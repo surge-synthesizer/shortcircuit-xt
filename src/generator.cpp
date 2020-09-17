@@ -13,6 +13,8 @@ extern short SincOffsetI16[(FIRipol_M)*FIRipol_N];
 const float I16InvScale = (1.f/(16384.f*32768.f));
 const __m128 I16InvScale_m128 = _mm_set1_ps(I16InvScale);
 
+static int SSE_VERSION = 2;
+
 template<bool,bool,int,int> void GeneratorSample(
 	GeneratorState* __restrict GD, 
 	GeneratorIO * __restrict IO );

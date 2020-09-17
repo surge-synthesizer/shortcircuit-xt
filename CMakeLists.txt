@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9 CACHE STRING "Build for 10.9")
 
-project(ShortCircuit VERSION 3.0.0.0 LANGUAGES CXX ASM)
+project(ShortCircuit VERSION 3.0.0.0 LANGUAGES C CXX ASM)
 message( STATUS "CMake Version is ${CMAKE_VERSION}" )
 message( STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}" )
 if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
@@ -64,7 +64,6 @@ set( SHORTCIRCUIT_SOURCE
   src/sfz_import.cpp
   src/shortcircuit2_RIFF_conversion.cpp
   src/steplfo.cpp
-  src/threadsafety.cpp
   src/tools.cpp
   src/unitconversion.cpp
   )
@@ -101,16 +100,40 @@ set( VST2_WRAPPER_SOURCE
   wrappers/vst2/shortcircuit_vsti.cpp
   wrappers/vst2/shortcircuit_vsti_edit.cpp
   wrappers/vst2/shortcircuit_vsti_main_edit.cpp
-  wrappers/vst2/scpb_vsti.cpp
+)
+
+
+set( VSTHACK "${CMAKE_SOURCE_DIR}/../../VST2_SDK/" )
+
+set( VST2_LIB_SOURCE
+  ${VSTHACK}/public.sdk/source/vst2.x/audioeffect.cpp
+  ${VSTHACK}/public.sdk/source/vst2.x/audioeffectx.cpp
+  )
+
+set( ZLIB_SOURCE
+  libs/external/zlib/adler32.c
+  libs/external/zlib/compress.c
+  libs/external/zlib/crc32.c
+  libs/external/zlib/deflate.c
+  libs/external/zlib/example.c
+  libs/external/zlib/gzio.c
+  libs/external/zlib/infback.c
+  libs/external/zlib/inffast.c
+  libs/external/zlib/inflate.c
+  libs/external/zlib/inftrees.c
+  libs/external/zlib/trees.c
+  libs/external/zlib/uncompr.c
+  libs/external/zlib/zutil.c
 )
 
 add_library( shortcircuit-lib
   SHARED
   ${SHORTCIRCUIT_SOURCE}
   ${VEMBERTECH_SOURCE}
+  ${VST2_WRAPPER_SOURCE}
+  ${VST2_LIB_SOURCE}
+  ${ZLIB_SOURCE}
 )
-
-set( VSTHACK "${CMAKE_SOURCE_DIR}/../../VST2_SDK/" )
 
 target_include_directories( shortcircuit-lib
   PRIVATE
@@ -131,7 +154,7 @@ target_include_directories( shortcircuit-lib
 
 
 if( WIN32 )
-  target_include_directories( shortcircuit-lib PRIVATE libs/external/libpng/win/include )
+  target_include_directories( shortcircuit-lib PRIVATE libs/external/libpng libs/external/zlib )
 endif()
 
 if( APPLE )
@@ -143,7 +166,32 @@ elseif( UNIX )
     LINUX=1
     )
 else()
+    if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
+    set( PNG_LINK_DIR "libs/external/libpng/" )
+  else()
+    set( PNG_LINK_DIR "libs/external/libpng/x64" )
+  endif()
+  message( STATUS "Configuring PNG linkage from ${PNG_LINK_DIR}" )
+
   target_compile_definitions( shortcircuit-lib PRIVATE
     WINDOWS=1
+    _CRT_SECURE_NO_WARNINGS=1
+    )
+  target_link_libraries( shortcircuit-lib
+    PRIVATE
+    
+    shell32
+    user32
+
+    Winmm
+    gdi32
+    gdiplus
+    msimg32
+    
+    ComDlg32
+    ComCtl32
+
+    ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/libpng.lib
+    ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/zlib.lib
     )
 endif()

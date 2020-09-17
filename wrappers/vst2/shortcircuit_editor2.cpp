@@ -12,6 +12,11 @@
 #include "sampler.h"
 #include "configuration.h"
 
+#include <string>
+using std::string;
+#include <vector>
+using std::vector;
+
 static int sc_instances = 0;
 extern bool global_skip_zone_noteon_redraws;
 extern bool global_skip_slice_noteon_redraws;
@@ -816,8 +821,8 @@ void vg_window::dropfiles_process(int mode, int key)
 				if(i->has_key) i->key_root = 24 + 12*octave + key;				
 			}
 			// stretch zones to fill void between them			
-			sort(dropfiles.begin(),dropfiles.end(),ptr_fun(sort_dropfile_by_filename));
-			sort(dropfiles.begin(),dropfiles.end(),ptr_fun(sort_dropfile_by_rootkey));
+			std::sort(dropfiles.begin(),dropfiles.end(),sort_dropfile_by_filename);
+			std::sort(dropfiles.begin(),dropfiles.end(),sort_dropfile_by_rootkey);
 			
 			for(unsigned int j=0; j<dropfiles.size(); j++)
 			{

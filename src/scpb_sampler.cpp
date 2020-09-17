@@ -1,3 +1,5 @@
+#if 0
+
 #include "scpb_sampler.h"
 #include <windows.h>
 #include "globals.h"
@@ -502,3 +504,5 @@ void scpb_sampler::do_changepatch()
 	((scpb_editor*)editor)->patchChanged();	
 	holdengine = false;
 }
+
+#endif

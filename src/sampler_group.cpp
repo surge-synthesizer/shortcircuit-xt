@@ -6,6 +6,7 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+#if 0
 #include "sampler_group.h"
 #include "controllers.h"
 
@@ -113,3 +114,4 @@ void sampler_group::process(bool bypass_fx)
 		ampR.process();
 	}
 }
+#endif

@@ -1,6 +1,9 @@
 //-------------------------------------------------------------------------------------------------------
 //	Copyright 2005 Claes Johanson & vember|audio
 //-------------------------------------------------------------------------------------------------------
+#if 0
+
+
 #include "scpb_editor.h"
 #include "../common/vstcontrols.h"
 #include <assert.h>
@@ -443,3 +446,5 @@ void scpb_editor::valueChanged (CDrawContext* context, CControl* control)
 
 	//control->setDirty();	
 }
+
+#endif

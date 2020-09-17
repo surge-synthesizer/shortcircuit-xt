@@ -17,6 +17,7 @@
 #include "cpuarch.h"
 #include "sampler.h"
 #include "configuration.h"
+#include <vt_util/vt_string.h>
 
 //#include "mdump.h"
 

@@ -6,6 +6,8 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+#if 0
+
 #if WINDOWS
 
 // #include "stdafx.h"
@@ -347,4 +349,5 @@ LRESULT CConfigDialog::OnNMClickDlist(int idCtrl, LPNMHDR nData, BOOL& bHandled)
 	bHandled = true;
 	return 0;
 }
+#endif
 #endif
