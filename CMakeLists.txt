@@ -194,4 +194,7 @@ else()
     ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/libpng.lib
     ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/zlib.lib
     )
+
+  target_link_options(shortcircuit-lib PUBLIC "/DEF:${CMAKE_SOURCE_DIR}\\resources\\windows\\shortcircuit_vst2.def" )
+
 endif()

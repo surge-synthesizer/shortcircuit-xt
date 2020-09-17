@@ -336,31 +336,21 @@ void shortcircuit_vsti::getParameterLabel(VstInt32 index, char *label)
 //------------------------------------------------------------------------
 bool shortcircuit_vsti::getEffectName (char* name)
 {
-#ifdef SCFREE
-	strcpy (name, "shortcircuit² free");
-#else
-	strcpy (name, "shortcircuit²");
-#endif
-	
+    strcpy( name, "ShortCircuit3" );
 	return true;
 }
 
 //------------------------------------------------------------------------
 bool shortcircuit_vsti::getProductString (char* text)
 {
-#ifdef SCFREE
-	strcpy (text, "shortcircuit² free");
-#else
-	strcpy (text, "shortcircuit²");
-#endif
-	
+    strcpy (text, "ShortCircuit3");
 	return true;
 }
 
 //------------------------------------------------------------------------
 bool shortcircuit_vsti::getVendorString (char* text)
 {
-	strcpy (text, "Vember Audio");
+	strcpy (text, "Surge Synth Team");
 	return true;
 }
 
