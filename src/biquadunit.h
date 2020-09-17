@@ -8,7 +8,7 @@
 // FIXME OF COURSE
 #define Align16
 
-#define USE_SSE2 ((_M_IX86_FP >= 2) || defined(_M_X64) || _DEBUG)
+#define USE_SSE2 1
 
 const double minBW = 0.0001;
 
@@ -107,7 +107,7 @@ public:
 
 	void process_block_DF2SOFTCLIP(float *data);
 	
-	inline float biquadunit::process_sample(float input)
+	inline float process_sample(float input)
 	{
 		a1.process();	a2.process();
 		b0.process();	b1.process();	b2.process();
@@ -121,7 +121,7 @@ public:
 		return (float)op;		
 	}
 
-	inline __m128d biquadunit::process_sample_sd(__m128d input)
+	inline __m128d process_sample_sd(__m128d input)
 	{		
 		a1.process();	a2.process();	b0.process();	b1.process();	b2.process();
 		__m128d op0 = _mm_add_sd(reg0.v,_mm_mul_sd(b0.v.v, input));
@@ -130,7 +130,7 @@ public:
 		return op0;
 	}
 
-	inline void biquadunit::process_sample_nolag(float &L, float &R)
+	inline void process_sample_nolag(float &L, float &R)
 	{		
 		double op;
 
@@ -145,7 +145,7 @@ public:
 		R = (float)op;
 	}
 
-	inline void biquadunit::process_sample_nolag(float &L, float &R, float &Lout, float &Rout)
+	inline void process_sample_nolag(float &L, float &R, float &Lout, float &Rout)
 	{		
 		double op;
 
@@ -160,7 +160,7 @@ public:
 		Rout = (float)op;
 	}
 
-	inline void biquadunit::process_sample_nolag_noinput(float &Lout, float &Rout)
+	inline void process_sample_nolag_noinput(float &Lout, float &Rout)
 	{		
 		double op;
 

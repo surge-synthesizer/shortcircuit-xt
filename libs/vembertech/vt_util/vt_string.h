@@ -13,5 +13,5 @@ std::wstring ToW(const char* Source);
 std::wstring ToW(int Value);
 
 #define wstringCharReadout(x,y,n)			\
-char y##[n];										\
+char y [n];										\
 vtWStringToString(y, x.c_str(), n);

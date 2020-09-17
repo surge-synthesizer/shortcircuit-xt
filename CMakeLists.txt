@@ -66,6 +66,9 @@ set( SHORTCIRCUIT_SOURCE
   src/steplfo.cpp
   src/tools.cpp
   src/unitconversion.cpp
+
+  # Windows only later on
+  src/vtgiurc.rc
   )
 
 set( VEMBERTECH_SOURCE
@@ -160,6 +163,9 @@ endif()
 if( APPLE )
   target_compile_definitions( shortcircuit-lib PRIVATE
     MAC=1
+    )
+  target_compile_options( shortcircuit-lib PRIVATE
+    -Wno-invalid-source-encoding
     )
 elseif( UNIX )
   target_compile_definitions( shortcircuit-lib PRIVATE

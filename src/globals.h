@@ -12,7 +12,6 @@
 #include "simde/x86/sse2.h"
 #else
 #include <xmmintrin.h>
-#include <intrin.h>
 
 #if LINUX
 #include <immintrin.h>
@@ -56,3 +55,7 @@ extern float samplerate_inv;
 extern float multiplier_freq2omega;
 
 extern int SSE_VERSION;
+
+#ifndef WINDOWS
+#define stricmp strcasecmp
+#endif

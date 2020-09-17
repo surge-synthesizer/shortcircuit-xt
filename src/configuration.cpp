@@ -80,8 +80,8 @@ bool configuration::load(std::wstring filename)
 	{
 		conf_filename = filename;		
 	}
-	char filenameUTF8[256];
-	//wstringCharReadout(filename, filenameUTF8, 256);
+
+	wstringCharReadout(filename, filenameUTF8, 256);
 	
 	TiXmlDocument doc(filenameUTF8);
 

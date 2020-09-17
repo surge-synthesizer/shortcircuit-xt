@@ -19,10 +19,6 @@ class sampler;
 #include <vector>
 #include <string>
 
-// FIXME - this should be alignas obviously
-#define Align16
-
-
 class sample;
 class sampler_voice;
 class filter;
@@ -46,17 +42,19 @@ class sampler
 {	
 public:
 	// Aligned members
-	Align16 float output[max_outputs<<1][block_size],output_part[n_sampler_parts<<1][block_size],output_fx[n_sampler_effects<<1][block_size];
-	Align16 struct partvoice	
+	float output alignas(16) [max_outputs<<1][block_size],
+		output_part alignas(16) [n_sampler_parts<<1][block_size],
+		output_fx alignas(16)[n_sampler_effects<<1][block_size];
+	struct alignas(16) partvoice	
 	{
-		Align16 lipol_ps fmix1,fmix2,ampL,ampR,pfg,aux1L,aux1R,aux2L,aux2R;
+		lipol_ps fmix1,fmix2,ampL,ampR,pfg,aux1L,aux1R,aux2L,aux2R;
 		filter* pFilter[2];
 		int last_ft[2];
 		modmatrix* mm;
 	} partv[n_sampler_parts];
-	Align16 struct multivoice
+	struct alignas(16) multivoice
 	{		
-		Align16 lipol_ps pregain,postgain;
+		lipol_ps pregain,postgain;
 		filter* pFilter[8];
 		int last_ft[8];
 	} multiv;
