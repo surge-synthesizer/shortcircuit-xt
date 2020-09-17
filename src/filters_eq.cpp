@@ -13,6 +13,12 @@
 #include "tools.h"
 #include <assert.h>
 
+#include <cmath>
+#include <math.h>
+#include <algorithm>
+using std::min;
+using std::max;
+
 // morph eq
 
 morphEQ::morphEQ(float *fp,void *loader, int *ip) : filter(fp,loader,true,ip)

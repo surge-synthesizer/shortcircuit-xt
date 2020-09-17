@@ -203,7 +203,7 @@ void steplfo::process(int )
 
 		state++;
 
-		if(settings->onlyonce) state = min(settings->repeat-1,state);
+		if(settings->onlyonce) state = min((long)( settings->repeat-1 ),state);
 		else if (state >= settings->repeat) state = 0; 
 		phase -= 1.0f;
 

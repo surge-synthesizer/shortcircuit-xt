@@ -60,14 +60,9 @@ set( SHORTCIRCUIT_SOURCE
   src/sampler_voice.cpp
   src/scpb_editor.cpp
   src/scpb_sampler.cpp
-  src/scpb_vsti.cpp
   src/sf2_import.cpp
   src/sfz_import.cpp
   src/shortcircuit2_RIFF_conversion.cpp
-  src/shortcircuit_editor2.cpp
-  src/shortcircuit_vsti.cpp
-  src/shortcircuit_vsti_edit.cpp
-  src/shortcircuit_vsti_main_edit.cpp
   src/steplfo.cpp
   src/threadsafety.cpp
   src/tools.cpp
@@ -99,6 +94,14 @@ set( VEMBERTECH_SOURCE
   libs/vembertech/vt_gui/vt_gui_controls.cpp
   libs/vembertech/vt_gui/browserdata.cpp
   libs/vembertech/thread/threadsafety.cpp
+)
+
+set( VST2_WRAPPER_SOURCE
+  wrappers/vst2/shortcircuit_editor2.cpp
+  wrappers/vst2/shortcircuit_vsti.cpp
+  wrappers/vst2/shortcircuit_vsti_edit.cpp
+  wrappers/vst2/shortcircuit_vsti_main_edit.cpp
+  wrappers/vst2/scpb_vsti.cpp
 )
 
 add_library( shortcircuit-lib

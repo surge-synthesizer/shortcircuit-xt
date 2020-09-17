@@ -24,8 +24,8 @@ vg_rect::vg_rect()
 
 void vg_rect::flip_if_needed()
 {
-	if(x>x2) swap(x,x2);	
-	if(y>y2) swap(y,y2);
+	if(x>x2) std::swap(x,x2);	
+	if(y>y2) std::swap(y,y2);
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -289,7 +289,7 @@ bool vg_surface::create(int sizeX, int sizeY, bool DIB)
 
 //-------------------------------------------------------------------------------------------------------
 
-bool vg_surface::create(string filename)
+bool vg_surface::create(std::string filename)
 {
 	if(!filename.size()) return false;		
 	return (read_png(filename)==0);
@@ -762,7 +762,7 @@ inline void fontblend(unsigned int col, unsigned int alpha, unsigned int &dst)
 
 //-------------------------------------------------------------------------------------------------------
 
-void vg_surface::draw_text_multiline(vg_rect r, string text, unsigned int color, int halign, int valign)
+void vg_surface::draw_text_multiline(vg_rect r, std::string text, unsigned int color, int halign, int valign)
 {
 	if(!font) return;
 		
@@ -770,10 +770,10 @@ void vg_surface::draw_text_multiline(vg_rect r, string text, unsigned int color,
 	int fontheight = font->cell_height;	
 	if(!text.empty())
 	{		
-		basic_string <char>::size_type a=0,b=0;
+		std::basic_string <char>::size_type a=0,b=0;
 		while(b<text.size())
 		{
-			string entry;
+			std::string entry;
 			b = text.find_first_of("\n",a);			
 			
 			if(b == text.npos) b=text.size();
@@ -790,7 +790,7 @@ void vg_surface::draw_text_multiline(vg_rect r, string text, unsigned int color,
 
 void vg_surface::draw_text(
 	vg_rect r, 
-	string text, 
+	std::string text, 
 	unsigned int color, 
 	int halign, 
 	int valign,
@@ -913,7 +913,7 @@ vg_font::~vg_font()
 
 //-------------------------------------------------------------------------------------------------------
 
-bool vg_font::load(string filename)
+bool vg_font::load(std::string filename)
 {	
 	vg_surface surf;	
 	if (!surf.create(filename)) return false;	
@@ -994,10 +994,10 @@ void vg_control::draw()
 
 //-------------------------------------------------------------------------------------------------------
 
-string vg_control::decode_vars(string s)
+std::string vg_control::decode_vars(std::string s)
 {
-	string::size_type pos = s.find("%i",0);
-	if(pos != string::npos) 
+	auto pos = s.find("%i",0);
+	if(pos != std::string::npos) 
 	{
 		char meh[16];
 		int sid = parameter_subid + 1;

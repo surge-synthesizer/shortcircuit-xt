@@ -54,7 +54,7 @@ void vtStringToWString(wchar_t* Destination, const char* Source, size_t Length)
 //
 //-------------------------------------------------------------------------------------------------------
 
-wstring ToW(const char* Source)
+std::wstring ToW(const char* Source)
 {
 	size_t Length = strlen(Source);
 
@@ -63,7 +63,7 @@ wstring ToW(const char* Source)
 
 	vtStringToWString(TempWString, Source, Length + 1);
 
-	wstring Result = TempWString;
+	std::wstring Result = TempWString;
 
 	free(TempWString);
 
@@ -72,11 +72,11 @@ wstring ToW(const char* Source)
 
 //-------------------------------------------------------------------------------------------------------
 
-wstring ToW(int Value)
+std::wstring ToW(int Value)
 {	
 	wchar_t TempW[16];
 	swprintf_s(TempW, 16, L"%i", Value);
-	wstring Result = TempW;	
+	std::wstring Result = TempW;	
 
 	return Result;
 }

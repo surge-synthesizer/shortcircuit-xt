@@ -39,24 +39,24 @@ public:
 	browserdata();
 	~browserdata();
 	
-	void set_paths(int type, string s); // semi-colon seperated for multiple directories		
+	void set_paths(int type, std::string s); // semi-colon seperated for multiple directories		
 	void refresh();
 	void save_cache();
 	bool load_cache();
-	bool init(string filename);
-	bool inject_newfile(int type, wstring filename);
+	bool init(std::string filename);
+	bool inject_newfile(int type, std::wstring filename);
 	bool build_samplelist(int ft, database_samplelist *s, int n_samples);
 
-	vector<patch_entry>		patchlist[max_filetypes];		
-	vector<category_entry>	categorylist[max_filetypes];
+	std::vector<patch_entry>		patchlist[max_filetypes];		
+	std::vector<category_entry>	categorylist[max_filetypes];
 
 	int currentmode;
 
 private:	
-	int traverse_dir(int ftype, wstring dir, int depth, int attacher, int parent);	
+	int traverse_dir(int ftype, std::wstring dir, int depth, int attacher, int parent);	
 	bool valid_extension(int,const wchar_t*,bool &is_bank);	
-	vector<string> ft_ext[max_filetypes];
-	wstring paths[max_filetypes];
-	string cachefile;	
+	std::vector<std::string> ft_ext[max_filetypes];
+	std::wstring paths[max_filetypes];
+	std::string cachefile;	
 	bool IsRefreshing;
 };

@@ -12,6 +12,7 @@
 #include "simde/x86/sse2.h"
 #else
 #include <xmmintrin.h>
+#include <intrin.h>
 
 #if LINUX
 #include <immintrin.h>

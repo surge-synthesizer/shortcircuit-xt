@@ -1,40 +1,41 @@
 #pragma once
 
 #pragma pack(push, 1)
+#include <cstdint>
 
 struct wavheader
 {
-	int16    wFormatTag;        /* format type */
-	int16    nChannels;         /* number of channels (i.e. mono, stereo...) */
-	int32   nSamplesPerSec;    /* sample rate */
-	int32   nAvgBytesPerSec;   /* for buffer estimation */
-	int16    nBlockAlign;       /* block size of data */
-	int16    wBitsPerSample;    /* Number of bits per sample of mono data */
+	int16_t    wFormatTag;        /* format type */
+	int16_t    nChannels;         /* number of channels (i.e. mono, stereo...) */
+	int32_t   nSamplesPerSec;    /* sample rate */
+	int32_t   nAvgBytesPerSec;   /* for buffer estimation */
+	int16_t    nBlockAlign;       /* block size of data */
+	int16_t    wBitsPerSample;    /* Number of bits per sample of mono data */
 
-	/*int16    cbSize;*/            /* The count in bytes of the size of
+	/*int16_t    cbSize;*/            /* The count in bytes of the size of
 											  extra information (after cbSize) */
 };
 
 struct CuePoint 
 {
-	int32 dwIdentifier;
-	int32 dwPosition;
-	int32 fccChunk;
-	int32 dwChunkStart;
-	int32 dwBlockStart;
-	int32 dwSampleOffset;
+	int32_t dwIdentifier;
+	int32_t dwPosition;
+	int32_t fccChunk;
+	int32_t dwChunkStart;
+	int32_t dwBlockStart;
+	int32_t dwSampleOffset;
 };
 
 struct wave_strc_header
 {
-	int32 unknown;
-	int32 subchunks;
-	int32 unknown2[5];  
+	int32_t unknown;
+	int32_t subchunks;
+	int32_t unknown2[5];  
 };
 
 struct wave_acid_chunk
 {
-	int32 type;
+	int32_t type;
 	/*
 	0x01 On: One Shot         Off: Loop
 	0x02 On: Root note is Set Off: No root
@@ -42,44 +43,44 @@ struct wave_acid_chunk
 	0x08 On: Disk Based       Off: Ram based
 	0x10 On: ??????????       Off: ????????? (Acidizer puts that ON)
 	*/
-	int16 rootnote,unknown;
+	int16_t rootnote,unknown;
 	float unknown2;
-	int32 n_beats;
-	int16 met_denom,met_num;
+	int32_t n_beats;
+	int16_t met_denom,met_num;
 	float tempo;
 };
 
 struct wave_strc_entry
 {
-	int32 unknown[2];
-	int32 spos1;
-	int32 unknown2;
-	int32 spos2;
-	int32 unknown3[2];
+	int32_t unknown[2];
+	int32_t spos1;
+	int32_t unknown2;
+	int32_t spos2;
+	int32_t unknown3[2];
 	float unknown4;
 };
 
 struct SampleLoop
 {
-	int32  dwIdentifier;
-	int32  dwType;
-	int32  dwStart;
-	int32  dwEnd;
-	int32  dwFraction;
-	int32  dwPlayCount;
+	int32_t  dwIdentifier;
+	int32_t  dwType;
+	int32_t  dwStart;
+	int32_t  dwEnd;
+	int32_t  dwFraction;
+	int32_t  dwPlayCount;
 };
 
 struct SamplerChunk
 {
-	int32           dwManufacturer;
-	int32           dwProduct;
-	int32           dwSamplePeriod;
-	int32           dwMIDIUnityNote;
-	int32           dwMIDIPitchFraction;
-	int32           dwSMPTEFormat;
-	int32           dwSMPTEOffset;
-	int32           cSampleLoops;
-	int32           cbSamplerData;
+	int32_t           dwManufacturer;
+	int32_t           dwProduct;
+	int32_t           dwSamplePeriod;
+	int32_t           dwMIDIUnityNote;
+	int32_t           dwMIDIPitchFraction;
+	int32_t           dwSMPTEFormat;
+	int32_t           dwSMPTEOffset;
+	int32_t           cSampleLoops;
+	int32_t           cbSamplerData;
 	//SampleLoop Loops[];
 };
 

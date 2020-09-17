@@ -1,4 +1,5 @@
 #include "generator.h"
+#include "globals.h"
 #include "resampling.h"
 #include "tools.h"
 #include "sampler_voice.h"
@@ -98,7 +99,6 @@ void GeneratorSample(
 	GeneratorState* __restrict GD,
 	GeneratorIO* __restrict IO )
 {	
-#ifndef MAC
 	int SamplePos = GD->SamplePos;
 	int SampleSubPos = GD->SampleSubPos;			
 	int LowerBound = GD->LowerBound;
@@ -164,6 +164,7 @@ void GeneratorSample(
 			// int16
 			if(SSE<2)
 			{
+#ifdef INCLUDE_BEFORE_SSE2
 				// MMX path	92 cycles/sample (stereo)
 				__m64 lipol0, tmp[4], sL4[4], sR4[4];		
 				__m128 fL,fR;
@@ -194,6 +195,7 @@ void GeneratorSample(
 					fR = _mm_mul_ss(_mm_cvtsi32_ss(fR,rR), I16InvScale_m128);
 					_mm_store_ss(&OutputR[i],fR);
 				}
+#endif
 			}
 			else
 			{
@@ -211,7 +213,7 @@ void GeneratorSample(
 				sL8A = _mm_add_epi32(sL8A,sL8B);		
 				if(stereo) sR8A = _mm_add_epi32(sR8A,sR8B);
 
-				Align16 int l[4],r[4];
+				int l alignas(16) [4],r alignas(16) [4];
 				_mm_store_si128((__m128i*)&l,sL8A);	
 				if(stereo) _mm_store_si128((__m128i*)&r,sR8A);
 				l[0] = (l[0] + l[1]) + (l[2] + l[3]);				
@@ -239,6 +241,7 @@ void GeneratorSample(
 				// Med überreleasen så verkar det inte bli något problem.
 				int zero = 0;				
 				int one = 1;
+#if SUPPORTS_ASM
 				__asm
 				{				
 					; load
@@ -264,10 +267,12 @@ void GeneratorSample(
 					mov SamplePos, eax				
 					mov SampleSubPos, edx
 				}
+#endif
 			}
 			break;
 		case GSM_Loop:		
-			{								
+			{			
+#if SUPPORTS_ASM
 				__asm
 				{					
 					; load
@@ -294,6 +299,7 @@ store:
 
 					mov SamplePos, eax													
 				}
+#endif
 			}
 			break;
 		case GSM_Bidirectional:		
@@ -301,6 +307,7 @@ store:
 				// Låter bäst då man INTE justerar SamplePos & SubPos för att den passerat Bounds
 
 				int fram = 1, bak = -1;
+#if SUPPORTS_ASM
 				__asm
 				{					
 					; load					
@@ -318,6 +325,7 @@ store:
 					; Store					
 					mov Direction, ecx
 				}
+#endif
 				SamplePos = limit_range(SamplePos,0,WaveSize);
 			}
 			break;
@@ -334,13 +342,14 @@ store:
 		}
 	}	
 	
+#if BEFORE_SSE2
 	if(!fp && (SSE<2)) _mm_empty();
-	
+#endif
+
 	GD->Direction = Direction*RatioSign;
 	GD->SamplePos = SamplePos;
 	GD->SampleSubPos = SampleSubPos;	
 	GD->IsFinished = IsFinished;
-#endif
 }
 
 /*

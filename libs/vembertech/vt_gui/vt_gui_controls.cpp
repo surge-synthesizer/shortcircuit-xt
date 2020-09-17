@@ -1,9 +1,10 @@
 #include "vt_gui_controls.h"
 #include "unitconversion.h"
+#include <vt_util/vt_string.h>
 
 const int menurow_height = 12;
 
-vg_control* spawn_control(string type,TiXmlElement *data, vg_window *owner, int newid)
+vg_control* spawn_control(std::string type,TiXmlElement *data, vg_window *owner, int newid)
 {			
 	if (type.compare(vgct_names[vgct_browser]) == 0)
 	{
@@ -131,7 +132,7 @@ float temposync_quantitize(float x)
 	return a + b;		
 }
 
-string temposynced_float_to_str(float x)
+std::string temposynced_float_to_str(float x)
 {
 	x = temposync_quantitize(x);
 	
@@ -155,9 +156,9 @@ string temposynced_float_to_str(float x)
 	return txt;
 }
 
-string dmode_int_to_str(int x, int dmode, string unit)
+std::string dmode_int_to_str(int x, int dmode, std::string unit)
 {
-	string s;
+	std::string s;
 	char ch[256];
 	switch(dmode)
 	{
@@ -193,9 +194,9 @@ string dmode_int_to_str(int x, int dmode, string unit)
 	return s;
 }
 
-string dmode_float_to_str(float x, int dmode, string unit)
+std::string dmode_float_to_str(float x, int dmode, std::string unit)
 {
-	string s;
+	std::string s;
 	char ch[256];
 	bool noprefix = false;
 	
@@ -248,7 +249,7 @@ string dmode_float_to_str(float x, int dmode, string unit)
 	return s;
 }
 
-bool dmode_str_to_float(string str, float &xout, int dmode)
+bool dmode_str_to_float(std::string str, float &xout, int dmode)
 {
 	if(str.empty()) return false;
 	float x = atof(str.c_str());
@@ -271,7 +272,7 @@ bool dmode_str_to_float(string str, float &xout, int dmode)
 	return true;
 }
 
-bool dmode_str_to_int(string str, int &xout, int dmode)
+bool dmode_str_to_int(std::string str, int &xout, int dmode)
 {
 	if(str.empty()) return false;
 
@@ -337,7 +338,7 @@ bool dmode_str_to_int(string str, int &xout, int dmode)
 	}
 }
 
-unsigned int hex2color(string colstring)
+unsigned int hex2color(std::string colstring)
 {		
 	int n = colstring.length();
 	unsigned int col = 0;
@@ -507,7 +508,7 @@ int vg_button::get_parameter_type(int id)
 	}
 	return 0;
 }
-string vg_button::get_parameter_name(int id)
+std::string vg_button::get_parameter_name(int id)
 {
 	switch(id)
 	{
@@ -528,7 +529,7 @@ string vg_button::get_parameter_name(int id)
 	}
 	return "-";
 }
-string vg_button::get_parameter_text(int id)
+std::string vg_button::get_parameter_text(int id)
 {
 	char t[256];
 	switch(id)
@@ -558,7 +559,7 @@ string vg_button::get_parameter_text(int id)
 	}
 	return "-";
 }
-void vg_button::set_parameter_text(int id,string text, bool no_refresh)
+void vg_button::set_parameter_text(int id,std::string text, bool no_refresh)
 {
 	switch(id)
 	{
@@ -619,7 +620,7 @@ void vg_multibutton::draw()
 	draw_background();
 
 	// count buttons
-	basic_string <char>::size_type a=0,b;
+	std::basic_string <char>::size_type a=0,b;
 	sub_buttons = count(label.begin(),label.end(),',');
 	sub_rows = count(label.begin(),label.end(),';');
 	sub_rows++;
@@ -640,7 +641,7 @@ void vg_multibutton::draw()
 			r.x = (i%sub_columns)*sb_width;		r.x2 = r.x+sb_width;
 			r.y = (i/sub_columns)*sb_height;	r.y2 = r.y+sb_height;
 
-			string entry;
+			std::string entry;
 			b = label.find_first_of(",;",a);
 			
 			if(b == label.npos) b=label.size();
@@ -1152,7 +1153,7 @@ int vg_slider::get_parameter_type(int id)
 	}
 	return 0;
 }
-string vg_slider::get_parameter_name(int id)
+std::string vg_slider::get_parameter_name(int id)
 {
 	switch(id)
 	{
@@ -1171,7 +1172,7 @@ string vg_slider::get_parameter_name(int id)
 	}
 	return "-";
 }
-string vg_slider::get_parameter_text(int id)
+std::string vg_slider::get_parameter_text(int id)
 {
 	char t[64];
 	switch(id)
@@ -1209,7 +1210,7 @@ string vg_slider::get_parameter_text(int id)
 	}
 	return "-";
 }
-void vg_slider::set_parameter_text(int id,string text, bool no_refresh)
+void vg_slider::set_parameter_text(int id,std::string text, bool no_refresh)
 {
 	switch(id)
 	{
@@ -1223,8 +1224,8 @@ void vg_slider::set_parameter_text(int id,string text, bool no_refresh)
 			if(text[0] == 'f')
 			{
 				floatmode = true;
-				string entry;
-				basic_string <char>::size_type a=2,b;
+				std::string entry;
+				std::basic_string <char>::size_type a=2,b;
 				b = text.find_first_of(",",a);
 				entry = text.substr(a,b-a);
 				if (entry.empty()) return;
@@ -1251,8 +1252,8 @@ void vg_slider::set_parameter_text(int id,string text, bool no_refresh)
 			else if(text[0] == 'i')
 			{
 				floatmode = false;
-				string entry;
-				basic_string <char>::size_type a=2,b;
+				std::string entry;
+				std::basic_string <char>::size_type a=2,b;
 				b = text.find_first_of(",",a);
 				entry = text.substr(a,b-a);
 				if (entry.empty()) return;
@@ -1489,7 +1490,7 @@ int vg_textedit::get_parameter_type(int id)
 	}
 	return 0;
 }
-string vg_textedit::get_parameter_name(int id)
+std::string vg_textedit::get_parameter_name(int id)
 {
 	switch(id)
 	{
@@ -1500,7 +1501,7 @@ string vg_textedit::get_parameter_name(int id)
 	}
 	return "-";
 }
-string vg_textedit::get_parameter_text(int id)
+std::string vg_textedit::get_parameter_text(int id)
 {
 	char t[64];
 	switch(id)
@@ -1515,7 +1516,7 @@ string vg_textedit::get_parameter_text(int id)
 	}
 	return "-";
 }
-void vg_textedit::set_parameter_text(int id,string text, bool no_refresh)
+void vg_textedit::set_parameter_text(int id,std::string text, bool no_refresh)
 {
 	switch(id)
 	{
@@ -1913,7 +1914,7 @@ int vg_paramedit::get_parameter_type(int id)
 	}
 	return 0;
 }
-string vg_paramedit::get_parameter_name(int id)
+std::string vg_paramedit::get_parameter_name(int id)
 {
 	switch(id)
 	{
@@ -1930,7 +1931,7 @@ string vg_paramedit::get_parameter_name(int id)
 	}
 	return "-";
 }
-string vg_paramedit::get_parameter_text(int id)
+std::string vg_paramedit::get_parameter_text(int id)
 {
 	char t[64];
 	switch(id)
@@ -1967,7 +1968,7 @@ string vg_paramedit::get_parameter_text(int id)
 	}
 	return "-";
 }
-void vg_paramedit::set_parameter_text(int id,string text, bool no_refresh)
+void vg_paramedit::set_parameter_text(int id,std::string text, bool no_refresh)
 {
 	switch(id)
 	{
@@ -1987,8 +1988,8 @@ void vg_paramedit::set_parameter_text(int id,string text, bool no_refresh)
 			if(text[0] == 'f')
 			{
 				floatmode = true;
-				string entry;
-				basic_string <char>::size_type a=2,b;
+				std::string entry;
+				std::basic_string <char>::size_type a=2,b;
 				b = text.find_first_of(",",a);
 				entry = text.substr(a,b-a);
 				if (entry.empty()) return;
@@ -2015,8 +2016,8 @@ void vg_paramedit::set_parameter_text(int id,string text, bool no_refresh)
 			else if(text[0] == 'i')
 			{
 				floatmode = false;
-				string entry;
-				basic_string <char>::size_type a=2,b;
+				std::string entry;
+				std::basic_string <char>::size_type a=2,b;
 				b = text.find_first_of(",",a);
 				entry = text.substr(a,b-a);
 				if (entry.empty()) return;
@@ -2068,7 +2069,7 @@ void vg_textview::draw()
 	draw_background();
 
 	int margin = 2;
-	string textdata = text.empty()?label:text;	
+	std::string textdata = text.empty()?label:text;	
 
 	char *cs = (char *)textdata.c_str();
 	for(int i=0; i<textdata.size(); i++) 
@@ -2115,7 +2116,7 @@ int vg_textview::get_parameter_type(int id)
 	}
 	return 0;
 }
-string vg_textview::get_parameter_name(int id)
+std::string vg_textview::get_parameter_name(int id)
 {
 	switch(id)
 	{
@@ -2126,7 +2127,7 @@ string vg_textview::get_parameter_name(int id)
 	}
 	return "-";
 }
-string vg_textview::get_parameter_text(int id)
+std::string vg_textview::get_parameter_text(int id)
 {
 	char t[64];
 	switch(id)
@@ -2141,7 +2142,7 @@ string vg_textview::get_parameter_text(int id)
 	}
 	return "-";
 }
-void vg_textview::set_parameter_text(int id,string text, bool no_refresh)
+void vg_textview::set_parameter_text(int id,std::string text, bool no_refresh)
 {
 	switch(id)
 	{

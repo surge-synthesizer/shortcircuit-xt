@@ -3,6 +3,8 @@
 #include "sampler_state.h"
 #include "sampler.h"
 
+#include <vt_util/vt_string.h>
+
 #include <list>
 using std::list;
 

@@ -8,7 +8,7 @@
 
 #if WINDOWS
 
-#include "stdafx.h"
+// #include "stdafx.h"
 #include "configuration_dialog.h"
 #include "resource2.h"
 #include "globals.h"

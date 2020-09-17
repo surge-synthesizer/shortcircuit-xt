@@ -1,3 +1,5 @@
+#pragma once 
+
 const int max_meq_entries = 512;
 
 struct meq_band
@@ -26,3 +28,4 @@ public:
 	void set_id(int *bank, int *patch, float val);
 	int n_loaded;
 };
+

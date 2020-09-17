@@ -23,6 +23,8 @@
 #include "shortcircuit2_RIFF_conversion.h"
 #include "configuration.h"
 
+using std::vector;
+
 // RIFF_StoreSample
 // call with data=0 to query size of the required buffer
 size_t RIFF_StoreSample(sample *s, void *data)

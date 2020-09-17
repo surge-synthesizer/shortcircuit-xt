@@ -350,10 +350,10 @@ float do_curve(unsigned int curve, float x)
 		x = fabs(x);
 		break;
 	case mmc_pos:
-		x = max(0,x);
+		x = max(0.f,x);
 		break;
 	case mmc_neg:
-		x = min(0,x);
+		x = min(0.f,x);
 		break;
 	case mmc_switch:
 		x = (x>0.f)?1:0;

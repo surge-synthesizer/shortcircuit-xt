@@ -1,5 +1,7 @@
 #include "vt_gui_controls.h"
 
+using std::string;
+
 const int menurow_height = 12;
 
 /*	vg_menu	*/

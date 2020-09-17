@@ -3,6 +3,11 @@
 #include <sampler_state.h>
 #include <interaction_parameters.h>
 
+using std::set;
+using std::vector;
+using std::string;
+
+
 unsigned int	framecol = 0xff000000;
 
 /* thoughts
@@ -309,9 +314,9 @@ void vg_list::update_dragcorners()
 	}
 }
 
-vector<int> vg_list::get_zones_at(vg_point p)
+std::vector<int> vg_list::get_zones_at(vg_point p)
 {
-	vector<int> get;
+	std::vector<int> get;
 
 	int n = zones.size();
 	int j=0;
@@ -781,7 +786,7 @@ void vg_list::processevent(vg_controlevent &e)
 				mde.ad.data.i[0] = 1-mode;
 				md.entries.push_back(mde);
 				
-				vector<int> sel = get_zones_at(p);
+				std::vector<int> sel = get_zones_at(p);
 				if(!sel.empty())
 				{
 					mde.label = "Select";

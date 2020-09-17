@@ -30,8 +30,8 @@ struct timedata;
 class sampler_voice
 {
 public:	
-	Align16 float output[2][block_size*2];
-	Align16 lipol_ps vca,faderL,faderR,pfg,aux1L,aux1R,aux2L,aux2R,fmix1,fmix2;	
+	float output alignas(16) [2][block_size*2];
+	lipol_ps vca,faderL,faderR,pfg,aux1L,aux1R,aux2L,aux2R,fmix1,fmix2;	
 	
 	sampler_voice(uint32 voice_id,timedata*);
 	virtual ~sampler_voice();
@@ -50,7 +50,7 @@ public:
 
 	uint32 voice_id;	
 
-	int32 key,velocity,channel,detune;
+	int32_t key,velocity,channel,detune;
 	float *__restrict ctrl;
 	float *__restrict automation;
 
@@ -89,7 +89,7 @@ public:
 	float envelope_follower,fpitch;
 	float lag[2];
 
-	forceinline int get_filter_type(int id);
+	inline int get_filter_type(int id);
 	//void filter_ctrldata(int);
 	bool sample_started,first_run;
 	bool upsampling;
@@ -97,12 +97,12 @@ public:
 	bool finished;
 	int playmode;
 	uint32 grain_id;		
-	int32 RingOut;	// when sample playback is finished, this will be decremented until zero
+	int32_t RingOut;	// when sample playback is finished, this will be decremented until zero
 	//template<bool stereo, bool oversampling, bool xfadeloop, int architecture> __declspec(noalias) bool process_t(float *L, float *R, float *aux1L, float *aux1R, float *aux2L, float *aux2R);
 	bool process_block(float *L, float *R, float *aux1L, float *aux1R, float *aux2L, float *aux2R);	
-	forceinline void check_filtertypes();
+	inline void check_filtertypes();
 	inline void update_lag_gen(int);
-	forceinline void update_portamento();
+	inline void update_portamento();
 	bool use_oversampling,use_stereo,use_xfade;
 	bool looping_active,portamento_active;
 };

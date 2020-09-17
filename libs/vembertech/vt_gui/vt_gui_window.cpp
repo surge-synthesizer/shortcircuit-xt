@@ -6,6 +6,12 @@
 #include <xmmintrin.h>
 #include "cpuarch.h"
 #include <vt_util/vt_lockfree.h>
+#include <vt_util/vt_string.h>
+
+#include <algorithm>
+using std::swap;
+using std::multimap;
+using std::pair;
 
 const int sizer_size = 5;
 
@@ -469,7 +475,7 @@ vg_window::~vg_window()
 {		
 }
 
-bool vg_window::create(string filename, bool is_editor, vg_window* owner, void *syswindow)
+bool vg_window::create(std::string filename, bool is_editor, vg_window* owner, void *syswindow)
 {			
 	load_art();
 	
@@ -497,7 +503,7 @@ bool vg_window::create(string filename, bool is_editor, vg_window* owner, void *
 
 	surf.create(sizeX,sizeY,true);
 	
-	string cf = rootdir_default + ("arrowcopy.cur");
+	std::string cf = rootdir_default + ("arrowcopy.cur");
 	hcursor_arrowcopy = LoadCursorFromFile(cf.c_str());
 	cf = rootdir_default + ("arrowvmove.cur");
 	hcursor_vmove = LoadCursorFromFile(cf.c_str());
@@ -809,7 +815,7 @@ void vg_window::draw(void *hwnd, int ctrlid)
 	else
 	{		
 		dirtykids_csec.enter();
-		set<int>::iterator iter;		
+		std::set<int>::iterator iter;		
 		dirtykids.begin();
 		iter=dirtykids.begin();
 		while(iter != dirtykids.end())
@@ -974,7 +980,7 @@ void vg_window::set_selected_id(int s)
 			ad2.data.i[0] = i;
 			ad.actiontype = vga_entry_add;
 			ad.data.ptr[0] = &ad2;
-			string s = param_get_label_from_id(i);
+			std::string s = param_get_label_from_id(i);
 			vtCopyString((char*)&ad.data.str[8],s.c_str(),32);
 			editwin->post_action_to_control(ad);
 		}	
@@ -1350,7 +1356,7 @@ bool vg_window::processevent(vg_controlevent &e)
 		dirtykids_csec.enter();
 		if(dirtykids.size() < 2)
 		{						
-			set<int>::iterator iter = dirtykids.begin();
+			std::set<int>::iterator iter = dirtykids.begin();
 			if(!((*iter >= 0)&&(*iter < (int)children.size()))) RedrawWindow(hWnd,0,0,RDW_INVALIDATE);
 			else
 			{
@@ -1456,7 +1462,7 @@ void vg_window::nudge_selected_control(int x, int y)
 	{
 		if(multiselector.size()>0)
 		{
-			set<int>::iterator iter;
+			std::set<int>::iterator iter;
 			
 			for (iter = multiselector.begin(); iter != multiselector.end(); iter++)
 			{
@@ -1631,7 +1637,7 @@ bool vg_window::load_layout()
 	{		
 		TiXmlElement *rect = control->FirstChild("rect")->ToElement();
 		TiXmlElement *data = control->FirstChild("data")->ToElement();
-		string type = control->Attribute("type");
+		std::string type = control->Attribute("type");
 		if(rect)
 		{
 			int x=0,x2=0,y=0,y2=0;
@@ -1739,11 +1745,11 @@ vg_bitmap vg_window::get_art(unsigned int bank_id, unsigned int style_id, unsign
 
 void vg_window::load_art()
 {	
-	string filename = rootdir_skin + "art.xml";
+	std::string filename = rootdir_skin + "art.xml";
 		
 	if (!artdoc.LoadFile(filename))
 	{
-		string filename = rootdir_default + "art.xml";
+		std::string filename = rootdir_default + "art.xml";
 		artdoc.LoadFile(filename);
 	}
 	int j;
@@ -1997,7 +2003,7 @@ void vg_window::align_selected(int mode)
 {
 	if(multiselector.size()>1)
 	{
-		set<int>::iterator iter;
+		std::set<int>::iterator iter;
 
 		bool first=true;
 		vg_rect bounds;
@@ -2121,7 +2127,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 		case editor_rectY:
 		case editor_rectY2:
 			{					 
-				for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+				for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 				{
 					int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 					vg_rect cr = children[i]->get_rect();					
@@ -2157,7 +2163,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 		case editor_cdata7:
 			{
 				int pid = ad.id - editor_cdata0;
-				for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+				for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 				{
 					int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 					children[i]->set_parameter_text(pid,(char*)ad.data.str);					
@@ -2167,7 +2173,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 			}
 		case editor_filter_type:
 			{				
-				for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+				for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 				{
 					int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 					children[i]->filter = val;
@@ -2178,7 +2184,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 		case editor_filter_entry:
 			{		
 				val = bitmask_from_hexlist((char*)ad.data.str);
-				for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+				for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 				{
 					int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 					children[i]->filter_entry = val;
@@ -2188,7 +2194,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 			}
 		case editor_offset:
 			{				
-				for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+				for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 				{
 					int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 					children[i]->offset = val;
@@ -2198,7 +2204,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 			}
 		case editor_offset_amount:
 			{				
-				for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+				for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 				{
 					int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 					children[i]->offset_amount = val;
@@ -2213,7 +2219,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 		switch(ad.id)
 		{
 		case editor_param_id:
-			for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+			for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 			{
 				int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 				children[i]->parameter_id = ad.data.i[0];
@@ -2222,7 +2228,7 @@ void vg_window::events_from_toolbox(actiondata ad)
 			set_selected_id(selected_id);
 			break;			
 		case editor_param_subid:
-			for (set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
+			for (std::set<int>::iterator iter = multiselector.begin(); iter != multiselector.end(); iter++)
 			{
 				int i = *iter; assert((i>=0)&&(i<(int)children.size()));
 				children[i]->parameter_subid = ad.data.i[0];
@@ -2394,7 +2400,7 @@ int vg_window::get_syscolor(int id)
 	return colorpalette[id&0xff];
 }
 
-bool vg_window::dialog_confirm(wstring label, wstring text, int mode)
+bool vg_window::dialog_confirm(std::wstring label, std::wstring text, int mode)
 {	
 	UINT flags = 0;
 	switch(mode)
@@ -2443,7 +2449,7 @@ void vg_window::dialog_save_multi()
 	post_action_to_program(ad);
 }
 
-wstring vg_window::dialog_save(wstring label, wstring startdir, int type)
+std::wstring vg_window::dialog_save(std::wstring label, std::wstring startdir, int type)
 {
 	OPENFILENAMEW ofn;       // common dialog box structure
 	WCHAR szFile[512];       // buffer for file name

@@ -21,10 +21,10 @@
 #include <vt_dsp/basic_dsp.h>
 #include "sample.h"
 
-Align64 float	SincTableF32[(FIRipol_M+1)*FIRipol_N];
-Align64 float	SincOffsetF32[(FIRipol_M)*FIRipol_N];
-Align64 short	SincTableI16[(FIRipol_M+1)*FIRipolI16_N];
-Align64 short SincOffsetI16[(FIRipol_M)*FIRipolI16_N];
+float	SincTableF32 alignas(64) [(FIRipol_M+1)*FIRipol_N];
+float	SincOffsetF32 alignas(64) [(FIRipol_M)*FIRipol_N];
+short	SincTableI16 alignas(64) [(FIRipol_M+1)*FIRipolI16_N];
+short   SincOffsetI16 alignas(64) [(FIRipol_M)*FIRipolI16_N];
 
 float table_dB[512],table_pitch[512],table_envrate_lpf[512],table_envrate_linear[512];
 float waveshapers[8][1024]; // typ?

@@ -10,6 +10,9 @@
 #include "sampler_state.h"
 #include <vt_dsp/lattice.h>
 
+// FIXME
+#define Align16
+
 //-------------------------------------------------------------------------------------------------------
 
 const char	str_freqdef[] = ("f,-5,0.04,6,5,Hz"),

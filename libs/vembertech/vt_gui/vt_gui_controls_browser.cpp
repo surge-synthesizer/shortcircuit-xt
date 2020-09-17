@@ -2,6 +2,10 @@
 #include "browserdata.h"
 #include "interaction_parameters.h"
 
+#include <vt_util/vt_string.h>
+using std::set;
+using std::vector;
+
 vg_browser::vg_browser(vg_window *o, int id, TiXmlElement *e) : vg_control(o,id,e)
 {	
 	restore_data(e);

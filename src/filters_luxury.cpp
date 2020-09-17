@@ -12,6 +12,15 @@
 #include "tools.h"
 #include <assert.h>
 
+#include <algorithm>
+using std::min;
+using std::max;
+
+#include <cmath>
+#include <math.h>
+
+#include <cstring>
+
 /*	LP4M		*/
 // moog ladder filter emulation
 

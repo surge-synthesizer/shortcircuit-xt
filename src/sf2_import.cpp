@@ -14,6 +14,7 @@
 #include "unitconversion.h"
 #include "modmatrix.h"
 #include "steplfo.h"
+#include <vt_util/vt_string.h>
 
 int get_sf2_patchlist(const wchar_t *filename, void **plist)
 {

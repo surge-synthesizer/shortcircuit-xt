@@ -11,6 +11,12 @@
 #include "tools.h"
 #include "parameterids.h"
 
+#include <math.h>
+#include <cmath>
+#include <algorithm>
+using std::max;
+using std::min;
+
 /*	limiter		*/
 
 limiter::limiter(float *fp, int *ip) : filter(fp,0,true,ip)

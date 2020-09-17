@@ -67,7 +67,7 @@ void SuperSVF::calc_coeffs()
 		float overshoot = (iparam[1] == 1) ? 0.05 : 0.075;
 		float Q1 = 2.0 - Reso*(2.0+overshoot) + F1*F1 * overshoot * 0.9;
 		
-		Q1 = min(Q1, min(2.00, 2.00 - 1.52*F1));
+		Q1 = min(Q1, min(2.00f, 2.00f - 1.52f*F1));
 
 		float NewClipDamp = 0.1*Reso*F1;
 

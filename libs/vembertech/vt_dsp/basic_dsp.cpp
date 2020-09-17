@@ -1,8 +1,15 @@
 #include "basic_dsp.h"
 #include <assert.h>
-#if MAC
+
+#define  _USE_MATH_DEFINES
+
 #include <algorithm>
-#endif
+#include <math.h>
+#include <cmath>
+
+
+using std::min;
+using std::max;
 
 int Min(int a, int b)
 {
@@ -850,13 +857,13 @@ float sine_float_nowrap(float x)
 	const float B = 4.f/M_PI;
 	const float C = -4.f/(M_PI*M_PI);
 
-	float y = B * x + C * x * ::abs(x);
+	float y = B * x + C * x * std::abs(x);
 
 	//EXTRA_PRECISION
 	//  const float Q = 0.775;
 	const float P = 0.225;
 
-	return P * (y * fabs(y) - y) + y;   // Q * y + P * y * abs(y)    	 
+	return P * (y * std::fabs(y) - y) + y;   // Q * y + P * y * abs(y)    	 
 }
 
 __m128 sine_ps_nowrap(__m128 x)

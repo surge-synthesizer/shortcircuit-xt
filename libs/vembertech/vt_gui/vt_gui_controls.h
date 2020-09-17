@@ -23,20 +23,20 @@ enum vg_control_types
 
 const char vgct_names[n_vgct][16] = { "none","button","slider","textedit","optionmenu","list","multibutton","paramedit","waveedit","steplfo","browser","textview","VU"};
 
-unsigned int hex2color(string colstring);
+unsigned int hex2color(std::string colstring);
 
-string dmode_float_to_str(float x, int dmode, string unit);
-string dmode_int_to_str(int x, int dmode, string unit);
+std::string dmode_float_to_str(float x, int dmode, std::string unit);
+std::string dmode_int_to_str(int x, int dmode, std::string unit);
 
-bool dmode_str_to_float(string str, float &x, int dmode);
-bool dmode_str_to_int(string str, int &x, int dmode);
+bool dmode_str_to_float(std::string str, float &x, int dmode);
+bool dmode_str_to_int(std::string str, int &x, int dmode);
 
 struct vg_menudata;
 struct vg_menudata_entry;
 
 struct vg_menudata_entry
 {
-	string label;
+	std::string label;
 	vg_menudata* submenu;
 	actiondata ad;	
 	vg_rect r;	// rectangle used temporarily by vg_menu (other classes shouldn't rely on it)		
@@ -44,7 +44,7 @@ struct vg_menudata_entry
 
 struct vg_menudata
 {
-	vector<vg_menudata_entry> entries;
+	std::vector<vg_menudata_entry> entries;
 };
 
 struct vg_menucolumn
@@ -63,7 +63,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return "none"; }	
+	virtual std::string serialize_tag(){ return "none"; }	
 	virtual int get_min_w(){ return 50; } 
 	virtual int get_min_h(){ return 50; } 
 	void set_style(int s);
@@ -72,17 +72,17 @@ public:
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);
 
 	bool clicked_entry(vg_point p, int &c, int &e);
 
-	string text,oldtext,label;
+	std::string text,oldtext,label;
 	int style,color;
 	bool down,hover,disabled,moved;	
 	//vg_menudata *menu;	
-	vector<vg_menucolumn> columns;
+	std::vector<vg_menucolumn> columns;
 };
 
 class vg_optionmenu : public vg_control
@@ -93,7 +93,7 @@ class vg_optionmenu : public vg_control
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_optionmenu]; }	
+	virtual std::string serialize_tag(){ return vgct_names[vgct_optionmenu]; }	
 	virtual int get_min_w(){ return buttonbmp[0].r.get_w(); } 
 	virtual int get_min_h(){ return buttonbmp[0].r.get_h(); } 
 	void set_style(int s);
@@ -102,11 +102,11 @@ class vg_optionmenu : public vg_control
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);	
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);	
 	
-	string label,action;
+	std::string label,action;
 	int style,action_p[2],action_i,value_int;
 	unsigned int color;
 	bool down,hover,disabled,stuck;	
@@ -122,7 +122,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_button]; }	
+	virtual std::string serialize_tag(){ return vgct_names[vgct_button]; }	
 	virtual int get_min_w(){ return buttonbmp[0].r.get_w(); } 
 	virtual int get_min_h(){ return buttonbmp[0].r.get_h(); } 
 	void set_style(int s);
@@ -131,13 +131,13 @@ public:
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);
 	
-	string label,action;
+	std::string label,action;
 	int style,action_p[2],action_i;
-	string action_text;
+	std::string action_text;
 	unsigned int color;
 	bool down,hover,disabled,stuck;	
 	vg_bitmap buttonbmp[4];	
@@ -151,13 +151,13 @@ public:
 	
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_multibutton]; }	
+	virtual std::string serialize_tag(){ return vgct_names[vgct_multibutton]; }	
 	virtual void post_action(actiondata ad);
 
 	int sub_buttons, sb_width, sb_height, sub_rows, sub_columns;
 	int sel_id,hover_id;
  };
-// (string based multibutton thing)
+// (std::string based multibutton thing)
 // should be used for channel-selection, pages etc
 // comma-seperated labels (samma params som button annars)
 
@@ -170,7 +170,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_paramedit]; }	
+	virtual std::string serialize_tag(){ return vgct_names[vgct_paramedit]; }	
 	virtual int get_min_w(){ return buttonbmp[0].r.get_w(); } 
 	virtual int get_min_h(){ return buttonbmp[0].r.get_h(); } 
 	void set_style(int s);
@@ -179,19 +179,19 @@ public:
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);
 
 	void interpret_textedit();
 
-	string label,text,oldtext;
+	std::string label,text,oldtext;
 	int style,value_int,labelcolor,labelsplit;
 	float value_float;
 	float f_movespeed;
 	float f_min,f_max,f_default;	
 	int i_min,i_max,dmode,i_default;	
-	string unit;
+	std::string unit;
 
 	bool down,textedit,hover,disabled;
 	bool floatmode;
@@ -218,7 +218,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_slider]; }	
+	virtual std::string serialize_tag(){ return vgct_names[vgct_slider]; }	
 	virtual int get_min_w(){ return 15; } 
 	virtual int get_min_h(){ return 15; } 
 	void set_style(int s);
@@ -227,9 +227,9 @@ public:
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);
 
 	int style;
 	bool vertical;
@@ -248,7 +248,7 @@ public:
 	float f_movespeed;
 	float f_min,f_max,f_default;
 	int i_min,i_max,dmode,i_default;	
-	string unit;	
+	std::string unit;	
 };
 
 class vg_textedit : public vg_control
@@ -259,7 +259,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_textedit]; }	
+	virtual std::string serialize_tag(){ return vgct_names[vgct_textedit]; }	
 	virtual int get_min_w(){ return buttonbmp[0].r.get_w(); } 
 	virtual int get_min_h(){ return buttonbmp[0].r.get_h(); } 
 	void set_style(int s);
@@ -268,12 +268,12 @@ public:
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);
 	virtual bool steal_kbd_on_focus(){ return true; }
 
-	string text,oldtext,label;
+	std::string text,oldtext,label;
 	int style,cursor;
 	bool down,hover,disabled;
 	
@@ -282,7 +282,7 @@ public:
 
 struct vg_list_zone
 {
-	string name;
+	std::string name;
 	int keylo,keyhi,keyroot,keyhifade,keylofade;
 	int vello,velhi;
 	int channel,id;
@@ -298,19 +298,19 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_list]; }			
+	virtual std::string serialize_tag(){ return vgct_names[vgct_list]; }			
 	virtual void post_action(actiondata ad);	
 	virtual bool is_dragdrop_destination(){ return true; }
 	virtual void on_resize();
 
 	vg_bitmap bmpdata[16];
-	vector<vg_list_zone> zones;	
+	std::vector<vg_list_zone> zones;	
 
 	void refresh();
 	void set_hover_id(int);
 	void set_selected_id(int);
 	int hover_id,selected_id,firstkey;
-	set<int> multiselect;
+	std::set<int> multiselect;
 	
 	int hover_id_corners,selected_id_corners;
 	vg_rect dragcorners[10];
@@ -326,7 +326,7 @@ private:
 	void draw_list_key(int key);
 	void draw_list_zone(vg_list_zone* i, int j);
 	int xy_to_key(int x, int y);
-	vector<int> get_zones_at(vg_point p);
+	std::vector<int> get_zones_at(vg_point p);
 
 	void toggle_zoom(bool toggle);
 	void update_dragcorners();
@@ -354,7 +354,7 @@ public:
 	void queue_draw_wave(bool be_quick, bool skip_wave_redraw);
 	void draw_plot();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_waveedit]; }			
+	virtual std::string serialize_tag(){ return vgct_names[vgct_waveedit]; }			
 	virtual void post_action(actiondata ad);	
 	virtual int get_min_w(){ return 20; } 
 	virtual int get_min_h(){ return 20; } 
@@ -389,7 +389,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_steplfo]; }			
+	virtual std::string serialize_tag(){ return vgct_names[vgct_steplfo]; }			
 	virtual void post_action(actiondata ad);	
 	virtual int get_min_w(){ return 20; } 
 	virtual int get_min_h(){ return 20; } 
@@ -433,7 +433,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_browser]; }			
+	virtual std::string serialize_tag(){ return vgct_names[vgct_browser]; }			
 	virtual void post_action(actiondata ad);	
 	virtual int get_min_w(){ return 20; } 
 	virtual int get_min_h(){ return 20; } 	
@@ -441,15 +441,15 @@ public:
 protected:
 
 	unsigned int split, style;
-	string searchstring;
+	std::string searchstring;
 	vg_bitmap sb_tray,sb_head,divider,folder,file[2];
 	vg_rect b_upper,b_lower,scroll_rect[2],scroll_rect_head[2];
 	bool is_refreshing;
 
-	vector<pp_dstrect> prect;
-	vector<pp_catrect> crect;	
-	vector<category_entry>* categorylist;
-	vector<patch_entry>* patchlist;	
+	std::vector<pp_dstrect> prect;
+	std::vector<pp_catrect> crect;	
+	std::vector<category_entry>* categorylist;
+	std::vector<patch_entry>* patchlist;	
 
 	void PreviewEntry(int Entry, bool AlwaysPreview);
 	void SelectSingle(int Entry);
@@ -457,7 +457,7 @@ protected:
 	int category,entry,controlstate,p_first,p_last, mNumVisiblePEntries;
 	int scroll_pos[2];
 	int database_type;
-	set<int> multiselect;
+	std::set<int> multiselect;
 	vg_menudata md;	// context menu
 	int moved_since_mdown;
 };
@@ -469,18 +469,18 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_textview]; }		
+	virtual std::string serialize_tag(){ return vgct_names[vgct_textview]; }		
 	void set_style(int s);
 
 	virtual void post_action(actiondata ad);
 
 	virtual int get_n_parameters();
 	virtual int get_parameter_type(int id);
-	virtual string get_parameter_name(int id);
-	virtual string get_parameter_text(int id);
-	virtual void set_parameter_text(int id,string text,bool no_refresh=false);	
+	virtual std::string get_parameter_name(int id);
+	virtual std::string get_parameter_text(int id);
+	virtual void set_parameter_text(int id,std::string text,bool no_refresh=false);	
 
-	string text;
+	std::string text;
 	int style;
 	bool selectable,disabled;
 	int selected_id;
@@ -493,7 +493,7 @@ public:
 
 	virtual void draw();
 	virtual void processevent(vg_controlevent &e);
-	virtual string serialize_tag(){ return vgct_names[vgct_VU]; }
+	virtual std::string serialize_tag(){ return vgct_names[vgct_VU]; }
 	virtual void post_action(actiondata ad);	
 protected:
 	int NumChannels;

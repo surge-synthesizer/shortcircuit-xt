@@ -6,13 +6,18 @@
 #include <ShlObj.h>
 #include "sample.h"
 
+#include <vt_util/vt_string.h>
+#include <string>
+using std::string;
+using std::wstring;
+
 browserdata::browserdata()
 {		
 	currentmode = 0;
 	IsRefreshing = false;
 }
 
-bool browserdata::init(string filename)
+bool browserdata::init(std::string filename)
 {	
 	cachefile = filename;
 	return load_cache();	
@@ -202,12 +207,12 @@ void browserdata::refresh()
 			e.depth = 0;
 			categorylist[i].push_back(e);
 
-			basic_string <char>::size_type a=0,b;
+			std::basic_string <char>::size_type a=0,b;
 			int attacher = 0;
 
 			WIN32_FIND_DATAW FindFileData;
 			HANDLE hFind;
-			wstring searchstring = paths[i] + L"*.lnk";
+			std::wstring searchstring = paths[i] + L"*.lnk";
 
 			hFind = FindFirstFileW(searchstring.c_str(), &FindFileData);		
 			if (hFind != INVALID_HANDLE_VALUE) 
@@ -217,7 +222,7 @@ void browserdata::refresh()
 					WCHAR *extension = wcsrchr(FindFileData.cFileName,L'.');				
 					if (extension && (wcsicmp(extension,L".lnk") == 0))
 					{
-						wstring lnkfile = paths[i];
+						std::wstring lnkfile = paths[i];
 						lnkfile.append(FindFileData.cFileName);
 
 						WCHAR szFilePath[MAX_PATH];
@@ -239,9 +244,9 @@ void browserdata::refresh()
 	IsRefreshing = false;
 }
 
-bool browserdata::inject_newfile(int type, wstring filename)
+bool browserdata::inject_newfile(int type, std::wstring filename)
 {
-	wstring path = filename.substr(0,filename.rfind('\\')+1);		
+	std::wstring path = filename.substr(0,filename.rfind('\\')+1);		
 	char fileUTF8[256];
 	char pathUTF8[256];
 	WideCharToMultiByte(CP_UTF8, 0, path.c_str(), -1, pathUTF8, 256, 0,0);	
@@ -266,7 +271,7 @@ bool browserdata::inject_newfile(int type, wstring filename)
 			patch_entry e;
 			e.category = c;			
 			WideCharToMultiByte(CP_UTF8, 0, filename.c_str(), -1, e.path, 256, 0,0);					
-			wstring name = filename.substr(filename.rfind('\\')+1);
+			std::wstring name = filename.substr(filename.rfind('\\')+1);
 			name = name.substr(0,name.rfind('.'));
 			WideCharToMultiByte(CP_ACP, 0, name.c_str(), -1, e.name, 64, 0,0); 
 					
@@ -314,12 +319,12 @@ inline void TrimLeft(std::string& str, const std::string & ChrsToTrim = " \t\n\r
 	Trim(str, ChrsToTrim, 1);
 }
 
-int browserdata::traverse_dir(int ftype, wstring dir, int depth, int creator, int parent)
+int browserdata::traverse_dir(int ftype, std::wstring dir, int depth, int creator, int parent)
 {			
 	assert(depth<16);
 		
 	category_entry e;
-	wstring name = dir;
+	std::wstring name = dir;
 	name.erase(name.length()-1);
 	name.erase(0,name.rfind('\\')+1);
 	//strncpy(e.name,name.c_str(),64);
@@ -356,7 +361,7 @@ int browserdata::traverse_dir(int ftype, wstring dir, int depth, int creator, in
 			}
 			else if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{				
-				wstring subdir = dir;				
+				std::wstring subdir = dir;				
 				subdir.append(FindFileData.cFileName);
 				subdir.append(L"\\");
 				subcreator = traverse_dir(ftype,subdir,depth+1,subcreator,e.id);				
@@ -371,7 +376,7 @@ int browserdata::traverse_dir(int ftype, wstring dir, int depth, int creator, in
 					{
 						if(is_bank)
 						{
-							wstring sf2file = dir;
+							std::wstring sf2file = dir;
 							sf2file.append(FindFileData.cFileName);
 							midipatch *plist=0;
 							int n;
@@ -382,7 +387,7 @@ int browserdata::traverse_dir(int ftype, wstring dir, int depth, int creator, in
 								patch_entry f;						
 								WCHAR s[256];
 								swprintf(s,L"%i",i);
-								wstring spath;
+								std::wstring spath;
 								if((n>1) && (i>0)) spath = dir + FindFileData.cFileName + L">" + s;
 								else spath = dir + FindFileData.cFileName;								
 								WideCharToMultiByte(CP_UTF8, 0, spath.c_str(), -1, f.path, 256, 0,0); 
@@ -403,7 +408,7 @@ int browserdata::traverse_dir(int ftype, wstring dir, int depth, int creator, in
 						else
 						{
 							patch_entry f;		
-							wstring tmp = dir + FindFileData.cFileName;
+							std::wstring tmp = dir + FindFileData.cFileName;
 							//strncpy(f.path,tmp.c_str(),256);
 							WideCharToMultiByte(CP_UTF8, 0, tmp.c_str(), -1, f.path, 256, 0,0); 
 							f.category = e.id;
