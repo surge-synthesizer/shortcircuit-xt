@@ -19,6 +19,10 @@
 
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_lockfree.h>
+#include <vt_util/vt_string.h>
+
+#include <list>
+using std::list;
 
 float samplerate;
 float samplerate_inv;
@@ -80,7 +84,7 @@ sampler::sampler(AEffEditor *editor, int NumOutputs, AudioEffectX *effect)
 	this->editor = (sc_editor2*)editor;
 	editor_open = false;
 //	this->effect = effect;
-	uint32 i,c;		
+	uint32_t i,c;		
 	for(i=0; i<max_voices; i++)
 	{				
 		voices[i] = (sampler_voice*) _mm_malloc(sizeof(sampler_voice),16);
@@ -418,7 +422,7 @@ bool sampler::clone_zone(int zone_id, int *new_z, bool same_key)
 		
 	memcpy(&zones[i], &zones[zone_id], sizeof (sample_zone));
 
-	uint32 s = zones[zone_id].sample_id;
+	uint32_t s = zones[zone_id].sample_id;
 	// increase refcount for sample
 	if (samples[s])
 		samples[s]->remember();
@@ -650,7 +654,7 @@ bool sampler::add_zone(const TCHAR *filename,int *new_z,char part,bool use_root_
 	if (i<0) return false;
 
 	// check if sample is loaded already
-	int32 s=0;
+	int32_t s=0;
 	if (filename)
 	{
 		bool is_loaded=get_sample_id(filename,&s);
@@ -852,7 +856,7 @@ bool sampler::replace_zone(int z, const char *filename)
 	return true;	
 }
 
-bool sampler::free_zone(uint32 zoneid){	
+bool sampler::free_zone(uint32_t zoneid){	
 	if (!zone_exists[zoneid]) return false;	
 	cs_patch.enter();
 	kill_notes(zoneid);

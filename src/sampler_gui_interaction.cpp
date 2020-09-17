@@ -17,6 +17,15 @@
 #include <vt_gui/browserdata.h>
 #include <vt_util/vt_lockfree.h>
 
+#include <vt_util/vt_string.h>
+
+#include <vector>
+using std::vector;
+
+#include <string>
+using std::string;
+using std::basic_string;
+
 void sampler::post_events_from_editor(actiondata ad)
 {				
 	ActionBuffer->WriteBlock(&ad);

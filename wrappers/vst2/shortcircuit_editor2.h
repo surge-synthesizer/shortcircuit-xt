@@ -35,7 +35,7 @@ public:
 	//static UINT_PTR CALLBACK OFN_sample_replace( HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam );
 	//void wait_for_fsys_changes();	
 	browserdata browserd;
-	wstring inject_file;
+	std::wstring inject_file;
 
 	virtual bool open (void *ptr);
 	virtual void close ();
@@ -51,11 +51,11 @@ protected:
 	virtual bool processevent_user(vg_controlevent &e);
 
 	virtual int param_get_n();
-	virtual string param_get_label_from_id(int id);
-	virtual int param_get_id_from_label(string s);	
+	virtual std::string param_get_label_from_id(int id);
+	virtual int param_get_id_from_label(std::string s);	
 	virtual int param_get_n_subparams(int id);
 
-	string get_dir(int id);
+	std::string get_dir(int id);
 	bool refresh_db();	
 
 	sampler *sobj;

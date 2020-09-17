@@ -6,8 +6,15 @@
 #pragma warning( disable : 4996 )
 #endif
 
+// Lib PNG 4 dropped these definitions
+// https://stackoverflow.com/questions/2442335/libpng-boostgil-png-infopp-null-not-found
+
+#define png_infopp_NULL (png_infopp)NULL
+#define png_voidp_NULL (png_voidp)NULL
+
+
 // TODO det är i read_png bottlenecken som gör att editorn laddar långsamt finns
-int vg_surface::read_png(string filename)
+int vg_surface::read_png(std::string filename)
 {		
 	static int pngloads=0;
 	pngloads++;
@@ -81,15 +88,17 @@ int vg_surface::read_png(string filename)
 
 	/* At this point you have read the entire image */
 	
-	if (create(info_ptr->width,info_ptr->height))
+	width = png_get_image_width(png_ptr, info_ptr);
+	height = png_get_image_height(png_ptr, info_ptr);
+	if (create(width, height))
 	{
-		unsigned char **row_pointers = new unsigned char*[info_ptr->height];				
+		unsigned char **row_pointers = new unsigned char*[height];				
 		row_pointers = png_get_rows(png_ptr, info_ptr);		   
 		
-		int w = info_ptr->width;
-		int h = info_ptr->height;
+		int w = width;
+		int h = height;
 
-		int ch = (info_ptr->pixel_depth)>>3;
+		int ch = png_get_bit_depth(png_ptr, info_ptr) >> 3; // (info_ptr->pixel_depth) >> 3;
 
 		if(ch == 4)
 		{

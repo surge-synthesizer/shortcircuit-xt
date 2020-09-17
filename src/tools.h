@@ -203,8 +203,10 @@ inline double SymmetricKaiser(double x, int nint, double Alpha)
 	double N = (double)nint;
 	x += N * 0.5;
 
-	x = std::min(x, N);
-	x = std::max(x, 0.0);
+	if (x > N) x = N;
+	if (x < 0.0) x = 0.0;
+	// x = std::min((double)x, (double)N);
+	//x = std::max(x, 0.0);
 	double a = (2.0 * x / N - 1.0);
 	return
 		BESSI0(PI * Alpha * sqrt( 1.0 - a*a)) / BESSI0(PI * Alpha);

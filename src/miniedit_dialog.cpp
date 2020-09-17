@@ -6,6 +6,7 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+#if 0
 // #include "stdafx.h"
 #ifndef _WINDEF_
 #include "windef.h"
@@ -34,3 +35,5 @@ int spawn_miniedit_int(int i, int ctype)
 		return me.ivalue;
 	return i;
 }
+
+#endif

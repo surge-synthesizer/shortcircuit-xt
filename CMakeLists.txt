@@ -110,6 +110,8 @@ add_library( shortcircuit-lib
   ${VEMBERTECH_SOURCE}
 )
 
+set( VSTHACK "${CMAKE_SOURCE_DIR}/../../VST2_SDK/" )
+
 target_include_directories( shortcircuit-lib
   PRIVATE
   src/
@@ -119,7 +121,18 @@ target_include_directories( shortcircuit-lib
   libs/vembertech/vt_dsp
   libs/vembertech/vt_gui
   libs/vembertech/vt_util
+
+  # Temporary until I refactor the VST2
+  wrappers/vst2
+  ${VSTHACK}
+  ${VSTHACK}/public.sdk/source/vst2.x
   )
+
+
+
+if( WIN32 )
+  target_include_directories( shortcircuit-lib PRIVATE libs/external/libpng/win/include )
+endif()
 
 if( APPLE )
   target_compile_definitions( shortcircuit-lib PRIVATE

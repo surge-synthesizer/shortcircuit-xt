@@ -25,7 +25,11 @@
 #include <windows.h>
 #include <shlobj.h>
 
+#include <string>
+using std::string;
+
 #include "shortcircuit_editor2.h"
+#include <vt_util/vt_string.h>
 
 const int ff_revision = 10;
 
