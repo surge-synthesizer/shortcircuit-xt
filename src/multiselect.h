@@ -12,7 +12,6 @@ class multiselect;
 #include "globals.h"
 #include <list>
 
-using namespace std;
 
 class sampler;
 struct steplfostruct;
@@ -89,7 +88,7 @@ private:
 	int current_group;
 	bool solo;
 
-	list<int> selected_zones;
-	list<int> selected_groups;	
+	std::list<int> selected_zones;
+	std::list<int> selected_groups;	
 	sampler *sobj;
 };

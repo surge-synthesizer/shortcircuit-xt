@@ -82,7 +82,7 @@ private:
 
 	Align16 halfrate_stereo mPolyphase;
 
-	forceinline __m128 process_internal(__m128 x, int Mode);
+	inline __m128 process_internal(__m128 x, int Mode);
 public:
 	SuperSVF(float*,int*);
 	void process(float *datain, float *dataout, float pitch);
@@ -754,7 +754,7 @@ public:
 protected:
 	void convolute();
 	bool first_run;
-	int64 oscstate;
+	int64_t oscstate;
 	float pitch;
 	int polarity;		
 	float osc_out;	
@@ -776,7 +776,7 @@ public:
 protected:
 	void convolute();
 	bool first_run;
-	int64 oscstate,syncstate,lastpulselength;
+	int64_t oscstate,syncstate,lastpulselength;
 	float pitch;
 	int polarity;		
 	float osc_out;	
@@ -805,7 +805,7 @@ public:
 protected:
 	void convolute(int);
 	bool first_run;
-	int64 oscstate[max_unison];
+	int64_t oscstate[max_unison];
 	float pitch;		
 	float osc_out;
 	float out_attenuation;

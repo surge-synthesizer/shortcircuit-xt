@@ -16,6 +16,7 @@
 #include "memfile.h"
 #include "sampler_state.h"
 #include "riff_wave.h"
+#include <cstdint>
 
 
 size_t sample::SaveWaveChunk(void* data)
@@ -84,7 +85,7 @@ bool sample::save_wave_file(const char * filename)
 	SaveWaveChunk(data);
 
 	FILE *f = fopen(filename,"wb");
-	int32 d[3];
+	int32_t d[3];
 	d[0] = swap_endianDW('RIFF');
 	d[1] = datasize+4;	
 	d[2] = swap_endianDW('WAVE');
@@ -118,9 +119,9 @@ bool sample::parse_riff_wave(void* data, size_t filesize, bool skip_riffchunk)
 	mf.SeekI(wr);
 	if(!mf.riff_descend('data',&datasize)) return false;
 
-	int32 WaveDataSize = datasize;
+	int32_t WaveDataSize = datasize;
 	if (!WaveDataSize) return false;
-	int32 WaveDataSamples = 8*WaveDataSize / (wh.wBitsPerSample*wh.nChannels);
+	int32_t WaveDataSamples = 8*WaveDataSize / (wh.wBitsPerSample*wh.nChannels);
 
 	/* get pointer to the sampledata */			
 
@@ -268,7 +269,7 @@ bool sample::parse_riff_wave(void* data, size_t filesize, bool skip_riffchunk)
 	mf.SeekI(wr);
 	if(mf.riff_descend('cue ',&datasize))
 	{		
-		int32 cuepoints = mf.ReadDWORD();
+		int32_t cuepoints = mf.ReadDWORD();
 		
 		if(cuepoints>1)
 		{
@@ -296,7 +297,7 @@ bool sample::parse_riff_wave(void* data, size_t filesize, bool skip_riffchunk)
 		{		
 			wave_strc_header header;
 			mf.Read(&header,sizeof(header));
-			int32 subchunks = header.subchunks-1;	// first entry seem different
+			int32_t subchunks = header.subchunks-1;	// first entry seem different
 
 			if(subchunks > 1)
 			{

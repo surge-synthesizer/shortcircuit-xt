@@ -15,6 +15,10 @@
 #include "filter.h"
 #include "configuration.h"
 #include <vt_dsp/basic_dsp.h>
+#include <vt_util/vt_string.h>
+#include <algorithm>
+using std::min;
+using std::max;
 
 float one = 1.0f;
 
@@ -334,10 +338,10 @@ float do_curve(unsigned int curve, float x)
 		x = x*x*x;
 		break;
 	case mmc_squareroot:
-		x = sqrt(max(0.00000000000001,x));
+		x = sqrt(max(0.00000000000001f,x));
 		break;
 	case mmc_cuberoot:
-		x = powf(max(0.00000000000001,x),1.f/3.f);
+		x = powf(max(0.00000000000001f,x),1.f/3.f);
 		break;
 	case mmc_reverse:
 		x = 1.f-x;

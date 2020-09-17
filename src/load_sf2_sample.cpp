@@ -35,18 +35,18 @@ bool sample::parse_sf2_sample(void* data, size_t filesize, unsigned int sample_i
 	off_t sdtastartpos = mf.TellI();	// store for later use
 	mf.SeekI(sampledata.dwStart*2 + 8,mf_FromCurrent);
 	int samplesize = sampledata.dwEnd - sampledata.dwStart;
-	int16 *loaddata = (int16*)mf.ReadPtr(samplesize*sizeof(int16));	
+	int16_t *loaddata = (int16_t*)mf.ReadPtr(samplesize*sizeof(int16_t));	
 		
 	/* check for linked channel */	
 	sf2_Sample sampledataL;
-	int16 *loaddataL = 0;
+	int16_t *loaddataL = 0;
 	channels = 1;
 	if((sampledata.sfSampleType == rightSample)&&(sampledata.wSampleLink < sample_count))
 	{		
 		mf.SeekI(shdrstartpos + 46*sampledata.wSampleLink);
 		mf.Read(&sampledataL,46);
 		mf.SeekI(sdtastartpos + sampledataL.dwStart*2 + 8);
-		loaddataL = (int16*)mf.ReadPtr(samplesize*sizeof(int16));		
+		loaddataL = (int16_t*)mf.ReadPtr(samplesize*sizeof(int16_t));		
 		channels = 2;
 	}
 		

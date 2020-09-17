@@ -16,10 +16,10 @@ typedef void (*ReleaseCallback)();
 
 struct GeneratorIO
 {
-	float* restrict OutputL;
-	float* restrict OutputR;
-	void* restrict SampleDataL;
-	void* restrict SampleDataR;
+	float* __restrict OutputL;
+	float* __restrict OutputR;
+	void* __restrict SampleDataL;
+	void* __restrict SampleDataR;
 	int WaveSize;
 	void* VoicePtr;
 };
@@ -40,7 +40,7 @@ enum GeneratorSampleModes
 	GSM_Shot = 3,  // can stop voice
 };
 
-typedef void (*GeneratorFPtr)(GeneratorState * restrict, GeneratorIO * restrict);
+typedef void (*GeneratorFPtr)(GeneratorState * __restrict, GeneratorIO * __restrict);
 
 GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode);
 

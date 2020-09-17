@@ -11,6 +11,11 @@
 #include "resampling.h"
 #include "tools.h"
 #include "mathtables.h"
+#include <math.h>
+#include <cmath>
+#include <algorithm>
+using std::min;
+using std::max;
 
 extern float	SincTableF32[(FIRipol_M+1)*FIRipol_N];
 extern float	SincOffsetF32[(FIRipol_M)*FIRipol_N];	
@@ -72,7 +77,7 @@ void BF::init_params()
 void BF::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR, float pitch)
 {
 	float t = samplerate_inv * 440*note_to_pitch(12*param[0]);
-	float bd = 16.f * min(1.f ,max(0.f, param[1]));
+	float bd = 16.f * std::min(1.f ,std::max(0.f, param[1]));
 	float b = powf(2,bd), b_inv = 1/b;
 
 	lp_params[0] = param[3];
@@ -91,7 +96,7 @@ void BF::process_stereo(float *datainL, float *datainR, float *dataoutL, float *
 			val += param[2];
 			level[0] = (float)((int)val) * b_inv;
 			time[0] += 1.0f;
-			time[0] = max(time[0], 0.f);
+			time[0] = std::max(time[0], 0.f);
 		}	
 		if(time[1]<0.f)
 		{
@@ -99,7 +104,7 @@ void BF::process_stereo(float *datainL, float *datainR, float *dataoutL, float *
 			val += param[2];
 			level[1] = (float)((int)val) * b_inv;
 			time[1] += 1.0f;
-			time[1] = max(time[1], 0.f);
+			time[1] = std::max(time[1], 0.f);
 		}	
 		dataoutL[k] = level[0];
 		dataoutR[k] = level[1];
@@ -109,7 +114,7 @@ void BF::process_stereo(float *datainL, float *datainR, float *dataoutL, float *
 void BF::process(float *datain, float *dataout, float pitch)
 {
 	float t = samplerate_inv * 440*note_to_pitch(12*param[0]);
-	float bd = 16.f * min(1.f ,max(0.f ,param[1]));
+	float bd = 16.f * std::min(1.f ,std::max(0.f ,param[1]));
 	
 	float 
 		b = powf(2.f, bd), 
@@ -192,7 +197,7 @@ void OD::process(float *data, float pitch)
 
 	float pk_amp = db_to_linear(param[2]) - 1;
 	float drive = 1 - param[0];
-	drive = max(0.f, min(drive, 1.f));
+	drive = std::max(0.f, std::min(drive, 1.f));
 
 	// peak filter
 	float pkbuffer[block_size];
@@ -274,12 +279,12 @@ void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL
 	{		
 		if((lastval[0] < 0.f)&&(tbuf[0][k] >= 0.f))
 		{
-			if(tbuf[0][k] > db_to_linear(param[0])) osc[0].set_rate((M_PI / max(2.f,length[0])) * powf(2.0,param[1] * (1/12.f)));
+			if(tbuf[0][k] > db_to_linear(param[0])) osc[0].set_rate((M_PI / std::max(2.f,length[0])) * powf(2.0,param[1] * (1/12.f)));
 			length[0] = 0.f;
 		}
 		if((lastval[1] < 0.f)&&(tbuf[1][k] >= 0.f))
 		{
-			if(tbuf[1][k] > db_to_linear(param[0])) osc[1].set_rate((M_PI / max(2.f,length[1])) * powf(2.0,param[1] * (1/12.f)));
+			if(tbuf[1][k] > db_to_linear(param[0])) osc[1].set_rate((M_PI / std::max(2.f,length[1])) * powf(2.0,param[1] * (1/12.f)));
 			length[1] = 0.f;
 		}
 		osc[0].process();

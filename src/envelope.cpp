@@ -4,6 +4,7 @@
 #include "mathtables.h"
 #include "sampler_state.h"
 #include <assert.h>
+#include <algorithm>
 
 //-------------------------------------------------------------------------------------------------
 
@@ -131,7 +132,7 @@ float Envelope::CalcCurve()
 {
 	assert((curve >= 0) && (curve < n_curves));
 
-	unsigned int e = min(0x7fffffff,phase) >> (31 - 5 - 16);
+	unsigned int e = std::min((uint32_t)0x7fffffff,phase) >> (31 - 5 - 16);
 
 	unsigned int e_coarse = e >> 16;
 	unsigned int e_fine = e & 0xffff;

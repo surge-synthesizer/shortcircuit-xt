@@ -7,42 +7,46 @@
 //-------------------------------------------------------------------------------------------------------
 #pragma once
 
-inline float uint32_to_float(uint32 i)
+#include <cstdint>
+#include <cmath>
+#include <algorithm>
+
+inline float uint32_to_float(uint32_t i)
 {
 	return float(i) * (1.f / (65536.f*65536.f - 1.f));
 }
 
 //-------------------------------------------------------------------------------------------------------
 
-inline float int32_to_float(int32 i)
+inline float int32_to_float(int32_t i)
 {
 	return float(i) * (1.f / (32768.f*65536.f));
 }
 
 //-------------------------------------------------------------------------------------------------------
 
-inline float uint8_to_float(uint8 i)
+inline float uint8_to_float(uint8_t i)
 {
 	return float(i) * (1.f / 255.f);
 }
 
 //----------------------------------------------------------------------------------------
 
-inline float int8_to_float(int8 i)
+inline float int8_to_float(int8_t i)
 {
 	return float(i) * (1.f / 128.f);
 }
 
 //----------------------------------------------------------------------------------------
 
-inline float uint16_to_float(uint16 i)
+inline float uint16_to_float(uint16_t i)
 {
 	return float(i) * (1.f / 65535.f);
 }
 
 //----------------------------------------------------------------------------------------
 
-inline float int16_to_float(int16 i)
+inline float int16_to_float(int16_t i)
 {
 	return float(i) * (1.f / 32768.f);
 }
@@ -199,8 +203,8 @@ inline double SymmetricKaiser(double x, int nint, double Alpha)
 	double N = (double)nint;
 	x += N * 0.5;
 
-	x = min(x, N);
-	x = max(x, 0.0);
+	x = std::min(x, N);
+	x = std::max(x, 0.0);
 	double a = (2.0 * x / N - 1.0);
 	return
 		BESSI0(PI * Alpha * sqrt( 1.0 - a*a)) / BESSI0(PI * Alpha);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "globals.h"
 #include <assert.h>
 
 class quadr_osc
@@ -59,7 +60,7 @@ public:
 	inline T getTargetValue(){
 			return new_v;
 		}
-	forceinline void process(){ v += dv; }
+	inline void process(){ v += dv; }
 	void setBlockSize(int n){ bs_inv = 1/(T)n; }
 	T v;
 private:

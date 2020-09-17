@@ -13,6 +13,10 @@
 #include <assert.h>
 #include "unitconversion.h"
 
+#include <algorithm>
+using std::min;
+using std::max;
+
 
 extern float	SincTableF32[(FIRipol_M+1)*FIRipol_N];
 extern float	SincOffsetF32[(FIRipol_M)*FIRipol_N];	

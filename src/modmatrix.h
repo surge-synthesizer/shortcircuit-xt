@@ -17,8 +17,6 @@ struct sample_zone;
 struct sample_part;
 struct timedata;
 
-using namespace std;
-
 const int namelen = 24;
 
 enum switchable_sources
@@ -168,7 +166,7 @@ public:
 	int get_destination_ctrlmode(int id){ return dst[id].ctrlmode; }
 	unsigned char get_source_RIFFID(int id){ return src[id].RIFFID; }	
 	unsigned char get_destination_RIFFID(int id){ return dst[id].RIFFID; }		
-	forceinline float get_destination_value(int id){ return fdst[id]; }
+	inline float get_destination_value(int id){ return fdst[id]; }
 	int get_destination_value_int(int id);	
 	float* get_destination_ptr(int id){ return &fdst[id]; }
 
@@ -178,7 +176,7 @@ public:
 	unsigned char DestinationInternalToRiffID(unsigned int);
 
 private:
-	vector<mm_src> src;
+	std::vector<mm_src> src;
 	mm_dst dst[md_num_destinations];	
 	float fdst[md_num_destinations];
 	sample_zone *__restrict zone;	

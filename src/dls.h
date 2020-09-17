@@ -22,6 +22,8 @@
  
  #ifndef _INC_DLS
  #define _INC_DLS
+
+#define FAR
  
  /*
  

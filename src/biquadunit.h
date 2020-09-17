@@ -5,6 +5,9 @@
 #include "mathtables.h"
 #include <vt_dsp/basic_dsp.h>
 
+// FIXME OF COURSE
+#define Align16
+
 #define USE_SSE2 ((_M_IX86_FP >= 2) || defined(_M_X64) || _DEBUG)
 
 const double minBW = 0.0001;
@@ -35,7 +38,7 @@ public:
 		v.v = _mm_setzero_pd();
 		target_v.v = _mm_setzero_pd();	
 	}
-	forceinline void process()
+	inline void process()
 	{ 
 		v.v = _mm_add_sd(_mm_mul_sd(v.v,vl_lpinv),_mm_mul_sd(target_v.v,vl_lp));		
 		v.v = _mm_unpacklo_pd(v.v,v.v);
@@ -48,17 +51,17 @@ public:
 		target_v.d[0] = 0;			
 		target_v.d[1] = 0;
 	}
-	forceinline  void process(){ v.d[0] = v.d[0]*d_lpinv + target_v.d[0]*d_lp; }
+	inline  void process(){ v.d[0] = v.d[0]*d_lpinv + target_v.d[0]*d_lp; }
 		
 #endif
-	forceinline  void newValue(double f){
+	inline  void newValue(double f){
 		target_v.d[0] = f; 
 	}
-	forceinline  void instantize()
+	inline  void instantize()
 	{
 		v = target_v;
 	}
-	forceinline  void startValue(double f){ 		
+	inline  void startValue(double f){ 		
 		target_v.d[0] = f; 
 		v.d[0] = f;			
 	}
@@ -104,7 +107,7 @@ public:
 
 	void process_block_DF2SOFTCLIP(float *data);
 	
-	forceinline float biquadunit::process_sample(float input)
+	inline float biquadunit::process_sample(float input)
 	{
 		a1.process();	a2.process();
 		b0.process();	b1.process();	b2.process();
@@ -118,7 +121,7 @@ public:
 		return (float)op;		
 	}
 
-	forceinline __m128d biquadunit::process_sample_sd(__m128d input)
+	inline __m128d biquadunit::process_sample_sd(__m128d input)
 	{		
 		a1.process();	a2.process();	b0.process();	b1.process();	b2.process();
 		__m128d op0 = _mm_add_sd(reg0.v,_mm_mul_sd(b0.v.v, input));
@@ -127,7 +130,7 @@ public:
 		return op0;
 	}
 
-	forceinline void biquadunit::process_sample_nolag(float &L, float &R)
+	inline void biquadunit::process_sample_nolag(float &L, float &R)
 	{		
 		double op;
 
@@ -142,7 +145,7 @@ public:
 		R = (float)op;
 	}
 
-	forceinline void biquadunit::process_sample_nolag(float &L, float &R, float &Lout, float &Rout)
+	inline void biquadunit::process_sample_nolag(float &L, float &R, float &Lout, float &Rout)
 	{		
 		double op;
 
@@ -157,7 +160,7 @@ public:
 		Rout = (float)op;
 	}
 
-	forceinline void biquadunit::process_sample_nolag_noinput(float &Lout, float &Rout)
+	inline void biquadunit::process_sample_nolag_noinput(float &Lout, float &Rout)
 	{		
 		double op;
 

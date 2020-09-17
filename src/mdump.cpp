@@ -1,3 +1,4 @@
+#if USE_MDUMP
 
 //#include "stdafx.h"
 
@@ -116,3 +117,5 @@ LONG MiniDumper::TopLevelFilter( struct _EXCEPTION_POINTERS *pExceptionInfo )
 
 	return retval;
 }
+
+#endif

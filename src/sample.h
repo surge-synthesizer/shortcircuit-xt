@@ -8,6 +8,7 @@
 #pragma once
 
 #include "globals.h"
+#include <cstdint>
 
 class configuration;
 
@@ -41,12 +42,12 @@ public:
 	// public data	
 	void* __restrict SampleData[2];	
 	bool UseInt16;
-	uint8 channels;
+	uint8_t channels;
 	bool Embedded;	// if true, sample data will be stored inside the patch/multi
-	uint32 sample_length;
-	uint32 sample_rate;
+	uint32_t sample_length;
+	uint32_t sample_rate;
 	float InvSampleRate;
-	uint32 *graintable;
+	uint32_t *graintable;
 	int num_grains;
 	bool grains_initialized;	
 	void init_grains();

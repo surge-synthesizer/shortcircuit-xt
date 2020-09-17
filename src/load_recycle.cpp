@@ -1,3 +1,5 @@
+#if INCLUDE_REX
+
 #include <windows.h>
 #include <assert.h>
 #include <mmreg.h>
@@ -298,3 +300,5 @@ void PrintREXError(REXError error)
 	sprintf(temp2,"REX error :%s",temp);
 	write_log(temp2);
 }
+
+#endif

@@ -9,6 +9,10 @@
 #include "filter_defs.h"
 #include "resampling.h"
 #include "tools.h"
+#include <algorithm>
+
+using std::min;
+using std::max;
 
 extern float	SincTableF32[(FIRipol_M+1)*FIRipol_N];
 extern float	SincOffsetF32[(FIRipol_M)*FIRipol_N];	
@@ -53,7 +57,7 @@ void osc_pulse::init_params()
 	param[1] = 0.0f;
 }
 
-const int64 large = 0x10000000000;
+const int64_t large = 0x10000000000;
 const float integrator_hpf = 0.99999999f;
 
 void osc_pulse::convolute()
@@ -77,7 +81,7 @@ void osc_pulse::convolute()
 	{
 		width = 1-width;
 	}	
-	int64 rate = (int64)(double)(65536.0*16777216.0 * t * width);	
+	int64_t rate = (int64_t)(double)(65536.0*16777216.0 * t * width);	
 
 	oscstate += rate;
 	polarity = !polarity;
@@ -170,7 +174,7 @@ void osc_pulse_sync::convolute()
 	{
 		ipos = ((large+syncstate)>>16) & 0xFFFFFFFF;
 		double t = max(0.5,samplerate / (440.0 * pow((double)1.05946309435,(double)pitch + param[0])));
-		int64 syncrate = (int64)(double)(65536.0*16777216.0 * t);	
+		int64_t syncrate = (int64_t)(double)(65536.0*16777216.0 * t);	
 		oscstate = syncstate;
 		syncstate += syncrate;
 		sync = true;
@@ -199,7 +203,7 @@ void osc_pulse_sync::convolute()
 	{
 		width = 1-width;
 	}	
-	int64 rate = (int64)(double)(65536.0*16777216.0 * t * width);	
+	int64_t rate = (int64_t)(double)(65536.0*16777216.0 * t * width);	
 
 	oscstate += rate;
 	polarity = !polarity;
@@ -325,7 +329,7 @@ void osc_saw::convolute(int voice)
 	double detune = param[1]*(detune_bias*float(voice) + detune_offset);
 	double t = max(2.0, samplerate / (440.0 * pow(1.05946309435,pitch + param[0] + detune)));	
 	dc_uni[voice] = s/t;
-	int64 rate = (int64)(double)(65536.0*16777216.0 * t);	
+	int64_t rate = (int64_t)(double)(65536.0*16777216.0 * t);	
 
 	oscstate[voice] += rate;	
 }
@@ -383,7 +387,7 @@ void osc_saw::process(float *datain, float *dataout, float pitch)
 		for(i=0; i<n_unison; i++){		
 			double drand = (double) rand() / RAND_MAX;
 			double t = drand * max(2.0, samplerate / (440.0 * pow((double)1.05946309435,(double)pitch + param[0])));	
-			oscstate[i] = (int64)(double)(65536.0*16777216.0 * t);	
+			oscstate[i] = (int64_t)(double)(65536.0*16777216.0 * t);	
 			dc_uni[i] = 0;
 		}		
 	}

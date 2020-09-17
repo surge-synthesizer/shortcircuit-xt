@@ -4,6 +4,12 @@
 #include "mathtables.h"
 #include "sampler_state.h"
 #include <vt_dsp/basic_dsp.h>
+#include <algorithm>
+#include <cmath>
+#include <math.h>
+
+using std::min;
+using std::max;
 
 void load_lfo_preset(int id, steplfostruct *settings)
 {
@@ -179,9 +185,10 @@ void steplfo::assign(steplfostruct *settings, float *rate, timedata *td)
 
 void steplfo::UpdatePhaseIncrement()
 {
-	phaseInc = min(32,block_size * note_to_pitch(12*(*rate)) * samplerate_inv * 
-		(settings->cyclemode ? 1 : settings->repeat) *
-		(settings->temposync ? (td->tempo*(1.f/120.f)) : 1)
+	phaseInc = std::min(32,
+		(int)( block_size * note_to_pitch(12*(*rate)) * samplerate_inv * 
+			(settings->cyclemode ? 1 : settings->repeat) *
+			(settings->temposync ? (td->tempo*(1.f/120.f)) : 1) )
 		);
 }
 

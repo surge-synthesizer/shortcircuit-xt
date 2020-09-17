@@ -3,6 +3,9 @@
 #include "sampler_state.h"
 #include "sampler.h"
 
+#include <list>
+using std::list;
+
 // usage set_zone_parameter_float(field, value);
 // usage set_zone_parameter_float_internal(offsetof(zoneptr,field), value);
 void multiselect::set_zone_parameter_float_internal(int offset, float value)

@@ -221,7 +221,7 @@ void reverb::update_rtime()
 	for(int t=0; t<rev_taps; t++) 
 	{
 		delay_fb[t] = powf(db60, delay_time[t] / (256.f * samplerate * powf(2.f,param[rp_decaytime])));
-		max_dt = max(max_dt,delay_time[t]);
+		max_dt = std::max(max_dt,delay_time[t]);
 	}
 	lastf[rp_decaytime] = param[rp_decaytime];	
 	float t = inv_block_size * ((float)(max_dt>>8) + samplerate * powf(2.f,param[rp_decaytime]) * 2.f);	// *2 is to get the db120 time

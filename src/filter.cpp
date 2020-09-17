@@ -8,6 +8,8 @@
 
 #include "sampler_state.h"
 #include "filter_defs.h"
+#include <vt_util/vt_string.h>
+#include <algorithm>
 //#include <new.h>		// needed for "placement new" to work
 
 extern float	SincTableF32[(FIRipol_M+1)*FIRipol_N];
@@ -243,6 +245,6 @@ char* filter::get_parameter_label(int p_id){
 char* filter::get_parameter_ctrlmode_descriptor(int p_id)
 {
 	if(p_id<0) return 0;
-	if(p_id>min(max_fparams,parameter_count)) return 0;
+	if(p_id>std::min(max_fparams,parameter_count)) return 0;
 	return ctrlmode_desc[p_id];	
 }

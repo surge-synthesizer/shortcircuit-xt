@@ -7,6 +7,22 @@
 //-------------------------------------------------------------------------------------------------------
 #pragma once
 
+#if ARM_NEON
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include "simde/x86/sse2.h"
+#else
+#include <xmmintrin.h>
+
+#if LINUX
+#include <immintrin.h>
+#endif
+#endif
+
+#include <cstdint>
+#include <cmath>
+
+typedef uint32_t uint32;
+
 const uint32 block_size = 64;		// must be a multiple of 4 (SIMD)
 const uint32 block_size_quad = block_size>>2;	
 const float inv_block_size = 1.f/float(block_size);

@@ -12,6 +12,13 @@
 #include "unitconversion.h"
 #include <assert.h>
 #include <vt_dsp/basic_dsp.h>
+#include <vt_util/vt_string.h>
+#include <cstdint>
+#if WINDOWS
+#include <mmiscapi.h>
+#endif
+
+typedef int8_t int8;
 
 #pragma pack(push, 1)
 
@@ -150,12 +157,14 @@ struct akai_s6k_akp_keygroup
 
 bool sampler::load_akai_s6k_program(const char *filename,char channel,bool replace)
 {
+#if WINDOWS
 	char path[256];
 	const char *last;
 	last = strrchr(filename,'\\');
 	vtCopyString(path, filename, 256);
 	path[last - filename + 1] = 0;
 
+    
 	HMMIO hmmio;
 
 	hmmio = mmioOpen((LPSTR)filename, NULL, MMIO_READ|MMIO_ALLOCBUF);
@@ -365,11 +374,12 @@ bool sampler::load_akai_s6k_program(const char *filename,char channel,bool repla
 						break;
 					};					
 
-					vtCopyString(zones[newzone].name, s6k_zone[k][z].samplename, 20);
+					vtCopyString(zones[newzone].name, (const char*)( s6k_zone[k][z].samplename ), 20);
 					zones[newzone].transpose = s6k_kloc[k].semitone_tune + s6k_zone[k][z].semitone_tune;										
 				}
 			}
 		}		
-	}	
+	}
+#endif    
 	return true;
 }

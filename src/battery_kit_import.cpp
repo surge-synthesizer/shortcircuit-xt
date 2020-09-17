@@ -12,6 +12,7 @@
 #include "logfile.h"
 #include <tinyxml/tinyxml.h>
 #include "unitconversion.h"
+#include <vt_util/vt_string.h>
 
 float battery_envtime2sc(float t)
 {

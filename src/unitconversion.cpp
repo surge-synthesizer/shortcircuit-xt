@@ -43,10 +43,12 @@ float seconds_to_envtime(float in)		// ff rev2
 	return v;
 }
 
-float log2(float x)
+#if 0
+float log2(float x) noexcept
 {
 	return log(x)/log(2.f);
 }
+#endif
 
 char* get_notename(char *s, int i_value)
 {

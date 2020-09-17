@@ -4,6 +4,9 @@
 #include <complex>
 #include "unitconversion.h"
 #include <vt_dsp/basic_dsp.h>
+#include <cmath>
+#include <math.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -57,7 +60,7 @@ void biquadunit::coeff_LP2B(double omega, double Q)
 	{						
 		double w_sq = omega*omega;		
 		double den = (w_sq*w_sq) + (pi1*pi1*pi1*pi1) + w_sq*(pi1*pi1)*(1/Q-2);
-		double G1 = min(1.0,sqrt((w_sq*w_sq)/den) * 0.5);
+		double G1 = std::min(1.0,sqrt((w_sq*w_sq)/den) * 0.5);
 
 		double	cosi = cos(omega),
 		sinu = sin(omega),		
@@ -253,7 +256,7 @@ void biquadunit::coeff_orfanidisEQ(double omega, double BW, double G, double GB,
 {			
 	double limit = 0.95;
 	double w0 = omega; //min(pi1-0.000001,omega);	
-	BW = max(minBW,BW);
+	BW = std::max(minBW,BW);
 	double Dww = 2*w0*sinh((log(2.0)/2.0)*BW);		// sinh = (e^x - e^-x)/2
 
 	double gainscale = 1; 

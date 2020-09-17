@@ -1,5 +1,11 @@
 
 #include "filter_defs.h"
+#include <cstring>
+#include <math.h>
+#include <cmath>
+#include <algorithm>
+using std::min;
+using std::max;
 
 //-------------------------------------------------------------------------------------------------------
 

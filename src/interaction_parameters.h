@@ -177,7 +177,7 @@ struct interactiondata
 	int ptr_offset;
 	int n_subid;
 	int subid_ptr_offset;
-	string label;
+	std::string label;
 };
 
 enum
@@ -361,4 +361,4 @@ const interactiondata ip_data[n_ip_entries] = {
 	ipvt_float,	(int)offsetof(sample_multi,filter_postgain[0]),	num_fxunits,(int)sizeof(float),"multi filter postgain",			
 };
 
-string datamode_from_cmode(int cmode);
+std::string datamode_from_cmode(int cmode);

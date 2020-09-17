@@ -10,71 +10,73 @@
 #include "unitconversion.h"
 #include "modmatrix.h"
 #include <vt_dsp/basic_dsp.h>
+#include <vt_util/vt_string.h>
+#include <cstdint>
 
 #pragma pack(push, 1)
 
 struct giga_3lnk
 {
-	uint32 SubRegionCount;	
+	uint32_t SubRegionCount;	
 	struct splitdef
 	{
-		uint8 DimensionType;
-		uint8 DimensionBitCount;
-		uint8 DimensionBitStart,DimensionBitEnd;
-		uint8 skip[4];
+		uint8_t DimensionType;
+		uint8_t DimensionBitCount;
+		uint8_t DimensionBitStart,DimensionBitEnd;
+		uint8_t skip[4];
 	} Split[5];	
-	uint32 RegionSampleID[32];
+	uint32_t RegionSampleID[32];
 };
 
 struct giga_3ewa
 {
-	int32 uk0;
-	int32 LFO3Frequency;
-	int32 EG3Attack;	
-	int32 LFO1InternalDepth;	
-	int32 LFO3InternalDepth;	
-	int32 LFO1ControlDepth;	
-	int32 LFO3ControlDepth;
-	int32 EG1Attack;
-	int32 EG1Decay1;
-	int32 EG1Sustain1;
-	int32 EG1Release;
-	uint8 EG1Controller;
-	uint8 EG1ControllerOptions;
-	uint8 EG2Controller;
-	uint8 EG2ControllerOptions;
-	int32 LFO1Frequency;
-	int32 EG2Attack;
-	int32 EG2Decay1;
-	int32 EG2Sustain;
-	int32 EG2Release;
-	int32 LFO2ControlDepth;
-	int32 LFO2Frequency;
-	int32 LFO2InternalDepth;
-	int32 EG1Decay2;
-	int32 EG1PreAttack;
-	int32 EG2Decay2;
-	int32 EG2PreAttack;
-	uint8 VelocityResponse;
-	uint8 ReleaseVelocityResponse;
-	uint8 VelocityResponseCurveScaling;
-	int8 AttenuationControllerThreshold;
-	uint32 uk1;
-	uint16 SampleStartOffset;
-	uint16 uk2;
-	uint8 pitchTrackDimensionBypass;
-	uint8 Pan;
-	uint8 SelfMask;
-	uint8 LFO3Controller;
-	uint8 AttenuationController;
-	uint8 LFO2Controller;
-	uint8 LFO1Controller;
-	uint16 eg3depth;
-	uint16 uk3;
-	uint8 ChannelOffset;
-	uint8 regoptions;
-	uint16 uk4;
-	uint8 VelocityUpperLimit;
+	int32_t uk0;
+	int32_t LFO3Frequency;
+	int32_t EG3Attack;	
+	int32_t LFO1InternalDepth;	
+	int32_t LFO3InternalDepth;	
+	int32_t LFO1ControlDepth;	
+	int32_t LFO3ControlDepth;
+	int32_t EG1Attack;
+	int32_t EG1Decay1;
+	int32_t EG1Sustain1;
+	int32_t EG1Release;
+	uint8_t EG1Controller;
+	uint8_t EG1ControllerOptions;
+	uint8_t EG2Controller;
+	uint8_t EG2ControllerOptions;
+	int32_t LFO1Frequency;
+	int32_t EG2Attack;
+	int32_t EG2Decay1;
+	int32_t EG2Sustain;
+	int32_t EG2Release;
+	int32_t LFO2ControlDepth;
+	int32_t LFO2Frequency;
+	int32_t LFO2InternalDepth;
+	int32_t EG1Decay2;
+	int32_t EG1PreAttack;
+	int32_t EG2Decay2;
+	int32_t EG2PreAttack;
+	uint8_t VelocityResponse;
+	uint8_t ReleaseVelocityResponse;
+	uint8_t VelocityResponseCurveScaling;
+	int8_t AttenuationControllerThreshold;
+	uint32_t uk1;
+	uint16_t SampleStartOffset;
+	uint16_t uk2;
+	uint8_t pitchTrackDimensionBypass;
+	uint8_t Pan;
+	uint8_t SelfMask;
+	uint8_t LFO3Controller;
+	uint8_t AttenuationController;
+	uint8_t LFO2Controller;
+	uint8_t LFO1Controller;
+	uint16_t eg3depth;
+	uint16_t uk3;
+	uint8_t ChannelOffset;
+	uint8_t regoptions;
+	uint16_t uk4;
+	uint8_t VelocityUpperLimit;
 	// forsätt senare
 };
 

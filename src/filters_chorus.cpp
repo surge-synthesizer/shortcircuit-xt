@@ -161,7 +161,7 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
 		{	
 			time[j].process();
 			float vtime = time[j].v;
-			int i_dtime = max(block_size,min((int)vtime,max_delay_length-FIRipol_N-1));				
+			int i_dtime = std::max((uint32_t)block_size,(uint32_t)std::min((int)vtime,(int)(max_delay_length-FIRipol_N-1)));				
 			int rp = ((wpos-i_dtime+k)-FIRipol_N)&(max_delay_length-1);			
 			int sinc = FIRipol_N*limit_range((int)(FIRipol_M*(float(i_dtime + 1)-vtime)),0,(int)FIRipol_M-1);		
 			

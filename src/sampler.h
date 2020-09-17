@@ -18,7 +18,10 @@ class sampler;
 #include <list>
 #include <vector>
 #include <string>
-using namespace std;
+
+// FIXME - this should be alignas obviously
+#define Align16
+
 
 class sample;
 class sampler_voice;
@@ -230,7 +233,7 @@ public:
 	char sample_replace_filename[256];
 	char keystate[16][128];
 	float adsr[4],mastergain;
-	string customcontrollers[16];
+	std::string customcontrollers[16];
 	bool customcontrollers_bp[16];
 	float controllers[16*n_controllers];
 	float controllers_target[16*n_controllers];	
@@ -246,7 +249,7 @@ protected:
 	double headroom_linear;
 	int headroom;	
 	bool hold[16];
-	list<int> holdbuffer;
+	std::list<int> holdbuffer;
 	void purge_holdbuffer();
 	char nrpn[16][2],nrpn_v[16][2];
 	char rpn[16][2],rpn_v[16][2];

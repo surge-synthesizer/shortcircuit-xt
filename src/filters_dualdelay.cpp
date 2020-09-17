@@ -7,6 +7,12 @@
 //-------------------------------------------------------------------------------------------------------
 
 #include "filter_defs.h"
+#include <cstring>
+#include <algorithm>
+#include <cstring>
+
+using std::min;
+using std::max;
 
 extern float	SincTableF32[(FIRipol_M+1)*FIRipol_N];
 extern float	SincOffsetF32[(FIRipol_M)*FIRipol_N];	

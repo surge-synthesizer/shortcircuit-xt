@@ -11,8 +11,6 @@
 #include <string>
 #include "globals.h"
 
-using namespace std;
-
 const int n_custom_controllers = 16;
 
 enum midi_controller_type
@@ -37,16 +35,16 @@ class configuration
 {
 public:
 	configuration();
-	bool load(wstring filename);
-	bool save(wstring filename);
+	bool load(std::wstring filename);
+	bool save(std::wstring filename);
 	
-	void decode_pathW(wstring in, wchar_t *out, wchar_t *extension, int *program_id, int *sample_id);	
+	void decode_pathW(std::wstring in, wchar_t *out, wchar_t *extension, int *program_id, int *sample_id);	
 			
-	wstring relative;
+	std::wstring relative;
 	int stereo_outputs, mono_outputs;
-	wstring conf_filename;
-	string pathlist[4];
-	string skindir;
+	std::wstring conf_filename;
+	std::string pathlist[4];
+	std::string skindir;
 	int headroom;
 	int keyboardmode;
 	bool store_in_projdir;	

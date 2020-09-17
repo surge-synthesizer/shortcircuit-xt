@@ -66,7 +66,7 @@ void COMB1::process_stereo(float *datainL, float *datainR, float *dataoutL, floa
 		delayloop[0][wpos] = datainL[k];
 		delayloop[1][wpos] = datainR[k];
 
-		int i_dt = max(0,(int)delaytime.v);
+		int i_dt = std::max(0,(int)delaytime.v);
 		int sinc = FIRipol_N*limit_range((int)(FIRipol_M*(float(i_dt + 1)-delaytime.v)),0,(int)FIRipol_M-1);
 		
 		for(int i=0; i<FIRipol_N; i++)
@@ -102,7 +102,7 @@ void COMB1::process(float *datain, float *dataout, float pitch)
 		float output = 0.f;
 		delayloop[0][wpos] = datain[k];
 
-		int i_dt = max(0,(int)delaytime.v);
+		int i_dt = std::max(0,(int)delaytime.v);
 		int sinc = FIRipol_N*limit_range((int)(FIRipol_M*(float(i_dt + 1)-delaytime.v)),0,(int)FIRipol_M-1);
 		
 		for(int i=0; i<FIRipol_N; i++)
@@ -168,7 +168,7 @@ void COMB3::process(float *data, float pitch)
 		float output = 0.f;
 		delayloop[wpos] = data[k];
 
-		int i_dt = max(0,(int)delaytime.v);
+		int i_dt = std::max(0,(int)delaytime.v);
 		int sinc = FIRipol_N*limit_range((int)(FIRipol_M*(float(i_dt + 1)-delaytime.v)),0,(int)FIRipol_M-1);
 		
 		for(int i=0; i<FIRipol_N; i++)

@@ -1,5 +1,10 @@
 #pragma once
 #include <vt_dsp/endian.h>
+#include <list>
+#if WINDOWS
+#include <Windows.h>
+#endif
+#include <vt_util/vt_string.h>
 
 struct riffheader
 {

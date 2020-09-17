@@ -12,6 +12,7 @@
 #include <tinyxml/tinyxml.h>
 #include <assert.h>
 #include "versionno.h"
+#include <vt_util/vt_string.h>
 
 
 bool global_use_alt_keyboardmethod = false;
@@ -69,7 +70,7 @@ configuration::configuration()
 	mAutoPreview = true;
 }
 
-bool configuration::load(wstring filename)
+bool configuration::load(std::wstring filename)
 {
 	if(filename.empty()) 
 	{
@@ -79,7 +80,8 @@ bool configuration::load(wstring filename)
 	{
 		conf_filename = filename;		
 	}
-	wstringCharReadout(filename,filenameUTF8,256)
+	char filenameUTF8[256];
+	//wstringCharReadout(filename, filenameUTF8, 256);
 	
 	TiXmlDocument doc(filenameUTF8);
 
@@ -128,7 +130,7 @@ bool configuration::load(wstring filename)
 	return true;
 }
 
-bool configuration::save(wstring filename)
+bool configuration::save(std::wstring filename)
 {
 	if(filename.empty()) 
 	{
@@ -191,7 +193,7 @@ bool configuration::save(wstring filename)
 	return true;
 }
 
-void configuration::decode_pathW(wstring in, wchar_t *out, wchar_t *extension, int *program_id, int *sample_id)
+void configuration::decode_pathW(std::wstring in, wchar_t *out, wchar_t *extension, int *program_id, int *sample_id)
 {	
 	assert(out);
 	assert(extension);
