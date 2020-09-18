@@ -111,7 +111,12 @@ set( VST2_WRAPPER_SOURCE
 )
 
 
-set( VSTHACK "${CMAKE_SOURCE_DIR}/../../VST2_SDK/" )
+
+if( DEFINED ENV{VST2SDK_DIR} )
+  file( TO_CMAKE_PATH "$ENV{VST2SDK_DIR}" VSTHACK )
+else()
+  set( VSTHACK "${CMAKE_SOURCE_DIR}/../../VST2_SDK/" )
+endif()
 
 set( VST2_LIB_SOURCE
   ${VSTHACK}/public.sdk/source/vst2.x/audioeffect.cpp
