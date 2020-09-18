@@ -35,7 +35,6 @@ typedef AudioEffectX WrapperClass;
 typedef int EditorClass;
 typedef int WrapperClass;
 
-struct sc_editor2 {};
 #endif 
 
 class modmatrix;
