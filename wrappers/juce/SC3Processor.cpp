@@ -81,8 +81,6 @@ void SC3AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     sc3->set_samplerate(sampleRate);
-    auto res = sc3->load_file("y:\\dev\\music\\SHORTCIRCUIT\\samples\\harpsi.sf2");
-    std::cout << res << std::endl;
 }
 
 void SC3AudioProcessor::releaseResources()
