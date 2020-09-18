@@ -54,7 +54,6 @@ set( SHORTCIRCUIT_SOURCE
   src/sampler_fileio.cpp
   src/sampler_fileio_riff.cpp
   src/sampler_group.cpp
-  src/sampler_gui_interaction.cpp
   src/sampler_notelogic.cpp
   src/sampler_process.cpp
   src/sampler_voice.cpp
@@ -67,6 +66,10 @@ set( SHORTCIRCUIT_SOURCE
   src/tools.cpp
   src/unitconversion.cpp
 
+  )
+
+set( SHORTCIRCUIT_GUI_SOURCE
+  src/sampler_gui_interaction.cpp
   # Windows only later on
   src/vtgiurc.rc
   )
@@ -84,6 +87,10 @@ set( VEMBERTECH_SOURCE
   libs/vembertech/vt_dsp/lattice.cpp
   libs/vembertech/vt_dsp/macspecific.cpp
   libs/vembertech/vt_dsp/basic_dsp.cpp
+  libs/vembertech/thread/threadsafety.cpp
+)
+
+set( VEMBERTECH_GUI_SOURCE
   libs/vembertech/vt_gui/vt_gui_controls_lfo.cpp
   libs/vembertech/vt_gui/readpng.cpp
   libs/vembertech/vt_gui/vt_gui_window.cpp
@@ -95,7 +102,6 @@ set( VEMBERTECH_SOURCE
   libs/vembertech/vt_gui/vt_gui_controls_menu.cpp
   libs/vembertech/vt_gui/vt_gui_controls.cpp
   libs/vembertech/vt_gui/browserdata.cpp
-  libs/vembertech/thread/threadsafety.cpp
 )
 
 set( VST2_WRAPPER_SOURCE
@@ -132,7 +138,9 @@ set( ZLIB_SOURCE
 add_library( shortcircuit-lib
   SHARED
   ${SHORTCIRCUIT_SOURCE}
+  ${SHORTCIRCUIT_GUI_SOURCE}
   ${VEMBERTECH_SOURCE}
+  ${VEMBERTECH_GUI_SOURCE}
   ${VST2_WRAPPER_SOURCE}
   ${VST2_LIB_SOURCE}
   ${ZLIB_SOURCE}
@@ -181,6 +189,8 @@ else()
 
   target_compile_definitions( shortcircuit-lib PRIVATE
     WINDOWS=1
+    TARGET_VST2=1
+    
     _CRT_SECURE_NO_WARNINGS=1
     )
   target_link_libraries( shortcircuit-lib
@@ -202,5 +212,45 @@ else()
     )
 
   target_link_options(shortcircuit-lib PUBLIC "/DEF:${CMAKE_SOURCE_DIR}\\resources\\windows\\shortcircuit_vst2.def" )
+
+endif()
+
+add_executable( sc-headless
+  ${SHORTCIRCUIT_SOURCE}
+  ${VEMBERTECH_SOURCE}
+  wrappers/headless/main.cpp
+  )
+
+target_include_directories( sc-headless
+  PRIVATE
+  src/
+  libs/vembertech
+  libs/vembertech/thread
+  libs/vembertech/tinyxml
+  libs/vembertech/vt_dsp
+  libs/vembertech/vt_util
+  )
+
+if( WIN32 )
+  target_compile_definitions( sc-headless PRIVATE
+    WIN=1
+    WINDOWS=1
+    TARGET_HEADLESS=1
+    )
+
+  target_link_libraries( sc-headless
+    PRIVATE
+    
+    shell32
+    user32
+
+    Winmm
+    gdi32
+    gdiplus
+    msimg32
+    
+    ComDlg32
+    ComCtl32
+    )
 
 endif()

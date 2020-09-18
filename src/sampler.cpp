@@ -2,7 +2,10 @@
 #ifdef SCPB
 #include "scpb_editor.h"	
 #endif
+#if ! TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
+#endif
+
 #include <string>
 #include <iostream>
 #include <tinyxml/tinyxml.h>
@@ -11,8 +14,10 @@
 #include "mathtables.h"
 #include "sampler_voice.h"
 #include "sample.h"
+#if TARGET_VST2
 #include <AEffEditor.h>
 #include <audioeffectx.h>
+#endif
 #include "morpheq.h"
 #include "configuration.h"
 #include "interaction_parameters.h"
@@ -41,7 +46,7 @@ void sampler::set_samplerate(float sr){
 
 //-------------------------------------------------------------------------------------------------
 
-sampler::sampler(AEffEditor *editor, int NumOutputs, AudioEffectX *effect)
+sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
 : mNumOutputs(NumOutputs)
 {	
 	// load configuration
@@ -81,7 +86,9 @@ sampler::sampler(AEffEditor *editor, int NumOutputs, AudioEffectX *effect)
 	polyphony_cap = max_voices;
 	#endif
 	
-	this->editor = (sc_editor2*)editor;
+#if TARGET_VST2
+	this->editor = (sc_editor2*)(editor);
+#endif
 	editor_open = false;
 //	this->effect = effect;
 	uint32_t i,c;		

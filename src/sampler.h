@@ -22,8 +22,22 @@ class sampler;
 class sample;
 class sampler_voice;
 class filter;
+
+#if TARGET_VST2
 class AEffEditor;
 class AudioEffectX;
+
+typedef AEffEditor EditorClass;
+typedef AudioEffectX WrapperClass;
+#endif
+
+#if TARGET_HEADLESS
+typedef int EditorClass;
+typedef int WrapperClass;
+
+struct sc_editor2 {};
+#endif 
+
 class modmatrix;
 class TiXmlElement;
 class configuration;
@@ -63,7 +77,7 @@ public:
 	
 	// Public Interface
 
-	sampler(AEffEditor *editor, int NumOutputs, AudioEffectX *effect=0);
+	sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect=0);
 	virtual ~sampler(void);
 	virtual bool PlayNote(char channel, char key, char velocity, bool is_release=false, char detune=0);
 	void play_zone(int zone_id);
@@ -103,12 +117,19 @@ public:
 
 	// interface to the V2 GUI
 
+#if TARGET_HEADLESS
+	void post_events_from_editor(actiondata ad) {}
+	void post_events_to_editor(actiondata ad, bool ErrorIfClosed=true) {}
+	void process_editor_events() {}
+	void post_initdata() {}
+#else    
 	void post_events_from_editor(actiondata ad);
 	void post_events_to_editor(actiondata ad, bool ErrorIfClosed=true);
 	void process_editor_events();
+	void post_initdata();
+#endif    
 	void post_zonedata();
 	void post_kgvdata();
-	void post_initdata();
 	void post_samplelist();
 	void post_initdata_mm(int);
 	void post_initdata_mm_part();

@@ -1,5 +1,8 @@
 #include "sampler.h"
+#if ! TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
+#endif
+#include "filter.h"
 #include "mathtables.h"
 #include "modmatrix.h"
 #include <vt_dsp/basic_dsp.h>
@@ -221,7 +224,9 @@ void sampler::process_audio()
 			{
 				polyphony--;				
 				holdbuffer.remove(v);
+#if TARGET_VST2
 				if (editor && editor->isOpen()) track_zone_triggered(voice_state[v].zone_id,false);
+#endif
 			}
 		}
 	}
@@ -265,7 +270,9 @@ void sampler::process_audio()
 
 void sampler::processVUs()
 {
+#if TARGET_VST2
 	if(!(editor && editor->isOpen())) return;	
+#endif
 	
 	for(int op=0; op<(mNumOutputs*2); op++)
 	{

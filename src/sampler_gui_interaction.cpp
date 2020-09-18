@@ -10,7 +10,9 @@
 #include "sample.h"
 #include "interaction_parameters.h"
 #include "parameterids.h"
+#if ! TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
+#endif
 #include "steplfo.h"
 #include "modmatrix.h"
 #include "configuration.h"

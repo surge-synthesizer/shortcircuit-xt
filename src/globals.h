@@ -56,6 +56,6 @@ extern float multiplier_freq2omega;
 
 extern int SSE_VERSION;
 
-#ifndef WINDOWS
+#if !WINDOWS
 #define stricmp strcasecmp
 #endif

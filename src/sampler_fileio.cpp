@@ -28,7 +28,10 @@
 #include <string>
 using std::string;
 
+#if ! TARGET_HEADLESS=1
 #include "shortcircuit_editor2.h"
+#endif
+
 #include <vt_util/vt_string.h>
 
 const int ff_revision = 10;
