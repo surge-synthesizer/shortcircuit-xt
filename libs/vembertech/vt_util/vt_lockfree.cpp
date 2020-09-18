@@ -1,12 +1,17 @@
 #include "vt_lockfree.h"
 #include <cstring>
+#if WINDOWS
 #include <malloc.h>
+#endif
 
 vt_LockFree::vt_LockFree(size_t EntrySize, unsigned int Entries, unsigned int Readers)
 {
-    // FIXTHIS
-	// data = _mm_malloc(Entries*EntrySize,16);
+#if WINDOWS
 	data = _aligned_malloc(Entries * EntrySize, 16);
+#else
+    data = malloc( Entries * EntrySize );
+#endif
+    
 	WriterPos = 0;
 	NumReaders = Readers;
 	NumEntries = Entries;
@@ -19,9 +24,11 @@ vt_LockFree::vt_LockFree(size_t EntrySize, unsigned int Entries, unsigned int Re
 }
 vt_LockFree::~vt_LockFree()
 {
-    // FIXTHIS
-	// _mm_free(data);
+#if WINDOWS
 	_aligned_free(data);
+#else
+    free(data);
+#endif    
 }
 
 void vt_LockFree::WriteBlock(void *srcData)

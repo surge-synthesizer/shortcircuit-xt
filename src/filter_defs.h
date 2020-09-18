@@ -1,7 +1,7 @@
 #pragma once
 #include "filter.h"
 #include "biquadunit.h"
-#include "morpheq.h"
+#include "morphEQ.h"
 #include "parameterids.h"
 #include <vt_dsp/basic_dsp.h>
 #include <vt_dsp/halfratefilter.h>

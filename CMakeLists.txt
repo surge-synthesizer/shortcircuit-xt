@@ -1,3 +1,7 @@
+#
+# This is all a mess as I hack away right now
+#
+
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9 CACHE STRING "Build for 10.9")
 
@@ -19,7 +23,6 @@ set( SHORTCIRCUIT_SOURCE
   src/battery_kit_import.cpp
   src/biquadunit.cpp
   src/configuration.cpp
-  src/configuration_dialog.cpp
   src/cpuarch.cpp
   src/dls_import.cpp
   src/envelope.cpp
@@ -44,7 +47,6 @@ set( SHORTCIRCUIT_SOURCE
   src/load_sf2_sample.cpp
   src/logfile.cpp
   src/mdump.cpp
-  src/miniedit_dialog.cpp
   src/modmatrix.cpp
   src/morphEQ.cpp
   src/multiselect.cpp
@@ -53,12 +55,9 @@ set( SHORTCIRCUIT_SOURCE
   src/sampler_automation.cpp
   src/sampler_fileio.cpp
   src/sampler_fileio_riff.cpp
-  src/sampler_group.cpp
   src/sampler_notelogic.cpp
   src/sampler_process.cpp
   src/sampler_voice.cpp
-  src/scpb_editor.cpp
-  src/scpb_sampler.cpp
   src/sf2_import.cpp
   src/sfz_import.cpp
   src/shortcircuit2_RIFF_conversion.cpp
@@ -230,6 +229,17 @@ target_include_directories( sc-headless
   libs/vembertech/vt_dsp
   libs/vembertech/vt_util
   )
+
+if( APPLE )
+  target_compile_definitions( sc-headless PRIVATE
+    MAC=1
+    TARGET_HEADLESS=1
+    )
+  target_compile_options( sc-headless PRIVATE
+    -Wno-invalid-source-encoding
+    )
+
+endif()
 
 if( WIN32 )
   target_compile_definitions( sc-headless PRIVATE

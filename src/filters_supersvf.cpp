@@ -7,6 +7,10 @@
 using std::min;
 using std::max;
 
+#if MAC
+#define __forceinline inline
+#endif
+
 //-------------------------------------------------------------------------------------------------------
 
 enum 

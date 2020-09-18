@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdlib>
 
 const int max_readers = 16;
 
