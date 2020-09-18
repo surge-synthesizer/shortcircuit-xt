@@ -11,8 +11,11 @@
 #include "logfile.h"
 #include "resampling.h"
 #include "globals.h"
+#if WINDOWS
 #include <windows.h>
 #include <mmreg.h>
+#endif
+
 #include <assert.h>
 #include "memfile.h"
 

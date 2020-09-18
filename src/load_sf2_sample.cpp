@@ -1,6 +1,8 @@
-#include <windows.h>
 #include <assert.h>
+#if WINDOWS
+#include <windows.h>
 #include <mmreg.h>
+#endif
 #include "sf2.h"
 #include "logfile.h"
 #include "sample.h"

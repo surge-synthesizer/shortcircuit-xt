@@ -54,8 +54,6 @@ extern float samplerate;
 extern float samplerate_inv;
 extern float multiplier_freq2omega;
 
-extern int SSE_VERSION;
-
 #if !WINDOWS
 #define stricmp strcasecmp
 #endif

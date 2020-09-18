@@ -1,6 +1,10 @@
 #pragma once
 #pragma pack(push, 1)
 
+#if !WINDOWS
+#include "windows_compat.h"
+#endif
+
 typedef enum
 {
 	monoSample = 1,

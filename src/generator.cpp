@@ -13,8 +13,6 @@ extern short SincOffsetI16[(FIRipol_M)*FIRipol_N];
 const float I16InvScale = (1.f/(16384.f*32768.f));
 const __m128 I16InvScale_m128 = _mm_set1_ps(I16InvScale);
 
-static int SSE_VERSION = 2;
-
 template<bool,bool,int,int> void GeneratorSample(
 	GeneratorState* __restrict GD, 
 	GeneratorIO * __restrict IO );
@@ -35,27 +33,14 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
 		}
 		else
 		{
-			if(SSE_VERSION >= 2)
-			{
-				switch(LoopMode)
-				{
-					case 0: return GeneratorSample<1,0,0,2>;
-					case 1: return GeneratorSample<1,0,1,2>;
-					case 2: return GeneratorSample<1,0,2,2>;
-					case 3: return GeneratorSample<1,0,3,2>;
-				}
-			}
-			else
-			{
-				switch(LoopMode)
-				{
-					case 0: return GeneratorSample<1,0,0,1>;
-					case 1: return GeneratorSample<1,0,1,1>;
-					case 2: return GeneratorSample<1,0,2,1>;
-					case 3: return GeneratorSample<1,0,3,1>;
-				}
-			}
-		}
+            switch(LoopMode)
+            {
+            case 0: return GeneratorSample<1,0,0,2>;
+            case 1: return GeneratorSample<1,0,1,2>;
+            case 2: return GeneratorSample<1,0,2,2>;
+            case 3: return GeneratorSample<1,0,3,2>;
+            }
+        }
 	}
 	else
 	{
@@ -71,26 +56,13 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
 		}
 		else
 		{
-			if(SSE_VERSION >= 2)
-			{
-				switch(LoopMode)
-				{
-					case 0: return GeneratorSample<0,0,0,2>;
-					case 1: return GeneratorSample<0,0,1,2>;
-					case 2: return GeneratorSample<0,0,2,2>;
-					case 3: return GeneratorSample<0,0,3,2>;
-				}
-			}
-			else
-			{
-				switch(LoopMode)
-				{
-					case 0: return GeneratorSample<0,0,0,1>;
-					case 1: return GeneratorSample<0,0,1,1>;
-					case 2: return GeneratorSample<0,0,2,1>;
-					case 3: return GeneratorSample<0,0,3,1>;
-				}
-			}
+            switch(LoopMode)
+            {
+            case 0: return GeneratorSample<0,0,0,2>;
+            case 1: return GeneratorSample<0,0,1,2>;
+            case 2: return GeneratorSample<0,0,2,2>;
+            case 3: return GeneratorSample<0,0,3,2>;
+            }
 		}
 	}
 	return 0;	
@@ -164,67 +136,29 @@ void GeneratorSample(
 		else
 		{
 			// int16
-			if(SSE<2)
-			{
-#ifdef INCLUDE_BEFORE_SSE2
-				// MMX path	92 cycles/sample (stereo)
-				__m64 lipol0, tmp[4], sL4[4], sR4[4];		
-				__m128 fL,fR;
-				lipol0 = _mm_set1_pi16(SampleSubPos&0xffff);		
-				tmp[0] = _mm_add_pi16(_mm_mulhi_pi16(*((__m64*)&SincOffsetI16[m0]),lipol0),*((__m64*)&SincTableI16[m0]));
-				tmp[1] = _mm_add_pi16(_mm_mulhi_pi16(*((__m64*)&SincOffsetI16[m0 + 4]),lipol0),*((__m64*)&SincTableI16[m0 + 4]));
-				tmp[2] = _mm_add_pi16(_mm_mulhi_pi16(*((__m64*)&SincOffsetI16[m0 + 8]),lipol0),*((__m64*)&SincTableI16[m0 + 8]));
-				tmp[3] = _mm_add_pi16(_mm_mulhi_pi16(*((__m64*)&SincOffsetI16[m0 + 12]),lipol0),*((__m64*)&SincTableI16[m0 + 12]));
-				sL4[0] = _mm_madd_pi16 (tmp[0],*(__m64*)&SampleDataL[SamplePos]);
-				sL4[1] = _mm_madd_pi16 (tmp[1],*(__m64*)&SampleDataL[SamplePos+4]);
-				sL4[2] = _mm_madd_pi16 (tmp[2],*(__m64*)&SampleDataL[SamplePos+8]);
-				sL4[3] = _mm_madd_pi16 (tmp[3],*(__m64*)&SampleDataL[SamplePos+12]);
-				sL4[0] = _mm_add_pi32(_mm_add_pi32(sL4[0],sL4[1]),_mm_add_pi32(sL4[2],sL4[3]));
-				int *sL4ptr = (int*)&sL4;
-				int rL = sL4ptr[0] + sL4ptr[1];
-				fL = _mm_mul_ss(_mm_cvtsi32_ss(fL,rL), I16InvScale_m128);
-				_mm_store_ss(&OutputL[i],fL);
-
-				if(stereo)
-				{
-					sR4[0] = _mm_madd_pi16 (tmp[0],*(__m64*)&SampleDataR[SamplePos]);
-					sR4[1] = _mm_madd_pi16 (tmp[1],*(__m64*)&SampleDataR[SamplePos+4]);
-					sR4[2] = _mm_madd_pi16 (tmp[2],*(__m64*)&SampleDataR[SamplePos+8]);
-					sR4[3] = _mm_madd_pi16 (tmp[3],*(__m64*)&SampleDataR[SamplePos+12]);
-					sR4[0] = _mm_add_pi32(_mm_add_pi32(sR4[0],sR4[1]),_mm_add_pi32(sR4[2],sR4[3]));
-					int *sR4ptr = (int*)&sR4;
-					int rR = sR4ptr[0] + sR4ptr[1];
-					fR = _mm_mul_ss(_mm_cvtsi32_ss(fR,rR), I16InvScale_m128);
-					_mm_store_ss(&OutputR[i],fR);
-				}
-#endif
-			}
-			else
-			{
-				// SSE2 path
-				__m128i lipol0, tmp, sL8A, sR8A, tmp2, sL8B, sR8B;
-				__m128 fL,fR;
-				lipol0 = _mm_set1_epi16(SampleSubPos&0xffff);
-
-				tmp = _mm_add_epi16 (_mm_mulhi_epi16(*((__m128i*)&SincOffsetI16[m0]),lipol0),*((__m128i*)&SincTableI16[m0]));		
-				sL8A = _mm_madd_epi16 (tmp,_mm_loadu_si128((__m128i*)&SampleDataL[SamplePos]));		
-				if(stereo) sR8A = _mm_madd_epi16 (tmp,_mm_loadu_si128((__m128i*)&SampleDataR[SamplePos]));		
-				tmp2 = _mm_add_epi16 (_mm_mulhi_epi16(*((__m128i*)&SincOffsetI16[m0+8]),lipol0),*((__m128i*)&SincTableI16[m0+8]));
-				sL8B = _mm_madd_epi16 (tmp2,_mm_loadu_si128((__m128i*)&SampleDataL[SamplePos+8]));
-				if(stereo) sR8B = _mm_madd_epi16 (tmp2,_mm_loadu_si128((__m128i*)&SampleDataR[SamplePos+8]));		
-				sL8A = _mm_add_epi32(sL8A,sL8B);		
-				if(stereo) sR8A = _mm_add_epi32(sR8A,sR8B);
-
-				int l alignas(16) [4],r alignas(16) [4];
-				_mm_store_si128((__m128i*)&l,sL8A);	
-				if(stereo) _mm_store_si128((__m128i*)&r,sR8A);
-				l[0] = (l[0] + l[1]) + (l[2] + l[3]);				
-				if(stereo) r[0] = (r[0] + r[1]) + (r[2] + r[3]);
-				fL = _mm_mul_ss(_mm_cvtsi32_ss(fL,l[0]), I16InvScale_m128);	
-				if(stereo) fR = _mm_mul_ss(_mm_cvtsi32_ss(fR,r[0]), I16InvScale_m128);
-				_mm_store_ss(&OutputL[i],fL);
-				if(stereo) _mm_store_ss(&OutputR[i],fR);	
-			}
+            // SSE2 path
+            __m128i lipol0, tmp, sL8A, sR8A, tmp2, sL8B, sR8B;
+            __m128 fL,fR;
+            lipol0 = _mm_set1_epi16(SampleSubPos&0xffff);
+            
+            tmp = _mm_add_epi16 (_mm_mulhi_epi16(*((__m128i*)&SincOffsetI16[m0]),lipol0),*((__m128i*)&SincTableI16[m0]));		
+            sL8A = _mm_madd_epi16 (tmp,_mm_loadu_si128((__m128i*)&SampleDataL[SamplePos]));		
+            if(stereo) sR8A = _mm_madd_epi16 (tmp,_mm_loadu_si128((__m128i*)&SampleDataR[SamplePos]));		
+            tmp2 = _mm_add_epi16 (_mm_mulhi_epi16(*((__m128i*)&SincOffsetI16[m0+8]),lipol0),*((__m128i*)&SincTableI16[m0+8]));
+            sL8B = _mm_madd_epi16 (tmp2,_mm_loadu_si128((__m128i*)&SampleDataL[SamplePos+8]));
+            if(stereo) sR8B = _mm_madd_epi16 (tmp2,_mm_loadu_si128((__m128i*)&SampleDataR[SamplePos+8]));		
+            sL8A = _mm_add_epi32(sL8A,sL8B);		
+            if(stereo) sR8A = _mm_add_epi32(sR8A,sR8B);
+            
+            int l alignas(16) [4],r alignas(16) [4];
+            _mm_store_si128((__m128i*)&l,sL8A);	
+            if(stereo) _mm_store_si128((__m128i*)&r,sR8A);
+            l[0] = (l[0] + l[1]) + (l[2] + l[3]);				
+            if(stereo) r[0] = (r[0] + r[1]) + (r[2] + r[3]);
+            fL = _mm_mul_ss(_mm_cvtsi32_ss(fL,l[0]), I16InvScale_m128);	
+            if(stereo) fR = _mm_mul_ss(_mm_cvtsi32_ss(fR,r[0]), I16InvScale_m128);
+            _mm_store_ss(&OutputL[i],fL);
+            if(stereo) _mm_store_ss(&OutputR[i],fR);	
 		}
 
 		// 3. Forward sample position
@@ -344,10 +278,6 @@ store:
 		}
 	}	
 	
-#if BEFORE_SSE2
-	if(!fp && (SSE<2)) _mm_empty();
-#endif
-
 	GD->Direction = Direction*RatioSign;
 	GD->SamplePos = SamplePos;
 	GD->SampleSubPos = SampleSubPos;	
