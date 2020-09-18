@@ -3,9 +3,10 @@
 #
 
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9 CACHE STRING "Build for 10.9")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "Build for 10.12")
 
 project(ShortCircuit VERSION 3.0.0.0 LANGUAGES C CXX ASM)
+
 message( STATUS "CMake Version is ${CMAKE_VERSION}" )
 message( STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}" )
 if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
@@ -13,6 +14,8 @@ if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
 else()
   message( STATUS "Building in 64 bit configuration" )
 endif()
+
+add_subdirectory(libs/JUCE)
 
 set(CMAKE_CXX_STANDARD 17)
 set(SURGE_CXX_STD_FLAG cxx_std_17)
@@ -64,7 +67,6 @@ set( SHORTCIRCUIT_SOURCE
   src/steplfo.cpp
   src/tools.cpp
   src/unitconversion.cpp
-
   )
 
 set( SHORTCIRCUIT_GUI_SOURCE
@@ -114,90 +116,73 @@ set( VST2_WRAPPER_SOURCE
 
 if( DEFINED ENV{VST2SDK_DIR} )
   file( TO_CMAKE_PATH "$ENV{VST2SDK_DIR}" VSTHACK )
-else()
-  set( VSTHACK "${CMAKE_SOURCE_DIR}/../../VST2_SDK/" )
-endif()
 
-set( VST2_LIB_SOURCE
-  ${VSTHACK}/public.sdk/source/vst2.x/audioeffect.cpp
-  ${VSTHACK}/public.sdk/source/vst2.x/audioeffectx.cpp
-  )
-
-set( ZLIB_SOURCE
-  libs/external/zlib/adler32.c
-  libs/external/zlib/compress.c
-  libs/external/zlib/crc32.c
-  libs/external/zlib/deflate.c
-  libs/external/zlib/example.c
-  libs/external/zlib/gzio.c
-  libs/external/zlib/infback.c
-  libs/external/zlib/inffast.c
-  libs/external/zlib/inflate.c
-  libs/external/zlib/inftrees.c
-  libs/external/zlib/trees.c
-  libs/external/zlib/uncompr.c
-  libs/external/zlib/zutil.c
-)
-
-add_library( shortcircuit-lib
-  SHARED
-  ${SHORTCIRCUIT_SOURCE}
-  ${SHORTCIRCUIT_GUI_SOURCE}
-  ${VEMBERTECH_SOURCE}
-  ${VEMBERTECH_GUI_SOURCE}
-  ${VST2_WRAPPER_SOURCE}
-  ${VST2_LIB_SOURCE}
-  ${ZLIB_SOURCE}
-)
-
-target_include_directories( shortcircuit-lib
-  PRIVATE
-  src/
-  libs/vembertech
-  libs/vembertech/thread
-  libs/vembertech/tinyxml
-  libs/vembertech/vt_dsp
-  libs/vembertech/vt_gui
-  libs/vembertech/vt_util
-
-  # Temporary until I refactor the VST2
-  wrappers/vst2
-  ${VSTHACK}
-  ${VSTHACK}/public.sdk/source/vst2.x
-  )
-
-
-
-if( WIN32 )
-  target_include_directories( shortcircuit-lib PRIVATE libs/external/libpng libs/external/zlib )
-endif()
-
-if( APPLE )
-  target_compile_definitions( shortcircuit-lib PRIVATE
-    MAC=1
+  set( VST2_LIB_SOURCE
+    ${VSTHACK}/public.sdk/source/vst2.x/audioeffect.cpp
+    ${VSTHACK}/public.sdk/source/vst2.x/audioeffectx.cpp
     )
-  target_compile_options( shortcircuit-lib PRIVATE
-    -Wno-invalid-source-encoding
+
+  set( ZLIB_SOURCE
+    libs/external/zlib/adler32.c
+    libs/external/zlib/compress.c
+    libs/external/zlib/crc32.c
+    libs/external/zlib/deflate.c
+    libs/external/zlib/example.c
+    libs/external/zlib/gzio.c
+    libs/external/zlib/infback.c
+    libs/external/zlib/inffast.c
+    libs/external/zlib/inflate.c
+    libs/external/zlib/inftrees.c
+    libs/external/zlib/trees.c
+    libs/external/zlib/uncompr.c
+    libs/external/zlib/zutil.c
     )
-elseif( UNIX )
-  target_compile_definitions( shortcircuit-lib PRIVATE
-    LINUX=1
+
+  add_library( shortcircuit-vst2
+    SHARED
+    ${SHORTCIRCUIT_SOURCE}
+    ${SHORTCIRCUIT_GUI_SOURCE}
+    ${VEMBERTECH_SOURCE}
+    ${VEMBERTECH_GUI_SOURCE}
+    ${VST2_WRAPPER_SOURCE}
+    ${VST2_LIB_SOURCE}
+    ${ZLIB_SOURCE}
     )
-else()
-    if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
+
+  target_include_directories( shortcircuit-vst2
+    PRIVATE
+    src/
+    libs/vembertech
+    libs/vembertech/thread
+    libs/vembertech/tinyxml
+    libs/vembertech/vt_dsp
+    libs/vembertech/vt_gui
+    libs/vembertech/vt_util
+    
+    # Temporary until I refactor the VST2
+    wrappers/vst2
+    ${VSTHACK}
+    ${VSTHACK}/public.sdk/source/vst2.x
+    )
+
+
+
+  target_include_directories( shortcircuit-vst2 PRIVATE libs/external/libpng libs/external/zlib )
+  
+  if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
     set( PNG_LINK_DIR "libs/external/libpng/" )
   else()
     set( PNG_LINK_DIR "libs/external/libpng/x64" )
   endif()
   message( STATUS "Configuring PNG linkage from ${PNG_LINK_DIR}" )
 
-  target_compile_definitions( shortcircuit-lib PRIVATE
+  target_compile_definitions( shortcircuit-vst2 PRIVATE
     WINDOWS=1
     TARGET_VST2=1
     
     _CRT_SECURE_NO_WARNINGS=1
     )
-  target_link_libraries( shortcircuit-lib
+  target_link_libraries( shortcircuit-vst2
     PRIVATE
     
     shell32
@@ -215,7 +200,7 @@ else()
     ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/zlib.lib
     )
 
-  target_link_options(shortcircuit-lib PUBLIC "/DEF:${CMAKE_SOURCE_DIR}\\resources\\windows\\shortcircuit_vst2.def" )
+  target_link_options(shortcircuit-vst2 PUBLIC "/DEF:${CMAKE_SOURCE_DIR}\\resources\\windows\\shortcircuit_vst2.def" )
 
 endif()
 
@@ -269,3 +254,74 @@ if( WIN32 )
     )
 
 endif()
+
+
+juce_add_plugin( ShortCircuit3
+  PRODUCT_NAME "ShortCircuit3"
+  COMPANY_NAME "Surge Synth Team"
+  BUNDLE_ID "org.surge-synth-team.shortcircuit3"
+  PLUGIN_MANUFACTURER_CODE VmbA
+  PLUGIN_CODE SCt3
+
+  IS_SYNTH TRUE
+  NEEDS_MIDI_INPUT TRUE
+
+  FORMATS AU VST3 Standalone
+  )
+
+juce_generate_juce_header( ShortCircuit3 )
+
+# Fix me this dies obviously
+file( GLOB SC3_RESOURCES_GLOB resources/test_samples/* )
+juce_add_binary_data( ShortCircuit3-Binary SOURCES ${SC3_RESOURCES_GLOB} )
+set_target_properties( ShortCircuit3-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE )
+
+target_include_directories( ShortCircuit3
+  PRIVATE
+  src/
+  libs/vembertech
+  libs/vembertech/thread
+  libs/vembertech/tinyxml
+  libs/vembertech/vt_dsp
+  libs/vembertech/vt_util
+  )
+
+target_sources( ShortCircuit3 PRIVATE
+  ${SHORTCIRCUIT_SOURCE}
+  ${VEMBERTECH_SOURCE}
+
+  # And of course wrappers/juce
+  wrappers/juce/SC3Processor.cpp
+  wrappers/juce/SC3Editor.cpp
+  )
+
+target_compile_definitions( ShortCircuit3 PUBLIC
+  JUCE_ALLOW_STATIC_NULL_VARIABLES=0
+  JUCE_STRICT_REFCOUNTEDPOINTER=1
+  
+  JUCE_VST3_CAN_REPLACE_VST2=0
+  JUCE_USE_CURL=0
+  JUCE_WEB_BROWSER=0
+  
+  JUCE_DISPLAY_SPLASH_SCREEN=0
+  JUCE_REPORT_APP_USAGE=0
+  
+  JUCE_ALSA=1
+  JUCE_JACK=1
+  )
+
+target_compile_definitions( ShortCircuit3 PUBLIC
+  WIN=1
+  WINDOWS=1
+  TARGET_HEADLESS=1
+  )
+
+target_link_libraries( ShortCircuit3 PRIVATE
+  ShortCircuit3-Binary
+  juce::juce_analytics
+  juce::juce_audio_utils
+  juce::juce_audio_processors
+  juce::juce_blocks_basics
+  juce::juce_box2d
+  juce::juce_dsp
+)

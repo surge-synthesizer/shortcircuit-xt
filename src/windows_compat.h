@@ -6,8 +6,8 @@
 ** goal: eliminate this file
 */
 
-typedef char_t CHAR;
-typedef byte_t BYTE;
+typedef char CHAR;
+typedef uint8_t BYTE;
 typedef uint32_t DWORD;
 typedef uint16_t WORD;
 typedef uint16_t SHORT;
