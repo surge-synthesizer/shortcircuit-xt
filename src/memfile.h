@@ -303,7 +303,7 @@ public:
 		if((loc + 8 + chunksize) > EndStack.front()) 
 		{
 			invalid();
-			return false;
+			return nullptr;
 		}		
 		loc += 8 + chunksize;
 		if(loc & 1) loc++;		// Add 1 if odd

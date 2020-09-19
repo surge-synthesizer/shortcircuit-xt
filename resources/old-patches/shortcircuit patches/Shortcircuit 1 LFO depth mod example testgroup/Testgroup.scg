@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<shortcircuit app="shortcircuit" version="1.1.2" revision="9">
+    <group name="Test" key_low="0" key_high="127" lo_vel="0" hi_vel="127" channel="0" poly_limit="16" output="0" transpose="0" coarsetune="0" finetune="0.000000" amplitude="0.000000" balance="0.000000" group_mix="yes">
+        <effect identifier="0" type="NONE" />
+        <effect identifier="1" type="NONE" />
+        <grouplfo rate="3.240000" smooth="0.000000" syncmode="0" repeat="16" />
+        <zone name="Triangle.wav" key_root="60" key_low="36" key_high="84" lo_vel="0" hi_vel="127" key_low_fade="0" key_high_fade="0" lo_vel_fade="0" hi_vel_fade="0" channel="0" output="0" aux_output="-1" transpose="0" finetune="0.000000" pitchcorrect="0.000000" playmode="fwd_loop" sample_start="261" sample_end="429" loop_start="261" loop_end="429" loop_crossfade_length="0" velsense="-30.000000" keytrack="1.000000" amplitude="0.000000" aux_level="0.000000" pan="0.000000" prefilter_gain="0.000000" PB_depth="2" mute_group="0" polymode="0" portamode="0" portamento="-10.000000" mute="no" mono_output="no" aux_mono_output="no" ef_attack="0.000000" ef_release="0.000000" lag0="0.000000" lag1="0.000000" filename="$relative\testgroup samples\triangle.wav">
+            <filter identifier="0" type="NONE" bypass="no" />
+            <filter identifier="1" type="NONE" bypass="no" />
+            <envelope identifier="0" attack="-10.000000" attack_shape="0.000000" hold="-10.000000" decay="0.000000" decay_shape="1.000000" sustain="1.000000" release="-4.500000" release_shape="1.000000" />
+            <envelope identifier="1" attack="-2.000000" attack_shape="0.000000" hold="-10.000000" decay="-2.000000" decay_shape="0.000000" sustain="1.000000" release="-5.000000" release_shape="0.000000" />
+            <lfo identifier="0" rate="2.160000" smooth="1.000000" syncmode="0" keytrigger="yes" repeat="32" step1="0.195085" step2="0.382673" step3="0.555556" step4="0.707090" step5="0.831454" step6="0.923866" step7="0.980777" step8="1.000000" step9="0.980795" step10="0.923902" step11="0.831505" step12="0.707156" step13="0.555633" step14="0.382758" step15="0.195176" step16="0.000093" step17="-0.194994" step18="-0.382587" step19="-0.555479" step20="-0.707025" step21="-0.831402" step22="-0.923831" step23="-0.980759" step24="-1.000000" step25="-0.980814" step26="-0.923937" step27="-0.831556" step28="-0.707221" step29="-0.555710" step30="-0.382844" step31="-0.195266" />
+            <lfo identifier="1" rate="0.000000" smooth="0.000000" syncmode="0" keytrigger="no" repeat="16" />
+            <lfo identifier="2" rate="0.000000" smooth="0.000000" syncmode="0" keytrigger="no" repeat="16" />
+            <modulation identifier="0" src="stepLFO1" dest="amplitude" amount="0.000000" />
+            <modulation identifier="1" src="modwheel" dest="mm0" amount="13.200001" />
+            <slice identifier="0" samplepos="0" end="0" env="0.000000" mute="no" />
+        </zone>
+    </group>
+    <global headroom="0" poly_cap="256" />
+</shortcircuit>

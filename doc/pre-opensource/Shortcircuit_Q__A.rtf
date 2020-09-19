@@ -1,0 +1,1044 @@
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049\deflangfe1049{\fonttbl{\f0\fswiss\fprq2\fcharset204{\*\fname Arial;}Arial CYR;}{\f1\fswiss\fprq2\fcharset0 Arial;}{\f2\fnil\fcharset2 Symbol;}}
+{\colortbl ;\red0\green128\blue0;\red255\green0\blue0;}
+{\*\generator Msftedit 5.41.15.1507;}\viewkind4\uc1\pard\nowidctlpar\lang1058\b\f0\fs36\par
+Vemberaudio.se Shortcircuit 1 and 2\fs20  \b0\par
+\par
+\b\fs40 Q & A\b0\fs20\par
+\par
+\fs28 ***************************************************************************************************************************************************************\par
+\par
+\fs20 Echoing a post of KVR user \i sinkmusic \i0 from http://www.kvraudio.com/forum/viewtopic.php?t=196784&postdays=0&postorder=asc&start=135 reading \par
+"wouldn't it be possible to try to gather as many infos as possible for SC1/SC2 usage ?"\par
+I compiled this document, which is an accumulation of Vemberaudio Shortcircuit sampler tips, tricks and workarounds gethered specifically with the purpose of creating such first of all from vemberaudio.se forum section dedicated to Shortcircuit, and from a few other Web sources, listed at the very bottom of this Q & A document.\par
+\par
+Unfortunately this Q & A does not cover the whole spectrum of Shortcircuit problems and uses and cannot substitute a manual, which the sampler lacks save for a fairly brief Help file included with Shortcircuit 1. But admittedly the intended purpose of this Q & A has been to fill the existing vacuum to a degree. \par
+\par
+I didn't puprosely categorize the entries by topics, so they are pretty much scattered. Some of them I would occasionally group in one or put one after the other, though it hasn't been done systematically. To search for useful information take advantage of the document Find feature (Ctrl+F) Color coding should also help to navigate between clauses.\par
+\par
+When it made sense I slightly edited users' posts so they sound coherent and concise and added questions where they seemed appropriate to illustrate the purpose of the author's original post.\par
+\par
+The acronyms SC1 and SC2 mean Shortcircuit 1 and Shortcircuit 2 respectively. Since they quite substantially differ from one another deferentiation should have been made. \par
+A separate clause of this Q & A is NOTE and TIP, which are just general explanations, advices, warnings, instructions and pointers   \par
+\par
+Since Shortcircuit was a product in development (especially Shortcircuit 2) some problems mentioned here may no longer be relevant for the sampler last versions both 1 and 2, being already addressed by its creator Claes.\par
+\par
+I cannot attest for the accuracy of all knowledge presented here as far as its appl\lang1033\f1 i\lang1058\f0 cability is concerned, since I didn't test and verify every tip, trick and workaround suggested.\par
+\par
+Along with this Q & A several educational Shortcircuit patches are provided, which were also retrieved from forums threads. Unfortunately not all ever posted file content had sirvived and some information was lost. \par
+\par
+Borrowing the idea of user \i JoeMFC \i0 presented at http://forum.vemberaudio.se/index.php/topic,221.0.html, in folder 'shortcircuit patch files icons' included with this Q & A I put two icons for Shortcircuit patch files format SCM and SCG, since they have none by default, so they're better recognizable visually. To assign an icon to a file format in Windows XP do the following as per \i JoeMFC\i0 :\par
+\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 Copy the icon file to the WINDOWS/SYSTEM32 Folder.\par
+{\pntext\f2\'B7\tab}Hit Start -> Settings -> Control Panel. Doubleclick "Folder Options". On the Top you will see 4 Tabs. Choose "File Types".\par
+{\pntext\f2\'B7\tab}Now you see a list of all the File Types on you PC. Scroll down to the .SCM File Type and mark it.\par
+{\pntext\f2\'B7\tab}Below the "File Type list box" you will see an "Advanced"-Button. Click it. You can now choose a Name for the .scm files (for example: ShortCircuit Multisample) This Name will be shown in the Explorer Column "Type".\par
+{\pntext\f2\'B7\tab}Ok, hit the "Change Icon" Button. Hit Browse and go to the directory where you saved the Shortcircuit.ico and doubleclick it. Press OK Button.\par
+{\pntext\f2\'B7\tab}Thats it. (Maybe you have to restart your system so that the Fileboxes in Programs will display the new icon)\par
+\pard\nowidctlpar\par
+If you don't like these you can create your own unique icons.\par
+\par
+All credit of this Q & A and the supplementary files is due to the original posters and contributors of the presented material: Claes and forums members who are too numerous to mention. \par
+\fs16 A couple of tricks I added from my humble self.\par
+\par
+\fs20 Njoy, Bayan\fs16\par
+\fs24\par
+******************************************************************************************************************************************************************************************\par
+\par
+\par
+\b\fs20 Q. How to assign the Host's parameters to the effects of SC ?\b0\par
+\par
+\b I see all the auto001 to auto031, but they don't seem to affect any parameters in SC\par
+I can certainly assig\lang1033\f1 n\lang1058\f0  these auto001 to auto031 to the effects desired! \b0\par
+\par
+\par
+\cf1\b A.\cf0\b0  \par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720\cf1 1. Use auto01 as a source (left column) in the modulation matrix of a sample zone in SC.\par
+{\pntext\f2\'B7\tab}2. Then select a destination (right column) in SC (i.e. filter cutoff, sample pitch, loop length etc).\par
+{\pntext\f2\'B7\tab}3. Then select a modulation depth (middle column).\par
+{\pntext\f2\'B7\tab}4. Lastly use your VST host's automation feature to draw in parameter modulation for auto01.\cf0\par
+\pard\nowidctlpar\par
+\par
+\b Q. How to get SC2 to load GIGA files?\par
+\b0\par
+\cf1\b A.\b0  if you place a shortcut in the SC2 database folder to the folder that contains the giga file it will show in the browser of SC 2.\par
+The file extension that i have is "giga". Maybe there are newer giga extensions that are not supported?\par
+Anyway..be sure to add a shortcut to the actual files in the database.\par
+I had been putting the shortcuts in the "samples" and "patches" folders within the database folder, which didn't work.  After reading your reply, I tried moving the shortcut to the root "database" folder, and that works...  strange but true.\par
+\cf0\par
+\par
+\b Q. How to copy a pad in SC2 ?\b0\par
+\par
+\cf1\b A.\b0  you can use ctrl-drag to clone it to a new pad\par
+\cf0\par
+\par
+\par
+\b Q.  In  SC2 can't seem to get it to layer Soundfont patches/programs. When I try to load a patch, I just select the SF file I want and then hit a key on the midikeyboard.\par
+But if I change layer and do the same the first SF that was loaded is cleared. Can you lock a layer from being replaced ?\par
+\b0\par
+\par
+\cf1\b A. \b0 Load the second soundfont to another part than the first and then rightclick the layer which gives you the option to move it  whereever you want.\par
+\cf0\par
+\par
+\b Q. \par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 1.Can i browse to a sample without adding shortcuts to the database / refresh the database in SC2?\par
+{\pntext\f2\'B7\tab}2. Does this version have direct disk streaming?\par
+{\pntext\f2\'B7\tab}3. WHen I make patches I can name them and save them etc. But when I reload them there is nowhere on SC2 that indicates the name of the patches. \par
+\pard\nowidctlpar Is this something Im doing wrong or was that still to be implemented (btw I can see the names in the browser)\par
+\b0\par
+\cf1\b A. \cf0\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720\cf1\b0 1. No.You must use the browser or the "replace" buttons in the zone window.The replace button scrolls the samples from the point where you are currently located in the browser window which allows you to try out new samples without dragging them.\par
+{\pntext\f2\'B7\tab}2. no, it doesn't has disk streaming functionality \par
+{\pntext\f2\'B7\tab}3. If you select 'Part' at the top right it should then display the patch name at the top left in the patch save box.\par
+\pard\nowidctlpar\cf0\par
+\par
+\b Q. I need to use a Midicontroller to remote any functions. I dont know how to use the user parameter setup\par
+\b0\par
+\cf1\b A.\cf0  \par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720\cf1\b0 - load SC and press "config"\par
+{\pntext\f2\'B7\tab}- in the lower half of the window you can config up to 16 controllers. Set CC numbers according to you\'ea MIDI controller settings and press OK\par
+{\pntext\f2\'B7\tab}- now in "modulation routing" popup menu select "c1:" (controller 1) as modulation source. And for destination choose whatever you want to control\par
+{\pntext\f2\'B7\tab}- set modulation depth\par
+\pard\nowidctlpar the faders dont move at change the value over midi you won't see them move. you'll just have to assume they move\par
+\cf0\par
+\par
+\b Q. how to crossfade a loop in SC1/2 ?\par
+\b0\par
+\cf1\b A.\b0  Crossfade has not been implemented in SC2.\par
+You can do this in SC1 quite easily. Set the loop mode to fwd crossfade. Drag the xfade points as desired\cf0\par
+\par
+\par
+\b Q. Is it possible to lock a loop region and move this set length up and down the range of a selected sample?\par
+\b0\par
+\cf1\b A.\b0  you can set the loop range and then move it using the "loop start" destination in the modulation matrix.\par
+\cf0\par
+\par
+\cf2\b NOTE\cf0\b0 : There are some issues in SC2 that has to do with how messages are sen\lang1033\f1 t\lang1058\f0  between the GUI and the engine, which is causing problems with some hosts.. It will manifest itself as samples not being properly added, menus not being filled and that sort of thing\par
+\par
+\par
+\par
+\b Q. When i open the GUI i can load samples, but i do not appear to be able to select the direction parameters of the samples i.e loop etc....nor can i select the filter parameters or output parameters. Why is this so and how can this be overcome?\par
+\b0\par
+\cf1\b A.\b0  This is what I did, I downloaded the soundfont analogue samples that a member kindly posted and copied the link into the sample library. I selected the preset and dragged it across to the zones and low and behold all missing parameters appeared.\par
+Having done this with this particular preset any samples I dragged across had all the parameters and drop down boxes. I have tried this a few times with the same results.\par
+OK not great but as a work around its will suffice\par
+\cf0\par
+\par
+\b Q. the EGs. I can \lang1033\f1 make \lang1058\f0 the AEG to work \lang1033\f1 with \lang1058\f0 no problems. BUT the EG2 will not cause any effect. I have tried using the Modulation Routing section, thinking that may be it, but I could not get it to make any difference. I chose Part 1, and asked it to go to EG2, and set the level to max (32 in this case) but there was no difference if I then manipulated EG2. Apparently I am missing something. The same for the Step Sequencer. I tried routing to that but no go.\b0\par
+\par
+\cf1\b A.\b0  Load a filter in the effect insert of the zone or part.\par
+\par
+Set the "cutoff" level low.\par
+Choose the EG2 in the box way left in the modulation routing.\lang1033\f1  \lang1058\f0 Set the octave setting in the modrouting  to 3.Then set the destination to "cutoff" in the box right to the octave box.\par
+\par
+Then experiment with the shape of the EG2 and you will hear how it works.\cf0\par
+\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : Shortcirtuit is not a "real" pitch and timeshifter but you can adapt loops to different tempos by splitting them up and arranging the splits.\par
+\par
+\par
+\b Q. i am trying to make a snare sound more human by making every hit have the pitch randomly go up or down a little. i can't seem to work out if this is possible?\par
+\b0\par
+\cf1\b A.\b0  select random +/- as the source. Select pitch as the destination. Set the intensity to a low level.\par
+Now, on each note-on, a random value will be selected and will control the pitch of the snare sound.\par
+\cf0\par
+\par
+\b Q. what can i convert SC2 sc2p banks with into other formats?\par
+\b0\par
+\cf1\b A. \b0 Chicken\lang1033\f1  S\lang1058\f0 ystems Translator starting from build 109\cf0\par
+\par
+\par
+\par
+\b Q. Anyone know the maximum number of zones in SC2?\par
+\b0\par
+\cf1\b A.\b0  It's 2048\cf0\par
+\par
+\par
+\b Q. Supose I have 1 snare drum recorded and grouped in 30 different velocities (30 different samples from the same snare). Is there any special/fast way to assign them to the same key but assign them to different velocities?\b0\par
+\par
+\cf1\b A.\b0  Well one way would be naming them from 0 to 30 (weakest hit gets the lowest number and the hardest hit the highest) and then you select all of them and drag them all at once  to the key you wish to assign them to.\par
+They will then be arranged as the are numbered.\par
+You can also drag them one by one (without renaming them) but if you do you will need to set the velocity level manually for each sample (correct me someone if i\lang1033\f1\'b4m wrong on this)\cf0\lang1058\f0\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : The interpolation in SC2 is both better sounding and uses less CPU cycles than the old one. This rewrite is also the reason some loop modes (crossfading) are missing, as they need to be rewritten to work for the new ridiculously efficient interpolator.\par
+\par
+Other notable missing features (most that were planned to be reintroduced before the originally planned release):\par
+\par
+- Slicing GUI not finished (can't add/remove slices)\par
+- No groups\par
+- This also mean the group feature such as the group LFO & filter override is missing\par
+- No morph-EQ (was taken out to be optimized as it was a cpu-hog)\par
+- Some other filters were also removed, but there's plenty of new ones\par
+- No automation (but the 16 part controls work from midi CC/RPN/NRPN)\par
+- No snap-to-zerocrossing for sample/loop start/end markers\par
+- Some GUI elements from V1 is missing (like EQ/envelope curves when changing filters etc)\par
+- Version 2 doesn't import Version 1 patches yet\par
+\par
+\par
+\par
+\b Q. Can I load banks in gigasampler format into Shortcisrcuit?\par
+\b0\par
+\cf1\b A. \b0 Yes, but only in SC2\par
+\cf0\par
+\par
+\b Q. I was loading a rx2 and got this message: 'REX buffers are too small, see the documentation on how to change the buffer'\par
+I checked the manual...nothing.  how can I fix that?\par
+\b0\par
+\cf1\b A.\b0  open the rex backup in recycle (if you have one) and move the end point slightly to the left and resave, make sure you have the chop mode switched on before saving (i can't remember the name right now but its the button that asks how many bars etc )\cf0\par
+\par
+\par
+\b Q. Function of Sync (1 beat), Sync (2 beats), Sync (1 beat) etc. These mods are on both drop-down lists on the Names and Ranges box in the Zones page. (I at first assumed that setting a sample to sync 1 beat would make it just play once per beat, etc, but it just plays as usual when I press down a key. In addition: Does the first of these two drop-down mod lists on the Names and Ranges box apply to the keyrange? Does the second apply to pitch? How is this supposed to work? Are there other things people are doing with it?\b0\par
+\par
+\cf1\b A.\b0  The ranges are a condition which if met will let the note play when you press the key. It won't trigger any more notes than you play, it just filters the ones out where the conditions aren't met. Basically it's just like key & velocity, the sample plays when it's in the range, except that you can choose the source yourself.\par
+An example usage would be to use the modwheel to trigger a sample with vibrato when it's above 64 and a normal one when not. Put them on the same key and set the additional ranges to:\par
+\par
+non vibrato-sample - [ 0 ][ modwheel ][ 63 ]\par
+vibrato-sample - [ 64 ][ modwheel ][ 127 ]\par
+\par
+The sync ones are the same, except that they depend on the song position. So you could for example let a key play open hihats on the last half of the beat  and closed ones on the first.\par
+\par
+One way to use it:\par
+A drummer is using one trigger besides his acoustic kit. So while he hits the trigger Shortcircuit would decide in dependance of the Songposition wich sample is to play. (open Hihat & closed Hihat - or - snare & sound fx...)\par
+\tab\cf0\par
+\par
+\b Q. Can i drag and drop samples from my project window into an instance of SC?\par
+\b0\par
+\cf1\b A.\b0  Yes, but only with SC1\lang1033\f1  and your host must support this, not all do.\cf0\lang1058\f0\par
+\par
+\par
+\b Q. Loading a soundfont into SC1 i don't see the loaded samples nor any sound is produced when i press the keys\par
+\b0\par
+\cf1\b A.\b0  Make sure that the soundfont instrument MIDI bank number isn't 0, SC1 recognizes banks numbered from 1 up\cf0\par
+\par
+\par
+\b Q. Sometimes when i load my DAW project file with SC1 in it i would get a message that SC1 can't find a particular sample and am promted for manual navigating to the location the missing sample is stored at. How can I overcome this behavior?\par
+\b0\par
+\cf1\b A.\b0  Instead of saving SC1 instruments and multis in its proprietary format, try saving its settings to a plugin preset in the proprietary format of your DAW, just like you do with the majority of VST instruments. In cases of many DAWs this will make the SC1 insrument saved thereby non-transferable to another DAW, so if you intend to do it, save the instrument in SC1 proprietary format.\par
+\par
+Or you may run scmPathReplace.vbs courtesy of user \i qwanta  \cf0\i0 (included with this Q &A in folder 'Shortcircuit patch sample path problem workaround' )\i\par
+\cf1\i0\par
+Basically, if you put this script in the same directory as one or more scm files and run it (double-click it), it will cycle through them and replace all occurrences of $relative with the current folder path. So if you do a save multi+samples, all your sample paths now contain the dreaded $relative variable (which doesn't work as we know, causing the need to manually navigate to the location of the samples when a project is loaded).\par
+Now, stick the vbs script in the scm folder, run it - this replaces $relative with the absolute path -, reload the scm into your shortcircuit instance and you have now absolute file references.\par
+\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 1) save multi+samples\par
+{\pntext\f2\'B7\tab}2) run script\par
+{\pntext\f2\'B7\tab}3) reload scm\par
+{\pntext\f2\'B7\tab}4) save host project\par
+\pard\nowidctlpar\par
+Note: you can also open the vbs file in notepad and edit it, if you want to modify what it does.\cf0\par
+\par
+\par
+\b Q. Can I use SC LFO's as step-sequencers?\par
+\b0\par
+\cf1\b A. \b0 Most likely not. The LFO/step sequencer is not a note-based step sequencer, so it will not trigger notes with samples assigned to them.  What it can do as a step sequencer is control the pitch of a sample, and with some editing you could program a melody with it.  Another thing you could do is have the LFO move the start point of a sample, so it would scan through a long sample like a break beat or a piano loop, more or less like a slicer...\cf0\par
+\par
+\par
+\b Q. Is SC1/2 supposed to show sample names from zones in host pianoroll?\par
+\b0\par
+\cf1\b A.\b0  SC2 does support it but host should support it as well.\cf0\par
+\par
+\par
+\b Q. can you rename Groups so that they are not all called 'New Group'? (in SC1)\par
+\b0\par
+\cf1\b A. \b0 Certainly. Double-click the field where "new group" line is on the Keygroup page under "group" tab next to "amplitude EG" tab, enter a custom name and hit Enter on the keyboard\par
+\cf0\par
+\par
+\b Q. Anyway to change the defaults in Shortcircuit? For example I would like to change the default velocity sensitivity for all samples.\par
+\b0\par
+\cf1\b A.\b0  Unfortunately not. you could do a template document where you just replace samples afterwards, but it'll be much more work than just changing it..\cf0\par
+\par
+\par
+\b Q. what's OMNI do?\par
+\b0\par
+\cf1\b A.\b0  in shortcircuit omni only chooses wheter you see & edit zones & groups from all midi-channels or just the currently selected one..\par
+The omni button is only a display toggle. If it is on, all zones & groups from all channels will be shown, if it's off only stuff on the currently selected channel will be shown.\par
+The selected channel also determines which channel new zones and groups will be added/loaded onto.\cf0\par
+\par
+\par
+\b Q. What's microtuning in SC1?\par
+\b0\par
+\cf1\b A.\b0  every note sent from the host can have a detune value in cents attached to it (in addition to the key). This means the host can use custom scales (and scales with more than 12 notes/octave) and shortcircuit (and surge, hehe) will follow along nicely.\cf0\par
+\par
+\par
+\b Q. i know there is an 'in context' sample preview, but is there any other way to auditon samples before you load them?\par
+\b0\par
+\cf1\b A.\b0  if you press the replace sample button you can still trigger the zone from midi while the dialog is up, and youll hear the new sample in context\cf0\par
+\par
+\par
+\par
+FOOD FOR THOUGHT: \par
+\par
+- do AEG times change proportionally when you play a note higher on the scale?\par
+- EG2 times?\par
+- if so, what about when you change the coarse tuning?\par
+\par
+a low string on a piano takes longer to die out than a high note. Based on that I was starting to think I had to adjust drum AEG times for their pitch.\par
+I tested it out with some rhythmic samples, and it seems like AEG is constant at any pitch\par
+if you resample a note with AEG and then spread it across a range of keys, the higher keys are going to compress the AEG times by nature.\par
+I guess samplers in general don't do this unless you explicitly enable it with the keytrack parameter.\par
+\par
+\par
+\b Q. Is it possible to export/import filters settings?\par
+\b0\par
+\cf1\b A.\b0  it's possible with morphEQ feeding it XML patches. if you have \lang1033\f1 E\lang1058\f0 lectri-q (don't know if it works in Posihfopit EQ) you could export its eq-settings (extension is ".e-q").\par
+And because they also are xml you could see the settings of the eq and transfer them to the morphEQ-preset.xml of shortcircuit.\par
+So it is possible to tweak the Eq while hearing a sound - to save the preset - and then use this values in the morphEQ. I think this works only for the peak-filters\par
+\cf0\par
+\par
+\b Q. How can zone start be modulated with LFO, it's seems impossible.\par
+\b0\par
+\cf1\b A.\b0  it's probably because the LFOs are constantly running, and zone start is a note-on condition. It would be nice if this limitation were removed, though.\par
+Here's a trick, though - if you push zone start past loop start (in one of the loop play modes, of course), then the sample will start on loop start instead of zone start. You can modulate loop start with the step LFOs.\cf0\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : \par
+\par
+\b user\b0 : \lang1033\f1 sometimes\lang1058\f0  SC1 sounds a bit muffled for high frequencies, especially when pitching down. generally i find short circiut brilliant for bass, and drum loops and hits. however i used some raw unfiltered waveforms, which a really bright and gritty, i did notice that as i went up in pitch, the top end of the sound sounded slightly muffled and filtered. i have done some tests using sinewave sweeps pitched up and down an octave and examined the spectrii and waveform amplitudes.The spectrii are very clean, hardly any visable aliasing, however it is clear the high end is being filtered below niquist, giving a slightly rounded top end. its clear to see when examining the amplitude wavforms. (even at root pitch)\par
+generally, i haven't found that this filtering has affected the quality of my sounds, however it is noticable when playing around with paticularly bright sounds, and epecially when you pitch them down do they loose their sparkle.\par
+           \par
+\b Claes replies\b0 : It would be possible to make the filter kernel brighter, but that is a trade-off between brightness and aliasing so that'll need some careful tuning. I could of course just make it longer but that'll increase the cpu-load. Having different cores would be bad for the cpu-cache but it might be feasible to allow you to tune the brightness as the kernel is created on load. I doubt it'll be improved any time soon\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : In SC1 to increase/decrese the zone/slice view resolution instead of clicking on "+/-" button, place the cusror over the zone/slice representation, hold down Shift and make repeated left mouse clicks to stretch the view or right mouse clicks to squeeze it.\par
+\par
+\par
+\b Q. is there a way to automate the override button in a group?\par
+\b0\par
+\cf1\b A.\b0  no, it's not possible\cf0\par
+\par
+\par
+\b Q.  I created this awesome song with shortcircuit 1, how do I make sure that the wave files are with my project so shortcircuit can load them up if I delete the waves at the original file path? Is the correct way to save multi + samples in my project folder? I'm also using a rex loop, does that change anything?\par
+\b0\par
+\par
+\cf1\b A.\b0\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 1) save multi + samples\par
+{\pntext\f2\'B7\tab}2) load the multi you just saved (the sample references in memory aren't updated unless you do this)\par
+{\pntext\f2\'B7\tab}3) save the song\par
+\pard\nowidctlpar\par
+However, if you move the project directory in the future the location won't match but the multi will always load. It will also let you search for the samples if it doesn't find them so since they're all in the same dir that shouldn't be a problem. There shouldn't be any issues with rex-files either, it's only sf2's that there has been issues with.\par
+\par
+In other setups, this method might not work however....Energyxt only works if the energyxt project fiile is in the same directory as the scm file ($relative seems to refer to energyxt project location).\par
+\par
+If this is your case try this:\par
+\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 1) save multi + samples\par
+{\pntext\f2\'B7\tab}2) load the saved multi\par
+{\pntext\f2\'B7\tab}3) save project\par
+{\pntext\f2\'B7\tab}4) reload project - window pops up asking for sample location\par
+{\pntext\f2\'B7\tab}5) navigate to sample directory\par
+\pard\nowidctlpar\cf0\par
+\par
+\b Q1. Is there a sensitivity thing that makes slices from transients detection ?\par
+\b0\par
+\cf1\b A.\b0  No, Although it snaps to 0 crossings very well. \par
+\cf0\par
+\b Q2. Will it support any types of slice markers in wav files (i don't mean rex files...) ?\par
+\b0\par
+\cf1\b A.\b0  Yes, in the current SC2  they are imported from acidized wav-files as well\cf0\par
+\par
+\b Q3. Also, can the loop length be synced to host's bpm (i know that sample start and length can be automated though) ?\par
+\b0\par
+\cf1\b A.\b0  No\cf0\par
+\par
+\b Q4. Can the browser auto preview samples when clicking them ?\par
+\b0\par
+\cf1\b A.\b0  Not currently. You can however preview them while replacing a zone. (when the replace button is active, each time you click an entry in the browser it replaces the active zone with the new sample so you can play it from MIDI or the audition button)\cf0\par
+\par
+\b Q5. Is the mousewheel supported, especially in the browser ?\par
+\b0\par
+\cf1\b A.\b0  Yes\cf0\par
+\par
+\b Q6. Can you drag n drop a sample to a midi key on the piano roll and have it (automatically) mapped to that key only, like any drumsampler actually ?\par
+\b0\par
+\cf1\b A.\b0  You can drag samples from your desktop or from your host. There's even "learn key from midi" buttons. There's also a drummap template you can load. There's also "add sample to next key."\par
+\cf0\par
+\b Q7. What would be the basic way to layer drums (assgn different samples to the same key over the whole velocity range, but while both samples have their own edit page for adsr etc) ?\par
+\b0\par
+\cf1\b A.\b0  Simple. Each sample has completely separate own page. You can make sample groups for easier organization and you can select multiple samples, hit the learn button, and hit a key on your keyboard for all those samples to get fixed to the same key.\par
+When you add a sample a zone is created for that sample, and each zone always have the parameters on the zone-page dedicated to it (filters, envelopes, lfos & modulation etc..)\cf0\par
+\par
+\par
+\b Q. what is a lag-generator for?\par
+\b0\par
+\cf1\b A.\b0  It like a lowpass filter for control data. It will smooth out the control data to make fast changes slow.\par
+One typical use for this would be to prevent stepping from the midi-controllers, but SC does this in a more clever way already. It can be good if you want the controller intentionally slow though.\cf0\par
+\par
+\cf1 they're useful for controlling the timing of filter sweeps.\par
+\par
+For example: a low pass filter opens to let a pad through on a track - the low pass filter goes from 100% closed to 100% open. Instead of setting up a complex controller curve in the sequencer to control the filter, I just enter a square wave (controller 0->127), then in sc send the controller->lag 1, lag 1->filter cutoff, and then adjust the lag 1 time to control how fast the filter opens.\par
+\par
+another use is slowing down aftertouch response. Aftertouch tends to be hyper-sensitive on many keyboards, so if you want to make precise yet drastic changes with it, the Lag Generators are perfect.\par
+\par
+if you have this modulation routing:\par
+\par
+\par
+[modwheel] [+2.0oct] [f1:cutoff]\par
+\par
+and want the control to move slower/smoother, insert a lag generator like this:\par
+\par
+\par
+[modwheel] [+100.0%] [lag 1    ]\par
+[lag 1   ] [+2.0oct] [f1:cutoff]\par
+\par
+\par
+It will give the same effect but it will pass through the lag generator, and using the lag-time parameter you can change how fast the modulation wheel movements will affect the filter.\cf0\par
+\par
+\par
+\b Q. what about that DnB voice effect where you modulate the section of the sample that is played so a "Yeah" sample would sounds like YYYYYYYEEEEEEEEEAAHHH all glitchy like.\par
+\b0\par
+\cf1\b A.\b0  set a reasonably short loop in the beginning of the sample, modulate [time (s)] to [loop start] by a suitable amount. You can also use the temposync modsources to get this temposynced for drumbeats etc.\par
+You can increase the pitch without affecting the playback rate while doing this.\par
+\cf0\par
+\par
+\b Q. when I hit a note, the midi indicator turns grey and no sound comes out. Why is this?\par
+\b0\par
+\cf1\b A.\b0  grey just means that there is midi input present in the range defined for the zone but the zone isn't playing (white). \par
+this could be for a variety of reasons as it does turn grey when the note has ended.  zone/loop start/end-points that cause it to stop playing instantly is one of them.\cf0\par
+\par
+\par
+\b Q. Are AIF/AIFF file formats supported in SC?\par
+\b0\par
+\cf1\b A.\b0  No\cf0\par
+\par
+\par
+\b Q. headroom setting - what does it do? \par
+\b0\par
+\cf1\b A.\b0  it just lowers the output-volume for the whole instance\cf0\par
+\par
+\par
+\b Q1.  I run my projects at 192khz and use your sampler for a lot of sounds. I like the sound quality a lot. I was wondering where in the chain SC resample the sounds\par
+\b0\par
+\cf1\b A.\b0\par
+\par
+[RAM]\par
+     |\par
+    \\|/\par
+[resampling] -> [pre-filter gain] -> [filters] -> [gain & pan/balance] -> output\par
+\par
+\par
+better illustartion of the voice-processing (from the help-file):\par
+the summing is done after everything at the voicelevel.\par
+for groups it work like this:\par
+and all groups are then summed together along with all the non-grouped zones to the outputs.\par
+\cf0\par
+\par
+\b Q2. Some time ago I tried to convert my samples to 192 khz because I wanted to see if they would sound better in SC. It didnt sound different. I understand that it because its the same thing that happens in SC. It starts by resampling. If summing and filter where done before resampling to the host samplerate there might have been a difference. I uderstand you have thought about all this and done everything to make it sound as good as possible. I like that.  I gues all this also means that SC would not use more CPU when using samples at 192khz than using samples at 44.1khz\par
+\b0\par
+\cf1\b A. \b0 Generally yes, but it makes the resampling more likely to be upwards in pitch, which has a performance penalty in shortcircuit since the resampling has to be oversampled in those cases. By saying "makes the resampling more likely to be upwards in pitch" what I mean is this: assuming the samplerate of the sample and the host is the same, the engine will use oversampling if it's pitched more than a few semitones up. This is to prevent aliasing.\par
+If you have a sample in another samplerate, say 96kHz and the system runs at 48kHz, the resampling is already pitched an octave up to get the sample at neutral pitch, so the oversampling will always be active unless you pitch it almost an octave down or more.\par
+Therefore it's not very CPU-efficient to use samples of higher sample-rate than the system.\par
+\cf0\par
+\par
+\b Q3. wouldn't it be more efficient to load/write (the) resampled data/sound into ram (to avoid realtime resampling and save cpu-ressources this way)!?\par
+\b0\par
+\cf1\b A.\b0  yes, but that would mean saying goodbye to any realtime-pitch changes, and it would require precomputation that might be much more costly than the resampling itself.\cf0\par
+\par
+\par
+\b Q4. let's bring this up again -> what about resampling in a background-thread (with very low priority) to temorary (32bit float) wav-files (which are also be loaded into ram)? so you load a wav-file -> now shortcicuit begins to resample it (for the whole or used keyrange) in the background to a temporary folder. if background-resampling isn't finished (or  doing other small pitch-changes), then it will be realtime processed!?\b0\par
+\par
+\cf1\b A.\b0  That would be quite complex and consume a lot of RAM and bandwidth\cf0\par
+\par
+\par
+\b Q. How do I move zones around in the Keygroup view? Are they draggable?\par
+\b0\par
+\cf1\b A.\b0  As of v1.x, you can only adjust the first and last notes/keys for a sample/keygroup, you can also adjust the root key by right-clicking the "keybard" though. You can't drag them around, but in V2 it's possible, as well as copying a keygroup. \cf0\par
+\par
+\par
+\b Q. any way to do mono/legato synth patches out of multisamples?\par
+\b0\par
+\cf1\b A.\b0  you should be able to do multisampled mono by assigning all the zones to the same mutegroup. \cf0\par
+\par
+\par
+\b Q. can you turn off the effects and filters via midi?\par
+\b0\par
+\cf1\b A. \b0 no \par
+sometimes modulating the mix/wet-level can do the trick though, but that's only available on some effects/filters.\cf0\par
+\par
+\par
+\b Q. i have a knob at cc17 that i want to control the cutoff of filter1 in shortcircuit. but i dont understand how to make it do that after i write all the info in the config menu.\par
+\b0\par
+\cf1\b A. \b0 The controllers you choose in the config are available in the 'modulation routing' section of the zone.\cf0\par
+\par
+\cf1 They look like this:\par
+\par
+[ source ] [ depth ] [ destination ]\par
+\par
+so if you want to route the first knob to filter cutoff with a depth of 4 octaves you should set a row in the routing so it looks like this:\par
+[1] [   c1:   ][   4 oct   ][  f1: cutoff  ]\par
+\cf0\par
+\par
+\b Q. what the "auto" parameters do in the modualtion matrix?\par
+\b0\par
+\cf1\b A.\b0  These are automation parameters for your sequencer. They'll show up as automatable tracks in Cubase or what have you so you can draw in envelopes.\cf0\par
+\par
+\par
+\b Q. is there a way to move samples in the keygroup as a group?\par
+example----  if i want to move group of samples that range from ((c2-c4)) to ((c1-c3))\par
+\b0\par
+\cf1\b A.\b0  In SC1 you can only move one at a time, in SC2 it's possible\cf0\par
+\par
+\par
+\b Q. Does SC have sliced loopes midi export?\par
+\b0\par
+\cf1\b A.\b0  No\cf0\par
+\par
+\par
+\b Q. Am i correct that Short only can have one "global" ouput configuration and that this will apply to all projects you create in your DAW?\par
+\b0\par
+\cf1\b A.\b0  yes.. the configuration is stored in the config file, which must be in the same directory.\par
+So if you want to have different global configurations you should put the plugin it in two seperate directories (and rename one of them) so they'll get seperate configuration-files. There might be a problem with some hosts as they have the same id though\cf0\par
+\par
+\par
+\b Q. Is velocity crossfading of zones supported.\par
+\b0\par
+\cf1\b A.\b0  You can edit the size of the fade-in/out for both note and velocity-ranges by holding shift down and dragging the edges of the zone in the keygroup-view. It's only accessible from there, there's no parameter in the zone editor.\par
+It was added at the last minute in v1.1.0 and I'm the first to admit the editing is a bit dodgy, but at least it works. \cf0\par
+\par
+\par
+\b Q. is importing lots of samples and automapping them according to root note (and 'velocity' (pp, p, mf etc) possible\par
+Does it do that even when dragging in loads of samples? So when dragging them in they all arrange themselves by root note?\par
+\b0\par
+\cf1\b A.\b0  It does the root note thing when dropped on the keyrange-view, but if all the samples are not formatted the same way it gives up and just map them sequentially. it's actually only activated when multiple samples are dragged.\cf0\par
+\par
+\par
+\b Q. The keycommands don't work in Cubase SX. the "Plugins recieve key-commands" option in the Cubase prefs are enabled. If enabled or disabled doesn't change anything.\par
+\b0\par
+\cf1\b A.\b0  this may happen if you have 'always on top' mode activated in SC, so you have to give SC focus (click the titlebar for example) first. then it receives keycommands.\par
+\cf0\par
+\par
+\b Q. Do keycommands work in Logic 5? I'm trying to use the keycommands in Logic but to no avail. SC doesn't seem to get any of the keystrokes. Is that some restriction of Logic or some incompatibility issue? I know there is this setting in Kontakt "Capture keycommands from host" or something like that.\b0\par
+\par
+\cf1\b A.\b0  No, because of the way the host handles keycommands in general it's a logic thing.  logic doesn't transmit the keymessages to the plugin's window like other hosts do. There are possible work-arounds of a hack-ish nature though, like the one kontakt uses..\par
+Keycommands don't work in EnergyXT, Ableton Live and FL either, although in Cubase they do\cf0\par
+\par
+\par
+\b Q. is there any way how you can modulate the amplitude of one sample with the amplitude of another sample?\par
+\b0\par
+\cf1\b A.\b0  No\cf0\par
+\par
+\par
+\b Q. i'm aiming to recreate a rough timestretch effect in my sequencer as follows:\par
+i draw a long line of very short midi notes, end to end. on a track that feed into SC.. SC has a drum hit (for eg) assigned to that note.\par
+I draw an automation curve over the notes (automation 000).. and in the SC mod matrix i assign automation 000 to zone start.\par
+But the result isn't what i was expecting (i get a clicky.. non-time stretched-sonding sound Smiley ).. if i swap automation for a temposync source in the mod matrix i get the kind of sound i was expecting.. but id like to recreate it with autmation curves for more control..\par
+could you give an indication of the kind of values (for the curve and for the modulation amount) that would be necessary to recreate the effect with automation curves?\par
+\b0\par
+\cf1\b A.\b0  the automation curves are only updated on every new block by the host, so their precision time-wise might be quite bad..  (the host decides how big the blocks are, so the host can issue a new block when a new automation event occurs, but i doubt they do this very frequently)\par
+i'd suggest trying midi-controllers and see if they work better.. they are updated as often as the modmatrix are, and are smoothed to prevent stepping.. they might be too smooth for your purposes though..\par
+draw a line of midi notes as described above.. (dont make them really really short though Smiley)\par
+add auto000 as a mod source in sc, assign it to zone start using 100%\par
+experiment with attack and delay of the grains to fine tune the sound.\par
+an autmomation ramp with values from 0 to .50 will step through the whole sound (i think).\cf0\par
+\par
+\par
+\b Q1. I'm trying to modulate a sample with the LFO. The modulation scheme looks like this:\par
+\b0\par
+\b stepLFO      | +0.0dB |    amplitude\par
+modwheel    | +0.0dB |    mod slot 1\par
+\par
+This is then supposed to modulate the depth of the LFO on amplitude\par
+I get lousy results from doing it this way...seems that you have to enter very high values to get a satisfying result and upon entering the highest possible value the signal gets modulated even if the modwheel stays at nil.\par
+How to do it? Use some offset value?\par
+Basically I'm trying to use an LFO with a constant depth of 100% and a rate which reaches nil at the lowest possible position...but the lowest value seems to be 0.000977 Hz\b0\par
+\par
+\cf1\b A.\b0  I believe the signal gets modulated even if the modwheel stays at nil might be because of the midi-controller smoothing..  It will follow fast movements quickly, but slows down as it approaches it's target value.. So it can take quite while for it to settle back to 0..\par
+you can force the lfo-rate even lower by modulating it with 'one'. There is no lower bound..\cf0\par
+\par
+\par
+\b Q2. But will it be possible to modulate the full depth then? Cause the highest setting is 3200% and -32dB is still audible\par
+\b0\par
+\cf1\b A.\b0  The range is the same as if you had modulated it directly now. so the range shouldn't be that much more of a problem\cf0\par
+\par
+\par
+\cf2\b TIP\cf0\b0 : Try out frequency shifter effect, it's particularly useful on drums with a good mix of skin & tone (like congas) as it changes the apparent size of the drums while still sounding quite natural..\par
+\par
+\par
+\b Q. Is it possible to control the pan from -100%L to 100%R using one of the midi controllers?\par
+With the mod matrix at 100% I can go from centered to 100%R, at -100% it goes from centered to 100%L. I was able to get the full range by controlling with the pitch wheel....is there a way with the standard 0-127 midi controller?\b0\par
+\par
+\par
+\cf1\b A.\b0  if you set the pan to -100% in the editor and then use a modulation routing with the depth 200% you will be able to control the entire range.. this is the point of the >100% setting in this particular case\cf0\par
+\par
+\par
+\b Q. does SC use more cpu the more outputs are configured but not used (assigned) ?\par
+\b0\par
+\cf1\b A.\b0  yes.. but it shouldn't be noticable..\par
+it only affects the static cpu usage, and not the cpu usage of each voice..\cf0\par
+\par
+\par
+\b Q. How do I locate samples from a moved folder?\par
+\b0\par
+\cf1\b A.\b0  the best way to deal with moved folders is if you set up your samples directories using the path variables system as you can just update the path in the configuration window to match (see the help file for info), but that has to be done before saving.. (which means now is too late)\par
+another way to restore requires a little trickery with a text-editor..\par
+if you can find the shortcircuit patch portion of your hosts project file and save it as an scm-file, you should be able to edit it and load it into shortcircuit with the right paths..\par
+they look like this:\par
+\par
+Code:\par
+\par
+\par
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\par
+<shortcircuit app="shortcircuit" version="1.0" revision="2">\par
+    <group is_root_group="yes">\par
+        <zone name="droid1.wav" key_root="38" key_low="38" key_high="38" lo_vel="0" hi_vel="127" channel="0" output="0" transpose="0" finetune="0.000000" playmode="0" sample_start="0" sample_end="41408" loop_start="0" loop_end="41408" amplitude="1.000000" pan="0.000000" prefilter_gain="1.000000" PB_depth="2" mute_group="0" mute="yes" obey_master="no" ef_attack="0" ef_release="0" lag0="1" lag1="1" filename="$home\\choir\\droid1.wav">\par
+            <filter identifier="0" type="NONE" p0="0.210000" p1="0.130000" />\par
+            <filter identifier="1" type="OD" p0="0.220000" p1="0.060000" />\par
+        </zone>\par
+    </group>\par
+    <global headroom="0" />\par
+</shortcircuit>\cf0\par
+\par
+\par
+\par
+\b Q. I got how I can control the smoothness of modulations with lag. But this sentence in the manual give me headaches:\par
+Quote: "The time constant (in the zone editor) has a special setting called sum which causes the lag generator to work as an integrator."\b0\par
+\par
+\par
+\cf1\b A.\b0  ok, maybe a real-life analogy is in order. \par
+imagine the output of the lag generator to be the position of an object along a a line.\par
+normally the object will move to the position defined by the input signal, although slowly.\par
+in the integrator mode, the object will move not to a specific position, but by a specific speed.\par
+try mapping the pitch bend wheel to the lag generator, and map the lag generator output to the pitch of some static sound and see what it does..  having the wheel centered will keep the same pitch, but when the wheel is above center the pitch will slide upwards and vice versa..\cf0\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : CPU wise resampling in shortcircuit is more expensive when upsampling than when downsampling\par
+\par
+\par
+\b Q. Is there key selects zone option so when you press a note on your keyboard containing a sample, shortcircuit selects it and displays automatically in Zone view?\par
+\b0\par
+\cf1\b A.\b0  Yes, L:locate zone. open the next played zone in the editor\cf0\par
+\par
+\par
+\b Q. Is this possible when you press a key have a mode where all the parimeters for that slice are selceted. So say I hit key c3 all the filter settings come up on the screen with everything else.\b0\par
+\par
+\cf1\b A.\b0  Pressing L will make the editor jump to the zone of the following midi-note.\cf0\par
+\par
+\par
+\b Q. Are group filters calculated per voice? When I play a beat through the group filter, it makes my CPU 'jump'\par
+I thought it was just an insert effect, basically - voice-independent\b0\par
+\par
+\par
+\cf1\b A.\b0  It's just a way to control the filters of the zones within the group, there are no seperate filters for the groups..  so yes, one filter per voice it is..\par
+the effects are calculated at the group level however (obviously).\cf0\par
+\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : Shortcircuit is supposed to work at any samplerate, but it will default to 44.1kHz if it doesn't get a samplerate provided by the host. So if there's an issue regarding samplerates, it's probably due to the communication between them (plugin & host).\par
+\par
+\par
+\cf2\b TIP\cf0\b0 : It's based on the osc trick where you select an osc filter and turn down the dry button so that you hear only the osc. just load 3 samples mapped to the entire keyboard 1 on top of the other and you get a nice 3 osc mono synth for free.  To get the osc to loops continuously, ya just set a loop on the samples.\par
+if you do this, you can set keytrack to 0% and the root key to something really high as the resampling uses less cpu the lower the sample is pitched and you're not gonna hear it anyway...\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : MIDI channel is assigned to groups/zones, not the other way around so you can have as many zones/groups as you want on every channel.\par
+\par
+\par
+\b Q. Is it possible to change a note root key from the mutli view?\par
+\b0\par
+\cf1\b A.\b0  the root key can be changed using the right mouse button on the virtual piano-thingy.\cf0\par
+\par
+\par
+\b Q. What oversampling is used in the smaple playback engine 2x 4x ?\par
+\b0\par
+\cf1\b A.\b0  2x is used, but only when the resampling ratio is higher than 1\cf0\par
+\par
+\par
+\b Q. Is it possible that if i wanted to use an automation curve in my host to control rate (linear), so that at its lowest values, the automation would be playing the sample backwards, and at its highest values, it would be playing forwards at faster-than-normal speed (or would it need an extra 'offset' type variable for each modulation assignment?)\par
+\b0\par
+\cf1\b A.\b0  you can use 'one' as an offset\par
+\par
+[ one ] [ -200% ] [rate (linear)]\par
+[auto0] [ 300%  ] [rate (linear)]\cf0\par
+\par
+\par
+\b Q. what are the mm slots (currently "mod slot #")?\par
+\b0\par
+\cf1\b A.\b0  by using the "mm slot"-destinations you can change the depth of another modulation routing slot.\par
+\par
+like this:\par
+\par
+[1][ stepLFO1  ][ 0.00st ][ pitch ]\par
+[2][ modwheel ][ 100% ][ mm slot 1 ]\par
+\par
+this will make the LFO control the pitch, but the depth of the modulation is done by the modwheel.\par
+i'll be renaming the destination to "mod slot #" now, since mm is short for modulation matrix and it isn't strictly a matrix in the mathematical sense\cf0\par
+\par
+\par
+\b Q. could you explain (again) how to use this 'one' and 'rate(linear)' to get the sample to play backwards at normal speed (i thought setting the amount to -100% would do it, but i was wrong).\b0\par
+\par
+\cf1\b A.\b0  the rate is 100% by default, so to get it to -100% you you have to set the modulation to -200%..\par
+\par
+you also need to set the sample start parameter to the end of the sample (as it's not supposed to start at the start any longer).\par
+\par
+[modwheel] [ -200% ] [rate (linear)]\par
+[modwheel] [ +100% ] [zone start   ] \par
+\par
+you could use 'one' instead of 'modwheel' to make the sample always play backwards, but then you could just use one of the reverse playmodes instead. But if you want to use looping and still play the sample backwards this is the way to go. (since the're isn't any "reverse loop" playmode)\par
+\cf0\par
+\par
+\b Q. what does each of modulation sources mean?\par
+\b0\par
+\b specifically i'm wondering about:\par
+\par
+time(m)\par
+time(s)\par
+channelAT (ch aftertouch now)\par
+auto\b0\par
+ \par
+\par
+\cf1\b A.\b0\par
+time(m):\par
+0% at start of playback, 100% after one minute. It will go on in that rate forever.. It is reset to 0% when the note is played if portamento is used\par
+\par
+time(s)\par
+same as (m) but with 100% after one second.\par
+\par
+channelAT\par
+channel aftertouch, also known as channel pressure. full-sized midi keyboards usually send this when you put different amount of force behind your fingers on keys you're already playing.\par
+\par
+auto\par
+the plugin has parameters with the same names available to the host. You can use the hosts automation facilities to control these.\par
+\cf0\par
+\par
+\b Q. how does sliced keymap mode as applied to a sample (eg a drum beat) work? There is a horisontal line in the slice function that does what?\par
+\b0\par
+\cf1\b A.\b0  Each slice will be assigned to a seperate key, starting at the root key and up. So you should set the root & low-key to the same key and set the high key as high as needed to make all slices audible.\par
+Keys that doesn't have a slice assigned to them won't play, so you don't need to worry about making it too big (except for cosmetical reasons in the keygroup-view).\par
+The horisontal line is the modulation source "slice env"\cf0\par
+\par
+\par
+\b Q. Need help understanding the path config. there are 6 of them totally. Does each path have to go all the way to the final folder for Short to find things?\par
+\b0\par
+\cf1\b A.\b0  there is a section in the help file (press F1) called path variables that describe them.\par
+The short story is that it allows you to set your favourite sample dirs there and if you move those directories later, you can update the path to match and SC will still find the samples.\cf0\par
+\par
+\par
+\b Q. on the Reaper forum, we're actually discuss things like timing problems. I did a test and had to notice, that the output of Shortcircuit2 is delayed by 1 sample\par
+\b0\par
+\cf1\b A.\b0  yes, that's quite probable.\cf0\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : "A" = audition key might not to work in Sonar 6, 7 and Renoise\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : sample auditioning in context from within file browser might not work in Sonar and Renoise\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : for ShortCircuit2 many of the dropdown menus don't work in Traktion and Renoise. as a workaround try importing a patch sf2 file or any other supported 3d party patch and then import samples you actually want to work with. then save it as a patch\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : in SC2 with Cubase 4 "LP/HP/BP 2-4P" filter module settings might not get saved\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : in Shortcircuit 1.1.2 the spacebar gets "through" to the host (Reaper 1.813) if you're inside an entry-box (to rename a group for example). In this case Shortcircuit should block this until you get out of this box. As workaround I can use SHIFT+Space\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : SC1 1.12 crash in Reaper is fixed for Reaper 1.813\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : effects bypass mode isn't saved neither with project nor with a SC patch\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : Velocity -> Filter-Cutoff in Legato-Mode doesn't work\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : It seems that synced LFOs don't work correctly under Ableton Live. The stepLFOs seem to be retriggered at every note on, regardless of whether keytrigger is on. The groupLFO does it's thing when not synced, but seems to emit a constant value when sync is turned on. In both Live 5.0.2 and Plogue Bidule any Sync LFO set to 1/2, 1 bar, 2 bars, 3 bars etc..all the way to 8 bars doesnt work. 1 bar tri and 1/2 dot do work though.\par
+\par
+\par
+\b Q. I have some waveform samples that loop for the entire length of the sample. These haves clicks in Sc because it seems to add a short silence to the beginning of the sound. \lang1033\f1 T\lang1058\f0 hese samples were edited in wavelab. 24bit, right out of the daw\par
+\b0\par
+\cf1\b A.\b0  no answer. but a similar problem may occur  when using Akai samples,  Akai utilizes an internal flag/marker of some kind to denote the beginning of the sample, it's NOT the actual beginning of the data. Akai does this so that, if you set your sample threshold too low and it didn't quite catch the beginning of the attack as it should have, you have a few samples' worth of space at the beginning in which to backtrack the beginning, which could save you the trouble of having to sample again.\cf0\par
+\par
+\par
+\b Q. is there way to fix click SC produces with bi-directional loops?\par
+\b0\par
+\cf1\b A.\b0  no, it's very picky about the loop-points being located exactly at a zero-crossing. SC flips the sample upside-down while going backwards, which is why it should be set at a zero-crossing. this might not have been such a good idea after all as it makes it really important that the loop points both are exactly at a zero crossing or you'll get clicks\cf0\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : with v 1.1.2 you may not be able to change the crossfade length from 0 in looped samples (even with snap off). in\lang1033\f1  \lang1058\f0 previous versions there might be an occasional wav that had some problems, but it's intermittent. if you load a multi made with an older version into 1.1.2 the crossfade will be OK. If you take just that same wav and load it into 1.1.2, you \lang1033\f1 m\lang1058\f0 ight not be able to do a crossfade other than 0 length.\par
+In v.1.1.1 this problem is non-existent\par
+\par
+\par
+\par
+\b Q1. is there (audibly) any difference between "loop until release" and "loop forward" (aka "loop in release" I believe) loops when the "loop forward" is set to a release of 0? \par
+\b0\par
+\cf1\b A.\b0  not in SC, it rely on that the user has set the release appropriately (i.e. it doesn't auto-'shot')\cf0\par
+\par
+\b Q2. so what differentiates "loop forward" from "loop until release"?\par
+\b0\par
+\cf1\b A. \b0 It is like this :\par
+I have a sample where I utter "Let's Rock In Hell"\par
+Loop until release could make it like "Let's RRRRRRRock In Hell", assuming you have a slow enough amplitude envelope release set up.\par
+Now with the little bug in shortcircuit the only possibility is to have the sound make "Let's RRRRRRRR"..., the RRR continuing during the release. Then of course there are separate "release loops" in some samplers but I don't think shortcircuit has ever claimed to have that feature directly available...\cf0\par
+\par
+\par
+\b Q. How can i get rid of clacklings sounds if I asign an LFO to the PAN or Amplitude? Im running it at 192 khz so maybe its only at high samplerates the problem is there. There is no problem however when I assign pan to an cc number an let logic automate the pan\par
+\b0\par
+\cf1\b A. \b0 Try setting "smoothing" on the LFO to some other number than 0%\cf0\par
+\par
+\par
+\b Q1. In SC1 When setting up a group EG2 to control whatever parameter in SC, it doesn't appear as a modulation source in the group mod matrix... Does it have to be used as the modsource at a keygroup/sample level? AEG and EG2 both appear as destinations but not as mod sources, why is that?\par
+\b0\par
+\cf1\b A.\b0  It's only the modulation sources that's calculated or available at the group-level that show up in the group-matrix. Since the EGs run on each voice they're not available at that 'level'.\cf0\par
+\par
+\b Q2. I'm talking about the group level AEG/EG2 that has the "overdide/offset" options. Are these not active? How can you use them as mod source?\par
+I can access the GroupLFO and use it as a mod source, all from the group screen. I just assumed I could do the same with the "group AEG and EG2" but maybe they're not really "group AEG and EG2" after all?\par
+\b0\par
+\cf1\b A. \b0 Yes. There's no seperate group EGs, it's just a way to control the EGs of the zones.\cf0\par
+\par
+\b Q3. what are the "group AEG and EG2" for then? They have "override" and "offset" options... how do I use them?\par
+\b0\par
+\cf1\b A.\b0  they're a quick way to control the envelope settings of all the zones in the group.\par
+when using override, the envelopes of all zones in the group will be using the settings you select here. (the settings in each zone will be ignored)\par
+when using offset, the settings used by the zone envelopes will be offset by the setting here. If you set attack to +1 time octave, the attack time of the envelope on each zone will be twice as long as the setting at the zone level.\cf0\par
+\par
+\b Q. .scm multi file saved in Cubase SX project doesn't load samples with the project opening, as i move stuff around alot and i get "file open error Io" if i then try manaully load the scm file cubase crashes, then i have to reboot\par
+How can this be avoided?\b0\par
+\par
+\cf1\b A.\b0  it's probably becuase it's unable to find the sample on the disk..\par
+if you open the .scm-file with a text-editor you should be able to see (and edit) the location of the samples. It may be unpractical if there's many of them though. (search-and-replace in notepad can be useful in those cases)\cf0\par
+\par
+\par
+\b Q1. If I setup an LFO to modulate pan, it works well for a long sample, or a sample with a loop section: as long as I hold the key down the sample will play with the pan nicely modulating from left to right and back again.\par
+Now, let's say I have a short hihat sample that I retrigger every 8th note from a sequencer. If I setup a slow rate LFO->pan on the hihat I would expect the hihats to pan smoothly from left to right and back.  What seems to happen though is that the pan for each new note is fairly random. I have the LFO set with keytrigger off and sync off.  Is this a bug, or am I perhaps misapplying something?\par
+\b0\par
+\cf1\b A.\b0  it's not a bug, it's just the LFOs that work this way. their phase are chosen randomly on each note-on unless they're temposynced or keytriggered.\par
+\cf0\par
+\par
+\b Q2.so to get the pan smoothly changing for retriggered hihats, I should use a synced LFO? that's cool, but sometimes I like to have the pan LFO independant of the tempo to add a kind of randomness to a beat (it never repeats exactly the same that way)...maybe an FR then to have the option of keeping the LFO running independantly of the triggering notes, unless there's a way to do this with the mod matrix?\par
+\b0\par
+\par
+\cf1\b A. \b0 yes, either that or put it in a group and use the group lfo.\par
+\cf0\par
+\par
+\b Q1. when you save multi+samples, the path displayed in shortcircuit for the sample doesn't reflect the new location....it's only a display problem, the filepath is fine in the scm file...  Bug?\par
+\par
+\b0\par
+\cf1\b A.\b0  it's not a bug, it's not the display that's incorrect, it's just that the save doesn't change the in-memory settings, as intended by design. So you'll have to reload the multi if you want to update the paths in-memory as well. This might seem slightly annoying, but i prefer it to the alternative which is that you're not able to save the multi & samples without forcing it to update the in-memory data, which would make it a pain to perform a copy of the data and keep working on the original set.\cf0\par
+\par
+\par
+\b Q2. If you select multipe samples at once and edit the filter/eq, you don't get the filter/eq spectrum graph display.\par
+Also, LP4M and LP4M saturated filters don't show spectrum display when modified. the curve is shown when using the filter for the first time. but after some use the curve isn't shown anymore when tweaking cutoff.\par
+\b0\par
+\par
+\cf1\b A.\b0  it's not a bug.. those filter types doesn't really 'have' a spectrum. I'm talking about LP4M & LP4M saturated.. these are not supposed to have filter curves (well, it could be nice, but they're not traditional digital filters so that's quite some work).\par
+\cf0\par
+\par
+\b Q. The pitch correct value right under the sample view seems reversed. When I put positive values, the pitch lowers and vice-versa.\par
+\par
+\b0\par
+\cf1\b A.\b0  it's intentional..  it's representing how much the sample is off pitch, and the sampler engine adjust's it in the opposite direction to get it in tune.. maybe a misleading name though\par
+\par
+\cf0\par
+\b Q. does shortcircuit use root-information from wav-samples?\par
+\par
+\b0\par
+\cf1\b A.\b0  here are two mechanisms for storing root keys & loops in wav-files, 'smpl'-chunks and 'inst'-chunks.. (that's what they're called within the wav file).\par
+sc reads the smpl-chunks but not the inst-chunks. when I wrote the wav-import code, the inst-chunks didn't seem to be in any general use and supported by any of the apps I tested with so I left it out.\par
+not though that when drag&dropping samples onto the keygroup-view it doesn't read smpl-chunks either, as the sample files aren't read until the files are actually dropped, but their keyrange are decided by the user while dragging prior to the drop..  it tries to find the root key by searching for patterns in the filename there though, as that seems to be far more common for multisamples.\par
+\cf0\par
+\par
+\b Q. When i set a sample to loop "forward crossfade" mode, the blue loop section markers dont work properly: when i try to drag them they don't move (but when i play the sample it does sound like the loop length is being changed).\par
+\par
+\b0\par
+\cf1\b A.\b0  when using crossfade looping there is as you probably know a third marker, between the loop start/end markers that controls the length of the  crossfade. It cannot be dragged past the start/end markers so in the case of a very tight loop from the beginning it's possible it won't move at all..  And it has a higher "priority" than the other markers so they won't move either if they're covered by the middle marker.\par
+Try setting a loop using the regular looping mode, switch to crossfade looping and try to loosen the middle marker by dragging the end marker to the left..\par
+\cf0\par
+\par
+\b Q. Is there an easy way to zone SFZ files?\par
+\b0\par
+\cf1\b A.\b0\par
+\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 1 create a new group\par
+{\pntext\f2\'B7\tab}2 drag the sfz onto SC1\par
+{\pntext\f2\'B7\tab}3 select all samples\par
+{\pntext\f2\'B7\tab}4 right click and move to new group\par
+{\pntext\f2\'B7\tab}5 rename the new group\par
+\pard\nowidctlpar\par
+Now group effects, envelopes and mod work.\cf0\par
+\par
+\par
+\b Q. How to set up Mod wheel to Pitch modualtion?\par
+\b0\par
+\cf1\b A.\b0\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 1 click new group header\par
+{\pntext\f2\'B7\tab}2 matrix 1s - groupLFO\par
+{\pntext\f2\'B7\tab}3 amt - 0.0%\par
+{\pntext\f2\'B7\tab}4 matrix 1d - pitch\par
+{\pntext\f2\'B7\tab}5 matrix 2s - modwheel\par
+{\pntext\f2\'B7\tab}6 amt - 50% to 500%\par
+{\pntext\f2\'B7\tab}7 matrix 2d - group mod slot #1\par
+\pard\nowidctlpar\cf0\par
+\par
+\b Q. Loading SFZ instuments\b0\par
+\par
+\cf1\b A.\b0  If you want to use your current SFZ lib save a group .SCG file to the same directory as the SFZ file. Now it can find the samples when loaded as a bank\par
+However you may experience problems getting SFZ's created with Chicken Systems Translator and DiscoDSP Highlife to work. For example the sample for C3 has the wrong root of C1\par
+Chicken Sys Translator doesnt do a good job translating to SFZ. It translates values like 0.250 to 5,9998AE or so. If you open the sfz files from chicken sys with SFZed, these values are in red (out of range, and with the "," instead of the dot)\par
+Additionaly, if you open some Highlife sfz maps with SFZed, and whitout chang\lang1033\f1 ing\lang1058\f0  anything, re-save them, Highlife may not open them properly.\cf0\par
+\par
+\par
+\b Q. How can I load sf2 and SFZ instruments into SC2, I update the database with paths but that doesn't change anyhting\par
+\b0\par
+\cf1\b A. \b0 Create the shortcut to the FOLDER the soundfont or sfz file is in, NOT to the soundfont itself, and put the shortcut to that folder in the Patches subdirectory of SC2. When you then right-click on the browser in the interface and select Refresh Database, the list of soundfonts and or sfz files in the folder will appear.\cf0\par
+\par
+\par
+\b Q. What are the limitations of SFZ import?\par
+\b0\par
+\cf1\b A.\b0  if you have some SFZ files with some advanced programming, dont expect that the sc use it. By example, if you have for the same layer and the same notes several samples, that you programmed to play randomly, by example, and staccato, SC simply ignores this, and always plays the same sample. Also, if you have a SFZ file with keyswitching, SC loads all the wav files simultaneously, instead of the proper layer according to the keyswitch you pressed\cf0\par
+\par
+\par
+\b Q. Can SC be used as a synth?\b0\par
+\par
+\cf1\b A. \b0 You can use the onboard oscillators in the filter section to do some synth sounds. In SC1 you load a silent wavefile and loop. In SC2 it may be any sample, it gets muted automatically \par
+But be aware that CPU consuption will skyrocket.\par
+\cf0\par
+\par
+\cf2\b TIP\cf0\b0 : one trick in \lang1033\f1 SC2 is if you change the \'a8hi\'a8 key in the \'a8names and ranges\'a8 the loop will split to the keys covered. If you drag the keyrange beyond the keys needed for the loop it loops back on itself\par
+\lang1058\f0\par
+\par
+\cf2\b TIP\cf0\b0 : In SC2 if you right-click in the virtual keyboard zone and select "switch to pad view", which is very convenient for drum kits.\par
+\par
+\par
+\par
+\b Q. What are the numbers above some of the ADSR sliders ... value multipliers or range limiters ? is that seconds ?\par
+\b0\par
+\cf1\b A. \b0 0 is a linear function, - values change it progressively (with increasing value) to a concave curve , + values to a convex curve \cf0\par
+\par
+\par
+\b Q. in SC2 the wav loops i load don't look sliced at all, and even by selecting "slice keymapped" and stretching the sample to one ocatve on the keymap, it does nothing : only C2 can trig the loop (no automatpping), and i can't manage to add slices (even right click > set zone start" does nothi\lang1033\f1 n\lang1058\f0 g at all). How can I fix that?\par
+\b0\par
+\cf1\b A.\b0  If you cannot get it to work a workaround might be in order. Create markers in the file a wave editor (Accoustica or \lang1033\f1 W\lang1058\f0 avosaur for instance) and save the file so they're embedded in it. Then load it into SC2 and it will get automaticaly set to "Slice Keymapped" and be sliced where you put labels (with orange H markers). You will also able to spread it to get the loop divided across the keyboard. You may not be able to add new slices but you still should be able move the existing ones.\par
+Just stretch that note and you'll have each slice on a separate note (if you have 10 slices strech the note to 10 notes)\cf0\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : In SC2 before you can use the controllers you have to setup up (map) each one first. go to the config window and ie. map controller 1 to midi CC 8 .... now you can use controller 1 as a modulation source in the modulation matrix . now you can tweak CC8 in your midi controller to obtain modulation (the controller sliders in sc2 will move when you tweak the midi controller)\par
+\par
+\par
+\cf2\b NOTE\cf0\b0 : In SC2 you can change the interface. Press CTRL-F12, and you can click and drag everything around. So you can move the list of samples over to the keyboard, etc, if you want. Press CTRL-F12 again to turn off editing the interface.\par
+Be careful, here though. Very easy to move things around. And the graphic files for the interface are in the folder Shortcircuit2\\database\\GUI. Skinnable, in other words, though not something you can just throw together.\par
+What you can't do, though, is move the larger background in the center of the Zones page or other pages. Each is a graphic that includes things like the black space in which the wave display appears at the top of the Zones page. Easy to shrink the wave display and drag the graphics for parameters, etc up--just drag the mouse pointer around the edges of all the commands and then use the cursor keys to move them up. But once you get them up there, the background graphic is your enemy\par
+\par
+\par
+\b Q. How to modulate pan sweeps?\b0\par
+\par
+\cf1\b A.\b0  you can do this in sc2 easily with a synced lfo. in the zone mod matrix : lfo1 --> pan . then setup the lfo. done. be aware that sc2 has no parameter automation.\par
+in sc1 what you have to do is set the pan for the sample at -100%. Then setup a mod matrix entry from auto000 to pan with 200% amount. 0-1 on auto000 will then correspond to -100% - 100% on pan.\cf0\par
+\par
+\par
+\cf2\b TIP\cf0\b0 : modulating the "rate" parameter can make a sample play backwards. it goes something like this, first set sample forward loop, then try setting random +- to rate (linear) with a value of -200. or try setting up alternate or gate to rate (linear) with a value of -200\par
+\par
+\par
+\b Q. Is it true that in SC2 there's no automation?\par
+\b0\par
+\cf1\b A.\b0  that's not exactly true. Say you've got a controller with 8 faders CC20-27.\par
+\par
+\pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-720\li720 Click Config\par
+{\pntext\f2\'B7\tab}In the User Parameter area.\par
+{\pntext\f2\'B7\tab}Set 1-8 to CC\par
+{\pntext\f2\'B7\tab}1-20\par
+{\pntext\f2\'B7\tab}2-21\par
+{\pntext\f2\'B7\tab}3-22\par
+{\pntext\f2\'B7\tab}4-23...8-27\par
+{\pntext\f2\'B7\tab}Click Part and move your controller faders.\par
+{\pntext\f2\'B7\tab}You'll see the Bottom Left Controls move.\par
+{\pntext\f2\'B7\tab}Click in the emptry area above the control.\par
+{\pntext\f2\'B7\tab}Label these to corrospond to your controller (s1-s8 here).\par
+{\pntext\f2\'B7\tab}If you want the controller - to + instead of 0 to + click the little button.\par
+{\pntext\f2\'B7\tab}Click in the mod matrix on the right and you'll see that.\par
+{\pntext\f2\'B7\tab}C1- through C8 - has changed to C1-S1 through C1-S8.\par
+{\pntext\f2\'B7\tab}Click Zones.\par
+{\pntext\f2\'B7\tab}Click in a mod matrix source slot and select C1-S1.\par
+{\pntext\f2\'B7\tab}Click in the destination slot and select what ever it is you want to automate.\cf0\par
+\pard\nowidctlpar\par
+\par
+\b Q. Is there sample replace option in SC2?\par
+\b0\par
+\cf1\b A. \b0 click on the sample you want to replace in the keyboard on the left of the GUI, then click on the replace button in the "sample" section just under the waveform dispay. Now chose which new sample is going to replace the old one by clicking on samples in the sample browser.\par
+\cf0\par
+\par
+\cf2\b NOTE\cf0\b0 : in SC2 PFG parameter means Post Filter Gain\par
+\par
+\par
+\par
+\b Q. How in SC2 the parameters in the lower part of the Name & Ranges section work?\par
+\b0\par
+\cf1\b A.\b0  It determines if (=under which circumstances) the sample is played back.\par
+\par
+Examples:\par
+\par
+- noise: quasi-random\par
+\par
+- modwheel: only when the modulation has an amount which is within the lower and the upper boarder the sample is played. (you can trigger several different samples this way, one at a time, each one with a different range on the mod wheel, and a delay & reverb on the output. As the mod wheel sweep it triggers a different sample for the notes.\par
+if you set 0 - mod wheel - 63 the sample will only play when the mod wheel is 0-50%, at 50-100% will not play.) \par
+\par
+what the lower and upper border is, depends on the respective source and in the case of sync, 0 is the cycle start and 127 is the cycle end. It has nothing to do with key-ranges or velocity. Cycle means the interval which is specified by the source parameter (1-2beats or 1,2 or 4 bars). However the values aren't absolutely exact. E.g. when you have chosen 'sync(2bars)' then the first bars is within 0-62 and the second one within 63-127\par
+These settings control if and when a sample will play on a given beat and\\or in a given bar.\par
+For example set the parameter to sync (1 bar). Then set the range from 0 to (127/4) = 32. Only notes played during the 1st beat will sound. \cf0\par
+\par
+\par
+\b Q. in SC2 does the "play" triangle mean you can audition by mouseclick?\par
+\par
+\b0\par
+\cf1\b A.\b0  The "play triangle" is there for auditioning if you dont have "auto" next to it selected. If the latter is selected, you hear the sample whenever clicking on the sample name in the browser. \cf0\par
+\par
+\par
+\b Q. In SC2 can you move around/swap the samples like the cells in Battery? Can you use the arrow keys/mouse wheel in the browser? \par
+\b0\par
+\cf1\b A. \b0\par
+\par
+1) drag'n'drop at will (with ctrl held to copy)\par
+2) 2/8 on the numerical keypad steps through the entries, pressing 5 will load it to the next free key.\par
+\par
+\cf0\par
+\b Q. In SC1 multi-out setup some kegroup parameters do not affect the grouped samples unless "group mixing" button is engaged, amplitude is probably the most notable, but once you engage this button the signal is routed back to the main channel and multi-out setup is no longer active. How can key group parameters be manipulated in multi-out mode?\par
+\par
+\b0\par
+\cf1\b A.\b0  It can be done via modulation matrix, for this in \lang1033\f1 its\lang1058\f0  source \lang1033\f1 section \lang1058\f0 select 'one' and in the destination whatever parameter that you need to tweak, as long as it's available in the 'destination' list, admplitude is. Then change the value. \par
+\cf0\par
+\par
+\b Q. In SC1 when I load one \lang1049\'f1\lang1058 ycle waveform like triangle, square etc and try to set a loop I can't move the loop points, they stick to one another and don't let me separate them\par
+\b0\par
+\par
+\cf1\b A.\b0  Disengage 'snap' button, so they don't lock onto the zero crossing of the wave cycle, then you can move them freely\par
+\par
+\par
+\cf0\b Q.\lang1033\f1  i wanna simulate delay using a looped sample, that is it should fade out with time, how can i set it up?\par
+\par
+\cf1\lang1058\f0 A.\b0  \lang1033\f1 the loop amplitude is controlled by amplitude EG of the zone, same as for one shot mode, so first you select 'forward loop' mode so the sample loops continuously after key release, then adjust the envelope release to taste.\cf0\lang1058\f0\par
+\fs24\par
+\cf2\b\fs20\par
+TIP\cf0\b0 :\lang1033\f1  when a sample is in loop mode this modulation setup\par
+[is within loop] [0.00st] [rate (linear)]\par
+\par
+make the sample play once at the original pitch, and in all following repetitions play at higher/lower pitch according to the numeric value\par
+\par
+in this modulation setup\par
+[position in loop] [0.00st] [rate (linear)]\par
+\par
+the pitch of the sample gradually changes within one repetition each time it's played\par
+\par
+\par
+\lang1058\b\f0 Q.\lang1033\f1  How can i adjust loop repetition time, similar to delay units?\par
+\par
+\cf1\lang1058\f0 A.\lang1033\f1  \b0 this modulation matrix setup can do it\par
+\par
+[temposync (1 beat)] [-15.0st] [loop length]\par
+\par
+this is correspondent to 1/4 unit\par
+\par
+the effect becomes apparrent only from setting -15.0st, positive values do not affect the playback at all\cf0\b\par
+\lang1058\b0\f0\fs24\par
+\fs20\par
+\fs28 ***************************************************************************************************************************************************************\fs20\par
+\par
+Sources used besides http://forum.vemberaudio.se/index.php#2 :\par
+\par
+http://www.kvraudio.com/forum/viewtopic.php?t=196784\par
+http://www.kvraudio.com/forum/viewtopic.php?t=178377&postdays=0&postorder=asc&start=0\par
+http://www.dogsonacid.com/showthread.php?threadid=535746&cache=29\par
+http://www.cockos.com/forum/showthread.php?t=14727\par
+\par
+\fs28 ***************************************************************************************************************************************************************\fs20\par
+}
+ 

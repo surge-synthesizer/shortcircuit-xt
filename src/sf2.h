@@ -143,4 +143,4 @@ enum sf2_generators
 	sf2_numgenerators,
 };
 
-#pragma pack()
+#pragma pack(pop)

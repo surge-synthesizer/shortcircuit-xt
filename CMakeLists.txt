@@ -236,6 +236,7 @@ if( WIN32 )
     WIN=1
     WINDOWS=1
     TARGET_HEADLESS=1
+    _CRT_SECURE_NO_WARNINGS=1
     )
 
   target_link_libraries( sc-headless
@@ -310,11 +311,21 @@ target_compile_definitions( ShortCircuit3 PUBLIC
   JUCE_JACK=1
   )
 
-target_compile_definitions( ShortCircuit3 PUBLIC
-  WIN=1
-  WINDOWS=1
-  TARGET_HEADLESS=1
-  )
+if( APPLE )
+  target_compile_definitions( ShortCircuit3 PUBLIC
+    MAC=1
+    TARGET_HEADLESS=1
+    )
+elseif( WIN32 )
+  target_compile_definitions( ShortCircuit3 PUBLIC
+    WIN=1
+    WINDOWS=1
+    TARGET_HEADLESS=1
+    _CRT_SECURE_NO_WARNINGS=1
+    )
+else()
+endif()
+
 
 target_link_libraries( ShortCircuit3 PRIVATE
   ShortCircuit3-Binary

@@ -153,7 +153,7 @@ struct akai_s6k_akp_keygroup
 	int8 keyscale;
 };
 */
-#pragma pack()
+#pragma pack(pop)
 
 bool sampler::load_akai_s6k_program(const char *filename,char channel,bool replace)
 {

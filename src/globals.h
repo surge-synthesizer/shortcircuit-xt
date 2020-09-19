@@ -55,5 +55,5 @@ extern float samplerate_inv;
 extern float multiplier_freq2omega;
 
 #if !WINDOWS
-#define stricmp strcasecmp
+#include "windows_compat.h"
 #endif

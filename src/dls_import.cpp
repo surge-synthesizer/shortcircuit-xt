@@ -133,6 +133,7 @@ int parse_dls_patchlist(void* data, size_t filesize, void **plist)
 
 int get_dls_patchlist(const wchar_t *filename, void **plist)
 {
+#if WINDOWS
 	assert(filename);		
 
 	HANDLE hf = CreateFileW(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
@@ -156,6 +157,8 @@ int get_dls_patchlist(const wchar_t *filename, void **plist)
 	CloseHandle(hf);
 
 	return result;
+#endif
+    return 0;
 }
 
 bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int patch, char *filename)

@@ -1,0 +1,332 @@
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fswiss\fcharset0 Arial;}}
+{\*\generator Msftedit 5.41.15.1503;}\viewkind4\uc1\pard\lang1033\f0\fs18 http://wiki.vemberaudio.se/shortcircuit:gui:browser?do=index\b\fs28\par
+\par
+\fs40 Shortcircuit 2 Wiki\fs28\par
+\par
+Change Log\b0\fs20\par
+\par
+\b\i Post-alpha versions\b0\i0\par
+\par
+\b v0.5.1\b0\par
+\par
+    *      Ctrl-click to reset a parameter didn\rquote t always update the engine setting\par
+    *      Fixed issue with names of user parameters not being set/stored properly\par
+    *      LFO Cycle/Step parameter wasn\rquote t restored correctly when loading\par
+    *      No longer crashed on drag&drop with no samples selected in the browser. It is also no longer possible to initialize an empty drag&drop.\par
+\par
+\b v0.5.0\b0\par
+\par
+    *      First release as freeware\par
+    *      Improved stability\par
+    *      Pre-VST2.4 compatibility fix\par
+    *      Adding a key DumpExceptions with the value 1 to the config file will use a built-in crashlogger\par
+\par
+\par
+\b\i Alpha versions\i0\par
+\b0\par
+\par
+\b Alpha 8 (r135)\b0\par
+\par
+    *      Fixed crash that occured when opening editor while notes were playing.\par
+    *      Fixed other gui crash fixes\par
+    *      Fixed SFZ load\par
+    *      Added new filter-type, imported from surge: LP/BP/HP 2/4-pole with stable self-oscillation\par
+    *      Envelope shapes now work again, and without their former performance penalty.\par
+    *      Notes are now turned off when sample-end is reached, unless certain filters are used (surge filters, comb or oscillators)\par
+    *      pw osc: sync can no longer be negative\par
+    *      Added ring-modulation option to sawtooth osc\par
+\par
+\b Alpha 7 (r32)\b0\par
+\par
+    *      Made a bunch of stuff \ldblquote safer\rdblquote\par
+    *      Part Legato Bug probably fixed\par
+    *      Sample Preview in the browser\par
+    *      Browser key commands improved (see Keyboard Command Reference)\par
+\par
+\b Alpha 6 (r23)\b0\par
+\par
+    *      Bugfixes, bugfixes, bugfixes.. Hopefully all the main causes of crashes are now gone.\par
+    *      Improved resampling interpolation\par
+    *      Cosmetic improvements\par
+\par
+\b Alpha 5\par
+\b0\par
+Pulled because of instability.\par
+\par
+    *      New interpolator that handles 16-bit files natively. It is also faster and has a slightly different behaviour in the finer details of the looping modes. Sample playback doesn\rquote t necessarily stop at the zone-end point now (unless shot mode is used) so filters such as comb & oscillators will continue to sound until the key is released.\par
+\par
+    *      The Envelope curve parameter is currently disabled as it was too expensive CPU-wise. Will either be replaced by a faster equivalent or something else in a later release.\par
+\par
+    *      Added VU-meters & visual MIDI feedback, fixed bipolar controls.\par
+\par
+    *      Added pad-controller mode. (zones are arranged in 4\'d74 blocks)\par
+\par
+    *      other bug-fixes & optimizations.\par
+\par
+\b Alpha 4\b0\par
+\par
+    *      New fileformat\par
+\par
+          o            Can have embedded samples (all samples are embedded in this alpha, options not to embed specific samples will be added later)\par
+          o            RIFF based instead of XML (faster, more compact and it makes embedding binary data practical)\par
+          o            All samples are currently embedded as 32-bit float data. This is because only a single copy of each sample is kept in memory and it needs to be in float for the interpolation. A 16-bit interpolation mode will be added later and will be used when suitable.\par
+\par
+    *      New Skin\par
+\par
+          o            Fit on 1024\'d7768 monitors\par
+          o            Darker\par
+          o            Prettier?\par
+\par
+    *      Other\par
+\par
+          o            Note-on conditions reworked\par
+          o            Improved limiter (feedback mode & RMS/Peak switch)\par
+          o            Removed a couple of filters that weren\rquote t general enough. There will be new filters to replace them in the future.\par
+          o            MorphEQ temporarily removed. Will be back and make more sense later.\par
+          o            Various bug/glitch fixes\par
+\par
+\b Alpha 3\b0\par
+\par
+    *      Fixed AKAI crossfade import.\par
+    *      Fixed filter related crashes.\par
+    *      Fixed LP4 MG whine\par
+    *      StepLFO MIDIsync implemented.\par
+    *      Polymode (legato/mono/poly & portamento) moved to the part level.\par
+    *      Added AIFF import\par
+    *      Added Slice import for WAV & AIFF files\par
+    *      Added partial .DLS & .GIG import\par
+    *      Implemented Note-on Conditions (note\rquote s only play if a mathematical expression is true)\par
+    *      Added part-level modulation routing\par
+\par
+\b Alpha 2\b0\par
+\par
+Installer has an option to install one of three binaries:\par
+\par
+    *      64-bit (x64)\par
+    *      32-bit for modern CPUs that supports SSE2\par
+    *      32-bit for older CPUs (Pentium 3 and Athlon XP) that doesn\rquote t support SSE2\par
+\par
+CPU optimizations\par
+\par
+Modulation routing curves introduced. Q1-12 is intended for quantitizing to a note value at pitch destinations.\par
+\par
+Modulation slot depth-destinations removed.\par
+\par
+For the sake of host compability, the editor now have several strategies for recieving keyboard events.\par
+\par
+\b Alpha 1\b0\par
+\par
+First release.\par
+\par
+\pard\ri-1800 *******************************************************************************************************************\par
+\pard\par
+\b\fs28 Hierarchies\fs20\par
+\b0\par
+No, this page isn\rquote t about your boss, or kings in the dark ages. Instead, it deals with how samples are organized within shortcircuit. Understanding the logic behind the design will make it more intuitive to use.\par
+\par
+\b Zones\b0\par
+\par
+Zones are the primary data structure editable by the user in shortcircuit. When you load samples into shortcircuit a zone will automatically be created for each sample.\par
+\par
+A zone contains:\par
+\par
+    *      A reference to a sample\par
+    *      A range of keys, velocity and more in which incoming events will play back the zone\par
+    *      Parameters used for playing back the sample\par
+\par
+\b Parts\b0\par
+\par
+A part is roughly what one typically consider to be a \ldblquote MIDI channel\rdblquote . There are 16 of them, they respond to a single MIDI channel, they can contain any number of zones and they can be saved/loaded as patches.\par
+\par
+A part contains:\par
+\par
+    *      Any number of zones\par
+    *      Settings for the processing done in the part\par
+    *      8 Layers\par
+\par
+\b Layers\b0\par
+\par
+Each zone are assigned to one of the 8 layers of the part they belong in.\par
+\par
+A layer provides:\par
+\par
+    *      Velocity swithching/crossfading for the zones\par
+    *      Extra range control for the zones in the layer\par
+\par
+\par
+*******************************************************************************************************************\par
+\par
+\b\fs28 Browser\b0\fs20\par
+\par
+\b Introduction\b0\par
+\par
+Shortcircuit has a database that makes it easy to find track on samples & patches in selected directories of your hard-drive. A free-text filter lets you instantly find what you\rquote re looking for.\par
+\par
+\b Setup the database\b0\par
+\par
+\b Using it in Shortcircuit\b0\par
+\par
+*******************************************************************************************************************\par
+\par
+\b\fs28 Getting Started\b0\fs20\par
+\par
+Before starting to use shortcircuit\'b2, click Database Management in the shortcircuit\'b2 start-menu group. Follow the instructions in readme.txt to add you samples and patches to the database. It will do wonders for your workflow.\par
+\par
+Next step is to fire up the plug-in in your favourite VST-host. Head over to the configuration and choose the number of stereo outputs you want. You can also assign User Parameters to hardware knobs and sliders here. Click Save config when you\rquote re done. You need to restart shortcircuit for the number of outputs to change. (by f.e. reloading the song you work on).\par
+\par
+Head over to the Zone page and start using it.\par
+\par
+*******************************************************************************************************************\par
+\par
+\b\fs28 Part Editor\fs20\par
+\par
+Main Section\par
+\par
+Control Related\par
+\par
+User Parameters\par
+\par
+Velocity Split/Crossfade\b0\par
+\par
+This feature is intended to provide a means of automatic velocity switching/crossfading for multisampled instruments. When this feature is used, the zone velocity settings are ignored for the zones on the affected layers.\par
+\par
+\pard\fi-2880\li2880 Velocity-split Layer selection \tab Chooses which layers that are used for switching/crossfading. The remaining layers will play as usual\par
+\pard\par
+\pard\fi-2880\li2880 Equal Gain / Equal Power \tab This setting affects the crossfade mode of the crossfade   operations within the part (velocity & key), even when the above setting is \lquote off\rquote\par
+\pard\par
+\pard\fi-2160\li2160 Distribution skew \tab Positive values will distribute the resulting splits towards higher velocities, negative settings toward lower velocities.\par
+\pard\par
+\pard\fi-2160\li2160 Crossfade amount \tab Sets the amount by which the zones of the velocity split/crossfade overlap.      (0% for no crossfade, 100% will always play 2 zones except for the edge-cases)\par
+\pard\par
+The remaining layers will play as usual and are suitable for samples which should be unaffected by the velocity switch/crossfade.\par
+\par
+\b Note-on Conditions\par
+\par
+Audio Routing/FX\par
+\par
+Outputs\par
+\par
+Insert Effects\par
+\b0\par
+\par
+*******************************************************************************************************************\par
+\par
+\par
+\b\fs28 Crossfading\b0\fs20\par
+\par
+Crossfading between different samples can be done in multiple ways in shortcircuit depending on what you want to accomplish.\par
+\par
+\b Zone Key Crossfading\b0\par
+\par
+To use this feature, place the zones adjacent as you would when not crossfading, but set the high key crossfade parameter of the lower zone in a split to match the low key crossfade of the upper zone of the split.\par
+\par
+ex.\par
+Zone 1 C1 - B1\par
+Zone 2 C2 - B2\par
+Set Zone 1 high key crossfade to 4\par
+Set Zone 2 low key crossfade to 4\par
+The Zones will now be crossfaded between G#1 and E2. \par
+\par
+The part editor setting of whether Equal Gain or Equal Power should be used apply to Zone Crossfades as well\par
+\par
+\b Layer Velocity Crossfading\b0\par
+\par
+For multisampled instruments (like piano) where you have entire keybeds of samples at different velocities the best approach is to place the zones on different layers and use tools in the Layer Velocity Split/Crossfade section of the Part Editor\par
+\par
+\b Zone Velocity Crossfading\b0\par
+\par
+When you wish to have control over the velocity split/crossfade for each key, like you would want on a drumkit, setting the velocity range for the zones directly is a better option. This works similarly to the Zone Key Crossfading i.e. you set the amount the adjacent zones fade between each other with the matching low/high crossfade pair.\par
+\par
+ex.\par
+Zone 1 0 - 63\par
+Zone 2 64 - 127\par
+Set Zone 1 high vel crossfade to 32\par
+Set Zone 2 low vel crossfade to 32\par
+The Zones will now be crossfaded between 31 and 96. \par
+\par
+ \par
+*******************************************************************************************************************\par
+\par
+\par
+\b\fs28 Filter/Effect Algorithm Reference\par
+\b0\fs20\par
+\b General Algorithms\b0\par
+\par
+    *      LP/HP/BP/N 2-8P\par
+    *      LP 1-4P MG\par
+    *      EQ 2-band parametric\par
+    *      EQ 6-band graphic\par
+    *      Comb\par
+    *      Lofi (digital)\par
+    *      Distortion 1\par
+    *      Limiter\par
+    *      Clipper\par
+    *      Slewer\par
+    *      Stereo Tools\par
+    *      Gate\par
+    *      Microgate (glitch)\par
+    *      Ring Modulator\par
+    *      Frequency Shifter\par
+    *      Phase Modulation\par
+    *      Treemonster\par
+\par
+\b Limiter\b0\par
+\par
+The limiter has two modes: FF (feedforward) and FB (feedback). The FF mode will follow your parameters more closely at extreme settings, while the FB mode stays rather smooth sounding no matter how much you abuse it.\par
+\par
+    *      input gain - how hard you wish to drive the limiter\par
+    *      attack - Attack Time\par
+    *      release - Release Time\par
+    *      initial - amount of click on note-on when used in a zone\par
+\par
+There is also a choice between using Peak and RMS for the gain-detection which have a subtle effect on the character of the compression.\par
+\par
+\b Part/Global-Only Algorithms\b0\par
+\par
+    *      Delay\par
+    *      Reverb\par
+    *      Chorus\par
+    *      Phaser\par
+    *      Rotary Speaker\par
+    *      Faux Stereo\par
+    *      Freqshift Flanger\par
+    *      Freqshift Delay\par
+\par
+\b Zone-Only Algorithms\b0\par
+\par
+    \b\i *      Oscillators\b0\i0\par
+\par
+          o            Osc: Pulse\par
+          o            Osc: Pulse (sync)\par
+          o            Osc: Sawtooth\par
+          o            Osc: Sine\par
+\par
+*******************************************************************************************************************\par
+\par
+\b\fs28 Keyboard Command Reference\par
+\b0\fs20\par
+\b Global\par
+\b0\par
+Key \tab Action\par
+A \tab Audition Current Zone\par
+Up \tab Select Next Zone\par
+Down \tab Select Previous Zone\par
+\par
+\b Browser\par
+\b0\par
+Z \tab Toggle Zoom in KeyView\par
+8 \tab Previous Entry\par
+2 \tab Next Entry\par
+5 \tab Load Entry\par
+4 \tab Previous Category\par
+6 \tab Next Category\par
+1 \tab Parent Category\par
+7 \tab Child Category\par
+\par
+\b GUI Editor\par
+\b0\par
+Ctrl+F12 \tab Open/Close GUI Editor\par
+\pard\fi-1440\li1440\tx1440 S \tab Save Changes\par
+\pard  \par
+}
+ 
