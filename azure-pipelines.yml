@@ -35,6 +35,8 @@ jobs:
     displayName: cmake 
 
   - bash: |
+      # This is a hack while i make the win tmp depend properly
+      cmake --build build --config Release
       cmake --build build --config Release --target win-tmp-zip
     displayName: Build
 
