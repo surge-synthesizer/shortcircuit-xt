@@ -15,6 +15,17 @@ else()
   message( STATUS "Building in 64 bit configuration" )
 endif()
 
+#
+# FIXME use the better git approach
+#
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+
 add_subdirectory(libs/JUCE)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -336,3 +347,20 @@ target_link_libraries( ShortCircuit3 PRIVATE
   juce::juce_box2d
   juce::juce_dsp
 )
+
+
+if( WIN32 )
+  add_custom_target( win-tmp-zip )
+  add_custom_command(
+    TARGET win-tmp-zip
+    POST_BUILD
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/asset
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/zipme
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/ShortCircuit3_artefacts/${CMAKE_CFG_INTDIR}" ${CMAKE_BINARY_DIR}/zipme
+    COMMAND erase zipme\\*lib
+    COMMAND powershell Compress-Archive
+           -DestinationPath "${CMAKE_BINARY_DIR}/asset/sst-project-3-${GIT_COMMIT_HASH}.zip"
+           -Path "${CMAKE_BINARY_DIR}/zipme"
+  )
+endif()
