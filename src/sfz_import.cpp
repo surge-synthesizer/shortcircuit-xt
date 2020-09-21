@@ -13,6 +13,10 @@
 #include "modmatrix.h"
 #include "configuration.h"
 
+#include <algorithm>
+using std::min;
+using std::max;
+
 int keyname_to_keynumber(const char *name)	// using C4 == 60
 {
 	int key = 0;

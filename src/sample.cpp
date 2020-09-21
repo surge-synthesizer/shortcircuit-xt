@@ -150,6 +150,7 @@ bool sample::load(const wchar_t *filename)
 	int sample_id,program_id;
 	conf->decode_pathW(filename,filename_decoded,extension,&program_id,&sample_id);
 
+#if WINDOWS    
 	HANDLE hf = CreateFileW(filename_decoded, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if(!hf) return false;
 	size_t datasize = GetFileSize(hf,NULL);
@@ -162,7 +163,12 @@ bool sample::load(const wchar_t *filename)
 	}
 
 	void *data = MapViewOfFile(hmf,FILE_MAP_READ,0,0,0);	
-
+#else
+    std::cout << "Implement with mmap" << std::endl;
+    size_t datasize = 0;
+    void *data = nullptr;
+#endif    
+    
 	clear_data();	// clear to a more predictable state
 	
 	const wchar_t *sname = wcsrchr(filename,L'\\');	
@@ -197,11 +203,14 @@ bool sample::load(const wchar_t *filename)
 		assert(SampleData[0]);
 		if(channels==2) assert(SampleData[1]);	
 	}
-		
+
+#if WINDOWS    
 	UnmapViewOfFile(data);
   
 	CloseHandle(hmf);
 	CloseHandle(hf);
+#endif
+    
 	if(r) wcsncpy(this->filename,filename,pathlength);
 	
 	if (!r)

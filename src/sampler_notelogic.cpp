@@ -7,6 +7,10 @@
 #include "tools.h"
 #include "interaction_parameters.h"
 
+#include <algorithm>
+using std::min;
+using std::max;
+
 void sampler::kill_notes(uint32 zone_id)
 {	
 	int i;

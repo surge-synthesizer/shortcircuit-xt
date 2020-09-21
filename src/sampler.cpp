@@ -9,7 +9,11 @@
 #include <string>
 #include <iostream>
 #include <tinyxml/tinyxml.h>
+#if WINDOWS
 #include <windows.h>
+#else
+#include "windows_compat.h"
+#endif
 #include "globals.h"
 #include "mathtables.h"
 #include "sampler_voice.h"
@@ -18,7 +22,7 @@
 #include <AEffEditor.h>
 #include <audioeffectx.h>
 #endif
-#include "morpheq.h"
+#include "morphEQ.h"
 #include "configuration.h"
 #include "interaction_parameters.h"
 
@@ -28,6 +32,10 @@
 
 #include <list>
 using std::list;
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 float samplerate;
 float samplerate_inv;

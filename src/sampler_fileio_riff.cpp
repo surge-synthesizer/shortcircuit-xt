@@ -12,7 +12,12 @@
 #include <assert.h>
 #include <algorithm>
 
+#if WINDOWS
 #include <windows.h>
+#else
+#include "windows_compat.h"
+#endif
+
 #include "globals.h"
 #include "versionno.h"
 #include "memfile.h"

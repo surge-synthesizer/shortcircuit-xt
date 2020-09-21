@@ -16,14 +16,17 @@
 #include "sampler_state.h"
 #include "configuration.h"
 
-#include <windows.h>
 #include "globals.h"
 #include "versionno.h"
 //#include <wx/wfstream.h>
 //#include <wx/zipstrm.h>
 
+#if WINDOWS
 #include <windows.h>
 #include <shlobj.h>
+#else
+#include "windows_compat.h"
+#endif
 
 #include <string>
 using std::string;
