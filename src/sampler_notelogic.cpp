@@ -227,130 +227,140 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
 	}
 
 	// find matching zone
-	for(int z=0; z<max_zones; z++)
-	{
-		if (!zone_exists[z]) goto skipzone;
-		if (zones[z].mute)	goto skipzone;
-		if (require_ignore && !zones[z].ignore_part_polymode) goto skipzone;
-		if (is_release && (zones[z].playmode != pm_forward_release)) goto skipzone;
-		if (!is_release && (zones[z].playmode == pm_forward_release)) goto skipzone;
-		if (channel != parts[zones[z].part&0xf].MIDIchannel) goto skipzone;
-		if ((sample_replace_filename[0] != 0) && (selected->zone_is_active(z))) goto skipzone;												
-		if (selected->get_solo() && !selected->zone_is_selected(z))	goto skipzone;	
-		
-		int p = zones[z].part&0xf;
-		int zkey = key + parts[p].transpose - parts[p].formant;	// key used for range check
-		if (zkey < (zones[z].key_low - zones[z].key_low_fade)) goto skipzone;
-		if (zkey > (zones[z].key_high + zones[z].key_high_fade)) goto skipzone;											
-		if (!partv[p].mm->check_NC(&zones[z])) goto skipzone;
+	for(int z=0; z<max_zones; z++) {
+        if (!zone_exists[z]) goto skipzone;
+        if (zones[z].mute) goto skipzone;
+        if (require_ignore && !zones[z].ignore_part_polymode) goto skipzone;
+        if (is_release && (zones[z].playmode != pm_forward_release)) goto skipzone;
+        if (!is_release && (zones[z].playmode == pm_forward_release)) goto skipzone;
+        if (channel != parts[zones[z].part & 0xf].MIDIchannel) goto skipzone;
+        if ((sample_replace_filename[0] != 0) && (selected->zone_is_active(z))) goto skipzone;
+        if (selected->get_solo() && !selected->zone_is_selected(z)) goto skipzone;
 
-		float crossfade_amp = 1.f;
+        int p = zones[z].part & 0xf;
+        int zkey = key + parts[p].transpose - parts[p].formant;    // key used for range check
+        if (zkey < (zones[z].key_low - zones[z].key_low_fade)) goto skipzone;
+        if (zkey > (zones[z].key_high + zones[z].key_high_fade)) goto skipzone;
+        if (!partv[p].mm->check_NC(&zones[z])) goto skipzone;
 
-		if(zones[z].key_low_fade || zones[z].key_high_fade)
-		{
-			if(zkey < (zones[z].key_low + zones[z].key_low_fade)) crossfade_amp = ((float)zkey - zones[z].key_low + zones[z].key_low_fade) / ((float)zones[z].key_low_fade * 2.f);
-			else if(zkey > (zones[z].key_high - zones[z].key_high_fade)) crossfade_amp = 1.f - (((float)zkey - zones[z].key_high + zones[z].key_high_fade) / ((float)zones[z].key_high_fade * 2.f));					
-			
-			crossfade_amp = limit_range(crossfade_amp,0.f,1.f);
-		}
+        float crossfade_amp = 1.f;
 
-		int n_split = parts[zones[z].part&0xf].vs_layercount;								
-		if(n_split && (zones[z].layer <= n_split))
-		{
-			float k = zones[z].layer;
-			float xf = parts[zones[z].part&0xf].vs_xfade;
-			float fvlo0 = (k - 0.5f * xf) / ((float)n_split + 1.0f);
-			float fvlo1 = (k + 0.5f * xf) / ((float)n_split + 1.0f);
-			float fvhi0 = (k + 1.0f - 0.5f * xf) / ((float)n_split + 1.0f);
-			float fvhi1 = (k + 1.0f + 0.5f * xf) / ((float)n_split + 1.0f);
+        if (zones[z].key_low_fade || zones[z].key_high_fade) {
+            if (zkey < (zones[z].key_low + zones[z].key_low_fade)) crossfade_amp = ((float) zkey - zones[z].key_low +
+                                                                                    zones[z].key_low_fade) /
+                                                                                   ((float) zones[z].key_low_fade *
+                                                                                    2.f);
+            else if (zkey > (zones[z].key_high - zones[z].key_high_fade)) crossfade_amp = 1.f - (((float) zkey -
+                                                                                                  zones[z].key_high +
+                                                                                                  zones[z].key_high_fade) /
+                                                                                                 ((float) zones[z].key_high_fade *
+                                                                                                  2.f));
 
-			// map to -1 .. 1
-			fvlo0 = saturate(fvlo0*2.f - 1.f);
-			fvlo1 = saturate(fvlo1*2.f - 1.f);
-			fvhi0 = saturate(fvhi0*2.f - 1.f);
-			fvhi1 = saturate(fvhi1*2.f - 1.f);				
+            crossfade_amp = limit_range(crossfade_amp, 0.f, 1.f);
+        }
 
-			//skew
-			float sk = parts[zones[z].part&0xf].vs_distribution;				
-			fvlo0 = fvlo0 - sk*fvlo0*fvlo0 + sk;
-			fvlo1 = fvlo1 - sk*fvlo1*fvlo1 + sk;
-			fvhi0 = fvhi0 - sk*fvhi0*fvhi0 + sk;
-			fvhi1 = fvhi1 - sk*fvhi1*fvhi1 + sk;
+        int n_split = parts[zones[z].part & 0xf].vs_layercount;
+        if (n_split && (zones[z].layer <= n_split)) {
+            float k = zones[z].layer;
+            float xf = parts[zones[z].part & 0xf].vs_xfade;
+            float fvlo0 = (k - 0.5f * xf) / ((float) n_split + 1.0f);
+            float fvlo1 = (k + 0.5f * xf) / ((float) n_split + 1.0f);
+            float fvhi0 = (k + 1.0f - 0.5f * xf) / ((float) n_split + 1.0f);
+            float fvhi1 = (k + 1.0f + 0.5f * xf) / ((float) n_split + 1.0f);
 
-			// map back and scale to 0 .. 127				
-			fvlo0 = fvlo0 * 64.f + 64.f;	fvlo1 = fvlo1 * 64.f + 64.f;	
-			fvhi0 = fvhi0 * 64.f + 64.f;	fvhi1 = fvhi1 * 64.f + 64.f;
+            // map to -1 .. 1
+            fvlo0 = saturate(fvlo0 * 2.f - 1.f);
+            fvlo1 = saturate(fvlo1 * 2.f - 1.f);
+            fvhi0 = saturate(fvhi0 * 2.f - 1.f);
+            fvhi1 = saturate(fvhi1 * 2.f - 1.f);
 
-			int lovel = fvlo0;
-			int hivel = fvhi1;
+            //skew
+            float sk = parts[zones[z].part & 0xf].vs_distribution;
+            fvlo0 = fvlo0 - sk * fvlo0 * fvlo0 + sk;
+            fvlo1 = fvlo1 - sk * fvlo1 * fvlo1 + sk;
+            fvhi0 = fvhi0 - sk * fvhi0 * fvhi0 + sk;
+            fvhi1 = fvhi1 - sk * fvhi1 * fvhi1 + sk;
 
-			if ((velocity < lovel)||(velocity >= hivel)) goto skipzone;
+            // map back and scale to 0 .. 127
+            fvlo0 = fvlo0 * 64.f + 64.f;
+            fvlo1 = fvlo1 * 64.f + 64.f;
+            fvhi0 = fvhi0 * 64.f + 64.f;
+            fvhi1 = fvhi1 * 64.f + 64.f;
 
-			if(xf > 0.001)
-			{
-				if((velocity < fvlo1)&&(zones[z].layer)) crossfade_amp *= (velocity - fvlo0) / (fvlo1 - fvlo0);
-				else if((velocity > fvhi0)&&(zones[z].layer<n_split)) crossfade_amp *= 1.f - ((velocity - fvhi0) / (fvhi1 - fvhi0));
-				crossfade_amp = limit_range(crossfade_amp,0.f,1.f);
-			}
-		}			
-		else
-		{
-			int lovel = zones[z].velocity_low - zones[z].velocity_low_fade;
-			int hivel = zones[z].velocity_high + zones[z].velocity_high_fade;
+            int lovel = fvlo0;
+            int hivel = fvhi1;
 
-			if ((velocity < lovel)||(velocity > hivel)) goto skipzone;
+            if ((velocity < lovel) || (velocity >= hivel)) goto skipzone;
 
-			if(zones[z].velocity_low_fade || zones[z].velocity_high_fade)
-			{
-				if(velocity < (zones[z].velocity_low + zones[z].velocity_low_fade)) crossfade_amp *= ((float)velocity - lovel) / ((float)zones[z].velocity_low_fade * 2.f);
-				else if(velocity > (zones[z].velocity_high - zones[z].velocity_high_fade)) crossfade_amp *= 1.f - (((float)velocity - zones[z].velocity_high + zones[z].velocity_high_fade) / ((float)zones[z].velocity_high_fade * 2.f));					
-				crossfade_amp = limit_range(crossfade_amp,0.f,1.f);
-			}
-		}					
+            if (xf > 0.001) {
+                if ((velocity < fvlo1) && (zones[z].layer)) crossfade_amp *= (velocity - fvlo0) / (fvlo1 - fvlo0);
+                else if ((velocity > fvhi0) && (zones[z].layer < n_split)) crossfade_amp *= 1.f - ((velocity - fvhi0) /
+                                                                                                   (fvhi1 - fvhi0));
+                crossfade_amp = limit_range(crossfade_amp, 0.f, 1.f);
+            }
+        } else {
+            int lovel = zones[z].velocity_low - zones[z].velocity_low_fade;
+            int hivel = zones[z].velocity_high + zones[z].velocity_high_fade;
 
-		// if mono, release other voices
-		//bool do_play = true;
+            if ((velocity < lovel) || (velocity > hivel)) goto skipzone;
 
-		if(!zones[z].ignore_part_polymode && (parts[p].polymode == polymode_mono))
-		{
-			int tv;
-			for(tv=0; tv<max_voices; tv++)
-			{
-				if(voice_state[tv].active && (voice_state[tv].part == p) && !zones[voice_state[tv].zone_id].ignore_part_polymode)
-					voices[tv]->uberrelease();
-			}
-		}
+            if (zones[z].velocity_low_fade || zones[z].velocity_high_fade) {
+                if (velocity < (zones[z].velocity_low + zones[z].velocity_low_fade)) crossfade_amp *=
+                                                                                             ((float) velocity -
+                                                                                              lovel) /
+                                                                                             ((float) zones[z].velocity_low_fade *
+                                                                                              2.f);
+                else if (velocity > (zones[z].velocity_high - zones[z].velocity_high_fade)) crossfade_amp *= 1.f -
+                                                                                                             (((float) velocity -
+                                                                                                               zones[z].velocity_high +
+                                                                                                               zones[z].velocity_high_fade) /
+                                                                                                              ((float) zones[z].velocity_high_fade *
+                                                                                                               2.f));
+                crossfade_amp = limit_range(crossfade_amp, 0.f, 1.f);
+            }
+        }
 
-		int v = GetFreeVoiceId(0);
+        // if mono, release other voices
+        //bool do_play = true;
 
-		if(zones[z].mute_group){
-			int tv;
-			int mg = zones[z].mute_group;
-			for(tv=0; tv<max_voices; tv++)
-			{
-				if(voice_state[tv].active && (zones[voice_state[tv].zone_id].mute_group == mg)/* && (z!=voice_state[tv].zone_id)*/)
-				{
-					voices[tv]->uberrelease();									
-				}
-			}
-		}
+        if (!zones[z].ignore_part_polymode && (parts[p].polymode == polymode_mono)) {
+            int tv;
+            for (tv = 0; tv < max_voices; tv++) {
+                if (voice_state[tv].active && (voice_state[tv].part == p) &&
+                    !zones[voice_state[tv].zone_id].ignore_part_polymode)
+                    voices[tv]->uberrelease();
+            }
+        }
 
-		if (parts[zones[z].part&0xf].vs_xf_equality) crossfade_amp = sqrt(crossfade_amp);
+        int v = GetFreeVoiceId(0);
 
-		if((zones[z].sample_id>=0) && samples[zones[z].sample_id])
-		{
-			update_zone_switches(z);
-			voices[v]->play(samples[zones[z].sample_id], &zones[z], &parts[p], key, velocity, detune, &controllers[n_controllers*channel],automation, crossfade_amp);							
-			voice_state[v].active = true;
-			voice_state[v].key = key;
-			voice_state[v].channel = channel;
-			voice_state[v].part = p;
-			voice_state[v].zone_id = z;
-			polyphony++;
-		}
+        if (zones[z].mute_group) {
+            int tv;
+            int mg = zones[z].mute_group;
+            for (tv = 0; tv < max_voices; tv++) {
+                if (voice_state[tv].active &&
+                    (zones[voice_state[tv].zone_id].mute_group == mg)/* && (z!=voice_state[tv].zone_id)*/) {
+                    voices[tv]->uberrelease();
+                }
+            }
+        }
 
-		if (editor && (parts[editorpart].MIDIchannel == channel)) track_zone_triggered(z,true);
-		
+        if (parts[zones[z].part & 0xf].vs_xf_equality) crossfade_amp = sqrt(crossfade_amp);
+
+        if ((zones[z].sample_id >= 0) && samples[zones[z].sample_id]) {
+            update_zone_switches(z);
+            voices[v]->play(samples[zones[z].sample_id], &zones[z], &parts[p], key, velocity, detune,
+                            &controllers[n_controllers * channel], automation, crossfade_amp);
+            voice_state[v].active = true;
+            voice_state[v].key = key;
+            voice_state[v].channel = channel;
+            voice_state[v].part = p;
+            voice_state[v].zone_id = z;
+            polyphony++;
+        }
+
+        if (editor && (parts[editorpart].MIDIchannel == channel)) track_zone_triggered(z, true);
+
 		skipzone:
 		int asdf = 0; // do nothing
 	}	

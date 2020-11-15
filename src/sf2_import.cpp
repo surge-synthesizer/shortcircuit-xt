@@ -16,6 +16,9 @@
 #include "steplfo.h"
 #include <vt_util/vt_string.h>
 
+using std::min;
+using std::max;
+
 int get_sf2_patchlist(const wchar_t *filename, void **plist)
 {
 	HMMIO hmmio;
@@ -24,7 +27,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	hmmio = mmioOpenW((LPWSTR)filename, NULL, MMIO_READ|MMIO_ALLOCBUF);
 	if (!hmmio){
 		char msg[256];
-		sprintf(msg,"file io error: File [%s] not found!",filename);
+		sprintf(msg,"file io error: File [%ls] not found!",filename);
 		write_log(msg);
 		mmioClose(hmmio, 0);
 		return false;
@@ -84,7 +87,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required phdr chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ph = (mmckinfoSubchunk.cksize/38);
 	preset_header = new sf2_PresetHeader[n_ph];
@@ -99,7 +102,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required pbag chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_pb = (mmckinfoSubchunk.cksize/4);
 	preset_bag = new sf2_PresetBag[n_pb];
@@ -114,7 +117,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required pgen chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_pg = (mmckinfoSubchunk.cksize/4);
 	preset_gen = new sf2_PresetGenList[n_pg];
@@ -129,7 +132,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required inst chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ih = (mmckinfoSubchunk.cksize/22);
 	inst_header = new sf2_InstHeader[n_ih];
@@ -144,7 +147,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required ibag chunk was not found!");		
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ib = (mmckinfoSubchunk.cksize/4);
 	inst_bag = new sf2_InstBag[n_ib];
@@ -159,7 +162,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required igen chunk was not found!");		
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ig = (mmckinfoSubchunk.cksize/4);
 	inst_gen = new sf2_InstGenList[n_ig];
@@ -174,7 +177,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required shdr chunk was not found!");		
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_shdr = (mmckinfoSubchunk.cksize/46);
 	shdr = new sf2_Sample[n_shdr];
@@ -291,7 +294,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required phdr chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ph = (mmckinfoSubchunk.cksize/38);
 	preset_header = new sf2_PresetHeader[n_ph];
@@ -306,7 +309,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required pbag chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_pb = (mmckinfoSubchunk.cksize/4);
 	preset_bag = new sf2_PresetBag[n_pb];
@@ -321,7 +324,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required pgen chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_pg = (mmckinfoSubchunk.cksize/4);
 	preset_gen = new sf2_PresetGenList[n_pg];
@@ -336,7 +339,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required inst chunk was not found!");
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ih = (mmckinfoSubchunk.cksize/22);
 	inst_header = new sf2_InstHeader[n_ih];
@@ -351,7 +354,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required ibag chunk was not found!");		
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ib = (mmckinfoSubchunk.cksize/4);
 	inst_bag = new sf2_InstBag[n_ib];
@@ -366,7 +369,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required igen chunk was not found!");		
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_ig = (mmckinfoSubchunk.cksize/4);
 	inst_gen = new sf2_InstGenList[n_ig];
@@ -381,7 +384,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 	if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
 	{		
 		write_log("file io (sf2): Required shdr chunk was not found!");		
-		goto bailout;
+		return false; // was goto bailout;
 	}
 	n_shdr = (mmckinfoSubchunk.cksize/46);
 	shdr = new sf2_Sample[n_shdr];
@@ -418,7 +421,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 		}
 #endif*/
 	}
-	if (pre_id < 0) goto bailout;
+	if (pre_id < 0) return false; // was goto bailout;
 	
 	// work in progress v2 
 	//add_group(preset_header[pre_id].achPresetName,&new_g,channel);
@@ -620,7 +623,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 						z->transpose = i_generators[coarseTune].shAmount;
 						z->finetune = 0.01f*i_generators[fineTune].shAmount;
 
-						z->aux[0].level = min(0,0.1f*i_generators[initialAttenuation].shAmount);
+						z->aux[0].level = min(0.f,0.1f*i_generators[initialAttenuation].shAmount);
 
 						const float egmult = 1.f / 2.7778f;
 
@@ -733,7 +736,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 							z->Filter[0].type = ft_none;
 
 						z->Filter[0].p[0] = -4.45943f + float(i_generators[initialFilterFc].wAmount-1500) / 1200;
-						z->Filter[0].p[1] = max(0,min(1,float(i_generators[initialFilterQ].wAmount/960)));
+						z->Filter[0].p[1] = max(0.f,min(1,f,float(i_generators[initialFilterQ].wAmount/960)));
 						update_zone_switches(newzone);
 					}
 				}

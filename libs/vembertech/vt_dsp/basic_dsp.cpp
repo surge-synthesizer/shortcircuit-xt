@@ -13,93 +13,36 @@ using std::max;
 
 int Min(int a, int b)
 {
-#if _M_X64 || PPC
 	return min(a,b);
-#else
-	__asm
-	{
-		mov		eax, a
-		mov		ecx, b
-		cmp		eax, ecx
-		cmovg	eax, ecx		
-	}
-#endif
 }
 int Max(int a, int b)
 {
-#if _M_X64 || PPC
 	return max(a,b);
-#else
-	__asm
-	{
-		mov		eax, a
-		mov		ecx, b
-		cmp		eax, ecx
-		cmovl	eax, ecx		
-	}
-#endif
 }
 
 double Max(double a, double b)
 {
-#if (_M_IX86_FP>1)
 	_mm_store_sd(&a, _mm_max_sd(_mm_load_sd(&a),_mm_load_sd(&b)));
 	return a;
-#else
-	if(a>b) return a;	
-	return b;
-#endif
 }
 
 unsigned int Min(unsigned int a, unsigned int b)
 {
-#if _M_X64 || PPC
 	return min(a,b);
-#else
-	__asm
-	{
-		mov		eax, a
-		mov		ecx, b
-		cmp		eax, ecx
-		cmova	eax, ecx		
-	}
-#endif
 }
 unsigned int Max(unsigned int a, unsigned int b)
 {
-#if _M_X64 || PPC
 	return max(a,b);
-#else
-	__asm
-	{
-		mov		eax, a
-		mov		ecx, b
-		cmp		eax, ecx
-		cmovb	eax, ecx		
-	}
-#endif
 }
 
 int limit_range(int x, int l, int h)
 {	
-#if _M_X64 || PPC
 	return max(min(x,h),l);
-#else
-	__asm
-	{
-		mov		eax, x
-		mov		edx, l
-		cmp		eax, edx
-		cmovl	eax, edx
-		mov		edx, h
-		cmp		eax, edx
-		cmovg	eax, edx
-	}
-#endif
 }
 
 int Wrap(int x, int L, int H)
 {
+#if 0
 #if _M_X64 || PPC
 	// fattar inte vad den gör längre..
 	//int diff = H - L;
@@ -128,39 +71,18 @@ int Wrap(int x, int L, int H)
 		cmovl	eax, edx
 	}	
 #endif
+#endif
+    assert( 0 );
 }
 
 int Sign(int x)
 {
-#if _M_X64 || PPC
 	return (x<0)?-1:1;
-#else
-	__asm
-	{		
-		mov eax, 1
-		mov edx, -1		
-		cmp x, 0
-		cmovle eax, edx
-	};
-#endif
 }
 
 unsigned int limit_range(unsigned int x, unsigned int l, unsigned int h)
 {
-#if _M_X64 || PPC
 	return max(min(x,h),l);
-#else
-	__asm
-	{
-		mov		eax, x		
-		mov		ecx, l	; load min
-		cmp		eax, ecx
-		cmovb	eax, ecx	; move if below
-		mov		ecx, h	; load max
-		cmp		eax, ecx
-		cmova	eax, ecx	; move if above
-	}	
-#endif
 }
 /*
 float limit_range(float x, float min, float max)

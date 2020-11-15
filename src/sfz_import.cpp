@@ -200,7 +200,7 @@ bool sampler::load_sfz(const char *data, size_t datasize,int *new_g,char channel
 				}
 				r++; i++;
 				
-				strncpy(val,v_start,min(255,r-v_start));
+				strncpy(val,v_start,min(255L,r-v_start));
 				val[i] = 0;
 
 				if (!z) break;		// no region/group has been created, cannot continue

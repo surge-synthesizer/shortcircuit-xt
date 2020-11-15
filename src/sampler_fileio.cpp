@@ -18,6 +18,7 @@
 
 #include "globals.h"
 #include "versionno.h"
+#include <string.h>
 //#include <wx/wfstream.h>
 //#include <wx/zipstrm.h>
 
@@ -30,8 +31,10 @@
 
 #include <string>
 using std::string;
+using std::max;
+using std::min;
 
-#if ! TARGET_HEADLESS=1
+#if ! TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
 #endif
 
@@ -87,7 +90,7 @@ bool sampler::load_file(const char *file_name,int *new_g, int *new_z, bool *is_g
 		char *backslash = strrchr(filename,'\\');
 		if (!backslash) return false;
 		assert(*(backslash+1));
-		strcpy_s(nameNoPath, 256, backslash+1);
+		strncpy(nameNoPath, backslash+1, 256);
 		char *ext = strrchr(nameNoPath,'.');
 		if (!ext) return false;
 		*ext = 0;
@@ -101,7 +104,7 @@ bool sampler::load_file(const char *file_name,int *new_g, int *new_z, bool *is_g
 	else if((!stricmp(extension,"gig")) || (!stricmp(extension,"dls")) || (!stricmp(extension,"sc2p")) || (!stricmp(extension,"sc2m")) || (!stricmp(extension,"sfz")))
 	{
 		// memory mapped file reads go here
-		// TODO flytta in alla filformat här efterhand som de klarar memmapping
+		// TODO flytta in alla filformat hï¿½r efterhand som de klarar memmapping
 
 		wchar_t wfilename[4096];
 		MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, 4096);	
@@ -345,7 +348,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
 				if (sub->QueryIntAttribute(label,&i) == TIXML_SUCCESS)	zone->Filter[j].ip[k] = i;				
 			}
 			// rev 6: sawtooth osc amplitude scales better with unison count..
-			// kompensera gain för gamla filer			
+			// kompensera gain fï¿½r gamla filer			
 			if ((revision<6)&&(ft == ft_osc_saw)) 
 			{
 				float d = max(1.f,sqrt(zone->Filter[j].p[4]));
@@ -422,7 +425,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
 			int x;
 			const char *ts;
 			//ts = sub->Attribute("src");
-			// rev8 undvik att namnet på controllern lagras
+			// rev8 undvik att namnet pï¿½ controllern lagras
 			char msrc[256];
 			vtCopyString(msrc,sub->Attribute("src"),256);
 			char *colon = strrchr(msrc,':');
@@ -743,7 +746,7 @@ void store_part_as_element(TiXmlElement &element, sample_part *part, configurati
 				TiXmlElement nc("nc");
 				nc.Clear();	
 				nc.SetAttribute("i",j);
-				// TODO, lägg till samma rutiner som modmatrix src
+				// TODO, lï¿½gg till samma rutiner som modmatrix src
 				
 				nc.SetAttribute("src",t_mm.get_source_idname(part->nc[ncid].source));
 				nc.SetAttribute("low",part->nc[ncid].low);			
@@ -911,7 +914,8 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
 			if(sub->QueryDoubleAttribute("value",&d) == TIXML_SUCCESS) part->userparameter[j] = d;			
 			if(sub->QueryIntAttribute("bipolar",&i) == TIXML_SUCCESS) part->userparameterpolarity[j] = i;
 			const char* pname = sub->Attribute("name");
-			if(pname) strncpy_s(part->userparametername[j],16,pname,_TRUNCATE);
+			//if(pname) strncpy_s(part->userparametername[j],16,pname,_TRUNCATE);
+			if( pname ) strncpy( part->userparametername[j], pname, 16 );
 		}
 		sub = sub->NextSibling("userparam")->ToElement();
 	}

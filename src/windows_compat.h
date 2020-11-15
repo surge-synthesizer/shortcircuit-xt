@@ -32,6 +32,8 @@ typedef uint16_t USHORT;
 typedef int64_t LONG;
 typedef uint64_t ULONG;
 
+typedef uint64_t HANDLE;
+typedef void* HPSTR;
 
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
@@ -87,26 +89,53 @@ typedef int HMMIO;
 struct MMCKINFO {
     int fccType;
     int ckid;
+    int cksize;
 };
 
 #define MMIO_READ 0
 #define MMIO_ALLOCBUF 0
 #define MMIO_FINDRIFF 0
+#define MMIO_FINDCHUNK 0
 #define MMIO_FINDLIST 0
 #define LPWSTR wchar_t *
+#define LPSTR char *
 #define LPMMCKINFO MMCKINFO *
 
-int mmioOpenW( wchar_t *, void *, int ) {
+inline int mmioOpen( char *, void *, int ) {
     std::cout << "MMIO Open " << std::endl;
     return 1;
 }
 
-int mmioFOURCC( char a, char b, char c, char d ) {  return 0; }
-int mmioDescend(HMMIO a, MMCKINFO *b, int c, int d ) { return 0; }
-int mmioClose(HMMIO a, int b ) { return 0; }
-int mmioSeek(HMMIO a, int s, int f ) { return 0; }
+inline int mmioOpenW( wchar_t *, void *, int ) {
+    std::cout << "MMIO Open " << std::endl;
+    return 1;
+}
+
+inline int mmioFOURCC( char a, char b, char c, char d ) {  return 0; }
+inline int mmioDescend(HMMIO a, MMCKINFO *b, MMCKINFO *c, int d ) { return 0; }
+inline int mmioClose(HMMIO a, int b ) { return 0; }
+inline int mmioSeek(HMMIO a, int s, int f ) { return 0; }
+inline int mmioAscend(HMMIO a, MMCKINFO *b, int ) { return 0; }
+inline int mmioRead(HMMIO a, HPSTR b, int );
 
 typedef size_t HMODULE;
-int GetModuleFileNameW(HMODULE h, wchar_t *f, int t ) { return 0; }
+inline int GetModuleFileNameW(HMODULE h, wchar_t *f, int t ) { return 0; }
 
+#define GENERIC_READ 1
+#define FILE_SHARE_READ 1
+#define OPEN_EXISTING 1
+#define FILE_FLAG_SEQUENTIAL_SCAN 1
+#define PAGE_READONLY 1
+#define FILE_MAP_READ 1
+
+inline HANDLE CreateFileW( std::wstring wfn, int, int, void *, int, int, void * ) { return 0;}
+inline HANDLE CreateFileMappingW(HANDLE h, int, int, int, int, int ) { return 0; }
+inline size_t GetFileSize( HANDLE h, void * ) { return 0; }
+inline void CloseHandle( HANDLE h );
+inline void* MapViewOfFile( HANDLE, int, int, int, int ) { return 0; }
+inline void UnmapViewOfFile( void * );
 typedef char TCHAR;
+
+inline void OutputDebugString( const char* c ) { std::cout << c << std::endl; }
+
+#define MAX_PATH 1024
