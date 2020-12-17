@@ -236,8 +236,13 @@ if( APPLE )
     MAC=1
     TARGET_HEADLESS=1
     )
+  # Obviously fix all of these
   target_compile_options( sc-headless PRIVATE
+
     -Wno-invalid-source-encoding
+          -Wno-undefined-bool-conversion
+          -Wno-format-security
+          -Wno-writable-strings
     )
 
 endif()

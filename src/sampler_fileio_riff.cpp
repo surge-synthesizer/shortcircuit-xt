@@ -18,6 +18,9 @@
 #include "windows_compat.h"
 #endif
 
+using std::min;
+using std::max;
+
 #include "globals.h"
 #include "versionno.h"
 #include "memfile.h"
@@ -295,7 +298,7 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const WCHAR *filename, int PartID)
 	chunkDataPtr = malloc(datasize);	
 	memfile mf(chunkDataPtr,datasize);
 
-	// TODO, ta hänsyn till vsts chunk ptr issuesdryghet
+	// TODO, ta hï¿½nsyn till vsts chunk ptr issuesdryghet
 
 	// Phase 3
 	// Write data to memfile

@@ -193,7 +193,7 @@ public:
 		{
 			if (!Read(&rh,sizeof(riffheader))) return false;
 			rh.datasize = swap_endianDW(rh.datasize);
-			if((rh.id == 'MROF'))
+			if(rh.id == 'MROF')
 			{
 				unsigned long subtag;				
 				if (!Read(&subtag,4)) return false;
@@ -279,7 +279,7 @@ public:
 	void invalid()
 	{		
 		char txt[1024];
-		sprintf(txt,"Invalid RIFF-structure.\n\nOffset: 0x%X",loc);
+		sprintf(txt,"Invalid RIFF-structure.\n\nOffset: 0x%X",(unsigned int)loc);
 		MessageBox(::GetActiveWindow(),txt,
 		"File I/O Error",MB_OK | MB_ICONERROR);
 	}

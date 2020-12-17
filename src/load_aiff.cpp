@@ -93,7 +93,7 @@ struct aiff_INST_chunk
   aiff_loop   releaseLoop;
 };
 
-#pragma pack()
+#pragma pack
 
 bool sample::parse_aiff(void* data, size_t filesize)
 {	
