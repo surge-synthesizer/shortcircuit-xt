@@ -1,5 +1,8 @@
 #include "threadsafety.h"
 #include "assert.h"
+#if MAC
+#include <CoreServices/CoreServices.h>
+#endif
 
 c_sec::c_sec()
 {

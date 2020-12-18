@@ -1,3 +1,6 @@
 [submodule "libs/JUCE"]
 	path = libs/JUCE
 	url = https://github.com/juce-framework/JUCE
+[submodule "libs/filesystem"]
+	path = libs/filesystem
+	url = https://github.com/surge-synthesizer/surge-filesystem

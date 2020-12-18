@@ -40,7 +40,7 @@ typedef void* HPSTR;
 #define wcsicmp wcscasecmp
 
 
-int GetActiveWindow() { return 0; }
+inline int GetActiveWindow() { return 0; }
 #define MB_OK 0
 #define MB_ICONERROR 0
 
@@ -162,8 +162,8 @@ struct BROWSEINFO {
 #define BIF_RETURNONLYFSDIRS 0
 
 typedef int LPITEMIDLIST;
-LPITEMIDLIST SHBrowseForFolder(BROWSEINFO *) { return LPITEMIDLIST(); }
-bool SHGetPathFromIDList( LPITEMIDLIST, const char * ) { return false; }
+inline LPITEMIDLIST SHBrowseForFolder(BROWSEINFO *) { return LPITEMIDLIST(); }
+inline bool SHGetPathFromIDList( LPITEMIDLIST, const char * ) { return false; }
 
 inline HANDLE FindFirstFile( const char*, WIN32_FIND_DATA * ) { return 0; }
 inline HANDLE FindNextFile( HANDLE, WIN32_FIND_DATA * ) { return 0; }

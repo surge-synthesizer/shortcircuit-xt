@@ -1,5 +1,4 @@
 #if WINDOWS
-
 #include "vt_string.h"
 #include <assert.h>
 #include <string.h>
@@ -85,5 +84,9 @@ std::wstring ToW(int Value)
 //-------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------
-
+#else
+void vtCopyString( char*, char const*, unsigned long ) {}
+void vtCopyStringW( wchar_t*, wchar_t const *, unsigned long ) {}
+void vtStringToWString(wchar_t*, char const*, unsigned long) {}
+void vtWStringToString( char*, wchar_t const*, unsigned long) {}
 #endif

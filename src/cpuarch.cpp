@@ -9,6 +9,7 @@ void __cpuid(int* CPUInfo, int InfoType);
 
 unsigned int determine_support()
 {
+#if FIXME
 	unsigned int arch=0;
 	int CPUInfo[4] = {-1};
 	__cpuid(CPUInfo,0);
@@ -34,7 +35,9 @@ unsigned int determine_support()
 		__cpuid(CPUInfo,0x80000001);
 		if (((1<<30)&CPUInfo[3])&&((1<<31)&CPUInfo[3])) arch |= ca_3DNOW;	
 	}
-
+#else
+	unsigned int arch = 0;
+#endif
 	return arch;
 }
 #endif

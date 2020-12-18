@@ -10,9 +10,9 @@ jobs:
 - job: Build
   strategy:
     matrix:
-#      mac:
-#        imageName: 'macos-10.14'
-#        isMac: True
+    #  mac:
+    #    imageName: 'macos-10.14'
+    #    isMac: True
       win:
         imageName: 'windows-2019'
         isWindows: True
@@ -39,6 +39,14 @@ jobs:
       cmake --build build --config Release
       cmake --build build --config Release --target win-tmp-zip
     displayName: Build
+    condition: variables.isWindows
+
+
+  - bash: |
+      # This is a hack while i make the win tmp depend properly
+      # cmake --build build --config Release --target sc-headless
+    displayName: Build
+    condition: variables.isMac
 
 
   - task: PublishPipelineArtifact@0

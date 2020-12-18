@@ -15,6 +15,13 @@ else()
   message( STATUS "Building in 64 bit configuration" )
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+
+# For now have to define this as surge-tests because of filesystem. Fix obviously
+add_library(surge-tests tests/oneday.cpp)
+
+add_subdirectory(libs/filesystem)
+
 #
 # FIXME use the better git approach
 #
@@ -28,8 +35,6 @@ execute_process(
 
 add_subdirectory(libs/JUCE)
 
-set(CMAKE_CXX_STANDARD 17)
-set(SURGE_CXX_STD_FLAG cxx_std_17)
 
 set( SHORTCIRCUIT_SOURCE
   src/Precompiled.cpp
@@ -245,6 +250,11 @@ if( APPLE )
           -Wno-writable-strings
     )
 
+  target_link_libraries( sc-headless PRIVATE
+          surge::filesystem
+          "-framework CoreServices"
+          )
+
 endif()
 
 if( WIN32 )
@@ -268,6 +278,8 @@ if( WIN32 )
     
     ComDlg32
     ComCtl32
+
+          surge::filesystem
     )
 
 endif()
