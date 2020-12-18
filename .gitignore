@@ -2,3 +2,7 @@ build
 buildwin
 buildlin
 buildmac
+
+cmake-build*
+.idea/
+snr.bat

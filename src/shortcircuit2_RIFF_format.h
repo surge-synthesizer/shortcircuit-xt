@@ -197,7 +197,7 @@ enum RIFF_ZONE_Playmode
 };
 
 // "Smpl"
-// TODO Lägg till mer metadata
+// TODO Lï¿½gg till mer metadata
 struct RIFF_SampleURL
 {	
 	unsigned int FileSize;
@@ -393,4 +393,4 @@ enum RIFF_MM_Destination
 	RMD_PartFilter2Param0	= 0xD1,
 };
 
-#pragma pack()
+#pragma pack(pop)

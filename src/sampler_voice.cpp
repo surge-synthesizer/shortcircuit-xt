@@ -11,7 +11,7 @@
 #include <fstream>
 #include "controllers.h"
 #include "sampler.h"
-#include <intrin.h>
+// #include <intrin.h>
 #include <assert.h>
 #include "mathtables.h"
 #include "generator.h"
@@ -20,6 +20,9 @@
 #include <vt_dsp/halfratefilter.h>
 #include <vt_dsp/basic_dsp.h>
 #include "sample.h"
+
+using std::min;
+using std::max;
 
 float	SincTableF32 alignas(64) [(FIRipol_M+1)*FIRipol_N];
 float	SincOffsetF32 alignas(64) [(FIRipol_M)*FIRipol_N];
@@ -350,7 +353,7 @@ void sampler_voice::uberrelease()
 	is_uberrelease = true;
 }
 
-__forceinline int sampler_voice::get_filter_type(int id)
+inline int sampler_voice::get_filter_type(int id)
 {	
 	return zone->Filter[id].type;
 }
@@ -420,7 +423,7 @@ void sampler_voice::CalcRatio()
 	
 	fpitch = part->transpose + zone->transpose + zone->finetune + zone->pitch_bend_depth*ctrl[c_pitch_bend] + mm.get_destination_value(md_pitch);	
 	
-	// inte viktig nog att offra perf för.. bättre att beräkna on demand isåfall
+	// inte viktig nog att offra perf fï¿½r.. bï¿½ttre att berï¿½kna on demand isï¿½fall
 	//loop_pos = limit_range((sample_pos - mm.get_destination_value_int(md_loop_start))/(float)mm.get_destination_value_int(md_loop_length),0,1);	
 	
 	GD.Ratio = Float2Int((float)((wave->sample_rate * samplerate_inv)*16777216.f*note_to_pitch(fpitch+kt-zone->pitchcorrection)*mm.get_destination_value(md_rate)));
