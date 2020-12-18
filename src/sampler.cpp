@@ -63,11 +63,16 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
 	holdengine = false;
 	GetModuleFileNameW((HMODULE)hInstance, path, 1024);	
 	wchar_t *end = wcsrchr(path,L'\\');
+	if( end ) {
 #ifdef SCPB
-	wcscpy(end,L"\\scpb-conf.xml");	
+        wcscpy(end,L"\\scpb-conf.xml");
 #else
-	wcscpy(end,L"\\shortcircuitV2-conf.xml");	
+        wcscpy(end, L"\\shortcircuitV2-conf.xml");
 #endif
+    } else {
+        wcscpy( path, L"" );
+        std::cout << "FIXME: Setup Config" << std::endl;
+	}
 	conf = new configuration();
 	conf->load(path);
 

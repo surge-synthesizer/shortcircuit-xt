@@ -4,3 +4,6 @@
 [submodule "libs/filesystem"]
 	path = libs/filesystem
 	url = https://github.com/surge-synthesizer/surge-filesystem
+[submodule "libs/pybind11"]
+	path = libs/pybind11
+	url = https://github.com/pybind/pybind11
