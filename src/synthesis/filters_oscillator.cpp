@@ -10,6 +10,7 @@
 #include "resampling.h"
 #include "tools.h"
 #include <algorithm>
+#include <cstring>
 
 using std::min;
 using std::max;

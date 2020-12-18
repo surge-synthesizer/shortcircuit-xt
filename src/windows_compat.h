@@ -16,6 +16,9 @@
 #include <cstdint>
 #include <iostream>
 #include <clocale>
+#if LINUX
+#include <strings.h>
+#endif
 
 #ifdef SKIP_WINDOWS_COMPAT
 #else
@@ -178,4 +181,5 @@ inline void OutputDebugString( const char* c ) { std::cout << c << std::endl; }
 
 #define MAX_PATH 1024
 
+#define _MM_ALIGN16
 #endif

@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <cmath>
+#include <cstring>
 #include <math.h>
 #include <algorithm>
 using std::min;

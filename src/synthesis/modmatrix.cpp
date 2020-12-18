@@ -17,6 +17,7 @@
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
 #include <algorithm>
+#include <cstring>
 using std::min;
 using std::max;
 

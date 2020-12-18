@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "sampler.h"
 #include "stdio.h"
+#include <string.h>
 #include "infrastructure/logfile.h"
 #include "unitconversion.h"
 #include <assert.h>

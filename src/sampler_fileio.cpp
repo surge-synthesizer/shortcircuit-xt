@@ -350,7 +350,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
 			// kompensera gain f�r gamla filer			
 			if ((revision<6)&&(ft == ft_osc_saw)) 
 			{
-				float d = max(1.f,sqrt(zone->Filter[j].p[4]));
+				float d = max(1.f,(float)sqrt(zone->Filter[j].p[4]));
 				zone->Filter[j].p[2] *= 1/d;
 			}
 			

@@ -1,4 +1,5 @@
 #include <emmintrin.h>
+#include <cmath>
 #include "lattice.h"
 #include "basic_dsp.h"
 #include <algorithm>

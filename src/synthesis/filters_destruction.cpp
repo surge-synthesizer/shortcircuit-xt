@@ -13,6 +13,7 @@
 #include "mathtables.h"
 #include <math.h>
 #include <cmath>
+#include <cstring>
 #include <algorithm>
 using std::min;
 using std::max;

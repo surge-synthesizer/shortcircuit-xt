@@ -10,6 +10,7 @@
 #include "filter_defs.h"
 #include "resampling.h"
 #include "tools.h"
+#include <string.h>
 #include <assert.h>
 #include "unitconversion.h"
 

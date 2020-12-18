@@ -6,6 +6,7 @@
 #include <vt_util/vt_string.h>
 
 #include <list>
+#include <cstring>
 using std::list;
 
 // usage set_zone_parameter_float(field, value);

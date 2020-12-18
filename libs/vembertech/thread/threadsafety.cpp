@@ -9,6 +9,8 @@ c_sec::c_sec()
 	refcount = 0;
 #if MAC
 	MPCreateCriticalRegion (&cs);
+#elif LINUX
+#warning IMPLEMENT THIS
 #else
 	InitializeCriticalSection(&cs);
 #endif
@@ -18,6 +20,7 @@ c_sec::~c_sec()
 {
 #if MAC
 	MPDeleteCriticalRegion(cs);
+#elif LINUX
 #else
 	DeleteCriticalSection(&cs);
 #endif
@@ -27,6 +30,7 @@ void c_sec::enter()
 {
 #if MAC
 	MPEnterCriticalRegion(cs,kDurationForever);
+#elif LINUX
 #else
 	EnterCriticalSection(&cs);
 #endif
@@ -45,6 +49,7 @@ void c_sec::leave()
 	assert(refcount >= 0);	
 #if MAC
 	MPExitCriticalRegion(cs);
+#elif LINUX
 #else
 	LeaveCriticalSection(&cs);
 #endif

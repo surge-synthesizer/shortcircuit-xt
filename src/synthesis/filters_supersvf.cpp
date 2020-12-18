@@ -7,7 +7,7 @@
 using std::min;
 using std::max;
 
-#if MAC
+#if MAC || LINUX
 #define __forceinline inline
 #endif
 

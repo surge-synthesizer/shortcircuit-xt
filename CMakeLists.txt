@@ -76,6 +76,13 @@ if( APPLE )
           "-framework CoreServices"
           )
 elseif( UNIX AND NOT APPLE )
+  set( OS_COMPILE_OPTIONS
+          )
+  set( OS_COMPILE_DEFINITIONS
+          LINUX=1 )
+
+  set( OS_LINK_LIBRARIES
+          )
 else()
   set( OS_COMPILE_OPTIONS )
   set( OS_COMPILE_DEFINITIONS

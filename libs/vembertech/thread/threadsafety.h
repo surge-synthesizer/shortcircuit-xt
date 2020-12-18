@@ -2,6 +2,7 @@
 
 #if MAC
 #include <CoreServices/CoreServices.h>
+#elif LINUX
 #else
 #include "windows.h"
 #endif
@@ -16,6 +17,7 @@ public:
 protected:
 	#if MAC
 	MPCriticalRegionID cs;
+        #elif LINUX
 	#else
 	CRITICAL_SECTION cs;
 	#endif

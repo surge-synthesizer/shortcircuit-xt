@@ -15,6 +15,7 @@
 #include "synthesis/modmatrix.h"
 #include "synthesis/steplfo.h"
 #include <vt_util/vt_string.h>
+#include <cstring>
 
 using std::min;
 using std::max;

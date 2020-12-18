@@ -10,6 +10,7 @@
 #include "resampling.h"
 #include "tools.h"
 #include <assert.h>
+#include <cstring>
 #include "unitconversion.h"
 
 using namespace std;

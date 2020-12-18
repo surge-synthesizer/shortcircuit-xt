@@ -13,6 +13,7 @@
 
 #include <math.h>
 #include <cmath>
+#include <cstring>
 #include <algorithm>
 using std::max;
 using std::min;
