@@ -1164,7 +1164,7 @@ bool sampler::load_all_from_xml(void* data, int datasize, char *filename, bool r
 						{
 							//if (!searchpath.empty()) rlength = SearchPath(searchpath.c_str(),filename,0,256,newpath,0);
 							//if(rlength) break;
-
+#if FIXME
 
 							if (!searchpath.empty()) 
 							{
@@ -1207,6 +1207,7 @@ bool sampler::load_all_from_xml(void* data, int datasize, char *filename, bool r
 								dont_ask_path = true;
 								break;
 							}
+#endif
 						}	
 
 						if(newpath.size() && subsamplename[0]) newpath.append(subsamplename);
@@ -1355,6 +1356,7 @@ bool sampler::load_all_from_sc1_xml(void* data, int datasize, char *filename, bo
 								if (!newpath.empty()) break;
 							}
 
+#if FIXME
 							BROWSEINFO bi;							
 							bi.ulFlags = BIF_NONEWFOLDERBUTTON | BIF_RETURNONLYFSDIRS;
 							char title[256];
@@ -1390,6 +1392,7 @@ bool sampler::load_all_from_sc1_xml(void* data, int datasize, char *filename, bo
 								dont_ask_path = true;
 								break;
 							}
+#endif
 						}	
 
 						if(newpath.size() && subsamplename[0]) newpath.append(subsamplename);

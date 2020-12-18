@@ -8,9 +8,14 @@
 #include <vt_dsp/basic_dsp.h>
 #include "sampler_voice.h"
 #include "configuration.h"
+#if ! TARGET_HEADLESS
 #include <vt_gui/vt_gui_controls.h>
+#endif
 #include "tools.h"
 #include "interaction_parameters.h"
+
+using std::max;
+using std::min;
 
 float* sampler::get_output_pointer(int id, int channel, int part)
 {	
@@ -272,8 +277,7 @@ void sampler::processVUs()
 {
 #if TARGET_VST2
 	if(!(editor && editor->isOpen())) return;	
-#endif
-	
+
 	for(int op=0; op<(mNumOutputs*2); op++)
 	{
 		vu_peak[op] = max(vu_peak[op],get_absmax(output[op],block_size_quad));		
@@ -307,4 +311,6 @@ void sampler::processVUs()
 		}	
 		post_events_to_editor(ad);
 	}
+#endif
+
 }

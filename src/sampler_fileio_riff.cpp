@@ -477,7 +477,7 @@ bool sampler::LoadAllFromRIFF(void* data, size_t datasize, bool Replace, int Par
 								} 
 								else if (tag == 'Name')
 								{
-									vtCopyString(&(p->userparametername[CtrlID][0]),(char*)mf.RIFFReadChunk(),min(chunksize,state_string_length));
+									vtCopyString(&(p->userparametername[CtrlID][0]),(char*)mf.RIFFReadChunk(),min(chunksize,(size_t)state_string_length));
 									p->userparametername[CtrlID][state_string_length-1] = 0;
 								} else mf.RIFFSkipChunk();
 							}
@@ -502,7 +502,7 @@ bool sampler::LoadAllFromRIFF(void* data, size_t datasize, bool Replace, int Par
 						break;
 					case 'Name':
 						{
-							vtCopyString(p->name,(char*)mf.RIFFReadChunk(),min(chunksize,32));
+							vtCopyString(p->name,(char*)mf.RIFFReadChunk(),min(chunksize,(size_t)32));
 							p->name[31] = 0;
 						}
 						break;
@@ -629,7 +629,7 @@ bool sampler::LoadAllFromRIFF(void* data, size_t datasize, bool Replace, int Par
 							break;
 						case 'Name':
 							{
-								vtCopyString(z->name,(char*)mf.RIFFReadChunk(),min(chunksize,32));
+								vtCopyString(z->name,(char*)mf.RIFFReadChunk(),min(chunksize,(size_t)32));
 								z->name[31] = 0;
 							}
 							break;					

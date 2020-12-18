@@ -736,7 +736,7 @@ bool sampler::load_sf2_preset(const char *filename,int *new_group,char channel, 
 							z->Filter[0].type = ft_none;
 
 						z->Filter[0].p[0] = -4.45943f + float(i_generators[initialFilterFc].wAmount-1500) / 1200;
-						z->Filter[0].p[1] = max(0.f,min(1,f,float(i_generators[initialFilterQ].wAmount/960)));
+						z->Filter[0].p[1] = max(0.f,min(1.f,float(i_generators[initialFilterQ].wAmount/960)));
 						update_zone_switches(newzone);
 					}
 				}

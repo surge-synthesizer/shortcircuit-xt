@@ -228,6 +228,9 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
 
 	// find matching zone
 	for(int z=0; z<max_zones; z++) {
+	    int p = 0, v = 0, n_split = 0, zkey = 0;
+        float crossfade_amp = 1.f;
+
         if (!zone_exists[z]) goto skipzone;
         if (zones[z].mute) goto skipzone;
         if (require_ignore && !zones[z].ignore_part_polymode) goto skipzone;
@@ -237,13 +240,12 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
         if ((sample_replace_filename[0] != 0) && (selected->zone_is_active(z))) goto skipzone;
         if (selected->get_solo() && !selected->zone_is_selected(z)) goto skipzone;
 
-        int p = zones[z].part & 0xf;
-        int zkey = key + parts[p].transpose - parts[p].formant;    // key used for range check
+        p = zones[z].part & 0xf;
+        zkey = key + parts[p].transpose - parts[p].formant;    // key used for range check
+
         if (zkey < (zones[z].key_low - zones[z].key_low_fade)) goto skipzone;
         if (zkey > (zones[z].key_high + zones[z].key_high_fade)) goto skipzone;
         if (!partv[p].mm->check_NC(&zones[z])) goto skipzone;
-
-        float crossfade_amp = 1.f;
 
         if (zones[z].key_low_fade || zones[z].key_high_fade) {
             if (zkey < (zones[z].key_low + zones[z].key_low_fade)) crossfade_amp = ((float) zkey - zones[z].key_low +
@@ -259,7 +261,8 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
             crossfade_amp = limit_range(crossfade_amp, 0.f, 1.f);
         }
 
-        int n_split = parts[zones[z].part & 0xf].vs_layercount;
+        n_split = parts[zones[z].part & 0xf].vs_layercount;
+        v = 0;
         if (n_split && (zones[z].layer <= n_split)) {
             float k = zones[z].layer;
             float xf = parts[zones[z].part & 0xf].vs_xfade;
@@ -332,7 +335,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
             }
         }
 
-        int v = GetFreeVoiceId(0);
+        v = GetFreeVoiceId(0);
 
         if (zones[z].mute_group) {
             int tv;

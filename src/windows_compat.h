@@ -116,25 +116,57 @@ inline int mmioDescend(HMMIO a, MMCKINFO *b, MMCKINFO *c, int d ) { return 0; }
 inline int mmioClose(HMMIO a, int b ) { return 0; }
 inline int mmioSeek(HMMIO a, int s, int f ) { return 0; }
 inline int mmioAscend(HMMIO a, MMCKINFO *b, int ) { return 0; }
-inline int mmioRead(HMMIO a, HPSTR b, int );
+inline int mmioRead(HMMIO a, HPSTR b, int ) { return 0; }
+
+inline int SearchPath(const char*, const char*, int, int, char*, int ) { return 0; }
 
 typedef size_t HMODULE;
 inline int GetModuleFileNameW(HMODULE h, wchar_t *f, int t ) { return 0; }
 
 #define GENERIC_READ 1
+#define GENERIC_WRITE 1
 #define FILE_SHARE_READ 1
+#define FILE_SHARE_WRITE 1
+#define CREATE_ALWAYS 1
 #define OPEN_EXISTING 1
 #define FILE_FLAG_SEQUENTIAL_SCAN 1
 #define PAGE_READONLY 1
 #define FILE_MAP_READ 1
+#define FILE_ATTRIBUTE_DIRECTORY 0
+#define FILE_ATTRIBUTE_REPARSE_POINT 0
+#define INVALID_HANDLE_VALUE -1
 
 inline HANDLE CreateFileW( std::wstring wfn, int, int, void *, int, int, void * ) { return 0;}
 inline HANDLE CreateFileMappingW(HANDLE h, int, int, int, int, int ) { return 0; }
 inline size_t GetFileSize( HANDLE h, void * ) { return 0; }
-inline void CloseHandle( HANDLE h );
+inline int WriteFile( HANDLE h, void *, size_t, DWORD *, void* ) { return 0; }
+inline void CloseHandle( HANDLE h ) {}
 inline void* MapViewOfFile( HANDLE, int, int, int, int ) { return 0; }
-inline void UnmapViewOfFile( void * );
+inline void UnmapViewOfFile( void * ) { }
+inline void FindClose( HANDLE ) { };
 typedef char TCHAR;
+struct WIN32_FIND_DATA
+{
+    int dwFileAttributes;
+    char cFileName[1024];
+};
+struct BROWSEINFO {
+    int ulFlags;
+    LPSTR lpszTitle;
+    LPSTR pszDisplayName;
+    void* lpfn;
+    void* pidlRoot;
+    HANDLE hwndOwner;
+};
+#define BIF_NONEWFOLDERBUTTON 0
+#define BIF_RETURNONLYFSDIRS 0
+
+typedef int LPITEMIDLIST;
+LPITEMIDLIST SHBrowseForFolder(BROWSEINFO *) { return LPITEMIDLIST(); }
+bool SHGetPathFromIDList( LPITEMIDLIST, const char * ) { return false; }
+
+inline HANDLE FindFirstFile( const char*, WIN32_FIND_DATA * ) { return 0; }
+inline HANDLE FindNextFile( HANDLE, WIN32_FIND_DATA * ) { return 0; }
 
 inline void OutputDebugString( const char* c ) { std::cout << c << std::endl; }
 
