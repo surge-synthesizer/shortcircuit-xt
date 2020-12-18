@@ -3,11 +3,12 @@
 #include <memory>
 
 #include "sampler.h"
+#include "version.h"
 
 void *hInstance = 0;
 int main( int argc, char **argv )
 {
-    std::cout << "ShortCircuit3 Headless." << std::endl;
+    std::cout << "ShortCircuit3 Headless. " << ShortCircuit::Build::FullVersionStr << std::endl;
 
     auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
     sc3->set_samplerate(48000);

@@ -1,12 +1,22 @@
+# CMakeList.txt to build ShortCircuit3
 #
-# This is all a mess as I hack away right now
+# SC3 began with a not-building snap of the code which was used at some point in the SC2
+# product cycle, so we took a different strategy which was
+#
+# 1. Have a libshortcircuit-core basically which contains all the code to be SC
+# 2. Expose that in an shortcircuit-headless, shortcircuitpy library and exe
+# 3. Rebuild the plugin using that library and JUCE
+#
+# At least that's the plan. Critically this no longer builds any of the old GUI or
+# VST2 code, which we couldn't make work anyway. That code is still in the codebase for
+# reference as we port, but we should remove it before we ship 3.0.0.0
 #
 
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "Build for 10.12")
-
 project(ShortCircuit VERSION 3.0.0.0 LANGUAGES C CXX ASM)
 
+# Share some information about the  build
 message( STATUS "CMake Version is ${CMAKE_VERSION}" )
 message( STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}" )
 if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
@@ -15,59 +25,110 @@ else()
   message( STATUS "Building in 64 bit configuration" )
 endif()
 
+# Everything here is C++ 17 now
 set(CMAKE_CXX_STANDARD 17)
 
-# For now have to define this as surge-tests because of filesystem. Fix obviously
-add_library(surge-tests tests/oneday.cpp)
+# Set up version information using the same approach as surge, namely
+# with an external cmake run, a git-info target, and a generated
+# ${bld}/geninclude/version.cpp
+execute_process(
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND}
+        -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        -D SHORTCSRC=${CMAKE_SOURCE_DIR}
+        -D SHORTCBLD=${CMAKE_BINARY_DIR}
+        -D AZURE_PIPELINE=${AZURE_PIPELINE}
+        -D WIN32=${WIN32}
+        -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
+)
+add_custom_target( git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND}
+        -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        -D SHORTCSRC=${CMAKE_SOURCE_DIR}
+        -D SHORTCBLD=${CMAKE_BINARY_DIR}
+        -D AZURE_PIPELINE=${AZURE_PIPELINE}
+        -D WIN32=${WIN32}
+        -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
+        )
 
+# Include the surge filesystem API so we can work on systems which don't have
+# a full std::filesystem (mac targets <10.15, older ubuntus)
 add_subdirectory(libs/filesystem)
 
-#
-# FIXME use the better git approach
-#
-execute_process(
-  COMMAND git log -1 --format=%h
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-
+# And include JUCE
 add_subdirectory(libs/JUCE)
 
+# Platform Specific Compile Settings
+if( APPLE )
+  set( OS_COMPILE_OPTIONS
+          -Wno-invalid-source-encoding
+          -Wno-undefined-bool-conversion
+          -Wno-format-security
+          -Wno-writable-strings
+          )
+  set( OS_COMPILE_DEFINITIONS
+          MAC=1 )
 
+  set( OS_LINK_LIBRARIES
+          "-framework CoreServices"
+          )
+elseif( UNIX AND NOT APPLE )
+else()
+  set( OS_COMPILE_OPTIONS )
+  set( OS_COMPILE_DEFINITIONS
+     WIN=1
+     WINDOWS=1
+    _CRT_SECURE_NO_WARNINGS=1
+          )
+
+  set( OS_LINK_LIBRARIES
+          shell32
+          user32
+
+          Winmm
+          gdi32
+          gdiplus
+          msimg32
+
+          ComDlg32
+          ComCtl32
+          )
+endif()
+
+# Now set up the sources for the core library
 set( SHORTCIRCUIT_SOURCE
-  src/Precompiled.cpp
-  src/akai_s6k_import.cpp
-  src/battery_kit_import.cpp
-  src/biquadunit.cpp
+        src/loaders/akai_s6k_import.cpp
+        src/loaders/battery_kit_import.cpp
+        src/synthesis/biquadunit.cpp
   src/configuration.cpp
-  src/cpuarch.cpp
-  src/dls_import.cpp
-  src/envelope.cpp
-  src/filter.cpp
-  src/filters_chorus.cpp
-  src/filters_delay_based.cpp
-  src/filters_destruction.cpp
-  src/filters_dualdelay.cpp
-  src/filters_dynamics.cpp
-  src/filters_eq.cpp
-  src/filters_luxury.cpp
-  src/filters_modulation.cpp
-  src/filters_oscillator.cpp
-  src/filters_reverb.cpp
-  src/filters_supersvf.cpp
-  src/filters_traditional.cpp
-  src/filters_v1effects.cpp
+        src/loaders/dls_import.cpp
+        src/synthesis/envelope.cpp
+        src/synthesis/filter.cpp
+        src/synthesis/filters_chorus.cpp
+        src/synthesis/filters_delay_based.cpp
+        src/synthesis/filters_destruction.cpp
+        src/synthesis/filters_dualdelay.cpp
+        src/synthesis/filters_dynamics.cpp
+        src/synthesis/filters_eq.cpp
+        src/synthesis/filters_luxury.cpp
+        src/synthesis/filters_modulation.cpp
+        src/synthesis/filters_oscillator.cpp
+        src/synthesis/filters_reverb.cpp
+        src/synthesis/filters_supersvf.cpp
+        src/synthesis/filters_traditional.cpp
+        src/synthesis/filters_v1effects.cpp
   src/generator.cpp
-  src/load_aiff.cpp
-  src/load_recycle.cpp
-  src/load_riff_wave.cpp
-  src/load_sf2_sample.cpp
-  src/logfile.cpp
+        src/loaders/load_aiff.cpp
+        src/loaders/load_recycle.cpp
+        src/loaders/load_riff_wave.cpp
+        src/loaders/load_sf2_sample.cpp
+        src/infrastructure/logfile.cpp
   src/mdump.cpp
-  src/modmatrix.cpp
-  src/morphEQ.cpp
+        src/synthesis/modmatrix.cpp
+        src/synthesis/morphEQ.cpp
   src/multiselect.cpp
   src/sample.cpp
   src/sampler.cpp
@@ -77,19 +138,16 @@ set( SHORTCIRCUIT_SOURCE
   src/sampler_notelogic.cpp
   src/sampler_process.cpp
   src/sampler_voice.cpp
-  src/sf2_import.cpp
-  src/sfz_import.cpp
-  src/shortcircuit2_RIFF_conversion.cpp
-  src/steplfo.cpp
+        src/loaders/sf2_import.cpp
+        src/loaders/sfz_import.cpp
+        src/loaders/shortcircuit2_RIFF_conversion.cpp
+        src/synthesis/steplfo.cpp
   src/tools.cpp
   src/unitconversion.cpp
   )
 
-set( SHORTCIRCUIT_GUI_SOURCE
-  src/sampler_gui_interaction.cpp
-  # Windows only later on
-  src/vtgiurc.rc
-  )
+set( SHORTCIRCUIT_GENERATED_SOURCE
+        ${CMAKE_BINARY_DIR}/geninclude/version.cpp )
 
 set( VEMBERTECH_SOURCE
   libs/vembertech/tinyxml/tinystr.cpp
@@ -107,183 +165,33 @@ set( VEMBERTECH_SOURCE
   libs/vembertech/thread/threadsafety.cpp
 )
 
-set( VEMBERTECH_GUI_SOURCE
-  libs/vembertech/vt_gui/vt_gui_controls_lfo.cpp
-  libs/vembertech/vt_gui/readpng.cpp
-  libs/vembertech/vt_gui/vt_gui_window.cpp
-  libs/vembertech/vt_gui/scparamedit_layer.cpp
-  libs/vembertech/vt_gui/vt_gui_waveedit.cpp
-  libs/vembertech/vt_gui/vt_gui_controls_browser.cpp
-  libs/vembertech/vt_gui/vt_gui_controls_list.cpp
-  libs/vembertech/vt_gui/vt_gui.cpp
-  libs/vembertech/vt_gui/vt_gui_controls_menu.cpp
-  libs/vembertech/vt_gui/vt_gui_controls.cpp
-  libs/vembertech/vt_gui/browserdata.cpp
+set( SHORTCIRCUIT_INCLUDE_DIRS
+     src/
+     libs/vembertech
 )
 
-set( VST2_WRAPPER_SOURCE
-  wrappers/vst2/shortcircuit_editor2.cpp
-  wrappers/vst2/shortcircuit_vsti.cpp
-  wrappers/vst2/shortcircuit_vsti_edit.cpp
-  wrappers/vst2/shortcircuit_vsti_main_edit.cpp
-)
+add_library(shortcircuit-core
+        ${SHORTCIRCUIT_SOURCE}
+        ${VEMBERTECH_SOURCE}
+        ${SHORTCIRCUIT_GENERATED_SOURCE})
 
-
-
-if( DEFINED ENV{VST2SDK_DIR} )
-  file( TO_CMAKE_PATH "$ENV{VST2SDK_DIR}" VSTHACK )
-
-  set( VST2_LIB_SOURCE
-    ${VSTHACK}/public.sdk/source/vst2.x/audioeffect.cpp
-    ${VSTHACK}/public.sdk/source/vst2.x/audioeffectx.cpp
-    )
-
-  set( ZLIB_SOURCE
-    libs/external/zlib/adler32.c
-    libs/external/zlib/compress.c
-    libs/external/zlib/crc32.c
-    libs/external/zlib/deflate.c
-    libs/external/zlib/example.c
-    libs/external/zlib/gzio.c
-    libs/external/zlib/infback.c
-    libs/external/zlib/inffast.c
-    libs/external/zlib/inflate.c
-    libs/external/zlib/inftrees.c
-    libs/external/zlib/trees.c
-    libs/external/zlib/uncompr.c
-    libs/external/zlib/zutil.c
-    )
-
-  add_library( shortcircuit-vst2
-    SHARED
-    ${SHORTCIRCUIT_SOURCE}
-    ${SHORTCIRCUIT_GUI_SOURCE}
-    ${VEMBERTECH_SOURCE}
-    ${VEMBERTECH_GUI_SOURCE}
-    ${VST2_WRAPPER_SOURCE}
-    ${VST2_LIB_SOURCE}
-    ${ZLIB_SOURCE}
-    )
-
-  target_include_directories( shortcircuit-vst2
-    PRIVATE
-    src/
-    libs/vembertech
-    libs/vembertech/thread
-    libs/vembertech/tinyxml
-    libs/vembertech/vt_dsp
-    libs/vembertech/vt_gui
-    libs/vembertech/vt_util
-    
-    # Temporary until I refactor the VST2
-    wrappers/vst2
-    ${VSTHACK}
-    ${VSTHACK}/public.sdk/source/vst2.x
-    )
-
-
-
-  target_include_directories( shortcircuit-vst2 PRIVATE libs/external/libpng libs/external/zlib )
-  
-  if( ${CMAKE_SIZEOF_VOID_P} EQUAL 4 )
-    set( PNG_LINK_DIR "libs/external/libpng/" )
-  else()
-    set( PNG_LINK_DIR "libs/external/libpng/x64" )
-  endif()
-  message( STATUS "Configuring PNG linkage from ${PNG_LINK_DIR}" )
-
-  target_compile_definitions( shortcircuit-vst2 PRIVATE
-    WINDOWS=1
-    TARGET_VST2=1
-    
-    _CRT_SECURE_NO_WARNINGS=1
-    )
-  target_link_libraries( shortcircuit-vst2
-    PRIVATE
-    
-    shell32
-    user32
-
-    Winmm
-    gdi32
-    gdiplus
-    msimg32
-    
-    ComDlg32
-    ComCtl32
-
-    ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/libpng.lib
-    ${CMAKE_SOURCE_DIR}/${PNG_LINK_DIR}/zlib.lib
-    )
-
-  target_link_options(shortcircuit-vst2 PUBLIC "/DEF:${CMAKE_SOURCE_DIR}\\resources\\windows\\shortcircuit_vst2.def" )
-
-endif()
+target_include_directories(shortcircuit-core PRIVATE ${SHORTCIRCUIT_INCLUDE_DIRS} )
+target_compile_options(shortcircuit-core PRIVATE ${OS_COMPILE_OPTIONS})
+target_compile_definitions(shortcircuit-core PRIVATE ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
+add_dependencies(shortcircuit-core git-info)
 
 add_executable( sc-headless
-  ${SHORTCIRCUIT_SOURCE}
-  ${VEMBERTECH_SOURCE}
   wrappers/headless/main.cpp
   )
 
-target_include_directories( sc-headless
-  PRIVATE
-  src/
-  libs/vembertech
-  libs/vembertech/thread
-  libs/vembertech/tinyxml
-  libs/vembertech/vt_dsp
-  libs/vembertech/vt_util
-  )
-
-if( APPLE )
-  target_compile_definitions( sc-headless PRIVATE
-    MAC=1
-    TARGET_HEADLESS=1
-    )
-  # Obviously fix all of these
-  target_compile_options( sc-headless PRIVATE
-
-    -Wno-invalid-source-encoding
-          -Wno-undefined-bool-conversion
-          -Wno-format-security
-          -Wno-writable-strings
-    )
-
-  target_link_libraries( sc-headless PRIVATE
-          surge::filesystem
-          "-framework CoreServices"
-          )
-
-endif()
-
-if( WIN32 )
-  target_compile_definitions( sc-headless PRIVATE
-    WIN=1
-    WINDOWS=1
-    TARGET_HEADLESS=1
-    _CRT_SECURE_NO_WARNINGS=1
-    )
-
-  target_link_libraries( sc-headless
-    PRIVATE
-    
-    shell32
-    user32
-
-    Winmm
-    gdi32
-    gdiplus
-    msimg32
-    
-    ComDlg32
-    ComCtl32
-
-          surge::filesystem
-    )
-
-endif()
-
+target_include_directories( sc-headless PRIVATE ${SHORTCIRCUIT_INCLUDE_DIRS} )
+target_compile_options(sc-headless PRIVATE ${OS_COMPILE_OPTIONS})
+target_compile_definitions(sc-headless PRIVATE ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
+target_link_libraries(sc-headless PRIVATE
+        ${OS_LINK_LIBRARIES}
+        shortcircuit-core
+        surge::filesystem
+        )
 
 juce_add_plugin( ShortCircuit3
   PRODUCT_NAME "ShortCircuit3"
@@ -307,24 +215,17 @@ set_target_properties( ShortCircuit3-Binary PROPERTIES POSITION_INDEPENDENT_CODE
 
 target_include_directories( ShortCircuit3
   PRIVATE
-  src/
-  libs/vembertech
-  libs/vembertech/thread
-  libs/vembertech/tinyxml
-  libs/vembertech/vt_dsp
-  libs/vembertech/vt_util
+  ${SHORTCIRCUIT_INCLUDE_DIRS}
   )
 
 target_sources( ShortCircuit3 PRIVATE
-  ${SHORTCIRCUIT_SOURCE}
-  ${VEMBERTECH_SOURCE}
-
-  # And of course wrappers/juce
   wrappers/juce/SC3Processor.cpp
   wrappers/juce/SC3Editor.cpp
   )
-
+target_compile_options(ShortCircuit3 PUBLIC ${OS_COMPILE_OPTIONS})
 target_compile_definitions( ShortCircuit3 PUBLIC
+        ${OS_COMPILE_DEFINITIONS}
+        TARGET_HEADLESS=1
   JUCE_ALLOW_STATIC_NULL_VARIABLES=0
   JUCE_STRICT_REFCOUNTEDPOINTER=1
   
@@ -339,24 +240,9 @@ target_compile_definitions( ShortCircuit3 PUBLIC
   JUCE_JACK=1
   )
 
-if( APPLE )
-  target_compile_definitions( ShortCircuit3 PUBLIC
-    MAC=1
-    TARGET_HEADLESS=1
-    )
-elseif( WIN32 )
-  target_compile_definitions( ShortCircuit3 PUBLIC
-    WIN=1
-    WINDOWS=1
-    TARGET_HEADLESS=1
-    _CRT_SECURE_NO_WARNINGS=1
-    )
-else()
-endif()
-
-
 target_link_libraries( ShortCircuit3 PRIVATE
   ShortCircuit3-Binary
+  shortcircuit-core
   juce::juce_analytics
   juce::juce_audio_utils
   juce::juce_audio_processors
@@ -365,19 +251,3 @@ target_link_libraries( ShortCircuit3 PRIVATE
   juce::juce_dsp
 )
 
-
-if( WIN32 )
-  add_custom_target( win-tmp-zip )
-  add_custom_command(
-    TARGET win-tmp-zip
-    POST_BUILD
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/asset
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/zipme
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/ShortCircuit3_artefacts/${CMAKE_CFG_INTDIR}" ${CMAKE_BINARY_DIR}/zipme
-    COMMAND erase zipme\\*lib
-    COMMAND powershell Compress-Archive
-           -DestinationPath "${CMAKE_BINARY_DIR}/asset/sst-project-3-${GIT_COMMIT_HASH}.zip"
-           -Path "${CMAKE_BINARY_DIR}/zipme"
-  )
-endif()

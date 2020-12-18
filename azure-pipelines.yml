@@ -10,9 +10,9 @@ jobs:
 - job: Build
   strategy:
     matrix:
-    #  mac:
-    #    imageName: 'macos-10.14'
-    #    isMac: True
+      mac:
+        imageName: 'macos-10.14'
+        isMac: True
       win:
         imageName: 'windows-2019'
         isWindows: True
@@ -36,52 +36,6 @@ jobs:
 
   - bash: |
       # This is a hack while i make the win tmp depend properly
-      cmake --build build --config Release
-      cmake --build build --config Release --target win-tmp-zip
+      cmake --build build --config Debug
     displayName: Build
-    condition: variables.isWindows
-
-
-  - bash: |
-      # This is a hack while i make the win tmp depend properly
-      # cmake --build build --config Release --target sc-headless
-    displayName: Build
-    condition: variables.isMac
-
-
-  - task: PublishPipelineArtifact@0
-    inputs:
-      artifactName: 'WINDOWS_BUILD'
-      targetPath: 'build/asset/'
-    displayName: Publish Windows Zip
-    condition: variables.isWindows
-
-
-- job: UpdateGithubRelease
-  dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-
-  steps:
-  - task: DownloadPipelineArtifact@0
-    inputs:
-      artifactName: 'WINDOWS_BUILD'
-      targetPath: $(Build.ArtifactStagingDirectory)
-
-
-  - bash: |
-     scripts/release-notes.sh > $(Build.ArtifactStagingDirectory)/ReleaseNotes.md
-     ls $(Build.ArtifactStagingDirectory)
-    displayName: Fake up release notes
-
-  - task: GitHubRelease@0
-    displayName: "Update Github Release"
-    inputs:
-      gitHubConnection: baconpaul
-      repositoryName: baconpaul/sst-project-3
-      action: edit
-      tag: Nightly
-      target: '$(Build.SourceVersion)'
-      addChangeLog: false
-      releaseNotesFile: $(Build.ArtifactStagingDirectory)/ReleaseNotes.md
-      assets: $(Build.ArtifactStagingDirectory)/*.*
 

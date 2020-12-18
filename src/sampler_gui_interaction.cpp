@@ -13,8 +13,8 @@
 #if ! TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
 #endif
-#include "steplfo.h"
-#include "modmatrix.h"
+#include "synthesis/steplfo.h"
+#include "synthesis/modmatrix.h"
 #include "configuration.h"
 #include <vt_gui/browserdata.h>
 #include <vt_util/vt_lockfree.h>
@@ -32,9 +32,9 @@ void sampler::post_events_from_editor(actiondata ad)
 {				
 	ActionBuffer->WriteBlock(&ad);
 	
-	// lägg till pseudo:
+	// lï¿½gg till pseudo:
 	// if (halt_engine) process_editor_events()
-	// TODO om audio-processing inte är aktiv ska guit funka ändå
+	// TODO om audio-processing inte ï¿½r aktiv ska guit funka ï¿½ndï¿½
 
 	// HACK verkar strula deluxemkt
 	if(AudioHalted) process_editor_events();
@@ -125,7 +125,7 @@ void sampler::process_editor_events()
 						zones[nz].key_high = i->key_hi;
 						zones[nz].velocity_low = i->vel_lo;
 						zones[nz].velocity_high = i->vel_hi;
-						//vtCopyString(zones[nz].name,i->label.c_str(),31);		// gör i sample:: istället
+						//vtCopyString(zones[nz].name,i->label.c_str(),31);		// gï¿½r i sample:: istï¿½llet
 						zones[nz].database_id = i->database_id;
 					}
 				}

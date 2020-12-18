@@ -7,7 +7,7 @@
 //-------------------------------------------------------------------------------------------------------
 
 #include "sample.h"
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include "resampling.h"
 #include "globals.h"
 //#include <windows.h>

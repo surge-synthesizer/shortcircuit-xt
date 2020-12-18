@@ -1,14 +1,14 @@
 #include <assert.h>
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include "sample.h"
 #include "globals.h"
 #include "resampling.h"
 #include "memfile.h"
-#include "sf2_import.h"
+#include "loaders/sf2_import.h"
 #include "dls.h"
 #include "sampler.h"
 #include "unitconversion.h"
-#include "modmatrix.h"
+#include "synthesis/modmatrix.h"
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
 #include <cstdint>
@@ -77,7 +77,7 @@ struct giga_3ewa
 	uint8_t regoptions;
 	uint16_t uk4;
 	uint8_t VelocityUpperLimit;
-	// forsätt senare
+	// forsï¿½tt senare
 };
 
 #pragma pack()

@@ -15,7 +15,7 @@
 #include <assert.h>
 #include "mathtables.h"
 #include "generator.h"
-#include "filter.h"
+#include "synthesis/filter.h"
 #include "sampler_state.h"
 #include <vt_dsp/halfratefilter.h>
 #include <vt_dsp/basic_dsp.h>

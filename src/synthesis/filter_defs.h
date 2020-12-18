@@ -1,6 +1,6 @@
 #pragma once
 #include "filter.h"
-#include "biquadunit.h"
+#include "synthesis/biquadunit.h"
 #include "morphEQ.h"
 #include "parameterids.h"
 #include <vt_dsp/basic_dsp.h>
@@ -352,7 +352,7 @@ public:
 	virtual void init_params();
 	void calc_coeffs();
 	virtual void suspend(){ parametric[0].suspend(); parametric[1].suspend(); parametric[2].suspend(); parametric[3].suspend(); parametric[4].suspend(); parametric[5].suspend(); }
-	virtual bool init_freq_graph(){ calc_coeffs(); return true; }	// filter z-plot honk (visa på waveformdisplay)
+	virtual bool init_freq_graph(){ calc_coeffs(); return true; }	// filter z-plot honk (visa pï¿½ waveformdisplay)
 	virtual float get_freq_graph(float f);
 };
 
@@ -374,7 +374,7 @@ public:
 	virtual const char* get_ip_entry_label(int ip_id, int c_id);
 	
 	void calc_coeffs();
-	virtual bool init_freq_graph(){ calc_coeffs(); return true; }	// filter z-plot honk (visa på waveformdisplay)
+	virtual bool init_freq_graph(){ calc_coeffs(); return true; }	// filter z-plot honk (visa pï¿½ waveformdisplay)
 	virtual float get_freq_graph(float f);
 	//virtual int get_entry_count(int p_id);
 	//virtual const char*	get_entry_label(int p_id, int c_id);
@@ -400,7 +400,7 @@ public:
 	virtual void init_params();
 	void calc_coeffs();
 	virtual void suspend(){ f.suspend(); }
-	virtual bool init_freq_graph(){ calc_coeffs(); return true; }	// filter z-plot honk (visa på waveformdisplay)
+	virtual bool init_freq_graph(){ calc_coeffs(); return true; }	// filter z-plot honk (visa pï¿½ waveformdisplay)
 	virtual float get_freq_graph(float f);
 };
 
@@ -1024,7 +1024,7 @@ class chorus : public filter
 	Align16 lipol_ps feedback,width;
 	Align16 __m128 voicepanL4[4],voicepanR4[4];
 	Align16 biquadunit lp,hp;	
-	Align16 float buffer[max_delay_length+FIRipol_N];	// så kan den interpoleras med SSE utan wrap
+	Align16 float buffer[max_delay_length+FIRipol_N];	// sï¿½ kan den interpoleras med SSE utan wrap
 public:
 	chorus(float*,int*);
 	virtual ~chorus();	

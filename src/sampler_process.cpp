@@ -2,9 +2,9 @@
 #if ! TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
 #endif
-#include "filter.h"
+#include "synthesis/filter.h"
 #include "mathtables.h"
-#include "modmatrix.h"
+#include "synthesis/modmatrix.h"
 #include <vt_dsp/basic_dsp.h>
 #include "sampler_voice.h"
 #include "configuration.h"

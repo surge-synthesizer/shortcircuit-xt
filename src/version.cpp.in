@@ -1,0 +1,36 @@
+/*
+** This file is rebuilt and substitited every time you run a build.
+** Things which need to be per-build should be defined here, declared
+** in the version.h header, and then used wherever you want
+*/
+#include "version.h"
+
+namespace ShortCircuit
+{
+   const char* Build::MajorVersionStr = "@SHORTC_MAJOR_VERSION@";
+   const int   Build::MajorVersionInt = @SHORTC_MAJOR_VERSION@;
+   
+   const char* Build::SubVersionStr = "@SHORTC_SUB_VERSION@";
+   const int   Build::SubVersionInt = @SHORTC_SUB_VERSION@;
+   
+   const char* Build::ReleaseNumberStr = "@SHORTC_RELEASE_NUMBER@";
+   const char* Build::ReleaseStr = "@SHORTC_RELEASE_VERSION@";
+   
+   const char* Build::BuildNumberStr = "@SHORTC_BUILD_HASH@"; // Build number to be sure that each result could identified.
+   
+   const char* Build::FullVersionStr = "@SHORTC_FULL_VERSION@";
+   const char* Build::BuildHost = "@SHORTC_BUILD_FQDN@";
+   const char* Build::BuildArch = "@SHORTC_BUILD_ARCH@";
+
+   const char* Build::BuildLocation = "@SHORTC_BUILD_LOCATION@";
+
+   const char* Build::BuildDate = "@SHORTC_BUILD_DATE@";
+   const char* Build::BuildTime = "@SHORTC_BUILD_TIME@";
+   const char* Build::BuildYear = "@SHORTC_BUILD_YEAR@";
+
+   const char* Build::GitHash = "@GIT_COMMIT_HASH@";
+   const char* Build::GitBranch = "@GIT_BRANCH@";
+
+   const char* Build::CMAKE_INSTALL_PREFIX = "@CMAKE_INSTALL_PREFIX@";
+}
+

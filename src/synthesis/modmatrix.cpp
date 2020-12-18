@@ -9,10 +9,10 @@
 #include "modmatrix.h"
 #include "parameterids.h"
 #include "controllers.h"
-#include "shortcircuit2_RIFF_format.h"
+#include "loaders/shortcircuit2_RIFF_format.h"
 #include "sampler_voice.h"
 #include "sampler_state.h"
-#include "filter.h"
+#include "synthesis/filter.h"
 #include "configuration.h"
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
@@ -69,7 +69,7 @@ void modmatrix::assign(
 		add_source(RMS_Modulator5, "stepLFO3",		voice ? &voice->stepLFO[2].output : 0);	
 		add_source(RMS_SliceEnv, "slice_env",		voice ? &voice->slice_env : 0,"Slice Envelope");			
 		add_source(RMS_Random, "random+",		voice ? &voice->random : 0);
-		add_source(RMS_RandomBP, "random±",		voice ? &voice->randombp : 0);
+		add_source(RMS_RandomBP, "randomï¿½",		voice ? &voice->randombp : 0);
 		add_source(RMS_Gate, "gate",			voice ? &voice->fgate : 0);
 		add_source(RMS_Time, "time",			voice ? &voice->time : 0,"Time (s)");
 		add_source(RMS_TimeMinutes, "time60",		voice ? &voice->time60 : 0,"Time (m)");

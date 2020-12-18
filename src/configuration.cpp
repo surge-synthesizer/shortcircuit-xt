@@ -11,8 +11,9 @@
 #include <string.h>
 #include <tinyxml/tinyxml.h>
 #include <assert.h>
-#include "versionno.h"
 #include <vt_util/vt_string.h>
+
+#include "version.h"
 
 
 bool global_use_alt_keyboardmethod = false;
@@ -146,7 +147,7 @@ bool configuration::save(std::wstring filename)
 	TiXmlDocument doc(filenameUTF8);
 
 	TiXmlElement conf("configuration");
-	conf.SetAttribute("version",STRSCVERNICE);			
+	conf.SetAttribute("version",ShortCircuit::Build::FullVersionStr);
 	conf.SetAttribute("store_in_projdir",store_in_projdir?1:0);	
 	conf.SetAttribute("outputs_stereo",this->stereo_outputs);				
 	conf.SetAttribute("skin",skindir.c_str());

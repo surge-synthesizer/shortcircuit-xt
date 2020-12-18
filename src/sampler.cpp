@@ -22,7 +22,7 @@
 #include <AEffEditor.h>
 #include <audioeffectx.h>
 #endif
-#include "morphEQ.h"
+#include "synthesis/morphEQ.h"
 #include "configuration.h"
 #include "interaction_parameters.h"
 
@@ -404,7 +404,7 @@ void sampler::purge_holdbuffer()
 	}
 	cs_engine.leave();
 
-	// note: måste remova entries när noter dödar sig själv auch
+	// note: mï¿½ste remova entries nï¿½r noter dï¿½dar sig sjï¿½lv auch
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -537,7 +537,7 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
 	{
 		if (s_id) *s_id = -1;
 		cs_patch.leave();
-		return true;	// finns redan, skulle man kunna säga, eftersom den inte ska laddas
+		return true;	// finns redan, skulle man kunna sï¿½ga, eftersom den inte ska laddas
 	}
 
 	if(filename && !strncmp("loaded",filename,6))
@@ -726,7 +726,7 @@ bool sampler::add_zone(const TCHAR *filename,int *new_z,char part,bool use_root_
 		zones[i].finetune = samples[s]->inst_tag.chFineTune/128.0f;
 	}*/
 	
-	// flytta loop & slices-transfer från samplingen till en egen funktion när det är uppdateringar av det så det bara finns på ett ställe
+	// flytta loop & slices-transfer frï¿½n samplingen till en egen funktion nï¿½r det ï¿½r uppdateringar av det sï¿½ det bara finns pï¿½ ett stï¿½lle
 		if(use_root_key && samples[s]->meta.rootkey_present)
 		{
 			zones[i].key_root = samples[s]->meta.key_root;
@@ -780,7 +780,7 @@ bool sampler::add_zone(const TCHAR *filename,int *new_z,char part,bool use_root_
 
 bool sampler::replace_zone(int z, const char *filename)
 {
-	// ACHTUNG!!! om sample refcount > 1 så ska samplingen enbart bytas för den aktuella zonen!!	
+	// ACHTUNG!!! om sample refcount > 1 sï¿½ ska samplingen enbart bytas fï¿½r den aktuella zonen!!	
 	// kill all notes for the given zone
 	kill_notes(z);	
 	int s_old = zones[z].sample_id;	

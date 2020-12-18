@@ -11,7 +11,7 @@ class sampler;
 
 #include "sampler_state.h"
 #include "controllers.h"
-#include "threadsafety.h"
+#include <thread/threadsafety.h>
 #include "multiselect.h"
 #include <vt_dsp/lipol.h>
 #include <vt_gui/vt_gui_constants.h>

@@ -8,7 +8,7 @@
 
 #include "sample.h"
 #include "sampler_state.h"
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include "resampling.h"
 #include "globals.h"
 #if WINDOWS

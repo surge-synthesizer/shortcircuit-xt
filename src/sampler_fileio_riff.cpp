@@ -22,13 +22,12 @@ using std::min;
 using std::max;
 
 #include "globals.h"
-#include "versionno.h"
 #include "memfile.h"
 #include "sample.h"
 
 #include <vt_dsp/endian.h>
-#include "shortcircuit2_RIFF_format.h"
-#include "shortcircuit2_RIFF_conversion.h"
+#include "loaders/shortcircuit2_RIFF_format.h"
+#include "loaders/shortcircuit2_RIFF_conversion.h"
 #include "configuration.h"
 
 using std::vector;

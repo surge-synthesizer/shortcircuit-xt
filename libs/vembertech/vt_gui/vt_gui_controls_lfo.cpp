@@ -1,5 +1,5 @@
 #include "vt_gui_controls.h"
-#include "steplfo.h"
+#include "synthesis/steplfo.h"
 
 vg_steplfo::vg_steplfo(vg_window *o, int id, TiXmlElement *e) : vg_control(o,id,e)
 {

@@ -5,10 +5,11 @@
 //	Copyright 2004 Claes Johanson
 //
 //-------------------------------------------------------------------------------------------------------
+
 #include "globals.h"
 #include "sampler.h"
 #include "stdio.h"
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include "unitconversion.h"
 #include <assert.h>
 #include <vt_dsp/basic_dsp.h>
@@ -17,6 +18,10 @@
 #if WINDOWS
 #include <mmiscapi.h>
 #endif
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 typedef int8_t int8;
 
@@ -157,7 +162,6 @@ struct akai_s6k_akp_keygroup
 
 bool sampler::load_akai_s6k_program(const char *filename,char channel,bool replace)
 {
-#if WINDOWS
 	char path[256];
 	const char *last;
 	last = strrchr(filename,'\\');
@@ -286,7 +290,7 @@ bool sampler::load_akai_s6k_program(const char *filename,char channel,bool repla
 				return false;
 			}			
 			
-			int csize = min(mmckinfoSubchunk.cksize, sizeof(akai_s6k_akp_zone));
+			int csize = min(mmckinfoSubchunk.cksize, (int)sizeof(akai_s6k_akp_zone));
 			if (mmioRead(hmmio, (HPSTR)&s6k_zone[k][z], csize) != (LRESULT)csize)
 			{				
 				write_log("file	io: error reading the zone chunk!");
@@ -380,6 +384,5 @@ bool sampler::load_akai_s6k_program(const char *filename,char channel,bool repla
 			}
 		}		
 	}
-#endif    
 	return true;
 }

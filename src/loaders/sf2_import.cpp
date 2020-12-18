@@ -8,12 +8,12 @@
 #include "globals.h"
 #include "sampler.h"
 #include "stdio.h"
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include "sf2.h"
 #include "sf2_import.h"
 #include "unitconversion.h"
-#include "modmatrix.h"
-#include "steplfo.h"
+#include "synthesis/modmatrix.h"
+#include "synthesis/steplfo.h"
 #include <vt_util/vt_string.h>
 
 using std::min;

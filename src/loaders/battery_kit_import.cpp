@@ -9,7 +9,7 @@
 #include "sampler.h"
 #include <stdio.h>
 #include <float.h>
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include <tinyxml/tinyxml.h>
 #include "unitconversion.h"
 #include <vt_util/vt_string.h>

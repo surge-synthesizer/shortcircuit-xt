@@ -17,6 +17,10 @@
 #include <iostream>
 #include <clocale>
 
+#ifdef SKIP_WINDOWS_COMPAT
+#else
+
+
 /*
 ** Various stuff so unixens can compile windows code while we port.
 ** goal: eliminate this file
@@ -101,6 +105,8 @@ struct MMCKINFO {
 #define LPSTR char *
 #define LPMMCKINFO MMCKINFO *
 
+typedef int LRESULT;
+
 inline int mmioOpen( char *, void *, int ) {
     std::cout << "MMIO Open " << std::endl;
     return 1;
@@ -171,3 +177,5 @@ inline HANDLE FindNextFile( HANDLE, WIN32_FIND_DATA * ) { return 0; }
 inline void OutputDebugString( const char* c ) { std::cout << c << std::endl; }
 
 #define MAX_PATH 1024
+
+#endif

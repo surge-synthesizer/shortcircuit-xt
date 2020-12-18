@@ -7,7 +7,7 @@
 //-------------------------------------------------------------------------------------------------------
 
 #include "sampler.h"
-#include "modmatrix.h"
+#include "synthesis/modmatrix.h"
 #include <string>
 #include <iostream>
 #include <assert.h>
@@ -17,7 +17,6 @@
 #include "configuration.h"
 
 #include "globals.h"
-#include "versionno.h"
 #include <string.h>
 //#include <wx/wfstream.h>
 //#include <wx/zipstrm.h>

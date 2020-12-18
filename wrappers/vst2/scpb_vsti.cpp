@@ -10,7 +10,7 @@
 #include "scpb_vsti.h"
 #endif
 
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include <math.h>
 #include <float.h>
 #include "scpb_editor.h"
@@ -284,7 +284,7 @@ void scpb_vsti::handleEvent(VstEvent* ev){
 			sobj->all_notes_off();		
 		} 
 
-		// lägg till allnotesoff etc.. sno från pdroidmk2
+		// lï¿½gg till allnotesoff etc.. sno frï¿½n pdroidmk2
 	}
 }
 

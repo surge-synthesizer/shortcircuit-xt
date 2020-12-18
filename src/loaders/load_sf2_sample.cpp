@@ -4,7 +4,7 @@
 #include <mmreg.h>
 #endif
 #include "sf2.h"
-#include "logfile.h"
+#include "infrastructure/logfile.h"
 #include "sample.h"
 #include "globals.h"
 #include "resampling.h"

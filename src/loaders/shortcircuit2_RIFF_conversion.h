@@ -1,7 +1,7 @@
 #pragma once
 #include "shortcircuit2_RIFF_format.h"
 #include "sampler_state.h"
-#include "modmatrix.h"
+#include "synthesis/modmatrix.h"
 #include <vt_dsp/endian.h>
 
 int RIFF_FILTER_Type_To_Internal(int);

@@ -10,7 +10,7 @@
 #include "stdio.h"
 
 #include "unitconversion.h"
-#include "modmatrix.h"
+#include "synthesis/modmatrix.h"
 #include "configuration.h"
 
 #include <algorithm>

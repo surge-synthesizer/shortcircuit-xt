@@ -11,9 +11,9 @@
 #include "resampling.h"
 
 #include "generator.h"
-#include "envelope.h"
-#include "steplfo.h"
-#include "modmatrix.h"
+#include "synthesis/envelope.h"
+#include "synthesis/steplfo.h"
+#include "synthesis/modmatrix.h"
 
 #include <vt_dsp/lipol.h>
 

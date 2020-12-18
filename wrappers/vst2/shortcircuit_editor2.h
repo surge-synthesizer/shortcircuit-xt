@@ -7,7 +7,7 @@
 //-------------------------------------------------------------------------------------------------------
 #pragma once
 
-#include "filter.h"
+#include "synthesis/filter.h"
 //#include <process.h>
 #include <aeffeditor.h>
 #include <vt_gui/vt_gui.h>
