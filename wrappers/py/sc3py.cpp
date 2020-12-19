@@ -1,5 +1,8 @@
 #include <pybind11/pybind11.h>
 
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
+
 #include <string>
 #include <utility>
 
@@ -14,6 +17,18 @@ namespace py = pybind11;
 struct SC3PY : public sampler
 {
     explicit SC3PY(int numOuts) : sampler(nullptr, numOuts) {}
+
+    void loadFileFullKeyboard(const std::string &s) { load_file(s.c_str()); }
+
+    void playNotePy(int ch, int note, int vel) { PlayNote(ch, note, vel); }
+    void releaseNotePy(int ch, int note, int vel) { ReleaseNote(ch, note, vel); }
+
+    py::array_t<float> getOutput( )
+    {
+        return py::array_t<float> ({{ 2, (long)block_size }},
+                                   { 2* sizeof(float), sizeof(float)},
+                                   (const float*)( & output[0][0] ) );
+    }
 };
 
 std::unique_ptr<SC3PY> createSC3(float sampleRate, int nChannels)
@@ -32,5 +47,12 @@ PYBIND11_MODULE(shortcircuit3py, m)
         "getVersion", []() { return ShortCircuit::Build::FullVersionStr; },
         "Get the version of ShortCircuit");
 
-    py::class_<SC3PY>(m, "ShortCircuit3Sampler");
+    py::class_<SC3PY>(m, "ShortCircuit3Sampler")
+        .def("loadFileSimple", &SC3PY::loadFileFullKeyboard)
+
+        .def( "process_audio", &SC3PY::process_audio )
+        .def( "getOutput", &SC3PY::getOutput )
+
+        .def("playNote", &SC3PY::playNotePy)
+        .def("releaseNote", &SC3PY::releaseNotePy);
 }

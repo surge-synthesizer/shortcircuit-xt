@@ -77,16 +77,22 @@ class sampler
 
     sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect = 0);
     virtual ~sampler(void);
+
+    /*
+     * Midi Messages
+     */
     virtual bool PlayNote(char channel, char key, char velocity, bool is_release = false,
                           char detune = 0);
-    void play_zone(int zone_id);
-    void release_zone(int zone_id);
     void PitchBend(char channel, int value);
     void ChannelAftertouch(char channel, int value);
     void ChannelController(char channel, int cc, int value);
     void ReleaseNote(char channel, char key, char velocity);
-    void voice_off(uint32 voice_id);
     void AllNotesOff();
+
+
+    void play_zone(int zone_id);
+    void release_zone(int zone_id);
+    void voice_off(uint32 voice_id);
     void kill_notes(uint32 zone_id);
     float *get_output_pointer(int id, int channel, int part); // internal
     bool get_key_name(char *str, int channel, int key);
