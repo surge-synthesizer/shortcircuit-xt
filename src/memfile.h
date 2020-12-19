@@ -5,6 +5,7 @@
 #include <Windows.h>
 #endif
 #include <vt_util/vt_string.h>
+#include <cassert>
 
 struct riffheader
 {

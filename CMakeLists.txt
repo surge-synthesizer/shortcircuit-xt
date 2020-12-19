@@ -79,6 +79,7 @@ if (APPLE)
             )
 elseif (UNIX AND NOT APPLE)
     set(OS_COMPILE_OPTIONS
+	    -fPIC
             -fvisibility=hidden -fvisibility-inlines-hidden
             )
     set(OS_COMPILE_DEFINITIONS
