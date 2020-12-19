@@ -1,6 +1,6 @@
 #pragma once
-#include "shortcircuit2_RIFF_format.h"
 #include "sampler_state.h"
+#include "shortcircuit2_RIFF_format.h"
 #include "synthesis/modmatrix.h"
 #include <vt_dsp/endian.h>
 
@@ -13,7 +13,7 @@ unsigned char Playmode_From_Internal(unsigned char);
 void ReadChunkFltD(RIFF_FILTER *F, filterstruct *f);
 void WriteChunkFltD(RIFF_FILTER *F, filterstruct *f);
 void ReadChunkFltB(RIFF_FILTER_BUSSEX *F, sample_multi *m, int id);
-void WriteChunkFltB(RIFF_FILTER_BUSSEX *F,  sample_multi *m, int id);
+void WriteChunkFltB(RIFF_FILTER_BUSSEX *F, sample_multi *m, int id);
 void ReadChunkAuxB(RIFF_AUX_BUSS *E, aux_buss *e);
 void WriteChunkAuxB(RIFF_AUX_BUSS *E, aux_buss *e);
 void ReadChunkMMen(RIFF_MM_ENTRY *E, mm_entry *e, modmatrix *mm);

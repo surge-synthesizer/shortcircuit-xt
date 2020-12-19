@@ -1,14 +1,14 @@
 #if 0
 
 #include "scpb_sampler.h"
-#include <windows.h>
+#include "../common/vstcontrols.h"
 #include "globals.h"
 #include "mathtables.h"
-#include "../common/vstcontrols.h"
+#include "patch_select_dialog.h"
 #include "scpb_editor.h"
+#include <windows.h>
 #include <wx/wfstream.h>
 #include <wx/zipstrm.h>
-#include "patch_select_dialog.h"
 
 scpb_sampler::scpb_sampler(AEffEditor *editor, AudioEffectX	*effect)
 : sampler(editor)

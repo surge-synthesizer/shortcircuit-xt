@@ -12,10 +12,10 @@
 
 // #include "stdafx.h"
 #include "configuration_dialog.h"
-#include "resource2.h"
 #include "globals.h"
-#include <atldlgs.h>
 #include "miniedit_dialog.h"
+#include "resource2.h"
+#include <atldlgs.h>
 
 
 class CConfigDialog : public CDialogImpl<CConfigDialog>

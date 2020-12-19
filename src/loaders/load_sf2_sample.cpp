@@ -1,73 +1,79 @@
 #include <assert.h>
 #if WINDOWS
-#include <windows.h>
 #include <mmreg.h>
+#include <windows.h>
 #endif
-#include "sf2.h"
-#include "infrastructure/logfile.h"
-#include "sample.h"
 #include "globals.h"
-#include "resampling.h"
+#include "infrastructure/logfile.h"
 #include "memfile.h"
+#include "resampling.h"
+#include "sample.h"
+#include "sf2.h"
 
-bool sample::parse_sf2_sample(void* data, size_t filesize, unsigned int sample_id)
-{	
-	size_t datasize;
-	memfile mf(data,filesize);	
-	if(!mf.riff_descend_RIFF_or_LIST('sfbk',&datasize)) return false;	
+bool sample::parse_sf2_sample(void *data, size_t filesize, unsigned int sample_id)
+{
+    size_t datasize;
+    memfile mf(data, filesize);
+    if (!mf.riff_descend_RIFF_or_LIST('sfbk', &datasize))
+        return false;
 
-	off_t startpos = mf.TellI(); // store for later use
-	if(!mf.riff_descend_RIFF_or_LIST('pdta',&datasize)) return false;	
-	
-	sf2_Sample sampledata;
-	if(!mf.riff_descend('shdr',&datasize)) return false;
-	off_t shdrstartpos = mf.TellI(); // store for later use
+    off_t startpos = mf.TellI(); // store for later use
+    if (!mf.riff_descend_RIFF_or_LIST('pdta', &datasize))
+        return false;
 
-	int sample_count = (datasize/46) - 1;
-	
-	if(sample_id >= sample_count) return false;
+    sf2_Sample sampledata;
+    if (!mf.riff_descend('shdr', &datasize))
+        return false;
+    off_t shdrstartpos = mf.TellI(); // store for later use
 
-	mf.SeekI(sample_id*46,mf_FromCurrent);
-	mf.Read(&sampledata,46);
-	vtCopyString(name,sampledata.achSampleName,20);
+    int sample_count = (datasize / 46) - 1;
 
-	mf.SeekI(startpos);
-	if(!mf.riff_descend_RIFF_or_LIST('sdta',&datasize)) return false;
+    if (sample_id >= sample_count)
+        return false;
 
-	off_t sdtastartpos = mf.TellI();	// store for later use
-	mf.SeekI(sampledata.dwStart*2 + 8,mf_FromCurrent);
-	int samplesize = sampledata.dwEnd - sampledata.dwStart;
-	int16_t *loaddata = (int16_t*)mf.ReadPtr(samplesize*sizeof(int16_t));	
-		
-	/* check for linked channel */	
-	sf2_Sample sampledataL;
-	int16_t *loaddataL = 0;
-	channels = 1;
-	if((sampledata.sfSampleType == rightSample)&&(sampledata.wSampleLink < sample_count))
-	{		
-		mf.SeekI(shdrstartpos + 46*sampledata.wSampleLink);
-		mf.Read(&sampledataL,46);
-		mf.SeekI(sdtastartpos + sampledataL.dwStart*2 + 8);
-		loaddataL = (int16_t*)mf.ReadPtr(samplesize*sizeof(int16_t));		
-		channels = 2;
-	}
-		
-	if(channels==2)
-	{
-		load_data_i16(0,loaddataL,samplesize,2);
-		load_data_i16(1,loaddata,samplesize,2);
-	}
-	else
-	{
-		load_data_i16(0,loaddata,samplesize,2);		
-	}
+    mf.SeekI(sample_id * 46, mf_FromCurrent);
+    mf.Read(&sampledata, 46);
+    vtCopyString(name, sampledata.achSampleName, 20);
 
-	this->sample_loaded = true;		
+    mf.SeekI(startpos);
+    if (!mf.riff_descend_RIFF_or_LIST('sdta', &datasize))
+        return false;
 
-	if(!SetMeta(channels,sampledata.dwSampleRate,samplesize)) return false;
-	
-	meta.loop_present = true;
-	meta.loop_start = sampledata.dwStartloop - sampledata.dwStart;
-	meta.loop_end	= sampledata.dwEndloop - sampledata.dwStart;	
-	return true;
+    off_t sdtastartpos = mf.TellI(); // store for later use
+    mf.SeekI(sampledata.dwStart * 2 + 8, mf_FromCurrent);
+    int samplesize = sampledata.dwEnd - sampledata.dwStart;
+    int16_t *loaddata = (int16_t *)mf.ReadPtr(samplesize * sizeof(int16_t));
+
+    /* check for linked channel */
+    sf2_Sample sampledataL;
+    int16_t *loaddataL = 0;
+    channels = 1;
+    if ((sampledata.sfSampleType == rightSample) && (sampledata.wSampleLink < sample_count))
+    {
+        mf.SeekI(shdrstartpos + 46 * sampledata.wSampleLink);
+        mf.Read(&sampledataL, 46);
+        mf.SeekI(sdtastartpos + sampledataL.dwStart * 2 + 8);
+        loaddataL = (int16_t *)mf.ReadPtr(samplesize * sizeof(int16_t));
+        channels = 2;
+    }
+
+    if (channels == 2)
+    {
+        load_data_i16(0, loaddataL, samplesize, 2);
+        load_data_i16(1, loaddata, samplesize, 2);
+    }
+    else
+    {
+        load_data_i16(0, loaddata, samplesize, 2);
+    }
+
+    this->sample_loaded = true;
+
+    if (!SetMeta(channels, sampledata.dwSampleRate, samplesize))
+        return false;
+
+    meta.loop_present = true;
+    meta.loop_start = sampledata.dwStartloop - sampledata.dwStart;
+    meta.loop_end = sampledata.dwEndloop - sampledata.dwStart;
+    return true;
 }

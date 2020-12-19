@@ -1,12 +1,12 @@
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 
 #include "sampler.h"
 #include "version.h"
 
 void *hInstance = 0;
-int main( int argc, char **argv )
+int main(int argc, char **argv)
 {
     std::cout << "ShortCircuit3 Headless. " << ShortCircuit::Build::FullVersionStr << std::endl;
 
@@ -21,7 +21,9 @@ int main( int argc, char **argv )
     int np = sc3->auto_get_n_parameters();
     for (int i = 0; i < np; ++i)
     {
-        std::cout << i << " " << sc3->auto_get_parameter_name(i) << " " << sc3->auto_get_parameter_display(i) << " " << sc3->auto_get_parameter_value(i) << std::endl;
+        std::cout << i << " " << sc3->auto_get_parameter_name(i) << " "
+                  << sc3->auto_get_parameter_display(i) << " " << sc3->auto_get_parameter_value(i)
+                  << std::endl;
     }
 
     std::cout << "Loading y:\\dev\\music\\SHORTCIRCUIT\\samples\\harpsi.sf2" << std::endl;

@@ -3,18 +3,17 @@
 //-------------------------------------------------------------------------------------------------------
 #if 0
 
-
 #include "scpb_editor.h"
 #include "../common/vstcontrols.h"
-#include <assert.h>
-#include "resource.h"
-#include "gui_slider.h"
-#include "gui_patchpicker.h"
-#include "scpb_sampler.h"
-#include "scpb_vsti.h"
 #include "Ckeygroupview.h"
 #include "cparamedit.h"
 #include "gui_display.h"
+#include "gui_patchpicker.h"
+#include "gui_slider.h"
+#include "resource.h"
+#include "scpb_sampler.h"
+#include "scpb_vsti.h"
+#include <assert.h>
 #include <wx/dnd.h>
 
 //#include <commctrl.h>
