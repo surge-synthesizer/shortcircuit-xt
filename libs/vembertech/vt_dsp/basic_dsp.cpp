@@ -73,6 +73,7 @@ int Wrap(int x, int L, int H)
 #endif
 #endif
     assert( 0 );
+    return 0;
 }
 
 int Sign(int x)

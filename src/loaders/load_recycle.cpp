@@ -7,8 +7,8 @@
 #include "sample.h"
 #include "sampler_state.h"
 #include <assert.h>
-#include <mmreg.h>
 #include <windows.h>
+#include <mmreg.h>
 
 using namespace REX;
 

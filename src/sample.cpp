@@ -12,8 +12,8 @@
 #include <assert.h>
 #include <vt_dsp/endian.h>
 #if WINDOWS
-#include <mmreg.h>
 #include <windows.h>
+#include <mmreg.h>
 #endif
 
 sample::sample(configuration *conf)

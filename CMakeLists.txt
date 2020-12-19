@@ -263,23 +263,21 @@ target_link_libraries(ShortCircuit3 PRIVATE
         )
 
 
-if (NOT WIN32)
-    message(STATUS "Building ShortCircuit Python bindings with pybind11")
-    add_subdirectory(libs/pybind11)
+message(STATUS "Building ShortCircuit Python bindings with pybind11")
+add_subdirectory(libs/pybind11)
 
-    pybind11_add_module(shortcircuit3py)
-    target_sources(shortcircuit3py PRIVATE wrappers/py/sc3py.cpp)
-    target_include_directories(shortcircuit3py PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
-    target_compile_options(shortcircuit3py PUBLIC ${OS_COMPILE_OPTIONS})
-    target_compile_definitions(shortcircuit3py PUBLIC
-            ${OS_COMPILE_DEFINITIONS}
-            TARGET_HEADLESS=1
-            )
+pybind11_add_module(shortcircuit3py)
+target_sources(shortcircuit3py PRIVATE wrappers/py/sc3py.cpp)
+target_include_directories(shortcircuit3py PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
+target_compile_options(shortcircuit3py PUBLIC ${OS_COMPILE_OPTIONS})
+target_compile_definitions(shortcircuit3py PUBLIC
+        ${OS_COMPILE_DEFINITIONS}
+        TARGET_HEADLESS=1
+        )
 
 
-    target_link_libraries(shortcircuit3py PRIVATE
-            shortcircuit-core
-            surge::filesystem
-            ${OS_LINK_LIBRARIES}
-            )
-endif ()
+target_link_libraries(shortcircuit3py PRIVATE
+        shortcircuit-core
+        surge::filesystem
+        ${OS_LINK_LIBRARIES}
+        )

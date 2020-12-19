@@ -12,8 +12,8 @@
 #include "sample.h"
 #include "sampler_state.h"
 #if WINDOWS
-#include <mmreg.h>
 #include <windows.h>
+#include <mmreg.h>
 #endif
 
 #include "memfile.h"

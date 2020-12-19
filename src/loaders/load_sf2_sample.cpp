@@ -1,7 +1,7 @@
 #include <assert.h>
 #if WINDOWS
-#include <mmreg.h>
 #include <windows.h>
+#include <mmreg.h>
 #endif
 #include "globals.h"
 #include "infrastructure/logfile.h"

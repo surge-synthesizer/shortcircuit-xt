@@ -1,8 +1,9 @@
 #include "globals.h"
-#include "dls.h"
+
+#include "memfile.h"
+
 #include "infrastructure/logfile.h"
 #include "loaders/sf2_import.h"
-#include "memfile.h"
 #include "resampling.h"
 #include "sample.h"
 #include "sampler.h"
@@ -12,6 +13,7 @@
 #include <cstdint>
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
+#include "dls.h"
 
 #pragma pack(push, 1)
 
