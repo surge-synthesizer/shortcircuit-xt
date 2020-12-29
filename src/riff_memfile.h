@@ -1,41 +1,58 @@
-#pragma once
-#include <list>
-#include <vt_dsp/endian.h>
+/*
+** ShortCircuit3 is Free and Open Source Software
+**
+** ShortCircuit is made available under the Gnu General Public License, v3.0
+** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
+** reserve the right to re-license their contributions under the MIT license in the
+** future at the discretion of the project maintainers.
+**
+** Copyright 2004-2021 by various individuals as described by the Git transaction log
+**
+** All source at: https://github.com/surge-synthesizer/surge.git
+**
+** ShortCircuit was a commercial product from 2004-2018, with Copyright and ownership
+** in that period held by Claes Johanson at Vember Audio. Claes made ShortCircuit
+** open source in December 2020.
+*/
+
+#ifndef __SC3_MEMFILE_H
+#define __SC3_MEMFILE_H
+
 #if WINDOWS
 #include <Windows.h>
 #endif
+
+#include <list>
+#include <vt_dsp/endian.h>
 #include <vt_util/vt_string.h>
 #include <cassert>
 
-struct riffheader
+namespace SC3::Memfile
 {
-    unsigned long id;
-    unsigned long datasize;
-};
 
-enum mfseek
-{
-    mf_FromStart = 0,
-    mf_FromCurrent,
-    mf_FromEnd,
-};
-
-__forceinline unsigned short swap_endianW(unsigned short x)
-{
-    return ((x & 0xFF) << 8) | ((x & 0xFF00) >> 8);
-}
-
-__forceinline unsigned int swap_endianDW(unsigned int x)
+inline uint16_t swap_endian_16(uint16_t x) { return ((x & 0xFF) << 8) | ((x & 0xFF00) >> 8); }
+inline uint32_t swap_endian_32(uint32_t x)
 {
     return ((x & 0xFF) << 24) | ((x & 0xFF00) << 8) | ((x & 0xFF0000) >> 8) |
            ((x & 0xFF000000) >> 24);
 }
 
-// class intended to parse memory mapped RIFF-files
-class memfile
+struct riffheader
+{
+    uint32_t id = 0;
+    size_t datasize = 0;
+};
+enum mfseek
+{
+    mf_FromStart = 0,
+    mf_FromCurrent,
+    mf_FromEnd,
+}; // class intended to parse memory mapped RIFF-files
+
+class RIFFMemFile
 {
   public:
-    memfile(void *data, int datasize)
+    RIFFMemFile(void *data, int datasize)
     {
         assert(data);
         assert(datasize);
@@ -74,37 +91,37 @@ class memfile
         return true;
     }
 
-    unsigned long ReadDWORD()
+    uint32_t ReadDWORD()
     {
         if ((4 + loc) > size)
             return 0;
-        unsigned long val = *(unsigned long *)(data + loc);
+        uint32_t val = *(uint32_t *)(data + loc);
         loc += 4;
         return val;
     }
 
-    unsigned long ReadDWORDBE()
+    uint32_t ReadDWORDBE()
     {
         if ((4 + loc) > size)
             return 0;
-        unsigned long val = *(unsigned long *)(data + loc);
+        uint32_t val = *(uint32_t *)(data + loc);
         loc += 4;
         return vt_read_int32BE(val);
     }
 
-    void WriteDWORD(unsigned long dw)
+    void WriteDWORD(uint32_t dw)
     {
         if ((4 + loc) > size)
             return;
-        *(unsigned long *)(data + loc) = dw;
+        *(uint32_t *)(data + loc) = dw;
         loc += 4;
     }
 
-    void WriteDWORDBE(unsigned long dw)
+    void WriteDWORDBE(uint32_t dw)
     {
         if ((4 + loc) > size)
             return;
-        *(unsigned long *)(data + loc) = vt_write_int32BE(dw);
+        *(uint32_t *)(data + loc) = vt_write_int32BE(dw);
         loc += 4;
     }
 
@@ -121,7 +138,7 @@ class memfile
                             // of copying it
     {
         if ((s + loc) > size)
-            return 0;
+            return nullptr;
         void *ptr = data + loc;
         loc += s;
         return ptr;
@@ -133,11 +150,11 @@ class memfile
         return ptr;
     }
 
-    size_t TellI() { return loc; }
+    size_t TellI() const { return loc; }
 
     size_t SeekI(size_t pos, int mode = mf_FromStart)
     {
-        switch (mode)
+        switch ((mfseek)mode)
         {
         case mf_FromStart:
             loc = pos;
@@ -166,7 +183,7 @@ class memfile
                 return false;
             if ((rh.id == 'FFIR') || (rh.id == 'TSIL'))
             {
-                unsigned long subtag;
+                uint32_t subtag;
                 if (!Read(&subtag, 4))
                     return false;
                 if (subtag == rtag)
@@ -207,10 +224,10 @@ class memfile
         {
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
-            rh.datasize = swap_endianDW(rh.datasize);
+            rh.datasize = swap_endian_32(rh.datasize);
             if (rh.id == 'MROF')
             {
-                unsigned long subtag;
+                uint32_t subtag;
                 if (!Read(&subtag, 4))
                     return false;
                 if (subtag == rtag)
@@ -273,8 +290,8 @@ class memfile
 
     // NEW Start
 
-    bool RIFFPeekChunk(int *Tag = 0, size_t *DataSize = 0, bool *HasSubchunks = 0,
-                       int *LISTTag = 0) // Get the Tag & size without affecting the locator
+    bool RIFFPeekChunk(int *Tag = nullptr, size_t *DataSize = nullptr, bool *HasSubchunks = nullptr,
+                       int *LISTTag = nullptr) // Get the Tag & size without affecting the locator
     {
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
@@ -305,11 +322,11 @@ class memfile
         return true;
     }
 
-    void invalid()
+    void invalid() const
     {
         char txt[1024];
         sprintf(txt, "Invalid RIFF-structure.\n\nOffset: 0x%X", (unsigned int)loc);
-        MessageBox(::GetActiveWindow(), txt, "File I/O Error", MB_OK | MB_ICONERROR);
+        MessageBox(GetActiveWindow(), txt, "File I/O Error", MB_OK | MB_ICONERROR);
     }
 
     bool RIFFIsContainer() // Returns true if the following Chunk is RIFF or LIST
@@ -321,11 +338,12 @@ class memfile
         return (ChunkTag == 'RIFF') || (ChunkTag == 'LIST');
     }
 
-    void *RIFFReadChunk(int *Tag = 0, size_t *DataSize = 0) // Read chunk & forward locator
+    void *RIFFReadChunk(int *Tag = nullptr,
+                        size_t *DataSize = nullptr) // Read chunk & forward locator
     {
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
-            return 0;
+            return nullptr;
         size_t chunksize = vt_read_int32LE(*(int *)(data + loc + 4));
         if (Tag)
             *Tag = vt_read_int32BE(*(int *)(data + loc));
@@ -343,7 +361,7 @@ class memfile
         return dataptr;
     }
 
-    bool RIFFSkipChunk(int *Tag = 0, size_t *DataSize = 0)
+    bool RIFFSkipChunk(int *Tag = nullptr, size_t *DataSize = nullptr)
     {
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
@@ -382,8 +400,8 @@ class memfile
         return true;
     }
 
-    bool RIFFDescend(int *LISTtag = 0,
-                     size_t *datasize = 0) // Descend into the chunk at the current location
+    bool RIFFDescend(int *LISTtag = nullptr,
+                     size_t *datasize = nullptr) // Descend into the chunk at the current location
     {
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 12) > EndStack.front())
@@ -406,7 +424,7 @@ class memfile
     }
 
     bool
-    RIFFDescendSearch(int tag, size_t *datasize = 0,
+    RIFFDescendSearch(int tag, size_t *datasize = nullptr,
                       unsigned int entry =
                           0) // Descend into a chunk by searching for it (sequentially if desired)
     {
@@ -420,7 +438,7 @@ class memfile
             rh.datasize = vt_read_int32LE(rh.datasize);
             if ((rh.id == 'RIFF') || (rh.id == 'LIST'))
             {
-                unsigned long subtag;
+                uint32_t subtag;
                 if (!Read(&subtag, 4))
                     return false;
                 subtag = vt_read_int32BE(subtag);
@@ -453,21 +471,21 @@ class memfile
         return false;
     }
 
-    unsigned int RIFFGetFileType() // Read the ID of the RIFF chunk
+    uint32_t RIFFGetFileType() // Read the ID of the RIFF chunk
     {
-        return vt_read_int32BE(*(unsigned int *)(data + 8));
+        return vt_read_int32BE(*(uint32_t *)(data + 8));
     };
 
-    bool RIFFCreateChunk(unsigned long tag, void *indata, size_t datasize)
+    bool RIFFCreateChunk(uint32_t tag, void *indata, size_t datasize)
     {
         if ((8 + loc + datasize) > size)
         {
             invalid();
             return false;
         }
-        *(unsigned long *)(data + loc) = vt_write_int32BE(tag);
+        *(uint32_t *)(data + loc) = vt_write_int32BE(tag);
         loc += 4;
-        *(unsigned long *)(data + loc) = vt_write_int32LE(datasize);
+        *(uint32_t *)(data + loc) = vt_write_int32LE(datasize);
         loc += 4;
 
         memcpy(data + loc, indata, datasize);
@@ -476,16 +494,16 @@ class memfile
         return true;
     }
 
-    bool RIFFCreateLISTHeader(unsigned long tag, size_t subsize)
+    bool RIFFCreateLISTHeader(uint32_t tag, size_t subsize)
     {
         if ((12 + loc + subsize) > size)
         {
             invalid();
             return false;
         }
-        *(unsigned long *)(data + loc) = vt_write_int32BE('LIST');
-        *(unsigned long *)(data + loc + 4) = vt_write_int32LE(subsize + 4);
-        *(unsigned long *)(data + loc + 8) = vt_write_int32BE(tag);
+        *(uint32_t *)(data + loc) = vt_write_int32BE('LIST');
+        *(uint32_t *)(data + loc + 4) = vt_write_int32LE(subsize + 4);
+        *(uint32_t *)(data + loc + 8) = vt_write_int32BE(tag);
         loc += 12;
         return true;
     }
@@ -502,7 +520,7 @@ class memfile
         return datasize + 8;
     }
 
-    bool RIFFCreateTextChunk(unsigned long tag, char *txt)
+    bool RIFFCreateTextChunk(uint32_t tag, char *txt)
     {
         // skip chunk if string is null/empty
         if (!txt)
@@ -519,8 +537,8 @@ class memfile
             invalid();
             return false;
         }
-        *(unsigned long *)(data + loc) = vt_write_int32BE(tag);
-        *(unsigned long *)(data + loc + 4) = vt_write_int32LE(datasize);
+        *(uint32_t *)(data + loc) = vt_write_int32BE(tag);
+        *(uint32_t *)(data + loc + 4) = vt_write_int32LE(datasize);
         loc += 8;
 
         memset(data + loc, 0, datasize);
@@ -531,20 +549,6 @@ class memfile
     }
 
     // New End
-
-    // File I/O
-
-    bool LoadFile(wchar_t *FileName)
-    {
-        assert(0);
-        return false;
-    }
-    bool SaveFile(wchar_t *FileName)
-    {
-        assert(0);
-        return false;
-    }
-
     bool iff_descend(int tag, int *datasize)
     {
         char *cv = (char *)&tag;
@@ -555,7 +559,7 @@ class memfile
         {
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
-            rh.datasize = swap_endianDW(rh.datasize);
+            rh.datasize = swap_endian_32(rh.datasize);
             if (rh.id == rtag)
             {
                 if (datasize)
@@ -570,8 +574,27 @@ class memfile
         return false;
     }
 
-    bool Eof() { return (loc > size); }
-    bool Eob() { return (loc > size) || (loc > EndStack.front()); }
+    bool Eof() const { return (loc > size); }
+    bool Eob() const { return (loc > size) || (loc > EndStack.front()); }
+
+    void tagToFourCC(uint32_t tag, char fcc[4])
+    {
+        for (auto i = 0; i < 4; ++i)
+        {
+            fcc[3 - i] = (char)(tag & 0xFF);
+            tag = tag >> 8;
+        }
+    }
+
+    void tagToFourCCStr(uint32_t tag, char fcc[5])
+    {
+        for (auto i = 0; i < 4; ++i)
+        {
+            fcc[3 - i] = (char)(tag & 0xFF);
+            tag = tag >> 8;
+        }
+        fcc[4] = 0;
+    }
 
   private:
     size_t loc, size;
@@ -579,3 +602,7 @@ class memfile
     std::list<size_t> EndStack;
     char *data;
 };
+
+} // namespace SC3::Memfile
+
+#endif // __SC3_MEMFILE_H

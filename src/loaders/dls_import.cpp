@@ -1,6 +1,6 @@
 #include "globals.h"
 
-#include "memfile.h"
+#include "riff_memfile.h"
 
 #include "infrastructure/logfile.h"
 #include "loaders/sf2_import.h"
@@ -87,7 +87,7 @@ struct giga_3ewa
 bool sample::parse_dls_sample(void *data, size_t filesize, unsigned int sample_id)
 {
     size_t datasize;
-    memfile mf(data, filesize);
+    SC3::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('DLS ', &datasize))
         return false;
 
@@ -105,7 +105,7 @@ bool sample::parse_dls_sample(void *data, size_t filesize, unsigned int sample_i
 int parse_dls_patchlist(void *data, size_t filesize, void **plist)
 {
     size_t datasize;
-    memfile mf(data, filesize);
+    SC3::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('DLS ', &datasize))
         return 0;
     off_t startpos = mf.TellI(); // store for later use
@@ -182,7 +182,7 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
     if (patch < 0)
         return false;
     size_t datasize;
-    memfile mf(data, filesize);
+    SC3::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('DLS ', &datasize))
         return false;
     off_t startpos = mf.TellI(); // store for later use

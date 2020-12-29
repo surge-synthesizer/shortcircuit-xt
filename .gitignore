@@ -7,3 +7,5 @@ cmake-build*
 .idea/
 snr.bat
 test-data/
+
+.DS_Store

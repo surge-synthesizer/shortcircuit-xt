@@ -280,3 +280,33 @@ target_link_libraries(shortcircuit3py PRIVATE
         surge::filesystem
         ${OS_LINK_LIBRARIES}
         )
+
+
+add_executable(sc3-test
+        tests/lowlevel_io.cpp
+        tests/test_main.cpp)
+target_include_directories(sc3-test PRIVATE
+        ${SHORTCIRCUIT_INCLUDE_DIRS}
+        libs/catch2/include)
+target_compile_options(sc3-test PRIVATE ${OS_COMPILE_OPTIONS})
+target_compile_definitions(sc3-test PUBLIC
+        ${OS_COMPILE_DEFINITIONS}
+        TARGET_HEADLESS=1
+        )
+target_link_libraries(sc3-test
+        shortcircuit-core
+        surge::filesystem
+        ${OS_LINK_LIBRARIES})
+
+set(SC3_PRODUCT_DIR ${CMAKE_BINARY_DIR}/products )
+file(MAKE_DIRECTORY ${SC3_PRODUCT_DIR})
+
+add_custom_target(sc3-products)
+
+add_dependencies(sc3-products sc3-test)
+add_custom_command(
+        TARGET sc3-products
+        POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND cmake -E copy $<TARGET_FILE:sc3-test> ${SC3_PRODUCT_DIR}
+)

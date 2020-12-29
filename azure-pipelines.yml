@@ -84,3 +84,11 @@ jobs:
       cmake --build build --config Debug --target $(cmakeTarget)
     displayName: Build SC3
 
+
+
+  - bash: |
+      cmake --build build --config Debug --target sc3-products
+      ./build/products/sc3-test
+
+    displayName: Build and Run Tests SC3
+
