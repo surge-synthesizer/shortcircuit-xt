@@ -5,7 +5,7 @@
 #endif
 #include "globals.h"
 #include "infrastructure/logfile.h"
-#include "memfile.h"
+#include "riff_memfile.h"
 #include "resampling.h"
 #include "sample.h"
 #include "sf2.h"
@@ -13,7 +13,7 @@
 bool sample::parse_sf2_sample(void *data, size_t filesize, unsigned int sample_id)
 {
     size_t datasize;
-    memfile mf(data, filesize);
+    SC3::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('sfbk', &datasize))
         return false;
 
@@ -31,7 +31,7 @@ bool sample::parse_sf2_sample(void *data, size_t filesize, unsigned int sample_i
     if (sample_id >= sample_count)
         return false;
 
-    mf.SeekI(sample_id * 46, mf_FromCurrent);
+    mf.SeekI(sample_id * 46, SC3::Memfile::mf_FromCurrent);
     mf.Read(&sampledata, 46);
     vtCopyString(name, sampledata.achSampleName, 20);
 
@@ -40,7 +40,7 @@ bool sample::parse_sf2_sample(void *data, size_t filesize, unsigned int sample_i
         return false;
 
     off_t sdtastartpos = mf.TellI(); // store for later use
-    mf.SeekI(sampledata.dwStart * 2 + 8, mf_FromCurrent);
+    mf.SeekI(sampledata.dwStart * 2 + 8, SC3::Memfile::mf_FromCurrent);
     int samplesize = sampledata.dwEnd - sampledata.dwStart;
     int16_t *loaddata = (int16_t *)mf.ReadPtr(samplesize * sizeof(int16_t));
 

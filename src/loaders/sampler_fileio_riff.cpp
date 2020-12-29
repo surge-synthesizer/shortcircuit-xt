@@ -22,7 +22,7 @@ using std::max;
 using std::min;
 
 #include "globals.h"
-#include "memfile.h"
+#include "riff_memfile.h"
 #include "sample.h"
 
 #include "configuration.h"
@@ -39,11 +39,11 @@ size_t RIFF_StoreSample(sample *s, void *data)
     char filename[1024];
     if (!s->Embedded && s->get_filename(filename))
     {
-        size_t ChunkSize = 12 + memfile::RIFFTextChunkSize(filename);
+        size_t ChunkSize = 12 + SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(filename);
         if (!data)
             return ChunkSize;
 
-        memfile mf(data, ChunkSize);
+        SC3::Memfile::RIFFMemFile mf(data, ChunkSize);
         mf.RIFFCreateLISTHeader('Smpl', ChunkSize - 12);
         mf.RIFFCreateTextChunk('SUrl', filename);
 
@@ -56,7 +56,7 @@ size_t RIFF_StoreSample(sample *s, void *data)
         if (!data)
             return ChunkSize;
 
-        memfile mf(data, ChunkSize);
+        SC3::Memfile::RIFFMemFile mf(data, ChunkSize);
         mf.RIFFCreateLISTHeader('WAVE', WaveSize);
         s->SaveWaveChunk(mf.ReadPtr(WaveSize));
 
@@ -75,14 +75,14 @@ size_t RIFF_StoreZone(sample_zone *z, void *data, int SampleID)
                      nc_entries * (8 + sizeof(RIFF_NC_ENTRY)) + 2 * (8 + sizeof(RIFF_AHDSR)) +
                      3 * (8 + sizeof(RIFF_LFO)) + 3 * (8 + sizeof(RIFF_AUX_BUSS)) +
                      z->n_hitpoints * (8 + sizeof(RIFF_HITPOINT)) + (8 + sizeof(RIFF_ZONE)) +
-                     memfile::RIFFTextChunkSize(z->name);
+                     SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(z->name);
 
     size_t zonesize = 12 + subsize;
 
     if (!data)
         return zonesize;
 
-    memfile mf(data, zonesize);
+    SC3::Memfile::RIFFMemFile mf(data, zonesize);
 
     mf.RIFFCreateLISTHeader('Zone', subsize);
 
@@ -162,7 +162,7 @@ size_t RIFF_StorePart(sample_part *p, void *data)
 
     size_t ctrltxtsize = 0;
     for (int i = 0; i < n_custom_controllers; i++)
-        ctrltxtsize += memfile::RIFFTextChunkSize(p->userparametername[i]);
+        ctrltxtsize += SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(p->userparametername[i]);
 
     size_t subsize =
         2 * (12 + 8 + sizeof(RIFF_FILTER)) +
@@ -170,14 +170,14 @@ size_t RIFF_StorePart(sample_part *p, void *data)
         num_layers * (12 + num_layer_ncs * (sizeof(RIFF_NC_ENTRY) + 8)) +
         n_custom_controllers * (12 + 8 + sizeof(RIFF_CONTROLLER)) + ctrltxtsize +
         3 * (8 + sizeof(RIFF_AUX_BUSS)) + (8 + sizeof(RIFF_PART)) +
-        memfile::RIFFTextChunkSize(p->name);
+        SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(p->name);
 
     size_t partsize = 12 + subsize;
 
     if (!data)
         return partsize;
 
-    memfile mf(data, partsize);
+    SC3::Memfile::RIFFMemFile mf(data, partsize);
 
     mf.RIFFCreateLISTHeader('Part', subsize);
 
@@ -308,12 +308,12 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const WCHAR *filename, int PartID)
     if (chunkDataPtr)
         free(chunkDataPtr);
     chunkDataPtr = malloc(datasize);
-    memfile mf(chunkDataPtr, datasize);
+    SC3::Memfile::RIFFMemFile mf(chunkDataPtr, datasize);
 
     // TODO, ta h�nsyn till vsts chunk ptr issuesdryghet
 
     // Phase 3
-    // Write data to memfile
+    // Write data to RIFFMemFile
 
     mf.WriteDWORD(vt_write_int32BE('RIFF'));
     mf.WriteDWORD(datasize - 8);
@@ -409,7 +409,7 @@ bool sampler::LoadAllFromRIFF(void *data, size_t datasize, bool Replace, int Par
     if (!data)
         return false;
     assert(datasize >= 4);
-    memfile mf(data, datasize);
+    SC3::Memfile::RIFFMemFile mf(data, datasize);
 
     bool IsMulti;
     // if((mf.RIFFGetFileType() == 'SC2P') && mf.riff_descend_RIFF_or_LIST('SC2P',0)) IsMulti =
