@@ -1,3 +1,5 @@
+#error THIS CODE DOES NOT COMPILE
+
 #if USE_MDUMP
 
 //#include "stdafx.h"

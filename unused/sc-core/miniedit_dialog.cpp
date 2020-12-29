@@ -6,6 +6,9 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+
+#error THIS FILE IS UNUSED AND SHOULD NOT COMPILE
+
 #if 0
 // #include "stdafx.h"
 #ifndef _WINDEF_

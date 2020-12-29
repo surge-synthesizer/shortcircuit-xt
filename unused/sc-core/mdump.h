@@ -1,3 +1,4 @@
+#error THIS CODE DOES NOT COMPILE
 
 #if 0
 

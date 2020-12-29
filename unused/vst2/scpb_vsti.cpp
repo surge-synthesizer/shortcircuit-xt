@@ -6,6 +6,9 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+
+#error THIS FILE IS UNUSED AND SHOULD NOT COMPILE
+
 #ifndef __scpb_vsti_H
 #include "scpb_vsti.h"
 #endif

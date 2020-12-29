@@ -137,7 +137,6 @@ set(SHORTCIRCUIT_SOURCE
         src/loaders/load_riff_wave.cpp
         src/loaders/load_sf2_sample.cpp
         src/infrastructure/logfile.cpp
-        src/mdump.cpp
         src/synthesis/modmatrix.cpp
         src/synthesis/morphEQ.cpp
         src/multiselect.cpp

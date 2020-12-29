@@ -6,6 +6,9 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+
+#error THIS FILE IS UNUSED AND SHOULD NOT COMPILE
+
 #if 0
 #include "sampler_group.h"
 #include "controllers.h"
@@ -56,7 +59,7 @@ void sampler_group::clear_busses()
 	//memset(left,0,sizeof(float)*block_size);
 	//memset(right,0,sizeof(float)*block_size);
 
-	// joxa in brus istället för att hindra denormals
+	// joxa in brus istï¿½llet fï¿½r att hindra denormals
 	
 	int k;
 	for(k=0; k<(block_size>>1); k++)
