@@ -11,11 +11,17 @@ jobs:
   strategy:
     matrix:
       mac:
-        imageName: 'macos-10.14'
+        imageName: 'macos-10.15'
         isMac: True
+        cmakeTarget: shortcircuit3py
       win:
         imageName: 'windows-2019'
         isWindows: True
+        cmakeTarget: shortcircuit-core
+      lin:
+        imageName: 'ubuntu-20.04'
+        isWindows: True
+        cmakeTarget: shortcircuit3py
 
   pool:
     vmImage: $(imageName)
@@ -32,10 +38,6 @@ jobs:
 
   - bash:
       cmake -Bbuild
-    displayName: cmake 
-
-  - bash: |
-      # This is a hack while i make the win tmp depend properly
-      cmake --build build --config Debug
-    displayName: Build
+      cmake --build build --config Debug --target $(cmakeTarget)
+    displayName: Build SC3
 
