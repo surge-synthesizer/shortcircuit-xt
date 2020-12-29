@@ -9,7 +9,7 @@
 
 #include <audioeffectx.h>
 
-#include "mdump.h"
+#include "../sc-core/mdump.h"
 
 class sampler;
 

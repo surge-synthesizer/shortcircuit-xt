@@ -6,6 +6,8 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+#error THIS FILE IS UNUSED AND SHOULD NOT COMPILE
+
 #if 0
 
 #if WINDOWS
@@ -316,7 +318,7 @@ LRESULT CConfigDialog::OnNMClickDlist(int idCtrl, LPNMHDR nData, BOOL& bHandled)
 			}
 		case 2:
 			{
-				// lägg in switch för om det är external editor
+				// lï¿½gg in switch fï¿½r om det ï¿½r external editor
 				if (a==6)
 				{
 					WTL::CFileDialog fdiag(true,0,0,0,"Windows Executable (*.exe)\0*.exe\0",::GetActiveWindow());					

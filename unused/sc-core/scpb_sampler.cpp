@@ -1,3 +1,6 @@
+
+#error THIS FILE IS UNUSED AND SHOULD NOT COMPILE
+
 #if 0
 
 #include "scpb_sampler.h"

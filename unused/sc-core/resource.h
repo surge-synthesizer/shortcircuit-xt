@@ -1,3 +1,6 @@
+
+#error THIS FILE IS UNUSED AND SHOULD NOT COMPILE
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by scpb.rc
