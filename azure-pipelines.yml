@@ -31,7 +31,7 @@ jobs:
     fetchDepth: 1
     # submodules: recursive # can't do submodules here b'cuz depth=1 fails with Github
 
- - bash: |
+  - bash: |
       set -e
 
       sudo apt-get update
