@@ -41,25 +41,31 @@ Ambitious.
 
 # An important note about licensing
 
-Right now the copyright to the SC3 code is held by Claes (on the code) and Paul (on his diffs since Claes shared the
-code). And this repository you are looking at is licensed under GPL3. We know that, if we end up with ShortCircuit3,
-we will end up with a GPL3 plugin, since it will depend on JUCE which is itself GPL3 if used in an open source
+Just like with Surge, we welcome any and all contributions from anyone who wants to work on open source music 
+software.
+
+At the initial open-sourcing, the copyright to the SC3 code was held by Claes (on the initial code) and Paul (on his 
+diffs since Claes shared the code).  This repository is licensed under GPL3. We know that, if we end up with ShortCircuit3,
+we will end up with a GPL3 plugin, since it will depend on JUCE or VST3SDK which are GPL3 if used in an open source
 context.
 
 But, Paul and Claes are discussing refactoring the code to be a mix of MIT and GPL3 code, with some critical
-things like sample format loaders, some DSP code, and some utilities at least being released under MIT. We don't 
-know where that line is yet, though, so this repo is GPL3. 
-Since we both agree to shifting license in the future, we can of course re-license our code. 
-But this means we cannot take quite the same stance
-on inbound PR as we do with Surge, where we merge contributions under GPL3 and individuals hold their copyright.
-If we were to do that with SC3 and want to re-license a subset of the code to MIT, the administrative burden would 
-be high.
+things like sample format loaders, some DSP code, and some utilities at least being released under MIT in a subordinate 
+library (and from a separate repo). We don't know where that line is yet, but we do want to reserve the right to re-license any
+or all of the code here under an MIT license at our discretion.
 
-This is not a problem. CLAs exist and the like. But it does mean if you want to contribute to this repo we need
-to chat and we probably want to execute some form of acknowledgement that you would be happy for your change to be
-re-licensed at our discretion. Basically: If you think you want to work on this, either talk to @baconpaul on our
-surge discord, or open an issue here and we can chat. My guess is we would just use one of the Canonical CLAs to have
-you assign copyright to Claes and me, but we may do something else.
+As a result, we are asking individual contributors who want to contribute to SC3 to sign a CLA. 
+We have used the Canonical/Harmony 1.0 CLA http://selector.harmonyagreements.org with
+the following choices:
+
+1. You retain copyright to your code. *We do not need you to assign copyright to us*.
+2. You grant us a license to distribute your code under GPL3 or MIT; and your content under CC3 attribution
+
+You can read the entire document [here](doc/ShortCircuit3-Individual-CLA.pdf). 
+
+To agree to this document,
+please add your name to the `AUTHORS` list in a git transaction where you indicate in the git log message
+that you consent to the CLA. You only need to do this once, and you can do it in your first commit to the repo.
 
 # How to build what we have
 
