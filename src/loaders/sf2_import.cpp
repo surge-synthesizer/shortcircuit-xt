@@ -13,7 +13,7 @@
 #include "stdio.h"
 #include "synthesis/modmatrix.h"
 #include "synthesis/steplfo.h"
-#include "unitconversion.h"
+#include "util/unitconversion.h"
 #include <cstring>
 #include <vt_util/vt_string.h>
 

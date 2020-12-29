@@ -9,7 +9,7 @@
 #include "filter_defs.h"
 #include "parameterids.h"
 #include "resampling.h"
-#include "tools.h"
+#include "util/tools.h"
 
 #include <algorithm>
 #include <cmath>
@@ -99,8 +99,8 @@ void limiter::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
     at = 1.f - 0.001f * am * am;
     re = 1.f - 0.001f * rm * rm;
 
-    // TODO sidechain.. disabled atm (behöver listig strategi för feedbaackläget.. kan vara bättre
-    // med separat filter för det)
+    // TODO sidechain.. disabled atm (behï¿½ver listig strategi fï¿½r feedbaacklï¿½get.. kan vara bï¿½ttre
+    // med separat filter fï¿½r det)
     // Align16 float sidechainL[block_size];
     // Align16 float sidechainR[block_size];
     // bq.coeff_peakEQ(bq.calc_omega(param[4]),1,param[5]);

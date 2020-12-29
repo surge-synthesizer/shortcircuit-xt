@@ -8,5 +8,6 @@ IndentWidth: 4
 AlignAfterOpenBracket: Align
 BreakBeforeBraces: Allman
 ColumnLimit: 100
+SortIncludes: false
 ---
 

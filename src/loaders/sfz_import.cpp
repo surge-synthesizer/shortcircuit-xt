@@ -11,7 +11,7 @@
 
 #include "configuration.h"
 #include "synthesis/modmatrix.h"
-#include "unitconversion.h"
+#include "util/unitconversion.h"
 
 #include <algorithm>
 #include <cstring>

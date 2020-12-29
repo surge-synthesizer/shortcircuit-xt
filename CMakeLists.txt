@@ -144,8 +144,8 @@ set(SHORTCIRCUIT_SOURCE
         src/sample.cpp
         src/sampler.cpp
         src/sampler_automation.cpp
-        src/sampler_fileio.cpp
-        src/sampler_fileio_riff.cpp
+        src/loaders/sampler_fileio.cpp
+        src/loaders/sampler_fileio_riff.cpp
         src/sampler_notelogic.cpp
         src/sampler_process.cpp
         src/sampler_voice.cpp
@@ -153,8 +153,8 @@ set(SHORTCIRCUIT_SOURCE
         src/loaders/sfz_import.cpp
         src/loaders/shortcircuit2_RIFF_conversion.cpp
         src/synthesis/steplfo.cpp
-        src/tools.cpp
-        src/unitconversion.cpp
+        src/util/tools.cpp
+        src/util/unitconversion.cpp
         )
 
 set(SHORTCIRCUIT_GENERATED_SOURCE

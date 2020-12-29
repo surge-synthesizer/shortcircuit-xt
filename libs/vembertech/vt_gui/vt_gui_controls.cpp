@@ -1,5 +1,5 @@
 #include "vt_gui_controls.h"
-#include "unitconversion.h"
+#include "util/unitconversion.h"
 #include <vt_util/vt_string.h>
 
 const int menurow_height = 12;
@@ -2207,7 +2207,7 @@ void vg_VU::draw()
 		}
 		else
 		{
-			// finns inte än
+			// finns inte ï¿½n
 			assert(0);
 		}
 		r.offset(2*w,0);

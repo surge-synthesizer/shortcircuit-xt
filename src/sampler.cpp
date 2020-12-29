@@ -15,7 +15,7 @@
 #include "windows_compat.h"
 #endif
 #include "globals.h"
-#include "mathtables.h"
+#include "synthesis/mathtables.h"
 #include "sample.h"
 #include "sampler_voice.h"
 #if TARGET_VST2

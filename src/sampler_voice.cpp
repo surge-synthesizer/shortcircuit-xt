@@ -9,11 +9,11 @@
 #include "sampler_voice.h"
 #include "controllers.h"
 #include "sampler.h"
-#include "tools.h"
+#include "util/tools.h"
 #include <fstream>
 // #include <intrin.h>
 #include "generator.h"
-#include "mathtables.h"
+#include "synthesis/mathtables.h"
 #include "sample.h"
 #include "sampler_state.h"
 #include "synthesis/filter.h"

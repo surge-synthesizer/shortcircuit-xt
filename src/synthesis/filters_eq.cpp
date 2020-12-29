@@ -9,8 +9,8 @@
 #define _USE_MATH_DEFINES
 #include "filter_defs.h"
 #include "resampling.h"
-#include "tools.h"
-#include "unitconversion.h"
+#include "util/tools.h"
+#include "util/unitconversion.h"
 #include <assert.h>
 
 #include <algorithm>
@@ -59,7 +59,7 @@ morphEQ::morphEQ(float *fp, void *loader, int *ip) : filter(fp, loader, true, ip
             b_active[i] = snap[0].bands[i].active || snap[1].bands[i].active;
     }
     gaintarget = 1.f;
-    lastparam[0] = -165464686; // se till att cal_coeffs altlid utförs första gången
+    lastparam[0] = -165464686; // se till att cal_coeffs altlid utfï¿½rs fï¿½rsta gï¿½ngen
 }
 
 void morphEQ::init_params()
@@ -217,7 +217,7 @@ EQ2BP_A::EQ2BP_A(float *fp, int *ip) : filter(fp, 0, true, ip)
     strcpy(ctrlmode_desc[4], str_freqdef);
     strcpy(ctrlmode_desc[5], str_bwdef);
 
-    lastparam[0] = -1654646816; // se till att cal_coeffs altlid utförs första gången
+    lastparam[0] = -1654646816; // se till att cal_coeffs altlid utfï¿½rs fï¿½rsta gï¿½ngen
 }
 
 void EQ2BP_A::init_params()

@@ -9,8 +9,8 @@
 #include "filter_defs.h"
 #include "mathtables.h"
 #include "resampling.h"
-#include "tools.h"
-#include "unitconversion.h"
+#include "util/tools.h"
+#include "util/unitconversion.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -151,7 +151,7 @@ void BF::process(float *datain, float *dataout, float pitch)
 
 OD::OD(float *fp) : filter(fp)
 {
-    strcpy(filtername, ("mörder OD"));
+    strcpy(filtername, ("mï¿½rder OD"));
     parameter_count = 5;
     strcpy(ctrllabel[0], ("drive"));
     ctrlmode[0] = cm_percent;
@@ -278,8 +278,8 @@ void treemonster::init_params()
 void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                                  float pitch)
 {
-    // TODO powf används, det är ju inte snabbt
-    // gör så man kan ändra pitchen kontinuerligt och inte bara vid triggnignar
+    // TODO powf anvï¿½nds, det ï¿½r ju inte snabbt
+    // gï¿½r sï¿½ man kan ï¿½ndra pitchen kontinuerligt och inte bara vid triggnignar
     gain[0].set_target(limit_range(param[2], 0.f, 1.f));
 
     Align16 float tbuf[2][block_size];

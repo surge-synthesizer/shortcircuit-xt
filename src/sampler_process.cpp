@@ -3,7 +3,7 @@
 #include "shortcircuit_editor2.h"
 #endif
 #include "configuration.h"
-#include "mathtables.h"
+#include "synthesis/mathtables.h"
 #include "sampler_voice.h"
 #include "synthesis/filter.h"
 #include "synthesis/modmatrix.h"
@@ -12,7 +12,7 @@
 #include <vt_gui/vt_gui_controls.h>
 #endif
 #include "interaction_parameters.h"
-#include "tools.h"
+#include "util/tools.h"
 
 using std::max;
 using std::min;

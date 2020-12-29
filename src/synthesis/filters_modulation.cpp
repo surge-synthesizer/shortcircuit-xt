@@ -8,8 +8,8 @@
 
 #include "filter_defs.h"
 #include "resampling.h"
-#include "tools.h"
-#include "unitconversion.h"
+#include "util/tools.h"
+#include "util/unitconversion.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>

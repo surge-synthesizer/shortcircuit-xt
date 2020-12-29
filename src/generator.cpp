@@ -2,7 +2,7 @@
 #include "globals.h"
 #include "resampling.h"
 #include "sampler_voice.h"
-#include "tools.h"
+#include "util/tools.h"
 #include <vt_dsp/basic_dsp.h>
 
 extern float SincTableF32[(FIRipol_M + 1) * FIRipol_N];
@@ -205,9 +205,9 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         {
         case GSM_Normal:
         {
-            // Denna koden gör att sample-pekaren stannar när den kommer till start/stop
-            // Det lämnar en DC-offset, men det är mindre störigt än ett klick
-            // Med überreleasen så verkar det inte bli något problem.
+            // Denna koden gï¿½r att sample-pekaren stannar nï¿½r den kommer till start/stop
+            // Det lï¿½mnar en DC-offset, men det ï¿½r mindre stï¿½rigt ï¿½n ett klick
+            // Med ï¿½berreleasen sï¿½ verkar det inte bli nï¿½got problem.
             int zero = 0;
             int one = 1;
 #if SUPPORTS_ASM
@@ -251,7 +251,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 					sub ecx, LoopOffset
 					add edx, LoopOffset
 
-					cmp Direction, 0			; välj path beroende på direction (som är toklätt att predicta)
+					cmp Direction, 0			; vï¿½lj path beroende pï¿½ direction (som ï¿½r toklï¿½tt att predicta)
 					jg upper
 ;lower										
 					cmp eax, LowerBound					
@@ -272,7 +272,7 @@ store:
         break;
         case GSM_Bidirectional:
         {
-            // Låter bäst då man INTE justerar SamplePos & SubPos för att den passerat Bounds
+            // Lï¿½ter bï¿½st dï¿½ man INTE justerar SamplePos & SubPos fï¿½r att den passerat Bounds
 
             int fram = 1, bak = -1;
 #if SUPPORTS_ASM

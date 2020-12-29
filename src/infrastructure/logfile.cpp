@@ -3,6 +3,9 @@
 #include <string.h>
 #include <time.h>
 
+#include <iostream>
+
+
 bool log_updated = false;
 char log_entry[256];
 
@@ -10,6 +13,8 @@ void write_log(const char *text)
 {
     log_updated = true;
     strcpy(log_entry, text);
+
+    std::cout << "[] " << text << std::endl;
 
     // open file
     /*FILE *f = fopen("c:\\shortcircuit.log","a+");

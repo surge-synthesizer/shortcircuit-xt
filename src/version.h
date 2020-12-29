@@ -34,13 +34,4 @@ struct Build
 };
 } // namespace ShortCircuit
 
-#define SURGE_VST2_IDENTIFIER 'cjs3'
-
-#define stringProductName "Surge"
-#define stringWebsite "https://surge-synthesizer.github.io/"
-#define stringFileDescription "Surge Synth Team Surge"
-#define stringCompanyName "Surge Synth Team\0"
-#define stringLegalCopyright "© 2004-2020 Various Authors"
-#define stringLegalTrademarks "VST is a trademark of Steinberg Media Technologies GmbH"
-
 #endif //__version__

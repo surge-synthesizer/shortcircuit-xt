@@ -2,7 +2,7 @@
 #include "globals.h"
 #include "mathtables.h"
 #include "sampler_state.h"
-#include "tools.h"
+#include "util/tools.h"
 #include <algorithm>
 #include <assert.h>
 

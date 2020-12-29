@@ -4,7 +4,7 @@
 #endif
 #include "interaction_parameters.h"
 #include "sampler_voice.h"
-#include "tools.h"
+#include "util/tools.h"
 #include <vt_dsp/basic_dsp.h>
 
 #include <algorithm>

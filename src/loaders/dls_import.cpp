@@ -8,7 +8,7 @@
 #include "sample.h"
 #include "sampler.h"
 #include "synthesis/modmatrix.h"
-#include "unitconversion.h"
+#include "util/unitconversion.h"
 #include <assert.h>
 #include <cstdint>
 #include <vt_dsp/basic_dsp.h>

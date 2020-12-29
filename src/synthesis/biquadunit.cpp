@@ -1,6 +1,6 @@
 #include "biquadunit.h"
 #include "globals.h"
-#include "unitconversion.h"
+#include "util/unitconversion.h"
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -61,7 +61,7 @@ void biquadunit::coeff_LP2B(double omega, double Q)
                // alpha = sinu*sinh((log(2.0)/2.0) * (BW) * omega / sinu),
             alpha = sinu / (2 * Q),
                // G1 = 0.05, //powf(2,-log(pi1/omega)/log(2.0)),
-               // sätt aa till 6 db
+               // sï¿½tt aa till 6 db
 
             A = 2 * sqrt(G1) * sqrt(2 - G1), b0 = (1 - cosi + G1 * (1 + cosi) + A * sinu) * 0.5,
                b1 = (1 - cosi - G1 * (1 + cosi)),
@@ -248,7 +248,7 @@ void biquadunit::coeff_orfanidisEQ(double omega, double BW, double G, double GB,
 
 void biquadunit::coeff_same_as_last_time()
 {
-    // ifall man skulle byta ipol så sätt dv = 0 här
+    // ifall man skulle byta ipol sï¿½ sï¿½tt dv = 0 hï¿½r
 }
 
 void biquadunit::coeff_instantize()

@@ -8,7 +8,7 @@
 
 #include "filter_defs.h"
 #include "resampling.h"
-#include "tools.h"
+#include "util/tools.h"
 #include <string.h>
 
 extern float SincTableF32[(FIRipol_M + 1) * FIRipol_N];

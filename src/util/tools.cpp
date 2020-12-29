@@ -1,5 +1,5 @@
 #include "globals.h"
-#include "mathtables.h"
+#include "synthesis/mathtables.h"
 #include <assert.h>
 
 float note_to_pitch(float x)
