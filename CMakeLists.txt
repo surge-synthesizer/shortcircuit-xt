@@ -79,7 +79,7 @@ if (APPLE)
             )
 elseif (UNIX AND NOT APPLE)
     set(OS_COMPILE_OPTIONS
-	    -fPIC
+            -fPIC
             -fvisibility=hidden -fvisibility-inlines-hidden
             )
     set(OS_COMPILE_DEFINITIONS
@@ -185,24 +185,19 @@ add_library(shortcircuit-core
         ${VEMBERTECH_SOURCE}
         ${SHORTCIRCUIT_GENERATED_SOURCE})
 
-target_include_directories(shortcircuit-core PRIVATE ${SHORTCIRCUIT_INCLUDE_DIRS})
-target_compile_options(shortcircuit-core PRIVATE ${OS_COMPILE_OPTIONS})
-target_compile_definitions(shortcircuit-core PRIVATE ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
+# The core library includes most of the exports and flags you need
+target_include_directories(shortcircuit-core PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
+target_compile_options(shortcircuit-core PUBLIC ${OS_COMPILE_OPTIONS})
+target_compile_definitions(shortcircuit-core PUBLIC ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
+target_link_libraries(shortcircuit-core PUBLIC ${OS_LINK_LIBRARIES} surge::filesystem)
 add_dependencies(shortcircuit-core git-info)
 
-add_executable(sc-headless
-        wrappers/headless/main.cpp
-        )
+# Executable Target sc-headless is primarily for throwaway tests and has been subsumed by
+# sc3-test and the python library. Keep it nonetheless
+add_executable(sc-headless wrappers/headless/main.cpp)
+target_link_libraries(sc-headless PRIVATE shortcircuit-core)
 
-target_include_directories(sc-headless PRIVATE ${SHORTCIRCUIT_INCLUDE_DIRS})
-target_compile_options(sc-headless PRIVATE ${OS_COMPILE_OPTIONS})
-target_compile_definitions(sc-headless PRIVATE ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
-target_link_libraries(sc-headless PRIVATE
-        ${OS_LINK_LIBRARIES}
-        shortcircuit-core
-        surge::filesystem
-        )
-
+# The JUCE plugin ShortCircuit3 has an AU VST3 and Standalone version
 juce_add_plugin(ShortCircuit3
         PRODUCT_NAME "ShortCircuit3"
         COMPANY_NAME "Surge Synth Team"
@@ -218,24 +213,17 @@ juce_add_plugin(ShortCircuit3
 
 juce_generate_juce_header(ShortCircuit3)
 
-# Fix me this dies obviously
+# Add a binary resource (needs remediation)
 file(GLOB SC3_RESOURCES_GLOB resources/test_samples/*)
 juce_add_binary_data(ShortCircuit3-Binary SOURCES ${SC3_RESOURCES_GLOB})
 set_target_properties(ShortCircuit3-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-target_include_directories(ShortCircuit3
-        PRIVATE
-        ${SHORTCIRCUIT_INCLUDE_DIRS}
-        )
-
+# Then set up the source and the JUCE settings
 target_sources(ShortCircuit3 PRIVATE
         wrappers/juce/SC3Processor.cpp
         wrappers/juce/SC3Editor.cpp
         )
-target_compile_options(ShortCircuit3 PUBLIC ${OS_COMPILE_OPTIONS})
 target_compile_definitions(ShortCircuit3 PUBLIC
-        ${OS_COMPILE_DEFINITIONS}
-        TARGET_HEADLESS=1
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
         JUCE_STRICT_REFCOUNTEDPOINTER=1
 
@@ -249,7 +237,6 @@ target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_ALSA=1
         JUCE_JACK=1
         )
-
 target_link_libraries(ShortCircuit3 PRIVATE
         ShortCircuit3-Binary
         shortcircuit-core
@@ -262,47 +249,30 @@ target_link_libraries(ShortCircuit3 PRIVATE
         )
 
 
+# Build the python bindings
 message(STATUS "Building ShortCircuit Python bindings with pybind11")
 add_subdirectory(libs/pybind11)
-
 pybind11_add_module(shortcircuit3py)
 target_sources(shortcircuit3py PRIVATE wrappers/py/sc3py.cpp)
-target_include_directories(shortcircuit3py PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
-target_compile_options(shortcircuit3py PUBLIC ${OS_COMPILE_OPTIONS})
-target_compile_definitions(shortcircuit3py PUBLIC
-        ${OS_COMPILE_DEFINITIONS}
-        TARGET_HEADLESS=1
-        )
+target_link_libraries(shortcircuit3py PRIVATE shortcircuit-core)
 
 
-target_link_libraries(shortcircuit3py PRIVATE
-        shortcircuit-core
-        surge::filesystem
-        ${OS_LINK_LIBRARIES}
-        )
-
-
+# And finally the test suite
 add_executable(sc3-test
         tests/lowlevel_io.cpp
         tests/test_main.cpp)
 target_include_directories(sc3-test PRIVATE
-        ${SHORTCIRCUIT_INCLUDE_DIRS}
         libs/catch2/include)
-target_compile_options(sc3-test PRIVATE ${OS_COMPILE_OPTIONS})
-target_compile_definitions(sc3-test PUBLIC
-        ${OS_COMPILE_DEFINITIONS}
-        TARGET_HEADLESS=1
-        )
 target_link_libraries(sc3-test
         shortcircuit-core
         surge::filesystem
-        ${OS_LINK_LIBRARIES})
+        )
 
-set(SC3_PRODUCT_DIR ${CMAKE_BINARY_DIR}/products )
+# Once we have our assets built, lets move them to our product directory
+set(SC3_PRODUCT_DIR ${CMAKE_BINARY_DIR}/products)
 file(MAKE_DIRECTORY ${SC3_PRODUCT_DIR})
 
 add_custom_target(sc3-products)
-
 add_dependencies(sc3-products sc3-test)
 add_custom_command(
         TARGET sc3-products
@@ -310,3 +280,12 @@ add_custom_command(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMAND cmake -E copy $<TARGET_FILE:sc3-test> ${SC3_PRODUCT_DIR}
 )
+add_dependencies(sc3-products shortcircuit3py)
+add_custom_command(
+        TARGET sc3-products
+        POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND cmake -E copy $<TARGET_FILE:shortcircuit3py> ${SC3_PRODUCT_DIR}
+)
+
+# TODO: Move the JUCE assets into products
