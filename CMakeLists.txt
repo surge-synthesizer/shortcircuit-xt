@@ -88,7 +88,13 @@ elseif (UNIX AND NOT APPLE)
     set(OS_LINK_LIBRARIES
             )
 else ()
-    set(OS_COMPILE_OPTIONS)
+    set(OS_COMPILE_OPTIONS
+            /wd4244   # convert float from double
+            /wd4305   # truncate from double to float
+            /wd4018   # signed unsigned compare
+            /wd4996   # don't warn on stricmp vs _stricmp and other posix names
+            /wd4267   # converting size_t <-> int
+            )
     set(OS_COMPILE_DEFINITIONS
             WIN=1
             WINDOWS=1
