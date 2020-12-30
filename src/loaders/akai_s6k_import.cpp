@@ -6,6 +6,11 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+#if WINDOWS
+#include <windows.h>
+#include <mmiscapi.h>
+#endif
+
 #include "globals.h"
 #include "infrastructure/logfile.h"
 #include "sampler.h"
@@ -17,9 +22,7 @@
 #include <string.h>
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
-#if WINDOWS
-#include <mmiscapi.h>
-#endif
+
 
 #include <algorithm>
 using std::max;

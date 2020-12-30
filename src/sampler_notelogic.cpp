@@ -1,3 +1,7 @@
+#if WINDOWS
+#include <windows.h>
+#endif
+
 #include "sampler.h"
 #if !TARGET_HEADLESS
 #include "shortcircuit_editor2.h"

@@ -15,6 +15,7 @@ class sampler;
 #include <list>
 #include <string>
 #include <thread>
+#include <mutex>
 #include <vector>
 #include <vt_dsp/lipol.h>
 #include <vt_gui/vt_gui_constants.h>
