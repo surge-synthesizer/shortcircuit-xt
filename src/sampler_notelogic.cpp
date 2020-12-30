@@ -1,6 +1,3 @@
-#if WINDOWS
-#include <windows.h>
-#endif
 
 #include "sampler.h"
 #if !TARGET_HEADLESS
@@ -146,7 +143,6 @@ int sampler::GetFreeVoiceId(int group_id)
             polyphony--;
             v_free = 0;
         }
-        ::OutputDebugString("voice killed\n");
     }
 
     return v_free;

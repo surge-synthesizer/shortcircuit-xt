@@ -182,8 +182,6 @@ inline bool SHGetPathFromIDList(LPITEMIDLIST, const char *) { return false; }
 inline HANDLE FindFirstFile(const char *, WIN32_FIND_DATA *) { return 0; }
 inline HANDLE FindNextFile(HANDLE, WIN32_FIND_DATA *) { return 0; }
 
-inline void OutputDebugString(const char *c) { std::cout << c << std::endl; }
-
 #define MAX_PATH 1024
 
 #ifndef _MM_ALIGN16
