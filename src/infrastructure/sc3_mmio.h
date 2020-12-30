@@ -24,6 +24,8 @@
 #else
 #include <windows_compat.h>
 #include <iostream>
+#include <memory>
+
 #include "infrastructure/logfile.h"
 #include "riff_memfile.h"
 
