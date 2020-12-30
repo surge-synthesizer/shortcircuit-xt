@@ -1,3 +1,4 @@
+#error THIS IS NOT USED
 #if INCLUDE_REX
 
 #include "../common/rex.h"
