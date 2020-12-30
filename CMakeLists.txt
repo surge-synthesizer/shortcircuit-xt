@@ -133,7 +133,6 @@ set(SHORTCIRCUIT_SOURCE
         src/synthesis/filters_v1effects.cpp
         src/generator.cpp
         src/loaders/load_aiff.cpp
-        src/loaders/load_recycle.cpp
         src/loaders/load_riff_wave.cpp
         src/loaders/load_sf2_sample.cpp
         src/infrastructure/logfile.cpp
@@ -160,14 +159,12 @@ set(SHORTCIRCUIT_GENERATED_SOURCE
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
 
 set(VEMBERTECH_SOURCE
-        libs/vembertech/tinyxml/tinystr.cpp
         libs/vembertech/tinyxml/tinyxmlparser.cpp
         libs/vembertech/tinyxml/tinyxmlerror.cpp
         libs/vembertech/tinyxml/tinyxml.cpp
         libs/vembertech/vt_util/vt_string.cpp
         libs/vembertech/vt_util/vt_lockfree.cpp
         libs/vembertech/vt_dsp/halfratefilter.cpp
-        libs/vembertech/vt_dsp/halfratefilter_ppc.cpp
         libs/vembertech/vt_dsp/lipol.cpp
         libs/vembertech/vt_dsp/lattice.cpp
         libs/vembertech/vt_dsp/macspecific.cpp

@@ -1,3 +1,5 @@
+#error THIS FILE IS NOT USED
+
 #if PPC
 
 #include "halfratefilter.h"

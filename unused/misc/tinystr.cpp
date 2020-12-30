@@ -22,7 +22,9 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
-#include "tinyxml.h"
+#include "tinyxml/tinyxml.h"
+
+#error THIS IS NOT USED
 
 #ifndef TIXML_USE_STL
 
