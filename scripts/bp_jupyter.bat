@@ -1,0 +1,3 @@
+REM there must be a better way but...
+set PATH=%PATH%;C:\Users\paul\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.9_qbz5n2kfra8p0\LocalCache\local-packages\Python39\Scripts
+jupyter.exe notebook

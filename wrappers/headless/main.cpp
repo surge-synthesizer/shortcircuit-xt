@@ -31,14 +31,21 @@ int main(int argc, char **argv)
     auto res = sc3->load_file("resources\\test_samples\\harpsi.sf2");
     std::cout << "RES is " << res << std::endl;
 
-    sc3->PlayNote(0, 60, 120);
-    for (int i = 0; i < 500; ++i)
+    for (int i = 0; i < 100; ++i)
     {
+        if( i == 30 )
+            sc3->PlayNote(0, 60, 120);
+
         sc3->process_audio();
+        float rms = 0;
         for (int k = 0; k < block_size; ++k)
         {
+            rms += sc3->output[0][k] * sc3->output[0][k] +
+                sc3->output[1][k] * sc3->output[1][k];
             //std::cout << sc3->output[0][k] << " " << sc3->output[1][k] << std::endl;
         }
+        rms = sqrt(rms) / block_size;
+        std::cout << "i= " << i << " RMS=" << rms << std::endl;
     }
     sc3->ReleaseNote(0, 60, 0);
 }
