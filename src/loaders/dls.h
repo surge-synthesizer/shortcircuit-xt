@@ -23,7 +23,9 @@
 #ifndef _INC_DLS
 #define _INC_DLS
 
+#ifndef FAR
 #define FAR
+#endif
 
 /*
 

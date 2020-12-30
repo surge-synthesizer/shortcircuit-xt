@@ -1393,7 +1393,6 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
 bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bool replace,
                                     int part_id)
 {
-    int i;
     int revision;
     //	double d;
     if (replace)
