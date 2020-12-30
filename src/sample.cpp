@@ -87,8 +87,8 @@ size_t sample::GetDataSize() { return sample_length * (UseInt16 ? 2 : 4) * chann
 char *sample::GetName()
 {
     return name;
-    // TODO samplingar behöver numera namn!
-    // TODO som även ska sparas i RIFFdata (använd wav's metastruktur)
+    // TODO samplingar behï¿½ver numera namn!
+    // TODO som ï¿½ven ska sparas i RIFFdata (anvï¿½nd wav's metastruktur)
 }
 
 void sample::clear_data()
@@ -228,7 +228,7 @@ bool sample::load(const wchar_t *filename)
     if (!r)
     {
         wchar_t tmp[512];
-        swprintf(tmp, 512, L"Could not read file %s", filename);
+        swprintf(tmp, 512, L"HERE Could not read file %s", filename);
         MessageBoxW(::GetActiveWindow(), tmp, L"File I/O Error", MB_OK | MB_ICONERROR);
     }
 

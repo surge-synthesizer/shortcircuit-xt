@@ -52,6 +52,10 @@ enum mfseek
 class RIFFMemFile
 {
   public:
+    RIFFMemFile()
+    {
+        data = nullptr; size=0; loc=0;
+    }
     RIFFMemFile(void *data, int datasize)
     {
         assert(data);
@@ -577,7 +581,7 @@ class RIFFMemFile
     bool Eof() const { return (loc > size); }
     bool Eob() const { return (loc > size) || (loc > EndStack.front()); }
 
-    void tagToFourCC(uint32_t tag, char fcc[4])
+    static void tagToFourCC(uint32_t tag, char fcc[4])
     {
         for (auto i = 0; i < 4; ++i)
         {

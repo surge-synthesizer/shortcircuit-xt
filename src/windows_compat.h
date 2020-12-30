@@ -93,43 +93,9 @@ inline bool WideCharToMultiByte(int cp, int fl, const wchar_t *src, int srclen, 
     }
 }
 
-typedef int HMMIO;
-struct MMCKINFO
-{
-    int fccType;
-    int ckid;
-    int cksize;
-};
-
-#define MMIO_READ 0
-#define MMIO_ALLOCBUF 0
-#define MMIO_FINDRIFF 0
-#define MMIO_FINDCHUNK 0
-#define MMIO_FINDLIST 0
 #define LPWSTR wchar_t *
 #define LPSTR char *
-#define LPMMCKINFO MMCKINFO *
 
-typedef int LRESULT;
-
-inline int mmioOpen(char *, void *, int)
-{
-    std::cout << "MMIO Open " << std::endl;
-    return 1;
-}
-
-inline int mmioOpenW(wchar_t *, void *, int)
-{
-    std::cout << "MMIO Open " << std::endl;
-    return 1;
-}
-
-inline int mmioFOURCC(char a, char b, char c, char d) { return 0; }
-inline int mmioDescend(HMMIO a, MMCKINFO *b, MMCKINFO *c, int d) { return 0; }
-inline int mmioClose(HMMIO a, int b) { return 0; }
-inline int mmioSeek(HMMIO a, int s, int f) { return 0; }
-inline int mmioAscend(HMMIO a, MMCKINFO *b, int) { return 0; }
-inline int mmioRead(HMMIO a, HPSTR b, int) { return 0; }
 
 inline int SearchPath(const char *, const char *, int, int, char *, int) { return 0; }
 
