@@ -14,6 +14,7 @@
 #include "synthesis/modmatrix.h"
 #include "synthesis/steplfo.h"
 #include "util/unitconversion.h"
+#include "infrastructure/logfile.h"
 #include <cstring>
 #include <vt_util/vt_string.h>
 
@@ -30,7 +31,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     {
         char msg[256];
         sprintf(msg, "file io error: File [%ls] not found!", filename);
-        write_log(msg);
+        SC3::Log::write_log(msg);
         mmioClose(hmmio, 0);
         return false;
     }
@@ -42,7 +43,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoParent.fccType = mmioFOURCC('s', 'f', 'b', 'k');
     if (mmioDescend(hmmio, (LPMMCKINFO)&mmckinfoParent, 0, MMIO_FINDRIFF))
     {
-        write_log("file io (sf2): This file doesn't contain a 'sfbk'!");
+        SC3::Log::write_log("file io (sf2): This file doesn't contain a 'sfbk'!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -67,7 +68,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     if (mmioDescend(hmmio, &mmckinfoListchunk, &mmckinfoParent, MMIO_FINDLIST))
     {
         /* Oops! The required fmt chunk was not found! */
-        write_log("file io (sf2): Required pdta LIST chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required pdta LIST chunk was not found!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -88,7 +89,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'h', 'd', 'r');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required phdr chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required phdr chunk was not found!");
         return false; // was goto bailout;
     }
     n_ph = (mmckinfoSubchunk.cksize / 38);
@@ -103,7 +104,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'b', 'a', 'g');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required pbag chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required pbag chunk was not found!");
         return false; // was goto bailout;
     }
     n_pb = (mmckinfoSubchunk.cksize / 4);
@@ -118,7 +119,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'g', 'e', 'n');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required pgen chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required pgen chunk was not found!");
         return false; // was goto bailout;
     }
     n_pg = (mmckinfoSubchunk.cksize / 4);
@@ -133,7 +134,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'n', 's', 't');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required inst chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required inst chunk was not found!");
         return false; // was goto bailout;
     }
     n_ih = (mmckinfoSubchunk.cksize / 22);
@@ -148,7 +149,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'b', 'a', 'g');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required ibag chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required ibag chunk was not found!");
         return false; // was goto bailout;
     }
     n_ib = (mmckinfoSubchunk.cksize / 4);
@@ -163,7 +164,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'g', 'e', 'n');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required igen chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required igen chunk was not found!");
         return false; // was goto bailout;
     }
     n_ig = (mmckinfoSubchunk.cksize / 4);
@@ -178,7 +179,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     mmckinfoSubchunk.ckid = mmioFOURCC('s', 'h', 'd', 'r');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required shdr chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required shdr chunk was not found!");
         return false; // was goto bailout;
     }
     n_shdr = (mmckinfoSubchunk.cksize / 46);
@@ -239,7 +240,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     {
         char msg[256];
         sprintf(msg, "file io error: File [%s] not found!", filename);
-        write_log(msg);
+        SC3::Log::write_log(msg);
         mmioClose(hmmio, 0);
         return false;
     }
@@ -251,7 +252,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoParent.fccType = mmioFOURCC('s', 'f', 'b', 'k');
     if (mmioDescend(hmmio, (LPMMCKINFO)&mmckinfoParent, 0, MMIO_FINDRIFF))
     {
-        write_log("file io (sf2): This file doesn't contain a 'sfbk'!");
+        SC3::Log::write_log("file io (sf2): This file doesn't contain a 'sfbk'!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -276,7 +277,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     if (mmioDescend(hmmio, &mmckinfoListchunk, &mmckinfoParent, MMIO_FINDLIST))
     {
         /* Oops! The required fmt chunk was not found! */
-        write_log("file io (sf2): Required pdta LIST chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required pdta LIST chunk was not found!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -297,7 +298,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'h', 'd', 'r');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required phdr chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required phdr chunk was not found!");
         return false; // was goto bailout;
     }
     n_ph = (mmckinfoSubchunk.cksize / 38);
@@ -312,7 +313,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'b', 'a', 'g');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required pbag chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required pbag chunk was not found!");
         return false; // was goto bailout;
     }
     n_pb = (mmckinfoSubchunk.cksize / 4);
@@ -327,7 +328,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'g', 'e', 'n');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required pgen chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required pgen chunk was not found!");
         return false; // was goto bailout;
     }
     n_pg = (mmckinfoSubchunk.cksize / 4);
@@ -342,7 +343,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'n', 's', 't');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required inst chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required inst chunk was not found!");
         return false; // was goto bailout;
     }
     n_ih = (mmckinfoSubchunk.cksize / 22);
@@ -357,7 +358,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'b', 'a', 'g');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required ibag chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required ibag chunk was not found!");
         return false; // was goto bailout;
     }
     n_ib = (mmckinfoSubchunk.cksize / 4);
@@ -372,7 +373,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'g', 'e', 'n');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required igen chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required igen chunk was not found!");
         return false; // was goto bailout;
     }
     n_ig = (mmckinfoSubchunk.cksize / 4);
@@ -387,7 +388,7 @@ bool sampler::load_sf2_preset(const char *filename, int *new_group, char channel
     mmckinfoSubchunk.ckid = mmioFOURCC('s', 'h', 'd', 'r');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        write_log("file io (sf2): Required shdr chunk was not found!");
+        SC3::Log::write_log("file io (sf2): Required shdr chunk was not found!");
         return false; // was goto bailout;
     }
     n_shdr = (mmckinfoSubchunk.cksize / 46);

@@ -22,6 +22,7 @@
 #include <AEffEditor.h>
 #include <audioeffectx.h>
 #endif
+#include "infrastructure/logfile.h"
 #include "configuration.h"
 #include "interaction_parameters.h"
 #include "synthesis/morphEQ.h"
@@ -75,7 +76,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
     else
     {
         wcscpy(path, L"");
-        std::cout << "FIXME: Setup Config" << std::endl;
+        SC3::Log::logos() << "FIXME: Setup Config" << std::endl;
     }
     conf = new configuration();
     conf->load(path);

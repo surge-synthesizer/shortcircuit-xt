@@ -11,6 +11,7 @@
 #include "sampler.h"
 #include "stdio.h"
 #include "util/unitconversion.h"
+#include "infrastructure/logfile.h"
 #include <assert.h>
 #include <cstdint>
 #include <string.h>
@@ -175,7 +176,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
     {
         char msg[256];
         sprintf(msg, "file io error: File [%s] not found!", filename);
-        write_log(msg);
+        SC3::Log::write_log(msg);
         mmioClose(hmmio, 0);
         return false;
     }
@@ -186,7 +187,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
     if (mmioDescend(hmmio, (LPMMCKINFO)&mmckinfoParent, 0, MMIO_FINDRIFF))
     {
 
-        write_log("file	io:	This file doesn't contain a APRG!");
+        SC3::Log::write_log("file	io:	This file doesn't contain a APRG!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -196,7 +197,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'r', 'g', ' ');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, 0, MMIO_FINDCHUNK))
     {
-        write_log("file	io:	Required prg chunk was not found!");
+        SC3::Log::write_log("file	io:	Required prg chunk was not found!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -207,7 +208,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
         (LRESULT)mmckinfoSubchunk.cksize)
     {
         /* Oops! */
-        write_log("file	io: error reading the prg chunk!");
+        SC3::Log::write_log("file	io: error reading the prg chunk!");
         mmioClose(hmmio, 0);
         return false;
     }
@@ -241,7 +242,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
         mmckinfoSubchunk.ckid = mmioFOURCC('k', 'g', 'r', 'p');
         if (mmioDescend(hmmio, &mmckinfoSubchunk, 0, MMIO_FINDCHUNK))
         {
-            write_log("file	io: kgrp chunk not found!");
+            SC3::Log::write_log("file	io: kgrp chunk not found!");
             mmioClose(hmmio, 0);
             return false;
         }
@@ -249,7 +250,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
         mmckinfoSubchunk.ckid = mmioFOURCC('k', 'l', 'o', 'c');
         if (mmioDescend(hmmio, &mmckinfoSubchunk, 0, MMIO_FINDCHUNK))
         {
-            write_log("file	io: kloc chunk not found!");
+            SC3::Log::write_log("file	io: kloc chunk not found!");
             mmioClose(hmmio, 0);
             return false;
         }
@@ -259,7 +260,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
             (LRESULT)mmckinfoSubchunk.cksize)
         {
             /* Oops! */
-            write_log("file	io: error reading the kloc chunk!");
+            SC3::Log::write_log("file	io: error reading the kloc chunk!");
             mmioClose(hmmio, 0);
             return false;
         }
@@ -268,7 +269,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
         mmckinfoSubchunk.ckid = mmioFOURCC('e', 'n', 'v', ' ');
         if (mmioDescend(hmmio, &mmckinfoSubchunk, 0, MMIO_FINDCHUNK))
         {
-            write_log("file	io: 'env ' chunk not found!");
+            SC3::Log::write_log("file	io: 'env ' chunk not found!");
             mmioClose(hmmio, 0);
             return false;
         }
@@ -277,7 +278,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
         if (mmioRead(hmmio, (HPSTR)&s6k_ampenv[k], mmckinfoSubchunk.cksize) !=
             (LRESULT)mmckinfoSubchunk.cksize)
         {
-            write_log("file	io: error reading the 'env ' chunk!");
+            SC3::Log::write_log("file	io: error reading the 'env ' chunk!");
             mmioClose(hmmio, 0);
             return false;
         }
@@ -289,7 +290,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
             mmckinfoSubchunk.ckid = mmioFOURCC('z', 'o', 'n', 'e');
             if (mmioDescend(hmmio, &mmckinfoSubchunk, 0, MMIO_FINDCHUNK))
             {
-                write_log("file	io: zone chunk not found!");
+                SC3::Log::write_log("file	io: zone chunk not found!");
                 mmioClose(hmmio, 0);
                 return false;
             }
@@ -297,7 +298,7 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
             int csize = min(mmckinfoSubchunk.cksize, (int)sizeof(akai_s6k_akp_zone));
             if (mmioRead(hmmio, (HPSTR)&s6k_zone[k][z], csize) != (LRESULT)csize)
             {
-                write_log("file	io: error reading the zone chunk!");
+                SC3::Log::write_log("file	io: error reading the zone chunk!");
                 mmioClose(hmmio, 0);
                 return false;
             }
