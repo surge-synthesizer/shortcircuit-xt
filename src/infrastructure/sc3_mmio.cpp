@@ -51,7 +51,7 @@ HMMIO mmioOpen(char *fn, void *, int mode)
 }
 HMMIO mmioOpenW(wchar_t *fn, void *, int mode)
 {
-#if MAC
+#if MAC || LINUX
     auto converter = std::wstring_convert<
         std::codecvt_utf8_utf16<wchar_t>, wchar_t>{};
     auto fnut8 = converter.to_bytes(fn);
