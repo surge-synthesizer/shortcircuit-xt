@@ -40,8 +40,9 @@ inline uint32_t swap_endian_32(uint32_t x)
 struct riffheader
 {
     uint32_t id = 0;
-    size_t datasize = 0;
-};
+    uint32_t datasize = 0;
+}; // We use the size of this to scan the file so don't make datasize a size_t
+
 enum mfseek
 {
     mf_FromStart = 0,
