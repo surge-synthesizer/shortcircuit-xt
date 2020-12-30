@@ -6,18 +6,19 @@
 //
 //-------------------------------------------------------------------------------------------------
 
+#include <cassert>
+
 #include "sampler_voice.h"
 #include "controllers.h"
 #include "sampler.h"
 #include "util/tools.h"
-#include <fstream>
 // #include <intrin.h>
 #include "generator.h"
 #include "synthesis/mathtables.h"
 #include "sample.h"
 #include "sampler_state.h"
 #include "synthesis/filter.h"
-#include <assert.h>
+
 #include <vt_dsp/basic_dsp.h>
 #include <vt_dsp/halfratefilter.h>
 
@@ -39,8 +40,8 @@ sampler_voice::sampler_voice(uint32 voice_id, timedata *td)
     halfrate = (halfrate_stereo *)_mm_malloc(sizeof(halfrate_stereo), 16);
     new (halfrate) halfrate_stereo(4, false);
 
-    voice_filter[0] = 0;
-    voice_filter[1] = 0;
+    voice_filter[0] = nullptr;
+    voice_filter[1] = nullptr;
 
     this->voice_id = voice_id;
     this->td = td;
@@ -111,9 +112,9 @@ sampler_voice::sampler_voice(uint32 voice_id, timedata *td)
 sampler_voice::~sampler_voice()
 {
     spawn_filter_release(voice_filter[0]);
-    voice_filter[0] = 0;
+    voice_filter[0] = nullptr;
     spawn_filter_release(voice_filter[1]);
-    voice_filter[1] = 0;
+    voice_filter[1] = nullptr;
 
     halfrate->~halfrate_stereo();
     _mm_free(halfrate);
@@ -143,7 +144,7 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
     part->last_note = key;
 
     this->velocity = velocity;
-    this->channel = channel;
+    // Channel is not an input - so comment this out this->channel = channel;
     this->ctrl = ctrl;
     this->automation = autom;
 
@@ -165,8 +166,8 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
     slice_env = 0;
     time60 = 0;
     loop_pos = 0;
-    random = (float)rand() / RAND_MAX;
-    randombp = ((float)rand() / RAND_MAX) * 2.f - 1.f;
+    random = (float)rand() / (float)RAND_MAX;
+    randombp = ((float)rand() / (float)RAND_MAX) * 2.f - 1.f;
     envelope_follower = 0;
     grain_id = 0;
 
@@ -184,7 +185,7 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
 
     halfrate->reset();
 
-    mm.assign(0, zone, part, this, ctrl, autom, td);
+    mm.assign(nullptr, zone, part, this, ctrl, autom, td);
     mm.process();
 
     first_run = true;
@@ -214,8 +215,8 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
 
     last_ft[0] = 0;
     last_ft[1] = 0;
-    voice_filter[0] = 0;
-    voice_filter[1] = 0;
+    voice_filter[0] = nullptr;
+    voice_filter[1] = nullptr;
 
     check_filtertypes();
 
@@ -300,7 +301,7 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
     }
 
     // choose generator function pointer
-    Generator = 0;
+    Generator = nullptr;
 
     int gmode = 0;
     switch (playmode)
@@ -372,7 +373,7 @@ void sampler_voice::uberrelease()
     is_uberrelease = true;
 }
 
-inline int sampler_voice::get_filter_type(int id) { return zone->Filter[id].type; }
+inline int sampler_voice::get_filter_type(int id) const { return zone->Filter[id].type; }
 
 void sampler_voice::check_filtertypes()
 {
@@ -381,7 +382,7 @@ void sampler_voice::check_filtertypes()
     {
         spawn_filter_release(voice_filter[0]);
         voice_filter[0] = spawn_filter(get_filter_type(0), mm.get_destination_ptr(md_filter1prm0),
-                                       zone->Filter[0].ip, 0, true);
+                                       zone->Filter[0].ip, nullptr, true);
         if (voice_filter[0])
             voice_filter[0]->init();
         last_ft[0] = get_filter_type(0);
@@ -390,7 +391,7 @@ void sampler_voice::check_filtertypes()
     {
         spawn_filter_release(voice_filter[1]);
         voice_filter[1] = spawn_filter(get_filter_type(1), mm.get_destination_ptr(md_filter2prm0),
-                                       zone->Filter[1].ip, 0, true);
+                                       zone->Filter[1].ip, nullptr, true);
         if (voice_filter[1])
             voice_filter[1]->init();
         last_ft[1] = get_filter_type(1);
@@ -434,9 +435,7 @@ void sampler_voice::update_portamento()
 #if perfprof
 #define perfslot(x) perf[x] = __rdtsc();
 #else
-#define perfslot(x)                                                                                \
-    {                                                                                              \
-    }
+#define perfslot(x)
 #endif
 
 void sampler_voice::CalcRatio()
@@ -469,27 +468,30 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
 #endif
     int VE = zone->element_active;
 
-    perfslot(0)
+    perfslot(0);
 
-        check_filtertypes();
+    check_filtertypes();
 
-    perfslot(1)
+    perfslot(1);
 
-        // process envelopes & stepLFO's
-        bool continue_playing = AEG.Process(block_size);
+    // process envelopes & stepLFO's
+    bool continue_playing = AEG.Process(block_size);
 
     if (VE & ve_EG2)
         EG2.Process(block_size);
-    perfslot(2) if (VE & ve_LFO1) stepLFO[0].process(block_size);
+    perfslot(2);
+    if (VE & ve_LFO1)
+        stepLFO[0].process(block_size);
     if (VE & ve_LFO2)
         stepLFO[1].process(block_size);
     if (VE & ve_LFO3)
         stepLFO[2].process(block_size);
 
-    perfslot(3) mm.process();
-    perfslot(4)
+    perfslot(3);
+    mm.process();
+    perfslot(4);
 
-        if (first_run)
+    if (first_run)
     {
         pfg.set_target_instantize(db_to_linear(mm.get_destination_value(md_prefilter_gain)));
         float amp = crossfade_amp * db_to_linear((1 - fvelocity) * zone->velsense) * AEG.output;
@@ -541,9 +543,10 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
         fmix2.set_target_smoothed(limit_range(mm.get_destination_value(md_filter2mix), 0.f, 1.f));
     }
 
-    perfslot(5)
+    perfslot(5);
 
-        if (portamento_active) update_portamento();
+    if (portamento_active)
+        update_portamento();
     CalcRatio();
     if (use_oversampling)
         GD.Ratio = GD.Ratio >> 1;
@@ -553,11 +556,11 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
 
     int bs = GD.BlockSize;
 
-    perfslot(6)
+    perfslot(6);
 
-        // GD.RatioMask = looping_active ? 0xffffffff : 0;
+    // GD.RatioMask = looping_active ? 0xffffffff : 0;
 
-        if (looping_active)
+    if (looping_active)
     {
         int end = (int)wave->sample_length;
         int ll = mm.get_destination_value_int(md_loop_length);
@@ -578,42 +581,43 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
         }
     }
 
-    perfslot(7)
+    perfslot(7);
 
-        if (use_stereo) pfg.multiply_2_blocks(
-            output[0], output[1], use_oversampling ? (block_size_quad << 1) : block_size_quad);
-    else pfg.multiply_block(output[0], use_oversampling ? (block_size_quad << 1) : block_size_quad);
+    if (use_stereo)
+        pfg.multiply_2_blocks(output[0], output[1],
+                              use_oversampling ? (block_size_quad << 1) : block_size_quad);
+    else
+        pfg.multiply_block(output[0], use_oversampling ? (block_size_quad << 1) : block_size_quad);
 
     if (use_oversampling)
     {
         halfrate->process_block_D2(output[0], output[1], block_size << 1);
     }
 
-    perfslot(8)
+    perfslot(8);
 
-        // envelope follower
-        /*{
-                const float integratorconst = samplerate_inv * block_size;
-                float bs_inv = (float)1/bs;
-                float ef_newvalue = sqrt(block_rms*bs_inv);
-                if (stereo) ef_newvalue *= 0.5;
-                float ef_rate;
+    // envelope follower
+    /*{
+            const float integratorconst = samplerate_inv * block_size;
+            float bs_inv = (float)1/bs;
+            float ef_newvalue = sqrt(block_rms*bs_inv);
+            if (stereo) ef_newvalue *= 0.5;
+            float ef_rate;
 
-                if(ef_newvalue>envelope_follower)
-                        ef_rate = zone->ef_attack;
-                else
-                        ef_rate = zone->ef_release;
+            if(ef_newvalue>envelope_follower)
+                    ef_rate = zone->ef_attack;
+            else
+                    ef_rate = zone->ef_release;
 
-                //float x = pi * powf(2,-ef_rate) * integratorconst;
-                float x = pi * note_to_pitch(-12*ef_rate) * integratorconst;
-                float tm = 2-cos(x);
-                float p = tm - sqrt(tm*tm - 1);
+            //float x = pi * powf(2,-ef_rate) * integratorconst;
+            float x = pi * note_to_pitch(-12*ef_rate) * integratorconst;
+            float tm = 2-cos(x);
+            float p = tm - sqrt(tm*tm - 1);
 
-                envelope_follower = envelope_follower*p + (1-p)*ef_newvalue;
-        }*/
+            envelope_follower = envelope_follower*p + (1-p)*ef_newvalue;
+    }*/
 
-        _MM_ALIGN16 float tempbuf[2][block_size],
-        postfader_buf[2][block_size];
+    _MM_ALIGN16 float tempbuf[2][block_size], postfader_buf[2][block_size];
 
     if (use_stereo)
     {
@@ -649,9 +653,9 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
         copy_block(output[0], output[1], block_size_quad);
     }
 
-    perfslot(9)
+    perfslot(9);
 
-        const unsigned int bufof = block_size;
+    const unsigned int bufof = block_size;
     vca.multiply_2_blocks(output[0], output[1], block_size_quad);
     faderL.multiply_block_to(output[0], postfader_buf[0], block_size_quad);
     faderR.multiply_block_to(output[1], postfader_buf[1], block_size_quad);

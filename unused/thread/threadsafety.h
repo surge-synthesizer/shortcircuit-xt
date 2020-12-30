@@ -1,5 +1,7 @@
 #pragma once
 
+#error THIS IS NO LONGER NEEDED
+
 #if MAC
 #include <CoreServices/CoreServices.h>
 #elif LINUX

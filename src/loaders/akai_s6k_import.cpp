@@ -6,6 +6,11 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
+#if WINDOWS
+#include <windows.h>
+#include <mmiscapi.h>
+#endif
+
 #include "globals.h"
 #include "infrastructure/logfile.h"
 #include "sampler.h"
@@ -17,9 +22,7 @@
 #include <string.h>
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
-#if WINDOWS
-#include <mmiscapi.h>
-#endif
+
 
 #include <algorithm>
 using std::max;
@@ -228,8 +231,6 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
     bool do_kg_xfade = (s6k_prg.KGXFade == 1);
 
     akai_s6k_akp_kloc s6k_kloc[256];
-
-    assert(s6k_prg.n_keygroups <= 256);
 
     akai_s6k_akp_env s6k_ampenv[256];
     akai_s6k_akp_zone s6k_zone[256][4];

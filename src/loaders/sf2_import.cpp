@@ -5,6 +5,9 @@
 //	Copyright 2004 Claes Johanson
 //
 //-------------------------------------------------------------------------------------------------------
+#if WINDOWS
+#include <windows.h>
+#endif
 #include "sf2_import.h"
 #include "globals.h"
 #include "infrastructure/logfile.h"

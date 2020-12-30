@@ -92,7 +92,7 @@ struct wave_inst_chunk
     char vel_low, vel_high;
 };
 
-#pragma pack()
+#pragma pack(pop)
 
 // from MMsystem.h
 

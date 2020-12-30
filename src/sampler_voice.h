@@ -91,7 +91,7 @@ class sampler_voice
     float envelope_follower, fpitch;
     float lag[2];
 
-    inline int get_filter_type(int id);
+    inline int get_filter_type(int id) const;
     // void filter_ctrldata(int);
     bool sample_started, first_run;
     bool upsampling;

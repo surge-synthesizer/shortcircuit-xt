@@ -172,7 +172,6 @@ set(VEMBERTECH_SOURCE
         libs/vembertech/vt_dsp/lattice.cpp
         libs/vembertech/vt_dsp/macspecific.cpp
         libs/vembertech/vt_dsp/basic_dsp.cpp
-        libs/vembertech/thread/threadsafety.cpp
         )
 
 set(SHORTCIRCUIT_INCLUDE_DIRS

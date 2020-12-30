@@ -5,6 +5,10 @@
 //	Copyright 2004 Claes Johanson
 //
 //-------------------------------------------------------------------------------------------------------
+#if WINDOWS
+#include <windows.h>
+#endif
+
 #include "globals.h"
 #include "sampler.h"
 #include "stdio.h"

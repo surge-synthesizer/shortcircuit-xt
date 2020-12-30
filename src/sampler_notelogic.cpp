@@ -1,3 +1,4 @@
+
 #include "sampler.h"
 #if !TARGET_HEADLESS
 #include "shortcircuit_editor2.h"
@@ -142,7 +143,6 @@ int sampler::GetFreeVoiceId(int group_id)
             polyphony--;
             v_free = 0;
         }
-        ::OutputDebugString("voice killed\n");
     }
 
     return v_free;
