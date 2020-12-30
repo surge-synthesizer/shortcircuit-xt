@@ -149,7 +149,7 @@ void iir_lattice_sd_x87(lattice_sd &d, double * __restrict Data, int NSamples)
 	}
 }
 
-// TODO måste testas
+// TODO mï¿½ste testas
 void iir_lattice_pd_serial_SSE2(lattice_pd &d, double * __restrict Data, int NSamples)
 {	
 	const __m128d v0_1 = _mm_set_sd(0.1);
@@ -165,7 +165,7 @@ void iir_lattice_pd_serial_SSE2(lattice_pd &d, double * __restrict Data, int NSa
 	__m128d V2 = d.v.V2;
 	__m128d V3 = d.v.V3;	
 	__m128d CG = d.v.ClipGain;
-	__m128d in = d.reg[4];
+	__m128d in = d.reg[3];
 
 	for(int i=0; i<NSamples; i++)
 	{					
@@ -209,7 +209,7 @@ void iir_lattice_pd_serial_SSE2(lattice_pd &d, double * __restrict Data, int NSa
 	d.reg[0] = r0;
 
 	d.reg[2] = regmult;
-	d.reg[4] = in;
+	d.reg[3] = in;
 }
 
 double map_resonance_to_2Qinv(double reso, double freq) 

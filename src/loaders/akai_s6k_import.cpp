@@ -229,8 +229,6 @@ bool sampler::load_akai_s6k_program(const char *filename, char channel, bool rep
 
     akai_s6k_akp_kloc s6k_kloc[256];
 
-    assert(s6k_prg.n_keygroups <= 256);
-
     akai_s6k_akp_env s6k_ampenv[256];
     akai_s6k_akp_zone s6k_zone[256][4];
     bool zone_present[256][4];

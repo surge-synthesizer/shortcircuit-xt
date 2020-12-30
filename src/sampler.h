@@ -14,7 +14,7 @@ class sampler;
 #include "sampler_state.h"
 #include <list>
 #include <string>
-#include <thread/threadsafety.h>
+#include <thread>
 #include <vector>
 #include <vt_dsp/lipol.h>
 #include <vt_gui/vt_gui_constants.h>
@@ -256,7 +256,7 @@ class sampler
     bool editor_open;
     // AudioEffectX	*effect;
     multiselect *selected;
-    c_sec cs_patch, cs_gui, cs_engine;
+    std::mutex cs_patch, cs_gui, cs_engine;
     configuration *conf;
     char sample_replace_filename[256];
     char keystate[16][128];

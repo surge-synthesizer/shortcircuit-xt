@@ -82,7 +82,7 @@ struct giga_3ewa
     // fors�tt senare
 };
 
-#pragma pack()
+#pragma pack(pop)
 
 bool sample::parse_dls_sample(void *data, size_t filesize, unsigned int sample_id)
 {
@@ -378,7 +378,7 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
             // no sub-regions, read as normal DLS
             char fn[256];
             int newzone;
-            sprintf(fn, "%s|%i", filename, wlnk.ulTableIndex);
+            sprintf(fn, "%s|%llu", filename, wlnk.ulTableIndex);
             if (add_zone(fn, &newzone, channel))
             {
                 sample_zone *z = &zones[newzone];

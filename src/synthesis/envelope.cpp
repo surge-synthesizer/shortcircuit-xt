@@ -62,13 +62,13 @@ void Envelope::Assign(float *envA, float *envH, float *envD, float *envS, float 
     R = envR;
     shape = envshape;
 
-    this->edata = edata;
+    // this->edata = edata;
 
     state = sIdle;
     level = 0.;
     output = 0.;
     block = 1; // counter
-    this->is_AEG = is_AEG;
+    // this->is_AEG = is_AEG;
 }
 
 //-------------------------------------------------------------------------------------------------

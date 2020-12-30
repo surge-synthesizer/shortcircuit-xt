@@ -222,63 +222,64 @@ void sampler::process_audio()
         clear_block(output_part[op], block_size_quad);
 
     // clear buffers & process controls
-    cs_patch.enter();
-
-    // render voices
-    for (unsigned int v = 0; v < highest_voice_id; v++)
     {
-        if (voice_state[v].active) // is bottleneck at idle (?)
+        std::lock_guard g(cs_patch);
+
+        // render voices
+        for (unsigned int v = 0; v < highest_voice_id; v++)
         {
-            float *outbuf[3][2];
-            outbuf[0][0] =
-                get_output_pointer(voices[v]->zone->aux[0].output, 0, voices[v]->zone->part);
-            outbuf[0][1] =
-                get_output_pointer(voices[v]->zone->aux[0].output, 1, voices[v]->zone->part);
-            outbuf[1][0] =
-                get_output_pointer(voices[v]->zone->aux[1].output, 0, voices[v]->zone->part);
-            outbuf[1][1] =
-                get_output_pointer(voices[v]->zone->aux[1].output, 1, voices[v]->zone->part);
-            outbuf[2][0] =
-                get_output_pointer(voices[v]->zone->aux[2].output, 0, voices[v]->zone->part);
-            outbuf[2][1] =
-                get_output_pointer(voices[v]->zone->aux[2].output, 1, voices[v]->zone->part);
-
-            voice_state[v].active = voices[v]->process_block(
-                outbuf[0][0], outbuf[0][1], outbuf[1][0], outbuf[1][1], outbuf[2][0], outbuf[2][1]);
-
-            if (!voice_state[v].active)
+            if (voice_state[v].active) // is bottleneck at idle (?)
             {
-                polyphony--;
-                holdbuffer.remove(v);
+                float *outbuf[3][2];
+                outbuf[0][0] =
+                    get_output_pointer(voices[v]->zone->aux[0].output, 0, voices[v]->zone->part);
+                outbuf[0][1] =
+                    get_output_pointer(voices[v]->zone->aux[0].output, 1, voices[v]->zone->part);
+                outbuf[1][0] =
+                    get_output_pointer(voices[v]->zone->aux[1].output, 0, voices[v]->zone->part);
+                outbuf[1][1] =
+                    get_output_pointer(voices[v]->zone->aux[1].output, 1, voices[v]->zone->part);
+                outbuf[2][0] =
+                    get_output_pointer(voices[v]->zone->aux[2].output, 0, voices[v]->zone->part);
+                outbuf[2][1] =
+                    get_output_pointer(voices[v]->zone->aux[2].output, 1, voices[v]->zone->part);
+
+                voice_state[v].active =
+                    voices[v]->process_block(outbuf[0][0], outbuf[0][1], outbuf[1][0], outbuf[1][1],
+                                             outbuf[2][0], outbuf[2][1]);
+
+                if (!voice_state[v].active)
+                {
+                    polyphony--;
+                    holdbuffer.remove(v);
 #if TARGET_VST2
-                if (editor && editor->isOpen())
-                    track_zone_triggered(voice_state[v].zone_id, false);
+                    if (editor && editor->isOpen())
+                        track_zone_triggered(voice_state[v].zone_id, false);
 #endif
+                }
+            }
+        }
+
+        // process parts
+        for (int p = 0; p < n_sampler_parts; p++)
+        {
+            process_part(p);
+        }
+
+        process_global_effects();
+
+        // Process preview player
+        if (mpPreview->mActive)
+        {
+            bool ContinuePreviewing =
+                mpPreview->mpVoice->process_block(output[0], output[1], NULL, NULL, NULL, NULL);
+
+            if (!ContinuePreviewing)
+            {
+                mpPreview->SetPlayingState(false);
             }
         }
     }
-
-    // process parts
-    for (int p = 0; p < n_sampler_parts; p++)
-    {
-        process_part(p);
-    }
-
-    process_global_effects();
-
-    // Process preview player
-    if (mpPreview->mActive)
-    {
-        bool ContinuePreviewing =
-            mpPreview->mpVoice->process_block(output[0], output[1], NULL, NULL, NULL, NULL);
-
-        if (!ContinuePreviewing)
-        {
-            mpPreview->SetPlayingState(false);
-        }
-    }
-
-    cs_patch.leave();
 
     processVUs();
     // post amplitude

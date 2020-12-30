@@ -4,6 +4,8 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
+#error THIS IS NO LONGER NEEDED
+
 c_sec::c_sec()
 {
 	refcount = 0;

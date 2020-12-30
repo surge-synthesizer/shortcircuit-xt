@@ -401,7 +401,7 @@ void sampler::ChannelController(char channel, int cc, int value)
 
 void sampler::purge_holdbuffer()
 {
-    cs_engine.enter();
+    std::lock_guard g(cs_engine);
     int z;
     list<int>::iterator iter = holdbuffer.begin();
     while (1)
@@ -419,8 +419,6 @@ void sampler::purge_holdbuffer()
         else
             iter++;
     }
-    cs_engine.leave();
-
     // note: m�ste remova entries n�r noter d�dar sig sj�lv auch
 }
 
@@ -550,12 +548,11 @@ bool sampler::get_key_name(char *str, int channel, int key)
 
 bool sampler::get_sample_id(const char *filename, int *s_id)
 {
-    cs_patch.enter();
+    std::lock_guard g(cs_patch);
     if (!filename)
     {
         if (s_id)
             *s_id = -1;
-        cs_patch.leave();
         return true; // finns redan, skulle man kunna s�ga, eftersom den inte ska laddas
     }
 
@@ -563,7 +560,6 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
     {
         if (s_id)
             *s_id = atoi(filename + 6);
-        cs_patch.leave();
         return (samples[*s_id & (max_samples - 1)] != NULL);
     }
 
@@ -576,12 +572,10 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
             {
                 if (s_id)
                     *s_id = s;
-                cs_patch.leave();
                 return true;
             }
         }
     }
-    cs_patch.leave();
     return false;
 }
 
@@ -718,7 +712,9 @@ bool sampler::add_zone(const TCHAR *filename, int *new_z, char part, bool use_ro
     }
     else
         s = -1;
-    cs_patch.enter();
+
+
+    std::lock_guard lockUntilEnd( cs_patch );
     InitZone(i);
 
     zones[i].part = part;
@@ -795,7 +791,6 @@ bool sampler::add_zone(const TCHAR *filename, int *new_z, char part, bool use_ro
         *new_z = i;
     zone_exists[i] = true;
     update_zone_switches(i);
-    cs_patch.leave();
     return true;
 }
 
@@ -808,12 +803,15 @@ bool sampler::replace_zone(int z, const char *filename)
     kill_notes(z);
     int s_old = zones[z].sample_id;
 
-    cs_patch.enter();
-    int s = GetFreeSampleId();
-    if (s < 0)
-        return false;
-    samples[s] = new sample(conf);
-    cs_patch.leave();
+    int s = 0;
+    {
+        std::lock_guard g(cs_patch);
+
+        s = GetFreeSampleId();
+        if (s < 0)
+            return false;
+        samples[s] = new sample(conf);
+    }
 
     if (!(samples[s]->load(filename)))
     {
@@ -822,8 +820,8 @@ bool sampler::replace_zone(int z, const char *filename)
         return false;
     }
 
-    cs_patch.enter();
 
+    std::lock_guard lockUntilEnd( cs_patch );
     if ((s_old >= 0) && samples[s_old]->forget())
     {
         delete samples[s_old];
@@ -893,7 +891,6 @@ bool sampler::replace_zone(int z, const char *filename)
     temp[31] = 0;
     vtCopyString(zones[z].name, temp, 32);
     update_zone_switches(z);
-    cs_patch.leave();
     return true;
 }
 
@@ -901,7 +898,7 @@ bool sampler::free_zone(uint32_t zoneid)
 {
     if (!zone_exists[zoneid])
         return false;
-    cs_patch.enter();
+    std::lock_guard g(cs_patch);
     kill_notes(zoneid);
     zone_exists[zoneid] = false;
     if ((zones[zoneid].sample_id >= 0) && samples[zones[zoneid].sample_id]->forget())
@@ -909,7 +906,6 @@ bool sampler::free_zone(uint32_t zoneid)
         delete samples[zones[zoneid].sample_id];
         samples[zones[zoneid].sample_id] = 0;
     }
-    cs_patch.leave();
     return true;
 }
 
@@ -1017,7 +1013,7 @@ void sampler::idle()
 
 void sampler::part_clear_zones(int p)
 {
-    cs_patch.enter();
+    std::lock_guard g(cs_patch);
     int i;
     for (i = 0; i < max_zones; i++)
     {
@@ -1026,7 +1022,6 @@ void sampler::part_clear_zones(int p)
             free_zone(i);
         }
     }
-    cs_patch.leave();
 }
 
 //-------------------------------------------------------------------------------------------------
