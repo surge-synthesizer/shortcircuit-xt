@@ -10,6 +10,7 @@
 #endif
 #include "sf2_import.h"
 #include "globals.h"
+#include "infrastructure/sc3_mmio.h"
 #include "infrastructure/logfile.h"
 #include "sampler.h"
 #include "sf2.h"

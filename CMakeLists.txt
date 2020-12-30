@@ -153,7 +153,7 @@ set(SHORTCIRCUIT_SOURCE
         src/synthesis/steplfo.cpp
         src/util/tools.cpp
         src/util/unitconversion.cpp
-        )
+        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h)
 
 set(SHORTCIRCUIT_GENERATED_SOURCE
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
@@ -256,6 +256,7 @@ target_link_libraries(shortcircuit3py PRIVATE shortcircuit-core)
 # And finally the test suite
 add_executable(sc3-test
         tests/lowlevel_io.cpp
+        tests/mmio_test.cpp
         tests/test_main.cpp)
 target_include_directories(sc3-test PRIVATE
         libs/catch2/include)

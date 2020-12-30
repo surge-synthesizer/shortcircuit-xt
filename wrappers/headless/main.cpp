@@ -26,9 +26,9 @@ int main(int argc, char **argv)
                   << std::endl;
     }
 
-    std::cout << "Loading y:\\dev\\music\\SHORTCIRCUIT\\samples\\harpsi.sf2" << std::endl;
+    std::cout << "Loading harpsi.sf2" << std::endl;
 
-    auto res = sc3->load_file("y:\\dev\\music\\SHORTCIRCUIT\\samples\\harpsi.sf2");
+    auto res = sc3->load_file("resources\\test_samples\\harpsi.sf2");
     std::cout << "RES is " << res << std::endl;
 
     sc3->PlayNote(0, 60, 120);
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
         sc3->process_audio();
         for (int k = 0; k < block_size; ++k)
         {
-            std::cout << sc3->output[0][k] << " " << sc3->output[1][k] << std::endl;
+            //std::cout << sc3->output[0][k] << " " << sc3->output[1][k] << std::endl;
         }
     }
     sc3->ReleaseNote(0, 60, 0);

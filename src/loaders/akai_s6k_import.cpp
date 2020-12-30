@@ -6,12 +6,9 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
-#if WINDOWS
-#include <windows.h>
-#include <mmiscapi.h>
-#endif
 
 #include "globals.h"
+#include "infrastructure/sc3_mmio.h"
 #include "infrastructure/logfile.h"
 #include "sampler.h"
 #include "stdio.h"

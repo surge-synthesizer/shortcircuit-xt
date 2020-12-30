@@ -21,12 +21,14 @@
 
 #include "globals.h"
 #include "riff_memfile.h"
+#include <iostream>
+#include <map>
 
 TEST_CASE("RIFF_MemFile", "[io]")
 {
     SECTION("Create an RMF")
     {
-        auto p = string_to_path("tests/data/WavStereo48k.wav");
+        auto p = string_to_path("resources/test_samples/WavStereo48k.wav");
         auto ifs = std::ifstream(p, std::ios::binary);
 
         REQUIRE(ifs.is_open());
@@ -45,6 +47,12 @@ TEST_CASE("RIFF_MemFile", "[io]")
         int tag, LISTtag;
         bool IsLIST;
 
+        std::map<std::string,int> knownSizes;
+        knownSizes["fmt "] = 16;
+        knownSizes["data"] = 2835688;
+        knownSizes["LGWV"] = 2778;
+        knownSizes["cue "] = 28;
+
         bool foundData = false;
         while (rmf.RIFFPeekChunk(&tag, &chunksize))
         {
@@ -57,6 +65,8 @@ TEST_CASE("RIFF_MemFile", "[io]")
             {
                 char rfD[5];
                 rmf.tagToFourCCStr(tag, rfD);
+                if( knownSizes.find(rfD) != knownSizes.end() )
+                    REQUIRE( chunksize == knownSizes[rfD]);
                 if (strcmp(rfD, "data") == 0)
                     foundData = true;
                 rmf.RIFFSkipChunk();
