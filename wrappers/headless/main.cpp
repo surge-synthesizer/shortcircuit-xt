@@ -35,7 +35,12 @@ int main(int argc, char **argv)
     else
     {
         std::cout << "Loading Bad Pluck" << std::endl;
+#if WINDOWS
         auto res = sc3->load_file("resources\\test_samples\\BadPluckSample.wav");
+#else
+        auto res = sc3->load_file("resources/test_samples/BadPluckSample.wav");
+#endif
+
         std::cout << "RES is " << res << std::endl;
     }
     for( int n=0; n<127; ++n )

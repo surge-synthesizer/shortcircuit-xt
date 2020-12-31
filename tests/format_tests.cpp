@@ -38,5 +38,39 @@ TEST_CASE( "Simple SF2 Load", "[formats]" )
         REQUIRE( sc3->load_file("resources\\test_samples\\harpsi.sf2") );
 #endif
     }
+}
 
+TEST_CASE( "Simple WAV Load", "[formats]" )
+{
+    SECTION( "Simple Load" )
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        REQUIRE( sc3 );
+
+        sc3->set_samplerate(48000);
+#if WINDOWS
+        REQUIRE( sc3->load_file("resources\\test_samples\\BadPluckSample.wav") );
+#else
+        REQUIRE( sc3->load_file("resources/test_samples/BadPluckSample.wav") );
+#endif
+
+        double rms = 0;
+        int n = 36;
+        for (int i = 0; i < 100; ++i)
+        {
+            if (i == 30)
+                sc3->PlayNote(0, n, 120);
+            if( i == 70 )
+                sc3->ReleaseNote(0,n,0);
+
+            sc3->process_audio();
+            for (int k = 0; k < block_size; ++k)
+            {
+                rms +=
+                    sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+            }
+        }
+        rms = sqrt(rms);
+        REQUIRE( rms == Approx(6.0266351586).margin(1e-4));
+    }
 }

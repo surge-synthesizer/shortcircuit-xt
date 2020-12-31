@@ -89,6 +89,8 @@ bool sampler::load_file(const char *file_name, int *new_g, int *new_z, bool *is_
     {
         char *backslash = strrchr(filename, '\\');
         if (!backslash)
+            backslash = strrchr(filename, '/' );
+        if (!backslash)
             return false;
         assert(*(backslash + 1));
         strncpy(nameNoPath, backslash + 1, 256);
