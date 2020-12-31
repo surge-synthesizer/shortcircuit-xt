@@ -26,26 +26,40 @@ int main(int argc, char **argv)
                   << std::endl;
     }
 
-    std::cout << "Loading harpsi.sf2" << std::endl;
-
-    auto res = sc3->load_file("resources\\test_samples\\harpsi.sf2");
-    std::cout << "RES is " << res << std::endl;
-
-    for (int i = 0; i < 100; ++i)
+    if(false)
     {
-        if( i == 30 )
-            sc3->PlayNote(0, 60, 120);
-
-        sc3->process_audio();
-        float rms = 0;
-        for (int k = 0; k < block_size; ++k)
-        {
-            rms += sc3->output[0][k] * sc3->output[0][k] +
-                sc3->output[1][k] * sc3->output[1][k];
-            //std::cout << sc3->output[0][k] << " " << sc3->output[1][k] << std::endl;
-        }
-        rms = sqrt(rms) / block_size;
-        std::cout << "i= " << i << " RMS=" << rms << std::endl;
+        std::cout << "Loading harpsi.sf2" << std::endl;
+        auto res = sc3->load_file("resources\\test_samples\\harpsi.sf2");
+        std::cout << "RES is " << res << std::endl;
     }
-    sc3->ReleaseNote(0, 60, 0);
+    else
+    {
+        std::cout << "Loading Bad Pluck" << std::endl;
+        auto res = sc3->load_file("resources\\test_samples\\BadPluckSample.wav");
+        std::cout << "RES is " << res << std::endl;
+    }
+    for( int n=0; n<127; ++n )
+    {
+        double rms = 0;
+
+        for (int i = 0; i < 100; ++i)
+        {
+            if (i == 30)
+                sc3->PlayNote(0, n, 120);
+            if( i == 70 )
+                sc3->ReleaseNote(0,n,0);
+
+            sc3->process_audio();
+            for (int k = 0; k < block_size; ++k)
+            {
+                rms +=
+                    sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+                // std::cout << sc3->output[0][k] << " " << sc3->output[1][k] << std::endl;
+            }
+        }
+        rms = sqrt(rms) / block_size / 100;
+
+        if( rms > 1e-10 )
+            std::cout << n << " " << rms << std::endl;
+    }
 }
