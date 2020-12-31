@@ -49,8 +49,7 @@ TEST_CASE( "Simple WAV Load", "[formats]" )
 
         sc3->set_samplerate(48000);
 #if WINDOWS
-        std::cout << "Loading harpsi.sf2" << std::endl;
-        REQUIRE( sc3->load_file("resources\\test_samples\\harpsi.sf2") );
+        REQUIRE( sc3->load_file("resources\\test_samples\\BadPluckSample.wav") );
 #else
         REQUIRE( sc3->load_file("resources/test_samples/BadPluckSample.wav") );
 #endif
