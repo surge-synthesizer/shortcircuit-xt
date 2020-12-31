@@ -14,7 +14,20 @@
 #if WINDOWS
 #include <windows.h>
 #include <mmreg.h>
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include "vt_util/vt_string.h"
 #endif
+
+#include "infrastructure/logfile.h"
 
 sample::sample(configuration *conf)
 {
@@ -174,9 +187,26 @@ bool sample::load(const wchar_t *filename)
 
     void *data = MapViewOfFile(hmf, FILE_MAP_READ, 0, 0, 0);
 #else
-    std::cout << "Implement with mmap" << std::endl;
-    size_t datasize = 0;
-    void *data = nullptr;
+    int fd;
+    struct stat sb;
+    char fn[MAX_PATH];
+    vtWStringToString(fn, filename_decoded, MAX_PATH );
+
+    fd = open(fn, O_RDONLY);
+    if( ! fd )
+    {
+        SC3::Log::logos() << "Unable to open file " << fn << std::endl;
+        return false;
+    }
+    fstat(fd, &sb);
+    SC3::Log::logos() << "File '" << fn << "' has size " << sb.st_size << std::endl;
+    void * data = mmap(nullptr, sb.st_size, PROT_WRITE, MAP_PRIVATE, fd, 0);
+    if (data == MAP_FAILED)
+    {
+        SC3::Log::logos() << "Unable to mmap file '" << fn <<"'" << std::endl;
+    }
+
+    size_t datasize = sb.st_size;
 #endif
 
     clear_data(); // clear to a more predictable state
@@ -220,6 +250,9 @@ bool sample::load(const wchar_t *filename)
 
     CloseHandle(hmf);
     CloseHandle(hf);
+#else
+    munmap( data, datasize );
+    close(fd);
 #endif
 
     if (r)

@@ -79,6 +79,7 @@ if (APPLE)
             )
 elseif (UNIX AND NOT APPLE)
     set(OS_COMPILE_OPTIONS
+            -Wno-multichar
             -fPIC
             -fvisibility=hidden -fvisibility-inlines-hidden
             )
@@ -263,7 +264,7 @@ target_link_libraries(shortcircuit3py PRIVATE shortcircuit-core)
 add_executable(sc3-test
         tests/lowlevel_io.cpp
         tests/mmio_test.cpp
-        tests/test_main.cpp tests/sf2_tests.cpp)
+        tests/test_main.cpp tests/format_tests.cpp tests/vt_miscellany.cpp)
 target_include_directories(sc3-test PRIVATE
         libs/catch2/include)
 target_link_libraries(sc3-test
