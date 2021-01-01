@@ -27,6 +27,7 @@
 #include "vt_util/vt_string.h"
 #endif
 
+#include "vt_util/vt_string.h"
 #include "infrastructure/logfile.h"
 #include "infrastructure/file_map_view.h"
 
@@ -143,11 +144,8 @@ bool sample::load(const char *filename)
 {
     assert(filename);
     wchar_t wfilename[pathlength];
-    int result = MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, 1024);
-    if (!result)
-        return false;
+    vtStringToWString(wfilename, filename, pathlength);
     bool r = load(wfilename);
-    // if(r) vtCopyString(this->filename,filename,256);
     return r;
 }
 
@@ -188,8 +186,12 @@ bool sample::load(const wchar_t *filename)
     {
         sname++;
         int length = wcsrchr(sname, '.') - sname;
+#if WINDOWS
         if (length > 0)
             WideCharToMultiByte(CP_UTF8, 0, sname, length, name, 64, 0, 0);
+#else
+#warning Compiling un-ported WideChar code
+#endif
     }
 
     bool r = false;
@@ -224,7 +226,12 @@ bool sample::load(const wchar_t *filename)
     {
         wchar_t tmp[512];
         swprintf(tmp, 512, L"HERE Could not read file %s", filename);
+#if WINDOWS
         MessageBoxW(::GetActiveWindow(), tmp, L"File I/O Error", MB_OK | MB_ICONERROR);
+#else
+#warning Implement user feedeback
+        SC3::Log::logos() << "File IO error" << std::endl;
+#endif
     }
 
     return r;
@@ -277,9 +284,7 @@ void sample::init_grains()
 
 bool sample::get_filename(char *utf8name)
 {
-    int result = WideCharToMultiByte(CP_UTF8, 0, filename, -1, utf8name, 256, 0, 0);
-    if (!result)
-        return false;
+    vtStringToWString(filename, utf8name, 256 );
     return true;
 }
 
@@ -287,9 +292,7 @@ bool sample::compare_filename(const char *utf8name)
 {
     assert(filename);
     wchar_t wfilename[pathlength];
-    int result = MultiByteToWideChar(CP_UTF8, 0, utf8name, -1, wfilename, 1024);
-    if (!result)
-        return false;
+    vtStringToWString(wfilename, utf8name, 1024 );
     return (wcscmp(filename, wfilename) == 0);
 }
 

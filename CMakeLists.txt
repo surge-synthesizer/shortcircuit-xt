@@ -57,6 +57,10 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
 # Include the surge filesystem API so we can work on systems which don't have
 # a full std::filesystem (mac targets <10.15, older ubuntus)
 add_subdirectory(libs/filesystem)
+if( APPLE )
+    # Hmmm...
+    target_compile_options(filesystem PUBLIC -fvisibility=hidden -fvisibility-inlines-hidden)
+endif()
 
 # And include JUCE
 add_subdirectory(libs/JUCE)
@@ -265,8 +269,10 @@ add_executable(sc3-test
         tests/lowlevel_io.cpp
         tests/mmio_test.cpp
         tests/test_main.cpp tests/format_tests.cpp tests/vt_miscellany.cpp)
+
 target_include_directories(sc3-test PRIVATE
         libs/catch2/include)
+
 target_link_libraries(sc3-test
         shortcircuit-core
         surge::filesystem

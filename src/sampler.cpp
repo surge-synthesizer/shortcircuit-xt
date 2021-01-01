@@ -61,6 +61,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
 {
     // load configuration
     wchar_t path[1024];
+#if WINDOWS
     extern void *hInstance;
     holdengine = false;
     GetModuleFileNameW((HMODULE)hInstance, path, 1024);
@@ -78,6 +79,10 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
         wcscpy(path, L"");
         SC3::Log::logos() << "FIXME: Setup Config" << std::endl;
     }
+#else
+#warning Deal with configuration paths.
+    wcscpy(path, L"." );
+#endif
     conf = new configuration();
     conf->load(path);
 
@@ -674,7 +679,7 @@ void sampler::SInitZone(sample_zone *pZone)
 
 //-------------------------------------------------------------------------------------------------
 
-bool sampler::add_zone(const TCHAR *filename, int *new_z, char part, bool use_root_key)
+bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_root_key)
 {
     // find free zone and create zone object
     int i = GetFreeZoneId();
@@ -969,9 +974,14 @@ int sampler::GetFreeZoneId()
         }
     }
 
+#if WINDOWS
     MessageBox(::GetActiveWindow(),
                "Zone limit reached.\n\nPlease nag at developer to increase the limit.",
                "Too many zones", MB_OK | MB_ICONERROR);
+#else
+#warning Implement user feedback
+    SC3::Log::logos() << "Zone limit reached" << std::endl;
+#endif
 
     return -1;
 }

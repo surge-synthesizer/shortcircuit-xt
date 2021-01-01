@@ -18,6 +18,9 @@
 #include "windows_compat.h"
 #endif
 
+#include <iostream>
+#include <fstream>
+
 using std::max;
 using std::min;
 
@@ -378,15 +381,18 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const WCHAR *filename, int PartID)
     }
     else if (filename)
     {
-        HANDLE hf =
-            CreateFileW(filename, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, 0, NULL);
-        if (!hf)
+#if WINDOWS
+        std::ofstream ofs(filename, std::ios::binary );
+#else
+        char fnu8[PATH_MAX];
+        vtWStringToString(fnu8, filename, PATH_MAX );
+        std::ofstream ofs(fnu8, std::ios::binary);
+#endif
+        if (!ofs.is_open())
             goto abort;
 
-        DWORD byteswritten;
-        WriteFile(hf, chunkDataPtr, datasize, &byteswritten, NULL);
+        ofs.write((const char*)chunkDataPtr, datasize );
 
-        CloseHandle(hf);
         free(chunkDataPtr);
         chunkDataPtr = 0;
         return 1;
