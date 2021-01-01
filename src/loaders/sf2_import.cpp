@@ -149,7 +149,7 @@ int get_sf2_patchlist(const wchar_t *filename, void **plist)
     }
     mmioAscend(hmmio, &mmckinfoSubchunk, 0);
 
-    // instrument bag
+    // instrument bagin
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'b', 'a', 'g');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {

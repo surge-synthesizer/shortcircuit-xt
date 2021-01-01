@@ -28,6 +28,7 @@
 #endif
 
 #include "infrastructure/logfile.h"
+#include "infrastructure/file_map_view.h"
 
 sample::sample(configuration *conf)
 {
@@ -171,43 +172,14 @@ bool sample::load(const wchar_t *filename)
     int sample_id, program_id;
     conf->decode_pathW(filename, filename_decoded, extension, &program_id, &sample_id);
 
-#if WINDOWS
-    HANDLE hf = CreateFileW(filename_decoded, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                            FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    if (!hf)
-        return false;
-    size_t datasize = GetFileSize(hf, NULL);
-
-    HANDLE hmf = CreateFileMappingW(hf, 0, PAGE_READONLY, 0, 0, 0);
-    if (!hmf)
+    auto mapper = std::make_unique<SC3::FileMapView>(filename_decoded);
+    if (!mapper->isMapped())
     {
-        CloseHandle(hf);
+        SC3::Log::logos() << "Unable to map view of file '" << filename_decoded << "'";
         return false;
     }
-
-    void *data = MapViewOfFile(hmf, FILE_MAP_READ, 0, 0, 0);
-#else
-    int fd;
-    struct stat sb;
-    char fn[MAX_PATH];
-    vtWStringToString(fn, filename_decoded, MAX_PATH );
-
-    fd = open(fn, O_RDONLY);
-    if( ! fd )
-    {
-        SC3::Log::logos() << "Unable to open file " << fn << std::endl;
-        return false;
-    }
-    fstat(fd, &sb);
-    SC3::Log::logos() << "File '" << fn << "' has size " << sb.st_size << std::endl;
-    void * data = mmap(nullptr, sb.st_size, PROT_WRITE, MAP_PRIVATE, fd, 0);
-    if (data == MAP_FAILED)
-    {
-        SC3::Log::logos() << "Unable to mmap file '" << fn <<"'" << std::endl;
-    }
-
-    size_t datasize = sb.st_size;
-#endif
+    auto data = mapper->data();
+    auto datasize = mapper->dataSize();
 
     clear_data(); // clear to a more predictable state
 
@@ -244,16 +216,6 @@ bool sample::load(const wchar_t *filename)
         if (channels == 2)
             assert(SampleData[1]);
     }
-
-#if WINDOWS
-    UnmapViewOfFile(data);
-
-    CloseHandle(hmf);
-    CloseHandle(hf);
-#else
-    munmap( data, datasize );
-    close(fd);
-#endif
 
     if (r)
         wcsncpy(this->filename, filename, pathlength);

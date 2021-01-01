@@ -160,7 +160,7 @@ set(SHORTCIRCUIT_SOURCE
         src/synthesis/steplfo.cpp
         src/util/tools.cpp
         src/util/unitconversion.cpp
-        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h)
+        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h src/infrastructure/file_map_view.cpp src/infrastructure/file_map_view.h)
 
 set(SHORTCIRCUIT_GENERATED_SOURCE
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
