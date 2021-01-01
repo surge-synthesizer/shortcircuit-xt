@@ -74,7 +74,7 @@ You know the drill
 ```
 git submodule update --init --recursive
 cmake -Bbuild
-cmake --build build --config Release --target sc3py
+cmake --build build --config Release --target shortcircuit3py
 cd build
 python3 (and import sc3py code)
 ```
