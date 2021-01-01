@@ -37,6 +37,8 @@ using std::string;
 #include "shortcircuit_editor2.h"
 #endif
 
+#include "infrastructure/file_map_view.h"
+
 #include <vt_util/vt_string.h>
 
 const int ff_revision = 10;
@@ -126,20 +128,12 @@ bool sampler::load_file(const char *file_name, int *new_g, int *new_z, bool *is_
         *last = 0;
         conf->relative = relpath;
 
-        HANDLE hf = CreateFileW(wfilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                                FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-        if (!hf)
+        auto mapper = std::make_unique<SC3::FileMapView>(wfilename);
+        if (!mapper->isMapped())
             return false;
-        size_t datasize = GetFileSize(hf, NULL);
 
-        HANDLE hmf = CreateFileMappingW(hf, 0, PAGE_READONLY, 0, 0, 0);
-        if (!hmf)
-        {
-            CloseHandle(hf);
-            return false;
-        }
-
-        void *data = MapViewOfFile(hmf, FILE_MAP_READ, 0, 0, 0);
+        auto data = mapper->data();
+        auto datasize = mapper->dataSize();
 
         bool result = false;
 
@@ -163,11 +157,6 @@ bool sampler::load_file(const char *file_name, int *new_g, int *new_z, bool *is_
             vtCopyString(parts[channel].name, nameNoPath, 32);
             // TODO add name from last part of filename
         }
-
-        UnmapViewOfFile(data);
-
-        CloseHandle(hmf);
-        CloseHandle(hf);
 
         return result;
     }
