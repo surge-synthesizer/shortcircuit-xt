@@ -116,12 +116,8 @@ inline int GetModuleFileNameW(HMODULE h, wchar_t *f, int t) { return 0; }
 #define INVALID_HANDLE_VALUE -1
 
 inline HANDLE CreateFileW(std::wstring wfn, int, int, void *, int, int, void *) { return 0; }
-inline HANDLE CreateFileMappingW(HANDLE h, int, int, int, int, int) { return 0; }
-inline size_t GetFileSize(HANDLE h, void *) { return 0; }
 inline int WriteFile(HANDLE h, void *, size_t, DWORD *, void *) { return 0; }
 inline void CloseHandle(HANDLE h) {}
-inline void *MapViewOfFile(HANDLE, int, int, int, int) { return 0; }
-inline void UnmapViewOfFile(void *) {}
 inline void FindClose(HANDLE){};
 typedef char TCHAR;
 struct WIN32_FIND_DATA

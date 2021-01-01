@@ -15,6 +15,8 @@
 #include <vt_util/vt_string.h>
 #include "dls.h"
 
+#include "infrastructure/file_map_view.h"
+
 #pragma pack(push, 1)
 
 struct giga_3lnk
@@ -147,34 +149,15 @@ int parse_dls_patchlist(void *data, size_t filesize, void **plist)
 
 int get_dls_patchlist(const wchar_t *filename, void **plist)
 {
-#if WINDOWS
     assert(filename);
 
-    HANDLE hf = CreateFileW(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                            FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    if (!hf)
+    auto mapper = std::make_unique<SC3::FileMapView>(filename);
+    if( ! mapper->isMapped() )
         return 0;
-    size_t datasize = GetFileSize(hf, NULL);
 
-    HANDLE hmf = CreateFileMappingW(hf, 0, PAGE_READONLY, 0, 0, 0);
-    if (!hmf)
-    {
-        CloseHandle(hf);
-        return 0;
-    }
-
-    void *data = MapViewOfFile(hmf, FILE_MAP_READ, 0, 0, 0);
-
-    int result = parse_dls_patchlist(data, datasize, plist);
-
-    UnmapViewOfFile(data);
-
-    CloseHandle(hmf);
-    CloseHandle(hf);
+    int result = parse_dls_patchlist(mapper->data(), mapper->dataSize(), plist);
 
     return result;
-#endif
-    return 0;
 }
 
 bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int patch, char *filename)
