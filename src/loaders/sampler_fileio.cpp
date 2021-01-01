@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include <tinyxml/tinyxml.h>
 
 #include "globals.h"

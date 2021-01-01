@@ -21,6 +21,7 @@
 #include "infrastructure/logfile.h"
 #include <cstring>
 #include <vt_util/vt_string.h>
+#include <algorithm>
 
 using std::max;
 using std::min;
