@@ -44,12 +44,12 @@ HMMIO mmioOpenSTR( std::ifstream &ifs, int mode )
     return res;
 }
 
-HMMIO mmioOpen(char *fn, void *, int mode)
+HMMIO mmioOpen(const char *fn, void *, int mode)
 {
     auto ifs = std::ifstream(fn, std::ios::binary);
     return mmioOpenSTR( ifs, mode );
 }
-HMMIO mmioOpenW(wchar_t *fn, void *, int mode)
+HMMIO mmioOpenW(const wchar_t *fn, void *, int mode)
 {
 #if MAC || LINUX
     auto converter = std::wstring_convert<

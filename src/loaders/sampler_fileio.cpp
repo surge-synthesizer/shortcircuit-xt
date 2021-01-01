@@ -37,7 +37,9 @@ using std::string;
 #include "shortcircuit_editor2.h"
 #endif
 
+#include "infrastructure/logfile.h"
 #include "infrastructure/file_map_view.h"
+#include "filesystem/import.h"
 
 #include <vt_util/vt_string.h>
 
@@ -116,9 +118,8 @@ bool sampler::load_file(const char *file_name, int *new_g, int *new_z, bool *is_
     {
         // memory mapped file reads go here
         // TODO flytta in alla filformat h�r efterhand som de klarar memmapping
-
         wchar_t wfilename[4096];
-        MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, 4096);
+        vtStringToWString(wfilename, filename, 4096 );
 
         // assign path to configuration
         wchar_t relpath[256];
@@ -1113,53 +1114,25 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
 
 string recursive_search(string filename, string path)
 {
-    char newpath[MAX_PATH];
-    int rlength = SearchPath(path.c_str(), filename.c_str(), 0, MAX_PATH, newpath, 0);
-    if (rlength)
-        return newpath;
+    // returns the path of the filename i think. Since we haven't got enough running
+    // to test this let me leave a log message in and a warning
+#if ! WINDOWS
+#warning Compiling untested rewrite of recursive_search
+#endif
 
-    char searchdir[512];
-    sprintf(searchdir, "%s*", path.c_str());
+    SC3::Log::logos() << "Implement recursive_search " << filename << " " << path << std::endl;
+    auto p = string_to_path(path);
+    auto f = string_to_path(filename);
 
-    WIN32_FIND_DATA FindFileData;
-    HANDLE hFind;
-
-    hFind = FindFirstFile(searchdir, &FindFileData);
-    if (hFind != INVALID_HANDLE_VALUE)
+    for( auto & ent : fs::recursive_directory_iterator(p))
     {
-        while (1)
+        auto dp = fs::path(ent);
+        auto fn = dp.filename();
+        if( path_to_string(fn) == path_to_string(f) )
         {
-            if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-                (FindFileData.cFileName[0] == '.'))
-            {
-                // . and ..
-                // do nothing
-            }
-            else if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-                     !(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
-            {
-                string subdir = path;
-                subdir.append(FindFileData.cFileName);
-                subdir.append("\\");
-                string ss = recursive_search(filename, subdir);
-                if (!ss.empty())
-                {
-                    FindClose(hFind);
-                    return ss;
-                }
-            } /*else if(filename.compare(FindFileData.cFileName) == 0)
-            {
-                    string file = path;
-                    file.append(FindFileData.cFileName);
-                    return file;
-            }*/
-
-            if (!FindNextFile(hFind, &FindFileData))
-                break;
+            return path_to_string(dp);
         }
-        FindClose(hFind);
     }
-
     return "";
 }
 
@@ -1304,7 +1277,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
                             // if (!searchpath.empty()) rlength =
                             // SearchPath(searchpath.c_str(),filename,0,256,newpath,0); if(rlength)
                             // break;
-#if FIXME
+#if WINDOWS
 
                             if (!searchpath.empty())
                             {
@@ -1351,7 +1324,10 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
                                 dont_ask_path = true;
                                 break;
                             }
+#else
+#warning Substantial part of unimplemented UI code to prompt being skipped
 #endif
+
                         }
 
                         if (newpath.size() && subsamplename[0])
@@ -1516,7 +1492,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bo
                                     break;
                             }
 
-#if FIXME
+#if WINDOWS
                             BROWSEINFO bi;
                             bi.ulFlags = BIF_NONEWFOLDERBUTTON | BIF_RETURNONLYFSDIRS;
                             char title[256];
@@ -1555,6 +1531,8 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bo
                                 dont_ask_path = true;
                                 break;
                             }
+#else
+#warning Skipping Shell Browse for Folder on Mac/Linux
 #endif
                         }
 

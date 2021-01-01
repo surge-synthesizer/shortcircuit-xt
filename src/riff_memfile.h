@@ -26,6 +26,7 @@
 #include <vt_dsp/endian.h>
 #include <vt_util/vt_string.h>
 #include <cassert>
+#include "infrastructure/logfile.h"
 
 namespace SC3::Memfile
 {
@@ -331,7 +332,12 @@ class RIFFMemFile
     {
         char txt[1024];
         sprintf(txt, "Invalid RIFF-structure.\n\nOffset: 0x%X", (unsigned int)loc);
+#if WINDOWS
         MessageBox(GetActiveWindow(), txt, "File I/O Error", MB_OK | MB_ICONERROR);
+#else
+#warning Implement user feedback
+        SC3::Log::logos() << txt << std::endl;
+#endif
     }
 
     bool RIFFIsContainer() // Returns true if the following Chunk is RIFF or LIST
