@@ -81,7 +81,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
     }
 #else
 #warning Deal with configuration paths.
-    wcscpy(path, L"." );
+    wcscpy(path, L"" );
 #endif
     conf = new configuration();
     conf->load(path);
