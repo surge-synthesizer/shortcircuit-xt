@@ -16,13 +16,17 @@
 */
 
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <cctype>
+#include <stdio.h>
+
 #include <catch2/catch2.hpp>
 #include <filesystem/import.h>
 
 #include "globals.h"
 #include "riff_memfile.h"
-#include <iostream>
-#include <map>
+#include "infrastructure/file_map_view.h"
 
 TEST_CASE("RIFF_MemFile", "[io]")
 {
@@ -155,5 +159,46 @@ TEST_CASE("RIFF_MemFile", "[io]")
         REQUIRE( rmf.riff_descend_RIFF_or_LIST('sfbk', &datasize));
 
         delete[] data;
+    }
+}
+
+TEST_CASE("File Mapper", "[io]")
+{
+    int testSize = 52310;
+    int testSkip = 13;
+#define MAKE_TEST_DATA_FILES 0
+#if MAKE_TEST_DATA_FILES
+    auto f = fopen("resources/test_samples/not_audio.bin", "wb");
+    REQUIRE(f);
+    if (f)
+    {
+        unsigned char d = 0;
+        for (auto i = 0; i < testSize; ++i)
+        {
+            fwrite(&d, 1, 1, f);
+            d += testSkip;
+        }
+    }
+    fclose(f);
+#endif
+
+    SECTION("Mapper reads Test Data")
+    {
+        auto mapper = std::make_unique<SC3::FileMapView>("resources/test_samples/not_audio.bin");
+        REQUIRE(mapper);
+        REQUIRE(mapper->isMapped());
+
+        auto data = (const unsigned char *)mapper->data();
+        REQUIRE(data);
+        auto dataSize = mapper->dataSize();
+        REQUIRE(dataSize == testSize);
+
+        unsigned char d = 0;
+        for (int i = 0; i < dataSize; ++i)
+        {
+            INFO("Testing at position " << i)
+            REQUIRE(data[i] == d);
+            d += testSkip;
+        }
     }
 }
