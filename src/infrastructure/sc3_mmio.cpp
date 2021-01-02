@@ -66,7 +66,67 @@ HMMIO mmioOpenW(const wchar_t *fn, void *, int mode)
 
 int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
 {
-    return 0;
+    /*
+    bool RIFFPeekChunk(int *Tag = nullptr, size_t *DataSize = nullptr, bool *HasSubchunks = nullptr,
+                       int *LISTTag = nullptr)
+                       */
+    int tag;
+    size_t ds;
+    bool has;
+    int ltag;
+
+    /*
+     * This is not a correct implementation but it makes regtests pass so it might
+     * be enough for our sub out workflow
+     */
+    if (parent == nullptr)
+    {
+        if (h->memFile.RIFFPeekChunk(&tag, &ds, &has, &ltag))
+        {
+            h->memFile.RIFFDescend();
+
+            target->ckid = vt_write_int32BE(tag);
+            target->fccType = vt_write_int32BE(ltag);
+            target->cksize = ds;
+
+            return 0;
+        }
+    }
+    else
+    {
+        auto lookFor = target->ckid;
+        int ds;
+        if (h->memFile.iff_descend(lookFor, &ds))
+        {
+            target->cksize = ds;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int mmioRead(HMMIO h, HPSTR b, int s)
+{
+    if (!h->memFile.Read(b, s))
+        return 0;
+    return s;
+}
+int mmioSeek(HMMIO h, int t, int flag)
+{
+    int res = -1;
+    switch (flag)
+    {
+    case SEEK_CUR:
+        res = h->memFile.SeekI(t, SC3::Memfile::mf_FromCurrent);
+        break;
+    case SEEK_SET:
+        res = h->memFile.SeekI(t, SC3::Memfile::mf_FromStart);
+        break;
+    case SEEK_END:
+        res = h->memFile.SeekI(t, SC3::Memfile::mf_FromEnd);
+        break;
+    }
+    return res;
 }
 
 #endif

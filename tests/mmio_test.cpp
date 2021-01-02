@@ -62,7 +62,6 @@ TEST_CASE( "MMIO Layer", "[io]" )
         REQUIRE( mmioFOURCC( 'R', 'I', 'F', 'F' ) == 0x46464952);
         REQUIRE( mmioFOURCC( 'd', 'a', 't', 'a' ) == 0x61746164);
     }
-#if WINDOWS
     SECTION( "Wave File Header Traversal" )
     {
         auto h =
@@ -99,6 +98,33 @@ TEST_CASE( "MMIO Layer", "[io]" )
             REQUIRE(mmioAscend(h, &mmckinfoSub, 0 ) == 0);
             REQUIRE(mmioSeek(h,12,SEEK_SET) == 12);
         }
+
+        /*
+         * Lets actually read off the format block
+         */
+        MMCKINFO mmckinfoSub;
+        mmckinfoSub.ckid = mmioFOURCC('f', 'm', 't', ' ');
+        REQUIRE(mmioDescend(h, &mmckinfoSub, &mmckinfoParent, MMIO_FINDCHUNK) == 0);
+        REQUIRE(mmckinfoSub.cksize == 16);
+        char sdata[16]; // lazy fixed size but above REQUIRE will blow us out if wrong
+        mmioRead(h, sdata, mmckinfoSub.cksize);
+        unsigned char data[16];
+        for (int i = 0; i < 16; ++i)
+            data[i] = sdata[i];
+        int ft = data[0] + 256 * data[1];
+        int ch = data[2] + 256 * data[3];
+        int sr = data[4] + 256 * (data[5] + 256 * (data[6] + 256 * data[7]));
+        int dr = data[8] + 256 * (data[9] + 256 * (data[10] + 256 * data[11]));
+        int bc = data[12] + 256 * data[13];
+        int bs = data[14] + 256 * data[15];
+
+        REQUIRE(ft == 3);
+        REQUIRE(ch == 2);
+        REQUIRE(sr == 48000);
+        REQUIRE(dr == 384000);
+        REQUIRE(bc == 8);
+        REQUIRE(bs == 32);
+
         REQUIRE( mmioClose( h, 0 ) == 0 );
     }
     SECTION( "Open on an SF2" )
@@ -116,5 +142,4 @@ TEST_CASE( "MMIO Layer", "[io]" )
 
 
     }
-#endif
 }
