@@ -26,7 +26,7 @@ int main(int argc, char **argv)
                   << std::endl;
     }
 
-    if(true)
+    if (true)
     {
         std::cout << "Loading harpsi.sf2" << std::endl;
         auto res = sc3->load_file("resources/test_samples/harpsi.sf2");

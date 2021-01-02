@@ -71,7 +71,7 @@ int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
     bool has;
     int ltag;
 
-    switch( type )
+    switch (type)
     {
     case MMIO_FINDRIFF:
     {
@@ -80,7 +80,7 @@ int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
          */
         if (h->memFile.RIFFPeekChunk(&tag, &ds, &has, &ltag))
         {
-            if( vt_write_int32BE(tag) == mmioFOURCC('R','I','F','F') )
+            if (vt_write_int32BE(tag) == mmioFOURCC('R', 'I', 'F', 'F'))
             {
                 h->memFile.RIFFDescend();
 
@@ -112,7 +112,7 @@ int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
         size_t ds;
         // I am unsure why I need to do a BE switch here but don't want to change
         // the BE in the RIFFDescendSearch code.
-        if( h->memFile.RIFFDescendSearch(vt_write_int32BE(target->fccType), &ds) )
+        if (h->memFile.RIFFDescendSearch(vt_write_int32BE(target->fccType), &ds))
         {
             target->cksize = ds;
             return 0;
@@ -121,18 +121,6 @@ int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
     }
     }
 
-#if 0
-    else
-    {
-        auto lookFor = target->ckid;
-        int ds;
-        if (h->memFile.iff_descend(lookFor, &ds))
-        {
-            target->cksize = ds;
-            return 0;
-        }
-    }
-#endif
     return 1;
 }
 

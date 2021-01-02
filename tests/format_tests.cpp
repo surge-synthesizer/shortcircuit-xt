@@ -24,7 +24,6 @@
 #include "globals.h"
 #include "sampler.h"
 
-
 TEST_CASE( "Simple SF2 Load", "[formats]" )
 {
     SECTION( "Simple Load" )
@@ -36,34 +35,34 @@ TEST_CASE( "Simple SF2 Load", "[formats]" )
 #if WINDOWS
         REQUIRE( sc3->load_file("resources\\test_samples\\harpsi.sf2") );
 #else
-        REQUIRE( sc3->load_file("resources/test_samples/harpsi.sf2") );
+        REQUIRE(sc3->load_file("resources/test_samples/harpsi.sf2"));
 #endif
 
-        auto notes = { 60, 64, 66 };
+        auto notes = {60, 64, 66};
         std::vector<float> rmses;
-        for( auto n : notes )
+        for (auto n : notes)
         {
             double rms = 0;
             for (int i = 0; i < 150; ++i)
             {
                 if (i == 30)
                     sc3->PlayNote(0, n, 120);
-                if( i == 70 )
-                    sc3->ReleaseNote(0,n,0);
+                if (i == 70)
+                    sc3->ReleaseNote(0, n, 0);
 
                 sc3->process_audio();
                 for (int k = 0; k < block_size; ++k)
                 {
-                    rms +=
-                        sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+                    rms += sc3->output[0][k] * sc3->output[0][k] +
+                           sc3->output[1][k] * sc3->output[1][k];
                 }
             }
             rms = sqrt(rms);
             rmses.push_back(rms);
         }
-        REQUIRE( rmses[0] == Approx( 19.88632 ).margin(1e-3));
-        REQUIRE( rmses[1] == Approx( 20.96383 ).margin(1e-3));
-        REQUIRE( rmses[2] == Approx( 20.93767 ).margin(1e-3));
+        REQUIRE(rmses[0] == Approx(19.88632).margin(1e-3));
+        REQUIRE(rmses[1] == Approx(20.96383).margin(1e-3));
+        REQUIRE(rmses[2] == Approx(20.93767).margin(1e-3));
     }
 }
 

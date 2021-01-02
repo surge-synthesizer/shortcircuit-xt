@@ -148,11 +148,13 @@ TEST_CASE( "MMIO Layer", "[io]" )
         mmckinfoSubchunk.ckid = mmioFOURCC('p', 'h', 'd', 'r');
         REQUIRE(mmioDescend(h, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK) == 0);
         char data[1024];
-        REQUIRE(mmckinfoSubchunk.cksize < 1024 );
-        REQUIRE(mmioRead(h, data, mmckinfoSubchunk.cksize ) == mmckinfoSubchunk.cksize);
-        REQUIRE(mmioAscend(h,&mmckinfoSubchunk, 0) == 0);
+        REQUIRE(mmckinfoSubchunk.cksize < 1024);
+        REQUIRE(mmioRead(h, data, mmckinfoSubchunk.cksize) == mmckinfoSubchunk.cksize);
+        REQUIRE(mmioAscend(h, &mmckinfoSubchunk, 0) == 0);
         mmckinfoSubchunk.ckid = mmioFOURCC('p', 'g', 'e', 'n');
         REQUIRE(mmioDescend(h, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK) == 0);
-        REQUIRE(mmioAscend(h,&mmckinfoSubchunk, 0) == 0);
+        REQUIRE(mmioAscend(h, &mmckinfoSubchunk, 0) == 0);
+
+        REQUIRE(mmioClose(h, 0) == 0);
     }
 }
