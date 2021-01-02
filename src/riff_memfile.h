@@ -570,7 +570,8 @@ class RIFFMemFile
         {
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
-            rh.datasize = swap_endian_32(rh.datasize);
+            rh.id = vt_read_int32BE(rh.id);
+            rh.datasize = vt_read_int32LE(rh.datasize);
             if (rh.id == rtag)
             {
                 if (datasize)

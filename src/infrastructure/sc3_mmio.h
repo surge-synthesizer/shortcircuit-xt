@@ -88,10 +88,9 @@ inline int mmioClose(HMMIO h, uint32_t) {
 }
 
 int mmioDescend(HMMIO handle, MMCKINFO *target, MMCKINFO *parent, int style);
-inline int mmioSeek(HMMIO a, int s, int f) { return 0; }
+int mmioSeek(HMMIO a, int s, int f);
 inline int mmioAscend(HMMIO a, MMCKINFO *b, int) { return 0; }
-inline int mmioRead(HMMIO a, HPSTR b, int) { return 0; }
-
+int mmioRead(HMMIO a, HPSTR b, int);
 
 #endif
 
