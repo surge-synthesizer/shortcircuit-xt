@@ -15,15 +15,14 @@
 ** open source in December 2020.
 */
 
-#include <fstream>
 #include <catch2/catch2.hpp>
+
+#include <iostream>
+#include <map>
+#include <vector>
 
 #include "globals.h"
 #include "sampler.h"
-#include "riff_memfile.h"
-#include <iostream>
-#include <map>
-
 
 TEST_CASE( "Simple SF2 Load", "[formats]" )
 {
@@ -34,9 +33,36 @@ TEST_CASE( "Simple SF2 Load", "[formats]" )
 
         sc3->set_samplerate(48000);
 #if WINDOWS
-        std::cout << "Loading harpsi.sf2" << std::endl;
         REQUIRE( sc3->load_file("resources\\test_samples\\harpsi.sf2") );
+#else
+        REQUIRE(sc3->load_file("resources/test_samples/harpsi.sf2"));
 #endif
+
+        auto notes = {60, 64, 66};
+        std::vector<float> rmses;
+        for (auto n : notes)
+        {
+            double rms = 0;
+            for (int i = 0; i < 150; ++i)
+            {
+                if (i == 30)
+                    sc3->PlayNote(0, n, 120);
+                if (i == 70)
+                    sc3->ReleaseNote(0, n, 0);
+
+                sc3->process_audio();
+                for (int k = 0; k < block_size; ++k)
+                {
+                    rms += sc3->output[0][k] * sc3->output[0][k] +
+                           sc3->output[1][k] * sc3->output[1][k];
+                }
+            }
+            rms = sqrt(rms);
+            rmses.push_back(rms);
+        }
+        REQUIRE(rmses[0] == Approx(19.88632).margin(1e-3));
+        REQUIRE(rmses[1] == Approx(20.96383).margin(1e-3));
+        REQUIRE(rmses[2] == Approx(20.93767).margin(1e-3));
     }
 }
 

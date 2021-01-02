@@ -140,6 +140,21 @@ TEST_CASE( "MMIO Layer", "[io]" )
         REQUIRE( mmioDescend( h, &mmckinfoParent, 0, MMIO_FINDRIFF ) == 0 );
         REQUIRE( mmioSeek(h, 0, SEEK_CUR ) == 12 ); // skipped the header
 
+        MMCKINFO mmckinfoListchunk;
+        MMCKINFO mmckinfoSubchunk;
+        mmckinfoListchunk.fccType = mmioFOURCC('p', 'd', 't', 'a');
+        REQUIRE(mmioDescend(h, &mmckinfoListchunk, &mmckinfoParent, MMIO_FINDLIST) == 0);
 
+        mmckinfoSubchunk.ckid = mmioFOURCC('p', 'h', 'd', 'r');
+        REQUIRE(mmioDescend(h, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK) == 0);
+        char data[1024];
+        REQUIRE(mmckinfoSubchunk.cksize < 1024);
+        REQUIRE(mmioRead(h, data, mmckinfoSubchunk.cksize) == mmckinfoSubchunk.cksize);
+        REQUIRE(mmioAscend(h, &mmckinfoSubchunk, 0) == 0);
+        mmckinfoSubchunk.ckid = mmioFOURCC('p', 'g', 'e', 'n');
+        REQUIRE(mmioDescend(h, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK) == 0);
+        REQUIRE(mmioAscend(h, &mmckinfoSubchunk, 0) == 0);
+
+        REQUIRE(mmioClose(h, 0) == 0);
     }
 }

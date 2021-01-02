@@ -66,34 +66,38 @@ HMMIO mmioOpenW(const wchar_t *fn, void *, int mode)
 
 int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
 {
-    /*
-    bool RIFFPeekChunk(int *Tag = nullptr, size_t *DataSize = nullptr, bool *HasSubchunks = nullptr,
-                       int *LISTTag = nullptr)
-                       */
     int tag;
     size_t ds;
     bool has;
     int ltag;
 
-    /*
-     * This is not a correct implementation but it makes regtests pass so it might
-     * be enough for our sub out workflow
-     */
-    if (parent == nullptr)
+    switch (type)
     {
+    case MMIO_FINDRIFF:
+    {
+        /*
+         * A naieve implementation but assume that only first time through is a RIFF
+         */
         if (h->memFile.RIFFPeekChunk(&tag, &ds, &has, &ltag))
         {
-            h->memFile.RIFFDescend();
+            if (vt_write_int32BE(tag) == mmioFOURCC('R', 'I', 'F', 'F'))
+            {
+                h->memFile.RIFFDescend();
 
-            target->ckid = vt_write_int32BE(tag);
-            target->fccType = vt_write_int32BE(ltag);
-            target->cksize = ds;
+                target->ckid = vt_write_int32BE(tag);
+                target->fccType = vt_write_int32BE(ltag);
+                target->cksize = ds;
 
-            return 0;
+                return 0;
+            }
         }
+        break;
     }
-    else
+    case MMIO_FINDCHUNK:
     {
+        /*
+         * I ignore parent here. That's bad but it meets the limited pattern we have
+         */
         auto lookFor = target->ckid;
         int ds;
         if (h->memFile.iff_descend(lookFor, &ds))
@@ -101,7 +105,22 @@ int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
             target->cksize = ds;
             return 0;
         }
+        break;
     }
+    case MMIO_FINDLIST:
+    {
+        size_t ds;
+        // I am unsure why I need to do a BE switch here but don't want to change
+        // the BE in the RIFFDescendSearch code.
+        if (h->memFile.RIFFDescendSearch(vt_write_int32BE(target->fccType), &ds))
+        {
+            target->cksize = ds;
+            return 0;
+        }
+        break;
+    }
+    }
+
     return 1;
 }
 

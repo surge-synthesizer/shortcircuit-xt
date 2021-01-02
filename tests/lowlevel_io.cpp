@@ -112,7 +112,6 @@ TEST_CASE("RIFF_MemFile", "[io]")
             {
                 char rl[5];
                 rmf.tagToFourCCStr(listTag, rl );
-                std::cout << "LIST TAG is " << rl << std::endl;
             }
 
             rmf.RIFFDescend();
@@ -120,16 +119,13 @@ TEST_CASE("RIFF_MemFile", "[io]")
             {
                 char rfD[5];
                 rmf.tagToFourCCStr(tag, rfD);
-                std::cout << rfD << std::endl;
                 if( std::string(rfD) == "LIST" )
                 {
                     rmf.RIFFDescend();
                     while (rmf.RIFFPeekChunk(&tag, &chunksize))
                     {
                         rmf.tagToFourCCStr(tag, rfD);
-                        std::cout << "  - " << rfD << std::endl;
                         rmf.RIFFSkipChunk();
-
                     }
                     rmf.RIFFAscend();
                 }
