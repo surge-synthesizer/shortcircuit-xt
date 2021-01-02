@@ -15,6 +15,15 @@
 ** open source in December 2020.
 */
 
+/*
+ * IT IS CRITICAL YOU UNDERSTAND: This is not even remotely close to a complete implementation
+ * of the win32 mmio spec. Rather it implements "just enough" that the readers in the SC3 codebase
+ * which use mmio can make *those* patterns work on the files in question.
+ *
+ * If you find you want more functions or more anything else, please add it and add a test to
+ * tests/mmio_test.cpp.
+ */
+
 #ifndef SHORTCIRCUIT_SC3_MMIO_H
 #define SHORTCIRCUIT_SC3_MMIO_H
 
@@ -64,11 +73,14 @@ struct MMCKINFO
     int cksize;
 };
 
+// Since we only have an alloc read-only version we ignore these.
 #define MMIO_READ 0
 #define MMIO_ALLOCBUF 0
-#define MMIO_FINDRIFF 0
-#define MMIO_FINDCHUNK 0
-#define MMIO_FINDLIST 0
+
+#define MMIO_FINDRIFF 1024
+#define MMIO_FINDCHUNK 1025
+#define MMIO_FINDLIST 1026
+
 #define LPMMCKINFO MMCKINFO *
 
 typedef int LRESULT;

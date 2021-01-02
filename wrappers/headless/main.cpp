@@ -26,10 +26,10 @@ int main(int argc, char **argv)
                   << std::endl;
     }
 
-    if(false)
+    if(true)
     {
         std::cout << "Loading harpsi.sf2" << std::endl;
-        auto res = sc3->load_file("resources\\test_samples\\harpsi.sf2");
+        auto res = sc3->load_file("resources/test_samples/harpsi.sf2");
         std::cout << "RES is " << res << std::endl;
     }
     else
