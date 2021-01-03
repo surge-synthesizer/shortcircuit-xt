@@ -257,7 +257,7 @@ class sampler
     bool editor_open;
     // AudioEffectX	*effect;
     multiselect *selected;
-    std::mutex cs_patch, cs_gui, cs_engine;
+    std::recursive_mutex cs_patch, cs_gui, cs_engine;
     configuration *conf;
     char sample_replace_filename[256];
     char keystate[16][128];
