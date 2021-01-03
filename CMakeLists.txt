@@ -61,7 +61,7 @@ if( APPLE )
     # Hmmm...
     target_compile_options(filesystem PUBLIC -fvisibility=hidden -fvisibility-inlines-hidden)
 elseif( UNIX AND NOT APPLE )
-    target_compile_options(filesystem INTERFACE -fpic -fvisibility=hidden -fvisibility-inlines-hidden)
+    target_compile_options(filesystem INTERFACE -fPIC -fvisibility=hidden -fvisibility-inlines-hidden)
 endif()
 
 # And include JUCE
@@ -223,7 +223,8 @@ juce_add_plugin(ShortCircuit3
 juce_generate_juce_header(ShortCircuit3)
 
 # Add a binary resource (needs remediation)
-file(GLOB SC3_RESOURCES_GLOB resources/test_samples/*)
+# file(GLOB SC3_RESOURCES_GLOB resources/test_samples/*)
+set( SC3_RESOURCES_GLOB resources/shortcircuit.ico )
 juce_add_binary_data(ShortCircuit3-Binary SOURCES ${SC3_RESOURCES_GLOB})
 set_target_properties(ShortCircuit3-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
@@ -301,3 +302,4 @@ add_custom_command(
 )
 
 # TODO: Move the JUCE assets into products
+add_dependencies(sc3-products ShortCircuit3)
