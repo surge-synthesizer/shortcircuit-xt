@@ -60,6 +60,8 @@ add_subdirectory(libs/filesystem)
 if( APPLE )
     # Hmmm...
     target_compile_options(filesystem PUBLIC -fvisibility=hidden -fvisibility-inlines-hidden)
+elseif( UNIX AND NOT APPLE )
+    target_compile_options(filesystem INTERFACE -fpic -fvisibility=hidden -fvisibility-inlines-hidden)
 endif()
 
 # And include JUCE

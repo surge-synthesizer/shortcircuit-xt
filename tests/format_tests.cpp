@@ -24,16 +24,16 @@
 #include "globals.h"
 #include "sampler.h"
 
-TEST_CASE( "Simple SF2 Load", "[formats]" )
+TEST_CASE("Simple SF2 Load", "[formats]")
 {
-    SECTION( "Simple Load" )
+    SECTION("Simple Load")
     {
         auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
-        REQUIRE( sc3 );
+        REQUIRE(sc3);
 
         sc3->set_samplerate(48000);
 #if WINDOWS
-        REQUIRE( sc3->load_file("resources\\test_samples\\harpsi.sf2") );
+        REQUIRE(sc3->load_file("resources\\test_samples\\harpsi.sf2"));
 #else
         REQUIRE(sc3->load_file("resources/test_samples/harpsi.sf2"));
 #endif
@@ -66,18 +66,18 @@ TEST_CASE( "Simple SF2 Load", "[formats]" )
     }
 }
 
-TEST_CASE( "Simple WAV Load", "[formats]" )
+TEST_CASE("Simple WAV Load", "[formats]")
 {
-    SECTION( "Simple Load" )
+    SECTION("Simple Load")
     {
         auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
-        REQUIRE( sc3 );
+        REQUIRE(sc3);
 
         sc3->set_samplerate(48000);
 #if WINDOWS
-        REQUIRE( sc3->load_file("resources\\test_samples\\BadPluckSample.wav") );
+        REQUIRE(sc3->load_file("resources\\test_samples\\BadPluckSample.wav"));
 #else
-        REQUIRE( sc3->load_file("resources/test_samples/BadPluckSample.wav") );
+        REQUIRE(sc3->load_file("resources/test_samples/BadPluckSample.wav"));
 #endif
 
         double rms = 0;
@@ -86,8 +86,8 @@ TEST_CASE( "Simple WAV Load", "[formats]" )
         {
             if (i == 30)
                 sc3->PlayNote(0, n, 120);
-            if( i == 70 )
-                sc3->ReleaseNote(0,n,0);
+            if (i == 70)
+                sc3->ReleaseNote(0, n, 0);
 
             sc3->process_audio();
             for (int k = 0; k < block_size; ++k)
@@ -97,6 +97,24 @@ TEST_CASE( "Simple WAV Load", "[formats]" )
             }
         }
         rms = sqrt(rms);
-        REQUIRE( rms == Approx(6.0266351586).margin(1e-4));
+        REQUIRE(rms == Approx(6.0266351586).margin(1e-4));
+    }
+}
+
+TEST_CASE("Load two SF2s", "[formats]")
+{
+    SECTION("TwoSF2s")
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        REQUIRE(sc3);
+
+        sc3->set_samplerate(48000);
+#if WINDOWS
+        REQUIRE(sc3->load_file("resources\\test_samples\\harpsi.sf2"));
+        REQUIRE(sc3->load_file("resources\\test_samples\\Crysrhod.sf2"));
+#else
+        REQUIRE(sc3->load_file("resources/test_samples/harpsi.sf2"));
+        REQUIRE(sc3->load_file("resources/test_samples/Crysrhod.sf2"));
+#endif
     }
 }
