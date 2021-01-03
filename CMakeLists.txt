@@ -172,21 +172,21 @@ set(SHORTCIRCUIT_GENERATED_SOURCE
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
 
 set(VEMBERTECH_SOURCE
-        libs/vembertech/tinyxml/tinyxmlparser.cpp
-        libs/vembertech/tinyxml/tinyxmlerror.cpp
-        libs/vembertech/tinyxml/tinyxml.cpp
-        libs/vembertech/vt_util/vt_string.cpp
-        libs/vembertech/vt_util/vt_lockfree.cpp
-        libs/vembertech/vt_dsp/halfratefilter.cpp
-        libs/vembertech/vt_dsp/lipol.cpp
-        libs/vembertech/vt_dsp/lattice.cpp
-        libs/vembertech/vt_dsp/macspecific.cpp
-        libs/vembertech/vt_dsp/basic_dsp.cpp
+        src/vembertech/tinyxml/tinyxmlparser.cpp
+        src/vembertech/tinyxml/tinyxmlerror.cpp
+        src/vembertech/tinyxml/tinyxml.cpp
+        src/vembertech/vt_util/vt_string.cpp
+        src/vembertech/vt_util/vt_lockfree.cpp
+        src/vembertech/vt_dsp/halfratefilter.cpp
+        src/vembertech/vt_dsp/lipol.cpp
+        src/vembertech/vt_dsp/lattice.cpp
+        src/vembertech/vt_dsp/macspecific.cpp
+        src/vembertech/vt_dsp/basic_dsp.cpp
         )
 
 set(SHORTCIRCUIT_INCLUDE_DIRS
         src/
-        libs/vembertech
+        src/vembertech  # used to be in libs but don't rewrite every ref
         )
 
 add_library(shortcircuit-core
