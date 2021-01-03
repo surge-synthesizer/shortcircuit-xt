@@ -13,15 +13,12 @@ jobs:
       mac:
         imageName: 'macos-10.15'
         isMac: True
-        cmakeTarget: shortcircuit3py
       win:
         imageName: 'windows-2019'
         isWindows: True
-        cmakeTarget: shortcircuit-core
       lin:
         imageName: 'ubuntu-20.04'
         isLinux: True
-        cmakeTarget: shortcircuit3py
 
   pool:
     vmImage: $(imageName)
@@ -78,14 +75,10 @@ jobs:
     displayName: Run CMake
 
   - bash: |
-      cmake --build build --config Debug --target $(cmakeTarget)
-    displayName: Build SC3
-
-
+      cmake --build build --config Debug --target sc3-products
+    displayName: Build sc3-products
 
   - bash: |
-      cmake --build build --config Debug --target sc3-products
       ./build/products/sc3-test
-
-    displayName: Build and Run Tests SC3
+    displayName: Run Tests SC3
 
