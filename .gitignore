@@ -9,3 +9,6 @@ snr.bat
 test-data/
 
 .DS_Store
+.vs/
+.vscode/
+CMakeSettings.json

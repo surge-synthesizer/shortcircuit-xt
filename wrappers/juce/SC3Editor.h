@@ -25,6 +25,7 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor, juce::Button:
     void resized() override;
 
     virtual void buttonClicked(Button *) override;
+    virtual void buttonStateChanged(Button *) override;
 
   private:
     // This reference is provided as a quick way for your editor to
@@ -32,6 +33,8 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor, juce::Button:
     SC3AudioProcessor &audioProcessor;
 
     std::unique_ptr<juce::Button> loadButton;
+    std::unique_ptr<juce::Button> manualButton;
+    bool manualPlaying;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessorEditor)
 };

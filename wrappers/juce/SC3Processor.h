@@ -56,6 +56,9 @@ class SC3AudioProcessor : public juce::AudioProcessor
 
     std::unique_ptr<sampler> sc3;
 
+    // temporary!
+    MidiBuffer mManualMidiBuf;
+
   private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessor)

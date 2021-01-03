@@ -216,6 +216,7 @@ sampler::~sampler(void)
     }
     for (int c = 0; c < 16; c++)
     {
+        partv[c].mm->~modmatrix();
         _mm_free(partv[c].mm);
     }
     delete conf;
@@ -1122,6 +1123,7 @@ sampler::Preview::Preview(timedata *pTD, sampler *pParent)
 
 sampler::Preview::~Preview()
 {
+    mpVoice->~sampler_voice();
     _mm_free(mpVoice);
     delete mpSample;
 }
