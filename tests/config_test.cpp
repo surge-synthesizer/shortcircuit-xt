@@ -29,7 +29,7 @@ TEST_CASE("Decode Path", "[config]")
     std::string nameOnly, ext;
     int progid, sampleid;
     fs::path out, pathOnly;
-
+#ifdef _WIN32
     SECTION("Windows")
     {
         fs::path p("c:\\my\\path\\filename.WAV>100|200");
@@ -90,16 +90,16 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == -1);
         REQUIRE(sampleid == 200);
     }
-#ifndef _WIN32
+#else
     SECTION("Unix/mac") 
     {
         fs::path p("/my/path/filename.WAV>100|200");
 
         decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
-        REQUIRE(out.compare("/my/path/filename.WAV") == 0);
-        REQUIRE(ext.compare("wav") == 0);
-        REQUIRE(nameOnly.compare("filename") == 0);
-        REQUIRE(pathOnly.compare("/my/path") == 0);
+        REQUIRE(out.string().compare(std::string("/my/path/filename.WAV")) == 0);
+        REQUIRE(ext.compare(std::string("wav")) == 0);
+        REQUIRE(nameOnly.compare(std::string("filename")) == 0);
+        REQUIRE(pathOnly.string().compare(std::string("/my/path")) == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
 
