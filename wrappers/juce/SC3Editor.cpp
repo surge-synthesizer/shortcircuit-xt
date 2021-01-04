@@ -41,7 +41,7 @@ void SC3AudioProcessorEditor::buttonClicked(Button *b)
         {
             auto f = sampleChooser.getResult();
             std::cout << f.getFullPathName() << std::endl;
-            audioProcessor.sc3->load_file(f.getFullPathName().toStdString().c_str());
+            audioProcessor.sc3->load_file(string_to_path(f.getFullPathName().toStdString()));
         }
     }
 }

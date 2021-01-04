@@ -79,12 +79,14 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
         wcscpy(path, L"");
         SC3::Log::logos() << "FIXME: Setup Config" << std::endl;
     }
+    auto ppath = fs::path(path);
 #else
 #warning Deal with configuration paths.
     wcscpy(path, L"" );
+    auto ppath = string_to_path("");
 #endif
     conf = new configuration();
-    conf->load(path);
+    conf->load(ppath);
 
     mpPreview = new sampler::Preview(&time_data, this);
 
@@ -707,7 +709,7 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
 
             samples[s] = new sample(conf);
 
-            if (!(samples[s]->load(filename)))
+            if (!(samples[s]->load(string_to_path(filename))))
             {
                 delete samples[s];
                 samples[s] = 0;
@@ -819,7 +821,7 @@ bool sampler::replace_zone(int z, const char *filename)
         samples[s] = new sample(conf);
     }
 
-    if (!(samples[s]->load(filename)))
+    if (!(samples[s]->load(string_to_path(filename))))
     {
         delete samples[s];
         samples[s] = 0;
@@ -1134,7 +1136,15 @@ void sampler::Preview::Start(const wchar_t *Filename)
 {
     mActive = false;
 
-    if (mpSample->load(Filename))
+#if WINDOWS
+    auto ppath = string_to_path(Filename);
+#else
+    char fnu8[PATH_MAX];
+    vtWStringToString(fnu8, Filename, PATH_MAX );
+    auto ppath = string_to_path(fnu8);
+#endif
+
+    if (mpSample->load(ppath))
     {
         mZone.sample_start = 0;
         mZone.sample_stop = mpSample->sample_length;

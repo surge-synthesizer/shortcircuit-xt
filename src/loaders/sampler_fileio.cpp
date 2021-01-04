@@ -35,7 +35,7 @@ using std::min;
 using std::string;
 
 #if !TARGET_HEADLESS
-#include "shortcircuit_editor2.h"
+//#include "shortcircuit_editor2.h"
 #endif
 
 #include "infrastructure/logfile.h"
@@ -1094,7 +1094,7 @@ string recursive_search(string filename, string path)
     {
         auto dp = fs::path(ent);
         auto fn = dp.filename();
-        if( path_to_string(fn) == path_to_string(f) )
+        if( fn.compare(f)==0 )
         {
             return path_to_string(dp);
         }
@@ -1206,7 +1206,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
                 {
                     sample_id = this->GetFreeSampleId();
                     samples[sample_id] = new sample(conf);
-                    if (samples[sample_id]->load(samplefname))
+                    if (samples[sample_id]->load(string_to_path(samplefname)))
                     {
                         zones[zone_id].sample_id = sample_id;
                         zone_exists[zone_id] = true;
@@ -1295,7 +1295,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
                         if (newpath.size() && subsamplename[0])
                             newpath.append(subsamplename);
 
-                        if (newpath.size() && samples[sample_id]->load(newpath.c_str()))
+                        if (newpath.size() && samples[sample_id]->load(string_to_path(newpath)))
                         {
                             zones[zone_id].sample_id = sample_id;
                             zone_exists[zone_id] = true;
@@ -1410,7 +1410,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &fi
                 {
                     sample_id = this->GetFreeSampleId();
                     samples[sample_id] = new sample(conf);
-                    if (samples[sample_id]->load(samplefname))
+                    if (samples[sample_id]->load(string_to_path(samplefname)))
                     {
                         zones[zone_id].sample_id = sample_id;
                         zone_exists[zone_id] = true;
@@ -1498,7 +1498,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &fi
                         if (newpath.size() && subsamplename[0])
                             newpath.append(subsamplename);
 
-                        if (newpath.size() && samples[sample_id]->load(newpath.c_str()))
+                        if (newpath.size() && samples[sample_id]->load(string_to_path(newpath)))
                         {
                             zones[zone_id].sample_id = sample_id;
                             zone_exists[zone_id] = true;

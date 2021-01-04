@@ -256,6 +256,6 @@ void decode_path(const fs::path &in, fs::path *out, std::string *extension,
     
 
     if (out)
-        *out = tmp;
+        *out = string_to_path(tmp);
 
 }
