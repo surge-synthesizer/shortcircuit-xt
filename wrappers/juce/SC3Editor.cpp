@@ -53,16 +53,15 @@ void SC3AudioProcessorEditor::buttonStateChanged(Button *b)
         switch (manualButton->getState())
         {
         case Button::buttonDown:
-            audioProcessor.mManualMidiBuf.addEvent(MidiMessage::noteOn(1, 60, (uint8)127), 0);
+            audioProcessor.sc3->PlayNote(0, 60, 127);
             manualPlaying = true;
             break;
         case Button::buttonNormal:
             if (manualPlaying)
             {
                 manualPlaying = false;
-                audioProcessor.mManualMidiBuf.addEvent(MidiMessage::noteOff(1, 60, (uint8)0), 0);                
+                audioProcessor.sc3->ReleaseNote(0, 60, 127);
             }
-            
             break;
         
         }

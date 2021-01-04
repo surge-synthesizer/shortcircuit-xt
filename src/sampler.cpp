@@ -57,7 +57,7 @@ void sampler::set_samplerate(float sr)
 //-------------------------------------------------------------------------------------------------
 
 sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
-    : mNumOutputs(NumOutputs)
+    : editor(0), mNumOutputs(NumOutputs)
 {
     // load configuration
     wchar_t path[1024];
@@ -574,7 +574,7 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
     {
         if (samples[s])
         {
-            if (samples[s]->compare_filename(filename))
+            if (samples[s]->compare_filename(string_to_path(filename)))
             {
                 if (s_id)
                     *s_id = s;
@@ -804,7 +804,7 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
 
 bool sampler::replace_zone(int z, const char *filename)
 {
-    // ACHTUNG!!! om sample refcount > 1 s� ska samplingen enbart bytas f�r den aktuella zonen!!
+    // ATTENTION !!! if sample refcount> 1 then the sampling should only be changed for the current zone !!
     // kill all notes for the given zone
     kill_notes(z);
     int s_old = zones[z].sample_id;

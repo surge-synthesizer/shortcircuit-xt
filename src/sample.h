@@ -9,6 +9,7 @@
 
 #include "globals.h"
 #include <cstdint>
+#include "filesystem/import.h"
 
 class configuration;
 
@@ -19,10 +20,9 @@ class sample
     sample(configuration *conf);
     /// deconstructor
     virtual ~sample();
-    bool load(const char *filename);
-    bool load(const wchar_t *filename);
-    bool get_filename(char *);
-    bool compare_filename(const char *);
+    bool load(const fs::path &path);
+    bool get_filename(fs::path *out);
+    bool compare_filename(const fs::path &path);
     bool parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk = false);
     short *GetSamplePtrI16(int Channel);
     float *GetSamplePtrF32(int Channel);
@@ -95,6 +95,6 @@ class sample
     bool load_data_f32(int channel, void *data, unsigned int samplesize, unsigned int stride);
     bool load_data_f64(int channel, void *data, unsigned int samplesize, unsigned int stride);
     bool sample_loaded;
-    wchar_t filename[pathlength];
+    fs::path mFileName;
     uint32 refcount;
 };

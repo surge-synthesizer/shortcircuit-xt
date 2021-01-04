@@ -8,7 +8,7 @@
 #pragma once
 
 class sampler;
-
+#include "filesystem/import.h"
 #include "controllers.h"
 #include "multiselect.h"
 #include "sampler_state.h"
@@ -181,20 +181,20 @@ class sampler
 
     // File I/O
     bool load_akai_s6k_program(const char *filename, char channel = 0, bool replace = true);
-    bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, char *filename);
+    bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, const char *filename);
     bool load_sf2_preset(const char *filename, int *new_g = 0, char channel = 0, int patch = -1);
     bool load_sfz(const char *data, size_t datasize, int *new_g = 0, char channel = 0);
     bool load_battery_kit(const char *filename, char channel = 0, bool replace = true);
-    bool load_file(const char *filename, int *new_g = 0, int *new_z = 0, bool *is_group = 0,
+    bool load_file(const fs::path &filename, int *new_g = 0, int *new_z = 0, bool *is_group = 0,
                    char channel = 0, int add_zones_to_groupid = 0, bool replace = false);
     // bool load_file(const wchar_t *filename, char part, int *new_z=0);
 
     long save_all(void **data); // , int group_id=-1); ?
     void free_all();
     bool load_all(void *data, int datasize);
-    bool load_all_from_xml(void *data, int datasize, char *filename = 0, bool replace = true,
+    bool load_all_from_xml(void *data, int datasize, const fs::path &filename = fs::path(), bool replace = true,
                            int channel = -1);
-    bool load_all_from_sc1_xml(void *data, int datasize, char *filename = 0, bool replace = true,
+    bool load_all_from_sc1_xml(void *data, int datasize, const fs::path &filename = fs::path(), bool replace = true,
                                int channel = -1);
     bool save_all_to_disk(const char *filename);
     size_t save_part_as_xml(int part_id, const wchar_t *filename, bool copy_samples = false);
