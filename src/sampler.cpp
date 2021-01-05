@@ -57,7 +57,7 @@ void sampler::set_samplerate(float sr)
 //-------------------------------------------------------------------------------------------------
 
 sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
-    : mNumOutputs(NumOutputs)
+    : editor(0), mNumOutputs(NumOutputs)
 {
     // load configuration
     wchar_t path[1024];
@@ -79,12 +79,14 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
         wcscpy(path, L"");
         SC3::Log::logos() << "FIXME: Setup Config" << std::endl;
     }
+    auto ppath = fs::path(path);
 #else
 #warning Deal with configuration paths.
     wcscpy(path, L"" );
+    auto ppath = string_to_path("");
 #endif
     conf = new configuration();
-    conf->load(path);
+    conf->load(ppath);
 
     mpPreview = new sampler::Preview(&time_data, this);
 
@@ -574,7 +576,7 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
     {
         if (samples[s])
         {
-            if (samples[s]->compare_filename(filename))
+            if (samples[s]->compare_filename(string_to_path(filename)))
             {
                 if (s_id)
                     *s_id = s;
@@ -707,7 +709,7 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
 
             samples[s] = new sample(conf);
 
-            if (!(samples[s]->load(filename)))
+            if (!(samples[s]->load(string_to_path(filename))))
             {
                 delete samples[s];
                 samples[s] = 0;
@@ -804,7 +806,7 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
 
 bool sampler::replace_zone(int z, const char *filename)
 {
-    // ACHTUNG!!! om sample refcount > 1 s� ska samplingen enbart bytas f�r den aktuella zonen!!
+    // ATTENTION !!! if sample refcount> 1 then the sampling should only be changed for the current zone !!
     // kill all notes for the given zone
     kill_notes(z);
     int s_old = zones[z].sample_id;
@@ -819,7 +821,7 @@ bool sampler::replace_zone(int z, const char *filename)
         samples[s] = new sample(conf);
     }
 
-    if (!(samples[s]->load(filename)))
+    if (!(samples[s]->load(string_to_path(filename))))
     {
         delete samples[s];
         samples[s] = 0;
@@ -1134,7 +1136,16 @@ void sampler::Preview::Start(const wchar_t *Filename)
 {
     mActive = false;
 
-    if (mpSample->load(Filename))
+    
+    // wchar_t conversion to path not working. figure out later or change to take path above
+
+    //auto ppath = string_to_path(Filename);
+
+    char fnu8[2048];
+    vtWStringToString(fnu8, Filename, 2048);
+    auto ppath = string_to_path(fnu8);
+
+    if (mpSample->load(ppath))
     {
         mZone.sample_start = 0;
         mZone.sample_stop = mpSample->sample_length;

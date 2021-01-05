@@ -10,6 +10,7 @@
 
 #include "globals.h"
 #include <string>
+#include "filesystem/import.h"
 
 const int n_custom_controllers = 16;
 
@@ -33,17 +34,16 @@ struct midi_controller
 
 class configuration
 {
+    fs::path mRelative;
+    fs::path mConfFilename;
   public:
     configuration();
-    bool load(std::wstring filename);
-    bool save(std::wstring filename);
-
-    void decode_pathW(std::wstring in, wchar_t *out, wchar_t *extension, int *program_id,
-                      int *sample_id);
-
-    std::wstring relative;
-    int stereo_outputs, mono_outputs;
-    std::wstring conf_filename;
+    bool load(const fs::path &filename);
+    bool save(const fs::path  &filename);
+    // replace <relative> in filename
+    fs::path resolve_path(const fs::path &in);
+    void set_relative_path(const fs::path &in);
+    int stereo_outputs, mono_outputs;   
     std::string pathlist[4];
     std::string skindir;
     int headroom;
@@ -54,3 +54,17 @@ class configuration
     bool mAutoPreview;
     bool mUseMiniDumper;
 };
+
+
+// parse a path into components. All outputs are optional. Example:
+// c:\file\name.EXT>1|2
+// outputs:
+//  out: c:\file\name.EXT (full valid path)
+//  extension: ext (extension, lowercased)
+//  name_only: name (name without ext)
+//  path_only: c:\file (path without file)
+//  program_id: 1
+//  sample_id: 2
+// returns the extension as lowercase
+void decode_path(const fs::path &in, fs::path *out, std::string *extension=0,
+                 std::string *name_only=0, fs::path *path_only=0, int *program_id=0, int *sample_id=0);

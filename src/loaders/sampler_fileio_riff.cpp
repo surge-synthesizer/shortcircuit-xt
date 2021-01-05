@@ -40,16 +40,16 @@ using std::vector;
 // call with data=0 to query size of the required buffer
 size_t RIFF_StoreSample(sample *s, void *data)
 {
-    char filename[1024];
-    if (!s->Embedded && s->get_filename(filename))
+    fs::path filename;
+    if (!s->Embedded && s->get_filename(&filename))
     {
-        size_t ChunkSize = 12 + SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(filename);
+        size_t ChunkSize = 12 + SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(path_to_string(filename).c_str());
         if (!data)
             return ChunkSize;
 
         SC3::Memfile::RIFFMemFile mf(data, ChunkSize);
         mf.RIFFCreateLISTHeader('Smpl', ChunkSize - 12);
-        mf.RIFFCreateTextChunk('SUrl', filename);
+        mf.RIFFCreateTextChunk('SUrl', path_to_string(filename).c_str());
 
         return ChunkSize;
     }
@@ -426,7 +426,7 @@ bool sampler::LoadAllFromRIFF(void *data, size_t datasize, bool Replace, int Par
     else if ((mf.RIFFGetFileType() == 'SC2M') && mf.RIFFDescendSearch('SC2M'))
         IsMulti = true;
     else if (*(int *)data == 'mx?<')
-        return load_all_from_xml(data, datasize, 0, Replace, PartID);
+        return load_all_from_xml(data, datasize, fs::path(), Replace, PartID);
     else
         return false;
 

@@ -84,10 +84,6 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 {
     MidiBuffer::Iterator midiIterator(midiMessages);
     midiIterator.setNextSamplePosition(0);
-    
-    MidiBuffer::Iterator manualMidiIterator(mManualMidiBuf);
-    midiIterator.setNextSamplePosition(0);
-
     int midiEventPos;
     MidiMessage m;
 
@@ -105,20 +101,6 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
             sc3->ReleaseNote(0, m.getNoteNumber(), m.getVelocity());
         }
     }
-
-    // manually added (yeah might not be thread safe, but this is temporary)
-    while (manualMidiIterator.getNextEvent(m, midiEventPos))
-    {
-        if (m.isNoteOn())
-        {
-            sc3->PlayNote(0, m.getNoteNumber(), m.getVelocity());
-        }
-        else if (m.isNoteOff())
-        {
-            sc3->ReleaseNote(0, m.getNoteNumber(), m.getVelocity());
-        }
-    }
-    mManualMidiBuf.clear();
 
     auto mainInputOutput = getBusBuffer(buffer, false, 0);
 

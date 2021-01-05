@@ -35,7 +35,7 @@ using std::min;
 using std::string;
 
 #if !TARGET_HEADLESS
-#include "shortcircuit_editor2.h"
+//#include "shortcircuit_editor2.h"
 #endif
 
 #include "infrastructure/logfile.h"
@@ -68,69 +68,37 @@ const int ff_revision = 10;
         return false;
 }*/
 
-bool sampler::load_file(const char *file_name, int *new_g, int *new_z, bool *is_group, char channel,
+bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool *is_group, char channel,
                         int add_zones_to_groupid, bool replace)
 {
-    char filename[256];
-    vtCopyString(filename, file_name, 256);
-
+    // AS TODO any fn taking a filename should be fixed to propagate this path object downward
+    fs::path validFileName;
     int programid = 0;
+    int sampleid = 0;
+    std::string extension, nameOnly;    
+    fs::path pathOnly;
 
-    char *pidchar = strrchr(filename, '>');
-    if (pidchar)
-    {
-        *pidchar = 0;
-        pidchar++;
-        programid = atoi(pidchar);
-    }
+    decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid );
 
-    // find the extension
-    char *extension = strrchr(filename, '.');
-    if (!extension)
-        return false;
-    extension += 1;
-
-    char nameNoPath[256];
-    {
-        char *backslash = strrchr(filename, '\\');
-        if (!backslash)
-            backslash = strrchr(filename, '/' );
-        if (!backslash)
-            return false;
-        assert(*(backslash + 1));
-        strncpy(nameNoPath, backslash + 1, 256);
-        char *ext = strrchr(nameNoPath, '.');
-        if (!ext)
-            return false;
-        *ext = 0;
-    }
-
-    if ((!stricmp(extension, "wav")) || (!stricmp(extension, "aif")) ||
-        (!stricmp(extension, "aiff")) || (!stricmp(extension, "rcy")) ||
-        (!stricmp(extension, "rex")) || (!stricmp(extension, "rx2")))
+    if ((!extension.compare("wav")) || (!extension.compare("aif")) ||
+        (!extension.compare("aiff")) || (!extension.compare("rcy")) ||
+        (!extension.compare("rex")) || (!extension.compare("rx2")))
     {
         if (is_group)
             *is_group = false;
-        return add_zone(filename, new_z, channel, add_zones_to_groupid != 0);
+        return add_zone(path_to_string(validFileName).c_str(), new_z, channel, add_zones_to_groupid != 0);
     }
-    else if ((!stricmp(extension, "gig")) || (!stricmp(extension, "dls")) ||
-             (!stricmp(extension, "sc2p")) || (!stricmp(extension, "sc2m")) ||
-             (!stricmp(extension, "sfz")))
+    else if ((!extension.compare("gig")) || (!extension.compare("dls")) ||
+             (!extension.compare("sc2p")) || (!extension.compare("sc2m")) ||
+             (!extension.compare("sfz")))
     {
         // memory mapped file reads go here
-        // TODO flytta in alla filformat h�r efterhand som de klarar memmapping
-        wchar_t wfilename[4096];
-        vtStringToWString(wfilename, filename, 4096 );
+        // TODO move all file formats here as they manage memmapping
 
         // assign path to configuration
-        wchar_t relpath[256];
-        wchar_t *last;
-        vtCopyStringW(relpath, wfilename, 256);
-        last = wcsrchr(relpath, L'\\');
-        *last = 0;
-        conf->relative = relpath;
+        conf->set_relative_path(pathOnly);
 
-        auto mapper = std::make_unique<SC3::FileMapView>(wfilename);
+        auto mapper = std::make_unique<SC3::FileMapView>(validFileName);
         if (!mapper->isMapped())
             return false;
 
@@ -139,62 +107,63 @@ bool sampler::load_file(const char *file_name, int *new_g, int *new_z, bool *is_
 
         bool result = false;
 
-        if ((!stricmp(extension, "sc2p")) || (!stricmp(extension, "sc2m")))
+        if ((!extension.compare("sc2p")) || (!extension.compare("sc2m")))
         {
             if (is_group)
                 *is_group = true;
             result = LoadAllFromRIFF(data, datasize, replace, channel);
         }
-        else if ((!stricmp(extension, "gig")) || (!stricmp(extension, "dls")))
+        else if ((!extension.compare("gig")) || (!extension.compare("dls")))
         {
             if (is_group)
                 *is_group = true;
-            result = parse_dls_preset(data, datasize, channel, programid, filename);
+            result = parse_dls_preset(data, datasize, channel, programid,
+                path_to_string(validFileName).c_str());
         }
-        else if (!stricmp(extension, "sfz"))
+        else if (!extension.compare("sfz"))
         {
             if (is_group)
                 *is_group = true;
             result = load_sfz((char *)data, datasize, new_g, channel);
-            vtCopyString(parts[channel].name, nameNoPath, 32);
+            vtCopyString(parts[channel].name, nameOnly.c_str(), 32);
             // TODO add name from last part of filename
         }
 
         return result;
     }
-    else if (!stricmp(extension, "akp"))
+    else if (!extension.compare("akp"))
     {
         if (is_group)
             *is_group = true;
-        return load_akai_s6k_program(filename, channel, true);
+        return load_akai_s6k_program(path_to_string(validFileName).c_str(), channel, true);
     }
-    else if (!stricmp(extension, "kit"))
+    else if (!extension.compare("kit"))
     {
         if (is_group)
             *is_group = true;
-        return load_battery_kit(filename, channel, true);
+        return load_battery_kit(path_to_string(validFileName).c_str(), channel, true);
     }
-    else if (!stricmp(extension, "scg"))
+    else if (!extension.compare("scg"))
     {
         if (is_group)
             *is_group = true;
         if (new_g)
             *new_g = 0;
-        return load_all_from_sc1_xml(0, 0, filename, false, channel);
+        return load_all_from_sc1_xml(0, 0, validFileName, false, channel);
     }
-    else if (!stricmp(extension, "scm"))
+    else if (!extension.compare("scm"))
     {
         if (is_group)
             *is_group = true;
         if (new_g)
             *new_g = 0;
-        return load_all_from_sc1_xml(0, 0, filename, replace);
+        return load_all_from_sc1_xml(0, 0, validFileName, replace);
     }
-    else if (!stricmp(extension, "sf2"))
+    else if (!extension.compare("sf2"))
     {
         if (is_group)
             *is_group = true;
-        return load_sf2_preset(filename, new_g, channel, programid);
+        return load_sf2_preset(path_to_string(validFileName).c_str(), new_g, channel, programid);
     }
     return false;
 }
@@ -603,7 +572,6 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
 
 void sampler::store_zone_as_element(TiXmlElement &element, sample_zone *zone, configuration *conf)
 {
-#ifndef _DEMO_
     char tempstr[64];
     element.SetAttribute("name", zone->name);
     element.SetAttribute("layer", zone->layer);
@@ -797,12 +765,10 @@ void sampler::store_zone_as_element(TiXmlElement &element, sample_zone *zone, co
         mm.SetAttribute("mute", yes_no(zone->hp[i].muted, tempstr));
         element.InsertEndChild(mm);
     }
-#endif
 }
 
 void store_part_as_element(TiXmlElement &element, sample_part *part, configuration *conf)
 {
-#ifndef _DEMO_
     char tempstr[64];
     element.SetAttribute("name", part->name);
     if (part->transpose)
@@ -922,7 +888,6 @@ void store_part_as_element(TiXmlElement &element, sample_part *part, configurati
             element.InsertEndChild(mm);
         }
     }
-#endif
 }
 
 void recall_part_from_element(TiXmlElement &element, sample_part *part, int revision,
@@ -1129,7 +1094,7 @@ string recursive_search(string filename, string path)
     {
         auto dp = fs::path(ent);
         auto fn = dp.filename();
-        if( path_to_string(fn) == path_to_string(f) )
+        if( fn.compare(f)==0 )
         {
             return path_to_string(dp);
         }
@@ -1137,7 +1102,8 @@ string recursive_search(string filename, string path)
     return "";
 }
 
-bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool replace, int part_id)
+bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filename, bool replace,
+                                int part_id)
 {
     if (datasize && (*(int *)data == 'FFIR'))
     {
@@ -1159,18 +1125,13 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
         doc.Parse(temp);
         free(temp);
     }
-    else if (filename)
+    else if (!filename.empty())
     {
-        if (!doc.LoadFile(filename))
-            return false;
-
+        // TODO propagate path down
+        if (!doc.LoadFile(path_to_string(filename).c_str()))
+            return false;        
         // assign path to configuration
-        wchar_t path[256];
-        wchar_t *last;
-        vtStringToWString(path, filename, 256);
-        last = wcsrchr(path, '\\');
-        *last = 0;
-        conf->relative = path;
+        conf->set_relative_path(filename);
     }
     else
         return false;
@@ -1245,7 +1206,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
                 {
                     sample_id = this->GetFreeSampleId();
                     samples[sample_id] = new sample(conf);
-                    if (samples[sample_id]->load(samplefname))
+                    if (samples[sample_id]->load(string_to_path(samplefname)))
                     {
                         zones[zone_id].sample_id = sample_id;
                         zone_exists[zone_id] = true;
@@ -1334,7 +1295,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
                         if (newpath.size() && subsamplename[0])
                             newpath.append(subsamplename);
 
-                        if (newpath.size() && samples[sample_id]->load(newpath.c_str()))
+                        if (newpath.size() && samples[sample_id]->load(string_to_path(newpath)))
                         {
                             zones[zone_id].sample_id = sample_id;
                             zone_exists[zone_id] = true;
@@ -1358,7 +1319,8 @@ bool sampler::load_all_from_xml(void *data, int datasize, char *filename, bool r
     return true;
 }
 
-bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bool replace,
+bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &filename,
+                                    bool replace,
                                     int part_id)
 {
     int revision;
@@ -1375,18 +1337,14 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bo
         doc.Parse(temp);
         free(temp);
     }
-    else if (filename)
+    else if (!filename.empty())
     {
-        if (!doc.LoadFile(filename))
+        // TODO propagate path down to Tixml
+        if (!doc.LoadFile(path_to_string(filename).c_str()))
             return false;
 
         // assign path to configuration
-        wchar_t path[256];
-        wchar_t *last;
-        vtStringToWString(path, filename, 256);
-        last = wcsrchr(path, '\\');
-        *last = 0;
-        conf->relative = path;
+        conf->set_relative_path(filename);
     }
     else
         return false;
@@ -1452,7 +1410,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bo
                 {
                     sample_id = this->GetFreeSampleId();
                     samples[sample_id] = new sample(conf);
-                    if (samples[sample_id]->load(samplefname))
+                    if (samples[sample_id]->load(string_to_path(samplefname)))
                     {
                         zones[zone_id].sample_id = sample_id;
                         zone_exists[zone_id] = true;
@@ -1540,7 +1498,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, char *filename, bo
                         if (newpath.size() && subsamplename[0])
                             newpath.append(subsamplename);
 
-                        if (newpath.size() && samples[sample_id]->load(newpath.c_str()))
+                        if (newpath.size() && samples[sample_id]->load(string_to_path(newpath)))
                         {
                             zones[zone_id].sample_id = sample_id;
                             zone_exists[zone_id] = true;

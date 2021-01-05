@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     if (true)
     {
         std::cout << "Loading harpsi.sf2" << std::endl;
-        auto res = sc3->load_file("resources/test_samples/harpsi.sf2");
+        auto res = sc3->load_file(string_to_path("resources/test_samples/harpsi.sf2"));
         std::cout << "RES is " << res << std::endl;
     }
     else
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 #if WINDOWS
         auto res = sc3->load_file("resources\\test_samples\\BadPluckSample.wav");
 #else
-        auto res = sc3->load_file("resources/test_samples/BadPluckSample.wav");
+        auto res = sc3->load_file(string_to_path("resources/test_samples/BadPluckSample.wav"));
 #endif
 
         std::cout << "RES is " << res << std::endl;

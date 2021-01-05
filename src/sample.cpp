@@ -66,8 +66,8 @@ bool sample::AllocateI16(int Channel, int Samples)
     // int samplesizewithmargin = Samples + 2*FIRipol_N + block_size + FIRoffset;
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
-        delete SampleData[Channel];
-    SampleData[Channel] = new short[samplesizewithmargin];
+        free(SampleData[Channel]);
+    SampleData[Channel] = malloc( sizeof(short)*samplesizewithmargin);
     if (!SampleData[Channel])
         return false;
     UseInt16 = true;
@@ -83,8 +83,8 @@ bool sample::AllocateF32(int Channel, int Samples)
 {
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
-        delete SampleData[Channel];
-    SampleData[Channel] = new float[samplesizewithmargin];
+        free(SampleData[Channel]);
+    SampleData[Channel] = malloc(sizeof(float)*samplesizewithmargin);
     if (!SampleData[Channel])
         return false;
     UseInt16 = false;
@@ -102,8 +102,8 @@ size_t sample::GetDataSize() { return sample_length * (UseInt16 ? 2 : 4) * chann
 char *sample::GetName()
 {
     return name;
-    // TODO samplingar beh�ver numera namn!
-    // TODO som �ven ska sparas i RIFFdata (anv�nd wav's metastruktur)
+    // TODO samples now need names!
+    // TODO which should also be saved in RIFFdata (using wav's metastructure)
 }
 
 void sample::clear_data()
@@ -113,9 +113,9 @@ void sample::clear_data()
 
     // free any allocated data
     if (SampleData[0])
-        delete SampleData[0];
+        free(SampleData[0]);
     if (SampleData[1])
-        delete SampleData[1];
+        free(SampleData[1]);
     if (meta.slice_start)
         delete meta.slice_start;
     if (meta.slice_end)
@@ -132,21 +132,12 @@ void sample::clear_data()
 
     memset(name, 0, 64);
     memset(&meta, 0, sizeof(meta));
-    filename[0] = 0;
+    mFileName.clear();
 }
 
 sample::~sample()
 {
     clear_data(); // this should free everything
-}
-
-bool sample::load(const char *filename)
-{
-    assert(filename);
-    wchar_t wfilename[pathlength];
-    vtStringToWString(wfilename, filename, pathlength);
-    bool r = load(wfilename);
-    return r;
 }
 
 bool sample::SetMeta(unsigned int Channels, unsigned int SampleRate, unsigned int SampleLength)
@@ -162,18 +153,20 @@ bool sample::SetMeta(unsigned int Channels, unsigned int SampleRate, unsigned in
     return true;
 }
 
-bool sample::load(const wchar_t *filename)
+bool sample::load(const fs::path &filename)
 {
     assert(conf);
-    assert(filename);
-    wchar_t filename_decoded[pathlength], extension[64];
-    int sample_id, program_id;
-    conf->decode_pathW(filename, filename_decoded, extension, &program_id, &sample_id);
+    fs::path validFilename;
+    std::string extension;
+    int sample_id;
 
-    auto mapper = std::make_unique<SC3::FileMapView>(filename_decoded);
+    // extract elements of path
+    decode_path(conf->resolve_path(filename), &validFilename, &extension, 0, 0, 0, &sample_id);
+
+    auto mapper = std::make_unique<SC3::FileMapView>(validFilename);
     if (!mapper->isMapped())
     {
-        SC3::Log::logos() << "Unable to map view of file '" << filename_decoded << "'";
+        SC3::Log::logos() << "Unable to map view of file '" << validFilename << "'";
         return false;
     }
     auto data = mapper->data();
@@ -181,33 +174,20 @@ bool sample::load(const wchar_t *filename)
 
     clear_data(); // clear to a more predictable state
 
-    const wchar_t *sname = wcsrchr(filename, L'\\');
-    if (sname)
-    {
-        sname++;
-        int length = wcsrchr(sname, '.') - sname;
-#if WINDOWS
-        if (length > 0)
-            WideCharToMultiByte(CP_UTF8, 0, sname, length, name, 64, 0, 0);
-#else
-#warning Compiling un-ported WideChar code
-#endif
-    }
-
     bool r = false;
-    if (wcsicmp(extension, L"wav") == 0)
+    if (extension.compare("wav") == 0)
     {
         r = parse_riff_wave(data, datasize);
     }
-    else if (wcsicmp(extension, L"sf2") == 0)
+    else if (extension.compare("sf2") == 0)
     {
         r = parse_sf2_sample(data, datasize, sample_id);
     }
-    else if ((wcsicmp(extension, L"dls") == 0) || (wcsicmp(extension, L"gig") == 0))
+    else if ((extension.compare("dls") == 0) || (extension.compare("gig") == 0))
     {
         r = parse_dls_sample(data, datasize, sample_id);
     }
-    else if ((wcsicmp(extension, L"aif") == 0) || (wcsicmp(extension, L"aiff") == 0))
+    else if ((extension.compare("aif") == 0) || (extension.compare("aiff") == 0))
     {
         r = parse_aiff(data, datasize);
     }
@@ -217,15 +197,12 @@ bool sample::load(const wchar_t *filename)
         assert(SampleData[0]);
         if (channels == 2)
             assert(SampleData[1]);
-    }
 
-    if (r)
-        wcsncpy(this->filename, filename, pathlength);
-
-    if (!r)
-    {
+        mFileName = filename;
+    } else 
+    {    
         wchar_t tmp[512];
-        swprintf(tmp, 512, L"HERE Could not read file %s", filename);
+        swprintf(tmp, 512, L"HERE Could not read file %s", validFilename.c_str());
 #if WINDOWS
         MessageBoxW(::GetActiveWindow(), tmp, L"File I/O Error", MB_OK | MB_ICONERROR);
 #else
@@ -282,18 +259,16 @@ void sample::init_grains()
     }*/
 }
 
-bool sample::get_filename(char *utf8name)
+bool sample::get_filename(fs::path *out)
 {
-    vtStringToWString(filename, utf8name, 256 );
-    return true;
+    assert(out);
+    *out = mFileName;
+    return !mFileName.empty();
 }
 
-bool sample::compare_filename(const char *utf8name)
+bool sample::compare_filename(const fs::path &path)
 {
-    assert(filename);
-    wchar_t wfilename[pathlength];
-    vtStringToWString(wfilename, utf8name, 1024 );
-    return (wcscmp(filename, wfilename) == 0);
+    return (mFileName.compare(path) == 0);
 }
 
 bool sample::load_data_ui8(int channel, void *data, unsigned int samplesize, unsigned int stride)

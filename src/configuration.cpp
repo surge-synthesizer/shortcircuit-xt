@@ -7,6 +7,9 @@
 //-------------------------------------------------------------------------------------------------------
 
 #include "configuration.h"
+#include <regex>
+#include <cstring>
+#include <cstdlib>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,49 +22,8 @@ bool global_use_alt_keyboardmethod = false;
 bool global_skip_zone_noteon_redraws = false;
 bool global_skip_slice_noteon_redraws = false;
 
-bool stringreplace(char *string, char *find, char *replace)
-{
-    if (strlen(replace) <= 0)
-        return false;
-    char source[256];
-    strcpy(source, string);
-    char *begin, *end;
-    begin = strstr(string, find);
-    if (find[0] && begin)
-    {
-        end = strstr(source, find) + strlen(find);
-        strcpy(begin, replace);
-        begin += strlen(replace);
-        strcpy(begin, end);
-        return true;
-    }
-    return false;
-}
-
-bool stringreplaceW(wchar_t *string, wchar_t *find, const wchar_t *replace)
-{
-    if (wcslen(replace) <= 0)
-        return false;
-    wchar_t source[256];
-    wcscpy(source, string);
-    wchar_t *begin, *end;
-    begin = wcsstr(string, find);
-    if (find[0] && begin)
-    {
-        end = wcsstr(source, find) + wcslen(find);
-        wcscpy(begin, replace);
-        begin += wcslen(replace);
-        wcscpy(begin, end);
-        return true;
-    }
-    return false;
-}
-
 configuration::configuration()
 {
-    relative = L"";
-    conf_filename = L"";
-
     memset(MIDIcontrol, 0, sizeof(midi_controller) * n_custom_controllers);
 
     headroom = 0;
@@ -72,20 +34,16 @@ configuration::configuration()
     mAutoPreview = true;
 }
 
-bool configuration::load(std::wstring filename)
+bool configuration::load(const fs::path &filename)
 {
-    if (filename.empty())
-    {
-        filename = conf_filename;
-    }
-    else
-    {
-        conf_filename = filename;
+    auto fn = mConfFilename;
+    if (!filename.empty())
+    {   
+        fn = filename;
+        mConfFilename = filename;
     }
 
-    wstringCharReadout(filename, filenameUTF8, 256);
-
-    TiXmlDocument doc(filenameUTF8);
+    TiXmlDocument doc(path_to_string(fn)); // TODO propagate fs::path down?
 
     doc.LoadFile();
     if (doc.Error())
@@ -148,19 +106,18 @@ bool configuration::load(std::wstring filename)
     return true;
 }
 
-bool configuration::save(std::wstring filename)
+bool configuration::save(const fs::path &filename)
 {
-    if (filename.empty())
+    auto fn = mConfFilename;
+    if (!filename.empty())
     {
-        filename = conf_filename;
+        fn = filename;
+        mConfFilename = filename;
     }
-    else
-    {
-        conf_filename = filename;
-    }
+        
     TiXmlDeclaration decl("1.0", "UTF-8", "yes");
 
-    wstringCharReadout(filename, filenameUTF8, 256) TiXmlDocument doc(filenameUTF8);
+    TiXmlDocument doc(path_to_string(fn)); // TODO propagate fs::path down?
 
     TiXmlElement conf("configuration");
     conf.SetAttribute("version", ShortCircuit::Build::FullVersionStr);
@@ -210,42 +167,95 @@ bool configuration::save(std::wstring filename)
     return true;
 }
 
-void configuration::decode_pathW(std::wstring in, wchar_t *out, wchar_t *extension, int *program_id,
-                                 int *sample_id)
+fs::path configuration::resolve_path(const fs::path &in)
 {
-    assert(out);
-    assert(extension);
-    wcsncpy(out, in.c_str(), pathlength);
+    auto s = path_to_string(in);
+    auto r = std::regex_replace(s, std::regex("<relative>"), path_to_string(mRelative));
+    return string_to_path(r);
+}
 
-    stringreplaceW(out, L"<relative>", relative.c_str());
+void configuration::set_relative_path(const fs::path &in) 
+{ 
+    mRelative = in; 
+}
 
-    // get program/sample id if available
+void decode_path(const fs::path &in, fs::path *out, std::string *extension,
+    std::string *name_only, fs::path *path_only, int *program_id, int *sample_id)
+{
+    if (path_only)
+    {
+
+        *path_only = in;       
+        if (path_only->has_filename())
+        {
+            path_only->remove_filename();
+        }
+        // rem trailing separator if there
+        auto s = path_to_string(*path_only);
+        if (s.back() == static_cast<char>(fs::path::preferred_separator))
+        {
+            s.pop_back();
+            *path_only = string_to_path(s);
+        }
+    }
+    if (out)
+        out->clear();
+    if (extension)
+        extension->clear();
+    if (name_only)
+        name_only->clear();
     if (sample_id)
         *sample_id = -1;
     if (program_id)
         *program_id = -1;
-    wchar_t *separator = wcsrchr(out, L'|');
+
+    auto tmp = path_to_string(in);
+    
+    // get and strip off program/sample id if available
+    const char *separator = strrchr(tmp.c_str(), '|');
     if (separator)
     {
-        wchar_t sidstr[64];
-        wcscpy(sidstr, separator + 1);
+        std::string sidstr = separator + 1;
+
         if (sample_id)
-            *sample_id = wcstol(sidstr, NULL, 10);
-        *separator = 0;
-    }
-    separator = wcsrchr(out, L'>');
-    if (separator)
-    {
-        wchar_t pidstr[64];
-        wcscpy(pidstr, separator + 1);
-        if (program_id)
-            *program_id = wcstol(pidstr, NULL, 10);
-        *separator = 0;
+            *sample_id = std::strtol(sidstr.c_str(), NULL, 10);
+
+        tmp = tmp.substr(0, separator - tmp.c_str());
     }
 
-    separator = wcsrchr(out, L'.');
+    separator = strrchr(tmp.c_str(), '>');
     if (separator)
     {
-        wcsncpy(extension, separator + 1, 64);
+        std::string pidstr = separator + 1;
+        if (program_id)
+            *program_id = strtol(pidstr.c_str(), NULL, 10);
+        tmp = tmp.substr(0, separator - tmp.c_str());
     }
+    // extract filename portion only
+    auto p = string_to_path(tmp);
+    auto no = path_to_string(p.filename());
+
+    // extract extension and cvt to lower, also get name only without ext
+    separator = strrchr(no.c_str(), '.');
+    if (separator)
+    {
+        if (extension)
+        {
+            *extension = separator + 1;
+            std::transform((*extension).begin(), (*extension).end(), (*extension).begin(),
+                           ::tolower);
+        }
+        // strip it off
+        no = no.substr(0, separator - no.c_str());    
+    }
+
+    if (name_only)
+    {
+        *name_only = no;
+    }
+    
+
+    if (out)
+        *out = string_to_path(tmp);
+
 }

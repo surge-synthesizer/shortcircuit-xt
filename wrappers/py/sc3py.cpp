@@ -18,7 +18,7 @@ struct SC3PY : public sampler
 {
     explicit SC3PY(int numOuts) : sampler(nullptr, numOuts) {}
 
-    void loadFileFullKeyboard(const std::string &s) { load_file(s.c_str()); }
+    void loadFileFullKeyboard(const std::string &s) { load_file(string_to_path(s)); }
 
     void playNotePy(int ch, int note, int vel) { PlayNote(ch, note, vel); }
     void releaseNotePy(int ch, int note, int vel) { ReleaseNote(ch, note, vel); }

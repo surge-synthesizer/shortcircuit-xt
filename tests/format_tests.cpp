@@ -35,7 +35,7 @@ TEST_CASE("Simple SF2 Load", "[formats]")
 #if WINDOWS
         REQUIRE(sc3->load_file("resources\\test_samples\\harpsi.sf2"));
 #else
-        REQUIRE(sc3->load_file("resources/test_samples/harpsi.sf2"));
+        REQUIRE(sc3->load_file(string_to_path("resources/test_samples/harpsi.sf2")));
 #endif
 
         auto notes = {60, 64, 66};
@@ -77,7 +77,7 @@ TEST_CASE("Simple WAV Load", "[formats]")
 #if WINDOWS
         REQUIRE(sc3->load_file("resources\\test_samples\\BadPluckSample.wav"));
 #else
-        REQUIRE(sc3->load_file("resources/test_samples/BadPluckSample.wav"));
+        REQUIRE(sc3->load_file(string_to_path("resources/test_samples/BadPluckSample.wav")));
 #endif
 
         double rms = 0;
@@ -113,8 +113,8 @@ TEST_CASE("Load two SF2s", "[formats]")
         REQUIRE(sc3->load_file("resources\\test_samples\\harpsi.sf2"));
         REQUIRE(sc3->load_file("resources\\test_samples\\Crysrhod.sf2"));
 #else
-        REQUIRE(sc3->load_file("resources/test_samples/harpsi.sf2"));
-        REQUIRE(sc3->load_file("resources/test_samples/Crysrhod.sf2"));
+        REQUIRE(sc3->load_file(string_to_path("resources/test_samples/harpsi.sf2")));
+        REQUIRE(sc3->load_file(string_to_path("resources/test_samples/Crysrhod.sf2")));
 #endif
     }
 }

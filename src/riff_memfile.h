@@ -519,7 +519,7 @@ class RIFFMemFile
         return true;
     }
 
-    static size_t RIFFTextChunkSize(char *txt)
+    static size_t RIFFTextChunkSize(const char *txt)
     {
         if (!txt)
             return 0;
@@ -531,7 +531,7 @@ class RIFFMemFile
         return datasize + 8;
     }
 
-    bool RIFFCreateTextChunk(uint32_t tag, char *txt)
+    bool RIFFCreateTextChunk(uint32_t tag, const char *txt)
     {
         // skip chunk if string is null/empty
         if (!txt)
