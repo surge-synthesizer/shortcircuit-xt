@@ -4,6 +4,7 @@
 #include "sampler_voice.h"
 #include "util/tools.h"
 #include <vt_dsp/basic_dsp.h>
+#include <iostream>
 
 extern float SincTableF32[(FIRipol_M + 1) * FIRipol_N];
 extern float SincOffsetF32[(FIRipol_M)*FIRipol_N];
@@ -201,16 +202,26 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         SampleSubPos = SampleSubPos - (incr << 24);
 
         // if (SamplePos > UpperBound) SamplePos = UpperBound;
-        switch (playmode)
+         switch (playmode)
         {
         case GSM_Normal:
         {
+            if( SamplePos > UpperBound ) {
+                SamplePos = UpperBound;
+                SampleSubPos = 0;
+                IsFinished = 1;
+            }
+            if( SamplePos < LowerBound ) {
+                SamplePos = LowerBound;
+                SampleSubPos = 0;
+            }
+
+#if ASM_I_REWROTE  // Leaving this here for reference while we port
             // Denna koden g�r att sample-pekaren stannar n�r den kommer till start/stop
             // Det l�mnar en DC-offset, men det �r mindre st�rigt �n ett klick
             // Med �berreleasen s� verkar det inte bli n�got problem.
             int zero = 0;
             int one = 1;
-#if SUPPORTS_ASM
             __asm
             {				
 					; load
@@ -241,6 +252,9 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         break;
         case GSM_Loop:
         {
+#if ! WINDOWS
+#warning Un-ported Assembly in Generator Loop Mode
+#endif
 #if SUPPORTS_ASM
             __asm {					
 					; load
@@ -272,10 +286,11 @@ store:
         break;
         case GSM_Bidirectional:
         {
+
+#if ASM_I_REWROTE // Leaving this here for a bit as discussed above
             // L�ter b�st d� man INTE justerar SamplePos & SubPos f�r att den passerat Bounds
 
             int fram = 1, bak = -1;
-#if SUPPORTS_ASM
             __asm
             {					
 					; load					
@@ -294,6 +309,14 @@ store:
 					mov Direction, ecx
             }
 #endif
+            if( SamplePos >= UpperBound )
+            {
+                Direction = -1;
+            }
+            else if( SamplePos <= LowerBound )
+            {
+                Direction = 1;
+            }
             SamplePos = limit_range(SamplePos, 0, WaveSize);
         }
         break;
