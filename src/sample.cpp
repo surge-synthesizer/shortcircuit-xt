@@ -66,8 +66,8 @@ bool sample::AllocateI16(int Channel, int Samples)
     // int samplesizewithmargin = Samples + 2*FIRipol_N + block_size + FIRoffset;
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
-        delete SampleData[Channel];
-    SampleData[Channel] = new short[samplesizewithmargin];
+        free(SampleData[Channel]);
+    SampleData[Channel] = malloc( sizeof(short)*samplesizewithmargin);
     if (!SampleData[Channel])
         return false;
     UseInt16 = true;
@@ -83,8 +83,8 @@ bool sample::AllocateF32(int Channel, int Samples)
 {
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
-        delete SampleData[Channel];
-    SampleData[Channel] = new float[samplesizewithmargin];
+        free(SampleData[Channel]);
+    SampleData[Channel] = malloc(sizeof(float)*samplesizewithmargin);
     if (!SampleData[Channel])
         return false;
     UseInt16 = false;
@@ -113,9 +113,9 @@ void sample::clear_data()
 
     // free any allocated data
     if (SampleData[0])
-        delete SampleData[0];
+        free(SampleData[0]);
     if (SampleData[1])
-        delete SampleData[1];
+        free(SampleData[1]);
     if (meta.slice_start)
         delete meta.slice_start;
     if (meta.slice_end)

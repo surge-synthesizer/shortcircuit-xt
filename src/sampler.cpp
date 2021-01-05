@@ -1137,19 +1137,13 @@ void sampler::Preview::Start(const wchar_t *Filename)
     mActive = false;
 
     
-#if WINDOWS
-    // wchar_t conversion to path not working. figure out later
+    // wchar_t conversion to path not working. figure out later or change to take path above
 
     //auto ppath = string_to_path(Filename);
 
     char fnu8[2048];
     vtWStringToString(fnu8, Filename, 2048);
     auto ppath = string_to_path(fnu8);
-#else
-    char fnu8[PATH_MAX];
-    vtWStringToString(fnu8, Filename, PATH_MAX );
-    auto ppath = string_to_path(fnu8);
-#endif
 
     if (mpSample->load(ppath))
     {
