@@ -61,7 +61,14 @@ if( APPLE )
     # Hmmm...
     target_compile_options(filesystem PUBLIC -fvisibility=hidden -fvisibility-inlines-hidden)
 elseif( UNIX AND NOT APPLE )
-    target_compile_options(filesystem INTERFACE -fPIC -fvisibility=hidden -fvisibility-inlines-hidden)
+    get_target_property( FSTYPE filesystem TYPE )
+    message( STATUS "Linux filesystem is an ${FSTYPE}" )
+    if( ${FSTYPE} STREQUAL "INTERFACE_LIBRARY") 
+      message( STATUS "  An interface; so no fPIC needed" )
+    else()
+      message( STATUS "  Adding fPIC and so on to filesystem" )
+      target_compile_options(filesystem PUBLIC -fPIC -fvisibility=hidden -fvisibility-inlines-hidden)
+    endif()
 endif()
 
 # And include JUCE
