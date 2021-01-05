@@ -1,7 +1,7 @@
 #ifndef __version__
 #define __version__
 
-namespace ShortCircuit
+namespace SC3
 {
 struct Build
 {

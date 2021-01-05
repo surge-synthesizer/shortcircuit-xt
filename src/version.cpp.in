@@ -5,7 +5,7 @@
 */
 #include "version.h"
 
-namespace ShortCircuit
+namespace SC3
 {
    const char* Build::MajorVersionStr = "@SHORTC_MAJOR_VERSION@";
    const int   Build::MajorVersionInt = @SHORTC_MAJOR_VERSION@;

@@ -271,7 +271,11 @@ target_link_libraries(shortcircuit3py PRIVATE shortcircuit-core)
 add_executable(sc3-test
         tests/lowlevel_io.cpp
         tests/mmio_test.cpp
-        tests/test_main.cpp tests/format_tests.cpp tests/vt_miscellany.cpp tests/config_test.cpp)
+        tests/test_main.cpp
+        tests/format_tests.cpp
+        tests/vt_miscellany.cpp
+        tests/config_test.cpp
+        tests/zone_tests.cpp)
 
 target_include_directories(sc3-test PRIVATE
         libs/catch2/include)

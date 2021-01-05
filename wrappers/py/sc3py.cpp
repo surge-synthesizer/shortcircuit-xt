@@ -44,7 +44,7 @@ PYBIND11_MODULE(shortcircuit3py, m)
     m.def("createSC3", &createSC3, "Create an SC3 instance", py::arg("sampleRate"),
           py::arg("nChannels") = py::int_(2));
     m.def(
-        "getVersion", []() { return ShortCircuit::Build::FullVersionStr; },
+        "getVersion", []() { return SC3::Build::FullVersionStr; },
         "Get the version of ShortCircuit");
 
     py::class_<SC3PY>(m, "ShortCircuit3Sampler")

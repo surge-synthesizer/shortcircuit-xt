@@ -120,7 +120,7 @@ bool configuration::save(const fs::path &filename)
     TiXmlDocument doc(path_to_string(fn)); // TODO propagate fs::path down?
 
     TiXmlElement conf("configuration");
-    conf.SetAttribute("version", ShortCircuit::Build::FullVersionStr);
+    conf.SetAttribute("version", SC3::Build::FullVersionStr);
     conf.SetAttribute("store_in_projdir", store_in_projdir ? 1 : 0);
     conf.SetAttribute("outputs_stereo", this->stereo_outputs);
     conf.SetAttribute("skin", skindir.c_str());
