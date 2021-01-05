@@ -111,8 +111,8 @@ TEST_CASE("Decode Path", "[config]")
 
         decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
         REQUIRE(out.string().compare(std::string("/my/path/")) == 0);
-        REQUIRE(ext.empty()) == 0);
-        REQUIRE(nameOnly.empty()) == 0);
+        REQUIRE(ext.empty());
+        REQUIRE(nameOnly.empty());
         REQUIRE(pathOnly.string().compare(std::string("/my/path")) == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == -1);
