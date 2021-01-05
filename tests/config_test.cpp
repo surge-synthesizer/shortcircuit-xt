@@ -30,7 +30,7 @@ TEST_CASE("Decode Path", "[config]")
     int progid, sampleid;
     fs::path out, pathOnly;
 #ifdef _WIN32
-    SECTION("Windows")
+    SECTION("Windows basic")
     {
         fs::path p("c:\\my\\path\\filename.WAV>100|200");
 
@@ -42,7 +42,7 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
     }
-    SECTION("Sample id only")
+    SECTION("Windows Sample id only")
     {
         fs::path p("c:\\my\\path\\filename.WAV|200");
 
@@ -54,7 +54,7 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == -1);
         REQUIRE(sampleid == 200);
     }
-    SECTION("Prog id only")
+    SECTION("Windows Prog id only")
     {
         fs::path p("c:\\my\\path\\filename.WAV>100");
 
@@ -66,7 +66,7 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == -1);
     }
-    SECTION("Path only with progid")
+    SECTION("Windows Path only with progid")
     {
         fs::path p("c:\\my\\path\\>100");
 
@@ -78,7 +78,7 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == -1);
     }
-    SECTION("Path only with sampleid")
+    SECTION("Windows Path only with sampleid")
     {
         fs::path p("c:\\my\\path\\|200");
 
@@ -91,7 +91,7 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(sampleid == 200);
     }
 #else
-    SECTION("Unix/mac") 
+    SECTION("Unix/mac basic") 
     {
         fs::path p("/my/path/filename.WAV>100|200");
 
@@ -103,6 +103,19 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
 
+    }        
+
+    SECTION("Unix/mac path only")
+    {        
+        fs::path p("/my/path/>100");
+
+        decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
+        REQUIRE(out.string().compare(std::string("/my/path/")) == 0);
+        REQUIRE(ext.empty()) == 0);
+        REQUIRE(nameOnly.empty()) == 0);
+        REQUIRE(pathOnly.string().compare(std::string("/my/path")) == 0);
+        REQUIRE(progid == 100);
+        REQUIRE(sampleid == -1);
     }        
  #endif
 }
