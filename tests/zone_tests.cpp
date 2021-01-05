@@ -82,8 +82,8 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
                 auto zone = sc3->zones[i];
                 REQUIRE(zone.key_low == 36 + i);
                 REQUIRE(zone.key_high == 36 + i);
-                REQUIRE(zone.sample_id ==
-                        i); // since we are a fresh instance. This is not generally true
+                REQUIRE(zone.sample_id == i);
+                // since we are a fresh instance. This is not generally true
 
                 auto sample = sc3->samples[zone.sample_id];
                 REQUIRE( sample->channels == 1 );
@@ -97,8 +97,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
         }
     }
 
-#if TEST_FOR_PLAYBACK_BUG_WITH_SINGLE_WAVS
-    for( int i=0; i<10; ++i )
+    for( int i=0; i<30; ++i )
     DYNAMIC_SECTION("Playback Three AutoZones " << i )
     {
         auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
@@ -119,6 +118,17 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             {
                 auto zone = sc3->zones[i];
                 auto sample = sc3->samples[zone.sample_id];
+
+
+                REQUIRE(zone.key_low == 36 + i);
+                REQUIRE(zone.key_high == 36 + i);
+                REQUIRE(zone.sample_id == i);
+                // since we are a fresh instance. This is not generally true
+
+                REQUIRE(zone.sample_start == 0);
+                REQUIRE(zone.sample_stop == dsize[i] / 2 );
+                REQUIRE(zone.playmode == pm_forwardRIFF);
+
                 REQUIRE(sample->channels == 1);
                 REQUIRE(sample->GetDataSize() == dsize[i]);
                 REQUIRE(sample->sample_rate == 44100);
@@ -154,10 +164,8 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             {
                 INFO("Checking with note " << n);
                 std::vector<float> vals = {16.963544, 14.8987890705, 8.9075824};
-                if( n != 38 ) // STILL CHASING THIS BUG
-                    REQUIRE(rms == Approx(vals[n - 36]).margin(1e-5));
+                REQUIRE(rms == Approx(vals[n - 36]).margin(1e-5));
             }
         }
     }
-#endif
 }
