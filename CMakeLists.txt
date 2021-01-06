@@ -102,6 +102,10 @@ elseif (UNIX AND NOT APPLE)
     set(OS_LINK_LIBRARIES
             )
 else ()
+    execute_process(COMMAND powershell
+            -ExecutionPolicy Bypass
+            -File "scripts/win_dl_asiosdk.ps1"
+            )
     set(OS_COMPILE_OPTIONS
             /wd4244   # convert float from double
             /wd4305   # truncate from double to float
@@ -256,6 +260,7 @@ target_compile_definitions(ShortCircuit3 PUBLIC
 
         JUCE_ALSA=1
         JUCE_JACK=1
+        JUCE_ASIO=1
         )
 target_link_libraries(ShortCircuit3 PRIVATE
         ShortCircuit3-Binary
