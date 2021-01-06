@@ -173,7 +173,7 @@ set(SHORTCIRCUIT_SOURCE
         src/synthesis/steplfo.cpp
         src/util/tools.cpp
         src/util/unitconversion.cpp
-        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h src/infrastructure/file_map_view.cpp src/infrastructure/file_map_view.h)
+        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h src/infrastructure/file_map_view.cpp src/infrastructure/file_map_view.h src/sampler_internalStateView.cpp)
 
 set(SHORTCIRCUIT_GENERATED_SOURCE
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
@@ -208,10 +208,10 @@ target_compile_definitions(shortcircuit-core PUBLIC ${OS_COMPILE_DEFINITIONS} TA
 target_link_libraries(shortcircuit-core PUBLIC ${OS_LINK_LIBRARIES} surge::filesystem)
 add_dependencies(shortcircuit-core git-info)
 
-# Executable Target sc-headless is primarily for throwaway tests and has been subsumed by
+# Executable Target sc3-headless is primarily for throwaway tests and has been subsumed by
 # sc3-test and the python library. Keep it nonetheless
-add_executable(sc-headless wrappers/headless/main.cpp)
-target_link_libraries(sc-headless PRIVATE shortcircuit-core)
+add_executable(sc3-headless wrappers/headless/main.cpp)
+target_link_libraries(sc3-headless PRIVATE shortcircuit-core)
 
 # The JUCE plugin ShortCircuit3 has an AU VST3 and Standalone version
 juce_add_plugin(ShortCircuit3
@@ -239,6 +239,9 @@ set_target_properties(ShortCircuit3-Binary PROPERTIES POSITION_INDEPENDENT_CODE 
 target_sources(ShortCircuit3 PRIVATE
         wrappers/juce/SC3Processor.cpp
         wrappers/juce/SC3Editor.cpp
+        wrappers/juce/components/DebugPanel.cpp
+        wrappers/juce/components/DebugPanel.h
+        wrappers/juce/components/StubRegion.h
         )
 target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
