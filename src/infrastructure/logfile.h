@@ -20,6 +20,11 @@
 
 #include <iostream>
 #include <sstream>
+#include "logging.h"
+
+// TODO add var to cmake and use it to determine this var's value
+#define LOGGING_DEBUG_ENABLED 1
+
 namespace SC3::Log
 {
 /*
@@ -49,6 +54,66 @@ class logos : public std::ostream
 
 // And baconpaul's favorite debug helper
 #define _D(x) " " << (#x) << "=" << x
+
+// TODO above is deprecated. refactor to use below
+
+// macro helpers for stream based logging. pass the StreamLogger object as parameter
+#ifdef LOGGING_DEBUG_ENABLED
+#define LOGDEBUG(x) if(x.setLevel(SC3::Log::Level::Debug)) x
+#else
+#define LOGDEBUG(x) if(0) x
+#endif
+#define LOGINFO(x) if(x.setLevel(SC3::Log::Level::Info)) x
+#define LOGWARNING(x) if(x.setLevel(SC3::Log::Level::Warning)) x
+#define LOGERROR(x) if(x.setLevel(SC3::Log::Level::Error)) x
+
+// StreamLogger class is for stream based logging eg:
+// logger << "logmessage" ; // add message to buffer at the current level 
+// logger << "logmessage" << std::flush ; // send a log message at the current level now (ie flush now)
+// logger->setLevel(ERROR); // change the current level (preferable to use above macros though)
+class StreamLogger : public std::ostream
+{
+  private:
+    struct lbuf : public std::stringbuf
+    {
+        public:
+        LoggingCallback *mCB;
+        Level mLevel;
+        int sync() override {
+            int ret = std::stringbuf::sync();
+            if(ret)
+              return ret;
+
+            if(mCB && mCB->getLevel() >= mLevel) {
+                auto s=str();
+                if(!s.empty()) {
+                  mCB->message(mLevel, s);
+                }
+            }
+            str("");
+            return 0;
+        }
+        lbuf(LoggingCallback *cb) : mCB(cb) , mLevel(Level::Error) {}
+        ~lbuf() {pubsync();}
+    } buff;
+  public:
+
+    StreamLogger(LoggingCallback *cb) : buff(cb), std::ostream(&buff) {}
+
+    bool setLevel(const Level lev) {
+      buff.pubsync(); // flush old before setting new level
+      buff.mLevel=lev;
+      // avoid unnecessary stream evaluations
+      return (buff.mCB && buff.mCB->getLevel() >= buff.mLevel);
+    }
+};
+
+inline const char *getShortLevelStr(Level lev) {
+  return lev==SC3::Log::Level::Debug ? "[DEBUG] " :
+            lev==SC3::Log::Level::Info ? "[INFO ] " :
+            lev==SC3::Log::Level::Warning ? "[WARN ] " :
+            lev==SC3::Log::Level::Error ? "[ERROR] " : "";
+}
 
 } // namespace SC3::Log
 

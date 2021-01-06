@@ -1,4 +1,5 @@
 #include "sampler.h"
+#include "version.h"
 #ifdef SCPB
 #include "scpb_editor.h"
 #endif
@@ -56,9 +57,11 @@ void sampler::set_samplerate(float sr)
 
 //-------------------------------------------------------------------------------------------------
 
-sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
-    : editor(0), mNumOutputs(NumOutputs)
+sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect, SC3::Log::LoggingCallback *cb)
+    : mLogger(cb), editor(0), mNumOutputs(NumOutputs)
 {
+    LOGINFO(mLogger) << "SC3 engine " << SC3::Build::FullVersionStr << std::flush;
+
     // load configuration
     wchar_t path[1024];
 #if WINDOWS

@@ -71,6 +71,8 @@ const int ff_revision = 10;
 bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool *is_group, char channel,
                         int add_zones_to_groupid, bool replace)
 {
+    LOGDEBUG(mLogger) << "Loading file " << file_name.string() << std::flush;
+
     // AS TODO any fn taking a filename should be fixed to propagate this path object downward
     fs::path validFileName;
     int programid = 0;

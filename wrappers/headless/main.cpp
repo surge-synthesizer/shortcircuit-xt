@@ -4,13 +4,24 @@
 
 #include "sampler.h"
 #include "version.h"
+#include "infrastructure/logfile.h"
+
+class HeadlessLogger : public SC3::Log::LoggingCallback {
+    SC3::Log::Level getLevel() override {
+        return SC3::Log::Level::Debug;
+    }
+    void message(SC3::Log::Level lev, const std::string &msg) override {
+        std::cout << SC3::Log::getShortLevelStr(lev) << msg << std::endl;
+    }
+};
 
 void *hInstance = 0;
 int main(int argc, char **argv)
 {
+    HeadlessLogger logger;
     std::cout << "# ShortCircuit3 Headless. " << SC3::Build::FullVersionStr << std::endl;
 
-    auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+    auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, &logger);
     sc3->set_samplerate(48000);
     if (!sc3)
     {

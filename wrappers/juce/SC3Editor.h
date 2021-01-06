@@ -18,7 +18,8 @@
  */
 class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
                                 public juce::Button::Listener,
-                                public juce::FileDragAndDropTarget
+                                public juce::FileDragAndDropTarget,
+                                public EditorNotify
 {
   public:
     SC3AudioProcessorEditor(SC3AudioProcessor &);
@@ -38,6 +39,8 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
 
     // Fixme - obviously this is done with no thought of threading or anything else
     void rebuildUIState();
+
+    void setLogText(const std::string &txt) override;
 
   private:
     // This reference is provided as a quick way for your editor to

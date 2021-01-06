@@ -306,6 +306,7 @@ add_executable(sc3-test
         tests/format_tests.cpp
         tests/vt_miscellany.cpp
         tests/config_test.cpp
+        tests/logging_test.cpp
         tests/zone_tests.cpp tests/filesystem_basics.cpp)
 
 target_include_directories(sc3-test PRIVATE

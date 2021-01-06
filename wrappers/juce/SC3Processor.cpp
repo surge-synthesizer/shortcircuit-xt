@@ -14,14 +14,16 @@ void *hInstance = 0;
 
 //==============================================================================
 SC3AudioProcessor::SC3AudioProcessor()
-    : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true))
+    : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)), mNotify(0)
 {
     // This is a good place for VS mem leak debugging:
     // _CrtSetBreakAlloc(<id>);
-    sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+    mLogger = std::make_unique<SC3ProcessorLogger>(this);
+    sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, mLogger.get());
 }
 
-SC3AudioProcessor::~SC3AudioProcessor() {}
+SC3AudioProcessor::~SC3AudioProcessor() {
+}
 
 //==============================================================================
 const juce::String SC3AudioProcessor::getName() const { return JucePlugin_Name; }
