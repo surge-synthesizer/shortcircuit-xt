@@ -6,7 +6,7 @@
 # project paths
 $LIB_DIR="libs"
 $SDK_DIRNAME="asiosdk"
-$SDK_LOCATION="libs\$SDK_DIRNAME"
+$SDK_LOCATION="$LIB_DIR\$SDK_DIRNAME"
 
 # download params
 $ASIO_SDK_URL="https://www.steinberg.net/asiosdk"
@@ -23,9 +23,11 @@ if (-not (Test-Path $SDK_LOCATION))
 		Write-Output "--   Found $SDK_DOWNLOAD_FILE from previous download."
 	}
 	Write-Output "--   Extracting to $SDK_LOCATION..."
-	Expand-Archive asiosdk.zip $LIB_DIR
+	Expand-Archive $SDK_DOWNLOAD_FILE $LIB_DIR
 	Set-Location $LIB_DIR
-	(Get-ChildItem -Filter "asiosdk*")[0] | Rename-Item -NewName { $_.Name -Replace $_.Name, $SDK_DIRNAME }
+	
+	# SDK zip has it in a timestamped directory name. This strips it off.
+	(Get-ChildItem -Filter "$SDK_DIRNAME*")[0] | Rename-Item -NewName { $_.Name -Replace $_.Name, $SDK_DIRNAME }
 } else {
 	Write-Output "--   Steinberg ASIO SDK present in $SDK_LOCATION."
 }
