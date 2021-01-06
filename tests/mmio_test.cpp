@@ -21,7 +21,7 @@
 #include <string>
 
 #include <catch2/catch2.hpp>
-#include <filesystem/import.h>
+#include "infrastructure/import_fs.h"
 
 #include "globals.h"
 #include "infrastructure/sc3_mmio.h"

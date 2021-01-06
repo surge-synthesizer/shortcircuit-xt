@@ -40,7 +40,7 @@ using std::string;
 
 #include "infrastructure/logfile.h"
 #include "infrastructure/file_map_view.h"
-#include "filesystem/import.h"
+#include "infrastructure/import_fs.h"
 
 #include <vt_util/vt_string.h>
 

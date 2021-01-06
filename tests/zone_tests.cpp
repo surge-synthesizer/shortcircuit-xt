@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "sampler.h"
-#include "filesystem/import.h"
+#include "infrastructure/import_fs.h"
 #include "sample.h"
 
 TEST_CASE("Zones from 3 Wavs", "[zones]")
