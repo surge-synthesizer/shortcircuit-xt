@@ -198,7 +198,9 @@ if( SC3_FILESYSTEM_STD_FS_FOUND )
 else()
     message(STATUS "Using GHC Filesystem" )
     add_subdirectory(libs/ghc-filesystem)
-    add_compile_definitions(shortcircuit-core PUBLIC SC3_USE_GHC_FILESYSTEM=1)
+    target_compile_definitions(shortcircuit-core PUBLIC SC3_USE_GHC_FILESYSTEM=1)
+    target_link_libraries(shortcircuit-core PUBLIC ghc_filesystem)
+
 endif()
 
 
@@ -206,7 +208,7 @@ endif()
 target_include_directories(shortcircuit-core PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
 target_compile_options(shortcircuit-core PUBLIC ${OS_COMPILE_OPTIONS})
 target_compile_definitions(shortcircuit-core PUBLIC ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
-target_link_libraries(shortcircuit-core PUBLIC ${OS_LINK_LIBRARIES} ghc_filesystem)
+target_link_libraries(shortcircuit-core PUBLIC ${OS_LINK_LIBRARIES})
 add_dependencies(shortcircuit-core git-info)
 
 # Executable Target sc3-headless is primarily for throwaway tests and has been subsumed by
