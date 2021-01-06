@@ -59,7 +59,7 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
 add_subdirectory(libs/JUCE)
 
 # Optional variables
-set(SC3_INCLUDE_ASIO_SUPPORT TRUE)
+set(SC3_INCLUDE_ASIO_SUPPORT FALSE)
 
 # Platform Specific Compile Settings
 if (APPLE)
