@@ -58,6 +58,9 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
 # And include JUCE
 add_subdirectory(libs/JUCE)
 
+# Optional variables
+set(SC3_INCLUDE_ASIO_SUPPORT FALSE)
+
 # Platform Specific Compile Settings
 if (APPLE)
     set(OS_COMPILE_OPTIONS
@@ -86,6 +89,12 @@ elseif (UNIX AND NOT APPLE)
     set(OS_LINK_LIBRARIES
             )
 else ()
+    if (SC3_INCLUDE_ASIO_SUPPORT)
+        execute_process(COMMAND powershell
+                -ExecutionPolicy Bypass
+                -File "scripts/win_dl_asiosdk.ps1"
+                )
+    endif()
     set(OS_COMPILE_OPTIONS
             /wd4244   # convert float from double
             /wd4305   # truncate from double to float
@@ -260,6 +269,15 @@ target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_ALSA=1
         JUCE_JACK=1
         )
+# ASIO SDK is only for MS Windows.
+if (NOT APPLE AND NOT UNIX AND SC3_INCLUDE_ASIO_SUPPORT)
+    target_compile_definitions(ShortCircuit3 PUBLIC
+        JUCE_ASIO=1
+        )
+    target_include_directories(ShortCircuit3 PUBLIC
+       "libs/asiosdk/common"
+       )
+endif()
 target_link_libraries(ShortCircuit3 PRIVATE
         ShortCircuit3-Binary
         shortcircuit-core
