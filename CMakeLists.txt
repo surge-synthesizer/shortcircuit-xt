@@ -59,7 +59,7 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
 add_subdirectory(libs/JUCE)
 
 # Optional variables
-set(SC3_INCLUDE_ASIO_SUPPORT FALSE)
+set(SC3_INCLUDE_ASIO_SUPPORT TRUE)
 
 # Platform Specific Compile Settings
 if (APPLE)
@@ -270,7 +270,7 @@ target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_JACK=1
         )
 # ASIO SDK is only for MS Windows.
-if (NOT APPLE AND NOT UNIX AND SC3_SET_INCLUDE_ASIO_SUPPORT)
+if (NOT APPLE AND NOT UNIX AND SC3_INCLUDE_ASIO_SUPPORT)
     target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_ASIO=1
         )
