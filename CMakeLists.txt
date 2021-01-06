@@ -55,10 +55,6 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
         )
 
-# Include the surge filesystem API so we can work on systems which don't have
-# a full std::filesystem (mac targets <10.15, older ubuntus)
-add_subdirectory(libs/ghc-filesystem)
-
 # And include JUCE
 add_subdirectory(libs/JUCE)
 
@@ -189,6 +185,23 @@ add_library(shortcircuit-core
         ${VEMBERTECH_SOURCE}
         ${SHORTCIRCUIT_GENERATED_SOURCE})
 
+# Add a filesystem implementation if we need it
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+    #include <filesystem>
+    namespace fs = std::filesystem;
+    int main(int, char **argv) {
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+    }" SC3_FILESYSTEM_STD_FS_FOUND)
+if( SC3_FILESYSTEM_STD_FS_FOUND )
+    message(STATUS "Using OS level Filesystem" )
+else()
+    message(STATUS "Using GHC Filesystem" )
+    add_subdirectory(libs/ghc-filesystem)
+    add_compile_definitions(shortcircuit-core PUBLIC SC3_USE_GHC_FILESYSTEM=1)
+endif()
+
+
 # The core library includes most of the exports and flags you need
 target_include_directories(shortcircuit-core PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
 target_compile_options(shortcircuit-core PUBLIC ${OS_COMPILE_OPTIONS})
@@ -280,7 +293,6 @@ target_include_directories(sc3-test PRIVATE
 
 target_link_libraries(sc3-test
         shortcircuit-core
-        ghc_filesystem
         )
 
 # Once we have our assets built, lets move them to our product directory

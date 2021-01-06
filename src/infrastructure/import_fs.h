@@ -18,16 +18,14 @@
 #ifndef SHORTCIRCUIT_IMPORT_FS_H
 #define SHORTCIRCUIT_IMPORT_FS_H
 
-#if WINDOWS
-#define GHC_USE_STD_FS
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#ifndef GHC_USE_STD_FS
+#if SC3_USE_GHC_FILESYSTEM
 #include <ghc/filesystem.hpp>
 namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
-#endif
+
 
 inline std::string path_to_string(const fs::path &p )
 {
