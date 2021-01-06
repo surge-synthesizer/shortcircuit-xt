@@ -12,6 +12,7 @@ class sampler;
 #include "controllers.h"
 #include "multiselect.h"
 #include "sampler_state.h"
+#include "infrastructure/logfile.h"
 #include <list>
 #include <string>
 #include <thread>
@@ -19,6 +20,9 @@ class sampler;
 #include <vector>
 #include <vt_dsp/lipol.h>
 #include <vt_gui/vt_gui_constants.h>
+
+#include <sstream>
+#include <ostream>
 
 class sample;
 class sampler_voice;
@@ -54,6 +58,7 @@ class sc_editor2;
 
 class sampler
 {
+  SC3::Log::StreamLogger mLogger;
   public:
     // Aligned members
     float output alignas(16)[max_outputs << 1][block_size],
@@ -76,7 +81,7 @@ class sampler
 
     // Public Interface
 
-    sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect = 0);
+    sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect = 0, SC3::Log::LoggingCallback *cb=0);
     virtual ~sampler(void);
 
     /*
@@ -270,7 +275,6 @@ class sampler
     float controllers_target[16 * n_controllers];
 
     bool volatile AudioHalted; // don't care to wait for the process thread
-
   protected:
     bool zone_exists[max_zones];
     bool holdengine;
@@ -288,3 +292,6 @@ class sampler
 
     void *chunkDataPtr, *dbSampleListDataPtr;
 };
+
+
+

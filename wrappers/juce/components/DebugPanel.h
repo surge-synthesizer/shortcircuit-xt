@@ -43,11 +43,16 @@ class DebugPanel : public juce::Component
     void setSamplerText( const juce::String &s )
     {
         samplerT->setText(s);
+        
+
     }
 
-    void setLogText( const juce::String &s )
+    void appendLogText( const juce::String &s )
     {
-        logT->setText(s);
+        String str=s;
+        str+= "\n";
+        logT->setCaretPosition(logT->getText().length());
+        logT->insertTextAtCaret(str);
     }
 
     std::unique_ptr<juce::TextEditor> samplerT;

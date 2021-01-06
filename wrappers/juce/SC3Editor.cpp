@@ -15,6 +15,9 @@
 SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p), manualPlaying(false)
 {
+
+    p.mNotify=this;
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(900, 600);
@@ -35,7 +38,9 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     rebuildUIState();
 }
 
-SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {}
+SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
+    audioProcessor.mNotify=0;
+}
 
 void SC3AudioProcessorEditor::buttonClicked(Button *b)
 {
@@ -110,4 +115,10 @@ void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int 
 
 void SC3AudioProcessorEditor::rebuildUIState(){
     debugWindow->panel->setSamplerText(audioProcessor.sc3->generateInternalStateView());
+}
+
+void SC3AudioProcessorEditor::setLogText(const std::string &txt) 
+{
+    juce::String s=txt;
+    debugWindow->panel->appendLogText(s);
 }
