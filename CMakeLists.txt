@@ -27,6 +27,7 @@ endif ()
 
 # Everything here is C++ 17 now
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 # Set up version information using the same approach as surge, namely
 # with an external cmake run, a git-info target, and a generated
@@ -53,23 +54,6 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         -D WIN32=${WIN32}
         -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
         )
-
-# Include the surge filesystem API so we can work on systems which don't have
-# a full std::filesystem (mac targets <10.15, older ubuntus)
-add_subdirectory(libs/filesystem)
-if( APPLE )
-    # Hmmm...
-    target_compile_options(filesystem PUBLIC -fvisibility=hidden -fvisibility-inlines-hidden)
-elseif( UNIX AND NOT APPLE )
-    get_target_property( FSTYPE filesystem TYPE )
-    message( STATUS "Linux filesystem is an ${FSTYPE}" )
-    if( ${FSTYPE} STREQUAL "INTERFACE_LIBRARY") 
-      message( STATUS "  An interface; so no fPIC needed" )
-    else()
-      message( STATUS "  Adding fPIC and so on to filesystem" )
-      target_compile_options(filesystem PUBLIC -fPIC -fvisibility=hidden -fvisibility-inlines-hidden)
-    endif()
-endif()
 
 # And include JUCE
 add_subdirectory(libs/JUCE)
@@ -173,7 +157,7 @@ set(SHORTCIRCUIT_SOURCE
         src/synthesis/steplfo.cpp
         src/util/tools.cpp
         src/util/unitconversion.cpp
-        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h src/infrastructure/file_map_view.cpp src/infrastructure/file_map_view.h src/sampler_internalStateView.cpp)
+        src/infrastructure/sc3_mmio.cpp src/infrastructure/sc3_mmio.h src/infrastructure/file_map_view.cpp src/infrastructure/file_map_view.h src/sampler_internalStateView.cpp src/infrastructure/import_fs.h)
 
 set(SHORTCIRCUIT_GENERATED_SOURCE
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
@@ -201,11 +185,30 @@ add_library(shortcircuit-core
         ${VEMBERTECH_SOURCE}
         ${SHORTCIRCUIT_GENERATED_SOURCE})
 
+# Add a filesystem implementation if we need it
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+    #include <filesystem>
+    namespace fs = std::filesystem;
+    int main(int, char **argv) {
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+    }" SC3_FILESYSTEM_STD_FS_FOUND)
+if( SC3_FILESYSTEM_STD_FS_FOUND )
+    message(STATUS "Using OS level Filesystem" )
+else()
+    message(STATUS "Using GHC Filesystem" )
+    add_subdirectory(libs/ghc-filesystem)
+    target_compile_definitions(shortcircuit-core PUBLIC SC3_USE_GHC_FILESYSTEM=1)
+    target_link_libraries(shortcircuit-core PUBLIC ghc_filesystem)
+
+endif()
+
+
 # The core library includes most of the exports and flags you need
 target_include_directories(shortcircuit-core PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
 target_compile_options(shortcircuit-core PUBLIC ${OS_COMPILE_OPTIONS})
 target_compile_definitions(shortcircuit-core PUBLIC ${OS_COMPILE_DEFINITIONS} TARGET_HEADLESS=1)
-target_link_libraries(shortcircuit-core PUBLIC ${OS_LINK_LIBRARIES} surge::filesystem)
+target_link_libraries(shortcircuit-core PUBLIC ${OS_LINK_LIBRARIES})
 add_dependencies(shortcircuit-core git-info)
 
 # Executable Target sc3-headless is primarily for throwaway tests and has been subsumed by
@@ -285,14 +288,13 @@ add_executable(sc3-test
         tests/format_tests.cpp
         tests/vt_miscellany.cpp
         tests/config_test.cpp
-        tests/zone_tests.cpp)
+        tests/zone_tests.cpp tests/filesystem_basics.cpp)
 
 target_include_directories(sc3-test PRIVATE
         libs/catch2/include)
 
 target_link_libraries(sc3-test
         shortcircuit-core
-        surge::filesystem
         )
 
 # Once we have our assets built, lets move them to our product directory

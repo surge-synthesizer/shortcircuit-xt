@@ -8,7 +8,7 @@
 #pragma once
 
 class sampler;
-#include "filesystem/import.h"
+#include "infrastructure/import_fs.h"
 #include "controllers.h"
 #include "multiselect.h"
 #include "sampler_state.h"
