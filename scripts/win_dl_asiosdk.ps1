@@ -27,5 +27,5 @@ if (-not (Test-Path $SDK_LOCATION))
 	Set-Location $LIB_DIR
 	(Get-ChildItem -Filter "asiosdk*")[0] | Rename-Item -NewName { $_.Name -Replace $_.Name, $SDK_DIRNAME }
 } else {
-	Write-Output "--   Steinberg ASIO SDK present in libs."
+	Write-Output "--   Steinberg ASIO SDK present in $SDK_LOCATION."
 }

@@ -260,8 +260,16 @@ target_compile_definitions(ShortCircuit3 PUBLIC
 
         JUCE_ALSA=1
         JUCE_JACK=1
+        )
+# ASIO SDK is only for MS Windows.
+if (NOT APPLE AND NOT UNIX)
+    target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_ASIO=1
         )
+    target_include_directories(ShortCircuit3 PUBLIC
+       "libs/asiosdk/common"
+       )
+endif()
 target_link_libraries(ShortCircuit3 PRIVATE
         ShortCircuit3-Binary
         shortcircuit-core
