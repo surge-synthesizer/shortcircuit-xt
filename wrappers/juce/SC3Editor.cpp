@@ -9,6 +9,7 @@
 #include "SC3Editor.h"
 #include "SC3Processor.h"
 #include "version.h"
+#include "components/StubRegion.h"
 
 //==============================================================================
 SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
@@ -28,17 +29,8 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     manualButton->addListener(this);
     addAndMakeVisible(manualButton.get());
 
-    zoneListBoxModel = std::make_unique<ZoneListBoxModel>(this);
-    zoneList = std::make_unique<juce::TableListBox>();
-    zoneList->setBounds( 5, 30, 800, 400 );
-    zoneList->setModel( zoneListBoxModel.get() );
-    int cid = 0;
-    zoneList->getHeader().addColumn("Zone ID", cid++, 60 );
-    zoneList->getHeader().addColumn( "Sample ID", cid++, 60 );
-    zoneList->getHeader().addColumn( "Sample Name", cid++, 400 );
-    zoneList->getHeader().addColumn( "midiStart", cid++, 60 );
-    zoneList->getHeader().addColumn( "midiEnd", cid++, 60 );
-    addAndMakeVisible(zoneList.get());
+    debugWindow = std::make_unique<DebugPanelWindow>();
+    debugWindow->setVisible(true);
 
     rebuildUIState();
 }
@@ -117,5 +109,5 @@ void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int 
 }
 
 void SC3AudioProcessorEditor::rebuildUIState(){
-    zoneList->updateContent();
+    debugWindow->panel->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }

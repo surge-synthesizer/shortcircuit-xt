@@ -157,7 +157,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect)
     }
 
     for (i = 0; i < max_samples; i++)
-        samples[i] = 0;
+        samples[i] = nullptr;
     for (i = 0; i < max_zones; i++)
         zone_exists[i] = false;
 

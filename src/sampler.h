@@ -69,8 +69,8 @@ class sampler
     struct alignas(16) multivoice
     {
         lipol_ps pregain, postgain;
-        filter *pFilter[8];
-        int last_ft[8];
+        filter *pFilter[n_sampler_effects];
+        int last_ft[n_sampler_effects];
     } multiv;
     float *output_ptr[max_outputs << 1];
 
@@ -103,6 +103,8 @@ class sampler
     void processVUs();
     void part_check_filtertypes(int p, int f);
     void idle();
+
+    std::string generateInternalStateView() const;
 
     // float output[outputs_total_max][block_size];
     float vu_rms[max_outputs << 1], vu_peak[max_outputs << 1];
