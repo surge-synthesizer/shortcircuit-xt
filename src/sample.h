@@ -9,7 +9,7 @@
 
 #include "globals.h"
 #include <cstdint>
-#include "filesystem/import.h"
+#include "infrastructure/import_fs.h"
 
 class configuration;
 
