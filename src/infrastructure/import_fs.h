@@ -18,6 +18,8 @@
 #ifndef SHORTCIRCUIT_IMPORT_FS_H
 #define SHORTCIRCUIT_IMPORT_FS_H
 
+#include <utility>
+
 #if SC3_USE_GHC_FILESYSTEM
 #include <ghc/filesystem.hpp>
 namespace fs = ghc::filesystem;
@@ -29,12 +31,21 @@ namespace fs = std::filesystem;
 
 inline std::string path_to_string(const fs::path &p )
 {
+#ifdef _WIN32
     return p.u8string();
+#else
+    return p.generic_string();
+#endif
 }
+
 template<typename T>
-inline fs::path string_to_path(const T& s)
+inline fs::path string_to_path(T&& s)
 {
-    return fs::path{s};
+#ifdef _WIN32
+    return fs::u8path(std::forward<T>(s));
+#else
+    return fs::path(std::forward<T>(s));
+#endif
 }
 
 #endif // SHORTCIRCUIT_IMPORT_FS_H
