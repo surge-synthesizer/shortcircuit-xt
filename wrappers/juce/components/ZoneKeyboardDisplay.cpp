@@ -29,6 +29,8 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
     auto keyWhiteKeyColour = juce::Colour(255, 255, 245);
     auto keyBlackKeyColour = juce::Colour(40, 40, 40);
 
+    auto keyPressedColour = juce::Colour(0xFF, 0xc0, 0xcb);
+
     auto keyWhiteHoverColour = juce::Colour(200, 200, 255);
     auto keyBlackHoverColour = juce::Colour(200, 200, 255);
     std::vector<uint32_t> zoneColorPallette = {0xffdacac0, 0xffc7b582, 0xfff76f5e,
@@ -60,13 +62,16 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
         float ypos = 0.0;
         g.setColour(keyWhiteKeyColour);
         g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
-        g.setColour(keyOutlineColour);
-        g.drawLine(xpos, keyboardHeight, xpos + keyWidth, keyboardHeight);
         if (isWhiteKey)
         {
             if (i == hoveredKey)
             {
                 g.setColour(keyWhiteHoverColour);
+                g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
+            }
+            if (zsp->playingMidiNotes[i])
+            {
+                g.setColour(keyPressedColour);
                 g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
             }
             g.setColour(keyOutlineColour);
@@ -76,7 +81,11 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
         }
         else
         {
-            if (i == hoveredKey)
+            if (zsp->playingMidiNotes[i])
+            {
+                g.setColour(keyPressedColour);
+            }
+            else if (i == hoveredKey)
             {
                 g.setColour(keyBlackHoverColour);
             }
@@ -96,6 +105,8 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             g.drawLine(xpos, ypos + keyboardHeight - blackKeyInset, xpos + keyWidth,
                        ypos + keyboardHeight - blackKeyInset);
         }
+        g.setColour(keyOutlineColour);
+        g.drawLine(xpos, keyboardHeight, xpos + keyWidth, keyboardHeight);
     }
 
     auto zoneYStart = keyboardHeight + 1;

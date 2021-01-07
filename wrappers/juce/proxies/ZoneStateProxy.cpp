@@ -54,6 +54,16 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             res = true;
             break;
         }
+        case vga_note:
+        {
+            auto note = ad.data.i[0];
+            if (note >= 0 && note < 128)
+            {
+                playingMidiNotes[note] = ad.data.i[1];
+                repaintClients();
+            }
+            res = true;
+        }
         default:
             break;
         }
