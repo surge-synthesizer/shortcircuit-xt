@@ -14,6 +14,8 @@
 #include "version.h"
 #include "interaction_parameters.h"
 
+#include <unordered_map>
+
 #include "components/StubRegion.h"
 #include "components/DebugPanel.h"
 #include "components/ZoneKeyboardDisplay.h"
@@ -62,7 +64,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     idleTimer->startTimer(1000 / 30);
 }
 
-void SC3AudioProcessorEditor::sendActionToEngine(actiondata ad)
+void SC3AudioProcessorEditor::sendActionToEngine(const actiondata &ad)
 {
     audioProcessor.sc3->postEventsFromWrapper(ad);
 }
@@ -138,13 +140,28 @@ void SC3AudioProcessorEditor::idle()
 {
     int mcount = 0;
     actiondata ad;
+
+#define DEBUG_UNHANDLED_MESSAGES 1
+
+#if DEBUG_UNHANDLED_MESSAGES
+    std::map<int,int> unhandled;
+#endif
     while (actiondataToUI->pop(ad))
     {
         mcount++;
+        auto handled = false;
         for (auto &p : uiStateProxies)
         {
-            p->processActionData(ad);
+            handled |= p->processActionData(ad);
         }
+#if DEBUG_UNHANDLED_MESSAGES
+        if( ! handled )
+        {
+            if( unhandled.find(ad.actiontype) == unhandled.end() )
+                unhandled[ad.actiontype] = 0;
+            unhandled[ad.actiontype]++;
+        }
+#endif
     }
 
     std::string s;
@@ -154,9 +171,19 @@ void SC3AudioProcessorEditor::idle()
         mcount++;
     }
 
+#if DEBUG_UNHANDLED_MESSAGES
+    // bit of a hack, sure.
+    for( auto uh : unhandled )
+    {
+        std::ostringstream oss;
+        oss << "[EDITOR] Unhandled message: id=" << uh.first << " count=" << uh.second;
+        debugWindow->panel->appendLogText(oss.str());
+    }
+#endif
+
     // Obviously this is thread unsafe and wonky still
     if (mcount)
         refreshSamplerTextViewInThreadUnsafeWay();
 }
 
-void SC3AudioProcessorEditor::receiveActionFromProgram(actiondata ad) { actiondataToUI->push(ad); }
+void SC3AudioProcessorEditor::receiveActionFromProgram(const actiondata &ad) { actiondataToUI->push(ad); }

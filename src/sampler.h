@@ -131,14 +131,14 @@ class sampler
     struct WrapperListener
     {
         virtual ~WrapperListener() = default;
-        virtual void receiveActionFromProgram(actiondata ad) = 0;
+        virtual void receiveActionFromProgram(const actiondata &ad) = 0;
     };
 
     std::set<WrapperListener *> wrappers;
     void registerWrapperForEvents(WrapperListener *l) { wrappers.insert(l); }
     void unregisterWrapperForEvents(WrapperListener *l) { wrappers.erase(l); }
-    void postEventsFromWrapper(actiondata ad);
-    void postEventsToWrapper(actiondata ad, bool ErrorIfClosed = true);
+    void postEventsFromWrapper(const actiondata &ad);
+    void postEventsToWrapper(const actiondata &ad, bool ErrorIfClosed = true);
     void processWrapperEvents();
 
     void post_initdata();

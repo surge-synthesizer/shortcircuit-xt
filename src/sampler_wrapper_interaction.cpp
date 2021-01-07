@@ -44,11 +44,11 @@ using std::min;
 
 #include "synthesis/filter.h"
 
-void sampler::postEventsFromWrapper(actiondata ad)
+void sampler::postEventsFromWrapper(const actiondata &ad)
 {
     LOGDEBUG(mLogger) << "postEventsFromWrapper " << ad.actiontype << std::flush;
 
-    ActionBuffer->WriteBlock(&ad);
+    ActionBuffer->WriteBlock((void*)&ad);
 
     // Much like in surge, if there's no audio thread you try and process them
     // in a thread unsafe way
@@ -59,7 +59,7 @@ void sampler::postEventsFromWrapper(actiondata ad)
 
 //-------------------------------------------------------------------------------------------------
 
-void sampler::postEventsToWrapper(actiondata ad, bool ErrorIfClosed)
+void sampler::postEventsToWrapper(const actiondata &ad, bool ErrorIfClosed)
 {
     for (auto w : wrappers)
     {
