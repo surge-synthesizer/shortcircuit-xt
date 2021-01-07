@@ -1,6 +1,6 @@
 #pragma once
 #include <tinyxml/tinyxml.h>
-#include "vt_gui_constants.h"
+#include "sampler_wrapper_actiondata.h"
 #include <vector>
 #include <list>
 #include <set>

@@ -56,6 +56,7 @@ void SC3AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     sc3->set_samplerate(sampleRate);
+    sc3->AudioHalted = false;
 }
 
 void SC3AudioProcessor::releaseResources()

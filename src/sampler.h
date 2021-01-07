@@ -19,9 +19,10 @@ class sampler;
 #include <mutex>
 #include <vector>
 #include <vt_dsp/lipol.h>
-#include <vt_gui/vt_gui_constants.h>
+#include <sampler_wrapper_actiondata.h>
 
 #include <sstream>
+#include <set>
 #include <ostream>
 
 class sample;
@@ -53,8 +54,6 @@ struct voicestate
     unsigned char key, channel, part;
     uint32 zone_id;
 };
-
-class sc_editor2;
 
 class sampler
 {
@@ -128,19 +127,21 @@ class sampler
     float auto_get_parameter_value(unsigned int);
     void auto_set_parameter_value(unsigned int, float);
 
-    // interface to the V2 GUI
+    // Interface to GUI wrapeprs
+    struct WrapperListener
+    {
+        virtual ~WrapperListener() = default;
+        virtual void receiveActionFromProgram(actiondata ad) = 0;
+    };
 
-#if TARGET_HEADLESS
-    void post_events_from_editor(actiondata ad) {}
-    void post_events_to_editor(actiondata ad, bool ErrorIfClosed = true) {}
-    void process_editor_events() {}
-    void post_initdata() {}
-#else
-    void post_events_from_editor(actiondata ad);
-    void post_events_to_editor(actiondata ad, bool ErrorIfClosed = true);
-    void process_editor_events();
+    std::set<WrapperListener *> wrappers;
+    void registerWrapperForEvents(WrapperListener *l) { wrappers.insert(l); }
+    void unregisterWrapperForEvents(WrapperListener *l) { wrappers.erase(l); }
+    void postEventsFromWrapper(actiondata ad);
+    void postEventsToWrapper(actiondata ad, bool ErrorIfClosed = true);
+    void processWrapperEvents();
+
     void post_initdata();
-#endif
     void post_zonedata();
     void post_kgvdata();
     void post_samplelist();
@@ -260,8 +261,6 @@ class sampler
     int VUrate, VUidx;
     float automation[n_automation_parameters];
 
-    sc_editor2 *editor;
-    bool editor_open;
     // AudioEffectX	*effect;
     multiselect *selected;
     std::recursive_mutex cs_patch, cs_gui, cs_engine;

@@ -6,17 +6,32 @@
   ==============================================================================
 */
 
+// Before diving into this code you want to read the short comment set
+// at the top of src/sampler_wrapper_actiondata.h
+
 #include "SC3Editor.h"
 #include "SC3Processor.h"
 #include "version.h"
 #include "components/StubRegion.h"
+#include "interaction_parameters.h"
+
+struct SC3IdleTimer : juce::Timer
+{
+    SC3IdleTimer(SC3AudioProcessorEditor *ed) : ed(ed) {}
+    ~SC3IdleTimer() = default;
+    void timerCallback() override { ed->idle(); }
+    SC3AudioProcessorEditor *ed;
+};
 
 //==============================================================================
 SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p), manualPlaying(false)
 {
+    actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
+    logToUI = std::make_unique<SC3EngineToWrapperQueue<std::string>>();
 
     p.mNotify=this;
+    p.sc3->registerWrapperForEvents(this);
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -35,11 +50,21 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
 
-    rebuildUIState();
+    actiondata ad;
+    ad.actiontype = vga_openeditor;
+    audioProcessor.sc3->postEventsFromWrapper(ad);
+
+    idleTimer = std::make_unique<SC3IdleTimer>(this);
+    idleTimer->startTimer(1000 / 30);
 }
 
 SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
+    idleTimer->stopTimer();
     audioProcessor.mNotify=0;
+
+    actiondata ad;
+    ad.actiontype = vga_closeeditor;
+    audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
 void SC3AudioProcessorEditor::buttonClicked(Button *b)
@@ -51,9 +76,17 @@ void SC3AudioProcessorEditor::buttonClicked(Button *b)
             juce::File::getSpecialLocation(juce::File::userHomeDirectory));
         if (sampleChooser.browseForFileToOpen())
         {
+            auto d = new DropList();
+
             auto f = sampleChooser.getResult();
-            audioProcessor.sc3->load_file(string_to_path(f.getFullPathName().toStdString()));
-            rebuildUIState();
+            auto fd = DropList::File();
+            fd.p = string_to_path(f.getFileName().toStdString().c_str());
+            d->files.push_back(fd);
+
+            actiondata ad;
+            ad.actiontype = vga_load_dropfiles;
+            ad.data.dropList = d;
+            audioProcessor.sc3->postEventsFromWrapper(ad);
         }
     }
 }
@@ -106,19 +139,57 @@ bool SC3AudioProcessorEditor::isInterestedInFileDrag(const StringArray &files) {
     return true;
 }
 void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int y) {
+    auto d = new DropList();
+
     for( auto f : files )
     {
-        audioProcessor.sc3->load_file(string_to_path(f.toStdString().c_str()));
+        auto fd = DropList::File();
+        fd.p = string_to_path(f.toStdString().c_str());
+        d->files.push_back(fd);
     }
-    rebuildUIState();
+
+    actiondata ad;
+    ad.actiontype = vga_load_dropfiles;
+    ad.data.dropList = d;
+    audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
-void SC3AudioProcessorEditor::rebuildUIState(){
+void SC3AudioProcessorEditor::refreshSamplerTextViewInThreadUnsafeWay()
+{
     debugWindow->panel->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
-void SC3AudioProcessorEditor::setLogText(const std::string &txt) 
+void SC3AudioProcessorEditor::setLogText(const std::string &txt) { logToUI->push(txt); }
+
+void SC3AudioProcessorEditor::idle()
 {
-    juce::String s=txt;
-    debugWindow->panel->appendLogText(s);
+    int mcount = 0;
+    actiondata ad;
+    while (actiondataToUI->pop(ad))
+    {
+        mcount++;
+        /*
+         * ANd now we have to process these messages. Here's the simplest case
+         */
+        if (ad.id == ip_playmode)
+        {
+            if (ad.actiontype == vga_entry_add_ival_from_self)
+            {
+                std::cout << "Adding Playmode: " << ad.data.str << std::endl;
+            }
+        }
+    }
+
+    std::string s;
+    while (logToUI->pop(s))
+    {
+        debugWindow->panel->appendLogText(s);
+        mcount++;
+    }
+
+    // Obviously this is thread unsafe and wonky still
+    if (mcount)
+        refreshSamplerTextViewInThreadUnsafeWay();
 }
+
+void SC3AudioProcessorEditor::receiveActionFromProgram(actiondata ad) { actiondataToUI->push(ad); }

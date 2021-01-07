@@ -67,6 +67,9 @@ class DebugPanelWindow : public juce::DocumentWindow
                                juce::DocumentWindow::allButtons)
     {
         panel = std::make_unique<DebugPanel>();
+#if !WINDOWS
+#warning THIS API throws an assert but works. Use getContnetCompoonent sometime
+#endif
         addAndMakeVisible(panel.get());
 
         int baroff = 25;
