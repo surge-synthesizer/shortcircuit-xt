@@ -252,10 +252,17 @@ set_target_properties(ShortCircuit3-Binary PROPERTIES POSITION_INDEPENDENT_CODE 
 target_sources(ShortCircuit3 PRIVATE
         wrappers/juce/SC3Processor.cpp
         wrappers/juce/SC3Editor.cpp
+
         wrappers/juce/components/DebugPanel.cpp
         wrappers/juce/components/DebugPanel.h
         wrappers/juce/components/StubRegion.h
+        wrappers/juce/components/ZoneKeyboardDisplay.cpp
+        wrappers/juce/components/ZoneKeyboardDisplay.h
+
+        wrappers/juce/proxies/ZoneStateProxy.cpp
+        wrappers/juce/proxies/ZoneStateProxy.h
         )
+target_include_directories(ShortCircuit3 PRIVATE wrappers/juce )
 target_compile_definitions(ShortCircuit3 PUBLIC
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
         JUCE_STRICT_REFCOUNTEDPOINTER=1

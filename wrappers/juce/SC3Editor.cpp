@@ -12,8 +12,13 @@
 #include "SC3Editor.h"
 #include "SC3Processor.h"
 #include "version.h"
-#include "components/StubRegion.h"
 #include "interaction_parameters.h"
+
+#include "components/StubRegion.h"
+#include "components/DebugPanel.h"
+#include "components/ZoneKeyboardDisplay.h"
+
+#include "proxies/ZoneStateProxy.h"
 
 struct SC3IdleTimer : juce::Timer
 {
@@ -27,15 +32,24 @@ struct SC3IdleTimer : juce::Timer
 SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p), manualPlaying(false)
 {
-    actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
-    logToUI = std::make_unique<SC3EngineToWrapperQueue<std::string>>();
-
-    p.mNotify=this;
-    p.sc3->registerWrapperForEvents(this);
-
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(900, 600);
+
+    actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
+    logToUI = std::make_unique<SC3EngineToWrapperQueue<std::string>>();
+    p.mNotify=this;
+    p.sc3->registerWrapperForEvents(this);
+
+    // This is going to be a little pattern I'm sure
+    zoneStateProxy = std::make_unique<ZoneStateProxy>();
+    zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(zoneStateProxy.get());
+
+    uiStateProxies.insert(zoneStateProxy.get());
+    zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
+
+    zoneKeyboardDisplay->setBounds(5, 30, 890, 200);
+    addAndMakeVisible(zoneKeyboardDisplay.get());
 
     loadButton = std::make_unique<juce::TextButton>("Load Sample");
     loadButton->setBounds(5, 5, 100, 20);
@@ -59,6 +73,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 }
 
 SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
+    uiStateProxies.clear();
     idleTimer->stopTimer();
     audioProcessor.mNotify=0;
 
@@ -168,48 +183,9 @@ void SC3AudioProcessorEditor::idle()
     while (actiondataToUI->pop(ad))
     {
         mcount++;
-        /*
-         * ANd now we have to process these messages. Here's the simplest case
-         */
-        switch (ad.id)
+        for (auto &p : uiStateProxies)
         {
-        case ip_playmode:
-        {
-            if (ad.actiontype == vga_entry_add_ival_from_self)
-            {
-                std::cout << "Adding Playmode: " << ad.data.str << std::endl;
-            }
-        }
-        break;
-
-        case ip_kgv_or_list:
-        {
-            switch (ad.actiontype)
-            {
-            case vga_zonelist_clear:
-            {
-                std::cout << "ZONES: Clear All" << std::endl;
-                break;
-            }
-            case vga_zonelist_populate:
-            {
-                ad_zonedata *zd = (ad_zonedata *)&ad;
-                std::cout << "   New Zone: " << _D(zd->zid) << _D((int)zd->keylo)
-                          << _D((int)zd->keyhi) << _D(zd->name) << std::endl;
-                break;
-            }
-            case vga_zonelist_done:
-            {
-                std::cout << "ZONES: Done" << std::endl;
-                break;
-            }
-            default:
-                break;
-            }
-        }
-        break;
-        default:
-            break;
+            p->processActionData(ad);
         }
     }
 
