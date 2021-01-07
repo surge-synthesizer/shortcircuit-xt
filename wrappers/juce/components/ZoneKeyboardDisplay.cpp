@@ -21,12 +21,80 @@
 
 void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 {
+    // Configuration which would later come from a L&F
+    int totalWhiteKeys = round((128 / 12.0) * 7);
+    float keyboardHeight = 32;
+    float keyWidth = 1.f * getWidth() / totalWhiteKeys;
+    float blackKeyInset = keyboardHeight / 4;
+    float blackKeyWidth = keyWidth * 0.8;
+    auto keyOutlineColour = juce::Colour(20, 20, 20);
+    auto keyWhiteKeyColour = juce::Colour(255, 255, 245);
+    auto keyBlackKeyColour = juce::Colour(40, 40, 40);
+    // end configuration
+
     g.fillAll(juce::Colour(200, 200, 240));
     g.setColour(juce::Colour(0, 0, 0));
-    g.drawText("Zones", 2, 2, 200, 15, Justification::centredLeft);
+
+    /*
+     * Draw the keyboard
+     */
+    int keyCenter = 60;
+    auto pxCenter = getWidth() / 2.0;
+    auto key60Start = pxCenter - keyWidth / 2.0;
+
+    std::vector<int> whiteKeyIndex, blackKeyIndex;
+    int wc = 0;
+    for (int i = 0; i < 128; ++i)
+    {
+        int on = i % 12;
+        if (on == 0 || on == 2 || on == 4 || on == 5 || on == 7 || on == 9 || on == 11)
+        {
+            whiteKeyIndex.push_back(wc++);
+            blackKeyIndex.push_back(-1);
+        }
+        else
+        {
+            blackKeyIndex.push_back(wc);
+            whiteKeyIndex.push_back(-1);
+        }
+    }
+
+    /*
+     * White keys first
+     */
+    for (int i = 0; i < 128; ++i)
+    {
+        auto idx = whiteKeyIndex[i];
+        if (idx < 0)
+            continue;
+        float xpos = idx * keyWidth;
+        float ypos = 0.0;
+        g.setColour(keyWhiteKeyColour);
+        g.fillRect(xpos, ypos, keyWidth, keyboardHeight);
+        g.setColour(keyOutlineColour);
+        g.drawRect(xpos, ypos, keyWidth, keyboardHeight);
+    }
+    /*
+     * Then black keys
+     */
+    for (int i = 0; i < 128; ++i)
+    {
+        auto idx = blackKeyIndex[i];
+        if (idx < 0)
+            continue;
+        auto xpos = idx * keyWidth - blackKeyWidth * 0.5;
+        auto ypos = 0.0;
+        g.setColour(keyBlackKeyColour);
+        g.fillRect(xpos, ypos, blackKeyWidth, keyboardHeight - blackKeyInset);
+        g.setColour(keyOutlineColour);
+        g.drawRect(xpos, ypos, blackKeyWidth, keyboardHeight - blackKeyInset);
+    }
+
+    auto yp = keyboardHeight + 2;
+    g.drawText("Zones", 2, yp, 200, 15, Justification::centredLeft);
+    yp += 17;
 
     // This obviously sucks
-    auto yp = 17;
     for (int i = 0; i < max_zones; ++i)
     {
         if (zsp->activezones[i])

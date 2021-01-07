@@ -16,3 +16,52 @@
 */
 
 #include "DebugPanel.h"
+#include "SC3Editor.h"
+
+void DebugPanel::buttonClicked(juce::Button *b)
+{
+    if (b == loadButton.get())
+    {
+        juce::FileChooser sampleChooser(
+            "Please choose a sample file",
+            juce::File::getSpecialLocation(juce::File::userHomeDirectory));
+        if (sampleChooser.browseForFileToOpen())
+        {
+            auto d = new DropList();
+
+            auto f = sampleChooser.getResult();
+            auto fd = DropList::File();
+            fd.p = string_to_path(f.getFileName().toStdString().c_str());
+            d->files.push_back(fd);
+
+            actiondata ad;
+            ad.actiontype = vga_load_dropfiles;
+            ad.data.dropList = d;
+            ed->audioProcessor.sc3->postEventsFromWrapper(ad);
+        }
+    }
+}
+
+void DebugPanel::buttonStateChanged(juce::Button *b)
+{
+    if (b == manualButton.get())
+    {
+        switch (manualButton->getState())
+        {
+        case juce::Button::buttonDown:
+            playingNote = std::atoi(noteNumber->getText().toRawUTF8());
+            ed->audioProcessor.sc3->PlayNote(0, playingNote, 127);
+            manualPlaying = true;
+            break;
+        case juce::Button::buttonNormal:
+            if (manualPlaying)
+            {
+                manualPlaying = false;
+                ed->audioProcessor.sc3->ReleaseNote(0, playingNote, 127);
+            }
+            break;
+        case juce::Button::buttonOver:
+            break;
+        }
+    }
+}

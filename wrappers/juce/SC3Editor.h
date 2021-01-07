@@ -110,15 +110,11 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
 
     void idle();
 
-  private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     SC3AudioProcessor &audioProcessor;
 
-    std::unique_ptr<juce::Button> loadButton;
-    std::unique_ptr<juce::Button> manualButton;
-    bool manualPlaying;
-
+  private:
     std::unique_ptr<DebugPanelWindow> debugWindow;
     std::unique_ptr<SC3EngineToWrapperQueue<actiondata>> actiondataToUI;
     std::unique_ptr<SC3EngineToWrapperQueue<std::string>> logToUI;
