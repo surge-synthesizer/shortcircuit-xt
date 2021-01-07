@@ -362,7 +362,7 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
             char fn[256];
             int newzone;
             sprintf(fn, "%s|%lu", filename, wlnk.ulTableIndex); // TODO AS Fix
-            if (add_zone(fn, &newzone, channel))
+            if (add_zone(string_to_path(fn), &newzone, channel))
             {
                 sample_zone *z = &zones[newzone];
                 z->key_low = rgnh.RangeKey.usLow;
