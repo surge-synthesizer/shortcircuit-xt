@@ -144,7 +144,7 @@ void SC3AudioProcessorEditor::idle()
 #define DEBUG_UNHANDLED_MESSAGES 1
 
 #if DEBUG_UNHANDLED_MESSAGES
-    std::map<int,int> unhandled;
+    std::map<int, int> unhandled;
 #endif
     while (actiondataToUI->pop(ad))
     {
@@ -155,9 +155,9 @@ void SC3AudioProcessorEditor::idle()
             handled |= p->processActionData(ad);
         }
 #if DEBUG_UNHANDLED_MESSAGES
-        if( ! handled )
+        if (!handled)
         {
-            if( unhandled.find(ad.actiontype) == unhandled.end() )
+            if (unhandled.find(ad.actiontype) == unhandled.end())
                 unhandled[ad.actiontype] = 0;
             unhandled[ad.actiontype]++;
         }
@@ -173,7 +173,7 @@ void SC3AudioProcessorEditor::idle()
 
 #if DEBUG_UNHANDLED_MESSAGES
     // bit of a hack, sure.
-    for( auto uh : unhandled )
+    for (auto uh : unhandled)
     {
         std::ostringstream oss;
         oss << "[EDITOR] Unhandled message: id=" << uh.first << " count=" << uh.second;
@@ -186,4 +186,7 @@ void SC3AudioProcessorEditor::idle()
         refreshSamplerTextViewInThreadUnsafeWay();
 }
 
-void SC3AudioProcessorEditor::receiveActionFromProgram(const actiondata &ad) { actiondataToUI->push(ad); }
+void SC3AudioProcessorEditor::receiveActionFromProgram(const actiondata &ad)
+{
+    actiondataToUI->push(ad);
+}

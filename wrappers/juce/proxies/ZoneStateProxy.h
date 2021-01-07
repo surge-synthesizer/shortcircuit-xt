@@ -27,12 +27,15 @@ class ZoneStateProxy : public UIStateProxy
     {
         for (int i = 0; i < max_zones; ++i)
             activezones[i] = false;
+        for (int i = 0; i < 128; ++i)
+            playingMidiNotes[i] = 0;
     };
 
     virtual bool processActionData(const actiondata &d);
 
     sample_zone zonecopies[max_zones];
     bool activezones[max_zones];
+    std::array<int, 128> playingMidiNotes;
 };
 
 #endif // SHORTCIRCUIT_ZONESTATEPROXY_H

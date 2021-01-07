@@ -394,19 +394,14 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
             polyphony++;
         }
 
-#if 0
-        if (editor && (parts[editorpart].MIDIchannel == channel))
+        if (wrappers.size() && (parts[editorpart].MIDIchannel == channel))
             track_zone_triggered(z, true);
-#else
-#if !WINDOWS
-#warning Skipping this editor conditioned track zone
-#endif
-#endif
 
     skipzone:
         int asdf = 0; // do nothing
     }
     update_highest_voice_id();
+
     return true;
 }
 
