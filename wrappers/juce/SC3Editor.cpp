@@ -171,12 +171,45 @@ void SC3AudioProcessorEditor::idle()
         /*
          * ANd now we have to process these messages. Here's the simplest case
          */
-        if (ad.id == ip_playmode)
+        switch (ad.id)
+        {
+        case ip_playmode:
         {
             if (ad.actiontype == vga_entry_add_ival_from_self)
             {
                 std::cout << "Adding Playmode: " << ad.data.str << std::endl;
             }
+        }
+        break;
+
+        case ip_kgv_or_list:
+        {
+            switch (ad.actiontype)
+            {
+            case vga_zonelist_clear:
+            {
+                std::cout << "ZONES: Clear All" << std::endl;
+                break;
+            }
+            case vga_zonelist_populate:
+            {
+                ad_zonedata *zd = (ad_zonedata *)&ad;
+                std::cout << "   New Zone: " << _D(zd->zid) << _D((int)zd->keylo)
+                          << _D((int)zd->keyhi) << _D(zd->name) << std::endl;
+                break;
+            }
+            case vga_zonelist_done:
+            {
+                std::cout << "ZONES: Done" << std::endl;
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        break;
+        default:
+            break;
         }
     }
 
