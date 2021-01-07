@@ -20,7 +20,7 @@
 #include <map>
 #include <string>
 
-#include <catch2/catch2.hpp>
+#include "test_main.h"
 #include "infrastructure/import_fs.h"
 
 #include "globals.h"

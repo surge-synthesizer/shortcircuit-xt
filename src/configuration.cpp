@@ -22,7 +22,7 @@ bool global_use_alt_keyboardmethod = false;
 bool global_skip_zone_noteon_redraws = false;
 bool global_skip_slice_noteon_redraws = false;
 
-configuration::configuration()
+configuration::configuration(SC3::Log::StreamLogger &logger) : mLogger(logger)
 {
     memset(MIDIcontrol, 0, sizeof(midi_controller) * n_custom_controllers);
 
@@ -169,9 +169,33 @@ bool configuration::save(const fs::path &filename)
 
 fs::path configuration::resolve_path(const fs::path &in)
 {
+    // this assumes the path is a straight path without the | or > suffix
     auto s = path_to_string(in);
     auto r = std::regex_replace(s, std::regex("<relative>"), path_to_string(mRelative));
-    return string_to_path(r);
+    auto p = string_to_path(r);
+    // try to stat the file and if we can't get to it, it's possible we are on unix and the file
+    // extension is in uppercase 
+    // since we build filenames with lowercase extensions, and all other filenames are coming
+    // from the outer world (so presumably will be correct) we only need to try uppercase
+    // it's possible that the ext may be mixed case, but not bothering right now
+#if !defined(_WIN32) && !defined(__APPLE__)
+    std::error_code ec;
+    if(!exists(p, ec)) {
+        
+        std::string ext, name;
+        fs::path pathOnly;
+    
+        decode_path(p, 0,&ext,&name,&pathOnly);
+        std::transform((ext).begin(), (ext).end(), (ext).begin(),
+                        ::toupper);
+
+        auto test=build_path(pathOnly, name, ext);
+        if(exists(test, ec)) {
+            return test;
+        }
+    }
+#endif
+    return p;
 }
 
 void configuration::set_relative_path(const fs::path &in) 

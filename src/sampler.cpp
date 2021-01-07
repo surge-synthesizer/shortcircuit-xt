@@ -89,7 +89,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     wcscpy(path, L"" );
     auto ppath = string_to_path("");
 #endif
-    conf = new configuration();
+    conf = new configuration(mLogger);
     conf->load(ppath);
 
     mpPreview = new sampler::Preview(&time_data, this);

@@ -71,7 +71,7 @@ const int ff_revision = 10;
 bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool *is_group, char channel,
                         int add_zones_to_groupid, bool replace)
 {
-    LOGDEBUG(mLogger) << "Loading file " << file_name.string() << std::flush;
+    LOGDEBUG(mLogger) << "load_file " << file_name.string() << std::flush;
 
     // AS TODO any fn taking a filename should be fixed to propagate this path object downward
     fs::path validFileName;
@@ -135,6 +135,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
     }
     else if (!extension.compare("akp"))
     {
+        LOGDEBUG(mLogger) << "Akai S6k load" << std::flush;
         if (is_group)
             *is_group = true;
         return load_akai_s6k_program(validFileName, channel, true);

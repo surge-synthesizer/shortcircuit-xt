@@ -15,7 +15,7 @@
 ** open source in December 2020.
 */
 
-#include <catch2/catch2.hpp>
+#include "test_main.h"
 
 #include <iostream>
 #include <map>
@@ -131,6 +131,25 @@ TEST_CASE("Build Path", "[config]")
         fs::path p("c:\\my\\path");
         auto out=build_path(p, "filename", "WAV");
         REQUIRE(out.compare("c:\\my\\path\\filename.WAV") == 0);        
+    }
+#endif
+}
+
+TEST_CASE("Resolve Path", "[config]") {
+    SC3::Log::StreamLogger sl(gLogger);
+    configuration c(sl);
+
+    SECTION("relative") {
+        c.set_relative_path("/foo");
+        auto p=c.resolve_path(string_to_path("<relative>/bar"));
+        REQUIRE(p.string()==std::string("/foo/bar"));
+    }
+
+// unix only is case sensitive with paths
+#if !defined(_WIN32) && !defined(__APPLE__)
+    SECTION("Unix case sensitivity") {
+        auto p=c.resolve_path(string_to_path("resources/test_samples/akai_s6k/POWER SECT S.akp"));
+        REQUIRE(p.string()==std::string("resources/test_samples/akai_s6k/POWER SECT S.AKP"));
     }
 #endif
 }
