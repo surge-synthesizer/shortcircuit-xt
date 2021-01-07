@@ -1,21 +1,31 @@
-//-------------------------------------------------------------------------------------------------------
-//
-//	Shortcircuit
-//
-//	Copyright 2005 Claes Johanson
-//
-//-------------------------------------------------------------------------------------------------------
+/*
+** ShortCircuit3 is Free and Open Source Software
+**
+** ShortCircuit is made available under the Gnu General Public License, v3.0
+** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
+** reserve the right to re-license their contributions under the MIT license in the
+** future at the discretion of the project maintainers.
+**
+** Copyright 2004-2021 by various individuals as described by the Git transaction log
+**
+** All source at: https://github.com/surge-synthesizer/surge.git
+**
+** ShortCircuit was a commercial product from 2004-2018, with Copyright and ownership
+** in that period held by Claes Johanson at Vember Audio. Claes made ShortCircuit
+** open source in December 2020.
+*/
+
+// See the comment in sampler_wrapper_actiondata.h"
 
 #include "interaction_parameters.h"
 #include "parameterids.h"
 #include "sample.h"
 #include "sampler.h"
-#if !TARGET_HEADLESS
-#include "shortcircuit_editor2.h"
-#endif
 #include "configuration.h"
 #include "synthesis/modmatrix.h"
 #include "synthesis/steplfo.h"
+#include "sampler_wrapper_actiondata.h"
+
 #include <vt_gui/browserdata.h>
 #include <vt_util/vt_lockfree.h>
 
@@ -28,53 +38,55 @@ using std::vector;
 using std::basic_string;
 using std::string;
 
-void sampler::post_events_from_editor(actiondata ad)
+#include <algorithm>
+using std::max;
+using std::min;
+
+#include "synthesis/filter.h"
+
+void sampler::postEventsFromWrapper(actiondata ad)
 {
+    LOGDEBUG(mLogger) << "postEventsFromWrapper " << ad.actiontype << std::flush;
+
     ActionBuffer->WriteBlock(&ad);
 
-    // l�gg till pseudo:
-    // if (halt_engine) process_editor_events()
-    // TODO om audio-processing inte �r aktiv ska guit funka �nd�
+    // Much like in surge, if there's no audio thread you try and process them
+    // in a thread unsafe way
 
-    // HACK verkar strula deluxemkt
     if (AudioHalted)
-        process_editor_events();
+        processWrapperEvents();
 }
 
 //-------------------------------------------------------------------------------------------------
 
-void sampler::post_events_to_editor(actiondata ad, bool AlertIfClosed)
+void sampler::postEventsToWrapper(actiondata ad, bool ErrorIfClosed)
 {
-    if (editor)
+    for (auto w : wrappers)
     {
-        editor->post_action_from_program(ad);
-    }
-    else if (AlertIfClosed)
-    {
-        DebugBreak();
+        w->receiveActionFromProgram(ad);
     }
 }
 
 //-------------------------------------------------------------------------------------------------
 
-void sampler::process_editor_events()
+void sampler::processWrapperEvents()
 {
     // ingoing
     actiondata *adptr;
-    while (adptr = (actiondata *)ActionBuffer->ReadBlock())
+    while ((adptr = (actiondata *)ActionBuffer->ReadBlock()))
     {
         actiondata ad = *adptr;
+
+        LOGDEBUG(mLogger) << "processWrapperEvents handling " << ad.actiontype << std::flush;
 
         switch (ad.actiontype) // intercept these actiontypes regardless of the control
         {
         case vga_openeditor:
-            // actiondatabuffer_out.clear();	// any old actions generated when the editor was closed
-            // will not be relevant
-            editor_open = true;
+            // actiondatabuffer_out.clear();	// any old actions generated when the editor was
+            // closed will not be relevant
             post_initdata();
             break;
         case vga_closeeditor:
-            editor_open = false;
             break;
         case vga_note:
             if (ad.data.i[1] == 0)
@@ -116,7 +128,24 @@ void sampler::process_editor_events()
         break;
         case vga_load_dropfiles:
         {
+            auto dl = ad.data.dropList;
+
             int nz = -1;
+            for (auto f : dl->files)
+            {
+                if (add_zone(path_to_string(f.p).c_str(), &nz, editorpart & 0xf, false))
+                {
+                    LOGDEBUG(mLogger) << "Added zone; do rest of mapping too" << std::endl;
+                }
+            }
+            if (nz != -1)
+            {
+                selected->set_active_zone(nz);
+            }
+
+            delete dl;
+            post_zonedata();
+#if 0
 
             // seems unlikely to cause issues so it doesn't have to be threadsafe
             vector<dropfile>::iterator i;
@@ -139,10 +168,12 @@ void sampler::process_editor_events()
                 selected->set_active_zone(nz);
             }
             post_zonedata();
+#endif
         }
         break;
         case vga_load_patch:
         {
+#if 0
             if (editor->dropfiles.size())
             {
                 cs_patch.enter();
@@ -152,22 +183,36 @@ void sampler::process_editor_events()
                 post_initdata();
                 cs_patch.leave();
             }
+#else
+#if !WINDOWS
+#warning FIX THIS DROPFILE USAGE
+#endif
+#endif
         }
         break;
         case vga_save_patch:
         {
             // save_part_as_xml(editorpart,editor->savepart_fname.c_str());
+#if 0
             SaveAllAsRIFF(0, editor->savepart_fname.c_str(), editorpart);
+#else
+            LOGERROR(mLogger) << "Unable to vga_save_patch" << std::endl;
+#endif
         }
         break;
         case vga_save_multi:
         {
             // save_all_as_xml(0,editor->savepart_fname.c_str());
+#if 0
             SaveAllAsRIFF(0, editor->savepart_fname.c_str());
+#else
+            LOGERROR(mLogger) << "Unable to vga_save_patch" << std::flush;
+#endif
         }
         break;
         case vga_browser_preview_start:
         {
+#if 0
             vtStringToWString(mpPreview->mFilename, editor->dropfiles[0].path.c_str(), 1024);
 
             // ad.data.i[0] > 0 means the sample was played manually, so the AutoPreview setting
@@ -176,6 +221,9 @@ void sampler::process_editor_events()
             {
                 mpPreview->Start(mpPreview->mFilename);
             }
+#else
+            LOGDEBUG(mLogger) << "Failed to vga_browser_preview_start" << std::flush;
+#endif
         }
         break;
         case vga_browser_preview_stop:
@@ -189,7 +237,7 @@ void sampler::process_editor_events()
             actiondata ad2 = ad;
             ad2.id = ip_kgv_or_list;
             ad2.subid = -1;
-            post_events_to_editor(ad2);
+            postEventsToWrapper(ad2);
         }
         break;
         case vga_request_refresh:
@@ -264,7 +312,7 @@ void sampler::process_editor_events()
         {
             int i = selected->get_active_zone();
             selected->set_active_zone(
-                max(0, (vga_select_zone_previous == ad.actiontype) ? i - 1 : i + 1));
+                std::max(0, (vga_select_zone_previous == ad.actiontype) ? i - 1 : i + 1));
             post_zonedata();
         }
         break;
@@ -343,6 +391,7 @@ void sampler::process_editor_events()
                         // TODO edit sample name
                     }
                     break;
+#if 0
                 case ip_sample_prevnext:
                     if (ad.actiontype == vga_click)
                     {
@@ -381,7 +430,7 @@ void sampler::process_editor_events()
                     if (ad.actiontype == vga_text)
                     {
                         ad.id = ip_browser;
-                        post_events_to_editor(ad);
+                        postEventsToWrapper(ad);
                     }
                     break;
                 case ip_replace_sample:
@@ -418,6 +467,12 @@ void sampler::process_editor_events()
                     post_zonedata();
                 }
                 break;
+#else
+#if !WINDOWS
+#warning SKIPPING ALL OF IPPATCH
+#endif
+#endif
+
                 // case ip_config_h_or_v:
                 // case ip_config_slidersensitivity:
                 case ip_config_outputs:
@@ -465,7 +520,7 @@ void sampler::process_editor_events()
                 }
                 break;
                 case ip_config_save:
-                    conf->save(L"");
+                    conf->save(string_to_path(""));
                     break;
                 case ip_solo:
                     selected->set_solo(ad.data.i[0]);
@@ -542,7 +597,7 @@ void sampler::process_editor_events()
                 int cmode = mm.get_destination_ctrlmode(zones[z].mm[ad.subid].destination);
                 string s = datamode_from_cmode(cmode);
                 vtCopyString((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
-                post_events_to_editor(ad2);
+                postEventsToWrapper(ad2);
             }
         }
         break;
@@ -557,7 +612,7 @@ void sampler::process_editor_events()
             int cmode = mm.get_destination_ctrlmode(parts[editorpart].mm[ad.subid].destination);
             string s = datamode_from_cmode(cmode);
             vtCopyString((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
-            post_events_to_editor(ad2);
+            postEventsToWrapper(ad2);
         }
         break;
         case ip_lfoshape:
@@ -568,7 +623,7 @@ void sampler::process_editor_events()
                 ad2.id = ip_lfosteps;
                 ad2.subid = ad.subid;
                 ad2.data.f[0] = ad.data.f[0];
-                post_events_to_editor(ad2);
+                postEventsToWrapper(ad2);
             }
             break;
         case ip_lforepeat:
@@ -579,7 +634,7 @@ void sampler::process_editor_events()
                 ad2.id = ip_lfosteps;
                 ad2.subid = ad.subid;
                 ad2.data.i[0] = ad.data.i[0];
-                post_events_to_editor(ad2);
+                postEventsToWrapper(ad2);
             }
             break;
         case ip_lfosync:
@@ -589,7 +644,7 @@ void sampler::process_editor_events()
             ad2.id = ip_lforate;
             ad2.subid = ad.subid;
             ad2.data.i[0] = ad.data.i[0];
-            post_events_to_editor(ad2);
+            postEventsToWrapper(ad2);
             break;
         }
         case ip_playmode:
@@ -663,7 +718,7 @@ void sampler::process_editor_events()
                 else
                     vtCopyString((char *)ad2.data.str, "f,0,0.005,1,1,%", actiondata_maxstring);
 
-                post_events_to_editor(ad2);
+                postEventsToWrapper(ad2);
             }
         }
         break;
@@ -688,12 +743,14 @@ void sampler::set_editorpart(int p, int layer)
 
 void sampler::post_kgvdata()
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     actiondata ad;
     // clear list/kgv
     ad.actiontype = vga_zonelist_clear;
     ad.id = ip_kgv_or_list;
     ad.subid = 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     // populate list/kgv
     ad.actiontype = vga_zonelist_populate;
     for (int i = 0; i < max_zones; i++)
@@ -718,16 +775,16 @@ void sampler::post_kgvdata()
             zd->mute = zones[i].mute;
             vtCopyString(zd->name, zones[i].name, 32);
 
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
     }
 
     ad.actiontype = vga_zonelist_done;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     ad.actiontype = vga_zonelist_mode;
     ad.data.i[0] = parts[editorpart].zonelist_mode;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     post_samplelist();
 }
@@ -736,6 +793,8 @@ void sampler::post_kgvdata()
 
 void sampler::post_zonedata()
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     post_kgvdata();
     actiondata ad;
 
@@ -743,41 +802,41 @@ void sampler::post_zonedata()
     ad.id = ip_partselect;
     ad.subid = 0;
     ad.data.i[0] = editorpart;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.id = ip_layerselect;
     ad.subid = 0;
     ad.data.i[0] = editorlayer;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     // prev/next patch buttons
     ad.id = ip_patch_prevnext;
     ad.actiontype = vga_disable_state;
     ad.subid = 0; // prev
     ad.data.i[0] = !(parts[editorpart].database_id > 0);
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.subid = 1; // next
     ad.data.i[0] = !(parts[editorpart].database_id >= 0);
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     ad.actiontype = vga_intval;
     ad.id = ip_replace_sample;
     ad.subid = 0;
     ad.data.i[0] = toggled_samplereplace ? 1 : 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     // solo setting
     ad.id = ip_solo;
     ad.subid = 0;
     ad.actiontype = vga_intval;
     ad.data.i[0] = selected->get_solo() ? 1 : 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     // set lfoload to "load"
     ad.id = ip_lfo_load;
     ad.subid = -1;
     ad.actiontype = vga_intval;
     ad.data.i[0] = 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     bool has_sample = false;
     int z = selected->get_active_zone();
@@ -788,7 +847,7 @@ void sampler::post_zonedata()
             ad.id = ip_wavedisplay;
             ad.subid = 0;
             ad.actiontype = vga_wavedisp_multiselect;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         else
         {
@@ -808,7 +867,7 @@ void sampler::post_zonedata()
             ad.data.i[6] = zones[z].loop_end;
             ad.data.i[7] = zones[z].loop_crossfade_length;
             ad.data.i[8] = zones[z].n_hitpoints;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             if (zones[z].playmode == pm_forward_hitpoints)
             {
                 for (int i = 0; i < zones[z].n_hitpoints; i++)
@@ -819,7 +878,7 @@ void sampler::post_zonedata()
                     ad.data.i[2] = zones[z].hp[i].end_sample;
                     ad.data.i[3] = zones[z].hp[i].muted;
                     ad.data.f[4] = zones[z].hp[i].env;
-                    post_events_to_editor(ad);
+                    postEventsToWrapper(ad);
                 }
             }
             if (sptr)
@@ -829,17 +888,17 @@ void sampler::post_zonedata()
                 vtCopyString(ad.data.str, sptr->GetName(), actiondata_maxstring);
                 ad.id = ip_sample_name;
                 ad.subid = -1;
-                post_events_to_editor(ad);
+                postEventsToWrapper(ad);
 
                 ad.actiontype = vga_text;
-                _snprintf(ad.data.str, actiondata_maxstring,
-                          "\t%.3f MB\t\t%i sm\t\t%.1fkHz %s %iCh\t\tRef: %i\t",
-                          sptr->GetDataSize() / (1024.f * 1024.f), sptr->sample_length,
-                          sptr->sample_rate * 0.001f, sptr->UseInt16 ? "16i" : "32f",
-                          sptr->channels, sptr->GetRefCount());
+                snprintf(ad.data.str, actiondata_maxstring,
+                         "\t%.3f MB\t\t%i sm\t\t%.1fkHz %s %iCh\t\tRef: %i\t",
+                         sptr->GetDataSize() / (1024.f * 1024.f), sptr->sample_length,
+                         sptr->sample_rate * 0.001f, sptr->UseInt16 ? "16i" : "32f", sptr->channels,
+                         sptr->GetRefCount());
                 ad.id = ip_sample_metadata;
                 ad.subid = -1;
-                post_events_to_editor(ad);
+                postEventsToWrapper(ad);
             }
         }
 
@@ -854,10 +913,10 @@ void sampler::post_zonedata()
         ad.actiontype = vga_disable_state;
         ad.subid = 0; // prev
         ad.data.i[0] = !(zones[z].database_id > 0);
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.subid = 1; // next
         ad.data.i[0] = !(zones[z].database_id >= 0);
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
 
         // modmatrix
         modmatrix mm;
@@ -872,7 +931,7 @@ void sampler::post_zonedata()
             int cmode = mm.get_destination_ctrlmode(zones[z].mm[i].destination);
             string s = datamode_from_cmode(cmode);
             vtCopyString((char *)ad.data.str, s.c_str(), actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
 
         post_data_from_structure((char *)&zones[z], ip_zone_params_begin, ip_zone_params_end);
@@ -886,23 +945,23 @@ void sampler::post_zonedata()
         ad.actiontype = vga_disable_state;
         ad.data.i[0] = false;
         ad.id = ip_lfo_load;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_replace_sample;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_sample_prevnext;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_lfosteps;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         for (int i = 0; i < 3; i++)
         {
             ad.id = ip_lfosteps;
             ad.subid = i;
             ad.actiontype = vga_steplfo_repeat;
             ad.data.i[0] = zones[z].LFO[i].repeat;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.actiontype = vga_steplfo_shape;
             ad.data.f[0] = zones[z].LFO[i].smooth;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
 
             ad.id = ip_lfosteps;
             ad.subid = i;
@@ -911,7 +970,7 @@ void sampler::post_zonedata()
             {
                 ad.data.i[0] = s;
                 ad.data.f[1] = zones[z].LFO[i].data[s];
-                post_events_to_editor(ad);
+                postEventsToWrapper(ad);
             }
             // ad.data.i[0];
         }
@@ -923,13 +982,13 @@ void sampler::post_zonedata()
         post_control_range(ad, ip_zone_params_begin, ip_zone_params_end, -1);
         ad.id = ip_lfosteps;
         ad.subid = -1;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_lfo_load;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_replace_sample;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_sample_prevnext;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
 
         ad.actiontype = vga_hide;
         ad.data.i[0] = true;
@@ -941,7 +1000,7 @@ void sampler::post_zonedata()
             ad.id = ip_wavedisplay;
             ad.subid = 0;
             ad.actiontype = vga_wavedisp_multiselect;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         else
         {
@@ -949,7 +1008,7 @@ void sampler::post_zonedata()
             ad.subid = 0;
             ad.actiontype = vga_wavedisp_sample;
             ad.data.ptr[0] = 0;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
     }
     if (!has_sample)
@@ -958,13 +1017,13 @@ void sampler::post_zonedata()
         ad.data.str[0] = 0;
         ad.id = ip_sample_name;
         ad.subid = -1;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
 
         ad.actiontype = vga_text;
         ad.data.str[0] = 0;
         ad.id = ip_sample_metadata;
         ad.subid = -1;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
     // part data
     int p = editorpart & 0xf;
@@ -985,7 +1044,7 @@ void sampler::post_zonedata()
             vtCopyString((char *)ad.data.str, "f,0,0.005,1,1,%", actiondata_maxstring);
 
         ad.actiontype = vga_datamode;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         // vtCopyString((char*)ad.data.str,conf->MIDIcontrol[i].name[0]?conf->MIDIcontrol[i].name:"-",actiondata_maxstring);
         // vtCopyString((char*)ad.data.str,parts[p].userparametername[i][0]?parts[p].userparametername[i]:"-",actiondata_maxstring);
     }
@@ -994,17 +1053,17 @@ void sampler::post_zonedata()
     ad.id = ip_lfo_load;
     ad.subid = -1;
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
     for (int i = 0; i < n_lfopresets; i++)
     {
         ad.data.i[0] = i;
         vtCopyString((char *)&ad.data.str[4], lfopreset_abberations[i], actiondata_maxstring - 4);
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
     ad.actiontype = vga_intval;
     ad.data.i[0] = 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     // multi
     for (int i = 0; i < 8; i++)
@@ -1014,18 +1073,18 @@ void sampler::post_zonedata()
     ad.id = ip_multi_filter_type;
     ad.subid = -1;
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
 
     ad.data.i[0] = 0;
     sprintf((char *)&ad.data.str[4], "-");
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     for (int i = ft_part_first; i <= ft_part_last; i++)
     {
         ad.data.i[0] = i;
         sprintf((char *)&ad.data.str[4], "%s", filter_descname[i]);
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
 }
 
@@ -1034,6 +1093,8 @@ void sampler::post_zonedata()
 void sampler::post_control_range(actiondata ad, int id_start, int id_end, int subid_start,
                                  int subid_end)
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     if (subid_start == -1)
         subid_end = -1;
 
@@ -1043,7 +1104,7 @@ void sampler::post_control_range(actiondata ad, int id_start, int id_end, int su
         {
             ad.id = i;
             ad.subid = j;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
     }
 }
@@ -1052,6 +1113,8 @@ void sampler::post_control_range(actiondata ad, int id_start, int id_end, int su
 
 void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     for (int i = id_start; i <= id_end; i++)
     {
         for (int j = 0; j < ip_data[i].n_subid; j++)
@@ -1075,10 +1138,10 @@ void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
                 ad.actiontype = vga_text;
                 vtCopyString(ad.data.str, (char *)ptr, 32);
             }
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.actiontype = vga_disable_state;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
     }
 }
@@ -1087,6 +1150,8 @@ void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
 
 void sampler::post_zone_filterdata(int z, int i, bool send_data)
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     if (z < 0)
         return;
     filter *tf = spawn_filter(zones[z].Filter[i].type, zones[z].Filter[i].p, zones[z].Filter[i].ip,
@@ -1104,14 +1169,14 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
             ad.subid = j;
             ad.actiontype = vga_label;
             vtCopyString((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             vtCopyString((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
                          actiondata_maxstring);
             ad.actiontype = vga_datamode;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         for (int j = 0; j < nip; j++)
         {
@@ -1119,7 +1184,7 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
             ad.subid = j;
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
 
             /*
             // if using optionmenus
@@ -1131,7 +1196,7 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
             for(int k=0; k<ne; k++)
             {
             vtCopyString((char*)ad.data.str,tf->get_ip_entry_label(j,k),actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             }*/
 
             // if using multibuttons
@@ -1146,7 +1211,7 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
                 strcat(tmp, tf->get_ip_entry_label(j, k));
             }
             vtCopyString((char *)ad.data.str, tmp, actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
 
         spawn_filter_release(tf);
@@ -1165,6 +1230,8 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
 
 void sampler::post_part_filterdata(int p, int i, bool send_data)
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     filter *tf = spawn_filter(parts[p].Filter[i].type, parts[p].Filter[i].p, parts[p].Filter[i].ip,
                               0, false);
     actiondata ad;
@@ -1181,14 +1248,14 @@ void sampler::post_part_filterdata(int p, int i, bool send_data)
             ad.subid = j;
             ad.actiontype = vga_label;
             vtCopyString((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             vtCopyString((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
                          actiondata_maxstring);
             ad.actiontype = vga_datamode;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         for (int j = 0; j < nip; j++)
         {
@@ -1196,7 +1263,7 @@ void sampler::post_part_filterdata(int p, int i, bool send_data)
             ad.subid = j;
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
 
             // if using multibuttons
             ad.actiontype = vga_label;
@@ -1210,7 +1277,7 @@ void sampler::post_part_filterdata(int p, int i, bool send_data)
                 strcat(tmp, tf->get_ip_entry_label(j, k));
             }
             vtCopyString((char *)ad.data.str, tmp, actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         spawn_filter_release(tf);
     }
@@ -1231,6 +1298,8 @@ void sampler::post_part_filterdata(int p, int i, bool send_data)
 
 void sampler::post_multi_filterdata(int i, bool send_data)
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     filter *tf =
         spawn_filter(multi.Filter[i].type, multi.Filter[i].p, multi.Filter[i].ip, 0, false);
     actiondata ad;
@@ -1247,14 +1316,14 @@ void sampler::post_multi_filterdata(int i, bool send_data)
             ad.subid = i;
             ad.actiontype = vga_label;
             vtCopyString((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             vtCopyString((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
                          actiondata_maxstring);
             ad.actiontype = vga_datamode;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         for (int j = 0; j < nip; j++)
         {
@@ -1262,7 +1331,7 @@ void sampler::post_multi_filterdata(int i, bool send_data)
             ad.subid = i;
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
 
             // if using multibuttons
             ad.actiontype = vga_label;
@@ -1276,7 +1345,7 @@ void sampler::post_multi_filterdata(int i, bool send_data)
                 strcat(tmp, tf->get_ip_entry_label(j, k));
             }
             vtCopyString((char *)ad.data.str, tmp, actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         spawn_filter_release(tf);
     }
@@ -1298,9 +1367,9 @@ void sampler::post_multi_filterdata(int i, bool send_data)
     else
         sprintf((char *)&ad.data.str[4], "%s", output_abberations[out_fx1 + i]);
     ad.id = ip_zone_aux_output;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.id = ip_part_aux_output;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     if (send_data)
         post_data_from_structure((char *)&multi, ip_multi_filter_type, ip_multi_filter_ip2);
@@ -1336,6 +1405,8 @@ void sampler::relay_data_to_structure(actiondata ad, char *pt)
 
 void sampler::post_initdata_mm(int zone)
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     if (!zone_exist(zone))
         return;
 
@@ -1347,38 +1418,38 @@ void sampler::post_initdata_mm(int zone)
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
         ad.id = ip_mm_src;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_mm_src2;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_sources(); i++)
         {
             vtCopyString(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
             ad.id = ip_mm_src;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.id = ip_mm_src2;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         ad.id = ip_mm_dst;
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_destinations(); i++)
         {
             vtCopyString(ad.data.str, mm.get_destination_name(i), actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
 
         ad.id = ip_mm_curve;
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mmc_num_types; i++)
         {
             vtCopyString(ad.data.str, mmc_abberations[i], actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
     }
 }
@@ -1387,6 +1458,8 @@ void sampler::post_initdata_mm(int zone)
 
 void sampler::post_initdata_mm_part()
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     // part matrix
     actiondata ad;
     {
@@ -1395,55 +1468,55 @@ void sampler::post_initdata_mm_part()
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
         ad.id = ip_part_mm_src;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_part_mm_src2;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_sources(); i++)
         {
             vtCopyString(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
             ad.id = ip_part_mm_src;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.id = ip_part_mm_src2;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
         ad.id = ip_part_mm_dst;
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_destinations(); i++)
         {
             vtCopyString(ad.data.str, mm.get_destination_name(i), actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
 
         ad.id = ip_part_mm_curve;
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mmc_num_types; i++)
         {
             vtCopyString(ad.data.str, mmc_abberations[i], actiondata_maxstring);
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
 
         // note-on conditions
         ad.actiontype = vga_entry_clearall;
         ad.id = ip_part_nc_src;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.id = ip_nc_src;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
         ad.subid = -1;
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_sources(); i++)
         {
             vtCopyString(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
             ad.id = ip_nc_src;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
             ad.id = ip_part_nc_src;
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
         }
     }
 }
@@ -1452,25 +1525,27 @@ void sampler::post_initdata_mm_part()
 
 void sampler::post_initdata()
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     // fill various option-menus etc etc
 
     actiondata ad;
     ad.id = ip_playmode;
     ad.subid = -1; // send to all
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self;
     for (int i = 0; i < n_playmodes; i++)
     {
         vtCopyString((char *)ad.data.str, playmode_names[i], actiondata_maxstring);
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
 
     // output selection
     ad.id = ip_zone_aux_output;
     ad.subid = -1; // send to all
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
 
     for (int i = out_part; i < n_output_types; i++)
@@ -1478,14 +1553,14 @@ void sampler::post_initdata()
         ad.data.i[0] = i;
         sprintf((char *)&ad.data.str[4], "%s", output_abberations[i]);
         if (is_output_visible(i, mNumOutputs))
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
     }
 
     // part output selection
     ad.id = ip_part_aux_output;
     ad.subid = -1; // send to all
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
 
     for (int i = out_output1; i < n_output_types; i++)
@@ -1493,14 +1568,14 @@ void sampler::post_initdata()
         ad.data.i[0] = i;
         sprintf((char *)&ad.data.str[4], "%s", output_abberations[i]);
         if (is_output_visible(i, mNumOutputs))
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
     }
 
     // multi filter output selection
     ad.id = ip_multi_filter_output;
     ad.subid = -1; // send to all
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
 
     for (int i = out_output1; i < out_fx1; i++)
@@ -1508,43 +1583,43 @@ void sampler::post_initdata()
         ad.data.i[0] = i;
         sprintf((char *)&ad.data.str[4], "%s", output_abberations[i]);
         if (is_output_visible(i, mNumOutputs))
-            post_events_to_editor(ad);
+            postEventsToWrapper(ad);
     }
 
     // filters
     ad.id = ip_filter_type;
     ad.subid = -1;
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
 
     ad.data.i[0] = 0;
     sprintf((char *)&ad.data.str[4], "-");
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     for (int i = ft_zone_first; i <= ft_zone_last; i++)
     {
         ad.data.i[0] = i;
-        sprintf((char *)&ad.data.str[4], "%s", filter_descname[i], actiondata_maxstring - 4);
-        post_events_to_editor(ad);
+        snprintf((char *)&ad.data.str[4], actiondata_maxstring - 4, "%s", filter_descname[i]);
+        postEventsToWrapper(ad);
     }
 
     // part filters
     ad.id = ip_part_filter_type;
     ad.subid = -1;
     ad.actiontype = vga_entry_clearall;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     ad.actiontype = vga_entry_add_ival_from_self_with_id;
 
     ad.data.i[0] = 0;
     sprintf((char *)&ad.data.str[4], "-");
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     for (int i = ft_part_first; i <= ft_part_last; i++)
     {
         ad.data.i[0] = i;
         sprintf((char *)&ad.data.str[4], "%s", filter_descname[i]);
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
 
     // config data
@@ -1558,41 +1633,41 @@ void sampler::post_initdata()
     ad.subid = 0;
     ad.actiontype = vga_intval;
     ad.data.i[0] = conf->stereo_outputs - 1;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
     for (int i = 0; i < n_custom_controllers; i++)
     {
         ad.id = ip_config_controller_id;
         ad.subid = i;
         ad.actiontype = vga_intval;
         ad.data.i[0] = conf->MIDIcontrol[i].number;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
 
         ad.id = ip_config_controller_mode;
         ad.actiontype = vga_intval;
         ad.data.i[0] = conf->MIDIcontrol[i].type;
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
 
     ad.id = ip_config_kbdmode;
     ad.subid = 0;
     ad.actiontype = vga_intval;
     ad.data.i[0] = conf->keyboardmode;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     ad.id = ip_config_previewvolume;
     ad.actiontype = vga_floatval;
     ad.data.f[0] = conf->mPreviewLevel;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     ad.id = ip_config_autopreview;
     ad.actiontype = vga_intval;
     ad.data.i[0] = conf->mAutoPreview ? 1 : 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     ad.id = ip_browser_previewbutton;
     ad.actiontype = vga_intval;
     ad.data.i[0] = 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 
     post_initdata_mm_part();
 
@@ -1625,7 +1700,10 @@ string datamode_from_cmode(int cmode)
 
 void sampler::post_samplelist()
 {
+    LOGDEBUG(mLogger) << __func__ << std::flush;
+
     int n_samples = 0;
+    int j = 0;
     for (int i = 0; i < max_samples; i++)
     {
         if (samples[i])
@@ -1647,7 +1725,6 @@ void sampler::post_samplelist()
 
     dbSampleListDataPtr = (void *)malloc(sizeof(database_samplelist) * n_samples);
 
-    int j = 0;
     for (int i = 0; i < max_samples; i++)
     {
         if (samples[i])
@@ -1670,7 +1747,7 @@ submit:
     ad.data.i[2] = n_samples;
     ad.subid = -1;
     ad.id = -1;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 }
 
 //-------------------------------------------------------------------------------------------------

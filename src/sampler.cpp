@@ -57,8 +57,9 @@ void sampler::set_samplerate(float sr)
 
 //-------------------------------------------------------------------------------------------------
 
-sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect, SC3::Log::LoggingCallback *cb)
-    : mLogger(cb), editor(0), mNumOutputs(NumOutputs)
+sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
+                 SC3::Log::LoggingCallback *cb)
+    : mLogger(cb), mNumOutputs(NumOutputs)
 {
     LOGINFO(mLogger) << "SC3 engine " << SC3::Build::FullVersionStr << std::flush;
 
@@ -117,7 +118,6 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect, SC3:
 #if TARGET_VST2
     this->editor = (sc_editor2 *)(editor);
 #endif
-    editor_open = false;
     //	this->effect = effect;
     uint32_t i, c;
     for (i = 0; i < max_voices; i++)
@@ -256,14 +256,14 @@ void sampler::SetCustomController(int Part, int ControllerIdx, float NormalizedV
         parts[Part].userparameter[ControllerIdx] = NormalizedValue;
     }
 
-    if (editor_open && (Part == editorpart))
+    if (!wrappers.empty() && (Part == editorpart))
     {
         actiondata ad;
         ad.id = ip_part_userparam_value;
         ad.subid = ControllerIdx;
         ad.actiontype = vga_floatval;
         ad.data.f[0] = parts[Part].userparameter[ControllerIdx];
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
 }
 
@@ -1177,7 +1177,7 @@ void sampler::Preview::SetPlayingState(bool State)
     ad.subid = -1; // send to all
     ad.actiontype = vga_intval;
     ad.data.i[0] = State ? 1 : 0;
-    mpParent->post_events_to_editor(ad, false);
+    mpParent->postEventsToWrapper(ad, false);
 }
 
 //-----------------------------------------------------------------------------------------

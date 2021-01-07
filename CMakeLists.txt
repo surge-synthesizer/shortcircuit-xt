@@ -155,6 +155,7 @@ set(SHORTCIRCUIT_SOURCE
         src/sample.cpp
         src/sampler.cpp
         src/sampler_automation.cpp
+        src/sampler_wrapper_interaction.cpp
         src/loaders/sampler_fileio.cpp
         src/loaders/sampler_fileio_riff.cpp
         src/sampler_notelogic.cpp

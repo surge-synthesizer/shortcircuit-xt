@@ -394,8 +394,14 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
             polyphony++;
         }
 
+#if 0
         if (editor && (parts[editorpart].MIDIchannel == channel))
             track_zone_triggered(z, true);
+#else
+#if !WINDOWS
+#warning Skipping this editor conditioned track zone
+#endif
+#endif
 
     skipzone:
         int asdf = 0; // do nothing
@@ -406,7 +412,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
 
 void sampler::track_zone_triggered(int z, bool state)
 {
-    if (!editor)
+    if (wrappers.empty())
         return;
     actiondata ad;
     ad.actiontype = vga_zone_playtrigger;
@@ -414,12 +420,12 @@ void sampler::track_zone_triggered(int z, bool state)
     ad.data.i[1] = state;
     ad.id = ip_kgv_or_list;
     ad.subid = 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 }
 
 void sampler::track_key_triggered(int ch, int key, int vel)
 {
-    if (!editor)
+    if (wrappers.empty())
         return;
     if (parts[editorpart].MIDIchannel != ch)
         return;
@@ -429,7 +435,7 @@ void sampler::track_key_triggered(int ch, int key, int vel)
     ad.data.i[1] = vel;
     ad.id = ip_kgv_or_list;
     ad.subid = 0;
-    post_events_to_editor(ad);
+    postEventsToWrapper(ad);
 }
 
 int sampler::get_zone_poly(int zone)

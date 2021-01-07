@@ -198,7 +198,7 @@ void sampler::process_audio()
             clear_block(output[op], block_size_quad << 1);
         return;
     }
-    process_editor_events();
+    processWrapperEvents();
 
     /*if (sample_replace_filename[0])
     {
@@ -333,7 +333,7 @@ void sampler::processVUs()
             vu_peak[op + 1] = 0.f;
             ad.data.i[1 + (op >> 1)] = *(int *)&vu;
         }
-        post_events_to_editor(ad);
+        postEventsToWrapper(ad);
     }
 #endif
 }
