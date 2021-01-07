@@ -22,88 +22,82 @@
 void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 {
     // Configuration which would later come from a L&F
-    int totalWhiteKeys = round((128 / 12.0) * 7);
     float keyboardHeight = 32;
-    float keyWidth = 1.f * getWidth() / totalWhiteKeys;
+    float keyWidth = 1.f * getWidth() / 128;
     float blackKeyInset = keyboardHeight / 4;
-    float blackKeyWidth = keyWidth * 0.8;
     auto keyOutlineColour = juce::Colour(20, 20, 20);
     auto keyWhiteKeyColour = juce::Colour(255, 255, 245);
     auto keyBlackKeyColour = juce::Colour(40, 40, 40);
+    std::vector<uint32_t> zoneColorPallette = {0xffdacac0, 0xffc7b582, 0xfff76f5e,
+                                               0xff93965f, 0xffb1453f, 0xff676949};
+    auto zoneOutlineColor = juce::Colour(240, 220, 200);
     // end configuration
 
-    g.fillAll(juce::Colour(200, 200, 240));
+    g.fillAll(juce::Colour(80, 70, 60));
     g.setColour(juce::Colour(0, 0, 0));
-
-    /*
-     * Draw the keyboard
-     */
-    int keyCenter = 60;
-    auto pxCenter = getWidth() / 2.0;
-    auto key60Start = pxCenter - keyWidth / 2.0;
-
-    std::vector<int> whiteKeyIndex, blackKeyIndex;
-    int wc = 0;
-    for (int i = 0; i < 128; ++i)
-    {
-        int on = i % 12;
-        if (on == 0 || on == 2 || on == 4 || on == 5 || on == 7 || on == 9 || on == 11)
-        {
-            whiteKeyIndex.push_back(wc++);
-            blackKeyIndex.push_back(-1);
-        }
-        else
-        {
-            blackKeyIndex.push_back(wc);
-            whiteKeyIndex.push_back(-1);
-        }
-    }
 
     /*
      * White keys first
      */
+
+    std::vector<std::pair<float, float>> keyXBounds;
     for (int i = 0; i < 128; ++i)
     {
-        auto idx = whiteKeyIndex[i];
-        if (idx < 0)
-            continue;
+        bool isWhiteKey = false;
+        int on = i % 12;
+        if (on == 0 || on == 2 || on == 4 || on == 5 || on == 7 || on == 9 || on == 11)
+            isWhiteKey = true;
+
+        auto idx = i;
         float xpos = idx * keyWidth;
+
+        keyXBounds.push_back(std::make_pair(xpos, xpos + keyWidth - 1));
+
         float ypos = 0.0;
         g.setColour(keyWhiteKeyColour);
-        g.fillRect(xpos, ypos, keyWidth, keyboardHeight);
+        g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
         g.setColour(keyOutlineColour);
-        g.drawRect(xpos, ypos, keyWidth, keyboardHeight);
-    }
-    /*
-     * Then black keys
-     */
-    for (int i = 0; i < 128; ++i)
-    {
-        auto idx = blackKeyIndex[i];
-        if (idx < 0)
-            continue;
-        auto xpos = idx * keyWidth - blackKeyWidth * 0.5;
-        auto ypos = 0.0;
-        g.setColour(keyBlackKeyColour);
-        g.fillRect(xpos, ypos, blackKeyWidth, keyboardHeight - blackKeyInset);
-        g.setColour(keyOutlineColour);
-        g.drawRect(xpos, ypos, blackKeyWidth, keyboardHeight - blackKeyInset);
+        g.drawLine(xpos, keyboardHeight, xpos + keyWidth, keyboardHeight);
+        if (isWhiteKey)
+        {
+            g.setColour(keyOutlineColour);
+            if (on == 0 || on == 5)
+                g.drawLine(xpos, ypos, xpos, keyboardHeight);
+        }
+        else
+        {
+            g.setColour(keyBlackKeyColour);
+            g.fillRect(xpos, ypos, xpos + keyWidth, ypos + keyboardHeight - blackKeyInset);
+            g.setColour(keyOutlineColour);
+            g.drawLine(xpos + keyWidth / 2, ypos + keyboardHeight - blackKeyInset,
+                       xpos + keyWidth / 2, ypos + keyboardHeight, 1);
+            g.drawLine(xpos, ypos, xpos, ypos + keyboardHeight - blackKeyInset);
+            g.drawLine(xpos + keyWidth, ypos, xpos + keyWidth,
+                       ypos + keyboardHeight - blackKeyInset);
+            g.drawLine(xpos, ypos + keyboardHeight - blackKeyInset, xpos + keyWidth,
+                       ypos + keyboardHeight - blackKeyInset);
+        }
     }
 
-    auto yp = keyboardHeight + 2;
-    g.drawText("Zones", 2, yp, 200, 15, Justification::centredLeft);
-    yp += 17;
+    auto zoneYStart = keyboardHeight + 1;
+    auto zoneYEnd = 1.f * getHeight();
 
     // This obviously sucks
+
     for (int i = 0; i < max_zones; ++i)
     {
         if (zsp->activezones[i])
         {
-            std::ostringstream oss;
-            oss << "z=" << i << " " << zsp->zonecopies[i].key_low << " "
-                << zsp->zonecopies[i].key_high << std::endl;
-            g.drawText(oss.str(), 2, yp, 200, 15, Justification::centredLeft);
-            yp += 17;
+            auto ks = zsp->zonecopies[i].key_low;
+            auto ke = zsp->zonecopies[i].key_high;
+            auto col = juce::Colour(zoneColorPallette[i % zoneColorPallette.size()]);
+            auto xs = keyXBounds[ks].first;
+            auto xe = keyXBounds[ke].second;
+
+            g.setColour(col);
+            g.fillRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
+            g.setColour(zoneOutlineColor);
+            g.drawRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
         }
     }
 }
