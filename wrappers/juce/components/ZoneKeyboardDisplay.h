@@ -21,15 +21,26 @@
 #include <JuceHeader.h>
 #include "proxies/ZoneStateProxy.h"
 
+class ActionSender;
+
 class ZoneKeyboardDisplay : public juce::Component
 {
   public:
-    ZoneKeyboardDisplay(ZoneStateProxy *z) : zsp(z) {}
+    ZoneKeyboardDisplay(ZoneStateProxy *z, ActionSender *sender) : zsp(z), sender(sender) {}
 
     void paint(Graphics &g) override;
+    void mouseExit(const MouseEvent &event) override;
+    void mouseMove(const MouseEvent &event) override;
+    void mouseDown(const MouseEvent &event) override;
+    void mouseUp(const MouseEvent &event) override;
 
   private:
+    std::vector<juce::Rectangle<float>> keyLocations;
     ZoneStateProxy *zsp; // a non-owned weak copy
+    int hoveredKey = -1;
+    int playingKey = -1;
+
+    ActionSender *sender;
 };
 
 #endif // SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H
