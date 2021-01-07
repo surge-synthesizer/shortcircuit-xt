@@ -161,12 +161,14 @@ bool sample::load(const fs::path &filename)
     int sample_id;
 
     // extract elements of path
-    decode_path(conf->resolve_path(filename), &validFilename, &extension, 0, 0, 0, &sample_id);
+    decode_path(filename, &validFilename, &extension, 0, 0, 0, &sample_id);
+    // resolve the path
+    validFilename=conf->resolve_path(validFilename);
 
     auto mapper = std::make_unique<SC3::FileMapView>(validFilename);
     if (!mapper->isMapped())
     {
-        SC3::Log::logos() << "Unable to map view of file '" << validFilename << "'";
+        LOGERROR(conf->mLogger) << "Unable to map view of file '" << validFilename << "'" << std:: flush;
         return false;
     }
     auto data = mapper->data();
@@ -200,15 +202,8 @@ bool sample::load(const fs::path &filename)
 
         mFileName = filename;
     } else 
-    {    
-        wchar_t tmp[512];
-        swprintf(tmp, 512, L"HERE Could not read file %s", validFilename.c_str());
-#if WINDOWS
-        MessageBoxW(::GetActiveWindow(), tmp, L"File I/O Error", MB_OK | MB_ICONERROR);
-#else
-#warning Implement user feedeback
-        SC3::Log::logos() << "File IO error" << std::endl;
-#endif
+    {
+        LOGERROR(conf->mLogger) << "Error processing file " << validFilename.c_str() << std::flush;
     }
 
     return r;

@@ -15,7 +15,7 @@
 ** open source in December 2020.
 */
 
-#include <catch2/catch2.hpp>
+#include "test_main.h"
 
 #include <iostream>
 #include <map>
@@ -24,11 +24,12 @@
 #include "globals.h"
 #include "sampler.h"
 
+
 TEST_CASE("Simple SF2 Load", "[formats]")
 {
     SECTION("Simple Load")
     {
-        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, gLogger);
         REQUIRE(sc3);
 
         sc3->set_samplerate(48000);
@@ -117,4 +118,45 @@ TEST_CASE("Load two SF2s", "[formats]")
         REQUIRE(sc3->load_file(string_to_path("resources/test_samples/Crysrhod.sf2")));
 #endif
     }
+}
+
+TEST_CASE("Akai S6k patch load", "[formats]")
+{
+    gTestLevel=SC3::Log::Level::Debug;
+
+    SECTION("Simple Load")
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, gLogger);
+        REQUIRE(sc3);
+
+        sc3->set_samplerate(48000);
+#if WINDOWS
+        REQUIRE(sc3->load_file("resources\\test_samples\\akai_s6k\\POWER SECT S.AKP"));
+#else
+        REQUIRE(sc3->load_file(string_to_path("resources/test_samples/akai_s6k/POWER SECT S.AKP")));
+#endif
+/*
+        double rms = 0;
+        int n = 36;
+        for (int i = 0; i < 100; ++i)
+        {
+            if (i == 30)
+                sc3->PlayNote(0, n, 120);
+            if (i == 70)
+                sc3->ReleaseNote(0, n, 0);
+
+            sc3->process_audio();
+            for (int k = 0; k < block_size; ++k)
+            {
+                rms +=
+                    sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+            }
+        }
+        rms = sqrt(rms);
+        REQUIRE(rms == Approx(6.0266351586).margin(1e-4));
+        */
+    }
+
+    gTestLevel=SC3::Log::Level::None;
+
 }

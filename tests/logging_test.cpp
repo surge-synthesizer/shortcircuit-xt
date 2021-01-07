@@ -15,7 +15,7 @@
 ** open source in December 2020.
 */
 
-#include <catch2/catch2.hpp>
+#include "test_main.h"
 #include <vector>
 // ensure debug is tested
 #define LOGGING_DEBUG_ENABLED 1

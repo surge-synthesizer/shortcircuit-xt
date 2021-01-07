@@ -128,6 +128,7 @@ struct akai_s6k_akp_zone
     int8 level;
     int8 keytrack;
     int8 vel2LSB, vel2MSB;
+    int8 unused3[2]; // TODO AS experiment!!!
 };
 /*
 struct akai_s6k_akp_keygroup
@@ -173,8 +174,7 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
     hmmio = mmioOpen((LPSTR)path_to_string(filename).c_str(), NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
-        LOGERROR(mLogger) << "file io error: File [" << path_to_string(filename) << "] not found!"
-                          << std::flush;
+        LOGERROR(mLogger) << "file io error: File " << path_to_string(filename) << " not found" << std::flush;
         mmioClose(hmmio, 0);
         return false;
     }

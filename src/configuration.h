@@ -11,6 +11,7 @@
 #include "globals.h"
 #include <string>
 #include "infrastructure/import_fs.h"
+#include "infrastructure/logfile.h"
 
 const int n_custom_controllers = 16;
 
@@ -37,7 +38,9 @@ class configuration
     fs::path mRelative;
     fs::path mConfFilename;
   public:
-    configuration();
+    // TODO probably this doesn't belong here in the object hierarchy
+    SC3::Log::StreamLogger &mLogger; // logger which is owned by sampler
+    configuration(SC3::Log::StreamLogger &logger);
     bool load(const fs::path &filename);
     bool save(const fs::path  &filename);
     // replace <relative> in filename
