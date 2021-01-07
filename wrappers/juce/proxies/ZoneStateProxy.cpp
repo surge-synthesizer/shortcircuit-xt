@@ -20,8 +20,9 @@
 #include "interaction_parameters.h"
 #include "sampler_wrapper_actiondata.h"
 
-void ZoneStateProxy::processActionData(actiondata &ad)
+bool ZoneStateProxy::processActionData(const actiondata &ad)
 {
+    bool res = false;
     switch (ad.id)
     {
     case ip_kgv_or_list:
@@ -32,6 +33,7 @@ void ZoneStateProxy::processActionData(actiondata &ad)
         {
             for (int i = 0; i < max_zones; ++i)
                 activezones[i] = false;
+            res = true;
             break;
         }
         case vga_zonelist_populate:
@@ -43,11 +45,13 @@ void ZoneStateProxy::processActionData(actiondata &ad)
             sz->key_low = zd->keylo;
             sz->key_high = zd->keyhi;
             strncpy(sz->name, zd->name, 32);
+            res = true;
             break;
         }
         case vga_zonelist_done:
         {
             repaintClients();
+            res = true;
             break;
         }
         default:
@@ -58,4 +62,6 @@ void ZoneStateProxy::processActionData(actiondata &ad)
     default:
         break;
     }
+
+    return res;
 }

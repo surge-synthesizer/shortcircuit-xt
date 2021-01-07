@@ -29,7 +29,7 @@ class ZoneStateProxy : public UIStateProxy
             activezones[i] = false;
     };
 
-    virtual void processActionData(actiondata &d);
+    virtual bool processActionData(const actiondata &d);
 
     sample_zone zonecopies[max_zones];
     bool activezones[max_zones];

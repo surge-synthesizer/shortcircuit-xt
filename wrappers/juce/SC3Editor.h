@@ -62,7 +62,7 @@ class UIStateProxy
 {
   public:
     virtual ~UIStateProxy() = default;
-    virtual void processActionData(actiondata &d) = 0;
+    virtual bool processActionData(const actiondata &d) = 0;
     std::unordered_set<juce::Component *> clients;
     void repaintClients()
     {
@@ -77,7 +77,7 @@ class ActionSender
 {
   public:
     virtual ~ActionSender() = default;
-    virtual void sendActionToEngine(actiondata ad) = 0;
+    virtual void sendActionToEngine(const actiondata &ad) = 0;
 };
 
 // Forward decls of proxies and their componetns
@@ -115,8 +115,8 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
 
     void setLogText(const std::string &txt) override;
 
-    void receiveActionFromProgram(actiondata ad) override;
-    void sendActionToEngine(actiondata ad) override;
+    void receiveActionFromProgram(const actiondata &ad) override;
+    void sendActionToEngine(const actiondata &ad) override;
 
     void idle();
 
