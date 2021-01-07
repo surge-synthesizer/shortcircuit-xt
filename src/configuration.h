@@ -68,3 +68,8 @@ class configuration
 // returns the extension as lowercase
 void decode_path(const fs::path &in, fs::path *out, std::string *extension=0,
                  std::string *name_only=0, fs::path *path_only=0, int *program_id=0, int *sample_id=0);
+
+// construct a full path from dir and filename and optionally ext
+// if ext is supplied it's delimited with .
+fs::path build_path(const fs::path &in, const std::string &filename,
+                const std::string &ext = std::string());

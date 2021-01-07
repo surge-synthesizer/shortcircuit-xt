@@ -115,7 +115,7 @@ void sampler::processWrapperEvents()
         case vga_createemptyzone:
         {
             int nz;
-            if (add_zone(0, &nz, editorpart & 0xf, false))
+            if (add_zone(fs::path(), &nz, editorpart & 0xf, false))
             {
                 int key = ad.data.i[0] & 0x7f;
                 zones[nz].key_low = key;
@@ -133,7 +133,7 @@ void sampler::processWrapperEvents()
             int nz = -1;
             for (auto f : dl->files)
             {
-                if (add_zone(path_to_string(f.p).c_str(), &nz, editorpart & 0xf, false))
+                if (add_zone(f.p, &nz, editorpart & 0xf, false))
                 {
                     LOGDEBUG(mLogger) << "Added zone; do rest of mapping too" << std::endl;
                 }
@@ -151,7 +151,7 @@ void sampler::processWrapperEvents()
             vector<dropfile>::iterator i;
             for (i = editor->dropfiles.begin(); i != editor->dropfiles.end(); i++)
             {
-                if (add_zone(i->path.c_str(), &nz, editorpart & 0xf, false))
+                if (add_zone(i->path, &nz, editorpart & 0xf, false))
                 {
                     zones[nz].key_low = i->key_lo;
                     zones[nz].key_root = i->key_root;

@@ -88,7 +88,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
     {
         if (is_group)
             *is_group = false;
-        return add_zone(path_to_string(validFileName).c_str(), new_z, channel, add_zones_to_groupid != 0);
+        return add_zone(validFileName, new_z, channel, add_zones_to_groupid != 0);
     }
     else if ((!extension.compare("gig")) || (!extension.compare("dls")) ||
              (!extension.compare("sc2p")) || (!extension.compare("sc2m")) ||
@@ -137,13 +137,13 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
     {
         if (is_group)
             *is_group = true;
-        return load_akai_s6k_program(path_to_string(validFileName).c_str(), channel, true);
+        return load_akai_s6k_program(validFileName, channel, true);
     }
     else if (!extension.compare("kit"))
     {
         if (is_group)
             *is_group = true;
-        return load_battery_kit(path_to_string(validFileName).c_str(), channel, true);
+        return load_battery_kit(validFileName, channel, true);
     }
     else if (!extension.compare("scg"))
     {

@@ -596,7 +596,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
                     int newzone;
                     int sample_id = i_generators[sampleID].wAmount;
 
-                    sprintf(fn, "%s|%i", filename, sample_id);
+                    sprintf(fn, "%s|%i", filename, sample_id); // TODO AS Fix
                     if (i_generators_set[sampleID] &&
                         ((shdr[sample_id].sfSampleType == monoSample) ||
                          (shdr[sample_id].sfSampleType == rightSample)) &&

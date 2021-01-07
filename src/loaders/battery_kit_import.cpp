@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "infrastructure/logfile.h"
 #include "sampler.h"
+#include "configuration.h"
 #include "util/unitconversion.h"
 #include <float.h>
 #include <stdio.h>
@@ -21,16 +22,15 @@ float battery_envtime2sc(float t)
     return log2(powf(t / 127.0f, 3));
 }
 
-bool sampler::load_battery_kit(const char *filename, char channel, bool replace)
+bool sampler::load_battery_kit(const fs::path &fileName, char channel, bool replace)
 {
-    char path[256];
-    const char *last;
-    last = strrchr(filename, '.');
-    vtCopyString(path, filename, 256);
-    path[last - filename] = 0;
-    strcat(path, " samples\\");
 
-    TiXmlDocument doc(filename);
+    fs::path path;
+    std::string fn_only;
+    decode_path(fileName, 0, 0, &fn_only, &path);
+    path = path / "samples";
+
+    TiXmlDocument doc(path_to_string(fileName));
     doc.LoadFile();
 
     TiXmlElement *patch = doc.FirstChildElement("BatteryPatch");
@@ -53,9 +53,9 @@ bool sampler::load_battery_kit(const char *filename, char channel, bool replace)
         TiXmlElement *samplefile = (TiXmlElement *)slot->FirstChild("Sample");
         while (samplefile)
         {
-            char fn[256];
+            fs::path fn=build_path(path, samplefile->Attribute("file") );
             int newzone;
-            sprintf(fn, "%s%s", path, samplefile->Attribute("file"));
+            
             if (add_zone(fn, &newzone, channel))
             {
                 double dval;

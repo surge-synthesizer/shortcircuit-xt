@@ -261,7 +261,7 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
 
                     char fn[256];
                     int newzone;
-                    sprintf(fn, "%s|%i", filename, _3lnk.RegionSampleID[j]);
+                    sprintf(fn, "%s|%i", filename, _3lnk.RegionSampleID[j]); // TODO AS Fix
                     if (do_load && add_zone(fn, &newzone, channel))
                     {
                         sample_zone *z = &zones[newzone];
@@ -361,8 +361,8 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
             // no sub-regions, read as normal DLS
             char fn[256];
             int newzone;
-            sprintf(fn, "%s|%lu", filename, wlnk.ulTableIndex);
-            if (add_zone(fn, &newzone, channel))
+            sprintf(fn, "%s|%lu", filename, wlnk.ulTableIndex); // TODO AS Fix
+            if (add_zone(string_to_path(fn), &newzone, channel))
             {
                 sample_zone *z = &zones[newzone];
                 z->key_low = rgnh.RangeKey.usLow;

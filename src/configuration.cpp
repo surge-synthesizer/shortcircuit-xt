@@ -259,3 +259,21 @@ void decode_path(const fs::path &in, fs::path *out, std::string *extension,
         *out = string_to_path(tmp);
 
 }
+
+fs::path build_path(const fs::path &in, const std::string &filename,
+                const std::string &ext)
+{
+    std::string s = path_to_string(in);
+    
+    if (s.back() != static_cast<char>(fs::path::preferred_separator))
+    {
+        s.push_back(static_cast<char>(fs::path::preferred_separator));        
+    }
+    s.append(filename);
+    if (ext.length())
+    {
+        s.append(".");
+        s.append(ext);
+    }
+    return string_to_path(s);
+}

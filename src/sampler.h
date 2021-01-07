@@ -165,7 +165,7 @@ class sampler
     void part_clear_zones(int p);
 
     // zone & group management
-    bool add_zone(const char *filename, int *new_z = 0, char part = 0, bool use_root_key = false);
+    bool add_zone(const fs::path &filename, int *new_z = 0, char part = 0, bool use_root_key = false);
     void InitZone(int zone_id);
     static void SInitZone(sample_zone *pZone);
     bool clone_zone(int zone_id, int *new_z, bool same_key = true);
@@ -188,11 +188,11 @@ class sampler
     bool is_key_down(int channel, int key);
 
     // File I/O
-    bool load_akai_s6k_program(const char *filename, char channel = 0, bool replace = true);
+    bool load_akai_s6k_program(const fs::path &filename, char channel = 0, bool replace = true);
     bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, const char *filename);
     bool load_sf2_preset(const char *filename, int *new_g = 0, char channel = 0, int patch = -1);
     bool load_sfz(const char *data, size_t datasize, int *new_g = 0, char channel = 0);
-    bool load_battery_kit(const char *filename, char channel = 0, bool replace = true);
+    bool load_battery_kit(const fs::path &fileName, char channel = 0, bool replace = true);
     bool load_file(const fs::path &filename, int *new_g = 0, int *new_z = 0, bool *is_group = 0,
                    char channel = 0, int add_zones_to_groupid = 0, bool replace = false);
     // bool load_file(const wchar_t *filename, char part, int *new_z=0);

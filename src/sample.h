@@ -22,7 +22,7 @@ class sample
     virtual ~sample();
     bool load(const fs::path &path);
     bool get_filename(fs::path *out);
-    bool compare_filename(const fs::path &path);
+    bool compare_filename(const char *path);
     bool parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk = false);
     short *GetSamplePtrI16(int Channel);
     float *GetSamplePtrF32(int Channel);

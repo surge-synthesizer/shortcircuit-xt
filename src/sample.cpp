@@ -266,9 +266,9 @@ bool sample::get_filename(fs::path *out)
     return !mFileName.empty();
 }
 
-bool sample::compare_filename(const fs::path &path)
+bool sample::compare_filename(const char *path)
 {
-    return (mFileName.compare(path) == 0);
+    return (mFileName.compare(string_to_path(path)) == 0);
 }
 
 bool sample::load_data_ui8(int channel, void *data, unsigned int samplesize, unsigned int stride)
