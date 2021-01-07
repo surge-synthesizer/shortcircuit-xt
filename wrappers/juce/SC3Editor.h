@@ -51,6 +51,7 @@ template <typename T, int qSize = 4096> class SC3EngineToWrapperQueue
     T dq[qSize];
 };
 class SC3IdleTimer;
+class SC3AudioProcessorEditor;
 
 /*
  * The UIStateProxy is a class which handles messages and keeps an appropriate state.
@@ -72,6 +73,13 @@ class UIStateProxy
     }
 };
 
+class ActionSender
+{
+  public:
+    virtual ~ActionSender() = default;
+    virtual void sendActionToEngine(actiondata ad) = 0;
+};
+
 // Forward decls of proxies and their componetns
 class ZoneStateProxy;
 class ZoneKeyboardDisplay;
@@ -83,7 +91,8 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
                                 public juce::Button::Listener,
                                 public juce::FileDragAndDropTarget,
                                 public EditorNotify,
-                                public sampler::WrapperListener
+                                public sampler::WrapperListener,
+                                public ActionSender
 {
   public:
     SC3AudioProcessorEditor(SC3AudioProcessor &);
@@ -107,6 +116,7 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     void setLogText(const std::string &txt) override;
 
     void receiveActionFromProgram(actiondata ad) override;
+    void sendActionToEngine(actiondata ad) override;
 
     void idle();
 

@@ -37,7 +37,7 @@ void DebugPanel::buttonClicked(juce::Button *b)
             actiondata ad;
             ad.actiontype = vga_load_dropfiles;
             ad.data.dropList = d;
-            ed->audioProcessor.sc3->postEventsFromWrapper(ad);
+            ed->sendActionToEngine(ad);
         }
     }
 }

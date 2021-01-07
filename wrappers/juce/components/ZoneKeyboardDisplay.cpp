@@ -28,6 +28,9 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
     auto keyOutlineColour = juce::Colour(20, 20, 20);
     auto keyWhiteKeyColour = juce::Colour(255, 255, 245);
     auto keyBlackKeyColour = juce::Colour(40, 40, 40);
+
+    auto keyWhiteHoverColour = juce::Colour(200, 200, 255);
+    auto keyBlackHoverColour = juce::Colour(200, 200, 255);
     std::vector<uint32_t> zoneColorPallette = {0xffdacac0, 0xffc7b582, 0xfff76f5e,
                                                0xff93965f, 0xffb1453f, 0xff676949};
     auto zoneOutlineColor = juce::Colour(240, 220, 200);
@@ -41,6 +44,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
      */
 
     std::vector<std::pair<float, float>> keyXBounds;
+    keyLocations.clear();
     for (int i = 0; i < 128; ++i)
     {
         bool isWhiteKey = false;
@@ -60,14 +64,29 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
         g.drawLine(xpos, keyboardHeight, xpos + keyWidth, keyboardHeight);
         if (isWhiteKey)
         {
+            if (i == hoveredKey)
+            {
+                g.setColour(keyWhiteHoverColour);
+                g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
+            }
             g.setColour(keyOutlineColour);
             if (on == 0 || on == 5)
                 g.drawLine(xpos, ypos, xpos, keyboardHeight);
+            keyLocations.push_back(juce::Rectangle(xpos, ypos, keyWidth, keyboardHeight));
         }
         else
         {
-            g.setColour(keyBlackKeyColour);
+            if (i == hoveredKey)
+            {
+                g.setColour(keyBlackHoverColour);
+            }
+            else
+            {
+                g.setColour(keyBlackKeyColour);
+            }
             g.fillRect(xpos, ypos, xpos + keyWidth, ypos + keyboardHeight - blackKeyInset);
+            keyLocations.push_back(
+                juce::Rectangle(xpos, ypos, xpos + keyWidth, keyboardHeight - blackKeyInset));
             g.setColour(keyOutlineColour);
             g.drawLine(xpos + keyWidth / 2, ypos + keyboardHeight - blackKeyInset,
                        xpos + keyWidth / 2, ypos + keyboardHeight, 1);
@@ -99,5 +118,55 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             g.setColour(zoneOutlineColor);
             g.drawRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
         }
+    }
+}
+void ZoneKeyboardDisplay::mouseExit(const MouseEvent &event)
+{
+    hoveredKey = -1;
+    repaint();
+}
+void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
+{
+    int ohk = hoveredKey;
+    int i = 0;
+    hoveredKey = -1;
+    for (auto r : keyLocations)
+    {
+        if (r.contains(event.x, event.y))
+        {
+            hoveredKey = i;
+        }
+        i++;
+    }
+    if (hoveredKey != ohk)
+    {
+        repaint();
+    }
+}
+void ZoneKeyboardDisplay::mouseDown(const MouseEvent &event)
+{
+    if (hoveredKey >= 0)
+    {
+        playingKey = hoveredKey;
+        actiondata ad;
+        ad.actiontype = vga_note;
+        ad.data.i[0] = playingKey;
+        ad.data.i[1] = 127;
+        // SEND
+        sender->sendActionToEngine(ad);
+    }
+}
+void ZoneKeyboardDisplay::mouseUp(const MouseEvent &event)
+{
+    if (playingKey >= 0)
+    {
+        playingKey = hoveredKey;
+        actiondata ad;
+        ad.actiontype = vga_note;
+        ad.data.i[0] = playingKey;
+        ad.data.i[1] = 0;
+        sender->sendActionToEngine(ad);
+
+        playingKey = -1;
     }
 }

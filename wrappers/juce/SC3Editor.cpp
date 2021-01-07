@@ -42,7 +42,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
     // This is going to be a little pattern I'm sure
     zoneStateProxy = std::make_unique<ZoneStateProxy>();
-    zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(zoneStateProxy.get());
+    zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(zoneStateProxy.get(), this);
 
     uiStateProxies.insert(zoneStateProxy.get());
     zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
@@ -56,10 +56,15 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
     actiondata ad;
     ad.actiontype = vga_openeditor;
-    audioProcessor.sc3->postEventsFromWrapper(ad);
+    sendActionToEngine(ad);
 
     idleTimer = std::make_unique<SC3IdleTimer>(this);
     idleTimer->startTimer(1000 / 30);
+}
+
+void SC3AudioProcessorEditor::sendActionToEngine(actiondata ad)
+{
+    audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
 SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
@@ -70,7 +75,7 @@ SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
 
     actiondata ad;
     ad.actiontype = vga_closeeditor;
-    audioProcessor.sc3->postEventsFromWrapper(ad);
+    sendActionToEngine(ad);
 }
 
 void SC3AudioProcessorEditor::buttonClicked(Button *b)
@@ -118,11 +123,12 @@ void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int 
     actiondata ad;
     ad.actiontype = vga_load_dropfiles;
     ad.data.dropList = d;
-    audioProcessor.sc3->postEventsFromWrapper(ad);
+    sendActionToEngine(ad);
 }
 
 void SC3AudioProcessorEditor::refreshSamplerTextViewInThreadUnsafeWay()
 {
+    // Really this isn't thread safe and we should fix it
     debugWindow->panel->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
