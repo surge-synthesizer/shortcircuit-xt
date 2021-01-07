@@ -52,6 +52,30 @@ template <typename T, int qSize = 4096> class SC3EngineToWrapperQueue
 };
 class SC3IdleTimer;
 
+/*
+ * The UIStateProxy is a class which handles messages and keeps an appropriate state.
+ * Components can render it for bulk action. For instance there woudl be a ZoneMapProxy
+ * and so on. Each UIStateProxy registerred with the editor gets all the messages.
+ */
+class UIStateProxy
+{
+  public:
+    virtual ~UIStateProxy() = default;
+    virtual void processActionData(actiondata &d) = 0;
+    std::unordered_set<juce::Component *> clients;
+    void repaintClients()
+    {
+        for (auto c : clients)
+        {
+            c->repaint();
+        }
+    }
+};
+
+// Forward decls of proxies and their componetns
+class ZoneStateProxy;
+class ZoneKeyboardDisplay;
+
 //==============================================================================
 /**
  */
@@ -99,6 +123,11 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<SC3EngineToWrapperQueue<actiondata>> actiondataToUI;
     std::unique_ptr<SC3EngineToWrapperQueue<std::string>> logToUI;
     std::unique_ptr<SC3IdleTimer> idleTimer;
+
+    std::set<UIStateProxy *> uiStateProxies;
+
+    std::unique_ptr<ZoneStateProxy> zoneStateProxy;
+    std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessorEditor)
 };
