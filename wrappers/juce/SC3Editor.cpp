@@ -30,12 +30,11 @@ struct SC3IdleTimer : juce::Timer
 
 //==============================================================================
 SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
-    : AudioProcessorEditor(&p), audioProcessor(p), manualPlaying(false)
+    : AudioProcessorEditor(&p), audioProcessor(p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(900, 600);
-
     actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
     logToUI = std::make_unique<SC3EngineToWrapperQueue<std::string>>();
     p.mNotify=this;
@@ -48,21 +47,12 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     uiStateProxies.insert(zoneStateProxy.get());
     zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
 
-    zoneKeyboardDisplay->setBounds(5, 30, 890, 200);
+    zoneKeyboardDisplay->setBounds(0, 0, getWidth(), 200);
     addAndMakeVisible(zoneKeyboardDisplay.get());
-
-    loadButton = std::make_unique<juce::TextButton>("Load Sample");
-    loadButton->setBounds(5, 5, 100, 20);
-    loadButton->addListener(this);
-    addAndMakeVisible(loadButton.get());
-
-    manualButton = std::make_unique<juce::TextButton>("Play note");
-    manualButton->setBounds(110, 5, 100, 20);
-    manualButton->addListener(this);
-    addAndMakeVisible(manualButton.get());
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
+    debugWindow->panel->setEditor(this);
 
     actiondata ad;
     ad.actiontype = vga_openeditor;
@@ -74,6 +64,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
 SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
     uiStateProxies.clear();
+    debugWindow->panel->setEditor(nullptr);
     idleTimer->stopTimer();
     audioProcessor.mNotify=0;
 
@@ -84,50 +75,10 @@ SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
 
 void SC3AudioProcessorEditor::buttonClicked(Button *b)
 {
-    if (b == loadButton.get())
-    {
-        juce::FileChooser sampleChooser(
-            "Please choose a sample file",
-            juce::File::getSpecialLocation(juce::File::userHomeDirectory));
-        if (sampleChooser.browseForFileToOpen())
-        {
-            auto d = new DropList();
-
-            auto f = sampleChooser.getResult();
-            auto fd = DropList::File();
-            fd.p = string_to_path(f.getFileName().toStdString().c_str());
-            d->files.push_back(fd);
-
-            actiondata ad;
-            ad.actiontype = vga_load_dropfiles;
-            ad.data.dropList = d;
-            audioProcessor.sc3->postEventsFromWrapper(ad);
-        }
-    }
 }
 
 void SC3AudioProcessorEditor::buttonStateChanged(Button *b)
 {
-    if (b == manualButton.get())
-    {
-        switch (manualButton->getState())
-        {
-        case Button::buttonDown:
-            audioProcessor.sc3->PlayNote(0, 60, 127);
-            manualPlaying = true;
-            break;
-        case Button::buttonNormal:
-            if (manualPlaying)
-            {
-                manualPlaying = false;
-                audioProcessor.sc3->ReleaseNote(0, 60, 127);
-            }
-            break;
-        case Button::buttonOver:
-            break;
-        }
-        
-    }
 }
 
 //==============================================================================
@@ -148,6 +99,7 @@ void SC3AudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
+    std::cout << "RESIZED" << std::endl;
 }
 
 bool SC3AudioProcessorEditor::isInterestedInFileDrag(const StringArray &files) {

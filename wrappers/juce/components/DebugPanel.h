@@ -19,8 +19,11 @@
 #define SHORTCIRCUIT_DEBUGPANEL_H
 
 #include <JuceHeader.h>
+#include <string>
+#include "version.h"
+class SC3AudioProcessorEditor;
 
-class DebugPanel : public juce::Component
+class DebugPanel : public juce::Component, public juce::Button::Listener
 {
   public:
     DebugPanel() : Component( "Debug Panel" ) {
@@ -29,13 +32,28 @@ class DebugPanel : public juce::Component
         int lH = 200;
         setSize( w, sH + lH );
 
+        loadButton = std::make_unique<juce::TextButton>("Load Sample");
+        loadButton->setBounds(5, 2, 100, 20);
+        loadButton->addListener(this);
+        addAndMakeVisible(loadButton.get());
+
+        manualButton = std::make_unique<juce::TextButton>("Play note");
+        manualButton->setBounds(110, 2, 100, 20);
+        manualButton->addListener(this);
+        addAndMakeVisible(manualButton.get());
+
+        noteNumber = std::make_unique<juce::TextEditor>("number");
+        noteNumber->setText(std::to_string(playingNote));
+        noteNumber->setBounds(215, 2, 60, 20);
+        addAndMakeVisible(noteNumber.get());
+
         samplerT = std::make_unique<juce::TextEditor>();
-        samplerT->setBounds( 5, 5, w - 10, sH - 10 );
+        samplerT->setBounds(5, 25, w - 10, sH - 30);
         samplerT->setMultiLine(true, false );
         addAndMakeVisible(samplerT.get());
 
         logT = std::make_unique<juce::TextEditor>();
-        logT->setBounds( 5, 5 + sH, w - 10, lH - 10 );
+        logT->setBounds(5, 5 + sH, w - 10, lH - 30);
         logT->setMultiLine(true, false);
         addAndMakeVisible(logT.get());
     }
@@ -43,9 +61,9 @@ class DebugPanel : public juce::Component
     void setSamplerText( const juce::String &s )
     {
         samplerT->setText(s);
-        
-
     }
+
+    void setEditor(SC3AudioProcessorEditor *ed) { this->ed = ed; }
 
     void appendLogText( const juce::String &s )
     {
@@ -55,16 +73,28 @@ class DebugPanel : public juce::Component
         logT->insertTextAtCaret(str);
     }
 
+    virtual void buttonClicked(Button *b);
+    virtual void buttonStateChanged(Button *b);
+
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
+
+    std::unique_ptr<juce::Button> loadButton;
+    std::unique_ptr<juce::Button> manualButton;
+    std::unique_ptr<juce::TextEditor> noteNumber;
+    bool manualPlaying = false;
+    int playingNote = 60;
+
+    SC3AudioProcessorEditor *ed;
 };
 
 class DebugPanelWindow : public juce::DocumentWindow
 {
   public:
     DebugPanelWindow()
-        : juce::DocumentWindow("SC3 Debug Window", juce::Colour(0xFF000000),
-                               juce::DocumentWindow::allButtons)
+        : juce::DocumentWindow(juce::String("SC3 Debug - ") + SC3::Build::GitHash + "/" +
+                                   SC3::Build::GitBranch,
+                               juce::Colour(0xFF000000), juce::DocumentWindow::allButtons)
     {
         panel = new DebugPanel();
         setContentOwned(panel, true); // DebugPanelWindow takes ownership
