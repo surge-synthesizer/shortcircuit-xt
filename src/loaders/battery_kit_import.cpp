@@ -55,7 +55,7 @@ bool sampler::load_battery_kit(const char *filename, char channel, bool replace)
         {
             char fn[256];
             int newzone;
-            sprintf(fn, "%s%s", path, samplefile->Attribute("file"));
+            sprintf(fn, "%s%s", path, samplefile->Attribute("file")); // TODO AS Fix
             if (add_zone(fn, &newzone, channel))
             {
                 double dval;

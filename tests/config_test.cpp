@@ -119,3 +119,18 @@ TEST_CASE("Decode Path", "[config]")
     }        
  #endif
 }
+
+TEST_CASE("Build Path", "[config]")
+{
+    std::string nameOnly, ext;
+    int progid, sampleid;
+    fs::path out, pathOnly;
+#ifdef _WIN32
+    SECTION("Windows build")
+    {
+        fs::path p("c:\\my\\path");
+        auto out=build_path(p, "filename", "WAV");
+        REQUIRE(out.compare("c:\\my\\path\\filename.WAV") == 0);        
+    }
+#endif
+}

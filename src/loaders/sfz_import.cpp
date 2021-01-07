@@ -90,7 +90,7 @@ bool sampler::load_sfz(const char *data, size_t datasize, int *new_g, char chann
 
     // create empty zone, copy it to a buffer and then delete it
     int t_id;
-    add_zone(0, &t_id, channel, false);
+    add_zone(fs::path(), &t_id, channel, false);
     memcpy(&empty, &zones[t_id], sizeof(sample_zone));
     memcpy(&groupzone, &empty, sizeof(sample_zone)); // init, just in case it's used
     this->free_zone(t_id);
@@ -111,7 +111,7 @@ bool sampler::load_sfz(const char *data, size_t datasize, int *new_g, char chann
             if (strnicmp(r, "<region>", 8) == 0)
             {
                 r += 8;
-                if (add_zone(0, &z_id, channel, false)) // add an empty zone
+                if (add_zone(fs::path(), &z_id, channel, false)) // add an empty zone
                 {
                     region = &zones[z_id];
                     memcpy(region, &groupzone, sizeof(sample_zone));

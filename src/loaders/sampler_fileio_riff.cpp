@@ -625,7 +625,7 @@ bool sampler::LoadAllFromRIFF(void *data, size_t datasize, bool Replace, int Par
         {
             size_t ZoneStart = mf.TellI();
             int ZoneID;
-            if (add_zone(0, &ZoneID))
+            if (add_zone(fs::path(), &ZoneID))
             {
                 sample_zone *z = &zones[ZoneID];
                 modmatrix mmzone;

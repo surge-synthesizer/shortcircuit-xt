@@ -66,12 +66,9 @@ class DebugPanelWindow : public juce::DocumentWindow
         : juce::DocumentWindow("SC3 Debug Window", juce::Colour(0xFF000000),
                                juce::DocumentWindow::allButtons)
     {
-        panel = std::make_unique<DebugPanel>();
-#if !WINDOWS
-#warning THIS API throws an assert but works. Use getContnetCompoonent sometime
-#endif
-        addAndMakeVisible(panel.get());
-
+        panel = new DebugPanel();
+        setContentOwned(panel, true); // DebugPanelWindow takes ownership
+        
         int baroff = 25;
         juce::Rectangle<int> area( 100, 100+baroff,  panel->getWidth(), panel->getHeight() + baroff );
 
@@ -82,7 +79,7 @@ class DebugPanelWindow : public juce::DocumentWindow
         setUsingNativeTitleBar( false );
     }
 
-    std::unique_ptr<DebugPanel> panel;
+    DebugPanel *panel;
 };
 
 #endif // SHORTCIRCUIT_DEBUGPANEL_H

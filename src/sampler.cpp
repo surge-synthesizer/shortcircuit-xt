@@ -564,7 +564,7 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
     {
         if (s_id)
             *s_id = -1;
-        return true; // finns redan, skulle man kunna s�ga, eftersom den inte ska laddas
+        return true; // already exists, one could say, because it should not be charged
     }
 
     if (filename && !strncmp("loaded", filename, 6))
@@ -579,7 +579,7 @@ bool sampler::get_sample_id(const char *filename, int *s_id)
     {
         if (samples[s])
         {
-            if (samples[s]->compare_filename(string_to_path(filename)))
+            if (samples[s]->compare_filename(filename))
             {
                 if (s_id)
                     *s_id = s;
@@ -685,7 +685,7 @@ void sampler::SInitZone(sample_zone *pZone)
 
 //-------------------------------------------------------------------------------------------------
 
-bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_root_key)
+bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use_root_key)
 {
     // find free zone and create zone object
     int i = GetFreeZoneId();
@@ -694,9 +694,10 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
 
     // check if sample is loaded already
     int32_t s = 0;
-    if (filename)
+    if (!filename.empty())
     {
-        bool is_loaded = get_sample_id(filename, &s);
+        // AS this guy seems to want to parse out the first few chars of filename which seems fishy... leave as is for now.
+        bool is_loaded = get_sample_id(path_to_string(filename).c_str(), &s);
 
         if (is_loaded)
         {
@@ -712,7 +713,7 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
 
             samples[s] = new sample(conf);
 
-            if (!(samples[s]->load(string_to_path(filename))))
+            if (!(samples[s]->load(filename)))
             {
                 delete samples[s];
                 samples[s] = 0;
@@ -754,8 +755,8 @@ bool sampler::add_zone(const char *filename, int *new_z, char part, bool use_roo
                 zones[i].finetune = samples[s]->inst_tag.chFineTune/128.0f;
         }*/
 
-        // flytta loop & slices-transfer fr�n samplingen till en egen funktion n�r det �r
-        // uppdateringar av det s� det bara finns p� ett st�lle
+        // move loop & slices transfer from the sample to a separate function when it is
+        // updates of it so that it only exists in one place
         if (use_root_key && samples[s]->meta.rootkey_present)
         {
             zones[i].key_root = samples[s]->meta.key_root;
