@@ -115,5 +115,4 @@ message( STATUS "Using SHORTC_VERSION=${SHORTC_FULL_VERSION}" )
 message( STATUS "Configuring ${SHORTCBLD}/geninclude/version.cpp" )
 configure_file( ${SHORTCSRC}/src/version.cpp.in
   ${SHORTCBLD}/geninclude/version.cpp )
-
-  
+file(WRITE ${SHORTCBLD}/geninclude/githash.txt ${GIT_COMMIT_HASH})

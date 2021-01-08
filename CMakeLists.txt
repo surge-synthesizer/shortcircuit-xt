@@ -330,19 +330,72 @@ file(MAKE_DIRECTORY ${SC3_PRODUCT_DIR})
 
 add_custom_target(sc3-products)
 add_dependencies(sc3-products sc3-test)
-add_custom_command(
-        TARGET sc3-products
-        POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND cmake -E copy $<TARGET_FILE:sc3-test> ${SC3_PRODUCT_DIR}
-)
+
 add_dependencies(sc3-products shortcircuit3py)
 add_custom_command(
         TARGET sc3-products
         POST_BUILD
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND cmake -E copy $<TARGET_FILE:sc3-test> ${SC3_PRODUCT_DIR}
         COMMAND cmake -E copy $<TARGET_FILE:shortcircuit3py> ${SC3_PRODUCT_DIR}
+        COMMAND cmake -E copy ${CMAKE_SOURCE_DIR}/LICENSE ${SC3_PRODUCT_DIR}
+        COMMAND cmake -E copy ${CMAKE_SOURCE_DIR}/resources/installer_README.txt ${SC3_PRODUCT_DIR}/README.txt
 )
 
 # TODO: Move the JUCE assets into products
 add_dependencies(sc3-products ShortCircuit3)
+
+add_dependencies(sc3-products ShortCircuit3_VST3)
+add_dependencies(sc3-products ShortCircuit3_Standalone)
+get_target_property(JUCE_DIR ShortCircuit3 LIBRARY_OUTPUT_DIRECTORY)
+add_custom_command(
+        TARGET sc3-products
+        POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND cmake -E copy_directory ${JUCE_DIR}/VST3/ ${SC3_PRODUCT_DIR}
+        COMMAND cmake -E copy_directory ${JUCE_DIR}/Standalone/ ${SC3_PRODUCT_DIR}
+)
+
+if( APPLE )
+    add_dependencies(sc3-products ShortCircuit3_AU)
+    add_custom_command(
+            TARGET sc3-products
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMAND cmake -E copy_directory ${JUCE_DIR}/AU/ ${SC3_PRODUCT_DIR}
+    )
+endif()
+
+add_custom_target(sc3-installer)
+add_dependencies(sc3-installer sc3-products)
+file(READ ${CMAKE_BINARY_DIR}/geninclude/githash.txt GIT_COMMIT_HASH)
+if( APPLE )
+    add_custom_command(
+            TARGET sc3-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND cmake -E make_directory installer/macos
+            COMMAND hdiutil create installer/macos/ShortCircuit3-macos-${GIT_COMMIT_HASH}.dmg -ov -volname "ShortCircuit3 ${GIT_COMMIT_HASH}" -fs HFS+ -srcfolder products
+    )
+elseif( WIN32 )
+    file( TO_NATIVE_PATH "installer/windows/ShortCircuit3-win64-${GIT_COMMIT_HASH}.zip" OUTPUT_ZIP )
+    add_custom_command(
+            TARGET sc3-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory  installer/windows
+            COMMAND powershell Compress-Archive
+                -DestinationPath "${OUTPUT_ZIP}"
+                -Force
+                -Path "products"
+    )
+
+else()
+    add_custom_command(
+            TARGET sc3-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND cmake -E make_directory installer/linux
+            COMMAND tar czf installer/linux/ShortCircuit3-linux-${GIT_COMMIT_HASH}.tgz products
+    )
+endif()

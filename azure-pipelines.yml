@@ -78,8 +78,8 @@ jobs:
     displayName: Run CMake
 
   - bash: |
-      cmake --build build --config Debug --target sc3-products
-    displayName: Build sc3-products
+      cmake --build build --config Debug --target sc3-installer
+    displayName: Build sc3-installer
 
   - bash: |
       ./build/products/sc3-test
