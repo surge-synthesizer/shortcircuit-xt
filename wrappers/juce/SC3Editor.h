@@ -125,6 +125,8 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     SC3AudioProcessor &audioProcessor;
 
   private:
+    void sendActionInternal(const actiondata &ad);
+
     std::unique_ptr<DebugPanelWindow> debugWindow;
     std::unique_ptr<SC3EngineToWrapperQueue<actiondata>> actiondataToUI;
     std::unique_ptr<SC3EngineToWrapperQueue<std::string>> logToUI;

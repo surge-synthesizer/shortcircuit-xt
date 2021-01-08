@@ -12,7 +12,6 @@
 #include "SC3Editor.h"
 #include "SC3Processor.h"
 #include "version.h"
-#include "interaction_parameters.h"
 
 #include <unordered_map>
 
@@ -58,26 +57,32 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
     actiondata ad;
     ad.actiontype = vga_openeditor;
-    sendActionToEngine(ad);
+    sendActionInternal(ad);
+
 
     idleTimer = std::make_unique<SC3IdleTimer>(this);
     idleTimer->startTimer(1000 / 30);
 }
 
-void SC3AudioProcessorEditor::sendActionToEngine(const actiondata &ad)
-{
-    audioProcessor.sc3->postEventsFromWrapper(ad);
-}
 
 SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
     uiStateProxies.clear();
     debugWindow->panel->setEditor(nullptr);
     idleTimer->stopTimer();
-    audioProcessor.mNotify=0;
+    audioProcessor.mNotify=nullptr;
 
     actiondata ad;
     ad.actiontype = vga_closeeditor;
-    sendActionToEngine(ad);
+    sendActionInternal(ad);
+
+    audioProcessor.sc3->unregisterWrapperForEvents(this);
+}
+
+void SC3AudioProcessorEditor::sendActionToEngine(const actiondata &ad) { sendActionInternal(ad); }
+
+void SC3AudioProcessorEditor::sendActionInternal(const actiondata &ad)
+{
+    audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
 void SC3AudioProcessorEditor::buttonClicked(Button *b)
