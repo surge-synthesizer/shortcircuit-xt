@@ -1,5 +1,7 @@
 # ShortCircuit 3
 
+[![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit3?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit3/_build/latest?definitionId=2&branchName=main)
+
 What? ShortCircuit is open source? Well yes, but there are big big caveats. **Right now there are no downloadable
 assets you can to play music, and there is no runnable opensource ShortCircuit plugin**. We estimate this 
 will be the case for much of 2021, and maybe indefinitely. **You may never be able to run an opensource
