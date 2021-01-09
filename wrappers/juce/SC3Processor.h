@@ -73,6 +73,7 @@ class SC3AudioProcessor : public juce::AudioProcessor
     
 
   private:
+    size_t blockpos;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessor)
 };
