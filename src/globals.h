@@ -23,7 +23,7 @@
 
 typedef uint32_t uint32;
 
-const uint32 block_size = 64; // must be a multiple of 4 (SIMD)
+const uint32 block_size = 32; // must be a multiple of 4 (SIMD)
 const uint32 block_size_quad = block_size >> 2;
 const float inv_block_size = 1.f / float(block_size);
 const float inv_2block_size = 1.f / float(block_size << 1);
