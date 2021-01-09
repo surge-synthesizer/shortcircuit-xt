@@ -115,8 +115,8 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         if (blockpos == 0)
             sc3->process_audio();
         
-        memcpy(outL, &((sc3->output[0])[blockpos]), chunk * sizeof(float));
-        memcpy(outR, &((sc3->output[1])[blockpos]), chunk * sizeof(float));
+        memcpy(outL, &(sc3->output[0][blockpos]), chunk * sizeof(float));
+        memcpy(outR, &(sc3->output[1][blockpos]), chunk * sizeof(float));
 
         blockpos += chunk;
 

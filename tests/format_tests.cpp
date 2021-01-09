@@ -61,9 +61,9 @@ TEST_CASE("Simple SF2 Load", "[formats]")
             rms = sqrt(rms);
             rmses.push_back(rms);
         }
-        REQUIRE(rmses[0] == Approx(19.88632).margin(1e-3));
-        REQUIRE(rmses[1] == Approx(20.96383).margin(1e-3));
-        REQUIRE(rmses[2] == Approx(20.93767).margin(1e-3));
+        REQUIRE(rmses[0] == Approx(15.14437).margin(1e-3));
+        REQUIRE(rmses[1] == Approx(18.16663).margin(1e-3));
+        REQUIRE(rmses[2] == Approx(18.72027).margin(1e-3));
     }
 }
 
@@ -98,7 +98,7 @@ TEST_CASE("Simple WAV Load", "[formats]")
             }
         }
         rms = sqrt(rms);
-        REQUIRE(rms == Approx(6.0266351586).margin(1e-4));
+        REQUIRE(rms == Approx(2.2468728).margin(1e-4));
     }
 }
 

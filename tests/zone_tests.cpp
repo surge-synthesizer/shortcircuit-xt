@@ -163,7 +163,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             else
             {
                 INFO("Checking with note " << n);
-                std::vector<float> vals = {16.963544, 14.8987890705, 8.9075824};
+                std::vector<float> vals = {16.964918, 14.899617, 8.906973};
                 REQUIRE(rms == Approx(vals[n - 36]).margin(1e-5));
             }
         }
