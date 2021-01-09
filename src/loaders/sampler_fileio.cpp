@@ -166,7 +166,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
     {
         if (is_group)
             *is_group = true;
-        return load_sf2_preset(path_to_string(validFileName).c_str(), new_g, channel, programid);
+        return load_sf2_preset(validFileName, new_g, channel, programid);
     }
     return false;
 }

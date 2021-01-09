@@ -38,13 +38,13 @@ namespace SC3
 #if WINDOWS
 struct WinImpl : FileMapView::Impl
 {
-    WinImpl(std::string fname)
+    WinImpl(const fs::path &fname)
     {
+        // TODO AS sort out
         wchar_t wfn[2048];
-        vtStringToWString(wfn, fname.c_str(), 2048);
+        vtStringToWString(wfn, path_to_string(fname).c_str(), 2048);
         init(wfn);
     }
-    WinImpl(std::wstring fname) { init(fname); }
     ~WinImpl()
     {
         if (isMapped)
@@ -99,13 +99,7 @@ WinImpl *as(FileMapView::Impl *imp) { return reinterpret_cast<WinImpl *>(imp); }
 #else
 struct posixImpl : FileMapView::Impl
 {
-    posixImpl(std::string fname) { init(fname); }
-    posixImpl(std::wstring fname)
-    {
-        char fn[PATH_MAX];
-        vtWStringToString(fn, fname.c_str(), PATH_MAX);
-        init(fn);
-    }
+    posixImpl(const fs::path &fname) { init(fname); }
     ~posixImpl()
     {
         if (isMapped)
@@ -114,11 +108,11 @@ struct posixImpl : FileMapView::Impl
             close(fd);
         }
     }
-    void init(std::string fname)
+    void init(const fs::path &fname)
     {
         struct stat sb;
-
-        fd = open(fname.c_str(), O_RDONLY);
+        // TODO AS does open assume utf8?
+        fd = open(path_to_string(fname).c_str(), O_RDONLY);
         if (!fd)
         {
             isMapped = false;
@@ -147,16 +141,7 @@ struct posixImpl : FileMapView::Impl
 posixImpl *as(FileMapView::Impl *imp) { return reinterpret_cast<posixImpl *>(imp); }
 #endif
 
-FileMapView::FileMapView(std::string fname)
-{
-#if WIN32
-    impl = std::make_unique<WinImpl>(fname);
-#else
-    impl = std::make_unique<posixImpl>(fname);
-#endif
-}
-
-FileMapView::FileMapView(std::wstring fname)
+FileMapView::FileMapView(const fs::path &fname)
 {
 #if WIN32
     impl = std::make_unique<WinImpl>(fname);

@@ -20,13 +20,15 @@
 
 #include <string>
 #include <memory>
+#include "infrastructure/import_fs.h"
 
 /*
  * This class provides a mechanism to do a MapViewOfFile/mmap in a portable
  * way. The intent is that you would use it with a unique_ptr where you needed
  * the map scope. So, for instance
  *
- * auto mapper = std::make_unique<SC3::FileMapView>("foo.bin");
+ * fs::path p = string_to_path("foo.bin");
+ * auto mapper = std::make_unique<SC3::FileMapView>(p);
  * auto d = mapper->data; // valid until mapper is destroyed
  * auto s = mapper->dataSize;
  */
@@ -36,8 +38,7 @@ namespace SC3
 class FileMapView
 {
   public:
-    FileMapView(std::string fname);
-    FileMapView(std::wstring fname);
+    FileMapView(const fs::path &filename);
     ~FileMapView();
 
     bool isMapped();

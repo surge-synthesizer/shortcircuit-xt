@@ -36,6 +36,7 @@
 #include <memory>
 
 #include "infrastructure/logfile.h"
+#include "infrastructure/import_fs.h"
 #include "riff_memfile.h"
 
 struct sc3mmio_hand {
@@ -87,8 +88,8 @@ typedef int LRESULT;
 
 typedef const char* LPSTR;
 typedef const wchar_t* LPWSTR;
-HMMIO mmioOpen(LPSTR fn, void *defacto_unused, int mode);
-HMMIO mmioOpenW(LPWSTR fn, void *defacto_unused, int mode);
+HMMIO mmioOpen(const fs::path &fn, void *defacto_unused, int mode);
+
 
 inline uint32_t mmioFOURCC(char a, char b, char c, char d) {
     uint32_t res = ( a ) | ( b << 8 ) | ( c << 16 ) | (d << 24 );

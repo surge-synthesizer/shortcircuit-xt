@@ -48,14 +48,6 @@ TEST_CASE( "MMIO Layer", "[io]" )
         REQUIRE( h );
         REQUIRE( mmioClose( h, 0 ) == 0 );
     }
-    SECTION( "OpenW and Close" )
-    {
-        auto h = mmioOpenW(L"resources/test_samples/WavStereo48k.wav",
-                           NULL,
-                           MMIO_READ | MMIO_ALLOCBUF);
-        REQUIRE( h );
-        REQUIRE( mmioClose( h, 0 ) == 0 );
-    }
     SECTION( "mmioFourCC" )
     {
         REQUIRE( mmioFOURCC( 0, 0, 0, 0 ) == 0 );
@@ -129,7 +121,7 @@ TEST_CASE( "MMIO Layer", "[io]" )
     }
     SECTION( "Open on an SF2" )
     {
-        auto h = mmioOpen( "resources/test_samples/harpsi.sf2",
+        auto h = mmioOpen( string_to_path("resources/test_samples/harpsi.sf2"),
                           NULL,
                           MMIO_READ | MMIO_ALLOCBUF );
         REQUIRE( h );

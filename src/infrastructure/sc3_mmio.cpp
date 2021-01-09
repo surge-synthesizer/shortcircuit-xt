@@ -44,7 +44,7 @@ HMMIO mmioOpenSTR( std::ifstream &ifs, int mode )
     return res;
 }
 
-HMMIO mmioOpen(const char *fn, void *, int mode)
+HMMIO mmioOpen(const fs::path &fn, void *, int mode)
 {
     auto ifs = std::ifstream(fn, std::ios::binary);
     return mmioOpenSTR( ifs, mode );
