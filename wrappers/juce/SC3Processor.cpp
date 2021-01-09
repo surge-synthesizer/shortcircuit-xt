@@ -14,7 +14,8 @@ void *hInstance = 0;
 
 //==============================================================================
 SC3AudioProcessor::SC3AudioProcessor()
-    : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)), mNotify(0)
+    : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+      mNotify(0), blockPos(0)
 {
     // This is a good place for VS mem leak debugging:
     // _CrtSetBreakAlloc(<id>);
@@ -107,15 +108,21 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
     auto mainInputOutput = getBusBuffer(buffer, false, 0);
 
-    for (int outPos = 0; outPos < buffer.getNumSamples(); outPos += block_size)
+    for (int i = 0; i < buffer.getNumSamples(); i += BUFFER_COPY_CHUNK)
     {
-        auto outL = mainInputOutput.getWritePointer(0, outPos);
-        auto outR = mainInputOutput.getWritePointer(1, outPos);
+        auto outL = mainInputOutput.getWritePointer(0, i);
+        auto outR = mainInputOutput.getWritePointer(1, i);
 
-        sc3->process_audio();
+        if (blockPos == 0)
+            sc3->process_audio();
+        
+        memcpy(outL, &(sc3->output[0][blockPos]), BUFFER_COPY_CHUNK * sizeof(float));
+        memcpy(outR, &(sc3->output[1][blockPos]), BUFFER_COPY_CHUNK * sizeof(float));
 
-        memcpy(outL, &(sc3->output[0]), block_size * sizeof(float));
-        memcpy(outR, &(sc3->output[1]), block_size * sizeof(float));
+        blockPos += BUFFER_COPY_CHUNK;
+
+        if (blockPos >= block_size)
+            blockPos = 0;
     }
 }
 
