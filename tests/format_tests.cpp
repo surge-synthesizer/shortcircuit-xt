@@ -44,11 +44,11 @@ TEST_CASE("Simple SF2 Load", "[formats]")
         for (auto n : notes)
         {
             double rms = 0;
-            for (int i = 0; i < 150; ++i)
+            for (int i = 0; i < 300; ++i)
             {
-                if (i == 30)
+                if (i == 60)
                     sc3->PlayNote(0, n, 120);
-                if (i == 70)
+                if (i == 140)
                     sc3->ReleaseNote(0, n, 0);
 
                 sc3->process_audio();
@@ -61,9 +61,9 @@ TEST_CASE("Simple SF2 Load", "[formats]")
             rms = sqrt(rms);
             rmses.push_back(rms);
         }
-        REQUIRE(rmses[0] == Approx(15.14437).margin(1e-3));
-        REQUIRE(rmses[1] == Approx(18.16663).margin(1e-3));
-        REQUIRE(rmses[2] == Approx(18.72027).margin(1e-3));
+        REQUIRE(rmses[0] == Approx(19.86253).margin(1e-3));
+        REQUIRE(rmses[1] == Approx(21.01420).margin(1e-3));
+        REQUIRE(rmses[2] == Approx(20.87521).margin(1e-3));
     }
 }
 
@@ -83,11 +83,11 @@ TEST_CASE("Simple WAV Load", "[formats]")
 
         double rms = 0;
         int n = 36;
-        for (int i = 0; i < 100; ++i)
+        for (int i = 0; i < 200; ++i)
         {
-            if (i == 30)
+            if (i == 60)
                 sc3->PlayNote(0, n, 120);
-            if (i == 70)
+            if (i == 140)
                 sc3->ReleaseNote(0, n, 0);
 
             sc3->process_audio();
@@ -98,7 +98,7 @@ TEST_CASE("Simple WAV Load", "[formats]")
             }
         }
         rms = sqrt(rms);
-        REQUIRE(rms == Approx(2.2468728).margin(1e-4));
+        REQUIRE(rms == Approx(5.9624592896).margin(1e-4));
     }
 }
 

@@ -141,7 +141,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             double rms = 0;
             for (int i = 0; i < oneSecInBlocks; ++i)
             {
-                if (i == 30)
+                if (i == 60)
                     sc3->PlayNote(0, n, 120);
                 if (i == oneSecInBlocks - 50)
                     sc3->ReleaseNote(0, n, 0);
@@ -153,7 +153,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
                            sc3->output[1][k] * sc3->output[1][k];
                 }
             }
-            for (int i = 0; i < 1000; ++i)
+            for (int i = 0; i < 2000; ++i)
                 sc3->process_audio();
             rms = sqrt(rms);
             if (n < 36 || n > 38)
@@ -163,7 +163,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             else
             {
                 INFO("Checking with note " << n);
-                std::vector<float> vals = {16.964918, 14.899617, 8.906973};
+                std::vector<float> vals = {16.964388, 14.899617, 8.906973};
                 REQUIRE(rms == Approx(vals[n - 36]).margin(1e-5));
             }
         }
