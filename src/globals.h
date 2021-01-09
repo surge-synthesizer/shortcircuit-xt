@@ -25,7 +25,6 @@ typedef uint32_t uint32;
 
 const uint32 block_size = 32; // must be a multiple of 4 (SIMD)
 const uint32 block_size_quad = block_size >> 2;
-const uint32 chunk = 4;  // sample copy grain size
 const float inv_block_size = 1.f / float(block_size);
 const float inv_2block_size = 1.f / float(block_size << 1);
 const __m128 inv_block_size_128 = _mm_set1_ps(inv_block_size);
