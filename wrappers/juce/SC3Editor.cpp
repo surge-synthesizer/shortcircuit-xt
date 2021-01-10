@@ -43,8 +43,8 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     // editor's size to whatever you need it to be.
     setSize(900, 600);
     actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
-    logToUI = std::make_unique<SC3EngineToWrapperQueue<std::string>>();
-    p.mNotify=this;
+    logToUI = std::make_unique<SC3EngineToWrapperQueue<SC3AudioProcessorEditor::LogTransport>>();
+    p.addLogDisplayListener(this);
     p.sc3->registerWrapperForEvents(this);
 
     // This is going to be a little pattern I'm sure
@@ -75,7 +75,7 @@ SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
     uiStateProxies.clear();
     debugWindow->panel->setEditor(nullptr);
     idleTimer->stopTimer();
-    audioProcessor.mNotify=nullptr;
+    audioProcessor.removeLogDisplayListener(this);
 
     actiondata ad;
     ad.actiontype = vga_closeeditor;
@@ -145,7 +145,10 @@ void SC3AudioProcessorEditor::refreshSamplerTextViewInThreadUnsafeWay()
     debugWindow->panel->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
-void SC3AudioProcessorEditor::setLogText(const std::string &txt) { logToUI->push(txt); }
+void SC3AudioProcessorEditor::handleLogMessage(SC3::Log::Level lev, const std::string &txt)
+{
+    logToUI->push(SC3AudioProcessorEditor::LogTransport(lev, txt));
+}
 
 void SC3AudioProcessorEditor::idle()
 {
@@ -153,7 +156,7 @@ void SC3AudioProcessorEditor::idle()
     actiondata ad;
 
 #if DEBUG_UNHANDLED_MESSAGES
-    std::map<int, int> unhandled;
+    std::map<int, std::map<int, int>> unhandled;
 #endif
     while (actiondataToUI->pop(ad))
     {
@@ -166,28 +169,37 @@ void SC3AudioProcessorEditor::idle()
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
-            if (unhandled.find(ad.actiontype) == unhandled.end())
-                unhandled[ad.actiontype] = 0;
-            unhandled[ad.actiontype]++;
+            // if (unhandled.find(ad.actiontype) == unhandled.end())
+            //    unhandled[ad.actiontype];
+            unhandled[ad.actiontype][ad.id]++;
         }
 #endif
     }
 
-    std::string s;
-    while (logToUI->pop(s))
+    LogTransport lt;
+    while (logToUI->pop(lt))
     {
-        debugWindow->panel->appendLogText(s);
+        std::string t = SC3::Log::getShortLevelStr(lt.lev);
+        // We now have an option to do something else with errors if we want
+        debugWindow->panel->appendLogText(t + lt.txt);
         mcount++;
     }
 
 #if DEBUG_UNHANDLED_MESSAGES
     // bit of a hack, sure.
+    if (unhandled.size())
+    {
+        debugWindow->panel->appendLogText("[EDITOR] -------- MESSAGE BLOCK -------");
+    }
     for (auto uh : unhandled)
     {
-        std::ostringstream oss;
-        oss << "[EDITOR] ignored UI msg=" << debug_wrapper_vga_to_string(uh.first)
-            << " ct=" << uh.second;
-        debugWindow->panel->appendLogText(oss.str());
+        for (auto uhsub : uh.second)
+        {
+            std::ostringstream oss;
+            oss << "[EDITOR] ignored UI msg=" << debug_wrapper_vga_to_string(uh.first) << "/"
+                << debug_wrapper_ip_to_string(uhsub.first) << " ct=" << uhsub.second;
+            debugWindow->panel->appendLogText(oss.str());
+        }
     }
 #endif
 

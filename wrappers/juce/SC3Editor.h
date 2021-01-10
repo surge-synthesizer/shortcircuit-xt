@@ -90,7 +90,7 @@ class ZoneKeyboardDisplay;
 class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
                                 public juce::Button::Listener,
                                 public juce::FileDragAndDropTarget,
-                                public EditorNotify,
+                                public LogDisplayListener,
                                 public sampler::WrapperListener,
                                 public ActionSender
 {
@@ -113,7 +113,7 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     // Fixme - obviously this is done with no thought of threading or anything else
     void refreshSamplerTextViewInThreadUnsafeWay();
 
-    void setLogText(const std::string &txt) override;
+    void handleLogMessage(SC3::Log::Level lev, const std::string &txt) override;
 
     void receiveActionFromProgram(const actiondata &ad) override;
     void sendActionToEngine(const actiondata &ad) override;
@@ -129,7 +129,14 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
 
     std::unique_ptr<DebugPanelWindow> debugWindow;
     std::unique_ptr<SC3EngineToWrapperQueue<actiondata>> actiondataToUI;
-    std::unique_ptr<SC3EngineToWrapperQueue<std::string>> logToUI;
+    struct LogTransport
+    {
+        SC3::Log::Level lev = SC3::Log::Level::None;
+        std::string txt = "";
+        LogTransport() = default;
+        LogTransport(SC3::Log::Level l, const std::string &t) : lev(l), txt(t) {}
+    };
+    std::unique_ptr<SC3EngineToWrapperQueue<LogTransport>> logToUI;
     std::unique_ptr<SC3IdleTimer> idleTimer;
 
     std::set<UIStateProxy *> uiStateProxies;
