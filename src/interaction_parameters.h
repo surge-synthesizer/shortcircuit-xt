@@ -104,8 +104,8 @@ enum
     ip_zone_aux_balance,
     ip_zone_aux_output,
     ip_zone_aux_outmode,
-    ip_zone_params_end =
-        ip_zone_aux_outmode, // end: properties that should be handled by multiselect
+    ip_zone_params_end = ip_zone_aux_outmode,
+    // end: properties that should be handled by multiselect
 
     ip_part_name,
     ip_part_params_begin = ip_part_name,

@@ -21,6 +21,12 @@
 
 #include "proxies/ZoneStateProxy.h"
 
+#define DEBUG_UNHANDLED_MESSAGES 1
+
+#if DEBUG_UNHANDLED_MESSAGES
+#include "wrapper_msg_to_string.h"
+#endif
+
 struct SC3IdleTimer : juce::Timer
 {
     SC3IdleTimer(SC3AudioProcessorEditor *ed) : ed(ed) {}
@@ -146,8 +152,6 @@ void SC3AudioProcessorEditor::idle()
     int mcount = 0;
     actiondata ad;
 
-#define DEBUG_UNHANDLED_MESSAGES 1
-
 #if DEBUG_UNHANDLED_MESSAGES
     std::map<int, int> unhandled;
 #endif
@@ -181,7 +185,8 @@ void SC3AudioProcessorEditor::idle()
     for (auto uh : unhandled)
     {
         std::ostringstream oss;
-        oss << "[EDITOR] Unhandled message: id=" << uh.first << " count=" << uh.second;
+        oss << "[EDITOR] ignored UI msg=" << debug_wrapper_vga_to_string(uh.first)
+            << " ct=" << uh.second;
         debugWindow->panel->appendLogText(oss.str());
     }
 #endif
