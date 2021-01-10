@@ -97,12 +97,10 @@ TEST_CASE("Decode Path", "[config]")
     SECTION("Windows wide name")
     {
         fs::path p(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav>100|200");
-        char name[256];
-        WideCharToMultiByte(CP_UTF8, 0, L"\u8072\u97f3\u4e0d\u597d", -1, name, 256, 0, 0);
         decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
         REQUIRE(out.compare(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav") == 0);
         REQUIRE(ext.compare("wav") == 0);
-        REQUIRE(nameOnly.compare(name) == 0);
+        REQUIRE(nameOnly.compare("\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd") == 0);
         REQUIRE(pathOnly.compare("resources\\test_samples") == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
@@ -121,7 +119,20 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
 
-    }        
+    }
+
+    SECTION("Unix/mac unicode filename") 
+    {
+        fs::path p("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav>100|200");
+        decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
+        REQUIRE(out.compare("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav") == 0);
+        REQUIRE(ext.compare("wav") == 0);
+        REQUIRE(nameOnly.compare("\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd") == 0);
+        REQUIRE(pathOnly.compare("resources\\test_samples") == 0);
+        REQUIRE(progid == 100);
+        REQUIRE(sampleid == 200);
+        
+    }
 
     SECTION("Unix/mac path only")
     {        
@@ -152,10 +163,8 @@ TEST_CASE("Build Path", "[config]")
 
     SECTION("Windows wide") 
     { 
-        char name[256];
-        WideCharToMultiByte(CP_UTF8, 0, L"\u8072\u97f3\u4e0d\u597d", -1, name, 256, 0, 0);
         fs::path p("resources\\test_samples");        
-        auto out = build_path(p, name, "wav");
+        auto out = build_path(p, "\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd", "wav");
         auto wideFn = out.generic_wstring();
         REQUIRE(out.compare(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav") == 0); 
 
