@@ -1130,7 +1130,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
     }
     else if (!filename.empty())
     {
-        // TODO propagate path down
+        // wants utf8
         if (!doc.LoadFile(path_to_string(filename).c_str()))
             return false;        
         // assign path to configuration
@@ -1342,7 +1342,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &fi
     }
     else if (!filename.empty())
     {
-        // TODO propagate path down to Tixml
+        // Tixml wants utf8
         if (!doc.LoadFile(path_to_string(filename).c_str()))
             return false;
 

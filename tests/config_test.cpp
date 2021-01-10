@@ -190,3 +190,29 @@ TEST_CASE("Resolve Path", "[config]") {
     }
 #endif
 }
+
+
+TEST_CASE("Save/Load configuration", "[config]") {
+    SC3::Log::StreamLogger sl(gLogger);
+    
+    auto tempFn = fs::temp_directory_path();
+    tempFn /= "_sc3_test_config.xml";
+    
+    SECTION("save") { 
+        configuration c(sl);
+        c.stereo_outputs = 99;
+        REQUIRE(c.save(tempFn));
+        REQUIRE(fs::exists(tempFn));
+    }
+
+    SECTION("load") { 
+        configuration c(sl);
+        REQUIRE(c.load(tempFn));
+        REQUIRE(c.stereo_outputs == 99);
+    }
+
+    SECTION("Cleanup") { 
+        fs::remove(tempFn); 
+    }
+
+}

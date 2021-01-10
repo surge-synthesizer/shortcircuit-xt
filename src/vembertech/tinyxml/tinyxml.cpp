@@ -941,7 +941,14 @@ bool TiXmlDocument::LoadFile( const char* filename, TiXmlEncoding encoding )
 	// Fixed with the StringToBuffer class.
 	value = filename;
 
+#ifdef _WIN32
+	// AS - assume the filename is utf8 and convert to wide
+    wchar_t wbuf[2048];
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, wbuf, 2048);
+    FILE *file = _wfopen(wbuf, L"r");
+#else
 	FILE* file = fopen( value.c_str (), "r" );
+#endif
 
 	if ( file )
 	{
@@ -986,7 +993,15 @@ bool TiXmlDocument::LoadFile( const char* filename, TiXmlEncoding encoding )
 bool TiXmlDocument::SaveFile( const char * filename ) const
 {
 	// The old c stuff lives on...
-	FILE* fp = fopen( filename, "w" );
+#ifdef _WIN32
+    // AS - assume the filename is utf8 and convert to wide
+    wchar_t wbuf[2048];
+    MultiByteToWideChar(CP_UTF8, 0, filename, -1, wbuf, 2048);
+    FILE *fp = _wfopen(wbuf, L"w");
+#else
+    FILE *fp = fopen(filename, "w");
+#endif
+	
 	if ( fp )
 	{
 		Print( fp, 0 );

@@ -30,7 +30,7 @@ bool sampler::load_battery_kit(const fs::path &fileName, char channel, bool repl
     decode_path(fileName, 0, 0, &fn_only, &path);
     path = path / "samples";
 
-    TiXmlDocument doc(path_to_string(fileName));
+    TiXmlDocument doc(path_to_string(fileName)); // wants utf8
     doc.LoadFile();
 
     TiXmlElement *patch = doc.FirstChildElement("BatteryPatch");
