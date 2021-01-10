@@ -54,6 +54,12 @@ extern float samplerate;
 extern float samplerate_inv;
 extern float multiplier_freq2omega;
 
+// directory under user's profile where sc3 config file(s) will be sought
+// this should end up being same location that juce stores it's standalone app settings
+// TODO AS for juce wrappers, we may consider migrating to using juce's cross platform 
+// facility for loading/saving. see stochas configSerialization
+const char SC3_CONFIG_DIRECTORY[] = "ShortCircuit3";
+
 #if !WINDOWS
 #include "windows_compat.h"
 #endif

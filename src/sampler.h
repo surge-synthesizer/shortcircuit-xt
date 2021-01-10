@@ -83,6 +83,9 @@ class sampler
     sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect = 0, SC3::Log::LoggingCallback *cb=0);
     virtual ~sampler(void);
 
+    bool loadUserConfiguration(const fs::path &configFile);
+    bool saveUserConfiguration(const fs::path &configFile);
+
     /*
      * Midi Messages
      */

@@ -1,4 +1,6 @@
 #include "sampler.h"
+#include "sampler.h"
+#include "sampler.h"
 #include "version.h"
 #ifdef SCPB
 #include "scpb_editor.h"
@@ -62,35 +64,8 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     : mLogger(cb), mNumOutputs(NumOutputs)
 {
     LOGINFO(mLogger) << "SC3 engine " << SC3::Build::FullVersionStr << std::flush;
-
-    // load configuration
-    wchar_t path[1024];
-#if WINDOWS
-    extern void *hInstance;
-    holdengine = false;
-    GetModuleFileNameW((HMODULE)hInstance, path, 1024);
-    wchar_t *end = wcsrchr(path, L'\\');
-    if (end)
-    {
-#ifdef SCPB
-        wcscpy(end, L"\\scpb-conf.xml");
-#else
-        wcscpy(end, L"\\shortcircuitV2-conf.xml");
-#endif
-    }
-    else
-    {
-        wcscpy(path, L"");
-        SC3::Log::logos() << "FIXME: Setup Config" << std::endl;
-    }
-    auto ppath = fs::path(path);
-#else
-#warning Deal with configuration paths.
-    wcscpy(path, L"" );
-    auto ppath = string_to_path("");
-#endif
     conf = new configuration(mLogger);
-    conf->load(ppath);
+    
 
     mpPreview = new sampler::Preview(&time_data, this);
 
@@ -232,6 +207,16 @@ sampler::~sampler(void)
         free(chunkDataPtr);
     if (dbSampleListDataPtr)
         free(dbSampleListDataPtr);
+}
+
+bool sampler::loadUserConfiguration(const fs::path &configFile) {
+            
+    return conf->load(configFile);
+    
+}
+
+bool sampler::saveUserConfiguration(const fs::path &configFile) { 
+    return conf->save(configFile); 
 }
 
 bool sampler::zone_exist(int id)

@@ -22,7 +22,8 @@ class LogDisplayListener
  */
 class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingCallback
 {
-  
+    SC3::Log::StreamLogger mLogger; 
+    fs::path mConfigFileName;
   public:
     //==============================================================================
     SC3AudioProcessor();
