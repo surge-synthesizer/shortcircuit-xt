@@ -100,7 +100,19 @@ TEST_CASE("Simple WAV Load", "[formats]")
         rms = sqrt(rms);
         REQUIRE(rms == Approx(6.0266351586).margin(1e-4));
     }
+
+    SECTION("Wide string filename load") 
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        REQUIRE(sc3);
+
+        sc3->set_samplerate(48000);
+        REQUIRE(sc3->load_file(L"resources/test_samples/\u8072\u97f3\u4e0d\u597d.wav"));
+    }
 }
+
+
+
 
 TEST_CASE("Load two SF2s", "[formats]")
 {

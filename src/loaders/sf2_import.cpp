@@ -31,7 +31,7 @@ int get_sf2_patchlist(const fs::path &filename, void **plist, SC3::Log::StreamLo
     HMMIO hmmio;
 
     /* Open the file for reading with buffered I/O. Let windows use its default internal buffer */
-    hmmio = mmioOpen(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
+    hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
         LOGERROR(logger) << "file io error: File '" << path_to_string(filename) << "' not found!" << std::flush;
@@ -238,7 +238,7 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
     HMMIO hmmio;
 
     /* Open the file for reading with buffered I/O. Let windows use its default internal buffer */
-    hmmio = mmioOpen(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
+    hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
         LOGERROR(mLogger) << "file io error: File '" << path_to_string(filename) << "' not found!" << std::flush; 

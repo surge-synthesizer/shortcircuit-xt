@@ -26,7 +26,7 @@
 
 #ifndef SHORTCIRCUIT_SC3_MMIO_H
 #define SHORTCIRCUIT_SC3_MMIO_H
-
+#include "infrastructure/import_fs.h"
 #if WINDOWS
 #include <windows.h>
 #include <mmiscapi.h>
@@ -36,7 +36,6 @@
 #include <memory>
 
 #include "infrastructure/logfile.h"
-#include "infrastructure/import_fs.h"
 #include "riff_memfile.h"
 
 struct sc3mmio_hand {
@@ -88,7 +87,7 @@ typedef int LRESULT;
 
 typedef const char* LPSTR;
 typedef const wchar_t* LPWSTR;
-HMMIO mmioOpen(const fs::path &fn, void *defacto_unused, int mode);
+
 
 
 inline uint32_t mmioFOURCC(char a, char b, char c, char d) {
@@ -106,5 +105,8 @@ inline int mmioAscend(HMMIO a, MMCKINFO *b, int) { return 0; }
 int mmioRead(HMMIO a, HPSTR b, int);
 
 #endif
+
+HMMIO mmioOpenFromPath(const fs::path &fn, void *defacto_unused, int mode);
+
 
 #endif // SHORTCIRCUIT_SC3_MMIO_H

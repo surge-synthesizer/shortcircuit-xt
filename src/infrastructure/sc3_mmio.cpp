@@ -16,7 +16,13 @@
 */
 #include "sc3_mmio.h"
 
-#if ! WINDOWS
+#if WINDOWS
+HMMIO mmioOpenFromPath(const fs::path &fn, void *, int mode) 
+{
+    auto wideFn=fn.generic_wstring(); 
+    return mmioOpenW(const_cast<LPWSTR>(wideFn.c_str()), nullptr, mode);
+}
+#else
 
 #include <fstream>
 #include <string>
@@ -44,7 +50,7 @@ HMMIO mmioOpenSTR( std::ifstream &ifs, int mode )
     return res;
 }
 
-HMMIO mmioOpen(const fs::path &fn, void *, int mode)
+HMMIO mmioOpenFromPath(const fs::path &fn, void *, int mode)
 {
     auto ifs = std::ifstream(fn, std::ios::binary);
     return mmioOpenSTR( ifs, mode );

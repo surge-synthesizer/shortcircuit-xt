@@ -171,7 +171,7 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
     
     HMMIO hmmio;
 
-    hmmio = mmioOpen(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
+    hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
         LOGERROR(mLogger) << "file io error: File " << path_to_string(filename) << " not found" << std::flush;
