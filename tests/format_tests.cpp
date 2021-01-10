@@ -107,7 +107,7 @@ TEST_CASE("Simple WAV Load", "[formats]")
         REQUIRE(sc3);
 
         sc3->set_samplerate(48000);
-        REQUIRE(sc3->load_file(L"resources/test_samples/\u8072\u97f3\u4e0d\u597d.wav"));
+        REQUIRE(sc3->load_file("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav"));
     }
 }
 

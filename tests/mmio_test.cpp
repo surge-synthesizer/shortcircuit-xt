@@ -51,8 +51,14 @@ TEST_CASE( "MMIO Layer", "[io]" )
 
     SECTION("Open and Close wide")
     {
+        // make sure L version and utf8 version work (L version will be on win only)
+#ifdef _WIN32
         auto h = mmioOpenFromPath(L"resources/test_samples/\u8072\u97f3\u4e0d\u597d.wav", NULL,
                           MMIO_READ | MMIO_ALLOCBUF);
+#else
+        auto h = mmioOpenFromPath("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav", NULL,
+                          MMIO_READ | MMIO_ALLOCBUF);
+#endif
         REQUIRE(h);
         REQUIRE(mmioClose(h, 0) == 0);
     }

@@ -128,7 +128,7 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(out.compare("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav") == 0);
         REQUIRE(ext.compare("wav") == 0);
         REQUIRE(nameOnly.compare("\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd") == 0);
-        REQUIRE(pathOnly.compare("resources\\test_samples") == 0);
+        REQUIRE(pathOnly.compare("resources/test_samples") == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
         
