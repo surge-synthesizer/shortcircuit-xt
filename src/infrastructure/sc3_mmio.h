@@ -26,7 +26,7 @@
 
 #ifndef SHORTCIRCUIT_SC3_MMIO_H
 #define SHORTCIRCUIT_SC3_MMIO_H
-
+#include "infrastructure/import_fs.h"
 #if WINDOWS
 #include <windows.h>
 #include <mmiscapi.h>
@@ -87,8 +87,8 @@ typedef int LRESULT;
 
 typedef const char* LPSTR;
 typedef const wchar_t* LPWSTR;
-HMMIO mmioOpen(LPSTR fn, void *defacto_unused, int mode);
-HMMIO mmioOpenW(LPWSTR fn, void *defacto_unused, int mode);
+
+
 
 inline uint32_t mmioFOURCC(char a, char b, char c, char d) {
     uint32_t res = ( a ) | ( b << 8 ) | ( c << 16 ) | (d << 24 );
@@ -105,5 +105,8 @@ inline int mmioAscend(HMMIO a, MMCKINFO *b, int) { return 0; }
 int mmioRead(HMMIO a, HPSTR b, int);
 
 #endif
+
+HMMIO mmioOpenFromPath(const fs::path &fn, void *defacto_unused, int mode);
+
 
 #endif // SHORTCIRCUIT_SC3_MMIO_H

@@ -128,7 +128,7 @@ struct akai_s6k_akp_zone
     int8 level;
     int8 keytrack;
     int8 vel2LSB, vel2MSB;
-    int8 unused3[2]; // TODO AS experiment!!!
+    int8 unused3[2]; // TODO AS it seems like it can be this big in the wild. what is the extra data?
 };
 /*
 struct akai_s6k_akp_keygroup
@@ -171,7 +171,7 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
     
     HMMIO hmmio;
 
-    hmmio = mmioOpen((LPSTR)path_to_string(filename).c_str(), NULL, MMIO_READ | MMIO_ALLOCBUF);
+    hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
         LOGERROR(mLogger) << "file io error: File " << path_to_string(filename) << " not found" << std::flush;
@@ -248,7 +248,7 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
             return false;
         }
 
-        /* Tell Windows to read in the "kloc" chunk*/
+        /* read in the "kloc" chunk*/
         if (mmioRead(hmmio, (HPSTR)&s6k_kloc[k], mmckinfoSubchunk.cksize) !=
             (LRESULT)mmckinfoSubchunk.cksize)
         {
@@ -267,7 +267,7 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
             return false;
         }
 
-        /* Tell Windows to read in the "env " chunk*/
+        /* read in the "env " chunk*/
         if (mmioRead(hmmio, (HPSTR)&s6k_ampenv[k], mmckinfoSubchunk.cksize) !=
             (LRESULT)mmckinfoSubchunk.cksize)
         {
@@ -288,8 +288,15 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
                 return false;
             }
 
-            int csize = min(mmckinfoSubchunk.cksize, (int)sizeof(akai_s6k_akp_zone));
-            if (mmioRead(hmmio, (HPSTR)&s6k_zone[k][z], csize) != (LRESULT)csize)
+            if(mmckinfoSubchunk.cksize > sizeof(akai_s6k_akp_zone)) {
+                LOGERROR(mLogger) << "file io: zone chunk unhandled size";
+                mmioClose(hmmio, 0);
+                return false;
+            } else if (mmckinfoSubchunk.cksize < sizeof(akai_s6k_akp_zone) ) {
+                memset((HPSTR)&s6k_zone[k][z],0,sizeof(akai_s6k_akp_zone));
+            }
+
+            if (mmioRead(hmmio, (HPSTR)&s6k_zone[k][z], mmckinfoSubchunk.cksize) != mmckinfoSubchunk.cksize)
             {
                 LOGERROR(mLogger) << "file io: error reading the zone chunk!";
                 mmioClose(hmmio, 0);

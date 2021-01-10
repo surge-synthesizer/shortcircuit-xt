@@ -180,7 +180,7 @@ TEST_CASE("File Mapper", "[io]")
 
     SECTION("Mapper reads Test Data")
     {
-        auto mapper = std::make_unique<SC3::FileMapView>("resources/test_samples/not_audio.bin");
+        auto mapper = std::make_unique<SC3::FileMapView>(string_to_path(std::string("resources/test_samples/not_audio.bin")));
         REQUIRE(mapper);
         REQUIRE(mapper->isMapped());
 

@@ -42,20 +42,29 @@ TEST_CASE( "MMIO Layer", "[io]" )
 
     SECTION("Open and Close" )
     {
-        auto h = mmioOpen("resources/test_samples/WavStereo48k.wav",
+        auto h = mmioOpenFromPath("resources/test_samples/WavStereo48k.wav",
                           NULL,
                           MMIO_READ | MMIO_ALLOCBUF);
         REQUIRE( h );
         REQUIRE( mmioClose( h, 0 ) == 0 );
     }
-    SECTION( "OpenW and Close" )
+
+    SECTION("Open and Close wide")
     {
-        auto h = mmioOpenW(L"resources/test_samples/WavStereo48k.wav",
-                           NULL,
-                           MMIO_READ | MMIO_ALLOCBUF);
-        REQUIRE( h );
-        REQUIRE( mmioClose( h, 0 ) == 0 );
+        // make sure L version and utf8 version work (L version will be on win only)
+#ifdef _WIN32
+        auto h = mmioOpenFromPath(L"resources/test_samples/\u8072\u97f3\u4e0d\u597d.wav", NULL,
+                          MMIO_READ | MMIO_ALLOCBUF);
+#else
+        auto h = mmioOpenFromPath("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav", NULL,
+                          MMIO_READ | MMIO_ALLOCBUF);
+#endif
+        REQUIRE(h);
+        REQUIRE(mmioClose(h, 0) == 0);
     }
+
+    
+
     SECTION( "mmioFourCC" )
     {
         REQUIRE( mmioFOURCC( 0, 0, 0, 0 ) == 0 );
@@ -65,7 +74,7 @@ TEST_CASE( "MMIO Layer", "[io]" )
     SECTION( "Wave File Header Traversal" )
     {
         auto h =
-            mmioOpen("resources/test_samples/WavStereo48k.wav", NULL, MMIO_READ | MMIO_ALLOCBUF);
+            mmioOpenFromPath("resources/test_samples/WavStereo48k.wav", NULL, MMIO_READ | MMIO_ALLOCBUF);
         REQUIRE(h);
 
         MMCKINFO mmckinfoParent; /* for the Group Header */
@@ -129,7 +138,7 @@ TEST_CASE( "MMIO Layer", "[io]" )
     }
     SECTION( "Open on an SF2" )
     {
-        auto h = mmioOpen( "resources/test_samples/harpsi.sf2",
+        auto h = mmioOpenFromPath( "resources/test_samples/harpsi.sf2",
                           NULL,
                           MMIO_READ | MMIO_ALLOCBUF );
         REQUIRE( h );

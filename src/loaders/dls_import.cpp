@@ -147,9 +147,9 @@ int parse_dls_patchlist(void *data, size_t filesize, void **plist)
     return patchcount;
 }
 
-int get_dls_patchlist(const wchar_t *filename, void **plist)
+int get_dls_patchlist(const fs::path &filename, void **plist)
 {
-    assert(filename);
+    assert(!filename.empty());
 
     auto mapper = std::make_unique<SC3::FileMapView>(filename);
     if( ! mapper->isMapped() )
@@ -259,10 +259,11 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
                             do_load = false;
                     }
 
-                    char fn[256];
                     int newzone;
-                    sprintf(fn, "%s|%i", filename, _3lnk.RegionSampleID[j]); // TODO AS Fix
-                    if (do_load && add_zone(fn, &newzone, channel))
+                    std::string fn = path_to_string(filename);
+                    fn += "|";
+                    fn += std::to_string(_3lnk.RegionSampleID[j]);
+                    if (do_load && add_zone(string_to_path(fn), &newzone, channel))
                     {
                         sample_zone *z = &zones[newzone];
                         z->key_low = rgnh.RangeKey.usLow;
@@ -359,9 +360,10 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
         else
         {
             // no sub-regions, read as normal DLS
-            char fn[256];
             int newzone;
-            sprintf(fn, "%s|%lu", filename, wlnk.ulTableIndex); // TODO AS Fix
+            std::string fn = path_to_string(filename);
+            fn += "|";
+            fn += std::to_string(wlnk.ulTableIndex);
             if (add_zone(string_to_path(fn), &newzone, channel))
             {
                 sample_zone *z = &zones[newzone];

@@ -17,6 +17,10 @@
 
 #include "test_main.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <iostream>
 #include <map>
 #include <vector>
@@ -90,6 +94,18 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == -1);
         REQUIRE(sampleid == 200);
     }
+    SECTION("Windows wide name")
+    {
+        fs::path p(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav>100|200");
+        decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
+        REQUIRE(out.compare(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav") == 0);
+        REQUIRE(ext.compare("wav") == 0);
+        REQUIRE(nameOnly.compare("\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd") == 0);
+        REQUIRE(pathOnly.compare("resources\\test_samples") == 0);
+        REQUIRE(progid == 100);
+        REQUIRE(sampleid == 200);
+    }
+    
 #else
     SECTION("Unix/mac basic") 
     {
@@ -103,7 +119,20 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
 
-    }        
+    }
+
+    SECTION("Unix/mac unicode filename") 
+    {
+        fs::path p("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav>100|200");
+        decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
+        REQUIRE(out.compare("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav") == 0);
+        REQUIRE(ext.compare("wav") == 0);
+        REQUIRE(nameOnly.compare("\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd") == 0);
+        REQUIRE(pathOnly.compare("resources/test_samples") == 0);
+        REQUIRE(progid == 100);
+        REQUIRE(sampleid == 200);
+        
+    }
 
     SECTION("Unix/mac path only")
     {        
@@ -123,7 +152,6 @@ TEST_CASE("Decode Path", "[config]")
 TEST_CASE("Build Path", "[config]")
 {
     std::string nameOnly, ext;
-    int progid, sampleid;
     fs::path out, pathOnly;
 #ifdef _WIN32
     SECTION("Windows build")
@@ -131,6 +159,15 @@ TEST_CASE("Build Path", "[config]")
         fs::path p("c:\\my\\path");
         auto out=build_path(p, "filename", "WAV");
         REQUIRE(out.compare("c:\\my\\path\\filename.WAV") == 0);        
+    }
+
+    SECTION("Windows wide") 
+    { 
+        fs::path p("resources\\test_samples");        
+        auto out = build_path(p, "\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd", "wav");
+        auto wideFn = out.generic_wstring();
+        REQUIRE(out.compare(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav") == 0); 
+
     }
 #endif
 }
