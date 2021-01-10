@@ -43,7 +43,8 @@ bool configuration::load(const fs::path &filename)
         mConfFilename = filename;
     }
 
-    TiXmlDocument doc(path_to_string(fn)); // TODO propagate fs::path down?
+    // treat TiX stuff as 3rd party for now, pass utf8 fn
+    TiXmlDocument doc(path_to_string(fn));
 
     doc.LoadFile();
     if (doc.Error())
@@ -117,7 +118,7 @@ bool configuration::save(const fs::path &filename)
         
     TiXmlDeclaration decl("1.0", "UTF-8", "yes");
 
-    TiXmlDocument doc(path_to_string(fn)); // TODO propagate fs::path down?
+    TiXmlDocument doc(path_to_string(fn)); // wants utf8
 
     TiXmlElement conf("configuration");
     conf.SetAttribute("version", SC3::Build::FullVersionStr);
