@@ -50,7 +50,7 @@ template <typename T, int qSize = 4096> class SC3EngineToWrapperQueue
     juce::AbstractFifo af;
     T dq[qSize];
 };
-class SC3IdleTimer;
+struct SC3IdleTimer;
 class SC3AudioProcessorEditor;
 
 /*

@@ -14,15 +14,38 @@ void *hInstance = 0;
 
 //==============================================================================
 SC3AudioProcessor::SC3AudioProcessor()
-    : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+    : mLogger(this), AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
       blockPos(0)
 {
     // This is a good place for VS mem leak debugging:
     // _CrtSetBreakAlloc(<id>);
+
+    // determine where config file should be stored
+    auto configLoc=juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory).getFullPathName();
+    fs::path configFile(string_to_path(static_cast<const char*>(configLoc.toUTF8())));
+    configFile.append(SC3_CONFIG_DIRECTORY);
+    configFile.append("config.xml");
+    mConfigFileName = configFile;
+    
     sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, this);
+    if (!sc3->loadUserConfiguration(mConfigFileName))
+    {
+        LOGINFO(mLogger) << "Configuration file did not load" << std::flush;
+    }
+
 }
 
-SC3AudioProcessor::~SC3AudioProcessor() {
+SC3AudioProcessor::~SC3AudioProcessor()
+{
+    // save config so it's recalled next time they load
+    if (sc3)
+    {
+        if (!sc3->saveUserConfiguration(mConfigFileName))
+        {
+            // not that anyone will probably see it, but...
+            LOGINFO(mLogger) << "Configuration file did not save" << std::flush;
+        }
+    }
 }
 
 //==============================================================================
