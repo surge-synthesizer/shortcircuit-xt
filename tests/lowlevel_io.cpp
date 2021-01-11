@@ -48,8 +48,8 @@ TEST_CASE("RIFF_MemFile", "[io]")
         SC3::Memfile::RIFFMemFile rmf(data, length);
 
         size_t chunksize;
-        int tag, LISTtag;
-        bool IsLIST;
+        int tag; //, LISTtag;
+        //bool IsLIST;
 
         std::map<std::string,int> knownSizes;
         knownSizes["fmt "] = 16;
