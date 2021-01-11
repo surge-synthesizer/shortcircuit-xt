@@ -781,7 +781,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
     delete inst_gen;
     delete shdr;
     return true;
-bailout:
+//bailout:
     mmioClose(hmmio, 0);
     delete preset_header;
     delete preset_bag;
