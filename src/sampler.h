@@ -188,6 +188,8 @@ class sampler
     bool is_key_down(int channel, int key);
 
     // File I/O
+    bool is_multisample_file(const fs::path &filename);
+    bool is_mutlisample_extension(const std::string &extension);
     bool load_akai_s6k_program(const fs::path &filename, char channel = 0, bool replace = true);
     bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, const char *filename);
     bool load_sf2_preset(const fs::path &filename, int *new_g = 0, char channel = 0, int patch = -1);

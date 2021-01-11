@@ -68,6 +68,30 @@ const int ff_revision = 10;
         return false;
 }*/
 
+bool sampler::is_multisample_file(const fs::path &file_name)
+{
+    fs::path validFileName;
+    int programid = 0;
+    int sampleid = 0;
+    std::string extension, nameOnly;
+    fs::path pathOnly;
+
+    decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid);
+    return is_mutlisample_extension(extension);
+}
+
+bool sampler::is_mutlisample_extension(const std::string &extension)
+{
+    if ((!extension.compare("wav")) || (!extension.compare("aif")) ||
+        (!extension.compare("aiff")) || (!extension.compare("rcy")) ||
+        (!extension.compare("rex")) || (!extension.compare("rx2")))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool *is_group, char channel,
                         int add_zones_to_groupid, bool replace)
 {
@@ -82,9 +106,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
 
     decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid );
 
-    if ((!extension.compare("wav")) || (!extension.compare("aif")) ||
-        (!extension.compare("aiff")) || (!extension.compare("rcy")) ||
-        (!extension.compare("rex")) || (!extension.compare("rx2")))
+    if (!is_mutlisample_extension(extension))
     {
         if (is_group)
             *is_group = false;
