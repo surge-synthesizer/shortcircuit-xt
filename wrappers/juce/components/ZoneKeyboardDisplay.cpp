@@ -39,6 +39,8 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
     // end configuration
 
     g.fillAll(juce::Colour(80, 70, 60));
+    g.setColour(juce::Colour(255, 255, 255));
+    g.drawText("Drop Samples Here or Double Click to Load", getBounds(), Justification::centred);
     g.setColour(juce::Colour(0, 0, 0));
 
     /*
@@ -179,5 +181,24 @@ void ZoneKeyboardDisplay::mouseUp(const MouseEvent &event)
         sender->sendActionToEngine(ad);
 
         playingKey = -1;
+    }
+}
+void ZoneKeyboardDisplay::mouseDoubleClick(const MouseEvent &event)
+{
+    juce::FileChooser sampleChooser("Please choose a sample file",
+                                    juce::File::getSpecialLocation(juce::File::userHomeDirectory));
+    if (sampleChooser.browseForFileToOpen())
+    {
+        auto d = new DropList();
+
+        auto f = sampleChooser.getResult();
+        auto fd = DropList::File();
+        fd.p = string_to_path(f.getFullPathName().toStdString().c_str());
+        d->files.push_back(fd);
+
+        actiondata ad;
+        ad.actiontype = vga_load_dropfiles;
+        ad.data.dropList = d;
+        sender->sendActionToEngine(ad);
     }
 }

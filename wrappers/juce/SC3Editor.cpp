@@ -157,6 +157,7 @@ void SC3AudioProcessorEditor::idle()
 
 #if DEBUG_UNHANDLED_MESSAGES
     std::map<int, std::map<int, int>> unhandled;
+    bool collapseSubtypes = true;
 #endif
     while (actiondataToUI->pop(ad))
     {
@@ -171,7 +172,10 @@ void SC3AudioProcessorEditor::idle()
         {
             // if (unhandled.find(ad.actiontype) == unhandled.end())
             //    unhandled[ad.actiontype];
-            unhandled[ad.actiontype][ad.id]++;
+            int aid = ad.id;
+            if (collapseSubtypes)
+                aid = -1;
+            unhandled[ad.actiontype][aid]++;
         }
 #endif
     }
@@ -196,8 +200,10 @@ void SC3AudioProcessorEditor::idle()
         for (auto uhsub : uh.second)
         {
             std::ostringstream oss;
-            oss << "[EDITOR] ignored UI msg=" << debug_wrapper_vga_to_string(uh.first) << "/"
-                << debug_wrapper_ip_to_string(uhsub.first) << " ct=" << uhsub.second;
+            oss << "[EDITOR] ignored UI msg=" << debug_wrapper_vga_to_string(uh.first);
+            if (!collapseSubtypes)
+                oss << "/" << debug_wrapper_ip_to_string(uhsub.first);
+            oss << " ct=" << uhsub.second;
             debugWindow->panel->appendLogText(oss.str());
         }
     }

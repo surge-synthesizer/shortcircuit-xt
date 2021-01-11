@@ -133,9 +133,19 @@ void sampler::processWrapperEvents()
             int nz = -1;
             for (auto f : dl->files)
             {
-                if (add_zone(f.p, &nz, editorpart & 0xf, false))
+                if (is_multisample_file(f.p))
                 {
-                    LOGDEBUG(mLogger) << "Added zone; do rest of mapping too" << std::endl;
+                    if (!load_file(f.p, nullptr, &nz))
+                    {
+                        LOGDEBUG(mLogger) << "Did a loadFile for multi. What to do here?";
+                    }
+                }
+                else
+                {
+                    if (add_zone(f.p, &nz, editorpart & 0xf, false))
+                    {
+                        LOGDEBUG(mLogger) << "Added zone; do rest of mapping from below";
+                    }
                 }
             }
             if (nz != -1)

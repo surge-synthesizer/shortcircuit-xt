@@ -28,32 +28,17 @@ class DebugPanel : public juce::Component, public juce::Button::Listener
   public:
     DebugPanel() : Component( "Debug Panel" ) {
         int w = 500;
-        int sH = 400;
-        int lH = 200;
+        int sH = 250;
+        int lH = 350;
         setSize( w, sH + lH );
 
-        loadButton = std::make_unique<juce::TextButton>("Load Sample");
-        loadButton->setBounds(5, 2, 100, 20);
-        loadButton->addListener(this);
-        addAndMakeVisible(loadButton.get());
-
-        manualButton = std::make_unique<juce::TextButton>("Play note");
-        manualButton->setBounds(110, 2, 100, 20);
-        manualButton->addListener(this);
-        addAndMakeVisible(manualButton.get());
-
-        noteNumber = std::make_unique<juce::TextEditor>("number");
-        noteNumber->setText(std::to_string(playingNote));
-        noteNumber->setBounds(215, 2, 60, 20);
-        addAndMakeVisible(noteNumber.get());
-
         samplerT = std::make_unique<juce::TextEditor>();
-        samplerT->setBounds(5, 25, w - 10, sH - 30);
+        samplerT->setBounds(5, 5, w - 10, sH - 10);
         samplerT->setMultiLine(true, false );
         addAndMakeVisible(samplerT.get());
 
         logT = std::make_unique<juce::TextEditor>();
-        logT->setBounds(5, 5 + sH, w - 10, lH - 30);
+        logT->setBounds(5, 5 + sH, w - 10, lH - 10);
         logT->setMultiLine(true, false);
         addAndMakeVisible(logT.get());
     }
@@ -78,12 +63,6 @@ class DebugPanel : public juce::Component, public juce::Button::Listener
 
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
-
-    std::unique_ptr<juce::Button> loadButton;
-    std::unique_ptr<juce::Button> manualButton;
-    std::unique_ptr<juce::TextEditor> noteNumber;
-    bool manualPlaying = false;
-    int playingNote = 60;
 
     SC3AudioProcessorEditor *ed;
 };

@@ -34,6 +34,8 @@ class ZoneKeyboardDisplay : public juce::Component
     void mouseDown(const MouseEvent &event) override;
     void mouseUp(const MouseEvent &event) override;
 
+    void mouseDoubleClick(const MouseEvent &event) override;
+
   private:
     std::vector<juce::Rectangle<float>> keyLocations;
     ZoneStateProxy *zsp; // a non-owned weak copy
