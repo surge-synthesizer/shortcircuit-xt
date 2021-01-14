@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "ZoneKeyboardDisplay.h"
+#include "interaction_parameters.h" // todo as where should these end up?
 
 void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 {
@@ -123,6 +124,9 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             auto ks = zsp->zonecopies[i].key_low;
             auto ke = zsp->zonecopies[i].key_high;
             auto col = juce::Colour(zoneColorPallette[i % zoneColorPallette.size()]);
+            if (i==hoveredZone) {
+                col = juce::Colour(245, 184, 184);
+            }
             auto xs = keyXBounds[ks].first;
             auto xe = keyXBounds[ke].second;
 
@@ -141,8 +145,10 @@ void ZoneKeyboardDisplay::mouseExit(const MouseEvent &event)
 void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
 {
     int ohk = hoveredKey;
+    int ohz = hoveredZone;
     int i = 0;
     hoveredKey = -1;
+    hoveredZone = -1;
     for (auto r : keyLocations)
     {
         if (r.contains(event.x, event.y))
@@ -151,7 +157,41 @@ void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
         }
         i++;
     }
-    if (hoveredKey != ohk)
+
+    if(hoveredKey<0)
+    {
+        // todo shared func should be getting zone locations for drawing as well as hit detection
+        //  calculation of keyboard and zone locations should only be done on resize (not paint and not here)
+        float keyboardHeight = 32; // todo to const
+        float keyWidth = 1.f * getWidth() / 128;
+        auto zoneYStart = keyboardHeight + 1;
+        auto zoneYEnd = 1.f * getHeight();
+        std::vector<std::pair<float, float>> keyXBounds;
+        for (int i = 0; i < 128; ++i)
+        {
+            auto idx = i;
+            float xpos = idx * keyWidth;
+            keyXBounds.push_back(std::make_pair(xpos, xpos + keyWidth - 1));
+        }
+        for (int i = 0; i < max_zones; ++i)
+        {
+            if (zsp->activezones[i])
+            {
+                auto ks = zsp->zonecopies[i].key_low;
+                auto ke = zsp->zonecopies[i].key_high;
+                auto xs = keyXBounds[ks].first;
+                auto xe = keyXBounds[ke].second;
+                auto zoneRect = Rectangle<float>(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
+                if (zoneRect.contains(event.x, event.y)) {
+                    hoveredZone=i;
+                }
+            }
+        }
+    }
+
+
+
+    if (hoveredKey != ohk || hoveredZone != ohz)
     {
         repaint();
     }
@@ -166,6 +206,12 @@ void ZoneKeyboardDisplay::mouseDown(const MouseEvent &event)
         ad.data.i[0] = playingKey;
         ad.data.i[1] = 127;
         // SEND
+        sender->sendActionToEngine(ad);
+    } else if(hoveredZone >=0) {
+        actiondata ad;
+        ad.actiontype = vga_select_zone_primary;
+        ad.id = ip_kgv_or_list;
+        ad.data.i[0] = hoveredZone; // todo need zone id. is this it?
         sender->sendActionToEngine(ad);
     }
 }

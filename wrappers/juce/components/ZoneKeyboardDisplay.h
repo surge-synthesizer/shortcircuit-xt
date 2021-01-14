@@ -41,6 +41,7 @@ class ZoneKeyboardDisplay : public juce::Component
     ZoneStateProxy *zsp; // a non-owned weak copy
     int hoveredKey = -1;
     int playingKey = -1;
+    int hoveredZone = -1;
 
     ActionSender *sender;
 };

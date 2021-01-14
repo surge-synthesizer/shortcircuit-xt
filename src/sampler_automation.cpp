@@ -14,7 +14,7 @@ enum
 };
 
 unsigned int sampler::auto_get_n_parameters() { return 1; }
-char *sampler::auto_get_parameter_name(unsigned int) { return ""; }
-char *sampler::auto_get_parameter_display(unsigned int) { return ""; }
+const char *sampler::auto_get_parameter_name(unsigned int) { return ""; }
+const char *sampler::auto_get_parameter_display(unsigned int) { return ""; }
 float sampler::auto_get_parameter_value(unsigned int) { return 0.f; }
 void sampler::auto_set_parameter_value(unsigned int, float) {}

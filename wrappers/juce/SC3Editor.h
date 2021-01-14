@@ -82,7 +82,9 @@ class ActionSender
 
 // Forward decls of proxies and their componetns
 class ZoneStateProxy;
+class WaveDisplayProxy;
 class ZoneKeyboardDisplay;
+class WaveDisplay;
 
 //==============================================================================
 /**
@@ -143,6 +145,7 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
 
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
+    std::unique_ptr<WaveDisplay> waveDisplay;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessorEditor)
 };
