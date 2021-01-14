@@ -125,8 +125,8 @@ class sampler
     // automation interface
 
     unsigned int auto_get_n_parameters();
-    char *auto_get_parameter_name(unsigned int);
-    char *auto_get_parameter_display(unsigned int);
+    const char *auto_get_parameter_name(unsigned int);
+    const char *auto_get_parameter_display(unsigned int);
     float auto_get_parameter_value(unsigned int);
     void auto_set_parameter_value(unsigned int, float);
 

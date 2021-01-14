@@ -253,6 +253,8 @@ target_sources(ShortCircuit3 PRIVATE
         wrappers/juce/SC3Processor.cpp
         wrappers/juce/SC3Editor.cpp
 
+        wrappers/juce/components/WaveDisplay.cpp
+        wrappers/juce/components/WaveDisplay.h
         wrappers/juce/components/DebugPanel.cpp
         wrappers/juce/components/DebugPanel.h
         wrappers/juce/components/StubRegion.h

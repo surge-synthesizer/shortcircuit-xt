@@ -18,6 +18,7 @@
 #include "components/StubRegion.h"
 #include "components/DebugPanel.h"
 #include "components/ZoneKeyboardDisplay.h"
+#include "components/WaveDisplay.h"
 
 #include "proxies/ZoneStateProxy.h"
 
@@ -39,9 +40,7 @@ struct SC3IdleTimer : juce::Timer
 SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize(900, 600);
+
     actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
     logToUI = std::make_unique<SC3EngineToWrapperQueue<SC3AudioProcessorEditor::LogTransport>>();
     p.addLogDisplayListener(this);
@@ -50,12 +49,13 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     // This is going to be a little pattern I'm sure
     zoneStateProxy = std::make_unique<ZoneStateProxy>();
     zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(zoneStateProxy.get(), this);
-
+    waveDisplay = std::make_unique<WaveDisplay>(this);
     uiStateProxies.insert(zoneStateProxy.get());
+    uiStateProxies.insert(waveDisplay.get());
     zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
 
-    zoneKeyboardDisplay->setBounds(0, 0, getWidth(), 200);
     addAndMakeVisible(zoneKeyboardDisplay.get());
+    addAndMakeVisible(waveDisplay.get());
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
@@ -68,6 +68,10 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
     idleTimer = std::make_unique<SC3IdleTimer>(this);
     idleTimer->startTimer(1000 / 30);
+
+    // Make sure that before the constructor has finished, you've set the
+    // editor's size to whatever you need it to be.
+    setSize(900, 600);
 }
 
 
@@ -115,9 +119,11 @@ void SC3AudioProcessorEditor::paint(juce::Graphics &g)
 
 void SC3AudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-    std::cout << "RESIZED" << std::endl;
+    Rectangle<int> r = getLocalBounds();
+    r.reduce(2,2);
+    zoneKeyboardDisplay->setBounds(r.removeFromTop(200));
+    r.removeFromBottom(10);
+    waveDisplay->setBounds(r);
 }
 
 bool SC3AudioProcessorEditor::isInterestedInFileDrag(const StringArray &files) {
