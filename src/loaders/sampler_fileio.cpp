@@ -77,10 +77,10 @@ bool sampler::is_multisample_file(const fs::path &file_name)
     fs::path pathOnly;
 
     decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid);
-    return is_mutlisample_extension(extension);
+    return is_multisample_extension(extension);
 }
 
-bool sampler::is_mutlisample_extension(const std::string &extension)
+bool sampler::is_multisample_extension(const std::string &extension)
 {
     if ((!extension.compare("wav")) || (!extension.compare("aif")) ||
         (!extension.compare("aiff")) || (!extension.compare("rcy")) ||
@@ -106,7 +106,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
 
     decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid );
 
-    if (!is_mutlisample_extension(extension))
+    if (!is_multisample_extension(extension))
     {
         if (is_group)
             *is_group = false;
@@ -141,8 +141,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
         {
             if (is_group)
                 *is_group = true;
-            result = parse_dls_preset(data, datasize, channel, programid,
-                path_to_string(validFileName).c_str());
+            result = parse_dls_preset(data, datasize, channel, programid, validFileName);
         }
         else if (!extension.compare("sfz"))
         {
@@ -1218,7 +1217,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
                         *(c + 4) = '|';
                 }
                 is_loaded = get_sample_id(
-                    samplefname, &sample_id); // ACHTUNG!! blir fuck-up om filename inte finns (?)
+                    string_to_path(samplefname), &sample_id); // ATTENTION !! gets fuck-up if filename does not exist (?)
 
                 if (is_loaded)
                 {
@@ -1422,7 +1421,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &fi
                         *(c + 4) = '|';
                 }
                 is_loaded = get_sample_id(
-                    samplefname, &sample_id); // ACHTUNG!! blir fuck-up om filename inte finns (?)
+                    string_to_path(samplefname), &sample_id); // ACHTUNG!! blir fuck-up om filename inte finns (?)
 
                 if (is_loaded)
                 {

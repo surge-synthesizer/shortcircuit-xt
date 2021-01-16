@@ -22,6 +22,10 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
+#if WINDOWS
+#include <windows.h>
+#endif
+
 #include <ctype.h>
 #include "tinyxml.h"
 

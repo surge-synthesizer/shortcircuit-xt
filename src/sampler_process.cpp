@@ -203,7 +203,7 @@ void sampler::process_audio()
     /*if (sample_replace_filename[0])
     {
             if(zone_exist(selected->get_active_id()) && (selected->get_active_type() == 1))
-                    replace_zone(selected->get_active_id(),sample_replace_filename);
+                    replace_zone(selected->get_active_id(),string_to_path(sample_replace_filename));
             sample_replace_filename[0] = 0;
     }*/
 

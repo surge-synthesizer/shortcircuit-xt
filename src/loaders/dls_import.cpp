@@ -160,7 +160,7 @@ int get_dls_patchlist(const fs::path &filename, void **plist)
     return result;
 }
 
-bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int patch, const char *filename)
+bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int patch, const fs::path &filename)
 {
     if (patch < 0)
         return false;

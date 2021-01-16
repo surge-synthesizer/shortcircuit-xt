@@ -197,7 +197,7 @@ enum RIFF_ZONE_Playmode
 };
 
 // "Smpl"
-// TODO L�gg till mer metadata
+// TODO Add more metadata
 struct RIFF_SampleURL
 {
     unsigned int FileSize;
