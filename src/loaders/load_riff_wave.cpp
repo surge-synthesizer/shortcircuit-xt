@@ -83,7 +83,7 @@ bool sample::save_wave_file(const fs::path &filename)
     auto wide = filename.generic_wstring();
     FILE *f = _wfopen(wide.c_str(),L"wb");
 #else
-    FILE *f = fopen(filename, "wb");
+    FILE *f = fopen(path_to_string(filename).c_str(), "wb");
 #endif
     int32_t d[3];
     d[0] = SC3::Memfile::swap_endian_32('RIFF');
