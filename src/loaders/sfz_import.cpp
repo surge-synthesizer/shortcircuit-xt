@@ -223,7 +223,7 @@ bool sampler::load_sfz(const char *data, size_t datasize, int *new_g, char chann
             {
                 char spath[256];
                 sprintf(spath, "<relative>\\%s", val);
-                replace_zone(z_id, spath);
+                replace_zone(z_id, string_to_path(spath));
             }
             else if (stricmp(opcode, "key") == 0)
             {

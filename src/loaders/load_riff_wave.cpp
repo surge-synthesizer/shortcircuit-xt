@@ -73,19 +73,18 @@ size_t sample::SaveWaveChunk(void *data)
     return datasize;
 }
 
-bool sample::save_wave_file(const char *filename)
+bool sample::save_wave_file(const fs::path &filename)
 {
-    assert(filename);
-    /*wchar_t wfilename[pathlength];
-    int result = MultiByteToWideChar(CP_UTF8,0,filename,-1,wfilename,1024);
-    if(!result) return false;*/
-    // TODO change to use unicode
 
     size_t datasize = SaveWaveChunk(0);
     void *data = malloc(datasize);
     SaveWaveChunk(data);
-
+#if WINDOWS
+    auto wide = filename.generic_wstring();
+    FILE *f = _wfopen(wide.c_str(),L"wb");
+#else
     FILE *f = fopen(filename, "wb");
+#endif
     int32_t d[3];
     d[0] = SC3::Memfile::swap_endian_32('RIFF');
     d[1] = datasize + 4;

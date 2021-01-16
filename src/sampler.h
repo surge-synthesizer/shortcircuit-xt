@@ -174,10 +174,10 @@ class sampler
     bool clone_zone(int zone_id, int *new_z, bool same_key = true);
     bool slice_to_zone(int zone_id, int slice);
     bool slices_to_zones(int zone_id);
-    bool replace_zone(int z, const char *filename);
+    bool replace_zone(int z, const fs::path &filename);
     bool free_zone(uint32 zoneid);
     void update_zone_switches(int zone);
-    bool get_sample_id(const char *filename, int *s_id);
+    bool get_sample_id(const fs::path &filename, int *s_id);
     int find_next_free_key(int part);
     int GetFreeSampleId();
     int GetFreeZoneId();
@@ -192,15 +192,15 @@ class sampler
 
     // File I/O
     bool is_multisample_file(const fs::path &filename);
-    bool is_mutlisample_extension(const std::string &extension);
+    bool is_multisample_extension(const std::string &extension);
     bool load_akai_s6k_program(const fs::path &filename, char channel = 0, bool replace = true);
-    bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, const char *filename);
+    bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, const fs::path &filename);
     bool load_sf2_preset(const fs::path &filename, int *new_g = 0, char channel = 0, int patch = -1);
     bool load_sfz(const char *data, size_t datasize, int *new_g = 0, char channel = 0);
     bool load_battery_kit(const fs::path &fileName, char channel = 0, bool replace = true);
     bool load_file(const fs::path &filename, int *new_g = 0, int *new_z = 0, bool *is_group = 0,
                    char channel = 0, int add_zones_to_groupid = 0, bool replace = false);
-    // bool load_file(const wchar_t *filename, char part, int *new_z=0);
+    // bool load_file(const fs::path &filename, char part, int *new_z=0);
 
     long save_all(void **data); // , int group_id=-1); ?
     void free_all();
@@ -209,12 +209,12 @@ class sampler
                            int channel = -1);
     bool load_all_from_sc1_xml(void *data, int datasize, const fs::path &filename = fs::path(), bool replace = true,
                                int channel = -1);
-    bool save_all_to_disk(const char *filename);
-    size_t save_part_as_xml(int part_id, const wchar_t *filename, bool copy_samples = false);
+    bool save_all_to_disk(const fs::path &filename);
+    size_t save_part_as_xml(int part_id, const fs::path &filename, bool copy_samples = false);
 
     // The new RIFF based format for SC2
     bool LoadAllFromRIFF(void *data, size_t datasize, bool replace = true, int channel = -1);
-    size_t SaveAllAsRIFF(void **data, const wchar_t *filename = 0, int PartID = -1);
+    size_t SaveAllAsRIFF(void **data, const fs::path &fn=fs::path(), int PartID = -1);
 
     // helper functions for load/save
     void recall_zone_from_element(TiXmlElement &element, sample_zone *zone, int revision = 2,

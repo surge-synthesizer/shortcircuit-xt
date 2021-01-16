@@ -412,7 +412,7 @@ void sampler::processWrapperEvents()
                             int ne = zones[z].database_id + diff;
                             if ((ne >= 0) && (ne < editor->browserd.patchlist[0].size()))
                             {
-                                replace_zone(z, editor->browserd.patchlist[0][ne].path);
+                                replace_zone(z, string_to_path(editor->browserd.patchlist[0][ne].path));
                                 zones[z].database_id = ne;
                                 post_zonedata();
                             }
@@ -458,7 +458,7 @@ void sampler::processWrapperEvents()
                             int ne = ad.data.i[0];
                             if ((ne >= 0) && (ne < editor->browserd.patchlist[0].size()))
                             {
-                                replace_zone(z, editor->browserd.patchlist[0][ne].path);
+                                replace_zone(z, string_to_path(editor->browserd.patchlist[0][ne].path));
                                 zones[z].database_id = ne;
                                 post_zonedata();
                             }

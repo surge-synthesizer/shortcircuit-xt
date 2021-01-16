@@ -34,12 +34,12 @@ class sample
     bool parse_aiff(void *data, size_t filesize);
     bool parse_sf2_sample(void *data, size_t filesize, unsigned int sampleid);
     bool parse_dls_sample(void *data, size_t filesize, unsigned int sampleid);
-    // bool load_recycle(const char *filename);
+    // bool load_recycle(const fs::path &filename);
     configuration *conf;
 
   public:
     size_t SaveWaveChunk(void *data);
-    bool save_wave_file(const char *filename);
+    bool save_wave_file(const fs::path &filename);
 
     // public data
     void *__restrict SampleData[2];

@@ -245,7 +245,7 @@ size_t RIFF_StorePart(sample_part *p, void *data)
     return partsize;
 }
 
-size_t sampler::SaveAllAsRIFF(void **dataptr, const WCHAR *filename, int PartID)
+size_t sampler::SaveAllAsRIFF(void **dataptr, const fs::path &fileName, int PartID)
 {
     // Phase 1
     // Collect the size of all included zones/etc
@@ -314,7 +314,7 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const WCHAR *filename, int PartID)
     chunkDataPtr = malloc(datasize);
     SC3::Memfile::RIFFMemFile mf(chunkDataPtr, datasize);
 
-    // TODO, ta h�nsyn till vsts chunk ptr issuesdryghet
+    // TODO, take into account vsts chunk ptr issues generosity (was Swedish, dunno)
 
     // Phase 3
     // Write data to RIFFMemFile
@@ -380,14 +380,13 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const WCHAR *filename, int PartID)
         *dataptr = chunkDataPtr;
         return datasize;
     }
-    else if (filename)
+    else if (!fileName.empty())
     {
 #if WINDOWS
-        std::ofstream ofs(filename, std::ios::binary );
+        auto fnWide = fileName.generic_wstring();
+        std::ofstream ofs(fnWide.c_str(), std::ios::binary );
 #else
-        char fnu8[PATH_MAX];
-        vtWStringToString(fnu8, filename, PATH_MAX );
-        std::ofstream ofs(fnu8, std::ios::binary);
+        std::ofstream ofs(fileName, std::ios::binary);
 #endif
         if (!ofs.is_open())
             goto abort;

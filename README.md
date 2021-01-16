@@ -76,8 +76,15 @@ You know the drill
 ```
 git submodule update --init --recursive
 cmake -Bbuild
-cmake --build build --config Release --target shortcircuit3py
-cd build
-python3 (and import sc3py code)
+cmake --build build --config Release --target ShortCircuit3_Standalone
 ```
+
+This will build the rudimentary standalone app. Other targets exist for python as a wrapper, as well as sc3-test
+which runs the existing test suite.
+
+# Issues building
+* Windows - Some JUCE targets have an issue if you are using nmake (specifically you might get an error that 
+  looks like this 'Synth\""' is not recognized as an internal or external command). To solve this, use the ninja 
+  generator by passing `-G Ninja` to the first cmake command (you might need to download ninja from
+  https://ninja-build.org/ if you don't already have it.)
 

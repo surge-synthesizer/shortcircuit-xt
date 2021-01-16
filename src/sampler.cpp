@@ -543,29 +543,32 @@ bool sampler::get_key_name(char *str, int channel, int key)
 
 //-------------------------------------------------------------------------------------------------
 
-bool sampler::get_sample_id(const char *filename, int *s_id)
+bool sampler::get_sample_id(const fs::path &filename, int *s_id)
 {
     std::lock_guard g(cs_patch);
-    if (!filename)
+    if (filename.empty())
     {
         if (s_id)
             *s_id = -1;
         return true; // already exists, one could say, because it should not be charged
     }
 
-    if (filename && !strncmp("loaded", filename, 6))
+    auto fnstr = path_to_string(filename);
+
+    if (!strncmp("loaded", fnstr.c_str(), 6))
     {
         if (s_id)
-            *s_id = atoi(filename + 6);
+            *s_id = atoi(fnstr.c_str() + 6);
         return (samples[*s_id & (max_samples - 1)] != NULL);
     }
+
 
     int s;
     for (s = 0; s < max_samples; s++)
     {
         if (samples[s])
         {
-            if (samples[s]->compare_filename(filename))
+            if (samples[s]->compare_filename(fnstr.c_str()))
             {
                 if (s_id)
                     *s_id = s;
@@ -794,7 +797,7 @@ bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use
 
 //-------------------------------------------------------------------------------------------------
 
-bool sampler::replace_zone(int z, const char *filename)
+bool sampler::replace_zone(int z, const fs::path &fileName)
 {
     // ATTENTION !!! if sample refcount> 1 then the sampling should only be changed for the current zone !!
     // kill all notes for the given zone
@@ -811,7 +814,7 @@ bool sampler::replace_zone(int z, const char *filename)
         samples[s] = new sample(conf);
     }
 
-    if (!(samples[s]->load(string_to_path(filename))))
+    if (!(samples[s]->load(fileName)))
     {
         delete samples[s];
         samples[s] = 0;
@@ -884,10 +887,9 @@ bool sampler::replace_zone(int z, const char *filename)
         }
     }
 
-    char temp[256];
-    vtCopyString(temp, (strrchr(filename, '\\') + 1), 256);
-    temp[31] = 0;
-    vtCopyString(zones[z].name, temp, 32);
+    std::string nameOnly;
+    decode_path(fileName, nullptr, nullptr, &nameOnly);
+    vtCopyString(zones[z].name, nameOnly.c_str(), 32);
     update_zone_switches(z);
     return true;
 }
@@ -1005,7 +1007,7 @@ void sampler::idle()
         {
             if (zone_exist(selected->get_active_id()) && (selected->get_active_type() == 1))
             {
-                replace_zone(selected->get_active_id(), sample_replace_filename);
+                replace_zone(selected->get_active_id(), string_to_path(sample_replace_filename));
             }
             sample_replace_filename[0] = 0;
         }
