@@ -11,7 +11,6 @@
 
 #include "globals.h"
 #include "sampler.h"
-#include "stdio.h"
 
 #include "configuration.h"
 #include "synthesis/modmatrix.h"
@@ -81,12 +80,31 @@ int keyname_to_keynumber(const char *name) // using C4 == 60
     return 12 * octave + key;
 }
 
-bool sampler::load_sfz(const char *data, size_t datasize, int *new_g, char channel)
+
+
+bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, int *new_g,
+                       char channel)
 {
     bool eof = false;
     const char *r = data;
     sample_zone *region = 0, *z = 0;
     sample_zone empty, groupzone;
+    // JN only supporting SFZ 1.0 opcodes to start with... Can expand to 2.0 and ARIA in a future stage...
+
+    // Rewrite SFZ parser... pseudocode
+    // 1. (SFZ v1) Load group-region pairs.  (only create zones per group).
+    //     a. Collect opcodes for <group>
+    //     b. Collect opcodes for <region> until no more regions (eg: EOF or next <group>
+    //     c. Create sample zones based on parsed groups, noting that:
+    //        i. If no key ranges are specified, assume keys 0-127
+    //       ii. If no vel ranges are specified, assume vels 0-127
+    //      iii. If no ampeg settings, assume default ADSR.
+    //       iv. group opcodes apply to all regions after it, then region opcodes take precedence for each zone generated.
+    //        v. (TODO) If using *sine *saw etc. possibly pre-load inbuilt sample in its place? (used for synthesized sfz presets)
+    //     d. Repeat until there are no more groups/region tags.
+    
+    // 2. (SFZ v2) Apply additional tags and follow similar pattern as 1.
+    // 3. (ARIA) as above.
 
     // create empty zone, copy it to a buffer and then delete it
     int t_id;
