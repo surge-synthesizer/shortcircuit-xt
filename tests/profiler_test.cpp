@@ -31,7 +31,6 @@ TEST_CASE("Profiler Basic", "[profiler]")
     SECTION("Timestamp functions")
     {
         SC3::Time::Timestamp a,b,d;
-        SC3::Time::setSafeMode();
         SC3::Time::getCurrentTimestamp(&a);
         std::this_thread::sleep_for(std::chrono::milliseconds(15));
         SC3::Time::getCurrentTimestamp(&b);

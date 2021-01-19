@@ -23,18 +23,8 @@
 namespace SC3::Time {
 
 typedef int64_t Timestamp;
-
-//struct Timestamp {
-//    int64_t seconds;
-//    int microSeconds;
-//    void clear(){seconds=0;microSeconds=0;}
-//};
-
 void getCurrentTimestamp(Timestamp *val);
 void getTimestampDiff(Timestamp *a, Timestamp *b, Timestamp *diff);
-
-// for windows, set thread affinity (avoid timing inaccuracies at cost of performance)
-void setSafeMode();
 
 }
 

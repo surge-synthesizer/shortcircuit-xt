@@ -26,28 +26,14 @@
          or the hardware abstraction layer (HAL). To specify processor affinity
          for a thread, use the SetThreadAffinityMask function.
 */
-static bool safeMode=false;
 static LARGE_INTEGER gFrequency;
 static bool gFreqSet=false;
 #else
 #include <time.h>
 #endif
 
-
-
 namespace SC3::Time {
 
-// set safe mode (also init the freq)
-void setSafeMode() {
-#if WINDOWS
-    safeMode=true;
-    if(!gFreqSet)
-    {
-        QueryPerformanceFrequency(&gFrequency);
-        gFreqSet = true;
-    }
-#endif
-}
 
 void getCurrentTimestamp(Timestamp *val) {
 #if WINDOWS
@@ -56,13 +42,11 @@ void getCurrentTimestamp(Timestamp *val) {
 
     if(!gFreqSet)
     {
-        QueryPerformanceFrequency(&gFrequency);
         gFreqSet = true;
+        QueryPerformanceFrequency(&gFrequency);
     }
 
     QueryPerformanceCounter(&ticks);
-    if(safeMode) // clear affinity mask
-        SetThreadAffinityMask(GetCurrentThread(), oldMask);
 
     *val=(int64_t)(((double)ticks.QuadPart / gFrequency.QuadPart) * 1000000);
 
