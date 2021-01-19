@@ -19,7 +19,7 @@
 #define SHORTCIRCUIT_WAVEDISPLAY_H
 #include <JuceHeader.h>
 #include <SC3Editor.h>
-#include "infrastructure/
+#include "infrastructure/profiler.h"
 
 class WaveDisplay : public juce::Component, public UIStateProxy
 {

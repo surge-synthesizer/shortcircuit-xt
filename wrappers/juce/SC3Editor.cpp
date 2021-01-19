@@ -151,11 +151,6 @@ void SC3AudioProcessorEditor::refreshSamplerTextViewInThreadUnsafeWay()
     debugWindow->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
-void SC3AudioProcessorEditor::handleLogMessage(SC3::Log::Level lev, const std::string &txt)
-{
-    logToUI->push(SC3AudioProcessorEditor::LogTransport(lev, txt));
-}
-
 void SC3AudioProcessorEditor::idle()
 {
     int mcount = 0;
