@@ -19,10 +19,14 @@
 #define SHORTCIRCUIT_WAVEDISPLAY_H
 #include <JuceHeader.h>
 #include <SC3Editor.h>
+#include "infrastructure/
 
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
     ActionSender *mSender;
+    SC3::Log::StreamLogger mLogger;
+
+    SC3::Perf::Profiler prof;
 
 
     void *sampleptr;
@@ -62,7 +66,7 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     virtual bool processActionData(const actiondata &d) override;
 
   public:
-    WaveDisplay(ActionSender *sender);
+    WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger);
 
 
 };

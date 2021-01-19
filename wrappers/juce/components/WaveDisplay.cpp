@@ -21,6 +21,7 @@
 // AS this is for the limit_range function
 #include "vembertech/vt_dsp/basic_dsp.h"
 #include <algorithm>
+#include "infrastructure/profiler.h"
 
 
 const int WAVE_MARGIN = 6; // margin around wave display in pixels
@@ -38,7 +39,7 @@ enum
 
 static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2);
 
-WaveDisplay::WaveDisplay(ActionSender *sender) : mSender(sender) {
+WaveDisplay::WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger) : mSender(sender) , mLogger(logger), prof(logger, "Wave Display Paint"){
     dispmode = 0;
     sampleptr = 0;
     zoom = 1;
@@ -60,6 +61,8 @@ WaveDisplay::WaveDisplay(ActionSender *sender) : mSender(sender) {
 
 void WaveDisplay::paint(Graphics &g)
 {
+
+    prof.enter();
     Rectangle<int> r = getLocalBounds();
     g.setColour( juce::Colours::darkgrey); // background color for entire control (wave bg is separate)
     g.fillRect(r);
@@ -75,7 +78,9 @@ void WaveDisplay::paint(Graphics &g)
         {
             // draw wave within our margin
             r.reduce(WAVE_MARGIN, WAVE_MARGIN);
+            prof.enter();
             drawWave(g, draw_be_quick, draw_skip_wave_redraw, r);
+            prof.exit("draw wave");
         }
         break;
     case 1:
@@ -90,6 +95,9 @@ void WaveDisplay::paint(Graphics &g)
         // filter/EG plot
         break;
     };
+    prof.exit("paint");
+    prof.dump("paint of wave display");
+    prof.reset("resetting");
 }
 
 bool WaveDisplay::processActionData(const actiondata &ad) {
@@ -233,6 +241,7 @@ void WaveDisplay::drawWave(Graphics &g, bool be_quick, bool skip_wave_redraw, Re
             bheight = (imgh - totalGap) /s->channels;
         }
 
+        prof.enter();
         for (int c = 0; c < s->channels; c++)
         {
             // location of top of waveform
@@ -378,8 +387,11 @@ void WaveDisplay::drawWave(Graphics &g, bool be_quick, bool skip_wave_redraw, Re
                 }
             }
         }
+        prof.exit("main draw loop");
     } //!skip_wave_redraw
+    prof.enter();
     g.drawImage(pixels, bounds.toFloat());
+    prof.exit("blit to graphics");
 
 /* TODO AS all of this. Want to probably do the markers separate from the drawing of the wave
  *   preferably just keep the wave bitmap in memory and only recalc if need be

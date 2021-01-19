@@ -11,12 +11,6 @@
 #include "sampler.h"
 #include <JuceHeader.h>
 
-class LogDisplayListener
-{
-  public:
-    virtual void handleLogMessage(SC3::Log::Level lev, const std::string &txt) = 0;
-};
-
 //==============================================================================
 /**
  */
@@ -33,16 +27,18 @@ class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingC
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    std::unordered_set<LogDisplayListener *> logDispList;
-    void addLogDisplayListener(LogDisplayListener *e) { logDispList.insert(e); }
-    void removeLogDisplayListener(LogDisplayListener *e) { logDispList.erase(e); }
-    SC3::Log::Level getLevel() override { return SC3::Log::Level::Debug; }
+    std::unordered_set<SC3::Log::LoggingCallback *> logDispList;
+    void addLogDisplayListener(SC3::Log::LoggingCallback *e) { logDispList.insert(e); }
+    void removeLogDisplayListener(SC3::Log::LoggingCallback *e) { logDispList.erase(e); }
 
+    // implement logger callback
+    SC3::Log::Level getLevel() override { return SC3::Log::Level::Debug; }
     void message(SC3::Log::Level lev, const std::string &msg) override
     {
         for (auto l : logDispList)
         {
-            l->handleLogMessage(lev, msg);
+            if(l->getLevel() >= lev)
+                l->message(lev, msg);
         }
     }
 
