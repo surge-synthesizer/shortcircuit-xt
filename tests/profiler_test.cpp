@@ -20,7 +20,9 @@
 #include "infrastructure/ticks.h"
 #include <chrono>
 #include <thread>
+#if WINDOWS
 #include <windows.h>
+#endif
 
 #if 1
 TEST_CASE("Profiler Basic", "[profiler]")
