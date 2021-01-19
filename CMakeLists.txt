@@ -149,6 +149,10 @@ set(SHORTCIRCUIT_SOURCE
         src/loaders/load_riff_wave.cpp
         src/loaders/load_sf2_sample.cpp
         src/infrastructure/logfile.cpp
+        src/infrastructure/ticks.h
+        src/infrastructure/ticks.cpp
+        src/infrastructure/profiler.h
+        src/infrastructure/profiler.cpp
         src/synthesis/modmatrix.cpp
         src/synthesis/morphEQ.cpp
         src/multiselect.cpp
@@ -317,6 +321,7 @@ add_executable(sc3-test
         tests/vt_miscellany.cpp
         tests/config_test.cpp
         tests/logging_test.cpp
+        tests/profiler_test.cpp
         tests/zone_tests.cpp tests/filesystem_basics.cpp)
 
 target_include_directories(sc3-test PRIVATE
