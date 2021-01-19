@@ -1,0 +1,9 @@
+/* config.h, generated from sc3_config.h.in by CMake ${CMAKE_VERSION} */
+#ifndef SC3_CONFIG_H_
+#define SC3_CONFIG_H_
+
+
+#cmakedefine HAVE_CLOCK_GETTIME
+#cmakedefine HAVE_GETTIMEOFDAY
+
+#endif
