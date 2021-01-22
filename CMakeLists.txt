@@ -186,8 +186,7 @@ set(VEMBERTECH_SOURCE
         src/vembertech/vt_dsp/lipol.cpp
         src/vembertech/vt_dsp/lattice.cpp
         src/vembertech/vt_dsp/macspecific.cpp
-        src/vembertech/vt_dsp/basic_dsp.cpp
-        )
+        src/vembertech/vt_dsp/basic_dsp.cpp)
 
 set(SHORTCIRCUIT_INCLUDE_DIRS
         src/
@@ -267,6 +266,9 @@ target_sources(ShortCircuit3 PRIVATE
 
         wrappers/juce/proxies/ZoneStateProxy.cpp
         wrappers/juce/proxies/ZoneStateProxy.h
+
+        wrappers/juce/scratchpad.cpp
+        wrappers/juce/scratchpad.h
         )
 target_include_directories(ShortCircuit3 PRIVATE wrappers/juce )
 target_compile_definitions(ShortCircuit3 PUBLIC

@@ -21,74 +21,64 @@
 #include <JuceHeader.h>
 #include <string>
 #include "version.h"
+#include "scratchpad.h"
+
 class SC3AudioProcessorEditor;
 
-class DebugPanel : public juce::Component, public juce::Button::Listener
+class ActionRunner : public Component,
+                     public juce::Button::Listener,
+                     public juce::ComboBox::Listener
 {
+
+    void buttonClicked(Button *b) override;
+    void resized() override;
+    void comboBoxChanged(ComboBox *comboBoxThatHasChanged) override;
+    std::unique_ptr<juce::TextButton> mSendActionBtn;
+    std::unique_ptr<juce::TextEditor> mParameters;
+    std::unique_ptr<juce::ComboBox> mActionList;
+    std::unique_ptr<juce::TextEditor> mDescription;
+    std::vector<ScratchPadItem *> mItems;
+
   public:
-    DebugPanel() : Component( "Debug Panel" ) {
-        int w = 500;
-        int sH = 250;
-        int lH = 350;
-        setSize( w, sH + lH );
+    ActionRunner();
 
-        samplerT = std::make_unique<juce::TextEditor>();
-        samplerT->setBounds(5, 5, w - 10, sH - 10);
-        samplerT->setMultiLine(true, false );
-        addAndMakeVisible(samplerT.get());
+    SC3AudioProcessorEditor *mEditor;
+};
 
-        logT = std::make_unique<juce::TextEditor>();
-        logT->setBounds(5, 5 + sH, w - 10, lH - 10);
-        logT->setMultiLine(true, false);
-        addAndMakeVisible(logT.get());
-    }
+class DebugPanel : public juce::Component
+{
+    void resized() override;
 
-    void setSamplerText( const juce::String &s )
-    {
-        samplerT->setText(s);
-    }
-
-    void setEditor(SC3AudioProcessorEditor *ed) { this->ed = ed; }
-
-    void appendLogText( const juce::String &s )
-    {
-        String str=s;
-        str+= "\n";
-        logT->setCaretPosition(logT->getText().length());
-        logT->insertTextAtCaret(str);
-    }
-
-    virtual void buttonClicked(Button *b);
-    virtual void buttonStateChanged(Button *b);
-
+  public:
+    DebugPanel();
+    std::unique_ptr<ActionRunner> mActionRunner;
+    SC3AudioProcessorEditor *mEditor;
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
-
-    SC3AudioProcessorEditor *ed;
 };
 
 class DebugPanelWindow : public juce::DocumentWindow
 {
+    DebugPanel *panel;
+
   public:
-    DebugPanelWindow()
-        : juce::DocumentWindow(juce::String("SC3 Debug - ") + SC3::Build::GitHash + "/" +
-                                   SC3::Build::GitBranch,
-                               juce::Colour(0xFF000000), juce::DocumentWindow::allButtons)
+    DebugPanelWindow();
+
+    void setSamplerText(const juce::String &s) { panel->samplerT->setText(s); }
+
+    void setEditor(SC3AudioProcessorEditor *ed)
     {
-        panel = new DebugPanel();
-        setContentOwned(panel, true); // DebugPanelWindow takes ownership
-        
-        int baroff = 25;
-        juce::Rectangle<int> area( 100, 100+baroff,  panel->getWidth(), panel->getHeight() + baroff );
-
-        setBounds (area);
-        panel->setBounds( 0, baroff, panel->getWidth(), panel->getHeight() );
-
-        setResizable( false, false );
-        setUsingNativeTitleBar( false );
+        panel->mEditor = ed;
+        panel->mActionRunner->mEditor = ed;
     }
 
-    DebugPanel *panel;
+    void appendLogText(const juce::String &s)
+    {
+        String str = s;
+        str += "\n";
+        panel->logT->setCaretPosition(panel->logT->getText().length());
+        panel->logT->insertTextAtCaret(str);
+    }
 };
 
 #endif // SHORTCIRCUIT_DEBUGPANEL_H
