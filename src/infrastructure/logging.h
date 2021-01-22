@@ -22,11 +22,11 @@
 namespace SC3::Log {
 
 enum class Level {
-    Error=0,
+    None=0, // turn off logging
+    Error,
     Warning,
     Info,
-    Debug,
-    None
+    Debug
 };
 
 
