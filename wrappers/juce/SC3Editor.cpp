@@ -59,7 +59,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
-    debugWindow->panel->setEditor(this);
+    debugWindow->setEditor(this);
 
     actiondata ad;
     ad.actiontype = vga_openeditor;
@@ -77,7 +77,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
 
 SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
     uiStateProxies.clear();
-    debugWindow->panel->setEditor(nullptr);
+    debugWindow->setEditor(nullptr);
     idleTimer->stopTimer();
     audioProcessor.removeLogDisplayListener(this);
 
@@ -148,7 +148,7 @@ void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int 
 void SC3AudioProcessorEditor::refreshSamplerTextViewInThreadUnsafeWay()
 {
     // Really this isn't thread safe and we should fix it
-    debugWindow->panel->setSamplerText(audioProcessor.sc3->generateInternalStateView());
+    debugWindow->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
 void SC3AudioProcessorEditor::handleLogMessage(SC3::Log::Level lev, const std::string &txt)
@@ -191,7 +191,7 @@ void SC3AudioProcessorEditor::idle()
     {
         std::string t = SC3::Log::getShortLevelStr(lt.lev);
         // We now have an option to do something else with errors if we want
-        debugWindow->panel->appendLogText(t + lt.txt);
+        debugWindow->appendLogText(t + lt.txt);
         mcount++;
     }
 
@@ -199,7 +199,7 @@ void SC3AudioProcessorEditor::idle()
     // bit of a hack, sure.
     if (unhandled.size())
     {
-        debugWindow->panel->appendLogText("[EDITOR] -------- MESSAGE BLOCK -------");
+        debugWindow->appendLogText("[EDITOR] -------- MESSAGE BLOCK -------");
     }
     for (auto uh : unhandled)
     {
@@ -210,7 +210,7 @@ void SC3AudioProcessorEditor::idle()
             if (!collapseSubtypes)
                 oss << "/" << debug_wrapper_ip_to_string(uhsub.first);
             oss << " ct=" << uhsub.second;
-            debugWindow->panel->appendLogText(oss.str());
+            debugWindow->appendLogText(oss.str());
         }
     }
 #endif
