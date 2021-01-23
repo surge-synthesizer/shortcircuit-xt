@@ -129,17 +129,31 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     if (s->add_zone(string_to_path(sample_path_str), &z_id, channel, false))
     {
         z = &s->zones[z_id];
+        bool no_root_key = false;
 
         // Apply zone defaults where opcodes are missing
         // (behaviour matches Polyphone and some other sfz players)
+        if (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end())
+        {
+            sfz_zone_opcodes.insert({"key", "60"});
+            no_root_key = true;
+        }
+
         if (sfz_zone_opcodes.find("lokey") == sfz_zone_opcodes.end())
-            sfz_zone_opcodes.insert({"lokey", "0"});
+        {
+            if (no_root_key)
+                sfz_zone_opcodes.insert({"lokey", "0"});
+            else
+                sfz_zone_opcodes.insert({"lokey", sfz_zone_opcodes["key"]});
+        }
 
         if (sfz_zone_opcodes.find("hikey") == sfz_zone_opcodes.end())
-            sfz_zone_opcodes.insert({"hikey", "127"});
-
-        if (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end())
-            sfz_zone_opcodes.insert({"key", "60"});
+        {
+            if (no_root_key)
+                sfz_zone_opcodes.insert({"hikey", "127"});
+            else
+                sfz_zone_opcodes.insert({"hikey", sfz_zone_opcodes["key"]});
+        }   
     }
     else
     {
@@ -303,6 +317,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         z->velocity_high_fade = xfout_hivel - z->velocity_high;
         ++num_opcodes_processed;
     }
+
+    s->update_zone_switches(z_id);
 
     if (num_opcodes_processed < sfz_zone_opcodes.size())
     {
