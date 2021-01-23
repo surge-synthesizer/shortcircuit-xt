@@ -110,7 +110,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     uint8_t num_opcodes_processed = 0;
     int z_id;
 
-    // Transient values (Crossfade)
+    // Transient zone values (Crossfade)
     int xfin_lokey = -1, xfin_hikey = -1, xfout_lokey = -1, xfout_hikey = -1;
     int xfin_lovel = -1, xfin_hivel = -1, xfout_lovel = -1, xfout_hivel = -1;
 
@@ -127,8 +127,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     ss << path_to_string(path) << static_cast<char>(fs::path::preferred_separator) << sfz_zone_opcodes["sample"];
     std::string sample_path_str = ss.str();
     sample_zone *z;
-
-    if (s->add_zone(string_to_path(sample_path_str), &z_id, channel, false))
+    
+    if (s->add_zone(fs::absolute(string_to_path(sample_path_str)), &z_id, channel, false))
     {
         z = &s->zones[z_id];
 
@@ -387,8 +387,9 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
         while (v < working_data_end)
         {
-            // TODO really should use a regex library here to only accept [\s0-9A-Za-z_]+ opcodes
-            if (*v != ' ' && *v < '0' && *v > '9' && *v < 'A' && *v > 'Z' && *v < 'a' && *v > 'z')
+            // TODO really should use a regex here to only accept [\s0-9A-Za-z_]+ opcode labels
+            if (*v != ' ' && *v < '0' && *v > '9' && *v < 'A' && *v > 'Z' &&
+                *v < 'a' && *v > 'z')
             {
                 // If opcode name is not valid text, report the invalid string and find the next one.
                 copy_size = (v - r);
@@ -413,7 +414,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
             copy_size = (v - r);
             for (int i=0; i<copy_size; ++i)
             {
-                if (r[i] == ' ')
+                if (r[i] <= ' ')
                     buf[i] = '_';
                 else
                     buf[i] = tolower(r[i]);
@@ -457,6 +458,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                         ++w;
                         if (*w == '\r' || *w == '\n')
                             is_spaced = false;
+                        else
+                            continue;
                     }
                     else
                         quote_ended = true;
@@ -470,6 +473,12 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
                 if ((is_spaced && *w < 32) || *w >= 127 || (!is_spaced && *w <= 32))
                 {
+                    if (is_quoted && quote_ended)
+                    {
+                        --w;
+                        ++v;
+                    }
+
                     const int copy_size = (w - v);
                     strncpy(buf, v, copy_size);
                     buf[copy_size] = '\0';
@@ -477,7 +486,13 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
                     if (is_quoted && !quote_ended)
                         LOGWARNING(s->mLogger) << "Unterminated quote value found: " << opcode << "=" << value;
-                    
+
+                    if (is_quoted && quote_ended)
+                    {
+                        ++w;
+                        --v;
+                    }
+
                     parsed = true;
                 }
                 ++w;
