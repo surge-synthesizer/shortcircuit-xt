@@ -426,8 +426,10 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
             // All opcode=value pairs can be space-delimited or across multiple lines, however due
             // care required for sample paths containing spaces.
             // Valid cases:
-            //   - Paths with no quotes around path value will assume entire line remainder.
-            //   - Paths with quotes will end at the next corresponding quote provided it is on the same line.
+            //   - Paths with no quotes around path value will assume entire line
+            //     remainder until '.' is encountered in the path string (TODO can improve)
+            //   - Paths with quotes will end at the next corresponding quote provided
+            //     it is on the same line.
             if (*w == '"')
             {
                 is_quoted = true;
@@ -443,6 +445,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
             {
                 if (is_quoted)
                 {
+                    // Where paths/values are quoted, find the corresponding end quote
+                    // unless it's an end-line, which then we assume that's the value end.
                     if (*w != '"')
                     {
                         ++w;
@@ -452,6 +456,13 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                     else
                         quote_ended = true;
                 }
+                else if (is_spaced && *w == '.')
+                {
+                    // Assume file extension passed (sample dirs with dots, seriously GTFO)
+                    is_spaced = false;
+                    ++w;
+                }
+
                 if ((is_spaced && *w < 32) || *w >= 127 || (!is_spaced && *w <= 32))
                 {
                     const int copy_size = (w - v);
