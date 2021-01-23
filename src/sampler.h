@@ -57,7 +57,6 @@ struct voicestate
 
 class sampler
 {
-  SC3::Log::StreamLogger mLogger;
   public:
     // Aligned members
     float output alignas(16)[max_outputs << 1][block_size],
@@ -77,6 +76,7 @@ class sampler
         int last_ft[n_sampler_effects];
     } multiv;
     float *output_ptr[max_outputs << 1];
+    SC3::Log::StreamLogger mLogger;
 
     // Public Interface
 
