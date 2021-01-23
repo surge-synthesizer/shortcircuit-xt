@@ -131,31 +131,36 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     if (s->add_zone(string_to_path(sample_path_str), &z_id, channel, false))
     {
         z = &s->zones[z_id];
-        bool no_root_key = false;
 
         // Apply zone defaults where opcodes are missing
         // (behaviour matches Polyphone and some other sfz players)
-        if (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end())
-        {
-            sfz_zone_opcodes.insert({"key", "60"});
-            no_root_key = true;
-        }
+        bool no_root_key = (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end());
+        bool no_low_key = (sfz_zone_opcodes.find("lokey") == sfz_zone_opcodes.end());
+        bool no_high_key = (sfz_zone_opcodes.find("hikey") == sfz_zone_opcodes.end());
+        bool no_keycenter = (sfz_zone_opcodes.find("pitch_keycenter") == sfz_zone_opcodes.end());
 
-        if (sfz_zone_opcodes.find("lokey") == sfz_zone_opcodes.end())
+        if (no_root_key)
         {
-            if (no_root_key)
+            if (no_low_key && no_high_key)
+            {
+                sfz_zone_opcodes.insert({"key", "60"});
                 sfz_zone_opcodes.insert({"lokey", "0"});
-            else
-                sfz_zone_opcodes.insert({"lokey", sfz_zone_opcodes["key"]});
-        }
-
-        if (sfz_zone_opcodes.find("hikey") == sfz_zone_opcodes.end())
-        {
-            if (no_root_key)
                 sfz_zone_opcodes.insert({"hikey", "127"});
-            else
+            }
+            else if (!no_keycenter)
+                sfz_zone_opcodes.insert({"key", sfz_zone_opcodes["pitch_keycenter"]});
+            else if (!no_low_key)
+                sfz_zone_opcodes.insert({"key", sfz_zone_opcodes["lokey"]});
+            else if (!no_high_key)
+                sfz_zone_opcodes.insert({"key", sfz_zone_opcodes["hikey"]});
+        }
+        else
+        {
+            if (no_low_key)
+                sfz_zone_opcodes.insert({"lokey", sfz_zone_opcodes["key"]});
+            if (no_high_key)
                 sfz_zone_opcodes.insert({"hikey", sfz_zone_opcodes["key"]});
-        }   
+        }
     }
     else
     {
@@ -255,7 +260,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         }
         else
         {
-            // TODO check if crossfading implementation correct
+            // TODO check if crossfading implementation is correct
             if (stricmp(opcode, "xfin_lokey") == 0)
                 xfin_lokey = keyname_to_keynumber(val);
             else if (stricmp(opcode, "xfin_hikey") == 0)
