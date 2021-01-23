@@ -27,10 +27,8 @@
 #include "util/unitconversion.h"
 
 #include <algorithm>
-#include <iostream>
 #include <map>
 #include <string>
-#include <regex>
 
 static int keyname_to_keynumber(const char *name) // using C4 == 60
 {
@@ -91,11 +89,18 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
     return 12 * octave + key;
 }
 
+void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
+{
+    LOGDEBUG(s->mLogger) << "Opcode dump for incomplete SFZ zone created: {";
+    for (auto [k, v] : working_opcodes)
+        LOGDEBUG(s->mLogger) << "   " << k << ": " << v;
+}
+
 /**
  * Take the current SFZ <region> opcodes and create a sample zone out of it.
  * This assumes <group> opcodes have already been integrated into the std::map.
  */
-bool create_sfz_zone(sampler *s, std::map<std::string, std::string>& sfz_zone_opcodes,
+bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_opcodes,
                      const fs::path &path, const char &channel)
 {
     if (sfz_zone_opcodes.empty())
@@ -104,6 +109,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string>& sfz_zone_op
     // Create zone (assuming region with group opcodes already integrated)
     uint8_t num_opcodes_processed = 0;
     int z_id;
+    int xfin_lokey = -1, xfin_hikey = -1, xfout_lokey = -1, xfout_hikey = -1;
+    int xfin_lovel = -1, xfin_hivel = -1, xfout_lovel = -1, xfout_hivel = -1;
 
     // First check if a zone CAN be created - does it even have a sample?
     if (sfz_zone_opcodes.find("sample") == sfz_zone_opcodes.end())
@@ -119,6 +126,13 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string>& sfz_zone_op
     if (s->add_zone(string_to_path(sample_path_str), &z_id, channel, false))
     {
         z = &s->zones[z_id];
+
+        // Apply zone defaults where opcodes are missing (behaviour equivalent to Polyphone)
+        if (sfz_zone_opcodes.find("lokey") == sfz_zone_opcodes.end())
+            sfz_zone_opcodes.insert({"lokey", "0"});
+
+        if (sfz_zone_opcodes.find("hikey") == sfz_zone_opcodes.end())
+            sfz_zone_opcodes.insert({"hikey", "127"});
     }
     else
     {
@@ -133,7 +147,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string>& sfz_zone_op
 
         if (stricmp(opcode, "sample") == 0)
         {
-            continue; // already used it.
+            ++num_opcodes_processed;
+            // already used it above.
         }
         else if (stricmp(opcode, "key") == 0)
         {
@@ -141,105 +156,154 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string>& sfz_zone_op
             z->key_low = key;
             z->key_root = key;
             z->key_high = key;
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "lokey") == 0)
         {
             z->key_low = keyname_to_keynumber(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "hikey") == 0)
         {
             z->key_high = keyname_to_keynumber(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "pitch_keycenter") == 0)
         {
             z->key_root = keyname_to_keynumber(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "lovel") == 0)
         {
             z->velocity_low = atol(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "hivel") == 0)
         {
             z->velocity_high = atol(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "pitch_keytrack") == 0)
         {
             z->keytrack = atof(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "transpose") == 0)
         {
             z->transpose = atoi(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "tune") == 0)
         {
             z->finetune = (float)0.01f * atoi(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "volume") == 0)
         {
             z->aux[0].level = atof(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "pan") == 0)
         {
             z->aux[0].balance = (float)0.01f * atof(val);
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "ampeg_attack") == 0)
         {
             z->AEG.attack = log2(atof(val));
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "ampeg_hold") == 0)
         {
             z->AEG.hold = log2(atof(val));
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "ampeg_decay") == 0)
         {
             z->AEG.decay = log2(atof(val));
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "ampeg_release") == 0)
         {
             z->AEG.release = log2(atof(val));
+            ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "ampeg_sustain") == 0)
         {
             z->AEG.sustain = 0.01f * atof(val);
+            ++num_opcodes_processed;
         }
-
-        /*// crossfading
-        int xfin_lokey=-1,xfin_hikey=-1,xfout_lokey=-1,xfout_hikey=-1;
-        int xfin_lovel=-1,xfin_hivel=-1,xfout_lovel=-1,xfout_hivel=-1;
-        else if(stricmp(opcode,"xfin_lokey") == 0)
+        else
         {
+            // TODO check if crossfading implementation correct
+            if (stricmp(opcode, "xfin_lokey") == 0)
                 xfin_lokey = keyname_to_keynumber(val);
-        }
-        else if(stricmp(opcode,"xfin_hikey") == 0)
-        {
+            else if (stricmp(opcode, "xfin_hikey") == 0)
                 xfin_hikey = keyname_to_keynumber(val);
-        }
-        else if(stricmp(opcode,"xfout_lokey") == 0)
-        {
+            else if (stricmp(opcode, "xfout_lokey") == 0)
                 xfout_lokey = keyname_to_keynumber(val);
-        }
-        else if(stricmp(opcode,"xfout_hikey") == 0)
-        {
+            else if (stricmp(opcode, "xfout_hikey") == 0)
                 xfout_hikey = keyname_to_keynumber(val);
+            else if (stricmp(opcode, "xfin_lovel") == 0)
+                xfin_lovel = atoi(val);
+            else if (stricmp(opcode, "xfin_hivel") == 0)
+                xfin_hivel = atoi(val);
+            else if (stricmp(opcode, "xfout_lovel") == 0)
+                xfout_lovel = atoi(val);
+            else if (stricmp(opcode, "xfout_hivel") == 0)
+                xfout_hivel = atoi(val);
         }
-
-        // has to be done per-zone (to be order independent), not per-opcode as it is now
-        if (xfin_lokey>=0)	z->key_low = xfin_lokey + 1;
-        if (xfin_hikey>=0)	z->key_low_fade = xfin_hikey - z->key_low;
-        if (xfout_hikey>=0)		z->key_high = xfout_lokey + 1;
-        if (xfinout_lokey>=0)	z->key_high_fade = xfout_hikey - z->key_high;*/
-    }
-
-    bool ret = true;
-
-    if (num_opcodes_processed <= 0 && sfz_zone_opcodes.size() > 0)
-    {
-        LOGWARNING(s->mLogger) << "Zone creation skipped due to erroneous SFZ opcode data.";
-        ret = false;
     }
     
-    sfz_zone_opcodes.clear();
-    return ret;
+    // Crossfade handler has to be done per-zone (to be order independent).
+    if (xfin_lokey >= 0)
+    {
+        z->key_low = xfin_lokey + 1;
+        ++num_opcodes_processed;
+    }
+    if (xfin_hikey >= 0)
+    {
+        z->key_low_fade = xfin_hikey - z->key_low;
+        ++num_opcodes_processed;
+    }
+    if (xfout_hikey >= 0)
+    {
+        z->key_high = xfout_lokey + 1;
+        ++num_opcodes_processed;
+    }
+    if (xfout_lokey >= 0)
+    {
+        z->key_high_fade = xfout_hikey - z->key_high;
+        ++num_opcodes_processed;
+    }
+    if (xfin_lovel >= 0)
+    {
+        z->velocity_low = xfin_lovel + 1;
+        ++num_opcodes_processed;
+    }
+    if (xfin_hivel >= 0)
+    {
+        z->velocity_low_fade = xfin_hivel - z->velocity_low;
+        ++num_opcodes_processed;
+    }
+    if (xfout_hivel >= 0)
+    {
+        z->velocity_high = xfout_lovel + 1;
+        ++num_opcodes_processed;
+    }
+    if (xfout_lovel >= 0)
+    {
+        z->velocity_high_fade = xfout_hivel - z->velocity_high;
+        ++num_opcodes_processed;
+    }
+
+    if (num_opcodes_processed < sfz_zone_opcodes.size())
+    {
+        LOGWARNING(s->mLogger) << "Zone creation did not process all SFZ opcodes.";
+        return false;
+    }
+    
+    return true;
 }
 
 /**
@@ -266,6 +330,12 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
     // Read all opcodes
     while (r < working_data_end)
     {
+        if (*r == '/') // comment, skip ahead until the rest of the line
+        {
+            while (r < working_data_end && *r != '\n' && *r != '\r')
+                r++;
+            continue;
+        }
         // Skip whitespace, CRLF and control characters when looking for opcode names.
         if (*r <= 32 || *r >= 127)
         {
@@ -281,9 +351,14 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
         while (v < working_data_end)
         {
-            // If opcode name is not valid text, report the invalid string and find the next one.
-            if (*v <= 32 || *v >= 127)
+            if (*v == '/') // comment, skip ahead until the rest of the line
             {
+                while (v < working_data_end && *v != '\n' && *v != '\r')
+                    v++;
+            }
+            else if (*v <= 32 || *v >= 127)
+            {
+                // If opcode name is not valid text, report the invalid string and find the next one.
                 const int copy_size = (v - r);
                 strncpy(buf, r, copy_size);
                 buf[copy_size] = '\0';
@@ -334,7 +409,11 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                 if (is_quoted)
                 {
                     if (*w != '"')
+                    {
                         ++w;
+                        if (*w == '\r' || *w == '\n')
+                            is_spaced = false;
+                    }
                     else
                         quote_ended = true;
                 }
@@ -346,7 +425,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                     value = buf;
 
                     if (is_quoted && !quote_ended)
-                        LOGERROR(s->mLogger) << "Unterminated quote value found: " << opcode << "=" << value;
+                        LOGWARNING(s->mLogger) << "Unterminated quote value found: " << opcode << "=" << value;
                     
                     parsed = true;
                 }
@@ -401,19 +480,9 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, int *new_g,
                        char channel)
 {
-    bool eof = false;
-    const char *r = data, *data_end = (data + datasize);
-    
-    // create empty zone, copy it to a buffer and then delete it
-    //int t_id;
-    //add_zone(fs::path(), &t_id, channel, false);
-    //memcpy(&empty, &zones[t_id], sizeof(sample_zone));
-    //memcpy(&groupzone, &empty, sizeof(sample_zone)); // init, just in case it's used
-    //this->free_zone(t_id);
-    
+    const char *r = data, *data_end = (data + datasize);   
     std::map<std::string, std::string>
         cur_group_opcodes, cur_region_opcodes, *working_opcodes = &cur_region_opcodes;
-    //const std::vector<std::string> sfz_lines = split(std::string(data), "\n");
 
     // apply groups, then regions containing group-defined opcodes as relevant.
     // TODO do we need to work out how to re-use already loaded samples for multiple zones from here?
@@ -426,24 +495,17 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
             {
                 if (!cur_region_opcodes.empty())
                 {
-                    create_sfz_zone(this, cur_region_opcodes, path, channel);
+                    if (!create_sfz_zone(this, cur_region_opcodes, path, channel))
+                        dump_opcodes(this, cur_region_opcodes);
+                    cur_region_opcodes.clear();
                 }
 
                 // Collect opcodes from last group read.
                 for (auto const& [opcode, val] : cur_group_opcodes)
-                {
                     cur_region_opcodes.insert({opcode, val});
-                }
 
                 working_opcodes = &cur_region_opcodes;
                 r += 8;
-
-                //if (add_zone(fs::path(), &z_id, channel, false)) // add an empty zone
-                //{
-                //    region = &zones[z_id];
-                //    memcpy(region, &groupzone, sizeof(sample_zone));
-                //    z = region;
-                //}
             }
             else if (strnicmp(r, "<group>", 7) == 0)
             {
@@ -456,7 +518,8 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
                 // At this point, all opcodes for a <region>/<group> would have been accumulated and so should be processed.
                 if (!cur_region_opcodes.empty())
                 {
-                    create_sfz_zone(this, cur_region_opcodes, path, channel);
+                    if (!create_sfz_zone(this, cur_region_opcodes, path, channel))
+                        dump_opcodes(this, cur_region_opcodes);
                     cur_region_opcodes.clear();
                 }
 
@@ -491,7 +554,8 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
     // If a region has not been processed, add it.
     if (!cur_region_opcodes.empty())
     {
-        create_sfz_zone(this, cur_region_opcodes, path, channel);
+        if (!create_sfz_zone(this, cur_region_opcodes, path, channel))
+            dump_opcodes(this, cur_region_opcodes);
     }
 
     return true;
