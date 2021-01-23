@@ -123,7 +123,9 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
 
     // Normalise sample path first before creating a zone to load it.
     // TODO: Pseudo-samples eg: *saw *sine *triangle etc. TBI
-    std::string sample_path_str = path_to_string(path) + "/" + sfz_zone_opcodes["sample"];
+    std::stringstream ss;
+    ss << path_to_string(path) << static_cast<char>(fs::path::preferred_separator) << sfz_zone_opcodes["sample"];
+    std::string sample_path_str = ss.str();
     sample_zone *z;
 
     if (s->add_zone(string_to_path(sample_path_str), &z_id, channel, false))
