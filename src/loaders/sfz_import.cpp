@@ -26,7 +26,6 @@
 #include "synthesis/modmatrix.h"
 #include "util/unitconversion.h"
 
-#include <algorithm>
 #include <map>
 #include <string>
 
@@ -70,9 +69,7 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
     const char *c = name + 1;
     if (*c == '#')
         key++;
-    else if (*c == 'b')
-        key--;
-    else if (*c == 'B')
+    else if (*c == 'b' || *c == 'B')
         key--;
     else
         c--;
@@ -89,11 +86,14 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
     return 12 * octave + key;
 }
 
+/**
+ * Useful for debugging unsupported SFZ opcodes for a given zone.
+ */
 void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
 {
     LOGDEBUG(s->mLogger) << "Opcode dump for incomplete SFZ zone created: {";
     for (auto [k, v] : working_opcodes)
-        LOGDEBUG(s->mLogger) << "   " << k << ": " << v;
+        LOGDEBUG(s->mLogger) << "\t" << k << ": " << v;
 }
 
 /**
@@ -109,6 +109,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     // Create zone (assuming region with group opcodes already integrated)
     uint8_t num_opcodes_processed = 0;
     int z_id;
+
+    // Transient values (Crossfade)
     int xfin_lokey = -1, xfin_hikey = -1, xfout_lokey = -1, xfout_hikey = -1;
     int xfin_lovel = -1, xfin_hivel = -1, xfout_lovel = -1, xfout_hivel = -1;
 
@@ -120,6 +122,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     }
 
     // Normalise sample path first before creating a zone to load it.
+    // TODO: Pseudo-samples eg: *saw *sine *triangle etc. TBI
     std::string sample_path_str = path_to_string(path) + "/" + sfz_zone_opcodes["sample"];
     sample_zone *z;
 
@@ -127,12 +130,16 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     {
         z = &s->zones[z_id];
 
-        // Apply zone defaults where opcodes are missing (behaviour equivalent to Polyphone)
+        // Apply zone defaults where opcodes are missing
+        // (behaviour matches Polyphone and some other sfz players)
         if (sfz_zone_opcodes.find("lokey") == sfz_zone_opcodes.end())
             sfz_zone_opcodes.insert({"lokey", "0"});
 
         if (sfz_zone_opcodes.find("hikey") == sfz_zone_opcodes.end())
             sfz_zone_opcodes.insert({"hikey", "127"});
+
+        if (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end())
+            sfz_zone_opcodes.insert({"key", "60"});
     }
     else
     {
@@ -152,10 +159,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         }
         else if (stricmp(opcode, "key") == 0)
         {
-            int key = keyname_to_keynumber(val);
-            z->key_low = key;
-            z->key_root = key;
-            z->key_high = key;
+            z->key_root = keyname_to_keynumber(val);
             ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "lokey") == 0)
@@ -252,6 +256,9 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
                 xfout_lovel = atoi(val);
             else if (stricmp(opcode, "xfout_hivel") == 0)
                 xfout_hivel = atoi(val);
+
+            // TODO other opcodes not yet mapped:
+            // see https://sfzformat.com/legacy/
         }
     }
     
@@ -323,6 +330,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
     // Find the next tag start to mark end of processing opcodes for the current zone.
     const char *working_data_end = r;
     char buf[256];
+    int copy_size;
 
     while (working_data_end < data_end && *working_data_end != '<')
         ++working_data_end;
@@ -330,14 +338,19 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
     // Read all opcodes
     while (r < working_data_end)
     {
-        if (*r == '/') // comment, skip ahead until the rest of the line
+        // comment, skip ahead until the rest of the line
+        if (*r == '/')
         {
             while (r < working_data_end && *r != '\n' && *r != '\r')
                 r++;
             continue;
         }
-        // Skip whitespace, CRLF and control characters when looking for opcode names.
-        if (*r <= 32 || *r >= 127)
+
+        // Annoyingly, some SFZ players allow incorrect opcodes such as "ampeg attack"
+        // to work when they're not meant to... so white-space will be normalised later...
+        
+        // Ignore CRLF and control characters when looking for opcode names.
+        if (*r < 32 || *r >= 127)
         {
             ++r;
             continue;
@@ -351,18 +364,15 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
         while (v < working_data_end)
         {
-            if (*v == '/') // comment, skip ahead until the rest of the line
-            {
-                while (v < working_data_end && *v != '\n' && *v != '\r')
-                    v++;
-            }
-            else if (*v <= 32 || *v >= 127)
+            // TODO really should use a regex library here to only accept [\s0-9A-Za-z_]+ opcodes
+            if (*v != ' ' && *v < '0' && *v > '9' && *v < 'A' && *v > 'Z' && *v < 'a' && *v > 'z')
             {
                 // If opcode name is not valid text, report the invalid string and find the next one.
-                const int copy_size = (v - r);
+                copy_size = (v - r);
                 strncpy(buf, r, copy_size);
                 buf[copy_size] = '\0';
                 LOGERROR(s->mLogger) << "Invalid SFZ opcode found: " << buf;
+                r = v;  // scan forward for the next SFZ opcode
                 break;
             }
 
@@ -376,11 +386,18 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
         if (opcode_found)
         {
-            // Retain opcode name
-            int copy_size = (v - r);
-            strncpy(buf, r, copy_size);
+            // Retain opcode name, normalise whitespace to _ and lowercase.
+            copy_size = (v - r);
+            for (int i=0; i<copy_size; ++i)
+            {
+                if (r[i] == ' ')
+                    buf[i] = '_';
+                else
+                    buf[i] = tolower(r[i]);
+            }
             buf[copy_size] = '\0';
             ++v;
+
             std::string opcode(buf), value;
 
             // Now obtain the value.
@@ -444,6 +461,11 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                 
             // move next opcode scan forward
             r = w;
+        }
+        else
+        {
+            // Nothing to parse.
+            r = v;
         }
     }
 }
@@ -509,8 +531,9 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
             }
             else if (strnicmp(r, "<group>", 7) == 0)
             {
-                // FIXME as SCG/SCM zone groups from SC1.1.2 are not implemented in SC2/3, for now these
+                // TODO: as SCG/SCM zone groups from SC1.1.2 are not implemented in SC2/3, for now these
                 // act as 'pre-fills' to regions parsed to zones assigned to a single sample.
+                // Eventually some group settings could apply similarly to SC1.1.2
 
                 if (!cur_group_opcodes.empty())
                     cur_group_opcodes.clear();
