@@ -111,7 +111,105 @@ TEST_CASE("Simple WAV Load", "[formats]")
     }
 }
 
+TEST_CASE("Simple SFZ+WAV Load", "[formats]")
+{
+    SECTION("Load SFZ - Single Sample, simplest case")
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        REQUIRE(sc3);
 
+        sc3->set_samplerate(48000);
+        REQUIRE(sc3->load_file("resources/test_samples/malicex_sfz/miniguitar_octavelike.sfz"));
+
+        // play single note
+        double rms = 0;
+        int n = 60;
+        for (int i = 0; i < 200; ++i)
+        {
+            if (i == 60)
+                sc3->PlayNote(0, n, 120);
+            if (i == 140)
+                sc3->ReleaseNote(0, n, 0);
+
+            sc3->process_audio();
+            for (int k = 0; k < block_size; ++k)
+            {
+                rms +=
+                    sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+            }
+        }
+        rms = sqrt(rms);
+        REQUIRE(rms == Approx(35.68221).margin(1e-4));
+    }
+
+    SECTION("Load SFZ - Single-velocity Drumkit")
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        REQUIRE(sc3);
+
+        sc3->set_samplerate(48000);
+        REQUIRE(sc3->load_file("resources/test_samples/malicex_sfz/YM-FM_Font FM Drums.sfz"));
+
+        double rms = 0;
+        int n_lo = 35, n_hi = 60;  // play several notes at once
+        for (int i = 0; i < 200; ++i)
+        {
+            if (i == 60)
+                for (int n = n_lo; n <= n_hi; ++n)
+                    sc3->PlayNote(0, n, 127);
+
+            if (i == 140)
+                for (int n = n_lo; n <= n_hi; ++n)
+                    sc3->ReleaseNote(0, n, 0);
+
+            sc3->process_audio();
+            for (int k = 0; k < block_size; ++k)
+            {
+                rms +=
+                    sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+            }
+        }
+        rms = sqrt(rms);
+        // TODO this one fluctuates a lot, also risk of segfault due to looping bug
+        REQUIRE(rms == Approx(194.88163).margin(1e-4));
+    }
+
+    SECTION("Load SFZ - Multi-velocity zones")
+    {
+        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+        REQUIRE(sc3);
+
+        sc3->set_samplerate(48000);
+        REQUIRE(sc3->load_file("resources/test_samples/malicex_sfz/YM-FM_Font Music Box.sfz"));
+
+        // play notes (same key, different velocities) at once.
+        double rms = 0;
+        int notes[] = {36, 90};
+        int vels[] = {40, 41, 79, 80, 89, 90, 100, 127};
+
+        for (int i = 0; i < 200; ++i)
+        {
+            if (i == 60)
+                for (auto n : notes)
+                    for (auto v : vels)
+                        sc3->PlayNote(0, n, v);
+
+            if (i == 140)
+                for (auto n : notes)
+                    for (auto v : vels)  // just getting the counts
+                        sc3->ReleaseNote(0, n, 0);
+
+            sc3->process_audio();
+            for (int k = 0; k < block_size; ++k)
+            {
+                rms +=
+                    sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
+            }
+        }
+        rms = sqrt(rms);
+        REQUIRE(rms == Approx(138.08783).margin(1e-4));
+    }
+}
 
 
 TEST_CASE("Load two SF2s", "[formats]")

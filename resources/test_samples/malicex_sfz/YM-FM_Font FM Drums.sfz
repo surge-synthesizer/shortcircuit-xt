@@ -6,7 +6,6 @@
 //  Created 2003-11-12
 //  Using Audio Compositor 4.5
 
-
 <region>
 sample=FM Agogo.wav
 lokey=d4
@@ -69,7 +68,7 @@ pitch_keycenter=d#2
 ampeg_release=7
 
 <region>
-sample=FMCowbell.wav
+sample=FM Cowbell.wav
 lokey=g#4
 hikey=g#4
 pitch_keycenter=c#6
@@ -78,7 +77,7 @@ ampeg_sustain=4
 ampeg_release=2
 
 <region>
-sample=FMCowbell.wav
+sample=FM Cowbell.wav
 lokey=g4
 hikey=g4
 pitch_keycenter=g5

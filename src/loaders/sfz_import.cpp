@@ -260,6 +260,34 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
             z->AEG.sustain = 0.01f * atof(val);
             ++num_opcodes_processed;
         }
+        else if (stricmp(opcode, "loop_mode") == 0)
+        {
+            if (stricmp(val, "loop_continuous") == 0)
+                z->playmode = pm_forward_loop;
+            else if (stricmp(val, "loop_sustain") == 0)
+                z->playmode = pm_forward_loop_until_release;
+            else if (stricmp(val, "one_shot") == 0)
+                z->playmode = pm_forward_shot;
+            else // "no_loop" or invalid values will use default
+                z->playmode = pm_forward;
+            ++num_opcodes_processed;
+        }
+        else if (stricmp(opcode, "amp_velcurve") == 0)
+        {
+            // TODO verify alignment of SFZ curvature to SC values
+            z->velsense = atof(val);
+            ++num_opcodes_processed;
+        }
+        else if (stricmp(opcode, "seq_length") == 0)
+        {
+            // TBI: need note groups properly implemented/testable first.
+            LOGWARNING(s->mLogger) << "SFZ 1.0 seq_length not yet implemnted";
+        }
+        else if (stricmp(opcode, "seq_position") == 0)
+        {
+            // TBI: need note groups properly implemented/testable first.
+            LOGWARNING(s->mLogger) << "SFZ 1.0 seq_position not yet implemnted";
+        }
         else
         {
             // TODO check if crossfading implementation is correct
@@ -566,13 +594,14 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
  *      d. Repeat until there are no more groups/region tags.
  * TODO:
  *   2. (SFZ v2) Apply additional tags and follow similar pattern as 1.
+ *      a. Pre-processor handling for #include etc.
  *   3. (ARIA) as above.
  */
 bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, int *new_g,
                        char channel)
 {
     const char *r = data, *data_end = (data + datasize);
-    std::map<std::string, std::string> cur_group_opcodes, cur_region_opcodes,
+    std::map<std::string, std::string> global_opcodes, cur_group_opcodes, cur_region_opcodes,
         *working_opcodes = &cur_region_opcodes;
 
     // apply groups, then regions containing group-defined opcodes as relevant.
@@ -581,22 +610,13 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
 
     while (r < data_end)
     {
-        if (*r == '<') // group/region
+        if (*r == '<') // global -> group -> region
         {
-            if (strnicmp(r, "<region>", 8) == 0)
+            if (strnicmp(r, "<global>", 8) == 0)
             {
-                if (!cur_region_opcodes.empty())
-                {
-                    if (!create_sfz_zone(this, cur_region_opcodes, path, channel))
-                        dump_opcodes(this, cur_region_opcodes);
-                    cur_region_opcodes.clear();
-                }
-
-                // Collect opcodes from last group read.
-                for (auto const &[opcode, val] : cur_group_opcodes)
-                    cur_region_opcodes.insert({opcode, val});
-
-                working_opcodes = &cur_region_opcodes;
+                // SFZ v2. There should only be one but...yeah.
+                global_opcodes.clear();
+                working_opcodes = &global_opcodes;
                 r += 8;
             }
             else if (strnicmp(r, "<group>", 7) == 0)
@@ -617,8 +637,32 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
                     cur_region_opcodes.clear();
                 }
 
+                // Where present, accumulate <global> opcodes.
+                for (auto const &[opcode, val] : global_opcodes)
+                    cur_region_opcodes.insert({opcode, val});
+
                 working_opcodes = &cur_group_opcodes;
                 r += 7;
+            }
+            else if (strnicmp(r, "<region>", 8) == 0)
+            {
+                if (!cur_region_opcodes.empty())
+                {
+                    if (!create_sfz_zone(this, cur_region_opcodes, path, channel))
+                        dump_opcodes(this, cur_region_opcodes);
+                    cur_region_opcodes.clear();
+                }
+
+                // Collect opcodes from last group read. If empty, ensure <global> is read.
+                if (!cur_group_opcodes.empty())
+                    for (auto const &[opcode, val] : cur_group_opcodes)
+                        cur_region_opcodes.insert({opcode, val});
+                else
+                    for (auto const &[opcode, val] : global_opcodes)
+                        cur_region_opcodes.insert({opcode, val});
+
+                working_opcodes = &cur_region_opcodes;
+                r += 8;
             }
             else
             {
