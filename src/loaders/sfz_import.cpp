@@ -29,6 +29,8 @@
 #include <map>
 #include <string>
 
+using std::max;
+
 static int keyname_to_keynumber(const char *name) // using C4 == 60
 {
     int key = 0;
