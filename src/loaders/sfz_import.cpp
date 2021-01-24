@@ -28,6 +28,7 @@
 
 #include <map>
 #include <string>
+#include <algorithm>
 
 using std::max;
 
@@ -93,14 +94,12 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
  */
 inline void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
 {
-//#ifdef _DEBUG
     std::stringstream ss;
     ss << "Opcode dump for incomplete SFZ zone created: {" << std::endl;
     for (auto [k, v] : working_opcodes)
         ss << '\t' << k << ": " << v << std::endl;
     ss << '}';
     LOGDEBUG(s->mLogger) << ss.str();
-//#endif
 }
 
 /**

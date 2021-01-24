@@ -152,13 +152,13 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
 
         double rms = 0;
         int n_lo = 35, n_hi = 60;  // play several notes at once
-        for (int i = 0; i < 200; ++i)
+        for (int i = 0; i < 2000; ++i)
         {
             if (i == 60)
                 for (int n = n_lo; n <= n_hi; ++n)
                     sc3->PlayNote(0, n, 127);
 
-            if (i == 140)
+            if (i == 1400)
                 for (int n = n_lo; n <= n_hi; ++n)
                     sc3->ReleaseNote(0, n, 0);
 
@@ -171,7 +171,7 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
         }
         rms = sqrt(rms);
         // TODO this one fluctuates a lot, also risk of segfault due to looping bug
-        REQUIRE(rms == Approx(194.88163).margin(1e-4));
+        REQUIRE(rms == Approx(232.55386).margin(1e-4));
     }
 
     SECTION("Load SFZ - Multi-velocity zones")
@@ -184,17 +184,17 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
 
         // play notes (same key, different velocities) at once.
         double rms = 0;
-        int notes[] = {36, 90};
+        int notes[] = {24};
         int vels[] = {40, 41, 79, 80, 89, 90, 100, 127};
 
-        for (int i = 0; i < 200; ++i)
+        for (int i = 0; i < 2000; ++i)
         {
             if (i == 60)
                 for (auto n : notes)
                     for (auto v : vels)
                         sc3->PlayNote(0, n, v);
 
-            if (i == 140)
+            if (i == 1400)
                 for (auto n : notes)
                     for (auto v : vels)  // just getting the counts
                         sc3->ReleaseNote(0, n, 0);
@@ -207,7 +207,7 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
             }
         }
         rms = sqrt(rms);
-        REQUIRE(rms == Approx(138.08783).margin(1e-4));
+        REQUIRE(rms == Approx(588.04064).margin(1e-4));
     }
 }
 
