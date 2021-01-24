@@ -95,7 +95,7 @@ inline void dump_opcodes(sampler *s, std::map<std::string, std::string> &working
     std::stringstream ss;
     ss << "Opcode dump for incomplete SFZ zone created: {" << std::endl;
     for (auto [k, v] : working_opcodes)
-        ss << '\t' << k << ": \t" << v << std::endl;
+        ss << '\t' << k << ": " << v << std::endl;
     ss << '}';
     LOGDEBUG(s->mLogger) << ss.str();
 //#endif
@@ -147,32 +147,19 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
 
         // Apply zone defaults where opcodes are missing
         // (behaviour matches Polyphone and some other sfz players)
-        bool no_root_key = (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end());
+        bool no_key_macro = (sfz_zone_opcodes.find("key") == sfz_zone_opcodes.end());
         bool no_low_key = (sfz_zone_opcodes.find("lokey") == sfz_zone_opcodes.end());
         bool no_high_key = (sfz_zone_opcodes.find("hikey") == sfz_zone_opcodes.end());
         bool no_keycenter = (sfz_zone_opcodes.find("pitch_keycenter") == sfz_zone_opcodes.end());
 
-        if (no_root_key)
+        if (no_key_macro)
         {
-            if (no_low_key && no_high_key)
-            {
-                sfz_zone_opcodes.insert({"key", "60"});
-                sfz_zone_opcodes.insert({"lokey", "0"});
-                sfz_zone_opcodes.insert({"hikey", "127"});
-            }
-            else if (!no_keycenter)
-                sfz_zone_opcodes.insert({"key", sfz_zone_opcodes["pitch_keycenter"]});
-            else if (!no_low_key)
-                sfz_zone_opcodes.insert({"key", sfz_zone_opcodes["lokey"]});
-            else if (!no_high_key)
-                sfz_zone_opcodes.insert({"key", sfz_zone_opcodes["hikey"]});
-        }
-        else
-        {
+            if (no_keycenter)
+                sfz_zone_opcodes.insert({"pitch_keycenter", "60"});
             if (no_low_key)
-                sfz_zone_opcodes.insert({"lokey", sfz_zone_opcodes["key"]});
+                sfz_zone_opcodes.insert({"lokey", "0"});
             if (no_high_key)
-                sfz_zone_opcodes.insert({"hikey", sfz_zone_opcodes["key"]});
+                sfz_zone_opcodes.insert({"hikey", "127"});
         }
     }
     else
@@ -194,6 +181,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         else if (stricmp(opcode, "key") == 0)
         {
             z->key_root = keyname_to_keynumber(val);
+            z->key_low = keyname_to_keynumber(val);
+            z->key_high = keyname_to_keynumber(val);
             ++num_opcodes_processed;
         }
         else if (stricmp(opcode, "lokey") == 0)
@@ -353,7 +342,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
  * If next data is typable, read in all opcudes until the next sfz <tag> is encountered
  * or otherwise reached the end.
  */
-void parse_opcodes(sampler *s, const char *&r, const char *data_end,
+void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::path &path,
                    std::map<std::string, std::string> &working_opcodes)
 {
     if (r == nullptr || r >= data_end)
@@ -437,7 +426,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
             // Now obtain the value.
             const char *w = v;
-            bool is_spaced = false, is_quoted = false, quote_ended = false, parsed = false;
+            bool is_sample = false, parsed = false;
+            bool is_quoted = false, quote_ended = false;
 
             // All opcode=value pairs can be space-delimited or across multiple lines, however due
             // care required for sample paths containing spaces. Note these are always relative to
@@ -447,65 +437,78 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
             //     remainder until '.' is encountered in the path string (TODO can improve)
             //   - Paths with quotes will end at the next corresponding quote provided
             //     it is on the same line.
-            if (*w == '"')
+            if (stricmp(opcode.c_str(), "sample") == 0)
             {
-                is_quoted = true;
-                is_spaced = true;
+                is_sample = true;
+
+                // Note: other SFZ players eg: Polyphone, may not support quoted path strings.
+                if (*w == '"')
+                    is_quoted = true;
+
                 ++w;
-            }
-            else if (stricmp(opcode.c_str(), "sample") == 0)
-            {
-                is_spaced = true;
             }
 
             while (w < working_data_end && !parsed)
             {
-                if (is_quoted && !quote_ended)
+                if (is_sample)
                 {
-                    // Where paths/values are quoted, find the corresponding end quote
-                    // unless it's an end-line, which then we assume that's the value end.
-                    if (*w != '"')
+                    if (is_quoted && !quote_ended)
                     {
-                        ++w;
-                        if (*w == '\r' || *w == '\n')
-                            is_spaced = false;
+                        // Where paths are quoted, find the corresponding end quote
+                        // unless it's CRLF, which then we assume that's the value end.
+                        if (*w != '"')
+                        {
+                            ++w;
+                            if (*w == '\r' || *w == '\n')
+                                is_sample = false;
+                            else
+                                continue;
+                        }
                         else
-                            continue;
+                            quote_ended = true;
                     }
-                    else
-                        quote_ended = true;
-                }
-                else if (is_spaced && *w == '.')  // TODO get rid of this hack
-                {
-                    // Assume file extension passed (sample dirs with dots or going up one
-                    // level, best put quotes around your path until I can figure out a
-                    // better way to generalise this with path testing.)
-                    is_spaced = false;
-                    ++w;
+                    else if (!is_quoted)
+                    {
+                        copy_size = (w - v);
+                        strncpy(buf, v, copy_size);
+                        buf[copy_size] = '\0';
+
+                        std::stringstream ss;
+                        ss << path_to_string(path)
+                           << static_cast<char>(fs::path::preferred_separator) << buf;
+                        fs::path test_path = string_to_path(ss.str());
+                        
+                        if (fs::exists(test_path) && !fs::is_directory(test_path))
+                            is_sample = false;
+                    }
                 }
 
                 // Condition to parse opcode value - have we got everything by this point?
-                if ((is_spaced && *w < 32) || *w >= 127 || (!is_spaced && *w <= 32))
+                if ((is_sample && *w < 32) || *w >= 127 || (!is_sample && *w <= 32))
                 {
                     if (is_quoted && quote_ended)
                     {
                         --w;
                         ++v;
                     }
-
-                    const int copy_size = (w - v);
+                    
+                    copy_size = (w - v);
                     strncpy(buf, v, copy_size);
                     buf[copy_size] = '\0';
                     value = buf;
 
-                    if (is_quoted && !quote_ended)
-                        LOGWARNING(s->mLogger)
-                            << "Unterminated quote value found: " << opcode << "=" << value;
-
-                    if (is_quoted && quote_ended)
+                    if (is_quoted)
                     {
-                        ++w;
-                        --v;
+                        if (quote_ended)
+                        {
+                            ++w;
+                            --v;
+                        }
+                        else
+                        {
+                            LOGWARNING(s->mLogger)
+                                << "Unterminated quote value found: " << opcode << "=" << value;
+                        }
                     }
 
                     parsed = (!opcode.empty() && !value.empty());
@@ -638,7 +641,7 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
         }
         else
         {
-            parse_opcodes(this, r, data_end, *working_opcodes);
+            parse_opcodes(this, r, data_end, path, *working_opcodes);
         }
     }
 

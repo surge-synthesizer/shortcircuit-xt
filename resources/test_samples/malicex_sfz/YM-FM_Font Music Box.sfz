@@ -15,7 +15,7 @@ ampeg_sustain=53
 ampeg_release=2.500
 
 <region>
-sample="..\malicex_sfz\i has space\MusBox.wav"
+sample=..\malicex_sfz\i has space\MusBox.wav
 lokey=d6
 pitch_keycenter=c8
 lovel=90
@@ -28,7 +28,7 @@ hivel=89
 lovel=41
 
 <region>
-sample="..\malicex_sfz\i has space\MusBox.wav"
+sample=i has space\MusBox.wav
 lokey=d6
 pitch_keycenter=c8
 hivel=40
@@ -39,6 +39,6 @@ hikey=c#6
 hivel=79
 
 <region>
-sample=MusBoxC4.wav
+sample=.\MusBoxC4.wav
 lovel=80
 hikey=c#6
