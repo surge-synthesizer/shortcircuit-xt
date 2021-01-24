@@ -89,11 +89,16 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
 /**
  * Useful for debugging unsupported SFZ opcodes for a given zone.
  */
-void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
+inline void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
 {
-    LOGDEBUG(s->mLogger) << "Opcode dump for incomplete SFZ zone created: {";
+//#ifdef _DEBUG
+    std::stringstream ss;
+    ss << "Opcode dump for incomplete SFZ zone created: {" << std::endl;
     for (auto [k, v] : working_opcodes)
-        LOGDEBUG(s->mLogger) << "\t" << k << ": " << v;
+        ss << '\t' << k << ": \t" << v << std::endl;
+    ss << '}';
+    LOGDEBUG(s->mLogger) << ss.str();
+//#endif
 }
 
 /**
@@ -120,15 +125,23 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         LOGERROR(s->mLogger) << "Zone not created due to missing SFZ sample opcode.";
         return false;
     }
+    
+    std::stringstream ss;
+    sample_zone *z;
 
     // Normalise sample path first before creating a zone to load it.
     // TODO: Pseudo-samples eg: *saw *sine *triangle etc. TBI
-    std::stringstream ss;
-    ss << path_to_string(path) << static_cast<char>(fs::path::preferred_separator) << sfz_zone_opcodes["sample"];
-    std::string sample_path_str = ss.str();
-    sample_zone *z;
-    
-    if (s->add_zone(fs::absolute(string_to_path(sample_path_str)), &z_id, channel, false))
+    ss << path_to_string(path) << static_cast<char>(fs::path::preferred_separator)
+       << sfz_zone_opcodes["sample"];
+    auto sample_path = fs::absolute(string_to_path(ss.str()));
+
+    if (!fs::exists(sample_path))
+    {
+        LOGERROR(s->mLogger) << "Zone not created due to invalid sample path: " << sample_path;
+        return false;
+    }
+
+    if (s->add_zone(sample_path, &z_id, channel, false))
     {
         z = &s->zones[z_id];
 
@@ -164,7 +177,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     }
     else
     {
-        LOGERROR(s->mLogger) << "Unable to create zone from SFZ sample " << sample_path_str;
+        LOGERROR(s->mLogger) << "Failed to create zone for SFZ sample: " << sample_path;
         return false;
     }
 
@@ -282,7 +295,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
             // see https://sfzformat.com/legacy/
         }
     }
-    
+
     // Crossfade handler has to be done per-zone (to be order independent).
     if (xfin_lokey >= 0)
     {
@@ -332,7 +345,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         LOGWARNING(s->mLogger) << "Zone creation did not process all SFZ opcodes.";
         return false;
     }
-    
+
     return true;
 }
 
@@ -349,7 +362,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
         LOGWARNING(s->mLogger) << "SFZ opcode parsing appears to have reached an unstable state.";
         return;
     }
-    
+
     // Find the next tag start to mark end of processing opcodes for the current zone.
     const char *working_data_end = r;
     char buf[256];
@@ -368,19 +381,16 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                 r++;
             continue;
         }
-
-        // Annoyingly, some SFZ players allow incorrect opcodes such as "ampeg attack"
-        // to work when they're not meant to... so white-space will be normalised later...
         
-        // Ignore CRLF and control characters when looking for opcode names.
-        if (*r < 32 || *r >= 127)
+        // Ignore whitespace, CRLF and control characters when looking for the start of an opcode.
+        if (*r <= 32 || *r >= 127)
         {
             ++r;
             continue;
         }
 
-        // Now look for the = operator (sfz spec says no spaces between opcode and value, but we'll pretend
-        // they're not there in this case)
+        // Now look for the = operator (sfz spec says no spaces between opcode and value, but we'll
+        // pretend they're not there in this case)
         const char *v = r;
         bool opcode_found = false;
         ++v;
@@ -388,15 +398,16 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
         while (v < working_data_end)
         {
             // TODO really should use a regex here to only accept [\s0-9A-Za-z_]+ opcode labels
-            if (*v != ' ' && *v < '0' && *v > '9' && *v < 'A' && *v > 'Z' &&
-                *v < 'a' && *v > 'z')
+            // Annoyingly, some SFZ players allow incorrect opcodes such as "ampeg attack"
+            // to work when they're not meant to... so white-space will be normalised later...
+            if (*v != ' ' && *v < '0' && *v > '9' && *v < 'A' && *v > 'Z' && *v < 'a' && *v > 'z')
             {
-                // If opcode name is not valid text, report the invalid string and find the next one.
+                // If opcode name is not valid text, log invalid string and find the next one.
                 copy_size = (v - r);
                 strncpy(buf, r, copy_size);
                 buf[copy_size] = '\0';
                 LOGERROR(s->mLogger) << "Invalid SFZ opcode found: " << buf;
-                r = v;  // scan forward for the next SFZ opcode
+                r = v; // scan forward for the next SFZ opcode
                 break;
             }
 
@@ -412,7 +423,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
         {
             // Retain opcode name, normalise whitespace to _ and lowercase.
             copy_size = (v - r);
-            for (int i=0; i<copy_size; ++i)
+            for (int i = 0; i < copy_size; ++i)
             {
                 if (r[i] <= ' ')
                     buf[i] = '_';
@@ -426,11 +437,11 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 
             // Now obtain the value.
             const char *w = v;
-            bool parsed = false, is_spaced = false, is_quoted = false, quote_ended = false;
-            ++w;
+            bool is_spaced = false, is_quoted = false, quote_ended = false, parsed = false;
 
             // All opcode=value pairs can be space-delimited or across multiple lines, however due
-            // care required for sample paths containing spaces.
+            // care required for sample paths containing spaces. Note these are always relative to
+            // the SFZ file location.
             // Valid cases:
             //   - Paths with no quotes around path value will assume entire line
             //     remainder until '.' is encountered in the path string (TODO can improve)
@@ -446,10 +457,10 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
             {
                 is_spaced = true;
             }
-            
+
             while (w < working_data_end && !parsed)
             {
-                if (is_quoted)
+                if (is_quoted && !quote_ended)
                 {
                     // Where paths/values are quoted, find the corresponding end quote
                     // unless it's an end-line, which then we assume that's the value end.
@@ -464,13 +475,16 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                     else
                         quote_ended = true;
                 }
-                else if (is_spaced && *w == '.')
+                else if (is_spaced && *w == '.')  // TODO get rid of this hack
                 {
-                    // Assume file extension passed (sample dirs with dots, seriously GTFO)
+                    // Assume file extension passed (sample dirs with dots or going up one
+                    // level, best put quotes around your path until I can figure out a
+                    // better way to generalise this with path testing.)
                     is_spaced = false;
                     ++w;
                 }
 
+                // Condition to parse opcode value - have we got everything by this point?
                 if ((is_spaced && *w < 32) || *w >= 127 || (!is_spaced && *w <= 32))
                 {
                     if (is_quoted && quote_ended)
@@ -485,7 +499,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                     value = buf;
 
                     if (is_quoted && !quote_ended)
-                        LOGWARNING(s->mLogger) << "Unterminated quote value found: " << opcode << "=" << value;
+                        LOGWARNING(s->mLogger)
+                            << "Unterminated quote value found: " << opcode << "=" << value;
 
                     if (is_quoted && quote_ended)
                     {
@@ -493,27 +508,29 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
                         --v;
                     }
 
-                    parsed = true;
+                    parsed = (!opcode.empty() && !value.empty());
                 }
                 ++w;
             }
-            
-            if (opcode.size() == 0 || value.size() == 0)
-            {
-                parsed = false;
-                LOGERROR(s->mLogger) << "Unexpected SFZ opcode-value pair: " << opcode << "=" << value;
-            }
 
-            // Save the SFZ opcode=value pair
-            if (parsed)
+            // Once here, if parsing had failed then log an error.
+            if (!parsed)
+            {
+                LOGERROR(s->mLogger)
+                    << "Unexpected SFZ opcode-value pair: " << opcode << "=" << value;
+            }
+            else
+            {
+                // Save the SFZ opcode=value pair
                 working_opcodes.insert({opcode, value});
-                
-            // move next opcode scan forward
+            }
+            
+            // move forward to the next opcode scan.
             r = w;
         }
         else
         {
-            // Nothing to parse.
+            // Nothing to parse from this point.
             r = v;
         }
     }
@@ -551,13 +568,14 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end,
 bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, int *new_g,
                        char channel)
 {
-    const char *r = data, *data_end = (data + datasize);   
-    std::map<std::string, std::string>
-        cur_group_opcodes, cur_region_opcodes, *working_opcodes = &cur_region_opcodes;
+    const char *r = data, *data_end = (data + datasize);
+    std::map<std::string, std::string> cur_group_opcodes, cur_region_opcodes,
+        *working_opcodes = &cur_region_opcodes;
 
     // apply groups, then regions containing group-defined opcodes as relevant.
-    // TODO do we need to work out how to re-use already loaded samples for multiple zones from here?
-    
+    // TODO do we need to work out how to re-use already loaded samples for multiple zones from
+    // here?
+
     while (r < data_end)
     {
         if (*r == '<') // group/region
@@ -572,7 +590,7 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
                 }
 
                 // Collect opcodes from last group read.
-                for (auto const& [opcode, val] : cur_group_opcodes)
+                for (auto const &[opcode, val] : cur_group_opcodes)
                     cur_region_opcodes.insert({opcode, val});
 
                 working_opcodes = &cur_region_opcodes;
@@ -580,14 +598,15 @@ bool sampler::load_sfz(const char *data, size_t datasize, const fs::path &path, 
             }
             else if (strnicmp(r, "<group>", 7) == 0)
             {
-                // TODO: as SCG/SCM zone groups from SC1.1.2 are not implemented in SC2/3, for now these
-                // act as 'pre-fills' to regions parsed to zones assigned to a single sample.
+                // TODO: as SCG/SCM zone groups from SC1.1.2 are not implemented in SC2/3, for now
+                // these act as 'pre-fills' to regions parsed to zones assigned to a single sample.
                 // Eventually some group settings could apply similarly to SC1.1.2
 
                 if (!cur_group_opcodes.empty())
                     cur_group_opcodes.clear();
-                
-                // At this point, all opcodes for a <region>/<group> would have been accumulated and so should be processed.
+
+                // At this point, all opcodes for a <region>/<group> would have been accumulated and
+                // so should be processed.
                 if (!cur_region_opcodes.empty())
                 {
                     if (!create_sfz_zone(this, cur_region_opcodes, path, channel))

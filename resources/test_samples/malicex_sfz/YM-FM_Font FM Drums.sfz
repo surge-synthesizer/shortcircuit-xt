@@ -42,7 +42,7 @@ ampeg_decay=0.255
 ampeg_sustain=4
 
 <region>
-sample=./FM Bongos.wav
+sample=FM Bongos.wav
 lokey=e4
 hikey=e4
 loop_mode=loop_continuous
