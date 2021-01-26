@@ -134,7 +134,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     // TODO: Pseudo-samples eg: *saw *sine *triangle etc. TBI
     ss << path_to_string(path) << static_cast<char>(fs::path::preferred_separator)
        << sfz_zone_opcodes["sample"];
-    auto sample_path = fs::absolute(string_to_path(ss.str()));
+    auto sample_path = fs::canonical(string_to_path(ss.str()));
 
     if (!fs::exists(sample_path))
     {
