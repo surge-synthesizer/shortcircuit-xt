@@ -57,7 +57,6 @@ struct voicestate
 
 class sampler
 {
-  SC3::Log::StreamLogger mLogger;
   public:
     // Aligned members
     float output alignas(16)[max_outputs << 1][block_size],
@@ -77,6 +76,7 @@ class sampler
         int last_ft[n_sampler_effects];
     } multiv;
     float *output_ptr[max_outputs << 1];
+    SC3::Log::StreamLogger mLogger;
 
     // Public Interface
 
@@ -196,7 +196,7 @@ class sampler
     bool load_akai_s6k_program(const fs::path &filename, char channel = 0, bool replace = true);
     bool parse_dls_preset(void *data, size_t datasize, char channel, int patch, const fs::path &filename);
     bool load_sf2_preset(const fs::path &filename, int *new_g = 0, char channel = 0, int patch = -1);
-    bool load_sfz(const char *data, size_t datasize, int *new_g = 0, char channel = 0);
+    bool load_sfz(const char *data, size_t datasize, const fs::path &path, int *new_g = 0, char channel = 0);
     bool load_battery_kit(const fs::path &fileName, char channel = 0, bool replace = true);
     bool load_file(const fs::path &filename, int *new_g = 0, int *new_z = 0, bool *is_group = 0,
                    char channel = 0, int add_zones_to_groupid = 0, bool replace = false);

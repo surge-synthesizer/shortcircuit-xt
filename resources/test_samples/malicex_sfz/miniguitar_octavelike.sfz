@@ -1,0 +1,9 @@
+// (C) 2010 dj.tuBIG/MaliceX
+// A recording of me plucking two mini-guitar string
+// Note: the empty region is deliberate.
+
+<group>
+sample=miniguitar_octavelikedulcimer_one.wav
+transpose=1
+
+<region>

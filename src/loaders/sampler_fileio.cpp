@@ -147,7 +147,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
         {
             if (is_group)
                 *is_group = true;
-            result = load_sfz((char *)data, datasize, new_g, channel);
+            result = load_sfz((char *)data, datasize, pathOnly, new_g, channel);
             vtCopyString(parts[channel].name, nameOnly.c_str(), 32);
             // TODO add name from last part of filename
         }
