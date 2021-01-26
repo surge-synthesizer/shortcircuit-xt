@@ -134,8 +134,13 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     // TODO: Pseudo-samples eg: *saw *sine *triangle etc. TBI
     ss << path_to_string(path) << static_cast<char>(fs::path::preferred_separator)
        << sfz_zone_opcodes["sample"];
-    auto sample_path = fs::canonical(string_to_path(ss.str()));
 
+    std::string sample_path_str = ss.str();
+    std::replace(sample_path_str.begin(), sample_path_str.end(), '\\',
+                 static_cast<char>(fs::path::preferred_separator));
+
+    auto sample_path = fs::absolute(string_to_path(sample_path_str));
+    
     if (!fs::exists(sample_path))
     {
         LOGERROR(s->mLogger) << "Zone not created due to invalid sample path: " << sample_path;
@@ -385,7 +390,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
     const char *working_data_end = r;
     char buf[256];
     int copy_size;
-
+    
     while (working_data_end < data_end && *working_data_end != '<')
         ++working_data_end;
 
@@ -503,9 +508,12 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
                         buf[copy_size] = '\0';
 
                         std::stringstream ss;
-                        ss << path_to_string(path)
-                           << static_cast<char>(fs::path::preferred_separator) << buf;
-                        fs::path test_path = string_to_path(ss.str());
+                        ss << path_to_string(path) <<
+                            static_cast<char>(fs::path::preferred_separator) << buf;
+                        std::string test_path_str = ss.str();
+                        std::replace(test_path_str.begin(), test_path_str.end(), '\\',
+                                     static_cast<char>(fs::path::preferred_separator));
+                        fs::path test_path = fs::absolute(string_to_path(test_path_str));
                         
                         if (fs::exists(test_path) && !fs::is_directory(test_path))
                             is_sample = false;
