@@ -235,7 +235,7 @@ void ZoneKeyboardDisplay::mouseDoubleClick(const MouseEvent &event)
                                     juce::File::getSpecialLocation(juce::File::userHomeDirectory));
     if (sampleChooser.browseForFileToOpen())
     {
-        auto d = new DropList();
+        auto d = new DropList(); // engine takes ownership
 
         auto f = sampleChooser.getResult();
         auto fd = DropList::File();

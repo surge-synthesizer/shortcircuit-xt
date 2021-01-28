@@ -49,7 +49,7 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     // This is going to be a little pattern I'm sure
     zoneStateProxy = std::make_unique<ZoneStateProxy>();
     zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(zoneStateProxy.get(), this);
-    waveDisplay = std::make_unique<WaveDisplay>(this);
+    waveDisplay = std::make_unique<WaveDisplay>(this, this);
     uiStateProxies.insert(zoneStateProxy.get());
     uiStateProxies.insert(waveDisplay.get());
     zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
@@ -151,11 +151,6 @@ void SC3AudioProcessorEditor::refreshSamplerTextViewInThreadUnsafeWay()
     debugWindow->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
-void SC3AudioProcessorEditor::handleLogMessage(SC3::Log::Level lev, const std::string &txt)
-{
-    logToUI->push(SC3AudioProcessorEditor::LogTransport(lev, txt));
-}
-
 void SC3AudioProcessorEditor::idle()
 {
     int mcount = 0;
@@ -223,4 +218,12 @@ void SC3AudioProcessorEditor::idle()
 void SC3AudioProcessorEditor::receiveActionFromProgram(const actiondata &ad)
 {
     actiondataToUI->push(ad);
+}
+SC3::Log::Level SC3AudioProcessorEditor::getLevel()
+{
+    // TODO some kind of global config read
+    return SC3::Log::Level::Debug;
+}
+void SC3AudioProcessorEditor::message(SC3::Log::Level lev, const std::string &msg) {
+    logToUI->push(SC3AudioProcessorEditor::LogTransport(lev, msg));
 }

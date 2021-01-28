@@ -67,7 +67,8 @@
  */
 
 #pragma once
-
+#include "interaction_parameters.h"
+#include <cassert>
 enum
 {
     vget_mousedown = 0,
@@ -271,6 +272,10 @@ struct actiondata
 
         DropList *dropList; // Ownership is with the processor now
     } data;
+
+    // try to avoid any uninitialized mem issues
+    actiondata() { actiontype=0; id=0; subid=0; data.str[0]=0;}
+
 }; // 64 bytes of whatever you like.. should be plenty
 
 struct ad_zonedata
@@ -286,3 +291,76 @@ struct ad_zonedata
     char is_active, is_selected, mute;
     char name[34];
 };
+
+// corresponds to vga_wavedisp_editpoint
+struct ActionWaveDisplayEditPoint : public actiondata {
+    enum PointType
+    {
+        start = 0,
+        end,
+        loopStart,
+        loopEnd,
+        loopXFade,
+        hitPointStart, // hitpoints first item
+    };
+
+    // Regular type
+    ActionWaveDisplayEditPoint(PointType dragId, int samplePos)
+    {
+        actiontype = vga_wavedisp_editpoint;
+        data.i[0] = dragId;
+        data.i[1] = samplePos;
+    }
+    // hitpoint type
+    ActionWaveDisplayEditPoint(int hitPoint, unsigned startSample, unsigned endSample, bool muted, float env) {
+
+        data.i[0] = hitPointStart + hitPoint;
+        data.i[1] = startSample;
+        data.i[2] = endSample;
+        data.i[3] = muted;
+        data.f[4] = env;
+    }
+
+
+    inline PointType dragId() const {return (PointType)data.i[0];}
+    inline int hitPoint() const {assert(data.i[0]>= hitPointStart); return data.i[0] - hitPointStart;}
+    bool muted() const {return (bool)data.i[3];}
+    float env() const {return (bool)data.i[4];}
+    inline int samplePos() const {return data.i[1];}
+    inline int endSamplePos() const {return data.i[2];}
+};
+
+// corresponds to vga_wavedisp_sample
+struct ActionWaveDisplaySample : public actiondata {
+    ActionWaveDisplaySample(void *samplePtr,
+                            int playMode, // todo enum
+                            unsigned int start,
+                            unsigned int end,
+                            unsigned int loopStart,
+                            unsigned int loopEnd,
+                            unsigned int loopCrossfade,
+                            unsigned int numHitpoints
+                            )  {
+        id = ip_wavedisplay;
+        subid = 0;
+        actiontype = vga_wavedisp_sample;
+        data.ptr[0] = samplePtr;
+        data.i[2] = playMode;
+        data.i[3] = start;
+        data.i[4] = end;
+        data.i[5] = loopStart;
+        data.i[6] = loopEnd;
+        data.i[7] = loopCrossfade;
+        data.i[8] = numHitpoints;
+    }
+    inline void *samplePtr(){return data.ptr[0];}
+    inline int playMode(){return data.i[2];}
+    inline unsigned int start(){return data.i[3];}
+    inline unsigned int end(){return data.i[4];}
+    inline unsigned int loopStart(){return data.i[5];}
+    inline unsigned int loopEnd(){return data.i[6];}
+    inline unsigned int loopCrossfade(){return data.i[7];}
+    inline unsigned int numHitpoints(){return data.i[8];}
+
+};
+
