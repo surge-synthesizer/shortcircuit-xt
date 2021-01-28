@@ -861,34 +861,24 @@ void sampler::post_zonedata()
         }
         else
         {
-            ad.id = ip_wavedisplay;
-            ad.subid = 0;
-            ad.actiontype = vga_wavedisp_sample;
             sample *sptr;
             if (zones[z].sample_id < 0)
                 sptr = 0;
             else
                 sptr = samples[zones[z].sample_id];
-            ad.data.ptr[0] = sptr;
-            ad.data.i[2] = zones[z].playmode;
-            ad.data.i[3] = zones[z].sample_start;
-            ad.data.i[4] = zones[z].sample_stop;
-            ad.data.i[5] = zones[z].loop_start;
-            ad.data.i[6] = zones[z].loop_end;
-            ad.data.i[7] = zones[z].loop_crossfade_length;
-            ad.data.i[8] = zones[z].n_hitpoints;
-            postEventsToWrapper(ad);
+            postEventsToWrapper(ActionWaveDisplaySample(sptr, zones[z].playmode, zones[z].sample_start,
+                                        zones[z].sample_stop, zones[z].loop_start,
+                                        zones[z].loop_end, zones[z].loop_crossfade_length,
+                                        zones[z].n_hitpoints));
+
             if (zones[z].playmode == pm_forward_hitpoints)
             {
                 for (int i = 0; i < zones[z].n_hitpoints; i++)
                 {
-                    ad.actiontype = vga_wavedisp_editpoint;
-                    ad.data.i[0] = 5 + i;
-                    ad.data.i[1] = zones[z].hp[i].start_sample;
-                    ad.data.i[2] = zones[z].hp[i].end_sample;
-                    ad.data.i[3] = zones[z].hp[i].muted;
-                    ad.data.f[4] = zones[z].hp[i].env;
-                    postEventsToWrapper(ad);
+                    postEventsToWrapper(ActionWaveDisplayEditPoint(
+                        i, zones[z].hp[i].start_sample, zones[z].hp[i].end_sample,
+                        zones[z].hp[i].muted, zones[z].hp[i].env));
+
                 }
             }
             if (sptr)
