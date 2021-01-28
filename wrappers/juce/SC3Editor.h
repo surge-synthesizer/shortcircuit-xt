@@ -92,9 +92,9 @@ class WaveDisplay;
 class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
                                 public juce::Button::Listener,
                                 public juce::FileDragAndDropTarget,
-                                public LogDisplayListener,
                                 public sampler::WrapperListener,
-                                public ActionSender
+                                public ActionSender,
+                                public SC3::Log::LoggingCallback
 {
   public:
     SC3AudioProcessorEditor(SC3AudioProcessor &);
@@ -115,7 +115,6 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     // Fixme - obviously this is done with no thought of threading or anything else
     void refreshSamplerTextViewInThreadUnsafeWay();
 
-    void handleLogMessage(SC3::Log::Level lev, const std::string &txt) override;
 
     void receiveActionFromProgram(const actiondata &ad) override;
     void sendActionToEngine(const actiondata &ad) override;
@@ -146,6 +145,10 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
+
+    // implement logging interface for logs generated on ui side
+    SC3::Log::Level getLevel() override;
+    void message(SC3::Log::Level lev, const std::string &msg) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessorEditor)
 };

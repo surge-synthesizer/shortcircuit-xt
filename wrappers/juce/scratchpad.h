@@ -1,5 +1,6 @@
 //
 // The idea here is to add test actions while developing
+// and eventually get rid of it once the real functionality is in place
 //
 
 #ifndef SHORTCIRCUIT_SCRATCHPAD_H
@@ -34,10 +35,11 @@ class ScratchPadItem
         }
         return result;
     }
-
   public:
+    virtual ~ScratchPadItem()= default;
     std::string mName;
     std::string mDescription;
+    std::string mDefaultParameter;
     // given parameters, prepare the actiondata which will be posted.
     // if there is a problem return false, and set error
     virtual bool prepareAction(sampler *s, std::string parameters, actiondata *ad,
@@ -45,5 +47,6 @@ class ScratchPadItem
 };
 
 std::vector<ScratchPadItem *> registerScratchPadItems();
+void unregisterScratchPadItems(std::vector<ScratchPadItem *> items);
 
 #endif // SHORTCIRCUIT_SCRATCHPAD_H

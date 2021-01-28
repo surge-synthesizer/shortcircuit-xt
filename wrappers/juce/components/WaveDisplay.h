@@ -19,50 +19,63 @@
 #define SHORTCIRCUIT_WAVEDISPLAY_H
 #include <JuceHeader.h>
 #include <SC3Editor.h>
+#include "infrastructure/profiler.h"
 
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
     ActionSender *mSender;
+    SC3::Log::StreamLogger mLogger;
 
+    SC3::Perf::Profiler prof;
 
-    void *sampleptr;
+    // boundary around actual waveform display (excludes margin)
+    Rectangle<int> mWaveBounds;
+
+    // this will hold the rendered wave
+    Image mWavePixels;
+
+    sample *mSamplePtr;
     int dispmode;
-    int zoom,zoom_max,start;
-    float vzoom,vzoom_drag;
-    int n_visible_pixels,n_hitpoints;
+    int mZoom; // zoom factor. A value of 1 means 1 pixel is 1 sample. Higher value is more zoomed out
+    int mZoomMax;
+    int mLeftMostSample; // leftmost sample in the display (in samples)
+    float mVerticalZoom,vzoom_drag;
+    int mNumVisiblePixels;  // width in pixels of visible wave display
+    int n_hitpoints;
     unsigned int aatable[4][256];
     int playmode;
     int markerpos[256];
     bool draw_be_quick, draw_skip_wave_redraw;
+    Rectangle<int> dragpoint[256];
 /*
     vg_surface wavesurf;
-
-
-
     int controlstate,dragid;
-
-
     vg_point lastmouseloc;
-
     vg_bitmap bmpdata[16];
-
-    vg_rect dragpoint[256];
-
     vg_menudata md;	// context menu
     */
 
     void queue_draw_wave(bool be_quick, bool skip_wave_redraw);
-    // blast the wave to the area in g specified by bounds
-    void drawWave(Graphics &g, bool be_quick, bool skip_wave_redraw, Rectangle<int> bounds);
+
+    // blast the wave to mWavePixels
+    // if quick is specified, then no anti-aliasing is done (mouse panning or scrolling)
+    void renderWave(bool quick);
+
+    // draw the start/end/loop points
+    void drawDetails(Graphics &g, Rectangle<int> bounds);
+
+    // conversion
+    int samplePosToPixelPos(int sample);
 
     // implement Component
     void paint(Graphics &g) override;
+    void resized() override;
 
     // implement UIStateProxy
     virtual bool processActionData(const actiondata &d) override;
 
   public:
-    WaveDisplay(ActionSender *sender);
+    WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger);
 
 
 };

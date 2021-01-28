@@ -41,6 +41,7 @@ class ActionRunner : public Component,
 
   public:
     ActionRunner();
+    ~ActionRunner();
 
     SC3AudioProcessorEditor *mEditor;
 };
