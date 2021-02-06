@@ -263,13 +263,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 // Lower
                 if (offset < LowerBound)
-                    offset = SamplePos+LoopOffset;
+                    offset += LoopOffset;
             }
 
             if (offset > WaveSize || offset < 0)
                 offset = UpperBound;
 
             SamplePos = offset;
+
 #if ASM_I_REWROTE // Leaving this here for reference while we port
             __asm {					
 					; load

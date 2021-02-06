@@ -94,12 +94,10 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
  */
 inline void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
 {
-    std::stringstream ss;
-    ss << "Opcode dump for incomplete SFZ zone created: {" << std::endl;
+    LOGDEBUG(s->mLogger) << "Opcode dump for incomplete SFZ zone created: {" << std::endl << std::flush;
     for (auto [k, v] : working_opcodes)
-        ss << '\t' << k << ": " << v << std::endl;
-    ss << '}';
-    LOGDEBUG(s->mLogger) << ss.str();
+        LOGDEBUG(s->mLogger) << '\t' << k << ": " << v << std::endl << std::flush;
+    LOGDEBUG(s->mLogger) << '}' << std::flush;
 }
 
 /**
@@ -123,7 +121,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     // First check if a zone CAN be created - does it even have a sample?
     if (sfz_zone_opcodes.find("sample") == sfz_zone_opcodes.end())
     {
-        LOGERROR(s->mLogger) << "Zone not created due to missing SFZ sample opcode.";
+        LOGERROR(s->mLogger) << "Zone not created due to missing SFZ sample opcode." << std::flush;
         return false;
     }
     
@@ -143,7 +141,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     
     if (!fs::exists(sample_path))
     {
-        LOGERROR(s->mLogger) << "Zone not created due to invalid sample path: " << sample_path;
+        LOGERROR(s->mLogger) << "Zone not created due to invalid sample path: " << sample_path
+                             << std::flush;
         return false;
     }
 
@@ -170,7 +169,8 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
     }
     else
     {
-        LOGERROR(s->mLogger) << "Failed to create zone for SFZ sample: " << sample_path;
+        LOGERROR(s->mLogger) << "Failed to create zone for SFZ sample: " << sample_path
+                             << std::flush;
         return false;
     }
 
@@ -287,12 +287,12 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         else if (stricmp(opcode, "seq_length") == 0)
         {
             // TBI: need note groups properly implemented/testable first.
-            LOGWARNING(s->mLogger) << "SFZ 1.0 seq_length not yet implemnted";
+            LOGWARNING(s->mLogger) << "SFZ 1.0 seq_length not yet implemented" << std::flush;
         }
         else if (stricmp(opcode, "seq_position") == 0)
         {
             // TBI: need note groups properly implemented/testable first.
-            LOGWARNING(s->mLogger) << "SFZ 1.0 seq_position not yet implemnted";
+            LOGWARNING(s->mLogger) << "SFZ 1.0 seq_position not yet implemented" << std::flush;
         }
         else
         {
@@ -365,7 +365,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
 
     if (num_opcodes_processed < sfz_zone_opcodes.size())
     {
-        LOGWARNING(s->mLogger) << "Zone creation did not process all SFZ opcodes.";
+        LOGWARNING(s->mLogger) << "Zone creation did not process all SFZ opcodes." << std::flush;
         return false;
     }
 
@@ -382,7 +382,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
     if (r == nullptr || r >= data_end)
     {
         // TODO may need to refactor these loader functions rather than passing the mLogger object.
-        LOGWARNING(s->mLogger) << "SFZ opcode parsing appears to have reached an unstable state.";
+        LOGWARNING(s->mLogger) << "SFZ opcode parsing appears to have reached an unstable state."
+                               << std::flush;
         return;
     }
 
@@ -429,7 +430,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
                 copy_size = (v - r);
                 strncpy(buf, r, copy_size);
                 buf[copy_size] = '\0';
-                LOGERROR(s->mLogger) << "Invalid SFZ opcode found: " << buf;
+                LOGERROR(s->mLogger) << "Invalid SFZ opcode found: " << buf << std::flush;
                 r = v; // scan forward for the next SFZ opcode
                 break;
             }
@@ -543,8 +544,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
                         }
                         else
                         {
-                            LOGWARNING(s->mLogger)
-                                << "Unterminated quote value found: " << opcode << "=" << value;
+                            LOGWARNING(s->mLogger) << "Unterminated quote value found: " << opcode
+                                                   << "=" << value << std::flush;
                         }
                     }
 
@@ -556,8 +557,8 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
             // Once here, if parsing had failed then log an error.
             if (!parsed)
             {
-                LOGERROR(s->mLogger)
-                    << "Unexpected SFZ opcode-value pair: " << opcode << "=" << value;
+                LOGERROR(s->mLogger) << "Unexpected SFZ opcode-value pair: " << opcode << "="
+                                     << value << std::flush;
             }
             else
             {
