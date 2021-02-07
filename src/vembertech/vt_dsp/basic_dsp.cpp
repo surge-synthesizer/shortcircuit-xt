@@ -1,10 +1,9 @@
 #include "basic_dsp.h"
-#include <assert.h>
+#include <cassert>
 
 #define  _USE_MATH_DEFINES
 
 #include <algorithm>
-#include <math.h>
 #include <cmath>
 
 
@@ -42,7 +41,7 @@ int limit_range(int x, int l, int h)
 
 int Wrap(int x, int L, int H)
 {
-#if 0
+#if ASM_I_REWROTE // Leaving this here for reference while we port
 #if _M_X64 || PPC
 	// fattar inte vad den gör längre..
 	//int diff = H - L;
@@ -72,8 +71,17 @@ int Wrap(int x, int L, int H)
 	}	
 #endif
 #endif
-    assert( 0 );
-    return 0;
+    int newX = x;
+
+    // compare with H
+    if (newX > H)
+        newX -= H;
+
+    // compare with L
+    if (newX < L)
+        newX += (H - L);
+
+    return newX;
 }
 
 int Sign(int x)
