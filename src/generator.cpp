@@ -252,10 +252,26 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         break;
         case GSM_Loop:
         {
-#if ! WINDOWS
-#warning Un-ported Assembly in Generator Loop Mode
-#endif
-#if SUPPORTS_ASM
+            int offset = SamplePos;
+            
+            if (Direction)
+            {
+                // Upper
+                if (offset > UpperBound)
+                    offset -= LoopOffset;
+            } else
+            {
+                // Lower
+                if (offset < LowerBound)
+                    offset += LoopOffset;
+            }
+
+            if (offset > WaveSize || offset < 0)
+                offset = UpperBound;
+
+            SamplePos = offset;
+
+#if ASM_I_REWROTE // Leaving this here for reference while we port
             __asm {					
 					; load
 					mov eax, SamplePos
