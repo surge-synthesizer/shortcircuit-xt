@@ -21,8 +21,17 @@
 #include <SC3Editor.h>
 #include "infrastructure/profiler.h"
 
+
+
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
+    enum ControlState
+    {
+        cs_default=0,
+        cs_pan,
+        cs_dragpoint,
+    };
+
     ActionSender *mSender;
     SC3::Log::StreamLogger mLogger;
 
@@ -47,9 +56,14 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     int markerpos[256];
     bool draw_be_quick, draw_skip_wave_redraw;
     Rectangle<int> dragpoint[256];
+    int dragid=-1;// which item is being dragged
+    int controlstate=cs_default;
+
+    // we need a point of reference from last drag event as we are modifying state while dragging
+    Point<int> mZoomPanOffset;
 /*
     vg_surface wavesurf;
-    int controlstate,dragid;
+
     vg_point lastmouseloc;
     vg_bitmap bmpdata[16];
     vg_menudata md;	// context menu
@@ -66,10 +80,18 @@ class WaveDisplay : public juce::Component, public UIStateProxy
 
     // conversion
     int samplePosToPixelPos(int sample);
+    int pixelPosToSamplePos(int pos);
 
     // implement Component
     void paint(Graphics &g) override;
     void resized() override;
+    // we might not need all of these...
+    void mouseDrag(const MouseEvent &event) override;
+    void mouseDown(const MouseEvent &event) override;
+    void mouseUp(const MouseEvent &event) override;
+    void mouseEnter(const MouseEvent &event) override;
+    void mouseExit(const MouseEvent &event) override;
+    void mouseMove(const MouseEvent &event) override;
 
     // implement UIStateProxy
     virtual bool processActionData(const actiondata &d) override;
