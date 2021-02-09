@@ -5,7 +5,7 @@
 What? Shortcircuit is open source? Well yes, but there are big big caveats. **Right now there are no downloadable
 assets you can get to play music, and there is no runnable open source Shortcircuit plugin**. We estimate this
 will be the case for much of 2021, and maybe indefinitely. **You may never be able to run an open source
-Shortcircuit**. Might just be too much work.
+Shortcircuit**. Might just be too much work. But if you are dev you can help!
 
 ## How we got here?
 
