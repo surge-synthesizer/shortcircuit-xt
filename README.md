@@ -1,6 +1,6 @@
 # Shortcircuit XT
 
-[![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit3?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit3/_build/latest?definitionId=2&branchName=main)
+[![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit-xt?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit-xt/_build/latest?definitionId=2&branchName=main)
 
 What? Shortcircuit is open source? Well yes, but there are big big caveats. **Right now there are no downloadable
 assets you can get to play music, and there is no runnable open source Shortcircuit plugin**. We estimate this
@@ -61,7 +61,7 @@ We have used the Canonical/Harmony 1.0 CLA http://selector.harmonyagreements.org
 1. You retain copyright to your code. *We do not need you to assign copyright to us*.
 2. You grant us a license to distribute your code under GPL3 or MIT; and your content under CC3 attribution
 
-You can read the entire document [here](doc/ShortCircuit3-Individual-CLA.pdf).
+You can read the entire document [here](doc/ShortCircuitXT-Individual-CLA.pdf).
 
 To agree to this document,
 please add your name to the `AUTHORS` list in a git transaction where you indicate in the git log message
