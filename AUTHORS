@@ -1,10 +1,15 @@
 The following individuals have contributed code or content to this repo.
 
-By adding your name to this list, you are also agreeing to the CLA in doc/ShortCircuit3-Individual.pdf.
+By adding your name to this list, you are also agreeing to the CLA in doc/ShortcircuitXT-Individual-CLA.pdf.
 For now, agreeing to the CLA is a pre-requisite of merging your changes here, since, as discussed
-in the README, we are considering a mix of GPL3 and MIT licensing for SC3.
+in the README, we are considering a mix of GPL3 and MIT licensing for Shortcircuit XT.
 
-Claes Johanson (@kurasu / original author)
-Paul Walker (@baconpaul)
-Andrew Shakinovsky (@rudeog)
+Shortcircuit's original author:
+Claes Johanson <@kurasu / original author>
+
+Authors in the repository since 1.6 alpha was open-sourced (in alphabetical order):
+
+Mario Krušelj a.k.a. EvilDragon (@mkruselj)
 James Alan Nguyen (@djtubig-malicex)
+Andrew Shakinovsky (@rudeog)
+Paul Walker (@baconpaul)
