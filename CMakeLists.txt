@@ -1,7 +1,7 @@
 # CMakeList.txt to build Shortcircuit XT
 #
 # Shortcircuit XT began with a not-building snap of the code which was used
-* at some point in the SC2 product cycle, so we took a different strategy which was:
+# at some point in the SC2 product cycle, so we took a different strategy which was:
 #
 # 1. Have a libshortcircuit-core basically which contains all the code to be SC
 # 2. Expose that in an shortcircuit-headless, shortcircuitpy library and exe

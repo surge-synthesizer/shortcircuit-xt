@@ -47,7 +47,7 @@ PYBIND11_MODULE(shortcircuit3py, m)
         "getVersion", []() { return SC3::Build::FullVersionStr; },
         "Get the version of Shortcircuit XT");
 
-    py::class_<SC3PY>(m, "Shortcircuit XT Sampler")
+    py::class_<SC3PY>(m, "ShortcircuitXTSampler")
         .def("loadFileSimple", &SC3PY::loadFileFullKeyboard)
 
         .def( "process_audio", &SC3PY::process_audio )
