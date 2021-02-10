@@ -19,7 +19,7 @@ void *hInstance = 0;
 int main(int argc, char **argv)
 {
     HeadlessLogger logger;
-    std::cout << "# ShortCircuit3 Headless. " << SC3::Build::FullVersionStr << std::endl;
+    std::cout << "# Shortcircuit XT Headless. " << SC3::Build::FullVersionStr << std::endl;
 
     auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, &logger);
     sc3->set_samplerate(48000);

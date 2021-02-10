@@ -1,7 +1,7 @@
-# CMakeList.txt to build ShortCircuitXT
+# CMakeList.txt to build Shortcircuit XT
 #
-# SC3 began with a not-building snap of the code which was used at some point in the SC2
-# product cycle, so we took a different strategy which was
+# Shortcircuit XT began with a not-building snap of the code which was used
+# at some point in the SC2 product cycle, so we took a different strategy which was:
 #
 # 1. Have a libshortcircuit-core basically which contains all the code to be SC
 # 2. Expose that in an shortcircuit-headless, shortcircuitpy library and exe
@@ -9,7 +9,7 @@
 #
 # At least that's the plan. Critically this no longer builds any of the old GUI or
 # VST2 code, which we couldn't make work anyway. That code is still in the codebase for
-# reference as we port, but we should remove it before we ship 3.0.0.0
+# reference as we port, but we should remove it before we ship Shortcircuit XT
 #
 
 cmake_minimum_required(VERSION 3.10)
@@ -59,7 +59,7 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
 add_subdirectory(libs/JUCE)
 
 # Optional variables
-set(SC3_INCLUDE_ASIO_SUPPORT FALSE)
+set(SCXT_INCLUDE_ASIO_SUPPORT FALSE)
 
 # Platform Specific Compile Settings
 if (APPLE)
@@ -89,7 +89,7 @@ elseif (UNIX AND NOT APPLE)
     set(OS_LINK_LIBRARIES
             )
 else ()
-    if (SC3_INCLUDE_ASIO_SUPPORT)
+    if (SCXT_INCLUDE_ASIO_SUPPORT)
         execute_process(COMMAND powershell
                 -ExecutionPolicy Bypass
                 -File "scripts/win_dl_asiosdk.ps1"
@@ -229,9 +229,9 @@ add_dependencies(shortcircuit-core git-info)
 add_executable(sc3-headless wrappers/headless/main.cpp)
 target_link_libraries(sc3-headless PRIVATE shortcircuit-core)
 
-# The JUCE plugin ShortCircuitXT has an AU VST3 and Standalone version
-juce_add_plugin(ShortCircuitXT
-        PRODUCT_NAME "ShortCircuitXT"
+# The JUCE plugin Shortcircuit XT has an AU, VST3 and standalone version
+juce_add_plugin(ShortcircuitXT
+        PRODUCT_NAME "Shortcircuit XT"
         COMPANY_NAME "Surge Synth Team"
         BUNDLE_ID "org.surge-synth-team.shortcircuit-xt"
         PLUGIN_MANUFACTURER_CODE VmbA
@@ -243,16 +243,16 @@ juce_add_plugin(ShortCircuitXT
         FORMATS AU VST3 Standalone
         )
 
-juce_generate_juce_header(ShortCircuitXT)
+juce_generate_juce_header(ShortcircuitXT)
 
 # Add a binary resource (needs remediation)
 # file(GLOB SC3_RESOURCES_GLOB resources/test_samples/*)
 set( SC3_RESOURCES_GLOB resources/shortcircuit.ico )
-juce_add_binary_data(ShortCircuitXT-Binary SOURCES ${SC3_RESOURCES_GLOB})
-set_target_properties(ShortCircuitXT-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+juce_add_binary_data(ShortcircuitXT-Binary SOURCES ${SC3_RESOURCES_GLOB})
+set_target_properties(ShortcircuitXT-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # Then set up the source and the JUCE settings
-target_sources(ShortCircuitXT PRIVATE
+target_sources(ShortcircuitXT PRIVATE
         wrappers/juce/SC3Processor.cpp
         wrappers/juce/SC3Editor.cpp
 
@@ -270,8 +270,8 @@ target_sources(ShortCircuitXT PRIVATE
         wrappers/juce/scratchpad.cpp
         wrappers/juce/scratchpad.h
         )
-target_include_directories(ShortCircuitXT PRIVATE wrappers/juce )
-target_compile_definitions(ShortCircuitXT PUBLIC
+target_include_directories(ShortcircuitXT PRIVATE wrappers/juce )
+target_compile_definitions(ShortcircuitXT PUBLIC
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
         JUCE_STRICT_REFCOUNTEDPOINTER=1
 
@@ -286,16 +286,16 @@ target_compile_definitions(ShortCircuitXT PUBLIC
         JUCE_JACK=1
         )
 # ASIO SDK is only for MS Windows.
-if (NOT APPLE AND NOT UNIX AND SC3_INCLUDE_ASIO_SUPPORT)
-    target_compile_definitions(ShortCircuitXT PUBLIC
+if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
+    target_compile_definitions(ShortcircuitXT PUBLIC
         JUCE_ASIO=1
         )
-    target_include_directories(ShortCircuitXT PUBLIC
+    target_include_directories(ShortcircuitXT PUBLIC
        "libs/asiosdk/common"
        )
 endif()
-target_link_libraries(ShortCircuitXT PRIVATE
-        ShortCircuitXT-Binary
+target_link_libraries(ShortcircuitXT PRIVATE
+        ShortcircuitXT-Binary
         shortcircuit-core
         juce::juce_analytics
         juce::juce_audio_utils
@@ -352,11 +352,11 @@ add_custom_command(
 )
 
 # TODO: Move the JUCE assets into products
-add_dependencies(sc3-products ShortCircuitXT)
+add_dependencies(sc3-products ShortcircuitXT)
 
-add_dependencies(sc3-products ShortCircuitXT_VST3)
-add_dependencies(sc3-products ShortCircuitXT_Standalone)
-get_target_property(JUCE_DIR ShortCircuitXT LIBRARY_OUTPUT_DIRECTORY)
+add_dependencies(sc3-products ShortcircuitXT_VST3)
+add_dependencies(sc3-products ShortcircuitXT_Standalone)
+get_target_property(JUCE_DIR ShortcircuitXT LIBRARY_OUTPUT_DIRECTORY)
 add_custom_command(
         TARGET sc3-products
         POST_BUILD
@@ -366,7 +366,7 @@ add_custom_command(
 )
 
 if( APPLE )
-    add_dependencies(sc3-products ShortCircuitXT_AU)
+    add_dependencies(sc3-products ShortcircuitXT_AU)
     add_custom_command(
             TARGET sc3-products
             POST_BUILD
@@ -384,10 +384,10 @@ if( APPLE )
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMAND cmake -E make_directory installer/macos
-            COMMAND hdiutil create installer/macos/ShortCircuitXT-macos-${GIT_COMMIT_HASH}.dmg -ov -volname "ShortCircuitXT ${GIT_COMMIT_HASH}" -fs HFS+ -srcfolder products
+            COMMAND hdiutil create installer/macos/ShortcircuitXT-macos-${GIT_COMMIT_HASH}.dmg -ov -volname "ShortcircuitXT ${GIT_COMMIT_HASH}" -fs HFS+ -srcfolder products
     )
 elseif( WIN32 )
-    file( TO_NATIVE_PATH "installer/windows/ShortCircuitXT-win64-${GIT_COMMIT_HASH}.zip" OUTPUT_ZIP )
+    file( TO_NATIVE_PATH "installer/windows/ShortcircuitXT-win64-${GIT_COMMIT_HASH}.zip" OUTPUT_ZIP )
     add_custom_command(
             TARGET sc3-installer
             POST_BUILD
@@ -405,6 +405,6 @@ else()
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMAND cmake -E make_directory installer/linux
-            COMMAND tar czf installer/linux/ShortCircuitXT-linux-${GIT_COMMIT_HASH}.tgz products
+            COMMAND tar czf installer/linux/ShortcircuitXT-linux-${GIT_COMMIT_HASH}.tgz products
     )
 endif()

@@ -113,7 +113,7 @@ void SC3AudioProcessorEditor::paint(juce::Graphics &g)
     g.setColour(juce::Colours::white);
     g.setFont(14.0f);
     auto bottomLabel = bounds.removeFromTop(bounds.getHeight()).expanded(-2,0);
-    g.drawFittedText("ShortCircuit3", bottomLabel, juce::Justification::bottomLeft, 1);
+    g.drawFittedText("Shortcircuit XT", bottomLabel, juce::Justification::bottomLeft, 1);
     g.drawFittedText(SC3::Build::FullVersionStr, bottomLabel, juce::Justification::bottomRight, 1);
 }
 
