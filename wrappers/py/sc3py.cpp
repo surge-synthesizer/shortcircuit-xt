@@ -40,14 +40,14 @@ std::unique_ptr<SC3PY> createSC3(float sampleRate, int nChannels)
 
 PYBIND11_MODULE(shortcircuit3py, m)
 {
-    m.doc() = "Python bindings for ShortCircuit3";
-    m.def("createSC3", &createSC3, "Create an SC3 instance", py::arg("sampleRate"),
+    m.doc() = "Python bindings for Shortcircuit XT";
+    m.def("createSC3", &createSC3, "Create a Shortcircuit XT instance", py::arg("sampleRate"),
           py::arg("nChannels") = py::int_(2));
     m.def(
         "getVersion", []() { return SC3::Build::FullVersionStr; },
-        "Get the version of ShortCircuit");
+        "Get the version of Shortcircuit XT");
 
-    py::class_<SC3PY>(m, "ShortCircuit3Sampler")
+    py::class_<SC3PY>(m, "Shortcircuit XT Sampler")
         .def("loadFileSimple", &SC3PY::loadFileFullKeyboard)
 
         .def( "process_audio", &SC3PY::process_audio )

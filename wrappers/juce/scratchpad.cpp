@@ -91,7 +91,7 @@ class LoadSampleFile : public ScratchPadItem {
     LoadSampleFile() {
 
         PropertiesFile::Options options;
-        options.applicationName="ShortCircuit3_scratch";
+        options.applicationName="ShortcircuitXT_scratch";
         ap.setStorageParameters(options);
         auto user=ap.getUserSettings();
         auto f=user->getValue("scratchLoadFile");
