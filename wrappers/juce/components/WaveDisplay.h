@@ -1,17 +1,17 @@
 /*
-** ShortCircuit3 is Free and Open Source Software
+** Shortcircuit XT is Free and Open Source Software
 **
-** ShortCircuit is made available under the Gnu General Public License, v3.0
+** Shortcircuit is made available under the Gnu General Public License, v3.0
 ** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
 ** reserve the right to re-license their contributions under the MIT license in the
 ** future at the discretion of the project maintainers.
 **
-** Copyright 2004-2021 by various individuals as described by the Git transaction log
+** Copyright 2004-2021 by various individuals as described by the git transaction log
 **
 ** All source at: https://github.com/surge-synthesizer/surge.git
 **
-** ShortCircuit was a commercial product from 2004-2018, with Copyright and ownership
-** in that period held by Claes Johanson at Vember Audio. Claes made ShortCircuit
+** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
+** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
 ** open source in December 2020.
 */
 
@@ -21,8 +21,17 @@
 #include <SC3Editor.h>
 #include "infrastructure/profiler.h"
 
+
+
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
+    enum ControlState
+    {
+        cs_default=0,
+        cs_pan,
+        cs_dragpoint,
+    };
+
     ActionSender *mSender;
     SC3::Log::StreamLogger mLogger;
 
@@ -47,9 +56,14 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     int markerpos[256];
     bool draw_be_quick, draw_skip_wave_redraw;
     Rectangle<int> dragpoint[256];
+    int dragid=-1;// which item is being dragged
+    int controlstate=cs_default;
+
+    // we need a point of reference from last drag event as we are modifying state while dragging
+    Point<int> mZoomPanOffset;
 /*
     vg_surface wavesurf;
-    int controlstate,dragid;
+
     vg_point lastmouseloc;
     vg_bitmap bmpdata[16];
     vg_menudata md;	// context menu
@@ -66,10 +80,18 @@ class WaveDisplay : public juce::Component, public UIStateProxy
 
     // conversion
     int samplePosToPixelPos(int sample);
+    int pixelPosToSamplePos(int pos);
 
     // implement Component
     void paint(Graphics &g) override;
     void resized() override;
+    // we might not need all of these...
+    void mouseDrag(const MouseEvent &event) override;
+    void mouseDown(const MouseEvent &event) override;
+    void mouseUp(const MouseEvent &event) override;
+    void mouseEnter(const MouseEvent &event) override;
+    void mouseExit(const MouseEvent &event) override;
+    void mouseMove(const MouseEvent &event) override;
 
     // implement UIStateProxy
     virtual bool processActionData(const actiondata &d) override;

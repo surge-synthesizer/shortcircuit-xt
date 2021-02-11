@@ -1,17 +1,17 @@
 /*
-** ShortCircuit3 is Free and Open Source Software
+** Shortcircuit XT is Free and Open Source Software
 **
-** ShortCircuit is made available under the Gnu General Public License, v3.0
+** Shortcircuit is made available under the Gnu General Public License, v3.0
 ** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
 ** reserve the right to re-license their contributions under the MIT license in the
 ** future at the discretion of the project maintainers.
 **
-** Copyright 2004-2021 by various individuals as described by the Git transaction log
+** Copyright 2004-2021 by various individuals as described by the git transaction log
 **
 ** All source at: https://github.com/surge-synthesizer/surge.git
 **
-** ShortCircuit was a commercial product from 2004-2018, with Copyright and ownership
-** in that period held by Claes Johanson at Vember Audio. Claes made ShortCircuit
+** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
+** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
 ** open source in December 2020.
 */
 
@@ -404,6 +404,12 @@ int WaveDisplay::samplePosToPixelPos(int sample)
     return ((sample- mLeftMostSample)/std::max(0,mZoom));
 }
 
+// untested! note that there is WAVE_MARGIN that needs to be accounted for
+int WaveDisplay::pixelPosToSamplePos(int pos)
+{
+    return pos*mZoom + mLeftMostSample;
+}
+
 // draw the start/end/loop pos etc.
 // bounds here is entire area
 void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
@@ -527,215 +533,188 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
             surf.draw_text_multiline(rt,text,owner->get_syscolor(col_standard_text),1,1);
     }*/
 }
+void WaveDisplay::mouseDrag(const MouseEvent &event) {
+    if (controlstate==cs_pan) {
+        sample *so = mSamplePtr;
+        if(so)
+        {
+            if(event.mods.isShiftDown() )
+            {
+                mVerticalZoom -= 0.1 * (event.y - mZoomPanOffset.y);
+                mVerticalZoom = std::max(1.f,mVerticalZoom);
+            }
+            else
+            {
+                //TODO  note that in this algo, the panning doesn't exactly match the mouse pos
+                //  need to fix
+                float movemult = 2.f;
+                if (event.mods.isRightButtonDown())
+                    movemult = 8.f;
+                mLeftMostSample -= (event.x - mZoomPanOffset.x) * mZoom * movemult;
+                mLeftMostSample = std::min(mLeftMostSample,
+                                           (int)so->sample_length - mZoom * mNumVisiblePixels);
+                mLeftMostSample = std::max(0, mLeftMostSample);
 
+            }
+
+            mZoomPanOffset = event.getPosition();
+
+        }
+        queue_draw_wave(true,false);
+    } else if(controlstate==cs_dragpoint)
+    {
+        sample *so = mSamplePtr;
+        if(so)
+        {
+            int s = pixelPosToSamplePos(event.x+WAVE_MARGIN);
+            s = limit_range(s,0,(int)(so->sample_length));
+            markerpos[dragid] = s;
+            queue_draw_wave(false,true);
+            // TODO use our wrapper
+            actiondata ad;
+            ad.actiontype = vga_wavedisp_editpoint;
+            ad.data.i[0] = dragid;
+            ad.data.i[1] = s;
+
+            mSender->sendActionToEngine(ad);
+
+        }
+    }
+}
+
+void WaveDisplay::mouseDown(const MouseEvent &event) {
+
+    auto mp=event.getMouseDownPosition();
+    // this will be updated as we are dragging
+    mZoomPanOffset=mp;
+
+    for(int i=0; i<(5+n_hitpoints); i++)
+    {
+        if(dragpoint[i].contains(mp))
+        {
+            controlstate = cs_dragpoint;
+            //owner->take_focus(control_id);
+
+            dragid = i;
+            return;
+        }
+    }
+    // did not click on a line, so we are in pan mode
+    controlstate = cs_pan;
+    //owner->take_focus(control_id);
+    //owner->show_mousepointer(false);
+
+    vzoom_drag = mVerticalZoom;
+    if (vzoom_drag < 1.01f) vzoom_drag = -2;
 
 #if 0
-#include "vt_gui_controls.h"
-#include "sample.h"
-#include "sampler_state.h"
-#include "resampling.h"
-#include <vt_dsp/basic_dsp.h>
-
-vg_waveeditor::vg_waveeditor(vg_window *o, int id, TiXmlElement *e) : vg_control(o,id,e)
+    //TODO context menu
+if((dispmode == 0) && mSamplePtr)
 {
+int s = getsample((int)e.x);
+sample *so = mSamplePtr;
+if(so) s = limit_range(s,0,(int)(so->sample_length));
 
+md.entries.clear();
+vg_menudata_entry mde;
+mde.submenu = 0;
+mde.ad.id = parameter_id;
+mde.ad.subid = 0;
+mde.ad.data.i[1] = s;
+
+mde.ad.actiontype = vga_nothing;
+mde.label = "Zone";	 md.entries.push_back(mde);
+mde.ad.actiontype = vga_wavedisp_editpoint;
+mde.ad.data.i[0] = 0;
+mde.label = "set start";	 md.entries.push_back(mde);
+mde.ad.data.i[0] = 1;
+mde.label = "set end";	 md.entries.push_back(mde);
+
+mde.ad.actiontype = vga_nothing;
+mde.label = "Loop";	 md.entries.push_back(mde);
+mde.ad.actiontype = vga_wavedisp_editpoint;
+mde.ad.data.i[0] = 2;
+mde.label = "set start";	 md.entries.push_back(mde);
+mde.ad.data.i[0] = 3;
+mde.label = "set end";	 md.entries.push_back(mde);
+
+actiondata ad;
+ad.id = control_id;
+ad.subid = 0;
+ad.data.ptr[0] = ((void*)&md);
+ad.data.i[2] = false;	// doesn't need destruction
+ad.data.i[3] = location.x + e.x;
+ad.data.i[4] = location.y + e.y;
+ad.actiontype = vga_menu;
+owner->post_action(ad,0);
 }
-
-
-vg_waveeditor::~vg_waveeditor()
-{
-	wavesurf.destroy();
-}
-
-
-int vg_waveeditor::getsample(int pos)
-{
-	return (pos-WAVE_MARGIN)*zoom + mLeftMostSample;
-}
-
-void vg_waveeditor::set_rect(vg_rect r)
-{
-	wavesurf.destroy();
-	wavesurf.create(r.get_w(),r.get_h());
-	vg_control::set_rect(r);
-}
-
-
-
-void vg_waveeditor::draw_plot(){}
-
-enum
-{
-	cs_default=0,
-	cs_pan,
-	cs_dragpoint,
-};
-
-void vg_waveeditor::processevent(vg_controlevent &e)
-{
-	if(dispmode) return;
-
-	switch(controlstate)
-	{
-	case cs_pan:
-		{
-			if((e.eventtype == vget_mouseup)&&(e.activebutton == 1))
-			{
-				controlstate = cs_default;
-				owner->drop_focus(control_id);
-				owner->show_mousepointer(true);
-				queue_draw_wave(false,false);
-			}
-			else if(e.eventtype == vget_mousemove)
-			{
-				sample *so = mSamplePtr;
-				if(so)
-				{
-					if (e.buttonmask & vgm_shift)
-					{
-						mVerticalZoom -= 0.1 * (e.y - lastmouseloc.y);
-						mVerticalZoom = max(1.f,mVerticalZoom);
-					}
-					else
-					{
-						float movemult = 2.f;
-						if (e.buttonmask & (vgm_RMB|vgm_control)) movemult = 8.f;
-						mLeftMostSample -= (e.x - lastmouseloc.x)*zoom*movemult;
-						mLeftMostSample = min(mLeftMostSample, (int)so->sample_length - zoom*mNumVisiblePixels);
-						mLeftMostSample = max(0,mLeftMostSample);
-					}
-					//lastmouseloc.x = e.x;
-					//lastmouseloc.y = e.y;
-					owner->move_mousepointer(location.x + lastmouseloc.x, location.y + lastmouseloc.y);
-				}
-				queue_draw_wave(true,false);
-			}
-		}
-		break;
-	case cs_dragpoint:
-		{
-			if(e.eventtype == vget_mouseup)
-			{
-				controlstate = cs_default;
-				owner->drop_focus(control_id);
-				queue_draw_wave(false,true);
-			}
-			else if(e.eventtype == vget_mousemove)
-			{
-				sample *so = mSamplePtr;
-				if(so)
-				{
-					int s = getsample((int)e.x);
-					s = limit_range(s,0,(int)(so->sample_length));
-					markerpos[dragid] = s;
-					queue_draw_wave(false,true);
-
-					actiondata ad;
-					ad.actiontype = vga_wavedisp_editpoint;
-					ad.data.i[0] = dragid;
-					ad.data.i[1] = s;
-					owner->post_action(ad,this);
-				}
-			}
-		}
-		break;
-	default:
-		{
-			if(e.eventtype == vget_mousewheel)
-			{
-				int oldsample = getsample(e.x);
-
-				if(e.eventdata[0] > 0) zoom  = max(1,zoom>>1);
-				else zoom  = min(zoom_max,zoom<<1);
-
-				mLeftMostSample -= getsample(e.x) - oldsample;
-				sample *so = mSamplePtr;
-				if(so) mLeftMostSample = min(mLeftMostSample, (int)so->sample_length - zoom*mNumVisiblePixels);
-				mLeftMostSample = max(0,mLeftMostSample);
-
-				queue_draw_wave(false,false);
-			}
-			else if((e.eventtype == vget_mousedown)&&(e.activebutton == 1))
-			{
-				for(int i=0; i<(5+n_hitpoints); i++)
-				{
-					if(dragpoint[i].point_within(vg_point(e.x,e.y)))
-					{
-						controlstate = cs_dragpoint;
-						owner->take_focus(control_id);
-						lastmouseloc.x = e.x;
-						lastmouseloc.y = e.y;
-						dragid = i;
-						return;
-					}
-				}
-				controlstate = cs_pan;
-				owner->take_focus(control_id);
-				owner->show_mousepointer(false);
-				lastmouseloc.x = e.x;
-				lastmouseloc.y = e.y;
-				vzoom_drag = mVerticalZoom;
-				if (vzoom_drag < 1.01f) vzoom_drag = -2;
-			}
-			else if((e.eventtype == vget_mousedown)&&(e.activebutton == 2))
-			{
-				// context menu
-				if((dispmode == 0) && mSamplePtr)
-				{
-					int s = getsample((int)e.x);
-					sample *so = mSamplePtr;
-					if(so) s = limit_range(s,0,(int)(so->sample_length));
-
-					md.entries.clear();
-					vg_menudata_entry mde;
-					mde.submenu = 0;
-					mde.ad.id = parameter_id;
-					mde.ad.subid = 0;
-					mde.ad.data.i[1] = s;
-
-					mde.ad.actiontype = vga_nothing;
-					mde.label = "Zone";	 md.entries.push_back(mde);
-					mde.ad.actiontype = vga_wavedisp_editpoint;
-					mde.ad.data.i[0] = 0;
-					mde.label = "set start";	 md.entries.push_back(mde);
-					mde.ad.data.i[0] = 1;
-					mde.label = "set end";	 md.entries.push_back(mde);
-
-					mde.ad.actiontype = vga_nothing;
-					mde.label = "Loop";	 md.entries.push_back(mde);
-					mde.ad.actiontype = vga_wavedisp_editpoint;
-					mde.ad.data.i[0] = 2;
-					mde.label = "set start";	 md.entries.push_back(mde);
-					mde.ad.data.i[0] = 3;
-					mde.label = "set end";	 md.entries.push_back(mde);
-
-					actiondata ad;
-					ad.id = control_id;
-					ad.subid = 0;
-					ad.data.ptr[0] = ((void*)&md);
-					ad.data.i[2] = false;	// doesn't need destruction
-					ad.data.i[3] = location.x + e.x;
-					ad.data.i[4] = location.y + e.y;
-					ad.actiontype = vga_menu;
-					owner->post_action(ad,0);
-				}
-			}
-			else if(e.eventtype == vget_mousemove)
-			{
-				for(int i=0; i<(5+n_hitpoints); i++)
-				{
-					if(dragpoint[i].point_within(vg_point(e.x,e.y)))
-					{
-						owner->set_cursor(cursor_hmove);
-						return;
-					}
-				}
-				owner->set_cursor(cursor_hand_pan);
-				return;
-			}
-		}
-		break;
-	}
-}
-
 #endif
+
+}
+
+
+void WaveDisplay::mouseUp(const MouseEvent &event) {
+
+    // temporarily use this for zoom in or out (left click/right click)
+    // until we have a better way
+    if(event.mouseWasClicked())
+    {
+        int oldsample = pixelPosToSamplePos(event.x + WAVE_MARGIN);
+
+        if (event.mods.isRightButtonDown())
+            mZoom = std::min(mZoomMax, mZoom << 1);
+        else
+            mZoom = std::max(1, mZoom >> 1);
+
+
+        mLeftMostSample -= pixelPosToSamplePos(event.x+WAVE_MARGIN) - oldsample;
+        sample *so = mSamplePtr;
+        if (so)
+            mLeftMostSample =
+                std::min(mLeftMostSample, (int)so->sample_length - mZoom * mNumVisiblePixels);
+        mLeftMostSample = std::max(0, mLeftMostSample);
+
+        queue_draw_wave(false, false);
+    } else {
+        // TODO Technically there is another state we should detect: mouse up without click (clicked, didn't drag, let go)
+        queue_draw_wave(false, false);
+    }
+    controlstate=cs_default;
+
+
+}
+void WaveDisplay::mouseEnter(const MouseEvent &event) { Component::mouseEnter(event); }
+void WaveDisplay::mouseExit(const MouseEvent &event) { Component::mouseExit(event); }
+
+#if 0
+// TODO mouse wheel
+if(e.eventtype == vget_mousewheel)
+{
+    int oldsample = getsample(e.x);
+
+    if(e.eventdata[0] > 0) zoom  = max(1,zoom>>1);
+    else zoom  = min(zoom_max,zoom<<1);
+
+    mLeftMostSample -= getsample(e.x) - oldsample;
+    sample *so = mSamplePtr;
+    if(so) mLeftMostSample = min(mLeftMostSample, (int)so->sample_length - zoom*mNumVisiblePixels);
+    mLeftMostSample = max(0,mLeftMostSample);
+
+    queue_draw_wave(false,false);
+}
+#endif
+
+// this should be used to change the mouse cursor
+void WaveDisplay::mouseMove(const MouseEvent &event) {
+    auto mp=event.getPosition();
+    for(int i=0; i<(5+n_hitpoints); i++)
+    {
+        if(dragpoint[i].contains(mp))
+        {
+            setMouseCursor(MouseCursor::LeftRightResizeCursor);
+            return;
+        }
+    }
+    setMouseCursor(MouseCursor::NormalCursor);
+    return;
+}
