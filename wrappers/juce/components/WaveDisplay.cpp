@@ -486,8 +486,8 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         {
             g.setColour(zmcol);
             g.drawRect(x+waveLeft,0,1,imgh-1);
-            // TODO same as above
-            // surf.blit_alphablend(dragpoint[0], bmpdata[0]);
+            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_start_png, SCXTImages::wavehandle_start_pngSize);
+            g.drawImageAt(img, x+waveLeft - (img.getWidth()/2),0);
         }
 
         x = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::end]);
@@ -497,8 +497,8 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         {
             g.setColour(zmcol);
             g.drawRect(x+waveLeft,0,1,imgh-1);
-            // TODO same as above
-            //surf.blit_alphablend(dragpoint[1], bmpdata[1]);
+            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_end_png, SCXTImages::wavehandle_end_pngSize);
+            g.drawImageAt(img, x+waveLeft - (img.getWidth()/2),0);
         }
     }
     else
@@ -570,12 +570,12 @@ void WaveDisplay::mouseDrag(const MouseEvent &event) {
             s = limit_range(s,0,(int)(so->sample_length));
             markerpos[dragid] = s;
             queue_draw_wave(false,true);
+            repaint();
             // TODO use our wrapper
             actiondata ad;
             ad.actiontype = vga_wavedisp_editpoint;
             ad.data.i[0] = dragid;
             ad.data.i[1] = s;
-
             mSender->sendActionToEngine(ad);
 
         }

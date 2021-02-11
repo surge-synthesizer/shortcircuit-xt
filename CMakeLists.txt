@@ -251,6 +251,16 @@ set( SC3_RESOURCES_GLOB resources/shortcircuit.ico )
 juce_add_binary_data(ShortcircuitXT-Binary SOURCES ${SC3_RESOURCES_GLOB})
 set_target_properties(ShortcircuitXT-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
+# images used in the ui
+juce_add_binary_data(ImageAssets NAMESPACE SCXTImages SOURCES
+        resources/images/wavehandle_start.png
+        resources/images/wavehandle_end.png
+        resources/images/wavehandle_crossfade.png
+        )
+
+set_target_properties(ImageAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+
 # Then set up the source and the JUCE settings
 target_sources(ShortcircuitXT PRIVATE
         wrappers/juce/SC3Processor.cpp
@@ -295,6 +305,7 @@ if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
        )
 endif()
 target_link_libraries(ShortcircuitXT PRIVATE
+        ImageAssets
         ShortcircuitXT-Binary
         shortcircuit-core
         juce::juce_analytics
