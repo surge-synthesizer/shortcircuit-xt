@@ -216,6 +216,10 @@ else()
 
 endif()
 
+# Build a target and directory for our final products
+set(SC3_PRODUCT_DIR ${CMAKE_BINARY_DIR}/products)
+file(MAKE_DIRECTORY ${SC3_PRODUCT_DIR})
+add_custom_target(sc3-products)
 
 # The core library includes most of the exports and flags you need
 target_include_directories(shortcircuit-core PUBLIC ${SHORTCIRCUIT_INCLUDE_DIRS})
@@ -318,12 +322,23 @@ target_link_libraries(ShortcircuitXT PRIVATE
 
 
 # Build the python bindings
-message(STATUS "Building ShortCircuit Python bindings with pybind11")
-add_subdirectory(libs/pybind11)
-pybind11_add_module(shortcircuit3py)
-target_sources(shortcircuit3py PRIVATE wrappers/py/sc3py.cpp)
-target_link_libraries(shortcircuit3py PRIVATE shortcircuit-core)
+if(SHORTCIRCUIT_XT_SKIP_PYTHON)
+    message( STATUS "Skipping Python Build" )
+else()
+    message(STATUS "Building ShortCircuit Python bindings with pybind11")
+    add_subdirectory(libs/pybind11)
+    pybind11_add_module(shortcircuit3py)
+    target_sources(shortcircuit3py PRIVATE wrappers/py/sc3py.cpp)
+    target_link_libraries(shortcircuit3py PRIVATE shortcircuit-core)
 
+    add_dependencies(sc3-products shortcircuit3py)
+    add_custom_command(
+            TARGET sc3-products
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMAND cmake -E copy $<TARGET_FILE:shortcircuit3py> ${SC3_PRODUCT_DIR}
+     )
+endif()
 
 # And finally the test suite
 add_executable(sc3-test
@@ -344,20 +359,13 @@ target_link_libraries(sc3-test
         shortcircuit-core
         )
 
-# Once we have our assets built, lets move them to our product directory
-set(SC3_PRODUCT_DIR ${CMAKE_BINARY_DIR}/products)
-file(MAKE_DIRECTORY ${SC3_PRODUCT_DIR})
-
-add_custom_target(sc3-products)
 add_dependencies(sc3-products sc3-test)
 
-add_dependencies(sc3-products shortcircuit3py)
 add_custom_command(
         TARGET sc3-products
         POST_BUILD
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMAND cmake -E copy $<TARGET_FILE:sc3-test> ${SC3_PRODUCT_DIR}
-        COMMAND cmake -E copy $<TARGET_FILE:shortcircuit3py> ${SC3_PRODUCT_DIR}
         COMMAND cmake -E copy ${CMAKE_SOURCE_DIR}/LICENSE ${SC3_PRODUCT_DIR}
         COMMAND cmake -E copy ${CMAKE_SOURCE_DIR}/resources/installer_README.txt ${SC3_PRODUCT_DIR}/README.txt
 )
