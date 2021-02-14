@@ -78,7 +78,17 @@ cmake --build build --config Release --target ShortCircuit3_Standalone
 ```
 
 This will build the rudimentary standalone app. Other targets exist for Python as a wrapper, as well as `sc3-test`
-which runs the existing test suite.
+which runs the existing test suite. 
+
+If you don't have the prerequisites for build installed it might fail, but many Windows users don't have
+python installed, which will make cmake complain. So if you want to build skipping the python libs you can also do
+
+```
+git submodule update --init --recursive
+cmake -Bbuild -DSHORTCIRCUIT_XT_SKIP_PYTHON=TRUE
+cmake --build build --config Release --target ShortCircuit3_Standalone
+```
+
 
 # Issues building
 * Windows - Some JUCE targets have an issue if you are using nmake (specifically you might get an error that

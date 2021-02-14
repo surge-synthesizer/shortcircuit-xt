@@ -12,3 +12,5 @@ test-data/
 .vs/
 .vscode/
 CMakeSettings.json
+
+ignore/
