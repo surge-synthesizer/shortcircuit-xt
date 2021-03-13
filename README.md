@@ -61,7 +61,7 @@ We have used the Canonical/Harmony 1.0 CLA http://selector.harmonyagreements.org
 1. You retain copyright to your code. *We do not need you to assign copyright to us*.
 2. You grant us a license to distribute your code under GPL3 or MIT; and your content under CC3 attribution
 
-You can read the entire document [here](doc/ShortCircuitXT-Individual-CLA.pdf).
+You can read the entire document [here](doc/ShortcircuitXT-Individual-CLA.pdf).
 
 To agree to this document,
 please add your name to the `AUTHORS` list in a git transaction where you indicate in the git log message
@@ -74,7 +74,7 @@ You know the drill:
 ```
 git submodule update --init --recursive
 cmake -Bbuild
-cmake --build build --config Release --target ShortCircuit3_Standalone
+cmake --build build --config Release --target ShortcircuitXT_Standalone
 ```
 
 This will build the rudimentary standalone app. Other targets exist for Python as a wrapper, as well as `sc3-test`
@@ -86,7 +86,7 @@ python installed, which will make cmake complain. So if you want to build skippi
 ```
 git submodule update --init --recursive
 cmake -Bbuild -DSHORTCIRCUIT_XT_SKIP_PYTHON=TRUE
-cmake --build build --config Release --target ShortCircuit3_Standalone
+cmake --build build --config Release --target ShortcircuitXT_Standalone
 ```
 
 
