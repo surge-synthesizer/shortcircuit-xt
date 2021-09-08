@@ -30,13 +30,13 @@ class filter
     char *get_filtername() { return filtername; } // deprecated
     // future
 
-    virtual bool init_freq_graph() { return false; } // filter z-plot honk (visa på waveformdisplay)
+    virtual bool init_freq_graph() { return false; } // filter z-plot honk (visa pï¿½ waveformdisplay)
     virtual float get_freq_graph(float f) { return 0; }
 
-    /*void set_entry(int p_id, int c_id) - så att minneslalala inte behöver mappa 1:1
-    använd ctrlmode > num_controlmodes för att markera att den använder en alternativ honk?
-    void parameter_was_updated(){ bool updated = true;}		// det skulle räcka att uppdatera
-    stuff vid parametersettings
+    /*void set_entry(int p_id, int c_id) - // set memory tag does not need to map 1:1
+    use ctrlmode > num_controlmodes to indicate that it uses an alternative honk?
+    void parameter_was_updated(){ bool updated = true;}		// it would be good to update
+    stuff at parameter settings
     */
     virtual void init_params() {}
     virtual void init() {}

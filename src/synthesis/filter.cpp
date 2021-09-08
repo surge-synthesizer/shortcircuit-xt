@@ -212,7 +212,7 @@ filter *spawn_filter(int id, float *fp, int *ip, void *loader, bool stereo)
 
 filter::filter(float *params, void *loader, bool stereo, int *iparams)
 {
-    this->param = params; // SKA JU INTE VARA FS utan post-modmatrixhonket
+    this->param = params; // DO NOT BE FS without the post-mod matrix honeycomb
     this->iparam = iparams;
     parameter_count = 0;
     modulation_output = 0.f;

@@ -465,7 +465,7 @@ class EQ6B : public filter
     {
         calc_coeffs();
         return true;
-    } // filter z-plot honk (visa p� waveformdisplay)
+    } // filter z-plot honk (show per waveformdisplay)
     virtual float get_freq_graph(float f);
 };
 
@@ -493,7 +493,7 @@ class morphEQ : public filter
     {
         calc_coeffs();
         return true;
-    } // filter z-plot honk (visa p� waveformdisplay)
+    } // filter z-plot honk (show per waveformdisplay)
     virtual float get_freq_graph(float f);
     // virtual int get_entry_count(int p_id);
     // virtual const char*	get_entry_label(int p_id, int c_id);
@@ -535,7 +535,7 @@ class LP2HP2_morph : public filter
     {
         calc_coeffs();
         return true;
-    } // filter z-plot honk (visa p� waveformdisplay)
+    } // filter z-plot honk (show per waveformdisplay)
     virtual float get_freq_graph(float f);
 };
 

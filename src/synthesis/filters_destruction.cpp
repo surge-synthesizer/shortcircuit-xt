@@ -278,8 +278,8 @@ void treemonster::init_params()
 void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                                  float pitch)
 {
-    // TODO powf anv�nds, det �r ju inte snabbt
-    // g�r s� man kan �ndra pitchen kontinuerligt och inte bara vid triggnignar
+    // TODO powf is used, it is not fast
+    // makes it possible to change the pitch continuously and not only on triggers
     gain[0].set_target(limit_range(param[2], 0.f, 1.f));
 
     Align16 float tbuf[2][block_size];

@@ -59,7 +59,7 @@ morphEQ::morphEQ(float *fp, void *loader, int *ip) : filter(fp, loader, true, ip
             b_active[i] = snap[0].bands[i].active || snap[1].bands[i].active;
     }
     gaintarget = 1.f;
-    lastparam[0] = -165464686; // se till att cal_coeffs altlid utf�rs f�rsta g�ngen
+    lastparam[0] = -165464686; // make sure cal_coeffs altlid is executed for the first time
 }
 
 void morphEQ::init_params()
@@ -217,7 +217,7 @@ EQ2BP_A::EQ2BP_A(float *fp, int *ip) : filter(fp, 0, true, ip)
     strcpy(ctrlmode_desc[4], str_freqdef);
     strcpy(ctrlmode_desc[5], str_bwdef);
 
-    lastparam[0] = -1654646816; // se till att cal_coeffs altlid utf�rs f�rsta g�ngen
+    lastparam[0] = -1654646816; // make sure cal_coeffs altlid is executed for the first time
 }
 
 void EQ2BP_A::init_params()
@@ -536,5 +536,5 @@ void COMB2::process(float *data, float pitch)
         feedback *= fbval.v;
         fbval.process();
     }
-    // feedback ska bort egentligen
+    // feedback should be removed really
 }
