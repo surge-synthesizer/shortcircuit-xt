@@ -12,11 +12,11 @@ unsigned int	framecol = 0xff000000;
 
 /* thoughts
 
-ska stödja multiselect
+should support multiselect
 vel-dragging (hi/lo)
-note-dragging (lo/hi/root samtidigt)
+note-dragging (lo/hi/root at the same time)
 
-behöver inte stödja ms:
+does not need to support ms:
 key hi/lo
 
 doubleclick to create new empty zone
@@ -24,7 +24,7 @@ doubleclick to create new empty zone
 ctrl-drag to clone
 alt-click to delete
 
-rmb up/dn drag på keybed ska scrolla up/dn
+rmb up/dn drag on keybed to scroll up/dn
 
 */
 
@@ -236,7 +236,7 @@ void vg_list::draw_list_zone(vg_list_zone* i, int j)
 void vg_list::draw()
 {	
 	draw_needed = false;
-	toggle_zoom(false); // update noteh variable
+	toggle_zoom(false); // update note variable
 	//draw_background();
 	
 	if(mode == mode_pad)
@@ -771,7 +771,7 @@ void vg_list::processevent(vg_controlevent &e)
 		{			
 			if(e.activebutton == 2)
 			{
-				// TODO om inte zonen är med i selection, sätt selection till zonen
+				// TODO if the zone is not in the selection, add the selection to the zone
 				
 				// fill menu
 				md.entries.clear();

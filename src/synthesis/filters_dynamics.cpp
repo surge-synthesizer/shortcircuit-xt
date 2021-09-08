@@ -99,8 +99,8 @@ void limiter::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
     at = 1.f - 0.001f * am * am;
     re = 1.f - 0.001f * rm * rm;
 
-    // TODO sidechain.. disabled atm (beh�ver listig strategi f�r feedbaackl�get.. kan vara b�ttre
-    // med separat filter f�r det)
+    // TODO sidechain.. disabled atm (needs cunning strategy for feed back.. can be better
+    // with separate filter for that)
     // Align16 float sidechainL[block_size];
     // Align16 float sidechainR[block_size];
     // bq.coeff_peakEQ(bq.calc_omega(param[4]),1,param[5]);

@@ -13,7 +13,7 @@
 #define png_voidp_NULL (png_voidp)NULL
 
 
-// TODO det är i read_png bottlenecken som gör att editorn laddar långsamt finns
+// TODO it is in read_png the bottleneck that makes the editor load slowly is
 int vg_surface::read_png(std::string filename)
 {		
 	static int pngloads=0;

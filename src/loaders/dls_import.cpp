@@ -81,7 +81,7 @@ struct giga_3ewa
     uint8_t regoptions;
     uint16_t uk4;
     uint8_t VelocityUpperLimit;
-    // fors�tt senare
+    // Planned for later
 };
 
 #pragma pack(pop)

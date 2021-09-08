@@ -102,7 +102,7 @@ void reverb::init()
     modphase = 0;
     update_rsize();
 
-    width.set_target(1.f); // borde bli mest smooth
+    width.set_target(1.f); // should be most smooth
     width.instantize();
 
     for (int t = 0; t < rev_taps; t++)

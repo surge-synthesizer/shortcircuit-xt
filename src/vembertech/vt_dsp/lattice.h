@@ -24,4 +24,4 @@ extern iir_lattice_sd_FPtr iir_lattice_sd;
 void coeff_LP2_sd(lattice_sd&,double,double);
 
 //void coeff_LP(int mask, float freq, float q);	
-//mask styr unit 1, 2 eller 1+2
+// mask control unit 1, 2 or 1+2

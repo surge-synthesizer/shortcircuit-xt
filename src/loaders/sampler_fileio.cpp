@@ -499,7 +499,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
             int x;
             const char *ts;
             // ts = sub->Attribute("src");
-            // rev8 undvik att namnet p� controllern lagras
+            // rev8 avoid storing the name of the controller
             char msrc[256];
             vtCopyString(msrc, sub->Attribute("src"), 256);
             char *colon = strrchr(msrc, ':');
@@ -829,7 +829,7 @@ void store_part_as_element(TiXmlElement &element, sample_part *part, configurati
                 TiXmlElement nc("nc");
                 nc.Clear();
                 nc.SetAttribute("i", j);
-                // TODO, l�gg till samma rutiner som modmatrix src
+                // TODO, add to the same routines as modmatrix src
 
                 nc.SetAttribute("src", t_mm.get_source_idname(part->nc[ncid].source));
                 nc.SetAttribute("low", part->nc[ncid].low);
@@ -1421,7 +1421,7 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &fi
                         *(c + 4) = '|';
                 }
                 is_loaded = get_sample_id(
-                    string_to_path(samplefname), &sample_id); // ACHTUNG!! blir fuck-up om filename inte finns (?)
+                    string_to_path(samplefname), &sample_id); // ATTENTION!! will be fuck-up if filename does not exist (?)
 
                 if (is_loaded)
                 {

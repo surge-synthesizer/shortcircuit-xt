@@ -217,9 +217,9 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             }
 
 #if ASM_I_REWROTE  // Leaving this here for reference while we port
-            // Denna koden g�r att sample-pekaren stannar n�r den kommer till start/stop
-            // Det l�mnar en DC-offset, men det �r mindre st�rigt �n ett klick
-            // Med �berreleasen s� verkar det inte bli n�got problem.
+            // This code makes the sample pointer stop when it gets to start/stop
+            // There is a DC offset, but it is less severe than a click
+            // With the release switch, there doesn't seem to be a problem.
             int zero = 0;
             int one = 1;
             __asm
@@ -304,7 +304,7 @@ store:
         {
 
 #if ASM_I_REWROTE // Leaving this here for a bit as discussed above
-            // L�ter b�st d� man INTE justerar SamplePos & SubPos f�r att den passerat Bounds
+            // Solves the problem of NOT adjusting SamplePos & SubPos before it passes Bounds
 
             int fram = 1, bak = -1;
             __asm

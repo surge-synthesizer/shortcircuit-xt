@@ -116,8 +116,8 @@ void halfrate_stereo::process_block(float * __restrict floatL, float * __restric
 	}
 }
 #if 0
-// software pipelining.. fin id� men kompilatorn gillade det inte alls
-// den andra �r ganska ok eftersom ty0 inte anv�nds f�rr�n om 2 samples, d�rf�r delas latency-dependencyn med 3
+// software pipelining.. nice idea but the compiler didn't like it at all
+// the second one is quite ok because ty0 is not used for 2 samples, so the latency dependency is split by 3
 void halfrate_stereo::process_block(float * __restrict floatL, float * __restrict floatR, int N)
 {		
 	int NM1 = N + M - 1;
@@ -208,7 +208,7 @@ void halfrate_stereo::process_block_D2(float * floatL, float * floatR, int nsamp
 
 	/*
 
-	// g�r s�h�r om man vill undvika downsampling
+	// do this if you want to avoid downsampling
 	for(unsigned int k=0; k<nsamples; k++)
 	{
 
@@ -362,7 +362,7 @@ void halfrate_stereo::process_block_U2(float * floatL_in, float * floatR_in, flo
 		oldout = _mm_shuffle_ps(o[k],o[k],_MM_SHUFFLE(3,3,1,1));
 	}
 
-	// g�r s�h�r om man vill undvika downsampling
+	// do this if you want to avoid downsampling
 	/*float oldout_f = 0.f;
 	for(unsigned int k=0; k<nsamples; k++)
 	{

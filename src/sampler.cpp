@@ -416,7 +416,7 @@ void sampler::purge_holdbuffer()
         else
             iter++;
     }
-    // note: m�ste remova entries n�r noter d�dar sig sj�lv auch
+    // note: must remove entries when notes are playing themselves also
 }
 
 //-------------------------------------------------------------------------------------------------
