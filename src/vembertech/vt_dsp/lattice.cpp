@@ -149,7 +149,7 @@ void iir_lattice_sd_x87(lattice_sd &d, double * __restrict Data, int NSamples)
 	}
 }
 
-// TODO m�ste testas
+// TODO must be tested
 void iir_lattice_pd_serial_SSE2(lattice_pd &d, double * __restrict Data, int NSamples)
 {	
 	const __m128d v0_1 = _mm_set_sd(0.1);

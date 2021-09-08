@@ -39,7 +39,7 @@ void vt_LockFree::WriteBlock(void *srcData)
 
 	tmp++;
 	if(tmp >= NumEntries) tmp = 0;
-	// ACHTUNG! WritePos får absolut inte skrivas till minnet med fel värde i ett mellansteg
+	// ATTENTION. WritePos must absolutely not be written to memory with a wrong value in an intermediate step
 
 	WriterPos = tmp;
 }

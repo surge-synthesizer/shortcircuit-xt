@@ -1,6 +1,6 @@
 #include "lipol.h"
 
-// TODO benchmarka pÂ PPC och unrolla efter vad som ‰r optimalt
+// TODO benchmark on PPC and unroll for what is optimal
 
 #if !PPC
 const __m128 two = _mm_set1_ps(2.f);
@@ -42,8 +42,8 @@ void lipol_ps::multiply_block(float* src, unsigned int nquads)
 	const vFloat zero = (vFloat) 0.f;
 	
 	
-	// 256-272 före y1/y2 unroll
-	// 208/224 efter
+	// 256-272 before y1/y2 unroll
+	// 208/224 after
 	/*
 	 vFloat y1,y2,dy;
 	 initblock(y1,dy);

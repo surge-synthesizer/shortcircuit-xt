@@ -2207,7 +2207,7 @@ void vg_VU::draw()
 		}
 		else
 		{
-			// finns inte �n
+			// not yet available
 			assert(0);
 		}
 		r.offset(2*w,0);

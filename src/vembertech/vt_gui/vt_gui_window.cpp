@@ -2250,8 +2250,8 @@ void vg_window::post_action_from_program(actiondata ad)
 	if(!ActionBuffer) return;
 	ActionBuffer->WriteBlock(&ad);		// thread-safe buffer
 
-	// beh�vs verkligen threadsafeness p� detta h�llet? JA!	
-	// framf�rallt, det ser till att det inte hamnar i en TimeCritical thread
+	// do we really need threadsafeness at this time? YES!	
+	// above all, it makes sure it doesn't end up in a TimeCritical thread
 
 	if(initialized) PostMessage(hWnd,WM_APP+1212,0,0);	
 }

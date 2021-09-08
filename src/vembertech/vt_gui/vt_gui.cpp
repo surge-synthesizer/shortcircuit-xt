@@ -262,7 +262,7 @@ bool vg_surface::create(int sizeX, int sizeY, bool DIB)
 	if(1)
 	{			
 		bmpinfo.bmiHeader.biWidth = sizeXA;
-		bmpinfo.bmiHeader.biHeight = -sizeY;		// kör man minus så blir det top-left som origo
+		bmpinfo.bmiHeader.biHeight = -sizeY;		//  if you get minus it will be top-left as origin
 		bmpinfo.bmiHeader.biBitCount = 32;
 		bmpinfo.bmiHeader.biPlanes = 1;
 		bmpinfo.bmiHeader.biCompression = BI_RGB;
@@ -1062,8 +1062,8 @@ void vg_control::set_rect(vg_rect r)
 void vg_control::set_dirty(bool redraw_all)
 {
 	draw_needed = true; 
-	// TODO den har crashat här. beror troligtvis på thread-unsafe
-	// en csec borde fixa det
+	// TODO it has crashed here. probably due to thread-unsafe
+	// a csec should fix it
 	owner->set_child_dirty(control_id,redraw_all);
 }
 

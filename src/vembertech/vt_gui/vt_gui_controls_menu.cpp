@@ -30,7 +30,7 @@ void vg_menu::draw()
 	unsigned int selectionblue = owner->get_syscolor(col_selected_bg);
 	int colwidth = 120;
 
-	//surf.clear(0x00ffffff);	// onödig, eftersom bara aktiva kolumner kopieras till "backbuffern"
+	//surf.clear(0x00ffffff);	// invalid, because only active columns are copied to the "backbuffer"
 
 	int nc = columns.size();
 	for(int c=0; c<nc; c++)
@@ -76,7 +76,7 @@ void vg_menu::draw()
 			surf.fill_rect(tr,bgcol,true);
 			tr.inset(5,0);			
 			surf.draw_text(tr,columns[c].menu->entries[i].label,textcol,-1);
-			if(columns[c].menu->entries[i].submenu) surf.draw_text(tr,"‚",textcol,1);	// no ordinary comma
+			if(columns[c].menu->entries[i].submenu) surf.draw_text(tr,"ï¿½",textcol,1);	// no ordinary comma
 		}			
 	}
 

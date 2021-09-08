@@ -658,7 +658,7 @@ void sum_ps_to_ss_block(__m128 *xb, unsigned int nquads)
 #if PPC
 	assert(0);
 #else
-	// finns en snabbare variant pÂ sidan 227 i AMDs optimization manual
+	// there is a faster version on page 227 of the AMD optimization manual
 	for(unsigned int i=0; i<nquads; i++)
 	{	
 		__m128 x = xb[i];
@@ -797,11 +797,11 @@ void subtract_block(float * __restrict src1, float * __restrict src2, float * __
 
 
 #if !PPC
-// Snabba sin(x) substitut
+// Fast sin(x) substitutes
 // work in progress
 float sine_float_nowrap(float x)
 {
-	// http://www.devmaster.net/forums/showthread.php?t=5784
+	// https://web.archive.org/web/20060909123349/http://www.devmaster.net/forums/showthread.php?t=5784
 	const float B = 4.f/M_PI;
 	const float C = -4.f/(M_PI*M_PI);
 

@@ -49,7 +49,7 @@ public:
 	int x,y,x2,y2;
 };
 
-// coordinate system: origo is top-left corner
+// coordinate system: origin is top-left corner
 
 class vg_point
 {
