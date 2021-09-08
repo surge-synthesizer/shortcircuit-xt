@@ -213,7 +213,7 @@ void sample::init_grains()
 {
     return; // disabled atm
 
-    // TODO inkompatible med short
+    // TODO incompatible with short
     /*
 
     if (!grains_initialized)

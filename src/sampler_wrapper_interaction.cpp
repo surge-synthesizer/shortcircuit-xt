@@ -168,8 +168,8 @@ void sampler::processWrapperEvents()
                     zones[nz].key_high = i->key_hi;
                     zones[nz].velocity_low = i->vel_lo;
                     zones[nz].velocity_high = i->vel_hi;
-                    // vtCopyString(zones[nz].name,i->label.c_str(),31);		// g�r i sample::
-                    // ist�llet
+                    // vtCopyString(zones[nz].name,i->label.c_str(),31);		// do in sample::
+                    // instead
                     zones[nz].database_id = i->database_id;
                 }
             }
@@ -1720,7 +1720,7 @@ void sampler::post_samplelist()
         if (*((int *)dbSampleListDataPtr) == 'done')
             free(dbSampleListDataPtr);
         else
-            return; // upptagen
+            return; // busy
     }
 
     dbSampleListDataPtr = (void *)malloc(sizeof(database_samplelist) * n_samples);

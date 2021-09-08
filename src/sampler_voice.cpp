@@ -447,7 +447,7 @@ void sampler_voice::CalcRatio()
     fpitch = part->transpose + zone->transpose + zone->finetune +
              zone->pitch_bend_depth * ctrl[c_pitch_bend] + mm.get_destination_value(md_pitch);
 
-    // inte viktig nog att offra perf f�r.. b�ttre att ber�kna on demand is�fall
+    // not important enough to sacrifice perf for.. better to use on demand in case
     // loop_pos = limit_range((sample_pos -
     // mm.get_destination_value_int(md_loop_start))/(float)mm.get_destination_value_int(md_loop_length),0,1);
 
