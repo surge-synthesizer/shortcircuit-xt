@@ -287,6 +287,7 @@ target_sources(ShortcircuitXT PRIVATE
 target_include_directories(ShortcircuitXT PRIVATE wrappers/juce )
 target_compile_definitions(ShortcircuitXT PUBLIC
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
+        JUCE_MODAL_LOOPS_PERMITTED=1
         JUCE_STRICT_REFCOUNTEDPOINTER=1
 
         JUCE_VST3_CAN_REPLACE_VST2=0
@@ -312,11 +313,8 @@ target_link_libraries(ShortcircuitXT PRIVATE
         ImageAssets
         ShortcircuitXT-Binary
         shortcircuit-core
-        juce::juce_analytics
         juce::juce_audio_utils
         juce::juce_audio_processors
-        juce::juce_blocks_basics
-        juce::juce_box2d
         juce::juce_dsp
         )
 
