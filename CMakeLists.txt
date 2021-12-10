@@ -193,6 +193,10 @@ set(SHORTCIRCUIT_INCLUDE_DIRS
         src/vembertech  # used to be in libs but don't rewrite every ref
         )
 
+add_library(simde INTERFACE)
+target_include_directories(simde INTERFACE ${CMAKE_SOURCE_DIR}/libs/simde)
+add_library(surge::simde ALIAS simde)
+
 add_library(shortcircuit-core
         ${SHORTCIRCUIT_SOURCE}
         ${VEMBERTECH_SOURCE}
@@ -212,7 +216,7 @@ else()
     message(STATUS "Using GHC Filesystem" )
     add_subdirectory(libs/ghc-filesystem)
     target_compile_definitions(shortcircuit-core PUBLIC SC3_USE_GHC_FILESYSTEM=1)
-    target_link_libraries(shortcircuit-core PUBLIC ghc_filesystem)
+    target_link_libraries(shortcircuit-core PUBLIC ghc_filesystem simde)
 
 endif()
 
