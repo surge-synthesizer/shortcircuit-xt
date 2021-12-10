@@ -7,3 +7,6 @@
 [submodule "libs/ghc-filesystem"]
 	path = libs/ghc-filesystem
 	url = https://github.com/gulrak/filesystem.git
+[submodule "libs/simde"]
+	path = libs/simde
+	url = https://github.com/simd-everywhere/simde

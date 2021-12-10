@@ -1,4 +1,10 @@
+#if defined(__aarch64__)
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include "simde/x86/sse2.h"
+
+#else
 #include <emmintrin.h>
+#endif
 #include <cmath>
 #include "lattice.h"
 #include "basic_dsp.h"

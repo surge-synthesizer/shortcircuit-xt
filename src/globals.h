@@ -7,9 +7,13 @@
 //-------------------------------------------------------------------------------------------------------
 #pragma once
 
-#if ARM_NEON
+#if defined(__aarch64__)
 #define SIMDE_ENABLE_NATIVE_ALIASES
 #include "simde/x86/sse2.h"
+
+// TODO: FixMe on all of these
+#define _mm_malloc(a,b) malloc(a)
+#define _mm_free(a) free(a)
 #else
 #include <xmmintrin.h>
 

@@ -3,7 +3,7 @@
 #include "macspecific.h"
 #endif
 
-#if ARM_NEON
+#if defined(__aarch64__)
 #define SIMDE_ENABLE_NATIVE_ALIASES
 #include "simde/x86/sse2.h"
 #else
