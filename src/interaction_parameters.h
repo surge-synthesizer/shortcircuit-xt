@@ -2,6 +2,7 @@
 
 #include <string>
 #include "sampler_state.h"
+#include <iostream>
 
 enum
 {
@@ -172,16 +173,7 @@ enum
 
 };
 
-struct interactiondata
-{
-    int vtype;
-    int ptr_offset;
-    int n_subid;
-    int subid_ptr_offset;
-    std::string label;
-};
-
-enum
+enum IPType
 {
     ipvt_int = 0,
     ipvt_char,
@@ -190,6 +182,45 @@ enum
     ipvt_bdata, // binary data for fx preset save/load (size from subid_ptr_offset)
     ipvt_other
 };
+
+struct interactiondata
+{
+    IPType vtype;
+    int ptr_offset;
+    int n_subid;
+    int subid_ptr_offset;
+    std::string label;
+};
+
+inline std::ostream &operator<<(std::ostream &os, const interactiondata &d)
+{
+    os << "interaction[" << d.label << " ";
+    switch(d.vtype)
+    {
+    case ipvt_int:
+        os << "int";
+        break;
+    case ipvt_char:
+        os << "char";
+        break;
+    case ipvt_float:
+        os << "float";
+        break;
+    case ipvt_string:
+        os << "string";
+        break;
+    case ipvt_bdata:
+        os << "bdata";
+        break;
+    case ipvt_other:
+        os << "other";
+        break;
+    }
+
+    os << " ptroff=" << d.ptr_offset << " n_subid=" << d.n_subid << " subpo=" << d.subid_ptr_offset << "]";
+    return os;
+}
+
 
 const interactiondata ip_data[n_ip_entries] = {
     ipvt_int,

@@ -27,7 +27,9 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
     {
     case ip_kgv_or_list:
     {
-        switch (ad.actiontype)
+        if (!std::holds_alternative<VAction>(ad.actiontype))
+            break;
+        switch (std::get<VAction>(ad.actiontype))
         {
         case vga_zonelist_clear:
         {

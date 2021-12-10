@@ -13,7 +13,7 @@
 #
 
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "Build for 10.12")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Build for 10.14")  # this way we can use C++17 for real
 project(ShortCircuit VERSION 3.0.0.0 LANGUAGES C CXX ASM)
 
 # Share some information about the  build

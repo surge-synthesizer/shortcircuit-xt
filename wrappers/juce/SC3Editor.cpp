@@ -164,6 +164,15 @@ void SC3AudioProcessorEditor::idle()
     {
         mcount++;
         auto handled = false;
+        if (std::holds_alternative<VAction>(ad.actiontype))
+        {
+            auto id = ad.id;
+            if (id > 0)
+            {
+                auto inter = ip_data[id];
+                std::cout << ad << " " << inter << std::endl;
+            }
+        }
         for (auto &p : uiStateProxies)
         {
             handled |= p->processActionData(ad);
@@ -176,7 +185,10 @@ void SC3AudioProcessorEditor::idle()
             int aid = ad.id;
             if (collapseSubtypes)
                 aid = -1;
-            unhandled[ad.actiontype][aid]++;
+            if (std::holds_alternative<VAction>(ad.actiontype))
+                unhandled[std::get<VAction>(ad.actiontype)][aid]++;
+            else
+                jassert(false);
         }
 #endif
     }

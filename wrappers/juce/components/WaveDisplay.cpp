@@ -115,7 +115,11 @@ void WaveDisplay::paint(Graphics &g)
 // this is called when the sampler is sending out a broadcast
 bool WaveDisplay::processActionData(const actiondata &ad) {
     bool res = false;
-    if(ad.actiontype == vga_wavedisp_sample)
+    if (!std::holds_alternative<VAction>(ad.actiontype))
+        return false;
+
+    auto at = std::get<VAction>(ad.actiontype);
+    if(at == vga_wavedisp_sample)
     {
         auto e = (const ActionWaveDisplaySample &)(ad);
         bool same_sample = (mSamplePtr == e.samplePtr()) && (dispmode == 0);
@@ -149,7 +153,7 @@ bool WaveDisplay::processActionData(const actiondata &ad) {
         }
         queue_draw_wave(false,false);
     }
-    if(ad.actiontype == vga_wavedisp_editpoint)
+    if(at == vga_wavedisp_editpoint)
     {
         auto e = (const ActionWaveDisplayEditPoint &)(ad);
         markerpos[e.dragId()] = e.samplePos();
@@ -157,7 +161,7 @@ bool WaveDisplay::processActionData(const actiondata &ad) {
         // todo do we really need a full redraw here?
         queue_draw_wave(false,false);
     }
-    else if(ad.actiontype == vga_wavedisp_multiselect)
+    else if(at == vga_wavedisp_multiselect)
     {
         dispmode = 1;
         repaint();
