@@ -69,7 +69,14 @@
 #pragma once
 #include "interaction_parameters.h"
 #include <cassert>
-enum
+#include <variant>
+
+enum VUnInitialized
+{
+    vuininit = 0
+};
+
+enum VGet
 {
     vget_mousedown = 0,
     vget_mouseup,
@@ -87,8 +94,11 @@ enum
     vget_process_actionbuffer,
     vget_dragfiles,
     vget_dropfiles,
-    vget_deactivate,
+    vget_deactivate
+};
 
+enum VMouse
+{
     vgm_LMB = 0x1,
     vgm_RMB = 0x2,
     vgm_shift = 0x4,
@@ -96,8 +106,11 @@ enum
     vgm_MMB = 0x10,
     vgm_MB4 = 0x20,
     vgm_MB5 = 0x40,
-    vgm_alt = 0x80,
+    vgm_alt = 0x80
+};
 
+enum VCursor
+{
     cursor_arrow = 0,
     cursor_hand_point,
     cursor_hand_pan,
@@ -113,18 +126,27 @@ enum
     cursor_zoomin,
     cursor_zoomout,
     cursor_vmove,
-    cursor_hmove,
+    cursor_hmove
+};
 
+enum VAlign
+{
     vg_align_top = -1,
     vg_align_left = -1,
     vg_align_center = 0,
     vg_align_bottom = 1,
     vg_align_right = 1,
+};
 
+enum VType
+{
     vgvt_int = 0,
     vgvt_bool,
-    vgvt_float,
+    vgvt_float
+};
 
+enum VAction
+{
     vga_nothing = 0,
     vga_floatval,
     vga_intval,
@@ -202,7 +224,10 @@ enum
     vga_save_patch,
     vga_save_multi,
     vga_vudata,
+};
 
+enum VColor
+{
     // color palette entries
     col_standard_bg = 0,
     col_standard_text,
@@ -229,13 +254,20 @@ enum
     col_list_text_keybed,
     col_vu_back,
     col_vu_front,
-    col_vu_overload,
+    col_vu_overload
+};
+
+enum VKbm
+{
     kbm_autodetect = 0,
     kbm_os,
     kbm_vst,
     kbm_globalhook,
-    kbm_seperate_window,
+    kbm_seperate_window
 };
+
+typedef std::variant<VUnInitialized, VGet, VMouse, VCursor, VAlign, VType, VAction, VColor, VKbm>
+    actiontype_t;
 
 union vg_pdata
 {
@@ -259,7 +291,7 @@ struct DropList
 
 struct actiondata
 {
-    int actiontype;
+    actiontype_t actiontype;
     int id, subid;
 
     union
@@ -274,9 +306,134 @@ struct actiondata
     } data;
 
     // try to avoid any uninitialized mem issues
-    actiondata() { actiontype=0; id=0; subid=0; data.str[0]=0;}
+    actiondata()
+    {
+        actiontype = vuininit;
+        id = 0;
+        subid = 0;
+        data.str[0] = 0;
+    }
 
 }; // 64 bytes of whatever you like.. should be plenty
+
+template <class... Ts> struct overloaded : Ts...
+{
+    using Ts::operator()...;
+};
+template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+inline std::ostream &operator<<(std::ostream &stream, const actiontype_t &t)
+{
+    std::visit(
+        overloaded{[&stream](auto arg) { stream << "Generic [" << arg << "]"; },
+                   [&stream](VUnInitialized arg)
+                   { stream << "UnInitialized [" << arg << "]"; },
+                   [&stream](VAction arg)
+                   {
+                       stream << "VAction [";
+#define C(x) \
+                       case x: \
+                           stream << #x; \
+                           break;
+
+
+
+                       switch (arg)
+                       {
+                           C(vga_floatval)
+                               C(vga_intval)
+                               C(vga_intval_inc)
+                               C(vga_intval_dec)
+                               C(vga_boolval)
+                               C(vga_beginedit)
+                               C(vga_endedit)
+                               C(vga_load_dropfiles)
+                               C(vga_load_patch)
+                               C(vga_text)
+                               C(vga_click)
+                               C(vga_exec_external)
+                               C(vga_url_external)
+                               C(vga_doc_external)
+                               C(vga_disable_state)
+                               C(vga_stuck_state)
+                               C(vga_hide)
+                               C(vga_label)
+                               C(vga_temposync)
+                               C(vga_filter)
+                               C(vga_datamode)
+                               C(vga_menu)
+                               C(vga_entry_add)
+                               C(vga_entry_add_ival_from_self)
+                               C(vga_entry_add_ival_from_self_with_id)
+                               C(vga_entry_replace_label_on_id)
+                               C(vga_entry_setactive)
+                               C(vga_entry_clearall)
+                               C(vga_select_zone_clear)
+                               C(vga_select_zone_primary)
+                               C(vga_select_zone_secondary)
+                               C(vga_select_zone_previous)
+                               C(vga_select_zone_next)
+                               C(vga_zone_playtrigger)
+                               C(vga_deletezone)
+                               C(vga_createemptyzone)
+                               C(vga_clonezone)
+                               C(vga_clonezone_next)
+                               C(vga_movezonetopart)
+                               C(vga_movezonetolayer)
+                               C(vga_zonelist_clear)
+                               C(vga_zonelist_populate)
+                               C(vga_zonelist_done)
+                               C(vga_zonelist_mode)
+                               C(vga_toggle_zoom)
+                               C(vga_note)
+                               C(vga_audition_zone)
+                               C(vga_request_refresh)
+                               C(vga_set_zone_keyspan)
+                               C(vga_set_zone_keyspan_clone)
+                               C(vga_openeditor)
+                               C(vga_closeeditor)
+                               C(vga_wavedisp_sample)
+                               C(vga_wavedisp_multiselect)
+                               C(vga_wavedisp_plot)
+                               C(vga_wavedisp_editpoint)
+                               C(vga_steplfo_repeat)
+                               C(vga_steplfo_shape)
+                               C(vga_steplfo_data)
+                               C(vga_steplfo_data_single)
+                               C(vga_browser_listptr)
+                               C(vga_browser_entry_next)
+                               C(vga_browser_entry_prev)
+                               C(vga_browser_entry_load)
+                               C(vga_browser_category_next)
+                               C(vga_browser_category_prev)
+                               C(vga_browser_category_parent)
+                               C(vga_browser_category_child)
+                               C(vga_browser_preview_start)
+                               C(vga_browser_preview_stop)
+                               C(vga_browser_is_refreshing)
+                               C(vga_inject_database)
+                               C(vga_database_samplelist)
+                               C(vga_save_patch)
+                               C(vga_save_multi)
+                               C(vga_vudata)
+
+                       default:
+                           stream << arg;
+                           break;
+                       }
+                       stream << "]";
+                   }},
+#undef C
+
+        t);
+    return stream;
+}
+
+inline std::ostream &operator<<(std::ostream &stream, const actiondata &d)
+{
+    stream << "actiondata[" << d.actiontype << " id=" << d.id << " subid=" << d.subid << "]";
+    return stream;
+}
 
 struct ad_zonedata
 {
@@ -293,7 +450,8 @@ struct ad_zonedata
 };
 
 // corresponds to vga_wavedisp_editpoint
-struct ActionWaveDisplayEditPoint : public actiondata {
+struct ActionWaveDisplayEditPoint : public actiondata
+{
     enum PointType
     {
         start = 0,
@@ -312,7 +470,9 @@ struct ActionWaveDisplayEditPoint : public actiondata {
         data.i[1] = samplePos;
     }
     // hitpoint type
-    ActionWaveDisplayEditPoint(int hitPoint, unsigned startSample, unsigned endSample, bool muted, float env) {
+    ActionWaveDisplayEditPoint(int hitPoint, unsigned startSample, unsigned endSample, bool muted,
+                               float env)
+    {
 
         data.i[0] = hitPointStart + hitPoint;
         data.i[1] = startSample;
@@ -321,26 +481,27 @@ struct ActionWaveDisplayEditPoint : public actiondata {
         data.f[4] = env;
     }
 
-
-    inline PointType dragId() const {return (PointType)data.i[0];}
-    inline int hitPoint() const {assert(data.i[0]>= hitPointStart); return data.i[0] - hitPointStart;}
-    bool muted() const {return (bool)data.i[3];}
-    float env() const {return (bool)data.i[4];}
-    inline int samplePos() const {return data.i[1];}
-    inline int endSamplePos() const {return data.i[2];}
+    inline PointType dragId() const { return (PointType)data.i[0]; }
+    inline int hitPoint() const
+    {
+        assert(data.i[0] >= hitPointStart);
+        return data.i[0] - hitPointStart;
+    }
+    bool muted() const { return (bool)data.i[3]; }
+    float env() const { return (bool)data.i[4]; }
+    inline int samplePos() const { return data.i[1]; }
+    inline int endSamplePos() const { return data.i[2]; }
 };
 
 // corresponds to vga_wavedisp_sample
-struct ActionWaveDisplaySample : public actiondata {
+struct ActionWaveDisplaySample : public actiondata
+{
     ActionWaveDisplaySample(void *samplePtr,
                             int playMode, // todo enum
-                            unsigned int start,
-                            unsigned int end,
-                            unsigned int loopStart,
-                            unsigned int loopEnd,
-                            unsigned int loopCrossfade,
-                            unsigned int numHitpoints
-                            )  {
+                            unsigned int start, unsigned int end, unsigned int loopStart,
+                            unsigned int loopEnd, unsigned int loopCrossfade,
+                            unsigned int numHitpoints)
+    {
         id = ip_wavedisplay;
         subid = 0;
         actiontype = vga_wavedisp_sample;
@@ -353,14 +514,12 @@ struct ActionWaveDisplaySample : public actiondata {
         data.i[7] = loopCrossfade;
         data.i[8] = numHitpoints;
     }
-    inline void *samplePtr(){return data.ptr[0];}
-    inline int playMode(){return data.i[2];}
-    inline unsigned int start(){return data.i[3];}
-    inline unsigned int end(){return data.i[4];}
-    inline unsigned int loopStart(){return data.i[5];}
-    inline unsigned int loopEnd(){return data.i[6];}
-    inline unsigned int loopCrossfade(){return data.i[7];}
-    inline unsigned int numHitpoints(){return data.i[8];}
-
+    inline void *samplePtr() { return data.ptr[0]; }
+    inline int playMode() { return data.i[2]; }
+    inline unsigned int start() { return data.i[3]; }
+    inline unsigned int end() { return data.i[4]; }
+    inline unsigned int loopStart() { return data.i[5]; }
+    inline unsigned int loopEnd() { return data.i[6]; }
+    inline unsigned int loopCrossfade() { return data.i[7]; }
+    inline unsigned int numHitpoints() { return data.i[8]; }
 };
-

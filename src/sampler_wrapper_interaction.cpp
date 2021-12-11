@@ -48,7 +48,7 @@ void sampler::postEventsFromWrapper(const actiondata &ad)
 {
     LOGDEBUG(mLogger) << "postEventsFromWrapper " << ad.actiontype << std::flush;
 
-    ActionBuffer->WriteBlock((void*)&ad);
+    ActionBuffer->WriteBlock((void *)&ad);
 
     // Much like in surge, if there's no audio thread you try and process them
     // in a thread unsafe way
@@ -79,7 +79,14 @@ void sampler::processWrapperEvents()
 
         LOGDEBUG(mLogger) << "processWrapperEvents handling " << ad.actiontype << std::flush;
 
-        switch (ad.actiontype) // intercept these actiontypes regardless of the control
+        if (!std::holds_alternative<VAction>(ad.actiontype))
+        {
+            LOGDEBUG(mLogger) << "Surprise! It's not an action" << std::flush;
+            continue;
+        }
+
+        auto at = std::get<VAction>(ad.actiontype);
+        switch (at) // intercept these actiontypes regardless of the control
         {
         case vga_openeditor:
             // actiondatabuffer_out.clear();	// any old actions generated when the editor was
@@ -322,7 +329,7 @@ void sampler::processWrapperEvents()
         {
             int i = selected->get_active_zone();
             selected->set_active_zone(
-                std::max(0, (vga_select_zone_previous == ad.actiontype) ? i - 1 : i + 1));
+                std::max(0, (vga_select_zone_previous == at) ? i - 1 : i + 1));
             post_zonedata();
         }
         break;
@@ -352,19 +359,19 @@ void sampler::processWrapperEvents()
                 (ad.subid < ip_data[ad.id].n_subid))
             {
                 int offset = ip_data[ad.id].ptr_offset + ip_data[ad.id].subid_ptr_offset * ad.subid;
-                if ((ad.actiontype == vga_intval) && (ip_data[ad.id].vtype == ipvt_int))
+                if ((at == vga_intval) && (ip_data[ad.id].vtype == ipvt_int))
                 {
                     selected->set_zone_parameter_int_internal(offset, ad.data.i[0]);
                 }
-                else if ((ad.actiontype == vga_intval) && (ip_data[ad.id].vtype == ipvt_char))
+                else if ((at == vga_intval) && (ip_data[ad.id].vtype == ipvt_char))
                 {
                     selected->set_zone_parameter_char_internal(offset, ad.data.i[0] & 0xff);
                 }
-                else if ((ad.actiontype == vga_floatval) && (ip_data[ad.id].vtype == ipvt_float))
+                else if ((at == vga_floatval) && (ip_data[ad.id].vtype == ipvt_float))
                 {
                     selected->set_zone_parameter_float_internal(offset, ad.data.f[0]);
                 }
-                else if ((ad.actiontype == vga_text) && (ip_data[ad.id].vtype == ipvt_string))
+                else if ((at == vga_text) && (ip_data[ad.id].vtype == ipvt_string))
                 {
                     selected->set_zone_parameter_cstr_internal(offset, (char *)ad.data.str);
                 }
@@ -384,26 +391,26 @@ void sampler::processWrapperEvents()
                 switch (ad.id)
                 {
                 case ip_partselect:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                     {
                         set_editorpart(ad.data.i[0], parts[ad.data.i[0] & 0xf].activelayer);
                     }
                     break;
                 case ip_layerselect:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                     {
                         set_editorpart(editorpart, ad.data.i[0] & (num_layers - 1));
                     }
                     break;
                 case ip_sample_name:
-                    if (ad.actiontype == vga_text)
+                    if (at == vga_text)
                     {
                         // TODO edit sample name
                     }
                     break;
 #if 0
                 case ip_sample_prevnext:
-                    if (ad.actiontype == vga_click)
+                    if (at == vga_click)
                     {
                         int diff = (ad.subid == 1) ? 1 : -1;
                         int z = selected->get_active_zone();
@@ -420,7 +427,7 @@ void sampler::processWrapperEvents()
                     }
                     break;
                 case ip_patch_prevnext:
-                    if (ad.actiontype == vga_click)
+                    if (at == vga_click)
                     {
                         int diff = (ad.subid == 1) ? 1 : -1;
                         if (parts[editorpart].database_id >= 0)
@@ -437,20 +444,20 @@ void sampler::processWrapperEvents()
                     }
                     break;
                 case ip_browser_searchtext:
-                    if (ad.actiontype == vga_text)
+                    if (at == vga_text)
                     {
                         ad.id = ip_browser;
                         postEventsToWrapper(ad);
                     }
                     break;
                 case ip_replace_sample:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                     {
                         toggled_samplereplace = (ad.data.i[0] != 0);
                     }
                     break;
                 case ip_browser:
-                    if ((ad.actiontype == vga_intval) && toggled_samplereplace)
+                    if ((at == vga_intval) && toggled_samplereplace)
                     {
                         int z = selected->get_active_zone();
                         if (zone_exist(z))
@@ -486,32 +493,32 @@ void sampler::processWrapperEvents()
                 // case ip_config_h_or_v:
                 // case ip_config_slidersensitivity:
                 case ip_config_outputs:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                         conf->stereo_outputs = max(1, min(ad.data.i[0] + 1, 8));
                     break;
                 case ip_config_controller_id:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                         conf->MIDIcontrol[ad.subid & 0xf].number = ad.data.i[0];
                     break;
                 case ip_config_controller_mode:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                         conf->MIDIcontrol[ad.subid & 0xf].type = (midi_controller_type)ad.data.i[0];
                     break;
                 case ip_config_refresh_db:
                     break;
                 case ip_config_kbdmode:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                         conf->keyboardmode = ad.data.i[0];
                     break;
                 case ip_config_autopreview:
-                    if (ad.actiontype == vga_intval)
+                    if (at == vga_intval)
                     {
                         conf->mAutoPreview = ad.data.i[0] != 0;
                         mpPreview->mAutoPreview = ad.data.i[0] != 0;
                     }
                     break;
                 case ip_config_previewvolume:
-                    if (ad.actiontype == vga_floatval)
+                    if (at == vga_floatval)
                     {
                         conf->mPreviewLevel = ad.data.f[0];
                         mpPreview->mZone.aux[0].level = conf->mPreviewLevel;
@@ -584,7 +591,7 @@ void sampler::processWrapperEvents()
         case ip_high_key:
         case ip_low_vel:
         case ip_high_vel:
-            if (ad.actiontype == vga_endedit)
+            if (at == vga_endedit)
             {
                 post_kgvdata();
             }
@@ -626,7 +633,7 @@ void sampler::processWrapperEvents()
         }
         break;
         case ip_lfoshape:
-            if (ad.actiontype == vga_floatval)
+            if (at == vga_floatval)
             {
                 actiondata ad2;
                 ad2.actiontype = vga_steplfo_shape;
@@ -637,7 +644,7 @@ void sampler::processWrapperEvents()
             }
             break;
         case ip_lforepeat:
-            if (ad.actiontype == vga_intval)
+            if (at == vga_intval)
             {
                 actiondata ad2;
                 ad2.actiontype = vga_steplfo_repeat;
@@ -716,7 +723,7 @@ void sampler::processWrapperEvents()
             break;
         case ip_part_userparam_polarity:
         {
-            if (ad.actiontype == vga_intval)
+            if (at == vga_intval)
             {
                 actiondata ad2;
                 ad2.actiontype = vga_datamode;
@@ -866,10 +873,10 @@ void sampler::post_zonedata()
                 sptr = 0;
             else
                 sptr = samples[zones[z].sample_id];
-            postEventsToWrapper(ActionWaveDisplaySample(sptr, zones[z].playmode, zones[z].sample_start,
-                                        zones[z].sample_stop, zones[z].loop_start,
-                                        zones[z].loop_end, zones[z].loop_crossfade_length,
-                                        zones[z].n_hitpoints));
+            postEventsToWrapper(ActionWaveDisplaySample(
+                sptr, zones[z].playmode, zones[z].sample_start, zones[z].sample_stop,
+                zones[z].loop_start, zones[z].loop_end, zones[z].loop_crossfade_length,
+                zones[z].n_hitpoints));
 
             if (zones[z].playmode == pm_forward_hitpoints)
             {
@@ -878,7 +885,6 @@ void sampler::post_zonedata()
                     postEventsToWrapper(ActionWaveDisplayEditPoint(
                         i, zones[z].hp[i].start_sample, zones[z].hp[i].end_sample,
                         zones[z].hp[i].muted, zones[z].hp[i].env));
-
                 }
             }
             if (sptr)
@@ -1382,19 +1388,25 @@ void sampler::relay_data_to_structure(actiondata ad, char *pt)
     pt += ip_data[ad.id].ptr_offset + ip_data[ad.id].subid_ptr_offset * ad.subid;
     // pointer changed, make sure not to reuse it
 
-    if ((ad.actiontype == vga_intval) && (ip_data[ad.id].vtype == ipvt_int))
+    if (!std::holds_alternative<VAction>(ad.actiontype))
+        return;
+
+    if ((std::get<VAction>(ad.actiontype) == vga_intval) && (ip_data[ad.id].vtype == ipvt_int))
     {
         *((int *)pt) = ad.data.i[0];
     }
-    else if ((ad.actiontype == vga_intval) && (ip_data[ad.id].vtype == ipvt_char))
+    else if ((std::get<VAction>(ad.actiontype) == vga_intval) &&
+             (ip_data[ad.id].vtype == ipvt_char))
     {
         // selected->set_zone_parameter_char_internal(offset, ad.data.i[0]&0xff);
     }
-    else if ((ad.actiontype == vga_floatval) && (ip_data[ad.id].vtype == ipvt_float))
+    else if ((std::get<VAction>(ad.actiontype) == vga_floatval) &&
+             (ip_data[ad.id].vtype == ipvt_float))
     {
         *((float *)pt) = ad.data.f[0];
     }
-    else if ((ad.actiontype == vga_text) && (ip_data[ad.id].vtype == ipvt_string))
+    else if ((std::get<VAction>(ad.actiontype) == vga_text) &&
+             (ip_data[ad.id].vtype == ipvt_string))
     {
         vtCopyString(pt, (char *)ad.data.str, 32);
         // selected->set_zone_parameter_cstr_internal(offset, (char*)ad.data.str);
