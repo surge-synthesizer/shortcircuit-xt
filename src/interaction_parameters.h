@@ -4,7 +4,7 @@
 #include "sampler_state.h"
 #include <iostream>
 
-enum
+enum InteractionId
 {
     ip_none = 0,
     ip_partselect,
@@ -35,6 +35,7 @@ enum
     ip_select_layer,
     ip_select_all,
     ip_vumeter,
+    n_ip_free_items = ip_vumeter,
     ip_zone_name,
     ip_zone_params_begin = ip_zone_name, // start: properties that should be handled by multiselect
     ip_channel,
@@ -195,7 +196,7 @@ struct interactiondata
 inline std::ostream &operator<<(std::ostream &os, const interactiondata &d)
 {
     os << "interaction[" << d.label << " ";
-    switch(d.vtype)
+    switch (d.vtype)
     {
     case ipvt_int:
         os << "int";
@@ -217,10 +218,10 @@ inline std::ostream &operator<<(std::ostream &os, const interactiondata &d)
         break;
     }
 
-    os << " ptroff=" << d.ptr_offset << " n_subid=" << d.n_subid << " subpo=" << d.subid_ptr_offset << "]";
+    os << " ptroff=" << d.ptr_offset << " n_subid=" << d.n_subid << " subpo=" << d.subid_ptr_offset
+       << "]";
     return os;
 }
-
 
 const interactiondata ip_data[n_ip_entries] = {
     ipvt_int,
@@ -968,5 +969,24 @@ const interactiondata ip_data[n_ip_entries] = {
     (int)sizeof(float),
     "multi filter postgain",
 };
+
+enum InteractionTarget
+{
+    Free,
+    Zone,
+    Part,
+    Multi
+};
+
+inline InteractionTarget targetForInteractionId(InteractionId id)
+{
+    if (id >= ip_zone_params_begin && id <= ip_zone_params_end)
+        return Zone;
+    if (id >= ip_part_params_begin && id <= ip_part_params_end)
+        return Part;
+    if (id >= ip_multi_params_begin && id <= ip_multi_params_end)
+        return Multi;
+    return Free;
+}
 
 std::string datamode_from_cmode(int cmode);

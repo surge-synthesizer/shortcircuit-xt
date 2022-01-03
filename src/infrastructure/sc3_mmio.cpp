@@ -17,9 +17,9 @@
 #include "sc3_mmio.h"
 
 #if WINDOWS
-HMMIO mmioOpenFromPath(const fs::path &fn, void *, int mode) 
+HMMIO mmioOpenFromPath(const fs::path &fn, void *, int mode)
 {
-    auto wideFn=fn.generic_wstring(); 
+    auto wideFn = fn.generic_wstring();
     return mmioOpenW(const_cast<LPWSTR>(wideFn.c_str()), nullptr, mode);
 }
 #else
@@ -29,9 +29,12 @@ HMMIO mmioOpenFromPath(const fs::path &fn, void *, int mode)
 #include <codecvt>
 #include <locale>
 
-HMMIO mmioOpenSTR( std::ifstream &ifs, int mode )
+HMMIO mmioOpenSTR(std::ifstream &ifs, int mode)
 {
-    if (!ifs.is_open()) { return nullptr; }
+    if (!ifs.is_open())
+    {
+        return nullptr;
+    }
 
     ifs.seekg(0, std::ios::end);
     auto length = ifs.tellg();
@@ -45,7 +48,8 @@ HMMIO mmioOpenSTR( std::ifstream &ifs, int mode )
     res->is_open = true;
     res->rawData = data;
     res->rawDataSize = length;
-    res->memFile = SC3::Memfile::RIFFMemFile(res->rawData, res->rawDataSize); // Remember it doesn't take ownership
+    res->memFile = SC3::Memfile::RIFFMemFile(
+        res->rawData, res->rawDataSize); // Remember it doesn't take ownership
 
     return res;
 }
@@ -53,24 +57,23 @@ HMMIO mmioOpenSTR( std::ifstream &ifs, int mode )
 HMMIO mmioOpenFromPath(const fs::path &fn, void *, int mode)
 {
     auto ifs = std::ifstream(fn, std::ios::binary);
-    return mmioOpenSTR( ifs, mode );
+    return mmioOpenSTR(ifs, mode);
 }
 HMMIO mmioOpenW(const wchar_t *fn, void *, int mode)
 {
 #if MAC || LINUX
-    auto converter = std::wstring_convert<
-        std::codecvt_utf8_utf16<wchar_t>, wchar_t>{};
+    auto converter = std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{};
     auto fnut8 = converter.to_bytes(fn);
 
-    auto ifs = std::ifstream( fnut8, std::ios::binary );
+    auto ifs = std::ifstream(fnut8, std::ios::binary);
 #else
-    auto ifs = std::ifstream( fn, std::ios::binary );
+    auto ifs = std::ifstream(fn, std::ios::binary);
 #endif
 
-    return mmioOpenSTR( ifs, mode );
+    return mmioOpenSTR(ifs, mode);
 }
 
-int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type )
+int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type)
 {
     int tag;
     size_t ds;

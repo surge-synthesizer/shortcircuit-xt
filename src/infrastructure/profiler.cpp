@@ -27,8 +27,8 @@
 
 #if WINDOWS
 #include <windows.h>
-static DWORD_PTR gThreadAffinityOriginal=0;
-static int gTASet=0;
+static DWORD_PTR gThreadAffinityOriginal = 0;
+static int gTASet = 0;
 #endif
 
 namespace SC3::Perf
@@ -37,9 +37,10 @@ namespace SC3::Perf
 struct ProfID
 {
     char mID[MAX_ID_LEN];
-    ProfID(const char *id) {
+    ProfID(const char *id)
+    {
         strncpy(mID, id, MAX_ID_LEN);
-        mID[MAX_ID_LEN-1]=0;
+        mID[MAX_ID_LEN - 1] = 0;
     }
 };
 
@@ -76,17 +77,15 @@ Profiler::Profiler(SC3::Log::LoggingCallback *logger, const char *msg) : mData(0
 #if WINDOWS
     // set thread affinity for this thread so that our timers are always from core 1
     gTASet++; // should be in tls, but for our purposes its fine
-    if (gTASet==1)
+    if (gTASet == 1)
     {
         gThreadAffinityOriginal = SetThreadAffinityMask(GetCurrentThread(), 1);
     }
 
 #endif
 
-    if(msg)
+    if (msg)
         reset(msg);
-
-
 }
 
 Profiler::~Profiler()
@@ -105,7 +104,7 @@ void Profiler::reset(const char *msg)
 {
     InternalRep *rt = (InternalRep *)mData;
 
-    LOGDEBUG(rt->mLogger) << "Profiler reset " << msg <<std::flush ;
+    LOGDEBUG(rt->mLogger) << "Profiler reset " << msg << std::flush;
     rt->mProfList.clear();
     rt->mProfTimes.clear();
 }
@@ -114,7 +113,7 @@ void Profiler::dump(const char *msg)
 {
     InternalRep *rt = (InternalRep *)mData;
     int64_t calc;
-    if(rt->mLogger.setLevel(Log::Level::Debug))
+    if (rt->mLogger.setLevel(Log::Level::Debug))
     {
         LOGDEBUG(rt->mLogger) << "Profiler dump '" << msg << "' (id/ms/calls)" << std::flush;
         std::map<ProfID, Metrics, ProfIDComp>::iterator it;
@@ -122,7 +121,8 @@ void Profiler::dump(const char *msg)
         {
             // cvt to milliseconds
             calc = it->second.mStamp / 1000;
-            LOGDEBUG(rt->mLogger) << it->first.mID << "," << (int)calc <<"," << it->second.mNumCalls << std::flush;
+            LOGDEBUG(rt->mLogger) << it->first.mID << "," << (int)calc << ","
+                                  << it->second.mNumCalls << std::flush;
         }
     }
 }
@@ -132,14 +132,11 @@ void Profiler::enter()
     InternalRep *rt = (InternalRep *)mData;
     Prof prof;
     SC3::Time::getCurrentTimestamp(&prof.start);
-    prof.subtract=0;
+    prof.subtract = 0;
     rt->mProfList.push_back(prof);
 }
 
-static void addTime(SC3::Time::Timestamp *target, SC3::Time::Timestamp *src)
-{
-    *target += *src;
-}
+static void addTime(SC3::Time::Timestamp *target, SC3::Time::Timestamp *src) { *target += *src; }
 
 void Profiler::exit(const char *id)
 {
@@ -153,7 +150,8 @@ void Profiler::exit(const char *id)
     SC3::Time::getCurrentTimestamp(&endtime);
     if (!rt->mProfList.size())
     {
-        LOGERROR(rt->mLogger) << "Inconsistent profile entry/exit count for %s." << id << std::flush;
+        LOGERROR(rt->mLogger) << "Inconsistent profile entry/exit count for %s." << id
+                              << std::flush;
         return;
     }
     // remove last item pushed
@@ -184,7 +182,7 @@ void Profiler::exit(const char *id)
     {
         // not found
         tot2.mNumCalls = 1; // initial value
-        //rt->mProfTimes.insert(std::make_pair<const ProfID, Metrics>(h, tot2));
+        // rt->mProfTimes.insert(std::make_pair<const ProfID, Metrics>(h, tot2));
         rt->mProfTimes.insert(std::make_pair(h, tot2));
     }
     else
@@ -195,4 +193,4 @@ void Profiler::exit(const char *id)
     }
 }
 
-} // namespace
+} // namespace SC3::Perf

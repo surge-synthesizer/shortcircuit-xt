@@ -94,7 +94,8 @@ static int keyname_to_keynumber(const char *name) // using C4 == 60
  */
 inline void dump_opcodes(sampler *s, std::map<std::string, std::string> &working_opcodes)
 {
-    LOGDEBUG(s->mLogger) << "Opcode dump for incomplete SFZ zone created: {" << std::endl << std::flush;
+    LOGDEBUG(s->mLogger) << "Opcode dump for incomplete SFZ zone created: {" << std::endl
+                         << std::flush;
     for (auto [k, v] : working_opcodes)
         LOGDEBUG(s->mLogger) << '\t' << k << ": " << v << std::endl << std::flush;
     LOGDEBUG(s->mLogger) << '}' << std::flush;
@@ -124,7 +125,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
         LOGERROR(s->mLogger) << "Zone not created due to missing SFZ sample opcode." << std::flush;
         return false;
     }
-    
+
     std::stringstream ss;
     sample_zone *z;
 
@@ -138,7 +139,7 @@ bool create_sfz_zone(sampler *s, std::map<std::string, std::string> &sfz_zone_op
                  static_cast<char>(fs::path::preferred_separator));
 
     auto sample_path = fs::absolute(string_to_path(sample_path_str));
-    
+
     if (!fs::exists(sample_path))
     {
         LOGERROR(s->mLogger) << "Zone not created due to invalid sample path: " << sample_path
@@ -391,7 +392,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
     const char *working_data_end = r;
     char buf[256];
     int copy_size;
-    
+
     while (working_data_end < data_end && *working_data_end != '<')
         ++working_data_end;
 
@@ -405,7 +406,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
                 r++;
             continue;
         }
-        
+
         // Ignore whitespace, CRLF and control characters when looking for the start of an opcode.
         if (*r <= 32 || *r >= 127)
         {
@@ -509,13 +510,13 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
                         buf[copy_size] = '\0';
 
                         std::stringstream ss;
-                        ss << path_to_string(path) <<
-                            static_cast<char>(fs::path::preferred_separator) << buf;
+                        ss << path_to_string(path)
+                           << static_cast<char>(fs::path::preferred_separator) << buf;
                         std::string test_path_str = ss.str();
                         std::replace(test_path_str.begin(), test_path_str.end(), '\\',
                                      static_cast<char>(fs::path::preferred_separator));
                         fs::path test_path = fs::absolute(string_to_path(test_path_str));
-                        
+
                         if (fs::exists(test_path) && !fs::is_directory(test_path))
                             is_sample = false;
                     }
@@ -529,7 +530,7 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
                         --w;
                         ++v;
                     }
-                    
+
                     copy_size = (w - v);
                     strncpy(buf, v, copy_size);
                     buf[copy_size] = '\0';
@@ -557,15 +558,15 @@ void parse_opcodes(sampler *s, const char *&r, const char *data_end, const fs::p
             // Once here, if parsing had failed then log an error.
             if (!parsed)
             {
-                LOGERROR(s->mLogger) << "Unexpected SFZ opcode-value pair: " << opcode << "="
-                                     << value << std::flush;
+                LOGERROR(s->mLogger)
+                    << "Unexpected SFZ opcode-value pair: " << opcode << "=" << value << std::flush;
             }
             else
             {
                 // Save the SFZ opcode=value pair
                 working_opcodes.insert({opcode, value});
             }
-            
+
             // move forward to the next opcode scan.
             r = w;
         }

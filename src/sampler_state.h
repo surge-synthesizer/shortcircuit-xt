@@ -8,6 +8,7 @@
 #pragma once
 
 #include "globals.h"
+#include <string>
 
 // timedata
 struct timedata
@@ -334,22 +335,22 @@ enum mm_curves
 const char mmc_abberations[mmc_num_types][8] = {
     "}x",
     "1-x",
-    "x²",
-    "x³",
-    "ŸŽ", // custom chars in font for sqrt(x)
-    "žŽ", // custom chars in font for cubert(x)
+    "xï¿½",
+    "xï¿½",
+    "ï¿½ï¿½", // custom chars in font for sqrt(x)
+    "ï¿½ï¿½", // custom chars in font for cubert(x)
     //"exp",
     "abs",
-    "+‚±",
-    "±‚+",
+    "+ï¿½ï¿½",
+    "ï¿½ï¿½+",
     "tri",
-    "tr±",
+    "trï¿½",
     "pos",
     "neg",
     ">0",
     "<0",
-    ">½",
-    "<½",
+    ">ï¿½",
+    "<ï¿½",
     "pol",
     //	"init",		never changes after attack
     "Q1",
@@ -365,7 +366,7 @@ const char mmc_abberations[mmc_num_types][8] = {
     "Q11",
     "Q12",
 };
-/*"clip","clip±",*/
+/*"clip","clipï¿½",*/
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -504,6 +505,10 @@ struct sample_zone
     int database_id;             // locator id for next/prev buttons
     unsigned int element_active; // optimization
 };
+
+// These I hope will bite the dust one day
+std::string debug_view(const sample_part &p);
+std::string debug_view(const sample_zone &p);
 
 //-------------------------------------------------------------------------------------------------------
 

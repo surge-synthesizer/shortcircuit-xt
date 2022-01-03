@@ -15,7 +15,7 @@ bool sample::parse_sf2_sample(void *data, size_t filesize, unsigned int sample_i
     size_t datasize;
     SC3::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('sfbk', &datasize))
-         return false;
+        return false;
 
     off_t startpos = mf.TellI(); // store for later use
     if (!mf.riff_descend_RIFF_or_LIST('pdta', &datasize))

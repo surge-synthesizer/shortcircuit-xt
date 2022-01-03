@@ -6,11 +6,11 @@
 #include "version.h"
 #include "infrastructure/logfile.h"
 
-class HeadlessLogger : public SC3::Log::LoggingCallback {
-    SC3::Log::Level getLevel() override {
-        return SC3::Log::Level::Debug;
-    }
-    void message(SC3::Log::Level lev, const std::string &msg) override {
+class HeadlessLogger : public SC3::Log::LoggingCallback
+{
+    SC3::Log::Level getLevel() override { return SC3::Log::Level::Debug; }
+    void message(SC3::Log::Level lev, const std::string &msg) override
+    {
         std::cout << SC3::Log::getShortLevelStr(lev) << msg << std::endl;
     }
 };

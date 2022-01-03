@@ -49,9 +49,9 @@ TEST_CASE("RIFF_MemFile", "[io]")
 
         size_t chunksize;
         int tag; //, LISTtag;
-        //bool IsLIST;
+        // bool IsLIST;
 
-        std::map<std::string,int> knownSizes;
+        std::map<std::string, int> knownSizes;
         knownSizes["fmt "] = 16;
         knownSizes["data"] = 2835688;
         knownSizes["LGWV"] = 2778;
@@ -69,8 +69,8 @@ TEST_CASE("RIFF_MemFile", "[io]")
             {
                 char rfD[5];
                 rmf.tagToFourCCStr(tag, rfD);
-                if( knownSizes.find(rfD) != knownSizes.end() )
-                    REQUIRE( chunksize == knownSizes[rfD]);
+                if (knownSizes.find(rfD) != knownSizes.end())
+                    REQUIRE(chunksize == knownSizes[rfD]);
                 if (strcmp(rfD, "data") == 0)
                     foundData = true;
                 rmf.RIFFSkipChunk();
@@ -80,7 +80,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
         delete[] data;
     }
 
-    SECTION( "Read an SF2 with an RMF" )
+    SECTION("Read an SF2 with an RMF")
     {
         auto p = string_to_path("resources/test_samples/harpsi.sf2");
         auto ifs = std::ifstream(p, std::ios::binary);
@@ -108,10 +108,10 @@ TEST_CASE("RIFF_MemFile", "[io]")
             REQUIRE(strcmp(rf, "RIFF") == 0);
             REQUIRE(((size_t)length - chunksize) == 8);
 
-            if( isList )
+            if (isList)
             {
                 char rl[5];
-                rmf.tagToFourCCStr(listTag, rl );
+                rmf.tagToFourCCStr(listTag, rl);
             }
 
             rmf.RIFFDescend();
@@ -119,7 +119,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
             {
                 char rfD[5];
                 rmf.tagToFourCCStr(tag, rfD);
-                if( std::string(rfD) == "LIST" )
+                if (std::string(rfD) == "LIST")
                 {
                     rmf.RIFFDescend();
                     while (rmf.RIFFPeekChunk(&tag, &chunksize))
@@ -134,7 +134,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
         delete[] data;
     }
 
-    SECTION( "riff descend search test" )
+    SECTION("riff descend search test")
     {
         auto p = string_to_path("resources/test_samples/harpsi.sf2");
         auto ifs = std::ifstream(p, std::ios::binary);
@@ -152,7 +152,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
         SC3::Memfile::RIFFMemFile rmf(data, length);
 
         size_t datasize;
-        REQUIRE( rmf.riff_descend_RIFF_or_LIST('sfbk', &datasize));
+        REQUIRE(rmf.riff_descend_RIFF_or_LIST('sfbk', &datasize));
 
         delete[] data;
     }
@@ -180,7 +180,8 @@ TEST_CASE("File Mapper", "[io]")
 
     SECTION("Mapper reads Test Data")
     {
-        auto mapper = std::make_unique<SC3::FileMapView>(string_to_path(std::string("resources/test_samples/not_audio.bin")));
+        auto mapper = std::make_unique<SC3::FileMapView>(
+            string_to_path(std::string("resources/test_samples/not_audio.bin")));
         REQUIRE(mapper);
         REQUIRE(mapper->isMapped());
 

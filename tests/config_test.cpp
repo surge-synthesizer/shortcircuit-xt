@@ -105,9 +105,9 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
     }
-    
+
 #else
-    SECTION("Unix/mac basic") 
+    SECTION("Unix/mac basic")
     {
         fs::path p("/my/path/filename.WAV>100|200");
 
@@ -118,24 +118,26 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(pathOnly.string().compare(std::string("/my/path")) == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
-
     }
 
-    SECTION("Unix/mac unicode filename") 
+    SECTION("Unix/mac unicode filename")
     {
-        fs::path p("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav>100|200");
+        fs::path p(
+            "resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav>100|200");
         decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
-        REQUIRE(out.compare("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav") == 0);
+        REQUIRE(
+            out.compare(
+                "resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav") ==
+            0);
         REQUIRE(ext.compare("wav") == 0);
         REQUIRE(nameOnly.compare("\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd") == 0);
         REQUIRE(pathOnly.compare("resources/test_samples") == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == 200);
-        
     }
 
     SECTION("Unix/mac path only")
-    {        
+    {
         fs::path p("/my/path/>100");
 
         decode_path(p, &out, &ext, &nameOnly, &pathOnly, &progid, &sampleid);
@@ -145,8 +147,8 @@ TEST_CASE("Decode Path", "[config]")
         REQUIRE(pathOnly.string().compare(std::string("/my/path")) == 0);
         REQUIRE(progid == 100);
         REQUIRE(sampleid == -1);
-    }        
- #endif
+    }
+#endif
 }
 
 TEST_CASE("Build Path", "[config]")
@@ -157,62 +159,63 @@ TEST_CASE("Build Path", "[config]")
     SECTION("Windows build")
     {
         fs::path p("c:\\my\\path");
-        auto out=build_path(p, "filename", "WAV");
-        REQUIRE(out.compare("c:\\my\\path\\filename.WAV") == 0);        
+        auto out = build_path(p, "filename", "WAV");
+        REQUIRE(out.compare("c:\\my\\path\\filename.WAV") == 0);
     }
 
-    SECTION("Windows wide") 
-    { 
-        fs::path p("resources\\test_samples");        
+    SECTION("Windows wide")
+    {
+        fs::path p("resources\\test_samples");
         auto out = build_path(p, "\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd", "wav");
         auto wideFn = out.generic_wstring();
-        REQUIRE(out.compare(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav") == 0); 
-
+        REQUIRE(out.compare(L"resources\\test_samples\\\u8072\u97f3\u4e0d\u597d.wav") == 0);
     }
 #endif
 }
 
-TEST_CASE("Resolve Path", "[config]") {
+TEST_CASE("Resolve Path", "[config]")
+{
     SC3::Log::StreamLogger sl(gLogger);
     configuration c(sl);
 
-    SECTION("relative") {
+    SECTION("relative")
+    {
         c.set_relative_path("/foo");
-        auto p=c.resolve_path(string_to_path("<relative>/bar"));
-        REQUIRE(p.string()==std::string("/foo/bar"));
+        auto p = c.resolve_path(string_to_path("<relative>/bar"));
+        REQUIRE(p.string() == std::string("/foo/bar"));
     }
 
 // unix only is case sensitive with paths
 #if !defined(_WIN32) && !defined(__APPLE__)
-    SECTION("Unix case sensitivity") {
-        auto p=c.resolve_path(string_to_path("resources/test_samples/akai_s6k/POWER SECT S.akp"));
-        REQUIRE(p.string()==std::string("resources/test_samples/akai_s6k/POWER SECT S.AKP"));
+    SECTION("Unix case sensitivity")
+    {
+        auto p = c.resolve_path(string_to_path("resources/test_samples/akai_s6k/POWER SECT S.akp"));
+        REQUIRE(p.string() == std::string("resources/test_samples/akai_s6k/POWER SECT S.AKP"));
     }
 #endif
 }
 
-
-TEST_CASE("Save/Load configuration", "[config]") {
+TEST_CASE("Save/Load configuration", "[config]")
+{
     SC3::Log::StreamLogger sl(gLogger);
-    
+
     auto tempFn = fs::temp_directory_path();
     tempFn /= "_sc3_test_config.xml";
-    
-    SECTION("save") { 
+
+    SECTION("save")
+    {
         configuration c(sl);
         c.stereo_outputs = 99;
         REQUIRE(c.save(tempFn));
         REQUIRE(fs::exists(tempFn));
     }
 
-    SECTION("load") { 
+    SECTION("load")
+    {
         configuration c(sl);
         REQUIRE(c.load(tempFn));
         REQUIRE(c.stereo_outputs == 99);
     }
 
-    SECTION("Cleanup") { 
-        fs::remove(tempFn); 
-    }
-
+    SECTION("Cleanup") { fs::remove(tempFn); }
 }

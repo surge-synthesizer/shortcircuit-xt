@@ -38,7 +38,7 @@ bool configuration::load(const fs::path &filename)
 {
     auto fn = mConfFilename;
     if (!filename.empty())
-    {   
+    {
         fn = filename;
         mConfFilename = filename;
     }
@@ -115,7 +115,7 @@ bool configuration::save(const fs::path &filename)
         fn = filename;
         mConfFilename = filename;
     }
-        
+
     TiXmlDeclaration decl("1.0", "UTF-8", "yes");
 
     TiXmlDocument doc(path_to_string(fn)); // wants utf8
@@ -175,23 +175,24 @@ fs::path configuration::resolve_path(const fs::path &in)
     auto r = std::regex_replace(s, std::regex("<relative>"), path_to_string(mRelative));
     auto p = string_to_path(r);
     // try to stat the file and if we can't get to it, it's possible we are on unix and the file
-    // extension is in uppercase 
+    // extension is in uppercase
     // since we build filenames with lowercase extensions, and all other filenames are coming
     // from the outer world (so presumably will be correct) we only need to try uppercase
     // it's possible that the ext may be mixed case, but not bothering right now
 #if !defined(_WIN32) && !defined(__APPLE__)
     std::error_code ec;
-    if(!exists(p, ec)) {
-        
+    if (!exists(p, ec))
+    {
+
         std::string ext, name;
         fs::path pathOnly;
-    
-        decode_path(p, 0,&ext,&name,&pathOnly);
-        std::transform((ext).begin(), (ext).end(), (ext).begin(),
-                        ::toupper);
 
-        auto test=build_path(pathOnly, name, ext);
-        if(exists(test, ec)) {
+        decode_path(p, 0, &ext, &name, &pathOnly);
+        std::transform((ext).begin(), (ext).end(), (ext).begin(), ::toupper);
+
+        auto test = build_path(pathOnly, name, ext);
+        if (exists(test, ec))
+        {
             return test;
         }
     }
@@ -199,18 +200,15 @@ fs::path configuration::resolve_path(const fs::path &in)
     return p;
 }
 
-void configuration::set_relative_path(const fs::path &in) 
-{ 
-    mRelative = in; 
-}
+void configuration::set_relative_path(const fs::path &in) { mRelative = in; }
 
-void decode_path(const fs::path &in, fs::path *out, std::string *extension,
-    std::string *name_only, fs::path *path_only, int *program_id, int *sample_id)
+void decode_path(const fs::path &in, fs::path *out, std::string *extension, std::string *name_only,
+                 fs::path *path_only, int *program_id, int *sample_id)
 {
     if (path_only)
     {
 
-        *path_only = in;       
+        *path_only = in;
         if (path_only->has_filename())
         {
             path_only->remove_filename();
@@ -235,7 +233,7 @@ void decode_path(const fs::path &in, fs::path *out, std::string *extension,
         *program_id = -1;
 
     auto tmp = path_to_string(in);
-    
+
     // get and strip off program/sample id if available
     const char *separator = strrchr(tmp.c_str(), '|');
     if (separator)
@@ -271,28 +269,25 @@ void decode_path(const fs::path &in, fs::path *out, std::string *extension,
                            ::tolower);
         }
         // strip it off
-        no = no.substr(0, separator - no.c_str());    
+        no = no.substr(0, separator - no.c_str());
     }
 
     if (name_only)
     {
         *name_only = no;
     }
-    
 
     if (out)
         *out = string_to_path(tmp);
-
 }
 
-fs::path build_path(const fs::path &in, const std::string &filename,
-                const std::string &ext)
+fs::path build_path(const fs::path &in, const std::string &filename, const std::string &ext)
 {
     std::string s = path_to_string(in);
-    
+
     if (s.back() != static_cast<char>(fs::path::preferred_separator))
     {
-        s.push_back(static_cast<char>(fs::path::preferred_separator));        
+        s.push_back(static_cast<char>(fs::path::preferred_separator));
     }
     s.append(filename);
     if (ext.length())

@@ -83,12 +83,10 @@ void ActionRunner::comboBoxChanged(ComboBox *comboBoxThatHasChanged)
     if (id > 0)
     {
         mDescription->setText(mItems[id - 1]->mDescription, NotificationType::dontSendNotification);
-        mParameters->setText(mItems[id-1]->mDefaultParameter, dontSendNotification);
+        mParameters->setText(mItems[id - 1]->mDefaultParameter, dontSendNotification);
     }
 }
-ActionRunner::~ActionRunner() {
-    unregisterScratchPadItems(mItems);
-}
+ActionRunner::~ActionRunner() { unregisterScratchPadItems(mItems); }
 DebugPanel::DebugPanel() : Component("Debug Panel")
 {
     // sampler state window

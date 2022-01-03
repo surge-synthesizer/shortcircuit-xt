@@ -23,13 +23,14 @@
 #include <algorithm>
 #include "infrastructure/profiler.h"
 
-
-const int WAVE_MARGIN = 6; // margin around wave display in pixels
+const int WAVE_MARGIN = 6;      // margin around wave display in pixels
 const int WAVE_CHANNEL_GAP = 4; // gap between channels
 
 static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2);
 
-WaveDisplay::WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger) : mSender(sender) , mLogger(logger), prof(logger, "Wave Display Paint"){
+WaveDisplay::WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger)
+    : mSender(sender), mLogger(logger), prof(logger, "Wave Display Paint")
+{
     dispmode = 0;
     mSamplePtr = 0;
     mZoom = 1;
@@ -38,24 +39,25 @@ WaveDisplay::WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger
     mLeftMostSample = 0;
     n_hitpoints = 0;
 
-    calc_aatable(aatable[0],0xFFFFFFFF,0xFF000000);
-    calc_aatable(aatable[1],0xFF000000,0xFFFFFF);
-    calc_aatable(aatable[2],0xff4ea1f3,0xff000000);
+    calc_aatable(aatable[0], 0xFFFFFFFF, 0xFF000000);
+    calc_aatable(aatable[1], 0xFF000000, 0xFFFFFF);
+    calc_aatable(aatable[2], 0xff4ea1f3, 0xff000000);
 
     // Todo as enable once we have it
-    //for(int i=0; i<7; i++)	bmpdata[i] = owner->get_art(vgct_waveedit,0,i);
+    // for(int i=0; i<7; i++)	bmpdata[i] = owner->get_art(vgct_waveedit,0,i);
 
     // todo e refers to xml element
-    //restore_data(e);
+    // restore_data(e);
 }
-void WaveDisplay::resized() {
+void WaveDisplay::resized()
+{
 
     // actual wave dimensions we'll be drawing in and using for calculations
     mWaveBounds = getLocalBounds().reduced(WAVE_MARGIN, WAVE_MARGIN);
 
     mNumVisiblePixels = mWaveBounds.getWidth() - 2;
 
-    queue_draw_wave(false,false);
+    queue_draw_wave(false, false);
 }
 
 void WaveDisplay::paint(Graphics &g)
@@ -63,17 +65,20 @@ void WaveDisplay::paint(Graphics &g)
 
     prof.enter();
     Rectangle<int> r = getLocalBounds();
-    g.setColour( juce::Colours::darkgrey); // background color for entire control (wave bg is separate)
+    g.setColour(
+        juce::Colours::darkgrey); // background color for entire control (wave bg is separate)
     g.fillRect(r);
 
-    switch(dispmode)
+    switch (dispmode)
     {
     case 0:
-        if(!mSamplePtr) {
+        if (!mSamplePtr)
+        {
             g.setColour(juce::Colours::white); // foreground color for text
-            g.drawText("No sample.",r,
-                       Justification::horizontallyCentred|Justification::verticallyCentred );
-        } else
+            g.drawText("No sample.", r,
+                       Justification::horizontallyCentred | Justification::verticallyCentred);
+        }
+        else
         {
             // render the wave to mWavePixels if need be
             if (!draw_skip_wave_redraw)
@@ -91,17 +96,15 @@ void WaveDisplay::paint(Graphics &g)
             prof.enter();
             drawDetails(g, r);
             prof.exit("add details");
-
-
         }
         break;
     case 1:
         // multiple zones selected
-    {
-        g.setColour(juce::Colours::white); // foreground color for text
-        g.drawText("Multiple zones selected. Changes will be applied to all of them.",r,
-                   Justification::horizontallyCentred|Justification::verticallyCentred );
-    }
+        {
+            g.setColour(juce::Colours::white); // foreground color for text
+            g.drawText("Multiple zones selected. Changes will be applied to all of them.", r,
+                       Justification::horizontallyCentred | Justification::verticallyCentred);
+        }
         break;
     case 2:
         // filter/EG plot
@@ -113,13 +116,14 @@ void WaveDisplay::paint(Graphics &g)
 }
 
 // this is called when the sampler is sending out a broadcast
-bool WaveDisplay::processActionData(const actiondata &ad) {
+bool WaveDisplay::processActionData(const actiondata &ad)
+{
     bool res = false;
     if (!std::holds_alternative<VAction>(ad.actiontype))
         return false;
 
     auto at = std::get<VAction>(ad.actiontype);
-    if(at == vga_wavedisp_sample)
+    if (at == vga_wavedisp_sample)
     {
         auto e = (const ActionWaveDisplaySample &)(ad);
         bool same_sample = (mSamplePtr == e.samplePtr()) && (dispmode == 0);
@@ -134,12 +138,13 @@ bool WaveDisplay::processActionData(const actiondata &ad) {
         markerpos[ActionWaveDisplayEditPoint::PointType::loopXFade] = e.loopCrossfade();
         n_hitpoints = e.numHitpoints();
 
-        if(mSamplePtr)
+        if (mSamplePtr)
         {
             // calculate the max amount we can zoom out (higher value is more zoomed out)
-            float ratio = std::max(1.f,float(mSamplePtr->sample_length)/float(mNumVisiblePixels));
-            mZoomMax = (int) ceil(ratio);
-            if(same_sample)
+            float ratio =
+                std::max(1.f, float(mSamplePtr->sample_length) / float(mNumVisiblePixels));
+            mZoomMax = (int)ceil(ratio);
+            if (same_sample)
             {
                 mZoom = std::min(mZoom, mZoomMax);
             }
@@ -151,17 +156,17 @@ bool WaveDisplay::processActionData(const actiondata &ad) {
                 mVerticalZoom = 1.f;
             }
         }
-        queue_draw_wave(false,false);
+        queue_draw_wave(false, false);
     }
-    if(at == vga_wavedisp_editpoint)
+    if (at == vga_wavedisp_editpoint)
     {
         auto e = (const ActionWaveDisplayEditPoint &)(ad);
         markerpos[e.dragId()] = e.samplePos();
 
         // todo do we really need a full redraw here?
-        queue_draw_wave(false,false);
+        queue_draw_wave(false, false);
     }
-    else if(at == vga_wavedisp_multiselect)
+    else if (at == vga_wavedisp_multiselect)
     {
         dispmode = 1;
         repaint();
@@ -185,19 +190,22 @@ void WaveDisplay::queue_draw_wave(bool be_quick, bool skip_wave_redraw)
 // calculate anti-alias tables
 static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2)
 {
-    for(int i=0; i<256; i++)
+    for (int i = 0; i < 256; i++)
     {
-        float x = i*(1.f/255.f);
+        float x = i * (1.f / 255.f);
         int c[4];
         float f[4];
 
-        f[0] = (1-x)*powf((col1&0xff)*(1.f/255.f),1/2.2f) + x*powf((col2&0xff)*(1.f/255.f),1/2.2f);
-        f[1] = (1-x)*powf(((col1>>8)&0xff)*(1.f/255.f),1/2.2f) + x*powf(((col2>>8)&0xff)*(1.f/255.f),1/2.2f);
-        f[2] = (1-x)*powf(((col1>>16)&0xff)*(1.f/255.f),1/2.2f) + x*powf(((col2>>16)&0xff)*(1.f/255.f),1/2.2f);
-        c[0] = std::max(0,std::min(255,(int)(255.f*f[0])));
-        c[1] = std::max(0,std::min(255,(int)(255.f*f[1])));
-        c[2] = std::max(0,std::min(255,(int)(255.f*f[2])));
-        tbl[i] = 0xff000000 | (c[2]<<16) | (c[1]<<8) | c[0];
+        f[0] = (1 - x) * powf((col1 & 0xff) * (1.f / 255.f), 1 / 2.2f) +
+               x * powf((col2 & 0xff) * (1.f / 255.f), 1 / 2.2f);
+        f[1] = (1 - x) * powf(((col1 >> 8) & 0xff) * (1.f / 255.f), 1 / 2.2f) +
+               x * powf(((col2 >> 8) & 0xff) * (1.f / 255.f), 1 / 2.2f);
+        f[2] = (1 - x) * powf(((col1 >> 16) & 0xff) * (1.f / 255.f), 1 / 2.2f) +
+               x * powf(((col2 >> 16) & 0xff) * (1.f / 255.f), 1 / 2.2f);
+        c[0] = std::max(0, std::min(255, (int)(255.f * f[0])));
+        c[1] = std::max(0, std::min(255, (int)(255.f * f[1])));
+        c[2] = std::max(0, std::min(255, (int)(255.f * f[2])));
+        tbl[i] = 0xff000000 | (c[2] << 16) | (c[1] << 8) | c[0];
     }
 }
 
@@ -215,8 +223,7 @@ void WaveDisplay::renderWave(bool quick)
     // gain access to the raw pixels which we'll be modifying
     uint32 *img = (unsigned int *)pixelsBmp.data;
 
-
-    //float fratio = (float)(s->sample_length) / (float)(imgw);
+    // float fratio = (float)(s->sample_length) / (float)(imgw);
     int ratio = mZoom;
 
     unsigned int column[2048];
@@ -236,8 +243,10 @@ void WaveDisplay::renderWave(bool quick)
         aa_p2 = 0;
         sample_inc = ratio;
         n_samples = 1;
-    } else {
-        sample_inc= std::max(1, ratio / maxSamples);
+    }
+    else
+    {
+        sample_inc = std::max(1, ratio / maxSamples);
         n_samples = ratio / sample_inc;
     }
 
@@ -326,7 +335,8 @@ void WaveDisplay::renderWave(bool quick)
 
                     int cpos = pos + sp;
                     // was commented:
-                    // if (pm_has_loop(playmode)&&(cpos >= loop_start)&&(cpos < loop_end)) aaidx = 2;
+                    // if (pm_has_loop(playmode)&&(cpos >= loop_start)&&(cpos < loop_end)) aaidx =
+                    // 2;
                     float val;
                     if (mSamplePtr->UseInt16)
                     {
@@ -398,21 +408,16 @@ void WaveDisplay::renderWave(bool quick)
         }
     }
     prof.exit("main draw loop");
-
-
 }
 
 // convert sample position to pixel position
 int WaveDisplay::samplePosToPixelPos(int sample)
 {
-    return ((sample- mLeftMostSample)/std::max(0,mZoom));
+    return ((sample - mLeftMostSample) / std::max(0, mZoom));
 }
 
 // untested! note that there is WAVE_MARGIN that needs to be accounted for
-int WaveDisplay::pixelPosToSamplePos(int pos)
-{
-    return pos*mZoom + mLeftMostSample;
-}
+int WaveDisplay::pixelPosToSamplePos(int pos) { return pos * mZoom + mLeftMostSample; }
 
 // draw the start/end/loop pos etc.
 // bounds here is entire area
@@ -430,17 +435,16 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
     lmcol_faint = lmcol_faint.withAlpha(
         (uint8)100); // TODO I think we need alpha on this so it doesn't obscure the wave
 
-
     int imgw = bounds.getWidth();
     int imgh = bounds.getHeight();
 
     for (int i = 0; i < 256; i++) // TODO constant here
         dragpoint[i] = Rectangle<int>(0, 0, 0, 0);
 
-    int waveLeft=mWaveBounds.getX();
-    int waveTop=mWaveBounds.getY();
-    int waveHeight=mWaveBounds.getHeight();
-    int waveWidth=mWaveBounds.getWidth();
+    int waveLeft = mWaveBounds.getX();
+    int waveTop = mWaveBounds.getY();
+    int waveHeight = mWaveBounds.getHeight();
+    int waveWidth = mWaveBounds.getWidth();
 
     if (pm_has_loop(playmode))
     {
@@ -448,32 +452,31 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         int x1 = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::loopStart]);
         int x2 = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::loopEnd]);
 
-
-        Rectangle<int> tr(x1+waveLeft, waveTop, x2 - x1, waveHeight);
+        Rectangle<int> tr(x1 + waveLeft, waveTop, x2 - x1, waveHeight);
         // ensure that it stays within our bounds (not that I think it matters)
         bounds.intersectRectangle(tr);
         g.setColour(lmcol_faint);
         g.fillRect(tr);
 
         dragpoint[2] = Rectangle<int>(0, 0, 13, 13);
-        dragpoint[2].setCentre(x1+waveLeft, waveTop+waveHeight);
+        dragpoint[2].setCentre(x1 + waveLeft, waveTop + waveHeight);
 
         // draw vertical line and icon for left loop marker
         if ((x1 >= 0) && (x1 < waveWidth))
         {
             g.setColour(lmcol);
-            g.drawRect(x1+waveLeft, 0, 1, imgh-1);
+            g.drawRect(x1 + waveLeft, 0, 1, imgh - 1);
 
             // TODO need to pull in this bitmap data
             // surf.blit_alphablend(dragpoint[2],bmpdata[2]);
         }
 
         dragpoint[3] = Rectangle<int>(0, 0, 13, 13);
-        dragpoint[3].setCentre(x2+waveLeft, waveTop+waveHeight);
+        dragpoint[3].setCentre(x2 + waveLeft, waveTop + waveHeight);
         if ((x2 >= 0) && (x2 < waveWidth))
         {
             g.setColour(lmcol);
-            g.drawRect(x2+waveLeft, 0, 1, imgh-1);
+            g.drawRect(x2 + waveLeft, 0, 1, imgh - 1);
             // TODO need to pull in this bitmap data
             // surf.blit_alphablend(dragpoint[3],bmpdata[3]);
         }
@@ -485,24 +488,26 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         int x = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::start]);
 
         dragpoint[0] = Rectangle<int>(0, 0, 13, 13);
-        dragpoint[0].setCentre(x+waveLeft, waveTop);
+        dragpoint[0].setCentre(x + waveLeft, waveTop);
         if ((x >= 0) && (x < waveWidth))
         {
             g.setColour(zmcol);
-            g.drawRect(x+waveLeft,0,1,imgh-1);
-            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_start_png, SCXTImages::wavehandle_start_pngSize);
-            g.drawImageAt(img, x+waveLeft - (img.getWidth()/2),0);
+            g.drawRect(x + waveLeft, 0, 1, imgh - 1);
+            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_start_png,
+                                                 SCXTImages::wavehandle_start_pngSize);
+            g.drawImageAt(img, x + waveLeft - (img.getWidth() / 2), 0);
         }
 
         x = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::end]);
         dragpoint[1] = Rectangle<int>(0, 0, 13, 13);
-        dragpoint[1].setCentre(x+waveLeft,waveTop);
+        dragpoint[1].setCentre(x + waveLeft, waveTop);
         if ((x >= 0) && (x < waveWidth))
         {
             g.setColour(zmcol);
-            g.drawRect(x+waveLeft,0,1,imgh-1);
-            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_end_png, SCXTImages::wavehandle_end_pngSize);
-            g.drawImageAt(img, x+waveLeft - (img.getWidth()/2),0);
+            g.drawRect(x + waveLeft, 0, 1, imgh - 1);
+            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_end_png,
+                                                 SCXTImages::wavehandle_end_pngSize);
+            g.drawImageAt(img, x + waveLeft - (img.getWidth() / 2), 0);
         }
     }
     else
@@ -510,15 +515,18 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         // have slices. draw each
         for (int i = 0; i < n_hitpoints; i++)
         {
-            int x1 = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::hitPointStart + i]);
-            dragpoint[ActionWaveDisplayEditPoint::PointType::hitPointStart + i] = Rectangle<int>(0, 0, 13, 13);
-            dragpoint[ActionWaveDisplayEditPoint::PointType::hitPointStart + i].setCentre(x1, imgh - 1);
+            int x1 = samplePosToPixelPos(
+                markerpos[ActionWaveDisplayEditPoint::PointType::hitPointStart + i]);
+            dragpoint[ActionWaveDisplayEditPoint::PointType::hitPointStart + i] =
+                Rectangle<int>(0, 0, 13, 13);
+            dragpoint[ActionWaveDisplayEditPoint::PointType::hitPointStart + i].setCentre(x1,
+                                                                                          imgh - 1);
             if ((x1 >= 0) && (x1 < imgw))
             {
                 g.setColour(juce::Colour(0xffbc4e03));
-                g.drawRect(x1,0,1,imgh-1);
+                g.drawRect(x1, 0, 1, imgh - 1);
                 // TODO
-                //surf.blit_alphablend(dragpoint[hitPointStart + i], bmpdata[5]);
+                // surf.blit_alphablend(dragpoint[hitPointStart + i], bmpdata[5]);
             }
         }
     }
@@ -537,43 +545,44 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
             surf.draw_text_multiline(rt,text,owner->get_syscolor(col_standard_text),1,1);
     }*/
 }
-void WaveDisplay::mouseDrag(const MouseEvent &event) {
-    if (controlstate==cs_pan) {
+void WaveDisplay::mouseDrag(const MouseEvent &event)
+{
+    if (controlstate == cs_pan)
+    {
         sample *so = mSamplePtr;
-        if(so)
+        if (so)
         {
-            if(event.mods.isShiftDown() )
+            if (event.mods.isShiftDown())
             {
                 mVerticalZoom -= 0.1 * (event.y - mZoomPanOffset.y);
-                mVerticalZoom = std::max(1.f,mVerticalZoom);
+                mVerticalZoom = std::max(1.f, mVerticalZoom);
             }
             else
             {
-                //TODO  note that in this algo, the panning doesn't exactly match the mouse pos
-                //  need to fix
+                // TODO  note that in this algo, the panning doesn't exactly match the mouse pos
+                //   need to fix
                 float movemult = 2.f;
                 if (event.mods.isRightButtonDown())
                     movemult = 8.f;
                 mLeftMostSample -= (event.x - mZoomPanOffset.x) * mZoom * movemult;
-                mLeftMostSample = std::min(mLeftMostSample,
-                                           (int)so->sample_length - mZoom * mNumVisiblePixels);
+                mLeftMostSample =
+                    std::min(mLeftMostSample, (int)so->sample_length - mZoom * mNumVisiblePixels);
                 mLeftMostSample = std::max(0, mLeftMostSample);
-
             }
 
             mZoomPanOffset = event.getPosition();
-
         }
-        queue_draw_wave(true,false);
-    } else if(controlstate==cs_dragpoint)
+        queue_draw_wave(true, false);
+    }
+    else if (controlstate == cs_dragpoint)
     {
         sample *so = mSamplePtr;
-        if(so)
+        if (so)
         {
-            int s = pixelPosToSamplePos(event.x+WAVE_MARGIN);
-            s = limit_range(s,0,(int)(so->sample_length));
+            int s = pixelPosToSamplePos(event.x + WAVE_MARGIN);
+            s = limit_range(s, 0, (int)(so->sample_length));
             markerpos[dragid] = s;
-            queue_draw_wave(false,true);
+            queue_draw_wave(false, true);
             repaint();
             // TODO use our wrapper
             actiondata ad;
@@ -581,23 +590,23 @@ void WaveDisplay::mouseDrag(const MouseEvent &event) {
             ad.data.i[0] = dragid;
             ad.data.i[1] = s;
             mSender->sendActionToEngine(ad);
-
         }
     }
 }
 
-void WaveDisplay::mouseDown(const MouseEvent &event) {
+void WaveDisplay::mouseDown(const MouseEvent &event)
+{
 
-    auto mp=event.getMouseDownPosition();
+    auto mp = event.getMouseDownPosition();
     // this will be updated as we are dragging
-    mZoomPanOffset=mp;
+    mZoomPanOffset = mp;
 
-    for(int i=0; i<(5+n_hitpoints); i++)
+    for (int i = 0; i < (5 + n_hitpoints); i++)
     {
-        if(dragpoint[i].contains(mp))
+        if (dragpoint[i].contains(mp))
         {
             controlstate = cs_dragpoint;
-            //owner->take_focus(control_id);
+            // owner->take_focus(control_id);
 
             dragid = i;
             return;
@@ -605,11 +614,12 @@ void WaveDisplay::mouseDown(const MouseEvent &event) {
     }
     // did not click on a line, so we are in pan mode
     controlstate = cs_pan;
-    //owner->take_focus(control_id);
-    //owner->show_mousepointer(false);
+    // owner->take_focus(control_id);
+    // owner->show_mousepointer(false);
 
     vzoom_drag = mVerticalZoom;
-    if (vzoom_drag < 1.01f) vzoom_drag = -2;
+    if (vzoom_drag < 1.01f)
+        vzoom_drag = -2;
 
 #if 0
     //TODO context menu
@@ -653,15 +663,14 @@ ad.actiontype = vga_menu;
 owner->post_action(ad,0);
 }
 #endif
-
 }
 
-
-void WaveDisplay::mouseUp(const MouseEvent &event) {
+void WaveDisplay::mouseUp(const MouseEvent &event)
+{
 
     // temporarily use this for zoom in or out (left click/right click)
     // until we have a better way
-    if(event.mouseWasClicked())
+    if (event.mouseWasClicked())
     {
         int oldsample = pixelPosToSamplePos(event.x + WAVE_MARGIN);
 
@@ -670,8 +679,7 @@ void WaveDisplay::mouseUp(const MouseEvent &event) {
         else
             mZoom = std::max(1, mZoom >> 1);
 
-
-        mLeftMostSample -= pixelPosToSamplePos(event.x+WAVE_MARGIN) - oldsample;
+        mLeftMostSample -= pixelPosToSamplePos(event.x + WAVE_MARGIN) - oldsample;
         sample *so = mSamplePtr;
         if (so)
             mLeftMostSample =
@@ -679,13 +687,14 @@ void WaveDisplay::mouseUp(const MouseEvent &event) {
         mLeftMostSample = std::max(0, mLeftMostSample);
 
         queue_draw_wave(false, false);
-    } else {
-        // TODO Technically there is another state we should detect: mouse up without click (clicked, didn't drag, let go)
+    }
+    else
+    {
+        // TODO Technically there is another state we should detect: mouse up without click
+        // (clicked, didn't drag, let go)
         queue_draw_wave(false, false);
     }
-    controlstate=cs_default;
-
-
+    controlstate = cs_default;
 }
 void WaveDisplay::mouseEnter(const MouseEvent &event) { Component::mouseEnter(event); }
 void WaveDisplay::mouseExit(const MouseEvent &event) { Component::mouseExit(event); }
@@ -709,11 +718,12 @@ if(e.eventtype == vget_mousewheel)
 #endif
 
 // this should be used to change the mouse cursor
-void WaveDisplay::mouseMove(const MouseEvent &event) {
-    auto mp=event.getPosition();
-    for(int i=0; i<(5+n_hitpoints); i++)
+void WaveDisplay::mouseMove(const MouseEvent &event)
+{
+    auto mp = event.getPosition();
+    for (int i = 0; i < (5 + n_hitpoints); i++)
     {
-        if(dragpoint[i].contains(mp))
+        if (dragpoint[i].contains(mp))
         {
             setMouseCursor(MouseCursor::LeftRightResizeCursor);
             return;

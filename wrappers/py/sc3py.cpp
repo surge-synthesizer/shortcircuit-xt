@@ -23,11 +23,10 @@ struct SC3PY : public sampler
     void playNotePy(int ch, int note, int vel) { PlayNote(ch, note, vel); }
     void releaseNotePy(int ch, int note, int vel) { ReleaseNote(ch, note, vel); }
 
-    py::array_t<float> getOutput( )
+    py::array_t<float> getOutput()
     {
-        return py::array_t<float> ({{ 2, (long)block_size }},
-                                   { 2* sizeof(float), sizeof(float)},
-                                   (const float*)( & output[0][0] ) );
+        return py::array_t<float>({{2, (long)block_size}}, {2 * sizeof(float), sizeof(float)},
+                                  (const float *)(&output[0][0]));
     }
 };
 
@@ -50,8 +49,8 @@ PYBIND11_MODULE(shortcircuit3py, m)
     py::class_<SC3PY>(m, "ShortcircuitXTSampler")
         .def("loadFileSimple", &SC3PY::loadFileFullKeyboard)
 
-        .def( "process_audio", &SC3PY::process_audio )
-        .def( "getOutput", &SC3PY::getOutput )
+        .def("process_audio", &SC3PY::process_audio)
+        .def("getOutput", &SC3PY::getOutput)
 
         .def("playNote", &SC3PY::playNotePy)
         .def("releaseNote", &SC3PY::releaseNotePy);

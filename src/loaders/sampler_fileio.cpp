@@ -92,8 +92,8 @@ bool sampler::is_multisample_extension(const std::string &extension)
     return true;
 }
 
-bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool *is_group, char channel,
-                        int add_zones_to_groupid, bool replace)
+bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool *is_group,
+                        char channel, int add_zones_to_groupid, bool replace)
 {
     LOGDEBUG(mLogger) << "load_file " << file_name.string() << std::flush;
 
@@ -101,10 +101,10 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
     fs::path validFileName;
     int programid = 0;
     int sampleid = 0;
-    std::string extension, nameOnly;    
+    std::string extension, nameOnly;
     fs::path pathOnly;
 
-    decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid );
+    decode_path(file_name, &validFileName, &extension, &nameOnly, &pathOnly, &programid, &sampleid);
 
     if (!is_multisample_extension(extension))
     {
@@ -251,8 +251,10 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
     element.Attribute("hi_vel_fade", &i);
     zone->velocity_high_fade = i;
 
-    // element.Attribute("part",&i);				zone->part = i;		// don't store (stored in the parent
-    // instead)
+    // element.Attribute("part",&i);
+    // zone->part = i;
+    // don't store (stored in the
+    // parent instead)
     element.Attribute("output", &i);
     zone->aux[0].output = i;
     if (element.QueryIntAttribute("aux_output", &i) == TIXML_SUCCESS)
@@ -1106,7 +1108,7 @@ string recursive_search(string filename, string path)
 {
     // returns the path of the filename i think. Since we haven't got enough running
     // to test this let me leave a log message in and a warning
-#if ! WINDOWS
+#if !WINDOWS
 #warning Compiling untested rewrite of recursive_search
 #endif
 
@@ -1114,11 +1116,11 @@ string recursive_search(string filename, string path)
     auto p = string_to_path(path);
     auto f = string_to_path(filename);
 
-    for( auto & ent : fs::recursive_directory_iterator(p))
+    for (auto &ent : fs::recursive_directory_iterator(p))
     {
         auto dp = fs::path(ent);
         auto fn = dp.filename();
-        if( fn.compare(f)==0 )
+        if (fn.compare(f) == 0)
         {
             return path_to_string(dp);
         }
@@ -1153,7 +1155,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
     {
         // wants utf8
         if (!doc.LoadFile(path_to_string(filename).c_str()))
-            return false;        
+            return false;
         // assign path to configuration
         conf->set_relative_path(filename);
     }
@@ -1217,7 +1219,8 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
                         *(c + 4) = '|';
                 }
                 is_loaded = get_sample_id(
-                    string_to_path(samplefname), &sample_id); // ATTENTION !! gets fuck-up if filename does not exist (?)
+                    string_to_path(samplefname),
+                    &sample_id); // ATTENTION !! gets fuck-up if filename does not exist (?)
 
                 if (is_loaded)
                 {
@@ -1313,7 +1316,6 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
 #else
 #warning Substantial part of unimplemented UI code to prompt being skipped
 #endif
-
                         }
 
                         if (newpath.size() && subsamplename[0])
@@ -1344,8 +1346,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
 }
 
 bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &filename,
-                                    bool replace,
-                                    int part_id)
+                                    bool replace, int part_id)
 {
     int revision;
     //	double d;
@@ -1421,7 +1422,8 @@ bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &fi
                         *(c + 4) = '|';
                 }
                 is_loaded = get_sample_id(
-                    string_to_path(samplefname), &sample_id); // ATTENTION!! will be fuck-up if filename does not exist (?)
+                    string_to_path(samplefname),
+                    &sample_id); // ATTENTION!! will be fuck-up if filename does not exist (?)
 
                 if (is_loaded)
                 {

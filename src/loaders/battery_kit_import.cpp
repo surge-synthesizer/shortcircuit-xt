@@ -53,9 +53,9 @@ bool sampler::load_battery_kit(const fs::path &fileName, char channel, bool repl
         TiXmlElement *samplefile = (TiXmlElement *)slot->FirstChild("Sample");
         while (samplefile)
         {
-            fs::path fn=build_path(path, samplefile->Attribute("file") );
+            fs::path fn = build_path(path, samplefile->Attribute("file"));
             int newzone;
-            
+
             if (add_zone(fn, &newzone, channel))
             {
                 double dval;

@@ -17,62 +17,52 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 #ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+LANGUAGE LANG_ENGLISH,
+    SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 #endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
+    /////////////////////////////////////////////////////////////////////////////
+    //
+    // TEXTINCLUDE
+    //
+
+    1 TEXTINCLUDE BEGIN "resource.h\0" END
+
+    2 TEXTINCLUDE BEGIN "#include "
+                        "afxres.h"
+                        "\r\n"
+                        "\0" END
+
+    3 TEXTINCLUDE BEGIN "\r\n"
+                        "\0" END
+
+#endif // APSTUDIO_INVOKED
+
+#endif // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Swedish resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_SVE)
 #ifdef _WIN32
-LANGUAGE LANG_SWEDISH, SUBLANG_DEFAULT
+                            LANGUAGE LANG_SWEDISH,
+    SUBLANG_DEFAULT
 #pragma code_page(1252)
 #endif //_WIN32
 
+        /////////////////////////////////////////////////////////////////////////////
+        //
+        // Cursor
+        //
+
+        IDC_CURSOR1 CURSOR "arrowcopy.cur" IDC_CURSOR2 CURSOR "arrowhmove.cur" IDC_CURSOR3 CURSOR
+                           "arrowvmove.cur" IDC_CURSOR4 CURSOR "zoomin.cur" IDC_CURSOR5 CURSOR
+                           "zoomout.cur"
+#endif // Swedish resources
 /////////////////////////////////////////////////////////////////////////////
-//
-// Cursor
-//
-
-IDC_CURSOR1             CURSOR                  "arrowcopy.cur"
-IDC_CURSOR2             CURSOR                  "arrowhmove.cur"
-IDC_CURSOR3             CURSOR                  "arrowvmove.cur"
-IDC_CURSOR4             CURSOR                  "zoomin.cur"
-IDC_CURSOR5             CURSOR                  "zoomout.cur"
-#endif    // Swedish resources
-/////////////////////////////////////////////////////////////////////////////
-
-
 
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -80,7 +70,5 @@ IDC_CURSOR5             CURSOR                  "zoomout.cur"
 // Generated from the TEXTINCLUDE 3 resource.
 //
 
-
 /////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
-
+#endif // not APSTUDIO_INVOKED

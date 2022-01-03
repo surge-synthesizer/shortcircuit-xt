@@ -19,32 +19,31 @@
 #define __SC3_LOGGING_H
 #include <string>
 
-namespace SC3::Log {
+namespace SC3::Log
+{
 
-enum class Level {
-    None=0, // turn off logging
+enum class Level
+{
+    None = 0, // turn off logging
     Error,
     Warning,
     Info,
     Debug
 };
 
-
-class LoggingCallback {
-public:
-    // These functions may be called from a separate thread. Implementers responsibility to 
+class LoggingCallback
+{
+  public:
+    // These functions may be called from a separate thread. Implementers responsibility to
     // do any synchronization necessary.
-    
+
     // highest desired logging level. higher values will be filtered out
-    virtual Level getLevel()=0;
+    virtual Level getLevel() = 0;
 
     // message received
-    virtual void message(Level lev, const std::string &msg)=0;
-
+    virtual void message(Level lev, const std::string &msg) = 0;
 };
 
-
-}
-
+} // namespace SC3::Log
 
 #endif

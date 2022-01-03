@@ -43,7 +43,8 @@ size_t RIFF_StoreSample(sample *s, void *data)
     fs::path filename;
     if (!s->Embedded && s->get_filename(&filename))
     {
-        size_t ChunkSize = 12 + SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(path_to_string(filename).c_str());
+        size_t ChunkSize =
+            12 + SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(path_to_string(filename).c_str());
         if (!data)
             return ChunkSize;
 
@@ -384,14 +385,14 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const fs::path &fileName, int Part
     {
 #if WINDOWS
         auto fnWide = fileName.generic_wstring();
-        std::ofstream ofs(fnWide.c_str(), std::ios::binary );
+        std::ofstream ofs(fnWide.c_str(), std::ios::binary);
 #else
         std::ofstream ofs(fileName, std::ios::binary);
 #endif
         if (!ofs.is_open())
             goto abort;
 
-        ofs.write((const char*)chunkDataPtr, datasize );
+        ofs.write((const char *)chunkDataPtr, datasize);
 
         free(chunkDataPtr);
         chunkDataPtr = 0;

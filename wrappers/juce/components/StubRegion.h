@@ -23,17 +23,18 @@
 class StubRegion : public juce::Component
 {
   public:
-    StubRegion(const juce::Rectangle<int> &rect, const juce::Colour &c,
-               const juce::String &lab ) : juce::Component()
+    StubRegion(const juce::Rectangle<int> &rect, const juce::Colour &c, const juce::String &lab)
+        : juce::Component()
     {
         setBounds(rect);
         this->bg = c;
         this->lab = lab;
     }
 
-    void paint(Graphics &g) override {
+    void paint(Graphics &g) override
+    {
         g.fillAll(bg);
-        g.setColour(juce::Colour(255,255,255));
+        g.setColour(juce::Colour(255, 255, 255));
         g.drawText(lab, getBounds(), Justification::centred);
     }
 

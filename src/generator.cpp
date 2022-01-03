@@ -202,21 +202,23 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         SampleSubPos = SampleSubPos - (incr << 24);
 
         // if (SamplePos > UpperBound) SamplePos = UpperBound;
-         switch (playmode)
+        switch (playmode)
         {
         case GSM_Normal:
         {
-            if( SamplePos > UpperBound ) {
+            if (SamplePos > UpperBound)
+            {
                 SamplePos = UpperBound;
                 SampleSubPos = 0;
                 IsFinished = 1;
             }
-            if( SamplePos < LowerBound ) {
+            if (SamplePos < LowerBound)
+            {
                 SamplePos = LowerBound;
                 SampleSubPos = 0;
             }
 
-#if ASM_I_REWROTE  // Leaving this here for reference while we port
+#if ASM_I_REWROTE // Leaving this here for reference while we port
             // This code makes the sample pointer stop when it gets to start/stop
             // There is a DC offset, but it is less severe than a click
             // With the release switch, there doesn't seem to be a problem.
@@ -253,13 +255,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         case GSM_Loop:
         {
             int offset = SamplePos;
-            
+
             if (Direction)
             {
                 // Upper
                 if (offset > UpperBound)
                     offset -= LoopOffset;
-            } else
+            }
+            else
             {
                 // Lower
                 if (offset < LowerBound)
@@ -325,14 +328,11 @@ store:
 					mov Direction, ecx
             }
 #endif
-            if( SamplePos >= UpperBound )
+            if (SamplePos >= UpperBound)
             {
                 Direction = -1;
             }
-            else if( SamplePos <= LowerBound )
-            {
-                Direction = 1;
-            }
+            else if (SamplePos <= LowerBound) { Direction = 1; }
             SamplePos = limit_range(SamplePos, 0, WaveSize);
         }
         break;

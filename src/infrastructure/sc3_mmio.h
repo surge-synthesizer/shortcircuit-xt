@@ -38,7 +38,8 @@
 #include "infrastructure/logfile.h"
 #include "riff_memfile.h"
 
-struct sc3mmio_hand {
+struct sc3mmio_hand
+{
     bool is_open = false;
     char *rawData = nullptr;
     size_t rawDataSize = 0;
@@ -46,7 +47,7 @@ struct sc3mmio_hand {
 
     void close()
     {
-        if( is_open )
+        if (is_open)
         {
             is_open = false;
             delete[] rawData;
@@ -56,11 +57,14 @@ struct sc3mmio_hand {
     }
 
     sc3mmio_hand() = default;
-    ~sc3mmio_hand() {
-        if( is_open )
+    ~sc3mmio_hand()
+    {
+        if (is_open)
         {
-            SC3::Log::logos() << "Leaked an sc3mmio_hand: Destroyed a non-closed handle" << std::endl;
-            if( rawData ) delete[] rawData;
+            SC3::Log::logos() << "Leaked an sc3mmio_hand: Destroyed a non-closed handle"
+                              << std::endl;
+            if (rawData)
+                delete[] rawData;
         }
     }
 };
@@ -85,17 +89,18 @@ struct MMCKINFO
 
 typedef int LRESULT;
 
-typedef const char* LPSTR;
-typedef const wchar_t* LPWSTR;
+typedef const char *LPSTR;
+typedef const wchar_t *LPWSTR;
 
-
-
-inline uint32_t mmioFOURCC(char a, char b, char c, char d) {
-    uint32_t res = ( a ) | ( b << 8 ) | ( c << 16 ) | (d << 24 );
+inline uint32_t mmioFOURCC(char a, char b, char c, char d)
+{
+    uint32_t res = (a) | (b << 8) | (c << 16) | (d << 24);
     return res;
 }
-inline int mmioClose(HMMIO h, uint32_t) {
-    if( h && h->is_open ) h->close();
+inline int mmioClose(HMMIO h, uint32_t)
+{
+    if (h && h->is_open)
+        h->close();
     return 0;
 }
 
@@ -107,6 +112,5 @@ int mmioRead(HMMIO a, HPSTR b, int);
 #endif
 
 HMMIO mmioOpenFromPath(const fs::path &fn, void *defacto_unused, int mode);
-
 
 #endif // SHORTCIRCUIT_SC3_MMIO_H

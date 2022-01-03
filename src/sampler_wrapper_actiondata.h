@@ -292,7 +292,8 @@ struct DropList
 struct actiondata
 {
     actiontype_t actiontype;
-    int id, subid;
+    /*InteractionId*/ int id;
+    int subid;
 
     union
     {
@@ -309,7 +310,7 @@ struct actiondata
     actiondata()
     {
         actiontype = vuininit;
-        id = 0;
+        id = ip_none;
         subid = 0;
         data.str[0] = 0;
     }
@@ -324,108 +325,106 @@ template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 inline std::ostream &operator<<(std::ostream &stream, const actiontype_t &t)
 {
-    std::visit(
-        overloaded{[&stream](auto arg) { stream << "Generic [" << arg << "]"; },
-                   [&stream](VUnInitialized arg)
-                   { stream << "UnInitialized [" << arg << "]"; },
-                   [&stream](VAction arg)
-                   {
-                       stream << "VAction [";
-#define C(x) \
-                       case x: \
-                           stream << #x; \
-                           break;
+    // clang-format off
+    std::visit(overloaded{[&stream](auto arg) { stream << "Generic [" << arg << "]"; },
+                                [&stream](VUnInitialized arg) { stream << "UnInitialized [" << arg << "]"; },
+                                [&stream](VAction arg)
+                                 {
+                                    stream << "VAction [";
+#define C(x)                                                                                       \
+    case x:                                                                                        \
+        stream << #x;                                                                              \
+        break;
 
+                              switch (arg)
+                              {
+                                  C(vga_floatval)
+                                  C(vga_intval)
+                                  C(vga_intval_inc)
+                                  C(vga_intval_dec)
+                                  C(vga_boolval)
+                                  C(vga_beginedit)
+                                  C(vga_endedit)
+                                  C(vga_load_dropfiles)
+                                  C(vga_load_patch)
+                                  C(vga_text)
+                                  C(vga_click)
+                                  C(vga_exec_external)
+                                  C(vga_url_external)
+                                  C(vga_doc_external)
+                                  C(vga_disable_state)
+                                  C(vga_stuck_state)
+                                  C(vga_hide)
+                                  C(vga_label)
+                                  C(vga_temposync)
+                                  C(vga_filter)
+                                  C(vga_datamode)
+                                  C(vga_menu)
+                                  C(vga_entry_add)
+                                  C(vga_entry_add_ival_from_self)
+                                  C(vga_entry_add_ival_from_self_with_id)
+                                  C(vga_entry_replace_label_on_id)
+                                  C(vga_entry_setactive)
+                                  C(vga_entry_clearall)
+                                  C(vga_select_zone_clear)
+                                  C(vga_select_zone_primary)
+                                  C(vga_select_zone_secondary)
+                                  C(vga_select_zone_previous)
+                                  C(vga_select_zone_next)
+                                  C(vga_zone_playtrigger)
+                                  C(vga_deletezone)
+                                  C(vga_createemptyzone)
+                                  C(vga_clonezone)
+                                  C(vga_clonezone_next)
+                                  C(vga_movezonetopart)
+                                  C(vga_movezonetolayer)
+                                  C(vga_zonelist_clear)
+                                  C(vga_zonelist_populate)
+                                  C(vga_zonelist_done)
+                                  C(vga_zonelist_mode)
+                                  C(vga_toggle_zoom)
+                                  C(vga_note)
+                                  C(vga_audition_zone)
+                                  C(vga_request_refresh)
+                                  C(vga_set_zone_keyspan)
+                                  C(vga_set_zone_keyspan_clone)
+                                  C(vga_openeditor)
+                                  C(vga_closeeditor)
+                                  C(vga_wavedisp_sample)
+                                  C(vga_wavedisp_multiselect)
+                                  C(vga_wavedisp_plot)
+                                  C(vga_wavedisp_editpoint)
+                                  C(vga_steplfo_repeat)
+                                  C(vga_steplfo_shape)
+                                  C(vga_steplfo_data)
+                                  C(vga_steplfo_data_single)
+                                  C(vga_browser_listptr)
+                                  C(vga_browser_entry_next)
+                                  C(vga_browser_entry_prev)
+                                  C(vga_browser_entry_load)
+                                  C(vga_browser_category_next)
+                                  C(vga_browser_category_prev)
+                                  C(vga_browser_category_parent)
+                                  C(vga_browser_category_child)
+                                  C(vga_browser_preview_start)
+                                  C(vga_browser_preview_stop)
+                                  C(vga_browser_is_refreshing)
+                                  C(vga_inject_database)
+                                  C(vga_database_samplelist)
+                                  C(vga_save_patch)
+                                  C(vga_save_multi)
+                                  C(vga_vudata)
 
-
-                       switch (arg)
-                       {
-                           C(vga_floatval)
-                               C(vga_intval)
-                               C(vga_intval_inc)
-                               C(vga_intval_dec)
-                               C(vga_boolval)
-                               C(vga_beginedit)
-                               C(vga_endedit)
-                               C(vga_load_dropfiles)
-                               C(vga_load_patch)
-                               C(vga_text)
-                               C(vga_click)
-                               C(vga_exec_external)
-                               C(vga_url_external)
-                               C(vga_doc_external)
-                               C(vga_disable_state)
-                               C(vga_stuck_state)
-                               C(vga_hide)
-                               C(vga_label)
-                               C(vga_temposync)
-                               C(vga_filter)
-                               C(vga_datamode)
-                               C(vga_menu)
-                               C(vga_entry_add)
-                               C(vga_entry_add_ival_from_self)
-                               C(vga_entry_add_ival_from_self_with_id)
-                               C(vga_entry_replace_label_on_id)
-                               C(vga_entry_setactive)
-                               C(vga_entry_clearall)
-                               C(vga_select_zone_clear)
-                               C(vga_select_zone_primary)
-                               C(vga_select_zone_secondary)
-                               C(vga_select_zone_previous)
-                               C(vga_select_zone_next)
-                               C(vga_zone_playtrigger)
-                               C(vga_deletezone)
-                               C(vga_createemptyzone)
-                               C(vga_clonezone)
-                               C(vga_clonezone_next)
-                               C(vga_movezonetopart)
-                               C(vga_movezonetolayer)
-                               C(vga_zonelist_clear)
-                               C(vga_zonelist_populate)
-                               C(vga_zonelist_done)
-                               C(vga_zonelist_mode)
-                               C(vga_toggle_zoom)
-                               C(vga_note)
-                               C(vga_audition_zone)
-                               C(vga_request_refresh)
-                               C(vga_set_zone_keyspan)
-                               C(vga_set_zone_keyspan_clone)
-                               C(vga_openeditor)
-                               C(vga_closeeditor)
-                               C(vga_wavedisp_sample)
-                               C(vga_wavedisp_multiselect)
-                               C(vga_wavedisp_plot)
-                               C(vga_wavedisp_editpoint)
-                               C(vga_steplfo_repeat)
-                               C(vga_steplfo_shape)
-                               C(vga_steplfo_data)
-                               C(vga_steplfo_data_single)
-                               C(vga_browser_listptr)
-                               C(vga_browser_entry_next)
-                               C(vga_browser_entry_prev)
-                               C(vga_browser_entry_load)
-                               C(vga_browser_category_next)
-                               C(vga_browser_category_prev)
-                               C(vga_browser_category_parent)
-                               C(vga_browser_category_child)
-                               C(vga_browser_preview_start)
-                               C(vga_browser_preview_stop)
-                               C(vga_browser_is_refreshing)
-                               C(vga_inject_database)
-                               C(vga_database_samplelist)
-                               C(vga_save_patch)
-                               C(vga_save_multi)
-                               C(vga_vudata)
-
-                       default:
-                           stream << arg;
-                           break;
-                       }
-                       stream << "]";
-                   }},
+                              default:
+                                  stream << arg;
+                                  break;
+                              }
+                              stream << "]";
+                          }},
 #undef C
 
-        t);
+               t);
+    // clang-format on
     return stream;
 }
 

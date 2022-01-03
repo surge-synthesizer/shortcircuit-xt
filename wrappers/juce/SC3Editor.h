@@ -115,7 +115,6 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     // Fixme - obviously this is done with no thought of threading or anything else
     void refreshSamplerTextViewInThreadUnsafeWay();
 
-
     void receiveActionFromProgram(const actiondata &ad) override;
     void sendActionToEngine(const actiondata &ad) override;
 
@@ -145,6 +144,11 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
+
+    sample_zone zonesC[max_zones];
+    sample_part partsC[n_sampler_parts];
+    sample_multi multiC;
+    int freeParamsC[n_ip_free_items][16];
 
     // implement logging interface for logs generated on ui side
     SC3::Log::Level getLevel() override;

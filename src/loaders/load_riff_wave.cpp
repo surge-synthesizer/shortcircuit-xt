@@ -81,7 +81,7 @@ bool sample::save_wave_file(const fs::path &filename)
     SaveWaveChunk(data);
 #if WINDOWS
     auto wide = filename.generic_wstring();
-    FILE *f = _wfopen(wide.c_str(),L"wb");
+    FILE *f = _wfopen(wide.c_str(), L"wb");
 #else
     FILE *f = fopen(path_to_string(filename).c_str(), "wb");
 #endif
@@ -229,8 +229,8 @@ bool sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         {
             meta.loop_present = true;
             mf.Read(&smpl_loop, sizeof(SampleLoop));
-            // smpl_loop.dwEnd++;	// SC wants the loop end point to be the first sample AFTER the
-            // loop
+            // smpl_loop.dwEnd++;	// SC wants the loop end point to be the first sample AFTER
+            // the loop
             meta.loop_start = smpl_loop.dwStart;
             meta.loop_end = smpl_loop.dwEnd + 1;
             if (smpl_loop.dwType == 1)

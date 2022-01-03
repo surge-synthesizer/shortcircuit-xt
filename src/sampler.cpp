@@ -64,7 +64,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     LOGINFO(mLogger) << "SC3 engine " << SC3::Build::FullVersionStr << std::flush;
     conf = new configuration(mLogger);
 
-#if WINDOWS    
+#if WINDOWS
     holdengine = false;
 #endif
 
@@ -210,15 +210,9 @@ sampler::~sampler(void)
         free(dbSampleListDataPtr);
 }
 
-bool sampler::loadUserConfiguration(const fs::path &configFile) {
-            
-    return conf->load(configFile);
-    
-}
+bool sampler::loadUserConfiguration(const fs::path &configFile) { return conf->load(configFile); }
 
-bool sampler::saveUserConfiguration(const fs::path &configFile) { 
-    return conf->save(configFile); 
-}
+bool sampler::saveUserConfiguration(const fs::path &configFile) { return conf->save(configFile); }
 
 bool sampler::zone_exist(int id)
 {
@@ -562,7 +556,6 @@ bool sampler::get_sample_id(const fs::path &filename, int *s_id)
         return (samples[*s_id & (max_samples - 1)] != NULL);
     }
 
-
     int s;
     for (s = 0; s < max_samples; s++)
     {
@@ -685,7 +678,8 @@ bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use
     int32_t s = 0;
     if (!filename.empty())
     {
-        // AS this guy seems to want to parse out the first few chars of filename which seems fishy... leave as is for now.
+        // AS this guy seems to want to parse out the first few chars of filename which seems
+        // fishy... leave as is for now.
         bool is_loaded = get_sample_id(path_to_string(filename).c_str(), &s);
 
         if (is_loaded)
@@ -714,8 +708,7 @@ bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use
     else
         s = -1;
 
-
-    std::lock_guard lockUntilEnd( cs_patch );
+    std::lock_guard lockUntilEnd(cs_patch);
     InitZone(i);
 
     zones[i].part = part;
@@ -799,8 +792,8 @@ bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use
 
 bool sampler::replace_zone(int z, const fs::path &fileName)
 {
-    // ATTENTION !!! if sample refcount> 1 then the sampling should only be changed for the current zone !!
-    // kill all notes for the given zone
+    // ATTENTION !!! if sample refcount> 1 then the sampling should only be changed for the current
+    // zone !! kill all notes for the given zone
     kill_notes(z);
     int s_old = zones[z].sample_id;
 
@@ -821,8 +814,7 @@ bool sampler::replace_zone(int z, const fs::path &fileName)
         return false;
     }
 
-
-    std::lock_guard lockUntilEnd( cs_patch );
+    std::lock_guard lockUntilEnd(cs_patch);
     if ((s_old >= 0) && samples[s_old]->forget())
     {
         delete samples[s_old];
@@ -1128,10 +1120,9 @@ void sampler::Preview::Start(const wchar_t *Filename)
 {
     mActive = false;
 
-    
     // wchar_t conversion to path not working. figure out later or change to take path above
 
-    //auto ppath = string_to_path(Filename);
+    // auto ppath = string_to_path(Filename);
 
     char fnu8[2048];
     vtWStringToString(fnu8, Filename, 2048);
@@ -1170,3 +1161,24 @@ void sampler::Preview::SetPlayingState(bool State)
 }
 
 //-----------------------------------------------------------------------------------------
+
+// These I hope will bite the dust one day
+std::string debug_view(const sample_part &p)
+{
+    std::ostringstream oss;
+    oss << "PART[";
+    oss << p.name;
+    oss << "]";
+
+    return oss.str();
+}
+std::string debug_view(const sample_zone &z)
+{
+    std::ostringstream oss;
+
+    oss << "ZONE[";
+    oss << z.name;
+    oss << " key r/l/h=" << z.key_root << "/" << z.key_low << "/" << z.key_high;
+    oss << "]";
+    return oss.str();
+}

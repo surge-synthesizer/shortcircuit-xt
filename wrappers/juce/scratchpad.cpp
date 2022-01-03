@@ -51,10 +51,12 @@ class RequestRefresh : public ScratchPadItem
 class DragWaveDisplayPoint : public ScratchPadItem
 {
   public:
-    DragWaveDisplayPoint(){
-        mDescription = "Drag a point on the wave display. Parameters are point id, location. "
-                       "Point id's are 0=start, 1=end, 2=loop start, 3=loop end, 4=xfade, 5..n=hitpoints."
-                       "Location is in samples";
+    DragWaveDisplayPoint()
+    {
+        mDescription =
+            "Drag a point on the wave display. Parameters are point id, location. "
+            "Point id's are 0=start, 1=end, 2=loop start, 3=loop end, 4=xfade, 5..n=hitpoints."
+            "Location is in samples";
         mName = "Drag wave point";
     }
     bool prepareAction(sampler *s, std::string parameters, actiondata *ad,
@@ -69,9 +71,9 @@ class DragWaveDisplayPoint : public ScratchPadItem
 
         try
         {
-            ActionWaveDisplayEditPoint a((ActionWaveDisplayEditPoint::PointType)std::stoi(parms[0]), std::stoi(parms[1]));
-            *ad=a;
-
+            ActionWaveDisplayEditPoint a((ActionWaveDisplayEditPoint::PointType)std::stoi(parms[0]),
+                                         std::stoi(parms[1]));
+            *ad = a;
         }
         catch (...)
         {
@@ -84,17 +86,19 @@ class DragWaveDisplayPoint : public ScratchPadItem
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Load a known sample
-class LoadSampleFile : public ScratchPadItem {
+class LoadSampleFile : public ScratchPadItem
+{
     ApplicationProperties ap;
-  public:
 
-    LoadSampleFile() {
+  public:
+    LoadSampleFile()
+    {
 
         PropertiesFile::Options options;
-        options.applicationName="ShortcircuitXT_scratch";
+        options.applicationName = "ShortcircuitXT_scratch";
         ap.setStorageParameters(options);
-        auto user=ap.getUserSettings();
-        auto f=user->getValue("scratchLoadFile");
+        auto user = ap.getUserSettings();
+        auto f = user->getValue("scratchLoadFile");
 
         mDescription = "Load a sample file into the sampler";
         mName = "Load Sample";
@@ -103,8 +107,8 @@ class LoadSampleFile : public ScratchPadItem {
     bool prepareAction(sampler *s, std::string parameters, actiondata *ad,
                        std::string *error) override
     {
-        auto user=ap.getUserSettings();
-        juce::String v=parameters;
+        auto user = ap.getUserSettings();
+        juce::String v = parameters;
         user->setValue("scratchLoadFile", v);
         user->saveIfNeeded();
 
@@ -115,10 +119,8 @@ class LoadSampleFile : public ScratchPadItem {
         ad->actiontype = vga_load_dropfiles;
         ad->data.dropList = d;
         return true;
-
     }
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 std::vector<ScratchPadItem *> registerScratchPadItems()
@@ -132,8 +134,10 @@ std::vector<ScratchPadItem *> registerScratchPadItems()
     return ret;
 }
 
-void unregisterScratchPadItems(std::vector<ScratchPadItem *> items) {
-    for(auto i : items) {
+void unregisterScratchPadItems(std::vector<ScratchPadItem *> items)
+{
+    for (auto i : items)
+    {
         delete i;
     }
 }

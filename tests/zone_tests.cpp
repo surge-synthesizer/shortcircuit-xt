@@ -28,7 +28,7 @@
 TEST_CASE("Zones from 3 Wavs", "[zones]")
 {
 #if WINDOWS
-    auto pbolpc = fs::path( "resources\\test_samples\\OLPC" );
+    auto pbolpc = fs::path("resources\\test_samples\\OLPC");
 #else
     auto pbolpc = string_to_path("resources/test_samples/OLPC");
 #endif
@@ -37,7 +37,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
     auto pHat = pbolpc / string_to_path("cymbal-hihat-foot-2.wav");
 
     auto kit = {pbassDrum, pSnare, pHat};
-    std::vector<int> dsize = { 169796, 127860, 35856 };
+    std::vector<int> dsize = {169796, 127860, 35856};
 
     SECTION("Load Three Waves get three zones")
     {
@@ -51,7 +51,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             bool isG;
             INFO(path_to_string(item));
             REQUIRE(sc3->load_file(item, &newG, &newZ, &isG));
-            REQUIRE( !isG );
+            REQUIRE(!isG);
             REQUIRE(newZ == z++);
         }
 
@@ -86,9 +86,8 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
                 // since we are a fresh instance. This is not generally true
 
                 auto sample = sc3->samples[zone.sample_id];
-                REQUIRE( sample->channels == 1 );
-                REQUIRE( sample->GetDataSize() == dsize[i] );
-
+                REQUIRE(sample->channels == 1);
+                REQUIRE(sample->GetDataSize() == dsize[i]);
             }
             else
             {
@@ -97,75 +96,74 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
         }
     }
 
-    for( int i=0; i<30; ++i )
-    DYNAMIC_SECTION("Playback Three AutoZones " << i )
-    {
-        auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
-        REQUIRE(sc3);
-        sc3->set_samplerate(48000);
-
-        auto oneSecInBlocks = (int)(48000 / block_size);
-
-        for (auto item : kit)
+    for (int i = 0; i < 30; ++i)
+        DYNAMIC_SECTION("Playback Three AutoZones " << i)
         {
-            int newG, newZ;
-            REQUIRE(sc3->load_file(item, &newG, &newZ));
-        }
+            auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr);
+            REQUIRE(sc3);
+            sc3->set_samplerate(48000);
 
-        for (auto i = 0; i < max_zones; ++i)
-        {
-            if (sc3->zone_exist(i))
+            auto oneSecInBlocks = (int)(48000 / block_size);
+
+            for (auto item : kit)
             {
-                auto zone = sc3->zones[i];
-                auto sample = sc3->samples[zone.sample_id];
-
-
-                REQUIRE(zone.key_low == 36 + i);
-                REQUIRE(zone.key_high == 36 + i);
-                REQUIRE(zone.sample_id == i);
-                // since we are a fresh instance. This is not generally true
-
-                REQUIRE(zone.sample_start == 0);
-                REQUIRE(zone.sample_stop == dsize[i] / 2 );
-                REQUIRE(zone.playmode == pm_forwardRIFF);
-
-                REQUIRE(sample->channels == 1);
-                REQUIRE(sample->GetDataSize() == dsize[i]);
-                REQUIRE(sample->sample_rate == 44100);
+                int newG, newZ;
+                REQUIRE(sc3->load_file(item, &newG, &newZ));
             }
-        }
 
-        std::vector<float> rmses;
-        for (auto n = 34; n < 42; ++n)
-        {
-            double rms = 0;
-            for (int i = 0; i < oneSecInBlocks; ++i)
+            for (auto i = 0; i < max_zones; ++i)
             {
-                if (i == 60)
-                    sc3->PlayNote(0, n, 120);
-                if (i == oneSecInBlocks - 50)
-                    sc3->ReleaseNote(0, n, 0);
-
-                sc3->process_audio();
-                for (int k = 0; k < block_size; ++k)
+                if (sc3->zone_exist(i))
                 {
-                    rms += sc3->output[0][k] * sc3->output[0][k] +
-                           sc3->output[1][k] * sc3->output[1][k];
+                    auto zone = sc3->zones[i];
+                    auto sample = sc3->samples[zone.sample_id];
+
+                    REQUIRE(zone.key_low == 36 + i);
+                    REQUIRE(zone.key_high == 36 + i);
+                    REQUIRE(zone.sample_id == i);
+                    // since we are a fresh instance. This is not generally true
+
+                    REQUIRE(zone.sample_start == 0);
+                    REQUIRE(zone.sample_stop == dsize[i] / 2);
+                    REQUIRE(zone.playmode == pm_forwardRIFF);
+
+                    REQUIRE(sample->channels == 1);
+                    REQUIRE(sample->GetDataSize() == dsize[i]);
+                    REQUIRE(sample->sample_rate == 44100);
                 }
             }
-            for (int i = 0; i < 2000; ++i)
-                sc3->process_audio();
-            rms = sqrt(rms);
-            if (n < 36 || n > 38)
+
+            std::vector<float> rmses;
+            for (auto n = 34; n < 42; ++n)
             {
-                REQUIRE(rms == Approx(0).margin(1e-5));
-            }
-            else
-            {
-                INFO("Checking with note " << n);
-                std::vector<float> vals = {16.964388, 14.899617, 8.906973};
-                REQUIRE(rms == Approx(vals[n - 36]).margin(1e-5));
+                double rms = 0;
+                for (int i = 0; i < oneSecInBlocks; ++i)
+                {
+                    if (i == 60)
+                        sc3->PlayNote(0, n, 120);
+                    if (i == oneSecInBlocks - 50)
+                        sc3->ReleaseNote(0, n, 0);
+
+                    sc3->process_audio();
+                    for (int k = 0; k < block_size; ++k)
+                    {
+                        rms += sc3->output[0][k] * sc3->output[0][k] +
+                               sc3->output[1][k] * sc3->output[1][k];
+                    }
+                }
+                for (int i = 0; i < 2000; ++i)
+                    sc3->process_audio();
+                rms = sqrt(rms);
+                if (n < 36 || n > 38)
+                {
+                    REQUIRE(rms == Approx(0).margin(1e-5));
+                }
+                else
+                {
+                    INFO("Checking with note " << n);
+                    std::vector<float> vals = {16.964388, 14.899617, 8.906973};
+                    REQUIRE(rms == Approx(vals[n - 36]).margin(1e-5));
+                }
             }
         }
-    }
 }

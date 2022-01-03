@@ -14,25 +14,27 @@ void *hInstance = 0;
 
 //==============================================================================
 SC3AudioProcessor::SC3AudioProcessor()
-    : mLogger(this), AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+    : mLogger(this),
+      AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
       blockPos(0)
 {
     // This is a good place for VS mem leak debugging:
     // _CrtSetBreakAlloc(<id>);
 
     // determine where config file should be stored
-    auto configLoc=juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory).getFullPathName();
-    fs::path configFile(string_to_path(static_cast<const char*>(configLoc.toUTF8())));
+    auto configLoc = juce::File::getSpecialLocation(
+                         juce::File::SpecialLocationType::userApplicationDataDirectory)
+                         .getFullPathName();
+    fs::path configFile(string_to_path(static_cast<const char *>(configLoc.toUTF8())));
     configFile.append(SC3_CONFIG_DIRECTORY);
     configFile.append("config.xml");
     mConfigFileName = configFile;
-    
+
     sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, this);
     if (!sc3->loadUserConfiguration(mConfigFileName))
     {
         LOGINFO(mLogger) << "Configuration file did not load" << std::flush;
     }
-
 }
 
 SC3AudioProcessor::~SC3AudioProcessor()
@@ -113,8 +115,8 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
     for (const MidiMessageMetadata it : midiMessages)
     {
-       MidiMessage m = it.getMessage();
-       if (m.isNoteOn())
+        MidiMessage m = it.getMessage();
+        if (m.isNoteOn())
         {
             sc3->PlayNote(0, m.getNoteNumber(), m.getVelocity());
         }
@@ -133,7 +135,7 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
         if (blockPos == 0)
             sc3->process_audio();
-        
+
         memcpy(outL, &(sc3->output[0][blockPos]), BUFFER_COPY_CHUNK * sizeof(float));
         memcpy(outR, &(sc3->output[1][blockPos]), BUFFER_COPY_CHUNK * sizeof(float));
 

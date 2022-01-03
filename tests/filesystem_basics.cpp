@@ -20,18 +20,17 @@
 #include "test_main.h"
 #include "infrastructure/import_fs.h"
 
-TEST_CASE( "FileSystem", "[infra]" )
+TEST_CASE("FileSystem", "[infra]")
 {
-    SECTION( "PATH" )
+    SECTION("PATH")
     {
-        auto a = fs::path{"Hi" };
-        REQUIRE( a.compare( fs::path{"Hi" }) == 0 );
+        auto a = fs::path{"Hi"};
+        REQUIRE(a.compare(fs::path{"Hi"}) == 0);
     }
-    SECTION( "ifstream" )
+    SECTION("ifstream")
     {
-        auto p = fs::path{ "CMakeLists.txt" };
+        auto p = fs::path{"CMakeLists.txt"};
         auto i = std::ifstream(p);
-        REQUIRE( i.is_open() );
+        REQUIRE(i.is_open());
     }
-
 }
