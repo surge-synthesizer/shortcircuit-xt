@@ -28,8 +28,7 @@ namespace fs = ghc::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-
-inline std::string path_to_string(const fs::path &p )
+inline std::string path_to_string(const fs::path &p)
 {
 #ifdef _WIN32
     return p.u8string();
@@ -38,8 +37,7 @@ inline std::string path_to_string(const fs::path &p )
 #endif
 }
 
-template<typename T>
-inline fs::path string_to_path(T&& s)
+template <typename T> inline fs::path string_to_path(T &&s)
 {
 #ifdef _WIN32
     return fs::u8path(std::forward<T>(s));

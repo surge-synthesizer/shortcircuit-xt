@@ -20,12 +20,13 @@
 
 #include "globals.h"
 
-namespace SC3::Time {
+namespace SC3::Time
+{
 
 typedef int64_t Timestamp;
 void getCurrentTimestamp(Timestamp *val);
 void getTimestampDiff(Timestamp *a, Timestamp *b, Timestamp *diff);
 
-}
+} // namespace SC3::Time
 
 #endif // SHORTCIRCUIT_TICKS_H

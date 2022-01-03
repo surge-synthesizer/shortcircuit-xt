@@ -152,7 +152,7 @@ int get_dls_patchlist(const fs::path &filename, void **plist)
     assert(!filename.empty());
 
     auto mapper = std::make_unique<SC3::FileMapView>(filename);
-    if( ! mapper->isMapped() )
+    if (!mapper->isMapped())
         return 0;
 
     int result = parse_dls_patchlist(mapper->data(), mapper->dataSize(), plist);
@@ -160,7 +160,8 @@ int get_dls_patchlist(const fs::path &filename, void **plist)
     return result;
 }
 
-bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int patch, const fs::path &filename)
+bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int patch,
+                               const fs::path &filename)
 {
     if (patch < 0)
         return false;

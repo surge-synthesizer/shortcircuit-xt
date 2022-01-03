@@ -20,7 +20,8 @@ const double d_lp = 0.004;
 const double d_lpinv = 1.0 - 0.004;
 #endif
 
-union vdouble {
+union vdouble
+{
     __m128d v;
     double d[2];
 };

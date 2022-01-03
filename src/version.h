@@ -32,6 +32,6 @@ struct Build
     // Some features from cmake
     static const char *CMAKE_INSTALL_PREFIX;
 };
-} // namespace ShortCircuit
+} // namespace SC3
 
 #endif //__version__

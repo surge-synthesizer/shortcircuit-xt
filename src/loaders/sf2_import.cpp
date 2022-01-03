@@ -34,7 +34,8 @@ int get_sf2_patchlist(const fs::path &filename, void **plist, SC3::Log::StreamLo
     hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
-        LOGERROR(logger) << "file io error: File '" << path_to_string(filename) << "' not found!" << std::flush;
+        LOGERROR(logger) << "file io error: File '" << path_to_string(filename) << "' not found!"
+                         << std::flush;
         mmioClose(hmmio, 0);
         return false;
     }
@@ -182,7 +183,7 @@ int get_sf2_patchlist(const fs::path &filename, void **plist, SC3::Log::StreamLo
     mmckinfoSubchunk.ckid = mmioFOURCC('s', 'h', 'd', 'r');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        LOGERROR(logger) << "file io (sf2): Required shdr chunk was not found!" << std::flush ;
+        LOGERROR(logger) << "file io (sf2): Required shdr chunk was not found!" << std::flush;
         return false; // was goto bailout;
     }
     n_shdr = (mmckinfoSubchunk.cksize / 46);
@@ -241,7 +242,8 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
     hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
-        LOGERROR(mLogger) << "file io error: File '" << path_to_string(filename) << "' not found!" << std::flush; 
+        LOGERROR(mLogger) << "file io error: File '" << path_to_string(filename) << "' not found!"
+                          << std::flush;
         return false;
     }
 
@@ -252,7 +254,8 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
     mmckinfoParent.fccType = mmioFOURCC('s', 'f', 'b', 'k');
     if (mmioDescend(hmmio, (LPMMCKINFO)&mmckinfoParent, 0, MMIO_FINDRIFF))
     {
-        LOGERROR(mLogger) << "file io (sf2): '"<< path_to_string(filename) << "' doesn't contain a 'sfbk'" << std::flush;
+        LOGERROR(mLogger) << "file io (sf2): '" << path_to_string(filename)
+                          << "' doesn't contain a 'sfbk'" << std::flush;
         mmioClose(hmmio, 0);
         return false;
     }
@@ -313,7 +316,7 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'b', 'a', 'g');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        LOGERROR(mLogger) << "file io (sf2): Required pbag chunk was not found!"<<std::flush;
+        LOGERROR(mLogger) << "file io (sf2): Required pbag chunk was not found!" << std::flush;
         return false; // was goto bailout;
     }
     n_pb = (mmckinfoSubchunk.cksize / 4);
@@ -328,7 +331,7 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
     mmckinfoSubchunk.ckid = mmioFOURCC('p', 'g', 'e', 'n');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        LOGERROR(mLogger) << "file io (sf2): Required pgen chunk was not found!" <<std::flush;
+        LOGERROR(mLogger) << "file io (sf2): Required pgen chunk was not found!" << std::flush;
         return false; // was goto bailout;
     }
     n_pg = (mmckinfoSubchunk.cksize / 4);
@@ -343,7 +346,7 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
     mmckinfoSubchunk.ckid = mmioFOURCC('i', 'n', 's', 't');
     if (mmioDescend(hmmio, &mmckinfoSubchunk, &mmckinfoListchunk, MMIO_FINDCHUNK))
     {
-        LOGERROR(mLogger) << "file io (sf2): Required inst chunk was not found!" <<std::flush;
+        LOGERROR(mLogger) << "file io (sf2): Required inst chunk was not found!" << std::flush;
         return false; // was goto bailout;
     }
     n_ih = (mmckinfoSubchunk.cksize / 22);
@@ -590,8 +593,8 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
                     int newzone;
                     int sample_id = i_generators[sampleID].wAmount;
                     std::string tmpFilename = path_to_string(filename);
-                    tmpFilename+="|";
-                    tmpFilename+= std::to_string(sample_id);
+                    tmpFilename += "|";
+                    tmpFilename += std::to_string(sample_id);
                     if (i_generators_set[sampleID] &&
                         ((shdr[sample_id].sfSampleType == monoSample) ||
                          (shdr[sample_id].sfSampleType == rightSample)) &&
@@ -603,8 +606,8 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
                         sample_zone *z = &zones[newzone];
 
                         z->mute = false;
-                        // z->layer = (pb-pb_first) & 7;		// layer by preset-bag test (no
-                        // good)
+                        // z->layer = (pb-pb_first) & 7;		// layer by preset-bag test
+                        // (no good)
                         /*char *comma = strrchr(fn,'|');
                         if (comma) strcpy(z->name, comma+1);*/
                         vtCopyString(z->name, shdr[sample_id].achSampleName, 32);
@@ -781,7 +784,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
     delete inst_gen;
     delete shdr;
     return true;
-//bailout:
+    // bailout:
     mmioClose(hmmio, 0);
     delete preset_header;
     delete preset_bag;

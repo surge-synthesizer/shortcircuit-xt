@@ -26,7 +26,7 @@
 #include "globals.h"
 #include "infrastructure/sc3_mmio.h"
 
-TEST_CASE( "MMIO Layer", "[io]" )
+TEST_CASE("MMIO Layer", "[io]")
 {
     auto fccstr = [](uint32_t tag)
     {
@@ -40,13 +40,12 @@ TEST_CASE( "MMIO Layer", "[io]" )
         return std::string(fcc);
     };
 
-    SECTION("Open and Close" )
+    SECTION("Open and Close")
     {
-        auto h = mmioOpenFromPath("resources/test_samples/WavStereo48k.wav",
-                          NULL,
-                          MMIO_READ | MMIO_ALLOCBUF);
-        REQUIRE( h );
-        REQUIRE( mmioClose( h, 0 ) == 0 );
+        auto h = mmioOpenFromPath("resources/test_samples/WavStereo48k.wav", NULL,
+                                  MMIO_READ | MMIO_ALLOCBUF);
+        REQUIRE(h);
+        REQUIRE(mmioClose(h, 0) == 0);
     }
 
     SECTION("Open and Close wide")
@@ -54,27 +53,26 @@ TEST_CASE( "MMIO Layer", "[io]" )
         // make sure L version and utf8 version work (L version will be on win only)
 #ifdef _WIN32
         auto h = mmioOpenFromPath(L"resources/test_samples/\u8072\u97f3\u4e0d\u597d.wav", NULL,
-                          MMIO_READ | MMIO_ALLOCBUF);
+                                  MMIO_READ | MMIO_ALLOCBUF);
 #else
-        auto h = mmioOpenFromPath("resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav", NULL,
-                          MMIO_READ | MMIO_ALLOCBUF);
+        auto h = mmioOpenFromPath(
+            "resources/test_samples/\xe8\x81\xb2\xe9\x9f\xb3\xe4\xb8\x8d\xe5\xa5\xbd.wav", NULL,
+            MMIO_READ | MMIO_ALLOCBUF);
 #endif
         REQUIRE(h);
         REQUIRE(mmioClose(h, 0) == 0);
     }
 
-    
-
-    SECTION( "mmioFourCC" )
+    SECTION("mmioFourCC")
     {
-        REQUIRE( mmioFOURCC( 0, 0, 0, 0 ) == 0 );
-        REQUIRE( mmioFOURCC( 'R', 'I', 'F', 'F' ) == 0x46464952);
-        REQUIRE( mmioFOURCC( 'd', 'a', 't', 'a' ) == 0x61746164);
+        REQUIRE(mmioFOURCC(0, 0, 0, 0) == 0);
+        REQUIRE(mmioFOURCC('R', 'I', 'F', 'F') == 0x46464952);
+        REQUIRE(mmioFOURCC('d', 'a', 't', 'a') == 0x61746164);
     }
-    SECTION( "Wave File Header Traversal" )
+    SECTION("Wave File Header Traversal")
     {
-        auto h =
-            mmioOpenFromPath("resources/test_samples/WavStereo48k.wav", NULL, MMIO_READ | MMIO_ALLOCBUF);
+        auto h = mmioOpenFromPath("resources/test_samples/WavStereo48k.wav", NULL,
+                                  MMIO_READ | MMIO_ALLOCBUF);
         REQUIRE(h);
 
         MMCKINFO mmckinfoParent; /* for the Group Header */
@@ -91,21 +89,21 @@ TEST_CASE( "MMIO Layer", "[io]" )
          * cue  28
          */
 
-        std::map<std::string,int> knownSizes;
+        std::map<std::string, int> knownSizes;
         knownSizes["fmt "] = 16;
         knownSizes["data"] = 2835688;
         knownSizes["LGWV"] = 2778;
         knownSizes["cue "] = 28;
 
-        for( auto p : knownSizes )
+        for (auto p : knownSizes)
         {
             MMCKINFO mmckinfoSub;
-            INFO( "Reading chunk " << p.first );
-            mmckinfoSub.ckid = mmioFOURCC( p.first[0], p.first[1], p.first[2], p.first[3] );
+            INFO("Reading chunk " << p.first);
+            mmckinfoSub.ckid = mmioFOURCC(p.first[0], p.first[1], p.first[2], p.first[3]);
             REQUIRE(mmioDescend(h, &mmckinfoSub, &mmckinfoParent, MMIO_FINDCHUNK) == 0);
             REQUIRE(p.second == mmckinfoSub.cksize);
-            REQUIRE(mmioAscend(h, &mmckinfoSub, 0 ) == 0);
-            REQUIRE(mmioSeek(h,12,SEEK_SET) == 12);
+            REQUIRE(mmioAscend(h, &mmckinfoSub, 0) == 0);
+            REQUIRE(mmioSeek(h, 12, SEEK_SET) == 12);
         }
 
         /*
@@ -134,20 +132,19 @@ TEST_CASE( "MMIO Layer", "[io]" )
         REQUIRE(bc == 8);
         REQUIRE(bs == 32);
 
-        REQUIRE( mmioClose( h, 0 ) == 0 );
+        REQUIRE(mmioClose(h, 0) == 0);
     }
-    SECTION( "Open on an SF2" )
+    SECTION("Open on an SF2")
     {
-        auto h = mmioOpenFromPath( "resources/test_samples/harpsi.sf2",
-                          NULL,
-                          MMIO_READ | MMIO_ALLOCBUF );
-        REQUIRE( h );
+        auto h =
+            mmioOpenFromPath("resources/test_samples/harpsi.sf2", NULL, MMIO_READ | MMIO_ALLOCBUF);
+        REQUIRE(h);
 
         MMCKINFO mmckinfoParent; /* for the Group Header */
         mmckinfoParent.fccType = mmioFOURCC('s', 'f', 'b', 'k');
 
-        REQUIRE( mmioDescend( h, &mmckinfoParent, 0, MMIO_FINDRIFF ) == 0 );
-        REQUIRE( mmioSeek(h, 0, SEEK_CUR ) == 12 ); // skipped the header
+        REQUIRE(mmioDescend(h, &mmckinfoParent, 0, MMIO_FINDRIFF) == 0);
+        REQUIRE(mmioSeek(h, 0, SEEK_CUR) == 12); // skipped the header
 
         MMCKINFO mmckinfoListchunk;
         MMCKINFO mmckinfoSubchunk;

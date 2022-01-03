@@ -6,7 +6,6 @@
 //
 //-------------------------------------------------------------------------------------------------------
 
-
 #include "globals.h"
 #include "infrastructure/sc3_mmio.h"
 #include "infrastructure/logfile.h"
@@ -20,7 +19,6 @@
 #include <string.h>
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_string.h>
-
 
 #include <algorithm>
 using std::max;
@@ -128,7 +126,8 @@ struct akai_s6k_akp_zone
     int8 level;
     int8 keytrack;
     int8 vel2LSB, vel2MSB;
-    int8 unused3[2]; // TODO AS it seems like it can be this big in the wild. what is the extra data?
+    int8
+        unused3[2]; // TODO AS it seems like it can be this big in the wild. what is the extra data?
 };
 /*
 struct akai_s6k_akp_keygroup
@@ -168,13 +167,14 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
     fs::path path;
     std::string fn_only;
     decode_path(filename, 0, 0, &fn_only, &path);
-    
+
     HMMIO hmmio;
 
     hmmio = mmioOpenFromPath(filename, NULL, MMIO_READ | MMIO_ALLOCBUF);
     if (!hmmio)
     {
-        LOGERROR(mLogger) << "file io error: File " << path_to_string(filename) << " not found" << std::flush;
+        LOGERROR(mLogger) << "file io error: File " << path_to_string(filename) << " not found"
+                          << std::flush;
         mmioClose(hmmio, 0);
         return false;
     }
@@ -215,7 +215,7 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
     // so far so fine.. time to start creating the samplegroup
     char groupname[256];
     vtCopyString(groupname, fn_only.c_str(), 256);
-    
+
     if (replace)
         part_init(channel, true, true);
     vtCopyString(parts[channel].name, groupname, 32);
@@ -288,15 +288,19 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
                 return false;
             }
 
-            if(mmckinfoSubchunk.cksize > sizeof(akai_s6k_akp_zone)) {
+            if (mmckinfoSubchunk.cksize > sizeof(akai_s6k_akp_zone))
+            {
                 LOGERROR(mLogger) << "file io: zone chunk unhandled size";
                 mmioClose(hmmio, 0);
                 return false;
-            } else if (mmckinfoSubchunk.cksize < sizeof(akai_s6k_akp_zone) ) {
-                memset((HPSTR)&s6k_zone[k][z],0,sizeof(akai_s6k_akp_zone));
+            }
+            else if (mmckinfoSubchunk.cksize < sizeof(akai_s6k_akp_zone))
+            {
+                memset((HPSTR)&s6k_zone[k][z], 0, sizeof(akai_s6k_akp_zone));
             }
 
-            if (mmioRead(hmmio, (HPSTR)&s6k_zone[k][z], mmckinfoSubchunk.cksize) != mmckinfoSubchunk.cksize)
+            if (mmioRead(hmmio, (HPSTR)&s6k_zone[k][z], mmckinfoSubchunk.cksize) !=
+                mmckinfoSubchunk.cksize)
             {
                 LOGERROR(mLogger) << "file io: error reading the zone chunk!";
                 mmioClose(hmmio, 0);
@@ -337,7 +341,8 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
         {
             if (zone_present[k][z])
             {
-                fs::path sample_filename = build_path(path, (char*)(s6k_zone[k][z].samplename), "wav");                
+                fs::path sample_filename =
+                    build_path(path, (char *)(s6k_zone[k][z].samplename), "wav");
                 int newzone;
                 if (add_zone(sample_filename, &newzone, channel, true))
                 {

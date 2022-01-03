@@ -39,7 +39,7 @@ class Profiler
 
   public:
     // implicit reset (msg is initial msg)
-    Profiler(SC3::Log::LoggingCallback *logger, const char *msg=0);
+    Profiler(SC3::Log::LoggingCallback *logger, const char *msg = 0);
 
     ~Profiler();
 
@@ -54,9 +54,7 @@ class Profiler
 
     // exit a section of code (id should not exceed max 255)
     void exit(const char *id);
-
-
 };
 
-}
+} // namespace SC3::Perf
 #endif // SHORTCIRCUIT_PROFILER_H

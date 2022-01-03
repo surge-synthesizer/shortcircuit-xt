@@ -35,8 +35,9 @@ class ScratchPadItem
         }
         return result;
     }
+
   public:
-    virtual ~ScratchPadItem()= default;
+    virtual ~ScratchPadItem() = default;
     std::string mName;
     std::string mDescription;
     std::string mDefaultParameter;

@@ -56,7 +56,9 @@ class RIFFMemFile
   public:
     RIFFMemFile()
     {
-        data = nullptr; size=0; loc=0;
+        data = nullptr;
+        size = 0;
+        loc = 0;
     }
     RIFFMemFile(void *data, int datasize)
     {

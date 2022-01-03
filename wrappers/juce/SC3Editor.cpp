@@ -65,7 +65,6 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     ad.actiontype = vga_openeditor;
     sendActionInternal(ad);
 
-
     idleTimer = std::make_unique<SC3IdleTimer>(this);
     idleTimer->startTimer(1000 / 30);
 
@@ -74,8 +73,8 @@ SC3AudioProcessorEditor::SC3AudioProcessorEditor(SC3AudioProcessor &p)
     setSize(900, 600);
 }
 
-
-SC3AudioProcessorEditor::~SC3AudioProcessorEditor() {
+SC3AudioProcessorEditor::~SC3AudioProcessorEditor()
+{
     uiStateProxies.clear();
     debugWindow->setEditor(nullptr);
     idleTimer->stopTimer();
@@ -95,13 +94,9 @@ void SC3AudioProcessorEditor::sendActionInternal(const actiondata &ad)
     audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
-void SC3AudioProcessorEditor::buttonClicked(Button *b)
-{
-}
+void SC3AudioProcessorEditor::buttonClicked(Button *b) {}
 
-void SC3AudioProcessorEditor::buttonStateChanged(Button *b)
-{
-}
+void SC3AudioProcessorEditor::buttonStateChanged(Button *b) {}
 
 //==============================================================================
 void SC3AudioProcessorEditor::paint(juce::Graphics &g)
@@ -112,7 +107,7 @@ void SC3AudioProcessorEditor::paint(juce::Graphics &g)
     auto bounds = getLocalBounds();
     g.setColour(juce::Colours::white);
     g.setFont(14.0f);
-    auto bottomLabel = bounds.removeFromTop(bounds.getHeight()).expanded(-2,0);
+    auto bottomLabel = bounds.removeFromTop(bounds.getHeight()).expanded(-2, 0);
     g.drawFittedText("Shortcircuit XT", bottomLabel, juce::Justification::bottomLeft, 1);
     g.drawFittedText(SC3::Build::FullVersionStr, bottomLabel, juce::Justification::bottomRight, 1);
 }
@@ -120,19 +115,18 @@ void SC3AudioProcessorEditor::paint(juce::Graphics &g)
 void SC3AudioProcessorEditor::resized()
 {
     Rectangle<int> r = getLocalBounds();
-    r.reduce(2,2);
+    r.reduce(2, 2);
     zoneKeyboardDisplay->setBounds(r.removeFromTop(200));
     r.removeFromBottom(10);
     waveDisplay->setBounds(r);
 }
 
-bool SC3AudioProcessorEditor::isInterestedInFileDrag(const StringArray &files) {
-    return true;
-}
-void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int y) {
+bool SC3AudioProcessorEditor::isInterestedInFileDrag(const StringArray &files) { return true; }
+void SC3AudioProcessorEditor::filesDropped(const StringArray &files, int x, int y)
+{
     auto d = new DropList();
 
-    for( auto f : files )
+    for (auto f : files)
     {
         auto fd = DropList::File();
         fd.p = string_to_path(f.toStdString().c_str());
@@ -164,15 +158,6 @@ void SC3AudioProcessorEditor::idle()
     {
         mcount++;
         auto handled = false;
-        if (std::holds_alternative<VAction>(ad.actiontype))
-        {
-            auto id = ad.id;
-            if (id > 0)
-            {
-                auto inter = ip_data[id];
-                std::cout << ad << " " << inter << std::endl;
-            }
-        }
         for (auto &p : uiStateProxies)
         {
             handled |= p->processActionData(ad);
@@ -180,6 +165,54 @@ void SC3AudioProcessorEditor::idle()
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
+            if (std::holds_alternative<VAction>(ad.actiontype))
+            {
+                auto id = ad.id;
+                auto at = std::get<VAction>(ad.actiontype);
+
+                if (id >= 0)
+                {
+                    auto inter = ip_data[id];
+                    auto itarget = targetForInteractionId((InteractionId)id);
+
+                    switch (itarget)
+                    {
+                    case Zone:
+                    {
+                        switch (at)
+                        {
+                        case vga_floatval:
+                            std::cout << ad << " " << inter << " float=" << ad.data.f[0]
+                                      << std::endl;
+                            break;
+                        case vga_intval:
+                            std::cout << ad << " " << inter << " int=" << ad.data.i[0] << std::endl;
+                            break;
+                        case vga_text:
+                            std::cout << ad << " " << inter << " str=" << ad.data.str << std::endl;
+                            break;
+                        case vga_disable_state:
+                            // fixme
+                            break;
+                        default:
+                            std::cout << "UNHZONE " << ad << " " << inter << std::endl;
+                            break;
+                        }
+
+                        break;
+                    }
+                    default:
+                        std::cout << "DEFTARGET " << ad << " " << inter << " " << itarget
+                                  << std::endl;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                std::cout << "NOT AN AT " << ad << std::endl;
+            }
+
             // if (unhandled.find(ad.actiontype) == unhandled.end())
             //    unhandled[ad.actiontype];
             int aid = ad.id;
@@ -236,6 +269,7 @@ SC3::Log::Level SC3AudioProcessorEditor::getLevel()
     // TODO some kind of global config read
     return SC3::Log::Level::Debug;
 }
-void SC3AudioProcessorEditor::message(SC3::Log::Level lev, const std::string &msg) {
+void SC3AudioProcessorEditor::message(SC3::Log::Level lev, const std::string &msg)
+{
     logToUI->push(SC3AudioProcessorEditor::LogTransport(lev, msg));
 }

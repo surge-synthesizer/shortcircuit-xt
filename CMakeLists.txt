@@ -94,7 +94,7 @@ else ()
                 -ExecutionPolicy Bypass
                 -File "scripts/win_dl_asiosdk.ps1"
                 )
-    endif()
+    endif ()
     set(OS_COMPILE_OPTIONS
             /wd4244   # convert float from double
             /wd4305   # truncate from double to float
@@ -210,15 +210,15 @@ check_cxx_source_compiles("
     int main(int, char **argv) {
       return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
     }" SC3_FILESYSTEM_STD_FS_FOUND)
-if( SC3_FILESYSTEM_STD_FS_FOUND )
-    message(STATUS "Using OS level Filesystem" )
-else()
-    message(STATUS "Using GHC Filesystem" )
+if (SC3_FILESYSTEM_STD_FS_FOUND)
+    message(STATUS "Using OS level Filesystem")
+else ()
+    message(STATUS "Using GHC Filesystem")
     add_subdirectory(libs/ghc-filesystem)
     target_compile_definitions(shortcircuit-core PUBLIC SC3_USE_GHC_FILESYSTEM=1)
     target_link_libraries(shortcircuit-core PUBLIC ghc_filesystem simde)
 
-endif()
+endif ()
 
 # Build a target and directory for our final products
 set(SC3_PRODUCT_DIR ${CMAKE_BINARY_DIR}/products)
@@ -255,7 +255,7 @@ juce_generate_juce_header(ShortcircuitXT)
 
 # Add a binary resource (needs remediation)
 # file(GLOB SC3_RESOURCES_GLOB resources/test_samples/*)
-set( SC3_RESOURCES_GLOB resources/shortcircuit.ico )
+set(SC3_RESOURCES_GLOB resources/shortcircuit.ico)
 juce_add_binary_data(ShortcircuitXT-Binary SOURCES ${SC3_RESOURCES_GLOB})
 set_target_properties(ShortcircuitXT-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
@@ -288,7 +288,7 @@ target_sources(ShortcircuitXT PRIVATE
         wrappers/juce/scratchpad.cpp
         wrappers/juce/scratchpad.h
         )
-target_include_directories(ShortcircuitXT PRIVATE wrappers/juce )
+target_include_directories(ShortcircuitXT PRIVATE wrappers/juce)
 target_compile_definitions(ShortcircuitXT PUBLIC
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
         JUCE_MODAL_LOOPS_PERMITTED=1
@@ -307,12 +307,12 @@ target_compile_definitions(ShortcircuitXT PUBLIC
 # ASIO SDK is only for MS Windows.
 if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
     target_compile_definitions(ShortcircuitXT PUBLIC
-        JUCE_ASIO=1
-        )
+            JUCE_ASIO=1
+            )
     target_include_directories(ShortcircuitXT PUBLIC
-       "libs/asiosdk/common"
-       )
-endif()
+            "libs/asiosdk/common"
+            )
+endif ()
 target_link_libraries(ShortcircuitXT PRIVATE
         ImageAssets
         ShortcircuitXT-Binary
@@ -324,9 +324,9 @@ target_link_libraries(ShortcircuitXT PRIVATE
 
 
 # Build the python bindings
-if(SHORTCIRCUIT_XT_SKIP_PYTHON)
-    message( STATUS "Skipping Python Build" )
-else()
+if (SHORTCIRCUIT_XT_SKIP_PYTHON)
+    message(STATUS "Skipping Python Build")
+else ()
     message(STATUS "Building ShortCircuit Python bindings with pybind11")
     add_subdirectory(libs/pybind11)
     pybind11_add_module(shortcircuit3py)
@@ -339,8 +339,8 @@ else()
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMAND cmake -E copy $<TARGET_FILE:shortcircuit3py> ${SC3_PRODUCT_DIR}
-     )
-endif()
+    )
+endif ()
 
 # And finally the test suite
 add_executable(sc3-test
@@ -386,7 +386,7 @@ add_custom_command(
         COMMAND cmake -E copy_directory ${JUCE_DIR}/Standalone/ ${SC3_PRODUCT_DIR}
 )
 
-if( APPLE )
+if (APPLE)
     add_dependencies(sc3-products ShortcircuitXT_AU)
     add_custom_command(
             TARGET sc3-products
@@ -394,12 +394,12 @@ if( APPLE )
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMAND cmake -E copy_directory ${JUCE_DIR}/AU/ ${SC3_PRODUCT_DIR}
     )
-endif()
+endif ()
 
 add_custom_target(sc3-installer)
 add_dependencies(sc3-installer sc3-products)
 file(READ ${CMAKE_BINARY_DIR}/geninclude/githash.txt GIT_COMMIT_HASH)
-if( APPLE )
+if (APPLE)
     add_custom_command(
             TARGET sc3-installer
             POST_BUILD
@@ -407,20 +407,20 @@ if( APPLE )
             COMMAND cmake -E make_directory installer/macos
             COMMAND hdiutil create installer/macos/ShortcircuitXT-macos-${GIT_COMMIT_HASH}.dmg -ov -volname "ShortcircuitXT ${GIT_COMMIT_HASH}" -fs HFS+ -srcfolder products
     )
-elseif( WIN32 )
-    file( TO_NATIVE_PATH "installer/windows/ShortcircuitXT-win64-${GIT_COMMIT_HASH}.zip" OUTPUT_ZIP )
+elseif (WIN32)
+    file(TO_NATIVE_PATH "installer/windows/ShortcircuitXT-win64-${GIT_COMMIT_HASH}.zip" OUTPUT_ZIP)
     add_custom_command(
             TARGET sc3-installer
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} -E make_directory  installer/windows
+            COMMAND ${CMAKE_COMMAND} -E make_directory installer/windows
             COMMAND powershell Compress-Archive
-                -DestinationPath "${OUTPUT_ZIP}"
-                -Force
-                -Path "products"
+            -DestinationPath "${OUTPUT_ZIP}"
+            -Force
+            -Path "products"
     )
 
-else()
+else ()
     add_custom_command(
             TARGET sc3-installer
             POST_BUILD
@@ -428,4 +428,22 @@ else()
             COMMAND cmake -E make_directory installer/linux
             COMMAND tar czf installer/linux/ShortcircuitXT-linux-${GIT_COMMIT_HASH}.tgz products
     )
-endif()
+endif ()
+
+
+add_custom_target(code-quality-pipeline-checks)
+
+# Clang Format checks
+set(CLANG_FORMAT_DIRS src wrappers tests)
+set(CLANG_FORMAT_EXTS cpp h)
+foreach (dir ${CLANG_FORMAT_DIRS})
+    foreach (ext ${CLANG_FORMAT_EXTS})
+        list(APPEND CLANG_FORMAT_GLOBS "':(glob)${dir}/**/*.${ext}'")
+    endforeach ()
+endforeach ()
+add_custom_command(TARGET code-quality-pipeline-checks
+        POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E echo About to check clang-format
+        COMMAND git ls-files -- ${CLANG_FORMAT_GLOBS} | xargs clang-format --dry-run --Werror
+        )

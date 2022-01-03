@@ -42,12 +42,14 @@ class logos : public std::ostream
     struct lbuf : public std::stringbuf
     {
         lbuf() = default;
-        int sync() override {
+        int sync() override
+        {
             int ret = std::stringbuf::sync();
             write_log(str().c_str());
             return ret;
         }
     } buff;
+
   public:
     logos() : buff(), std::ostream(&buff) {}
 };
@@ -59,60 +61,76 @@ class logos : public std::ostream
 
 // macro helpers for stream based logging. pass the StreamLogger object as parameter
 #ifdef LOGGING_DEBUG_ENABLED
-#define LOGDEBUG(x) if(x.setLevel(SC3::Log::Level::Debug)) x
+#define LOGDEBUG(x)                                                                                \
+    if (x.setLevel(SC3::Log::Level::Debug))                                                        \
+    x
 #else
-#define LOGDEBUG(x) if(0) x
+#define LOGDEBUG(x)                                                                                \
+    if (0)                                                                                         \
+    x
 #endif
-#define LOGINFO(x) if(x.setLevel(SC3::Log::Level::Info)) x
-#define LOGWARNING(x) if(x.setLevel(SC3::Log::Level::Warning)) x
-#define LOGERROR(x) if(x.setLevel(SC3::Log::Level::Error)) x
+#define LOGINFO(x)                                                                                 \
+    if (x.setLevel(SC3::Log::Level::Info))                                                         \
+    x
+#define LOGWARNING(x)                                                                              \
+    if (x.setLevel(SC3::Log::Level::Warning))                                                      \
+    x
+#define LOGERROR(x)                                                                                \
+    if (x.setLevel(SC3::Log::Level::Error))                                                        \
+    x
 
 // StreamLogger class is for stream based logging eg:
-// logger << "logmessage" ; // add message to buffer at the current level 
-// logger << "logmessage" << std::flush ; // send a log message at the current level now (ie flush now)
-// logger->setLevel(ERROR); // change the current level (preferable to use above macros though)
+// logger << "logmessage" ; // add message to buffer at the current level
+// logger << "logmessage" << std::flush ; // send a log message at the current level now (ie flush
+// now) logger->setLevel(ERROR); // change the current level (preferable to use above macros though)
 class StreamLogger : public std::ostream
 {
   private:
     struct lbuf : public std::stringbuf
     {
-        public:
+      public:
         LoggingCallback *mCB;
         Level mLevel;
-        int sync() override {
+        int sync() override
+        {
             int ret = std::stringbuf::sync();
-            if(ret)
-              return ret;
+            if (ret)
+                return ret;
 
-            if(mCB && mCB->getLevel() >= mLevel) {
-                auto s=str();
-                if(!s.empty()) {
-                  mCB->message(mLevel, s);
+            if (mCB && mCB->getLevel() >= mLevel)
+            {
+                auto s = str();
+                if (!s.empty())
+                {
+                    mCB->message(mLevel, s);
                 }
             }
             str("");
             return 0;
         }
-        lbuf(LoggingCallback *cb) : mCB(cb) , mLevel(Level::Error) {}
-        ~lbuf() {pubsync();}
+        lbuf(LoggingCallback *cb) : mCB(cb), mLevel(Level::Error) {}
+        ~lbuf() { pubsync(); }
     } buff;
-  public:
 
+  public:
     StreamLogger(LoggingCallback *cb) : buff(cb), std::ostream(&buff) {}
 
-    bool setLevel(const Level lev) {
-      buff.pubsync(); // flush old before setting new level
-      buff.mLevel=lev;
-      // avoid unnecessary stream evaluations
-      return (buff.mCB && buff.mCB->getLevel() >= buff.mLevel);
+    bool setLevel(const Level lev)
+    {
+        buff.pubsync(); // flush old before setting new level
+        buff.mLevel = lev;
+        // avoid unnecessary stream evaluations
+        return (buff.mCB && buff.mCB->getLevel() >= buff.mLevel);
     }
 };
 
-inline const char *getShortLevelStr(Level lev) {
-  return lev==SC3::Log::Level::Debug ? "[DEBUG] " :
-            lev==SC3::Log::Level::Info ? "[INFO ] " :
-            lev==SC3::Log::Level::Warning ? "[WARN ] " :
-            lev==SC3::Log::Level::Error ? "[ERROR] " : "";
+inline const char *getShortLevelStr(Level lev)
+{
+    return lev == SC3::Log::Level::Debug     ? "[DEBUG] "
+           : lev == SC3::Log::Level::Info    ? "[INFO ] "
+           : lev == SC3::Log::Level::Warning ? "[WARN ] "
+           : lev == SC3::Log::Level::Error   ? "[ERROR] "
+                                             : "";
 }
 
 } // namespace SC3::Log

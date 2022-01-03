@@ -54,7 +54,8 @@ typedef struct
     BYTE byHi;
 } rangesType;
 
-typedef union {
+typedef union
+{
     rangesType ranges;
     SHORT shAmount;
     WORD wAmount;

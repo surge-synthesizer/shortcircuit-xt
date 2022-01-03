@@ -16,8 +16,9 @@
  */
 class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingCallback
 {
-    SC3::Log::StreamLogger mLogger; 
+    SC3::Log::StreamLogger mLogger;
     fs::path mConfigFileName;
+
   public:
     //==============================================================================
     SC3AudioProcessor();
@@ -37,7 +38,7 @@ class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingC
     {
         for (auto l : logDispList)
         {
-            if(l->getLevel() >= lev)
+            if (l->getLevel() >= lev)
                 l->message(lev, msg);
         }
     }
@@ -72,7 +73,6 @@ class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingC
     void setStateInformation(const void *data, int sizeInBytes) override;
 
     std::unique_ptr<sampler> sc3;
-    
 
   private:
     size_t blockPos;
@@ -80,4 +80,3 @@ class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingC
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessor)
 };
-

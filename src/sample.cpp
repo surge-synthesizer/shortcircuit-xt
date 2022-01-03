@@ -67,7 +67,7 @@ bool sample::AllocateI16(int Channel, int Samples)
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
         free(SampleData[Channel]);
-    SampleData[Channel] = malloc( sizeof(short)*samplesizewithmargin);
+    SampleData[Channel] = malloc(sizeof(short) * samplesizewithmargin);
     if (!SampleData[Channel])
         return false;
     UseInt16 = true;
@@ -84,7 +84,7 @@ bool sample::AllocateF32(int Channel, int Samples)
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
         free(SampleData[Channel]);
-    SampleData[Channel] = malloc(sizeof(float)*samplesizewithmargin);
+    SampleData[Channel] = malloc(sizeof(float) * samplesizewithmargin);
     if (!SampleData[Channel])
         return false;
     UseInt16 = false;
@@ -163,12 +163,13 @@ bool sample::load(const fs::path &filename)
     // extract elements of path
     decode_path(filename, &validFilename, &extension, 0, 0, 0, &sample_id);
     // resolve the path
-    validFilename=conf->resolve_path(validFilename);
+    validFilename = conf->resolve_path(validFilename);
 
     auto mapper = std::make_unique<SC3::FileMapView>(validFilename);
     if (!mapper->isMapped())
     {
-        LOGERROR(conf->mLogger) << "Unable to map view of file '" << validFilename << "'" << std:: flush;
+        LOGERROR(conf->mLogger) << "Unable to map view of file '" << validFilename << "'"
+                                << std::flush;
         return false;
     }
     auto data = mapper->data();
@@ -201,7 +202,8 @@ bool sample::load(const fs::path &filename)
             assert(SampleData[1]);
 
         mFileName = filename;
-    } else 
+    }
+    else
     {
         LOGERROR(conf->mLogger) << "Error processing file " << validFilename.c_str() << std::flush;
     }

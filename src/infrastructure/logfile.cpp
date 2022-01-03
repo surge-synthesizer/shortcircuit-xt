@@ -18,14 +18,13 @@
 #include "infrastructure/logfile.h"
 #include <iostream>
 
-
 namespace SC3::Log
 {
-void write_log(const char* c)
+void write_log(const char *c)
 {
     /*
      * Obviously, improve this
      */
     std::cout << "SC3LOG: " << c << std::endl;
 }
-}
+} // namespace SC3::Log

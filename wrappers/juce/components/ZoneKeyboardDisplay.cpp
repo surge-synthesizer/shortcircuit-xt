@@ -124,7 +124,8 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             auto ks = zsp->zonecopies[i].key_low;
             auto ke = zsp->zonecopies[i].key_high;
             auto col = juce::Colour(zoneColorPallette[i % zoneColorPallette.size()]);
-            if (i==hoveredZone) {
+            if (i == hoveredZone)
+            {
                 col = juce::Colour(245, 184, 184);
             }
             auto xs = keyXBounds[ks].first;
@@ -158,10 +159,11 @@ void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
         i++;
     }
 
-    if(hoveredKey<0)
+    if (hoveredKey < 0)
     {
         // todo shared func should be getting zone locations for drawing as well as hit detection
-        //  calculation of keyboard and zone locations should only be done on resize (not paint and not here)
+        //  calculation of keyboard and zone locations should only be done on resize (not paint and
+        //  not here)
         float keyboardHeight = 32; // todo to const
         float keyWidth = 1.f * getWidth() / 128;
         auto zoneYStart = keyboardHeight + 1;
@@ -182,14 +184,13 @@ void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
                 auto xs = keyXBounds[ks].first;
                 auto xe = keyXBounds[ke].second;
                 auto zoneRect = Rectangle<float>(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
-                if (zoneRect.contains(event.x, event.y)) {
-                    hoveredZone=i;
+                if (zoneRect.contains(event.x, event.y))
+                {
+                    hoveredZone = i;
                 }
             }
         }
     }
-
-
 
     if (hoveredKey != ohk || hoveredZone != ohz)
     {
@@ -207,7 +208,9 @@ void ZoneKeyboardDisplay::mouseDown(const MouseEvent &event)
         ad.data.i[1] = 127;
         // SEND
         sender->sendActionToEngine(ad);
-    } else if(hoveredZone >=0) {
+    }
+    else if (hoveredZone >= 0)
+    {
         actiondata ad;
         ad.actiontype = vga_select_zone_primary;
         ad.id = ip_kgv_or_list;

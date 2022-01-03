@@ -21,13 +21,11 @@
 #include <SC3Editor.h>
 #include "infrastructure/profiler.h"
 
-
-
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
     enum ControlState
     {
-        cs_default=0,
+        cs_default = 0,
         cs_pan,
         cs_dragpoint,
     };
@@ -45,29 +43,30 @@ class WaveDisplay : public juce::Component, public UIStateProxy
 
     sample *mSamplePtr;
     int dispmode;
-    int mZoom; // zoom factor. A value of 1 means 1 pixel is 1 sample. Higher value is more zoomed out
+    int mZoom; // zoom factor. A value of 1 means 1 pixel is 1 sample. Higher value is more zoomed
+               // out
     int mZoomMax;
     int mLeftMostSample; // leftmost sample in the display (in samples)
-    float mVerticalZoom,vzoom_drag;
-    int mNumVisiblePixels;  // width in pixels of visible wave display
+    float mVerticalZoom, vzoom_drag;
+    int mNumVisiblePixels; // width in pixels of visible wave display
     int n_hitpoints;
     unsigned int aatable[4][256];
     int playmode;
     int markerpos[256];
     bool draw_be_quick, draw_skip_wave_redraw;
     Rectangle<int> dragpoint[256];
-    int dragid=-1;// which item is being dragged
-    int controlstate=cs_default;
+    int dragid = -1; // which item is being dragged
+    int controlstate = cs_default;
 
     // we need a point of reference from last drag event as we are modifying state while dragging
     Point<int> mZoomPanOffset;
-/*
-    vg_surface wavesurf;
+    /*
+        vg_surface wavesurf;
 
-    vg_point lastmouseloc;
-    vg_bitmap bmpdata[16];
-    vg_menudata md;	// context menu
-    */
+        vg_point lastmouseloc;
+        vg_bitmap bmpdata[16];
+        vg_menudata md;	// context menu
+        */
 
     void queue_draw_wave(bool be_quick, bool skip_wave_redraw);
 
@@ -98,8 +97,6 @@ class WaveDisplay : public juce::Component, public UIStateProxy
 
   public:
     WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger);
-
-
 };
 
 #endif // SHORTCIRCUIT_WAVEDISPLAY_H
