@@ -5,7 +5,8 @@
 //
 
 #include "scratchpad.h"
-#include <JuceHeader.h>
+#include "juce_gui_basics/juce_gui_basics.h"
+
 ////////////////////////////////////////////////////////////////////////////////////
 // example item
 class AuditionZone : public ScratchPadItem
@@ -88,13 +89,12 @@ class DragWaveDisplayPoint : public ScratchPadItem
 // Load a known sample
 class LoadSampleFile : public ScratchPadItem
 {
-    ApplicationProperties ap;
+    juce::ApplicationProperties ap;
 
   public:
     LoadSampleFile()
     {
-
-        PropertiesFile::Options options;
+        juce::PropertiesFile::Options options;
         options.applicationName = "ShortcircuitXT_scratch";
         ap.setStorageParameters(options);
         auto user = ap.getUserSettings();

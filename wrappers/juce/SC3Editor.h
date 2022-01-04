@@ -8,11 +8,13 @@
 
 #pragma once
 
+#include "juce_gui_basics/juce_gui_basics.h"
+
 #include "SC3Processor.h"
-#include <JuceHeader.h>
 #include "sample.h"
 #include "sampler.h"
 #include "components/DebugPanel.h"
+#include "DataInterfaces.h"
 
 /*
  * This is basically a lock free thread safe FIFO queue of Ts with size qSize
@@ -53,37 +55,11 @@ template <typename T, int qSize = 4096> class SC3EngineToWrapperQueue
 struct SC3IdleTimer;
 class SC3Editor;
 
-/*
- * The UIStateProxy is a class which handles messages and keeps an appropriate state.
- * Components can render it for bulk action. For instance there woudl be a ZoneMapProxy
- * and so on. Each UIStateProxy registerred with the editor gets all the messages.
- */
-class UIStateProxy
-{
-  public:
-    virtual ~UIStateProxy() = default;
-    virtual bool processActionData(const actiondata &d) = 0;
-    std::unordered_set<juce::Component *> clients;
-    void repaintClients()
-    {
-        for (auto c : clients)
-        {
-            c->repaint();
-        }
-    }
-};
-
-class ActionSender
-{
-  public:
-    virtual ~ActionSender() = default;
-    virtual void sendActionToEngine(const actiondata &ad) = 0;
-};
-
 // Forward decls of proxies and their componetns
 class ZoneStateProxy;
 class WaveDisplayProxy;
 class ZoneKeyboardDisplay;
+struct ZoneEditor;
 class WaveDisplay;
 
 //==============================================================================
@@ -105,12 +81,12 @@ class SC3Editor : public juce::AudioProcessorEditor,
     void resized() override;
 
     // juce::Button::Listener interface
-    virtual void buttonClicked(Button *) override;
-    virtual void buttonStateChanged(Button *) override;
+    virtual void buttonClicked(juce::Button *) override;
+    virtual void buttonStateChanged(juce::Button *) override;
 
     // juce::FileDragAndDrop interface
-    bool isInterestedInFileDrag(const StringArray &files) override;
-    void filesDropped(const StringArray &files, int x, int y) override;
+    bool isInterestedInFileDrag(const juce::StringArray &files) override;
+    void filesDropped(const juce::StringArray &files, int x, int y) override;
 
     // Fixme - obviously this is done with no thought of threading or anything else
     void refreshSamplerTextViewInThreadUnsafeWay();
@@ -144,6 +120,7 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
+    std::unique_ptr<ZoneEditor> zoneEditor;
 
   public:
     std::array<int, 128> playingMidiNotes;

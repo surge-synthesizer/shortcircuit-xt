@@ -41,7 +41,8 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 
     g.fillAll(juce::Colour(80, 70, 60));
     g.setColour(juce::Colour(255, 255, 255));
-    g.drawText("Drop Samples Here or Double Click to Load", getBounds(), Justification::centred);
+    g.drawText("Drop Samples Here or Double Click to Load", getBounds(),
+               juce::Justification::centred);
     g.setColour(juce::Colour(0, 0, 0));
 
     /*
@@ -138,12 +139,12 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
         }
     }
 }
-void ZoneKeyboardDisplay::mouseExit(const MouseEvent &event)
+void ZoneKeyboardDisplay::mouseExit(const juce::MouseEvent &event)
 {
     hoveredKey = -1;
     repaint();
 }
-void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
+void ZoneKeyboardDisplay::mouseMove(const juce::MouseEvent &event)
 {
     int ohk = hoveredKey;
     int ohz = hoveredZone;
@@ -183,7 +184,8 @@ void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
                 auto ke = editor->zonesCopy[i].key_high;
                 auto xs = keyXBounds[ks].first;
                 auto xe = keyXBounds[ke].second;
-                auto zoneRect = Rectangle<float>(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
+                auto zoneRect =
+                    juce::Rectangle<float>(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
                 if (zoneRect.contains(event.x, event.y))
                 {
                     hoveredZone = i;
@@ -197,7 +199,7 @@ void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
         repaint();
     }
 }
-void ZoneKeyboardDisplay::mouseDown(const MouseEvent &event)
+void ZoneKeyboardDisplay::mouseDown(const juce::MouseEvent &event)
 {
     if (hoveredKey >= 0)
     {
@@ -218,7 +220,7 @@ void ZoneKeyboardDisplay::mouseDown(const MouseEvent &event)
         sender->sendActionToEngine(ad);
     }
 }
-void ZoneKeyboardDisplay::mouseUp(const MouseEvent &event)
+void ZoneKeyboardDisplay::mouseUp(const juce::MouseEvent &event)
 {
     if (playingKey >= 0)
     {
@@ -232,7 +234,7 @@ void ZoneKeyboardDisplay::mouseUp(const MouseEvent &event)
         playingKey = -1;
     }
 }
-void ZoneKeyboardDisplay::mouseDoubleClick(const MouseEvent &event)
+void ZoneKeyboardDisplay::mouseDoubleClick(const juce::MouseEvent &event)
 {
     juce::FileChooser sampleChooser("Please choose a sample file",
                                     juce::File::getSpecialLocation(juce::File::userHomeDirectory));

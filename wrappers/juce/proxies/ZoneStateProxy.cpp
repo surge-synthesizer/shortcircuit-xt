@@ -36,6 +36,7 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             for (int i = 0; i < max_zones; ++i)
                 editor->activeZones[i] = false;
             res = true;
+            invalidateAndRepaintClients();
             break;
         }
         case vga_zonelist_populate:
@@ -59,11 +60,12 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             sz->mute = zd->mute;
             strncpy(sz->name, zd->name, 32);
             res = true;
+            invalidateAndRepaintClients();
             break;
         }
         case vga_zonelist_done:
         {
-            repaintClients();
+            invalidateAndRepaintClients();
             res = true;
             break;
         }
