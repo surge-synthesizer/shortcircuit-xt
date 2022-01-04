@@ -72,7 +72,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
                 g.setColour(keyWhiteHoverColour);
                 g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
             }
-            if (zsp->playingMidiNotes[i])
+            if (editor->playingMidiNotes[i])
             {
                 g.setColour(keyPressedColour);
                 g.fillRect(xpos, ypos, keyWidth, ypos + keyboardHeight);
@@ -84,7 +84,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
         }
         else
         {
-            if (zsp->playingMidiNotes[i])
+            if (editor->playingMidiNotes[i])
             {
                 g.setColour(keyPressedColour);
             }
@@ -119,10 +119,10 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 
     for (int i = 0; i < max_zones; ++i)
     {
-        if (zsp->activezones[i])
+        if (editor->activeZones[i])
         {
-            auto ks = zsp->zonecopies[i].key_low;
-            auto ke = zsp->zonecopies[i].key_high;
+            auto ks = editor->zonesCopy[i].key_low;
+            auto ke = editor->zonesCopy[i].key_high;
             auto col = juce::Colour(zoneColorPallette[i % zoneColorPallette.size()]);
             if (i == hoveredZone)
             {
@@ -177,10 +177,10 @@ void ZoneKeyboardDisplay::mouseMove(const MouseEvent &event)
         }
         for (int i = 0; i < max_zones; ++i)
         {
-            if (zsp->activezones[i])
+            if (editor->activeZones[i])
             {
-                auto ks = zsp->zonecopies[i].key_low;
-                auto ke = zsp->zonecopies[i].key_high;
+                auto ks = editor->zonesCopy[i].key_low;
+                auto ke = editor->zonesCopy[i].key_high;
                 auto xs = keyXBounds[ks].first;
                 auto xe = keyXBounds[ke].second;
                 auto zoneRect = Rectangle<float>(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);

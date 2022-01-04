@@ -152,10 +152,7 @@ bool SC3AudioProcessor::hasEditor() const
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor *SC3AudioProcessor::createEditor()
-{
-    return new SC3AudioProcessorEditor(*this);
-}
+juce::AudioProcessorEditor *SC3AudioProcessor::createEditor() { return new SC3Editor(*this); }
 
 //==============================================================================
 void SC3AudioProcessor::getStateInformation(juce::MemoryBlock &destData)
