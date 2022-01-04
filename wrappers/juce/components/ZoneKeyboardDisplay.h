@@ -19,14 +19,14 @@
 #define SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H
 
 #include <JuceHeader.h>
-#include "proxies/ZoneStateProxy.h"
+#include "SC3Editor.h"
 
 class ActionSender;
 
 class ZoneKeyboardDisplay : public juce::Component
 {
   public:
-    ZoneKeyboardDisplay(ZoneStateProxy *z, ActionSender *sender) : zsp(z), sender(sender) {}
+    ZoneKeyboardDisplay(SC3Editor *z, ActionSender *sender) : editor(z), sender(sender) {}
 
     void paint(Graphics &g) override;
     void mouseExit(const MouseEvent &event) override;
@@ -38,7 +38,7 @@ class ZoneKeyboardDisplay : public juce::Component
 
   private:
     std::vector<juce::Rectangle<float>> keyLocations;
-    ZoneStateProxy *zsp; // a non-owned weak copy
+    SC3Editor *editor{nullptr}; // a non-owned weak copy
     int hoveredKey = -1;
     int playingKey = -1;
     int hoveredZone = -1;

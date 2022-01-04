@@ -23,7 +23,7 @@
 #include "version.h"
 #include "scratchpad.h"
 
-class SC3AudioProcessorEditor;
+class SC3Editor;
 
 class ActionRunner : public Component,
                      public juce::Button::Listener,
@@ -43,7 +43,7 @@ class ActionRunner : public Component,
     ActionRunner();
     ~ActionRunner();
 
-    SC3AudioProcessorEditor *mEditor;
+    SC3Editor *mEditor;
 };
 
 class DebugPanel : public juce::Component
@@ -53,7 +53,7 @@ class DebugPanel : public juce::Component
   public:
     DebugPanel();
     std::unique_ptr<ActionRunner> mActionRunner;
-    SC3AudioProcessorEditor *mEditor;
+    SC3Editor *mEditor;
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
 };
@@ -67,7 +67,7 @@ class DebugPanelWindow : public juce::DocumentWindow
 
     void setSamplerText(const juce::String &s) { panel->samplerT->setText(s); }
 
-    void setEditor(SC3AudioProcessorEditor *ed)
+    void setEditor(SC3Editor *ed)
     {
         panel->mEditor = ed;
         panel->mActionRunner->mEditor = ed;

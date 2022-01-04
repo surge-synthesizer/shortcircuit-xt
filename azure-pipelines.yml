@@ -80,7 +80,7 @@ jobs:
         condition: variables.isLinux
 
       - bash: |
-          cmake --build build --config Debug --target sc3-installer
+          cmake --build build --config Debug --target sc3-installer --parallel 4
         displayName: Build sc3-installer
 
       - bash: |

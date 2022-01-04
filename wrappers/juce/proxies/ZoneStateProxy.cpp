@@ -34,7 +34,7 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
         case vga_zonelist_clear:
         {
             for (int i = 0; i < max_zones; ++i)
-                activezones[i] = false;
+                editor->activeZones[i] = false;
             res = true;
             break;
         }
@@ -42,10 +42,21 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
         {
             ad_zonedata *zd = (ad_zonedata *)&ad;
 
-            sample_zone *sz = &zonecopies[zd->zid];
-            activezones[zd->zid] = true;
+            sample_zone *sz = &editor->zonesCopy[zd->zid];
+            editor->activeZones[zd->zid] = true;
+
+            sz->part = zd->part;
+            sz->layer = zd->layer;
             sz->key_low = zd->keylo;
+            sz->key_low_fade = zd->keylofade;
             sz->key_high = zd->keyhi;
+            sz->key_high_fade = zd->keyhifade;
+            sz->key_root = zd->keyroot;
+            sz->velocity_low = zd->vello;
+            sz->velocity_low_fade = zd->vellofade;
+            sz->velocity_high = zd->velhi;
+            sz->velocity_high_fade = zd->velhifade;
+            sz->mute = zd->mute;
             strncpy(sz->name, zd->name, 32);
             res = true;
             break;
@@ -61,7 +72,7 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             auto note = ad.data.i[0];
             if (note >= 0 && note < 128)
             {
-                playingMidiNotes[note] = ad.data.i[1];
+                editor->playingMidiNotes[note] = ad.data.i[1];
                 repaintClients();
             }
             res = true;

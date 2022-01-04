@@ -23,19 +23,11 @@
 class ZoneStateProxy : public UIStateProxy
 {
   public:
-    ZoneStateProxy()
-    {
-        for (int i = 0; i < max_zones; ++i)
-            activezones[i] = false;
-        for (int i = 0; i < 128; ++i)
-            playingMidiNotes[i] = 0;
-    };
+    ZoneStateProxy(SC3Editor *ed) : editor(ed){};
 
     virtual bool processActionData(const actiondata &d);
 
-    sample_zone zonecopies[max_zones];
-    bool activezones[max_zones];
-    std::array<int, 128> playingMidiNotes;
+    SC3Editor *editor{nullptr};
 };
 
 #endif // SHORTCIRCUIT_ZONESTATEPROXY_H

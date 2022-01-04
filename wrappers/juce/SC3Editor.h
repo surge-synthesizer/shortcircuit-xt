@@ -51,7 +51,7 @@ template <typename T, int qSize = 4096> class SC3EngineToWrapperQueue
     T dq[qSize];
 };
 struct SC3IdleTimer;
-class SC3AudioProcessorEditor;
+class SC3Editor;
 
 /*
  * The UIStateProxy is a class which handles messages and keeps an appropriate state.
@@ -89,16 +89,16 @@ class WaveDisplay;
 //==============================================================================
 /**
  */
-class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
-                                public juce::Button::Listener,
-                                public juce::FileDragAndDropTarget,
-                                public sampler::WrapperListener,
-                                public ActionSender,
-                                public SC3::Log::LoggingCallback
+class SC3Editor : public juce::AudioProcessorEditor,
+                  public juce::Button::Listener,
+                  public juce::FileDragAndDropTarget,
+                  public sampler::WrapperListener,
+                  public ActionSender,
+                  public SC3::Log::LoggingCallback
 {
   public:
-    SC3AudioProcessorEditor(SC3AudioProcessor &);
-    ~SC3AudioProcessorEditor() override;
+    SC3Editor(SC3AudioProcessor &);
+    ~SC3Editor() override;
 
     //==============================================================================
     void paint(juce::Graphics &) override;
@@ -145,7 +145,13 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
 
-    sample_zone zonesC[max_zones];
+  public:
+    std::array<int, 128> playingMidiNotes;
+
+    friend class ZoneStateProxy;
+    sample_zone zonesCopy[max_zones];
+    bool activeZones[max_zones];
+
     sample_part partsC[n_sampler_parts];
     sample_multi multiC;
     int freeParamsC[n_ip_free_items][16];
@@ -154,5 +160,5 @@ class SC3AudioProcessorEditor : public juce::AudioProcessorEditor,
     SC3::Log::Level getLevel() override;
     void message(SC3::Log::Level lev, const std::string &msg) override;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3Editor)
 };
