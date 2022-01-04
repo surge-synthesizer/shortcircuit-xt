@@ -17,7 +17,9 @@
 
 #ifndef SHORTCIRCUIT_WAVEDISPLAY_H
 #define SHORTCIRCUIT_WAVEDISPLAY_H
-#include <JuceHeader.h>
+
+#include "juce_gui_basics/juce_gui_basics.h"
+
 #include <SC3Editor.h>
 #include "infrastructure/profiler.h"
 
@@ -36,10 +38,10 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     SC3::Perf::Profiler prof;
 
     // boundary around actual waveform display (excludes margin)
-    Rectangle<int> mWaveBounds;
+    juce::Rectangle<int> mWaveBounds;
 
     // this will hold the rendered wave
-    Image mWavePixels;
+    juce::Image mWavePixels;
 
     sample *mSamplePtr;
     int dispmode;
@@ -54,12 +56,12 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     int playmode;
     int markerpos[256];
     bool draw_be_quick, draw_skip_wave_redraw;
-    Rectangle<int> dragpoint[256];
+    juce::Rectangle<int> dragpoint[256];
     int dragid = -1; // which item is being dragged
     int controlstate = cs_default;
 
     // we need a point of reference from last drag event as we are modifying state while dragging
-    Point<int> mZoomPanOffset;
+    juce::Point<int> mZoomPanOffset;
     /*
         vg_surface wavesurf;
 
@@ -75,22 +77,22 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     void renderWave(bool quick);
 
     // draw the start/end/loop points
-    void drawDetails(Graphics &g, Rectangle<int> bounds);
+    void drawDetails(juce::Graphics &g, juce::Rectangle<int> bounds);
 
     // conversion
     int samplePosToPixelPos(int sample);
     int pixelPosToSamplePos(int pos);
 
     // implement Component
-    void paint(Graphics &g) override;
+    void paint(juce::Graphics &g) override;
     void resized() override;
     // we might not need all of these...
-    void mouseDrag(const MouseEvent &event) override;
-    void mouseDown(const MouseEvent &event) override;
-    void mouseUp(const MouseEvent &event) override;
-    void mouseEnter(const MouseEvent &event) override;
-    void mouseExit(const MouseEvent &event) override;
-    void mouseMove(const MouseEvent &event) override;
+    void mouseDrag(const juce::MouseEvent &event) override;
+    void mouseDown(const juce::MouseEvent &event) override;
+    void mouseUp(const juce::MouseEvent &event) override;
+    void mouseEnter(const juce::MouseEvent &event) override;
+    void mouseExit(const juce::MouseEvent &event) override;
+    void mouseMove(const juce::MouseEvent &event) override;
 
     // implement UIStateProxy
     virtual bool processActionData(const actiondata &d) override;

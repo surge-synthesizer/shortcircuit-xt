@@ -32,11 +32,12 @@ void ActionRunner::buttonClicked(juce::Button *b)
                                                         &error))
             {
                 mEditor->audioProcessor.sc3->postEventsFromWrapper(ad);
-                mDescription->setText("Action was sent.", dontSendNotification);
+                mDescription->setText("Action was sent.", juce::dontSendNotification);
             }
             else
             {
-                mDescription->setText(juce::String(error), NotificationType::dontSendNotification);
+                mDescription->setText(juce::String(error),
+                                      juce::NotificationType::dontSendNotification);
             }
         }
     }
@@ -75,15 +76,16 @@ ActionRunner::ActionRunner()
     {
         mActionList->addItem(it->mName, ++index); // must be 1 based
     }
-    mDescription->setText("Select action to run", NotificationType::dontSendNotification);
+    mDescription->setText("Select action to run", juce::NotificationType::dontSendNotification);
 }
-void ActionRunner::comboBoxChanged(ComboBox *comboBoxThatHasChanged)
+void ActionRunner::comboBoxChanged(juce::ComboBox *comboBoxThatHasChanged)
 {
     auto id = mActionList->getSelectedId();
     if (id > 0)
     {
-        mDescription->setText(mItems[id - 1]->mDescription, NotificationType::dontSendNotification);
-        mParameters->setText(mItems[id - 1]->mDefaultParameter, dontSendNotification);
+        mDescription->setText(mItems[id - 1]->mDescription,
+                              juce::NotificationType::dontSendNotification);
+        mParameters->setText(mItems[id - 1]->mDefaultParameter, juce::dontSendNotification);
     }
 }
 ActionRunner::~ActionRunner() { unregisterScratchPadItems(mItems); }

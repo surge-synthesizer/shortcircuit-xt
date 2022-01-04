@@ -208,6 +208,9 @@ bool sample::load(const fs::path &filename)
         LOGERROR(conf->mLogger) << "Error processing file " << validFilename.c_str() << std::flush;
     }
 
+    auto st = mFileName.stem().u8string();
+    strncpy(name, st.c_str(), 64);
+
     return r;
 }
 

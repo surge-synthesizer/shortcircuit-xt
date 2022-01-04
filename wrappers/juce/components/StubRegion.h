@@ -18,7 +18,7 @@
 #ifndef SHORTCIRCUIT_STUBREGION_H
 #define SHORTCIRCUIT_STUBREGION_H
 
-#include <JuceHeader.h>
+#include "juce_gui_basics/juce_gui_basics.h"
 
 class StubRegion : public juce::Component
 {
@@ -31,11 +31,11 @@ class StubRegion : public juce::Component
         this->lab = lab;
     }
 
-    void paint(Graphics &g) override
+    void paint(juce::Graphics &g) override
     {
         g.fillAll(bg);
         g.setColour(juce::Colour(255, 255, 255));
-        g.drawText(lab, getBounds(), Justification::centred);
+        g.drawText(lab, getBounds(), juce::Justification::centred);
     }
 
     juce::Colour bg;

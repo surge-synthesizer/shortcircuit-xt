@@ -18,7 +18,8 @@
 #ifndef SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H
 #define SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H
 
-#include <JuceHeader.h>
+#include "juce_gui_basics/juce_gui_basics.h"
+
 #include "SC3Editor.h"
 
 class ActionSender;
@@ -28,13 +29,13 @@ class ZoneKeyboardDisplay : public juce::Component
   public:
     ZoneKeyboardDisplay(SC3Editor *z, ActionSender *sender) : editor(z), sender(sender) {}
 
-    void paint(Graphics &g) override;
-    void mouseExit(const MouseEvent &event) override;
-    void mouseMove(const MouseEvent &event) override;
-    void mouseDown(const MouseEvent &event) override;
-    void mouseUp(const MouseEvent &event) override;
+    void paint(juce::Graphics &g) override;
+    void mouseExit(const juce::MouseEvent &event) override;
+    void mouseMove(const juce::MouseEvent &event) override;
+    void mouseDown(const juce::MouseEvent &event) override;
+    void mouseUp(const juce::MouseEvent &event) override;
 
-    void mouseDoubleClick(const MouseEvent &event) override;
+    void mouseDoubleClick(const juce::MouseEvent &event) override;
 
   private:
     std::vector<juce::Rectangle<float>> keyLocations;

@@ -251,8 +251,6 @@ juce_add_plugin(ShortcircuitXT
         FORMATS AU VST3 Standalone
         )
 
-juce_generate_juce_header(ShortcircuitXT)
-
 # Add a binary resource (needs remediation)
 # file(GLOB SC3_RESOURCES_GLOB resources/test_samples/*)
 set(SC3_RESOURCES_GLOB resources/shortcircuit.ico)
@@ -260,7 +258,10 @@ juce_add_binary_data(ShortcircuitXT-Binary SOURCES ${SC3_RESOURCES_GLOB})
 set_target_properties(ShortcircuitXT-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # images used in the ui
-juce_add_binary_data(ImageAssets NAMESPACE SCXTImages SOURCES
+juce_add_binary_data(ImageAssets
+        NAMESPACE SCXTImages
+        HEADER_NAME BinaryImageAssets.h
+        SOURCES
         resources/images/wavehandle_start.png
         resources/images/wavehandle_end.png
         resources/images/wavehandle_crossfade.png
@@ -275,18 +276,13 @@ target_sources(ShortcircuitXT PRIVATE
         wrappers/juce/SC3Editor.cpp
 
         wrappers/juce/components/WaveDisplay.cpp
-        wrappers/juce/components/WaveDisplay.h
         wrappers/juce/components/DebugPanel.cpp
-        wrappers/juce/components/DebugPanel.h
-        wrappers/juce/components/StubRegion.h
         wrappers/juce/components/ZoneKeyboardDisplay.cpp
-        wrappers/juce/components/ZoneKeyboardDisplay.h
+        wrappers/juce/components/ZoneEditor.cpp
 
         wrappers/juce/proxies/ZoneStateProxy.cpp
-        wrappers/juce/proxies/ZoneStateProxy.h
 
         wrappers/juce/scratchpad.cpp
-        wrappers/juce/scratchpad.h
         )
 target_include_directories(ShortcircuitXT PRIVATE wrappers/juce)
 target_compile_definitions(ShortcircuitXT PUBLIC

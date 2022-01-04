@@ -18,21 +18,22 @@
 #ifndef SHORTCIRCUIT_DEBUGPANEL_H
 #define SHORTCIRCUIT_DEBUGPANEL_H
 
-#include <JuceHeader.h>
+#include "juce_gui_basics/juce_gui_basics.h"
+
 #include <string>
 #include "version.h"
 #include "scratchpad.h"
 
 class SC3Editor;
 
-class ActionRunner : public Component,
+class ActionRunner : public juce::Component,
                      public juce::Button::Listener,
                      public juce::ComboBox::Listener
 {
 
-    void buttonClicked(Button *b) override;
+    void buttonClicked(juce::Button *b) override;
     void resized() override;
-    void comboBoxChanged(ComboBox *comboBoxThatHasChanged) override;
+    void comboBoxChanged(juce::ComboBox *comboBoxThatHasChanged) override;
     std::unique_ptr<juce::TextButton> mSendActionBtn;
     std::unique_ptr<juce::TextEditor> mParameters;
     std::unique_ptr<juce::ComboBox> mActionList;
@@ -75,7 +76,7 @@ class DebugPanelWindow : public juce::DocumentWindow
 
     void appendLogText(const juce::String &s)
     {
-        String str = s;
+        auto str = s;
         str += "\n";
         panel->logT->setCaretPosition(panel->logT->getText().length());
         panel->logT->insertTextAtCaret(str);

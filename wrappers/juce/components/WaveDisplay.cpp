@@ -23,6 +23,8 @@
 #include <algorithm>
 #include "infrastructure/profiler.h"
 
+#include "BinaryImageAssets.h"
+
 const int WAVE_MARGIN = 6;      // margin around wave display in pixels
 const int WAVE_CHANNEL_GAP = 4; // gap between channels
 
@@ -60,11 +62,11 @@ void WaveDisplay::resized()
     queue_draw_wave(false, false);
 }
 
-void WaveDisplay::paint(Graphics &g)
+void WaveDisplay::paint(juce::Graphics &g)
 {
 
     prof.enter();
-    Rectangle<int> r = getLocalBounds();
+    juce::Rectangle<int> r = getLocalBounds();
     g.setColour(
         juce::Colours::darkgrey); // background color for entire control (wave bg is separate)
     g.fillRect(r);
@@ -76,7 +78,8 @@ void WaveDisplay::paint(Graphics &g)
         {
             g.setColour(juce::Colours::white); // foreground color for text
             g.drawText("No sample.", r,
-                       Justification::horizontallyCentred | Justification::verticallyCentred);
+                       juce::Justification::horizontallyCentred |
+                           juce::Justification::verticallyCentred);
         }
         else
         {
@@ -103,7 +106,8 @@ void WaveDisplay::paint(Graphics &g)
         {
             g.setColour(juce::Colours::white); // foreground color for text
             g.drawText("Multiple zones selected. Changes will be applied to all of them.", r,
-                       Justification::horizontallyCentred | Justification::verticallyCentred);
+                       juce::Justification::horizontallyCentred |
+                           juce::Justification::verticallyCentred);
         }
         break;
     case 2:
@@ -212,14 +216,15 @@ static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2
 void WaveDisplay::renderWave(bool quick)
 {
     // draw wave within our margin
-    Rectangle<int> bounds = mWaveBounds;
+    juce::Rectangle<int> bounds = mWaveBounds;
 
     int imgw = bounds.getWidth();
     int imgh = bounds.getHeight();
 
     // software image type has known pixel format (may be slower?)
-    mWavePixels = Image(Image::PixelFormat::ARGB, imgw, imgh, true, SoftwareImageType());
-    Image::BitmapData pixelsBmp(mWavePixels, Image::BitmapData::writeOnly);
+    mWavePixels =
+        juce::Image(juce::Image::PixelFormat::ARGB, imgw, imgh, true, juce::SoftwareImageType());
+    juce::Image::BitmapData pixelsBmp(mWavePixels, juce::Image::BitmapData::writeOnly);
     // gain access to the raw pixels which we'll be modifying
     uint32 *img = (unsigned int *)pixelsBmp.data;
 
@@ -421,7 +426,7 @@ int WaveDisplay::pixelPosToSamplePos(int pos) { return pos * mZoom + mLeftMostSa
 
 // draw the start/end/loop pos etc.
 // bounds here is entire area
-void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
+void WaveDisplay::drawDetails(juce::Graphics &g, juce::Rectangle<int> bounds)
 {
 
     uint32 bgcola = juce::Colour(juce::Colours::red).getARGB(); // background
@@ -433,13 +438,13 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
     juce::Colour lmcol = juce::Colour(0xff0462c2);
     juce::Colour lmcol_faint = juce::Colours::bisque; // tint area
     lmcol_faint = lmcol_faint.withAlpha(
-        (uint8)100); // TODO I think we need alpha on this so it doesn't obscure the wave
+        (uint8_t)100); // TODO I think we need alpha on this so it doesn't obscure the wave
 
     int imgw = bounds.getWidth();
     int imgh = bounds.getHeight();
 
     for (int i = 0; i < 256; i++) // TODO constant here
-        dragpoint[i] = Rectangle<int>(0, 0, 0, 0);
+        dragpoint[i] = juce::Rectangle<int>(0, 0, 0, 0);
 
     int waveLeft = mWaveBounds.getX();
     int waveTop = mWaveBounds.getY();
@@ -452,13 +457,13 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         int x1 = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::loopStart]);
         int x2 = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::loopEnd]);
 
-        Rectangle<int> tr(x1 + waveLeft, waveTop, x2 - x1, waveHeight);
+        juce::Rectangle<int> tr(x1 + waveLeft, waveTop, x2 - x1, waveHeight);
         // ensure that it stays within our bounds (not that I think it matters)
         bounds.intersectRectangle(tr);
         g.setColour(lmcol_faint);
         g.fillRect(tr);
 
-        dragpoint[2] = Rectangle<int>(0, 0, 13, 13);
+        dragpoint[2] = juce::Rectangle<int>(0, 0, 13, 13);
         dragpoint[2].setCentre(x1 + waveLeft, waveTop + waveHeight);
 
         // draw vertical line and icon for left loop marker
@@ -471,7 +476,7 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
             // surf.blit_alphablend(dragpoint[2],bmpdata[2]);
         }
 
-        dragpoint[3] = Rectangle<int>(0, 0, 13, 13);
+        dragpoint[3] = juce::Rectangle<int>(0, 0, 13, 13);
         dragpoint[3].setCentre(x2 + waveLeft, waveTop + waveHeight);
         if ((x2 >= 0) && (x2 < waveWidth))
         {
@@ -487,26 +492,26 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
         // not slice mode, so draw zone start and end markers
         int x = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::start]);
 
-        dragpoint[0] = Rectangle<int>(0, 0, 13, 13);
+        dragpoint[0] = juce::Rectangle<int>(0, 0, 13, 13);
         dragpoint[0].setCentre(x + waveLeft, waveTop);
         if ((x >= 0) && (x < waveWidth))
         {
             g.setColour(zmcol);
             g.drawRect(x + waveLeft, 0, 1, imgh - 1);
-            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_start_png,
-                                                 SCXTImages::wavehandle_start_pngSize);
+            auto img = juce::ImageCache::getFromMemory(SCXTImages::wavehandle_start_png,
+                                                       SCXTImages::wavehandle_start_pngSize);
             g.drawImageAt(img, x + waveLeft - (img.getWidth() / 2), 0);
         }
 
         x = samplePosToPixelPos(markerpos[ActionWaveDisplayEditPoint::PointType::end]);
-        dragpoint[1] = Rectangle<int>(0, 0, 13, 13);
+        dragpoint[1] = juce::Rectangle<int>(0, 0, 13, 13);
         dragpoint[1].setCentre(x + waveLeft, waveTop);
         if ((x >= 0) && (x < waveWidth))
         {
             g.setColour(zmcol);
             g.drawRect(x + waveLeft, 0, 1, imgh - 1);
-            auto img = ImageCache::getFromMemory(SCXTImages::wavehandle_end_png,
-                                                 SCXTImages::wavehandle_end_pngSize);
+            auto img = juce::ImageCache::getFromMemory(SCXTImages::wavehandle_end_png,
+                                                       SCXTImages::wavehandle_end_pngSize);
             g.drawImageAt(img, x + waveLeft - (img.getWidth() / 2), 0);
         }
     }
@@ -518,7 +523,7 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
             int x1 = samplePosToPixelPos(
                 markerpos[ActionWaveDisplayEditPoint::PointType::hitPointStart + i]);
             dragpoint[ActionWaveDisplayEditPoint::PointType::hitPointStart + i] =
-                Rectangle<int>(0, 0, 13, 13);
+                juce::Rectangle<int>(0, 0, 13, 13);
             dragpoint[ActionWaveDisplayEditPoint::PointType::hitPointStart + i].setCentre(x1,
                                                                                           imgh - 1);
             if ((x1 >= 0) && (x1 < imgw))
@@ -545,7 +550,7 @@ void WaveDisplay::drawDetails(Graphics &g, Rectangle<int> bounds)
             surf.draw_text_multiline(rt,text,owner->get_syscolor(col_standard_text),1,1);
     }*/
 }
-void WaveDisplay::mouseDrag(const MouseEvent &event)
+void WaveDisplay::mouseDrag(const juce::MouseEvent &event)
 {
     if (controlstate == cs_pan)
     {
@@ -594,7 +599,7 @@ void WaveDisplay::mouseDrag(const MouseEvent &event)
     }
 }
 
-void WaveDisplay::mouseDown(const MouseEvent &event)
+void WaveDisplay::mouseDown(const juce::MouseEvent &event)
 {
 
     auto mp = event.getMouseDownPosition();
@@ -665,7 +670,7 @@ owner->post_action(ad,0);
 #endif
 }
 
-void WaveDisplay::mouseUp(const MouseEvent &event)
+void WaveDisplay::mouseUp(const juce::MouseEvent &event)
 {
 
     // temporarily use this for zoom in or out (left click/right click)
@@ -696,8 +701,8 @@ void WaveDisplay::mouseUp(const MouseEvent &event)
     }
     controlstate = cs_default;
 }
-void WaveDisplay::mouseEnter(const MouseEvent &event) { Component::mouseEnter(event); }
-void WaveDisplay::mouseExit(const MouseEvent &event) { Component::mouseExit(event); }
+void WaveDisplay::mouseEnter(const juce::MouseEvent &event) { Component::mouseEnter(event); }
+void WaveDisplay::mouseExit(const juce::MouseEvent &event) { Component::mouseExit(event); }
 
 #if 0
 // TODO mouse wheel
@@ -718,17 +723,17 @@ if(e.eventtype == vget_mousewheel)
 #endif
 
 // this should be used to change the mouse cursor
-void WaveDisplay::mouseMove(const MouseEvent &event)
+void WaveDisplay::mouseMove(const juce::MouseEvent &event)
 {
     auto mp = event.getPosition();
     for (int i = 0; i < (5 + n_hitpoints); i++)
     {
         if (dragpoint[i].contains(mp))
         {
-            setMouseCursor(MouseCursor::LeftRightResizeCursor);
+            setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
             return;
         }
     }
-    setMouseCursor(MouseCursor::NormalCursor);
+    setMouseCursor(juce::MouseCursor::NormalCursor);
     return;
 }

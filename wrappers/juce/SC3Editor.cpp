@@ -17,6 +17,7 @@
 
 #include "components/StubRegion.h"
 #include "components/DebugPanel.h"
+#include "components/ZoneEditor.h"
 #include "components/ZoneKeyboardDisplay.h"
 #include "components/WaveDisplay.h"
 
@@ -57,8 +58,12 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     uiStateProxies.insert(waveDisplay.get());
     zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
 
-    addAndMakeVisible(zoneKeyboardDisplay.get());
-    addAndMakeVisible(waveDisplay.get());
+    zoneEditor = std::make_unique<ZoneEditor>(this);
+    zoneStateProxy->clients.insert(zoneEditor.get());
+
+    addAndMakeVisible(*zoneEditor);
+    addAndMakeVisible(*zoneKeyboardDisplay);
+    addAndMakeVisible(*waveDisplay);
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
@@ -73,7 +78,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(900, 600);
+    setSize(900, 700);
 }
 
 SC3Editor::~SC3Editor()
@@ -97,9 +102,9 @@ void SC3Editor::sendActionInternal(const actiondata &ad)
     audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
-void SC3Editor::buttonClicked(Button *b) {}
+void SC3Editor::buttonClicked(juce::Button *b) {}
 
-void SC3Editor::buttonStateChanged(Button *b) {}
+void SC3Editor::buttonStateChanged(juce::Button *b) {}
 
 //==============================================================================
 void SC3Editor::paint(juce::Graphics &g)
@@ -117,15 +122,16 @@ void SC3Editor::paint(juce::Graphics &g)
 
 void SC3Editor::resized()
 {
-    Rectangle<int> r = getLocalBounds();
-    r.reduce(2, 2);
-    zoneKeyboardDisplay->setBounds(r.removeFromTop(200));
-    r.removeFromBottom(10);
-    waveDisplay->setBounds(r);
+    auto r = getLocalBounds();
+    r = r.reduced(2, 2);
+    zoneKeyboardDisplay->setBounds(r.withHeight(180));
+    r = r.withTrimmedTop(180);
+    waveDisplay->setBounds(r.withWidth(400));
+    zoneEditor->setBounds(r.withTrimmedLeft(400));
 }
 
-bool SC3Editor::isInterestedInFileDrag(const StringArray &files) { return true; }
-void SC3Editor::filesDropped(const StringArray &files, int x, int y)
+bool SC3Editor::isInterestedInFileDrag(const juce::StringArray &files) { return true; }
+void SC3Editor::filesDropped(const juce::StringArray &files, int x, int y)
 {
     auto d = new DropList();
 

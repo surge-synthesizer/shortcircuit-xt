@@ -113,9 +113,9 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     int ons[127], offs[127];
     int onp = 0, offp = 0;
 
-    for (const MidiMessageMetadata it : midiMessages)
+    for (const auto it : midiMessages)
     {
-        MidiMessage m = it.getMessage();
+        auto m = it.getMessage();
         if (m.isNoteOn())
         {
             sc3->PlayNote(0, m.getNoteNumber(), m.getVelocity());
