@@ -167,7 +167,6 @@ void SC3Editor::idle()
 
 #if DEBUG_UNHANDLED_MESSAGES
     std::map<int, std::map<int, int>> unhandled;
-    bool collapseSubtypes = true;
     uint64_t unhandledCount = 0;
 #endif
     while (actiondataToUI->pop(ad))
@@ -272,10 +271,8 @@ void SC3Editor::idle()
             // if (unhandled.find(ad.actiontype) == unhandled.end())
             //    unhandled[ad.actiontype];
             int aid = ad.id;
-            if (collapseSubtypes)
-                aid = -1;
             if (std::holds_alternative<VAction>(ad.actiontype))
-                unhandled[std::get<VAction>(ad.actiontype)][aid]++;
+                unhandled[aid][std::get<VAction>(ad.actiontype)]++;
             else
             {
                 // jassert(false);
@@ -292,12 +289,14 @@ void SC3Editor::idle()
         DBG("Unhandled Message Count : " << unhandledCount);
 #endif
 
+    std::ostringstream debugLog;
+
     LogTransport lt;
     while (logToUI->pop(lt))
     {
         std::string t = SC3::Log::getShortLevelStr(lt.lev);
         // We now have an option to do something else with errors if we want
-        debugWindow->appendLogText(t + lt.txt);
+        debugLog << t << lt.txt << "\n";
         mcount++;
     }
 
@@ -305,21 +304,20 @@ void SC3Editor::idle()
     // bit of a hack, sure.
     if (unhandled.size())
     {
-        debugWindow->appendLogText("[EDITOR] -------- MESSAGE BLOCK -------");
+        debugLog << "[EDITOR] ---- Unhandled " << unhandledCount << " Messages ---\n";
     }
     for (auto uh : unhandled)
     {
+        debugLog << "[EDITOR] Message ID: " << debug_wrapper_ip_to_string(uh.first) << "\n";
         for (auto uhsub : uh.second)
         {
-            std::ostringstream oss;
-            oss << "[EDITOR] ignored UI msg=" << debug_wrapper_vga_to_string(uh.first);
-            if (!collapseSubtypes)
-                oss << "/" << debug_wrapper_ip_to_string(uhsub.first);
-            oss << " ct=" << uhsub.second;
-            debugWindow->appendLogText(oss.str());
+            debugLog << "[EDITOR]       Action=" << debug_wrapper_vga_to_string(uhsub.first)
+                     << " ct=" << uhsub.second << "\n";
         }
     }
 #endif
+
+    debugWindow->appendLogText(debugLog.str(), false);
 
     // Obviously this is thread unsafe and wonky still
     if (mcount)
