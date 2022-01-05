@@ -23,6 +23,7 @@
 
 #include "proxies/ZoneStateProxy.h"
 #include "proxies/BrowserDataProxy.h"
+#include "proxies/SelectionStateProxy.h"
 
 #define DEBUG_UNHANDLED_MESSAGES 1
 
@@ -52,11 +53,9 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     p.sc3->registerWrapperForEvents(this);
 
     // This is going to be a little pattern I'm sure
-    zoneStateProxy = std::make_unique<ZoneStateProxy>(this);
-    uiStateProxies.insert(zoneStateProxy.get());
-
-    browserDataProxy = std::make_unique<BrowserDataProxy>(this);
-    uiStateProxies.insert(browserDataProxy.get());
+    zoneStateProxy = make_proxy<ZoneStateProxy>();
+    browserDataProxy = make_proxy<BrowserDataProxy>();
+    selectionStateProxy = make_proxy<SelectionStateProxy>();
 
     waveDisplay = std::make_unique<WaveDisplay>(this, this);
     uiStateProxies.insert(waveDisplay.get());

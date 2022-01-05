@@ -62,6 +62,7 @@ class SC3Editor;
 class ZoneStateProxy;
 class WaveDisplayProxy;
 struct BrowserDataProxy;
+struct SelectionStateProxy;
 
 class ZoneKeyboardDisplay;
 struct ZoneEditor;
@@ -124,6 +125,14 @@ class SC3Editor : public juce::AudioProcessorEditor,
 
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<BrowserDataProxy> browserDataProxy;
+    std::unique_ptr<SelectionStateProxy> selectionStateProxy;
+
+    template <typename T> std::unique_ptr<T> make_proxy()
+    {
+        auto r = std::make_unique<T>(this);
+        uiStateProxies.insert(r.get());
+        return (std::move(r));
+    }
 
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
