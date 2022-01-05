@@ -19,17 +19,29 @@ class BrowserDataProxy : public UIStateProxy
             auto at = std::get<VAction>(ad.actiontype);
             if (at == vga_database_samplelist)
             {
-                editor->n_databaseSampleList = ad.data.i[2];
-                editor->databaseSampleList = (database_samplelist *)ad.data.ptr[0];
+                editor->samplesCopyActiveCount = ad.data.i[2];
+                auto dsl = (database_samplelist *)ad.data.ptr[0];
+
+                for (auto &d : editor->samplesCopy)
+                    d.id = -1;
+
+                if (!dsl)
+                    return true;
+
+                for (int i = 0; i < editor->samplesCopyActiveCount; ++i)
+                {
+                    editor->samplesCopy[i] = dsl[i];
+                }
+
+                *((int *)dsl) = 'done';
+
                 invalidateAndRepaintClients();
 
-                std::cout << "UPDATED DATABASE SAMPLES " << editor->n_databaseSampleList
-                          << std::endl;
-                auto d = editor->databaseSampleList;
-                for (int i = 0; i < editor->n_databaseSampleList; ++i)
+                for (const auto &d : editor->samplesCopy)
                 {
-                    std::cout << d[i].name << " " << d[i].size << " " << d[i].refcount << " "
-                              << d[i].id << std::endl;
+                    if (d.id >= 0)
+                        std::cout << d.name << " " << d.size << " " << d.refcount << " " << d.id
+                                  << std::endl;
                 }
                 return true;
             }
