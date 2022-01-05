@@ -96,6 +96,7 @@ class LoadSampleFile : public ScratchPadItem
     {
         juce::PropertiesFile::Options options;
         options.applicationName = "ShortcircuitXT_scratch";
+        options.osxLibrarySubFolder = "Application Support/ShortcircuitXT";
         ap.setStorageParameters(options);
         auto user = ap.getUserSettings();
         auto f = user->getValue("scratchLoadFile");

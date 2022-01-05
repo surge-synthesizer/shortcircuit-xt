@@ -13,13 +13,16 @@
 #include "SC3Processor.h"
 #include "sample.h"
 #include "sampler.h"
+
+#include "vt_gui/browserdata.h"
+
 #include "components/DebugPanel.h"
 #include "DataInterfaces.h"
 
 /*
  * This is basically a lock free thread safe FIFO queue of Ts with size qSize
  */
-template <typename T, int qSize = 4096> class SC3EngineToWrapperQueue
+template <typename T, int qSize = 4096 * 16> class SC3EngineToWrapperQueue
 {
   public:
     SC3EngineToWrapperQueue() : af(qSize) {}
@@ -58,6 +61,8 @@ class SC3Editor;
 // Forward decls of proxies and their componetns
 class ZoneStateProxy;
 class WaveDisplayProxy;
+struct BrowserDataProxy;
+
 class ZoneKeyboardDisplay;
 struct ZoneEditor;
 class WaveDisplay;
@@ -118,11 +123,16 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::set<UIStateProxy *> uiStateProxies;
 
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
+    std::unique_ptr<BrowserDataProxy> browserDataProxy;
+
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
     std::unique_ptr<ZoneEditor> zoneEditor;
 
   public:
+    const database_samplelist *databaseSampleList{nullptr};
+    uint64_t n_databaseSampleList{0};
+
     std::array<int, 128> playingMidiNotes;
 
     friend class ZoneStateProxy;

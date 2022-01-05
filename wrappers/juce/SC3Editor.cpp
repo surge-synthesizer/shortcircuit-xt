@@ -22,6 +22,7 @@
 #include "components/WaveDisplay.h"
 
 #include "proxies/ZoneStateProxy.h"
+#include "proxies/BrowserDataProxy.h"
 
 #define DEBUG_UNHANDLED_MESSAGES 1
 
@@ -52,10 +53,15 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
 
     // This is going to be a little pattern I'm sure
     zoneStateProxy = std::make_unique<ZoneStateProxy>(this);
-    zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(this, this);
-    waveDisplay = std::make_unique<WaveDisplay>(this, this);
     uiStateProxies.insert(zoneStateProxy.get());
+
+    browserDataProxy = std::make_unique<BrowserDataProxy>(this);
+    uiStateProxies.insert(browserDataProxy.get());
+
+    waveDisplay = std::make_unique<WaveDisplay>(this, this);
     uiStateProxies.insert(waveDisplay.get());
+
+    zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(this, this);
     zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
 
     zoneEditor = std::make_unique<ZoneEditor>(this);
@@ -162,6 +168,7 @@ void SC3Editor::idle()
 #if DEBUG_UNHANDLED_MESSAGES
     std::map<int, std::map<int, int>> unhandled;
     bool collapseSubtypes = true;
+    uint64_t unhandledCount = 0;
 #endif
     while (actiondataToUI->pop(ad))
     {
@@ -174,10 +181,17 @@ void SC3Editor::idle()
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
+            unhandledCount++;
             if (std::holds_alternative<VAction>(ad.actiontype))
             {
                 auto id = ad.id;
                 auto at = std::get<VAction>(ad.actiontype);
+
+                if (at == vga_database_samplelist)
+                {
+                    std::cout << "DBSL " << ad.data.i[2] << " at " << ad.data.ptr[0] << " " << id
+                              << std::endl;
+                }
 
                 if (id >= 0)
                 {
@@ -269,6 +283,14 @@ void SC3Editor::idle()
         }
 #endif
     }
+
+#if DEBUG_UNHANDLED_MESSAGES
+    // eventually
+    // jassert(unhandledCount == 0);
+    // but for now
+    if (unhandledCount)
+        DBG("Unhandled Message Count : " << unhandledCount);
+#endif
 
     LogTransport lt;
     while (logToUI->pop(lt))
