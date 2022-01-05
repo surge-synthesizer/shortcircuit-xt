@@ -17,6 +17,7 @@
 
 #include "components/StubRegion.h"
 #include "components/DebugPanel.h"
+#include "components/HeaderPanel.h"
 #include "components/ZoneEditor.h"
 #include "components/ZoneKeyboardDisplay.h"
 #include "components/WaveDisplay.h"
@@ -42,6 +43,9 @@ struct SC3IdleTimer : juce::Timer
 //==============================================================================
 SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    lookAndFeel = std::make_unique<SCXTLookAndFeel>();
+    setLookAndFeel(lookAndFeel.get());
+
     for (int i = 0; i < max_zones; ++i)
         activeZones[i] = false;
     for (int i = 0; i < 128; ++i)
@@ -66,9 +70,13 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     zoneEditor = std::make_unique<ZoneEditor>(this);
     zoneStateProxy->clients.insert(zoneEditor.get());
 
+    headerPanel = std::make_unique<HeaderPanel>(this);
+    selectionStateProxy->clients.insert(headerPanel.get());
+
     addAndMakeVisible(*zoneEditor);
     addAndMakeVisible(*zoneKeyboardDisplay);
     addAndMakeVisible(*waveDisplay);
+    addAndMakeVisible(*headerPanel);
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
@@ -88,6 +96,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
 
 SC3Editor::~SC3Editor()
 {
+    setLookAndFeel(nullptr);
     uiStateProxies.clear();
     debugWindow->setEditor(nullptr);
     idleTimer->stopTimer();
@@ -128,7 +137,8 @@ void SC3Editor::paint(juce::Graphics &g)
 void SC3Editor::resized()
 {
     auto r = getLocalBounds();
-    r = r.reduced(2, 2);
+    headerPanel->setBounds(r.withHeight(25));
+    r = r.withTrimmedTop(25);
     zoneKeyboardDisplay->setBounds(r.withHeight(180));
     r = r.withTrimmedTop(180);
     waveDisplay->setBounds(r.withWidth(400));
@@ -332,4 +342,13 @@ SC3::Log::Level SC3Editor::getLevel()
 void SC3Editor::message(SC3::Log::Level lev, const std::string &msg)
 {
     logToUI->push(SC3Editor::LogTransport(lev, msg));
+}
+
+void SC3Editor::selectPart(int i)
+{
+    actiondata ad;
+    ad.id = ip_partselect;
+    ad.actiontype = vga_intval;
+    ad.data.i[0] = i;
+    sendActionToEngine(ad);
 }

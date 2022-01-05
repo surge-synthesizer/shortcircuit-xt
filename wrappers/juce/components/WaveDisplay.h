@@ -99,6 +99,8 @@ class WaveDisplay : public juce::Component, public UIStateProxy
 
   public:
     WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger);
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveDisplay);
 };
 
 #endif // SHORTCIRCUIT_WAVEDISPLAY_H

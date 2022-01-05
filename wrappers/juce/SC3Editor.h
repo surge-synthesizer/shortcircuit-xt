@@ -18,6 +18,7 @@
 
 #include "components/DebugPanel.h"
 #include "DataInterfaces.h"
+#include "SCXTLookAndFeel.h"
 
 /*
  * This is basically a lock free thread safe FIFO queue of Ts with size qSize
@@ -67,6 +68,7 @@ struct SelectionStateProxy;
 class ZoneKeyboardDisplay;
 struct ZoneEditor;
 class WaveDisplay;
+struct HeaderPanel;
 
 //==============================================================================
 /**
@@ -80,7 +82,7 @@ class SC3Editor : public juce::AudioProcessorEditor,
 {
   public:
     SC3Editor(SC3AudioProcessor &);
-    ~SC3Editor() override;
+    ~SC3Editor();
 
     //==============================================================================
     void paint(juce::Graphics &) override;
@@ -137,11 +139,16 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<WaveDisplay> waveDisplay;
     std::unique_ptr<ZoneEditor> zoneEditor;
+    std::unique_ptr<HeaderPanel> headerPanel;
+
+    std::unique_ptr<SCXTLookAndFeel> lookAndFeel;
 
   public:
     std::array<int, 128> playingMidiNotes;
 
-    friend class ZoneStateProxy;
+    int selectedPart{0};
+    void selectPart(int i);
+
     sample_zone zonesCopy[max_zones];
     bool activeZones[max_zones];
 

@@ -258,23 +258,28 @@ juce_add_binary_data(ShortcircuitXT-Binary SOURCES ${SC3_RESOURCES_GLOB})
 set_target_properties(ShortcircuitXT-Binary PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # images used in the ui
-juce_add_binary_data(ImageAssets
-        NAMESPACE SCXTImages
-        HEADER_NAME BinaryImageAssets.h
+juce_add_binary_data(UIAssets
+        NAMESPACE SCXTUIAssets
+        HEADER_NAME BinaryUIAssets.h
         SOURCES
         resources/images/wavehandle_start.png
         resources/images/wavehandle_end.png
         resources/images/wavehandle_crossfade.png
+
+        resources/fonts/Anonymous_Pro/AnonymousPro-Regular.ttf
+        resources/fonts/Anonymous_Pro/AnonymousPro-Bold.ttf
         )
 
-set_target_properties(ImageAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(UIAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 
 # Then set up the source and the JUCE settings
 target_sources(ShortcircuitXT PRIVATE
         wrappers/juce/SC3Processor.cpp
         wrappers/juce/SC3Editor.cpp
+        wrappers/juce/SCXTLookAndFeel.cpp
 
+        wrappers/juce/components/HeaderPanel.cpp
         wrappers/juce/components/WaveDisplay.cpp
         wrappers/juce/components/DebugPanel.cpp
         wrappers/juce/components/ZoneKeyboardDisplay.cpp
@@ -310,7 +315,7 @@ if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
             )
 endif ()
 target_link_libraries(ShortcircuitXT PRIVATE
-        ImageAssets
+        UIAssets
         ShortcircuitXT-Binary
         shortcircuit-core
         juce::juce_audio_utils

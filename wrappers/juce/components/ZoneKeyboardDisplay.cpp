@@ -236,6 +236,9 @@ void ZoneKeyboardDisplay::mouseUp(const juce::MouseEvent &event)
 }
 void ZoneKeyboardDisplay::mouseDoubleClick(const juce::MouseEvent &event)
 {
+    if (hoveredKey >= 0)
+        return;
+
     juce::FileChooser sampleChooser("Please choose a sample file",
                                     juce::File::getSpecialLocation(juce::File::userHomeDirectory));
     if (sampleChooser.browseForFileToOpen())

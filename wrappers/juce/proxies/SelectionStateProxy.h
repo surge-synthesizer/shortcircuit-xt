@@ -17,6 +17,10 @@ struct SelectionStateProxy : public UIStateProxy
         switch (ad.id)
         {
         case ip_partselect:
+            editor->selectedPart = ad.data.i[0];
+            invalidateAndRepaintClients();
+            return true;
+            break;
         case ip_layerselect:
         case ip_kgv_or_list:
         case ip_wavedisplay:

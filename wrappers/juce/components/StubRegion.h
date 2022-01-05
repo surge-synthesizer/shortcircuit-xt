@@ -40,6 +40,8 @@ class StubRegion : public juce::Component
 
     juce::Colour bg;
     juce::String lab;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StubRegion);
 };
 
 #endif // SHORTCIRCUIT_STUBREGION_H
