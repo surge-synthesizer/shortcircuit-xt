@@ -1730,7 +1730,9 @@ void sampler::post_samplelist()
     if (dbSampleListDataPtr)
     {
         if (*((int *)dbSampleListDataPtr) == 'done')
+        {
             free(dbSampleListDataPtr);
+        }
         else
             return; // busy
     }

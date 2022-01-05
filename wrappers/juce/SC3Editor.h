@@ -130,9 +130,6 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneEditor> zoneEditor;
 
   public:
-    const database_samplelist *databaseSampleList{nullptr};
-    uint64_t n_databaseSampleList{0};
-
     std::array<int, 128> playingMidiNotes;
 
     friend class ZoneStateProxy;
@@ -142,6 +139,9 @@ class SC3Editor : public juce::AudioProcessorEditor,
     sample_part partsC[n_sampler_parts];
     sample_multi multiC;
     int freeParamsC[n_ip_free_items][16];
+
+    std::array<database_samplelist, max_samples> samplesCopy;
+    uint32_t samplesCopyActiveCount{0};
 
     // implement logging interface for logs generated on ui side
     SC3::Log::Level getLevel() override;
