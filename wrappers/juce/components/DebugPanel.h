@@ -74,12 +74,20 @@ class DebugPanelWindow : public juce::DocumentWindow
         panel->mActionRunner->mEditor = ed;
     }
 
-    void appendLogText(const juce::String &s)
+    void appendLogText(const juce::String &s, bool appendNewline = true)
     {
-        auto str = s;
-        str += "\n";
-        panel->logT->setCaretPosition(panel->logT->getText().length());
-        panel->logT->insertTextAtCaret(str);
+        if (appendNewline)
+        {
+            auto str = s;
+            str += "\n";
+            panel->logT->setCaretPosition(panel->logT->getText().length());
+            panel->logT->insertTextAtCaret(str);
+        }
+        else
+        {
+            panel->logT->setCaretPosition(panel->logT->getText().length());
+            panel->logT->insertTextAtCaret(s);
+        }
     }
 };
 
