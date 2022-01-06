@@ -14,8 +14,7 @@ HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
         b->setRadioGroupId(174, juce::NotificationType::dontSendNotification);
         addAndMakeVisible(*b);
         partsButtons[i] = std::move(b);
-        partsButtons[i]->onClick = [this, i]()
-        {
+        partsButtons[i]->onClick = [this, i]() {
             if (partsButtons[i]->getToggleState())
                 editor->selectPart(i);
         };

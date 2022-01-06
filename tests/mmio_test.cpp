@@ -28,8 +28,7 @@
 
 TEST_CASE("MMIO Layer", "[io]")
 {
-    auto fccstr = [](uint32_t tag)
-    {
+    auto fccstr = [](uint32_t tag) {
         char fcc[5];
         for (auto i = 0; i < 4; ++i)
         {
