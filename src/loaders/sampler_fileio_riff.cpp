@@ -407,7 +407,7 @@ abort:
     return 0;
 }
 
-bool sampler::LoadAllFromRIFF(void *data, size_t datasize, bool Replace, int PartID)
+bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, int PartID)
 {
     size_t chunksize;
     int tag, LISTtag;

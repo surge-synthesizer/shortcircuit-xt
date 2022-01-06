@@ -157,15 +157,18 @@ juce::AudioProcessorEditor *SC3AudioProcessor::createEditor() { return new SC3Ed
 //==============================================================================
 void SC3AudioProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    void *data = 0; // I think this leaks
+    auto sz = sc3->SaveAllAsRIFF(&data);
+
+    if (sz > 0 && data)
+    {
+        destData.append(data, sz);
+    }
 }
 
 void SC3AudioProcessor::setStateInformation(const void *data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    sc3->LoadAllFromRIFF(data, sizeInBytes);
 }
 
 //==============================================================================

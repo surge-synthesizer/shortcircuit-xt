@@ -209,15 +209,16 @@ class sampler
     long save_all(void **data); // , int group_id=-1); ?
     void free_all();
     bool load_all(void *data, int datasize);
-    bool load_all_from_xml(void *data, int datasize, const fs::path &filename = fs::path(),
+    bool load_all_from_xml(const void *data, int datasize, const fs::path &filename = fs::path(),
                            bool replace = true, int channel = -1);
-    bool load_all_from_sc1_xml(void *data, int datasize, const fs::path &filename = fs::path(),
-                               bool replace = true, int channel = -1);
+    bool load_all_from_sc1_xml(const void *data, int datasize,
+                               const fs::path &filename = fs::path(), bool replace = true,
+                               int channel = -1);
     bool save_all_to_disk(const fs::path &filename);
     size_t save_part_as_xml(int part_id, const fs::path &filename, bool copy_samples = false);
 
     // The new RIFF based format for SC2
-    bool LoadAllFromRIFF(void *data, size_t datasize, bool replace = true, int channel = -1);
+    bool LoadAllFromRIFF(const void *data, size_t datasize, bool replace = true, int channel = -1);
     size_t SaveAllAsRIFF(void **data, const fs::path &fn = fs::path(), int PartID = -1);
 
     // helper functions for load/save
