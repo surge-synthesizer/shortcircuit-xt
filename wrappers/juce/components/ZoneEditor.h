@@ -31,6 +31,8 @@ struct ZoneEditor : public juce::Component,
     std::unique_ptr<juce::ComboBox> zoneSelector;
     std::unique_ptr<juce::TextEditor> lowKey, hiKey;
     SC3Editor *editor{nullptr};
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneEditor);
 };
 
 #endif // SHORTCIRCUIT_ZONEEDITOR_H

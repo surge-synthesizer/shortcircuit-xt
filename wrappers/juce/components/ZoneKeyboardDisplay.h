@@ -45,6 +45,8 @@ class ZoneKeyboardDisplay : public juce::Component
     int hoveredZone = -1;
 
     ActionSender *sender;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneKeyboardDisplay);
 };
 
 #endif // SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H

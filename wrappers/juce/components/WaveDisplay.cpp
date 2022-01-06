@@ -23,7 +23,7 @@
 #include <algorithm>
 #include "infrastructure/profiler.h"
 
-#include "BinaryImageAssets.h"
+#include "BinaryUIAssets.h"
 
 const int WAVE_MARGIN = 6;      // margin around wave display in pixels
 const int WAVE_CHANNEL_GAP = 4; // gap between channels
@@ -498,8 +498,8 @@ void WaveDisplay::drawDetails(juce::Graphics &g, juce::Rectangle<int> bounds)
         {
             g.setColour(zmcol);
             g.drawRect(x + waveLeft, 0, 1, imgh - 1);
-            auto img = juce::ImageCache::getFromMemory(SCXTImages::wavehandle_start_png,
-                                                       SCXTImages::wavehandle_start_pngSize);
+            auto img = juce::ImageCache::getFromMemory(SCXTUIAssets::wavehandle_start_png,
+                                                       SCXTUIAssets::wavehandle_start_pngSize);
             g.drawImageAt(img, x + waveLeft - (img.getWidth() / 2), 0);
         }
 
@@ -510,8 +510,8 @@ void WaveDisplay::drawDetails(juce::Graphics &g, juce::Rectangle<int> bounds)
         {
             g.setColour(zmcol);
             g.drawRect(x + waveLeft, 0, 1, imgh - 1);
-            auto img = juce::ImageCache::getFromMemory(SCXTImages::wavehandle_end_png,
-                                                       SCXTImages::wavehandle_end_pngSize);
+            auto img = juce::ImageCache::getFromMemory(SCXTUIAssets::wavehandle_end_png,
+                                                       SCXTUIAssets::wavehandle_end_pngSize);
             g.drawImageAt(img, x + waveLeft - (img.getWidth() / 2), 0);
         }
     }

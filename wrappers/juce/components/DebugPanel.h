@@ -45,6 +45,7 @@ class ActionRunner : public juce::Component,
     ~ActionRunner();
 
     SC3Editor *mEditor;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ActionRunner);
 };
 
 class DebugPanel : public juce::Component
@@ -57,6 +58,8 @@ class DebugPanel : public juce::Component
     SC3Editor *mEditor;
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DebugPanel);
 };
 
 class DebugPanelWindow : public juce::DocumentWindow
@@ -89,6 +92,7 @@ class DebugPanelWindow : public juce::DocumentWindow
             panel->logT->insertTextAtCaret(s);
         }
     }
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DebugPanelWindow);
 };
 
 #endif // SHORTCIRCUIT_DEBUGPANEL_H
