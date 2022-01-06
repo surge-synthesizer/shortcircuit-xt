@@ -435,7 +435,7 @@ endif ()
 add_custom_target(code-quality-pipeline-checks)
 
 # Clang Format checks
-set(CLANG_FORMAT_DIRS src wrappers)
+set(CLANG_FORMAT_DIRS src wrappers tests)
 set(CLANG_FORMAT_EXTS cpp h)
 foreach (dir ${CLANG_FORMAT_DIRS})
     foreach (ext ${CLANG_FORMAT_EXTS})

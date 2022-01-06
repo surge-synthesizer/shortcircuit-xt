@@ -73,13 +73,11 @@ TEST_CASE("Test logging", "[logging]")
         bool first_eval = false;
         bool second_eval = false;
 
-        auto eval1 = [&]() -> int
-        {
+        auto eval1 = [&]() -> int {
             first_eval = true;
             return 0;
         };
-        auto eval2 = [&]() -> int
-        {
+        auto eval2 = [&]() -> int {
             second_eval = true;
             return 0;
         };
@@ -117,8 +115,7 @@ TEST_CASE("Test logging", "[logging]")
         // make sure that expressions are not evaluated if cb is null
         bool first_eval = false;
 
-        auto eval1 = [&]() -> int
-        {
+        auto eval1 = [&]() -> int {
             first_eval = true;
             return 0;
         };
