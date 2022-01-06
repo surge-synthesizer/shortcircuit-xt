@@ -301,6 +301,7 @@ void sampler::processVUs()
 #if TARGET_VST2
     if (!(editor && editor->isOpen()))
         return;
+#endif
 
     for (int op = 0; op < (mNumOutputs * 2); op++)
     {
@@ -319,21 +320,17 @@ void sampler::processVUs()
 
         for (int op = 0; op < (mNumOutputs * 2); op += 2)
         {
-            VUdata vu;
-            vu.stereo = 1;
-            vu.clip1 = (vu_peak[op] > 1.f) ? 1 : 0;
-            vu.clip2 = (vu_peak[op + 1] > 1.f) ? 1 : 0;
-            const __m128 m255 = _mm_set1_ps(255.f);
+            auto vu1 = std::clamp((int)round(sqrt(vu_peak[op]) * 255), 0, 255);
+            auto vu2 = std::clamp((int)round(sqrt(vu_peak[op]) * 255), 0, 255);
+            auto clip1 = (vu_peak[op] > 1.f) ? 1 : 0;
+            auto clip2 = (vu_peak[op + 1] > 1.f) ? 1 : 0;
 
-            int a = _mm_cvttss_si32(_mm_mul_ss(m255, _mm_sqrt_ss(_mm_load_ss(&vu_peak[op]))));
-            vu.ch1 = limit_range(a, 0, 255);
-            a = _mm_cvttss_si32(_mm_mul_ss(m255, _mm_sqrt_ss(_mm_load_ss(&vu_peak[op + 1]))));
-            vu.ch2 = limit_range(a, 0, 255);
-            vu_peak[op] = 0.f;
-            vu_peak[op + 1] = 0.f;
-            ad.data.i[1 + (op >> 1)] = *(int *)&vu;
+            vu_peak[op] = 0;
+            vu_peak[op + 1] = 0;
+
+            ad.data.i[1 + (op >> 1)] = vu1 * (1 << 8) + vu2;
+            ad.data.i[1 + (op >> 1) + 1] = clip1 * (1 << 1) + clip2;
         }
         postEventsToWrapper(ad);
     }
-#endif
 }

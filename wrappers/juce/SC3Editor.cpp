@@ -25,6 +25,9 @@
 #include "proxies/ZoneStateProxy.h"
 #include "proxies/BrowserDataProxy.h"
 #include "proxies/SelectionStateProxy.h"
+#include "proxies/VUMeterProxy.h"
+
+#include "widgets/CompactVUMeter.h"
 
 #define DEBUG_UNHANDLED_MESSAGES 1
 
@@ -60,6 +63,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     zoneStateProxy = make_proxy<ZoneStateProxy>();
     browserDataProxy = make_proxy<BrowserDataProxy>();
     selectionStateProxy = make_proxy<SelectionStateProxy>();
+    vuMeterProxy = make_proxy<VUMeterProxy>();
 
     waveDisplay = std::make_unique<WaveDisplay>(this, this);
     uiStateProxies.insert(waveDisplay.get());
@@ -72,6 +76,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
 
     headerPanel = std::make_unique<HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
+    vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
 
     addAndMakeVisible(*zoneEditor);
     addAndMakeVisible(*zoneKeyboardDisplay);

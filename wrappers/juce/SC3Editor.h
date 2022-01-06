@@ -64,6 +64,7 @@ class ZoneStateProxy;
 class WaveDisplayProxy;
 struct BrowserDataProxy;
 struct SelectionStateProxy;
+struct VUMeterProxy;
 
 class ZoneKeyboardDisplay;
 struct ZoneEditor;
@@ -128,6 +129,7 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<BrowserDataProxy> browserDataProxy;
     std::unique_ptr<SelectionStateProxy> selectionStateProxy;
+    std::unique_ptr<VUMeterProxy> vuMeterProxy;
 
     template <typename T> std::unique_ptr<T> make_proxy()
     {
@@ -145,6 +147,13 @@ class SC3Editor : public juce::AudioProcessorEditor,
 
   public:
     std::array<int, 128> playingMidiNotes;
+
+    struct VUData
+    {
+        uint8_t ch1, ch2;
+        bool clip1, clip2;
+    };
+    std::array<VUData, max_outputs> vuData;
 
     int selectedPart{0};
     void selectPart(int i);
