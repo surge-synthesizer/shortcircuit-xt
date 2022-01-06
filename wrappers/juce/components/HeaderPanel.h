@@ -8,15 +8,27 @@
 #include "SC3Editor.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
+namespace SC3
+{
+namespace Widgets
+{
+struct CompactVUMeter;
+}
+} // namespace SC3
 struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 {
     HeaderPanel(SC3Editor *ed);
+    ~HeaderPanel();
 
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::green); }
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::darkgoldenrod); }
 
     void resized() override;
 
     std::array<std::unique_ptr<juce::Button>, n_sampler_parts> partsButtons;
+
+    std::unique_ptr<SC3::Widgets::CompactVUMeter> vuMeter0;
+
+    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, menuButton;
     void onProxyUpdate() override;
     SC3Editor *editor{nullptr};
 

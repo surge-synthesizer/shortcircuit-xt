@@ -500,12 +500,3 @@ class vg_VU : public vg_control
     int NumChannels;
     int ChannelData[max_outputs];
 };
-
-struct VUdata
-{
-    unsigned int ch1 : 8;
-    unsigned int ch2 : 8;
-    unsigned int stereo : 1;
-    unsigned int clip1 : 1;
-    unsigned int clip2 : 1;
-};

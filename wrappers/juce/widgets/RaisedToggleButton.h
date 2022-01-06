@@ -7,6 +7,10 @@
 
 #include "SCXTLookAndFeel.h"
 
+namespace SC3
+{
+namespace Widgets
+{
 struct RaisedToggleButton : public juce::Button
 {
     RaisedToggleButton(const std::string &l) : label(l), juce::Button(l) {}
@@ -25,12 +29,14 @@ struct RaisedToggleButton : public juce::Button
 
         g.setColour(juce::Colours::white);
         g.drawRect(getLocalBounds());
-        g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
+        g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(label, getLocalBounds(), juce::Justification::centred);
     }
     std::string label;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RaisedToggleButton);
 };
+} // namespace Widgets
+} // namespace SC3
 
 #endif // SHORTCIRCUIT_RAISEDTOGGLEBUTTON_H
