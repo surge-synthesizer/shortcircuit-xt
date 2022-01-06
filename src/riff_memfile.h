@@ -60,7 +60,7 @@ class RIFFMemFile
         size = 0;
         loc = 0;
     }
-    RIFFMemFile(void *data, int datasize)
+    RIFFMemFile(const void *data, int datasize)
     {
         assert(data);
         assert(datasize);

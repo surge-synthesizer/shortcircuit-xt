@@ -1128,8 +1128,8 @@ string recursive_search(string filename, string path)
     return "";
 }
 
-bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filename, bool replace,
-                                int part_id)
+bool sampler::load_all_from_xml(const void *data, int datasize, const fs::path &filename,
+                                bool replace, int part_id)
 {
     if (datasize && (*(int *)data == 'FFIR'))
     {
@@ -1345,7 +1345,7 @@ bool sampler::load_all_from_xml(void *data, int datasize, const fs::path &filena
     return true;
 }
 
-bool sampler::load_all_from_sc1_xml(void *data, int datasize, const fs::path &filename,
+bool sampler::load_all_from_sc1_xml(const void *data, int datasize, const fs::path &filename,
                                     bool replace, int part_id)
 {
     int revision;
