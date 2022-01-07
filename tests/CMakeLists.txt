@@ -14,3 +14,11 @@ target_link_libraries(sc3-test
         shortcircuit-core
         shortcircuit::catch2
         )
+
+
+add_custom_command(TARGET sc3-test
+        POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory test
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:sc3-test>" test
+        )
