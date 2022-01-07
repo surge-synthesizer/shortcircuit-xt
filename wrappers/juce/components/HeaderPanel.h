@@ -20,8 +20,7 @@ struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 {
     HeaderPanel(SC3Editor *ed);
     ~HeaderPanel();
-
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::darkgoldenrod); }
+    void paint(juce::Graphics &g) override;
 
     void resized() override;
 
@@ -29,9 +28,9 @@ struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 
     std::unique_ptr<SC3::Widgets::CompactVUMeter> vuMeter0;
 
-    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, aboutButton,
-        menuButton;
+    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, aboutButton;
     void onProxyUpdate() override;
+    void parentHierarchyChanged() override;
     SC3Editor *editor{nullptr};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderPanel);

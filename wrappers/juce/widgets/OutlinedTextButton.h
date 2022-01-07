@@ -14,22 +14,34 @@ namespace Widgets
 {
 struct OutlinedTextButton : public juce::TextButton
 {
-    OutlinedTextButton(const std::string &t) : juce::TextButton(t) {}
+    enum ColourIds
+    {
+        upColour = 0x000a0010,
+        downColour,
+        textColour
+    };
+    OutlinedTextButton(const std::string &t) : juce::TextButton(t)
+    {
+        if (!isColourSpecified(upColour))
+            setColour(upColour, juce::Colours::orchid);
+        if (!isColourSpecified(downColour))
+            setColour(downColour, juce::Colours::yellow);
+        if (!isColourSpecified(textColour))
+            setColour(textColour, juce::Colours::red);
+    }
 
     void paintButton(juce::Graphics &g, bool highlighted, bool down) override
     {
-        auto c = juce::Colours::darkblue;
+        auto c = findColour(upColour);
         if (down || getToggleState())
-            c = juce::Colours::darkred;
+            c = findColour(downColour);
         if (highlighted)
         {
             c = c.brighter(0.3);
         }
-        g.setColour(c);
-        g.fillRect(getLocalBounds());
 
-        g.setColour(juce::Colours::white);
-        g.drawRect(getLocalBounds());
+        SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), c, down || getToggleState());
+        g.setColour(findColour(textColour));
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred);
     }
