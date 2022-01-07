@@ -165,7 +165,7 @@ jobs:
 
       - task: DownloadSecureFile@1
         inputs:
-          secureFile: discord-nightly-sc3.webhook
+          secureFile: discord-nightly-shortcircuit.webhook
 
       - task: DownloadPipelineArtifact@0
         inputs:
