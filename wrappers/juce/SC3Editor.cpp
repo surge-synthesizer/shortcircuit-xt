@@ -98,6 +98,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(900, 700);
+    // setResizable(true, true);
 }
 
 SC3Editor::~SC3Editor()

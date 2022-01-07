@@ -19,19 +19,31 @@ struct CompactVUMeter : public juce::Component, UIStateProxy::Invalidatable
 
     void paint(juce::Graphics &g) override
     {
-        g.fillAll(juce::Colours::black);
-        auto top = getLocalBounds().withHeight(getHeight() / 2);
-        auto bot = getLocalBounds().withTrimmedTop(getHeight() / 2);
+        g.fillAll(findColour(SCXTColours::vuBackground));
+        auto top = getLocalBounds().withHeight(getHeight() / 2).reduced(1, 1);
+        auto bot = getLocalBounds().withTrimmedTop(getHeight() / 2 + 1).reduced(1, 1);
 
-        top = top.withWidth(getWidth() * value[0] / 255);
-        bot = bot.withWidth(getWidth() * value[1] / 255);
-
-        g.setColour(clipped[0] ? juce::Colours::red : juce::Colours::green);
+        if (clipped[0])
+            g.setColour(findColour(SCXTColours::vuClip));
+        else
+            g.setGradientFill(juce::ColourGradient::horizontal(
+                findColour(SCXTColours::vuPlayLow), findColour(SCXTColours::vuPlayHigh), top));
         g.fillRect(top);
-        g.setColour(clipped[1] ? juce::Colours::red : juce::Colours::green);
+        top = top.withTrimmedLeft(getWidth() * value[0] / 255);
+        g.setColour(findColour(SCXTColours::vuBackground));
+        g.fillRect(top);
+
+        if (clipped[1])
+            g.setColour(findColour(SCXTColours::vuClip));
+        else
+            g.setGradientFill(juce::ColourGradient::horizontal(
+                findColour(SCXTColours::vuPlayLow), findColour(SCXTColours::vuPlayHigh), bot));
+        g.fillRect(bot);
+        bot = bot.withTrimmedLeft(getWidth() * value[1] / 255);
+        g.setColour(findColour(SCXTColours::vuBackground));
         g.fillRect(bot);
 
-        g.setColour(juce::Colours::white);
+        g.setColour(findColour(SCXTColours::vuOutline));
         g.drawRect(getLocalBounds());
     }
 
