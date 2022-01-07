@@ -23,6 +23,10 @@
 #include <SC3Editor.h>
 #include "infrastructure/profiler.h"
 
+namespace SC3
+{
+namespace Components
+{
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
     enum ControlState
@@ -102,5 +106,8 @@ class WaveDisplay : public juce::Component, public UIStateProxy
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveDisplay);
 };
+
+} // namespace Components
+} // namespace SC3
 
 #endif // SHORTCIRCUIT_WAVEDISPLAY_H

@@ -14,7 +14,8 @@ namespace Widgets
 {
 struct CompactVUMeter;
 }
-} // namespace SC3
+namespace Components
+{
 struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 {
     HeaderPanel(SC3Editor *ed);
@@ -28,10 +29,13 @@ struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 
     std::unique_ptr<SC3::Widgets::CompactVUMeter> vuMeter0;
 
-    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, menuButton;
+    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, aboutButton,
+        menuButton;
     void onProxyUpdate() override;
     SC3Editor *editor{nullptr};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderPanel);
 };
+} // namespace Components
+} // namespace SC3
 #endif // SHORTCIRCUIT_HEADERPANEL_H
