@@ -22,31 +22,8 @@
 
 #include <string>
 #include "version.h"
-#include "scratchpad.h"
 
 class SC3Editor;
-
-class ActionRunner : public juce::Component,
-                     public juce::Button::Listener,
-                     public juce::ComboBox::Listener
-{
-
-    void buttonClicked(juce::Button *b) override;
-    void resized() override;
-    void comboBoxChanged(juce::ComboBox *comboBoxThatHasChanged) override;
-    std::unique_ptr<juce::TextButton> mSendActionBtn;
-    std::unique_ptr<juce::TextEditor> mParameters;
-    std::unique_ptr<juce::ComboBox> mActionList;
-    std::unique_ptr<juce::TextEditor> mDescription;
-    std::vector<ScratchPadItem *> mItems;
-
-  public:
-    ActionRunner();
-    ~ActionRunner();
-
-    SC3Editor *mEditor;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ActionRunner);
-};
 
 class DebugPanel : public juce::Component
 {
@@ -54,7 +31,6 @@ class DebugPanel : public juce::Component
 
   public:
     DebugPanel();
-    std::unique_ptr<ActionRunner> mActionRunner;
     SC3Editor *mEditor;
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
@@ -71,11 +47,7 @@ class DebugPanelWindow : public juce::DocumentWindow
 
     void setSamplerText(const juce::String &s) { panel->samplerT->setText(s); }
 
-    void setEditor(SC3Editor *ed)
-    {
-        panel->mEditor = ed;
-        panel->mActionRunner->mEditor = ed;
-    }
+    void setEditor(SC3Editor *ed) { panel->mEditor = ed; }
 
     void appendLogText(const juce::String &s, bool appendNewline = true)
     {

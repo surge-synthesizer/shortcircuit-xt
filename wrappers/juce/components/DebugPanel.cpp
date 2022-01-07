@@ -18,77 +18,6 @@
 #include "DebugPanel.h"
 #include "SC3Editor.h"
 
-void ActionRunner::buttonClicked(juce::Button *b)
-{
-    if (b == mSendActionBtn.get())
-    {
-        auto itemSelected = mActionList->getSelectedId();
-        if (itemSelected > 0)
-        {
-            std::string error;
-            actiondata ad;
-            if (mItems[itemSelected - 1]->prepareAction(mEditor->audioProcessor.sc3.get(),
-                                                        mParameters->getText().toStdString(), &ad,
-                                                        &error))
-            {
-                mEditor->audioProcessor.sc3->postEventsFromWrapper(ad);
-                mDescription->setText("Action was sent.", juce::dontSendNotification);
-            }
-            else
-            {
-                mDescription->setText(juce::String(error),
-                                      juce::NotificationType::dontSendNotification);
-            }
-        }
-    }
-}
-void ActionRunner::resized()
-{
-    auto r = getLocalBounds();
-    auto t = r.removeFromTop(22);
-    mSendActionBtn->setBounds(t.removeFromRight(40));
-    t.removeFromRight(2);
-    auto u = t.removeFromLeft(180);
-    mActionList->setBounds(u);
-    t.removeFromLeft(2);
-    mParameters->setBounds(t);
-    r.removeFromTop(2);
-    mDescription->setBounds(r);
-}
-ActionRunner::ActionRunner()
-{
-    mSendActionBtn = std::make_unique<juce::TextButton>("send");
-    addAndMakeVisible(mSendActionBtn.get());
-    mSendActionBtn->addListener(this);
-    mActionList = std::make_unique<juce::ComboBox>();
-    mActionList->addListener(this);
-    addAndMakeVisible(mActionList.get());
-    mParameters = std::make_unique<juce::TextEditor>();
-    addAndMakeVisible(mParameters.get());
-    mDescription = std::make_unique<juce::TextEditor>();
-    mDescription->setMultiLine(true, true);
-    mDescription->setReadOnly(true);
-    addAndMakeVisible(mDescription.get());
-
-    mItems = registerScratchPadItems();
-    int index = 0;
-    for (auto it : mItems)
-    {
-        mActionList->addItem(it->mName, ++index); // must be 1 based
-    }
-    mDescription->setText("Select action to run", juce::NotificationType::dontSendNotification);
-}
-void ActionRunner::comboBoxChanged(juce::ComboBox *comboBoxThatHasChanged)
-{
-    auto id = mActionList->getSelectedId();
-    if (id > 0)
-    {
-        mDescription->setText(mItems[id - 1]->mDescription,
-                              juce::NotificationType::dontSendNotification);
-        mParameters->setText(mItems[id - 1]->mDefaultParameter, juce::dontSendNotification);
-    }
-}
-ActionRunner::~ActionRunner() { unregisterScratchPadItems(mItems); }
 DebugPanel::DebugPanel() : Component("Debug Panel")
 {
     // sampler state window
@@ -100,25 +29,16 @@ DebugPanel::DebugPanel() : Component("Debug Panel")
     logT = std::make_unique<juce::TextEditor>();
     logT->setMultiLine(true, false);
     addAndMakeVisible(logT.get());
-
-    // action runner
-    mActionRunner = std::make_unique<ActionRunner>();
-    addAndMakeVisible(mActionRunner.get());
 }
 void DebugPanel::resized()
 {
     auto r = getLocalBounds();
     r.reduce(5, 5);
 
-    // action runner has fixed size
-    auto t = r.removeFromTop(100);
-    mActionRunner->setBounds(t);
-
-    r.removeFromTop(5);
     auto h = r.getHeight() - 5; // 5 is space between
 
     // state occupies half rest of space
-    t = r.removeFromTop(h / 2);
+    auto t = r.removeFromTop(h / 2);
     samplerT->setBounds(t);
 
     // log occupies the other half
