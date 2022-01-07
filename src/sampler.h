@@ -252,8 +252,16 @@ class sampler
     } * mpPreview;
 
   public:
+    /*
+     * These are the data representations of the innards of the synth.
+     */
     sample_zone zones[max_zones];
     sample_part parts[n_sampler_parts];
+
+    /*
+     * Multi contains the global FX state. It configures at runtime 'multiv' which contains
+     * the actual filter pointers. (In surge this would be called "MultiVoiceStorage" or some such)
+     */
     sample_multi multi;
 
     int polyphony_cap;

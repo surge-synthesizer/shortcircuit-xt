@@ -1,6 +1,8 @@
 add_subdirectory(pybind11)
 add_subdirectory(JUCE)
 
+add_subdirectory(sst/sst-cpputils)
+
 # Add a catch2 target
 add_library(catch2 INTERFACE)
 target_include_directories(catch2 INTERFACE catch2/include)

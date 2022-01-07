@@ -22,10 +22,12 @@
 #include "proxies/BrowserDataProxy.h"
 #include "proxies/SelectionStateProxy.h"
 #include "proxies/VUMeterProxy.h"
+#include "proxies/MultiDataProxy.h"
 
 #include "pages/PageBase.h"
 #include "pages/AboutPage.h"
 #include "pages/ZonePage.h"
+#include "pages/FXPage.h"
 
 #include "widgets/CompactVUMeter.h"
 
@@ -63,6 +65,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     zoneStateProxy = make_proxy<ZoneStateProxy>();
     browserDataProxy = make_proxy<BrowserDataProxy>();
     selectionStateProxy = make_proxy<SelectionStateProxy>();
+    multiDataProxy = make_proxy<MultiDataProxy>();
     vuMeterProxy = make_proxy<VUMeterProxy>();
 
     headerPanel = std::make_unique<SC3::Components::HeaderPanel>(this);
@@ -72,9 +75,11 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
 
     pages[ZONE] = std::make_unique<SC3::Pages::ZonePage>(this, ZONE);
     pages[PART] = std::make_unique<SC3::Pages::PageBase>(this, PART);
-    pages[FX] = std::make_unique<SC3::Pages::PageBase>(this, FX);
+    pages[FX] = std::make_unique<SC3::Pages::FXPage>(this, FX);
     pages[CONFIG] = std::make_unique<SC3::Pages::PageBase>(this, CONFIG);
     pages[ABOUT] = std::make_unique<SC3::Pages::AboutPage>(this, ABOUT);
+
+    multiDataProxy->clients.insert(pages[FX].get());
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
@@ -196,6 +201,20 @@ void SC3Editor::idle()
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
+            if (ad.id >= ip_multi_params_begin && ad.id <= ip_multi_params_end)
+            {
+                std::cout << "MULTI " << ad << " ";
+                if (std::holds_alternative<VAction>(ad.actiontype))
+                {
+                    auto at = std::get<VAction>(ad.actiontype);
+                    if (at == vga_datamode)
+                    {
+                        auto ipd = ip_data[ad.id];
+                        std::cout << (char *)&(ad.data.str[0]);
+                    }
+                }
+                std::cout << std::endl;
+            }
             unhandledCount++;
             if (std::holds_alternative<VAction>(ad.actiontype))
             {

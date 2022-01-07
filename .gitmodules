@@ -10,3 +10,6 @@
 [submodule "libs/simde"]
 	path = libs/simde
 	url = https://github.com/simd-everywhere/simde
+[submodule "libs/sst/sst-cpputils"]
+	path = libs/sst/sst-cpputils
+	url = https://github.com/surge-synthesizer/sst-cpputils

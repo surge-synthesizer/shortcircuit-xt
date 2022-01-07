@@ -431,7 +431,9 @@ inline std::ostream &operator<<(std::ostream &stream, const actiontype_t &t)
 
 inline std::ostream &operator<<(std::ostream &stream, const actiondata &d)
 {
-    stream << "actiondata[" << d.actiontype << " id=" << d.id << " subid=" << d.subid << "]";
+    extern std::string debug_wrapper_ip_to_string(int);
+    stream << "actiondata[" << d.actiontype << " id=" << debug_wrapper_ip_to_string(d.id)
+           << " subid=" << d.subid << "]";
     return stream;
 }
 

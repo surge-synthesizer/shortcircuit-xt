@@ -21,6 +21,7 @@ juce_add_binary_data(UIAssets
         ${CMAKE_SOURCE_DIR}/resources/images/wavehandle_start.png
         ${CMAKE_SOURCE_DIR}/resources/images/wavehandle_end.png
         ${CMAKE_SOURCE_DIR}/resources/images/wavehandle_crossfade.png
+        ${CMAKE_SOURCE_DIR}/resources/images/SCicon.svg
 
         ${CMAKE_SOURCE_DIR}/resources/fonts/Anonymous_Pro/AnonymousPro-Regular.ttf
         ${CMAKE_SOURCE_DIR}/resources/fonts/Anonymous_Pro/AnonymousPro-Bold.ttf
@@ -38,10 +39,13 @@ target_sources(ShortcircuitXT PRIVATE
         components/HeaderPanel.cpp
         components/WaveDisplay.cpp
         components/DebugPanel.cpp
+        components/SingleFX.cpp
         components/ZoneKeyboardDisplay.cpp
         components/ZoneEditor.cpp
 
         proxies/ZoneStateProxy.cpp
+
+        pages/FXPage.cpp
         pages/ZonePage.cpp
         )
 

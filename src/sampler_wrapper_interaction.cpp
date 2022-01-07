@@ -61,6 +61,10 @@ void sampler::postEventsFromWrapper(const actiondata &ad)
 
 void sampler::postEventsToWrapper(const actiondata &ad, bool ErrorIfClosed)
 {
+    if (std::holds_alternative<VUnInitialized>(ad.actiontype))
+    {
+        std::cout << "POST EVENT ERROR" << std::endl;
+    }
     for (auto w : wrappers)
     {
         w->receiveActionFromProgram(ad);
@@ -1129,6 +1133,7 @@ void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
             char *ptr = pointr + ip_data[i].ptr_offset + ip_data[i].subid_ptr_offset * j;
             ad.id = i;
             ad.subid = j;
+            bool post{true};
             if (ip_data[i].vtype == ipvt_int)
             {
                 ad.actiontype = vga_intval;
@@ -1144,7 +1149,18 @@ void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
                 ad.actiontype = vga_text;
                 vtCopyString(ad.data.str, (char *)ptr, 32);
             }
-            postEventsToWrapper(ad);
+            else if (ip_data[i].vtype == ipvt_bdata)
+            {
+                // FIXME
+                post = false;
+            }
+            else
+            {
+                post = false;
+                std::cout << "Not pusting " << ip_data[i].vtype << std::endl;
+            }
+            if (post)
+                postEventsToWrapper(ad);
             ad.actiontype = vga_disable_state;
             ad.data.i[0] = false;
             postEventsToWrapper(ad);
