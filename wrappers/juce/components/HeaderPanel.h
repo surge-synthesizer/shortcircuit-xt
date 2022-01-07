@@ -14,7 +14,8 @@ namespace Widgets
 {
 struct CompactVUMeter;
 }
-} // namespace SC3
+namespace Components
+{
 struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 {
     HeaderPanel(SC3Editor *ed);
@@ -34,4 +35,6 @@ struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderPanel);
 };
+} // namespace Components
+} // namespace SC3
 #endif // SHORTCIRCUIT_HEADERPANEL_H

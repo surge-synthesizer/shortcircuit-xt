@@ -57,7 +57,18 @@ template <typename T, int qSize = 4096 * 16> class SC3EngineToWrapperQueue
     T dq[qSize];
 };
 struct SC3IdleTimer;
-class SC3Editor;
+
+namespace SC3
+{
+namespace Pages
+{
+struct PageBase;
+}
+namespace Components
+{
+struct HeaderPanel;
+}
+} // namespace SC3
 
 // Forward decls of proxies and their componetns
 class ZoneStateProxy;
@@ -65,11 +76,6 @@ class WaveDisplayProxy;
 struct BrowserDataProxy;
 struct SelectionStateProxy;
 struct VUMeterProxy;
-
-class ZoneKeyboardDisplay;
-struct ZoneEditor;
-class WaveDisplay;
-struct HeaderPanel;
 
 //==============================================================================
 /**
@@ -109,6 +115,34 @@ class SC3Editor : public juce::AudioProcessorEditor,
     // access the processor object that created it.
     SC3AudioProcessor &audioProcessor;
 
+    enum Pages
+    {
+        ZONE,
+        PART,
+        FX,
+        CONFIG,
+        ABOUT
+    };
+
+    static std::string pageName(const Pages &p)
+    {
+        switch (p)
+        {
+        case ZONE:
+            return "Zone";
+        case PART:
+            return "Part";
+        case FX:
+            return "FX";
+        case CONFIG:
+            return "Config";
+        case ABOUT:
+            return "About";
+        }
+    }
+
+    void showPage(const Pages &p);
+
   private:
     void sendActionInternal(const actiondata &ad);
 
@@ -124,13 +158,12 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<SC3EngineToWrapperQueue<LogTransport>> logToUI;
     std::unique_ptr<SC3IdleTimer> idleTimer;
 
+  public:
     std::set<UIStateProxy *> uiStateProxies;
-
     std::unique_ptr<ZoneStateProxy> zoneStateProxy;
     std::unique_ptr<BrowserDataProxy> browserDataProxy;
     std::unique_ptr<SelectionStateProxy> selectionStateProxy;
     std::unique_ptr<VUMeterProxy> vuMeterProxy;
-
     template <typename T> std::unique_ptr<T> make_proxy()
     {
         auto r = std::make_unique<T>(this);
@@ -138,10 +171,9 @@ class SC3Editor : public juce::AudioProcessorEditor,
         return (std::move(r));
     }
 
-    std::unique_ptr<ZoneKeyboardDisplay> zoneKeyboardDisplay;
-    std::unique_ptr<WaveDisplay> waveDisplay;
-    std::unique_ptr<ZoneEditor> zoneEditor;
-    std::unique_ptr<HeaderPanel> headerPanel;
+    std::map<Pages, std::unique_ptr<SC3::Pages::PageBase>> pages;
+
+    std::unique_ptr<SC3::Components::HeaderPanel> headerPanel;
 
     std::unique_ptr<SCXTLookAndFeel> lookAndFeel;
 

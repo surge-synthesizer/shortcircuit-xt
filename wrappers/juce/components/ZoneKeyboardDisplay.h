@@ -24,6 +24,10 @@
 
 class ActionSender;
 
+namespace SC3
+{
+namespace Components
+{
 class ZoneKeyboardDisplay : public juce::Component
 {
   public:
@@ -48,5 +52,8 @@ class ZoneKeyboardDisplay : public juce::Component
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneKeyboardDisplay);
 };
+
+} // namespace Components
+} // namespace SC3
 
 #endif // SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H

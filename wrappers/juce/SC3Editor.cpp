@@ -15,17 +15,16 @@
 
 #include <unordered_map>
 
-#include "components/StubRegion.h"
 #include "components/DebugPanel.h"
 #include "components/HeaderPanel.h"
-#include "components/ZoneEditor.h"
-#include "components/ZoneKeyboardDisplay.h"
-#include "components/WaveDisplay.h"
 
 #include "proxies/ZoneStateProxy.h"
 #include "proxies/BrowserDataProxy.h"
 #include "proxies/SelectionStateProxy.h"
 #include "proxies/VUMeterProxy.h"
+
+#include "pages/PageBase.h"
+#include "pages/ZonePage.h"
 
 #include "widgets/CompactVUMeter.h"
 
@@ -65,27 +64,28 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     selectionStateProxy = make_proxy<SelectionStateProxy>();
     vuMeterProxy = make_proxy<VUMeterProxy>();
 
-    waveDisplay = std::make_unique<WaveDisplay>(this, this);
-    uiStateProxies.insert(waveDisplay.get());
-
-    zoneKeyboardDisplay = std::make_unique<ZoneKeyboardDisplay>(this, this);
-    zoneStateProxy->clients.insert(zoneKeyboardDisplay.get());
-
-    zoneEditor = std::make_unique<ZoneEditor>(this);
-    zoneStateProxy->clients.insert(zoneEditor.get());
-
-    headerPanel = std::make_unique<HeaderPanel>(this);
+    headerPanel = std::make_unique<SC3::Components::HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
     vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
-
-    addAndMakeVisible(*zoneEditor);
-    addAndMakeVisible(*zoneKeyboardDisplay);
-    addAndMakeVisible(*waveDisplay);
     addAndMakeVisible(*headerPanel);
+
+    pages[ZONE] = std::make_unique<SC3::Pages::ZonePage>(this, ZONE);
+    pages[PART] = std::make_unique<SC3::Pages::PageBase>(this, PART);
+    pages[FX] = std::make_unique<SC3::Pages::PageBase>(this, FX);
+    pages[CONFIG] = std::make_unique<SC3::Pages::PageBase>(this, CONFIG);
+    pages[ABOUT] = std::make_unique<SC3::Pages::PageBase>(this, ABOUT);
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
     debugWindow->setEditor(this);
+
+    for (const auto &[p, page] : pages)
+    {
+        page->connectProxies();
+        page->setVisible(false);
+        addChildComponent(*page);
+    }
+    pages[ZONE]->setVisible(true);
 
     actiondata ad;
     ad.actiontype = vga_openeditor;
@@ -144,10 +144,10 @@ void SC3Editor::resized()
     auto r = getLocalBounds();
     headerPanel->setBounds(r.withHeight(25));
     r = r.withTrimmedTop(25);
-    zoneKeyboardDisplay->setBounds(r.withHeight(180));
-    r = r.withTrimmedTop(180);
-    waveDisplay->setBounds(r.withWidth(400));
-    zoneEditor->setBounds(r.withTrimmedLeft(400));
+    for (const auto &[p, page] : pages)
+    {
+        page->setBounds(r);
+    }
 }
 
 bool SC3Editor::isInterestedInFileDrag(const juce::StringArray &files) { return true; }
@@ -356,4 +356,12 @@ void SC3Editor::selectPart(int i)
     ad.actiontype = vga_intval;
     ad.data.i[0] = i;
     sendActionToEngine(ad);
+}
+
+void SC3Editor::showPage(const Pages &pTo)
+{
+    for (const auto &[p, page] : pages)
+    {
+        page->setVisible(p == pTo);
+    }
 }

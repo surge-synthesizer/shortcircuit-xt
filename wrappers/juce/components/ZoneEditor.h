@@ -10,6 +10,10 @@
 
 struct SC3Editor;
 
+namespace SC3
+{
+namespace Components
+{
 struct ZoneEditor : public juce::Component,
                     UIStateProxy::Invalidatable,
                     juce::ComboBox::Listener,
@@ -34,5 +38,6 @@ struct ZoneEditor : public juce::Component,
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneEditor);
 };
-
+} // namespace Components
+} // namespace SC3
 #endif // SHORTCIRCUIT_ZONEEDITOR_H

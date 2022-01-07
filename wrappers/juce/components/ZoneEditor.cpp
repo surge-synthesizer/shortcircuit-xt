@@ -5,6 +5,10 @@
 #include "ZoneEditor.h"
 #include "SC3Editor.h"
 
+namespace SC3
+{
+namespace Components
+{
 ZoneEditor::ZoneEditor(SC3Editor *e) : editor(e)
 {
     zoneSelector = std::make_unique<juce::ComboBox>();
@@ -79,3 +83,6 @@ void ZoneEditor::textEditorReturnKeyPressed(juce::TextEditor &e)
     ad.actiontype = vga_request_refresh;
     editor->sendActionToEngine(ad);
 }
+
+} // namespace Components
+} // namespace SC3

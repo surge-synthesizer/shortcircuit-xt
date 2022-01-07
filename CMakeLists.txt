@@ -287,6 +287,8 @@ target_sources(ShortcircuitXT PRIVATE
 
         wrappers/juce/proxies/ZoneStateProxy.cpp
 
+        wrappers/juce/pages/ZonePage.cpp
+
         wrappers/juce/scratchpad.cpp
         )
 target_include_directories(ShortcircuitXT PRIVATE wrappers/juce)

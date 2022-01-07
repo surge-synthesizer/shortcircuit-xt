@@ -7,6 +7,10 @@
 #include "widgets/OutlinedTextButton.h"
 #include "widgets/CompactVUMeter.h"
 
+namespace SC3
+{
+namespace Components
+{
 HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
 {
     for (int i = 0; i < n_sampler_parts; ++i)
@@ -25,15 +29,19 @@ HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
         true, juce::NotificationType::dontSendNotification);
 
     zonesButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Zones");
+    zonesButton->onClick = [this]() { editor->showPage(SC3Editor::ZONE); };
     addAndMakeVisible(*zonesButton);
 
     partButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Part");
+    partButton->onClick = [this]() { editor->showPage(SC3Editor::PART); };
     addAndMakeVisible(*partButton);
 
     fxButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("FX");
+    fxButton->onClick = [this]() { editor->showPage(SC3Editor::FX); };
     addAndMakeVisible(*fxButton);
 
     configButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Config");
+    configButton->onClick = [this]() { editor->showPage(SC3Editor::CONFIG); };
     addAndMakeVisible(*configButton);
 
     menuButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Menu");
@@ -90,3 +98,5 @@ void HeaderPanel::onProxyUpdate()
             true, juce::NotificationType::dontSendNotification);
     }
 }
+} // namespace Components
+} // namespace SC3

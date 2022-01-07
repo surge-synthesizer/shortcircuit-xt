@@ -25,6 +25,10 @@
 
 #include "BinaryUIAssets.h"
 
+namespace SC3
+{
+namespace Components
+{
 const int WAVE_MARGIN = 6;      // margin around wave display in pixels
 const int WAVE_CHANNEL_GAP = 4; // gap between channels
 
@@ -737,3 +741,6 @@ void WaveDisplay::mouseMove(const juce::MouseEvent &event)
     setMouseCursor(juce::MouseCursor::NormalCursor);
     return;
 }
+
+} // namespace Components
+} // namespace SC3
