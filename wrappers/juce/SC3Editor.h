@@ -192,6 +192,7 @@ class SC3Editor : public juce::AudioProcessorEditor,
 
     sample_zone zonesCopy[max_zones];
     bool activeZones[max_zones];
+    bool selectedZones[max_zones];
 
     sample_part partsC[n_sampler_parts];
     sample_multi multiC;

@@ -43,9 +43,8 @@ target_sources(ShortcircuitXT PRIVATE
 
         proxies/ZoneStateProxy.cpp
         pages/ZonePage.cpp
-
-        scratchpad.cpp
         )
+
 target_include_directories(ShortcircuitXT PRIVATE .)
 target_compile_definitions(ShortcircuitXT PUBLIC
         JUCE_ALLOW_STATIC_NULL_VARIABLES=0
