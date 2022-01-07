@@ -60,7 +60,7 @@ else ()
 endif ()
 
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
-set(SCXT_ZIP MoniqueMonosynth-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
+set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
 message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
 
 add_custom_command(
