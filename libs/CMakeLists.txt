@@ -3,7 +3,7 @@ add_subdirectory(JUCE)
 
 # Add a catch2 target
 add_library(catch2 INTERFACE)
-target_include_directories(catch2 INTERFACE catch2)
+target_include_directories(catch2 INTERFACE catch2/include)
 add_library(shortcircuit::catch2 ALIAS catch2)
 
 # Add a SIMDE target

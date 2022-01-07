@@ -84,7 +84,7 @@ jobs:
 
       - bash: |
           cmake --build build --config Debug --target shortcircuit-staged --parallel 4
-        displayName: Build Monique for a Pull Request
+        displayName: Build SCXT for a Pull Request
         condition: eq(variables['Build.Reason'], 'PullRequest')
 
 
@@ -96,7 +96,7 @@ jobs:
 
       - bash: |
           cmake --build build --config Release --target shortcircuit-installer --parallel 4
-        displayName: Build Monique Installer for Main
+        displayName: Build SCXT Installer for Main
         condition: not(eq(variables['Build.Reason'], 'PullRequest'))
 
       - bash: |
@@ -257,5 +257,5 @@ jobs:
           # Finally tell discord
           export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
           
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. But you don't want it.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-monique.webhook`
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. But you don't want it.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
         displayName: Tell Discord
