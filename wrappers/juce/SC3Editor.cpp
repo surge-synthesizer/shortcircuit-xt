@@ -24,6 +24,7 @@
 #include "proxies/VUMeterProxy.h"
 
 #include "pages/PageBase.h"
+#include "pages/AboutPage.h"
 #include "pages/ZonePage.h"
 
 #include "widgets/CompactVUMeter.h"
@@ -73,7 +74,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     pages[PART] = std::make_unique<SC3::Pages::PageBase>(this, PART);
     pages[FX] = std::make_unique<SC3::Pages::PageBase>(this, FX);
     pages[CONFIG] = std::make_unique<SC3::Pages::PageBase>(this, CONFIG);
-    pages[ABOUT] = std::make_unique<SC3::Pages::PageBase>(this, ABOUT);
+    pages[ABOUT] = std::make_unique<SC3::Pages::AboutPage>(this, ABOUT);
 
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);

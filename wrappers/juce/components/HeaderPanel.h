@@ -29,7 +29,8 @@ struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 
     std::unique_ptr<SC3::Widgets::CompactVUMeter> vuMeter0;
 
-    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, menuButton;
+    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, aboutButton,
+        menuButton;
     void onProxyUpdate() override;
     SC3Editor *editor{nullptr};
 
