@@ -12,20 +12,26 @@ jobs:
       matrix:
         mac:
           imageName: 'macos-10.15'
+          cmakeRelArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+          cmakeDebArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
           isMac: True
         win:
           imageName: 'windows-2019'
+          cmakeRelArgs: -A x64
+          cmakeDebArgs: -A x64
           isWindows: True
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
-    
+          cmakeRelArgs:
+          cmakeDebArgs:
+
     pool:
       vmImage: $(imageName)
     
     steps:
       - checkout: self
-        fetchDepth: 1
+        fetchDepth: 5
         # submodules: recursive # can't do submodules here b'cuz depth=1 fails with Github
 
       - bash: |
@@ -67,12 +73,43 @@ jobs:
 
 
       - bash: |
-          git submodule update --init --recursive
+          git submodule update --depth 1 --init --recursive
         displayName: Get SubModules
 
       - bash: |
-          cmake -Bbuild
-        displayName: Run CMake
+          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeDebArgs)
+          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug $(cmakeDebArgs)
+        displayName: Run CMake (Debug)
+        condition: eq(variables['Build.Reason'], 'PullRequest')
+
+      - bash: |
+          cmake --build build --config Debug --target shortcircuit-staged --parallel 4
+        displayName: Build SCXT for a Pull Request
+        condition: eq(variables['Build.Reason'], 'PullRequest')
+
+
+      - bash: |
+          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeRelArgs)
+          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release $(cmakeRelArgs)
+        displayName: Run CMake (Release)
+        condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+
+      - bash: |
+          cmake --build build --config Release --target shortcircuit-installer --parallel 4
+        displayName: Build SCXT Installer for Main
+        condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+
+      - bash: |
+          mkdir -p build/stage_git/git_info
+          git log -1 --pretty=format:'%h : %s - %an' > build/stage_git/git_info/git_nightly_sc3_log_display
+          git log -1 --pretty=format:'%h : %s%n%aD%n%an%n%n%B' > build/stage_git/git_info/git_nightly_sc3_log_long_display
+          git log -5 --pretty=format:'%h : %s - %an' > build/stage_git/git_info/git_nightly_sc3_recent_five
+          git log -1 --pretty=format:'%h' > build/stage_git/git_info/git_nightly_sc3_log_hash
+
+          cat build/stage_git/git_info/*
+
+        condition: and(variables.isLinux, not(eq(variables['Build.Reason'], 'PullRequest')))
+        displayName: Use the linux build to make git log info
 
       - bash: |
           cmake --build build --target code-quality-pipeline-checks
@@ -80,10 +117,145 @@ jobs:
         condition: variables.isLinux
 
       - bash: |
-          cmake --build build --config Debug --target sc3-installer --parallel 4
-        displayName: Build sc3-installer
+          cmake --build build --config Debug --target sc3-test --parallel 4
+          ./build/test/sc3-test
+        displayName: Run Tests SC3
+        condition: eq(variables['Build.Reason'], 'PullRequest')
+
+      - task: PublishPipelineArtifact@0
+        inputs:
+          artifactName: 'INSTALLER_MAC_DIST'
+          targetPath: 'build/installer'
+        condition: and(variables.isMac,not(eq(variables['Build.Reason'], 'PullRequest')))
+        displayName: mac - publish mac zip
+
+      - task: PublishPipelineArtifact@0
+        inputs:
+          artifactName: 'INSTALLER_WIN_DIST'
+          targetPath: 'build/installer'
+        condition: and(variables.isWindows,not(eq(variables['Build.Reason'], 'PullRequest')))
+        displayName: win - publish win zip
+
+      - task: PublishPipelineArtifact@0
+        inputs:
+          artifactName: 'INSTALLER_LIN_DIST'
+          targetPath: 'build/installer'
+        condition: and(variables.isLinux,not(eq(variables['Build.Reason'], 'PullRequest')))
+        displayName: lin - publish lin zip
+
+
+      - task: PublishPipelineArtifact@0
+        inputs:
+          artifactName: 'GIT_INFO'
+          targetPath: 'build/stage_git/'
+        condition: and(variables.isLinux,not(eq(variables['Build.Reason'], 'PullRequest')))
+        displayName: lin - publish git info
+
+  - job: Release
+    dependsOn: Build
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+    strategy:
+      matrix:
+        release-on-mac:
+          imageName: 'macos-10.15'
+
+    steps:
+      - checkout: self
+        persistCredentials: true
+
+      - task: DownloadSecureFile@1
+        inputs:
+          secureFile: discord-nightly-shortcircuit.webhook
+
+      - task: DownloadPipelineArtifact@0
+        inputs:
+          artifactName: 'INSTALLER_MAC_DIST'
+          targetPath: $(System.DefaultWorkingDirectory)
+
+      - task: DownloadPipelineArtifact@0
+        inputs:
+          artifactName: 'INSTALLER_WIN_DIST'
+          targetPath: $(System.DefaultWorkingDirectory)
+
+      - task: DownloadPipelineArtifact@0
+        inputs:
+          artifactName: 'INSTALLER_LIN_DIST'
+          targetPath: $(System.DefaultWorkingDirectory)
+
+
+      - task: DownloadPipelineArtifact@0
+        inputs:
+          artifactName: 'GIT_INFO'
+          targetPath: $(System.DefaultWorkingDirectory)
 
       - bash: |
-          ./build/products/sc3-test
-        displayName: Run Tests SC3
+          set -e
+          set -x
+          
+          mkdir -p releases
+          
+          mv *.zip releases
+          
+          ls -l $(System.DefaultWorkingDirectory)/git_info/
+          echo "## ShortCircuit Nightly Build" > releases/ReleaseNotes.md
+          echo " " >> releases/ReleaseNotes.md
+          echo "**DO NOT USE THIS. It's all a mess**" >> releases/ReleaseNotes.md
+          echo " " >> releases/ReleaseNotes.md
+          date +"**Last Updated On: %Y-%m-%d %H:%M:%S %Z**" >> releases/ReleaseNotes.md
+          echo " " >> releases/ReleaseNotes.md
+          echo "5 most recent commits in this install:" >> releases/ReleaseNotes.md
+          echo "<pre>" >> releases/ReleaseNotes.md
+          cat $(System.DefaultWorkingDirectory)/git_info/git_nightly_sc3_recent_five >> releases/ReleaseNotes.md
+          echo " " >> releases/ReleaseNotes.md
+          echo "</pre>" >> releases/ReleaseNotes.md
+          
+          echo "---------------"
+          cat releases/ReleaseNotes.md
+          echo "---------------"
+          
+          ls -alFh releases
+        displayName: Prepare Release
 
+      - task: GitHubRelease@0
+        displayName: "Create Github Nightly Release"
+        # condition: eq(variables.SURGE_IS_MAIN, 'true')
+        inputs:
+          gitHubConnection: surge-rackupdater
+          repositoryName: surge-synthesizer/shortcircuit-xt
+          action: 'edit'
+          tag: Nightly
+          target: '$(Build.SourceVersion)'
+          addChangeLog: false
+          assetUploadMode: 'delete'
+          releaseNotesFile: $(System.DefaultWorkingDirectory)/releases/ReleaseNotes.md
+          assets: $(System.DefaultWorkingDirectory)/releases/*.*
+
+      # ToDo: Non-nightly release
+      #    - bash: |
+      #        git tag $(SURGE_VERSION)
+      #        git push origin $(SURGE_VERSION)
+      #      displayName: "Create Github Tag for Stable"
+      #      condition: eq(variables.SURGE_IS_MAIN, 'false')
+
+      #    - task: GitHubRelease@0
+      #      displayName: "Create Github Stable Release"
+      #      condition: eq(variables.SURGE_IS_MAIN, 'false')
+      #      inputs:
+      #        gitHubConnection: surge-rackupdater
+      #        repositoryName: surge-synthesizer/releases-xt
+      #        action: 'create'
+      #        tag: $(SURGE_VERSION)
+      #        tagSource: 'auto'
+      #        target: '$(Build.SourceVersion)'
+      #        addChangeLog: false
+      #        assetUploadMode: 'delete'
+      #        releaseNotesFile: $(System.DefaultWorkingDirectory)/releases/ReleaseNotes.md
+      #        assets: $(System.DefaultWorkingDirectory)/releases/*.*
+
+
+      - bash: |
+          # Finally tell discord
+          export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
+          
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. But you don't want it.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
+        displayName: Tell Discord

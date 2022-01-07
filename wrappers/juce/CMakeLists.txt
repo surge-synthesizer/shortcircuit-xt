@@ -1,0 +1,82 @@
+# The JUCE plugin Shortcircuit XT has an AU, VST3 and standalone version
+
+juce_add_plugin(ShortcircuitXT
+        PRODUCT_NAME "Shortcircuit XT"
+        COMPANY_NAME "Surge Synth Team"
+        BUNDLE_ID "org.surge-synth-team.shortcircuit-xt"
+        PLUGIN_MANUFACTURER_CODE VmbA
+        PLUGIN_CODE ScXT
+
+        IS_SYNTH TRUE
+        NEEDS_MIDI_INPUT TRUE
+
+        FORMATS AU VST3 Standalone
+        )
+
+# images used in the ui
+juce_add_binary_data(UIAssets
+        NAMESPACE SCXTUIAssets
+        HEADER_NAME BinaryUIAssets.h
+        SOURCES
+        ${CMAKE_SOURCE_DIR}/resources/images/wavehandle_start.png
+        ${CMAKE_SOURCE_DIR}/resources/images/wavehandle_end.png
+        ${CMAKE_SOURCE_DIR}/resources/images/wavehandle_crossfade.png
+
+        ${CMAKE_SOURCE_DIR}/resources/fonts/Anonymous_Pro/AnonymousPro-Regular.ttf
+        ${CMAKE_SOURCE_DIR}/resources/fonts/Anonymous_Pro/AnonymousPro-Bold.ttf
+        )
+
+set_target_properties(UIAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+
+# Then set up the source and the JUCE settings
+target_sources(ShortcircuitXT PRIVATE
+        SC3Processor.cpp
+        SC3Editor.cpp
+        SCXTLookAndFeel.cpp
+
+        components/HeaderPanel.cpp
+        components/WaveDisplay.cpp
+        components/DebugPanel.cpp
+        components/ZoneKeyboardDisplay.cpp
+        components/ZoneEditor.cpp
+
+        proxies/ZoneStateProxy.cpp
+        pages/ZonePage.cpp
+
+        scratchpad.cpp
+        )
+target_include_directories(ShortcircuitXT PRIVATE .)
+target_compile_definitions(ShortcircuitXT PUBLIC
+        JUCE_ALLOW_STATIC_NULL_VARIABLES=0
+        JUCE_MODAL_LOOPS_PERMITTED=1
+        JUCE_STRICT_REFCOUNTEDPOINTER=1
+
+        JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_CURL=0
+        JUCE_WEB_BROWSER=0
+
+        JUCE_DISPLAY_SPLASH_SCREEN=0
+        JUCE_REPORT_APP_USAGE=0
+
+        JUCE_ALSA=1
+        JUCE_JACK=1
+        )
+# ASIO SDK is only for MS Windows.
+if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
+    target_compile_definitions(ShortcircuitXT PUBLIC
+            JUCE_ASIO=1
+            )
+    target_include_directories(ShortcircuitXT PUBLIC
+            "libs/asiosdk/common"
+            )
+endif ()
+
+target_link_libraries(ShortcircuitXT PRIVATE
+        UIAssets
+        shortcircuit-core
+        juce::juce_audio_utils
+        juce::juce_audio_processors
+        juce::juce_dsp
+        )
+
