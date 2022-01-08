@@ -71,6 +71,7 @@ add_library(shortcircuit-core
         ${SHORTCIRCUIT_GENERATED_SOURCE})
 
 target_link_libraries(shortcircuit-core PUBLIC
+        sst-cpputils
         shortcircuit::filesystem
         shortcircuit::simde
         shortcircuit::compiler-options)

@@ -76,6 +76,7 @@ class WaveDisplayProxy;
 struct BrowserDataProxy;
 struct SelectionStateProxy;
 struct VUMeterProxy;
+struct MultiDataProxy;
 
 //==============================================================================
 /**
@@ -164,6 +165,8 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<BrowserDataProxy> browserDataProxy;
     std::unique_ptr<SelectionStateProxy> selectionStateProxy;
     std::unique_ptr<VUMeterProxy> vuMeterProxy;
+    std::unique_ptr<MultiDataProxy> multiDataProxy;
+
     template <typename T> std::unique_ptr<T> make_proxy()
     {
         auto r = std::make_unique<T>(this);
@@ -194,9 +197,15 @@ class SC3Editor : public juce::AudioProcessorEditor,
     bool activeZones[max_zones];
     bool selectedZones[max_zones];
 
-    sample_part partsC[n_sampler_parts];
-    sample_multi multiC;
     int freeParamsC[n_ip_free_items][16];
+
+    MultiData multi;
+
+    /*
+     * Configuration Data
+     */
+    std::vector<std::string> filterTypeNames;
+    std::vector<std::string> filterOutputNames;
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};

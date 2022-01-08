@@ -133,8 +133,8 @@ struct steplfostruct
 
 //-------------------------------------------------------------------------------------------------------
 
-const int n_filter_parameters = 9;
-const int n_filter_iparameters = 2;
+static constexpr int n_filter_parameters = 9;
+static constexpr int n_filter_iparameters = 2;
 
 struct filterstruct
 {
@@ -290,8 +290,8 @@ struct envelope_AHDSR
 
 //-------------------------------------------------------------------------------------------------------
 
-const int mm_entries = 12;
-const int mm_part_entries = 6;
+static constexpr int mm_entries = 12;
+static constexpr int mm_part_entries = 6;
 
 struct mm_entry
 {
@@ -377,7 +377,7 @@ struct nc_entry
 
 //-------------------------------------------------------------------------------------------------------
 
-const int max_hitpoints = 128; // fler makes no sense (yet) :P
+static constexpr int max_hitpoints = 128; // fler makes no sense (yet) :P
 
 struct hitpoint
 {
@@ -405,13 +405,13 @@ struct aux_buss
 
 //-------------------------------------------------------------------------------------------------------
 
-const int num_layers = 8;
-const int num_fxunits = 8;
-const int num_layer_ncs = 2;
-const int nc_entries = 2;
-const int num_part_ncs = num_layers * num_layer_ncs;
+static constexpr int num_layers = 8;
+static constexpr int num_fxunits = 8;
+static constexpr int num_layer_ncs = 2;
+static constexpr int nc_entries = 2;
+static constexpr int num_part_ncs = num_layers * num_layer_ncs;
 
-const int state_string_length = 32;
+static constexpr int state_string_length = 32;
 
 //-------------------------------------------------------------------------------------------------------
 
