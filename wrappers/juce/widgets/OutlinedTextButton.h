@@ -12,7 +12,7 @@ namespace SC3
 {
 namespace Widgets
 {
-struct OutlinedTextButton : public juce::TextButton
+struct OutlinedTextButton : public juce::TextButton, ColorRemapper<OutlinedTextButton>
 {
     enum ColourIds
     {
@@ -20,28 +20,20 @@ struct OutlinedTextButton : public juce::TextButton
         downColour,
         textColour
     };
-    OutlinedTextButton(const std::string &t) : juce::TextButton(t)
-    {
-        if (!isColourSpecified(upColour))
-            setColour(upColour, juce::Colours::orchid);
-        if (!isColourSpecified(downColour))
-            setColour(downColour, juce::Colours::yellow);
-        if (!isColourSpecified(textColour))
-            setColour(textColour, juce::Colours::red);
-    }
+    OutlinedTextButton(const std::string &t) : juce::TextButton(t) {}
 
     void paintButton(juce::Graphics &g, bool highlighted, bool down) override
     {
-        auto c = findColour(upColour);
+        auto c = findRemappedColour(upColour);
         if (down || getToggleState())
-            c = findColour(downColour);
+            c = findRemappedColour(downColour);
         if (highlighted)
         {
             c = c.brighter(0.3);
         }
 
         SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), c, down || getToggleState());
-        g.setColour(findColour(textColour));
+        g.setColour(findRemappedColour(textColour));
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred);
     }

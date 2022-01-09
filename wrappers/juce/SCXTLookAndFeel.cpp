@@ -17,6 +17,10 @@ SCXTLookAndFeel::SCXTLookAndFeel()
     setColour(SCXTColours::vuPlayHigh, juce::Colour(0xFF888800));
     setColour(SCXTColours::vuPlayLow, juce::Colour(0xFF3333EE));
     setColour(SCXTColours::vuClip, juce::Colours::red);
+
+    setColour(SCXTColours::fxPanelHeaderText, juce::Colours::white);
+    setColour(SCXTColours::fxPanelHeaderBackground, juce::Colour(0xFF336633));
+    setColour(SCXTColours::fxPanelBackground, juce::Colour(0xFF446644));
 }
 
 struct TypefaceHolder : public juce::DeletedAtShutdown

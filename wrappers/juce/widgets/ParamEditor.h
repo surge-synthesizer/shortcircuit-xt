@@ -20,14 +20,19 @@ struct FloatParamEditor : public juce::Component
         VSLIDER,
         SPINBOX
     } style{HSLIDER};
-    const ParameterProxy<float> &param;
+    ParameterProxy<float> &param;
 
-    FloatParamEditor(const Style &s, const ParameterProxy<float> &p)
-        : juce::Component(), style(s), param(p)
+    FloatParamEditor(const Style &s, ParameterProxy<float> &p, ActionSender *snd)
+        : juce::Component(), style(s), param(p), sender(snd)
     {
     }
 
     void paint(juce::Graphics &g) override;
+    void paintHSlider(juce::Graphics &g);
+
+    void mouseUp(const juce::MouseEvent &e) override;
+
+    ActionSender *sender{nullptr};
 };
 } // namespace Widgets
 } // namespace SC3

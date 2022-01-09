@@ -13,7 +13,8 @@ namespace SC3
 namespace Widgets
 {
 struct CompactVUMeter;
-}
+struct OutlinedTextButton;
+} // namespace Widgets
 namespace Components
 {
 struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
@@ -24,13 +25,14 @@ struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
 
     void resized() override;
 
-    std::array<std::unique_ptr<juce::Button>, n_sampler_parts> partsButtons;
+    std::array<std::unique_ptr<Widgets::OutlinedTextButton>, n_sampler_parts> partsButtons;
 
-    std::unique_ptr<SC3::Widgets::CompactVUMeter> vuMeter0;
+    std::unique_ptr<Widgets::CompactVUMeter> vuMeter0;
 
-    std::unique_ptr<juce::Button> zonesButton, partButton, fxButton, configButton, aboutButton;
+    std::unique_ptr<Widgets::OutlinedTextButton> zonesButton, partButton, fxButton, configButton,
+        aboutButton;
     void onProxyUpdate() override;
-    void parentHierarchyChanged() override;
+
     SC3Editor *editor{nullptr};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderPanel);

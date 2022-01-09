@@ -14,7 +14,7 @@ HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
 {
     for (int i = 0; i < n_sampler_parts; ++i)
     {
-        auto b = std::make_unique<SC3::Widgets::OutlinedTextButton>(std::to_string(i));
+        auto b = std::make_unique<SC3::Widgets::OutlinedTextButton>(std::to_string(i + 1));
         b->setClickingTogglesState(true);
         b->setRadioGroupId(174, juce::NotificationType::dontSendNotification);
         addAndMakeVisible(*b);
@@ -60,6 +60,24 @@ HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
 
     vuMeter0 = std::make_unique<SC3::Widgets::CompactVUMeter>(editor);
     addAndMakeVisible(*vuMeter0);
+
+    // This means i probably have a new look and feel so
+    auto attachColor = [this](const auto &b) {
+        b->remapColour(Widgets::OutlinedTextButton::upColour, SCXTColours::headerButton);
+        b->remapColour(Widgets::OutlinedTextButton::downColour, SCXTColours::headerButtonDown);
+        b->remapColour(Widgets::OutlinedTextButton::textColour, SCXTColours::headerButtonText);
+    };
+
+    for (const auto &b : partsButtons)
+    {
+        attachColor(b);
+    }
+
+    attachColor(zonesButton);
+    attachColor(partButton);
+    attachColor(fxButton);
+    attachColor(configButton);
+    attachColor(aboutButton);
 }
 
 HeaderPanel::~HeaderPanel() {}
@@ -115,27 +133,6 @@ void HeaderPanel::paint(juce::Graphics &g)
     SCXTLookAndFeel::fillWithGradientHeaderBand(g, getLocalBounds(),
                                                 findColour(SCXTColours::headerBackground));
 }
-void HeaderPanel::parentHierarchyChanged()
-{
-    // This means i probably have a new look and feel so
-    auto attachColor = [this](const auto &b) {
-        b->setColour(Widgets::OutlinedTextButton::upColour, findColour(SCXTColours::headerButton));
-        b->setColour(Widgets::OutlinedTextButton::downColour,
-                     findColour(SCXTColours::headerButtonDown));
-        b->setColour(Widgets::OutlinedTextButton::textColour,
-                     findColour(SCXTColours::headerButtonText));
-    };
 
-    for (const auto &b : partsButtons)
-    {
-        attachColor(b);
-    }
-
-    attachColor(zonesButton);
-    attachColor(partButton);
-    attachColor(fxButton);
-    attachColor(configButton);
-    attachColor(aboutButton);
-}
 } // namespace Components
 } // namespace SC3

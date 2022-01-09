@@ -23,7 +23,7 @@ SingleFX::SingleFX(SC3Editor *ed, int i) : editor(ed), idx(i)
     for (auto i = 0; i < n_filter_parameters; ++i)
     {
         auto q = std::make_unique<Widgets::FloatParamEditor>(Widgets::FloatParamEditor::HSLIDER,
-                                                             editor->multi.filters[idx].p[i]);
+                                                             editor->multi.filters[idx].p[i], ed);
         addChildComponent(*q);
         fParams[i] = std::move(q);
     }
@@ -40,13 +40,14 @@ SingleFX::~SingleFX() = default;
 
 void SingleFX::paint(juce::Graphics &g)
 {
-    g.fillAll(juce::Colours::darkkhaki);
+    g.fillAll(findColour(SCXTColours::fxPanelBackground));
 
     auto r = getLocalBounds().withHeight(20);
 
-    SCXTLookAndFeel::fillWithGradientHeaderBand(g, r, juce::Colour(0xFF333300));
-    g.setColour(juce::Colours::white);
-    g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
+    SCXTLookAndFeel::fillWithGradientHeaderBand(g, r,
+                                                findColour(SCXTColours::fxPanelHeaderBackground));
+    g.setColour(findColour(SCXTColours::fxPanelHeaderText));
+    g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
     g.drawText("Effect " + std::to_string(idx + 1), r, juce::Justification::centred);
 }
 
@@ -55,16 +56,16 @@ void SingleFX::resized()
     auto r = getLocalBounds().withHeight(20).translated(0, 25).reduced(2, 0);
     typeSelector->setBounds(r);
 
-    r = r.translated(0, 25).withHeight(20);
+    r = r.translated(0, 25).withHeight(24);
     for (const auto &p : fParams)
     {
         p->setBounds(r);
-        r = r.translated(0, 21);
+        r = r.translated(0, 25);
     }
     for (const auto &p : iParams)
     {
         p->setBounds(r);
-        r = r.translated(0, 21);
+        r = r.translated(0, 25);
     }
 }
 
