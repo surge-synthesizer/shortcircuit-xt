@@ -34,7 +34,7 @@ struct VUMeterProxy : public UIStateProxy
                 editor->vuData[i].clip1 = cl1;
                 editor->vuData[i].clip2 = cl2;
             }
-            invalidateAndRepaintClients();
+            markNeedsRepaintAndProxyUpdate();
             return true;
             break;
         }

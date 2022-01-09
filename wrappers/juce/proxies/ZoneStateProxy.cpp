@@ -36,7 +36,7 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             for (int i = 0; i < max_zones; ++i)
                 editor->activeZones[i] = false;
             res = true;
-            invalidateAndRepaintClients();
+            markNeedsRepaintAndProxyUpdate();
             break;
         }
         case vga_zonelist_populate:
@@ -60,12 +60,12 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             sz->mute = zd->mute;
             strncpy(sz->name, zd->name, 32);
             res = true;
-            invalidateAndRepaintClients();
+            markNeedsRepaintAndProxyUpdate();
             break;
         }
         case vga_zonelist_done:
         {
-            invalidateAndRepaintClients();
+            markNeedsRepaintAndProxyUpdate();
             res = true;
             break;
         }
@@ -75,7 +75,7 @@ bool ZoneStateProxy::processActionData(const actiondata &ad)
             if (note >= 0 && note < 128)
             {
                 editor->playingMidiNotes[note] = ad.data.i[1];
-                repaintClients();
+                markNeedsRepaint();
             }
             res = true;
         }

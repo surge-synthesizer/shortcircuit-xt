@@ -45,6 +45,8 @@ target_sources(ShortcircuitXT PRIVATE
 
         proxies/ZoneStateProxy.cpp
 
+        widgets/ParamEditor.cpp
+
         pages/FXPage.cpp
         pages/ZonePage.cpp
         )
