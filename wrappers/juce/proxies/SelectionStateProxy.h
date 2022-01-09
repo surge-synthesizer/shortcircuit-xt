@@ -18,7 +18,7 @@ struct SelectionStateProxy : public UIStateProxy
         {
         case ip_partselect:
             editor->selectedPart = ad.data.i[0];
-            invalidateAndRepaintClients();
+            markNeedsRepaintAndProxyUpdate();
             return true;
             break;
         case ip_layerselect:

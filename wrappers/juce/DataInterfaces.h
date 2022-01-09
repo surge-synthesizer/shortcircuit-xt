@@ -6,16 +6,7 @@
 #define SHORTCIRCUIT_DATAINTERFACES_H
 
 #include "sampler_wrapper_actiondata.h"
-
-template <typename T> struct ParameterProxy
-{
-    int id{-1};
-    int subid{-1};
-    T data;
-    bool hidden{false};
-    bool disabled{false};
-    std::string label;
-};
+#include <charconv>
 
 /*
  * The UIStateProxy is a class which handles messages and keeps an appropriate state.
@@ -33,18 +24,18 @@ class UIStateProxy
 
     struct InvalidateAndRepaintGuard
     {
-        InvalidateAndRepaintGuard(const UIStateProxy &p) : proxy(p), go{true} {}
+        InvalidateAndRepaintGuard(UIStateProxy &p) : proxy(p), go{true} {}
         ~InvalidateAndRepaintGuard()
         {
             if (go)
-                proxy.invalidateAndRepaintClients();
+                proxy.markNeedsRepaintAndProxyUpdate();
         }
         bool deactivate()
         {
             go = false;
             return go;
         }
-        const UIStateProxy &proxy;
+        UIStateProxy &proxy;
         bool go;
     };
 
@@ -58,20 +49,44 @@ class UIStateProxy
             c->repaint();
         }
     }
-    void invalidateClients() const
+
+    enum Validity
     {
+        VALID = 0,
+        NEEDS_REPAINT = 1 << 1,
+        NEEDS_PROXY_UPDATE = 1 << 2
+    };
+    uint32_t validity{VALID};
+
+    void markNeedsRepaint() { validity = validity | NEEDS_REPAINT; }
+    void markNeedsProxyUpdate() { validity = validity | NEEDS_PROXY_UPDATE; }
+    void markNeedsRepaintAndProxyUpdate()
+    {
+        validity = validity | NEEDS_PROXY_UPDATE | NEEDS_REPAINT;
+    }
+
+    void sweepValidity()
+    {
+        if (validity == VALID)
+            return;
+        bool rp = validity & NEEDS_REPAINT;
+        bool px = validity & NEEDS_PROXY_UPDATE;
+        validity = VALID;
         for (auto c : clients)
         {
-            if (auto q = dynamic_cast<Invalidatable *>(c))
+            if (rp)
             {
-                q->onProxyUpdate();
+                c->repaint();
+            }
+
+            if (px)
+            {
+                if (auto q = dynamic_cast<Invalidatable *>(c))
+                {
+                    q->onProxyUpdate();
+                }
             }
         }
-    }
-    void invalidateAndRepaintClients() const
-    {
-        invalidateClients();
-        repaintClients();
     }
 
     bool collectStringEntries(const actiondata &ad, InteractionId id, std::vector<std::string> &v)
@@ -106,6 +121,73 @@ struct ActionSender
     virtual void sendActionToEngine(const actiondata &ad) = 0;
 };
 
+template <typename T> struct ParameterProxy
+{
+    int id{-1};
+    int subid{-1};
+    T val;
+    bool hidden{false};
+    bool disabled{false};
+    std::string label;
+
+    T min, max, def, step;
+    std::string units;
+
+    void parseDatamode(const char *datamode)
+    {
+        // syntax is char,min,step,max,def,units
+        std::string dm{datamode};
+        std::vector<std::string> elements;
+        while (true)
+        {
+            auto p = dm.find(',');
+            if (p == std::string::npos)
+            {
+                elements.push_back(dm);
+                break;
+            }
+            else
+            {
+                auto r = dm.substr(0, p);
+                dm = dm.substr(p + 1);
+                elements.push_back(r);
+            }
+        }
+        jassert(elements.size() == 6);
+        jassert(elements[0][0] == dataModeIndicator());
+        min = strToT(elements[1]);
+        step = strToT(elements[2]);
+        max = strToT(elements[3]);
+        def = strToT(elements[4]);
+        units = elements[5];
+    }
+
+    char dataModeIndicator() const { return 'x'; }
+    T strToT(const std::string &s)
+    {
+        jassertfalse;
+        return T{};
+    }
+};
+
+template <> inline char ParameterProxy<float>::dataModeIndicator() const { return 'f'; }
+template <> inline float ParameterProxy<float>::strToT(const std::string &s)
+{
+    // Ideally we would use  auto [ptr, ec]{std::from_chars(s.data(), s.data() + s.size(), val,
+    // std::chars_format::general)}; but the runtimes don't support it yet
+    float res = 0.0f;
+    std::istringstream istr(s);
+
+    istr.imbue(std::locale::classic());
+    istr >> res;
+    return res;
+}
+template <> inline char ParameterProxy<int>::dataModeIndicator() const { return 'i'; }
+template <> inline int ParameterProxy<int>::strToT(const std::string &s)
+{
+    return std::atoi(s.c_str());
+}
+
 template <typename T> inline bool applyActionData(const actiondata &ad, ParameterProxy<T> &proxy)
 {
     if (!std::holds_alternative<VAction>(ad.actiontype))
@@ -118,11 +200,11 @@ template <typename T> inline bool applyActionData(const actiondata &ad, Paramete
     switch (at)
     {
     case vga_floatval:
-        proxy.data = ad.data.f[0];
+        proxy.val = ad.data.f[0];
         return true;
         break;
     case vga_intval:
-        proxy.data = ad.data.i[0];
+        proxy.val = ad.data.i[0];
         return true;
         break;
     case vga_disable_state:
@@ -135,6 +217,10 @@ template <typename T> inline bool applyActionData(const actiondata &ad, Paramete
         break;
     case vga_label:
         proxy.label = (char *)(&ad.data.str[0]); // fixme - check for overruns
+        return true;
+        break;
+    case vga_datamode:
+        proxy.parseDatamode(ad.data.str);
         return true;
         break;
     default:

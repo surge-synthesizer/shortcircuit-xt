@@ -198,6 +198,10 @@ void SC3Editor::idle()
         {
             handled |= p->processActionData(ad);
         }
+        for (auto &p : uiStateProxies)
+        {
+            p->sweepValidity();
+        }
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {

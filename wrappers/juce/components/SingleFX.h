@@ -11,6 +11,10 @@ struct SC3Editor;
 
 namespace SC3
 {
+namespace Widgets
+{
+struct FloatParamEditor;
+}
 namespace Components
 {
 struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
@@ -27,7 +31,7 @@ struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
 
     void typeSelectorChanged();
 
-    std::array<std::unique_ptr<juce::Label>, n_filter_parameters> fParams;
+    std::array<std::unique_ptr<Widgets::FloatParamEditor>, n_filter_parameters> fParams;
     std::array<std::unique_ptr<juce::Label>, n_filter_iparameters> iParams;
 
     std::unique_ptr<juce::ComboBox> typeSelector;

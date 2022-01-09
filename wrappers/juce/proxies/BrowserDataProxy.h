@@ -14,6 +14,7 @@ class BrowserDataProxy : public UIStateProxy
 
     virtual bool processActionData(const actiondata &ad)
     {
+        auto ig = InvalidateAndRepaintGuard(*this);
         if (std::holds_alternative<VAction>(ad.actiontype))
         {
             auto at = std::get<VAction>(ad.actiontype);
@@ -35,8 +36,6 @@ class BrowserDataProxy : public UIStateProxy
 
                 *((int *)dsl) = 'done';
 
-                invalidateAndRepaintClients();
-
                 for (const auto &d : editor->samplesCopy)
                 {
                     if (d.id >= 0)
@@ -46,7 +45,7 @@ class BrowserDataProxy : public UIStateProxy
                 return true;
             }
         }
-        return false;
+        return ig.deactivate();
     }
 
     SC3Editor *editor{nullptr};

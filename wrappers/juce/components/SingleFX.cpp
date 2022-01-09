@@ -6,6 +6,7 @@
 #include "SC3Editor.h"
 #include "SCXTLookAndFeel.h"
 #include "widgets/ComboBox.h"
+#include "widgets/ParamEditor.h"
 
 #include "sst/cpputils.h"
 
@@ -21,8 +22,8 @@ SingleFX::SingleFX(SC3Editor *ed, int i) : editor(ed), idx(i)
 
     for (auto i = 0; i < n_filter_parameters; ++i)
     {
-        auto q = std::make_unique<juce::Label>("FP " + std::to_string(i));
-        q->setText("FP " + std::to_string(i), juce::NotificationType::dontSendNotification);
+        auto q = std::make_unique<Widgets::FloatParamEditor>(Widgets::FloatParamEditor::HSLIDER,
+                                                             editor->multi.filters[idx].p[i]);
         addChildComponent(*q);
         fParams[i] = std::move(q);
     }
@@ -67,19 +68,21 @@ void SingleFX::resized()
     }
 }
 
+static constexpr int idOff = 1023;
 void SingleFX::onProxyUpdate()
 {
     typeSelector->clear(juce::dontSendNotification);
     for (const auto &[fidx, t] : sst::cpputils::enumerate(editor->filterTypeNames))
     {
-        typeSelector->addItem(t, fidx + 1000);
+        typeSelector->addItem(t, fidx + idOff);
     }
+    typeSelector->setSelectedId(editor->multi.filters[idx].type.val + idOff,
+                                juce::dontSendNotification);
 
     const auto &fx = editor->multi.filters[idx];
     for (const auto &[fidx, t] : sst::cpputils::enumerate(fx.p))
     {
         fParams[fidx]->setVisible(!t.hidden);
-        fParams[fidx]->setText(t.label, juce::dontSendNotification);
     }
     for (const auto &[fidx, t] : sst::cpputils::enumerate(fx.ip))
     {
@@ -91,7 +94,7 @@ void SingleFX::onProxyUpdate()
 void SingleFX::typeSelectorChanged()
 {
     auto cidx = typeSelector->getSelectedId();
-    auto ftype = cidx - 1000;
+    auto ftype = cidx - idOff;
 
     actiondata ad;
     ad.id = ip_multi_filter_type;
