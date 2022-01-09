@@ -162,6 +162,10 @@ template <typename T> struct ParameterProxy
         units = elements[5];
     }
 
+    // Float vs Int a bit clumsy here
+    float getValue01() const { return (val - min) / (max - min); }
+    void sendValue01(float value01, ActionSender *s) { jassert(false); }
+
     char dataModeIndicator() const { return 'x'; }
     T strToT(const std::string &s)
     {
@@ -182,10 +186,28 @@ template <> inline float ParameterProxy<float>::strToT(const std::string &s)
     istr >> res;
     return res;
 }
+
+template <> inline void ParameterProxy<float>::sendValue01(float value01, ActionSender *s)
+{
+    auto v = value01 * (max - min) + min;
+    val = v;
+    actiondata ad;
+    ad.id = id;
+    ad.subid = subid;
+    ad.actiontype = vga_floatval;
+    ad.data.f[0] = v;
+    s->sendActionToEngine(ad);
+}
+
 template <> inline char ParameterProxy<int>::dataModeIndicator() const { return 'i'; }
 template <> inline int ParameterProxy<int>::strToT(const std::string &s)
 {
     return std::atoi(s.c_str());
+}
+template <> inline float ParameterProxy<int>::getValue01() const
+{
+    jassert(false);
+    return 0;
 }
 
 template <typename T> inline bool applyActionData(const actiondata &ad, ParameterProxy<T> &proxy)

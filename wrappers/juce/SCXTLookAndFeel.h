@@ -6,6 +6,7 @@
 #define SHORTCIRCUIT_SCXTLOOKANDFEEL_H
 
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <unordered_map>
 
 enum SCXTColours : int32_t
 {
@@ -19,8 +20,26 @@ enum SCXTColours : int32_t
     vuOutline,
     vuPlayLow,
     vuPlayHigh,
-    vuClip
+    vuClip,
+
+    fxPanelHeaderBackground,
+    fxPanelHeaderText,
+    fxPanelBackground
     // clang-format on
+};
+
+template <typename T> struct ColorRemapper
+{
+    std::unordered_map<uint32_t, uint32_t> remaps;
+    void remapColour(uint32_t underlyer, uint32_t replace) { remaps[underlyer] = replace; }
+    inline T *asT() { return static_cast<T *>(this); }
+
+    juce::Colour findRemappedColour(uint32_t id)
+    {
+        if (remaps.find(id) != remaps.end())
+            id = remaps[id];
+        return asT()->findColour(id);
+    }
 };
 
 struct SCXTLookAndFeel : public juce::LookAndFeel_V4
