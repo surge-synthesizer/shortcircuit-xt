@@ -5,12 +5,16 @@
 #ifndef SHORTCIRCUIT_BROWSERDATAPROXY_H
 #define SHORTCIRCUIT_BROWSERDATAPROXY_H
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 
+namespace scxt
+{
+namespace proxies
+{
 class BrowserDataProxy : public UIStateProxy
 {
   public:
-    BrowserDataProxy(SC3Editor *ed) : editor(ed){};
+    BrowserDataProxy(SCXTEditor *ed) : editor(ed){};
 
     virtual bool processActionData(const actiondata &ad)
     {
@@ -48,7 +52,9 @@ class BrowserDataProxy : public UIStateProxy
         return ig.deactivate();
     }
 
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
 };
+} // namespace proxies
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_BROWSERDATAPROXY_H

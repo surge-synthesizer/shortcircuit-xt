@@ -6,14 +6,14 @@
   ==============================================================================
 */
 
-#include "SC3Processor.h"
-#include "SC3Editor.h"
+#include "SCXTProcessor.h"
+#include "SCXTEditor.h"
 #include <iostream>
 
 void *hInstance = 0;
 
 //==============================================================================
-SC3AudioProcessor::SC3AudioProcessor()
+SCXTProcessor::SCXTProcessor()
     : mLogger(this),
       AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
       blockPos(0)
@@ -26,7 +26,7 @@ SC3AudioProcessor::SC3AudioProcessor()
                          juce::File::SpecialLocationType::userApplicationDataDirectory)
                          .getFullPathName();
     fs::path configFile(string_to_path(static_cast<const char *>(configLoc.toUTF8())));
-    configFile.append(SC3_CONFIG_DIRECTORY);
+    configFile.append(SCXT_CONFIG_DIRECTORY);
     configFile.append("config.xml");
     mConfigFileName = configFile;
 
@@ -37,7 +37,7 @@ SC3AudioProcessor::SC3AudioProcessor()
     }
 }
 
-SC3AudioProcessor::~SC3AudioProcessor()
+SCXTProcessor::~SCXTProcessor()
 {
     // save config so it's recalled next time they load
     if (sc3)
@@ -51,32 +51,32 @@ SC3AudioProcessor::~SC3AudioProcessor()
 }
 
 //==============================================================================
-const juce::String SC3AudioProcessor::getName() const { return JucePlugin_Name; }
+const juce::String SCXTProcessor::getName() const { return JucePlugin_Name; }
 
-bool SC3AudioProcessor::acceptsMidi() const { return true; }
+bool SCXTProcessor::acceptsMidi() const { return true; }
 
-bool SC3AudioProcessor::producesMidi() const { return false; }
+bool SCXTProcessor::producesMidi() const { return false; }
 
-bool SC3AudioProcessor::isMidiEffect() const { return false; }
+bool SCXTProcessor::isMidiEffect() const { return false; }
 
-double SC3AudioProcessor::getTailLengthSeconds() const { return 0.0; }
+double SCXTProcessor::getTailLengthSeconds() const { return 0.0; }
 
-int SC3AudioProcessor::getNumPrograms()
+int SCXTProcessor::getNumPrograms()
 {
     return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
               // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int SC3AudioProcessor::getCurrentProgram() { return 0; }
+int SCXTProcessor::getCurrentProgram() { return 0; }
 
-void SC3AudioProcessor::setCurrentProgram(int index) {}
+void SCXTProcessor::setCurrentProgram(int index) {}
 
-const juce::String SC3AudioProcessor::getProgramName(int index) { return {}; }
+const juce::String SCXTProcessor::getProgramName(int index) { return {}; }
 
-void SC3AudioProcessor::changeProgramName(int index, const juce::String &newName) {}
+void SCXTProcessor::changeProgramName(int index, const juce::String &newName) {}
 
 //==============================================================================
-void SC3AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
+void SCXTProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
@@ -84,14 +84,14 @@ void SC3AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     sc3->AudioHalted = false;
 }
 
-void SC3AudioProcessor::releaseResources()
+void SCXTProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool SC3AudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
+bool SCXTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 {
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
@@ -107,8 +107,7 @@ bool SC3AudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 }
 #endif
 
-void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                     juce::MidiBuffer &midiMessages)
+void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
 {
     int ons[127], offs[127];
     int onp = 0, offp = 0;
@@ -147,15 +146,15 @@ void SC3AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 }
 
 //==============================================================================
-bool SC3AudioProcessor::hasEditor() const
+bool SCXTProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor *SC3AudioProcessor::createEditor() { return new SC3Editor(*this); }
+juce::AudioProcessorEditor *SCXTProcessor::createEditor() { return new SCXTEditor(*this); }
 
 //==============================================================================
-void SC3AudioProcessor::getStateInformation(juce::MemoryBlock &destData)
+void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
     void *data = 0; // I think this leaks
     auto sz = sc3->SaveAllAsRIFF(&data);
@@ -166,11 +165,11 @@ void SC3AudioProcessor::getStateInformation(juce::MemoryBlock &destData)
     }
 }
 
-void SC3AudioProcessor::setStateInformation(const void *data, int sizeInBytes)
+void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
 {
     sc3->LoadAllFromRIFF(data, sizeInBytes);
 }
 
 //==============================================================================
 // This creates new instances of the plugin..
-juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() { return new SC3AudioProcessor(); }
+juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() { return new SCXTProcessor(); }

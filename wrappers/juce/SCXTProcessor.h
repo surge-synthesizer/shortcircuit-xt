@@ -14,27 +14,27 @@
 //==============================================================================
 /**
  */
-class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingCallback
+class SCXTProcessor : public juce::AudioProcessor, public scxt::log::LoggingCallback
 {
-    SC3::Log::StreamLogger mLogger;
+    scxt::log::StreamLogger mLogger;
     fs::path mConfigFileName;
 
   public:
     //==============================================================================
-    SC3AudioProcessor();
-    ~SC3AudioProcessor() override;
+    SCXTProcessor();
+    ~SCXTProcessor() override;
 
     //==============================================================================
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    std::unordered_set<SC3::Log::LoggingCallback *> logDispList;
-    void addLogDisplayListener(SC3::Log::LoggingCallback *e) { logDispList.insert(e); }
-    void removeLogDisplayListener(SC3::Log::LoggingCallback *e) { logDispList.erase(e); }
+    std::unordered_set<scxt::log::LoggingCallback *> logDispList;
+    void addLogDisplayListener(scxt::log::LoggingCallback *e) { logDispList.insert(e); }
+    void removeLogDisplayListener(scxt::log::LoggingCallback *e) { logDispList.erase(e); }
 
     // implement logger callback
-    SC3::Log::Level getLevel() override { return SC3::Log::Level::Debug; }
-    void message(SC3::Log::Level lev, const std::string &msg) override
+    scxt::log::Level getLevel() override { return scxt::log::Level::Debug; }
+    void message(scxt::log::Level lev, const std::string &msg) override
     {
         for (auto l : logDispList)
         {
@@ -78,5 +78,5 @@ class SC3AudioProcessor : public juce::AudioProcessor, public SC3::Log::LoggingC
     size_t blockPos;
     static const uint32 BUFFER_COPY_CHUNK = 4; // sample copy grain size
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3AudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTProcessor)
 };

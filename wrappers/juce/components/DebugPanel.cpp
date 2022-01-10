@@ -16,7 +16,7 @@
 */
 
 #include "DebugPanel.h"
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 
 DebugPanel::DebugPanel() : Component("Debug Panel")
 {
@@ -47,8 +47,8 @@ void DebugPanel::resized()
     logT->setBounds(t);
 }
 DebugPanelWindow::DebugPanelWindow()
-    : juce::DocumentWindow(juce::String("SC3 Debug - ") + SC3::Build::GitHash + "/" +
-                               SC3::Build::GitBranch,
+    : juce::DocumentWindow(juce::String("scxt Debug - ") + scxt::build::GitHash + "/" +
+                               scxt::build::GitBranch,
                            juce::Colour(0xFF000000), juce::DocumentWindow::allButtons)
 {
     setResizable(true, true);

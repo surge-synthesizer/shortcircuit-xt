@@ -76,12 +76,12 @@ class sampler
         int last_ft[n_sampler_effects];
     } multiv;
     float *output_ptr[max_outputs << 1];
-    SC3::Log::StreamLogger mLogger;
+    scxt::log::StreamLogger mLogger;
 
     // Public Interface
 
     sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect = 0,
-            SC3::Log::LoggingCallback *cb = 0);
+            scxt::log::LoggingCallback *cb = 0);
     virtual ~sampler(void);
 
     bool loadUserConfiguration(const fs::path &configFile);

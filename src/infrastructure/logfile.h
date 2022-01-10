@@ -15,8 +15,8 @@
 ** open source in December 2020.
 */
 
-#ifndef __SC3_INFRA_LOGFILE_H
-#define __SC3_INFRA_LOGFILE_H
+#ifndef __SCXT_INFRA_LOGFILE_H
+#define __SCXT_INFRA_LOGFILE_H
 
 #include <iostream>
 #include <sstream>
@@ -25,7 +25,7 @@
 // TODO add var to cmake and use it to determine this var's value
 #define LOGGING_DEBUG_ENABLED 1
 
-namespace SC3::Log
+namespace scxt::log
 {
 /*
  * A function which writes a line to the log
@@ -34,7 +34,7 @@ void write_log(const char *text);
 
 /*
  * A little class which is an ostream so you can do
- * SC3::Log::logos() << "This is my message " << foo << "\n";
+ * scxt::Log::logos() << "This is my message " << foo << "\n";
  */
 class logos : public std::ostream
 {
@@ -62,7 +62,7 @@ class logos : public std::ostream
 // macro helpers for stream based logging. pass the StreamLogger object as parameter
 #ifdef LOGGING_DEBUG_ENABLED
 #define LOGDEBUG(x)                                                                                \
-    if (x.setLevel(SC3::Log::Level::Debug))                                                        \
+    if (x.setLevel(scxt::log::Level::Debug))                                                       \
     x
 #else
 #define LOGDEBUG(x)                                                                                \
@@ -70,13 +70,13 @@ class logos : public std::ostream
     x
 #endif
 #define LOGINFO(x)                                                                                 \
-    if (x.setLevel(SC3::Log::Level::Info))                                                         \
+    if (x.setLevel(scxt::log::Level::Info))                                                        \
     x
 #define LOGWARNING(x)                                                                              \
-    if (x.setLevel(SC3::Log::Level::Warning))                                                      \
+    if (x.setLevel(scxt::log::Level::Warning))                                                     \
     x
 #define LOGERROR(x)                                                                                \
-    if (x.setLevel(SC3::Log::Level::Error))                                                        \
+    if (x.setLevel(scxt::log::Level::Error))                                                       \
     x
 
 // StreamLogger class is for stream based logging eg:
@@ -126,13 +126,13 @@ class StreamLogger : public std::ostream
 
 inline const char *getShortLevelStr(Level lev)
 {
-    return lev == SC3::Log::Level::Debug     ? "[DEBUG] "
-           : lev == SC3::Log::Level::Info    ? "[INFO ] "
-           : lev == SC3::Log::Level::Warning ? "[WARN ] "
-           : lev == SC3::Log::Level::Error   ? "[ERROR] "
-                                             : "";
+    return lev == scxt::log::Level::Debug     ? "[DEBUG] "
+           : lev == scxt::log::Level::Info    ? "[INFO ] "
+           : lev == scxt::log::Level::Warning ? "[WARN ] "
+           : lev == scxt::log::Level::Error   ? "[ERROR] "
+                                              : "";
 }
 
-} // namespace SC3::Log
+} // namespace scxt::log
 
 #endif

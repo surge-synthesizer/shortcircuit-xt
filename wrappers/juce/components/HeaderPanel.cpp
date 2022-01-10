@@ -6,15 +6,15 @@
 #include "widgets/OutlinedTextButton.h"
 #include "widgets/CompactVUMeter.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
-HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
+HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed)
 {
     for (int i = 0; i < n_sampler_parts; ++i)
     {
-        auto b = std::make_unique<SC3::Widgets::OutlinedTextButton>(std::to_string(i + 1));
+        auto b = std::make_unique<scxt::widgets::OutlinedTextButton>(std::to_string(i + 1));
         b->setClickingTogglesState(true);
         b->setRadioGroupId(174, juce::NotificationType::dontSendNotification);
         addAndMakeVisible(*b);
@@ -27,45 +27,45 @@ HeaderPanel::HeaderPanel(SC3Editor *ed) : editor(ed)
     partsButtons[editor->selectedPart]->setToggleState(
         true, juce::NotificationType::dontSendNotification);
 
-    zonesButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Zones");
+    zonesButton = std::make_unique<scxt::widgets::OutlinedTextButton>("Zones");
     zonesButton->setClickingTogglesState(true);
     zonesButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
-    zonesButton->onClick = [this]() { editor->showPage(SC3Editor::ZONE); };
+    zonesButton->onClick = [this]() { editor->showPage(SCXTEditor::ZONE); };
     zonesButton->setToggleState(true, juce::NotificationType::dontSendNotification);
     addAndMakeVisible(*zonesButton);
 
-    partButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Part");
+    partButton = std::make_unique<scxt::widgets::OutlinedTextButton>("Part");
     partButton->setClickingTogglesState(true);
     partButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
-    partButton->onClick = [this]() { editor->showPage(SC3Editor::PART); };
+    partButton->onClick = [this]() { editor->showPage(SCXTEditor::PART); };
     addAndMakeVisible(*partButton);
 
-    fxButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("FX");
+    fxButton = std::make_unique<scxt::widgets::OutlinedTextButton>("FX");
     fxButton->setClickingTogglesState(true);
     fxButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
-    fxButton->onClick = [this]() { editor->showPage(SC3Editor::FX); };
+    fxButton->onClick = [this]() { editor->showPage(SCXTEditor::FX); };
     addAndMakeVisible(*fxButton);
 
-    configButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("Config");
+    configButton = std::make_unique<scxt::widgets::OutlinedTextButton>("Config");
     configButton->setClickingTogglesState(true);
     configButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
-    configButton->onClick = [this]() { editor->showPage(SC3Editor::CONFIG); };
+    configButton->onClick = [this]() { editor->showPage(SCXTEditor::CONFIG); };
     addAndMakeVisible(*configButton);
 
-    aboutButton = std::make_unique<SC3::Widgets::OutlinedTextButton>("About");
+    aboutButton = std::make_unique<scxt::widgets::OutlinedTextButton>("About");
     aboutButton->setClickingTogglesState(true);
     aboutButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
-    aboutButton->onClick = [this]() { editor->showPage(SC3Editor::ABOUT); };
+    aboutButton->onClick = [this]() { editor->showPage(SCXTEditor::ABOUT); };
     addAndMakeVisible(*aboutButton);
 
-    vuMeter0 = std::make_unique<SC3::Widgets::CompactVUMeter>(editor);
+    vuMeter0 = std::make_unique<scxt::widgets::CompactVUMeter>(editor);
     addAndMakeVisible(*vuMeter0);
 
     // This means i probably have a new look and feel so
     auto attachColor = [this](const auto &b) {
-        b->remapColour(Widgets::OutlinedTextButton::upColour, SCXTColours::headerButton);
-        b->remapColour(Widgets::OutlinedTextButton::downColour, SCXTColours::headerButtonDown);
-        b->remapColour(Widgets::OutlinedTextButton::textColour, SCXTColours::headerButtonText);
+        b->remapColour(widgets::OutlinedTextButton::upColour, SCXTColours::headerButton);
+        b->remapColour(widgets::OutlinedTextButton::downColour, SCXTColours::headerButtonDown);
+        b->remapColour(widgets::OutlinedTextButton::textColour, SCXTColours::headerButtonText);
     };
 
     for (const auto &b : partsButtons)
@@ -134,5 +134,5 @@ void HeaderPanel::paint(juce::Graphics &g)
                                                 findColour(SCXTColours::headerBackground));
 }
 
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt

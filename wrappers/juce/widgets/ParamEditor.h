@@ -8,9 +8,9 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "DataInterfaces.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Widgets
+namespace widgets
 {
 struct FloatParamEditor : public juce::Component
 {
@@ -34,7 +34,7 @@ struct FloatParamEditor : public juce::Component
 
     ActionSender *sender{nullptr};
 };
-} // namespace Widgets
-} // namespace SC3
+} // namespace widgets
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_PARAMEDITOR_H

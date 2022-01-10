@@ -32,8 +32,8 @@ set_target_properties(UIAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # Then set up the source and the JUCE settings
 target_sources(ShortcircuitXT PRIVATE
-        SC3Processor.cpp
-        SC3Editor.cpp
+        SCXTProcessor.cpp
+        SCXTEditor.cpp
         SCXTLookAndFeel.cpp
 
         components/HeaderPanel.cpp

@@ -22,7 +22,7 @@ bool global_use_alt_keyboardmethod = false;
 bool global_skip_zone_noteon_redraws = false;
 bool global_skip_slice_noteon_redraws = false;
 
-configuration::configuration(SC3::Log::StreamLogger &logger) : mLogger(logger)
+configuration::configuration(scxt::log::StreamLogger &logger) : mLogger(logger)
 {
     memset(MIDIcontrol, 0, sizeof(midi_controller) * n_custom_controllers);
 
@@ -121,7 +121,7 @@ bool configuration::save(const fs::path &filename)
     TiXmlDocument doc(path_to_string(fn)); // wants utf8
 
     TiXmlElement conf("configuration");
-    conf.SetAttribute("version", SC3::Build::FullVersionStr);
+    conf.SetAttribute("version", scxt::build::FullVersionStr);
     conf.SetAttribute("store_in_projdir", store_in_projdir ? 1 : 0);
     conf.SetAttribute("outputs_stereo", this->stereo_outputs);
     conf.SetAttribute("skin", skindir.c_str());

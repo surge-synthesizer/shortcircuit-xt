@@ -20,15 +20,15 @@ check_cxx_source_compiles("
     namespace fs = std::filesystem;
     int main(int, char **argv) {
       return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
-    }" SC3_FILESYSTEM_STD_FS_FOUND)
+    }" SCXT_FILESYSTEM_STD_FS_FOUND)
 add_library(filesystem INTERFACE)
-if (SC3_FILESYSTEM_STD_FS_FOUND)
+if (SCXT_FILESYSTEM_STD_FS_FOUND)
     message(STATUS "Using OS level Filesystem")
 else ()
     message(STATUS "Using GHC Filesystem")
     add_subdirectory(ghc-filesystem)
     target_link_libraries(filesystem INTERFACE ghc_filesystem)
-    target_compile_definitions(filesystem INTERFACE SC3_USE_GHC_FILESYSTEM=1)
+    target_compile_definitions(filesystem INTERFACE SCXT_USE_GHC_FILESYSTEM=1)
 endif ()
 add_library(shortcircuit::filesystem ALIAS filesystem)
 

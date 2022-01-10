@@ -97,7 +97,7 @@ struct aiff_INST_chunk
 bool sample::parse_aiff(void *data, size_t filesize)
 {
     int datasize;
-    SC3::Memfile::RIFFMemFile mf(data, filesize);
+    scxt::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.iff_descend_FORM('AIFF', &datasize))
         return false;
     off_t wr = mf.TellI();
@@ -107,11 +107,11 @@ bool sample::parse_aiff(void *data, size_t filesize)
     aiff_CommonChunk cc;
     // read header
     mf.Read(&cc, sizeof(cc));
-    channels = SC3::Memfile::swap_endian_16(cc.numChannels);
+    channels = scxt::Memfile::swap_endian_16(cc.numChannels);
     if (channels > 2)
         return false;
-    int nsamples = SC3::Memfile::swap_endian_32(cc.numSampleFrames);
-    int bitdepth = SC3::Memfile::swap_endian_16(cc.sampleSize);
+    int nsamples = scxt::Memfile::swap_endian_32(cc.numSampleFrames);
+    int bitdepth = scxt::Memfile::swap_endian_16(cc.sampleSize);
 
     if (!SetMeta(channels, ConvertFromIeeeExtended(cc.sampleRate), nsamples))
         return false;
@@ -120,9 +120,9 @@ bool sample::parse_aiff(void *data, size_t filesize)
     mf.SeekI(wr);
     if (!mf.iff_descend('SSND', &datasize))
         return false;
-    DWORD offset = SC3::Memfile::swap_endian_32(mf.ReadDWORD());
-    DWORD blocksize = SC3::Memfile::swap_endian_32(mf.ReadDWORD());
-    mf.SeekI(offset, SC3::Memfile::mf_FromCurrent); // skip comment
+    DWORD offset = scxt::Memfile::swap_endian_32(mf.ReadDWORD());
+    DWORD blocksize = scxt::Memfile::swap_endian_32(mf.ReadDWORD());
+    mf.SeekI(offset, scxt::Memfile::mf_FromCurrent); // skip comment
 
     unsigned char *loaddata = (unsigned char *)mf.ReadPtr(datasize - 8);
 
@@ -178,7 +178,7 @@ bool sample::parse_aiff(void *data, size_t filesize)
     mf.SeekI(wr);
     if (mf.iff_descend('MARK', &datasize))
     {
-        WORD markercount = SC3::Memfile::swap_endian_16(mf.ReadWORD());
+        WORD markercount = scxt::Memfile::swap_endian_16(mf.ReadWORD());
 
         meta.slice_start = new int[markercount];
         meta.slice_end = new int[markercount];
@@ -189,11 +189,11 @@ bool sample::parse_aiff(void *data, size_t filesize)
             aiff_marker marker;
             mf.Read(&marker, sizeof(marker));
             mf.SkipPSTRING();
-            WORD id = SC3::Memfile::swap_endian_16(marker.id);
+            WORD id = scxt::Memfile::swap_endian_16(marker.id);
             if (id < markercount)
             {
-                meta.slice_start[id] = SC3::Memfile::swap_endian_32(marker.pos);
-                meta.slice_end[id] = SC3::Memfile::swap_endian_32(marker.pos);
+                meta.slice_start[id] = scxt::Memfile::swap_endian_32(marker.pos);
+                meta.slice_end[id] = scxt::Memfile::swap_endian_32(marker.pos);
             }
         }
     }
@@ -216,9 +216,10 @@ bool sample::parse_aiff(void *data, size_t filesize)
             meta.vel_present = true;
 
             INST.sustainLoop.marker_start =
-                SC3::Memfile::swap_endian_16(INST.sustainLoop.marker_start);
-            INST.sustainLoop.marker_end = SC3::Memfile::swap_endian_16(INST.sustainLoop.marker_end);
-            INST.sustainLoop.playmode = SC3::Memfile::swap_endian_16(INST.sustainLoop.playmode);
+                scxt::Memfile::swap_endian_16(INST.sustainLoop.marker_start);
+            INST.sustainLoop.marker_end =
+                scxt::Memfile::swap_endian_16(INST.sustainLoop.marker_end);
+            INST.sustainLoop.playmode = scxt::Memfile::swap_endian_16(INST.sustainLoop.playmode);
 
             if (INST.sustainLoop.playmode)
             {

@@ -175,7 +175,7 @@ TEST_CASE("Build Path", "[config]")
 
 TEST_CASE("Resolve Path", "[config]")
 {
-    SC3::Log::StreamLogger sl(gLogger);
+    scxt::log::StreamLogger sl(gLogger);
     configuration c(sl);
 
     SECTION("relative")
@@ -197,7 +197,7 @@ TEST_CASE("Resolve Path", "[config]")
 
 TEST_CASE("Save/Load configuration", "[config]")
 {
-    SC3::Log::StreamLogger sl(gLogger);
+    scxt::log::StreamLogger sl(gLogger);
 
     auto tempFn = fs::temp_directory_path();
     tempFn /= "_sc3_test_config.xml";

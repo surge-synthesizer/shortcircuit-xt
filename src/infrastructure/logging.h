@@ -15,11 +15,11 @@
 ** open source in December 2020.
 */
 
-#ifndef __SC3_LOGGING_H
-#define __SC3_LOGGING_H
+#ifndef __SCXT_LOGGING_H
+#define __SCXT_LOGGING_H
 #include <string>
 
-namespace SC3::Log
+namespace scxt::log
 {
 
 enum class Level
@@ -44,6 +44,6 @@ class LoggingCallback
     virtual void message(Level lev, const std::string &msg) = 0;
 };
 
-} // namespace SC3::Log
+} // namespace scxt::log
 
 #endif

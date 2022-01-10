@@ -30,7 +30,7 @@
 
 #include "logging.h"
 
-namespace SC3::Perf
+namespace scxt::Perf
 {
 
 class Profiler
@@ -39,7 +39,7 @@ class Profiler
 
   public:
     // implicit reset (msg is initial msg)
-    Profiler(SC3::Log::LoggingCallback *logger, const char *msg = 0);
+    Profiler(scxt::log::LoggingCallback *logger, const char *msg = 0);
 
     ~Profiler();
 
@@ -56,5 +56,5 @@ class Profiler
     void exit(const char *id);
 };
 
-} // namespace SC3::Perf
+} // namespace scxt::Perf
 #endif // SHORTCIRCUIT_PROFILER_H

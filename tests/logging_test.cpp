@@ -21,7 +21,7 @@
 #define LOGGING_DEBUG_ENABLED 1
 #include "infrastructure/logfile.h"
 
-using namespace SC3::Log;
+using namespace scxt::log;
 
 class TestCallback : public LoggingCallback
 {
@@ -29,8 +29,8 @@ class TestCallback : public LoggingCallback
     TestCallback() : mTotal(0) {}
     int *mTotal;
     std::vector<std::pair<Level, std::string>> mResults;
-    SC3::Log::Level mLevel;
-    SC3::Log::Level getLevel() { return mLevel; }
+    scxt::log::Level mLevel;
+    scxt::log::Level getLevel() { return mLevel; }
     void message(Level lev, const std::string &msg)
     {
         if (mTotal)

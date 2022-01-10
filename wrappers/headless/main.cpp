@@ -6,12 +6,12 @@
 #include "version.h"
 #include "infrastructure/logfile.h"
 
-class HeadlessLogger : public SC3::Log::LoggingCallback
+class HeadlessLogger : public scxt::log::LoggingCallback
 {
-    SC3::Log::Level getLevel() override { return SC3::Log::Level::Debug; }
-    void message(SC3::Log::Level lev, const std::string &msg) override
+    scxt::log::Level getLevel() override { return scxt::log::Level::Debug; }
+    void message(scxt::log::Level lev, const std::string &msg) override
     {
-        std::cout << SC3::Log::getShortLevelStr(lev) << msg << std::endl;
+        std::cout << scxt::log::getShortLevelStr(lev) << msg << std::endl;
     }
 };
 
@@ -19,13 +19,13 @@ void *hInstance = 0;
 int main(int argc, char **argv)
 {
     HeadlessLogger logger;
-    std::cout << "# Shortcircuit XT Headless. " << SC3::Build::FullVersionStr << std::endl;
+    std::cout << "# Shortcircuit XT Headless. " << scxt::build::FullVersionStr << std::endl;
 
     auto sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, &logger);
     sc3->set_samplerate(48000);
     if (!sc3)
     {
-        std::cout << "Couldn't make an SC3" << std::endl;
+        std::cout << "Couldn't make an scxt" << std::endl;
         return 1;
     }
 

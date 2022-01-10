@@ -31,7 +31,7 @@ static DWORD_PTR gThreadAffinityOriginal = 0;
 static int gTASet = 0;
 #endif
 
-namespace SC3::Perf
+namespace scxt::Perf
 {
 
 struct ProfID
@@ -51,25 +51,25 @@ struct ProfIDComp
 
 struct Metrics
 {
-    SC3::Time::Timestamp mStamp;
+    scxt::Time::Timestamp mStamp;
     unsigned mNumCalls;
 };
 
 struct Prof
 {
-    SC3::Time::Timestamp start;
-    SC3::Time::Timestamp subtract;
+    scxt::Time::Timestamp start;
+    scxt::Time::Timestamp subtract;
 };
 
 struct InternalRep
 {
-    explicit InternalRep(SC3::Log::LoggingCallback *cb) : mLogger(cb) {}
-    SC3::Log::StreamLogger mLogger;
+    explicit InternalRep(scxt::log::LoggingCallback *cb) : mLogger(cb) {}
+    scxt::log::StreamLogger mLogger;
     std::list<Prof> mProfList;
     std::map<ProfID, Metrics, ProfIDComp> mProfTimes;
 };
 
-Profiler::Profiler(SC3::Log::LoggingCallback *logger, const char *msg) : mData(0)
+Profiler::Profiler(scxt::log::LoggingCallback *logger, const char *msg) : mData(0)
 {
     mData = (void *)new InternalRep(logger);
     InternalRep *rt = (InternalRep *)mData;
@@ -113,7 +113,7 @@ void Profiler::dump(const char *msg)
 {
     InternalRep *rt = (InternalRep *)mData;
     int64_t calc;
-    if (rt->mLogger.setLevel(Log::Level::Debug))
+    if (rt->mLogger.setLevel(log::Level::Debug))
     {
         LOGDEBUG(rt->mLogger) << "Profiler dump '" << msg << "' (id/ms/calls)" << std::flush;
         std::map<ProfID, Metrics, ProfIDComp>::iterator it;
@@ -131,23 +131,23 @@ void Profiler::enter()
 {
     InternalRep *rt = (InternalRep *)mData;
     Prof prof;
-    SC3::Time::getCurrentTimestamp(&prof.start);
+    scxt::Time::getCurrentTimestamp(&prof.start);
     prof.subtract = 0;
     rt->mProfList.push_back(prof);
 }
 
-static void addTime(SC3::Time::Timestamp *target, SC3::Time::Timestamp *src) { *target += *src; }
+static void addTime(scxt::Time::Timestamp *target, scxt::Time::Timestamp *src) { *target += *src; }
 
 void Profiler::exit(const char *id)
 {
     InternalRep *rt = (InternalRep *)mData;
     std::map<ProfID, Metrics, ProfIDComp>::iterator it;
     Prof prof;
-    SC3::Time::Timestamp endtime;
-    SC3::Time::Timestamp tot;
+    scxt::Time::Timestamp endtime;
+    scxt::Time::Timestamp tot;
     Metrics tot2;
 
-    SC3::Time::getCurrentTimestamp(&endtime);
+    scxt::Time::getCurrentTimestamp(&endtime);
     if (!rt->mProfList.size())
     {
         LOGERROR(rt->mLogger) << "Inconsistent profile entry/exit count for %s." << id
@@ -158,7 +158,7 @@ void Profiler::exit(const char *id)
     prof = rt->mProfList.back();
     rt->mProfList.pop_back();
     // determine it's time
-    SC3::Time::getTimestampDiff(&endtime, &prof.start, &tot);
+    scxt::Time::getTimestampDiff(&endtime, &prof.start, &tot);
 
     if (rt->mProfList.size())
     {
@@ -172,7 +172,7 @@ void Profiler::exit(const char *id)
 
     // for our current item, we will subtract any time that was registered
     // when sub items ran
-    SC3::Time::getTimestampDiff(&tot, &prof.subtract, &tot2.mStamp);
+    scxt::Time::getTimestampDiff(&tot, &prof.subtract, &tot2.mStamp);
 
     // and add that time to the big map
     ProfID h(id);
@@ -193,4 +193,4 @@ void Profiler::exit(const char *id)
     }
 }
 
-} // namespace SC3::Perf
+} // namespace scxt::Perf

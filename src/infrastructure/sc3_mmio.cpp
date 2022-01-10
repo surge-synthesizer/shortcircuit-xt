@@ -48,7 +48,7 @@ HMMIO mmioOpenSTR(std::ifstream &ifs, int mode)
     res->is_open = true;
     res->rawData = data;
     res->rawDataSize = length;
-    res->memFile = SC3::Memfile::RIFFMemFile(
+    res->memFile = scxt::Memfile::RIFFMemFile(
         res->rawData, res->rawDataSize); // Remember it doesn't take ownership
 
     return res;
@@ -145,13 +145,13 @@ int mmioSeek(HMMIO h, int t, int flag)
     switch (flag)
     {
     case SEEK_CUR:
-        res = h->memFile.SeekI(t, SC3::Memfile::mf_FromCurrent);
+        res = h->memFile.SeekI(t, scxt::Memfile::mf_FromCurrent);
         break;
     case SEEK_SET:
-        res = h->memFile.SeekI(t, SC3::Memfile::mf_FromStart);
+        res = h->memFile.SeekI(t, scxt::Memfile::mf_FromStart);
         break;
     case SEEK_END:
-        res = h->memFile.SeekI(t, SC3::Memfile::mf_FromEnd);
+        res = h->memFile.SeekI(t, scxt::Memfile::mf_FromEnd);
         break;
     }
     return res;

@@ -6,16 +6,16 @@
 #define SHORTCIRCUIT_COMPACTVUMETER_H
 
 #include "DataInterfaces.h"
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Widgets
+namespace widgets
 {
 struct CompactVUMeter : public juce::Component, UIStateProxy::Invalidatable
 {
-    CompactVUMeter(SC3Editor *ed) : editor(ed){};
+    CompactVUMeter(SCXTEditor *ed) : editor(ed){};
 
     void paint(juce::Graphics &g) override
     {
@@ -57,10 +57,10 @@ struct CompactVUMeter : public juce::Component, UIStateProxy::Invalidatable
 
     bool clipped[2]{false, false};
     uint8_t value[2]{0, 0};
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CompactVUMeter);
 };
-} // namespace Widgets
-} // namespace SC3
+} // namespace widgets
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_COMPACTVUMETER_H

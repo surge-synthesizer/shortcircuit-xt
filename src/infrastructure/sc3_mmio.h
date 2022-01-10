@@ -17,7 +17,7 @@
 
 /*
  * IT IS CRITICAL YOU UNDERSTAND: This is not even remotely close to a complete implementation
- * of the win32 mmio spec. Rather it implements "just enough" that the readers in the SC3 codebase
+ * of the win32 mmio spec. Rather it implements "just enough" that the readers in the scxt codebase
  * which use mmio can make *those* patterns work on the files in question.
  *
  * If you find you want more functions or more anything else, please add it and add a test to
@@ -43,7 +43,7 @@ struct sc3mmio_hand
     bool is_open = false;
     char *rawData = nullptr;
     size_t rawDataSize = 0;
-    SC3::Memfile::RIFFMemFile memFile;
+    scxt::Memfile::RIFFMemFile memFile;
 
     void close()
     {
@@ -61,8 +61,8 @@ struct sc3mmio_hand
     {
         if (is_open)
         {
-            SC3::Log::logos() << "Leaked an sc3mmio_hand: Destroyed a non-closed handle"
-                              << std::endl;
+            scxt::log::logos() << "Leaked an sc3mmio_hand: Destroyed a non-closed handle"
+                               << std::endl;
             if (rawData)
                 delete[] rawData;
         }

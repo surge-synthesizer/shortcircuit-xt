@@ -4,6 +4,6 @@
 #include "catch2/catch2.hpp"
 #include "infrastructure/logfile.h"
 
-extern SC3::Log::Level gTestLevel;
-extern SC3::Log::LoggingCallback *gLogger;
+extern scxt::log::Level gTestLevel;
+extern scxt::log::LoggingCallback *gLogger;
 #endif

@@ -7,27 +7,27 @@
 
 #include "PageBase.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
 struct SingleFX;
-} // namespace Components
-namespace Pages
+} // namespace components
+namespace pages
 {
 struct FXPage : public PageBase, public UIStateProxy::Invalidatable
 {
-    FXPage(SC3Editor *, SC3Editor::Pages p);
+    FXPage(SCXTEditor *, SCXTEditor::Pages p);
     ~FXPage();
 
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
 
     void onProxyUpdate() override;
-    std::array<std::unique_ptr<Components::SingleFX>, num_fxunits> fxComponents;
+    std::array<std::unique_ptr<components::SingleFX>, num_fxunits> fxComponents;
 };
 
-} // namespace Pages
-} // namespace SC3
+} // namespace pages
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_FXPAGE_H

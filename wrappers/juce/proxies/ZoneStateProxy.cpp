@@ -20,7 +20,7 @@
 #include "interaction_parameters.h"
 #include "sampler_wrapper_actiondata.h"
 
-bool ZoneStateProxy::processActionData(const actiondata &ad)
+bool scxt::proxies::ZoneStateProxy::processActionData(const actiondata &ad)
 {
     bool res = false;
     switch (ad.id)

@@ -30,19 +30,19 @@ TEST_CASE("Profiler Basic", "[profiler]")
 
     SECTION("Timestamp functions")
     {
-        SC3::Time::Timestamp a, b, d;
-        SC3::Time::getCurrentTimestamp(&a);
+        scxt::Time::Timestamp a, b, d;
+        scxt::Time::getCurrentTimestamp(&a);
         std::this_thread::sleep_for(std::chrono::milliseconds(15));
-        SC3::Time::getCurrentTimestamp(&b);
-        SC3::Time::getTimestampDiff(&a, &b, &d);
+        scxt::Time::getCurrentTimestamp(&b);
+        scxt::Time::getTimestampDiff(&a, &b, &d);
         // this will not be exact
         std::cout << "Elapsed milliseconds " << d / 1000 << std::endl;
     }
     SECTION("Time One")
     {
 
-        gTestLevel = SC3::Log::Level::Debug;
-        SC3::Perf::Profiler p(gLogger);
+        gTestLevel = scxt::log::Level::Debug;
+        scxt::Perf::Profiler p(gLogger);
         p.reset("Basic profile test");
         p.enter();
         p.enter();

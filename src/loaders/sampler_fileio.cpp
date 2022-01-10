@@ -122,7 +122,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
         // assign path to configuration
         conf->set_relative_path(pathOnly);
 
-        auto mapper = std::make_unique<SC3::FileMapView>(validFileName);
+        auto mapper = std::make_unique<scxt::FileMapView>(validFileName);
         if (!mapper->isMapped())
             return false;
 
@@ -1112,7 +1112,7 @@ string recursive_search(string filename, string path)
 #warning Compiling untested rewrite of recursive_search
 #endif
 
-    SC3::Log::logos() << "Implement recursive_search " << filename << " " << path << std::endl;
+    scxt::log::logos() << "Implement recursive_search " << filename << " " << path << std::endl;
     auto p = string_to_path(path);
     auto f = string_to_path(filename);
 

@@ -5,17 +5,17 @@
 #ifndef SHORTCIRCUIT_PAGEBASE_H
 #define SHORTCIRCUIT_PAGEBASE_H
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 #include "SCXTLookAndFeel.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Pages
+namespace pages
 {
 struct PageBase : public juce::Component
 {
-    PageBase(SC3Editor *ed, const SC3Editor::Pages &p) : editor(ed), page(p) {}
+    PageBase(SCXTEditor *ed, const SCXTEditor::Pages &p) : editor(ed), page(p) {}
     virtual ~PageBase() = default;
 
     void paint(juce::Graphics &g) override
@@ -23,16 +23,16 @@ struct PageBase : public juce::Component
         g.fillAll(juce::Colours::darkred);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(40));
         g.setColour(juce::Colours::white);
-        g.drawText(SC3Editor::pageName(page), getLocalBounds(), juce::Justification::centred);
+        g.drawText(SCXTEditor::pageName(page), getLocalBounds(), juce::Justification::centred);
     }
 
     virtual void connectProxies() {}
 
-    SC3Editor *editor{nullptr};
-    SC3Editor::Pages page{SC3Editor::ZONE};
+    SCXTEditor *editor{nullptr};
+    SCXTEditor::Pages page{SCXTEditor::ZONE};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageBase);
 };
-} // namespace Pages
-} // namespace SC3
+} // namespace pages
+} // namespace scxt
 #endif // SHORTCIRCUIT_PAGEBASE_H
