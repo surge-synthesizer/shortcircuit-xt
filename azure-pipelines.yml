@@ -83,7 +83,7 @@ jobs:
         condition: eq(variables['Build.Reason'], 'PullRequest')
 
       - bash: |
-          cmake --build build --config Debug --target shortcircuit-staged --parallel 4
+          cmake --build build --config Debug --target shortcircuit-products --parallel 4
         displayName: Build SCXT for a Pull Request
         condition: eq(variables['Build.Reason'], 'PullRequest')
 
