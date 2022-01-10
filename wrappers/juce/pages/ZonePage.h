@@ -7,33 +7,33 @@
 
 #include "PageBase.h"
 
-namespace SC3
+namespace scxt
 {
 
-namespace Components
+namespace components
 {
 struct ZoneKeyboardDisplay;
 struct WaveDisplay;
 struct ZoneEditor;
 
-} // namespace Components
-namespace Pages
+} // namespace components
+namespace pages
 {
 struct ZonePage : PageBase
 {
-    ZonePage(SC3Editor *ed, SC3Editor::Pages p);
+    ZonePage(SCXTEditor *ed, SCXTEditor::Pages p);
     ~ZonePage();
 
     void resized() override;
     virtual void connectProxies() override;
 
-    std::unique_ptr<Components::ZoneKeyboardDisplay> zoneKeyboardDisplay;
-    std::unique_ptr<Components::WaveDisplay> waveDisplay;
-    std::unique_ptr<Components::ZoneEditor> zoneEditor;
+    std::unique_ptr<components::ZoneKeyboardDisplay> zoneKeyboardDisplay;
+    std::unique_ptr<components::WaveDisplay> waveDisplay;
+    std::unique_ptr<components::ZoneEditor> zoneEditor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZonePage);
 };
-} // namespace Pages
-} // namespace SC3
+} // namespace pages
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_ZONEPAGE_H

@@ -165,7 +165,7 @@ bool sample::load(const fs::path &filename)
     // resolve the path
     validFilename = conf->resolve_path(validFilename);
 
-    auto mapper = std::make_unique<SC3::FileMapView>(validFilename);
+    auto mapper = std::make_unique<scxt::FileMapView>(validFilename);
     if (!mapper->isMapped())
     {
         LOGERROR(conf->mLogger) << "Unable to map view of file '" << validFilename << "'"

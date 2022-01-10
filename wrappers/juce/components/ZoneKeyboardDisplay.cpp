@@ -20,9 +20,9 @@
 #include "ZoneKeyboardDisplay.h"
 #include "interaction_parameters.h" // todo as where should these end up?
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
 void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 {
@@ -261,5 +261,5 @@ void ZoneKeyboardDisplay::mouseDoubleClick(const juce::MouseEvent &event)
     }
 }
 
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt

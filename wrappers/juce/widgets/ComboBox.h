@@ -7,13 +7,13 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Widgets
+namespace widgets
 {
 struct ComboBox : public juce::ComboBox
 {
 };
-} // namespace Widgets
-} // namespace SC3
+} // namespace widgets
+} // namespace scxt
 #endif // SHORTCIRCUIT_COMBOBOX_H

@@ -5,12 +5,16 @@
 #ifndef SHORTCIRCUIT_VUMETERPROXY_H
 #define SHORTCIRCUIT_VUMETERPROXY_H
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 #include "wrapper_msg_to_string.h"
 
+namespace scxt
+{
+namespace proxies
+{
 struct VUMeterProxy : public UIStateProxy
 {
-    VUMeterProxy(SC3Editor *ed) : editor(ed) {}
+    VUMeterProxy(SCXTEditor *ed) : editor(ed) {}
 
     bool processActionData(const actiondata &ad)
     {
@@ -41,7 +45,9 @@ struct VUMeterProxy : public UIStateProxy
         return false;
     }
 
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
 };
+} // namespace proxies
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_VUMETERPROXY_H

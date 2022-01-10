@@ -5,12 +5,17 @@
 #ifndef SHORTCIRCUIT_SELECTIONSTATEPROXY_H
 #define SHORTCIRCUIT_SELECTIONSTATEPROXY_H
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 #include "wrapper_msg_to_string.h"
+
+namespace scxt
+{
+namespace proxies
+{
 
 struct SelectionStateProxy : public UIStateProxy
 {
-    SelectionStateProxy(SC3Editor *ed) : editor(ed) {}
+    SelectionStateProxy(SCXTEditor *ed) : editor(ed) {}
 
     bool processActionData(const actiondata &ad)
     {
@@ -37,7 +42,8 @@ struct SelectionStateProxy : public UIStateProxy
         return false;
     }
 
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
 };
-
+} // namespace proxies
+} // namespace scxt
 #endif // SHORTCIRCUIT_SELECTIONSTATEPROXY_H

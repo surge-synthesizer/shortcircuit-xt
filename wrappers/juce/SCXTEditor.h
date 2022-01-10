@@ -10,7 +10,7 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 
-#include "SC3Processor.h"
+#include "SCXTProcessor.h"
 #include "sample.h"
 #include "sampler.h"
 
@@ -58,39 +58,41 @@ template <typename T, int qSize = 4096 * 16> class SC3EngineToWrapperQueue
 };
 struct SC3IdleTimer;
 
-namespace SC3
+namespace scxt
 {
-namespace Pages
+namespace pages
 {
 struct PageBase;
 }
-namespace Components
+namespace components
 {
 struct HeaderPanel;
 }
-} // namespace SC3
 
-// Forward decls of proxies and their componetns
+namespace proxies
+{
 class ZoneStateProxy;
 class WaveDisplayProxy;
 struct BrowserDataProxy;
 struct SelectionStateProxy;
 struct VUMeterProxy;
 struct MultiDataProxy;
+} // namespace proxies
+} // namespace scxt
 
 //==============================================================================
 /**
  */
-class SC3Editor : public juce::AudioProcessorEditor,
-                  public juce::Button::Listener,
-                  public juce::FileDragAndDropTarget,
-                  public sampler::WrapperListener,
-                  public ActionSender,
-                  public SC3::Log::LoggingCallback
+class SCXTEditor : public juce::AudioProcessorEditor,
+                   public juce::Button::Listener,
+                   public juce::FileDragAndDropTarget,
+                   public sampler::WrapperListener,
+                   public ActionSender,
+                   public scxt::log::LoggingCallback
 {
   public:
-    SC3Editor(SC3AudioProcessor &);
-    ~SC3Editor();
+    SCXTEditor(SCXTProcessor &);
+    ~SCXTEditor();
 
     //==============================================================================
     void paint(juce::Graphics &) override;
@@ -114,7 +116,7 @@ class SC3Editor : public juce::AudioProcessorEditor,
 
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    SC3AudioProcessor &audioProcessor;
+    SCXTProcessor &audioProcessor;
 
     enum Pages
     {
@@ -151,21 +153,21 @@ class SC3Editor : public juce::AudioProcessorEditor,
     std::unique_ptr<SC3EngineToWrapperQueue<actiondata>> actiondataToUI;
     struct LogTransport
     {
-        SC3::Log::Level lev = SC3::Log::Level::None;
+        scxt::log::Level lev = scxt::log::Level::None;
         std::string txt = "";
         LogTransport() = default;
-        LogTransport(SC3::Log::Level l, const std::string &t) : lev(l), txt(t) {}
+        LogTransport(scxt::log::Level l, const std::string &t) : lev(l), txt(t) {}
     };
     std::unique_ptr<SC3EngineToWrapperQueue<LogTransport>> logToUI;
     std::unique_ptr<SC3IdleTimer> idleTimer;
 
   public:
     std::set<UIStateProxy *> uiStateProxies;
-    std::unique_ptr<ZoneStateProxy> zoneStateProxy;
-    std::unique_ptr<BrowserDataProxy> browserDataProxy;
-    std::unique_ptr<SelectionStateProxy> selectionStateProxy;
-    std::unique_ptr<VUMeterProxy> vuMeterProxy;
-    std::unique_ptr<MultiDataProxy> multiDataProxy;
+    std::unique_ptr<scxt::proxies::ZoneStateProxy> zoneStateProxy;
+    std::unique_ptr<scxt::proxies::BrowserDataProxy> browserDataProxy;
+    std::unique_ptr<scxt::proxies::SelectionStateProxy> selectionStateProxy;
+    std::unique_ptr<scxt::proxies::VUMeterProxy> vuMeterProxy;
+    std::unique_ptr<scxt::proxies::MultiDataProxy> multiDataProxy;
 
     template <typename T> std::unique_ptr<T> make_proxy()
     {
@@ -174,9 +176,9 @@ class SC3Editor : public juce::AudioProcessorEditor,
         return (std::move(r));
     }
 
-    std::map<Pages, std::unique_ptr<SC3::Pages::PageBase>> pages;
+    std::map<Pages, std::unique_ptr<scxt::pages::PageBase>> pages;
 
-    std::unique_ptr<SC3::Components::HeaderPanel> headerPanel;
+    std::unique_ptr<scxt::components::HeaderPanel> headerPanel;
 
     std::unique_ptr<SCXTLookAndFeel> lookAndFeel;
 
@@ -211,8 +213,8 @@ class SC3Editor : public juce::AudioProcessorEditor,
     uint32_t samplesCopyActiveCount{0};
 
     // implement logging interface for logs generated on ui side
-    SC3::Log::Level getLevel() override;
-    void message(SC3::Log::Level lev, const std::string &msg) override;
+    scxt::log::Level getLevel() override;
+    void message(scxt::log::Level lev, const std::string &msg) override;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SC3Editor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTEditor)
 };

@@ -15,8 +15,8 @@
 ** open source in December 2020.
 */
 
-#ifndef __SC3_MEMFILE_H
-#define __SC3_MEMFILE_H
+#ifndef __SCXT_MEMFILE_H
+#define __SCXT_MEMFILE_H
 
 #if WINDOWS
 #include <Windows.h>
@@ -28,7 +28,7 @@
 #include <cassert>
 #include "infrastructure/logfile.h"
 
-namespace SC3::Memfile
+namespace scxt::Memfile
 {
 
 inline uint16_t swap_endian_16(uint16_t x) { return ((x & 0xFF) << 8) | ((x & 0xFF00) >> 8); }
@@ -338,7 +338,7 @@ class RIFFMemFile
         MessageBox(GetActiveWindow(), txt, "File I/O Error", MB_OK | MB_ICONERROR);
 #else
 #warning Implement user feedback
-        SC3::Log::logos() << txt << std::endl;
+        scxt::log::logos() << txt << std::endl;
 #endif
     }
 
@@ -617,6 +617,6 @@ class RIFFMemFile
     char *data;
 };
 
-} // namespace SC3::Memfile
+} // namespace scxt::Memfile
 
-#endif // __SC3_MEMFILE_H
+#endif // __SCXT_MEMFILE_H

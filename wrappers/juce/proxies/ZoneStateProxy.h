@@ -18,16 +18,21 @@
 #ifndef SHORTCIRCUIT_ZONESTATEPROXY_H
 #define SHORTCIRCUIT_ZONESTATEPROXY_H
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 
+namespace scxt
+{
+namespace proxies
+{
 class ZoneStateProxy : public UIStateProxy
 {
   public:
-    ZoneStateProxy(SC3Editor *ed) : editor(ed){};
+    ZoneStateProxy(SCXTEditor *ed) : editor(ed){};
 
     virtual bool processActionData(const actiondata &d);
 
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
 };
-
+} // namespace proxies
+} // namespace scxt
 #endif // SHORTCIRCUIT_ZONESTATEPROXY_H

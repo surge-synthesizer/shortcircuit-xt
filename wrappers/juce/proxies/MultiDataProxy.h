@@ -5,11 +5,15 @@
 #ifndef SHORTCIRCUIT_MULTIDATAPROXY_H
 #define SHORTCIRCUIT_MULTIDATAPROXY_H
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 
+namespace scxt
+{
+namespace proxies
+{
 struct MultiDataProxy : public UIStateProxy
 {
-    MultiDataProxy(SC3Editor *ed) : editor(ed) {}
+    MultiDataProxy(SCXTEditor *ed) : editor(ed) {}
 
     bool processActionData(const actiondata &ad)
     {
@@ -65,6 +69,9 @@ struct MultiDataProxy : public UIStateProxy
         return guard.deactivate();
     }
 
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
 };
+} // namespace proxies
+} // namespace scxt
+
 #endif // SHORTCIRCUIT_MULTIDATAPROXY_H

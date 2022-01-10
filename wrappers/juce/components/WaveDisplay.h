@@ -20,12 +20,12 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 
-#include <SC3Editor.h>
+#include <SCXTEditor.h>
 #include "infrastructure/profiler.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
 class WaveDisplay : public juce::Component, public UIStateProxy
 {
@@ -37,9 +37,9 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     };
 
     ActionSender *mSender;
-    SC3::Log::StreamLogger mLogger;
+    scxt::log::StreamLogger mLogger;
 
-    SC3::Perf::Profiler prof;
+    scxt::Perf::Profiler prof;
 
     // boundary around actual waveform display (excludes margin)
     juce::Rectangle<int> mWaveBounds;
@@ -102,12 +102,12 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     virtual bool processActionData(const actiondata &d) override;
 
   public:
-    WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger);
+    WaveDisplay(ActionSender *sender, scxt::log::LoggingCallback *logger);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveDisplay);
 };
 
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_WAVEDISPLAY_H

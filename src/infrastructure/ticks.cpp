@@ -32,7 +32,7 @@ static bool gFreqSet = false;
 #include <time.h>
 #endif
 
-namespace SC3::Time
+namespace scxt::Time
 {
 
 void getCurrentTimestamp(Timestamp *val)
@@ -65,4 +65,4 @@ void getTimestampDiff(Timestamp *a, Timestamp *b, Timestamp *diff)
         *diff *= -1;
 }
 
-} // namespace SC3::Time
+} // namespace scxt::Time

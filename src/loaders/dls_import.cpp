@@ -89,7 +89,7 @@ struct giga_3ewa
 bool sample::parse_dls_sample(void *data, size_t filesize, unsigned int sample_id)
 {
     size_t datasize;
-    SC3::Memfile::RIFFMemFile mf(data, filesize);
+    scxt::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('DLS ', &datasize))
         return false;
 
@@ -107,7 +107,7 @@ bool sample::parse_dls_sample(void *data, size_t filesize, unsigned int sample_i
 int parse_dls_patchlist(void *data, size_t filesize, void **plist)
 {
     size_t datasize;
-    SC3::Memfile::RIFFMemFile mf(data, filesize);
+    scxt::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('DLS ', &datasize))
         return 0;
     off_t startpos = mf.TellI(); // store for later use
@@ -151,7 +151,7 @@ int get_dls_patchlist(const fs::path &filename, void **plist)
 {
     assert(!filename.empty());
 
-    auto mapper = std::make_unique<SC3::FileMapView>(filename);
+    auto mapper = std::make_unique<scxt::FileMapView>(filename);
     if (!mapper->isMapped())
         return 0;
 
@@ -166,7 +166,7 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
     if (patch < 0)
         return false;
     size_t datasize;
-    SC3::Memfile::RIFFMemFile mf(data, filesize);
+    scxt::Memfile::RIFFMemFile mf(data, filesize);
     if (!mf.riff_descend_RIFF_or_LIST('DLS ', &datasize))
         return false;
     off_t startpos = mf.TellI(); // store for later use

@@ -8,18 +8,18 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "DataInterfaces.h"
 
-struct SC3Editor;
+struct SCXTEditor;
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
 struct ZoneEditor : public juce::Component,
                     UIStateProxy::Invalidatable,
                     juce::ComboBox::Listener,
                     juce::TextEditor::Listener
 {
-    ZoneEditor(SC3Editor *e);
+    ZoneEditor(SCXTEditor *e);
     virtual ~ZoneEditor() = default;
 
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::orchid); }
@@ -34,10 +34,10 @@ struct ZoneEditor : public juce::Component,
 
     std::unique_ptr<juce::ComboBox> zoneSelector;
     std::unique_ptr<juce::TextEditor> lowKey, hiKey;
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneEditor);
 };
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt
 #endif // SHORTCIRCUIT_ZONEEDITOR_H

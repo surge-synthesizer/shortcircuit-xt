@@ -23,7 +23,7 @@
 #include <string>
 #include "version.h"
 
-class SC3Editor;
+class SCXTEditor;
 
 class DebugPanel : public juce::Component
 {
@@ -31,7 +31,7 @@ class DebugPanel : public juce::Component
 
   public:
     DebugPanel();
-    SC3Editor *mEditor;
+    SCXTEditor *mEditor;
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
 
@@ -47,7 +47,7 @@ class DebugPanelWindow : public juce::DocumentWindow
 
     void setSamplerText(const juce::String &s) { panel->samplerT->setText(s); }
 
-    void setEditor(SC3Editor *ed) { panel->mEditor = ed; }
+    void setEditor(SCXTEditor *ed) { panel->mEditor = ed; }
 
     void appendLogText(const juce::String &s, bool appendNewline = true)
     {

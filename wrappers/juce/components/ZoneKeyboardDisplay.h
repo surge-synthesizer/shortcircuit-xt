@@ -20,18 +20,18 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 
 class ActionSender;
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
 class ZoneKeyboardDisplay : public juce::Component
 {
   public:
-    ZoneKeyboardDisplay(SC3Editor *z, ActionSender *sender) : editor(z), sender(sender) {}
+    ZoneKeyboardDisplay(SCXTEditor *z, ActionSender *sender) : editor(z), sender(sender) {}
 
     void paint(juce::Graphics &g) override;
     void mouseExit(const juce::MouseEvent &event) override;
@@ -43,7 +43,7 @@ class ZoneKeyboardDisplay : public juce::Component
 
   private:
     std::vector<juce::Rectangle<float>> keyLocations;
-    SC3Editor *editor{nullptr}; // a non-owned weak copy
+    SCXTEditor *editor{nullptr}; // a non-owned weak copy
     int hoveredKey = -1;
     int playingKey = -1;
     int hoveredZone = -1;
@@ -53,7 +53,7 @@ class ZoneKeyboardDisplay : public juce::Component
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneKeyboardDisplay);
 };
 
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_ZONEKEYBOARDDISPLAY_H

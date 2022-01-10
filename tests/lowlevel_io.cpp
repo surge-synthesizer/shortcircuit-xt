@@ -45,7 +45,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
         ifs.read(data, length);
         ifs.close();
 
-        SC3::Memfile::RIFFMemFile rmf(data, length);
+        scxt::Memfile::RIFFMemFile rmf(data, length);
 
         size_t chunksize;
         int tag; //, LISTtag;
@@ -95,7 +95,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
         ifs.read(data, length);
         ifs.close();
 
-        SC3::Memfile::RIFFMemFile rmf(data, length);
+        scxt::Memfile::RIFFMemFile rmf(data, length);
 
         size_t chunksize;
         int tag, listTag;
@@ -149,7 +149,7 @@ TEST_CASE("RIFF_MemFile", "[io]")
         ifs.read(data, length);
         ifs.close();
 
-        SC3::Memfile::RIFFMemFile rmf(data, length);
+        scxt::Memfile::RIFFMemFile rmf(data, length);
 
         size_t datasize;
         REQUIRE(rmf.riff_descend_RIFF_or_LIST('sfbk', &datasize));
@@ -180,7 +180,7 @@ TEST_CASE("File Mapper", "[io]")
 
     SECTION("Mapper reads Test Data")
     {
-        auto mapper = std::make_unique<SC3::FileMapView>(
+        auto mapper = std::make_unique<scxt::FileMapView>(
             string_to_path(std::string("resources/test_samples/not_audio.bin")));
         REQUIRE(mapper);
         REQUIRE(mapper->isMapped());

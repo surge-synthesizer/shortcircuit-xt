@@ -16,7 +16,7 @@
 */
 
 /*
- * This file originally existed with all the hacks I used to get SC3 linking but
+ * This file originally existed with all the hacks I used to get scxt linking but
  * as I resolved those, it shrunk away simply to some aliasing ifdefs of DWORD and
  * the like.
  */

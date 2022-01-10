@@ -218,26 +218,38 @@ std::string sampler::generateInternalStateView() const
         SHOW(MIDIchannel, p);
     }
 
-    oss << pfx << "effects:\n";
-    bool anyfx = false;
-    for (int i = 0; i < n_sampler_effects; ++i)
+    oss << pfx << "multi:\n";
     {
-        auto f = multiv.pFilter[i];
-        if (f)
+        auto gmutli = pfx.up();
+        bool anyfx = false;
+        oss << pfx << "effects:\n";
+        for (int i = 0; i < n_sampler_effects; ++i)
         {
-            anyfx = true;
+            auto f = multiv.pFilter[i];
+            if (f)
+            {
+                anyfx = true;
+                auto g2 = pfx.up();
+                oss << pfx << "- effect:\n";
+                auto g3 = pfx.up();
+                oss << pfx << "id: " << i << "\n";
+                oss << pfx << "name: " << f->get_filtername() << "\n";
+                oss << pfx << "- params:";
+                auto g4 = pfx.up();
+                for (int q = 0; q < f->get_parameter_count(); ++q)
+                {
+                    oss << pfx << "- " << q << "\n";
+                    auto g5 = pfx.up();
+                    oss << pfx << "label: " << f->get_parameter_label(q) << "\n";
+                    oss << pfx << "value: " << multi.Filter[i].p[q] << "\n";
+                }
+            }
+        }
+        if (!anyfx)
+        {
             auto g2 = pfx.up();
-            oss << pfx << "- effect:\n";
-            auto g3 = pfx.up();
-            oss << pfx << "id: " << i << "\n";
-            oss << pfx << "name: " << f->get_filtername() << "\n";
+            oss << pfx << "disabled: true\n";
         }
     }
-    if (!anyfx)
-    {
-        auto g2 = pfx.up();
-        oss << pfx << "disabled: true\n";
-    }
-
     return oss.str();
 }

@@ -1,9 +1,9 @@
 #ifndef __version__
 #define __version__
 
-namespace SC3
+namespace scxt
 {
-struct Build
+struct build
 {
     static const char *MajorVersionStr;
     static const int MajorVersionInt;
@@ -32,6 +32,6 @@ struct Build
     // Some features from cmake
     static const char *CMAKE_INSTALL_PREFIX;
 };
-} // namespace SC3
+} // namespace scxt
 
 #endif //__version__

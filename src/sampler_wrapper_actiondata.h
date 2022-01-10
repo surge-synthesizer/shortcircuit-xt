@@ -19,7 +19,7 @@
  * THIS DOCUMENTATION is still getting written. But it's a start
  *
  * So the question arises: how should the audio thread and the UI thread interact?
- * SC3 has a clear model
+ * scxt has a clear model
  *
  * 1. It has a lockfree buffer for small messages (class actiondata)
  * 2. A client which is hosting the engine (which we call a "Wrapper") can send messages

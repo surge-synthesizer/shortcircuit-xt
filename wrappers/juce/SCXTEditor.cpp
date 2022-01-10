@@ -9,8 +9,8 @@
 // Before diving into this code you want to read the short comment set
 // at the top of src/sampler_wrapper_actiondata.h
 
-#include "SC3Editor.h"
-#include "SC3Processor.h"
+#include "SCXTEditor.h"
+#include "SCXTProcessor.h"
 #include "version.h"
 
 #include <unordered_map>
@@ -39,14 +39,14 @@
 
 struct SC3IdleTimer : juce::Timer
 {
-    SC3IdleTimer(SC3Editor *ed) : ed(ed) {}
+    SC3IdleTimer(SCXTEditor *ed) : ed(ed) {}
     ~SC3IdleTimer() = default;
     void timerCallback() override { ed->idle(); }
-    SC3Editor *ed;
+    SCXTEditor *ed;
 };
 
 //==============================================================================
-SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
+SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
 {
     lookAndFeel = std::make_unique<SCXTLookAndFeel>();
     setLookAndFeel(lookAndFeel.get());
@@ -57,27 +57,27 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
         playingMidiNotes[i] = 0;
 
     actiondataToUI = std::make_unique<SC3EngineToWrapperQueue<actiondata>>();
-    logToUI = std::make_unique<SC3EngineToWrapperQueue<SC3Editor::LogTransport>>();
+    logToUI = std::make_unique<SC3EngineToWrapperQueue<SCXTEditor::LogTransport>>();
     p.addLogDisplayListener(this);
     p.sc3->registerWrapperForEvents(this);
 
     // This is going to be a little pattern I'm sure
-    zoneStateProxy = make_proxy<ZoneStateProxy>();
-    browserDataProxy = make_proxy<BrowserDataProxy>();
-    selectionStateProxy = make_proxy<SelectionStateProxy>();
-    multiDataProxy = make_proxy<MultiDataProxy>();
-    vuMeterProxy = make_proxy<VUMeterProxy>();
+    zoneStateProxy = make_proxy<scxt::proxies::ZoneStateProxy>();
+    browserDataProxy = make_proxy<scxt::proxies::BrowserDataProxy>();
+    selectionStateProxy = make_proxy<scxt::proxies::SelectionStateProxy>();
+    multiDataProxy = make_proxy<scxt::proxies::MultiDataProxy>();
+    vuMeterProxy = make_proxy<scxt::proxies::VUMeterProxy>();
 
-    headerPanel = std::make_unique<SC3::Components::HeaderPanel>(this);
+    headerPanel = std::make_unique<scxt::components::HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
     vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
     addAndMakeVisible(*headerPanel);
 
-    pages[ZONE] = std::make_unique<SC3::Pages::ZonePage>(this, ZONE);
-    pages[PART] = std::make_unique<SC3::Pages::PageBase>(this, PART);
-    pages[FX] = std::make_unique<SC3::Pages::FXPage>(this, FX);
-    pages[CONFIG] = std::make_unique<SC3::Pages::PageBase>(this, CONFIG);
-    pages[ABOUT] = std::make_unique<SC3::Pages::AboutPage>(this, ABOUT);
+    pages[ZONE] = std::make_unique<scxt::pages::ZonePage>(this, ZONE);
+    pages[PART] = std::make_unique<scxt::pages::PageBase>(this, PART);
+    pages[FX] = std::make_unique<scxt::pages::FXPage>(this, FX);
+    pages[CONFIG] = std::make_unique<scxt::pages::PageBase>(this, CONFIG);
+    pages[ABOUT] = std::make_unique<scxt::pages::AboutPage>(this, ABOUT);
 
     multiDataProxy->clients.insert(pages[FX].get());
 
@@ -106,7 +106,7 @@ SC3Editor::SC3Editor(SC3AudioProcessor &p) : AudioProcessorEditor(&p), audioProc
     // setResizable(true, true);
 }
 
-SC3Editor::~SC3Editor()
+SCXTEditor::~SCXTEditor()
 {
     setLookAndFeel(nullptr);
     uiStateProxies.clear();
@@ -121,19 +121,19 @@ SC3Editor::~SC3Editor()
     audioProcessor.sc3->unregisterWrapperForEvents(this);
 }
 
-void SC3Editor::sendActionToEngine(const actiondata &ad) { sendActionInternal(ad); }
+void SCXTEditor::sendActionToEngine(const actiondata &ad) { sendActionInternal(ad); }
 
-void SC3Editor::sendActionInternal(const actiondata &ad)
+void SCXTEditor::sendActionInternal(const actiondata &ad)
 {
     audioProcessor.sc3->postEventsFromWrapper(ad);
 }
 
-void SC3Editor::buttonClicked(juce::Button *b) {}
+void SCXTEditor::buttonClicked(juce::Button *b) {}
 
-void SC3Editor::buttonStateChanged(juce::Button *b) {}
+void SCXTEditor::buttonStateChanged(juce::Button *b) {}
 
 //==============================================================================
-void SC3Editor::paint(juce::Graphics &g)
+void SCXTEditor::paint(juce::Graphics &g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
@@ -143,10 +143,10 @@ void SC3Editor::paint(juce::Graphics &g)
     g.setFont(14.0f);
     auto bottomLabel = bounds.removeFromTop(bounds.getHeight()).expanded(-2, 0);
     g.drawFittedText("Shortcircuit XT", bottomLabel, juce::Justification::bottomLeft, 1);
-    g.drawFittedText(SC3::Build::FullVersionStr, bottomLabel, juce::Justification::bottomRight, 1);
+    g.drawFittedText(scxt::build::FullVersionStr, bottomLabel, juce::Justification::bottomRight, 1);
 }
 
-void SC3Editor::resized()
+void SCXTEditor::resized()
 {
     auto r = getLocalBounds();
     headerPanel->setBounds(r.withHeight(25));
@@ -157,8 +157,8 @@ void SC3Editor::resized()
     }
 }
 
-bool SC3Editor::isInterestedInFileDrag(const juce::StringArray &files) { return true; }
-void SC3Editor::filesDropped(const juce::StringArray &files, int x, int y)
+bool SCXTEditor::isInterestedInFileDrag(const juce::StringArray &files) { return true; }
+void SCXTEditor::filesDropped(const juce::StringArray &files, int x, int y)
 {
     auto d = new DropList();
 
@@ -175,13 +175,13 @@ void SC3Editor::filesDropped(const juce::StringArray &files, int x, int y)
     sendActionToEngine(ad);
 }
 
-void SC3Editor::refreshSamplerTextViewInThreadUnsafeWay()
+void SCXTEditor::refreshSamplerTextViewInThreadUnsafeWay()
 {
     // Really this isn't thread safe and we should fix it
     debugWindow->setSamplerText(audioProcessor.sc3->generateInternalStateView());
 }
 
-void SC3Editor::idle()
+void SCXTEditor::idle()
 {
     int mcount = 0;
     actiondata ad;
@@ -333,7 +333,7 @@ void SC3Editor::idle()
     LogTransport lt;
     while (logToUI->pop(lt))
     {
-        std::string t = SC3::Log::getShortLevelStr(lt.lev);
+        std::string t = scxt::log::getShortLevelStr(lt.lev);
         // We now have an option to do something else with errors if we want
         debugLog << t << lt.txt << "\n";
         mcount++;
@@ -363,18 +363,18 @@ void SC3Editor::idle()
         refreshSamplerTextViewInThreadUnsafeWay();
 }
 
-void SC3Editor::receiveActionFromProgram(const actiondata &ad) { actiondataToUI->push(ad); }
-SC3::Log::Level SC3Editor::getLevel()
+void SCXTEditor::receiveActionFromProgram(const actiondata &ad) { actiondataToUI->push(ad); }
+scxt::log::Level SCXTEditor::getLevel()
 {
     // TODO some kind of global config read
-    return SC3::Log::Level::Debug;
+    return scxt::log::Level::Debug;
 }
-void SC3Editor::message(SC3::Log::Level lev, const std::string &msg)
+void SCXTEditor::message(scxt::log::Level lev, const std::string &msg)
 {
-    logToUI->push(SC3Editor::LogTransport(lev, msg));
+    logToUI->push(SCXTEditor::LogTransport(lev, msg));
 }
 
-void SC3Editor::selectPart(int i)
+void SCXTEditor::selectPart(int i)
 {
     actiondata ad;
     ad.id = ip_partselect;
@@ -383,7 +383,7 @@ void SC3Editor::selectPart(int i)
     sendActionToEngine(ad);
 }
 
-void SC3Editor::showPage(const Pages &pTo)
+void SCXTEditor::showPage(const Pages &pTo)
 {
     for (const auto &[p, page] : pages)
     {

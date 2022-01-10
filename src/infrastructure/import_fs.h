@@ -20,7 +20,7 @@
 
 #include <utility>
 
-#if SC3_USE_GHC_FILESYSTEM
+#if SCXT_USE_GHC_FILESYSTEM
 #include <ghc/filesystem.hpp>
 namespace fs = ghc::filesystem;
 #else

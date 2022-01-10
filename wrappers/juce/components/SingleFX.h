@@ -7,37 +7,37 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "DataInterfaces.h"
-struct SC3Editor;
+struct SCXTEditor;
 
-namespace SC3
+namespace scxt
 {
-namespace Widgets
+namespace widgets
 {
 struct FloatParamEditor;
 }
-namespace Components
+namespace components
 {
 struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
 {
-    SingleFX(SC3Editor *ed, int idx);
+    SingleFX(SCXTEditor *ed, int idx);
     ~SingleFX();
 
     void paint(juce::Graphics &g) override;
     void resized() override;
     void onProxyUpdate() override;
 
-    SC3Editor *editor{nullptr};
+    SCXTEditor *editor{nullptr};
     int idx{-1};
 
     void typeSelectorChanged();
 
-    std::array<std::unique_ptr<Widgets::FloatParamEditor>, n_filter_parameters> fParams;
+    std::array<std::unique_ptr<widgets::FloatParamEditor>, n_filter_parameters> fParams;
     std::array<std::unique_ptr<juce::Label>, n_filter_iparameters> iParams;
 
     std::unique_ptr<juce::ComboBox> typeSelector;
 };
 
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_SINGLEFX_H

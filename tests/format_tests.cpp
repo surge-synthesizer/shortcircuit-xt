@@ -231,7 +231,7 @@ TEST_CASE("Load two SF2s", "[formats]")
 
 TEST_CASE("Akai S6k patch load", "[formats]")
 {
-    gTestLevel = SC3::Log::Level::Debug;
+    gTestLevel = scxt::log::Level::Debug;
 
     SECTION("Simple Load")
     {
@@ -267,5 +267,5 @@ TEST_CASE("Akai S6k patch load", "[formats]")
                 */
     }
 
-    gTestLevel = SC3::Log::Level::None;
+    gTestLevel = scxt::log::Level::None;
 }

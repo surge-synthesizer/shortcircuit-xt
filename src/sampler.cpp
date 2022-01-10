@@ -58,10 +58,10 @@ void sampler::set_samplerate(float sr)
 //-------------------------------------------------------------------------------------------------
 
 sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
-                 SC3::Log::LoggingCallback *cb)
+                 scxt::log::LoggingCallback *cb)
     : mLogger(cb), mNumOutputs(NumOutputs)
 {
-    LOGINFO(mLogger) << "SC3 engine " << SC3::Build::FullVersionStr << std::flush;
+    LOGINFO(mLogger) << "scxt engine " << scxt::build::FullVersionStr << std::flush;
     conf = new configuration(mLogger);
 
 #if WINDOWS
@@ -967,7 +967,7 @@ int sampler::GetFreeZoneId()
                "Too many zones", MB_OK | MB_ICONERROR);
 #else
 #warning Implement user feedback
-    SC3::Log::logos() << "Zone limit reached" << std::endl;
+    scxt::log::logos() << "Zone limit reached" << std::endl;
 #endif
 
     return -1;

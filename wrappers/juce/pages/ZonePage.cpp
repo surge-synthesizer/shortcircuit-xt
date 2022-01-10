@@ -10,15 +10,15 @@
 // This is a bummer
 #include "proxies/ZoneStateProxy.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Pages
+namespace pages
 {
-ZonePage::ZonePage(SC3Editor *ed, SC3Editor::Pages p) : PageBase(ed, p)
+ZonePage::ZonePage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
 {
-    waveDisplay = std::make_unique<Components::WaveDisplay>(editor, editor);
-    zoneKeyboardDisplay = std::make_unique<Components::ZoneKeyboardDisplay>(editor, editor);
-    zoneEditor = std::make_unique<Components::ZoneEditor>(editor);
+    waveDisplay = std::make_unique<components::WaveDisplay>(editor, editor);
+    zoneKeyboardDisplay = std::make_unique<components::ZoneKeyboardDisplay>(editor, editor);
+    zoneEditor = std::make_unique<components::ZoneEditor>(editor);
     addAndMakeVisible(*waveDisplay);
     addAndMakeVisible(*zoneKeyboardDisplay);
     addAndMakeVisible(*zoneEditor);
@@ -42,5 +42,5 @@ void ZonePage::connectProxies()
     editor->uiStateProxies.insert(waveDisplay.get());
 }
 
-} // namespace Pages
-} // namespace SC3
+} // namespace pages
+} // namespace scxt

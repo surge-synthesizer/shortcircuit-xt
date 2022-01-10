@@ -24,12 +24,12 @@ size_t sample::SaveWaveChunk(void *data)
     // both used for persistance and .wav export
     size_t samplesize = channels * sample_length * (UseInt16 ? 2 : 4);
     size_t datasize = (8 + sizeof(wavheader)) + (8 + samplesize) +
-                      (12 + SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(name));
+                      (12 + scxt::Memfile::RIFFMemFile::RIFFTextChunkSize(name));
 
     if (!data)
         return datasize;
 
-    SC3::Memfile::RIFFMemFile mf(data, datasize);
+    scxt::Memfile::RIFFMemFile mf(data, datasize);
 
     wavheader header;
     header.wFormatTag = vt_write_int16LE(UseInt16 ? WAVE_FORMAT_PCM : WAVE_FORMAT_IEEE_FLOAT);
@@ -40,7 +40,7 @@ size_t sample::SaveWaveChunk(void *data)
     header.nAvgBytesPerSec = vt_write_int32LE(header.nBlockAlign * header.nSamplesPerSec);
 
     mf.RIFFCreateChunk('fmt ', &header, sizeof(wavheader));
-    mf.RIFFCreateLISTHeader('INFO', SC3::Memfile::RIFFMemFile::RIFFTextChunkSize(name));
+    mf.RIFFCreateLISTHeader('INFO', scxt::Memfile::RIFFMemFile::RIFFTextChunkSize(name));
     mf.RIFFCreateTextChunk('INAM', name);
     mf.WriteDWORD(vt_write_int32BE('data'));
     mf.WriteDWORD(vt_write_int32LE(samplesize));
@@ -86,9 +86,9 @@ bool sample::save_wave_file(const fs::path &filename)
     FILE *f = fopen(path_to_string(filename).c_str(), "wb");
 #endif
     int32_t d[3];
-    d[0] = SC3::Memfile::swap_endian_32('RIFF');
+    d[0] = scxt::Memfile::swap_endian_32('RIFF');
     d[1] = datasize + 4;
-    d[2] = SC3::Memfile::swap_endian_32('WAVE');
+    d[2] = scxt::Memfile::swap_endian_32('WAVE');
     fwrite(d, 4, 3, f);
     fwrite(data, datasize, 1, f);
     fclose(f);
@@ -102,7 +102,7 @@ bool sample::save_wave_file(const fs::path &filename)
 bool sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
 {
     size_t datasize;
-    SC3::Memfile::RIFFMemFile mf(data, filesize);
+    scxt::Memfile::RIFFMemFile mf(data, filesize);
     if (!skip_riffchunk && !mf.riff_descend_RIFF_or_LIST('WAVE', &datasize))
         return false;
 
@@ -215,7 +215,7 @@ bool sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     this->sample_loaded = true;
 
     // read smpl chunk
-    mf.SeekI(wr, SC3::Memfile::mf_FromStart);
+    mf.SeekI(wr, scxt::Memfile::mf_FromStart);
     if (mf.riff_descend('smpl', &datasize))
     {
         SamplerChunk smpl_chunk;
@@ -332,7 +332,8 @@ bool sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
                 meta.playmode = pm_forward_hitpoints;
                 meta.playmode_present = true;
 
-                mf.SeekI(sizeof(wave_strc_entry), SC3::Memfile::mf_FromCurrent); // skip first entry
+                mf.SeekI(sizeof(wave_strc_entry),
+                         scxt::Memfile::mf_FromCurrent); // skip first entry
 
                 for (int i = 0; i < subchunks; i++)
                 {

@@ -28,12 +28,12 @@
  * the map scope. So, for instance
  *
  * fs::path p = string_to_path("foo.bin");
- * auto mapper = std::make_unique<SC3::FileMapView>(p);
+ * auto mapper = std::make_unique<scxt::FileMapView>(p);
  * auto d = mapper->data; // valid until mapper is destroyed
  * auto s = mapper->dataSize;
  */
 
-namespace SC3
+namespace scxt
 {
 class FileMapView
 {
@@ -51,6 +51,6 @@ class FileMapView
     };
     std::unique_ptr<Impl> impl;
 };
-} // namespace SC3
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_FILE_MAP_VIEW_H

@@ -5,15 +5,15 @@
 #include "FXPage.h"
 #include "components/SingleFX.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Pages
+namespace pages
 {
-FXPage::FXPage(SC3Editor *e, SC3Editor::Pages p) : PageBase(e, p)
+FXPage::FXPage(SCXTEditor *e, SCXTEditor::Pages p) : PageBase(e, p)
 {
     for (auto i = 0; i < num_fxunits; ++i)
     {
-        auto q = std::make_unique<Components::SingleFX>(editor, i);
+        auto q = std::make_unique<components::SingleFX>(editor, i);
 
         addAndMakeVisible(*q);
         fxComponents[i] = std::move(q);
@@ -43,5 +43,5 @@ void FXPage::onProxyUpdate()
         q->onProxyUpdate();
 }
 
-} // namespace Pages
-} // namespace SC3
+} // namespace pages
+} // namespace scxt

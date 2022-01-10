@@ -9,14 +9,14 @@
 #include "version.h"
 #include "BinaryUIAssets.h"
 
-namespace SC3
+namespace scxt
 {
 
-namespace Pages
+namespace pages
 {
 struct AboutPage : PageBase
 {
-    AboutPage(SC3Editor *ed, SC3Editor::Pages p) : PageBase(ed, p)
+    AboutPage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
     {
         icon = juce::Drawable::createFromImageData(SCXTUIAssets::SCicon_svg,
                                                    SCXTUIAssets::SCicon_svgSize);
@@ -40,11 +40,11 @@ struct AboutPage : PageBase
         g.drawText("ShortCircuit XT", r, juce::Justification::centred);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(40));
         r = r.translated(0, 60);
-        g.drawText(SC3::Build::FullVersionStr, r, juce::Justification::centred);
+        g.drawText(scxt::build::FullVersionStr, r, juce::Justification::centred);
         r = r.translated(0, 60);
-        std::string dt = SC3::Build::BuildDate;
+        std::string dt = scxt::build::BuildDate;
         dt += " at ";
-        dt += SC3::Build::BuildTime;
+        dt += scxt::build::BuildTime;
         g.drawText(dt, r, juce::Justification::centred);
     }
 
@@ -52,7 +52,7 @@ struct AboutPage : PageBase
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutPage);
 };
-} // namespace Pages
-} // namespace SC3
+} // namespace pages
+} // namespace scxt
 
 #endif // SHORTCIRCUIT_ABOUTPAGE_H

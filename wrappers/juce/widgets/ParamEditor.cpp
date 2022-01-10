@@ -5,9 +5,9 @@
 #include "ParamEditor.h"
 #include "SCXTLookAndFeel.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Widgets
+namespace widgets
 {
 
 void FloatParamEditor::paint(juce::Graphics &g)
@@ -70,5 +70,5 @@ void FloatParamEditor::mouseUp(const juce::MouseEvent &e)
     param.sendValue01(xf, sender);
     repaint();
 }
-} // namespace Widgets
-} // namespace SC3
+} // namespace widgets
+} // namespace scxt

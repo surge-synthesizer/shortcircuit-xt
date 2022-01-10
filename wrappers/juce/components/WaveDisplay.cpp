@@ -25,16 +25,16 @@
 
 #include "BinaryUIAssets.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
 const int WAVE_MARGIN = 6;      // margin around wave display in pixels
 const int WAVE_CHANNEL_GAP = 4; // gap between channels
 
 static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2);
 
-WaveDisplay::WaveDisplay(ActionSender *sender, SC3::Log::LoggingCallback *logger)
+WaveDisplay::WaveDisplay(ActionSender *sender, scxt::log::LoggingCallback *logger)
     : mSender(sender), mLogger(logger), prof(logger, "Wave Display Paint")
 {
     dispmode = 0;
@@ -742,5 +742,5 @@ void WaveDisplay::mouseMove(const juce::MouseEvent &event)
     return;
 }
 
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt

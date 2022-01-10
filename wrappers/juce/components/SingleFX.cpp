@@ -3,26 +3,26 @@
 //
 
 #include "SingleFX.h"
-#include "SC3Editor.h"
+#include "SCXTEditor.h"
 #include "SCXTLookAndFeel.h"
 #include "widgets/ComboBox.h"
 #include "widgets/ParamEditor.h"
 
 #include "sst/cpputils.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Components
+namespace components
 {
-SingleFX::SingleFX(SC3Editor *ed, int i) : editor(ed), idx(i)
+SingleFX::SingleFX(SCXTEditor *ed, int i) : editor(ed), idx(i)
 {
-    typeSelector = std::make_unique<SC3::Widgets::ComboBox>();
+    typeSelector = std::make_unique<scxt::widgets::ComboBox>();
     typeSelector->onChange = [this]() { typeSelectorChanged(); };
     addAndMakeVisible(*typeSelector);
 
     for (auto i = 0; i < n_filter_parameters; ++i)
     {
-        auto q = std::make_unique<Widgets::FloatParamEditor>(Widgets::FloatParamEditor::HSLIDER,
+        auto q = std::make_unique<widgets::FloatParamEditor>(widgets::FloatParamEditor::HSLIDER,
                                                              editor->multi.filters[idx].p[i], ed);
         addChildComponent(*q);
         fParams[i] = std::move(q);
@@ -104,5 +104,5 @@ void SingleFX::typeSelectorChanged()
     ad.data.i[0] = ftype;
     editor->sendActionToEngine(ad);
 }
-} // namespace Components
-} // namespace SC3
+} // namespace components
+} // namespace scxt

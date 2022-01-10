@@ -8,9 +8,9 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "SCXTLookAndFeel.h"
 
-namespace SC3
+namespace scxt
 {
-namespace Widgets
+namespace widgets
 {
 struct OutlinedTextButton : public juce::TextButton, ColorRemapper<OutlinedTextButton>
 {
@@ -38,6 +38,6 @@ struct OutlinedTextButton : public juce::TextButton, ColorRemapper<OutlinedTextB
         g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred);
     }
 };
-} // namespace Widgets
-} // namespace SC3
+} // namespace widgets
+} // namespace scxt
 #endif // SHORTCIRCUIT_OUTLINEDTEXTBUTTON_H

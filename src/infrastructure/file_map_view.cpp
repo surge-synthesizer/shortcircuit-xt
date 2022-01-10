@@ -32,7 +32,7 @@
 #include <limits.h>
 #endif
 
-namespace SC3
+namespace scxt
 {
 
 #if WINDOWS
@@ -158,4 +158,4 @@ size_t FileMapView::dataSize() { return as(impl.get())->dataSize; }
 
 bool FileMapView::isMapped() { return as(impl.get())->isMapped; }
 
-} // namespace SC3
+} // namespace scxt
