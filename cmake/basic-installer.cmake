@@ -1,25 +1,25 @@
 # A basic installer setup.
 #
 # This cmake file introduces two targets
-#  shortcircuit-staged:      moves all the built assets to a well named directory
-#  shortcircuit-installer:   depends on shortcircuit-staged, builds an installer
+#  shortcircuit-products:      moves all the built assets to a well named directory
+#  shortcircuit-installer:   depends on shortcircuit-products, builds an installer
 #
 # Right now shortcircuit-installer builds just the crudest zip file but this is the target
 # on which we will hang the proper installers later
 
-set(SCXT_PRODUCT_DIR ${CMAKE_BINARY_DIR}/shortcircuit_products)
+set(SCXT_PRODUCT_DIR ${CMAKE_BINARY_DIR}/shortcircuit-products)
 file(MAKE_DIRECTORY ${SCXT_PRODUCT_DIR})
 
-add_custom_target(shortcircuit-staged)
+add_custom_target(shortcircuit-products)
 add_custom_target(shortcircuit-installer)
 
 function(shortcircuit_package format)
     get_target_property(output_dir ShortcircuitXT RUNTIME_OUTPUT_DIRECTORY)
 
     if (TARGET ShortcircuitXT_${format})
-        add_dependencies(shortcircuit-staged ShortcircuitXT_${format})
+        add_dependencies(shortcircuit-products ShortcircuitXT_${format})
         add_custom_command(
-                TARGET shortcircuit-installer
+                TARGET shortcircuit-products
                 POST_BUILD
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                 COMMAND echo "Installing ${output_dir}/${format} to ${SCXT_PRODUCT_DIR}"
@@ -35,7 +35,7 @@ shortcircuit_package(AU)
 shortcircuit_package(CLAP)
 shortcircuit_package(Standalone)
 
-add_dependencies(shortcircuit-installer shortcircuit-staged)
+add_dependencies(shortcircuit-installer shortcircuit-products)
 
 add_custom_command(
         TARGET shortcircuit-installer
