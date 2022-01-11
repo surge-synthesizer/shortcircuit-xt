@@ -6,6 +6,8 @@
 #define SHORTCIRCUIT_DATAINTERFACES_H
 
 #include "sampler_wrapper_actiondata.h"
+#include "sampler_state.h"
+#include "configuration.h"
 #include <charconv>
 
 /*
@@ -101,6 +103,11 @@ class UIStateProxy
                 v.clear();
                 return true;
             }
+            if (at == vga_entry_add_ival_from_self)
+            {
+                v.push_back(ad.data.str);
+                return true;
+            }
             if (at == vga_entry_add_ival_from_self_with_id)
             {
                 auto entry = ad.data.i[0];
@@ -172,7 +179,22 @@ template <typename T> struct ParameterProxy
         jassertfalse;
         return T{};
     }
+
+    template <typename Q> void setFrom(const Q &v) { jassertfalse; }
 };
+
+template <> template <> inline void ParameterProxy<float>::setFrom<float>(const float &v)
+{
+    val = v;
+}
+template <> template <> inline void ParameterProxy<int>::setFrom<int>(const int &v) { val = v; }
+
+template <>
+template <>
+inline void ParameterProxy<std::string>::setFrom<std::string>(const std::string &v)
+{
+    val = v;
+}
 
 template <> inline char ParameterProxy<float>::dataModeIndicator() const { return 'f'; }
 template <> inline float ParameterProxy<float>::strToT(const std::string &s)
@@ -222,11 +244,15 @@ template <typename T> inline bool applyActionData(const actiondata &ad, Paramete
     switch (at)
     {
     case vga_floatval:
-        proxy.val = ad.data.f[0];
+        proxy.setFrom(ad.data.f[0]);
         return true;
         break;
     case vga_intval:
-        proxy.val = ad.data.i[0];
+        proxy.setFrom(ad.data.i[0]);
+        return true;
+        break;
+    case vga_text:
+        proxy.setFrom(std::string(ad.data.str));
         return true;
         break;
     case vga_disable_state:
@@ -261,6 +287,22 @@ inline bool applyActionData(const actiondata &ad, int base, ParameterProxy<T> (&
     return res;
 }
 
+template <typename T>
+inline bool applyActionDataIf(const actiondata &ad, const InteractionId &id,
+                              ParameterProxy<T> &proxy)
+{
+    if (ad.id == id && applyActionData(ad, proxy))
+        return true;
+    return false;
+}
+template <typename T, size_t N>
+inline bool applyActionDataSubIdIf(const actiondata &ad, const InteractionId &id,
+                                   ParameterProxy<T> (&proxy)[N])
+{
+    if (ad.id == id && applyActionData(ad, proxy[ad.subid]))
+        return true;
+    return false;
+}
 struct FilterData
 {
     ParameterProxy<float> p[n_filter_parameters];
@@ -269,10 +311,64 @@ struct FilterData
     ParameterProxy<int> type;
     ParameterProxy<int> bypass;
 };
+
+struct AuxBusData
+{
+    ParameterProxy<float> level, balance;
+    ParameterProxy<int> output, outmode;
+};
+
+struct MMEntryData
+{
+    ParameterProxy<int> source, source2;
+    ParameterProxy<int> destination;
+    ParameterProxy<float> strength;
+    ParameterProxy<int> active, curve;
+};
+
+struct NCEntryData
+{
+    ParameterProxy<int> source, low, high;
+};
+
+struct PartData
+{
+    ParameterProxy<std::string> name;
+    ParameterProxy<int> midichannel;
+    ParameterProxy<int> polylimit;
+    ParameterProxy<int> transpose;
+    ParameterProxy<int> formant;
+    ParameterProxy<int> polymode;
+    ParameterProxy<float> portamento;
+    ParameterProxy<int> portamento_mode;
+
+    ParameterProxy<int> part_vs_layers;
+    ParameterProxy<float> part_vs_distribution;
+    ParameterProxy<int> part_vs_xf_equality;
+    ParameterProxy<float> part_vs_xfade;
+
+    FilterData filters[num_filters_per_part];
+
+    AuxBusData aux[num_aux_busses];
+    MMEntryData mm[mm_part_entries];
+    NCEntryData nc[num_part_ncs];
+
+    ParameterProxy<float> userparameter[num_midi_channels];
+    ParameterProxy<std::string> userparameter_name[num_midi_channels];
+    ParameterProxy<int> userparameter_polarity[num_midi_channels];
+};
 struct MultiData
 {
     ParameterProxy<float> filter_pregain[num_fxunits], filter_postgain[num_fxunits];
     ParameterProxy<int> filter_output[num_fxunits];
     FilterData filters[num_fxunits];
+};
+
+struct ConfigData
+{
+    ParameterProxy<float> previewLevel;
+    ParameterProxy<int> autoPreview, kbdMode, outputs;
+
+    ParameterProxy<int> controllerId[n_custom_controllers], controllerMode[n_custom_controllers];
 };
 #endif // SHORTCIRCUIT_DATAINTERFACES_H

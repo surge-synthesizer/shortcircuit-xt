@@ -13,7 +13,7 @@
 #include "infrastructure/import_fs.h"
 #include "infrastructure/logfile.h"
 
-const int n_custom_controllers = 16;
+static constexpr int n_custom_controllers = 16;
 
 enum midi_controller_type
 {

@@ -136,6 +136,9 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             auto xs = keyXBounds[ks].first;
             auto xe = keyXBounds[ke].second;
 
+            if (xe < xs)
+                std::swap(xs,xe);
+
             g.setColour(col);
             g.fillRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
             g.setColour(zoneOutlineColor);

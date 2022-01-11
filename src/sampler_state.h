@@ -411,6 +411,10 @@ static constexpr int num_layer_ncs = 2;
 static constexpr int nc_entries = 2;
 static constexpr int num_part_ncs = num_layers * num_layer_ncs;
 
+static constexpr int num_midi_channels = 16;
+static constexpr int num_aux_busses = 3;
+static constexpr int num_filters_per_part = 2;
+
 static constexpr int state_string_length = 32;
 
 //-------------------------------------------------------------------------------------------------------
@@ -430,12 +434,12 @@ struct sample_multi
 struct sample_part
 {
     char name[state_string_length];
-    char userparametername[16][state_string_length];
-    float userparameter[16];
-    float userparameter_smoothed[16]; // used by interpolation
-    int userparameterpolarity[16];
+    char userparametername[num_midi_channels][state_string_length];
+    float userparameter[num_midi_channels];
+    float userparameter_smoothed[num_midi_channels]; // used by interpolation
+    int userparameterpolarity[num_midi_channels];
 
-    aux_buss aux[3];
+    aux_buss aux[num_aux_busses];
     mm_entry mm[mm_part_entries];
 
     float portamento, pfg;
@@ -445,7 +449,7 @@ struct sample_part
     int MIDIchannel; // channel part recieves on (defaults to its id but can be stored in multi, but
                      // not patches)
 
-    filterstruct Filter[2]; // filters / fx
+    filterstruct Filter[num_filters_per_part]; // filters / fx
 
     // layer velocity split settings
     int vs_layercount;

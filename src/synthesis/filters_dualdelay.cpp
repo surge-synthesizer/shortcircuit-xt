@@ -9,6 +9,7 @@
 #include "filter_defs.h"
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 using std::max;
 using std::min;
@@ -170,8 +171,6 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
         int sincR = FIRipol_N * limit_range((int)(FIRipol_M * (float(i_dtimeR + 1) - timeR.v)), 0,
                                             (int)FIRipol_M - 1);
 
-#ifdef MAC
-#else
         __m128 L, R;
         L = _mm_mul_ps(_mm_load_ps(&SincTableF32[sincL]), _mm_loadu_ps(&buffer[0][rpL]));
         L = _mm_add_ps(L, _mm_mul_ps(_mm_load_ps(&SincTableF32[sincL + 4]),
@@ -187,7 +186,6 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
         R = sum_ps_to_ss(R);
         _mm_store_ss(&dataoutL[k], L);
         _mm_store_ss(&dataoutR[k], R);
-#endif
     }
 
     softclip_block(dataoutL, block_size_quad);

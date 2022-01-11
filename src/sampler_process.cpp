@@ -126,7 +126,6 @@ void sampler::process_part(int p)
     partv[p].ampR.set_target_smoothed(megapanR(pan) * amp);
     amp = db_to_linear(partv[p].mm->get_destination_value(md_part_aux_level));
     pan = partv[p].mm->get_destination_value(md_part_aux_balance);
-    partv[p].aux1L.set_target_smoothed(megapanL(pan) * amp);
     partv[p].aux1R.set_target_smoothed(megapanR(pan) * amp);
     amp = db_to_linear(partv[p].mm->get_destination_value(md_part_aux2_level));
     pan = partv[p].mm->get_destination_value(md_part_aux2_balance);

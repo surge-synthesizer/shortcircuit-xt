@@ -152,8 +152,6 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
 
     clear_block_antidenormalnoise(tbufferL, block_size_quad);
     clear_block_antidenormalnoise(tbufferR, block_size_quad);
-#if MAC
-#else
 
     for (k = 0; k < block_size; k++)
     {
@@ -185,7 +183,6 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
         _mm_store_ss(&tbufferL[k], L);
         _mm_store_ss(&tbufferR[k], R);
     }
-#endif
 
     lp.process_block(tbufferL, tbufferR);
     hp.process_block(tbufferL, tbufferR);
