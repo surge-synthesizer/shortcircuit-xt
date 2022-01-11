@@ -73,7 +73,7 @@ static constexpr int idOff = 1023;
 void SingleFX::onProxyUpdate()
 {
     typeSelector->clear(juce::dontSendNotification);
-    for (const auto &[fidx, t] : sst::cpputils::enumerate(editor->filterTypeNames))
+    for (const auto &[fidx, t] : sst::cpputils::enumerate(editor->multiFilterTypeNames))
     {
         typeSelector->addItem(t, fidx + idOff);
     }

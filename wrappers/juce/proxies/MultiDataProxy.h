@@ -18,11 +18,11 @@ struct MultiDataProxy : public UIStateProxy
     bool processActionData(const actiondata &ad)
     {
         auto guard = InvalidateAndRepaintGuard(*this);
-        if (collectStringEntries(ad, ip_multi_filter_type, editor->filterTypeNames))
+        if (collectStringEntries(ad, ip_multi_filter_type, editor->multiFilterTypeNames))
         {
             return true;
         }
-        if (collectStringEntries(ad, ip_multi_filter_output, editor->filterOutputNames))
+        if (collectStringEntries(ad, ip_multi_filter_output, editor->multiFilterOutputNames))
         {
             return true;
         }

@@ -77,6 +77,8 @@ struct BrowserDataProxy;
 struct SelectionStateProxy;
 struct VUMeterProxy;
 struct MultiDataProxy;
+struct PartDataProxy;
+struct ConfigDataProxy;
 } // namespace proxies
 } // namespace scxt
 
@@ -168,6 +170,8 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<scxt::proxies::SelectionStateProxy> selectionStateProxy;
     std::unique_ptr<scxt::proxies::VUMeterProxy> vuMeterProxy;
     std::unique_ptr<scxt::proxies::MultiDataProxy> multiDataProxy;
+    std::unique_ptr<scxt::proxies::PartDataProxy> partProxy;
+    std::unique_ptr<scxt::proxies::ConfigDataProxy> configProxy;
 
     template <typename T> std::unique_ptr<T> make_proxy()
     {
@@ -201,13 +205,18 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
     int freeParamsC[n_ip_free_items][16];
 
+    PartData parts[n_sampler_parts];
     MultiData multi;
+    ConfigData config;
 
     /*
      * Configuration Data
      */
-    std::vector<std::string> filterTypeNames;
-    std::vector<std::string> filterOutputNames;
+    std::vector<std::string> multiFilterTypeNames;
+    std::vector<std::string> multiFilterOutputNames;
+    std::vector<std::string> partFilterTypeNames;
+    std::vector<std::string> partAuxOutputNames;
+    std::vector<std::string> partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};

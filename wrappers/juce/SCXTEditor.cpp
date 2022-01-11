@@ -23,6 +23,8 @@
 #include "proxies/SelectionStateProxy.h"
 #include "proxies/VUMeterProxy.h"
 #include "proxies/MultiDataProxy.h"
+#include "proxies/PartDataProxy.h"
+#include "proxies/ConfigDataProxy.h"
 
 #include "pages/PageBase.h"
 #include "pages/AboutPage.h"
@@ -67,6 +69,8 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     selectionStateProxy = make_proxy<scxt::proxies::SelectionStateProxy>();
     multiDataProxy = make_proxy<scxt::proxies::MultiDataProxy>();
     vuMeterProxy = make_proxy<scxt::proxies::VUMeterProxy>();
+    partProxy = make_proxy<scxt::proxies::PartDataProxy>();
+    configProxy = make_proxy<scxt::proxies::ConfigDataProxy>();
 
     headerPanel = std::make_unique<scxt::components::HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
