@@ -9,6 +9,9 @@
 #include "sampler_state.h"
 #include "configuration.h"
 #include <charconv>
+#include <fmt/core.h>
+#include "util/unitconversion.h"
+#include "synthesis/mathtables.h"
 
 /*
  * The UIStateProxy is a class which handles messages and keeps an appropriate state.
@@ -140,6 +143,17 @@ template <typename T> struct ParameterProxy
     T min, max, def, step;
     std::string units;
 
+    enum Units
+    {
+        DEF,
+        DB,
+        HZ,
+        KHZ,
+        PERCENT,
+        SECONDS,
+        OCTAVE
+    } unitType{DEF};
+
     void parseDatamode(const char *datamode)
     {
         // syntax is char,min,step,max,def,units
@@ -167,11 +181,57 @@ template <typename T> struct ParameterProxy
         max = strToT(elements[3]);
         def = strToT(elements[4]);
         units = elements[5];
+
+        unitType = DEF;
+        if (units == "dB")
+            unitType = DB;
+        if (units == "Hz")
+            unitType = HZ;
+        if (units == "%")
+            unitType = PERCENT;
+        if (units == "s")
+            unitType = SECONDS;
+        if (units == "kHz")
+            unitType = KHZ;
+        if (units == "oct")
+            unitType = OCTAVE;
+        jassert(unitType != DEF);
+    }
+
+    std::string valueToStringWithUnits()
+    {
+        switch (unitType)
+        {
+        case DB:
+            return fmt::format("{:.2f} dB", val);
+        case PERCENT:
+            return fmt::format("{:.2f} %", val * 100);
+        case OCTAVE:
+            return fmt::format("{:.2f} oct", val);
+        case SECONDS:
+        {
+            auto res = fmt::format("{:.3f} s", pow(2.0, val));
+            return res;
+        }
+        case HZ:
+        {
+            auto res = fmt::format("{:.3f} Hz", 440 * pow(2.0, val));
+            return res;
+        }
+
+        case DEF:
+        case KHZ:
+        default:
+            return fmt::format("{:.3f} RAW", val);
+        }
     }
 
     // Float vs Int a bit clumsy here
     float getValue01() const { return (val - min) / (max - min); }
     void sendValue01(float value01, ActionSender *s) { jassert(false); }
+    void sendValue(T value, ActionSender *s) { jassertfalse; }
+
+    std::string value_to_string() const {}
 
     char dataModeIndicator() const { return 'x'; }
     T strToT(const std::string &s)
@@ -230,6 +290,16 @@ template <> inline float ParameterProxy<int>::getValue01() const
 {
     jassert(false);
     return 0;
+}
+template <> inline void ParameterProxy<int>::sendValue(int value, ActionSender *s)
+{
+    actiondata ad;
+    ad.id = id;
+    ad.subid = subid;
+    ad.actiontype = vga_intval;
+    ad.data.i[0] = value;
+    val = value;
+    s->sendActionToEngine(ad);
 }
 
 template <typename T> inline bool applyActionData(const actiondata &ad, ParameterProxy<T> &proxy)

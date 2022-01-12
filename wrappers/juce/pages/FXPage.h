@@ -9,12 +9,12 @@
 
 namespace scxt
 {
-namespace components
-{
-struct SingleFX;
-} // namespace components
 namespace pages
 {
+namespace fx_contents
+{
+struct SingleFX;
+} // namespace fx_contents
 struct FXPage : public PageBase, public UIStateProxy::Invalidatable
 {
     FXPage(SCXTEditor *, SCXTEditor::Pages p);
@@ -24,7 +24,7 @@ struct FXPage : public PageBase, public UIStateProxy::Invalidatable
     void resized() override;
 
     void onProxyUpdate() override;
-    std::array<std::unique_ptr<components::SingleFX>, num_fxunits> fxComponents;
+    std::array<std::unique_ptr<fx_contents::SingleFX>, num_fxunits> fxComponents;
 };
 
 } // namespace pages

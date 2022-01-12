@@ -30,6 +30,7 @@
 #include "pages/AboutPage.h"
 #include "pages/ZonePage.h"
 #include "pages/FXPage.h"
+#include "pages/PartPage.h"
 
 #include "widgets/CompactVUMeter.h"
 
@@ -78,7 +79,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     addAndMakeVisible(*headerPanel);
 
     pages[ZONE] = std::make_unique<scxt::pages::ZonePage>(this, ZONE);
-    pages[PART] = std::make_unique<scxt::pages::PageBase>(this, PART);
+    pages[PART] = std::make_unique<scxt::pages::PartPage>(this, PART);
     pages[FX] = std::make_unique<scxt::pages::FXPage>(this, FX);
     pages[CONFIG] = std::make_unique<scxt::pages::PageBase>(this, CONFIG);
     pages[ABOUT] = std::make_unique<scxt::pages::AboutPage>(this, ABOUT);
@@ -206,12 +207,12 @@ void SCXTEditor::idle()
         {
             p->sweepValidity();
         }
+
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
             if (ad.id >= ip_multi_params_begin && ad.id <= ip_multi_params_end)
             {
-                std::cout << "MULTI " << ad << " ";
                 if (std::holds_alternative<VAction>(ad.actiontype))
                 {
                     auto at = std::get<VAction>(ad.actiontype);

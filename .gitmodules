@@ -13,3 +13,6 @@
 [submodule "libs/sst/sst-cpputils"]
 	path = libs/sst/sst-cpputils
 	url = https://github.com/surge-synthesizer/sst-cpputils
+[submodule "libs/fmt"]
+	path = libs/fmt
+	url = https://github.com/fmtlib/fmt.git

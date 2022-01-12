@@ -53,6 +53,11 @@ struct SCXTLookAndFeel : public juce::LookAndFeel_V4
     static void fillWithGradientHeaderBand(juce::Graphics &g, const juce::Rectangle<int> &r,
                                            juce::Colour base);
 
+    void drawComboBox(juce::Graphics &graphics, int width, int height, bool isButtonDown,
+                      int buttonX, int buttonY, int buttonW, int buttonH,
+                      juce::ComboBox &box) override;
+    juce::Font getComboBoxFont(juce::ComboBox &) override { return getMonoFontAt(10); }
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTLookAndFeel);
 };
 
