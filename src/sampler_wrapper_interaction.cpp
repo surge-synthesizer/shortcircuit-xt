@@ -65,6 +65,7 @@ void sampler::postEventsToWrapper(const actiondata &ad, bool ErrorIfClosed)
     {
         std::cout << "POST EVENT ERROR" << std::endl;
     }
+
     for (auto w : wrappers)
     {
         w->receiveActionFromProgram(ad);

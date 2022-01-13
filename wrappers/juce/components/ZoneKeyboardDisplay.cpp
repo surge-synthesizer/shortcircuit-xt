@@ -128,6 +128,13 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
         {
             auto ks = editor->zonesCopy[i].key_low;
             auto ke = editor->zonesCopy[i].key_high;
+
+            if (i == editor->selectedZone)
+            {
+                ks = editor->currentZone.key_low.val;
+                ke = editor->currentZone.key_high.val;
+            }
+
             auto col = juce::Colour(zoneColorPallette[i % zoneColorPallette.size()]);
             if (i == hoveredZone)
             {
@@ -137,7 +144,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             auto xe = keyXBounds[ke].second;
 
             if (xe < xs)
-                std::swap(xs,xe);
+                std::swap(xs, xe);
 
             g.setColour(col);
             g.fillRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
@@ -183,12 +190,19 @@ void ZoneKeyboardDisplay::mouseMove(const juce::MouseEvent &event)
             float xpos = idx * keyWidth;
             keyXBounds.push_back(std::make_pair(xpos, xpos + keyWidth - 1));
         }
+
         for (int i = 0; i < max_zones; ++i)
         {
             if (editor->activeZones[i])
             {
                 auto ks = editor->zonesCopy[i].key_low;
                 auto ke = editor->zonesCopy[i].key_high;
+
+                if (i == editor->selectedZone)
+                {
+                    ks = editor->currentZone.key_low.val;
+                    ke = editor->currentZone.key_high.val;
+                }
                 auto xs = keyXBounds[ks].first;
                 auto xe = keyXBounds[ke].second;
                 auto zoneRect =
@@ -225,6 +239,7 @@ void ZoneKeyboardDisplay::mouseDown(const juce::MouseEvent &event)
         ad.id = ip_kgv_or_list;
         ad.data.i[0] = hoveredZone; // todo need zone id. is this it?
         sender->sendActionToEngine(ad);
+        editor->selectedZone = hoveredZone;
     }
 }
 void ZoneKeyboardDisplay::mouseUp(const juce::MouseEvent &event)

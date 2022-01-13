@@ -94,10 +94,8 @@ class UIStateProxy
         }
     }
 
-    bool collectStringEntries(const actiondata &ad, InteractionId id, std::vector<std::string> &v)
+    bool collectStringEntries(const actiondata &ad, std::vector<std::string> &v)
     {
-        if (ad.id != id)
-            return false;
         if (std::holds_alternative<VAction>(ad.actiontype))
         {
             auto at = std::get<VAction>(ad.actiontype);
@@ -120,8 +118,21 @@ class UIStateProxy
                 v[entry] = val;
                 return true;
             }
+            if (at == vga_entry_replace_label_on_id)
+            {
+                auto entry = ad.data.i[0];
+                auto val = (char *)(&ad.data.str[4]);
+                v[entry] = val;
+                return true;
+            }
         }
         return false;
+    }
+    bool collectStringEntries(const actiondata &ad, InteractionId id, std::vector<std::string> &v)
+    {
+        if (ad.id != id)
+            return false;
+        return collectStringEntries(ad, v);
     }
 };
 
@@ -131,7 +142,24 @@ struct ActionSender
     virtual void sendActionToEngine(const actiondata &ad) = 0;
 };
 
-template <typename T> struct ParameterProxy
+template <typename T> struct SendVGA
+{
+};
+
+template <> struct SendVGA<float>
+{
+    static constexpr VAction action = vga_floatval;
+};
+template <> struct SendVGA<int>
+{
+    static constexpr VAction action = vga_intval;
+};
+template <> struct SendVGA<std::string>
+{
+    static constexpr VAction action = vga_text;
+};
+
+template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 {
     int id{-1};
     int subid{-1};
@@ -151,6 +179,8 @@ template <typename T> struct ParameterProxy
         KHZ,
         PERCENT,
         SECONDS,
+        SEMITONES,
+        CENTS,
         OCTAVE
     } unitType{DEF};
 
@@ -195,7 +225,16 @@ template <typename T> struct ParameterProxy
             unitType = KHZ;
         if (units == "oct")
             unitType = OCTAVE;
-        jassert(unitType != DEF);
+        if (units == "st")
+            unitType = SEMITONES;
+        if (units == "cents")
+            unitType = CENTS;
+
+        if (unitType == DEF)
+        {
+            // std::cout << "UNIT [" << units << "]" << " dm=[" << datamode << "]" << std::endl;
+            // jassert(unitType != DEF);
+        }
     }
 
     std::string valueToStringWithUnits()
@@ -231,7 +270,7 @@ template <typename T> struct ParameterProxy
     void sendValue01(float value01, ActionSender *s) { jassert(false); }
     void sendValue(T value, ActionSender *s) { jassertfalse; }
 
-    std::string value_to_string() const {}
+    std::string value_to_string() const { return std::to_string(val); }
 
     char dataModeIndicator() const { return 'x'; }
     T strToT(const std::string &s)
@@ -269,7 +308,8 @@ template <> inline float ParameterProxy<float>::strToT(const std::string &s)
     return res;
 }
 
-template <> inline void ParameterProxy<float>::sendValue01(float value01, ActionSender *s)
+template <>
+inline void ParameterProxy<float, vga_floatval>::sendValue01(float value01, ActionSender *s)
 {
     auto v = value01 * (max - min) + min;
     val = v;
@@ -373,6 +413,22 @@ inline bool applyActionDataSubIdIf(const actiondata &ad, const InteractionId &id
         return true;
     return false;
 }
+
+template <typename T, size_t N, typename F>
+inline bool applyToOneOrAll(const actiondata &ad, T (&indexedElement)[N], F getFunction)
+{
+    bool res = false;
+    if (ad.subid < 0)
+        for (auto &q : indexedElement)
+        {
+            auto &r = getFunction(q);
+            res = applyActionData(ad, r) || res;
+        }
+    else
+        res = applyActionData(ad, (getFunction(indexedElement[ad.subid])));
+    return res;
+}
+
 struct FilterData
 {
     ParameterProxy<float> p[n_filter_parameters];
@@ -399,6 +455,58 @@ struct MMEntryData
 struct NCEntryData
 {
     ParameterProxy<int> source, low, high;
+};
+
+struct EnvelopeData
+{
+    ParameterProxy<float> a, h, d, s, r;
+    ParameterProxy<float> s0, s1, s2;
+};
+
+struct LFOData
+{
+    ParameterProxy<float, vga_steplfo_data_single> data[32];
+    ParameterProxy<int> repeat;
+    ParameterProxy<float> rate;
+    ParameterProxy<float> smooth;
+    ParameterProxy<float> shuffle;
+    ParameterProxy<int> temposync;
+    ParameterProxy<int> triggermode;
+    ParameterProxy<int> cyclemode;
+    ParameterProxy<int> onlyonce;
+};
+
+struct ZoneData
+{
+    ParameterProxy<std::string> name;
+
+    ParameterProxy<int> key_root, key_low, key_high;
+    ParameterProxy<int> velocity_high, velocity_low;
+    ParameterProxy<int> key_low_fade, key_high_fade, velocity_low_fade, velocity_high_fade;
+    ParameterProxy<int> part, layer;
+    ParameterProxy<int> transpose;
+    ParameterProxy<float> finetune, pitchcorrection;
+    ParameterProxy<int> playmode;
+    ParameterProxy<int> loop_start, loop_end, sample_start, sample_stop, loop_crossfade_length;
+    ParameterProxy<float> pre_filter_gain;
+    ParameterProxy<int> pitch_bend_depth;
+    ParameterProxy<float> velsense, keytrack;
+
+    FilterData filter[2];
+
+    MMEntryData mm[mm_entries];
+    NCEntryData nc[nc_entries];
+    EnvelopeData env[2];
+    LFOData lfo[3];
+
+    AuxBusData aux[3];
+
+    ParameterProxy<int> sample_id;
+    ParameterProxy<int> mute_group;
+    ParameterProxy<int> ignore_part_polymode;
+    ParameterProxy<int> mute;
+    ParameterProxy<int> reverse;
+    ParameterProxy<float> lag_generator[2];
 };
 
 struct PartData

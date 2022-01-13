@@ -135,15 +135,15 @@ struct PartDataProxy : public UIStateProxy
         {
             if (std::get<VAction>(ad.actiontype) == vga_entry_replace_label_on_id)
             {
-                std::cout << __FILE__ << __LINE__ << ad.data.i[0] << " - "
-                          << (char *)(&(ad.data.str[4])) << std::endl;
+                std::cout << __FILE__ << ":" << __LINE__ << " " << ad << " " << ad.data.i[0]
+                          << " - " << (char *)(&(ad.data.str[4])) << std::endl;
             }
             return g.deactivate();
         }
 
         if (ad.id >= ip_part_params_begin && ad.id <= ip_part_params_end)
         {
-            std::cout << __FILE__ << __LINE__ << ad << std::endl;
+            std::cout << __FILE__ << ":" << __LINE__ << " " << ad << std::endl;
         }
         return g.deactivate();
     }

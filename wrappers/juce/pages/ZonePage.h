@@ -14,9 +14,20 @@ namespace components
 {
 struct ZoneKeyboardDisplay;
 struct WaveDisplay;
-struct ZoneEditor;
-
 } // namespace components
+
+namespace zone_contents
+{
+struct Sample;
+struct NamesAndRanges;
+struct Pitch;
+struct Envelopes;
+struct Filters;
+struct Routing;
+struct LFO;
+struct Outputs;
+} // namespace zone_contents
+
 namespace pages
 {
 struct ZonePage : PageBase
@@ -24,12 +35,21 @@ struct ZonePage : PageBase
     ZonePage(SCXTEditor *ed, SCXTEditor::Pages p);
     ~ZonePage();
 
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
     virtual void connectProxies() override;
 
     std::unique_ptr<components::ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<components::WaveDisplay> waveDisplay;
-    std::unique_ptr<components::ZoneEditor> zoneEditor;
+    
+    std::unique_ptr<zone_contents::Sample> sample;
+    std::unique_ptr<zone_contents::NamesAndRanges> namesAndRanges;
+    std::unique_ptr<zone_contents::Pitch> pitch;
+    std::unique_ptr<zone_contents::Envelopes> envelopes;
+    std::unique_ptr<zone_contents::Filters> filters;
+    std::unique_ptr<zone_contents::Routing> routing;
+    std::unique_ptr<zone_contents::LFO> lfo;
+    std::unique_ptr<zone_contents::Outputs> outputs;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZonePage);
 };

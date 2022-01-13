@@ -71,7 +71,8 @@ struct HeaderPanel;
 
 namespace proxies
 {
-class ZoneStateProxy;
+class ZoneDataProxy;
+class ZoneListDataProxy;
 class WaveDisplayProxy;
 struct BrowserDataProxy;
 struct SelectionStateProxy;
@@ -165,10 +166,11 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
   public:
     std::set<UIStateProxy *> uiStateProxies;
-    std::unique_ptr<scxt::proxies::ZoneStateProxy> zoneStateProxy;
-    std::unique_ptr<scxt::proxies::BrowserDataProxy> browserDataProxy;
     std::unique_ptr<scxt::proxies::SelectionStateProxy> selectionStateProxy;
     std::unique_ptr<scxt::proxies::VUMeterProxy> vuMeterProxy;
+    std::unique_ptr<scxt::proxies::BrowserDataProxy> browserDataProxy;
+    std::unique_ptr<scxt::proxies::ZoneDataProxy> zoneProxy;
+    std::unique_ptr<scxt::proxies::ZoneListDataProxy> zoneListProxy;
     std::unique_ptr<scxt::proxies::MultiDataProxy> multiDataProxy;
     std::unique_ptr<scxt::proxies::PartDataProxy> partProxy;
     std::unique_ptr<scxt::proxies::ConfigDataProxy> configProxy;
@@ -197,9 +199,9 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     std::array<VUData, max_outputs> vuData;
 
     int selectedPart{0};
+    int selectedZone{-1};
     void selectPart(int i);
 
-    sample_zone zonesCopy[max_zones];
     bool activeZones[max_zones];
     bool selectedZones[max_zones];
 
@@ -208,15 +210,22 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     PartData parts[n_sampler_parts];
     MultiData multi;
     ConfigData config;
+    ZoneData currentZone;
+
+    sample_zone zonesCopy[max_zones];
 
     /*
      * Configuration Data
      */
     std::vector<std::string> multiFilterTypeNames;
     std::vector<std::string> multiFilterOutputNames;
+
     std::vector<std::string> partFilterTypeNames;
     std::vector<std::string> partAuxOutputNames;
     std::vector<std::string> partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
+
+    std::vector<std::string> zonePlaymode, zoneAuxOutput, zoneFilterType;
+    std::vector<std::string> zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc;
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};

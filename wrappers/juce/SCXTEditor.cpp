@@ -18,7 +18,8 @@
 #include "components/DebugPanel.h"
 #include "components/HeaderPanel.h"
 
-#include "proxies/ZoneStateProxy.h"
+#include "proxies/ZoneDataProxy.h"
+#include "proxies/ZoneListDataProxy.h"
 #include "proxies/BrowserDataProxy.h"
 #include "proxies/SelectionStateProxy.h"
 #include "proxies/VUMeterProxy.h"
@@ -65,13 +66,14 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     p.sc3->registerWrapperForEvents(this);
 
     // This is going to be a little pattern I'm sure
-    zoneStateProxy = make_proxy<scxt::proxies::ZoneStateProxy>();
     browserDataProxy = make_proxy<scxt::proxies::BrowserDataProxy>();
     selectionStateProxy = make_proxy<scxt::proxies::SelectionStateProxy>();
     multiDataProxy = make_proxy<scxt::proxies::MultiDataProxy>();
     vuMeterProxy = make_proxy<scxt::proxies::VUMeterProxy>();
     partProxy = make_proxy<scxt::proxies::PartDataProxy>();
     configProxy = make_proxy<scxt::proxies::ConfigDataProxy>();
+    zoneProxy = make_proxy<scxt::proxies::ZoneDataProxy>();
+    zoneListProxy = make_proxy<scxt::proxies::ZoneListDataProxy>();
 
     headerPanel = std::make_unique<scxt::components::HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
@@ -83,6 +85,9 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     pages[FX] = std::make_unique<scxt::pages::FXPage>(this, FX);
     pages[CONFIG] = std::make_unique<scxt::pages::PageBase>(this, CONFIG);
     pages[ABOUT] = std::make_unique<scxt::pages::AboutPage>(this, ABOUT);
+
+    zoneListProxy->clients.insert(pages[ZONE].get());
+    zoneProxy->clients.insert(pages[ZONE].get());
 
     multiDataProxy->clients.insert(pages[FX].get());
 
@@ -211,115 +216,14 @@ void SCXTEditor::idle()
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
-            if (ad.id >= ip_multi_params_begin && ad.id <= ip_multi_params_end)
-            {
-                if (std::holds_alternative<VAction>(ad.actiontype))
-                {
-                    auto at = std::get<VAction>(ad.actiontype);
-                    if (at == vga_datamode)
-                    {
-                        auto ipd = ip_data[ad.id];
-                        std::cout << (char *)&(ad.data.str[0]);
-                    }
-                }
-                std::cout << std::endl;
-            }
             unhandledCount++;
-            if (std::holds_alternative<VAction>(ad.actiontype))
-            {
-                auto id = ad.id;
-                auto at = std::get<VAction>(ad.actiontype);
 
-                if (at == vga_database_samplelist)
-                {
-                    std::cout << "DBSL " << ad.data.i[2] << " at " << ad.data.ptr[0] << " " << id
-                              << std::endl;
-                }
-
-                if (id >= 0)
-                {
-                    auto inter = ip_data[id];
-                    auto itarget = targetForInteractionId((InteractionId)id);
-
-                    if (at == vga_zonelist_populate)
-                    {
-                        std::cout << "ZLP " << std::endl;
-                    }
-                    switch (itarget)
-                    {
-                    case Zone:
-                    {
-                        switch (at)
-                        {
-                        case vga_floatval:
-                            // std::cout << ad << " " << inter << " float=" << ad.data.f[0]
-                            //           << std::endl;
-                            break;
-                        case vga_intval:
-                            // std::cout << ad << " " << inter << " int=" << ad.data.i[0] <<
-                            // std::endl;
-                            break;
-                        case vga_text:
-                            // std::cout << debug_wrapper_ip_to_string(ad.id) << std::endl;
-                            // std::cout << ad << " " << inter << " str=" << ad.data.str <<
-                            // std::endl;
-                            break;
-                        case vga_disable_state:
-                            // fixme
-                            break;
-                        default:
-                            // std::cout << "UNHZONE " << ad << " " << inter << std::endl;
-                            break;
-                        }
-
-                        break;
-                    }
-                    case Multi:
-                        // std::cout << "MULTI " << ad << " " << inter << std::endl;
-                        break;
-                    case Part:
-                    { /*
-                         switch (at)
-                         {
-                         case vga_entry_add_ival_from_self_with_id:
-                         {
-                             std::cout << "VGA ENTRY WITH ID IN PART " << ad.id << " " << ad.subid
-                                       << " " << ad.data.i[0] << " " << (char *)&ad.data.str[4]
-                                       << " " << inter << std::endl;
-                             break;
-                         }
-                         case vga_entry_add_ival_from_self:
-                         {
-                             std::cout << "VGA ENTRY NO ID PART " << ad.id << " " << ad.subid << " "
-                                       << ad.data.str << " " << inter << std::endl;
-                             break;
-                         }
-                         default:
-                             std::cout << "PART " << ad << " " << inter << std::endl;
-                             break;
-                         }*/
-                        break;
-                    }
-                    default:
-                        // std::cout << "DEFTARGET " << ad << " " << inter << " " << itarget
-                        //           << std::endl;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                // std::cout << "NOT AN AT " << ad << std::endl;
-            }
-
-            // if (unhandled.find(ad.actiontype) == unhandled.end())
-            //    unhandled[ad.actiontype];
             int aid = ad.id;
             if (std::holds_alternative<VAction>(ad.actiontype))
                 unhandled[aid][std::get<VAction>(ad.actiontype)]++;
             else
             {
-                // jassert(false);
+                jassertfalse;
             }
         }
 #endif
@@ -386,6 +290,7 @@ void SCXTEditor::selectPart(int i)
     ad.actiontype = vga_intval;
     ad.data.i[0] = i;
     sendActionToEngine(ad);
+    selectedZone = -1;
 }
 
 void SCXTEditor::showPage(const Pages &pTo)
