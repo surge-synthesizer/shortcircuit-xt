@@ -13,6 +13,7 @@ namespace widgets
 {
 struct ComboBox : public juce::ComboBox
 {
+    ComboBox() : juce::ComboBox() {}
 };
 } // namespace widgets
 } // namespace scxt

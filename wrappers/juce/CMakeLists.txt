@@ -39,7 +39,6 @@ target_sources(ShortcircuitXT PRIVATE
         components/HeaderPanel.cpp
         components/WaveDisplay.cpp
         components/DebugPanel.cpp
-        components/SingleFX.cpp
         components/ZoneKeyboardDisplay.cpp
         components/ZoneEditor.cpp
 
@@ -48,6 +47,7 @@ target_sources(ShortcircuitXT PRIVATE
         widgets/ParamEditor.cpp
 
         pages/FXPage.cpp
+        pages/PartPage.cpp
         pages/ZonePage.cpp
         )
 

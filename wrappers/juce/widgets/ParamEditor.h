@@ -30,9 +30,37 @@ struct FloatParamEditor : public juce::Component
     void paint(juce::Graphics &g) override;
     void paintHSlider(juce::Graphics &g);
 
+    void mouseDrag(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
 
     ActionSender *sender{nullptr};
+};
+
+struct IntParamEditor : public juce::Component
+{
+    enum Orientation
+    {
+        HORIZ,
+        VERT
+    } orientation{VERT};
+    ParameterProxy<int> &param;
+    ActionSender *sender{nullptr};
+    int maxValue{0};
+
+    std::vector<std::string> labels;
+    IntParamEditor(const Orientation &o, ParameterProxy<int> &p, ActionSender *snd)
+        : juce::Component(), orientation(o), param(p), sender(snd)
+    {
+    }
+
+    void setLabels(const std::vector<std::string> &l)
+    {
+        labels = l;
+        maxValue = labels.size();
+        repaint();
+    }
+    void paint(juce::Graphics &g) override;
+    void mouseUp(const juce::MouseEvent &e) override;
 };
 } // namespace widgets
 } // namespace scxt

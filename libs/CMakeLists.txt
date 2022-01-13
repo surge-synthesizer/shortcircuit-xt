@@ -1,5 +1,6 @@
 add_subdirectory(pybind11)
 add_subdirectory(JUCE)
+add_subdirectory(fmt)
 
 add_subdirectory(sst/sst-cpputils)
 

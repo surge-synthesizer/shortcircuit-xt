@@ -4,6 +4,7 @@
 
 #include "SCXTLookAndFeel.h"
 #include "BinaryUIAssets.h"
+#include "widgets/OutlinedTextButton.h"
 
 SCXTLookAndFeel::SCXTLookAndFeel()
 {
@@ -21,6 +22,10 @@ SCXTLookAndFeel::SCXTLookAndFeel()
     setColour(SCXTColours::fxPanelHeaderText, juce::Colours::white);
     setColour(SCXTColours::fxPanelHeaderBackground, juce::Colour(0xFF336633));
     setColour(SCXTColours::fxPanelBackground, juce::Colour(0xFF446644));
+
+    setColour(scxt::widgets::OutlinedTextButton::upColour, juce::Colour(0xFF151515));
+    setColour(scxt::widgets::OutlinedTextButton::downColour, juce::Colour(0xFFAA1515));
+    setColour(scxt::widgets::OutlinedTextButton::textColour, juce::Colours::white);
 }
 
 struct TypefaceHolder : public juce::DeletedAtShutdown
@@ -76,4 +81,21 @@ void SCXTLookAndFeel::fillWithGradientHeaderBand(juce::Graphics &g, const juce::
     auto cgb = juce::ColourGradient::vertical(base, base.darker(0.4), rBottom);
     g.setGradientFill(cgb);
     g.fillRect(rBottom);
+}
+void SCXTLookAndFeel::drawComboBox(juce::Graphics &g, int w, int h, bool isButtonDown, int buttonX,
+                                   int buttonY, int buttonW, int buttonH, juce::ComboBox &box)
+{
+    auto c = juce::Colour(0xFF151515);
+    fillWithRaisedOutline(g, juce::Rectangle<int>(0, 0, w, h), c, !isButtonDown);
+    auto r = juce::Rectangle<int>(buttonX, buttonY, buttonW, buttonH);
+    r = r.reduced(7, 7);
+    r = r.withTrimmedLeft(r.getWidth() - r.getHeight());
+    g.setColour(juce::Colours::white);
+    auto bh = r.getHeight();
+    r = r.withHeight(2);
+    for (int i = 0; i < bh; i++)
+    {
+        g.fillRect(r);
+        r = r.translated(0, 2).reduced(1, 0);
+    }
 }
