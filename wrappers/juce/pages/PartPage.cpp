@@ -52,8 +52,8 @@ struct Output : public ContentBase
 
             auto h = b.getHeight() / 4;
             auto tr = juce::Rectangle<int>(xp, yp, b.getWidth() / 3, h);
-            auto txt =
-                std::string("output ") + parentPage.editor->partAuxOutputNames[aux[a].output.val];
+            auto txt = std::string("output ") +
+                       parentPage.editor->partAuxOutputNames.data[aux[a].output.val];
             g.drawText(txt, tr.reduced(2, 0), juce::Justification::left);
             tr = tr.translated(0, h);
 

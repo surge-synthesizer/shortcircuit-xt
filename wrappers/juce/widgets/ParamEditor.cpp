@@ -13,6 +13,7 @@ namespace widgets
 
 void FloatParamSlider::paint(juce::Graphics &g)
 {
+    assertParamRangesSet(param.get());
     switch (style)
     {
     case HSLIDER:
@@ -27,8 +28,8 @@ void FloatParamSlider::paint(juce::Graphics &g)
         g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
         auto b = getLocalBounds().reduced(2, 0);
         g.setColour(juce::Colours::white);
-        g.drawText(param.label, b, juce::Justification::left);
-        g.drawText(param.valueToStringWithUnits(), b, juce::Justification::right);
+        g.drawText(param.get().label, b, juce::Justification::left);
+        g.drawText(param.get().valueToStringWithUnits(), b, juce::Justification::right);
     }
     break;
     }
@@ -47,13 +48,13 @@ void FloatParamSlider::paintHSlider(juce::Graphics &g)
     auto lab = b.withHeight(getHeight() / 2 - 2).translated(0, getHeight() / 2 + 2).reduced(3, 0);
     g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
     g.setColour(juce::Colours::white);
-    g.drawText(param.label, lab, juce::Justification::left);
-    g.drawText(param.valueToStringWithUnits(), lab, juce::Justification::right);
+    g.drawText(param.get().label, lab, juce::Justification::left);
+    g.drawText(param.get().valueToStringWithUnits(), lab, juce::Justification::right);
 
     // Draw the handle
     auto edgeToEdge = getHeight() - 6;
     auto radius = edgeToEdge * 0.5;
-    auto f01 = param.getValue01();
+    auto f01 = param.get().getValue01();
 
     auto ctr = f01 * (getWidth() - edgeToEdge) + radius;
     auto x0 = ctr - radius;
@@ -75,7 +76,7 @@ void FloatParamSlider::paintVSlider(juce::Graphics &g)
 
     g.setColour(juce::Colours::white);
     g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
-    auto lab = param.label;
+    auto lab = param.get().label;
     if (lab.empty())
         lab = fallbackLabel;
     g.drawText(lab, b, juce::Justification::centredBottom);
@@ -83,7 +84,7 @@ void FloatParamSlider::paintVSlider(juce::Graphics &g)
     // Draw the handle
     auto edgeToEdge = getWidth() - 6;
     auto radius = edgeToEdge * 0.5;
-    auto f01 = param.getValue01();
+    auto f01 = param.get().getValue01();
 
     auto ctr = (1 - f01) * (getHeight() - edgeToEdge) + radius;
     auto y0 = ctr - radius;
@@ -100,12 +101,12 @@ void FloatParamSlider::mouseDrag(const juce::MouseEvent &e)
     if (style == HSLIDER)
     {
         auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
-        param.sendValue01(xf, sender);
+        param.get().sendValue01(xf, sender);
     }
     else if (style == VSLIDER)
     {
         auto yf = std::clamp(1 - e.position.y / getHeight(), 0.f, 1.f);
-        param.sendValue01(yf, sender);
+        param.get().sendValue01(yf, sender);
     }
     repaint();
 }
@@ -115,12 +116,12 @@ void FloatParamSlider::mouseUp(const juce::MouseEvent &e)
     if (style == HSLIDER)
     {
         auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
-        param.sendValue01(xf, sender);
+        param.get().sendValue01(xf, sender);
     }
     else if (style == VSLIDER)
     {
         auto yf = std::clamp(1 - e.position.y / getHeight(), 0.f, 1.f);
-        param.sendValue01(yf, sender);
+        param.get().sendValue01(yf, sender);
     }
     repaint();
 }
@@ -134,7 +135,7 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
     auto r = getLocalBounds().withHeight(bh);
     for (const auto &[idx, l] : sst::cpputils::enumerate(labels))
     {
-        if (param.val == idx)
+        if (param.get().val == idx)
             SCXTLookAndFeel::fillWithRaisedOutline(g, r, juce::Colour(0xFFAA1515), true);
         else
             SCXTLookAndFeel::fillWithRaisedOutline(g, r, juce::Colour(0xFF151515), false);
@@ -150,7 +151,7 @@ void IntParamMultiSwitch::mouseUp(const juce::MouseEvent &e)
     int midx = e.position.y / 20;
     if (midx >= 0 && midx < labels.size())
     {
-        param.sendValue(midx, sender);
+        param.get().sendValue(midx, sender);
         repaint();
     }
 }

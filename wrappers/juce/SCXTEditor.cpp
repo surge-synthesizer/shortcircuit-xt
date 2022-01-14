@@ -208,10 +208,7 @@ void SCXTEditor::idle()
         {
             handled |= p->processActionData(ad);
         }
-        for (auto &p : uiStateProxies)
-        {
-            p->sweepValidity();
-        }
+
 
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
@@ -229,6 +226,10 @@ void SCXTEditor::idle()
 #endif
     }
 
+    for (auto &p : uiStateProxies)
+    {
+        p->sweepValidity();
+    }
 #if DEBUG_UNHANDLED_MESSAGES
     // eventually
     // jassert(unhandledCount == 0);

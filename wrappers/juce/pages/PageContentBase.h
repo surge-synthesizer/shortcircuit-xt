@@ -9,6 +9,7 @@
 #include "widgets/ParamEditor.h"
 #include "DataInterfaces.h"
 #include "SCXTLookAndFeel.h"
+#include "widgets/OutlinedTextButton.h"
 
 namespace scxt
 {
@@ -17,27 +18,46 @@ namespace pages
 namespace contents
 {
 
+struct RowDivider
+{
+    juce::Rectangle<int> row;
+    float howFar{0.f};
+    int rx, ry;
+    RowDivider(const juce::Rectangle<int> &r, int rx = 1, int ry = 1) : row(r), rx(rx), ry(ry) {}
+    juce::Rectangle<int> next(float q)
+    {
+        auto res = row.withWidth(q * row.getWidth())
+                       .translated(howFar * row.getWidth(), 0)
+                       .reduced(rx, ry);
+        howFar += q;
+        return res;
+    }
+
+    juce::Rectangle<int> rest() { return next(1.0 - howFar); }
+};
+
 template <typename T> struct PageContentBase : public juce::Component, UIStateProxy::Invalidatable
 {
     PageContentBase(const T &p, const std::string &header, const juce::Colour &col)
         : parentPage(p), header(header), col(col)
     {
     }
+    static constexpr int headerSize = 16;
     void paint(juce::Graphics &g) override
     {
         g.fillAll(col);
-        auto h = getLocalBounds().withHeight(16);
+        auto h = getLocalBounds().withHeight(headerSize);
         SCXTLookAndFeel::fillWithGradientHeaderBand(g, h, col);
         g.setColour(juce::Colours::white);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(header, h, juce::Justification::centred);
 
-        auto b = getLocalBounds().withTrimmedBottom(16);
+        auto b = getLocalBounds().withTrimmedBottom(headerSize);
         auto gs = juce::Graphics::ScopedSaveState(g);
-        g.addTransform(juce::AffineTransform().translated(0, 16));
+        g.addTransform(juce::AffineTransform().translated(0, headerSize));
         paintContentInto(g, b);
     }
-    juce::Rectangle<int> getContentsBounds() { return getLocalBounds().withTrimmedTop(16); }
+    juce::Rectangle<int> getContentsBounds() { return getLocalBounds().withTrimmedTop(headerSize); }
     virtual void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) {}
     void onProxyUpdate() override
     {
@@ -46,6 +66,43 @@ template <typename T> struct PageContentBase : public juce::Component, UIStatePr
     }
     std::string header;
     juce::Colour col;
+
+    std::vector<std::unique_ptr<widgets::OutlinedTextButton>> tabButtons;
+    void activateTabs()
+    {
+        if (getTabCount() <= 1)
+            return;
+        for (int i = 0; i < getTabCount(); ++i)
+        {
+            auto q = std::make_unique<widgets::OutlinedTextButton>(getTabLabel(i));
+            q->onClick = [this, i]() {
+                if (tabButtons[i]->getToggleState())
+                    switchToTab(i);
+            };
+            q->setRadioGroupId(842, juce::NotificationType::dontSendNotification);
+            q->setClickingTogglesState(true);
+            q->setToggleState(i == 0, juce::NotificationType::dontSendNotification);
+            addAndMakeVisible(*q);
+            tabButtons.push_back(std::move(q));
+        }
+    }
+    void resized() override
+    {
+        if (getTabCount() <= 1)
+            return;
+
+        auto bw = 40;
+        auto hb = getLocalBounds().withHeight(headerSize).withWidth(bw);
+        hb = hb.translated(getWidth() - (getTabCount()) * bw - 5, 0);
+        for (const auto &t : tabButtons)
+        {
+            t->setBounds(hb.reduced(1, 1));
+            hb = hb.translated(bw, 0);
+        }
+    }
+    virtual int getTabCount() const { return 1; }
+    virtual std::string getTabLabel(int i) const { return ""; }
+    virtual void switchToTab(int i) {}
 
     template <typename W, typename... Args> auto bind(Args &&...args)
     {
@@ -78,8 +135,14 @@ template <typename T> struct PageContentBase : public juce::Component, UIStatePr
         return bind<widgets::IntParamSpinBox>(param);
     }
 
+    template <typename W, typename Q> auto rebind(const W &wid, Q &par)
+    {
+        wid->param = par;
+        wid->repaint();
+    }
+
     std::vector<widgets::IntParamComboBox *> comboWeakRefs;
-    template <typename P> auto bindIntComboBox(P &param, const std::vector<std::string> &lab)
+    template <typename P> auto bindIntComboBox(P &param, const NameList &lab)
     {
         auto q = std::make_unique<widgets::IntParamComboBox>(param, parentPage.editor, lab);
         comboWeakRefs.push_back(q.get());
@@ -119,6 +182,7 @@ template <typename T> struct PageContentBase : public juce::Component, UIStatePr
     }
     const T &parentPage;
 };
+
 } // namespace contents
 } // namespace pages
 } // namespace scxt

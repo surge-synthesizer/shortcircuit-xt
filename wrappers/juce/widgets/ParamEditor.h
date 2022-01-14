@@ -10,11 +10,26 @@
 #include "DataInterfaces.h"
 #include "SCXTLookAndFeel.h"
 #include "ComboBox.h"
+#include <sstream>
+#include "wrapper_msg_to_string.h"
 
 namespace scxt
 {
 namespace widgets
 {
+template <typename P> inline void assertParamRangesSet(const P &p)
+{
+    if (p.id < 0)
+        return;
+
+    jassert(p.paramRangesSet);
+    if (!p.paramRangesSet)
+    {
+        std::ostringstream oss;
+        oss << "Param Ranges unset " << debug_wrapper_ip_to_string(p.id);
+        DBG(oss.str());
+    }
+}
 struct FloatParamSlider : public juce::Component
 {
     enum Style
@@ -22,7 +37,7 @@ struct FloatParamSlider : public juce::Component
         HSLIDER,
         VSLIDER
     } style{HSLIDER};
-    ParameterProxy<float> &param;
+    std::reference_wrapper<ParameterProxy<float>> param;
 
     FloatParamSlider(const Style &s, ParameterProxy<float> &p, ActionSender *snd)
         : juce::Component(), style(s), param(p), sender(snd)
@@ -48,7 +63,7 @@ struct IntParamMultiSwitch : public juce::Component
         HORIZ,
         VERT
     } orientation{VERT};
-    ParameterProxy<int> &param;
+    std::reference_wrapper<ParameterProxy<int>> param;
     ActionSender *sender{nullptr};
     int maxValue{0};
 
@@ -70,23 +85,33 @@ struct IntParamMultiSwitch : public juce::Component
 
 template <typename T> struct TParamSpinBox : public juce::Component
 {
-    ParameterProxy<T> &param;
+    std::reference_wrapper<ParameterProxy<T>> param;
     ActionSender *sender{nullptr};
     TParamSpinBox(ParameterProxy<T> &p, ActionSender *snd) : param(p), sender(snd) {}
 
     void paint(juce::Graphics &g) override
     {
+        assertParamRangesSet(param.get());
         SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), juce::Colour(0xFF333355), true);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
         g.setColour(juce::Colours::white);
-        g.drawText(param.value_to_string(), getLocalBounds(), juce::Justification::centred);
+        g.drawText(param.get().value_to_string(), getLocalBounds(), juce::Justification::centred);
     }
 
     // HACK. Think about this
     std::function<void()> onSend = []() {};
 
     float dragY{0};
-    T valueJoggedBy(int dir) { return param.val + dir; }
+    T valueJoggedBy(int dir)
+    {
+        if (param.get().paramRangesSet)
+        {
+            return std::clamp(param.get().val + dir * param.get().step, param.get().min,
+                              param.get().max);
+        }
+        jassertfalse;
+        return param.get().val + dir;
+    }
     void mouseDown(const juce::MouseEvent &e) override { dragY = e.position.y; }
     void mouseDrag(const juce::MouseEvent &e) override
     {
@@ -104,7 +129,7 @@ template <typename T> struct TParamSpinBox : public juce::Component
         }
         if (mv)
         {
-            param.sendValue(valueJoggedBy(mv), sender);
+            param.get().sendValue(valueJoggedBy(mv), sender);
             repaint();
             onSend();
         }
@@ -113,7 +138,7 @@ template <typename T> struct TParamSpinBox : public juce::Component
 
 template <> inline float TParamSpinBox<float>::valueJoggedBy(int dir)
 {
-    return std::clamp(param.val + dir * param.step, param.min, param.max);
+    return std::clamp(param.get().val + dir * param.get().step, param.get().min, param.get().max);
 }
 
 struct IntParamSpinBox : public TParamSpinBox<int>
@@ -128,12 +153,11 @@ struct FloatParamSpinBox : public TParamSpinBox<float>
 
 struct IntParamComboBox : public ComboBox
 {
-    ParameterProxy<int> &param;
+    std::reference_wrapper<ParameterProxy<int>> param;
     ActionSender *sender{nullptr};
-    const std::vector<std::string> &labels;
+    const NameList &labels;
 
-    IntParamComboBox(ParameterProxy<int> &p, ActionSender *snd,
-                     const std::vector<std::string> &labelRef)
+    IntParamComboBox(ParameterProxy<int> &p, ActionSender *snd, const NameList &labelRef)
         : param(p), sender(snd), labels(labelRef)
     {
         updateFromLabels();
@@ -141,16 +165,23 @@ struct IntParamComboBox : public ComboBox
     }
     ~IntParamComboBox() = default;
 
+    void replaceParam(ParameterProxy<int> &p) { param = p; }
+
     static constexpr int idOff = 8675309;
 
+    uint64_t lastUpdateCount{0};
     void updateFromLabels()
     {
-        clear(juce::dontSendNotification);
-        for (const auto &[fidx, t] : sst::cpputils::enumerate(labels))
+        if (labels.update_count != lastUpdateCount)
         {
-            addItem(t, fidx + idOff);
+            clear(juce::dontSendNotification);
+            for (const auto &[fidx, t] : sst::cpputils::enumerate(labels.data))
+            {
+                addItem(t, fidx + idOff);
+            }
+            lastUpdateCount = labels.update_count;
         }
-        setSelectedId(param.val + idOff, juce::dontSendNotification);
+        setSelectedId(param.get().val + idOff, juce::dontSendNotification);
         repaint();
     }
 
@@ -158,7 +189,7 @@ struct IntParamComboBox : public ComboBox
     {
         auto cidx = getSelectedId();
         auto ftype = cidx - idOff;
-        param.sendValue(ftype, sender);
+        param.get().sendValue(ftype, sender);
     }
 };
 
