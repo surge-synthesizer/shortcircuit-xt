@@ -18,6 +18,7 @@ class BrowserDataProxy : public UIStateProxy
 
     virtual bool processActionData(const actiondata &ad)
     {
+        return false;
         auto ig = InvalidateAndRepaintGuard(*this);
         if (std::holds_alternative<VAction>(ad.actiontype))
         {

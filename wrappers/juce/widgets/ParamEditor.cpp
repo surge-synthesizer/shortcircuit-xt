@@ -76,7 +76,7 @@ void FloatParamEditor::mouseUp(const juce::MouseEvent &e)
     repaint();
 }
 
-void IntParamEditor::paint(juce::Graphics &g)
+void IntParamMultiSwitch::paint(juce::Graphics &g)
 {
     if (labels.size() == 0)
         return;
@@ -96,7 +96,7 @@ void IntParamEditor::paint(juce::Graphics &g)
     }
 }
 
-void IntParamEditor::mouseUp(const juce::MouseEvent &e)
+void IntParamMultiSwitch::mouseUp(const juce::MouseEvent &e)
 {
     int midx = e.position.y / 20;
     if (midx >= 0 && midx < labels.size())

@@ -16,12 +16,14 @@
 ** open source in December 2020.
 */
 
-#include "proxies/ZoneStateProxy.h"
+#include "proxies/ZoneDataProxy.h"
 #include "interaction_parameters.h"
 #include "sampler_wrapper_actiondata.h"
 
-bool scxt::proxies::ZoneStateProxy::processActionData(const actiondata &ad)
+#if 0
+bool scxt::proxies::ZoneDataProxy::processActionData(const actiondata &ad)
 {
+    return false;
     bool res = false;
     switch (ad.id)
     {
@@ -90,3 +92,4 @@ bool scxt::proxies::ZoneStateProxy::processActionData(const actiondata &ad)
 
     return res;
 }
+#endif

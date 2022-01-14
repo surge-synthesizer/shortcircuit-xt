@@ -21,9 +21,11 @@
 #include <iostream>
 #include <sstream>
 #include "logging.h"
+#include "import_fs.h"
+
+#define LOGGING_DEBUG_ENABLED 1
 
 // TODO add var to cmake and use it to determine this var's value
-#define LOGGING_DEBUG_ENABLED 1
 
 namespace scxt::log
 {
@@ -63,7 +65,7 @@ class logos : public std::ostream
 #ifdef LOGGING_DEBUG_ENABLED
 #define LOGDEBUG(x)                                                                                \
     if (x.setLevel(scxt::log::Level::Debug))                                                       \
-    x
+    x << fs::path{__FILE__}.filename().u8string() << ":" << __LINE__ << " "
 #else
 #define LOGDEBUG(x)                                                                                \
     if (0)                                                                                         \
@@ -71,13 +73,13 @@ class logos : public std::ostream
 #endif
 #define LOGINFO(x)                                                                                 \
     if (x.setLevel(scxt::log::Level::Info))                                                        \
-    x
+    x << fs::path{__FILE__}.filename().u8string() << ":" << __LINE__ << " "
 #define LOGWARNING(x)                                                                              \
     if (x.setLevel(scxt::log::Level::Warning))                                                     \
-    x
+    x << fs::path{__FILE__}.filename().u8string() << ":" << __LINE__ << " "
 #define LOGERROR(x)                                                                                \
     if (x.setLevel(scxt::log::Level::Error))                                                       \
-    x
+    x << fs::path{__FILE__}.filename().u8string() << ":" << __LINE__ << " "
 
 // StreamLogger class is for stream based logging eg:
 // logger << "logmessage" ; // add message to buffer at the current level

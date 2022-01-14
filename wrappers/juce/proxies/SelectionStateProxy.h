@@ -19,6 +19,7 @@ struct SelectionStateProxy : public UIStateProxy
 
     bool processActionData(const actiondata &ad)
     {
+        auto g = InvalidateAndRepaintGuard(*this);
         switch (ad.id)
         {
         case ip_partselect:
@@ -26,8 +27,8 @@ struct SelectionStateProxy : public UIStateProxy
             markNeedsRepaintAndProxyUpdate();
             return true;
             break;
+
         case ip_layerselect:
-        case ip_kgv_or_list:
         case ip_wavedisplay:
         case ip_browser_previewbutton:
         case ip_sample_prevnext:
@@ -36,10 +37,10 @@ struct SelectionStateProxy : public UIStateProxy
             // std::cout << "SELECT " << debug_wrapper_ip_to_string(ad.id) << " " << inter << " " <<
             // ad
             //           << std::endl;
-            return true;
+            return g.deactivate();
             break;
         }
-        return false;
+        return g.deactivate();
     }
 
     SCXTEditor *editor{nullptr};

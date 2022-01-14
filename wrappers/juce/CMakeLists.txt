@@ -40,9 +40,8 @@ target_sources(ShortcircuitXT PRIVATE
         components/WaveDisplay.cpp
         components/DebugPanel.cpp
         components/ZoneKeyboardDisplay.cpp
-        components/ZoneEditor.cpp
 
-        proxies/ZoneStateProxy.cpp
+        proxies/ZoneDataProxy.cpp
 
         widgets/ParamEditor.cpp
 
