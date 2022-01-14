@@ -42,7 +42,7 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
     this->control = control;
     this->automation = automation;
 
-    add_source(RMS_None, "}none", 0);
+    add_source(RMS_None, "none", 0);
     // voice sources
     if (zone) // only available for the zone
     {
@@ -59,7 +59,7 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
         add_source(RMS_Modulator5, "stepLFO3", voice ? &voice->stepLFO[2].output : 0);
         add_source(RMS_SliceEnv, "slice_env", voice ? &voice->slice_env : 0, "Slice Envelope");
         add_source(RMS_Random, "random+", voice ? &voice->random : 0);
-        add_source(RMS_RandomBP, "random�", voice ? &voice->randombp : 0);
+        add_source(RMS_RandomBP, "random +/-", voice ? &voice->randombp : 0);
         add_source(RMS_Gate, "gate", voice ? &voice->fgate : 0);
         add_source(RMS_Time, "time", voice ? &voice->time : 0, "Time (s)");
         add_source(RMS_TimeMinutes, "time60", voice ? &voice->time60 : 0, "Time (m)");

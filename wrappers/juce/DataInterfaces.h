@@ -161,6 +161,8 @@ template <> struct SendVGA<std::string>
 
 template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 {
+    ParameterProxy() {}
+    ParameterProxy(const std::string &s) { parseDatamode(s.c_str()); }
     int id{-1};
     int subid{-1};
     T val;
@@ -168,7 +170,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     bool disabled{false};
     std::string label;
 
-    T min, max, def, step;
+    T min{0}, max{1}, def{0}, step;
     std::string units;
 
     enum Units
@@ -295,6 +297,10 @@ inline void ParameterProxy<std::string>::setFrom<std::string>(const std::string 
     val = v;
 }
 
+template <> inline std::string ParameterProxy<float>::value_to_string() const
+{
+    return fmt::format("{:.2f}", val);
+}
 template <> inline char ParameterProxy<float>::dataModeIndicator() const { return 'f'; }
 template <> inline float ParameterProxy<float>::strToT(const std::string &s)
 {
@@ -318,6 +324,16 @@ inline void ParameterProxy<float, vga_floatval>::sendValue01(float value01, Acti
     ad.subid = subid;
     ad.actiontype = vga_floatval;
     ad.data.f[0] = v;
+    s->sendActionToEngine(ad);
+}
+template <> inline void ParameterProxy<float, vga_floatval>::sendValue(float value, ActionSender *s)
+{
+    val = value;
+    actiondata ad;
+    ad.id = id;
+    ad.subid = subid;
+    ad.actiontype = vga_floatval;
+    ad.data.f[0] = val;
     s->sendActionToEngine(ad);
 }
 
@@ -459,7 +475,9 @@ struct NCEntryData
 
 struct EnvelopeData
 {
-    ParameterProxy<float> a, h, d, s, r;
+    // FIXME - this is obviously an insane way to do this
+    ParameterProxy<float> a{"f,-10,0.05,5,0,s"}, h{"f,-10,0.05,0,5,s"}, d{"f,-10,0.05,0,5,s"},
+        s{"f,0,0.05,1,1,%"}, r{"f,-10,0.05,0,5,s"};
     ParameterProxy<float> s0, s1, s2;
 };
 

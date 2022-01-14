@@ -39,8 +39,8 @@ struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
 
         for (auto i = 0; i < n_filter_parameters; ++i)
         {
-            auto q = std::make_unique<widgets::FloatParamEditor>(
-                widgets::FloatParamEditor::HSLIDER, editor->multi.filters[idx].p[i], ed);
+            auto q = std::make_unique<widgets::FloatParamSlider>(
+                widgets::FloatParamSlider::HSLIDER, editor->multi.filters[idx].p[i], ed);
             addChildComponent(*q);
             fParams[i] = std::move(q);
         }
@@ -157,7 +157,7 @@ struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
         editor->sendActionToEngine(ad);
     }
 
-    std::array<std::unique_ptr<widgets::FloatParamEditor>, n_filter_parameters> fParams;
+    std::array<std::unique_ptr<widgets::FloatParamSlider>, n_filter_parameters> fParams;
     std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, n_filter_iparameters> iParams;
 
     std::unique_ptr<widgets::ComboBox> typeSelector;

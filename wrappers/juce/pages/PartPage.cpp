@@ -3,6 +3,7 @@
 //
 
 #include "PartPage.h"
+#include "PageContentBase.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "SCXTLookAndFeel.h"
 
@@ -12,38 +13,13 @@ namespace pages
 {
 namespace part_contents
 {
-struct PaintBase : public juce::Component, UIStateProxy::Invalidatable
-{
-    PaintBase(const scxt::pages::PartPage &p, const std::string &header, const juce::Colour &col)
-        : partPage(p), header(header), col(col)
-    {
-    }
-    void paint(juce::Graphics &g) override
-    {
-        g.fillAll(col);
-        auto h = getLocalBounds().withHeight(16);
-        SCXTLookAndFeel::fillWithGradientHeaderBand(g, h, col);
-        g.setColour(juce::Colours::white);
-        g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
-        g.drawText(header, h, juce::Justification::centred);
 
-        auto b = getLocalBounds().withTrimmedBottom(16);
-        auto gs = juce::Graphics::ScopedSaveState(g);
-        g.addTransform(juce::AffineTransform().translated(0, 16));
-        paintContentInto(g, b);
-    }
-    virtual void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) {}
-    void onProxyUpdate() override {}
-    std::string header;
-    juce::Colour col;
-
-    const scxt::pages::PartPage &partPage;
-};
+typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage> ContentBase;
 
 #define STUB(x, c)                                                                                 \
-    struct x : public PaintBase                                                                    \
+    struct x : public ContentBase                                                                  \
     {                                                                                              \
-        x(const scxt::pages::PartPage &p) : PaintBase(p, #x, c) {}                                 \
+        x(const scxt::pages::PartPage &p) : ContentBase(p, #x, c) {}                               \
     };
 
 STUB(Main, juce::Colours::darkgrey);
@@ -54,9 +30,9 @@ STUB(ModulationRouting, juce::Colours::darkgrey);
 STUB(Controllers, juce::Colour(0xFF335533));
 STUB(Effects, juce::Colour(0xFF555577));
 
-struct Output : public PaintBase
+struct Output : public ContentBase
 {
-    Output(const scxt::pages::PartPage &p) : PaintBase(p, "Output", juce::Colour(0xFF555577)) {}
+    Output(const scxt::pages::PartPage &p) : ContentBase(p, "Output", juce::Colour(0xFF555577)) {}
     void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &b) override
     {
         // dividers
@@ -66,7 +42,7 @@ struct Output : public PaintBase
         q = q.translated(getWidth() / 3 - 0.5, 0);
         g.fillRect(q);
 
-        auto &aux = partPage.editor->parts[partPage.editor->selectedPart].aux;
+        auto &aux = parentPage.editor->parts[parentPage.editor->selectedPart].aux;
         g.setColour(juce::Colours::white);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         for (int a = 0; a < num_aux_busses; ++a)
@@ -77,7 +53,7 @@ struct Output : public PaintBase
             auto h = b.getHeight() / 4;
             auto tr = juce::Rectangle<int>(xp, yp, b.getWidth() / 3, h);
             auto txt =
-                std::string("output ") + partPage.editor->partAuxOutputNames[aux[a].output.val];
+                std::string("output ") + parentPage.editor->partAuxOutputNames[aux[a].output.val];
             g.drawText(txt, tr.reduced(2, 0), juce::Justification::left);
             tr = tr.translated(0, h);
 
@@ -98,24 +74,14 @@ struct Output : public PaintBase
 } // namespace part_contents
 PartPage::PartPage(SCXTEditor *e, SCXTEditor::Pages p) : PageBase(e, p)
 {
-    // todo
-    main = std::make_unique<part_contents::Main>(*this);
-    polyMode = std::make_unique<part_contents::Polymode>(*this);
-    layerRanges = std::make_unique<part_contents::LayerRanges>(*this);
-    velocitySplit = std::make_unique<part_contents::VelocitySplit>(*this);
-    modulationRouting = std::make_unique<part_contents::ModulationRouting>(*this);
-    controllers = std::make_unique<part_contents::Controllers>(*this);
-    output = std::make_unique<part_contents::Output>(*this);
-    effects = std::make_unique<part_contents::Effects>(*this);
-
-    addAndMakeVisible(*main);
-    addAndMakeVisible(*polyMode);
-    addAndMakeVisible(*layerRanges);
-    addAndMakeVisible(*velocitySplit);
-    addAndMakeVisible(*modulationRouting);
-    addAndMakeVisible(*controllers);
-    addAndMakeVisible(*output);
-    addAndMakeVisible(*effects);
+    main = makeContent<part_contents::Main>(*this);
+    polyMode = makeContent<part_contents::Polymode>(*this);
+    layerRanges = makeContent<part_contents::LayerRanges>(*this);
+    velocitySplit = makeContent<part_contents::VelocitySplit>(*this);
+    modulationRouting = makeContent<part_contents::ModulationRouting>(*this);
+    controllers = makeContent<part_contents::Controllers>(*this);
+    output = makeContent<part_contents::Output>(*this);
+    effects = makeContent<part_contents::Effects>(*this);
 }
 
 PartPage::~PartPage() = default;
@@ -145,6 +111,5 @@ void PartPage::resized()
     controllers->setBounds(juce::Rectangle<int>(w / 2, h1, w / 2, h - h1).reduced(1, 1));
 }
 
-void PartPage::onProxyUpdate() {}
 } // namespace pages
 } // namespace scxt

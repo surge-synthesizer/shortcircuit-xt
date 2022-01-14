@@ -72,7 +72,6 @@ class ZoneDataProxy : public UIStateProxy
         case ip_nc_high:
             res = applyToOneOrAll(
                 ad, cz.nc, [](auto &r) -> auto & { return r.high; });
-
             break;
         case ip_nc_low:
             res = applyToOneOrAll(

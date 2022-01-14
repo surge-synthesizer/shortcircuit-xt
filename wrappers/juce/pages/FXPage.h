@@ -15,7 +15,7 @@ namespace fx_contents
 {
 struct SingleFX;
 } // namespace fx_contents
-struct FXPage : public PageBase, public UIStateProxy::Invalidatable
+struct FXPage : public PageBase
 {
     FXPage(SCXTEditor *, SCXTEditor::Pages p);
     ~FXPage();
