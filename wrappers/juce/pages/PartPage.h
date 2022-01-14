@@ -20,17 +20,14 @@ struct ModulationRouting;
 struct Controllers;
 struct Output;
 struct Effects;
-}
-struct PartPage : public PageBase, public UIStateProxy::Invalidatable
+} // namespace part_contents
+struct PartPage : public PageBase
 {
     PartPage(SCXTEditor *, SCXTEditor::Pages p);
     ~PartPage();
 
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
-
-    void onProxyUpdate() override;
-
 
     std::unique_ptr<part_contents::Main> main;
     std::unique_ptr<part_contents::Polymode> polyMode;

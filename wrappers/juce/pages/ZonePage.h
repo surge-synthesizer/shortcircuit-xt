@@ -16,21 +16,22 @@ struct ZoneKeyboardDisplay;
 struct WaveDisplay;
 } // namespace components
 
+namespace pages
+{
+
 namespace zone_contents
 {
 struct Sample;
 struct NamesAndRanges;
 struct Pitch;
-struct Envelopes;
+struct Envelope;
 struct Filters;
 struct Routing;
 struct LFO;
 struct Outputs;
 } // namespace zone_contents
 
-namespace pages
-{
-struct ZonePage : PageBase
+struct ZonePage : public PageBase
 {
     ZonePage(SCXTEditor *ed, SCXTEditor::Pages p);
     ~ZonePage();
@@ -41,11 +42,11 @@ struct ZonePage : PageBase
 
     std::unique_ptr<components::ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<components::WaveDisplay> waveDisplay;
-    
+
     std::unique_ptr<zone_contents::Sample> sample;
     std::unique_ptr<zone_contents::NamesAndRanges> namesAndRanges;
     std::unique_ptr<zone_contents::Pitch> pitch;
-    std::unique_ptr<zone_contents::Envelopes> envelopes;
+    std::unique_ptr<zone_contents::Envelope> envelopes[2];
     std::unique_ptr<zone_contents::Filters> filters;
     std::unique_ptr<zone_contents::Routing> routing;
     std::unique_ptr<zone_contents::LFO> lfo;

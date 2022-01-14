@@ -11,12 +11,15 @@ namespace scxt
 namespace widgets
 {
 
-void FloatParamEditor::paint(juce::Graphics &g)
+void FloatParamSlider::paint(juce::Graphics &g)
 {
     switch (style)
     {
     case HSLIDER:
         paintHSlider(g);
+        break;
+    case VSLIDER:
+        paintVSlider(g);
         break;
     default:
     {
@@ -31,7 +34,7 @@ void FloatParamEditor::paint(juce::Graphics &g)
     }
 }
 
-void FloatParamEditor::paintHSlider(juce::Graphics &g)
+void FloatParamSlider::paintHSlider(juce::Graphics &g)
 {
     auto b = getLocalBounds();
 
@@ -62,17 +65,63 @@ void FloatParamEditor::paintHSlider(juce::Graphics &g)
     g.drawLine(x0 + radius - 0.5, y0, x0 + radius - 0.5, y0 + edgeToEdge, 1.0);
 }
 
-void FloatParamEditor::mouseDrag(const juce::MouseEvent &e)
+void FloatParamSlider::paintVSlider(juce::Graphics &g)
 {
-    auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
-    param.sendValue01(xf, sender);
+    auto b = getLocalBounds();
+    auto sb = b.withTrimmedBottom(8);
+    auto tray = sb.reduced(0, 3).withWidth(2).translated(getWidth() / 2.0 - 1, 0);
+    g.setColour(juce::Colours::white);
+    g.fillRect(tray);
+
+    g.setColour(juce::Colours::white);
+    g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
+    auto lab = param.label;
+    if (lab.empty())
+        lab = fallbackLabel;
+    g.drawText(lab, b, juce::Justification::centredBottom);
+
+    // Draw the handle
+    auto edgeToEdge = getWidth() - 6;
+    auto radius = edgeToEdge * 0.5;
+    auto f01 = param.getValue01();
+
+    auto ctr = (1 - f01) * (getHeight() - edgeToEdge) + radius;
+    auto y0 = ctr - radius;
+    auto x0 = getWidth() * 0.5 - radius;
+    g.setColour(juce::Colours::green.withAlpha(0.7f));
+    g.fillEllipse(x0, y0, edgeToEdge, edgeToEdge);
+    g.setColour(juce::Colours::white);
+    g.drawEllipse(x0, y0, edgeToEdge, edgeToEdge, 1.0);
+    g.drawLine(x0, y0 + radius - 0.5, x0 + edgeToEdge, y0 + radius - 0.5, 1.0);
+}
+
+void FloatParamSlider::mouseDrag(const juce::MouseEvent &e)
+{
+    if (style == HSLIDER)
+    {
+        auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
+        param.sendValue01(xf, sender);
+    }
+    else if (style == VSLIDER)
+    {
+        auto yf = std::clamp(1 - e.position.y / getHeight(), 0.f, 1.f);
+        param.sendValue01(yf, sender);
+    }
     repaint();
 }
 
-void FloatParamEditor::mouseUp(const juce::MouseEvent &e)
+void FloatParamSlider::mouseUp(const juce::MouseEvent &e)
 {
-    auto xf = e.position.x / getWidth();
-    param.sendValue01(xf, sender);
+    if (style == HSLIDER)
+    {
+        auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
+        param.sendValue01(xf, sender);
+    }
+    else if (style == VSLIDER)
+    {
+        auto yf = std::clamp(1 - e.position.y / getHeight(), 0.f, 1.f);
+        param.sendValue01(yf, sender);
+    }
     repaint();
 }
 

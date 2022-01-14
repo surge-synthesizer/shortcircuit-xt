@@ -8,12 +8,13 @@
 #include "SCXTEditor.h"
 #include "SCXTLookAndFeel.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <vector>
 
 namespace scxt
 {
 namespace pages
 {
-struct PageBase : public juce::Component
+struct PageBase : public juce::Component, public UIStateProxy::Invalidatable
 {
     PageBase(SCXTEditor *ed, const SCXTEditor::Pages &p) : editor(ed), page(p) {}
     virtual ~PageBase() = default;
@@ -30,6 +31,22 @@ struct PageBase : public juce::Component
 
     SCXTEditor *editor{nullptr};
     SCXTEditor::Pages page{SCXTEditor::ZONE};
+
+    std::vector<UIStateProxy::Invalidatable *> contentWeakPointers;
+    template <typename T, class... Args> auto makeContent(Args &&...args)
+    {
+        auto q = std::make_unique<T>(std::forward<Args>(args)...);
+        addAndMakeVisible(*q);
+        contentWeakPointers.push_back(q.get());
+        return q;
+    }
+
+    void onProxyUpdate() override
+    {
+        // by default just invalidate my content
+        for (auto c : contentWeakPointers)
+            c->onProxyUpdate();
+    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageBase);
 };
