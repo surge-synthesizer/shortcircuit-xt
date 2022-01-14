@@ -13,6 +13,12 @@
 #include "util/unitconversion.h"
 #include "synthesis/mathtables.h"
 
+struct NameList
+{
+    std::vector<std::string> data;
+    uint64_t update_count{0};
+};
+
 /*
  * The UIStateProxy is a class which handles messages and keeps an appropriate state.
  * Components can render it for bulk action. For instance there woudl be a ZoneMapProxy
@@ -94,41 +100,46 @@ class UIStateProxy
         }
     }
 
-    bool collectStringEntries(const actiondata &ad, std::vector<std::string> &v)
+    bool collectStringEntries(const actiondata &ad, NameList &v)
     {
         if (std::holds_alternative<VAction>(ad.actiontype))
         {
             auto at = std::get<VAction>(ad.actiontype);
             if (at == vga_entry_clearall)
             {
-                v.clear();
+                v.data.clear();
+                v.update_count++;
                 return true;
             }
             if (at == vga_entry_add_ival_from_self)
             {
-                v.push_back(ad.data.str);
+                v.data.push_back(ad.data.str);
+                v.update_count++;
                 return true;
             }
             if (at == vga_entry_add_ival_from_self_with_id)
             {
                 auto entry = ad.data.i[0];
                 auto val = (char *)(&ad.data.str[4]);
-                if (entry >= v.size())
-                    v.resize(entry + 1);
-                v[entry] = val;
+                if (entry >= v.data.size())
+                    v.data.resize(entry + 1);
+                v.data[entry] = val;
+                v.update_count++;
                 return true;
             }
             if (at == vga_entry_replace_label_on_id)
             {
                 auto entry = ad.data.i[0];
                 auto val = (char *)(&ad.data.str[4]);
-                v[entry] = val;
+                v.data[entry] = val;
+                v.update_count++;
+
                 return true;
             }
         }
         return false;
     }
-    bool collectStringEntries(const actiondata &ad, InteractionId id, std::vector<std::string> &v)
+    bool collectStringEntries(const actiondata &ad, InteractionId id, NameList &v)
     {
         if (ad.id != id)
             return false;
@@ -162,7 +173,6 @@ template <> struct SendVGA<std::string>
 template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 {
     ParameterProxy() {}
-    ParameterProxy(const std::string &s) { parseDatamode(s.c_str()); }
     int id{-1};
     int subid{-1};
     T val;
@@ -172,6 +182,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 
     T min{0}, max{1}, def{0}, step;
     std::string units;
+    bool paramRangesSet{false};
 
     enum Units
     {
@@ -213,6 +224,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
         max = strToT(elements[3]);
         def = strToT(elements[4]);
         units = elements[5];
+        paramRangesSet = true;
 
         unitType = DEF;
         if (units == "dB")
@@ -397,6 +409,26 @@ template <typename T> inline bool applyActionData(const actiondata &ad, Paramete
         proxy.parseDatamode(ad.data.str);
         return true;
         break;
+    case vga_set_range_and_units:
+    {
+        proxy.paramRangesSet = true;
+        if (ad.data.i[0] == 'f')
+        {
+            proxy.min = ad.data.f[1];
+            proxy.max = ad.data.f[2];
+            proxy.def = ad.data.f[3];
+            proxy.step = ad.data.f[4];
+        }
+        else
+        {
+            proxy.min = ad.data.i[1];
+            proxy.max = ad.data.i[2];
+            proxy.def = ad.data.i[3];
+            proxy.step = ad.data.i[4];
+        }
+        return true;
+    }
+    break;
     default:
         break;
     }
@@ -475,9 +507,7 @@ struct NCEntryData
 
 struct EnvelopeData
 {
-    // FIXME - this is obviously an insane way to do this
-    ParameterProxy<float> a{"f,-10,0.05,5,0,s"}, h{"f,-10,0.05,0,5,s"}, d{"f,-10,0.05,0,5,s"},
-        s{"f,0,0.05,1,1,%"}, r{"f,-10,0.05,0,5,s"};
+    ParameterProxy<float> a, h, d, s, r;
     ParameterProxy<float> s0, s1, s2;
 };
 

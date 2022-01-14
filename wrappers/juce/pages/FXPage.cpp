@@ -98,7 +98,7 @@ struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
     void onProxyUpdate() override
     {
         outputTarget->clear(juce::dontSendNotification);
-        for (const auto [id, nm] : sst::cpputils::enumerate(editor->partAuxOutputNames))
+        for (const auto [id, nm] : sst::cpputils::enumerate(editor->partAuxOutputNames.data))
         {
             if (!nm.empty())
                 outputTarget->addItem(nm, id);
@@ -107,7 +107,7 @@ struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
                                     juce::dontSendNotification);
 
         typeSelector->clear(juce::dontSendNotification);
-        for (const auto &[fidx, t] : sst::cpputils::enumerate(editor->multiFilterTypeNames))
+        for (const auto &[fidx, t] : sst::cpputils::enumerate(editor->multiFilterTypeNames.data))
         {
             typeSelector->addItem(t, fidx + idOff);
         }

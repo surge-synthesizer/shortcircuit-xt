@@ -454,7 +454,10 @@ inline std::string debug_wrapper_vga_to_string(int in)
         return "vga_save_multi";
     case vga_vudata:
         return "vga_vudata";
+    case vga_set_range_and_units:
+        return "vga_set_range_and_units";
     }
 
+    jassertfalse;
     return std::string("unknown vga_ ") + std::to_string(in);
 }

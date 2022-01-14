@@ -193,8 +193,80 @@ struct Envelope : public ContentBase
     std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 3> shapes;
 };
 
+struct Routing : public ContentBase
+{
+    Routing(const scxt::pages::ZonePage &p)
+        : ContentBase(p, "Modulation Routing", juce::Colour(0xFF555555))
+    {
+        auto &mm = p.editor->currentZone.mm;
+        for (int i = 0; i < 6; ++i)
+        {
+            active[i] = whiteLabel(std::to_string(i + 1));
+            source[i] = bindIntComboBox(mm[i].source, p.editor->zoneMMSrc);
+            std::cout << _D(i) << _D(mm[i].source.subid) << std::endl;
+            source2[i] = bindIntComboBox(mm[i].source2, p.editor->zoneMMSrc2);
+            destination[i] = bindIntComboBox(mm[i].destination, p.editor->zoneMMDst);
+            curve[i] = bindIntComboBox(mm[i].curve, p.editor->zoneMMCurve);
+            strength[i] = bindFloatSpinBox(mm[i].strength);
+        }
+
+        activateTabs();
+    }
+
+    int getTabCount() const override { return 2; }
+    std::string getTabLabel(int i) const override
+    {
+        if (i == 0)
+            return "1-6";
+        return "7-12";
+    }
+    void switchToTab(int idx) override
+    {
+        auto &mm = parentPage.editor->currentZone.mm;
+        for (int i = 0; i < 6; ++i)
+        {
+            active[i]->setText(std::to_string(i + 1 + idx * 6), juce::dontSendNotification);
+            rebind(source[i], mm[i + idx * 6].source);
+            rebind(source2[i], mm[i + idx * 6].source2);
+            rebind(destination[i], mm[i + idx * 6].destination);
+            rebind(curve[i], mm[i + idx * 6].curve);
+            rebind(strength[i], mm[i + idx * 6].strength);
+
+            // FIXME _ build this into rebind for combos
+            source[i]->updateFromLabels();
+            source2[i]->updateFromLabels();
+            destination[i]->updateFromLabels();
+            curve[i]->updateFromLabels();
+        }
+    }
+    void resized() override
+    {
+        ContentBase::resized();
+        auto b = getContentsBounds();
+        auto rh = b.getHeight() / 6;
+        auto row = b.withHeight(rh);
+
+        auto w0 = row.getWidth();
+        for (int i = 0; i < 6; ++i)
+        {
+            auto div = contents::RowDivider(row);
+            active[i]->setBounds(div.next(0.05));
+            source[i]->setBounds(div.next(0.23));
+            source2[i]->setBounds(div.next(0.23));
+            strength[i]->setBounds(div.next(0.16));
+            destination[i]->setBounds(div.next(0.23));
+            curve[i]->setBounds(div.rest());
+            row = row.translated(0, rh);
+        }
+    }
+
+    std::array<std::unique_ptr<widgets::IntParamComboBox>, 6> source, source2, destination, curve;
+    std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 6> strength;
+    // TODO active
+    std::array<std::unique_ptr<juce::Label>, 6> active;
+};
+
 STUB(Pitch, juce::Colour(0XFF555555));
-STUB(Routing, juce::Colour(0XFF555555));
 STUB(LFO, juce::Colour(0xFF447744));
 STUB(Filters, juce::Colour(0xFF444477));
 STUB(Outputs, juce::Colour(0xFF444477));

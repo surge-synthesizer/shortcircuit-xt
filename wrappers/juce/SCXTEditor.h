@@ -217,15 +217,15 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     /*
      * Configuration Data
      */
-    std::vector<std::string> multiFilterTypeNames;
-    std::vector<std::string> multiFilterOutputNames;
+    NameList multiFilterTypeNames;
+    NameList multiFilterOutputNames;
 
-    std::vector<std::string> partFilterTypeNames;
-    std::vector<std::string> partAuxOutputNames;
-    std::vector<std::string> partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
+    NameList partFilterTypeNames;
+    NameList partAuxOutputNames;
+    NameList partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
 
-    std::vector<std::string> zonePlaymode, zoneAuxOutput, zoneFilterType;
-    std::vector<std::string> zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc;
+    NameList zonePlaymode, zoneAuxOutput, zoneFilterType;
+    NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc;
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};

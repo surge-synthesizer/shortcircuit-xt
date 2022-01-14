@@ -225,6 +225,7 @@ enum VAction
     vga_save_patch,
     vga_save_multi,
     vga_vudata,
+    vga_set_range_and_units // see sampler_parameter_ranges.h
 };
 
 enum VColor
@@ -415,6 +416,7 @@ inline std::ostream &operator<<(std::ostream &stream, const actiontype_t &t)
                                   C(vga_save_patch)
                                   C(vga_save_multi)
                                   C(vga_vudata)
+                                  C(vga_set_range_and_units)
 
                               default:
                                   stream << arg;
