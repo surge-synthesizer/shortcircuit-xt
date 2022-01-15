@@ -17,7 +17,7 @@ struct OutlinedTextButton;
 } // namespace widgets
 namespace components
 {
-struct HeaderPanel : public juce::Component, public UIStateProxy::Invalidatable
+struct HeaderPanel : public juce::Component, public scxt::data::UIStateProxy::Invalidatable
 {
     HeaderPanel(SCXTEditor *ed);
     ~HeaderPanel();

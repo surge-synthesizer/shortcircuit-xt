@@ -11,7 +11,7 @@ namespace scxt
 {
 namespace proxies
 {
-struct MultiDataProxy : public UIStateProxy
+struct MultiDataProxy : public scxt::data::UIStateProxy
 {
     MultiDataProxy(SCXTEditor *ed) : editor(ed) {}
 

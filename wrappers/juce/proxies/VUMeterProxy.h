@@ -12,7 +12,7 @@ namespace scxt
 {
 namespace proxies
 {
-struct VUMeterProxy : public UIStateProxy
+struct VUMeterProxy : public scxt::data::UIStateProxy
 {
     VUMeterProxy(SCXTEditor *ed) : editor(ed) {}
 

@@ -7,7 +7,7 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "sst/cpputils.h"
-#include "DataInterfaces.h"
+#include "data/SCXTData.h"
 #include "SCXTLookAndFeel.h"
 #include "ComboBox.h"
 #include <sstream>
@@ -30,17 +30,28 @@ template <typename P> inline void assertParamRangesSet(const P &p)
         DBG(oss.str());
     }
 }
-struct FloatParamSlider : public juce::Component
+
+template <typename T> struct ParamRefMixin
+{
+    typedef data::ParameterProxy<T> param_t;
+    std::reference_wrapper<data::ParameterProxy<T>> param;
+    data::ActionSender *sender{nullptr};
+
+    ParamRefMixin(param_t &p, data::ActionSender *s) : param(p), sender(s) {}
+
+    virtual void onRebind() {}
+};
+
+struct FloatParamSlider : public juce::Component, ParamRefMixin<float>
 {
     enum Style
     {
         HSLIDER,
         VSLIDER
     } style{HSLIDER};
-    std::reference_wrapper<ParameterProxy<float>> param;
 
-    FloatParamSlider(const Style &s, ParameterProxy<float> &p, ActionSender *snd)
-        : juce::Component(), style(s), param(p), sender(snd)
+    FloatParamSlider(const Style &s, data::ParameterProxy<float> &p, data::ActionSender *snd)
+        : juce::Component(), style(s), ParamRefMixin<float>(p, snd)
     {
     }
 
@@ -52,24 +63,20 @@ struct FloatParamSlider : public juce::Component
 
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
-
-    ActionSender *sender{nullptr};
 };
 
-struct IntParamMultiSwitch : public juce::Component
+struct IntParamMultiSwitch : public juce::Component, ParamRefMixin<int>
 {
     enum Orientation
     {
         HORIZ,
         VERT
     } orientation{VERT};
-    std::reference_wrapper<ParameterProxy<int>> param;
-    ActionSender *sender{nullptr};
-    int maxValue{0};
 
+    int maxValue{0};
     std::vector<std::string> labels;
-    IntParamMultiSwitch(const Orientation &o, ParameterProxy<int> &p, ActionSender *snd)
-        : juce::Component(), orientation(o), param(p), sender(snd)
+    IntParamMultiSwitch(const Orientation &o, data::ParameterProxy<int> &p, data::ActionSender *snd)
+        : juce::Component(), orientation(o), ParamRefMixin<int>(p, snd)
     {
     }
 
@@ -83,19 +90,18 @@ struct IntParamMultiSwitch : public juce::Component
     void mouseUp(const juce::MouseEvent &e) override;
 };
 
-template <typename T> struct TParamSpinBox : public juce::Component
+template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMixin<T>
 {
-    std::reference_wrapper<ParameterProxy<T>> param;
-    ActionSender *sender{nullptr};
-    TParamSpinBox(ParameterProxy<T> &p, ActionSender *snd) : param(p), sender(snd) {}
+    TParamSpinBox(data::ParameterProxy<T> &p, data::ActionSender *snd) : ParamRefMixin<T>(p, snd) {}
 
     void paint(juce::Graphics &g) override
     {
-        assertParamRangesSet(param.get());
+        assertParamRangesSet(ParamRefMixin<T>::param.get());
         SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), juce::Colour(0xFF333355), true);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
         g.setColour(juce::Colours::white);
-        g.drawText(param.get().value_to_string(), getLocalBounds(), juce::Justification::centred);
+        g.drawText(ParamRefMixin<T>::param.get().value_to_string(), getLocalBounds(),
+                   juce::Justification::centred);
     }
 
     // HACK. Think about this
@@ -104,13 +110,14 @@ template <typename T> struct TParamSpinBox : public juce::Component
     float dragY{0};
     T valueJoggedBy(int dir)
     {
-        if (param.get().paramRangesSet)
+        if (ParamRefMixin<T>::param.get().paramRangesSet)
         {
-            return std::clamp(param.get().val + dir * param.get().step, param.get().min,
-                              param.get().max);
+            return std::clamp(ParamRefMixin<T>::param.get().val +
+                                  dir * ParamRefMixin<T>::param.get().step,
+                              ParamRefMixin<T>::param.get().min, ParamRefMixin<T>::param.get().max);
         }
         jassertfalse;
-        return param.get().val + dir;
+        return ParamRefMixin<T>::param.get().val + dir;
     }
     void mouseDown(const juce::MouseEvent &e) override { dragY = e.position.y; }
     void mouseDrag(const juce::MouseEvent &e) override
@@ -129,7 +136,7 @@ template <typename T> struct TParamSpinBox : public juce::Component
         }
         if (mv)
         {
-            param.get().sendValue(valueJoggedBy(mv), sender);
+            ParamRefMixin<T>::param.get().sendValue(valueJoggedBy(mv), ParamRefMixin<T>::sender);
             repaint();
             onSend();
         }
@@ -143,29 +150,33 @@ template <> inline float TParamSpinBox<float>::valueJoggedBy(int dir)
 
 struct IntParamSpinBox : public TParamSpinBox<int>
 {
-    IntParamSpinBox(ParameterProxy<int> &p, ActionSender *snd) : TParamSpinBox<int>(p, snd) {}
+    IntParamSpinBox(data::ParameterProxy<int> &p, data::ActionSender *snd)
+        : TParamSpinBox<int>(p, snd)
+    {
+    }
 };
 
 struct FloatParamSpinBox : public TParamSpinBox<float>
 {
-    FloatParamSpinBox(ParameterProxy<float> &p, ActionSender *snd) : TParamSpinBox<float>(p, snd) {}
+    FloatParamSpinBox(data::ParameterProxy<float> &p, data::ActionSender *snd)
+        : TParamSpinBox<float>(p, snd)
+    {
+    }
 };
 
-struct IntParamComboBox : public ComboBox
+struct IntParamComboBox : public ComboBox, ParamRefMixin<int>
 {
-    std::reference_wrapper<ParameterProxy<int>> param;
-    ActionSender *sender{nullptr};
-    const NameList &labels;
-
-    IntParamComboBox(ParameterProxy<int> &p, ActionSender *snd, const NameList &labelRef)
-        : param(p), sender(snd), labels(labelRef)
+    const data::NameList &labels;
+    IntParamComboBox(data::ParameterProxy<int> &p, data::ActionSender *snd,
+                     const data::NameList &labelRef)
+        : ParamRefMixin<int>(p, snd), labels(labelRef)
     {
         updateFromLabels();
         onChange = [this]() { sendChange(); };
     }
     ~IntParamComboBox() = default;
 
-    void replaceParam(ParameterProxy<int> &p) { param = p; }
+    void replaceParam(data::ParameterProxy<int> &p) { param = p; }
 
     static constexpr int idOff = 8675309;
 
@@ -191,6 +202,8 @@ struct IntParamComboBox : public ComboBox
         auto ftype = cidx - idOff;
         param.get().sendValue(ftype, sender);
     }
+
+    void onRebind() override { updateFromLabels(); }
 };
 
 } // namespace widgets

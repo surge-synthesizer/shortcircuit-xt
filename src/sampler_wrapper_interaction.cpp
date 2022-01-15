@@ -32,6 +32,7 @@
 #include <vt_util/vt_string.h>
 
 #include <vector>
+#include "sst/cpputils.h"
 using std::vector;
 
 #include <string>
@@ -1555,6 +1556,18 @@ void sampler::post_initdata_mm_part()
 
 void sampler::post_initdata()
 {
+
+    for (const auto &[id, obj] : sst::cpputils::enumerate(ip_data))
+    {
+        if (id != obj.id)
+        {
+            std::cout << "IMPROPER INTERACTION DATA" << std::endl;
+            std::cout << "  At index:" << id << " Object has id:" << obj.id
+                      << " label:" << obj.label << std::endl;
+            std::terminate();
+        }
+    }
+
     LOGDEBUG(mLogger) << __func__ << std::flush;
 
     // fill various option-menus etc etc

@@ -17,7 +17,7 @@
 #include "vt_gui/browserdata.h"
 
 #include "components/DebugPanel.h"
-#include "DataInterfaces.h"
+#include "data/SCXTData.h"
 #include "SCXTLookAndFeel.h"
 
 /*
@@ -90,7 +90,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
                    public juce::Button::Listener,
                    public juce::FileDragAndDropTarget,
                    public sampler::WrapperListener,
-                   public ActionSender,
+                   public scxt::data::ActionSender,
                    public scxt::log::LoggingCallback
 {
   public:
@@ -165,7 +165,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<SC3IdleTimer> idleTimer;
 
   public:
-    std::set<UIStateProxy *> uiStateProxies;
+    std::set<scxt::data::UIStateProxy *> uiStateProxies;
     std::unique_ptr<scxt::proxies::SelectionStateProxy> selectionStateProxy;
     std::unique_ptr<scxt::proxies::VUMeterProxy> vuMeterProxy;
     std::unique_ptr<scxt::proxies::BrowserDataProxy> browserDataProxy;
@@ -207,25 +207,25 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
     int freeParamsC[n_ip_free_items][16];
 
-    PartData parts[n_sampler_parts];
-    MultiData multi;
-    ConfigData config;
-    ZoneData currentZone;
+    scxt::data::PartData parts[n_sampler_parts];
+    scxt::data::MultiData multi;
+    scxt::data::ConfigData config;
+    scxt::data::ZoneData currentZone;
 
     sample_zone zonesCopy[max_zones];
 
     /*
      * Configuration Data
      */
-    NameList multiFilterTypeNames;
-    NameList multiFilterOutputNames;
+    scxt::data::NameList multiFilterTypeNames;
+    scxt::data::NameList multiFilterOutputNames;
 
-    NameList partFilterTypeNames;
-    NameList partAuxOutputNames;
-    NameList partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
+    scxt::data::NameList partFilterTypeNames;
+    scxt::data::NameList partAuxOutputNames;
+    scxt::data::NameList partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
 
-    NameList zonePlaymode, zoneAuxOutput, zoneFilterType;
-    NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc;
+    scxt::data::NameList zonePlaymode, zoneAuxOutput, zoneFilterType;
+    scxt::data::NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc;
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};

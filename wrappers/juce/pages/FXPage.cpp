@@ -14,7 +14,7 @@ namespace pages
 {
 namespace fx_contents
 {
-struct SingleFX : public juce::Component, public UIStateProxy::Invalidatable
+struct SingleFX : public juce::Component, public scxt::data::UIStateProxy::Invalidatable
 {
     SingleFX(SCXTEditor *ed, int i) : editor(ed), idx(i)
     {

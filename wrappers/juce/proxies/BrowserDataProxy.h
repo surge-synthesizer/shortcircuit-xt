@@ -11,7 +11,7 @@ namespace scxt
 {
 namespace proxies
 {
-class BrowserDataProxy : public UIStateProxy
+class BrowserDataProxy : public scxt::data::UIStateProxy
 {
   public:
     BrowserDataProxy(SCXTEditor *ed) : editor(ed){};

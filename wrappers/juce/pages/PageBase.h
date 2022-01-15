@@ -14,7 +14,7 @@ namespace scxt
 {
 namespace pages
 {
-struct PageBase : public juce::Component, public UIStateProxy::Invalidatable
+struct PageBase : public juce::Component, public scxt::data::UIStateProxy::Invalidatable
 {
     PageBase(SCXTEditor *ed, const SCXTEditor::Pages &p) : editor(ed), page(p) {}
     virtual ~PageBase() = default;
@@ -32,7 +32,7 @@ struct PageBase : public juce::Component, public UIStateProxy::Invalidatable
     SCXTEditor *editor{nullptr};
     SCXTEditor::Pages page{SCXTEditor::ZONE};
 
-    std::vector<UIStateProxy::Invalidatable *> contentWeakPointers;
+    std::vector<scxt::data::UIStateProxy::Invalidatable *> contentWeakPointers;
     template <typename T, class... Args> auto makeContent(Args &&...args)
     {
         auto q = std::make_unique<T>(std::forward<Args>(args)...);

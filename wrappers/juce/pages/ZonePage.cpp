@@ -79,7 +79,7 @@ struct NamesAndRanges : public ContentBase
     {
         auto b = getContentsBounds().reduced(2, 2);
         auto h = b.getHeight();
-        auto rh = h / 8;
+        auto rh = h / 7;
         auto row = b.withHeight(rh);
         nameEd->setBounds(row.reduced(1, 1));
         row = row.translated(0, rh);
@@ -231,12 +231,6 @@ struct Routing : public ContentBase
             rebind(destination[i], mm[i + idx * 6].destination);
             rebind(curve[i], mm[i + idx * 6].curve);
             rebind(strength[i], mm[i + idx * 6].strength);
-
-            // FIXME _ build this into rebind for combos
-            source[i]->updateFromLabels();
-            source2[i]->updateFromLabels();
-            destination[i]->updateFromLabels();
-            curve[i]->updateFromLabels();
         }
     }
     void resized() override

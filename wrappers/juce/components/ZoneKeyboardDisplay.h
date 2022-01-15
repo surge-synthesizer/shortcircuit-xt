@@ -22,8 +22,13 @@
 
 #include "SCXTEditor.h"
 
+namespace scxt
+{
+namespace data
+{
 class ActionSender;
-
+}
+} // namespace scxt
 namespace scxt
 {
 namespace components
@@ -31,7 +36,9 @@ namespace components
 class ZoneKeyboardDisplay : public juce::Component
 {
   public:
-    ZoneKeyboardDisplay(SCXTEditor *z, ActionSender *sender) : editor(z), sender(sender) {}
+    ZoneKeyboardDisplay(SCXTEditor *z, scxt::data::ActionSender *sender) : editor(z), sender(sender)
+    {
+    }
 
     void paint(juce::Graphics &g) override;
     void mouseExit(const juce::MouseEvent &event) override;
@@ -48,7 +55,7 @@ class ZoneKeyboardDisplay : public juce::Component
     int playingKey = -1;
     int hoveredZone = -1;
 
-    ActionSender *sender;
+    scxt::data::ActionSender *sender;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoneKeyboardDisplay);
 };
