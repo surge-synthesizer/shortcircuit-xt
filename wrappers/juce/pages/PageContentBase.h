@@ -7,7 +7,7 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "widgets/ParamEditor.h"
-#include "DataInterfaces.h"
+#include "data/SCXTData.h"
 #include "SCXTLookAndFeel.h"
 #include "widgets/OutlinedTextButton.h"
 
@@ -36,7 +36,8 @@ struct RowDivider
     juce::Rectangle<int> rest() { return next(1.0 - howFar); }
 };
 
-template <typename T> struct PageContentBase : public juce::Component, UIStateProxy::Invalidatable
+template <typename T>
+struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Invalidatable
 {
     PageContentBase(const T &p, const std::string &header, const juce::Colour &col)
         : parentPage(p), header(header), col(col)
@@ -138,11 +139,12 @@ template <typename T> struct PageContentBase : public juce::Component, UIStatePr
     template <typename W, typename Q> auto rebind(const W &wid, Q &par)
     {
         wid->param = par;
+        wid->onRebind();
         wid->repaint();
     }
 
     std::vector<widgets::IntParamComboBox *> comboWeakRefs;
-    template <typename P> auto bindIntComboBox(P &param, const NameList &lab)
+    template <typename P> auto bindIntComboBox(P &param, const scxt::data::NameList &lab)
     {
         auto q = std::make_unique<widgets::IntParamComboBox>(param, parentPage.editor, lab);
         comboWeakRefs.push_back(q.get());

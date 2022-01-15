@@ -27,7 +27,7 @@ namespace scxt
 {
 namespace components
 {
-class WaveDisplay : public juce::Component, public UIStateProxy
+class WaveDisplay : public juce::Component, public scxt::data::UIStateProxy
 {
     enum ControlState
     {
@@ -36,7 +36,7 @@ class WaveDisplay : public juce::Component, public UIStateProxy
         cs_dragpoint,
     };
 
-    ActionSender *mSender;
+    scxt::data::ActionSender *mSender;
     scxt::log::StreamLogger mLogger;
 
     scxt::Perf::Profiler prof;
@@ -102,7 +102,7 @@ class WaveDisplay : public juce::Component, public UIStateProxy
     virtual bool processActionData(const actiondata &d) override;
 
   public:
-    WaveDisplay(ActionSender *sender, scxt::log::LoggingCallback *logger);
+    WaveDisplay(scxt::data::ActionSender *sender, scxt::log::LoggingCallback *logger);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveDisplay);
 };

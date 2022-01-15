@@ -5,7 +5,7 @@
 #ifndef SHORTCIRCUIT_COMPACTVUMETER_H
 #define SHORTCIRCUIT_COMPACTVUMETER_H
 
-#include "DataInterfaces.h"
+#include "data/SCXTData.h"
 #include "SCXTEditor.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
@@ -13,7 +13,7 @@ namespace scxt
 {
 namespace widgets
 {
-struct CompactVUMeter : public juce::Component, UIStateProxy::Invalidatable
+struct CompactVUMeter : public juce::Component, scxt::data::UIStateProxy::Invalidatable
 {
     CompactVUMeter(SCXTEditor *ed) : editor(ed){};
 

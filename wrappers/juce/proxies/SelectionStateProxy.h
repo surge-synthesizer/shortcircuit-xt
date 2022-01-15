@@ -13,7 +13,7 @@ namespace scxt
 namespace proxies
 {
 
-struct SelectionStateProxy : public UIStateProxy
+struct SelectionStateProxy : public scxt::data::UIStateProxy
 {
     SelectionStateProxy(SCXTEditor *ed) : editor(ed) {}
 

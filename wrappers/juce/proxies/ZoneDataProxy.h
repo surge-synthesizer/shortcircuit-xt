@@ -24,7 +24,7 @@ namespace scxt
 {
 namespace proxies
 {
-class ZoneDataProxy : public UIStateProxy
+class ZoneDataProxy : public scxt::data::UIStateProxy
 {
   public:
     ZoneDataProxy(SCXTEditor *ed) : editor(ed){};

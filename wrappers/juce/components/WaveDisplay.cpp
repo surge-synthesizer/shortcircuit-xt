@@ -34,7 +34,7 @@ const int WAVE_CHANNEL_GAP = 4; // gap between channels
 
 static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2);
 
-WaveDisplay::WaveDisplay(ActionSender *sender, scxt::log::LoggingCallback *logger)
+WaveDisplay::WaveDisplay(scxt::data::ActionSender *sender, scxt::log::LoggingCallback *logger)
     : mSender(sender), mLogger(logger), prof(logger, "Wave Display Paint")
 {
     dispmode = 0;

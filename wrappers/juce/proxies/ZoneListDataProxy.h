@@ -11,7 +11,7 @@ namespace scxt
 {
 namespace proxies
 {
-struct ZoneListDataProxy : public UIStateProxy
+struct ZoneListDataProxy : public scxt::data::UIStateProxy
 {
     SCXTEditor *editor{nullptr};
     ZoneListDataProxy(SCXTEditor *ed) : editor(ed){};
