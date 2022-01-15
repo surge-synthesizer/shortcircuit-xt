@@ -85,14 +85,14 @@ static constexpr parameter_ranges samplerParameterRanges[] = {
     {ip_EG_h, -10.f, 4.f, 0.0f, 0.01f, parameter_ranges::SECONDS},
     {ip_EG_d, -10.f, 4.f, 0.0f, 0.01f, parameter_ranges::SECONDS},
     {ip_EG_r, -10.f, 4.f, 0.0f, 0.01f, parameter_ranges::SECONDS},
-    parameter_ranges::percent(ip_EG_s, 0.05),
+    parameter_ranges::percent(ip_EG_s, 0.5),
 
     // hmm what are these
     {ip_EG_s0, 0., 5., 0.0f, 0.1f, parameter_ranges::UNDEF},
     {ip_EG_s1, 0., 5., 0.0f, 0.1f, parameter_ranges::UNDEF},
     {ip_EG_s2, 0., 5., 0.0f, 0.1f, parameter_ranges::UNDEF},
 
-    {ip_mm_amount, -20.f, 20.f, 0.f, 0.05f, parameter_ranges::UNDEF}
-};
+    {ip_mm_amount, -20.f, 20.f, 0.f, 0.05f, parameter_ranges::UNDEF},
+    parameter_ranges::percent(ip_filter_mix, 1)};
 
 #endif // SHORTCIRCUIT_SAMPLER_PARAMETER_RANGES_H

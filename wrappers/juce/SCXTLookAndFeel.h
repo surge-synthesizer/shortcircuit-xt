@@ -58,6 +58,8 @@ struct SCXTLookAndFeel : public juce::LookAndFeel_V4
                       juce::ComboBox &box) override;
     juce::Font getComboBoxFont(juce::ComboBox &) override { return getMonoFontAt(10); }
 
+    void fillTextEditorBackground(juce::Graphics &g, int /*width*/, int /*height*/,
+                                  juce::TextEditor &textEditor) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTLookAndFeel);
 };
 
