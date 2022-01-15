@@ -36,6 +36,53 @@ struct RowDivider
     juce::Rectangle<int> rest() { return next(1.0 - howFar); }
 };
 
+struct RowGenerator
+{
+    juce::Rectangle<int> parent;
+    juce::Rectangle<int> row;
+    float dHeight{1.f};
+    int nSteps{0};
+    RowGenerator(const juce::Rectangle<int> &r, int nSteps) : parent(r), nSteps(nSteps)
+    {
+        dHeight = r.getHeight() * 1.f / nSteps;
+        row = r.withHeight(dHeight);
+    }
+    juce::Rectangle<int> next(int span = 1)
+    {
+        auto res = row.withHeight(dHeight * span);
+        row = row.translated(0, dHeight * span);
+        return res;
+    }
+};
+
+struct SectionDivider
+{
+    static void divideSectionVertically(juce::Graphics &g, const juce::Rectangle<int> &bounds,
+                                        int nRegions, juce::Colour bar)
+    {
+        auto q = bounds.withWidth(1).reduced(0, 4);
+        auto dw = bounds.getWidth() * 1.f / nRegions;
+        for (int i = 0; i < nRegions - 1; ++i)
+        {
+            q = q.translated(dw, 0);
+            g.setColour(bar);
+            g.fillRect(q);
+        }
+    }
+    static void divideSectionHorizontally(juce::Graphics &g, const juce::Rectangle<int> &bounds,
+                                          int nRegions, juce::Colour bar)
+    {
+        auto q = bounds.withHeight(1).reduced(4, 0);
+        auto dh = bounds.getHeight() * 1.f / nRegions;
+        for (int i = 0; i < nRegions - 1; ++i)
+        {
+            q = q.translated(0, dh);
+            g.setColour(bar);
+            g.fillRect(q);
+        }
+    }
+};
+
 template <typename T>
 struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Invalidatable
 {
@@ -62,8 +109,9 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
     virtual void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) {}
     void onProxyUpdate() override
     {
-        for (auto q : comboWeakRefs)
-            q->updateFromLabels();
+        for (auto q : getChildren())
+            if (auto iv = dynamic_cast<scxt::data::UIStateProxy::Invalidatable *>(q))
+                iv->onProxyUpdate();
     }
     std::string header;
     juce::Colour col;
@@ -130,10 +178,13 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
     {
         return bind<widgets::FloatParamSlider>(widgets::FloatParamSlider::HSLIDER, param);
     }
-
     template <typename P> auto bindIntSpinBox(P &param)
     {
         return bind<widgets::IntParamSpinBox>(param);
+    }
+    template <typename P> auto bindIntComboBox(P &param, const scxt::data::NameList &lab)
+    {
+        return bind<widgets::IntParamComboBox>(param, lab);
     }
 
     template <typename W, typename Q> auto rebind(const W &wid, Q &par)
@@ -141,15 +192,6 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
         wid->param = par;
         wid->onRebind();
         wid->repaint();
-    }
-
-    std::vector<widgets::IntParamComboBox *> comboWeakRefs;
-    template <typename P> auto bindIntComboBox(P &param, const scxt::data::NameList &lab)
-    {
-        auto q = std::make_unique<widgets::IntParamComboBox>(param, parentPage.editor, lab);
-        comboWeakRefs.push_back(q.get());
-        addAndMakeVisible(*q);
-        return q;
     }
 
     auto whiteLabel(const std::string &txt)

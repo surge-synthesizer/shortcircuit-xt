@@ -145,7 +145,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     // Float vs Int a bit clumsy here
     float getValue01() const { return (val - min) / (max - min); }
     void sendValue01(float value01, ActionSender *s) { jassert(false); }
-    void sendValue(T value, ActionSender *s) { jassertfalse; }
+    void sendValue(const T &value, ActionSender *s) { jassertfalse; }
 
     std::string value_to_string() const { return std::to_string(val); }
 
@@ -201,7 +201,8 @@ inline void ParameterProxy<float, vga_floatval>::sendValue01(float value01, Acti
     ad.data.f[0] = v;
     s->sendActionToEngine(ad);
 }
-template <> inline void ParameterProxy<float, vga_floatval>::sendValue(float value, ActionSender *s)
+template <>
+inline void ParameterProxy<float, vga_floatval>::sendValue(const float &value, ActionSender *s)
 {
     val = value;
     actiondata ad;
@@ -222,7 +223,7 @@ template <> inline float ParameterProxy<int>::getValue01() const
     jassert(false);
     return 0;
 }
-template <> inline void ParameterProxy<int>::sendValue(int value, ActionSender *s)
+template <> inline void ParameterProxy<int>::sendValue(const int &value, ActionSender *s)
 {
     actiondata ad;
     ad.id = id;
@@ -233,6 +234,18 @@ template <> inline void ParameterProxy<int>::sendValue(int value, ActionSender *
     s->sendActionToEngine(ad);
 }
 
+template <>
+inline void ParameterProxy<std::string, vga_text>::sendValue(const std::string &value,
+                                                             ActionSender *s)
+{
+    val = value;
+    actiondata ad;
+    ad.id = id;
+    ad.subid = subid;
+    ad.actiontype = vga_text;
+    strncpy(ad.data.str, val.c_str(), 54);
+    s->sendActionToEngine(ad);
+}
 } // namespace data
 } // namespace scxt
 

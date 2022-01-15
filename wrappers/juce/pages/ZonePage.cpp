@@ -32,15 +32,11 @@ typedef scxt::pages::contents::PageContentBase<scxt::pages::ZonePage> ContentBas
         x(const scxt::pages::ZonePage &p) : ContentBase(p, #x, c) {}                               \
     };
 
-STUB(Sample, juce::Colour(0xFF444477));
-
 struct NamesAndRanges : public ContentBase
 {
     NamesAndRanges(const scxt::pages::ZonePage &p)
         : ContentBase(p, "Names & Ranges", juce::Colour(0xFF555555))
     {
-        nameEd = standIn("name");
-
         for (const auto &[i, l] :
              sst::cpputils::enumerate(std::array{"xf", "low", "root", "hi", "xf"}))
         {
@@ -48,6 +44,7 @@ struct NamesAndRanges : public ContentBase
         }
 
         auto &cz = parentPage.editor->currentZone;
+        nameEd = bind<widgets::SingleLineTextEditor>(cz.name);
 
         kParams[0] = bindIntSpinBox(cz.key_low_fade);
         kParams[1] = bindIntSpinBox(cz.key_low);
@@ -132,7 +129,7 @@ struct NamesAndRanges : public ContentBase
         }
     }
 
-    std::unique_ptr<StandIn> nameEd;
+    std::unique_ptr<widgets::SingleLineTextEditor> nameEd;
 
     std::array<std::unique_ptr<juce::Label>, 5> rowLabels;
     std::array<std::unique_ptr<widgets::IntParamSpinBox>, 5> kParams;
@@ -201,9 +198,8 @@ struct Routing : public ContentBase
         auto &mm = p.editor->currentZone.mm;
         for (int i = 0; i < 6; ++i)
         {
-            active[i] = whiteLabel(std::to_string(i + 1));
+            active[i] = bind<widgets::IntParamToggleButton>(mm[i].active, std::to_string(i + 1));
             source[i] = bindIntComboBox(mm[i].source, p.editor->zoneMMSrc);
-            std::cout << _D(i) << _D(mm[i].source.subid) << std::endl;
             source2[i] = bindIntComboBox(mm[i].source2, p.editor->zoneMMSrc2);
             destination[i] = bindIntComboBox(mm[i].destination, p.editor->zoneMMDst);
             curve[i] = bindIntComboBox(mm[i].curve, p.editor->zoneMMCurve);
@@ -225,7 +221,8 @@ struct Routing : public ContentBase
         auto &mm = parentPage.editor->currentZone.mm;
         for (int i = 0; i < 6; ++i)
         {
-            active[i]->setText(std::to_string(i + 1 + idx * 6), juce::dontSendNotification);
+            rebind(active[i], mm[i + idx * 6].active);
+            active[i]->setButtonText(std::to_string(i + 1 + idx * 6));
             rebind(source[i], mm[i + idx * 6].source);
             rebind(source2[i], mm[i + idx * 6].source2);
             rebind(destination[i], mm[i + idx * 6].destination);
@@ -256,14 +253,79 @@ struct Routing : public ContentBase
 
     std::array<std::unique_ptr<widgets::IntParamComboBox>, 6> source, source2, destination, curve;
     std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 6> strength;
-    // TODO active
-    std::array<std::unique_ptr<juce::Label>, 6> active;
+    std::array<std::unique_ptr<widgets::IntParamToggleButton>, 6> active;
 };
 
+struct Filters : public ContentBase
+{
+    Filters(ZonePage &p) : ContentBase(p, "Filters", juce::Colour(0xFF444477))
+    {
+        for (int i = 0; i < 2; ++i)
+        {
+            auto &ft = parentPage.editor->currentZone.filter[i];
+            types[i] = bindIntComboBox(ft.type, parentPage.editor->zoneFilterType);
+            for (int q = 0; q < n_filter_parameters; ++q)
+                fp[i][q] = bindFloatHSlider(ft.p[q]);
+
+            bypass[i] = bind<widgets::IntParamToggleButton>(ft.bypass, "mute");
+            mix[i] = bindFloatSpinBox(ft.mix);
+
+            for (int q = 0; q < n_filter_iparameters; ++q)
+                ip[i][q] = bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::VERT,
+                                                              ft.ip[q]);
+        }
+    }
+    void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) override
+    {
+        contents::SectionDivider::divideSectionVertically(g, bounds, 2, juce::Colours::black);
+    }
+
+    void resized() override
+    {
+        auto cb = getContentsBounds();
+        auto hw = cb.getWidth() / 2;
+        auto b = cb.withWidth(hw);
+        auto sideCol = 60;
+        for (int i = 0; i < 2; ++i)
+        {
+            auto rg = contents::RowGenerator(b.reduced(3, 1).withTrimmedRight(sideCol),
+                                             1 + n_filter_parameters);
+            types[i]->setBounds(rg.next());
+
+            for (auto q = 0; q < n_filter_parameters; ++q)
+                fp[i][q]->setBounds(rg.next());
+
+            auto sg = b.translated(b.getWidth() - sideCol, 0).withWidth(sideCol).reduced(1, 1);
+            auto srg = contents::RowGenerator(sg, 10);
+            bypass[i]->setBounds(srg.next());
+            mix[i]->setBounds(srg.next());
+            for (int q = 0; q < n_filter_iparameters; ++q)
+                ip[i][q]->setBounds(srg.next(4));
+
+            b = b.translated(hw, 0);
+        }
+    }
+
+    std::array<std::unique_ptr<widgets::IntParamComboBox>, 2> types;
+    std::array<std::unique_ptr<widgets::IntParamToggleButton>, 2> bypass;
+    std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 2> mix;
+    std::array<std::array<std::unique_ptr<widgets::FloatParamSlider>, n_filter_parameters>, 2> fp;
+    std::array<std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, n_filter_iparameters>, 2>
+        ip;
+};
+
+struct Outputs : public ContentBase
+{
+    Outputs(ZonePage &p) : ContentBase(p, "Outputs", juce::Colour(0xFF444477)) {}
+    void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) override
+    {
+        contents::SectionDivider::divideSectionHorizontally(g, bounds, 4, juce::Colours::black);
+    }
+};
+
+STUB(Sample, juce::Colour(0xFF444477));
 STUB(Pitch, juce::Colour(0XFF555555));
 STUB(LFO, juce::Colour(0xFF447744));
-STUB(Filters, juce::Colour(0xFF444477));
-STUB(Outputs, juce::Colour(0xFF444477));
 
 } // namespace zone_contents
 

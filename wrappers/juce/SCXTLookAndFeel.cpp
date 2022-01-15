@@ -99,3 +99,10 @@ void SCXTLookAndFeel::drawComboBox(juce::Graphics &g, int w, int h, bool isButto
         r = r.translated(0, 2).reduced(1, 0);
     }
 }
+
+void SCXTLookAndFeel::fillTextEditorBackground(juce::Graphics &g, int w, int h,
+                                               juce::TextEditor &textEditor)
+{
+    auto c = juce::Colour(0xFF151515);
+    fillWithRaisedOutline(g, juce::Rectangle<int>(0, 0, w, h), c, true);
+}

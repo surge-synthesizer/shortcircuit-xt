@@ -13,6 +13,10 @@ namespace widgets
 
 void FloatParamSlider::paint(juce::Graphics &g)
 {
+    if (param.get().hidden)
+    {
+        return;
+    }
     assertParamRangesSet(param.get());
     switch (style)
     {
@@ -52,10 +56,12 @@ void FloatParamSlider::paintHSlider(juce::Graphics &g)
     g.drawText(param.get().valueToStringWithUnits(), lab, juce::Justification::right);
 
     // Draw the handle
+    if (param.get().disabled)
+        return;
+
     auto edgeToEdge = getHeight() - 6;
     auto radius = edgeToEdge * 0.5;
     auto f01 = param.get().getValue01();
-
     auto ctr = f01 * (getWidth() - edgeToEdge) + radius;
     auto x0 = ctr - radius;
     auto y0 = getHeight() * 0.5 - radius;
@@ -82,10 +88,12 @@ void FloatParamSlider::paintVSlider(juce::Graphics &g)
     g.drawText(lab, b, juce::Justification::centredBottom);
 
     // Draw the handle
+    if (param.get().disabled)
+        return;
+
     auto edgeToEdge = getWidth() - 6;
     auto radius = edgeToEdge * 0.5;
     auto f01 = param.get().getValue01();
-
     auto ctr = (1 - f01) * (getHeight() - edgeToEdge) + radius;
     auto y0 = ctr - radius;
     auto x0 = getWidth() * 0.5 - radius;
@@ -129,6 +137,8 @@ void FloatParamSlider::mouseUp(const juce::MouseEvent &e)
 void IntParamMultiSwitch::paint(juce::Graphics &g)
 {
     if (labels.size() == 0)
+        return;
+    if (param.get().hidden == 0)
         return;
 
     auto bh = 20;

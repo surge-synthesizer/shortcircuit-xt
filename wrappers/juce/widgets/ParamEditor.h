@@ -12,6 +12,7 @@
 #include "ComboBox.h"
 #include <sstream>
 #include "wrapper_msg_to_string.h"
+#include "widgets/OutlinedTextButton.h"
 
 namespace scxt
 {
@@ -65,7 +66,9 @@ struct FloatParamSlider : public juce::Component, ParamRefMixin<float>
     void mouseUp(const juce::MouseEvent &e) override;
 };
 
-struct IntParamMultiSwitch : public juce::Component, ParamRefMixin<int>
+struct IntParamMultiSwitch : public juce::Component,
+                             ParamRefMixin<int>,
+                             data::UIStateProxy::Invalidatable
 {
     enum Orientation
     {
@@ -82,12 +85,31 @@ struct IntParamMultiSwitch : public juce::Component, ParamRefMixin<int>
 
     void setLabels(const std::vector<std::string> &l)
     {
+        jassertfalse;
         labels = l;
         maxValue = labels.size();
         repaint();
     }
     void paint(juce::Graphics &g) override;
     void mouseUp(const juce::MouseEvent &e) override;
+
+    void onProxyUpdate() override
+    {
+        labels.clear();
+        auto lb = param.get().label;
+        auto p = lb.find(";");
+        if (p != std::string::npos)
+        {
+            while (p != std::string::npos)
+            {
+                labels.push_back(lb.substr(0, p));
+                lb = lb.substr(p + 1);
+                p = lb.find(";");
+            }
+            labels.push_back(lb);
+        }
+        maxValue = labels.size();
+    }
 };
 
 template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMixin<T>
@@ -164,11 +186,13 @@ struct FloatParamSpinBox : public TParamSpinBox<float>
     }
 };
 
-struct IntParamComboBox : public ComboBox, ParamRefMixin<int>
+struct IntParamComboBox : public ComboBox,
+                          ParamRefMixin<int>,
+                          scxt::data::UIStateProxy::Invalidatable
 {
     const data::NameList &labels;
-    IntParamComboBox(data::ParameterProxy<int> &p, data::ActionSender *snd,
-                     const data::NameList &labelRef)
+    IntParamComboBox(data::ParameterProxy<int> &p, const data::NameList &labelRef,
+                     data::ActionSender *snd)
         : ParamRefMixin<int>(p, snd), labels(labelRef)
     {
         updateFromLabels();
@@ -188,7 +212,8 @@ struct IntParamComboBox : public ComboBox, ParamRefMixin<int>
             clear(juce::dontSendNotification);
             for (const auto &[fidx, t] : sst::cpputils::enumerate(labels.data))
             {
-                addItem(t, fidx + idOff);
+                if (!t.empty())
+                    addItem(t, fidx + idOff);
             }
             lastUpdateCount = labels.update_count;
         }
@@ -203,7 +228,48 @@ struct IntParamComboBox : public ComboBox, ParamRefMixin<int>
         param.get().sendValue(ftype, sender);
     }
 
+    void onProxyUpdate() override { updateFromLabels(); }
     void onRebind() override { updateFromLabels(); }
+};
+
+struct IntParamToggleButton : public OutlinedTextButton,
+                              ParamRefMixin<int>,
+                              scxt::data::UIStateProxy::Invalidatable
+{
+    IntParamToggleButton(data::ParameterProxy<int> &p, const std::string &label,
+                         data::ActionSender *snd)
+        : OutlinedTextButton(label), ParamRefMixin<int>(p, snd)
+    {
+        setClickingTogglesState(true);
+        setToggleState(param.get().val, juce::dontSendNotification);
+        onStateChange = [this]() { sendChange(); };
+    }
+
+    void onProxyUpdate() override { setToggleState(param.get().val, juce::dontSendNotification); }
+    void sendChange()
+    {
+        if (getToggleState())
+            param.get().sendValue(1, sender);
+        else
+            param.get().sendValue(0, sender);
+    }
+};
+
+struct SingleLineTextEditor : public juce::TextEditor,
+                              ParamRefMixin<std::string>,
+                              scxt::data::UIStateProxy::Invalidatable
+{
+    SingleLineTextEditor(data::ParameterProxy<std::string> &p, data::ActionSender *snd)
+        : juce::TextEditor(p.val), ParamRefMixin<std::string>(p, snd)
+    {
+        setText(p.val, juce::dontSendNotification);
+        setFont(SCXTLookAndFeel::getMonoFontAt(10));
+        setColour(juce::TextEditor::textColourId, juce::Colours::white);
+        onReturnKey = [this]() { sendUpdate(); };
+    }
+
+    void sendUpdate() { param.get().sendValue(getText().toStdString(), sender); }
+    void onProxyUpdate() override { setText(param.get().val, juce::dontSendNotification); }
 };
 
 } // namespace widgets
