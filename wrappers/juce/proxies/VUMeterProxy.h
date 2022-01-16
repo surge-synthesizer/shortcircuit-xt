@@ -21,6 +21,9 @@ struct VUMeterProxy : public scxt::data::UIStateProxy
         switch (ad.id)
         {
         case ip_vumeter:
+            auto at = std::get<VAction>(ad.actiontype);
+            if (at != vga_vudata)
+                break;
             int nOuts = ad.data.i[0];
             for (int i = 0; i < nOuts; ++i)
             {

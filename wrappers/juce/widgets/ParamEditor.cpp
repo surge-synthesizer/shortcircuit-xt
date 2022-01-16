@@ -138,11 +138,25 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
 {
     if (labels.size() == 0)
         return;
-    if (param.get().hidden == 0)
+    if (param.get().hidden)
         return;
 
-    auto bh = 20;
-    auto r = getLocalBounds().withHeight(bh);
+    float tranx, trany;
+    auto r = getLocalBounds();
+    if (orientation == VERT)
+    {
+        auto bh = std::min(getHeight() * 1.f / labels.size(), 15.f);
+        r = getLocalBounds().withHeight(bh);
+        tranx = 0;
+        trany = bh + 1;
+    }
+    else
+    {
+        auto bh = getWidth() * 1.f / labels.size();
+        r = getLocalBounds().withWidth(bh);
+        tranx = bh;
+        trany = 0;
+    }
     for (const auto &[idx, l] : sst::cpputils::enumerate(labels))
     {
         if (param.get().val == idx)
@@ -152,7 +166,7 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
         g.setColour(juce::Colours::white);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(l, r, juce::Justification::centred);
-        r = r.translated(0, bh + 1);
+        r = r.translated(tranx, trany);
     }
 }
 

@@ -1721,6 +1721,19 @@ void sampler::post_initdata()
         q.toActionData(ad);
         postEventsToWrapper(ad);
     }
+
+    for (const auto &q : ip_data)
+    {
+        if (q.id != ip_none && !q.label.empty() &&
+            (q.id == ip_zone_aux_outmode || q.id == ip_part_aux_outmode))
+        {
+            ad.id = q.id;
+            ad.actiontype = vga_label;
+            ad.subid = -1;
+            vtCopyString(ad.data.str, q.label.c_str(), 52);
+            postEventsToWrapper(ad);
+        }
+    }
 }
 
 //-------------------------------------------------------------------------------------------------

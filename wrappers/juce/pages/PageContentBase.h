@@ -194,13 +194,14 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
         wid->repaint();
     }
 
-    auto whiteLabel(const std::string &txt)
+    auto whiteLabel(const std::string &txt, juce::Justification j = juce::Justification::left)
     {
         auto q = std::make_unique<juce::Label>(txt);
         q->setText(txt, juce::dontSendNotification);
         q->setColour(juce::Label::textColourId, juce::Colours::white);
         q->setJustificationType(juce::Justification::centred);
         q->setFont(SCXTLookAndFeel::getMonoFontAt(9));
+        q->setJustificationType(j);
         addAndMakeVisible(*q);
         return q;
     }

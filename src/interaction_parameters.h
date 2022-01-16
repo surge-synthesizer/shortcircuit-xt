@@ -951,7 +951,7 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_zone, aux[0].outmode),
         3,
         (int)sizeof(aux_buss),
-        "main/AUX off/pre/post",
+        "main;AUX off;pre;post",
     },
     {
         ip_part_name,
@@ -1135,7 +1135,7 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_part, aux[0].outmode),
         3,
         (int)sizeof(aux_buss),
-        "part off/pre/post",
+        "part off;pre;post",
     },
     {
         ip_part_vs_layers,

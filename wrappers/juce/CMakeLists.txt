@@ -41,8 +41,6 @@ target_sources(ShortcircuitXT PRIVATE
         components/DebugPanel.cpp
         components/ZoneKeyboardDisplay.cpp
 
-        proxies/ZoneDataProxy.cpp
-
         widgets/ParamEditor.cpp
 
         pages/FXPage.cpp

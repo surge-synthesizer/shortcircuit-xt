@@ -18,7 +18,7 @@ struct PartDataProxy : public scxt::data::UIStateProxy
     bool processActionData(const actiondata &ad) override
     {
         auto g = InvalidateAndRepaintGuard(*this);
-        auto &part = editor->parts[editor->selectedPart];
+        auto &part = editor->currentPart;
 
         if (collectStringEntries(ad, ip_part_aux_output, editor->partAuxOutputNames))
         {
@@ -66,13 +66,21 @@ struct PartDataProxy : public scxt::data::UIStateProxy
         /*
          * AUX busses
          */
-        if (applyActionDataIf(ad, ip_part_aux_level, part.aux[ad.subid].level))
+        if (ad.id == ip_part_aux_level &&
+            data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.level; }))
             return true;
-        if (applyActionDataIf(ad, ip_part_aux_balance, part.aux[ad.subid].balance))
+        if (ad.id == ip_part_aux_balance &&
+            data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.balance; }))
             return true;
-        if (applyActionDataIf(ad, ip_part_aux_output, part.aux[ad.subid].output))
+        if (ad.id == ip_part_aux_output &&
+            data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.output; }))
             return true;
-        if (applyActionDataIf(ad, ip_part_aux_outmode, part.aux[ad.subid].outmode))
+        if (ad.id == ip_part_aux_outmode &&
+            data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.outmode; }))
             return true;
 
         /*

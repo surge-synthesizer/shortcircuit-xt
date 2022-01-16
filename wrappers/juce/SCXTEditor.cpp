@@ -91,6 +91,8 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
 
     multiDataProxy->clients.insert(pages[FX].get());
 
+    partProxy->clients.insert(pages[PART].get());
+
     debugWindow = std::make_unique<DebugPanelWindow>();
     debugWindow->setVisible(true);
     debugWindow->setEditor(this);
