@@ -29,10 +29,12 @@ struct ConfigDataProxy : public scxt::data::UIStateProxy
         if (applyActionDataIf(ad, ip_config_autopreview, cd.autoPreview))
             return true;
 
-        if (applyActionDataIf(ad, ip_config_controller_id, cd.controllerId[ad.subid]))
-            return true;
-        if (applyActionDataIf(ad, ip_config_controller_mode, cd.controllerMode[ad.subid]))
-            return true;
+        if (ad.id == ip_config_controller_id)
+            if (data::applyToOneOrAll(ad, cd.controllerId))
+                return true;
+        if (ad.id == ip_config_controller_mode)
+            if (data::applyToOneOrAll(ad, cd.controllerMode))
+                return true;
 
         return g.deactivate();
     }

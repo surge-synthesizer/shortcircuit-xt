@@ -100,8 +100,16 @@ template <typename T, size_t N>
 inline bool applyActionDataSubIdIf(const actiondata &ad, const InteractionId &id,
                                    ParameterProxy<T> (&proxy)[N])
 {
-    if (ad.id == id && applyActionData(ad, proxy[ad.subid]))
-        return true;
+    if (ad.id != id)
+        return false;
+
+    if (ad.subid == -1)
+    {
+        for (auto &p : proxy)
+            applyActionData(ad, p);
+    }
+    else
+        return applyActionData(ad, proxy[ad.subid]);
     return false;
 }
 

@@ -67,6 +67,7 @@ struct InternalRep
     scxt::log::StreamLogger mLogger;
     std::list<Prof> mProfList;
     std::map<ProfID, Metrics, ProfIDComp> mProfTimes;
+    bool logOutput{true};
 };
 
 Profiler::Profiler(scxt::log::LoggingCallback *logger, const char *msg) : mData(0)
@@ -100,11 +101,18 @@ Profiler::~Profiler()
     delete (InternalRep *)mData;
 }
 
+void Profiler::setLogOutput(bool b)
+{
+    InternalRep *rt = (InternalRep *)mData;
+    rt->logOutput = b;
+}
+
 void Profiler::reset(const char *msg)
 {
     InternalRep *rt = (InternalRep *)mData;
 
-    LOGDEBUG(rt->mLogger) << "Profiler reset " << msg << std::flush;
+    if (rt->logOutput)
+        LOGDEBUG(rt->mLogger) << "Profiler reset " << msg << std::flush;
     rt->mProfList.clear();
     rt->mProfTimes.clear();
 }
@@ -113,7 +121,7 @@ void Profiler::dump(const char *msg)
 {
     InternalRep *rt = (InternalRep *)mData;
     int64_t calc;
-    if (rt->mLogger.setLevel(log::Level::Debug))
+    if (rt->logOutput && rt->mLogger.setLevel(log::Level::Debug))
     {
         LOGDEBUG(rt->mLogger) << "Profiler dump '" << msg << "' (id/ms/calls)" << std::flush;
         std::map<ProfID, Metrics, ProfIDComp>::iterator it;

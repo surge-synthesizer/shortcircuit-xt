@@ -100,6 +100,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     //==============================================================================
     void paint(juce::Graphics &) override;
     void resized() override;
+    void parentHierarchyChanged() override;
 
     // juce::Button::Listener interface
     virtual void buttonClicked(juce::Button *) override;

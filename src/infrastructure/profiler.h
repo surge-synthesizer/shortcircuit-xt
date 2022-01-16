@@ -43,6 +43,8 @@ class Profiler
 
     ~Profiler();
 
+    void setLogOutput(bool);
+
     // reset the profiler
     void reset(const char *msg);
 

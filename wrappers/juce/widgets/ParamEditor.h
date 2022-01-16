@@ -111,7 +111,43 @@ struct IntParamMultiSwitch : public juce::Component,
             labels.push_back(lb);
         }
         maxValue = labels.size();
+
+        resetHitRects();
     }
+
+    void resized() override { resetHitRects(); }
+
+    void resetHitRects()
+    {
+        hitRects.clear();
+        if (labels.empty())
+            return;
+        float tranx, trany;
+        auto r = getLocalBounds();
+
+        if (orientation == VERT)
+        {
+            auto bh = std::min(getHeight() * 1.f / labels.size(), 15.f);
+            r = getLocalBounds().withHeight(bh);
+            tranx = 0;
+            trany = bh + 1;
+        }
+        else
+        {
+            auto bh = getWidth() * 1.f / labels.size();
+            r = getLocalBounds().withWidth(bh);
+            tranx = bh;
+            trany = 0;
+        }
+
+        for (int i = 0; i < labels.size(); ++i)
+        {
+            hitRects.push_back(r);
+            r = r.translated(tranx, trany);
+        }
+    }
+
+    std::vector<juce::Rectangle<int>> hitRects;
 };
 
 template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMixin<T>

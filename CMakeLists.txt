@@ -18,7 +18,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-project(ShortCircuit VERSION 3.0.0.0 LANGUAGES C CXX ASM)
+project(ShortCircuit VERSION 0.5.0.0 LANGUAGES C CXX ASM)
 
 # Share some information about the  build
 message(STATUS "ShortCircuit ${CMAKE_PROJECT_VERSION}")

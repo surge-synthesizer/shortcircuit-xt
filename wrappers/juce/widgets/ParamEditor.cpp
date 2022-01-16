@@ -141,24 +141,9 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
     if (param.get().hidden)
         return;
 
-    float tranx, trany;
-    auto r = getLocalBounds();
-    if (orientation == VERT)
-    {
-        auto bh = std::min(getHeight() * 1.f / labels.size(), 15.f);
-        r = getLocalBounds().withHeight(bh);
-        tranx = 0;
-        trany = bh + 1;
-    }
-    else
-    {
-        auto bh = getWidth() * 1.f / labels.size();
-        r = getLocalBounds().withWidth(bh);
-        tranx = bh;
-        trany = 0;
-    }
     for (const auto &[idx, l] : sst::cpputils::enumerate(labels))
     {
+        auto r = hitRects[idx];
         if (param.get().val == idx)
             SCXTLookAndFeel::fillWithRaisedOutline(g, r, juce::Colour(0xFFAA1515), true);
         else
@@ -166,17 +151,18 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
         g.setColour(juce::Colours::white);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(l, r, juce::Justification::centred);
-        r = r.translated(tranx, trany);
     }
 }
 
 void IntParamMultiSwitch::mouseUp(const juce::MouseEvent &e)
 {
-    int midx = e.position.y / 20;
-    if (midx >= 0 && midx < labels.size())
+    for (const auto &[midx, r] : sst::cpputils::enumerate(hitRects))
     {
-        param.get().sendValue(midx, sender);
-        repaint();
+        if (r.toFloat().contains(e.position))
+        {
+            param.get().sendValue(midx, sender);
+            repaint();
+        }
     }
 }
 } // namespace widgets
