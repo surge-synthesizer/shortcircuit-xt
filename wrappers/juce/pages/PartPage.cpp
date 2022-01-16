@@ -32,43 +32,48 @@ STUB(Effects, juce::Colour(0xFF555577));
 
 struct Output : public ContentBase
 {
-    Output(const scxt::pages::PartPage &p) : ContentBase(p, "Output", juce::Colour(0xFF555577)) {}
-    void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &b) override
+    Output(const scxt::pages::PartPage &p) : ContentBase(p, "Output", juce::Colour(0xFF555577))
     {
-        // dividers
-        auto q = b.reduced(0, 2).withWidth(1).translated(getWidth() / 3 - 0.5, 0);
-        g.setColour(juce::Colours::black);
-        g.fillRect(q);
-        q = q.translated(getWidth() / 3 - 0.5, 0);
-        g.fillRect(q);
-
-        auto &aux = parentPage.editor->parts[parentPage.editor->selectedPart].aux;
-        g.setColour(juce::Colours::white);
-        g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
-        for (int a = 0; a < num_aux_busses; ++a)
+        for (int i = 0; i < 3; ++i)
         {
-            auto xp = a * b.getWidth() / 3;
-            auto yp = 0;
-
-            auto h = b.getHeight() / 4;
-            auto tr = juce::Rectangle<int>(xp, yp, b.getWidth() / 3, h);
-            auto txt = std::string("output ") +
-                       parentPage.editor->partAuxOutputNames.data[aux[a].output.val];
-            g.drawText(txt, tr.reduced(2, 0), juce::Justification::left);
-            tr = tr.translated(0, h);
-
-            txt = std::string("outmode ") + std::to_string(aux[a].outmode.val);
-            g.drawText(txt, tr.reduced(2, 0), juce::Justification::left);
-            tr = tr.translated(0, h);
-
-            txt = std::string("level ") + std::to_string(aux[a].level.val);
-            g.drawText(txt, tr.reduced(2, 0), juce::Justification::left);
-            tr = tr.translated(0, h);
-
-            txt = std::string("balance ") + std::to_string(aux[a].balance.val);
-            g.drawText(txt, tr.reduced(2, 0), juce::Justification::left);
+            auto &aux = parentPage.editor->currentPart.aux[i];
+            output[i] = bindIntComboBox(aux.output, parentPage.editor->partAuxOutputNames);
+            level[i] = bindFloatHSlider(aux.level);
+            balance[i] = bindFloatHSlider(aux.balance);
+            if (i != 0)
+                outmode[i] = bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::VERT,
+                                                                aux.outmode);
         }
     }
+    void resized() override
+    {
+        auto cb = getContentsBounds();
+        auto hd = contents::RowDivider(cb);
+        for (int i = 0; i < 3; ++i)
+        {
+            auto ab = hd.next(1.0 / 3.0).reduced(2, 2);
+            auto rg = contents::RowGenerator(ab, 3);
+            output[i]->setBounds(rg.next());
+            if (i == 0)
+            {
+                level[i]->setBounds(rg.next());
+                balance[i]->setBounds(rg.next());
+            }
+            else
+            {
+                outmode[i]->setBounds(ab.withWidth(50).withTrimmedTop(ab.getHeight() / 3));
+                level[i]->setBounds(rg.next().withTrimmedLeft(52));
+                balance[i]->setBounds(rg.next().withTrimmedLeft(52));
+            }
+        }
+    }
+    void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &b) override
+    {
+        contents::SectionDivider::divideSectionVertically(g, b, 3, juce::Colours::black);
+    }
+    std::array<std::unique_ptr<widgets::IntParamComboBox>, 3> output;
+    std::array<std::unique_ptr<widgets::FloatParamSlider>, 3> level, balance;
+    std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, 3> outmode; // 0 will be null
 };
 
 } // namespace part_contents
@@ -104,8 +109,8 @@ void PartPage::resized()
     velocitySplit->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.3).reduced(1, 1));
     y0 += h1 * 0.3;
 
-    output->setBounds(juce::Rectangle<int>(w1, 0, w - w1, h1 * 0.3).reduced(1, 1));
-    effects->setBounds(juce::Rectangle<int>(w1, h1 * 0.3, w - w1, h1 * 0.7).reduced(1, 1));
+    output->setBounds(juce::Rectangle<int>(w1, 0, w - w1, h1 * 0.22).reduced(1, 1));
+    effects->setBounds(juce::Rectangle<int>(w1, h1 * 0.22, w - w1, h1 * 0.78).reduced(1, 1));
 
     modulationRouting->setBounds(juce::Rectangle<int>(0, h1, w / 2, h - h1).reduced(1, 1));
     controllers->setBounds(juce::Rectangle<int>(w / 2, h1, w / 2, h - h1).reduced(1, 1));

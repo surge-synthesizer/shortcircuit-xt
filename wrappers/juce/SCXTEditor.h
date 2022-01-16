@@ -207,10 +207,11 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
     int freeParamsC[n_ip_free_items][16];
 
-    scxt::data::PartData parts[n_sampler_parts];
+    // scxt::data::PartData parts[n_sampler_parts];
     scxt::data::MultiData multi;
     scxt::data::ConfigData config;
     scxt::data::ZoneData currentZone;
+    scxt::data::PartData currentPart;
 
     sample_zone zonesCopy[max_zones];
 

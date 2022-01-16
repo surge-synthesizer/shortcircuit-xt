@@ -120,6 +120,33 @@ inline bool applyToOneOrAll(const actiondata &ad, T (&indexedElement)[N], F getF
     return res;
 }
 
+template <typename T, size_t N>
+inline bool applyToOneOrAll(const actiondata &ad, T (&indexedElement)[N])
+{
+    return applyToOneOrAll(
+        ad, indexedElement, [](auto &r) -> auto & { return r; });
+}
+
+template <typename T, size_t N, typename F>
+inline bool applyToOneOrAll(const actiondata &ad, InteractionId base, T (&indexedElement)[N],
+                            F getFunction)
+{
+    bool res = false;
+    int dist = ad.id - base;
+    if (ad.subid < 0)
+        for (auto &q : indexedElement)
+        {
+            auto &r = getFunction(q);
+            res = applyActionData(ad, r[dist]) || res;
+        }
+    else
+    {
+        auto &r = getFunction(indexedElement[ad.subid]);
+        res = applyActionData(ad, r[dist]);
+    }
+    return res;
+}
+
 } // namespace data
 } // namespace scxt
 #endif // SHORTCIRCUIT_DATAAPPLICATORS_H

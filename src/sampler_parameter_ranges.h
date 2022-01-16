@@ -51,6 +51,11 @@ struct parameter_ranges
     {
         return parameter_ranges(id, 0.f, 1.f, def, 0.01f, PERCENT);
     }
+
+    constexpr static parameter_ranges percent_bipolar(InteractionId id, float def)
+    {
+        return parameter_ranges(id, -1.f, 1.f, def, 0.01f, PERCENT);
+    }
     void toActionData(actiondata &ad) const
     {
         ad.id = id;
@@ -93,6 +98,12 @@ static constexpr parameter_ranges samplerParameterRanges[] = {
     {ip_EG_s2, 0., 5., 0.0f, 0.1f, parameter_ranges::UNDEF},
 
     {ip_mm_amount, -20.f, 20.f, 0.f, 0.05f, parameter_ranges::UNDEF},
-    parameter_ranges::percent(ip_filter_mix, 1)};
+    parameter_ranges::percent(ip_filter_mix, 1),
+
+    parameter_ranges::percent(ip_part_aux_level, 1),
+    parameter_ranges::percent_bipolar(ip_part_aux_balance, 0),
+
+    parameter_ranges::percent(ip_zone_aux_level, 1),
+    parameter_ranges::percent_bipolar(ip_zone_aux_balance, 0)};
 
 #endif // SHORTCIRCUIT_SAMPLER_PARAMETER_RANGES_H

@@ -19,46 +19,49 @@ struct MultiDataProxy : public scxt::data::UIStateProxy
     {
         auto guard = InvalidateAndRepaintGuard(*this);
         if (collectStringEntries(ad, ip_multi_filter_type, editor->multiFilterTypeNames))
-        {
             return true;
-        }
+
         if (collectStringEntries(ad, ip_multi_filter_output, editor->multiFilterOutputNames))
-        {
             return true;
-        }
 
         if (ad.id >= ip_multi_filter_fp1 && ad.id <= ip_multi_filter_fp9)
         {
-            if (applyActionData(ad, ip_multi_filter_fp1, editor->multi.filters[ad.subid].p))
+            if (data::applyToOneOrAll(
+                    ad, ip_multi_filter_fp1, editor->multi.filters,
+                    [](auto &r) -> auto & { return r.p; }))
                 return true;
         }
 
         if (ad.id >= ip_multi_filter_ip1 && ad.id <= ip_multi_filter_ip2)
         {
-            if (applyActionData(ad, ip_multi_filter_ip1, editor->multi.filters[ad.subid].ip))
+            if (applyToOneOrAll(
+                    ad, ip_multi_filter_ip1, editor->multi.filters,
+                    [](auto &r) -> auto & { return r.ip; }))
                 return true;
         }
 
         switch (ad.id)
         {
         case ip_multi_filter_pregain:
-            if (applyActionData(ad, editor->multi.filter_pregain[ad.subid]))
+            if (applyToOneOrAll(ad, editor->multi.filter_pregain))
                 return true;
             break;
         case ip_multi_filter_postgain:
-            if (applyActionData(ad, editor->multi.filter_postgain[ad.subid]))
+            if (applyToOneOrAll(ad, editor->multi.filter_postgain))
                 return true;
             break;
         case ip_multi_filter_output:
-            if (applyActionData(ad, editor->multi.filter_output[ad.subid]))
+            if (applyToOneOrAll(ad, editor->multi.filter_output))
                 return true;
             break;
         case ip_multi_filter_type:
-            if (applyActionData(ad, editor->multi.filters[ad.subid].type))
+            if (applyToOneOrAll(
+                    ad, editor->multi.filters, [](auto &r) -> auto & { return r.type; }))
                 return true;
             break;
         case ip_multi_filter_bypass:
-            if (applyActionData(ad, editor->multi.filters[ad.subid].bypass))
+            if (applyToOneOrAll(
+                    ad, editor->multi.filters, [](auto &r) -> auto & { return r.bypass; }))
                 return true;
             break;
 

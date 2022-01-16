@@ -316,11 +316,49 @@ struct Filters : public ContentBase
 
 struct Outputs : public ContentBase
 {
-    Outputs(ZonePage &p) : ContentBase(p, "Outputs", juce::Colour(0xFF444477)) {}
+    Outputs(ZonePage &p) : ContentBase(p, "Outputs", juce::Colour(0xFF444477))
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            auto &aux = parentPage.editor->currentZone.aux[i];
+            output[i] = bindIntComboBox(aux.output, parentPage.editor->partAuxOutputNames);
+            level[i] = bindFloatHSlider(aux.level);
+            balance[i] = bindFloatHSlider(aux.balance);
+            if (i != 0)
+                outmode[i] = bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::HORIZ,
+                                                                aux.outmode);
+        }
+        for (const auto &[i, l] : sst::cpputils::enumerate(std::array{"main", "aux1", "aux2"}))
+        {
+            outLabel[i] = whiteLabel(l, juce::Justification::right);
+        }
+    }
     void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) override
     {
         contents::SectionDivider::divideSectionHorizontally(g, bounds, 4, juce::Colours::black);
     }
+
+    void resized() override
+    {
+        auto cb = getContentsBounds();
+        auto rg = contents::RowGenerator(cb, 4);
+        for (int i = 0; i < 3; ++i)
+        {
+            auto outB = rg.next().reduced(2, 2);
+            auto rrg = contents::RowGenerator(outB, 5);
+            output[i]->setBounds(rrg.next());
+            if (i != 0)
+                outmode[i]->setBounds(rrg.next());
+            level[i]->setBounds(rrg.next());
+            balance[i]->setBounds(rrg.next());
+            outLabel[i]->setBounds(rrg.next());
+        }
+    }
+
+    std::array<std::unique_ptr<juce::Label>, 3> outLabel;
+    std::array<std::unique_ptr<widgets::IntParamComboBox>, 3> output;
+    std::array<std::unique_ptr<widgets::FloatParamSlider>, 3> level, balance;
+    std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, 3> outmode; // 0 will be null
 };
 
 STUB(Sample, juce::Colour(0xFF444477));

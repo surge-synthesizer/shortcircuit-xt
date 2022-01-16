@@ -81,6 +81,7 @@ struct IntParamMultiSwitch : public juce::Component,
     IntParamMultiSwitch(const Orientation &o, data::ParameterProxy<int> &p, data::ActionSender *snd)
         : juce::Component(), orientation(o), ParamRefMixin<int>(p, snd)
     {
+        setLabelsFromParam();
     }
 
     void setLabels(const std::vector<std::string> &l)
@@ -93,7 +94,8 @@ struct IntParamMultiSwitch : public juce::Component,
     void paint(juce::Graphics &g) override;
     void mouseUp(const juce::MouseEvent &e) override;
 
-    void onProxyUpdate() override
+    void onProxyUpdate() override { setLabelsFromParam(); }
+    void setLabelsFromParam()
     {
         labels.clear();
         auto lb = param.get().label;
