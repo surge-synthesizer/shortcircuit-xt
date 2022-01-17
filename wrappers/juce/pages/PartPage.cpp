@@ -57,7 +57,7 @@ struct Output : public ContentBase
         {
             auto ab = hd.next(1.0 / 3.0).reduced(2, 2);
             auto rg = contents::RowGenerator(ab, 3);
-            output[i]->setBounds(rg.next());
+            output[i]->setBounds(rg.next().reduced(0, 1));
             if (i == 0)
             {
                 level[i]->setBounds(rg.next());
@@ -65,7 +65,7 @@ struct Output : public ContentBase
             }
             else
             {
-                outmode[i]->setBounds(ab.withWidth(50).withTrimmedTop(ab.getHeight() / 3));
+                outmode[i]->setBounds(ab.withWidth(50).withTrimmedTop(ab.getHeight() / 3 + 2));
                 level[i]->setBounds(rg.next().withTrimmedLeft(52));
                 balance[i]->setBounds(rg.next().withTrimmedLeft(52));
             }

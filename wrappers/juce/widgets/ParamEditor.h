@@ -18,17 +18,21 @@ namespace scxt
 {
 namespace widgets
 {
-template <typename P> inline void assertParamRangesSet(const P &p)
+template <typename P> inline void assertParamRangesSet(P &p)
 {
     if (p.id < 0)
         return;
 
-    jassert(p.paramRangesSet);
-    if (!p.paramRangesSet)
+    if (!p.complainedAboutParamRangesSet)
     {
-        std::ostringstream oss;
-        oss << "Param Ranges unset " << debug_wrapper_ip_to_string(p.id);
-        DBG(oss.str());
+        jassert(p.paramRangesSet);
+        if (!p.paramRangesSet)
+        {
+            std::ostringstream oss;
+            oss << "Param Ranges unset " << debug_wrapper_ip_to_string(p.id);
+            DBG(oss.str());
+        }
+        p.complainedAboutParamRangesSet = true;
     }
 }
 

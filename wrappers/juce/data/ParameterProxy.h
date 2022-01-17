@@ -46,6 +46,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     T min{0}, max{1}, def{0}, step;
     std::string units;
     bool paramRangesSet{false};
+    bool complainedAboutParamRangesSet{false};
 
     enum Units
     {
