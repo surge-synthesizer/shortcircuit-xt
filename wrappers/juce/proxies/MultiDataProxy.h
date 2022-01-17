@@ -26,7 +26,7 @@ struct MultiDataProxy : public scxt::data::UIStateProxy
 
         if (ad.id >= ip_multi_filter_fp1 && ad.id <= ip_multi_filter_fp9)
         {
-            if (data::applyToOneOrAll(
+            if (applyToOneOrAll(
                     ad, ip_multi_filter_fp1, editor->multi.filters,
                     [](auto &r) -> auto & { return r.p; }))
                 return true;

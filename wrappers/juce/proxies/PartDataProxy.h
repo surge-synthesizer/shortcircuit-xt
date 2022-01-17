@@ -20,134 +20,155 @@ struct PartDataProxy : public scxt::data::UIStateProxy
         auto g = InvalidateAndRepaintGuard(*this);
         auto &part = editor->currentPart;
 
-        if (collectStringEntriesIf(ad, ip_part_aux_output, editor->partAuxOutputNames))
+        bool res = false;
+        switch (ad.id)
         {
-            return true;
+        case ip_part_aux_output:
+            res = data::collectStringEntries(ad, editor->partAuxOutputNames);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.aux, [](auto &r) -> auto & { return r.output; });
+            break;
+        case ip_part_aux_level:
+            res = data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.level; });
+            break;
+        case ip_part_aux_balance:
+            res = data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.balance; });
+            break;
+        case ip_part_aux_outmode:
+            res = data::applyToOneOrAll(
+                ad, part.aux, [](auto &r) -> auto & { return r.outmode; });
+            break;
+
+        case ip_part_filter1_fp:
+            res = data::applyToOneOrAll(ad, part.filters[0].p);
+            break;
+        case ip_part_filter1_ip:
+            res = data::applyToOneOrAll(ad, part.filters[0].ip);
+            break;
+        case ip_part_filter2_fp:
+            res = data::applyToOneOrAll(ad, part.filters[1].p);
+            break;
+        case ip_part_filter2_ip:
+            res = data::applyToOneOrAll(ad, part.filters[1].ip);
+            break;
+        case ip_part_filter_type:
+            res = data::collectStringEntries(ad, editor->partFilterTypeNames);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.filters, [](auto &r) -> auto & { return r.type; });
+            break;
+        case ip_part_filter_mix:
+            res = data::applyToOneOrAll(
+                ad, part.filters, [](auto &r) -> auto & { return r.mix; });
+            break;
+        case ip_part_filter_bypass:
+            res = data::applyToOneOrAll(
+                ad, part.filters, [](auto &r) -> auto & { return r.bypass; });
+            break;
+
+        case ip_part_userparam_value:
+            res = data::applyToOneOrAll(ad, part.userparameter);
+            break;
+        case ip_part_userparam_name:
+            res = data::applyToOneOrAll(ad, part.userparameter_name);
+            break;
+        case ip_part_userparam_polarity:
+            res = data::applyToOneOrAll(ad, part.userparameter_polarity);
+            break;
+
+        case ip_part_name:
+            res = data::applyActionData(ad, part.name);
+            break;
+        case ip_part_midichannel:
+            res = data::applyActionData(ad, part.midichannel);
+            break;
+        case ip_part_polylimit:
+            res = data::applyActionData(ad, part.polylimit);
+            break;
+        case ip_part_transpose:
+            res = data::applyActionData(ad, part.transpose);
+            break;
+        case ip_part_formant:
+            res = data::applyActionData(ad, part.formant);
+            break;
+        case ip_part_polymode:
+            res = data::applyActionData(ad, part.polymode);
+            break;
+        case ip_part_portamento_mode:
+            res = data::applyActionData(ad, part.portamento_mode);
+            break;
+        case ip_part_portamento:
+            res = data::applyActionData(ad, part.portamento);
+            break;
+        case ip_part_vs_layers:
+            res = data::applyActionData(ad, part.part_vs_layers);
+            break;
+        case ip_part_vs_distribution:
+            res = data::applyActionData(ad, part.part_vs_distribution);
+            break;
+        case ip_part_vs_xf_equality:
+            res = data::applyActionData(ad, part.part_vs_xf_equality);
+            break;
+        case ip_part_vs_xfade:
+            res = data::applyActionData(ad, part.part_vs_xfade);
+            break;
+
+        case ip_part_nc_src:
+            res = data::collectStringEntries(ad, editor->partNCSrc);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.nc, [](auto &r) -> auto & { return r.source; });
+            break;
+        case ip_part_nc_high:
+            res = data::applyToOneOrAll(
+                ad, part.nc, [](auto &r) -> auto & { return r.high; });
+            break;
+        case ip_part_nc_low:
+            res = data::applyToOneOrAll(
+                ad, part.nc, [](auto &r) -> auto & { return r.low; });
+            break;
+
+        case ip_part_mm_src:
+            res = data::collectStringEntries(ad, editor->partMMSrc);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.mm, [](auto &r) -> auto & { return r.source; });
+            break;
+        case ip_part_mm_src2:
+            res = data::collectStringEntries(ad, editor->partMMSrc2);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.mm, [](auto &r) -> auto & { return r.source2; });
+            break;
+        case ip_part_mm_dst:
+            res = data::collectStringEntries(ad, editor->partMMDst);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.mm, [](auto &r) -> auto & { return r.destination; });
+            break;
+        case ip_part_mm_curve:
+            res = data::collectStringEntries(ad, editor->partMMCurve);
+            if (!res)
+                res = data::applyToOneOrAll(
+                    ad, part.mm, [](auto &r) -> auto & { return r.curve; });
+            break;
+        case ip_part_mm_active:
+            res = data::applyToOneOrAll(
+                ad, part.mm, [](auto &r) -> auto & { return r.active; });
+            break;
+        case ip_part_mm_amount:
+            res = data::applyToOneOrAll(
+                ad, part.mm, [](auto &r) -> auto & { return r.strength; });
+            break;
+        default:
+            break;
         }
-        if (collectStringEntriesIf(ad, ip_part_filter_type, editor->partFilterTypeNames))
-            return true;
-        if (collectStringEntriesIf(ad, ip_part_mm_src, editor->partMMSrc))
-            return true;
-        if (collectStringEntriesIf(ad, ip_part_mm_src2, editor->partMMSrc2))
-            return true;
-        if (collectStringEntriesIf(ad, ip_part_mm_dst, editor->partMMDst))
-            return true;
-        if (collectStringEntriesIf(ad, ip_part_mm_curve, editor->partMMCurve))
-            return true;
-        if (collectStringEntriesIf(ad, ip_part_nc_src, editor->partNCSrc))
-            return true;
 
-        if (applyActionDataSubIdIf(ad, ip_part_filter1_fp, part.filters[0].p))
+        if (res)
             return true;
-        if (applyActionDataSubIdIf(ad, ip_part_filter1_ip, part.filters[0].ip))
-            return true;
-        if (applyActionDataSubIdIf(ad, ip_part_filter2_fp, part.filters[1].p))
-            return true;
-        if (applyActionDataSubIdIf(ad, ip_part_filter2_ip, part.filters[1].ip))
-            return true;
-
-        /*
-         * This is a bit out of pattern
-         */
-        if (applyActionDataIf(ad, ip_part_filter_type, part.filters[ad.subid].type))
-            return true;
-        if (applyActionDataIf(ad, ip_part_filter_mix, part.filters[ad.subid].mix))
-            return true;
-        if (applyActionDataIf(ad, ip_part_filter_bypass, part.filters[ad.subid].bypass))
-            return true;
-
-        if (applyActionDataSubIdIf(ad, ip_part_userparam_value, part.userparameter))
-            return true;
-        if (applyActionDataSubIdIf(ad, ip_part_userparam_name, part.userparameter_name))
-            return true;
-        if (applyActionDataSubIdIf(ad, ip_part_userparam_polarity, part.userparameter_polarity))
-            return true;
-
-        /*
-         * AUX busses
-         */
-        if (ad.id == ip_part_aux_level &&
-            data::applyToOneOrAll(
-                ad, part.aux, [](auto &r) -> auto & { return r.level; }))
-            return true;
-        if (ad.id == ip_part_aux_balance &&
-            data::applyToOneOrAll(
-                ad, part.aux, [](auto &r) -> auto & { return r.balance; }))
-            return true;
-        if (ad.id == ip_part_aux_output &&
-            data::applyToOneOrAll(
-                ad, part.aux, [](auto &r) -> auto & { return r.output; }))
-            return true;
-        if (ad.id == ip_part_aux_outmode &&
-            data::applyToOneOrAll(
-                ad, part.aux, [](auto &r) -> auto & { return r.outmode; }))
-            return true;
-
-        /*
-         * MM object
-         */
-        if (applyActionDataIf(ad, ip_part_mm_src, part.mm[ad.subid].source))
-            return true;
-        if (applyActionDataIf(ad, ip_part_mm_src2, part.mm[ad.subid].source2))
-            return true;
-        if (applyActionDataIf(ad, ip_part_mm_dst, part.mm[ad.subid].destination))
-            return true;
-        if (applyActionDataIf(ad, ip_part_mm_amount, part.mm[ad.subid].strength))
-            return true;
-        if (applyActionDataIf(ad, ip_part_mm_active, part.mm[ad.subid].active))
-            return true;
-        if (applyActionDataIf(ad, ip_part_mm_curve, part.mm[ad.subid].curve))
-            return true;
-
-        /*
-         * NCs
-         */
-        if (applyActionDataIf(ad, ip_part_nc_src, part.nc[ad.subid].source))
-            return true;
-        if (applyActionDataIf(ad, ip_part_nc_high, part.nc[ad.subid].high))
-            return true;
-        if (applyActionDataIf(ad, ip_part_nc_low, part.nc[ad.subid].low))
-            return true;
-
-        /*
-         * One offs
-         */
-        if (applyActionDataIf(ad, ip_part_name, part.name))
-            return true;
-        if (applyActionDataIf(ad, ip_part_midichannel, part.midichannel))
-            return true;
-        if (applyActionDataIf(ad, ip_part_midichannel, part.midichannel))
-            return true;
-        if (applyActionDataIf(ad, ip_part_polylimit, part.polylimit))
-            return true;
-        if (applyActionDataIf(ad, ip_part_transpose, part.transpose))
-            return true;
-        if (applyActionDataIf(ad, ip_part_formant, part.formant))
-            return true;
-        if (applyActionDataIf(ad, ip_part_polymode, part.polymode))
-            return true;
-        if (applyActionDataIf(ad, ip_part_portamento_mode, part.portamento_mode))
-            return true;
-        if (applyActionDataIf(ad, ip_part_portamento, part.portamento))
-            return true;
-        if (applyActionDataIf(ad, ip_part_vs_layers, part.part_vs_layers))
-            return true;
-        if (applyActionDataIf(ad, ip_part_vs_distribution, part.part_vs_distribution))
-            return true;
-        if (applyActionDataIf(ad, ip_part_vs_xf_equality, part.part_vs_xf_equality))
-            return true;
-        if (applyActionDataIf(ad, ip_part_vs_xfade, part.part_vs_xfade))
-            return true;
-
-        if (ad.id == ip_part_aux_output)
-        {
-            if (std::get<VAction>(ad.actiontype) == vga_entry_replace_label_on_id)
-            {
-                std::cout << FILE_LINE_OS << ad << " " << ad.data.i[0] << " - "
-                          << (char *)(&(ad.data.str[4])) << std::endl;
-            }
-            return g.deactivate();
-        }
 
         if (ad.id >= ip_part_params_begin && ad.id <= ip_part_params_end)
         {

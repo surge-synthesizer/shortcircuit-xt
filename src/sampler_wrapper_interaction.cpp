@@ -1724,8 +1724,8 @@ void sampler::post_initdata()
 
     for (const auto &q : ip_data)
     {
-        if (q.id != ip_none && !q.label.empty() &&
-            (q.id == ip_zone_aux_outmode || q.id == ip_part_aux_outmode))
+        // this is a hack but if i send them all startup stalls. Why?
+        if (q.id != ip_none && !q.label.empty() && q.label.find(";") != std::string::npos)
         {
             ad.id = q.id;
             ad.actiontype = vga_label;

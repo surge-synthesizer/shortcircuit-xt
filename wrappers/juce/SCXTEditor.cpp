@@ -86,6 +86,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     pages[CONFIG] = std::make_unique<scxt::pages::PageBase>(this, CONFIG);
     pages[ABOUT] = std::make_unique<scxt::pages::AboutPage>(this, ABOUT);
 
+    selectionStateProxy->clients.insert(pages[ZONE].get());
     zoneListProxy->clients.insert(pages[ZONE].get());
     zoneProxy->clients.insert(pages[ZONE].get());
 

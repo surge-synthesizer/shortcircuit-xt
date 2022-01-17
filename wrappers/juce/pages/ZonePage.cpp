@@ -27,12 +27,6 @@ namespace zone_contents
 {
 typedef scxt::pages::contents::PageContentBase<scxt::pages::ZonePage> ContentBase;
 
-#define STUB(x, c)                                                                                 \
-    struct x : public ContentBase                                                                  \
-    {                                                                                              \
-        x(const scxt::pages::ZonePage &p) : ContentBase(p, #x, c) {}                               \
-    };
-
 struct NamesAndRanges : public ContentBase
 {
     NamesAndRanges(const scxt::pages::ZonePage &p)
@@ -259,7 +253,7 @@ struct Routing : public ContentBase
 
 struct Filters : public ContentBase
 {
-    Filters(ZonePage &p) : ContentBase(p, "Filters", juce::Colour(0xFF444477))
+    Filters(const ZonePage &p) : ContentBase(p, "Filters", juce::Colour(0xFF444477))
     {
         for (int i = 0; i < 2; ++i)
         {
@@ -322,7 +316,7 @@ struct Filters : public ContentBase
 
 struct Outputs : public ContentBase
 {
-    Outputs(ZonePage &p) : ContentBase(p, "Outputs", juce::Colour(0xFF444477))
+    Outputs(const ZonePage &p) : ContentBase(p, "Outputs", juce::Colour(0xFF444477))
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -367,9 +361,23 @@ struct Outputs : public ContentBase
     std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, 3> outmode; // 0 will be null
 };
 
-STUB(Sample, juce::Colour(0xFF444477));
-STUB(Pitch, juce::Colour(0XFF555555));
-STUB(LFO, juce::Colour(0xFF447744));
+struct Pitch : ContentBase
+{
+    Pitch(const ZonePage &p) : ContentBase(p, "Pitch & etc", juce::Colour(0xFF555555)) {}
+};
+
+struct Sample : ContentBase
+{
+    Sample(const ZonePage &p) : ContentBase(p, "Sample", juce::Colour(0xFF444477)) {}
+};
+
+struct LFO : ContentBase
+{
+    LFO(const ZonePage &p) : ContentBase(p, "LFO", juce::Colour(0xFF447744)) { activateTabs(); }
+
+    int getTabCount() const override { return 3; }
+    std::string getTabLabel(int i) const override { return std::to_string(i + 1); }
+};
 
 } // namespace zone_contents
 
@@ -460,6 +468,7 @@ void ZonePage::onProxyUpdate()
     PageBase::onProxyUpdate();
     if (editor->selectedLayer >= 0 && editor->selectedLayer < num_layers)
         layerButtons[editor->selectedLayer]->setToggleState(true, juce::dontSendNotification);
+    repaint();
 }
 
 } // namespace pages
