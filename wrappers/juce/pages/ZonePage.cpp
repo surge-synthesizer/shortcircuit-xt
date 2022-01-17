@@ -13,6 +13,7 @@
 
 #include "widgets/ParamEditor.h"
 #include "widgets/ComboBox.h"
+#include "widgets/OutlinedTextButton.h"
 
 #include "sst/cpputils.h"
 
@@ -288,15 +289,20 @@ struct Filters : public ContentBase
         auto sideCol = 60;
         for (int i = 0; i < 2; ++i)
         {
-            auto rg = contents::RowGenerator(b.reduced(3, 1).withTrimmedRight(sideCol),
-                                             1 + n_filter_parameters);
+            auto fSide = b.reduced(3, 1).withTrimmedRight(sideCol);
+            auto iSide = b.translated(b.getWidth() - sideCol, 0).withWidth(sideCol).reduced(1, 1);
+            if (i == 1)
+            {
+                fSide = fSide.translated(sideCol, 0);
+                iSide = iSide.translated(sideCol - b.getWidth(), 0);
+            }
+            auto rg = contents::RowGenerator(fSide, 1 + n_filter_parameters);
             types[i]->setBounds(rg.next());
 
             for (auto q = 0; q < n_filter_parameters; ++q)
                 fp[i][q]->setBounds(rg.next());
 
-            auto sg = b.translated(b.getWidth() - sideCol, 0).withWidth(sideCol).reduced(1, 1);
-            auto srg = contents::RowGenerator(sg, 10);
+            auto srg = contents::RowGenerator(iSide, 10);
             bypass[i]->setBounds(srg.next());
             mix[i]->setBounds(srg.next());
             for (int q = 0; q < n_filter_iparameters; ++q)
@@ -321,7 +327,7 @@ struct Outputs : public ContentBase
         for (int i = 0; i < 3; ++i)
         {
             auto &aux = parentPage.editor->currentZone.aux[i];
-            output[i] = bindIntComboBox(aux.output, parentPage.editor->partAuxOutputNames);
+            output[i] = bindIntComboBox(aux.output, parentPage.editor->zoneAuxOutput);
             level[i] = bindFloatHSlider(aux.level);
             balance[i] = bindFloatHSlider(aux.balance);
             if (i != 0)
@@ -375,6 +381,21 @@ ZonePage::ZonePage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
     waveDisplay = std::make_unique<components::WaveDisplay>(editor, editor);
     addAndMakeVisible(*waveDisplay);
 
+    for (int i = 0; i < num_layers; ++i)
+    {
+        std::string ln = "A";
+        ln[0] += i;
+        layerButtons[i] = std::make_unique<scxt::widgets::OutlinedTextButton>(ln);
+        layerButtons[i]->setClickingTogglesState(true);
+        layerButtons[i]->setToggleState(i == 0, juce::dontSendNotification);
+        layerButtons[i]->setRadioGroupId(172, juce::NotificationType::dontSendNotification);
+        layerButtons[i]->onClick = [this, i]() {
+            editor->selectLayer(i);
+            editor->repaint();
+        };
+        addAndMakeVisible(*layerButtons[i]);
+    }
+
     namespace zc = zone_contents;
     sample = makeContent<zc::Sample>(*this);
     namesAndRanges = makeContent<zc::NamesAndRanges>(*this);
@@ -392,8 +413,13 @@ void ZonePage::resized()
 {
     auto r = getLocalBounds();
 
-    zoneKeyboardDisplay->setBounds(r.withHeight(80));
-    waveDisplay->setBounds(r.withHeight(100).translated(0, 80));
+    zoneKeyboardDisplay->setBounds(r.withHeight(80).withTrimmedLeft(20));
+    waveDisplay->setBounds(r.withHeight(100).translated(0, 80).withTrimmedLeft(20));
+
+    auto layerR = r.withWidth(20).withHeight(180);
+    auto rg = contents::RowGenerator(layerR, num_layers);
+    for (const auto &lb : layerButtons)
+        lb->setBounds(rg.next());
 
     auto lower = r.withTrimmedTop(180);
 
@@ -427,6 +453,13 @@ void ZonePage::connectProxies()
     // Probably change this
     editor->zoneListProxy->clients.insert(zoneKeyboardDisplay.get());
     editor->uiStateProxies.insert(waveDisplay.get());
+}
+
+void ZonePage::onProxyUpdate()
+{
+    PageBase::onProxyUpdate();
+    if (editor->selectedLayer >= 0 && editor->selectedLayer < num_layers)
+        layerButtons[editor->selectedLayer]->setToggleState(true, juce::dontSendNotification);
 }
 
 } // namespace pages

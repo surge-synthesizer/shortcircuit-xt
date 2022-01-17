@@ -93,52 +93,6 @@ class UIStateProxy
             }
         }
     }
-
-    bool collectStringEntries(const actiondata &ad, NameList &v)
-    {
-        if (std::holds_alternative<VAction>(ad.actiontype))
-        {
-            auto at = std::get<VAction>(ad.actiontype);
-            if (at == vga_entry_clearall)
-            {
-                v.data.clear();
-                v.update_count++;
-                return true;
-            }
-            if (at == vga_entry_add_ival_from_self)
-            {
-                v.data.push_back(ad.data.str);
-                v.update_count++;
-                return true;
-            }
-            if (at == vga_entry_add_ival_from_self_with_id)
-            {
-                auto entry = ad.data.i[0];
-                auto val = (char *)(&ad.data.str[4]);
-                if (entry >= v.data.size())
-                    v.data.resize(entry + 1);
-                v.data[entry] = val;
-                v.update_count++;
-                return true;
-            }
-            if (at == vga_entry_replace_label_on_id)
-            {
-                auto entry = ad.data.i[0];
-                auto val = (char *)(&ad.data.str[4]);
-                v.data[entry] = val;
-                v.update_count++;
-
-                return true;
-            }
-        }
-        return false;
-    }
-    bool collectStringEntries(const actiondata &ad, InteractionId id, NameList &v)
-    {
-        if (ad.id != id)
-            return false;
-        return collectStringEntries(ad, v);
-    }
 };
 
 } // namespace data

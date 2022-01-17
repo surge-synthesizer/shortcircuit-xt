@@ -292,6 +292,19 @@ void SCXTEditor::selectPart(int i)
     ad.actiontype = vga_intval;
     ad.data.i[0] = i;
     sendActionToEngine(ad);
+    selectedPart = i;
+    selectedLayer = -1;
+    selectedZone = -1;
+}
+
+void SCXTEditor::selectLayer(int i)
+{
+    actiondata ad;
+    ad.id = ip_layerselect;
+    ad.actiontype = vga_intval;
+    ad.data.i[0] = i;
+    sendActionToEngine(ad);
+    selectedLayer = i;
     selectedZone = -1;
 }
 
