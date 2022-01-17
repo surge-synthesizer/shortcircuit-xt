@@ -24,11 +24,14 @@ struct SelectionStateProxy : public scxt::data::UIStateProxy
         {
         case ip_partselect:
             editor->selectedPart = ad.data.i[0];
-            markNeedsRepaintAndProxyUpdate();
             return true;
             break;
 
         case ip_layerselect:
+            editor->selectedLayer = ad.data.i[0];
+            return true;
+            break;
+
         case ip_wavedisplay:
         case ip_browser_previewbutton:
         case ip_sample_prevnext:

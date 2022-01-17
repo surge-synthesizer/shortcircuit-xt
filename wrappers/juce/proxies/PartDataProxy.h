@@ -20,21 +20,21 @@ struct PartDataProxy : public scxt::data::UIStateProxy
         auto g = InvalidateAndRepaintGuard(*this);
         auto &part = editor->currentPart;
 
-        if (collectStringEntries(ad, ip_part_aux_output, editor->partAuxOutputNames))
+        if (collectStringEntriesIf(ad, ip_part_aux_output, editor->partAuxOutputNames))
         {
             return true;
         }
-        if (collectStringEntries(ad, ip_part_filter_type, editor->partFilterTypeNames))
+        if (collectStringEntriesIf(ad, ip_part_filter_type, editor->partFilterTypeNames))
             return true;
-        if (collectStringEntries(ad, ip_part_mm_src, editor->partMMSrc))
+        if (collectStringEntriesIf(ad, ip_part_mm_src, editor->partMMSrc))
             return true;
-        if (collectStringEntries(ad, ip_part_mm_src2, editor->partMMSrc2))
+        if (collectStringEntriesIf(ad, ip_part_mm_src2, editor->partMMSrc2))
             return true;
-        if (collectStringEntries(ad, ip_part_mm_dst, editor->partMMDst))
+        if (collectStringEntriesIf(ad, ip_part_mm_dst, editor->partMMDst))
             return true;
-        if (collectStringEntries(ad, ip_part_mm_curve, editor->partMMCurve))
+        if (collectStringEntriesIf(ad, ip_part_mm_curve, editor->partMMCurve))
             return true;
-        if (collectStringEntries(ad, ip_part_nc_src, editor->partNCSrc))
+        if (collectStringEntriesIf(ad, ip_part_nc_src, editor->partNCSrc))
             return true;
 
         if (applyActionDataSubIdIf(ad, ip_part_filter1_fp, part.filters[0].p))

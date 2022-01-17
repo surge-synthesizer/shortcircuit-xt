@@ -40,7 +40,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
     auto keyBlackHoverColour = juce::Colour(200, 200, 255);
     std::vector<uint32_t> zoneColorPallette = {0xffdacac0, 0xffc7b582, 0xfff76f5e,
                                                0xff93965f, 0xffb1453f, 0xff676949};
-    auto zoneOutlineColor = juce::Colour(240, 220, 200);
+    auto zoneOutlineColor = juce::Colour(100, 180, 200);
     // end configuration
 
     g.fillAll(juce::Colour(80, 70, 60));
@@ -124,7 +124,8 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 
     for (int i = 0; i < max_zones; ++i)
     {
-        if (editor->activeZones[i])
+        if (editor->activeZones[i] && editor->zonesCopy[i].part == editor->selectedPart &&
+            editor->zonesCopy[i].layer == editor->selectedLayer)
         {
             auto ks = editor->zonesCopy[i].key_low;
             auto ke = editor->zonesCopy[i].key_high;
@@ -138,7 +139,15 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
             auto col = juce::Colour(zoneColorPallette[i % zoneColorPallette.size()]);
             if (i == hoveredZone)
             {
-                col = juce::Colour(245, 184, 184);
+                col = col.brighter(0.4f);
+            }
+
+            auto toc = zoneOutlineColor;
+
+            if (i == editor->selectedZone)
+            {
+                col = juce::Colours::yellow;
+                toc = juce::Colours::white;
             }
             auto xs = keyXBounds[ks].first;
             auto xe = keyXBounds[ke].second;
@@ -148,7 +157,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 
             g.setColour(col);
             g.fillRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
-            g.setColour(zoneOutlineColor);
+            g.setColour(toc);
             g.drawRect(xs, zoneYStart, xe - xs, zoneYEnd - zoneYStart);
         }
     }

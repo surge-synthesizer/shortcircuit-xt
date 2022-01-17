@@ -18,10 +18,10 @@ struct MultiDataProxy : public scxt::data::UIStateProxy
     bool processActionData(const actiondata &ad)
     {
         auto guard = InvalidateAndRepaintGuard(*this);
-        if (collectStringEntries(ad, ip_multi_filter_type, editor->multiFilterTypeNames))
+        if (collectStringEntriesIf(ad, ip_multi_filter_type, editor->multiFilterTypeNames))
             return true;
 
-        if (collectStringEntries(ad, ip_multi_filter_output, editor->multiFilterOutputNames))
+        if (collectStringEntriesIf(ad, ip_multi_filter_output, editor->multiFilterOutputNames))
             return true;
 
         if (ad.id >= ip_multi_filter_fp1 && ad.id <= ip_multi_filter_fp9)

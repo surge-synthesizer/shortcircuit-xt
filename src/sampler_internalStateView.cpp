@@ -196,7 +196,18 @@ std::string sampler::generateInternalStateView() const
             oss << pfx << "aux:\n";
             {
                 auto g3 = pfx.up();
-                oss << pfx << "coming_soon: true\n";
+                int idx = 0;
+                for (auto &a : z->aux)
+                {
+                    oss << pfx << "aux_" << idx << ":\n";
+                    idx++;
+                    auto g4 = pfx.up();
+                    auto aa = &a;
+                    SHOW(level, aa);
+                    SHOW(balance, aa);
+                    SHOW(output, aa);
+                    SHOW(outmode, aa);
+                }
             }
 
             oss << pfx << "lag_generator:\n";

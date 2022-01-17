@@ -15,10 +15,13 @@ namespace components
 struct ZoneKeyboardDisplay;
 struct WaveDisplay;
 } // namespace components
+namespace widgets
+{
+struct OutlinedTextButton;
+}
 
 namespace pages
 {
-
 namespace zone_contents
 {
 struct Sample;
@@ -39,9 +42,11 @@ struct ZonePage : public PageBase
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
     virtual void connectProxies() override;
+    virtual void onProxyUpdate() override;
 
     std::unique_ptr<components::ZoneKeyboardDisplay> zoneKeyboardDisplay;
     std::unique_ptr<components::WaveDisplay> waveDisplay;
+    std::array<std::unique_ptr<widgets::OutlinedTextButton>, num_layers> layerButtons;
 
     std::unique_ptr<zone_contents::Sample> sample;
     std::unique_ptr<zone_contents::NamesAndRanges> namesAndRanges;

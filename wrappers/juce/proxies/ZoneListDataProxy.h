@@ -53,6 +53,7 @@ struct ZoneListDataProxy : public scxt::data::UIStateProxy
             sz->velocity_high = zd->velhi;
             sz->velocity_high_fade = zd->velhifade;
             sz->mute = zd->mute;
+
             strncpy(sz->name, zd->name, 32);
             break;
         }

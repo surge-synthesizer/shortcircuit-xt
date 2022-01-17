@@ -200,8 +200,10 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     std::array<VUData, max_outputs> vuData;
 
     int selectedPart{0};
+    int selectedLayer{0};
     int selectedZone{-1};
     void selectPart(int i);
+    void selectLayer(int i);
 
     bool activeZones[max_zones];
     bool selectedZones[max_zones];
