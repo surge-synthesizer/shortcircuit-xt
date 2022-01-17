@@ -78,38 +78,12 @@ template <typename T> inline bool applyActionData(const actiondata &ad, Paramete
     return false;
 }
 
-template <typename T, size_t N>
-inline bool applyActionData(const actiondata &ad, int base, ParameterProxy<T> (&proxy)[N])
-{
-    auto idx = ad.id - base;
-
-    auto res = applyActionData(ad, proxy[idx]);
-
-    return res;
-}
-
 template <typename T>
 inline bool applyActionDataIf(const actiondata &ad, const InteractionId &id,
                               ParameterProxy<T> &proxy)
 {
     if (ad.id == id && applyActionData(ad, proxy))
         return true;
-    return false;
-}
-template <typename T, size_t N>
-inline bool applyActionDataSubIdIf(const actiondata &ad, const InteractionId &id,
-                                   ParameterProxy<T> (&proxy)[N])
-{
-    if (ad.id != id)
-        return false;
-
-    if (ad.subid == -1)
-    {
-        for (auto &p : proxy)
-            applyActionData(ad, p);
-    }
-    else
-        return applyActionData(ad, proxy[ad.subid]);
     return false;
 }
 

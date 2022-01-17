@@ -294,7 +294,9 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
             case vga_steplfo_data_single:
             {
                 auto lfo = ad.subid;
+                jassert(ad.subid >= 0 && ad.subid < 3);
                 auto step = ad.data.i[0];
+                jassert(step >= 0 && step < 32);
                 auto val = ad.data.f[1];
                 cz.lfo[lfo].data[step].val = val;
                 res = true;
@@ -309,9 +311,13 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
                 cz.lfo[ad.subid].smooth.val = ad.data.i[0];
                 res = true;
                 break;
+            case vga_label:
+                // that's ok;
+                res = true;
+                break;
             case vga_disable_state:
             case vga_floatval:
-                // FIXME - wuh?
+                // std::cout << FILE_LINE_OS << ad << " ignored" << std::endl;
                 res = true;
                 break;
             default:

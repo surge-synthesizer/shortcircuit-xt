@@ -28,7 +28,11 @@ STUB(LayerRanges, juce::Colours::darkgrey);
 STUB(VelocitySplit, juce::Colours::darkgrey);
 STUB(ModulationRouting, juce::Colours::darkgrey);
 STUB(Controllers, juce::Colour(0xFF335533));
-STUB(Effects, juce::Colour(0xFF555577));
+
+struct Effects : public ContentBase
+{
+    Effects(const scxt::pages::PartPage &p) : ContentBase(p, "Effects", juce::Colour(0xFF555577)) {}
+};
 
 struct Output : public ContentBase
 {

@@ -33,6 +33,17 @@ struct SelectionStateProxy : public scxt::data::UIStateProxy
             break;
 
         case ip_wavedisplay:
+            // FIXME - re-handle the way wavedisplay gets sent up
+            return true;
+            break;
+
+        case ip_sample_name:
+        case ip_sample_metadata:
+            std::cout << FILE_LINE_OS << ad << " " <<  ad.data.str << std::endl;
+            return true;
+            break;
+
+
         case ip_browser_previewbutton:
         case ip_sample_prevnext:
         case ip_patch_prevnext:
