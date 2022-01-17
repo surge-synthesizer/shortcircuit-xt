@@ -61,6 +61,8 @@ class logos : public std::ostream
 
 // TODO above is deprecated. refactor to use below
 
+#define FILE_LINE_OS fs::path{__FILE__}.filename().u8string() << ":" << __LINE__ << " "
+
 // macro helpers for stream based logging. pass the StreamLogger object as parameter
 #ifdef LOGGING_DEBUG_ENABLED
 #define LOGDEBUG(x)                                                                                \

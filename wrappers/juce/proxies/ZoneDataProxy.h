@@ -315,7 +315,7 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
                 res = true;
                 break;
             default:
-                std::cout << ad << std::endl;
+                std::cout << FILE_LINE_OS << ad << std::endl;
                 break;
             }
             if (res)
@@ -324,7 +324,7 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
 
         if (ad.id >= ip_zone_params_begin && ad.id <= ip_zone_params_end)
         {
-            std::cout << ad << std::endl;
+            std::cout << FILE_LINE_OS << ad << std::endl;
             return guard.deactivate();
         }
         return guard.deactivate();

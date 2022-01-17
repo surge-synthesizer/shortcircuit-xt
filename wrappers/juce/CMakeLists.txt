@@ -10,6 +10,8 @@ juce_add_plugin(ShortcircuitXT
         IS_SYNTH TRUE
         NEEDS_MIDI_INPUT TRUE
 
+        ICON_BIG "${CMAKE_SOURCE_DIR}/resources/images/SCAppIcon.png"
+
         FORMATS AU VST3 Standalone
         )
 
@@ -70,7 +72,7 @@ if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
             JUCE_ASIO=1
             )
     target_include_directories(ShortcircuitXT PUBLIC
-            "libs/asiosdk/common"
+            " libs/asiosdk/common "
             )
 endif ()
 

@@ -211,7 +211,6 @@ void SCXTEditor::idle()
             handled |= p->processActionData(ad);
         }
 
-
 #if DEBUG_UNHANDLED_MESSAGES
         if (!handled)
         {
@@ -301,5 +300,21 @@ void SCXTEditor::showPage(const Pages &pTo)
     for (const auto &[p, page] : pages)
     {
         page->setVisible(p == pTo);
+    }
+}
+
+void SCXTEditor::parentHierarchyChanged()
+{
+    juce::Component *c = this;
+    while (c)
+    {
+        if (auto dw = dynamic_cast<juce::TopLevelWindow *>(c))
+        {
+            auto n = std::string("ShortCircuit XT Alpha - ");
+            n += scxt::build::FullVersionStr;
+            c->setName(n);
+            return;
+        }
+        c = c->getParentComponent();
     }
 }

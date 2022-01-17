@@ -117,11 +117,28 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
         auto m = it.getMessage();
         if (m.isNoteOn())
         {
-            sc3->PlayNote(0, m.getNoteNumber(), m.getVelocity());
+            sc3->PlayNote(m.getChannel() - 1, m.getNoteNumber(), m.getVelocity());
         }
         else if (m.isNoteOff())
         {
-            sc3->ReleaseNote(0, m.getNoteNumber(), m.getVelocity());
+            sc3->ReleaseNote(m.getChannel() - 1, m.getNoteNumber(), m.getVelocity());
+        }
+        else if (m.isPitchWheel())
+        {
+            sc3->PitchBend(m.getChannel() - 1, m.getPitchWheelValue() - 8192);
+        }
+        else if (m.isController())
+        {
+            sc3->ChannelController(m.getChannel() - 1, m.getControllerNumber(),
+                                   m.getControllerValue());
+        }
+        else if (m.isAftertouch())
+        {
+            sc3->ChannelAftertouch(m.getChannel() - 1, m.getAfterTouchValue());
+        }
+        else if (m.isAllNotesOff() || m.isAllSoundOff())
+        {
+            sc3->AllNotesOff();
         }
     }
 

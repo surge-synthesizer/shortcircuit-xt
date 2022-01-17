@@ -54,6 +54,8 @@ WaveDisplay::WaveDisplay(scxt::data::ActionSender *sender, scxt::log::LoggingCal
 
     // todo e refers to xml element
     // restore_data(e);
+
+    prof.setLogOutput(false);
 }
 void WaveDisplay::resized()
 {
@@ -68,7 +70,6 @@ void WaveDisplay::resized()
 
 void WaveDisplay::paint(juce::Graphics &g)
 {
-
     prof.enter();
     juce::Rectangle<int> r = getLocalBounds();
     g.setColour(
