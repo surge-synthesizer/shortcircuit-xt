@@ -35,7 +35,7 @@ struct NamesAndRanges : public ContentBase
         for (const auto &[i, l] :
              sst::cpputils::enumerate(std::array{"xf", "low", "root", "hi", "xf"}))
         {
-            rowLabels[i] = whiteLabel(l);
+            rowLabels[i] = whiteLabel(l, juce::Justification::centred);
         }
 
         auto &cz = parentPage.editor->currentZone;
@@ -105,9 +105,11 @@ struct NamesAndRanges : public ContentBase
         row = row.translated(0, rh * 1.5);
         for (int i = 0; i < 3; ++i)
         {
-            auto ls = row.withWidth(row.getWidth() * 0.25);
-            auto rs = row.withTrimmedLeft(row.getWidth() * 0.75);
-            auto cb = row.withWidth(row.getWidth() * 0.5).translated(row.getWidth() * 0.25, 0);
+            auto ls = row.withWidth(row.getWidth() * 0.25).reduced(1, 1);
+            auto rs = row.withTrimmedLeft(row.getWidth() * 0.75).reduced(1, 1);
+            auto cb = row.withWidth(row.getWidth() * 0.5)
+                          .translated(row.getWidth() * 0.25, 0)
+                          .reduced(1, 1);
             if (i == 2)
             {
                 ncLabels[0]->setBounds(ls);
@@ -348,7 +350,7 @@ struct Outputs : public ContentBase
             auto rrg = contents::RowGenerator(outB, 5);
             output[i]->setBounds(rrg.next());
             if (i != 0)
-                outmode[i]->setBounds(rrg.next());
+                outmode[i]->setBounds(rrg.next().reduced(1, 1));
             level[i]->setBounds(rrg.next());
             balance[i]->setBounds(rrg.next());
             outLabel[i]->setBounds(rrg.next());
@@ -363,7 +365,56 @@ struct Outputs : public ContentBase
 
 struct Pitch : ContentBase
 {
-    Pitch(const ZonePage &p) : ContentBase(p, "Pitch & etc", juce::Colour(0xFF555555)) {}
+    Pitch(const ZonePage &p) : ContentBase(p, "Pitch & etc", juce::Colour(0xFF555555))
+    {
+        for (const auto &[i, l] :
+             sst::cpputils::enumerate(std::array{"PB Range", "Coarse", "mute group"}))
+            leftLabel[i] = whiteLabel(l, juce::Justification::right);
+        for (const auto &[i, l] :
+             sst::cpputils::enumerate(std::array{"keytrack", "fine", "vel sense"}))
+            rightLabel[i] = whiteLabel(l);
+        auto &cz = parentPage.editor->currentZone;
+
+        leftColumn[0] = bindIntSpinBox(cz.pitch_bend_depth);
+        leftColumn[1] = bindIntSpinBox(cz.transpose);
+        leftColumn[2] = bindIntSpinBox(cz.mute_group);
+        rightColumn[0] = bindFloatSpinBox(cz.keytrack);
+        rightColumn[1] = bindFloatSpinBox(cz.finetune);
+        rightColumn[2] = bindFloatSpinBox(cz.velsense);
+
+        ignorePM = bind<widgets::IntParamToggleButton>(cz.ignore_part_polymode, "ignore polymode");
+        lags[0] = bindFloatSpinBox(cz.lag_generator[0]);
+        lags[1] = bindFloatSpinBox(cz.lag_generator[1]);
+        lagLabel = whiteLabel("lag gen 1/2");
+    }
+
+    void resized() override
+    {
+        auto cb = getContentsBounds();
+        auto rg = contents::RowGenerator(cb, 4);
+        for (int i = 0; i < 3; ++i)
+        {
+            auto row = rg.next();
+            auto rd = contents::RowDivider(row);
+            leftLabel[i]->setBounds(rd.next(0.3));
+            leftColumn[i]->setBounds(rd.next(0.2));
+            rightColumn[i]->setBounds(rd.next(0.25));
+            rightLabel[i]->setBounds(rd.rest());
+        }
+        auto row = rg.next();
+        auto rd = contents::RowDivider(row);
+        ignorePM->setBounds(rd.next(0.4));
+        lags[0]->setBounds(rd.next(0.15));
+        lags[1]->setBounds(rd.next(0.15));
+        lagLabel->setBounds(rd.rest());
+    }
+
+    std::array<std::unique_ptr<juce::Label>, 3> leftLabel, rightLabel;
+    std::array<std::unique_ptr<widgets::IntParamSpinBox>, 3> leftColumn;
+    std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 3> rightColumn;
+    std::unique_ptr<widgets::IntParamToggleButton> ignorePM;
+    std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 2> lags;
+    std::unique_ptr<juce::Label> lagLabel;
 };
 
 struct Sample : ContentBase

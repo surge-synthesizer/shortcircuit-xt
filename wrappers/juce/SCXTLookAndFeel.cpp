@@ -47,25 +47,14 @@ juce::Font SCXTLookAndFeel::getMonoFontAt(int sz)
 void SCXTLookAndFeel::fillWithRaisedOutline(juce::Graphics &g, const juce::Rectangle<int> &r,
                                             juce::Colour base, bool down)
 {
-    g.setColour(base);
-    g.fillRect(r);
-
     auto up = base.brighter(0.4);
     auto dn = base.darker(0.4);
 
-    if (down)
-    {
-        std::swap(up, dn);
-    }
-
-    // This could obviously be cleaner
-    auto rf = r.reduced(1, 1).toFloat();
-    g.setColour(up);
-    g.drawLine({rf.getTopLeft(), rf.getTopRight()}, 2.0);
-    g.drawLine({rf.getTopLeft(), rf.getBottomLeft()}, 2.0);
-    g.setColour(dn);
-    g.drawLine({rf.getTopRight(), rf.getBottomRight()}, 2.0);
-    g.drawLine({rf.getBottomLeft(), rf.getBottomRight()}, 2.0);
+    auto drawThis = r.toFloat().reduced(0.5, 0.5);
+    g.setColour(base);
+    g.fillRoundedRectangle(drawThis, 2);
+    g.setColour(down ? dn : up);
+    g.drawRoundedRectangle(drawThis.toFloat(), 2, 1);
 }
 
 void SCXTLookAndFeel::fillWithGradientHeaderBand(juce::Graphics &g, const juce::Rectangle<int> &r,
@@ -81,6 +70,9 @@ void SCXTLookAndFeel::fillWithGradientHeaderBand(juce::Graphics &g, const juce::
     auto cgb = juce::ColourGradient::vertical(base, base.darker(0.4), rBottom);
     g.setGradientFill(cgb);
     g.fillRect(rBottom);
+
+    g.setColour(juce::Colours::black);
+    g.drawLine(r.getX(), r.getBottom(), r.getX() + r.getWidth(), r.getBottom(), 0.5);
 }
 void SCXTLookAndFeel::drawComboBox(juce::Graphics &g, int w, int h, bool isButtonDown, int buttonX,
                                    int buttonY, int buttonW, int buttonH, juce::ComboBox &box)
@@ -88,16 +80,17 @@ void SCXTLookAndFeel::drawComboBox(juce::Graphics &g, int w, int h, bool isButto
     auto c = juce::Colour(0xFF151515);
     fillWithRaisedOutline(g, juce::Rectangle<int>(0, 0, w, h), c, !isButtonDown);
     auto r = juce::Rectangle<int>(buttonX, buttonY, buttonW, buttonH);
-    r = r.reduced(7, 7);
+    auto cy = r.getCentreY();
+    r = r.reduced(5, 5);
     r = r.withTrimmedLeft(r.getWidth() - r.getHeight());
+    r = r.withHeight(8).withWidth(8).withCentre(juce::Point<int>{r.getCentreX(), cy});
     g.setColour(juce::Colours::white);
-    auto bh = r.getHeight();
-    r = r.withHeight(2);
-    for (int i = 0; i < bh; i++)
-    {
-        g.fillRect(r);
-        r = r.translated(0, 2).reduced(1, 0);
-    }
+    g.drawLine(
+        juce::Line<float>{r.getTopLeft().toFloat(), r.getCentre().withY(r.getBottom()).toFloat()},
+        1);
+    g.drawLine(
+        juce::Line<float>{r.getTopRight().toFloat(), r.getCentre().withY(r.getBottom()).toFloat()},
+        1);
 }
 
 void SCXTLookAndFeel::fillTextEditorBackground(juce::Graphics &g, int w, int h,

@@ -104,6 +104,11 @@ static constexpr parameter_ranges samplerParameterRanges[] = {
     parameter_ranges::percent_bipolar(ip_part_aux_balance, 0),
 
     parameter_ranges::percent(ip_zone_aux_level, 1),
-    parameter_ranges::percent_bipolar(ip_zone_aux_balance, 0)};
+    parameter_ranges::percent_bipolar(ip_zone_aux_balance, 0),
+
+    {ip_pbdepth, 0, 12, 2, 1, parameter_ranges::KEYS},
+    {ip_coarse_tune, -24, 24, 0, 1, parameter_ranges::KEYS},
+
+};
 
 #endif // SHORTCIRCUIT_SAMPLER_PARAMETER_RANGES_H

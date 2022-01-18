@@ -52,6 +52,19 @@ struct SC3IdleTimer : juce::Timer
 //==============================================================================
 SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->totalArea;
+    float ws = 900.f / area.getWidth();
+    float hs = 700.f / area.getHeight();
+    auto x = std::max(ws, hs);
+
+    auto sc = 1.f;
+    for (const auto &q : {1.25, 1.5, 1.75, 2.})
+    {
+        if (q * x < 1)
+            sc = q;
+    }
+
+    setTransform(juce::AffineTransform().scaled(sc));
     lookAndFeel = std::make_unique<SCXTLookAndFeel>();
     setLookAndFeel(lookAndFeel.get());
 
