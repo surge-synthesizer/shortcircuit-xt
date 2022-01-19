@@ -17,6 +17,7 @@ void FloatParamSlider::paint(juce::Graphics &g)
     {
         return;
     }
+
     assertParamRangesSet(param.get());
     switch (style)
     {
@@ -45,7 +46,7 @@ void FloatParamSlider::paintHSlider(juce::Graphics &g)
 
     // Draw the tray
     auto tray = b.reduced(3, 0).withHeight(2).translated(0, getHeight() / 2.0 - 1);
-    g.setColour(juce::Colours::white);
+    g.setColour(param.get().disabled ? juce::Colours::darkgrey : juce::Colours::white);
     g.fillRect(tray);
 
     // draw the label
@@ -77,7 +78,7 @@ void FloatParamSlider::paintVSlider(juce::Graphics &g)
     auto b = getLocalBounds();
     auto sb = b.withTrimmedBottom(8);
     auto tray = sb.reduced(0, 3).withWidth(2).translated(getWidth() / 2.0 - 1, 0);
-    g.setColour(juce::Colours::white);
+    g.setColour(param.get().disabled ? juce::Colours::darkgrey : juce::Colours::white);
     g.fillRect(tray);
 
     g.setColour(juce::Colours::white);

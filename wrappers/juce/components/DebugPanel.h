@@ -34,7 +34,7 @@ class DebugPanel : public juce::Component
     SCXTEditor *mEditor;
     std::unique_ptr<juce::TextEditor> samplerT;
     std::unique_ptr<juce::TextEditor> logT;
-
+    std::unique_ptr<juce::Label> warning;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DebugPanel);
 };
 
