@@ -20,6 +20,11 @@
 
 DebugPanel::DebugPanel() : Component("Debug Panel")
 {
+    warning = std::make_unique<juce::Label>();
+    warning->setText("This is a debug panel. Close it and SC will crash. Please ignore.",
+                     juce::dontSendNotification);
+    addAndMakeVisible(*warning);
+
     // sampler state window
     samplerT = std::make_unique<juce::TextEditor>();
     samplerT->setMultiLine(true, false);
@@ -39,7 +44,8 @@ void DebugPanel::resized()
 
     // state occupies half rest of space
     auto t = r.removeFromTop(h / 2);
-    samplerT->setBounds(t);
+    samplerT->setBounds(t.withTrimmedTop(18));
+    warning->setBounds(t.withHeight(18));
 
     // log occupies the other half
     r.removeFromTop(5);

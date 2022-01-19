@@ -161,9 +161,17 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
     void paint(juce::Graphics &g) override
     {
         assertParamRangesSet(ParamRefMixin<T>::param.get());
-        SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), juce::Colour(0xFF333355), true);
+        auto colFil = juce::Colour(0xFF333355);
+        auto colText = juce::Colours::white;
+        if (ParamRefMixin<T>::param.get().disabled)
+        {
+            colFil = juce::Colour(0xFF888899);
+            colText = juce::Colour(0xFFCCCCDD);
+
+        }
+        SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), colFil, true);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
-        g.setColour(juce::Colours::white);
+        g.setColour(colText);
         g.drawText(ParamRefMixin<T>::param.get().value_to_string(), getLocalBounds(),
                    juce::Justification::centred);
     }

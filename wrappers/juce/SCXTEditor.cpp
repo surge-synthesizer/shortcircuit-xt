@@ -57,10 +57,11 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     float hs = 700.f / area.getHeight();
     auto x = std::max(ws, hs);
 
+    // this is pretty arbitrary
     auto sc = 1.f;
     for (const auto &q : {1.25, 1.5, 1.75, 2.})
     {
-        if (q * x < 1)
+        if (q * x < 0.85)
             sc = q;
     }
 
