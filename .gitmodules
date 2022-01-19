@@ -16,3 +16,6 @@
 [submodule "libs/fmt"]
 	path = libs/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "libs/sst/sst-plugininfra"]
+	path = libs/sst/sst-plugininfra
+	url = https://github.com/surge-synthesizer/sst-plugininfra

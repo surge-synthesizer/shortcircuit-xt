@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <tinyxml/tinyxml.h>
+#include <tinyxml.h>
 #include <vt_util/vt_string.h>
 
 #include "version.h"
@@ -101,7 +101,11 @@ bool configuration::load(const fs::path &filename)
                     vtCopyString(MIDIcontrol[i].name, tstr, 16);
             }
         }
-        sub = sub->NextSibling("control")->ToElement();
+        auto q = sub->NextSibling("control");
+        if (q)
+            sub = q->ToElement();
+        else
+            sub = nullptr;
     }
 
     return true;

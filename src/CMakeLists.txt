@@ -53,9 +53,6 @@ set(SHORTCIRCUIT_SOURCE
 set(SHORTCIRCUIT_GENERATED_SOURCE ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
 
 set(VEMBERTECH_SOURCE
-        vembertech/tinyxml/tinyxmlparser.cpp
-        vembertech/tinyxml/tinyxmlerror.cpp
-        vembertech/tinyxml/tinyxml.cpp
         vembertech/vt_util/vt_string.cpp
         vembertech/vt_util/vt_lockfree.cpp
         vembertech/vt_dsp/halfratefilter.cpp
@@ -72,6 +69,7 @@ add_library(shortcircuit-core
 
 target_link_libraries(shortcircuit-core PUBLIC
         sst-cpputils
+        sst-plugininfra::tinyxml
         fmt::fmt
         shortcircuit::filesystem
         shortcircuit::simde

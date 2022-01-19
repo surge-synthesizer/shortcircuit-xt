@@ -15,7 +15,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <tinyxml/tinyxml.h>
+#include <tinyxml.h>
 
 #include "globals.h"
 #include <string.h>
