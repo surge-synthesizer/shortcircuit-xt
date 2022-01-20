@@ -107,6 +107,9 @@ void FloatParamSlider::paintVSlider(juce::Graphics &g)
 
 void FloatParamSlider::mouseDrag(const juce::MouseEvent &e)
 {
+    if (param.get().disabled || param.get().hidden)
+        return;
+
     if (style == HSLIDER)
     {
         auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
@@ -122,6 +125,9 @@ void FloatParamSlider::mouseDrag(const juce::MouseEvent &e)
 
 void FloatParamSlider::mouseUp(const juce::MouseEvent &e)
 {
+    if (param.get().disabled || param.get().hidden)
+        return;
+
     if (style == HSLIDER)
     {
         auto xf = std::clamp(e.position.x / getWidth(), 0.f, 1.f);
@@ -145,11 +151,17 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
     for (const auto &[idx, l] : sst::cpputils::enumerate(labels))
     {
         auto r = hitRects[idx];
-        if (param.get().val == idx)
+        if (param.get().disabled)
+            SCXTLookAndFeel::fillWithRaisedOutline(g, r, juce::Colour(0xFF777777), true);
+        else if (param.get().val == idx)
             SCXTLookAndFeel::fillWithRaisedOutline(g, r, juce::Colour(0xFFAA1515), true);
         else
             SCXTLookAndFeel::fillWithRaisedOutline(g, r, juce::Colour(0xFF151515), false);
-        g.setColour(juce::Colours::white);
+
+        if (param.get().disabled)
+            g.setColour(juce::Colour(0xFFAAAAAA));
+        else
+            g.setColour(juce::Colours::white);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(l, r, juce::Justification::centred);
     }
@@ -157,6 +169,9 @@ void IntParamMultiSwitch::paint(juce::Graphics &g)
 
 void IntParamMultiSwitch::mouseUp(const juce::MouseEvent &e)
 {
+    if (param.get().disabled || param.get().hidden)
+        return;
+
     for (const auto &[midx, r] : sst::cpputils::enumerate(hitRects))
     {
         if (r.toFloat().contains(e.position))

@@ -32,8 +32,13 @@ struct OutlinedTextButton : public juce::TextButton, ColorRemapper<OutlinedTextB
             c = c.brighter(0.3);
         }
 
+        if (!isEnabled())
+            c = juce::Colour(0xFF777777);
+
         SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), c, down || getToggleState());
         g.setColour(findRemappedColour(textColour));
+        if (!isEnabled())
+            g.setColour(juce::Colour(0xFFAAAAAA));
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(getButtonText(), getLocalBounds(), juce::Justification::centred);
     }
