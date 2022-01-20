@@ -1,8 +1,5 @@
 
 #include "sampler.h"
-#if !TARGET_HEADLESS
-#include "shortcircuit_editor2.h"
-#endif
 #include "interaction_parameters.h"
 #include "sampler_voice.h"
 #include "util/tools.h"
@@ -183,11 +180,6 @@ void sampler::play_zone(int z)
     voice_state[v].zone_id = z;
     polyphony++;
     update_highest_voice_id();
-
-#if TARGET_VST2
-    if (editor && editor->isOpen())
-        track_zone_triggered(z, true);
-#endif
 }
 
 void sampler::release_zone(int zone_id)
@@ -548,9 +540,4 @@ void sampler::voice_off(uint32 voice_id)
     voice_state[voice_id].active = false;
     polyphony--;
     holdbuffer.remove(voice_id);
-
-#if TARGET_VST2
-    if (editor && editor->isOpen())
-        track_zone_triggered(voice_state[voice_id].zone_id, false);
-#endif
 }

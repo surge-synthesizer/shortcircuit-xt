@@ -24,7 +24,7 @@
 
 #include <list>
 #include <vt_dsp/endian.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 #include <cassert>
 #include "infrastructure/logfile.h"
 
@@ -555,7 +555,7 @@ class RIFFMemFile
         loc += 8;
 
         memset(data + loc, 0, datasize);
-        vtCopyString(data + loc, txt, datasize);
+        strncpy_0term(data + loc, txt, datasize);
         loc += datasize;
 
         return true;

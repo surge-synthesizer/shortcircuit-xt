@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "tinyxml/tinyxml.h"
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 #include "version.h"
 
@@ -98,7 +98,7 @@ bool configuration::load(const fs::path &filename)
                 MIDIcontrol[i].number = j;
                 tstr = sub->Attribute("name");
                 if (tstr)
-                    vtCopyString(MIDIcontrol[i].name, tstr, 16);
+                    strncpy_0term(MIDIcontrol[i].name, tstr, 16);
             }
         }
         auto q = sub->NextSibling("control");

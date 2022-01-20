@@ -1,6 +1,6 @@
 #include "vt_gui_controls.h"
 #include "util/unitconversion.h"
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 const int menurow_height = 12;
 

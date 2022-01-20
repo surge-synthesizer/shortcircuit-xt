@@ -29,7 +29,7 @@
 #include <vt_gui/browserdata.h>
 #include <vt_util/vt_lockfree.h>
 
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 #include <vector>
 #include "sst/cpputils.h"
@@ -182,7 +182,7 @@ void sampler::processWrapperEvents()
                     zones[nz].key_high = i->key_hi;
                     zones[nz].velocity_low = i->vel_lo;
                     zones[nz].velocity_high = i->vel_hi;
-                    // vtCopyString(zones[nz].name,i->label.c_str(),31);		// do in sample::
+                    // strncpy_0term(zones[nz].name,i->label.c_str(),31);		// do in sample::
                     // instead
                     zones[nz].database_id = i->database_id;
                 }
@@ -620,7 +620,7 @@ void sampler::processWrapperEvents()
                 mm.assign(conf, &zones[z], &parts[editorpart]);
                 int cmode = mm.get_destination_ctrlmode(zones[z].mm[ad.subid].destination);
                 string s = datamode_from_cmode(cmode);
-                vtCopyString((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
+                strncpy_0term((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
                 postEventsToWrapper(ad2);
             }
         }
@@ -635,7 +635,7 @@ void sampler::processWrapperEvents()
             mm.assign(conf, 0, &parts[editorpart]);
             int cmode = mm.get_destination_ctrlmode(parts[editorpart].mm[ad.subid].destination);
             string s = datamode_from_cmode(cmode);
-            vtCopyString((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
+            strncpy_0term((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
             postEventsToWrapper(ad2);
         }
         break;
@@ -738,9 +738,9 @@ void sampler::processWrapperEvents()
                 ad2.subid = ad.subid;
 
                 if (ad.data.i[0])
-                    vtCopyString((char *)ad2.data.str, "f,-1,0.005,1,1,%", actiondata_maxstring);
+                    strncpy_0term((char *)ad2.data.str, "f,-1,0.005,1,1,%", actiondata_maxstring);
                 else
-                    vtCopyString((char *)ad2.data.str, "f,0,0.005,1,1,%", actiondata_maxstring);
+                    strncpy_0term((char *)ad2.data.str, "f,0,0.005,1,1,%", actiondata_maxstring);
 
                 postEventsToWrapper(ad2);
             }
@@ -797,7 +797,7 @@ void sampler::post_kgvdata()
             zd->is_active = selected->zone_is_active(i);
             zd->is_selected = selected->zone_is_selected(i);
             zd->mute = zones[i].mute;
-            vtCopyString(zd->name, zones[i].name, 32);
+            strncpy_0term(zd->name, zones[i].name, 32);
 
             postEventsToWrapper(ad);
         }
@@ -898,7 +898,7 @@ void sampler::post_zonedata()
             {
                 has_sample = true;
                 ad.actiontype = vga_text;
-                vtCopyString(ad.data.str, sptr->GetName(), actiondata_maxstring);
+                strncpy_0term(ad.data.str, sptr->GetName(), actiondata_maxstring);
                 ad.id = ip_sample_name;
                 ad.subid = -1;
                 postEventsToWrapper(ad);
@@ -943,7 +943,7 @@ void sampler::post_zonedata()
             ad.actiontype = vga_datamode;
             int cmode = mm.get_destination_ctrlmode(zones[z].mm[i].destination);
             string s = datamode_from_cmode(cmode);
-            vtCopyString((char *)ad.data.str, s.c_str(), actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, s.c_str(), actiondata_maxstring);
             postEventsToWrapper(ad);
         }
 
@@ -1052,14 +1052,14 @@ void sampler::post_zonedata()
         ad.subid = i;
 
         if (parts[p].userparameterpolarity[i])
-            vtCopyString((char *)ad.data.str, "f,-1,0.005,1,1,%", actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, "f,-1,0.005,1,1,%", actiondata_maxstring);
         else
-            vtCopyString((char *)ad.data.str, "f,0,0.005,1,1,%", actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, "f,0,0.005,1,1,%", actiondata_maxstring);
 
         ad.actiontype = vga_datamode;
         postEventsToWrapper(ad);
-        // vtCopyString((char*)ad.data.str,conf->MIDIcontrol[i].name[0]?conf->MIDIcontrol[i].name:"-",actiondata_maxstring);
-        // vtCopyString((char*)ad.data.str,parts[p].userparametername[i][0]?parts[p].userparametername[i]:"-",actiondata_maxstring);
+        // strncpy_0term((char*)ad.data.str,conf->MIDIcontrol[i].name[0]?conf->MIDIcontrol[i].name:"-",actiondata_maxstring);
+        // strncpy_0term((char*)ad.data.str,parts[p].userparametername[i][0]?parts[p].userparametername[i]:"-",actiondata_maxstring);
     }
 
     // lfo presets
@@ -1071,7 +1071,7 @@ void sampler::post_zonedata()
     for (int i = 0; i < n_lfopresets; i++)
     {
         ad.data.i[0] = i;
-        vtCopyString((char *)&ad.data.str[4], lfopreset_abberations[i], actiondata_maxstring - 4);
+        strncpy_0term((char *)&ad.data.str[4], lfopreset_abberations[i], actiondata_maxstring - 4);
         postEventsToWrapper(ad);
     }
     ad.actiontype = vga_intval;
@@ -1150,7 +1150,7 @@ void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
             else if (ip_data[i].vtype == ipvt_string)
             {
                 ad.actiontype = vga_text;
-                vtCopyString(ad.data.str, (char *)ptr, 32);
+                strncpy_0term(ad.data.str, (char *)ptr, 32);
             }
             else if (ip_data[i].vtype == ipvt_bdata)
             {
@@ -1193,13 +1193,13 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
             ad.id = ip_filter1_fp + i;
             ad.subid = j;
             ad.actiontype = vga_label;
-            vtCopyString((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
             postEventsToWrapper(ad);
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
             postEventsToWrapper(ad);
-            vtCopyString((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
-                         actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
+                          actiondata_maxstring);
             ad.actiontype = vga_datamode;
             postEventsToWrapper(ad);
         }
@@ -1220,7 +1220,7 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
             int ne = tf->get_ip_entry_count(j);
             for(int k=0; k<ne; k++)
             {
-            vtCopyString((char*)ad.data.str,tf->get_ip_entry_label(j,k),actiondata_maxstring);
+            strncpy_0term((char*)ad.data.str,tf->get_ip_entry_label(j,k),actiondata_maxstring);
             postEventsToWrapper(ad);
             }*/
 
@@ -1235,7 +1235,7 @@ void sampler::post_zone_filterdata(int z, int i, bool send_data)
                     strcat(tmp, ";");
                 strcat(tmp, tf->get_ip_entry_label(j, k));
             }
-            vtCopyString((char *)ad.data.str, tmp, actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tmp, actiondata_maxstring);
             postEventsToWrapper(ad);
         }
 
@@ -1272,13 +1272,13 @@ void sampler::post_part_filterdata(int p, int i, bool send_data)
             ad.id = ip_part_filter1_fp + i;
             ad.subid = j;
             ad.actiontype = vga_label;
-            vtCopyString((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
             postEventsToWrapper(ad);
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
             postEventsToWrapper(ad);
-            vtCopyString((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
-                         actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
+                          actiondata_maxstring);
             ad.actiontype = vga_datamode;
             postEventsToWrapper(ad);
         }
@@ -1301,7 +1301,7 @@ void sampler::post_part_filterdata(int p, int i, bool send_data)
                     strcat(tmp, ";");
                 strcat(tmp, tf->get_ip_entry_label(j, k));
             }
-            vtCopyString((char *)ad.data.str, tmp, actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tmp, actiondata_maxstring);
             postEventsToWrapper(ad);
         }
         spawn_filter_release(tf);
@@ -1340,13 +1340,13 @@ void sampler::post_multi_filterdata(int i, bool send_data)
             ad.id = ip_multi_filter_fp1 + j;
             ad.subid = i;
             ad.actiontype = vga_label;
-            vtCopyString((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tf->get_parameter_label(j), actiondata_maxstring);
             postEventsToWrapper(ad);
             ad.actiontype = vga_hide;
             ad.data.i[0] = false;
             postEventsToWrapper(ad);
-            vtCopyString((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
-                         actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tf->get_parameter_ctrlmode_descriptor(j),
+                          actiondata_maxstring);
             ad.actiontype = vga_datamode;
             postEventsToWrapper(ad);
         }
@@ -1369,7 +1369,7 @@ void sampler::post_multi_filterdata(int i, bool send_data)
                     strcat(tmp, ";");
                 strcat(tmp, tf->get_ip_entry_label(j, k));
             }
-            vtCopyString((char *)ad.data.str, tmp, actiondata_maxstring);
+            strncpy_0term((char *)ad.data.str, tmp, actiondata_maxstring);
             postEventsToWrapper(ad);
         }
         spawn_filter_release(tf);
@@ -1427,7 +1427,7 @@ void sampler::relay_data_to_structure(actiondata ad, char *pt)
     else if ((std::get<VAction>(ad.actiontype) == vga_text) &&
              (ip_data[ad.id].vtype == ipvt_string))
     {
-        vtCopyString(pt, (char *)ad.data.str, 32);
+        strncpy_0term(pt, (char *)ad.data.str, 32);
         // selected->set_zone_parameter_cstr_internal(offset, (char*)ad.data.str);
     }
 }
@@ -1455,7 +1455,7 @@ void sampler::post_initdata_mm(int zone)
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_sources(); i++)
         {
-            vtCopyString(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
+            strncpy_0term(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
             ad.id = ip_mm_src;
             postEventsToWrapper(ad);
             ad.id = ip_mm_src2;
@@ -1468,7 +1468,7 @@ void sampler::post_initdata_mm(int zone)
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_destinations(); i++)
         {
-            vtCopyString(ad.data.str, mm.get_destination_name(i), actiondata_maxstring);
+            strncpy_0term(ad.data.str, mm.get_destination_name(i), actiondata_maxstring);
             postEventsToWrapper(ad);
         }
 
@@ -1479,7 +1479,7 @@ void sampler::post_initdata_mm(int zone)
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mmc_num_types; i++)
         {
-            vtCopyString(ad.data.str, mmc_abberations[i], actiondata_maxstring);
+            strncpy_0term(ad.data.str, mmc_abberations[i], actiondata_maxstring);
             postEventsToWrapper(ad);
         }
     }
@@ -1505,7 +1505,7 @@ void sampler::post_initdata_mm_part()
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_sources(); i++)
         {
-            vtCopyString(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
+            strncpy_0term(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
             ad.id = ip_part_mm_src;
             postEventsToWrapper(ad);
             ad.id = ip_part_mm_src2;
@@ -1518,7 +1518,7 @@ void sampler::post_initdata_mm_part()
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_destinations(); i++)
         {
-            vtCopyString(ad.data.str, mm.get_destination_name(i), actiondata_maxstring);
+            strncpy_0term(ad.data.str, mm.get_destination_name(i), actiondata_maxstring);
             postEventsToWrapper(ad);
         }
 
@@ -1529,7 +1529,7 @@ void sampler::post_initdata_mm_part()
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mmc_num_types; i++)
         {
-            vtCopyString(ad.data.str, mmc_abberations[i], actiondata_maxstring);
+            strncpy_0term(ad.data.str, mmc_abberations[i], actiondata_maxstring);
             postEventsToWrapper(ad);
         }
 
@@ -1543,7 +1543,7 @@ void sampler::post_initdata_mm_part()
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mm.get_n_sources(); i++)
         {
-            vtCopyString(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
+            strncpy_0term(ad.data.str, mm.get_source_name(i), actiondata_maxstring);
             ad.id = ip_nc_src;
             postEventsToWrapper(ad);
             ad.id = ip_part_nc_src;
@@ -1580,7 +1580,7 @@ void sampler::post_initdata()
     ad.actiontype = vga_entry_add_ival_from_self;
     for (int i = 0; i < n_playmodes; i++)
     {
-        vtCopyString((char *)ad.data.str, playmode_names[i], actiondata_maxstring);
+        strncpy_0term((char *)ad.data.str, playmode_names[i], actiondata_maxstring);
         postEventsToWrapper(ad);
     }
 
@@ -1730,7 +1730,7 @@ void sampler::post_initdata()
             ad.id = q.id;
             ad.actiontype = vga_label;
             ad.subid = -1;
-            vtCopyString(ad.data.str, q.label.c_str(), 52);
+            strncpy_0term(ad.data.str, q.label.c_str(), 52);
             postEventsToWrapper(ad);
         }
     }
@@ -1796,7 +1796,7 @@ void sampler::post_samplelist()
             database_samplelist *dbe = (database_samplelist *)((char *)dbSampleListDataPtr +
                                                                sizeof(database_samplelist) * j);
             dbe->id = i;
-            vtCopyString(dbe->name, samples[i]->GetName(), 64);
+            strncpy_0term(dbe->name, samples[i]->GetName(), 64);
             dbe->refcount = samples[i]->GetRefCount();
             dbe->size = samples[i]->GetDataSize();
             dbe->type = samples[i]->Embedded ? 1 : 0;

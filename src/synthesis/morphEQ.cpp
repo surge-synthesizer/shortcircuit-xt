@@ -1,7 +1,7 @@
 #include "morphEQ.h"
 
 #include "tinyxml/tinyxml.h"
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 morphEQ_loader::morphEQ_loader() { n_loaded = 0; }
 
@@ -56,7 +56,7 @@ void morphEQ_loader::load(int bank, char *filename)
         int ival = 0;
         double dval = 0;
         const char *shname = sh->Attribute("name");
-        vtCopyString(s->name, shname, sizeof(s->name));
+        strncpy_0term(s->name, shname, sizeof(s->name));
 
         sh->Attribute("gain", &dval);
         s->gain = (float)dval;

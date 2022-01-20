@@ -1,11 +1,5 @@
 #include "sampler.h"
 #include "version.h"
-#ifdef SCPB
-#include "scpb_editor.h"
-#endif
-#if !TARGET_HEADLESS
-#include "shortcircuit_editor2.h"
-#endif
 
 #include <iostream>
 #include <string>
@@ -19,10 +13,6 @@
 #include "synthesis/mathtables.h"
 #include "sample.h"
 #include "sampler_voice.h"
-#if TARGET_VST2
-#include <AEffEditor.h>
-#include <audioeffectx.h>
-#endif
 #include "infrastructure/logfile.h"
 #include "configuration.h"
 #include "interaction_parameters.h"
@@ -30,7 +20,7 @@
 
 #include <vt_dsp/basic_dsp.h>
 #include <vt_util/vt_lockfree.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 #include <list>
 using std::list;
@@ -85,15 +75,8 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
 
     AudioHalted = true;
 
-#ifdef SCFREE
-    polyphony_cap = 2;
-#else
     polyphony_cap = max_voices;
-#endif
 
-#if TARGET_VST2
-    this->editor = (sc_editor2 *)(editor);
-#endif
     //	this->effect = effect;
     uint32_t i, c;
     for (i = 0; i < max_voices; i++)
@@ -526,7 +509,7 @@ bool sampler::get_key_name(char *str, int channel, int key)
             if ((zones[z].key_low <= zkey) && (zones[z].key_high >= zkey) &&
                 (parts[p].MIDIchannel == channel))
             {
-                vtCopyString(str, zones[z].name, 63);
+                strncpy_0term(str, zones[z].name, 63);
                 return true;
             }
         }
@@ -662,7 +645,7 @@ void sampler::SInitZone(sample_zone *pZone)
     pZone->LFO[1].repeat = 16;
     pZone->LFO[2].repeat = 16;
 
-    vtCopyString(pZone->name, "empty", 31);
+    strncpy_0term(pZone->name, "empty", 31);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -881,7 +864,7 @@ bool sampler::replace_zone(int z, const fs::path &fileName)
 
     std::string nameOnly;
     decode_path(fileName, nullptr, nullptr, &nameOnly);
-    vtCopyString(zones[z].name, nameOnly.c_str(), 32);
+    strncpy_0term(zones[z].name, nameOnly.c_str(), 32);
     update_zone_switches(z);
     return true;
 }
@@ -1097,7 +1080,7 @@ sampler::Preview::Preview(timedata *pTD, sampler *pParent)
     mpSample = new sample(mpParent->conf);
     mActive = false;
     mAutoPreview = mpParent->conf->mAutoPreview;
-    mFilename[0] = 0;
+    mFilename = fs::path{};
 
     memset(&mPart, 0, sizeof(sample_part));
     mPart.portamento_mode = 0;
@@ -1116,7 +1099,7 @@ sampler::Preview::~Preview()
 
 //-----------------------------------------------------------------------------------------
 
-void sampler::Preview::Start(const wchar_t *Filename)
+void sampler::Preview::Start(const fs::path &Filename)
 {
     mActive = false;
 
@@ -1124,9 +1107,10 @@ void sampler::Preview::Start(const wchar_t *Filename)
 
     // auto ppath = string_to_path(Filename);
 
-    char fnu8[2048];
-    vtWStringToString(fnu8, Filename, 2048);
-    auto ppath = string_to_path(fnu8);
+    // char fnu8[2048];
+    // vtWStringToString(fnu8, Filename, 2048);
+    // auto ppath = string_to_path(Filename);
+    auto ppath = Filename;
 
     if (mpSample->load(ppath))
     {

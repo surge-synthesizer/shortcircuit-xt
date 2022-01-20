@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <cstdint>
 #include <vt_dsp/basic_dsp.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 #include "dls.h"
 
 #include "infrastructure/file_map_view.h"
@@ -134,7 +134,7 @@ int parse_dls_patchlist(void *data, size_t filesize, void **plist)
         char *s = (char *)mf.ReadPtr(datasize);
         if (s)
         {
-            vtCopyString(mp[i].name, s, 32);
+            strncpy_0term(mp[i].name, s, 32);
         }
         mf.SeekI(inspos);
         if (!mf.riff_descend('insh', &datasize))

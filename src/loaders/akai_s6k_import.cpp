@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <string.h>
 #include <vt_dsp/basic_dsp.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 #include <algorithm>
 using std::max;
@@ -214,11 +214,11 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
 
     // so far so fine.. time to start creating the samplegroup
     char groupname[256];
-    vtCopyString(groupname, fn_only.c_str(), 256);
+    strncpy_0term(groupname, fn_only.c_str(), 256);
 
     if (replace)
         part_init(channel, true, true);
-    vtCopyString(parts[channel].name, groupname, 32);
+    strncpy_0term(parts[channel].name, groupname, 32);
 
     bool do_kg_xfade = (s6k_prg.KGXFade == 1);
 
@@ -405,8 +405,8 @@ bool sampler::load_akai_s6k_program(const fs::path &filename, char channel, bool
                         break;
                     };
 
-                    vtCopyString(zones[newzone].name, (const char *)(s6k_zone[k][z].samplename),
-                                 20);
+                    strncpy_0term(zones[newzone].name, (const char *)(s6k_zone[k][z].samplename),
+                                  20);
                     zones[newzone].transpose =
                         s6k_kloc[k].semitone_tune + s6k_zone[k][z].semitone_tune;
                 }

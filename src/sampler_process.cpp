@@ -1,16 +1,10 @@
 #include "sampler.h"
-#if !TARGET_HEADLESS
-#include "shortcircuit_editor2.h"
-#endif
 #include "configuration.h"
 #include "synthesis/mathtables.h"
 #include "sampler_voice.h"
 #include "synthesis/filter.h"
 #include "synthesis/modmatrix.h"
 #include <vt_dsp/basic_dsp.h>
-#if !TARGET_HEADLESS
-#include <vt_gui/vt_gui_controls.h>
-#endif
 #include "interaction_parameters.h"
 #include "util/tools.h"
 
@@ -251,10 +245,6 @@ void sampler::process_audio()
                 {
                     polyphony--;
                     holdbuffer.remove(v);
-#if TARGET_VST2
-                    if (editor && editor->isOpen())
-                        track_zone_triggered(voice_state[v].zone_id, false);
-#endif
                 }
             }
         }
@@ -297,11 +287,6 @@ void sampler::process_audio()
 
 void sampler::processVUs()
 {
-#if TARGET_VST2
-    if (!(editor && editor->isOpen()))
-        return;
-#endif
-
     for (int op = 0; op < (mNumOutputs * 2); op++)
     {
         vu_peak[op] = max(vu_peak[op], get_absmax(output[op], block_size_quad));

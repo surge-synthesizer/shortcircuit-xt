@@ -33,7 +33,7 @@ bool sample::parse_sf2_sample(void *data, size_t filesize, unsigned int sample_i
 
     mf.SeekI(sample_id * 46, scxt::Memfile::mf_FromCurrent);
     mf.Read(&sampledata, 46);
-    vtCopyString(name, sampledata.achSampleName, 20);
+    strncpy_0term(name, sampledata.achSampleName, 20);
 
     mf.SeekI(startpos);
     if (!mf.riff_descend_RIFF_or_LIST('sdta', &datasize))

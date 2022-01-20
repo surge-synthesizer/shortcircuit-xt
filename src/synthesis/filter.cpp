@@ -9,7 +9,7 @@
 #include "filter_defs.h"
 #include "sampler_state.h"
 #include <algorithm>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 //#include <new.h>		// needed for "placement new" to work
 
 extern float SincTableF32[(FIRipol_M + 1) * FIRipol_N];
@@ -221,8 +221,8 @@ filter::filter(float *params, void *loader, bool stereo, int *iparams)
     int i;
     for (i = 0; i < max_fparams; i++)
     {
-        vtCopyString(ctrllabel[i], ("---"), 32);
-        vtCopyString(ctrlmode_desc[i], ("f,0,0.01,1,0,"), 32);
+        strncpy_0term(ctrllabel[i], ("---"), 32);
+        strncpy_0term(ctrlmode_desc[i], ("f,0,0.01,1,0,"), 32);
     }
 
 #ifdef _DEBUG
