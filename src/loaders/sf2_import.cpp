@@ -20,7 +20,7 @@
 #include "util/unitconversion.h"
 #include "infrastructure/logfile.h"
 #include <cstring>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 #include <algorithm>
 
 using std::max;
@@ -209,7 +209,7 @@ int get_sf2_patchlist(const fs::path &filename, void **plist, scxt::log::StreamL
 
         mp[i].bank = preset_header[i].wBank;
         mp[i].PC = preset_header[i].wPreset;
-        vtCopyString(mp[i].name, preset_header[i].achPresetName, 32);
+        strncpy_0term(mp[i].name, preset_header[i].achPresetName, 32);
     }
     *plist = mp;
     mmioClose(hmmio, 0);
@@ -422,7 +422,7 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
                 {
                         mp[i].bank = preset_header[i].wBank;
                         mp[i].PC = preset_header[i].wPreset;
-                        vtCopyString(mp[i].name,preset_header[i].achPresetName,20);
+                        strncpy_0term(mp[i].name,preset_header[i].achPresetName,20);
                 }
                 pre_id =
 spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow(), mp, n_ph-1);
@@ -438,7 +438,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
     // if (new_group) *new_group = new_g;
 
     part_init(channel, true, true);
-    vtCopyString(parts[channel].name, preset_header[pre_id].achPresetName, 32);
+    strncpy_0term(parts[channel].name, preset_header[pre_id].achPresetName, 32);
 
     int pb, pb_first = preset_header[pre_id].wPresetBagNdx,
             pb_end = preset_header[pre_id + 1].wPresetBagNdx;
@@ -610,7 +610,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
                         // (no good)
                         /*char *comma = strrchr(fn,'|');
                         if (comma) strcpy(z->name, comma+1);*/
-                        vtCopyString(z->name, shdr[sample_id].achSampleName, 32);
+                        strncpy_0term(z->name, shdr[sample_id].achSampleName, 32);
 
                         // get root key from sample
                         z->key_root = shdr[sample_id].byOriginalKey;

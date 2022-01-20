@@ -6,7 +6,7 @@
 #include <xmmintrin.h>
 #include "cpuarch.h"
 #include <vt_util/vt_lockfree.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 #include <algorithm>
 using std::multimap;

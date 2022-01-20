@@ -516,9 +516,9 @@ bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, i
                                 }
                                 else if (tag == 'Name')
                                 {
-                                    vtCopyString(&(p->userparametername[CtrlID][0]),
-                                                 (char *)mf.RIFFReadChunk(),
-                                                 min(chunksize, (size_t)state_string_length));
+                                    strncpy_0term(&(p->userparametername[CtrlID][0]),
+                                                  (char *)mf.RIFFReadChunk(),
+                                                  min(chunksize, (size_t)state_string_length));
                                     p->userparametername[CtrlID][state_string_length - 1] = 0;
                                 }
                                 else
@@ -545,8 +545,8 @@ bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, i
                     break;
                     case 'Name':
                     {
-                        vtCopyString(p->name, (char *)mf.RIFFReadChunk(),
-                                     min(chunksize, (size_t)32));
+                        strncpy_0term(p->name, (char *)mf.RIFFReadChunk(),
+                                      min(chunksize, (size_t)32));
                         p->name[31] = 0;
                     }
                     break;
@@ -680,8 +680,8 @@ bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, i
                         break;
                         case 'Name':
                         {
-                            vtCopyString(z->name, (char *)mf.RIFFReadChunk(),
-                                         min(chunksize, (size_t)32));
+                            strncpy_0term(z->name, (char *)mf.RIFFReadChunk(),
+                                          min(chunksize, (size_t)32));
                             z->name[31] = 0;
                         }
                         break;

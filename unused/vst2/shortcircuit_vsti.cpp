@@ -17,7 +17,7 @@
 #include <excpt.h>
 #include <float.h>
 #include <fpieee.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 //#include "mdump.h"
 
@@ -292,7 +292,7 @@ void shortcircuit_vsti::handleEvent(VstEvent *ev)
             sobj->AllNotesOff();
         }
 
-        // lägg till allnotesoff etc.. sno från pdroidmk2
+        // lï¿½gg till allnotesoff etc.. sno frï¿½n pdroidmk2
 
         // send a copy to the editor for MIDI-learn purposes
         // if (editor)

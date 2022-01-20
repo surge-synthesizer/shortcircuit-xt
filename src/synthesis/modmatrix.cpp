@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <cstring>
 #include <vt_dsp/basic_dsp.h>
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 using std::max;
 using std::min;
 
@@ -275,12 +275,12 @@ int modmatrix::is_source_used(int source) // for CPU saving purposes
 void modmatrix::add_destination(unsigned char RIFFID, int id, const char *name, int control_type,
                                 const char *dispname)
 {
-    vtCopyString(dst[id].id_name, name, namelen);
+    strncpy_0term(dst[id].id_name, name, namelen);
 
     if (dispname)
-        vtCopyString(dst[id].display_name, dispname, namelen);
+        strncpy_0term(dst[id].display_name, dispname, namelen);
     else
-        vtCopyString(dst[id].display_name, name, namelen);
+        strncpy_0term(dst[id].display_name, name, namelen);
 
     dst[id].ctrlmode = control_type;
     dst[id].RIFFID = RIFFID;
@@ -292,12 +292,12 @@ void modmatrix::add_source(unsigned char RIFFID, const char *name, float *fptr,
                            const char *dispname)
 {
     mm_src t;
-    vtCopyString(t.id_name, name, namelen);
+    strncpy_0term(t.id_name, name, namelen);
 
     if (dispname)
-        vtCopyString(t.display_name, dispname, namelen);
+        strncpy_0term(t.display_name, dispname, namelen);
     else
-        vtCopyString(t.display_name, name, namelen);
+        strncpy_0term(t.display_name, name, namelen);
 
     t.fptr = fptr;
     t.RIFFID = RIFFID;

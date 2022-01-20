@@ -16,7 +16,7 @@
 */
 
 #include "infrastructure/file_map_view.h"
-#include "vt_util/vt_string.h"
+#include "util/scxtstring.h"
 #include <cstdio>
 #if WINDOWS
 #include <windows.h>
@@ -38,13 +38,7 @@ namespace scxt
 #if WINDOWS
 struct WinImpl : FileMapView::Impl
 {
-    WinImpl(const fs::path &fname)
-    {
-        // TODO AS sort out
-        wchar_t wfn[2048];
-        vtStringToWString(wfn, path_to_string(fname).c_str(), 2048);
-        init(wfn);
-    }
+    WinImpl(const fs::path &fname) { init(fname.wstring()); }
     ~WinImpl()
     {
         if (isMapped)

@@ -278,7 +278,7 @@ bool sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             switch (tag)
             {
             case 'INAM':
-                vtCopyString(name, (char *)mf.RIFFReadChunk(), 64);
+                strncpy_0term(name, (char *)mf.RIFFReadChunk(), 64);
                 break;
             default:
                 mf.RIFFSkipChunk();

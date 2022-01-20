@@ -3,7 +3,7 @@
 #include "sampler_state.h"
 #include <algorithm>
 
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 #include <cstring>
 #include <list>
@@ -43,7 +43,7 @@ void multiselect::set_zone_parameter_cstr_internal(int offset, char *value)
             char *adr = (char *)z;
             adr += offset;
 
-            vtCopyString(adr, value, 32);
+            strncpy_0term(adr, value, 32);
         }
     }
 }

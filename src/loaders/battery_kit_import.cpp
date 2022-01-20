@@ -13,7 +13,7 @@
 #include <float.h>
 #include <stdio.h>
 #include "tinyxml/tinyxml.h"
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 float battery_envtime2sc(float t)
 {
@@ -44,7 +44,7 @@ bool sampler::load_battery_kit(const fs::path &fileName, char channel, bool repl
 
     if (replace)
         part_init(channel, true, true);
-    vtCopyString(parts[channel].name, groupname, 32);
+    strncpy_0term(parts[channel].name, groupname, 32);
 
     // load samples
     TiXmlElement *slot = (TiXmlElement *)patch->FirstChild("SampleSlot");

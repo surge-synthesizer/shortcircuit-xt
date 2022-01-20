@@ -2,7 +2,7 @@
 #include "browserdata.h"
 #include "interaction_parameters.h"
 
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 using std::set;
 using std::vector;
 
@@ -480,7 +480,7 @@ void vg_browser::processevent(vg_controlevent &e)
                                 controlstate = cs_dragsource;
                                 moved_since_mdown = 0;
                                 if (e.buttonmask & (vgm_shift | vgm_control))
-                                    moved_since_mdown = 0xffff; // Se till att multiselect inte töms
+                                    moved_since_mdown = 0xffff; // Se till att multiselect inte tï¿½ms
                                                                 // vid shift & ctrl-klick
                                 owner->dropfiles.clear();
 

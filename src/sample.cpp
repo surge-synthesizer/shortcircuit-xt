@@ -24,10 +24,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "vt_util/vt_string.h"
+#include "util/scxtstring.h"
 #endif
 
-#include "vt_util/vt_string.h"
+#include "util/scxtstring.h"
 #include "infrastructure/logfile.h"
 #include "infrastructure/file_map_view.h"
 

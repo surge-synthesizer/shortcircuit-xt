@@ -29,19 +29,8 @@ class sample;
 class sampler_voice;
 class filter;
 
-#if TARGET_VST2
-class AEffEditor;
-class AudioEffectX;
-
-typedef AEffEditor EditorClass;
-typedef AudioEffectX WrapperClass;
-#endif
-
-#if TARGET_HEADLESS
 typedef int EditorClass;
 typedef int WrapperClass;
-
-#endif
 
 class modmatrix;
 class TiXmlElement;
@@ -237,7 +226,7 @@ class sampler
       public:
         Preview(timedata *pTD, sampler *pParent);
         ~Preview();
-        void Start(const wchar_t *pFilename);
+        void Start(const fs::path &pFilename);
         void Stop();
         void SetPlayingState(bool State);
 
@@ -248,7 +237,7 @@ class sampler
         sample *mpSample;
         sampler *mpParent;
         bool mActive, mAutoPreview;
-        wchar_t mFilename[1024];
+        fs::path mFilename;
     } * mpPreview;
 
   public:

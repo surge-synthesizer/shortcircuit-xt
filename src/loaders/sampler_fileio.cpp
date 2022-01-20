@@ -34,15 +34,11 @@ using std::max;
 using std::min;
 using std::string;
 
-#if !TARGET_HEADLESS
-//#include "shortcircuit_editor2.h"
-#endif
-
 #include "infrastructure/logfile.h"
 #include "infrastructure/file_map_view.h"
 #include "filesystem/import.h"
 
-#include <vt_util/vt_string.h>
+#include "util/scxtstring.h"
 
 const int ff_revision = 10;
 
@@ -148,7 +144,7 @@ bool sampler::load_file(const fs::path &file_name, int *new_g, int *new_z, bool 
             if (is_group)
                 *is_group = true;
             result = load_sfz((char *)data, datasize, pathOnly, new_g, channel);
-            vtCopyString(parts[channel].name, nameOnly.c_str(), 32);
+            strncpy_0term(parts[channel].name, nameOnly.c_str(), 32);
             // TODO add name from last part of filename
         }
 
@@ -227,7 +223,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
     double d;
     int i;
     const char *tstring;
-    vtCopyString(zone->name, element.Attribute("name"), 32);
+    strncpy_0term(zone->name, element.Attribute("name"), 32);
 
     element.Attribute("layer", &i);
     zone->layer = i;
@@ -356,13 +352,13 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
                 // convert old (beta1) filter numbers to abberation
                 sub->Attribute("type", &i);
                 if ((i >= 0) && (i < 14))
-                    vtCopyString(abb, filter_abberations_beta1[i], 16);
+                    strncpy_0term(abb, filter_abberations_beta1[i], 16);
                 else
                     strcpy(abb, "NONE");
             }
             else
             {
-                vtCopyString(abb, sub->Attribute("type"), 16);
+                strncpy_0term(abb, sub->Attribute("type"), 16);
             }
             // find filter abberation in list, if not found, set to NONE
             int l, ft = 0;
@@ -503,7 +499,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
             // ts = sub->Attribute("src");
             // rev8 avoid storing the name of the controller
             char msrc[256];
-            vtCopyString(msrc, sub->Attribute("src"), 256);
+            strncpy_0term(msrc, sub->Attribute("src"), 256);
             char *colon = strrchr(msrc, ':');
             if (colon && (msrc[0] == 'c' && (revision < 8)))
             {
@@ -548,7 +544,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
         {
             int x;
             char msrc[256];
-            vtCopyString(msrc, sub->Attribute("src"), 256);
+            strncpy_0term(msrc, sub->Attribute("src"), 256);
 
             for (x = 0; x < t_mm.get_n_sources(); x++)
             {
@@ -923,7 +919,7 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
     assert(conf != 0);
     double d;
     int i;
-    vtCopyString(part->name, element.Attribute("name"), 32);
+    strncpy_0term(part->name, element.Attribute("name"), 32);
 
     element.Attribute("transpose", &i);
     part->transpose = i;
@@ -982,7 +978,7 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
         if (j < 2)
         {
             char abb[16];
-            vtCopyString(abb, sub->Attribute("type"), 16);
+            strncpy_0term(abb, sub->Attribute("type"), 16);
 
             // find filter abberation in list, if not found, set to NONE
             int l, ft = 0;
@@ -1087,7 +1083,7 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
             {
                 int x;
                 char msrc[256];
-                vtCopyString(msrc, sub->Attribute("src"), 256);
+                strncpy_0term(msrc, sub->Attribute("src"), 256);
 
                 for (x = 0; x < t_mm.get_n_sources(); x++)
                 {
@@ -1211,7 +1207,7 @@ bool sampler::load_all_from_xml(const void *data, int datasize, const fs::path &
             if (zone->Attribute("filename"))
             {
                 char samplefname[256];
-                vtCopyString(samplefname, (char *)zone->Attribute("filename"), 256);
+                strncpy_0term(samplefname, (char *)zone->Attribute("filename"), 256);
                 if (revision < 9) // this wasn't correctly done in revision 8 either
                 {
                     char *c = strstr(samplefname, ".sf2,");
@@ -1246,14 +1242,14 @@ bool sampler::load_all_from_xml(const void *data, int datasize, const fs::path &
                         newpath[0] = 0;
                         char *r = strrchr(samplefname, '\\');
                         if (r)
-                            vtCopyString(filename, r + 1, 256);
+                            strncpy_0term(filename, r + 1, 256);
                         else
-                            vtCopyString(filename, samplefname, 256);
+                            strncpy_0term(filename, samplefname, 256);
 
                         r = strrchr(filename, '|');
                         if (r)
                         {
-                            vtCopyString(subsamplename, r, 256);
+                            strncpy_0term(subsamplename, r, 256);
                             *r = 0;
                         }
                         else
@@ -1414,7 +1410,7 @@ bool sampler::load_all_from_sc1_xml(const void *data, int datasize, const fs::pa
             if (zone->Attribute("filename"))
             {
                 char samplefname[256];
-                vtCopyString(samplefname, (char *)zone->Attribute("filename"), 256);
+                strncpy_0term(samplefname, (char *)zone->Attribute("filename"), 256);
                 if (revision < 9) // this wasn't correctly done in revision 8 either
                 {
                     char *c = strstr(samplefname, ".sf2,");
@@ -1449,14 +1445,14 @@ bool sampler::load_all_from_sc1_xml(const void *data, int datasize, const fs::pa
                         newpath[0] = 0;
                         char *r = strrchr(samplefname, '\\');
                         if (r)
-                            vtCopyString(filename, r + 1, 256);
+                            strncpy_0term(filename, r + 1, 256);
                         else
-                            vtCopyString(filename, samplefname, 256);
+                            strncpy_0term(filename, samplefname, 256);
 
                         r = strrchr(filename, '|');
                         if (r)
                         {
-                            vtCopyString(subsamplename, r, 256);
+                            strncpy_0term(subsamplename, r, 256);
                             *r = 0;
                         }
                         else
