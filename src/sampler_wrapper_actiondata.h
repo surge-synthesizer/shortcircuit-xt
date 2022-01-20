@@ -70,7 +70,7 @@
 #include <cassert>
 #include <variant>
 #include "interaction_parameters.h"
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 
 enum VUnInitialized
 {

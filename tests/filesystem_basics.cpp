@@ -18,7 +18,7 @@
 #include <fstream>
 
 #include "test_main.h"
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 
 TEST_CASE("FileSystem", "[infra]")
 {

@@ -21,7 +21,7 @@
 #include <string>
 
 #include "test_main.h"
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 
 #include "globals.h"
 #include "infrastructure/sc3_mmio.h"

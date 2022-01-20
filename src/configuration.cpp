@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <tinyxml.h>
+#include "tinyxml/tinyxml.h"
 #include <vt_util/vt_string.h>
 
 #include "version.h"

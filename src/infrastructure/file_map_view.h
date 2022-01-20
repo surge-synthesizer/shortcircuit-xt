@@ -20,7 +20,7 @@
 
 #include <string>
 #include <memory>
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 
 /*
  * This class provides a mechanism to do a MapViewOfFile/mmap in a portable

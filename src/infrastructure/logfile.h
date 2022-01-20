@@ -21,7 +21,7 @@
 #include <iostream>
 #include <sstream>
 #include "logging.h"
-#include "import_fs.h"
+#include "filesystem/import.h"
 
 #define LOGGING_DEBUG_ENABLED 1
 

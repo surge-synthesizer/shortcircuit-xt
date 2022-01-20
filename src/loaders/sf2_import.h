@@ -1,5 +1,5 @@
 #pragma once
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 #include "infrastructure/logfile.h"
 
 int get_sf2_patchlist(const fs::path &filename, void **plist, scxt::log::StreamLogger &logger);
