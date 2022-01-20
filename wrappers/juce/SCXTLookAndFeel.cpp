@@ -78,6 +78,8 @@ void SCXTLookAndFeel::drawComboBox(juce::Graphics &g, int w, int h, bool isButto
                                    int buttonY, int buttonW, int buttonH, juce::ComboBox &box)
 {
     auto c = juce::Colour(0xFF151515);
+    if (!box.isEnabled())
+        c = juce::Colour(0xFF777777);
     fillWithRaisedOutline(g, juce::Rectangle<int>(0, 0, w, h), c, !isButtonDown);
     auto r = juce::Rectangle<int>(buttonX, buttonY, buttonW, buttonH);
     auto cy = r.getCentreY();

@@ -85,6 +85,7 @@ struct IntParamMultiSwitch : public juce::Component,
     IntParamMultiSwitch(const Orientation &o, data::ParameterProxy<int> &p, data::ActionSender *snd)
         : juce::Component(), orientation(o), ParamRefMixin<int>(p, snd)
     {
+        setEnabled(!param.get().disabled);
         setLabelsFromParam();
     }
 
@@ -101,6 +102,7 @@ struct IntParamMultiSwitch : public juce::Component,
     void onProxyUpdate() override { setLabelsFromParam(); }
     void setLabelsFromParam()
     {
+        setEnabled(!param.get().disabled);
         labels.clear();
         auto lb = param.get().label;
         auto p = lb.find(";");
@@ -167,7 +169,6 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
         {
             colFil = juce::Colour(0xFF888899);
             colText = juce::Colour(0xFFCCCCDD);
-
         }
         SCXTLookAndFeel::fillWithRaisedOutline(g, getLocalBounds(), colFil, true);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
@@ -194,6 +195,9 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
     void mouseDown(const juce::MouseEvent &e) override { dragY = e.position.y; }
     void mouseDrag(const juce::MouseEvent &e) override
     {
+        if (this->param.get().disabled || this->param.get().hidden)
+            return;
+
         auto dy = e.position.y - dragY;
         int mv = 0;
         if (dy > 10)
@@ -246,6 +250,7 @@ struct IntParamComboBox : public ComboBox,
         : ParamRefMixin<int>(p, snd), labels(labelRef)
     {
         updateFromLabels();
+        setEnabled(!param.get().disabled);
         onChange = [this]() { sendChange(); };
     }
     ~IntParamComboBox() = default;
@@ -257,6 +262,7 @@ struct IntParamComboBox : public ComboBox,
     uint64_t lastUpdateCount{0};
     void updateFromLabels()
     {
+        setEnabled(!param.get().disabled);
         if (labels.update_count != lastUpdateCount)
         {
             clear(juce::dontSendNotification);
@@ -290,12 +296,23 @@ struct IntParamToggleButton : public OutlinedTextButton,
                          data::ActionSender *snd)
         : OutlinedTextButton(label), ParamRefMixin<int>(p, snd)
     {
+        setEnabled(!param.get().disabled);
         setClickingTogglesState(true);
         setToggleState(param.get().val, juce::dontSendNotification);
-        onStateChange = [this]() { sendChange(); };
+        onStateChange = [this]() {
+            bool ts = getToggleState();
+            bool pv = param.get().val != 0;
+
+            if (ts != pv)
+                sendChange();
+        };
     }
 
-    void onProxyUpdate() override { setToggleState(param.get().val, juce::dontSendNotification); }
+    void onProxyUpdate() override
+    {
+        setEnabled(!param.get().disabled);
+        setToggleState(param.get().val, juce::dontSendNotification);
+    }
     void sendChange()
     {
         if (getToggleState())
