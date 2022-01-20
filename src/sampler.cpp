@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <string>
-#include <tinyxml.h>
+#include "tinyxml/tinyxml.h"
 #if WINDOWS
 #include <windows.h>
 #else

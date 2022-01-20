@@ -48,7 +48,7 @@ set(SHORTCIRCUIT_SOURCE
         synthesis/steplfo.cpp
         util/tools.cpp
         util/unitconversion.cpp
-        infrastructure/sc3_mmio.cpp infrastructure/sc3_mmio.h infrastructure/file_map_view.cpp infrastructure/file_map_view.h sampler_internalStateView.cpp infrastructure/import_fs.h)
+        infrastructure/sc3_mmio.cpp infrastructure/sc3_mmio.h infrastructure/file_map_view.cpp infrastructure/file_map_view.h sampler_internalStateView.cpp)
 
 set(SHORTCIRCUIT_GENERATED_SOURCE ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
 
@@ -71,7 +71,7 @@ target_link_libraries(shortcircuit-core PUBLIC
         sst-cpputils
         sst-plugininfra::tinyxml
         fmt::fmt
-        shortcircuit::filesystem
+        sst-plugininfra::filesystem
         shortcircuit::simde
         shortcircuit::compiler-options)
 target_include_directories(shortcircuit-core PUBLIC vembertech .)

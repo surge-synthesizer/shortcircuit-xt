@@ -52,8 +52,8 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     {
         DEF,
         DB,
-        HZ,
-        KHZ,
+        HERTZ,
+        KHERTZ,
         PERCENT,
         SECONDS,
         SEMITONES,
@@ -94,13 +94,13 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
         if (units == "dB")
             unitType = DB;
         if (units == "Hz")
-            unitType = HZ;
+            unitType = HERTZ;
         if (units == "%")
             unitType = PERCENT;
         if (units == "s")
             unitType = SECONDS;
         if (units == "kHz")
-            unitType = KHZ;
+            unitType = KHERTZ;
         if (units == "oct")
             unitType = OCTAVE;
         if (units == "st")
@@ -130,14 +130,14 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
             auto res = fmt::format("{:.3f} s", pow(2.0, val));
             return res;
         }
-        case HZ:
+        case HERTZ:
         {
             auto res = fmt::format("{:.3f} Hz", 440 * pow(2.0, val));
             return res;
         }
 
         case DEF:
-        case KHZ:
+        case KHERTZ:
         default:
             return fmt::format("{:.3f} RAW", val);
         }

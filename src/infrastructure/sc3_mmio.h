@@ -26,7 +26,7 @@
 
 #ifndef SHORTCIRCUIT_SC3_MMIO_H
 #define SHORTCIRCUIT_SC3_MMIO_H
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 #if WINDOWS
 #include <windows.h>
 #include <mmiscapi.h>

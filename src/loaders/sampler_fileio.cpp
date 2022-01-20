@@ -15,7 +15,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <tinyxml.h>
+#include "tinyxml/tinyxml.h"
 
 #include "globals.h"
 #include <string.h>
@@ -40,7 +40,7 @@ using std::string;
 
 #include "infrastructure/logfile.h"
 #include "infrastructure/file_map_view.h"
-#include "infrastructure/import_fs.h"
+#include "filesystem/import.h"
 
 #include <vt_util/vt_string.h>
 
