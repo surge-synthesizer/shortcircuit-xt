@@ -15,6 +15,7 @@
 
 #include <unordered_map>
 
+#include "components/BrowserSidebar.h"
 #include "components/DebugPanel.h"
 #include "components/HeaderPanel.h"
 
@@ -94,6 +95,9 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
     addAndMakeVisible(*headerPanel);
 
+    browserSidebar = std::make_unique<scxt::components::BrowserSidebar>();
+    addAndMakeVisible(*browserSidebar);
+
     pages[ZONE] = std::make_unique<scxt::pages::ZonePage>(this, ZONE);
     pages[PART] = std::make_unique<scxt::pages::PartPage>(this, PART);
     pages[FX] = std::make_unique<scxt::pages::FXPage>(this, FX);
@@ -129,7 +133,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(900, 700);
+    setSize(970, 700);
     // setResizable(true, true);
 }
 
@@ -160,24 +164,19 @@ void SCXTEditor::buttonClicked(juce::Button *b) {}
 void SCXTEditor::buttonStateChanged(juce::Button *b) {}
 
 //==============================================================================
-void SCXTEditor::paint(juce::Graphics &g)
-{
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-
-    auto bounds = getLocalBounds();
-    g.setColour(juce::Colours::white);
-    g.setFont(14.0f);
-    auto bottomLabel = bounds.removeFromTop(bounds.getHeight()).expanded(-2, 0);
-    g.drawFittedText("Shortcircuit XT", bottomLabel, juce::Justification::bottomLeft, 1);
-    g.drawFittedText(scxt::build::FullVersionStr, bottomLabel, juce::Justification::bottomRight, 1);
-}
+void SCXTEditor::paint(juce::Graphics &g) { g.fillAll(juce::Colours::black); }
 
 void SCXTEditor::resized()
 {
     auto r = getLocalBounds();
     headerPanel->setBounds(r.withHeight(25));
+
     r = r.withTrimmedTop(25);
+    auto sidebarWidth = 145;
+    auto side = r.withWidth(sidebarWidth).translated(r.getWidth() - sidebarWidth, 0);
+    browserSidebar->setBounds(side.reduced(1, 0));
+    r = r.withTrimmedRight(sidebarWidth);
+
     for (const auto &[p, page] : pages)
     {
         page->setBounds(r);

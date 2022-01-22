@@ -38,6 +38,7 @@ target_sources(ShortcircuitXT PRIVATE
         SCXTEditor.cpp
         SCXTLookAndFeel.cpp
 
+        components/BrowserSidebar.cpp
         components/HeaderPanel.cpp
         components/WaveDisplay.cpp
         components/DebugPanel.cpp

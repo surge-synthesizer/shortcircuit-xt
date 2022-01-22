@@ -225,9 +225,33 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
         addAndMakeVisible(*q);
         return q;
     }
+
+    struct FilterRegion
+    {
+        std::unique_ptr<widgets::IntParamComboBox> type;
+        std::unique_ptr<widgets::IntParamToggleButton> bypass;
+        std::unique_ptr<widgets::FloatParamSpinBox> mix;
+        std::array<std::unique_ptr<widgets::FloatParamSlider>, n_filter_parameters> fp;
+        std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, n_filter_iparameters> ip;
+    };
+
+    void bind(FilterRegion &fr, data::FilterData &ft, bool bindMix = true)
+    {
+        fr.type = bindIntComboBox(ft.type, parentPage.editor->zoneFilterType);
+        for (int q = 0; q < n_filter_parameters; ++q)
+            fr.fp[q] = bindFloatHSlider(ft.p[q]);
+
+        fr.bypass = bind<widgets::IntParamToggleButton>(ft.bypass, "mute");
+        if (bindMix)
+            fr.mix = bindFloatSpinBox(ft.mix);
+
+        for (int q = 0; q < n_filter_iparameters; ++q)
+            fr.ip[q] =
+                bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::VERT, ft.ip[q]);
+    }
+
     const T &parentPage;
 };
-
 } // namespace contents
 } // namespace pages
 } // namespace scxt
