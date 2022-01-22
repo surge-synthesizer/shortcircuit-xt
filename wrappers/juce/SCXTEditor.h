@@ -67,7 +67,8 @@ struct PageBase;
 namespace components
 {
 struct HeaderPanel;
-}
+struct BrowserSidebar;
+} // namespace components
 
 namespace proxies
 {
@@ -186,6 +187,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     std::map<Pages, std::unique_ptr<scxt::pages::PageBase>> pages;
 
     std::unique_ptr<scxt::components::HeaderPanel> headerPanel;
+    std::unique_ptr<scxt::components::BrowserSidebar> browserSidebar;
 
     std::unique_ptr<SCXTLookAndFeel> lookAndFeel;
 

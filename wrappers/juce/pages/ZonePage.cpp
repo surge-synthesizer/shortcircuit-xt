@@ -260,16 +260,7 @@ struct Filters : public ContentBase
         for (int i = 0; i < 2; ++i)
         {
             auto &ft = parentPage.editor->currentZone.filter[i];
-            types[i] = bindIntComboBox(ft.type, parentPage.editor->zoneFilterType);
-            for (int q = 0; q < n_filter_parameters; ++q)
-                fp[i][q] = bindFloatHSlider(ft.p[q]);
-
-            bypass[i] = bind<widgets::IntParamToggleButton>(ft.bypass, "mute");
-            mix[i] = bindFloatSpinBox(ft.mix);
-
-            for (int q = 0; q < n_filter_iparameters; ++q)
-                ip[i][q] = bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::VERT,
-                                                              ft.ip[q]);
+            bind(filters[i], ft);
         }
     }
     void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) override
@@ -285,6 +276,7 @@ struct Filters : public ContentBase
         auto sideCol = 60;
         for (int i = 0; i < 2; ++i)
         {
+            auto &fr = filters[i];
             auto fSide = b.reduced(3, 1).withTrimmedRight(sideCol);
             auto iSide = b.translated(b.getWidth() - sideCol, 0).withWidth(sideCol).reduced(1, 1);
             if (i == 1)
@@ -293,27 +285,22 @@ struct Filters : public ContentBase
                 iSide = iSide.translated(sideCol - b.getWidth(), 0);
             }
             auto rg = contents::RowGenerator(fSide, 1 + n_filter_parameters);
-            types[i]->setBounds(rg.next());
+            fr.type->setBounds(rg.next());
 
             for (auto q = 0; q < n_filter_parameters; ++q)
-                fp[i][q]->setBounds(rg.next());
+                fr.fp[q]->setBounds(rg.next());
 
             auto srg = contents::RowGenerator(iSide, 10);
-            bypass[i]->setBounds(srg.next());
-            mix[i]->setBounds(srg.next());
+            fr.bypass->setBounds(srg.next());
+            fr.mix->setBounds(srg.next());
             for (int q = 0; q < n_filter_iparameters; ++q)
-                ip[i][q]->setBounds(srg.next(4));
+                fr.ip[q]->setBounds(srg.next(4));
 
             b = b.translated(hw, 0);
         }
     }
 
-    std::array<std::unique_ptr<widgets::IntParamComboBox>, 2> types;
-    std::array<std::unique_ptr<widgets::IntParamToggleButton>, 2> bypass;
-    std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 2> mix;
-    std::array<std::array<std::unique_ptr<widgets::FloatParamSlider>, n_filter_parameters>, 2> fp;
-    std::array<std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, n_filter_iparameters>, 2>
-        ip;
+    std::array<ContentBase::FilterRegion, 2> filters;
 };
 
 struct Outputs : public ContentBase

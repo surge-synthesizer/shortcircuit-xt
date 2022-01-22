@@ -31,7 +31,47 @@ STUB(Controllers, juce::Colour(0xFF335533));
 
 struct Effects : public ContentBase
 {
-    Effects(const scxt::pages::PartPage &p) : ContentBase(p, "Effects", juce::Colour(0xFF555577)) {}
+    Effects(const scxt::pages::PartPage &p) : ContentBase(p, "Effects", juce::Colour(0xFF555577))
+    {
+        for (int i = 0; i < 2; ++i)
+        {
+            bind(filters[i], parentPage.editor->currentPart.filters[i]);
+        }
+    }
+
+    void resized() override
+    {
+        auto cb = getContentsBounds();
+        auto hw = cb.getWidth() / 2;
+        auto b = cb.withWidth(hw);
+        auto sideCol = 60;
+        for (int i = 0; i < 2; ++i)
+        {
+            auto &fr = filters[i];
+            auto fSide = b.reduced(3, 1).withTrimmedRight(sideCol);
+            auto iSide = b.translated(b.getWidth() - sideCol, 0).withWidth(sideCol).reduced(1, 1);
+            if (i == 1)
+            {
+                fSide = fSide.translated(sideCol, 0);
+                iSide = iSide.translated(sideCol - b.getWidth(), 0);
+            }
+            auto rg = contents::RowGenerator(fSide, 1 + n_filter_parameters);
+            fr.type->setBounds(rg.next());
+
+            for (auto q = 0; q < n_filter_parameters; ++q)
+                fr.fp[q]->setBounds(rg.next());
+
+            auto srg = contents::RowGenerator(iSide, 10);
+            fr.bypass->setBounds(srg.next());
+            fr.mix->setBounds(srg.next());
+            for (int q = 0; q < n_filter_iparameters; ++q)
+                fr.ip[q]->setBounds(srg.next(4));
+
+            b = b.translated(hw, 0);
+        }
+    }
+
+    std::array<ContentBase::FilterRegion, 2> filters;
 };
 
 struct Output : public ContentBase

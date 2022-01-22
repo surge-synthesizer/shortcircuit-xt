@@ -23,17 +23,9 @@ struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
     {
         auto &mult = parentPage.editor->multi;
         auto &fx = parentPage.editor->multi.filters[idx];
-        typeSelector =
-            bind<widgets::IntParamComboBox>(fx.type, parentPage.editor->multiFilterTypeNames);
         outputTarget = bind<widgets::IntParamComboBox>(mult.filter_output[idx],
                                                        parentPage.editor->multiFilterOutputNames);
-        muteButton = bind<widgets::IntParamToggleButton>(fx.bypass, "mute");
-
-        for (auto i = 0; i < n_filter_parameters; ++i)
-            fParams[i] = bindFloatHSlider(fx.p[i]);
-        for (auto i = 0; i < n_filter_iparameters; ++i)
-            iParams[i] =
-                bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::VERT, fx.ip[i]);
+        bind(filter, fx);
     }
 
     ~SingleFX() = default;
@@ -47,27 +39,22 @@ struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
         auto rgl = contents::RowGenerator(bl, 4 + n_filter_parameters);
         auto rgr = contents::RowGenerator(br, 4 + n_filter_parameters);
 
-        typeSelector->setBounds(rgl.next());
+        filter.type->setBounds(rgl.next());
         rgl.next();
-        for (const auto &q : fParams)
+        for (const auto &q : filter.fp)
             q->setBounds(rgl.next());
         rgl.next();
         outputTarget->setBounds(rgl.next());
 
-        muteButton->setBounds(rgr.next());
+        filter.bypass->setBounds(rgr.next());
         rgr.next();
-        for (const auto &p : iParams)
+        for (const auto &p : filter.ip)
             p->setBounds(rgr.next(5));
     }
 
     int idx{-1};
 
-    std::array<std::unique_ptr<widgets::FloatParamSlider>, n_filter_parameters> fParams;
-    std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, n_filter_iparameters> iParams;
-
-    std::unique_ptr<widgets::IntParamComboBox> typeSelector;
-    std::unique_ptr<widgets::IntParamToggleButton> muteButton;
-
+    FilterRegion filter;
     std::unique_ptr<widgets::IntParamComboBox> outputTarget;
 };
 } // namespace fx_contents
