@@ -35,7 +35,8 @@ struct Effects : public ContentBase
     {
         for (int i = 0; i < 2; ++i)
         {
-            bind(filters[i], parentPage.editor->currentPart.filters[i]);
+            bind(filters[i], parentPage.editor->currentPart.filters[i],
+                 parentPage.editor->partFilterTypeNames);
         }
     }
 

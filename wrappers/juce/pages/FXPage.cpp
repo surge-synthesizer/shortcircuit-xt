@@ -25,7 +25,7 @@ struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
         auto &fx = parentPage.editor->multi.filters[idx];
         outputTarget = bind<widgets::IntParamComboBox>(mult.filter_output[idx],
                                                        parentPage.editor->multiFilterOutputNames);
-        bind(filter, fx);
+        bind(filter, fx, parentPage.editor->multiFilterTypeNames);
     }
 
     ~SingleFX() = default;

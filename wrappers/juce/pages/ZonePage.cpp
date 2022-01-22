@@ -260,7 +260,7 @@ struct Filters : public ContentBase
         for (int i = 0; i < 2; ++i)
         {
             auto &ft = parentPage.editor->currentZone.filter[i];
-            bind(filters[i], ft);
+            bind(filters[i], ft, parentPage.editor->zoneFilterType);
         }
     }
     void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) override
@@ -411,10 +411,104 @@ struct Sample : ContentBase
 
 struct LFO : ContentBase
 {
-    LFO(const ZonePage &p) : ContentBase(p, "LFO", juce::Colour(0xFF447744)) { activateTabs(); }
+    struct LFOStepsComponent : public juce::Component
+    {
+        std::reference_wrapper<LFO> content;
+        std::reference_wrapper<data::LFOData> lf;
+        LFOStepsComponent(LFO &c, data::LFOData &lf) : content(c), lf(lf) {}
+
+        void paint(juce::Graphics &g) override
+        {
+            g.fillAll(juce::Colours::black);
+            auto bg = juce::Colour(0xAAFFFF00);
+            auto bar = juce::Colours::blue;
+            auto rb = getLocalBounds().toFloat().withWidth(getWidth() / 32.0);
+            for (auto p : lf.get().data)
+            {
+                auto qb = rb.reduced(0.5, 0.5);
+                g.setColour(bg);
+                g.fillRect(qb);
+                auto v = std::clamp(p.val, -1.f, 1.f);
+                if (v > 0)
+                {
+                    auto bb = qb.withHeight(qb.getHeight() / 2.0)
+                                  .withTrimmedTop((1 - v) * qb.getHeight() / 2);
+                    g.setColour(bar);
+                    g.fillRect(bb);
+                }
+                else
+                {
+                    auto bb = qb.withTrimmedTop(qb.getHeight() / 2.0)
+                                  .withTrimmedBottom((1 + v) * qb.getHeight() / 2);
+                    g.setColour(bar);
+                    g.fillRect(bb);
+                }
+                rb = rb.translated(getWidth() / 32.0, 0);
+            }
+        }
+    };
+
+    LFO(const ZonePage &p) : ContentBase(p, "LFO", juce::Colour(0xFF447744))
+    {
+        activateTabs();
+
+        auto &lf = parentPage.editor->currentZone.lfo[0];
+        lfoRegion = std::make_unique<LFOStepsComponent>(*this, lf);
+        addAndMakeVisible(*lfoRegion);
+
+        repeat = bindIntSpinBox(lf.repeat);
+        rate = bindFloatHSlider(lf.rate);
+        smooth = bindFloatSpinBox(lf.smooth);
+        shuffle = bindFloatSpinBox(lf.shuffle);
+        temposync = bind<widgets::IntParamToggleButton>(lf.temposync, "temposync");
+        triggermode =
+            bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::HORIZ, lf.triggermode);
+        cyclemode =
+            bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::HORIZ, lf.cyclemode);
+        onlyonce = bind<widgets::IntParamToggleButton>(lf.onlyonce, "once");
+
+        shapeLab = whiteLabel("shape");
+        stepLab = whiteLabel("steps");
+    }
+
+    void resized() override
+    {
+        ContentBase::resized();
+
+        auto b = getContentsBounds();
+        auto ls = b.withWidth(120).reduced(1, 1);
+        auto rs = b.withTrimmedLeft(120).reduced(1, 1);
+
+        auto lrg = contents::RowGenerator(ls, 5);
+        rate->setBounds(lrg.next().reduced(1, 1));
+        lrg.next();
+        temposync->setBounds(lrg.next().reduced(1, 1));
+        cyclemode->setBounds(lrg.next().reduced(1, 1));
+        triggermode->setBounds(lrg.next().reduced(1, 1));
+
+        auto rrg = contents::RowGenerator(rs, 5);
+        lfoRegion->setBounds(rrg.next(4));
+        auto rd = contents::RowDivider(rrg.next());
+        shapeLab->setBounds(rd.next(1. / 6.));
+        smooth->setBounds(rd.next(1. / 6.));
+        stepLab->setBounds(rd.next(1. / 6.));
+        rd.next(1. / 6.);
+        onlyonce->setBounds(rd.next(1. / 6.));
+    }
 
     int getTabCount() const override { return 3; }
     std::string getTabLabel(int i) const override { return std::to_string(i + 1); }
+
+    std::unique_ptr<LFOStepsComponent> lfoRegion;
+
+    std::unique_ptr<widgets::IntParamSpinBox> repeat;
+    std::unique_ptr<widgets::FloatParamSlider> rate;
+    std::unique_ptr<widgets::FloatParamSpinBox> smooth, shuffle;
+    std::unique_ptr<widgets::IntParamToggleButton> temposync;
+    std::unique_ptr<widgets::IntParamMultiSwitch> triggermode;
+    std::unique_ptr<widgets::IntParamMultiSwitch> cyclemode;
+    std::unique_ptr<widgets::IntParamToggleButton> onlyonce;
+    std::unique_ptr<juce::Label> shapeLab, stepLab;
 };
 
 } // namespace zone_contents
