@@ -253,6 +253,8 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
         case ip_lfoshape:
             res = applyToOneOrAll(
                 ad, cz.lfo, [](auto &r) -> auto & { return r.smooth; });
+            std::cout << ad << " " << cz.lfo[0].smooth.val << " "
+                      << cz.lfo[0].smooth.value_to_string() << std::endl;
             break;
         case ip_lforepeat:
             res = applyToOneOrAll(
@@ -299,6 +301,8 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
                 jassert(step >= 0 && step < 32);
                 auto val = ad.data.f[1];
                 cz.lfo[lfo].data[step].val = val;
+                cz.lfo[lfo].data[step].id = ad.id;
+                cz.lfo[lfo].data[step].subid = ad.subid;
                 res = true;
             }
             break;
@@ -308,7 +312,7 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
                 res = true;
                 break;
             case vga_steplfo_shape:
-                cz.lfo[ad.subid].smooth.val = ad.data.i[0];
+                cz.lfo[ad.subid].smooth.val = ad.data.f[0];
                 res = true;
                 break;
             case vga_label:

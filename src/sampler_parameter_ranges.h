@@ -52,6 +52,11 @@ struct parameter_ranges
         return parameter_ranges(id, 0.f, 1.f, def, 0.01f, PERCENT);
     }
 
+    constexpr static parameter_ranges floatZeroTo(InteractionId id, float up, float def = 0.f)
+    {
+        return parameter_ranges(id, 0.f, up, def, 0.01, UNDEF);
+    }
+
     constexpr static parameter_ranges percent_bipolar(InteractionId id, float def)
     {
         return parameter_ranges(id, -1.f, 1.f, def, 0.01f, PERCENT);
@@ -109,6 +114,8 @@ static constexpr parameter_ranges samplerParameterRanges[] = {
     {ip_pbdepth, 0, 12, 2, 1, parameter_ranges::KEYS},
     {ip_coarse_tune, -24, 24, 0, 1, parameter_ranges::KEYS},
 
+    parameter_ranges::floatZeroTo(ip_lfoshape, 2.0, 1.0),
+    {ip_lforate, -1.f, 5.f, 0.f, 0.05f, parameter_ranges::UNDEF},
 };
 
 #endif // SHORTCIRCUIT_SAMPLER_PARAMETER_RANGES_H

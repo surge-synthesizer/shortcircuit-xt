@@ -33,7 +33,7 @@ void FloatParamSlider::paint(juce::Graphics &g)
         g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
         auto b = getLocalBounds().reduced(2, 0);
         g.setColour(juce::Colours::white);
-        g.drawText(param.get().label, b, juce::Justification::left);
+        g.drawText(param.get().getLabel(), b, juce::Justification::left);
         g.drawText(param.get().valueToStringWithUnits(), b, juce::Justification::right);
     }
     break;
@@ -53,7 +53,7 @@ void FloatParamSlider::paintHSlider(juce::Graphics &g)
     auto lab = b.withHeight(getHeight() / 2 - 2).translated(0, getHeight() / 2 + 2).reduced(3, 0);
     g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
     g.setColour(juce::Colours::white);
-    g.drawText(param.get().label, lab, juce::Justification::left);
+    g.drawText(param.get().getLabel(), lab, juce::Justification::left);
     g.drawText(param.get().valueToStringWithUnits(), lab, juce::Justification::right);
 
     // Draw the handle
@@ -83,7 +83,9 @@ void FloatParamSlider::paintVSlider(juce::Graphics &g)
 
     g.setColour(juce::Colours::white);
     g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
-    auto lab = param.get().label;
+    auto lab =
+        param.get()
+            .label; // this is label not getLabel on purpose so we don't fall back to ip for vert
     if (lab.empty())
         lab = fallbackLabel;
     g.drawText(lab, b, juce::Justification::centredBottom);
