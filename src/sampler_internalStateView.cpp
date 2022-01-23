@@ -172,7 +172,28 @@ std::string sampler::generateInternalStateView() const
             oss << pfx << "lfo:\n";
             {
                 auto g3 = pfx.up();
-                oss << pfx << "coming_soon: true\n";
+                for (int l = 0; l < 3; ++l)
+                {
+                    auto lf = &(z->LFO[i]);
+                    oss << pfx << "lfo" << l << ":\n";
+                    auto g4 = pfx.up();
+                    SHOW(repeat, lf);
+                    SHOW(rate, lf);
+                    SHOW(smooth, lf);
+                    SHOW(shuffle, lf);
+                    SHOW(temposync, lf);
+                    SHOW(triggermode, lf);
+                    SHOW(cyclemode, lf);
+                    SHOW(onlyonce, lf);
+                    oss << pfx << "data: ";
+                    std::string cm = "";
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        oss << cm << lf->data[i];
+                        cm = ", ";
+                    }
+                    oss << "...\n";
+                }
             }
 
             oss << pfx << "mm_entry:\n";

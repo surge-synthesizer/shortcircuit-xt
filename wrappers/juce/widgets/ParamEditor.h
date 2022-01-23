@@ -189,7 +189,7 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
                                   dir * ParamRefMixin<T>::param.get().step,
                               ParamRefMixin<T>::param.get().min, ParamRefMixin<T>::param.get().max);
         }
-        jassertfalse;
+        // jassertfalse;
         return ParamRefMixin<T>::param.get().val + dir;
     }
     void mouseDown(const juce::MouseEvent &e) override { dragY = e.position.y; }

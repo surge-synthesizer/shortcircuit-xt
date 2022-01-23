@@ -157,6 +157,13 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
         return T{};
     }
 
+    std::string getLabel() const
+    {
+        if (label.empty())
+            return ip_data[id].label;
+        return label;
+    }
+
     template <typename Q> void setFrom(const Q &v) { jassertfalse; }
 };
 
@@ -212,6 +219,15 @@ inline void ParameterProxy<float, vga_floatval>::sendValue(const float &value, A
     ad.actiontype = vga_floatval;
     ad.data.f[0] = val;
     s->sendActionToEngine(ad);
+}
+
+template <>
+inline void ParameterProxy<float, vga_steplfo_data_single>::sendValue(const float &value,
+                                                                      ActionSender *s)
+{
+    // This shuld never be called; because of the message layout the message is generated
+    // specially in the ZonePage
+    std::terminate();
 }
 
 template <> inline char ParameterProxy<int>::dataModeIndicator() const { return 'i'; }

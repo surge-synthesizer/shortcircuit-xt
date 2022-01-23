@@ -413,7 +413,7 @@ struct LFO : ContentBase
 {
     struct LFOStepsComponent : public juce::Component
     {
-        std::reference_wrapper<LFO> content;
+        LFO &content;
         std::reference_wrapper<data::LFOData> lf;
         LFOStepsComponent(LFO &c, data::LFOData &lf) : content(c), lf(lf) {}
 
@@ -423,8 +423,10 @@ struct LFO : ContentBase
             auto bg = juce::Colour(0xAAFFFF00);
             auto bar = juce::Colours::blue;
             auto rb = getLocalBounds().toFloat().withWidth(getWidth() / 32.0);
-            for (auto p : lf.get().data)
+            for (const auto &[i, p] : sst::cpputils::enumerate(lf.get().data))
             {
+                if (i > lf.get().repeat.val)
+                    bg = juce::Colour(0xFF444444);
                 auto qb = rb.reduced(0.5, 0.5);
                 g.setColour(bg);
                 g.fillRect(qb);
@@ -445,6 +447,25 @@ struct LFO : ContentBase
                 }
                 rb = rb.translated(getWidth() / 32.0, 0);
             }
+        }
+
+        void mouseDrag(const juce::MouseEvent &e) override
+        {
+            int step = std::clamp((int)std::floor(e.position.x * 32.f / getWidth()), 0, 32);
+            float yPos =
+                std::clamp(1.f * (getHeight() - e.position.y) / getHeight(), 0.f, 1.f) * 2.f - 1.f;
+
+            auto &datum = lf.get().data[step];
+            actiondata ad;
+            ad.id = datum.id;
+            ad.subid = datum.subid;
+            ad.actiontype = vga_steplfo_data_single;
+            ad.data.i[0] = step;
+            ad.data.f[1] = yPos;
+
+            datum.val = yPos;
+            content.parentPage.editor->sendActionToEngine(ad);
+            repaint();
         }
     };
 
@@ -492,12 +513,27 @@ struct LFO : ContentBase
         shapeLab->setBounds(rd.next(1. / 6.));
         smooth->setBounds(rd.next(1. / 6.));
         stepLab->setBounds(rd.next(1. / 6.));
-        rd.next(1. / 6.);
+        repeat->setBounds(rd.next(1. / 6.));
         onlyonce->setBounds(rd.next(1. / 6.));
     }
 
     int getTabCount() const override { return 3; }
     std::string getTabLabel(int i) const override { return std::to_string(i + 1); }
+
+    virtual void switchToTab(int i) override
+    {
+        auto &lf = parentPage.editor->currentZone.lfo[i];
+        lfoRegion->lf = lf;
+        rebind(repeat, lf.repeat);
+        rebind(rate, lf.rate);
+        rebind(smooth, lf.smooth);
+        rebind(shuffle, lf.shuffle);
+        rebind(temposync, lf.temposync);
+        rebind(triggermode, lf.triggermode);
+        rebind(cyclemode, lf.cyclemode);
+        rebind(onlyonce, lf.onlyonce);
+        repaint();
+    }
 
     std::unique_ptr<LFOStepsComponent> lfoRegion;
 
