@@ -235,9 +235,10 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
         std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, n_filter_iparameters> ip;
     };
 
-    void bind(FilterRegion &fr, data::FilterData &ft, bool bindMix = true)
+    void bind(FilterRegion &fr, data::FilterData &ft, scxt::data::NameList &choices,
+              bool bindMix = true)
     {
-        fr.type = bindIntComboBox(ft.type, parentPage.editor->zoneFilterType);
+        fr.type = bindIntComboBox(ft.type, choices);
         for (int q = 0; q < n_filter_parameters; ++q)
             fr.fp[q] = bindFloatHSlider(ft.p[q]);
 

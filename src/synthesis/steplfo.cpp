@@ -189,9 +189,9 @@ void steplfo::assign(steplfostruct *settings, float *rate, timedata *td)
 
 void steplfo::UpdatePhaseIncrement()
 {
-    phaseInc = std::min(32, (int)(block_size * note_to_pitch(12 * (*rate)) * samplerate_inv *
-                                  (settings->cyclemode ? 1 : settings->repeat) *
-                                  (settings->temposync ? (td->tempo * (1.f / 120.f)) : 1)));
+    phaseInc = block_size * note_to_pitch(12 * (*rate)) * samplerate_inv *
+               (settings->cyclemode ? 1 : settings->repeat) *
+               (settings->temposync ? (td->tempo * (1.f / 120.f)) : 1);
 }
 
 void steplfo::process(int)

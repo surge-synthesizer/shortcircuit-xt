@@ -711,7 +711,7 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_zone, LFO[0].cyclemode),
         3,
         (int)sizeof(steplfostruct),
-        "LFO cyclemode",
+        "cycle;step",
     },
     {
         ip_lfosync,
@@ -727,7 +727,7 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_zone, LFO[0].triggermode),
         3,
         (int)sizeof(steplfostruct),
-        "LFO trigger",
+        "key;sng;rnd",
     },
     {
         ip_lfoshuffle,
