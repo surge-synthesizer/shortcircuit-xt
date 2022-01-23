@@ -24,7 +24,7 @@ struct GeneratorIO
     void *VoicePtr;
 };
 
-// borde bo i samplingen istället
+// should live in the sample instead
 /*struct GeneratorGrain
 {
         int SampleTime;

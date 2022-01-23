@@ -155,7 +155,7 @@ inline float saturate(float f)
 
 inline __m128 softclip_ss(__m128 in)
 {
-    // y = x - (4/27)*x^3,  x € [-1.5 .. 1.5]
+    // y = x - (4/27)*x^3,  x âˆˆ [-1.5 .. 1.5]
     const __m128 a = _mm_set_ss(-4.f / 27.f);
 
     const __m128 x_min = _mm_set_ss(-1.5f);
@@ -172,7 +172,7 @@ inline __m128 softclip_ss(__m128 in)
 
 inline __m128 softclip_ps(__m128 in)
 {
-    // y = x - (4/27)*x^3,  x € [-1.5 .. 1.5]
+    // y = x - (4/27)*x^3,  x âˆˆ [-1.5 .. 1.5]
     const __m128 a = _mm_set1_ps(-4.f / 27.f);
 
     const __m128 x_min = _mm_set1_ps(-1.5f);
