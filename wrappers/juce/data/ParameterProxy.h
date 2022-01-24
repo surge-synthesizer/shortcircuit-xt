@@ -159,7 +159,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 
     std::string getLabel() const
     {
-        if (label.empty())
+        if (label.empty() && id >= 0)
             return ip_data[id].label;
         return label;
     }

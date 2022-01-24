@@ -147,6 +147,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
         case ABOUT:
             return "About";
         }
+        return "ERROR";
     }
 
     void showPage(const Pages &p);
