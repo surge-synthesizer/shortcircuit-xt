@@ -13,6 +13,7 @@ class sampler;
 #include "multiselect.h"
 #include "sampler_state.h"
 #include "infrastructure/logfile.h"
+#include "browser/ContentBrowser.h"
 #include <list>
 #include <string>
 #include <thread>
@@ -75,6 +76,16 @@ class sampler
 
     bool loadUserConfiguration(const fs::path &configFile);
     bool saveUserConfiguration(const fs::path &configFile);
+
+    /*
+     * User Directory
+     */
+    fs::path userDocuemntDirectory;
+
+    /*
+     * Associated content
+     */
+    scxt::content::ContentBrowser browser;
 
     /*
      * Midi Messages

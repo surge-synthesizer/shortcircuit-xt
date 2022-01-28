@@ -23,6 +23,8 @@
 #include "util/scxtstring.h"
 
 #include <list>
+#include "sst/plugininfra/paths.h"
+
 using std::list;
 
 #include <algorithm>
@@ -147,6 +149,11 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     time_data.ppqPos = 0;
     sample_replace_filename[0] = 0;
     toggled_samplereplace = false;
+
+    userDocuemntDirectory = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
+    if (!fs::is_directory(userDocuemntDirectory))
+        fs::create_directories(userDocuemntDirectory);
+    browser.initialize(userDocuemntDirectory);
 }
 
 //-------------------------------------------------------------------------------------------------

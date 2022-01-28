@@ -72,6 +72,18 @@ jobs:
         displayName: linux - run apt-get
 
 
+      - task: InstallAppleCertificate@2
+        inputs:
+          certSecureFile: 'dev_id.p12'
+          certPwd: '$(MAC_EXPORTED_CERT_PW)'
+        condition: variables.isMac
+
+      - task: InstallAppleCertificate@2
+        inputs:
+          certSecureFile: 'inst_id.p12'
+          certPwd: '$(MAC_EXPORTED_CERT_PW)'
+        condition: variables.isMac
+
       - bash: |
           git submodule update --depth 1 --init --recursive
         displayName: Get SubModules
@@ -98,6 +110,13 @@ jobs:
           cmake --build build --config Release --target shortcircuit-installer --parallel 4
         displayName: Build SCXT Installer for Main
         condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+        env:
+          MAC_INSTALLING_CERT: $(MAC_INSTALLING_CERT)
+          MAC_SIGNING_1UPW: $(MAC_SIGNING_1UPW)
+          MAC_SIGNING_CERT: $(MAC_SIGNING_CERT)
+          MAC_SIGNING_ID: $(MAC_SIGNING_ID)
+          MAC_SIGNING_TEAM: $(MAC_SIGNING_TEAM)
+
 
       - bash: |
           mkdir -p build/stage_git/git_info
@@ -197,12 +216,12 @@ jobs:
           
           mkdir -p releases
           
-          mv *.zip releases
+          mv *.zip *.dmg releases
           
           ls -l $(System.DefaultWorkingDirectory)/git_info/
           echo "## ShortCircuit Nightly Build" > releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
-          echo "**DO NOT USE THIS. It's all a mess**" >> releases/ReleaseNotes.md
+          echo "**Wildly Incomplete Alpha Build**" >> releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
           date +"**Last Updated On: %Y-%m-%d %H:%M:%S %Z**" >> releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
@@ -260,5 +279,5 @@ jobs:
           # Finally tell discord
           export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
           
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. But you don't want it.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. But you probably don't want it.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
         displayName: Tell Discord

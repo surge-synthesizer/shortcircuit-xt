@@ -69,6 +69,7 @@ add_library(shortcircuit-core
 target_link_libraries(shortcircuit-core PUBLIC
         sst-cpputils
         fmt::fmt
+        sst-plugininfra
         sst-plugininfra::tinyxml
         sst-plugininfra::filesystem
         shortcircuit::simde
