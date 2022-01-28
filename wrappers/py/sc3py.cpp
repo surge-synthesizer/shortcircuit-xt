@@ -9,9 +9,6 @@
 #include "sampler.h"
 #include "version.h"
 
-// This is obviously gross
-void *hInstance = nullptr;
-
 namespace py = pybind11;
 
 struct SC3PY : public sampler

@@ -10,8 +10,6 @@
 #include "SCXTEditor.h"
 #include <iostream>
 
-void *hInstance = 0;
-
 //==============================================================================
 SCXTProcessor::SCXTProcessor()
     : mLogger(this),
@@ -35,6 +33,8 @@ SCXTProcessor::SCXTProcessor()
     {
         LOGINFO(mLogger) << "Configuration file did not load" << std::flush;
     }
+
+    sc3->wrapperType = getWrapperTypeDescription(wrapperType);
 }
 
 SCXTProcessor::~SCXTProcessor()
