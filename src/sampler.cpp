@@ -19,7 +19,6 @@
 #include "synthesis/morphEQ.h"
 
 #include <vt_dsp/basic_dsp.h>
-#include <vt_util/vt_lockfree.h>
 #include "util/scxtstring.h"
 
 #include <list>
@@ -51,7 +50,7 @@ void sampler::set_samplerate(float sr)
 
 sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
                  scxt::log::LoggingCallback *cb)
-    : mLogger(cb), mNumOutputs(NumOutputs)
+    : mLogger(cb), mNumOutputs(NumOutputs), actionBuffer(0x4000)
 {
     LOGINFO(mLogger) << "scxt engine " << scxt::build::FullVersionStr << std::flush;
     conf = new configuration(mLogger);
@@ -69,8 +68,6 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
             meq_loader.load(1,path);*/
 
     selected = new multiselect(this);
-
-    ActionBuffer = new vt_LockFree(sizeof(actiondata), 0x4000, 1);
 
     chunkDataPtr = 0;
     dbSampleListDataPtr = 0;
@@ -192,7 +189,6 @@ sampler::~sampler(void)
     }
     delete conf;
     delete selected;
-    delete ActionBuffer;
     delete mpPreview;
     if (chunkDataPtr)
         free(chunkDataPtr);

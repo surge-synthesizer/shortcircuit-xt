@@ -53,7 +53,6 @@ set(SHORTCIRCUIT_SOURCE
 set(SHORTCIRCUIT_GENERATED_SOURCE ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
 
 set(VEMBERTECH_SOURCE
-        vembertech/vt_util/vt_lockfree.cpp
         vembertech/vt_dsp/halfratefilter.cpp
         vembertech/vt_dsp/lipol.cpp
         vembertech/vt_dsp/lattice.cpp
@@ -73,5 +72,6 @@ target_link_libraries(shortcircuit-core PUBLIC
         sst-plugininfra::tinyxml
         sst-plugininfra::filesystem
         shortcircuit::simde
-        shortcircuit::compiler-options)
+        shortcircuit::compiler-options
+        shortcircuit::readerwriterqueue)
 target_include_directories(shortcircuit-core PUBLIC vembertech .)
