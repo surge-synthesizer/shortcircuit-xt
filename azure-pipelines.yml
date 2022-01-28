@@ -6,6 +6,9 @@ trigger:
 pr:
   - main
 
+variables:
+  - group: mac-signing
+
 jobs:
   - job: Build
     strategy:
