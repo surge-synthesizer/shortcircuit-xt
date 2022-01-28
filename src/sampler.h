@@ -270,6 +270,8 @@ class sampler
     int editorpart, editorlayer, editorlfo, editormm;
     moodycamel::ReaderWriterQueue<actiondata> actionBuffer;
 
+    std::string wrapperType{"Not Set"};
+
     bool toggled_samplereplace;
 
     sample *samples[max_samples];

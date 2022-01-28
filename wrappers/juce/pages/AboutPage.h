@@ -8,6 +8,7 @@
 #include "PageBase.h"
 #include "version.h"
 #include "BinaryUIAssets.h"
+#include "sst/plugininfra/paths.h"
 
 namespace scxt
 {
@@ -16,39 +17,105 @@ namespace pages
 {
 struct AboutPage : PageBase
 {
+    struct AboutInfo
+    {
+        std::string title;
+        std::string value;
+        bool isBig{true};
+    };
+    std::vector<AboutInfo> info;
     AboutPage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
     {
         icon = juce::Drawable::createFromImageData(SCXTUIAssets::SCicon_svg,
                                                    SCXTUIAssets::SCicon_svgSize);
+        info.push_back({"Version", scxt::build::FullVersionStr});
+        info.push_back(
+            {"Build Time", std::string(scxt::build::BuildDate) + " at " + scxt::build::BuildTime});
+
+#if MAC
+        std::string platform = "macOS";
+#elif WINDOWS
+        std::string platform = "Windows";
+#elif LINUX
+        std::string platform = "Linux";
+#else
+        std::string platform = "GLaDOS, Orac or Skynet";
+#endif
+        std::string bitness =
+            (sizeof(size_t) == 4 ? std::string("32") : std::string("64")) + "-bit";
+        std::string wrapper = ed->processor.getWrapperTypeDescription(ed->processor.wrapperType);
+
+#if __aarch64__
+        std::string cpu = "arm";
+#else
+        std::string cpu = "x64";
+#endif
+
+        info.push_back({"System", platform + " " + cpu + " " + bitness + " " + wrapper});
+        info.push_back(
+            {"Executable", sst::plugininfra::paths::sharedLibraryBinaryPath().u8string()});
+
+        copyButton = std::make_unique<juce::TextButton>("Copy");
+        copyButton->setButtonText("Copy");
+        copyButton->onClick = [this]() { copyInfo(); };
+        addAndMakeVisible(*copyButton);
     }
 
+    static constexpr int infoh = 15;
+    void resized() override
+    {
+        auto r = getLocalBounds()
+                     .withHeight(infoh)
+                     .withWidth(100)
+                     .withY(getHeight() - (info.size() + 1.5) * infoh - 5)
+                     .withTrimmedLeft(5);
+        copyButton->setBounds(r);
+    }
+
+    void copyInfo()
+    {
+        std::ostringstream oss;
+        for (auto i : info)
+        {
+            oss << i.title << ":  " << i.value << "\n";
+        }
+        juce::SystemClipboard::copyTextToClipboard(oss.str());
+    }
     void paint(juce::Graphics &g) override
     {
-        g.fillAll(juce::Colours::darkred);
+        g.fillAll(juce::Colour(0xFF151515));
         g.setColour(juce::Colours::white);
         {
             auto gs = juce::Graphics::ScopedSaveState(g);
             auto wh = std::max(icon->getWidth(), icon->getHeight());
             auto c = (getWidth() - icon->getWidth() * 3) / 2.0;
-            g.addTransform(juce::AffineTransform().scaled(3.0).translated(c, 20));
+            g.addTransform(juce::AffineTransform().scaled(3.0).translated(c, 120));
 
             icon->drawAt(g, 0, 0, 1.0);
         }
-        auto r = getLocalBounds().withHeight(60).translated(0, 220);
+        auto r = getLocalBounds().withHeight(60).translated(0, 320);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(60));
         g.setColour(juce::Colours::white);
         g.drawText("ShortCircuit XT", r, juce::Justification::centred);
-        g.setFont(SCXTLookAndFeel::getMonoFontAt(40));
-        r = r.translated(0, 60);
-        g.drawText(scxt::build::FullVersionStr, r, juce::Justification::centred);
-        r = r.translated(0, 60);
-        std::string dt = scxt::build::BuildDate;
-        dt += " at ";
-        dt += scxt::build::BuildTime;
-        g.drawText(dt, r, juce::Justification::centred);
+
+        g.setFont(SCXTLookAndFeel::getMonoFontAt(12));
+
+        r = r.withHeight(infoh);
+        r = r.withY(getHeight() - (info.size()) * infoh - 5);
+        for (auto q : info)
+        {
+            g.setColour(juce::Colour(0xFFFF9000));
+            auto ra = r.withWidth(100).withTrimmedLeft(5);
+            g.drawText(q.title, ra, juce::Justification::left);
+            g.setColour(juce::Colours::white);
+            auto rb = r.withTrimmedLeft(102);
+            g.drawText(q.value, rb, juce::Justification::left);
+            r = r.translated(0, infoh);
+        }
     }
 
     std::unique_ptr<juce::Drawable> icon;
+    std::unique_ptr<juce::TextButton> copyButton;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutPage);
 };

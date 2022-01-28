@@ -15,7 +15,6 @@ class HeadlessLogger : public scxt::log::LoggingCallback
     }
 };
 
-void *hInstance = 0;
 int main(int argc, char **argv)
 {
     HeadlessLogger logger;
