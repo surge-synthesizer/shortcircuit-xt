@@ -21,6 +21,7 @@ class sampler;
 #include <vector>
 #include <vt_dsp/lipol.h>
 #include <sampler_wrapper_actiondata.h>
+#include <readerwriterqueue.h>
 
 #include <sstream>
 #include <set>
@@ -36,7 +37,6 @@ typedef int WrapperClass;
 class modmatrix;
 class TiXmlElement;
 class configuration;
-class vt_LockFree;
 
 struct voicestate
 {
@@ -268,7 +268,7 @@ class sampler
 
   public:
     int editorpart, editorlayer, editorlfo, editormm;
-    vt_LockFree *ActionBuffer;
+    moodycamel::ReaderWriterQueue<actiondata> actionBuffer;
 
     bool toggled_samplereplace;
 

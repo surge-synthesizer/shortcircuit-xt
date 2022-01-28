@@ -27,7 +27,6 @@
 #include "sampler_wrapper_actiondata.h"
 
 #include <vt_gui/browserdata.h>
-#include <vt_util/vt_lockfree.h>
 
 #include "util/scxtstring.h"
 
@@ -48,9 +47,7 @@ using std::min;
 
 void sampler::postEventsFromWrapper(const actiondata &ad)
 {
-    LOGDEBUG(mLogger) << "postEventsFromWrapper " << ad.actiontype << std::flush;
-
-    ActionBuffer->WriteBlock((void *)&ad);
+    actionBuffer.enqueue(ad);
 
     // Much like in surge, if there's no audio thread you try and process them
     // in a thread unsafe way
@@ -79,13 +76,9 @@ void sampler::postEventsToWrapper(const actiondata &ad, bool ErrorIfClosed)
 void sampler::processWrapperEvents()
 {
     // ingoing
-    actiondata *adptr;
-    while ((adptr = (actiondata *)ActionBuffer->ReadBlock()))
+    actiondata ad;
+    while (actionBuffer.try_dequeue(ad))
     {
-        actiondata ad = *adptr;
-
-        LOGDEBUG(mLogger) << "processWrapperEvents handling " << ad.actiontype << std::flush;
-
         if (!std::holds_alternative<VAction>(ad.actiontype))
         {
             LOGDEBUG(mLogger) << "Surprise! It's not an action" << std::flush;
