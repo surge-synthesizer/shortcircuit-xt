@@ -61,12 +61,32 @@ endif ()
 
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
 set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
-message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
 
-add_custom_command(
-        TARGET shortcircuit-installer
-        POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMAND ${CMAKE_COMMAND} -E make_directory installer
-        COMMAND ${CMAKE_COMMAND} -E tar cvf installer/${SCXT_ZIP} --format=zip ${SCXT_PRODUCT_DIR}/
-        COMMAND ${CMAKE_COMMAND} -E echo "Installer in: installer/${SCXT_ZIP}")
+if (APPLE)
+    message(STATUS "Configuring for mac installer.")
+    add_custom_command(
+            TARGET shortcircuit-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory installer
+            COMMAND ${CMAKE_SOURCE_DIR}/libs/sst/sst-plugininfra/scripts/installer_mac/make_installer.sh "Shortcircuit XT" ${CMAKE_BINARY_DIR}/shortcircuit-products ${CMAKE_SOURCE_DIR}/resources/installer_mac ${CMAKE_BINARY_DIR}/installer "${SCXT_DATE}-${VERSION_CHUNK}"
+    )
+elseif (WIN32)
+    message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
+    add_custom_command(
+            TARGET shortcircuit-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory installer
+            COMMAND 7z a -r installer/${SCXT_ZIP} ${SURGE_PRODUCT_DIR}
+            COMMAND ${CMAKE_COMMAND} -E echo "Installer in: installer/${SCXT_ZIP}")
+else ()
+    message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
+    add_custom_command(
+            TARGET shortcircuit-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory installer
+            COMMAND ${CMAKE_COMMAND} -E tar cvf installer/${SCXT_ZIP} --format=zip ${SCXT_PRODUCT_DIR}/
+            COMMAND ${CMAKE_COMMAND} -E echo "Installer in: installer/${SCXT_ZIP}")
+endif ()
