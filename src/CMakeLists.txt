@@ -1,6 +1,7 @@
 # Now set up the sources for the core library
 
 set(SHORTCIRCUIT_SOURCE
+        browser/ContentBrowser.cpp
         loaders/akai_s6k_import.cpp
         loaders/battery_kit_import.cpp
         synthesis/biquadunit.cpp

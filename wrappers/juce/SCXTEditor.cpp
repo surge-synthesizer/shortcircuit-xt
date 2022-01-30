@@ -95,7 +95,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
     addAndMakeVisible(*headerPanel);
 
-    browserSidebar = std::make_unique<scxt::components::BrowserSidebar>();
+    browserSidebar = std::make_unique<scxt::components::BrowserSidebar>(this);
     addAndMakeVisible(*browserSidebar);
 
     pages[ZONE] = std::make_unique<scxt::pages::ZonePage>(this, ZONE);

@@ -69,6 +69,11 @@ void sampler::postEventsToWrapper(const actiondata &ad, bool ErrorIfClosed)
     {
         w->receiveActionFromProgram(ad);
     }
+
+    if (ErrorIfClosed && wrappers.empty())
+    {
+        LOGERROR(mLogger) << "ERROR STATE: No Wrapeprs" << std::endl;
+    }
 }
 
 //-------------------------------------------------------------------------------------------------

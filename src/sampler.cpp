@@ -147,10 +147,9 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     sample_replace_filename[0] = 0;
     toggled_samplereplace = false;
 
-    userDocuemntDirectory = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
-    if (!fs::is_directory(userDocuemntDirectory))
-        fs::create_directories(userDocuemntDirectory);
-    browser.initialize(userDocuemntDirectory);
+    userDocumentDirectory = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
+    setupUserDocumentDirectory();
+    browser.initialize(userDocumentDirectory);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1168,4 +1167,14 @@ std::string debug_view(const sample_zone &z)
     oss << " key r/l/h=" << z.key_root << "/" << z.key_low << "/" << z.key_high;
     oss << "]";
     return oss.str();
+}
+
+void sampler::setupUserDocumentDirectory()
+{
+    auto userDocumentSamples = userDocumentDirectory / "Library";
+    for (const auto &dir : {userDocumentDirectory, userDocumentSamples})
+    {
+        if (!fs::is_directory(dir))
+            fs::create_directories(dir);
+    }
 }
