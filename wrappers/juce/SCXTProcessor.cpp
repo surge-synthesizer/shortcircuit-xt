@@ -93,15 +93,9 @@ void SCXTProcessor::releaseResources()
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool SCXTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 {
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() &&
-        layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    // There are obviously other options here
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
-
-    // FIXME - we can go mono -> stereo in the future
-    // if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-    // return false;
 
     return true;
 }

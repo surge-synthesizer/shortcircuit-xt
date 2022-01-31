@@ -13,6 +13,8 @@ juce_add_plugin(ShortcircuitXT
         ICON_BIG "${CMAKE_SOURCE_DIR}/resources/images/SCAppIcon.png"
 
         FORMATS AU VST3 Standalone
+
+        COPY_PLUGIN_AFTER_BUILD TRUE
         )
 
 # images used in the ui
