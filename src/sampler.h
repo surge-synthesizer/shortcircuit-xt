@@ -80,7 +80,8 @@ class sampler
     /*
      * User Directory
      */
-    fs::path userDocuemntDirectory;
+    fs::path userDocumentDirectory;
+    void setupUserDocumentDirectory();
 
     /*
      * Associated content

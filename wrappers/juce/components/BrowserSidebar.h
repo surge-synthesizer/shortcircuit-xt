@@ -7,22 +7,38 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "SCXTLookAndFeel.h"
+#include "sampler.h"
+
+class SCXTEditor;
 
 namespace scxt
 {
 namespace components
 {
-class BrowserSidebar : public juce::Component
+
+struct BrowserDragThingy;
+struct BrowserSidebar : public juce::Component
 {
-    void paint(juce::Graphics &g) override
-    {
-        g.fillAll(juce::Colour(0xFF000020));
-        auto hb = getLocalBounds().withHeight(20);
-        SCXTLookAndFeel::fillWithGradientHeaderBand(g, hb, juce::Colour(0xFF774444));
-        g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
-        g.setColour(juce::Colours::white);
-        g.drawText("Samples and Patches", hb, juce::Justification::centred);
-    }
+    BrowserSidebar(SCXTEditor *ed);
+    ~BrowserSidebar();
+    SCXTEditor *editor{nullptr};
+
+    typedef std::unique_ptr<scxt::content::ContentBrowser::Content> content_t;
+    typedef scxt::content::ContentBrowser::Content *content_raw_t;
+    void paint(juce::Graphics &g) override;
+    void paintContainer(juce::Graphics &g, const content_raw_t &content, int offset, int off0 = -1);
+
+    void mouseDown(const juce::MouseEvent &e) override;
+    void mouseUp(const juce::MouseEvent &e) override;
+    void mouseDrag(const juce::MouseEvent &e) override;
+
+    const content_t &root;
+    std::vector<int> childStack;
+
+    // This is a gross solution
+    std::vector<std::pair<juce::Rectangle<int>, int>> clickZones;
+    std::unique_ptr<BrowserDragThingy> dragComponent;
+    juce::ComponentDragger dragger;
 };
 } // namespace components
 } // namespace scxt
