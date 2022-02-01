@@ -422,11 +422,12 @@ struct LFO : ContentBase
             g.fillAll(juce::Colours::black);
             auto bg = juce::Colour(0xAAFFFF00);
             auto bar = juce::Colours::blue;
-            auto rb = getLocalBounds().toFloat().withWidth(getWidth() / 32.0);
+            auto rb =
+                getLocalBounds().toFloat().withWidth(getWidth() / std::max(1, lf.get().repeat.val));
             for (const auto &[i, p] : sst::cpputils::enumerate(lf.get().data))
             {
                 if (i > lf.get().repeat.val)
-                    bg = juce::Colour(0xFF444444);
+                    break;
                 auto qb = rb.reduced(0.5, 0.5);
                 g.setColour(bg);
                 g.fillRect(qb);
@@ -445,13 +446,15 @@ struct LFO : ContentBase
                     g.setColour(bar);
                     g.fillRect(bb);
                 }
-                rb = rb.translated(getWidth() / 32.0, 0);
+                rb = rb.translated(rb.getWidth(), 0);
             }
         }
 
         void mouseDrag(const juce::MouseEvent &e) override
         {
-            int step = std::clamp((int)std::floor(e.position.x * 32.f / getWidth()), 0, 32);
+            int step = std::clamp(
+                (int)std::floor(e.position.x * std::max(1, lf.get().repeat.val) / getWidth()), 0,
+                32);
             float yPos =
                 std::clamp(1.f * (getHeight() - e.position.y) / getHeight(), 0.f, 1.f) * 2.f - 1.f;
 

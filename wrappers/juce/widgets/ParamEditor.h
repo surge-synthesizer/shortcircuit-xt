@@ -25,7 +25,7 @@ template <typename P> inline void assertParamRangesSet(P &p)
 
     if (!p.complainedAboutParamRangesSet)
     {
-        jassert(p.paramRangesSet);
+        // jassert(p.paramRangesSet);
         if (!p.paramRangesSet)
         {
             std::ostringstream oss;

@@ -38,7 +38,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     ParameterProxy() {}
     int id{-1};
     int subid{-1};
-    T val;
+    T val{0};
     bool hidden{false};
     bool disabled{false};
     std::string label;
