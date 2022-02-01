@@ -87,6 +87,7 @@ struct ConfigDataProxy;
 //==============================================================================
 /**
  */
+struct SCXTTopLevel;
 class SCXTEditor : public juce::AudioProcessorEditor,
                    public juce::Button::Listener,
                    public juce::FileDragAndDropTarget,
@@ -152,6 +153,10 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
     void showPage(const Pages &p);
 
+    static constexpr int scWidth = 970, scHeight = 700;
+    float scale = 1.0;
+    void setScale(float sc);
+
   private:
     void sendActionInternal(const actiondata &ad);
 
@@ -166,6 +171,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     };
     std::unique_ptr<SC3EngineToWrapperQueue<LogTransport>> logToUI;
     std::unique_ptr<SC3IdleTimer> idleTimer;
+    std::unique_ptr<SCXTTopLevel> topLevel;
 
   public:
     std::set<scxt::data::UIStateProxy *> uiStateProxies;

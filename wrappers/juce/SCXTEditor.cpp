@@ -50,13 +50,23 @@ struct SC3IdleTimer : juce::Timer
     SCXTEditor *ed;
 };
 
+struct SCXTTopLevel : public juce::Component
+{
+    SCXTEditor *editor{nullptr};
+    SCXTTopLevel(SCXTEditor *e) : editor(e) {}
+    void resized() override;
+};
+
 //==============================================================================
 SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
 {
     auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->totalArea;
-    float ws = 900.f / area.getWidth();
-    float hs = 700.f / area.getHeight();
+    float ws = 1.f * scWidth / area.getWidth();
+    float hs = 1.f * scHeight / area.getHeight();
     auto x = std::max(ws, hs);
+
+    topLevel = std::make_unique<SCXTTopLevel>(this);
+    addAndMakeVisible(*topLevel);
 
     // this is pretty arbitrary
     auto sc = 1.f;
@@ -66,7 +76,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
             sc = q;
     }
 
-    setTransform(juce::AffineTransform().scaled(sc));
+    // topLevel->setTransform(juce::AffineTransform().scaled(sc));
     lookAndFeel = std::make_unique<SCXTLookAndFeel>();
     setLookAndFeel(lookAndFeel.get());
 
@@ -93,10 +103,10 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     headerPanel = std::make_unique<scxt::components::HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
     vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
-    addAndMakeVisible(*headerPanel);
+    topLevel->addAndMakeVisible(*headerPanel);
 
     browserSidebar = std::make_unique<scxt::components::BrowserSidebar>(this);
-    addAndMakeVisible(*browserSidebar);
+    topLevel->addAndMakeVisible(*browserSidebar);
 
     pages[ZONE] = std::make_unique<scxt::pages::ZonePage>(this, ZONE);
     pages[PART] = std::make_unique<scxt::pages::PartPage>(this, PART);
@@ -120,7 +130,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     {
         page->connectProxies();
         page->setVisible(false);
-        addChildComponent(*page);
+        topLevel->addChildComponent(*page);
     }
     pages[ZONE]->setVisible(true);
 
@@ -133,7 +143,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(970, 700);
+    setScale(sc);
     // setResizable(true, true);
 }
 
@@ -166,18 +176,30 @@ void SCXTEditor::buttonStateChanged(juce::Button *b) {}
 //==============================================================================
 void SCXTEditor::paint(juce::Graphics &g) { g.fillAll(juce::Colours::black); }
 
+void SCXTEditor::setScale(float sc)
+{
+    scale = sc;
+    setSize(scWidth * sc, scHeight * sc);
+}
+
 void SCXTEditor::resized()
 {
+    topLevel->setBounds(juce::Rectangle<int>(0, 0, scWidth, scHeight));
+    topLevel->setTransform(juce::AffineTransform().scaled(scale));
+}
+
+void SCXTTopLevel::resized()
+{
     auto r = getLocalBounds();
-    headerPanel->setBounds(r.withHeight(25));
+    editor->headerPanel->setBounds(r.withHeight(25));
 
     r = r.withTrimmedTop(25);
     auto sidebarWidth = 145;
     auto side = r.withWidth(sidebarWidth).translated(r.getWidth() - sidebarWidth, 0);
-    browserSidebar->setBounds(side.reduced(1, 0));
+    editor->browserSidebar->setBounds(side.reduced(1, 0));
     r = r.withTrimmedRight(sidebarWidth);
 
-    for (const auto &[p, page] : pages)
+    for (const auto &[p, page] : editor->pages)
     {
         page->setBounds(r);
     }
