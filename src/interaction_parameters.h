@@ -184,6 +184,123 @@ enum IPType
     ipvt_other
 };
 
+struct ip_range_and_units
+{
+    enum Units
+    {
+        UNDEF,
+        PERCENT,
+        SECONDS,
+        KEYS
+    } unit{UNDEF};
+    enum Type
+    {
+        UNINITIALIZED,
+        FLOAT = 1,
+        INT,
+        DATAMODE,
+        DISCRETE_DATAMODE
+    } type{UNINITIALIZED};
+    int mmds_int[4]{};
+    float mmds_float[4]{};
+    char label[256]{0};
+    char datamodestring[256]{0};
+
+    constexpr ip_range_and_units() : unit(UNDEF), type(UNINITIALIZED)
+    {
+        mmds_float[0] = 0.f;
+        mmds_float[1] = 1.f;
+        mmds_float[2] = 0.f;
+        mmds_float[3] = 0.01f;
+    }
+
+    constexpr ip_range_and_units(int minv, int maxv, int defv, int stepv, Units u)
+        : unit(u), type(INT)
+    {
+        mmds_int[0] = minv;
+        mmds_int[1] = maxv;
+        mmds_int[2] = defv;
+        mmds_int[3] = stepv;
+    }
+    constexpr ip_range_and_units(float minv, float maxv, float defv, float stepv, Units u)
+        : unit(u), type(FLOAT)
+    {
+        mmds_float[0] = minv;
+        mmds_float[1] = maxv;
+        mmds_float[2] = defv;
+        mmds_float[3] = stepv;
+    }
+
+    constexpr static ip_range_and_units midi127()
+    {
+        return ip_range_and_units(0, 127, 60, 1, KEYS);
+    }
+
+    constexpr static ip_range_and_units percent(float def)
+    {
+        return ip_range_and_units(0.f, 1.f, def, 0.01f, PERCENT);
+    }
+
+    constexpr static ip_range_and_units floatZeroTo(float up, float def = 0.f)
+    {
+        return ip_range_and_units(0.f, up, def, 0.01, UNDEF);
+    }
+
+    constexpr static ip_range_and_units percent_bipolar(float def)
+    {
+        return ip_range_and_units(-1.f, 1.f, def, 0.01f, PERCENT);
+    }
+
+    constexpr static ip_range_and_units fromDatamodeString(const char *s)
+    {
+        auto res = ip_range_and_units();
+        res.type = DATAMODE;
+        for (int i = 0; i < 256; ++i)
+        {
+            res.datamodestring[i] = s[i];
+            if (s[i] == 0)
+                break;
+        }
+        res.datamodestring[255] = 0;
+        return res;
+    }
+
+    constexpr static ip_range_and_units fromLabel(const char *label, int nChoices)
+    {
+        // sprintf isn't constexpr. Sigh
+        char dm[256]{'i', ',', '0', ',', ' ', ',', '0', ',', 0};
+        if (nChoices > 9)
+            nChoices = 0;
+        dm[4] = nChoices + '0';
+        auto res = fromDatamodeString(dm);
+        res.type = DISCRETE_DATAMODE;
+        // oh why is strncpy not constexpr? sigh.
+        for (int i = 0; i < 256; ++i)
+        {
+            res.label[i] = label[i];
+            if (label[i] == 0)
+                break;
+        }
+        res.label[255] = 0;
+        return res;
+    }
+    // sampler_wrapperinteraction sends this over
+    /*
+    void toActionData(actiondata &ad) const
+    {
+        ad.id = id;
+        ad.subid = -1;
+        ad.actiontype = vga_set_range_and_units;
+        ad.data.i[0] = (type == FLOAT ? 'f' : 'i');
+        if (type == FLOAT)
+            for (int i = 0; i < 4; ++i)
+                ad.data.f[i + 1] = mmds_float[i];
+        else
+            for (int i = 0; i < 4; ++i)
+                ad.data.i[i + 1] = mmds_int[i];
+    }
+     */
+};
 struct interactiondata
 {
     InteractionId id;
@@ -191,12 +308,13 @@ struct interactiondata
     int ptr_offset;
     int n_subid;
     int subid_ptr_offset;
-    std::string label;
+    std::string name;
+    ip_range_and_units rangeAndUnits;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const interactiondata &d)
 {
-    os << "interaction[" << d.label << " ";
+    os << "interaction[" << d.name << " ";
     switch (d.vtype)
     {
     case ipvt_int:
@@ -328,6 +446,7 @@ static const interactiondata ip_data[] = {
         16,
         0,
         "conf ctrl id",
+        ip_range_and_units::fromDatamodeString("i,0,16383,0,"),
     },
     {
         ip_config_controller_mode,
@@ -376,6 +495,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "conf preview volume",
+        ip_range_and_units::fromDatamodeString("f,-96.0,0.100,0.0,0,dB"),
     },
     {
         ip_config_save,
@@ -480,6 +600,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "low key",
+        ip_range_and_units::fromDatamodeString("i,0,127,2,"),
     },
     {
         ip_root_key,
@@ -488,6 +609,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "root key",
+        ip_range_and_units::fromDatamodeString("i,0,127,2,"),
     },
     {
         ip_high_key,
@@ -496,6 +618,8 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "high key",
+        ip_range_and_units::fromDatamodeString("i,0,127,2,"),
+
     },
     {
         ip_low_vel,
@@ -504,6 +628,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "low vel",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_high_vel,
@@ -512,6 +637,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "high vel",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_low_key_f,
@@ -520,6 +646,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "low key F",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_high_key_f,
@@ -528,6 +655,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "high key F",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_low_vel_f,
@@ -536,6 +664,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "low vel F",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_high_vel_f,
@@ -544,6 +673,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "high vel F",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_coarse_tune,
@@ -552,6 +682,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "coarse tune",
+        ip_range_and_units::fromDatamodeString("i,-96,96,0,"),
     },
     {
         ip_fine_tune,
@@ -560,6 +691,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "fine tune",
+        ip_range_and_units::fromDatamodeString("f,-1.0,0.010,1.0,1,c"),
     },
     {
         ip_pitchcorrect,
@@ -568,6 +700,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "pitch correction",
+        ip_range_and_units::fromDatamodeString("f,-1.0,0.010,1.0,1,cents"),
     },
     {
         ip_reverse,
@@ -584,6 +717,8 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "PB depth",
+        ip_range_and_units::fromDatamodeString("i,-36,36,0,"),
+
     },
     {
         ip_playmode,
@@ -600,6 +735,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "velsense",
+        ip_range_and_units::fromDatamodeString("f,-96.0,0.100,0.0,0,dB"),
     },
     {
         ip_keytrack,
@@ -608,6 +744,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "keytrack",
+        ip_range_and_units::fromDatamodeString("f,-1.0,0.010,1.0,1,%"),
     },
     {
         ip_mute_group,
@@ -616,6 +753,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "mute group",
+        ip_range_and_units::fromDatamodeString("i,0,63,0,"),
     },
     {
         ip_EG_a,
@@ -624,6 +762,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG attack",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.080,5.0,0,"),
     },
     {
         ip_EG_h,
@@ -632,6 +771,8 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG hold",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.080,5.0,0,"),
+
     },
     {
         ip_EG_d,
@@ -640,6 +781,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG decay",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.080,5.0,0,"),
     },
     {
         ip_EG_s,
@@ -648,6 +790,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG sustain",
+        ip_range_and_units::fromDatamodeString("f,0.0,0.010,1.0,0,"),
     },
     {
         ip_EG_r,
@@ -656,6 +799,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG release",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.080,5.0,0,"),
     },
     {
         ip_EG_s0,
@@ -664,6 +808,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG attack shape",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.050,10.0,0,"),
     },
     {
         ip_EG_s1,
@@ -672,6 +817,8 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG decay shape",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.050,10.0,0,"),
+
     },
     {
         ip_EG_s2,
@@ -680,6 +827,8 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(envelope_AHDSR),
         "EG release shape",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.050,10.0,0,"),
+
     },
     {
         ip_lforate,
@@ -688,6 +837,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(steplfostruct),
         "LFO rate",
+        ip_range_and_units::fromDatamodeString("f,-8.0,0.020,5.0,4,Hz"),
     },
     {
         ip_lfoshape,
@@ -696,6 +846,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(steplfostruct),
         "LFO smooth",
+        ip_range_and_units::fromDatamodeString("f,-2.0,0.010,2.0,0,"),
     },
     {
         ip_lforepeat,
@@ -704,6 +855,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(steplfostruct),
         "LFO repeat",
+        ip_range_and_units::fromDatamodeString("i,2,32,0,"),
     },
     {
         ip_lfocycle,
@@ -711,7 +863,8 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_zone, LFO[0].cyclemode),
         3,
         (int)sizeof(steplfostruct),
-        "cycle;step",
+        "LFO cycle",
+        ip_range_and_units::fromLabel("cycle;step", 2),
     },
     {
         ip_lfosync,
@@ -727,7 +880,8 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_zone, LFO[0].triggermode),
         3,
         (int)sizeof(steplfostruct),
-        "key;sng;rnd",
+        "LFO trigger",
+        ip_range_and_units::fromLabel("key;sng;rnd", 3),
     },
     {
         ip_lfoshuffle,
@@ -760,6 +914,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(float),
         "Lag generator",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.080,5.0,4,s"),
     },
     {
         ip_filter_object,
@@ -792,6 +947,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(filterstruct),
         "filter mix",
+        ip_range_and_units::fromDatamodeString("f,0.0,0.010,1.0,1,%"),
     },
     {
         ip_filter1_fp,
@@ -856,6 +1012,7 @@ static const interactiondata ip_data[] = {
         mm_entries,
         (int)sizeof(mm_entry),
         "MM amount",
+        ip_range_and_units::fromDatamodeString("f,-32.0,0.100,32.0,0,"),
     },
     {
         ip_mm_curve,
@@ -888,6 +1045,7 @@ static const interactiondata ip_data[] = {
         nc_entries,
         (int)sizeof(nc_entry),
         "zone nc low",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_nc_high,
@@ -896,6 +1054,7 @@ static const interactiondata ip_data[] = {
         nc_entries,
         (int)sizeof(nc_entry),
         "zone nc high",
+        ip_range_and_units::fromDatamodeString("i,0,127,0,"),
     },
     {
         ip_ignore_part_polymode,
@@ -920,6 +1079,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "prefilter gain",
+        ip_range_and_units::fromDatamodeString("f,-96.0,0.100,48.0,0,dB"),
     },
     {
         ip_zone_aux_level,
@@ -928,6 +1088,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(aux_buss),
         "main/AUX level",
+        ip_range_and_units::fromDatamodeString("f,-96.0,0.200,12.0,0,dB"),
     },
     {
         ip_zone_aux_balance,
@@ -936,6 +1097,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(aux_buss),
         "main/AUX balance",
+        ip_range_and_units::fromDatamodeString("f,-2.0,0.010,2.0,1,%"),
     },
     {
         ip_zone_aux_output,
@@ -951,7 +1113,8 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_zone, aux[0].outmode),
         3,
         (int)sizeof(aux_buss),
-        "main;AUX off;pre;post",
+        "main/AUX mode",
+        ip_range_and_units::fromLabel("main;AUX off;pre;post", 4),
     },
     {
         ip_part_name,
@@ -968,6 +1131,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "MIDI channel",
+        ip_range_and_units::fromDatamodeString("i,0,15,1,"),
     },
     {
         ip_part_polylimit,
@@ -976,6 +1140,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "part polylimit",
+        ip_range_and_units::fromDatamodeString("i,0,256,0,"),
     },
     {
         ip_part_transpose,
@@ -984,6 +1149,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "part transpose",
+        ip_range_and_units::fromDatamodeString("i,-36,36,0,"),
     },
     {
         ip_part_formant,
@@ -992,6 +1158,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "part formant",
+        ip_range_and_units::fromDatamodeString("i,-36,36,0,"),
     },
     {
         ip_part_polymode,
@@ -1008,6 +1175,8 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "part portamento",
+        ip_range_and_units::fromDatamodeString("f,-10.0,0.080,2.0,4,s"),
+
     },
     {
         ip_part_portamento_mode,
@@ -1040,6 +1209,7 @@ static const interactiondata ip_data[] = {
         16,
         (int)sizeof(float),
         "part UP value",
+        ip_range_and_units::fromDatamodeString("f,0.0,0.005,1.0,1,%"),
     },
     {
         ip_part_filter_object,
@@ -1072,6 +1242,7 @@ static const interactiondata ip_data[] = {
         2,
         (int)sizeof(filterstruct),
         "part filter mix",
+        ip_range_and_units::fromDatamodeString("f,0.0,0.005,1.0,1,%"),
     },
     {
         ip_part_filter1_fp,
@@ -1112,6 +1283,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(aux_buss),
         "part level",
+        ip_range_and_units::fromDatamodeString("f,-96.0,0.100,12.0,0,dB"),
     },
     {
         ip_part_aux_balance,
@@ -1120,6 +1292,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(aux_buss),
         "part balance",
+        ip_range_and_units::fromDatamodeString("f,-2.0,0.010,2.0,1,%"),
     },
     {
         ip_part_aux_output,
@@ -1152,6 +1325,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "split distribution",
+        ip_range_and_units::fromDatamodeString("f,-1.0,0.010,1.0,1,%"),
     },
     {
         ip_part_vs_xf_equality,
@@ -1168,6 +1342,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "xfade amount",
+        ip_range_and_units::fromDatamodeString("f,0.0,0.005,1.0,1,%"),
     },
     {
         ip_part_mm_src,
@@ -1232,6 +1407,7 @@ static const interactiondata ip_data[] = {
         num_part_ncs,
         (int)sizeof(nc_entry),
         "part nc low",
+        ip_range_and_units::fromDatamodeString("i,0,128,0,"),
     },
     {
         ip_part_nc_high,
@@ -1240,6 +1416,7 @@ static const interactiondata ip_data[] = {
         num_part_ncs,
         (int)sizeof(nc_entry),
         "part nc high",
+        ip_range_and_units::fromDatamodeString("i,0,128,0,"),
     },
     {
         ip_multi_filter_object,
@@ -1375,6 +1552,7 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_multi, filter_postgain[0]),
         num_fxunits,
         (int)sizeof(float),
+        "multi filter postgain",
     },
 
 };

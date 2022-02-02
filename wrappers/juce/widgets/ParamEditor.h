@@ -104,7 +104,7 @@ struct IntParamMultiSwitch : public juce::Component,
     {
         setEnabled(!param.get().disabled);
         labels.clear();
-        auto lb = param.get().label;
+        auto lb = param.get().getLabel();
         auto p = lb.find(";");
         if (p != std::string::npos)
         {
@@ -117,6 +117,10 @@ struct IntParamMultiSwitch : public juce::Component,
             labels.push_back(lb);
         }
         maxValue = labels.size();
+        if (maxValue == 0 && !param.get().hidden && !param.get().getName().empty())
+        {
+            DBG("No information in the labels from " << param.get().getName());
+        }
 
         resetHitRects();
     }
