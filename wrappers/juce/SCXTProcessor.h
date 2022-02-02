@@ -46,6 +46,7 @@ class SCXTProcessor : public juce::AudioProcessor, public scxt::log::LoggingCall
     bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
 
     void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
+    void applyMidi(const juce::MidiMessageMetadata &msg);
 
     //==============================================================================
     juce::AudioProcessorEditor *createEditor() override;
@@ -74,7 +75,6 @@ class SCXTProcessor : public juce::AudioProcessor, public scxt::log::LoggingCall
 
   private:
     size_t blockPos;
-    static const uint32 BUFFER_COPY_CHUNK = 4; // sample copy grain size
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTProcessor)
 };

@@ -106,53 +106,80 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
     int ons[127], offs[127];
     int onp = 0, offp = 0;
 
-    for (const auto it : midiMessages)
+    auto midiIt = midiMessages.findNextSamplePosition(0);
+    int nextMidi = -1;
+    if (midiIt != midiMessages.cend())
     {
-        auto m = it.getMessage();
-        if (m.isNoteOn())
-        {
-            sc3->PlayNote(m.getChannel() - 1, m.getNoteNumber(), m.getVelocity());
-        }
-        else if (m.isNoteOff())
-        {
-            sc3->ReleaseNote(m.getChannel() - 1, m.getNoteNumber(), m.getVelocity());
-        }
-        else if (m.isPitchWheel())
-        {
-            sc3->PitchBend(m.getChannel() - 1, m.getPitchWheelValue() - 8192);
-        }
-        else if (m.isController())
-        {
-            sc3->ChannelController(m.getChannel() - 1, m.getControllerNumber(),
-                                   m.getControllerValue());
-        }
-        else if (m.isAftertouch())
-        {
-            sc3->ChannelAftertouch(m.getChannel() - 1, m.getAfterTouchValue());
-        }
-        else if (m.isAllNotesOff() || m.isAllSoundOff())
-        {
-            sc3->AllNotesOff();
-        }
+        nextMidi = (*midiIt).samplePosition;
     }
 
     auto mainInputOutput = getBusBuffer(buffer, false, 0);
 
-    for (int i = 0; i < buffer.getNumSamples(); i += BUFFER_COPY_CHUNK)
+    for (int i = 0; i < buffer.getNumSamples(); i++)
     {
+        while (i == nextMidi)
+        {
+            applyMidi(*midiIt);
+            midiIt++;
+            if (midiIt == midiMessages.cend())
+            {
+                nextMidi = -1;
+            }
+            else
+            {
+                nextMidi = (*midiIt).samplePosition;
+            }
+        }
+
         auto outL = mainInputOutput.getWritePointer(0, i);
         auto outR = mainInputOutput.getWritePointer(1, i);
 
         if (blockPos == 0)
             sc3->process_audio();
 
-        memcpy(outL, &(sc3->output[0][blockPos]), BUFFER_COPY_CHUNK * sizeof(float));
-        memcpy(outR, &(sc3->output[1][blockPos]), BUFFER_COPY_CHUNK * sizeof(float));
+        *outL = sc3->output[0][blockPos];
+        *outR = sc3->output[1][blockPos];
 
-        blockPos += BUFFER_COPY_CHUNK;
+        blockPos++;
 
         if (blockPos >= block_size)
             blockPos = 0;
+    }
+
+    // This should, in theory, never happen, but better safe than sorry
+    while (midiIt != midiMessages.cend())
+    {
+        applyMidi(*midiIt);
+        midiIt++;
+    }
+}
+
+void SCXTProcessor::applyMidi(const juce::MidiMessageMetadata &msg)
+{
+    auto m = msg.getMessage();
+    if (m.isNoteOn())
+    {
+        sc3->PlayNote(m.getChannel() - 1, m.getNoteNumber(), m.getVelocity());
+    }
+    else if (m.isNoteOff())
+    {
+        sc3->ReleaseNote(m.getChannel() - 1, m.getNoteNumber(), m.getVelocity());
+    }
+    else if (m.isPitchWheel())
+    {
+        sc3->PitchBend(m.getChannel() - 1, m.getPitchWheelValue() - 8192);
+    }
+    else if (m.isController())
+    {
+        sc3->ChannelController(m.getChannel() - 1, m.getControllerNumber(), m.getControllerValue());
+    }
+    else if (m.isAftertouch())
+    {
+        sc3->ChannelAftertouch(m.getChannel() - 1, m.getAfterTouchValue());
+    }
+    else if (m.isAllNotesOff() || m.isAllSoundOff())
+    {
+        sc3->AllNotesOff();
     }
 }
 
