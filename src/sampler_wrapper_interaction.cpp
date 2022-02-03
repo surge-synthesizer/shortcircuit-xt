@@ -1560,8 +1560,8 @@ void sampler::post_initdata()
         if (id != obj.id)
         {
             std::cout << "IMPROPER INTERACTION DATA" << std::endl;
-            std::cout << "  At index:" << id << " Object has id:" << obj.id
-                      << " label:" << obj.label << std::endl;
+            std::cout << "  At index:" << id << " Object has id:" << obj.id << " label:" << obj.name
+                      << std::endl;
             std::terminate();
         }
     }
@@ -1714,22 +1714,47 @@ void sampler::post_initdata()
 
     post_zonedata();
 
-    for (const auto &q : samplerParameterRanges)
-    {
-        q.toActionData(ad);
-        postEventsToWrapper(ad);
-    }
-
     for (const auto &q : ip_data)
     {
         // this is a hack but if i send them all startup stalls. Why?
-        if (q.id != ip_none && !q.label.empty() && q.label.find(";") != std::string::npos)
+        if (q.id != ip_none && q.rangeAndUnits.type != ip_range_and_units::UNINITIALIZED)
         {
-            ad.id = q.id;
+            auto &rau = q.rangeAndUnits;
+            if (rau.type == ip_range_and_units::DATAMODE ||
+                rau.type == ip_range_and_units::DISCRETE_DATAMODE)
+            {
+                ad.id = q.id;
+                ad.subid = -1;
+                ad.actiontype = vga_datamode;
+                strncpy(ad.data.str, rau.datamodestring, 52);
+                postEventsToWrapper(ad);
+                if (rau.type == ip_range_and_units::DISCRETE_DATAMODE)
+                {
+                    ad.actiontype = vga_label;
+                    strncpy_0term(ad.data.str, rau.label, 52);
+                    postEventsToWrapper(ad);
+                }
+            }
+            else
+            {
+                ad.id = q.id;
+                ad.subid = -1;
+                ad.actiontype = vga_set_range_and_units;
+                ad.data.i[0] = (rau.type == ip_range_and_units::FLOAT ? 'f' : 'i');
+                if (rau.type == ip_range_and_units::FLOAT)
+                    for (int i = 0; i < 4; ++i)
+                        ad.data.f[i + 1] = rau.mmds_float[i];
+                else
+                    for (int i = 0; i < 4; ++i)
+                        ad.data.i[i + 1] = rau.mmds_int[i];
+                postEventsToWrapper(ad);
+            }
+            /*
             ad.actiontype = vga_label;
             ad.subid = -1;
-            strncpy_0term(ad.data.str, q.label.c_str(), 52);
+            strncpy_0term(ad.data.str, q.name.c_str(), 52);
             postEventsToWrapper(ad);
+             */
         }
     }
 }

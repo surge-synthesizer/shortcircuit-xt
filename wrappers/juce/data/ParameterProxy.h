@@ -81,13 +81,28 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
                 elements.push_back(r);
             }
         }
-        jassert(elements.size() == 6);
         jassert(elements[0][0] == dataModeIndicator());
-        min = strToT(elements[1]);
-        step = strToT(elements[2]);
-        max = strToT(elements[3]);
-        def = strToT(elements[4]);
-        units = elements[5];
+
+        if (elements[0][0] == 'i')
+        {
+            if (elements.size() != 5)
+                DBG("BAD E [" << datamode << "] " << getName());
+            jassert(elements.size() == 5);
+            min = strToT(elements[1]);
+            max = strToT(elements[2]);
+            def = strToT(elements[3]);
+            step = 1;
+            units = elements[4];
+        }
+        else
+        {
+            jassert(elements.size() == 6);
+            min = strToT(elements[1]);
+            step = strToT(elements[2]);
+            max = strToT(elements[3]);
+            def = strToT(elements[4]);
+            units = elements[5];
+        }
         paramRangesSet = true;
 
         unitType = DEF;
@@ -159,9 +174,16 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 
     std::string getLabel() const
     {
-        if (label.empty() && id >= 0)
-            return ip_data[id].label;
+        if (label.empty())
+            return getName();
         return label;
+    }
+
+    std::string getName() const
+    {
+        if (id > 0)
+            return ip_data[id].name;
+        return "";
     }
 
     template <typename Q> void setFrom(const Q &v) { jassertfalse; }
