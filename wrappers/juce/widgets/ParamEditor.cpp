@@ -46,6 +46,38 @@ void FloatParamSlider::paintHSlider(juce::Graphics &g)
 
     // Draw the tray
     auto tray = b.reduced(3, 0).withHeight(2).translated(0, getHeight() / 2.0 - 1);
+
+    if (!param.get().disabled)
+    {
+        bool isBip = (param.get().min * param.get().max) < 0;
+        g.setColour(juce::Colour(0x77FFFFFF));
+        if (isBip)
+        {
+            auto t0 = tray.getTopLeft().toFloat().translated(0, tray.getHeight() / 2.0);
+            auto t1 = tray.getTopRight().toFloat().translated(0, tray.getHeight() / 2.0);
+            auto t2 = t1.translated(0, -5);
+            auto t3 = t0.translated(0, 5);
+            auto p = juce::Path();
+            p.startNewSubPath(t0.toFloat());
+            p.lineTo(t1.toFloat());
+            p.lineTo(t2.toFloat());
+            p.lineTo(t3.toFloat());
+            p.closeSubPath();
+            g.fillPath(p);
+        }
+        else
+        {
+            auto t0 = tray.getTopLeft().toFloat().translated(0, tray.getHeight() / 2.0);
+            auto t1 = tray.getTopRight().toFloat().translated(0, tray.getHeight() / 2.0);
+            auto t2 = t1.translated(0, -5);
+            auto p = juce::Path();
+            p.startNewSubPath(t0.toFloat());
+            p.lineTo(t1.toFloat());
+            p.lineTo(t2.toFloat());
+            p.closeSubPath();
+            g.fillPath(p);
+        }
+    }
     g.setColour(param.get().disabled ? juce::Colours::darkgrey : juce::Colours::white);
     g.fillRect(tray);
 

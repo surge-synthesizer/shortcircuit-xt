@@ -43,7 +43,6 @@ using std::max;
 using std::min;
 
 #include "synthesis/filter.h"
-#include "sampler_parameter_ranges.h"
 
 void sampler::postEventsFromWrapper(const actiondata &ad)
 {
