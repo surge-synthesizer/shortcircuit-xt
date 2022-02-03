@@ -54,11 +54,13 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
         DB,
         HERTZ,
         KHERTZ,
+        LOWFREQHERTZ,
         PERCENT,
         SECONDS,
         SEMITONES,
         CENTS,
-        OCTAVE
+        OCTAVE,
+        MIDIKEY
     } unitType{DEF};
 
     void parseDatamode(const char *datamode)
@@ -110,6 +112,8 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
             unitType = DB;
         if (units == "Hz")
             unitType = HERTZ;
+        if (units == "LFHz")
+            unitType = LOWFREQHERTZ;
         if (units == "%")
             unitType = PERCENT;
         if (units == "s")
@@ -122,6 +126,8 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
             unitType = SEMITONES;
         if (units == "cents")
             unitType = CENTS;
+        if (units == "midikey")
+            unitType = MIDIKEY;
 
         if (unitType == DEF)
         {
@@ -150,12 +156,41 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
             auto res = fmt::format("{:.3f} Hz", 440 * pow(2.0, val));
             return res;
         }
+        case LOWFREQHERTZ:
+        {
+            auto res = fmt::format("{:.3f} Hz", pow(2.0, val));
+            return res;
+        }
+        case KHERTZ:
+        {
+            auto res = fmt::format("{:.3f} kHz", 440 * pow(2.0, val) / 1000.0);
+            return res;
+        }
+
+        case CENTS:
+        {
+            auto res = fmt::format("{:.3f} ct", val);
+            return res;
+        }
+
+        case SEMITONES:
+        {
+            auto res = fmt::format("{:.3f} semi", val);
+            return res;
+        }
 
         case DEF:
-        case KHERTZ:
         default:
-            return fmt::format("{:.3f} RAW", val);
+            return fmt::format("{:.3f} RAW ({})", val, units);
         }
+    }
+
+    bool isBipolar()
+    {
+        if (unitType == DEF || unitType == PERCENT || unitType == DB || unitType == CENTS ||
+            unitType == OCTAVE)
+            return min * max < 0;
+        return false;
     }
 
     // Float vs Int a bit clumsy here
@@ -188,6 +223,20 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
 
     template <typename Q> void setFrom(const Q &v) { jassertfalse; }
 };
+
+template <> inline std::string ParameterProxy<int>::value_to_string() const
+{
+    if (unitType == MIDIKEY)
+    {
+        static auto keys =
+            std::array{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+        int kn = val % 12;
+        int oc = val / 12;
+        return fmt::format("{}{}", keys[kn], oc);
+    }
+    else
+        return fmt::format("{}", val);
+}
 
 template <> template <> inline void ParameterProxy<float>::setFrom<float>(const float &v)
 {
