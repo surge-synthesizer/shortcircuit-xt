@@ -49,7 +49,7 @@ void FloatParamSlider::paintHSlider(juce::Graphics &g)
 
     if (!param.get().disabled)
     {
-        bool isBip = (param.get().min * param.get().max) < 0;
+        bool isBip = param.get().isBipolar();
         g.setColour(juce::Colour(0x77FFFFFF));
         if (isBip)
         {

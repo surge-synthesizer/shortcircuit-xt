@@ -600,7 +600,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "low key",
-        ip_range_and_units::fromDatamodeString("i,0,127,2,"),
+        ip_range_and_units::fromDatamodeString("i,0,127,2,midikey"),
     },
     {
         ip_root_key,
@@ -609,7 +609,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "root key",
-        ip_range_and_units::fromDatamodeString("i,0,127,2,"),
+        ip_range_and_units::fromDatamodeString("i,0,127,2,midikey"),
     },
     {
         ip_high_key,
@@ -618,8 +618,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "high key",
-        ip_range_and_units::fromDatamodeString("i,0,127,2,"),
-
+        ip_range_and_units::fromDatamodeString("i,0,127,2,midikey"),
     },
     {
         ip_low_vel,
@@ -837,7 +836,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(steplfostruct),
         "LFO rate",
-        ip_range_and_units::fromDatamodeString("f,-8.0,0.020,5.0,4,Hz"),
+        ip_range_and_units::fromDatamodeString("f,-8.0,0.020,5.0,4,LFHz"),
     },
     {
         ip_lfoshape,
