@@ -61,8 +61,7 @@ struct sc3mmio_hand
     {
         if (is_open)
         {
-            scxt::log::logos() << "Leaked an sc3mmio_hand: Destroyed a non-closed handle"
-                               << std::endl;
+            std::cerr << "Leaked an sc3mmio_hand: Destroyed a non-closed handle" << std::endl;
             if (rawData)
                 delete[] rawData;
         }

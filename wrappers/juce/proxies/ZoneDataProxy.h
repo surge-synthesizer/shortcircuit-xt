@@ -253,8 +253,6 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
         case ip_lfoshape:
             res = applyToOneOrAll(
                 ad, cz.lfo, [](auto &r) -> auto & { return r.smooth; });
-            std::cout << ad << " " << cz.lfo[0].smooth.val << " "
-                      << cz.lfo[0].smooth.value_to_string() << std::endl;
             break;
         case ip_lforepeat:
             res = applyToOneOrAll(

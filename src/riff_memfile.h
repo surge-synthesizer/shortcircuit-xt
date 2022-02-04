@@ -338,7 +338,6 @@ class RIFFMemFile
         MessageBox(GetActiveWindow(), txt, "File I/O Error", MB_OK | MB_ICONERROR);
 #else
 #warning Implement user feedback
-        scxt::log::logos() << txt << std::endl;
 #endif
     }
 

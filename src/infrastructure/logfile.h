@@ -25,36 +25,8 @@
 
 #define LOGGING_DEBUG_ENABLED 1
 
-// TODO add var to cmake and use it to determine this var's value
-
 namespace scxt::log
 {
-/*
- * A function which writes a line to the log
- */
-void write_log(const char *text);
-
-/*
- * A little class which is an ostream so you can do
- * scxt::Log::logos() << "This is my message " << foo << "\n";
- */
-class logos : public std::ostream
-{
-  private:
-    struct lbuf : public std::stringbuf
-    {
-        lbuf() = default;
-        int sync() override
-        {
-            int ret = std::stringbuf::sync();
-            write_log(str().c_str());
-            return ret;
-        }
-    } buff;
-
-  public:
-    logos() : buff(), std::ostream(&buff) {}
-};
 
 // And baconpaul's favorite debug helper
 #define _D(x) " " << (#x) << "=" << x

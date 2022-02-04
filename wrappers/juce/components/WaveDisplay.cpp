@@ -15,6 +15,7 @@
 ** open source in December 2020.
 */
 
+#include "SCXTLookAndFeel.h"
 #include "WaveDisplay.h"
 #include "sampler_wrapper_actiondata.h"
 #include "interaction_parameters.h"
@@ -34,8 +35,8 @@ const int WAVE_CHANNEL_GAP = 4; // gap between channels
 
 static void calc_aatable(unsigned int *tbl, unsigned int col1, unsigned int col2);
 
-WaveDisplay::WaveDisplay(scxt::data::ActionSender *sender, scxt::log::LoggingCallback *logger)
-    : mSender(sender), mLogger(logger), prof(logger, "Wave Display Paint")
+WaveDisplay::WaveDisplay(SCXTEditor *sender, scxt::log::LoggingCallback *logger)
+    : mEditor(sender), mLogger(logger), prof(logger, "Wave Display Paint")
 {
     dispmode = 0;
     mSamplePtr = 0;
@@ -61,7 +62,8 @@ void WaveDisplay::resized()
 {
 
     // actual wave dimensions we'll be drawing in and using for calculations
-    mWaveBounds = getLocalBounds().reduced(WAVE_MARGIN, WAVE_MARGIN);
+    mWaveBounds = getLocalBounds().reduced(WAVE_MARGIN, WAVE_MARGIN).withTrimmedBottom(8);
+    mTextBounds = getLocalBounds().withHeight(10).translated(0, getHeight() - 11);
 
     mNumVisiblePixels = mWaveBounds.getWidth() - 2;
 
@@ -104,6 +106,12 @@ void WaveDisplay::paint(juce::Graphics &g)
             prof.enter();
             drawDetails(g, r);
             prof.exit("add details");
+
+            g.setColour(juce::Colours::white);
+            g.setFont(SCXTLookAndFeel::getMonoFontAt(9));
+            auto md = juce::String(mEditor->currentSampleName) + "    " +
+                      juce::String(mEditor->currentSampleMetadata).replace("\t", "    ");
+            g.drawText(md, mTextBounds.reduced(3, 0), juce::Justification::centred);
         }
         break;
     case 1:
@@ -599,7 +607,7 @@ void WaveDisplay::mouseDrag(const juce::MouseEvent &event)
             ad.actiontype = vga_wavedisp_editpoint;
             ad.data.i[0] = dragid;
             ad.data.i[1] = s;
-            mSender->sendActionToEngine(ad);
+            mEditor->sendActionToEngine(ad);
         }
     }
 }
