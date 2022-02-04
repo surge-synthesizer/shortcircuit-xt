@@ -72,6 +72,10 @@ template <typename T> inline bool applyActionData(const actiondata &ad, Paramete
         return true;
     }
     break;
+    case vga_temposync:
+        proxy.temposync = ad.data.i[0];
+        return true;
+        break;
     default:
         break;
     }

@@ -476,7 +476,8 @@ struct LFO : ContentBase
     {
         activateTabs();
 
-        auto &lf = parentPage.editor->currentZone.lfo[0];
+        currentLFO = 0;
+        auto &lf = parentPage.editor->currentZone.lfo[currentLFO];
         lfoRegion = std::make_unique<LFOStepsComponent>(*this, lf);
         addAndMakeVisible(*lfoRegion);
 
@@ -494,6 +495,8 @@ struct LFO : ContentBase
         shapeLab = whiteLabel("shape");
         stepLab = whiteLabel("steps");
     }
+
+    ~LFO() {}
 
     void resized() override
     {
@@ -525,6 +528,7 @@ struct LFO : ContentBase
 
     virtual void switchToTab(int i) override
     {
+        currentLFO = i;
         auto &lf = parentPage.editor->currentZone.lfo[i];
         lfoRegion->lf = lf;
         rebind(repeat, lf.repeat);
@@ -535,6 +539,7 @@ struct LFO : ContentBase
         rebind(triggermode, lf.triggermode);
         rebind(cyclemode, lf.cyclemode);
         rebind(onlyonce, lf.onlyonce);
+
         repaint();
     }
 
@@ -548,6 +553,8 @@ struct LFO : ContentBase
     std::unique_ptr<widgets::IntParamMultiSwitch> cyclemode;
     std::unique_ptr<widgets::IntParamToggleButton> onlyonce;
     std::unique_ptr<juce::Label> shapeLab, stepLab;
+
+    int currentLFO{0};
 };
 
 } // namespace zone_contents

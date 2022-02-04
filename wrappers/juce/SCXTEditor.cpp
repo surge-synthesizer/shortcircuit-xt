@@ -160,6 +160,10 @@ SCXTEditor::~SCXTEditor()
     sendActionInternal(ad);
 
     audioProcessor.sc3->unregisterWrapperForEvents(this);
+
+    // We do this here to clean up the UI elements before the data elements explicitly
+    for (auto &p : pages)
+        p.second.reset(nullptr);
 }
 
 void SCXTEditor::sendActionToEngine(const actiondata &ad) { sendActionInternal(ad); }
