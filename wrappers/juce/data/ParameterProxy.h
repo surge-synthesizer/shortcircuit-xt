@@ -9,6 +9,7 @@
 
 #include "configuration.h"
 #include "sampler_wrapper_actiondata.h"
+#include "wrapper_msg_to_string.h"
 #include "data/BasicTypes.h"
 #include <cmath>
 
@@ -201,7 +202,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     }
 
     // Float vs Int a bit clumsy here
-    float getValue01() const { return (val - min) / (max - min); }
+    float getValue01() const { return std::clamp((val - min) / (max - min), 0.f, 1.f); }
     void sendValue01(float value01, ActionSender *s) { jassert(false); }
     void sendValue(const T &value, ActionSender *s) { jassertfalse; }
 
@@ -301,7 +302,19 @@ template <> inline std::string ParameterProxy<int>::value_to_string() const
 
 template <> template <> inline void ParameterProxy<float>::setFrom<float>(const float &v)
 {
-    val = v;
+    if (paramRangesSet)
+    {
+        val = std::clamp(v, min, max);
+        if (v < min || v > max)
+        {
+            DBG("Clamping range on control " << debug_wrapper_ip_to_string(id)
+                << " with min-max = " << min << "/" << max << " and val=" << v );
+        }
+    }
+    else
+    {
+        val = v;
+    }
     notifyListeners();
 }
 template <> template <> inline void ParameterProxy<int>::setFrom<int>(const int &v)

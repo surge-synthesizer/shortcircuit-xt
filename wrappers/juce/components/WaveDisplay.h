@@ -36,13 +36,13 @@ class WaveDisplay : public juce::Component, public scxt::data::UIStateProxy
         cs_dragpoint,
     };
 
-    scxt::data::ActionSender *mSender;
+    SCXTEditor *mEditor;
     scxt::log::StreamLogger mLogger;
 
     scxt::Perf::Profiler prof;
 
     // boundary around actual waveform display (excludes margin)
-    juce::Rectangle<int> mWaveBounds;
+    juce::Rectangle<int> mWaveBounds, mTextBounds;
 
     // this will hold the rendered wave
     juce::Image mWavePixels;
@@ -102,7 +102,7 @@ class WaveDisplay : public juce::Component, public scxt::data::UIStateProxy
     virtual bool processActionData(const actiondata &d) override;
 
   public:
-    WaveDisplay(scxt::data::ActionSender *sender, scxt::log::LoggingCallback *logger);
+    WaveDisplay(SCXTEditor *sender, scxt::log::LoggingCallback *logger);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveDisplay);
 };

@@ -26,7 +26,6 @@ set(SHORTCIRCUIT_SOURCE
         loaders/load_aiff.cpp
         loaders/load_riff_wave.cpp
         loaders/load_sf2_sample.cpp
-        infrastructure/logfile.cpp
         infrastructure/ticks.h
         infrastructure/ticks.cpp
         infrastructure/profiler.h

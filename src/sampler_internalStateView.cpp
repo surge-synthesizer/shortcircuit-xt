@@ -41,6 +41,7 @@ std::ostream &operator<<(std::ostream &os, const indenter &p)
 }
 
 #define SHOW(a, b) oss << pfx << #a << ": " << b->a << "\n"
+#define SHOWV(a, b) oss << pfx << #a << ": " << b.a << "\n"
 #define SHOWT(a, b, t) oss << pfx << #a << ": " << (t)(b->a) << "\n"
 
 std::string sampler::generateInternalStateView() const
@@ -160,13 +161,27 @@ std::string sampler::generateInternalStateView() const
             oss << pfx << "aeg:\n";
             {
                 auto g3 = pfx.up();
-                oss << pfx << "coming_soon: true\n";
+                SHOWV(attack, z->AEG);
+                SHOWV(hold, z->AEG);
+                SHOWV(decay, z->AEG);
+                SHOWV(sustain, z->AEG);
+                SHOWV(release, z->AEG);
+                SHOWV(shape[0], z->AEG);
+                SHOWV(shape[1], z->AEG);
+                SHOWV(shape[2], z->AEG);
             }
 
-            oss << pfx << "feg:\n";
+            oss << pfx << "eg2:\n";
             {
                 auto g3 = pfx.up();
-                oss << pfx << "coming_soon: true\n";
+                SHOWV(attack, z->EG2);
+                SHOWV(hold, z->EG2);
+                SHOWV(decay, z->EG2);
+                SHOWV(sustain, z->EG2);
+                SHOWV(release, z->EG2);
+                SHOWV(shape[0], z->EG2);
+                SHOWV(shape[1], z->EG2);
+                SHOWV(shape[2], z->EG2);
             }
 
             oss << pfx << "lfo:\n";

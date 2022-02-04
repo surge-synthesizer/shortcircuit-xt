@@ -38,8 +38,12 @@ struct SelectionStateProxy : public scxt::data::UIStateProxy
             break;
 
         case ip_sample_name:
+            editor->currentSampleName = ad.data.str;
+            return true;
+            break;
+
         case ip_sample_metadata:
-            std::cout << FILE_LINE_OS << ad << " " <<  ad.data.str << std::endl;
+            editor->currentSampleMetadata = ad.data.str;
             return true;
             break;
 

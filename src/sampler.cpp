@@ -952,7 +952,6 @@ int sampler::GetFreeZoneId()
                "Too many zones", MB_OK | MB_ICONERROR);
 #else
 #warning Implement user feedback
-    scxt::log::logos() << "Zone limit reached" << std::endl;
 #endif
 
     return -1;

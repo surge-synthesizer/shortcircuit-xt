@@ -226,6 +226,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     scxt::data::PartData currentPart;
 
     sample_zone zonesCopy[max_zones];
+    std::string currentSampleName, currentSampleMetadata;
 
     /*
      * Configuration Data

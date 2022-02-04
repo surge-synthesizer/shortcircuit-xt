@@ -1108,7 +1108,6 @@ string recursive_search(string filename, string path)
 #warning Compiling untested rewrite of recursive_search
 #endif
 
-    scxt::log::logos() << "Implement recursive_search " << filename << " " << path << std::endl;
     auto p = string_to_path(path);
     auto f = string_to_path(filename);
 

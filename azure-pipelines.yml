@@ -224,7 +224,11 @@ jobs:
           ls -l $(System.DefaultWorkingDirectory)/git_info/
           echo "## ShortCircuit Nightly Build" > releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
-          echo "**Wildly Incomplete Alpha Build**" >> releases/ReleaseNotes.md
+          echo "**This is an incomplete pre-alpha build of SCXT. Please beware.** " >> releases/ReleaseNotes.md
+          echo "The software has missing features, known bugs, may crash, and more. If you " >> releases/ReleaseNotes.md
+          echo "choose to use it, please strongly consider a limiter in your DAW and dont " >> releases/ReleaseNotes.md
+          echo "use in-ear headphones as DSP errors may make unbounded noise. " >> releases/ReleaseNotes.md
+          echo "For more info, please join our discord!" >> releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
           date +"**Last Updated On: %Y-%m-%d %H:%M:%S %Z**" >> releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
@@ -282,5 +286,5 @@ jobs:
           # Finally tell discord
           export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
           
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. But you probably don't want it.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. Some stuff almost kinda works.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
         displayName: Tell Discord
