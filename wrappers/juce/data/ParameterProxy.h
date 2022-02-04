@@ -10,6 +10,7 @@
 #include "configuration.h"
 #include "sampler_wrapper_actiondata.h"
 #include "data/BasicTypes.h"
+#include <cmath>
 
 namespace scxt
 {
@@ -41,6 +42,7 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     T val{0};
     bool hidden{false};
     bool disabled{false};
+    bool temposync{false};
     std::string label;
 
     T min{0}, max{1}, def{0}, step;
@@ -158,6 +160,11 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
         }
         case LOWFREQHERTZ:
         {
+            if (temposync)
+            {
+                auto res = fmt::format("{}", temposynced_float_to_str(val));
+                return res;
+            }
             auto res = fmt::format("{:.3f} Hz", pow(2.0, val));
             return res;
         }
@@ -222,6 +229,60 @@ template <typename T, VAction A = SendVGA<T>::action> struct ParameterProxy
     }
 
     template <typename Q> void setFrom(const Q &v) { jassertfalse; }
+
+    struct Listener
+    {
+        virtual ~Listener() = default;
+        virtual void onChanged() = 0;
+    };
+    std::set<Listener *> listeners;
+    void addListener(Listener *l) { listeners.insert(l); }
+    void removeListener(Listener *l) { listeners.erase(l); }
+    void notifyListeners() const
+    {
+        for (auto *l : listeners)
+            l->onChanged();
+    }
+
+    float temposync_quantitize(float x) const
+    {
+        float a{0};
+        float b = std::modf(x, &a);
+        if (b < 0)
+        {
+            b += 1.f;
+            a -= 1.f;
+        }
+        b = pow(2.0, b);
+        b = std::min(floor(b * 2.f) / 2.f, floor(b * 3.f) / 3.f);
+        b = std::log(b) / std::log(2.f);
+        return a + b;
+    }
+
+    std::string temposynced_float_to_str(float x) const
+    {
+        // Obviously consider replacing this with the improved version we have in Surge
+        // one day soon
+        x = temposync_quantitize(x);
+        char txt[256];
+
+        if (x > 4)
+            sprintf(txt, "%.2f / 64th", 32.f * powf(2.0f, -x));
+        else if (x > 3)
+            sprintf(txt, "%.2f / 32th", 16.f * powf(2.0f, -x));
+        else if (x > 2)
+            sprintf(txt, "%.2f / 16th", 8.f * powf(2.0f, -x));
+        else if (x > 1)
+            sprintf(txt, "%.2f / 8th", 4.f * powf(2.0f, -x));
+        else if (x > 0)
+            sprintf(txt, "%.2f / 4th", 2.f * powf(2.0f, -x));
+        else if (x > -1)
+            sprintf(txt, "%.2f / 2th", 1.f * powf(2.0f, -x));
+        else
+            sprintf(txt, "%.2f bars", 0.5f * powf(2.0f, -x));
+
+        return txt;
+    }
 };
 
 template <> inline std::string ParameterProxy<int>::value_to_string() const
@@ -241,14 +302,20 @@ template <> inline std::string ParameterProxy<int>::value_to_string() const
 template <> template <> inline void ParameterProxy<float>::setFrom<float>(const float &v)
 {
     val = v;
+    notifyListeners();
 }
-template <> template <> inline void ParameterProxy<int>::setFrom<int>(const int &v) { val = v; }
+template <> template <> inline void ParameterProxy<int>::setFrom<int>(const int &v)
+{
+    val = v;
+    notifyListeners();
+}
 
 template <>
 template <>
 inline void ParameterProxy<std::string>::setFrom<std::string>(const std::string &v)
 {
     val = v;
+    notifyListeners();
 }
 
 template <> inline std::string ParameterProxy<float>::value_to_string() const
@@ -279,6 +346,7 @@ inline void ParameterProxy<float, vga_floatval>::sendValue01(float value01, Acti
     ad.actiontype = vga_floatval;
     ad.data.f[0] = v;
     s->sendActionToEngine(ad);
+    notifyListeners();
 }
 template <>
 inline void ParameterProxy<float, vga_floatval>::sendValue(const float &value, ActionSender *s)
@@ -289,7 +357,10 @@ inline void ParameterProxy<float, vga_floatval>::sendValue(const float &value, A
     ad.subid = subid;
     ad.actiontype = vga_floatval;
     ad.data.f[0] = val;
+    if (temposync)
+        ad.data.f[0] = temposync_quantitize(val);
     s->sendActionToEngine(ad);
+    notifyListeners();
 }
 
 template <>
@@ -320,6 +391,7 @@ template <> inline void ParameterProxy<int>::sendValue(const int &value, ActionS
     ad.data.i[0] = value;
     val = value;
     s->sendActionToEngine(ad);
+    notifyListeners();
 }
 
 template <>
@@ -333,6 +405,7 @@ inline void ParameterProxy<std::string, vga_text>::sendValue(const std::string &
     ad.actiontype = vga_text;
     strncpy(ad.data.str, val.c_str(), 54);
     s->sendActionToEngine(ad);
+    notifyListeners();
 }
 } // namespace data
 } // namespace scxt
