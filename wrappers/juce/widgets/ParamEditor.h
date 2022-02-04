@@ -162,11 +162,32 @@ struct IntParamMultiSwitch : public juce::Component,
 
 template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMixin<T>
 {
-    TParamSpinBox(data::ParameterProxy<T> &p, data::ActionSender *snd) : ParamRefMixin<T>(p, snd) {}
+    TParamSpinBox(data::ParameterProxy<T> &p, data::ActionSender *snd) : ParamRefMixin<T>(p, snd)
+    {
+        textEd = std::make_unique<juce::TextEditor>();
+        textEd->setFont(SCXTLookAndFeel::getMonoFontAt(9));
+        textEd->onReturnKey = [this]() { sendTextEd(); };
+        textEd->onEscapeKey = [this]() {
+            textEd->setVisible(false);
+            repaint();
+        };
+        textEd->onFocusLost = [this]() {
+            textEd->setVisible(false);
+            repaint();
+        };
+        addChildComponent(*textEd);
+    }
+
+    std::unique_ptr<juce::TextEditor> textEd;
+
+    void resized() override { textEd->setBounds(getLocalBounds()); }
 
     void paint(juce::Graphics &g) override
     {
         assertParamRangesSet(ParamRefMixin<T>::param.get());
+        if (textEd->isVisible())
+            return;
+
         auto colFil = juce::Colour(0xFF333355);
         auto colText = juce::Colours::white;
         if (ParamRefMixin<T>::param.get().disabled)
@@ -204,12 +225,12 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
 
         auto dy = e.position.y - dragY;
         int mv = 0;
-        if (dy > 10)
+        if (dy > 3)
         {
             mv = -1;
             dragY = e.position.y;
         }
-        if (dy < -10)
+        if (dy < -3)
         {
             mv = 1;
             dragY = e.position.y;
@@ -221,7 +242,39 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
             onSend();
         }
     }
+
+    void mouseDoubleClick(const juce::MouseEvent &e) override
+    {
+        textEd->setVisible(true);
+        textEd->setText(ParamRefMixin<T>::param.get().value_to_string(),
+                        juce::dontSendNotification);
+        textEd->grabKeyboardFocus();
+        textEd->selectAll();
+    }
+
+    void sendTextEd()
+    {
+        auto newVal =
+            std::clamp(stringToVal(textEd->getText().toStdString()),
+                       ParamRefMixin<T>::param.get().min, ParamRefMixin<T>::param.get().max);
+        ParamRefMixin<T>::param.get().sendValue(newVal, ParamRefMixin<T>::sender);
+        onSend();
+        textEd->setVisible(false);
+        repaint();
+    }
+
+    T stringToVal(const std::string &s) { jassertfalse; }
 };
+
+template <> inline float TParamSpinBox<float>::stringToVal(const std::string &s)
+{
+    return std::atof(s.c_str());
+}
+
+template <> inline int TParamSpinBox<int>::stringToVal(const std::string &s)
+{
+    return std::atoi(s.c_str());
+}
 
 template <> inline float TParamSpinBox<float>::valueJoggedBy(int dir)
 {
