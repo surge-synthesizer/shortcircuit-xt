@@ -450,30 +450,32 @@ struct LFO : ContentBase
                     g.setColour(bar);
                     g.fillRect(bb);
                 }
-                float h[4];
-                h[0] = lf.get().data[(i + 1) % n_steps].val;
-                h[1] = lf.get().data[(i + 0) % n_steps].val;
-                h[2] = lf.get().data[(n_steps + i - 1) % n_steps].val;
-                h[3] = lf.get().data[(n_steps + i - 2) % n_steps].val;
-                float m = 1.f / ((float)(rb.getWidth() + 1.f));
-
-                for (int x = 0; x < (int)(rb.getWidth() + 1); x++)
+                if (n_steps > 0)
                 {
-                    float phase = ((float)x) * m;
-                    float f = lfo_ipol(h, phase, lf.get().smooth.val, i & 1);
-                    int xp = x + rb.getX();
-                    float yp = (1 - f) * rb.getHeight() * 0.5;
-                    if (!startedPath)
+                    float h[4];
+                    h[0] = lf.get().data[(i + 1) % n_steps].val;
+                    h[1] = lf.get().data[(i + 0) % n_steps].val;
+                    h[2] = lf.get().data[(n_steps + i - 1) % n_steps].val;
+                    h[3] = lf.get().data[(n_steps + i - 2) % n_steps].val;
+                    float m = 1.f / ((float)(rb.getWidth() + 1.f));
+
+                    for (int x = 0; x < (int)(rb.getWidth() + 1); x++)
                     {
-                        lfop.startNewSubPath(xp, yp);
-                        startedPath = true;
-                    }
-                    else
-                    {
-                        lfop.lineTo(xp, yp);
+                        float phase = ((float)x) * m;
+                        float f = lfo_ipol(h, phase, lf.get().smooth.val, i & 1);
+                        int xp = x + rb.getX();
+                        float yp = (1 - f) * rb.getHeight() * 0.5;
+                        if (!startedPath)
+                        {
+                            lfop.startNewSubPath(xp, yp);
+                            startedPath = true;
+                        }
+                        else
+                        {
+                            lfop.lineTo(xp, yp);
+                        }
                     }
                 }
-
                 rb = rb.translated(rb.getWidth(), 0);
             }
             g.setColour(juce::Colours::white);
