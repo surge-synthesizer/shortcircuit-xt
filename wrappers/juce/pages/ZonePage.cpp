@@ -16,6 +16,7 @@
 #include "widgets/OutlinedTextButton.h"
 
 #include "sst/cpputils.h"
+#include "synthesis/steplfo.h"
 
 namespace scxt
 {
@@ -422,11 +423,14 @@ struct LFO : ContentBase
             g.fillAll(juce::Colours::black);
             auto bg = juce::Colour(0xAAFFFF00);
             auto bar = juce::Colours::blue;
+            auto lfop = juce::Path();
+            bool startedPath{false};
+            int n_steps = lf.get().repeat.val;
             auto rb =
                 getLocalBounds().toFloat().withWidth(getWidth() / std::max(1, lf.get().repeat.val));
             for (const auto &[i, p] : sst::cpputils::enumerate(lf.get().data))
             {
-                if (i > lf.get().repeat.val)
+                if (i > n_steps)
                     break;
                 auto qb = rb.reduced(0.5, 0.5);
                 g.setColour(bg);
@@ -446,8 +450,34 @@ struct LFO : ContentBase
                     g.setColour(bar);
                     g.fillRect(bb);
                 }
+                float h[4];
+                h[0] = lf.get().data[(i + 1) % n_steps].val;
+                h[1] = lf.get().data[(i + 0) % n_steps].val;
+                h[2] = lf.get().data[(n_steps + i - 1) % n_steps].val;
+                h[3] = lf.get().data[(n_steps + i - 2) % n_steps].val;
+                float m = 1.f / ((float)(rb.getWidth() + 1.f));
+
+                for (int x = 0; x < (int)(rb.getWidth() + 1); x++)
+                {
+                    float phase = ((float)x) * m;
+                    float f = lfo_ipol(h, phase, lf.get().smooth.val, i & 1);
+                    int xp = x + rb.getX();
+                    float yp = (1 - f) * rb.getHeight() * 0.5;
+                    if (!startedPath)
+                    {
+                        lfop.startNewSubPath(xp, yp);
+                        startedPath = true;
+                    }
+                    else
+                    {
+                        lfop.lineTo(xp, yp);
+                    }
+                }
+
                 rb = rb.translated(rb.getWidth(), 0);
             }
+            g.setColour(juce::Colours::white);
+            g.strokePath(lfop, juce::PathStrokeType(1.0));
         }
 
         void mouseDrag(const juce::MouseEvent &e) override
