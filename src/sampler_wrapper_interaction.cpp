@@ -476,6 +476,12 @@ void sampler::processWrapperEvents()
                         }
                     }
                     break;
+
+#else
+#if !WINDOWS
+#warning SKIPPING ALL OF IPPATCH
+#endif
+#endif
                 case ip_lfo_load:
                 {
                     int z = selected->get_active_zone();
@@ -488,12 +494,6 @@ void sampler::processWrapperEvents()
                     post_zonedata();
                 }
                 break;
-#else
-#if !WINDOWS
-#warning SKIPPING ALL OF IPPATCH
-#endif
-#endif
-
                 // case ip_config_h_or_v:
                 // case ip_config_slidersensitivity:
                 case ip_config_outputs:

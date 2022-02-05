@@ -58,6 +58,8 @@ struct LFOData
     ParameterProxy<int> triggermode;
     ParameterProxy<int> cyclemode;
     ParameterProxy<int> onlyonce;
+
+    ParameterProxy<int> presetLoad;
 };
 
 struct ZoneData
