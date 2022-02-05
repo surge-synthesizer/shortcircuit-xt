@@ -246,6 +246,12 @@ class ZoneDataProxy : public scxt::data::UIStateProxy
                 ad, cz.env, [](auto &r) -> auto & { return r.s2; });
             break;
 
+        case ip_lfo_load:
+            res = collectStringEntries(ad, editor->zoneLFOPresets);
+            if (!res)
+                res = applyToOneOrAll(
+                    ad, cz.lfo, [](auto &r) -> auto & { return r.presetLoad; });
+            break;
         case ip_lforate:
             res = applyToOneOrAll(
                 ad, cz.lfo, [](auto &r) -> auto & { return r.rate; });

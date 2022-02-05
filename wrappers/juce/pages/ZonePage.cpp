@@ -486,7 +486,7 @@ struct LFO : ContentBase
         {
             int step = std::clamp(
                 (int)std::floor(e.position.x * std::max(1, lf.get().repeat.val) / getWidth()), 0,
-                32);
+                31);
             float yPos =
                 std::clamp(1.f * (getHeight() - e.position.y) / getHeight(), 0.f, 1.f) * 2.f - 1.f;
 
@@ -504,8 +504,17 @@ struct LFO : ContentBase
         }
     };
 
+    struct ForceRepaint : data::ParameterProxy<int>::Listener
+    {
+        LFO &lf;
+        ForceRepaint(LFO &lf) : lf(lf) {}
+        void onChanged() override { lf.repaint(); }
+    };
+    std::unique_ptr<ForceRepaint> repaintL;
+
     LFO(const ZonePage &p) : ContentBase(p, "LFO", juce::Colour(0xFF447744))
     {
+        repaintL = std::make_unique<ForceRepaint>(*this);
         activateTabs();
 
         currentLFO = 0;
@@ -523,12 +532,16 @@ struct LFO : ContentBase
         cyclemode =
             bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::HORIZ, lf.cyclemode);
         onlyonce = bind<widgets::IntParamToggleButton>(lf.onlyonce, "once");
-
+        preset = bindIntComboBox(lf.presetLoad, parentPage.editor->zoneLFOPresets);
+        lf.presetLoad.addListener(repaintL.get());
         shapeLab = whiteLabel("shape");
         stepLab = whiteLabel("steps");
     }
 
-    ~LFO() {}
+    ~LFO()
+    {
+        parentPage.editor->currentZone.lfo[currentLFO].presetLoad.removeListener(repaintL.get());
+    }
 
     void resized() override
     {
@@ -548,11 +561,12 @@ struct LFO : ContentBase
         auto rrg = contents::RowGenerator(rs, 5);
         lfoRegion->setBounds(rrg.next(4));
         auto rd = contents::RowDivider(rrg.next());
-        shapeLab->setBounds(rd.next(1. / 6.));
-        smooth->setBounds(rd.next(1. / 6.));
-        stepLab->setBounds(rd.next(1. / 6.));
-        repeat->setBounds(rd.next(1. / 6.));
-        onlyonce->setBounds(rd.next(1. / 6.));
+        shapeLab->setBounds(rd.next(.125));
+        smooth->setBounds(rd.next(.175));
+        stepLab->setBounds(rd.next(.125));
+        repeat->setBounds(rd.next(.175));
+        onlyonce->setBounds(rd.next(.15));
+        preset->setBounds(rd.next(.25));
     }
 
     int getTabCount() const override { return 3; }
@@ -560,6 +574,7 @@ struct LFO : ContentBase
 
     virtual void switchToTab(int i) override
     {
+        parentPage.editor->currentZone.lfo[currentLFO].presetLoad.removeListener(repaintL.get());
         currentLFO = i;
         auto &lf = parentPage.editor->currentZone.lfo[i];
         lfoRegion->lf = lf;
@@ -571,7 +586,8 @@ struct LFO : ContentBase
         rebind(triggermode, lf.triggermode);
         rebind(cyclemode, lf.cyclemode);
         rebind(onlyonce, lf.onlyonce);
-
+        rebind(preset, lf.presetLoad);
+        lf.presetLoad.addListener(repaintL.get());
         repaint();
     }
 
@@ -584,6 +600,7 @@ struct LFO : ContentBase
     std::unique_ptr<widgets::IntParamMultiSwitch> triggermode;
     std::unique_ptr<widgets::IntParamMultiSwitch> cyclemode;
     std::unique_ptr<widgets::IntParamToggleButton> onlyonce;
+    std::unique_ptr<widgets::IntParamComboBox> preset;
     std::unique_ptr<juce::Label> shapeLab, stepLab;
 
     int currentLFO{0};

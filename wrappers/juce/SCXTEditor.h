@@ -239,7 +239,8 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     scxt::data::NameList partMMSrc, partMMSrc2, partMMDst, partMMCurve, partNCSrc;
 
     scxt::data::NameList zonePlaymode, zoneAuxOutput, zoneFilterType;
-    scxt::data::NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc;
+    scxt::data::NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc, zoneLFOPresets;
+
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};
