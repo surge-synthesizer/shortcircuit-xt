@@ -10,7 +10,7 @@
 set(SCXT_PRODUCT_DIR ${CMAKE_BINARY_DIR}/shortcircuit-products)
 file(MAKE_DIRECTORY ${SCXT_PRODUCT_DIR})
 
-add_custom_target(shortcircuit-products)
+add_custom_target(shortcircuit-products ALL)
 add_custom_target(shortcircuit-installer)
 
 function(shortcircuit_package format)
