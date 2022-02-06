@@ -212,6 +212,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     int selectedPart{0};
     int selectedLayer{0};
     int selectedZone{-1};
+    int zoneListMode{0};
     void selectPart(int i);
     void selectLayer(int i);
 

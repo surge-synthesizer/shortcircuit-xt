@@ -387,13 +387,15 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
         }
 
         if (wrappers.size() && (parts[editorpart].MIDIchannel == channel))
+        {
             track_zone_triggered(z, true);
+        }
 
     skipzone:
         int asdf = 0; // do nothing
     }
     update_highest_voice_id();
-
+   
     return true;
 }
 

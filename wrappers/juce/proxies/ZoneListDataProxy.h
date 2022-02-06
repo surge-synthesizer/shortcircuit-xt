@@ -26,12 +26,14 @@ struct ZoneListDataProxy : public scxt::data::UIStateProxy
         if (!std::holds_alternative<VAction>(ad.actiontype))
             return g.deactivate();
 
+        bool handled{false};
         switch (std::get<VAction>(ad.actiontype))
         {
         case vga_zonelist_clear:
         {
             for (int i = 0; i < max_zones; ++i)
                 editor->activeZones[i] = false;
+            handled = true;
             break;
         }
         case vga_zonelist_populate:
@@ -55,11 +57,13 @@ struct ZoneListDataProxy : public scxt::data::UIStateProxy
             sz->mute = zd->mute;
 
             strncpy(sz->name, zd->name, 32);
+            handled = true;
             break;
         }
         case vga_zonelist_done:
         {
             markNeedsRepaintAndProxyUpdate();
+            handled = true;
             break;
         }
         case vga_note:
@@ -70,11 +74,26 @@ struct ZoneListDataProxy : public scxt::data::UIStateProxy
                 editor->playingMidiNotes[note] = ad.data.i[1];
                 markNeedsRepaint();
             }
+            handled = true;
         }
+        break;
+        case vga_zonelist_mode:
+        {
+            editor->zoneListMode = ad.data.i[0];
+            handled = true;
+        }
+        break;
+        case vga_zone_playtrigger:
+        {
+            auto z = ad.data.i[0];
+            auto s = ad.data.i[1];
+            handled = true;
+        }
+        break;
         default:
             break;
         }
-        return true;
+        return handled;
     }
 };
 } // namespace proxies
