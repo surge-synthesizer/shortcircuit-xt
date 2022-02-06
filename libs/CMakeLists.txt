@@ -1,4 +1,7 @@
-add_subdirectory(pybind11)
+
+if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+    add_subdirectory(pybind11)
+endif ()
 add_subdirectory(JUCE)
 add_subdirectory(fmt)
 
