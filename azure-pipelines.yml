@@ -22,12 +22,12 @@ jobs:
           imageName: 'windows-2019'
           cmakeRelArgs: -A x64
           cmakeDebArgs: -A x64
-          isWindows32: True
+          isWindows: True
         win-32bit:
           imageName: 'windows-2019'
           cmakeRelArgs: -A Win32
           cmakeDebArgs: -A Win32
-          isWindows: True
+          isWindows32: True
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
