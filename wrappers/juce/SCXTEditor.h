@@ -77,7 +77,7 @@ class ZoneListDataProxy;
 class WaveDisplayProxy;
 struct BrowserDataProxy;
 struct SelectionStateProxy;
-struct VUMeterProxy;
+struct VUMeterPolyphonyProxy;
 struct MultiDataProxy;
 struct PartDataProxy;
 struct ConfigDataProxy;
@@ -176,7 +176,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
   public:
     std::set<scxt::data::UIStateProxy *> uiStateProxies;
     std::unique_ptr<scxt::proxies::SelectionStateProxy> selectionStateProxy;
-    std::unique_ptr<scxt::proxies::VUMeterProxy> vuMeterProxy;
+    std::unique_ptr<scxt::proxies::VUMeterPolyphonyProxy> vuMeterProxy;
     std::unique_ptr<scxt::proxies::BrowserDataProxy> browserDataProxy;
     std::unique_ptr<scxt::proxies::ZoneDataProxy> zoneProxy;
     std::unique_ptr<scxt::proxies::ZoneListDataProxy> zoneListProxy;
@@ -207,6 +207,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
         bool clip1, clip2;
     };
     std::array<VUData, max_outputs> vuData;
+    int polyphony{0};
 
     int selectedPart{0};
     int selectedLayer{0};
@@ -240,7 +241,6 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
     scxt::data::NameList zonePlaymode, zoneAuxOutput, zoneFilterType;
     scxt::data::NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc, zoneLFOPresets;
-
 
     std::array<database_samplelist, max_samples> samplesCopy;
     uint32_t samplesCopyActiveCount{0};

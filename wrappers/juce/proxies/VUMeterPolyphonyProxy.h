@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/6/22.
 //
 
-#ifndef SHORTCIRCUIT_VUMETERPROXY_H
-#define SHORTCIRCUIT_VUMETERPROXY_H
+#ifndef SHORTCIRCUIT_VUMETERPOLYPHONYPROXY_H
+#define SHORTCIRCUIT_VUMETERPOLYPHONYPROXY_H
 
 #include "SCXTEditor.h"
 #include "wrapper_msg_to_string.h"
@@ -12,15 +12,16 @@ namespace scxt
 {
 namespace proxies
 {
-struct VUMeterProxy : public scxt::data::UIStateProxy
+struct VUMeterPolyphonyProxy : public scxt::data::UIStateProxy
 {
-    VUMeterProxy(SCXTEditor *ed) : editor(ed) {}
+    VUMeterPolyphonyProxy(SCXTEditor *ed) : editor(ed) {}
 
     bool processActionData(const actiondata &ad)
     {
         switch (ad.id)
         {
         case ip_vumeter:
+        {
             auto at = std::get<VAction>(ad.actiontype);
             if (at != vga_vudata)
                 break;
@@ -45,12 +46,22 @@ struct VUMeterProxy : public scxt::data::UIStateProxy
             return true;
             break;
         }
+        case ip_polyphony:
+        {
+            auto at = std::get<VAction>(ad.actiontype);
+            if (at != vga_intval)
+                break;
+            editor->polyphony = ad.data.i[0];
+            markNeedsRepaintAndProxyUpdate();
+            return true;
+            break;
+        }
+        }
         return false;
     }
-
     SCXTEditor *editor{nullptr};
 };
 } // namespace proxies
 } // namespace scxt
 
-#endif // SHORTCIRCUIT_VUMETERPROXY_H
+#endif // SHORTCIRCUIT_VUMETERPOLYPHONYPROXY_H

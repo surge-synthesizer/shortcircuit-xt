@@ -62,6 +62,8 @@ inline std::string debug_wrapper_ip_to_string(int in)
         return "ip_select_layer";
     case ip_select_all:
         return "ip_select_all";
+    case ip_polyphony:
+        return "ip_polphyony";
     case ip_vumeter:
         return "ip_vumeter";
     case ip_zone_name:

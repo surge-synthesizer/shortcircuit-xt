@@ -13,6 +13,7 @@ namespace scxt
 namespace widgets
 {
 struct CompactVUMeter;
+struct PolyphonyDisplay;
 struct OutlinedTextButton;
 } // namespace widgets
 namespace components
@@ -28,9 +29,11 @@ struct HeaderPanel : public juce::Component, public scxt::data::UIStateProxy::In
     std::array<std::unique_ptr<widgets::OutlinedTextButton>, n_sampler_parts> partsButtons;
 
     std::unique_ptr<widgets::CompactVUMeter> vuMeter0;
+    std::unique_ptr<widgets::PolyphonyDisplay> polyDisplay;
 
     std::unique_ptr<widgets::OutlinedTextButton> zonesButton, partButton, fxButton, configButton,
         aboutButton;
+
     void onProxyUpdate() override;
 
     SCXTEditor *editor{nullptr};

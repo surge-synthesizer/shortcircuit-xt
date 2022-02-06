@@ -26,8 +26,50 @@ STUB(Main, juce::Colours::darkgrey);
 STUB(Polymode, juce::Colours::darkgrey);
 STUB(LayerRanges, juce::Colours::darkgrey);
 STUB(VelocitySplit, juce::Colours::darkgrey);
-STUB(ModulationRouting, juce::Colours::darkgrey);
 STUB(Controllers, juce::Colour(0xFF335533));
+
+struct ModulationRouting : public ContentBase
+{
+    ModulationRouting(const scxt::pages::PartPage &p)
+        : ContentBase(p, "Modulation Routing", juce::Colours::darkgrey)
+    {
+        auto &mm = p.editor->currentPart.mm;
+        for (int i = 0; i < 6; ++i)
+        {
+            active[i] = bind<widgets::IntParamToggleButton>(mm[i].active, std::to_string(i + 1));
+            source[i] = bindIntComboBox(mm[i].source, p.editor->partMMSrc);
+            source2[i] = bindIntComboBox(mm[i].source2, p.editor->partMMSrc2);
+            destination[i] = bindIntComboBox(mm[i].destination, p.editor->partMMDst);
+            curve[i] = bindIntComboBox(mm[i].curve, p.editor->partMMCurve);
+            strength[i] = bindFloatSpinBox(mm[i].strength);
+        }
+    }
+
+    void resized() override
+    {
+        ContentBase::resized();
+        auto b = getContentsBounds();
+        auto rh = 22;
+        auto row = b.withHeight(rh);
+
+        auto w0 = row.getWidth();
+        for (int i = 0; i < 6; ++i)
+        {
+            auto div = contents::RowDivider(row);
+            active[i]->setBounds(div.next(0.05));
+            source[i]->setBounds(div.next(0.23));
+            source2[i]->setBounds(div.next(0.23));
+            strength[i]->setBounds(div.next(0.16));
+            destination[i]->setBounds(div.next(0.23));
+            curve[i]->setBounds(div.rest());
+            row = row.translated(0, rh);
+        }
+    }
+
+    std::array<std::unique_ptr<widgets::IntParamComboBox>, 6> source, source2, destination, curve;
+    std::array<std::unique_ptr<widgets::FloatParamSpinBox>, 6> strength;
+    std::array<std::unique_ptr<widgets::IntParamToggleButton>, 6> active;
+};
 
 struct Effects : public ContentBase
 {

@@ -108,7 +108,7 @@ class sampler
     void process_audio();
     void process_part(int p);
     void process_global_effects();
-    void processVUs();
+    void processVUsAndPolyphonyUpdates();
     void part_check_filtertypes(int p, int f);
     void idle();
 
@@ -279,7 +279,7 @@ class sampler
     int polyphony;
     int mNumOutputs;
     timedata time_data;
-    int VUrate, VUidx;
+    int VUrate, VUidx, lastSentPolyphony{-1};
     float automation[n_automation_parameters];
 
     // AudioEffectX	*effect;
