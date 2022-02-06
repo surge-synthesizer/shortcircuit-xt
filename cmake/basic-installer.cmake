@@ -97,7 +97,7 @@ elseif (WIN32)
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMAND ${CMAKE_COMMAND} -E make_directory installer
-            COMMAND 7z a -r installer/${SCXT_ZIP} ${SURGE_PRODUCT_DIR}
+            COMMAND 7z a -r installer/${SCXT_ZIP} ${SCXT_PRODUCT_DIR}/
             COMMAND ${CMAKE_COMMAND} -E echo "Installer in: installer/${SCXT_ZIP}")
 else ()
     message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
