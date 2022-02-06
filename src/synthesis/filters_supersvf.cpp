@@ -125,8 +125,8 @@ void SuperSVF::ProcessT(float *DataInL, float *DataInR, float *DataOutL, float *
     assert(iparam[1] < 2);
 
     const int bs2 = block_size << 1;
-    Align16 float PolyphaseInL[bs2];
-    Align16 float PolyphaseInR[bs2];
+    float PolyphaseInL alignas(16)[bs2];
+    float PolyphaseInR alignas(16)[bs2];
 
     for (int k = 0; k < block_size; k++)
     {

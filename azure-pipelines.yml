@@ -22,6 +22,11 @@ jobs:
           imageName: 'windows-2019'
           cmakeRelArgs: -A x64
           cmakeDebArgs: -A x64
+          isWindows32: True
+        win-32bit:
+          imageName: 'windows-2019'
+          cmakeRelArgs: -A Win32
+          cmakeDebArgs: -A Win32
           isWindows: True
         lin:
           imageName: 'ubuntu-20.04'
@@ -39,9 +44,9 @@ jobs:
 
       - bash: |
           set -e
-          
+
           sudo apt-get update
-          
+
           sudo apt-get install -y \
               devscripts \
               libxcb-cursor-dev \
@@ -127,7 +132,7 @@ jobs:
           git log -1 --pretty=format:'%h : %s%n%aD%n%an%n%n%B' > build/stage_git/git_info/git_nightly_sc3_log_long_display
           git log -5 --pretty=format:'%h : %s - %an' > build/stage_git/git_info/git_nightly_sc3_recent_five
           git log -1 --pretty=format:'%h' > build/stage_git/git_info/git_nightly_sc3_log_hash
-          
+
           cat build/stage_git/git_info/*
 
         condition: and(variables.isLinux, not(eq(variables['Build.Reason'], 'PullRequest')))
@@ -216,11 +221,11 @@ jobs:
       - bash: |
           set -e
           set -x
-          
+
           mkdir -p releases
-          
+
           mv *.zip *.dmg releases
-          
+
           ls -l $(System.DefaultWorkingDirectory)/git_info/
           echo "## ShortCircuit Nightly Build" > releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
@@ -237,11 +242,11 @@ jobs:
           cat $(System.DefaultWorkingDirectory)/git_info/git_nightly_sc3_recent_five >> releases/ReleaseNotes.md
           echo " " >> releases/ReleaseNotes.md
           echo "</pre>" >> releases/ReleaseNotes.md
-          
+
           echo "---------------"
           cat releases/ReleaseNotes.md
           echo "---------------"
-          
+
           ls -alFh releases
         displayName: Prepare Release
 
@@ -285,6 +290,6 @@ jobs:
       - bash: |
           # Finally tell discord
           export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
-          
+
           curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. Some stuff almost kinda works.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
         displayName: Tell Discord

@@ -3,7 +3,7 @@
 #include "globals.h"
 #include <assert.h>
 
-class quadr_osc
+class alignas(16) quadr_osc
 {
   public:
     quadr_osc()

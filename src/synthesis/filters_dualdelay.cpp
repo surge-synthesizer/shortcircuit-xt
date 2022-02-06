@@ -149,8 +149,8 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
 {
     setvars(false);
 
-    Align16 float wbL[block_size]; // wb = write-buffer
-    Align16 float wbR[block_size];
+    float wbL alignas(16)[block_size]; // wb = write-buffer
+    float wbR alignas(16)[block_size];
     int k;
 
     for (k = 0; k < block_size; k++)

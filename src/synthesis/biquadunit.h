@@ -5,9 +5,6 @@
 #include "mathtables.h"
 #include <vt_dsp/basic_dsp.h>
 
-// FIXME OF COURSE
-#define Align16
-
 #define USE_SSE2 1
 
 const double minBW = 0.0001;
@@ -20,18 +17,18 @@ const double d_lp = 0.004;
 const double d_lpinv = 1.0 - 0.004;
 #endif
 
-union vdouble
+union alignas(16) vdouble
 {
     __m128d v;
     double d[2];
 };
 
-class vlag
+class alignas(16) vlag
 {
   public:
-    Align16 vdouble v, target_v;
+    vdouble v, target_v;
     vlag() {}
-#if USE_SSE2
+
     void init()
     {
         v.v = _mm_setzero_pd();
@@ -42,17 +39,7 @@ class vlag
         v.v = _mm_add_sd(_mm_mul_sd(v.v, vl_lpinv), _mm_mul_sd(target_v.v, vl_lp));
         v.v = _mm_unpacklo_pd(v.v, v.v);
     }
-#else
-    void init()
-    {
-        v.d[0] = 0;
-        v.d[1] = 0;
-        target_v.d[0] = 0;
-        target_v.d[1] = 0;
-    }
-    inline void process() { v.d[0] = v.d[0] * d_lpinv + target_v.d[0] * d_lp; }
 
-#endif
     inline void newValue(double f) { target_v.d[0] = f; }
     inline void instantize() { v = target_v; }
     inline void startValue(double f)
@@ -62,11 +49,10 @@ class vlag
     }
 };
 
-class biquadunit
+class alignas(16) biquadunit
 {
-    // Align16 lag<double,false> a1,a2,b0,b1,b2;
-    Align16 vlag a1, a2, b0, b1, b2;
-    Align16 vdouble reg0, reg1;
+    vlag a1, a2, b0, b1, b2;
+    vdouble reg0, reg1;
     // Align16 double reg0R,reg1R;
   public:
     biquadunit();

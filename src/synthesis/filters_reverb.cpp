@@ -240,7 +240,7 @@ void reverb::update_rsize()
 void reverb::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                             float pitch)
 {
-    Align16 float wetL[block_size], wetR[block_size];
+    float wetL alignas(16)[block_size], wetR alignas(16)[block_size];
 
     if (iparam[0] != shape)
         loadpreset(iparam[0]);
@@ -327,7 +327,7 @@ void reverb::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
     hicut.process_block_slowlag(wetL, wetR);
 
     // scale width
-    Align16 float M[block_size], S[block_size];
+    float M alignas(16)[block_size], S alignas(16)[block_size];
     encodeMS(wetL, wetR, M, S, block_size_quad);
     width.multiply_block(S, block_size_quad);
     decodeMS(M, S, dataoutL, dataoutR, block_size_quad);

@@ -10,9 +10,6 @@
 #include <vt_dsp/lattice.h>
 #include <vt_dsp/lipol.h>
 
-// FIXME
-#define Align16
-
 //-------------------------------------------------------------------------------------------------------
 
 const char str_freqdef[] = ("f,-5,0.04,6,5,Hz"), str_freqmoddef[] = ("f,-12,0.04,12,0,oct"),
@@ -26,9 +23,9 @@ const int tail_infinite = 0x1000000;
 
 //-------------------------------------------------------------------------------------------------------
 
-class LP2A : public filter
+class alignas(16) LP2A : public filter
 {
-    Align16 biquadunit lp;
+    biquadunit lp;
 
   public:
     LP2A(float *);
@@ -48,9 +45,9 @@ class LP2A : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class superbiquad : public filter
+class alignas(16) superbiquad : public filter
 {
-    Align16 biquadunit bq[4];
+    biquadunit bq alignas(16)[4];
 
   public:
     superbiquad(float *, int *, int);
@@ -79,13 +76,12 @@ class superbiquad : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class SuperSVF : public filter
+class alignas(16) SuperSVF : public filter
 {
   private:
-    Align16 __m128 Freq, dFreq, Q, dQ, MD, dMD, ClipDamp, dClipDamp, Gain, dGain, Reg[3],
-        LastOutput;
+    __m128 Freq, dFreq, Q, dQ, MD, dMD, ClipDamp, dClipDamp, Gain, dGain, Reg[3], LastOutput;
 
-    Align16 halfrate_stereo mPolyphase;
+    halfrate_stereo mPolyphase;
 
     inline __m128 process_internal(__m128 x, int Mode);
 
@@ -110,9 +106,9 @@ class SuperSVF : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class LP2B : public filter
+class alignas(16) LP2B : public filter
 {
-    Align16 biquadunit lp;
+    biquadunit lp;
 
   public:
     LP2B(float *);
@@ -134,11 +130,11 @@ class LP2B : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class LP4M_sat : public filter
+class alignas(16) LP4M_sat : public filter
 {
-    Align16 lipol_ps gain;
-    Align16 halfrate_stereo pre_filter, post_filter;
-    Align16 float reg[10];
+    lipol_ps gain;
+    halfrate_stereo pre_filter, post_filter;
+    float reg alignas(16)[10];
 
   public:
     LP4M_sat(float *, int *);
@@ -162,9 +158,9 @@ class LP4M_sat : public filter
 
 /*	HP2A				*/
 
-class HP2A : public filter
+class alignas(16) HP2A : public filter
 {
-    Align16 biquadunit hp;
+    biquadunit hp;
 
   public:
     HP2A(float *);
@@ -188,9 +184,9 @@ class HP2A : public filter
 
 /*	BP2A				*/
 
-class BP2A : public filter
+class alignas(16) BP2A : public filter
 {
-    Align16 biquadunit bq;
+    biquadunit bq;
 
   public:
     BP2A(float *);
@@ -210,9 +206,9 @@ class BP2A : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class BP2B : public filter
+class alignas(16) BP2B : public filter
 {
-    Align16 biquadunit bq;
+    biquadunit bq;
 
   public:
     BP2B(float *);
@@ -234,9 +230,9 @@ class BP2B : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class BP2AD : public filter
+class alignas(16) BP2AD : public filter
 {
-    Align16 biquadunit bq[2];
+    biquadunit bq alignas(16)[2];
 
   public:
     BP2AD(float *);
@@ -266,9 +262,9 @@ class BP2AD : public filter
 
 /*	PKA				*/
 
-class PKA : public filter
+class alignas(16) PKA : public filter
 {
-    Align16 biquadunit bq;
+    biquadunit bq;
 
   public:
     PKA(float *);
@@ -290,9 +286,9 @@ class PKA : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class PKAD : public filter
+class alignas(16) PKAD : public filter
 {
-    Align16 biquadunit bq[2];
+    biquadunit bq alignas(16)[2];
 
   public:
     PKAD(float *);
@@ -322,9 +318,9 @@ class PKAD : public filter
 
 /* LP+HP serial	*/
 
-class LPHP_par : public filter
+class alignas(16) LPHP_par : public filter
 {
-    Align16 biquadunit bq[2];
+    biquadunit bq alignas(16)[2];
 
   public:
     LPHP_par(float *);
@@ -351,9 +347,9 @@ class LPHP_par : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class LPHP_ser : public filter
+class alignas(16) LPHP_ser : public filter
 {
-    Align16 biquadunit bq[2];
+    biquadunit bq alignas(16)[2];
 
   public:
     LPHP_ser(float *);
@@ -382,10 +378,10 @@ class LPHP_ser : public filter
 
 /*	NOTCH				*/
 
-class NOTCH : public filter
+class alignas(16) NOTCH : public filter
 {
   protected:
-    Align16 biquadunit bq;
+    biquadunit bq;
 
   public:
     NOTCH(float *);
@@ -407,10 +403,10 @@ class NOTCH : public filter
 
 /*	EQ2BP - 2 band parametric EQ				*/
 
-class EQ2BP_A : public filter
+class alignas(16) EQ2BP_A : public filter
 {
   protected:
-    Align16 biquadunit parametric[2];
+    biquadunit parametric alignas(16)[2];
 
   public:
     EQ2BP_A(float *, int *);
@@ -440,10 +436,10 @@ class EQ2BP_A : public filter
 
 /*	EQ6B - 6 band graphic EQ				*/
 
-class EQ6B : public filter
+class alignas(16) EQ6B : public filter
 {
   protected:
-    Align16 biquadunit parametric[6];
+    biquadunit parametric alignas(16)[6];
 
   public:
     EQ6B(float *);
@@ -471,10 +467,10 @@ class EQ6B : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class morphEQ : public filter
+class alignas(16) morphEQ : public filter
 {
-    Align16 lipol_ps gain;
-    Align16 biquadunit b[8];
+    lipol_ps gain;
+    biquadunit b alignas(16)[8];
 
   public:
     morphEQ(float *, void *, int *);
@@ -520,10 +516,10 @@ class morphEQ : public filter
 
 /*	EQ2BP - 2 band parametric EQ				*/
 
-class LP2HP2_morph : public filter
+class alignas(16) LP2HP2_morph : public filter
 {
   protected:
-    Align16 biquadunit f;
+    biquadunit f;
 
   public:
     LP2HP2_morph(float *);
@@ -545,7 +541,7 @@ class LP2HP2_morph : public filter
 
 const int comb_max_delay = 8192;
 
-class COMB1 : public filter
+class alignas(16) COMB1 : public filter
 {
   public:
     COMB1(float *);
@@ -564,7 +560,7 @@ class COMB1 : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class COMB3 : public filter
+class alignas(16) COMB3 : public filter
 {
   public:
     COMB3(float *);
@@ -583,7 +579,7 @@ class COMB3 : public filter
 
 /*	comb filter 2			*/
 
-class COMB2 : public filter
+class alignas(16) COMB2 : public filter
 {
   public:
     COMB2(float *);
@@ -606,7 +602,7 @@ class COMB2 : public filter
 
 /*	BF				*/
 
-class BF : public filter
+class alignas(16) BF : public filter
 {
   public:
     BF(float *);
@@ -625,7 +621,7 @@ class BF : public filter
 
 /*	OD				*/
 
-class OD : public filter
+class alignas(16) OD : public filter
 {
   public:
     OD(float *);
@@ -642,11 +638,11 @@ class OD : public filter
 
 /*	treemonster				*/
 
-class treemonster : public filter
+class alignas(16) treemonster : public filter
 {
-    Align16 biquadunit locut;
-    Align16 quadr_osc osc[2];
-    Align16 lipol_ps gain[2];
+    biquadunit locut;
+    quadr_osc osc alignas(16)[2];
+    lipol_ps gain alignas(16)[2];
 
   public:
     treemonster(float *, int *);
@@ -669,10 +665,10 @@ class treemonster : public filter
 
 /*	clipper				*/
 
-class clipper : public filter
+class alignas(16) clipper : public filter
 {
   public:
-    Align16 lipol_ps pregain, postgain;
+    lipol_ps pregain, postgain;
     clipper(float *);
     virtual ~clipper();
     void process(float *datain, float *dataout, float pitch);
@@ -687,10 +683,10 @@ class clipper : public filter
 
 /*	stereotools				*/
 
-class stereotools : public filter
+class alignas(16) stereotools : public filter
 {
   public:
-    Align16 lipol_ps ampL, ampR, width;
+    lipol_ps ampL, ampR, width;
     stereotools(float *, int *);
     virtual ~stereotools();
     void process(float *datain, float *dataout, float pitch);
@@ -707,7 +703,7 @@ class stereotools : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class limiter : public filter
+class alignas(16) limiter : public filter
 {
   protected:
     // Align16 biquadunit bq;
@@ -725,16 +721,16 @@ class limiter : public filter
     virtual const char *get_ip_entry_label(int ip_id, int c_id);
 
   protected:
-    Align16 lipol_ps pregain, postgain;
+    lipol_ps pregain, postgain;
     float ef, at, re;
 };
 
 //-------------------------------------------------------------------------------------------------------
 
-class fdistortion : public filter
+class alignas(16) fdistortion : public filter
 {
   public:
-    Align16 lipol_ps gain;
+    lipol_ps gain;
     halfrate_stereo pre, post;
 
     fdistortion(float *);
@@ -750,9 +746,9 @@ class fdistortion : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class fslewer : public filter
+class alignas(16) fslewer : public filter
 {
-    Align16 biquadunit bq[2];
+    biquadunit bq alignas(16)[2];
 
   public:
     fslewer(float *);
@@ -783,7 +779,7 @@ class fslewer : public filter
     float v[2];
 };
 /*
-class fexciter : public filter
+class alignas(16)fexciter : public filter
 {
 public:
         fexciter(float*);
@@ -801,7 +797,7 @@ protected:
 /*
 bygg clipper med x times OS
 
-class clipperHQ : public filter
+class alignas(16)clipperHQ : public filter
 {
 public:
         clipper(float*);
@@ -815,7 +811,7 @@ protected:
 
 /*	gate				*/
 
-class gate : public filter
+class alignas(16) gate : public filter
 {
   public:
     gate(float *);
@@ -834,7 +830,7 @@ class gate : public filter
 //-------------------------------------------------------------------------------------------------------
 
 const int mg_bufsize = 4096;
-class microgate : public filter
+class alignas(16) microgate : public filter
 {
   public:
     microgate(float *);
@@ -858,10 +854,10 @@ class microgate : public filter
 
 /* RING					*/
 
-class RING : public filter
+class alignas(16) RING : public filter
 {
-    Align16 halfrate_stereo pre, post;
-    Align16 quadr_osc qosc;
+    halfrate_stereo pre, post;
+    quadr_osc qosc;
 
   public:
     RING(float *);
@@ -879,11 +875,11 @@ class RING : public filter
 
 /* frequency shafter					*/
 
-class FREQSHIFT : public filter
+class alignas(16) FREQSHIFT : public filter
 {
   protected:
-    Align16 halfrate_stereo fcL, fcR;
-    Align16 quadr_osc o1, o2;
+    halfrate_stereo fcL, fcR;
+    quadr_osc o1, o2;
 
   public:
     FREQSHIFT(float *, int *);
@@ -902,10 +898,10 @@ class FREQSHIFT : public filter
 
 /* PMOD					*/
 
-class PMOD : public filter
+class alignas(16) PMOD : public filter
 {
-    Align16 lipol_ps pregain, postgain;
-    Align16 halfrate_stereo pre, post;
+    lipol_ps pregain, postgain;
+    halfrate_stereo pre, post;
 
   public:
     PMOD(float *);
@@ -926,9 +922,9 @@ class PMOD : public filter
 /* pulse				*/
 const int ob_length = 16;
 
-class osc_pulse : public filter
+class alignas(16) osc_pulse : public filter
 {
-    Align16 float oscbuffer[ob_length];
+    float oscbuffer alignas(16)[ob_length];
 
   public:
     osc_pulse(float *);
@@ -951,9 +947,9 @@ class osc_pulse : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class osc_pulse_sync : public filter
+class alignas(16) osc_pulse_sync : public filter
 {
-    Align16 float oscbuffer[ob_length];
+    float oscbuffer alignas(16)[ob_length];
 
   public:
     osc_pulse_sync(float *);
@@ -979,9 +975,9 @@ class osc_pulse_sync : public filter
 /* saw	*/
 const int max_unison = 16;
 
-class osc_saw : public filter
+class alignas(16) osc_saw : public filter
 {
-    Align16 float oscbuffer[ob_length];
+    float oscbuffer alignas(16)[ob_length];
 
   public:
     osc_saw(float *, int *);
@@ -1012,7 +1008,7 @@ class osc_saw : public filter
 //-------------------------------------------------------------------------------------------------------
 
 /* sin	*/
-class osc_sin : public filter
+class alignas(16) osc_sin : public filter
 {
   public:
     osc_sin(float *);
@@ -1037,10 +1033,10 @@ const int slowrate_m1 = slowrate - 1;
 
 //-------------------------------------------------------------------------------------------------------
 
-class dualdelay : public filter
+class alignas(16) dualdelay : public filter
 {
-    Align16 lipol_ps feedback, crossfeed, pan;
-    Align16 float buffer[2][max_delay_length + FIRipol_N];
+    lipol_ps feedback, crossfeed, pan;
+    float buffer alignas(16)[2][max_delay_length + FIRipol_N];
 
   public:
     dualdelay(float *, int *);
@@ -1067,9 +1063,9 @@ class dualdelay : public filter
 //-------------------------------------------------------------------------------------------------------
 
 /* rotary speaker	*/
-class rotary_speaker : public filter
+class alignas(16) rotary_speaker : public filter
 {
-    Align16 biquadunit xover, lowbass;
+    biquadunit xover, lowbass;
 
   public:
     rotary_speaker(float *, int *);
@@ -1092,10 +1088,10 @@ class rotary_speaker : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class phaser : public filter
+class alignas(16) phaser : public filter
 {
-    Align16 float L[block_size], R[block_size];
-    Align16 biquadunit *biquad[8];
+    float L alignas(16)[block_size], R alignas(16)[block_size];
+    biquadunit *biquad alignas(16)[8];
 
   public:
     phaser(float *, int *);
@@ -1122,9 +1118,9 @@ class phaser : public filter
 
 /* SC V1 effects	*/
 
-class fauxstereo : public filter
+class alignas(16) fauxstereo : public filter
 {
-    Align16 lipol_ps l_amplitude, l_source;
+    lipol_ps l_amplitude, l_source;
 
   public:
     fauxstereo(float *, int *);
@@ -1144,7 +1140,7 @@ class fauxstereo : public filter
 //-------------------------------------------------------------------------------------------------------
 
 /*	fs_flange			*/
-class fs_flange : public filter
+class alignas(16) fs_flange : public filter
 {
   public:
     fs_flange(float *, int *);
@@ -1164,7 +1160,7 @@ class fs_flange : public filter
 //-------------------------------------------------------------------------------------------------------
 
 /*	freqshiftdelay				*/
-class freqshiftdelay : public filter
+class alignas(16) freqshiftdelay : public filter
 {
   public:
     freqshiftdelay(float *, int *);
@@ -1191,16 +1187,16 @@ const int max_rev_dly = 1 << revbits;
 const int rev_tap_bits = 4;
 const int rev_taps = 1 << rev_tap_bits;
 
-class reverb : public filter
+class alignas(16) reverb : public filter
 {
-    Align16 float delay_pan_L[rev_taps], delay_pan_R[rev_taps];
-    Align16 float delay_fb[rev_taps];
-    Align16 float delay[rev_taps * max_rev_dly];
-    Align16 float out_tap[rev_taps];
-    Align16 float predelay[max_rev_dly];
-    Align16 biquadunit band1, locut, hicut;
-    Align16 int delay_time[rev_taps];
-    Align16 lipol_ps width;
+    float delay_pan_L alignas(16)[rev_taps], delay_pan_R alignas(16)[rev_taps];
+    float delay_fb alignas(16)[rev_taps];
+    float delay alignas(16)[rev_taps * max_rev_dly];
+    float out_tap alignas(16)[rev_taps];
+    float predelay alignas(16)[max_rev_dly];
+    biquadunit band1, locut, hicut;
+    int delay_time alignas(16)[rev_taps];
+    lipol_ps width;
 
   public:
     reverb(float *, int *);
@@ -1230,12 +1226,14 @@ class reverb : public filter
 
 //-------------------------------------------------------------------------------------------------------
 
-class chorus : public filter
+class alignas(16) chorus : public filter
 {
-    Align16 lipol_ps feedback, width;
-    Align16 __m128 voicepanL4[4], voicepanR4[4];
-    Align16 biquadunit lp, hp;
-    Align16 float buffer[max_delay_length + FIRipol_N]; // s� kan den interpoleras med SSE utan wrap
+    lipol_ps feedback, width;
+    __m128 voicepanL4 alignas(16)[4], voicepanR4 alignas(16)[4];
+    biquadunit lp, hp;
+    float buffer alignas(
+        16)[max_delay_length + FIRipol_N];
+    // s� kan den interpoleras med SSE utan wrap
   public:
     chorus(float *, int *);
     virtual ~chorus();

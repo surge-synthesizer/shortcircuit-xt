@@ -55,7 +55,7 @@ void RING::process_stereo(float *datainL, float *datainR, float *dataoutL, float
     qosc.set_rate(omega);
 
     const int bs2 = block_size << 1;
-    Align16 float OS[2][bs2];
+    float OS alignas(16)[2][bs2];
 
     pre.process_block_U2(datainL, datainR, OS[0], OS[1], bs2);
 
@@ -77,7 +77,7 @@ void RING::process(float *datain, float *dataout, float pitch)
     qosc.set_rate(omega);
 
     const int bs2 = block_size << 1;
-    Align16 float OS[2][bs2];
+    float OS alignas(16)[2][bs2];
 
     pre.process_block_U2(datain, datain, OS[0], OS[1], bs2);
 
@@ -130,7 +130,8 @@ void FREQSHIFT::process_stereo(float *datainL, float *datainR, float *dataoutL, 
     o1.set_rate(M_PI * 0.5 - min(0.0, omega));
     o2.set_rate(M_PI * 0.5 + max(0.0, omega));
 
-    Align16 float L_R[block_size], L_I[block_size], R_R[block_size], R_I[block_size];
+    float L_R alignas(16)[block_size], L_I alignas(16)[block_size], R_R alignas(16)[block_size],
+        R_I alignas(16)[block_size];
 
     for (int k = 0; k < block_size; k++)
     {
@@ -171,7 +172,7 @@ void FREQSHIFT::process(float *datain, float *dataout, float pitch)
     o1.set_rate(M_PI * 0.5 - min(0.0, omega));
     o2.set_rate(M_PI * 0.5 + max(0.0, omega));
 
-    Align16 float L_R[block_size], L_I[block_size];
+    float L_R alignas(16)[block_size], L_I alignas(16)[block_size];
 
     for (int k = 0; k < block_size; k++)
     {
@@ -252,7 +253,7 @@ void PMOD::process(float *datain, float *dataout, float pitch)
     // postgain.set_target(dB_to_linear(max(0,-param[1])));
 
     const int bs2 = block_size << 1;
-    Align16 float OS[2][bs2];
+    float OS alignas(16)[2][bs2];
 
     pregain.multiply_block_to(datain, OS[0], block_size_quad);
     pre.process_block_U2(OS[0], OS[0], OS[0], OS[1], bs2);
@@ -275,7 +276,7 @@ void PMOD::process_stereo(float *datainL, float *datainR, float *dataoutL, float
     // postgain.set_target(dB_to_linear(max(0,-param[1])));
 
     const int bs2 = block_size << 1;
-    Align16 float OS[2][bs2];
+    float OS alignas(16)[2][bs2];
 
     pregain.multiply_2_blocks_to(datainL, datainR, OS[0], OS[1], block_size_quad);
     pre.process_block_U2(OS[0], OS[1], OS[0], OS[1], bs2);
@@ -381,11 +382,11 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
 
     lfo.process();
 
-    Align16 float upper[block_size];
-    Align16 float lower[block_size];
-    Align16 float lower_sub[block_size];
-    Align16 float tbufferL[block_size];
-    Align16 float tbufferR[block_size];
+    float upper alignas(16)[block_size];
+    float lower alignas(16)[block_size];
+    float lower_sub alignas(16)[block_size];
+    float tbufferL alignas(16)[block_size];
+    float tbufferR alignas(16)[block_size];
 
     int k;
 
