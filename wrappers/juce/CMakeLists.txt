@@ -1,4 +1,9 @@
 # The JUCE plugin Shortcircuit XT has an AU, VST3 and standalone version
+if (WIN32)
+    set(SCXT_COPY_AFTER FALSE)
+else ()
+    set(SCXT_COPY_AFTER TRUE)
+endif ()
 
 juce_add_plugin(ShortcircuitXT
         PRODUCT_NAME "Shortcircuit XT"
@@ -14,7 +19,7 @@ juce_add_plugin(ShortcircuitXT
 
         FORMATS AU VST3 Standalone
 
-        COPY_PLUGIN_AFTER_BUILD TRUE
+        COPY_PLUGIN_AFTER_BUILD ${SCXT_COPY_AFTER}
         )
 
 # images used in the ui
@@ -76,10 +81,10 @@ if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
         file(TO_CMAKE_PATH "$ENV{ASIOSDK_DIR}" ASIOSDK_DIR)
         message(STATUS "ASIO SDK found at ${ASIOSDK_DIR}")
         target_include_directories(ShortcircuitXT PUBLIC ${ASIOSDK_DIR}/common)
-    else()
+    else ()
         message(STATUS "Expecting ASIO SDK at libs/asiosdk...")
         target_include_directories(ShortcircuitXT PUBLIC " libs/asiosdk/common ")
-    endif()
+    endif ()
 
     message(STATUS "The resulting Shortcircuit XT standalone executable is not licensed for distribution!")
 

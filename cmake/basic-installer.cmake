@@ -35,6 +35,19 @@ shortcircuit_package(AU)
 shortcircuit_package(CLAP)
 shortcircuit_package(Standalone)
 
+if (WIN32)
+    message(STATUS "Including special windows cleanup installer stage")
+    add_custom_command(TARGET shortcircuit-products
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMAND ${CMAKE_COMMAND} -E echo "Cleaning up windows goobits"
+            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.exp"
+            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.ilk"
+            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.lib"
+            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.pdb"
+            )
+endif ()
+
 add_dependencies(shortcircuit-installer shortcircuit-products)
 
 add_custom_command(
