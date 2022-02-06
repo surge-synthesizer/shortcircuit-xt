@@ -55,16 +55,16 @@ endif()
 
 cmake_host_system_information(RESULT SHORTC_BUILD_FQDN QUERY FQDN )
 
-message( STATUS "Setting up surge version" )
-message( STATUS "  git hash is ${GIT_COMMIT_HASH} and branch is ${GIT_BRANCH}" )
-message( STATUS "  buildhost is ${SHORTC_BUILD_FQDN}" )
-message( STATUS "  buildarch is ${SHORTC_BUILD_ARCH}" )
+message( STATUS "Setting up Shortcircuit XT version:" )
+message( STATUS "  Git hash is ${GIT_COMMIT_HASH} and branch is ${GIT_BRANCH}" )
+message( STATUS "  Build host is ${SHORTC_BUILD_FQDN}" )
+message( STATUS "  Build architecture is ${SHORTC_BUILD_ARCH}" )
 
 if( ${AZURE_PIPELINE} )
-  message( STATUS "Azure Pipeline Build" )
+  message( STATUS "Azure pipeline build" )
   set( lpipeline "pipeline" )
 else()
-  message( STATUS "Developer Local Build" )
+  message( STATUS "Developer local build" )
   set( lpipeline "local" )
 endif()
 

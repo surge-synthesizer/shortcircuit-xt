@@ -69,14 +69,21 @@ target_compile_definitions(ShortcircuitXT PUBLIC
         JUCE_ALSA=1
         JUCE_JACK=1
         )
+
 # ASIO SDK is only for MS Windows.
 if (NOT APPLE AND NOT UNIX AND SCXT_INCLUDE_ASIO_SUPPORT)
-    target_compile_definitions(ShortcircuitXT PUBLIC
-            JUCE_ASIO=1
-            )
-    target_include_directories(ShortcircuitXT PUBLIC
-            " libs/asiosdk/common "
-            )
+    if (DEFINED ENV{ASIOSDK_DIR})
+        file(TO_CMAKE_PATH "$ENV{ASIOSDK_DIR}" ASIOSDK_DIR)
+        message(STATUS "ASIO SDK found at ${ASIOSDK_DIR}")
+        target_include_directories(ShortcircuitXT PUBLIC ${ASIOSDK_DIR}/common)
+    else()
+        message(STATUS "Expecting ASIO SDK at libs/asiosdk...")
+        target_include_directories(ShortcircuitXT PUBLIC " libs/asiosdk/common ")
+    endif()
+
+    message(STATUS "The resulting Shortcircuit XT standalone executable is not licensed for distribution!")
+
+    target_compile_definitions(ShortcircuitXT PUBLIC JUCE_ASIO=1)
 endif ()
 
 target_link_libraries(ShortcircuitXT PRIVATE
