@@ -482,7 +482,7 @@ struct LFO : ContentBase
             g.strokePath(lfop, juce::PathStrokeType(1.0));
         }
 
-        void mouseDrag(const juce::MouseEvent &e) override
+        void setLFOFromMouseEvent(const juce::MouseEvent &e)
         {
             int step = std::clamp(
                 (int)std::floor(e.position.x * std::max(1, lf.get().repeat.val) / getWidth()), 0,
@@ -501,6 +501,15 @@ struct LFO : ContentBase
             datum.val = yPos;
             content.parentPage.editor->sendActionToEngine(ad);
             repaint();
+        }
+        void mouseUp(const juce::MouseEvent &e) override
+        {
+            if (getLocalBounds().contains(e.position.toInt()))
+                setLFOFromMouseEvent(e);
+        }
+        void mouseDrag(const juce::MouseEvent &e) override
+        {
+            setLFOFromMouseEvent(e);
         }
     };
 

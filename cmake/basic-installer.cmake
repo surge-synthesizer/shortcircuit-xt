@@ -60,7 +60,13 @@ else ()
 endif ()
 
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
-set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
+if (WIN32)
+    math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
+    set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${BITS}bit.zip)
+else ()
+    set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
+endif ()
+
 
 if (APPLE)
     message(STATUS "Configuring for mac installer.")

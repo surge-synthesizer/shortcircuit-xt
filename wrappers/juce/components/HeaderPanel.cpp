@@ -5,6 +5,7 @@
 #include "HeaderPanel.h"
 #include "widgets/OutlinedTextButton.h"
 #include "widgets/CompactVUMeter.h"
+#include "widgets/PolyphonyDisplay.h"
 
 namespace scxt
 {
@@ -60,6 +61,9 @@ HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed)
 
     vuMeter0 = std::make_unique<scxt::widgets::CompactVUMeter>(editor);
     addAndMakeVisible(*vuMeter0);
+
+    polyDisplay = std::make_unique<scxt::widgets::PolyphonyDisplay>(editor);
+    addAndMakeVisible(*polyDisplay);
 
     // This means i probably have a new look and feel so
     auto attachColor = [this](const auto &b) {
@@ -117,6 +121,9 @@ void HeaderPanel::resized()
 
     r = getLocalBounds().withWidth(128).withCentre({getWidth() / 2, getHeight() / 2}).reduced(0, 2);
     vuMeter0->setBounds(r);
+
+    r = r.translated(r.getWidth() + 2, 0).withWidth(20);
+    polyDisplay->setBounds(r);
 }
 
 void HeaderPanel::onProxyUpdate()

@@ -34,6 +34,7 @@ enum InteractionId
     ip_solo,
     ip_select_layer,
     ip_select_all,
+    ip_polyphony,
     ip_vumeter,
     n_ip_free_items = ip_vumeter,
     ip_zone_name,
@@ -568,6 +569,14 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "select all",
+    },
+    {
+        ip_polyphony,
+        ipvt_int,
+        0,
+        1,
+        0,
+        "polyphony",
     },
     {
         ip_vumeter,

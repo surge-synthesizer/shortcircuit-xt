@@ -23,7 +23,7 @@
 #include "proxies/ZoneListDataProxy.h"
 #include "proxies/BrowserDataProxy.h"
 #include "proxies/SelectionStateProxy.h"
-#include "proxies/VUMeterProxy.h"
+#include "proxies/VUMeterPolyphonyProxy.h"
 #include "proxies/MultiDataProxy.h"
 #include "proxies/PartDataProxy.h"
 #include "proxies/ConfigDataProxy.h"
@@ -35,6 +35,7 @@
 #include "pages/PartPage.h"
 
 #include "widgets/CompactVUMeter.h"
+#include "widgets/PolyphonyDisplay.h"
 
 #define DEBUG_UNHANDLED_MESSAGES 1
 
@@ -94,7 +95,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     browserDataProxy = make_proxy<scxt::proxies::BrowserDataProxy>();
     selectionStateProxy = make_proxy<scxt::proxies::SelectionStateProxy>();
     multiDataProxy = make_proxy<scxt::proxies::MultiDataProxy>();
-    vuMeterProxy = make_proxy<scxt::proxies::VUMeterProxy>();
+    vuMeterProxy = make_proxy<scxt::proxies::VUMeterPolyphonyProxy>();
     partProxy = make_proxy<scxt::proxies::PartDataProxy>();
     configProxy = make_proxy<scxt::proxies::ConfigDataProxy>();
     zoneProxy = make_proxy<scxt::proxies::ZoneDataProxy>();
@@ -103,6 +104,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     headerPanel = std::make_unique<scxt::components::HeaderPanel>(this);
     selectionStateProxy->clients.insert(headerPanel.get());
     vuMeterProxy->clients.insert(headerPanel->vuMeter0.get());
+    vuMeterProxy->clients.insert(headerPanel->polyDisplay.get());
     topLevel->addAndMakeVisible(*headerPanel);
 
     browserSidebar = std::make_unique<scxt::components::BrowserSidebar>(this);

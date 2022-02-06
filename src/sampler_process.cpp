@@ -270,7 +270,7 @@ void sampler::process_audio()
         }
     }
 
-    processVUs();
+    processVUsAndPolyphonyUpdates();
     // post amplitude
     /*
     for(op=0; op<(output_pairs*2); op++)
@@ -285,7 +285,7 @@ void sampler::process_audio()
     */
 }
 
-void sampler::processVUs()
+void sampler::processVUsAndPolyphonyUpdates()
 {
     for (int op = 0; op < (mNumOutputs * 2); op++)
     {
@@ -316,5 +316,16 @@ void sampler::processVUs()
             ad.data.i[1 + (op >> 1) + 1] = clip1 * (1 << 1) + clip2;
         }
         postEventsToWrapper(ad);
+
+        if (polyphony != lastSentPolyphony)
+        {
+            actiondata ad;
+            ad.actiontype = vga_intval;
+            ad.id = ip_polyphony;
+            ad.subid = -1;
+            ad.data.i[0] = polyphony;
+            postEventsToWrapper(ad);
+            lastSentPolyphony = polyphony;
+        }
     }
 }
