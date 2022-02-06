@@ -3,7 +3,7 @@
 
 const unsigned int halfrate_max_M = 6;
 
-class halfrate_stereo
+class alignas(16) halfrate_stereo
 {
     // must be aligned
   private:

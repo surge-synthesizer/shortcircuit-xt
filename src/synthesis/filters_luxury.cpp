@@ -118,7 +118,7 @@ void LP4M_sat::process_stereo(float *datainL, float *datainR, float *dataoutL, f
     float *ypoleL = &reg[limit_range(iparam[0], 0, 3)];
     float *ypoleR = &reg[5 + limit_range(iparam[0], 0, 3)];
 
-    Align16 float dataOS[2][block_size << 1];
+    float dataOS alignas(16)[2][block_size << 1];
 
     gain.multiply_2_blocks_to(datainL, datainR, dataOS[0], dataOS[1], block_size_quad);
     pre_filter.process_block_U2(dataOS[0], dataOS[1], dataOS[0], dataOS[1], block_size << 1);
@@ -169,7 +169,7 @@ void LP4M_sat::process(float *datain, float *dataout, float pitch)
 
     float *ypole = &reg[limit_range(iparam[0], 0, 3)];
 
-    Align16 float dataOS[2][block_size << 1];
+    float dataOS alignas(16)[2][block_size << 1];
 
     gain.multiply_block_to(datain, dataOS[0], block_size_quad);
     clear_block(dataOS[1], block_size_quad);

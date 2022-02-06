@@ -53,7 +53,8 @@ void fauxstereo::process_stereo(float *datainL, float *datainR, float *dataoutL,
     l_amplitude.set_target_smoothed(db_to_linear(param[0]));
     l_source.set_target_smoothed(clamp01(param[2]));
 
-    Align16 float mid[block_size], side[block_size], side_comb[block_size];
+    float mid alignas(16)[block_size], side alignas(16)[block_size],
+        side_comb alignas(16)[block_size];
 
     encodeMS(datainL, datainR, mid, side, block_size_quad);
     l_source.fade_block_to(mid, side, side_comb, block_size_quad);

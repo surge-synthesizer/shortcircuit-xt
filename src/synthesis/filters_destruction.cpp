@@ -282,7 +282,7 @@ void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL
     // makes it possible to change the pitch continuously and not only on triggers
     gain[0].set_target(limit_range(param[2], 0.f, 1.f));
 
-    Align16 float tbuf[2][block_size];
+    float tbuf alignas(16)[2][block_size];
     if (iparam[0])
         locut.coeff_LP2B(biquadunit::calc_omega(param[3]), 0.707);
     else
@@ -327,7 +327,7 @@ void treemonster::process(float *datain, float *dataout, float pitch)
 {
     gain[0].set_target(limit_range(param[2], 0.f, 1.f));
 
-    Align16 float tbuf[block_size];
+    float tbuf alignas(16)[block_size];
     if (iparam[0])
         locut.coeff_LP2B(biquadunit::calc_omega(param[3]), 0.707);
     else
@@ -456,7 +456,7 @@ void fdistortion::process_stereo(float *datainL, float *datainR, float *dataoutL
                                  float pitch)
 {
     gain.set_target(2.f * db_to_linear(param[0]));
-    Align16 float osbuffer[2][block_size * 2];
+    float osbuffer alignas(16)[2][block_size * 2];
 
     pre.process_block_U2(datainL, datainR, osbuffer[0], osbuffer[1], block_size << 1);
 

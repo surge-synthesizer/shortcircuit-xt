@@ -527,7 +527,7 @@ void BP2AD::process_stereo(float *datainL, float *datainR, float *dataoutL, floa
                            float pitch)
 {
     calc_coeffs();
-    Align16 float d[2][block_size];
+    float d alignas(16)[2][block_size];
     bq[0].process_block_to(datainL, datainR, d[0], d[1]);
     bq[1].process_block_to(datainL, datainR, dataoutL, dataoutR);
     accumulate_block(d[0], dataoutL, block_size_quad);
@@ -537,7 +537,7 @@ void BP2AD::process_stereo(float *datainL, float *datainR, float *dataoutL, floa
 void BP2AD::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
-    Align16 float d[block_size];
+    float d alignas(16)[block_size];
     bq[0].process_block_to(datain, d);
     bq[1].process_block_to(datain, dataout);
     accumulate_block(d, dataout, block_size_quad);
@@ -666,7 +666,7 @@ void PKAD::process_stereo(float *datainL, float *datainR, float *dataoutL, float
                           float pitch)
 {
     calc_coeffs();
-    Align16 float d[2][block_size];
+    float d alignas(16)[2][block_size];
     bq[0].process_block_to(datainL, datainR, d[0], d[1]);
     bq[1].process_block_to(datainL, datainR, dataoutL, dataoutR);
     accumulate_block(d[0], dataoutL, block_size_quad);
@@ -676,7 +676,7 @@ void PKAD::process_stereo(float *datainL, float *datainR, float *dataoutL, float
 void PKAD::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
-    Align16 float d[block_size];
+    float d alignas(16)[block_size];
     bq[0].process_block_to(datain, d);
     bq[1].process_block_to(datain, dataout);
     accumulate_block(d, dataout, block_size_quad);
@@ -847,7 +847,7 @@ void LPHP_par::process_stereo(float *datainL, float *datainR, float *dataoutL, f
                               float pitch)
 {
     calc_coeffs();
-    Align16 float d[2][block_size];
+    float d alignas(16)[2][block_size];
     bq[0].process_block_to(datainL, datainR, d[0], d[1]);
     bq[1].process_block_to(datainL, datainR, dataoutL, dataoutR);
     accumulate_block(d[0], dataoutL, block_size_quad);
@@ -857,7 +857,7 @@ void LPHP_par::process_stereo(float *datainL, float *datainR, float *dataoutL, f
 void LPHP_par::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
-    Align16 float d[block_size];
+    float d alignas(16)[block_size];
     bq[0].process_block_to(datain, d);
     bq[1].process_block_to(datain, dataout);
     accumulate_block(d, dataout, block_size_quad);

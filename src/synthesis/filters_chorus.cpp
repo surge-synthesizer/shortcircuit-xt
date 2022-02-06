@@ -118,9 +118,9 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
 {
     setvars(false);
 
-    Align16 float tbufferL[block_size];
-    Align16 float tbufferR[block_size];
-    Align16 float fbblock[block_size];
+    float tbufferL alignas(16)[block_size];
+    float tbufferR alignas(16)[block_size];
+    float fbblock alignas(16)[block_size];
     int k;
 
     /*for(k=0; k<block_size; k++)
@@ -214,7 +214,7 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
                 buffer[k]; // copy buffer so FIR-core doesn't have to wrap
 
     // scale width
-    Align16 float M[block_size], S[block_size];
+    float M alignas(16)[block_size], S alignas(16)[block_size];
     encodeMS(tbufferL, tbufferR, M, S, block_size_quad);
     width.multiply_block(S, block_size_quad);
     decodeMS(M, S, dataoutL, dataoutR, block_size_quad);

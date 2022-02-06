@@ -515,7 +515,7 @@ void stereotools::process_stereo(float *datainL, float *datainR, float *dataoutL
     ampL.set_target_smoothed(clamp1bp(1 - param[0]));
     ampR.set_target_smoothed(clamp1bp(1 + param[0]) * ((iparam[0] == 1) ? -1.f : 1.f));
 
-    Align16 float M[block_size], S[block_size];
+    float M alignas(16)[block_size], S alignas(16)[block_size];
 
     if (iparam[0] == 2)
     {

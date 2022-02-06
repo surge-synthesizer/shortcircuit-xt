@@ -370,7 +370,7 @@ struct Pitch : ContentBase
         rightColumn[1] = bindFloatSpinBox(cz.finetune);
         rightColumn[2] = bindFloatSpinBox(cz.velsense);
 
-        ignorePM = bind<widgets::IntParamToggleButton>(cz.ignore_part_polymode, "ignore polymode");
+        ignorePM = bind<widgets::IntParamToggleButton>(cz.ignore_part_polymode, "ignore playmode");
         lags[0] = bindFloatSpinBox(cz.lag_generator[0]);
         lags[1] = bindFloatSpinBox(cz.lag_generator[1]);
         lagLabel = whiteLabel("lag gen 1/2");
