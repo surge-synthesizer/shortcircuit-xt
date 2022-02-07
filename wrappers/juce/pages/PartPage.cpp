@@ -22,11 +22,59 @@ typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage> ContentBas
         x(const scxt::pages::PartPage &p) : ContentBase(p, #x, c) {}                               \
     };
 
-STUB(Main, juce::Colours::darkgrey);
 STUB(Polymode, juce::Colours::darkgrey);
 STUB(LayerRanges, juce::Colours::darkgrey);
 STUB(VelocitySplit, juce::Colours::darkgrey);
 STUB(Controllers, juce::Colour(0xFF335533));
+
+struct Main : public ContentBase
+{
+    Main(const scxt::pages::PartPage &p) : ContentBase(p, "Main", juce::Colours::darkgrey)
+    {
+        savePart = std::make_unique<widgets::OutlinedTextButton>("save part");
+        savePart->onClick = [this]() { this->savePM(false); };
+        addAndMakeVisible(*savePart);
+        saveMulti = std::make_unique<widgets::OutlinedTextButton>("save multi");
+        saveMulti->onClick = [this]() { this->savePM(true); };
+        addAndMakeVisible(*saveMulti);
+    }
+
+    void resized() override
+    {
+        auto b = getContentsBounds();
+        auto mp = b.withTrimmedTop(b.getHeight() - 40).withTrimmedLeft(b.getWidth() - 100);
+        mp = mp.withHeight(20);
+        savePart->setBounds(mp);
+        mp = mp.translated(0, 20);
+        saveMulti->setBounds(mp);
+    }
+    std::unique_ptr<juce::FileChooser> fc;
+    void savePM(bool isMulti)
+    {
+        auto nm = std::string("Save Part");
+        if (isMulti)
+            nm = "Save Multi";
+        fc = std::make_unique<juce::FileChooser>(nm.c_str());
+        fc->launchAsync(
+            juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+                juce::FileBrowserComponent::warnAboutOverwriting,
+            [this, isMulti](const juce::FileChooser &c) {
+                auto result = c.getResults();
+                if (result.isEmpty() || result.size() > 1)
+                    return;
+
+                auto p = fs::path{result[0].getFullPathName().toStdString()};
+                p = p.replace_extension(fs::path{".sc2p"});
+                this->parentPage.editor->audioProcessor.sc3->editorProxy.savepart_path.set(p);
+                actiondata ad;
+                ad.id = ip_none;
+                ad.subid = -1;
+                ad.actiontype = isMulti ? vga_save_multi : vga_save_patch;
+                this->parentPage.editor->sendActionToEngine(ad);
+            });
+    }
+    std::unique_ptr<widgets::OutlinedTextButton> savePart, saveMulti;
+};
 
 struct ModulationRouting : public ContentBase
 {
