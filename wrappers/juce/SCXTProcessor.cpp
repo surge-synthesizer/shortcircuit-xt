@@ -9,6 +9,7 @@
 #include "SCXTProcessor.h"
 #include "SCXTEditor.h"
 #include <iostream>
+#include "sst/plugininfra/cpufeatures.h"
 
 //==============================================================================
 SCXTProcessor::SCXTProcessor()
@@ -103,8 +104,7 @@ bool SCXTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 
 void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
 {
-    int ons[127], offs[127];
-    int onp = 0, offp = 0;
+    auto ftzGuard = sst::plugininfra::cpufeatures::FPUStateGuard();
 
     auto midiIt = midiMessages.findNextSamplePosition(0);
     int nextMidi = -1;

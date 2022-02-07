@@ -31,7 +31,7 @@ struct HeaderPanel : public juce::Component, public scxt::data::UIStateProxy::In
     std::unique_ptr<widgets::CompactVUMeter> vuMeter0;
     std::unique_ptr<widgets::PolyphonyDisplay> polyDisplay;
 
-    std::unique_ptr<widgets::OutlinedTextButton> zonesButton, partButton, fxButton, configButton,
+    std::unique_ptr<widgets::OutlinedTextButton> zonesButton, partButton, fxButton, menuButton,
         aboutButton;
 
     void onProxyUpdate() override;

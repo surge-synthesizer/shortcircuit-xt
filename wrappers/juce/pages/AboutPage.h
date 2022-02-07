@@ -9,6 +9,7 @@
 #include "version.h"
 #include "BinaryUIAssets.h"
 #include "sst/plugininfra/paths.h"
+#include "sst/plugininfra/cpufeatures.h"
 
 namespace scxt
 {
@@ -45,16 +46,11 @@ struct AboutPage : PageBase
             (sizeof(size_t) == 4 ? std::string("32") : std::string("64")) + "-bit";
         std::string wrapper = ed->processor.getWrapperTypeDescription(ed->processor.wrapperType);
 
-#if __aarch64__
-        std::string cpu = "arm";
-#else
-        std::string cpu = "x64";
-#endif
-
-        info.push_back({"System", platform + " " + cpu + " " + bitness + " " + wrapper});
+        info.push_back({"System", platform + " " + bitness + " " + wrapper + " on " +
+                                      sst::plugininfra::cpufeatures::brand()});
         info.push_back(
             {"Executable", sst::plugininfra::paths::sharedLibraryBinaryPath().u8string()});
-
+        info.push_back({"User Dir", ed->audioProcessor.sc3->userDocumentDirectory.u8string()});
         copyButton = std::make_unique<juce::TextButton>("Copy");
         copyButton->setButtonText("Copy");
         copyButton->onClick = [this]() { copyInfo(); };
@@ -77,7 +73,7 @@ struct AboutPage : PageBase
         std::ostringstream oss;
         for (auto i : info)
         {
-            oss << i.title << ":  " << i.value << "\n";
+            oss << i.title << ":\t" << i.value << "\n";
         }
         juce::SystemClipboard::copyTextToClipboard(oss.str());
     }

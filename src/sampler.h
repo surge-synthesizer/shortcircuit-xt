@@ -26,6 +26,7 @@ class sampler;
 #include <sstream>
 #include <set>
 #include <ostream>
+#include "sampler_userdefaults.h"
 
 class sample;
 class sampler_voice;
@@ -82,6 +83,7 @@ class sampler
      */
     fs::path userDocumentDirectory;
     void setupUserDocumentDirectory();
+    std::unique_ptr<scxt::defaults::Provider> defaultsProvider;
 
     /*
      * Associated content

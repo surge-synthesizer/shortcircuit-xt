@@ -6,6 +6,7 @@
 #include "widgets/OutlinedTextButton.h"
 #include "widgets/CompactVUMeter.h"
 #include "widgets/PolyphonyDisplay.h"
+#include "menus/MainMenuProvider.h"
 
 namespace scxt
 {
@@ -47,17 +48,19 @@ HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed)
     fxButton->onClick = [this]() { editor->showPage(SCXTEditor::FX); };
     addAndMakeVisible(*fxButton);
 
-    configButton = std::make_unique<scxt::widgets::OutlinedTextButton>("Config");
-    configButton->setClickingTogglesState(true);
-    configButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
-    configButton->onClick = [this]() { editor->showPage(SCXTEditor::CONFIG); };
-    addAndMakeVisible(*configButton);
-
     aboutButton = std::make_unique<scxt::widgets::OutlinedTextButton>("About");
     aboutButton->setClickingTogglesState(true);
     aboutButton->setRadioGroupId(175, juce::NotificationType::dontSendNotification);
     aboutButton->onClick = [this]() { editor->showPage(SCXTEditor::ABOUT); };
     addAndMakeVisible(*aboutButton);
+
+    menuButton = std::make_unique<scxt::widgets::OutlinedTextButton>("Menu");
+    menuButton->setClickingTogglesState(false);
+    menuButton->onClick = [this]() {
+        auto pm = scxt::menus::MainMenuProvider::createMenu(this->editor);
+        pm.showMenuAsync(juce::PopupMenu::Options());
+    };
+    addAndMakeVisible(*menuButton);
 
     vuMeter0 = std::make_unique<scxt::widgets::CompactVUMeter>(editor);
     addAndMakeVisible(*vuMeter0);
@@ -80,8 +83,8 @@ HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed)
     attachColor(zonesButton);
     attachColor(partButton);
     attachColor(fxButton);
-    attachColor(configButton);
     attachColor(aboutButton);
+    attachColor(menuButton);
 }
 
 HeaderPanel::~HeaderPanel() {}
@@ -102,8 +105,9 @@ void HeaderPanel::resized()
     auto nRButtons = 5; // zones part fx config menu
     auto rbWidth = 50;
     auto margin = 0;
+    auto menuMargin = 20;
     r = getLocalBounds().reduced(2, 2);
-    r = r.withLeft(r.getRight() - nRButtons * (rbWidth + margin));
+    r = r.withLeft(r.getRight() - nRButtons * (rbWidth + margin) - menuMargin);
     r = r.withWidth(rbWidth);
 
     auto buttonL = r.getX();
@@ -114,10 +118,10 @@ void HeaderPanel::resized()
     r = r.translated(rbWidth + margin, 0);
     fxButton->setBounds(r);
     r = r.translated(rbWidth + margin, 0);
-    configButton->setBounds(r);
-    r = r.translated(rbWidth + margin, 0);
     aboutButton->setBounds(r);
-    r = r.translated(rbWidth + margin, 0);
+    r = r.translated(rbWidth + margin + menuMargin, 0);
+
+    menuButton->setBounds(r);
 
     r = getLocalBounds().withWidth(128).withCentre({getWidth() / 2, getHeight() / 2}).reduced(0, 2);
     vuMeter0->setBounds(r);
