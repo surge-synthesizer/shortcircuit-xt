@@ -270,6 +270,35 @@ class sampler
     int polyphony_cap;
 
   public:
+    /*
+     * We no longer have an editor object here to read things from.
+     * But we do have a set of state the editor can update on the sampler
+     * which will happen under a lock for non-realtime things like
+     * saving patches.
+     */
+    struct EditorProxy
+    {
+        template <typename T> struct getset
+        {
+            std::mutex &mu;
+            T val{};
+            getset(std::mutex &m) : mu(m) {}
+            void set(const T &v)
+            {
+                auto g = std::lock_guard<std::mutex>(mu);
+                val = v;
+            }
+            T get() const
+            {
+                auto g = std::lock_guard<std::mutex>(mu);
+                return val;
+            }
+        };
+
+        std::mutex editorMutex;
+        getset<fs::path> savepart_path{editorMutex};
+    } editorProxy;
+
     int editorpart, editorlayer, editorlfo, editormm;
     moodycamel::ReaderWriterQueue<actiondata> actionBuffer;
 

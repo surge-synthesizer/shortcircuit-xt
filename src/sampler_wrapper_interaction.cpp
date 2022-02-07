@@ -214,21 +214,13 @@ void sampler::processWrapperEvents()
         case vga_save_patch:
         {
             // save_part_as_xml(editorpart,editor->savepart_fname.c_str());
-#if 0
-            SaveAllAsRIFF(0, editor->savepart_fname.c_str(), editorpart);
-#else
-            LOGERROR(mLogger) << "Unable to vga_save_patch" << std::endl;
-#endif
+            SaveAllAsRIFF(0, editorProxy.savepart_path.get(), editorpart);
         }
         break;
         case vga_save_multi:
         {
             // save_all_as_xml(0,editor->savepart_fname.c_str());
-#if 0
-            SaveAllAsRIFF(0, editor->savepart_fname.c_str());
-#else
-            LOGERROR(mLogger) << "Unable to vga_save_patch" << std::flush;
-#endif
+            SaveAllAsRIFF(0, editorProxy.savepart_path.get());
         }
         break;
         case vga_browser_preview_start:
