@@ -129,7 +129,6 @@ class SCXTEditor : public juce::AudioProcessorEditor,
         ZONE,
         PART,
         FX,
-        CONFIG,
         ABOUT
     };
 
@@ -143,8 +142,6 @@ class SCXTEditor : public juce::AudioProcessorEditor,
             return "Part";
         case FX:
             return "FX";
-        case CONFIG:
-            return "Config";
         case ABOUT:
             return "About";
         }
@@ -156,6 +153,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     static constexpr int scWidth = 970, scHeight = 700;
     float scale = 1.0;
     void setScale(float sc);
+    float optimalScaleForDisplay();
 
   private:
     void sendActionInternal(const actiondata &ad);

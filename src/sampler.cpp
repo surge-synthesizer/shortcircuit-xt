@@ -148,6 +148,11 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     toggled_samplereplace = false;
 
     userDocumentDirectory = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
+    defaultsProvider = std::make_unique<scxt::defaults::Provider>(
+        userDocumentDirectory, "ShortcircuitXT",
+        [](auto e) { return scxt::defaults::defaultKeyToString(e); },
+        [](auto em, auto t) { std::cerr << "PARSE ERROR FIXME " << em << t << std::endl; });
+
     setupUserDocumentDirectory();
     browser.initialize(userDocumentDirectory);
 }

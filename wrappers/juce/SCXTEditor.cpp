@@ -61,20 +61,19 @@ struct SCXTTopLevel : public juce::Component
 //==============================================================================
 SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->totalArea;
-    float ws = 1.f * scWidth / area.getWidth();
-    float hs = 1.f * scHeight / area.getHeight();
-    auto x = std::max(ws, hs);
-
     topLevel = std::make_unique<SCXTTopLevel>(this);
     addAndMakeVisible(*topLevel);
 
     // this is pretty arbitrary
     auto sc = 1.f;
-    for (const auto &q : {1.25, 1.5, 1.75, 2.})
+    auto zf = p.sc3->defaultsProvider->getUserDefaultValue(scxt::defaults::zoomLevel, -1);
+    if (zf > 50)
     {
-        if (q * x < 0.85)
-            sc = q;
+        sc = zf / 100.f;
+    }
+    else
+    {
+        sc = optimalScaleForDisplay();
     }
 
     // topLevel->setTransform(juce::AffineTransform().scaled(sc));
@@ -113,7 +112,6 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProces
     pages[ZONE] = std::make_unique<scxt::pages::ZonePage>(this, ZONE);
     pages[PART] = std::make_unique<scxt::pages::PartPage>(this, PART);
     pages[FX] = std::make_unique<scxt::pages::FXPage>(this, FX);
-    pages[CONFIG] = std::make_unique<scxt::pages::PageBase>(this, CONFIG);
     pages[ABOUT] = std::make_unique<scxt::pages::AboutPage>(this, ABOUT);
 
     selectionStateProxy->clients.insert(pages[ZONE].get());
@@ -186,6 +184,24 @@ void SCXTEditor::setScale(float sc)
 {
     scale = sc;
     setSize(scWidth * sc, scHeight * sc);
+    audioProcessor.sc3->defaultsProvider->updateUserDefaultValue(scxt::defaults::zoomLevel,
+                                                                 (int)(round(sc * 100)));
+}
+
+float SCXTEditor::optimalScaleForDisplay()
+{
+    auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->totalArea;
+    float ws = 1.f * scWidth / area.getWidth();
+    float hs = 1.f * scHeight / area.getHeight();
+    auto x = std::max(ws, hs);
+
+    float sc = 1.f;
+    for (const auto &q : {1.25, 1.5, 1.75, 2.})
+    {
+        if (q * x < 0.85)
+            sc = q;
+    }
+    return sc;
 }
 
 void SCXTEditor::resized()
