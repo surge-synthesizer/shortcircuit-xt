@@ -107,6 +107,28 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
 {
     auto ftzGuard = sst::plugininfra::cpufeatures::FPUStateGuard();
 
+    auto playhead = getPlayHead();
+    if (playhead)
+    {
+        juce::AudioPlayHead::CurrentPositionInfo cp;
+        playhead->getCurrentPosition(cp);
+        sc3->time_data.tempo = cp.bpm;
+
+        // isRecording should always imply isPlaying but better safe than sorry
+        if (cp.isPlaying || cp.isRecording)
+            sc3->time_data.ppqPos = cp.ppqPosition;
+
+        sc3->time_data.timeSigNumerator = cp.timeSigNumerator;
+        sc3->time_data.timeSigDenominator = cp.timeSigDenominator;
+        sc3->resetStateFromTimeData();
+    }
+    else
+    {
+        sc3->time_data.tempo = 120;
+        sc3->time_data.timeSigNumerator = 4;
+        sc3->time_data.timeSigDenominator = 4;
+    }
+
     auto midiIt = midiMessages.findNextSamplePosition(0);
     int nextMidi = -1;
     if (midiIt != midiMessages.cend())
@@ -144,7 +166,10 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
         blockPos++;
 
         if (blockPos >= block_size)
+        {
             blockPos = 0;
+            sc3->time_data.ppqPos += (double)block_size * sc3->time_data.tempo / (60. * samplerate);
+        }
     }
 
     // This should, in theory, never happen, but better safe than sorry
