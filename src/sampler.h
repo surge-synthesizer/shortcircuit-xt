@@ -310,6 +310,9 @@ class sampler
     int polyphony;
     int mNumOutputs;
     timedata time_data;
+    // surge needed this so presume SC3 will too one day. For now make it a noop
+    void resetStateFromTimeData() {}
+
     int VUrate, VUidx, lastSentPolyphony{-1};
     float automation[n_automation_parameters];
 
