@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <iostream>
 #include <algorithm>
+#include <sst/plugininfra/strnatcmp.h>
 
 namespace scxt
 {
@@ -86,6 +87,10 @@ void ContentBrowser::Content::recursivelyPopulate()
                 children.push_back(std::move(child));
             }
         }
+        std::sort(children.begin(), children.end(), [](const auto &a, const auto &b) {
+            return strnatcasecmp(a->displayPath.u8string().c_str(),
+                                 b->displayPath.u8string().c_str()) < 0;
+        });
     }
 }
 } // namespace content
