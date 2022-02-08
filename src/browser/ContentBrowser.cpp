@@ -52,7 +52,7 @@ void ContentBrowser::Content::recursivelyPopulate()
 
     const static auto samplesuffixes =
         std::unordered_set<std::string>({".wav", ".riff", ".sf2", ".sfz"});
-    const static auto patchsuffixes = std::unordered_set<std::string>({".sc2p"});
+    const static auto patchsuffixes = std::unordered_set<std::string>({".sc2p", ".sc2m"});
     for (const auto &d : fs::directory_iterator(fullPath))
     {
         auto dp = d.path();
