@@ -64,7 +64,10 @@ struct Main : public ContentBase
                     return;
 
                 auto p = fs::path{result[0].getFullPathName().toStdString()};
-                p = p.replace_extension(fs::path{".sc2p"});
+                if (isMulti)
+                    p.replace_extension(fs::path{".sc2m"});
+                else
+                    p = p.replace_extension(fs::path{".sc2p"});
                 this->parentPage.editor->audioProcessor.sc3->editorProxy.savepart_path.set(p);
                 actiondata ad;
                 ad.id = ip_none;

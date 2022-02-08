@@ -28,6 +28,7 @@ SCXTProcessor::SCXTProcessor()
     configFile.append(SCXT_CONFIG_DIRECTORY);
     configFile.append("config.xml");
     mConfigFileName = configFile;
+    std::cout << "CONFIG LOCATION IS " << configLoc << std::endl;
 
     sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, this);
     if (!sc3->loadUserConfiguration(mConfigFileName))
