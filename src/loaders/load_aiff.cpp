@@ -98,6 +98,7 @@ bool sample::parse_aiff(void *data, size_t filesize)
 {
     int datasize;
     scxt::Memfile::RIFFMemFile mf(data, filesize);
+    mf.useWaveEndian = false;
     if (!mf.iff_descend_FORM('AIFF', &datasize))
         return false;
     off_t wr = mf.TellI();

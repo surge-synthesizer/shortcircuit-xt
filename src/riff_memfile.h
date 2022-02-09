@@ -71,6 +71,22 @@ class RIFFMemFile
         EndStack.push_front(datasize);
     }
 
+    bool useWaveEndian{true};
+    size_t readWaveEndianLittle(uint32_t inp)
+    {
+        if (useWaveEndian)
+            return vt_read_int32LE(inp);
+        else
+            return vt_read_int32BE(inp);
+    }
+    size_t readWaveEndianBig(uint32_t inp)
+    {
+        if (useWaveEndian)
+            return vt_read_int32BE(inp);
+        else
+            return vt_read_int32LE(inp);
+    }
+
     virtual char Peek()
     {
         assert(data);
@@ -307,7 +323,7 @@ class RIFFMemFile
         int ChunkTag = vt_read_int32BE(*(int *)(data + loc));
         if (Tag)
             *Tag = ChunkTag;
-        size_t dataSize = vt_read_int32LE(*(int *)(data + loc + 4));
+        size_t dataSize = readWaveEndianLittle(*(int *)(data + loc + 4));
         if (DataSize)
             *DataSize = dataSize;
         bool hasSubchunks = (ChunkTag == 'RIFF') || (ChunkTag == 'LIST');
@@ -356,7 +372,7 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return nullptr;
-        size_t chunksize = vt_read_int32LE(*(int *)(data + loc + 4));
+        size_t chunksize = readWaveEndianLittle(*(int *)(data + loc + 4));
         if (Tag)
             *Tag = vt_read_int32BE(*(int *)(data + loc));
         if (DataSize)
@@ -378,7 +394,7 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return false;
-        size_t ChunkSize = vt_read_int32LE(*(int *)(data + loc + 4));
+        size_t ChunkSize = readWaveEndianLittle(*(int *)(data + loc + 4));
         if (Tag)
             *Tag = vt_read_int32BE(*(int *)(data + loc));
         if (DataSize)
@@ -421,7 +437,7 @@ class RIFFMemFile
         int Tag = vt_read_int32BE(*(int *)(data + loc));
         if ((Tag != 'LIST') && (Tag != 'RIFF'))
             return false;
-        size_t chunksize = vt_read_int32LE(*(int *)(data + loc + 4));
+        size_t chunksize = readWaveEndianLittle(*(int *)(data + loc + 4));
         int LISTTag = vt_read_int32BE(*(int *)(data + loc + 8));
         loc += 12;
 
@@ -447,7 +463,7 @@ class RIFFMemFile
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
             rh.id = vt_read_int32BE(rh.id);
-            rh.datasize = vt_read_int32LE(rh.datasize);
+            rh.datasize = readWaveEndianLittle(rh.datasize);
             if ((rh.id == 'RIFF') || (rh.id == 'LIST'))
             {
                 uint32_t subtag;
@@ -561,7 +577,7 @@ class RIFFMemFile
     }
 
     // New End
-    bool iff_descend(int tag, int *datasize)
+    bool iff_descend(uint32_t tag, int *datasize)
     {
         char *cv = (char *)&tag;
         int rtag = (cv[0] << 24) + (cv[1] << 16) + (cv[2] << 8) + cv[3];
@@ -571,8 +587,8 @@ class RIFFMemFile
         {
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
-            rh.id = vt_read_int32BE(rh.id);
-            rh.datasize = vt_read_int32LE(rh.datasize);
+            rh.id = readWaveEndianBig(rh.id);
+            rh.datasize = readWaveEndianLittle(rh.datasize);
             if (rh.id == rtag)
             {
                 if (datasize)
