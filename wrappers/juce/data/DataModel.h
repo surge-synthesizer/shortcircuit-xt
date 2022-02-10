@@ -117,9 +117,9 @@ struct PartData
     MMEntryData mm[mm_part_entries];
     NCEntryData nc[num_part_ncs];
 
-    ParameterProxy<float> userparameter[num_midi_channels];
-    ParameterProxy<std::string> userparameter_name[num_midi_channels];
-    ParameterProxy<int> userparameter_polarity[num_midi_channels];
+    ParameterProxy<float> userparameter[num_userparams];
+    ParameterProxy<std::string> userparameter_name[num_userparams];
+    ParameterProxy<int> userparameter_polarity[num_userparams];
 };
 struct MultiData
 {

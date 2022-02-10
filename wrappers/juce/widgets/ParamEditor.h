@@ -68,6 +68,8 @@ struct FloatParamSlider : public juce::Component, ParamRefMixin<float>
 
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
+
+    void onRebind() override { repaint(); }
 };
 
 struct IntParamMultiSwitch : public juce::Component,
@@ -365,7 +367,9 @@ struct IntParamToggleButton : public OutlinedTextButton,
         };
     }
 
-    void onProxyUpdate() override
+    void onProxyUpdate() override { updateState(); }
+    void onRebind() override { updateState(); }
+    void updateState()
     {
         setEnabled(!param.get().disabled);
         setToggleState(param.get().val, juce::dontSendNotification);
@@ -393,7 +397,13 @@ struct SingleLineTextEditor : public juce::TextEditor,
     }
 
     void sendUpdate() { param.get().sendValue(getText().toStdString(), sender); }
-    void onProxyUpdate() override { setText(param.get().val, juce::dontSendNotification); }
+    void updateText()
+    {
+        setText(param.get().val, juce::dontSendNotification);
+        repaint();
+    }
+    void onProxyUpdate() override { updateText(); }
+    void onRebind() override { updateText(); }
 };
 
 } // namespace widgets

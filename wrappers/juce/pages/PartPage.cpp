@@ -25,7 +25,75 @@ typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage> ContentBas
 STUB(Polymode, juce::Colours::darkgrey);
 STUB(LayerRanges, juce::Colours::darkgrey);
 STUB(VelocitySplit, juce::Colours::darkgrey);
-STUB(Controllers, juce::Colour(0xFF335533));
+
+struct Controllers : public ContentBase
+{
+    Controllers(const scxt::pages::PartPage &p)
+        : ContentBase(p, "Controllers", juce::Colour(0xFF335533))
+    {
+        activateTabs();
+        auto &pd = p.editor->currentPart;
+        for (int i = 0; i < 8; ++i)
+        {
+            names[i] = bind<widgets::SingleLineTextEditor>(pd.userparameter_name[i]);
+            bipolars[i] = bind<widgets::IntParamToggleButton>(pd.userparameter_polarity[i], "+/-");
+            sliders[i] = bind<widgets::FloatParamSlider>(widgets::FloatParamSlider::HSLIDER,
+                                                         pd.userparameter[i]);
+        }
+    }
+
+    void resized() override
+    {
+        ContentBase::resized();
+        auto b = getContentsBounds();
+        auto w2 = b.getWidth() / 2;
+        auto ih = 25;
+        auto im = 1;
+        auto ig = 5;
+        auto h = (ih + im) * 8;
+        auto r = b.withWidth(w2).withHeight(ih).translated(0, im).reduced(3, 0);
+        for (int i = 0; i < 8; ++i)
+        {
+            auto nr = r.withTrimmedRight(30);
+            auto br = r.withTrimmedLeft(r.getWidth() - 30);
+            auto sr = r.translated(0, ih + im);
+
+            names[i]->setBounds(nr.reduced(1));
+            bipolars[i]->setBounds(br.reduced(1));
+            sliders[i]->setBounds(sr.reduced(1));
+
+            r = r.translated(0, (ih + im) * 2 + ig);
+
+            if (i == 3)
+            {
+                r = b.withWidth(w2).withHeight(ih).translated(w2, im).reduced(0, 3);
+            }
+        }
+    }
+
+    int getTabCount() const override { return 2; }
+    std::string getTabLabel(int i) const override
+    {
+        if (i == 0)
+            return "1-8";
+        else
+            return "9-16";
+    }
+
+    virtual void switchToTab(int t) override
+    {
+        auto &pd = parentPage.editor->currentPart;
+        for (int i = 0; i < 8; ++i)
+        {
+            rebind(names[i], pd.userparameter_name[i + t * 8]);
+            rebind(bipolars[i], pd.userparameter_polarity[i + t * 8]);
+            rebind(sliders[i], pd.userparameter[i + t * 8]);
+        }
+    }
+    std::array<std::unique_ptr<widgets::SingleLineTextEditor>, 8> names;
+    std::array<std::unique_ptr<widgets::FloatParamSlider>, 8> sliders;
+    std::array<std::unique_ptr<widgets::IntParamToggleButton>, 8> bipolars;
+};
 
 struct Main : public ContentBase
 {
