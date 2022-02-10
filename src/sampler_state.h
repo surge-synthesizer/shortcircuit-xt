@@ -415,6 +415,7 @@ static constexpr int num_part_ncs = num_layers * num_layer_ncs;
 static constexpr int num_midi_channels = 16;
 static constexpr int num_aux_busses = 3;
 static constexpr int num_filters_per_part = 2;
+static constexpr int num_userparams = 16;
 
 static constexpr int state_string_length = 32;
 
