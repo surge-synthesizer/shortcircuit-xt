@@ -25,7 +25,7 @@ struct AboutPage : PageBase
         bool isBig{true};
     };
     std::vector<AboutInfo> info;
-    AboutPage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
+    AboutPage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p, scxt::style::Selector{"about"})
     {
         icon = juce::Drawable::createFromImageData(SCXTUIAssets::SCicon_svg,
                                                    SCXTUIAssets::SCicon_svgSize);

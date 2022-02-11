@@ -9,14 +9,21 @@
 #include "SCXTLookAndFeel.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <vector>
+#include "style/StyleSheet.h"
 
 namespace scxt
 {
 namespace pages
 {
-struct PageBase : public juce::Component, public scxt::data::UIStateProxy::Invalidatable
+struct PageBase : public juce::Component,
+                  public scxt::data::UIStateProxy::Invalidatable,
+                  public scxt::style::DOMParticipant
 {
-    PageBase(SCXTEditor *ed, const SCXTEditor::Pages &p) : editor(ed), page(p) {}
+    PageBase(SCXTEditor *ed, const SCXTEditor::Pages &p, const scxt::style::Selector &s)
+        : editor(ed), page(p), scxt::style::DOMParticipant(s)
+    {
+        setupJuceAccessibility();
+    }
     virtual ~PageBase() = default;
 
     void paint(juce::Graphics &g) override

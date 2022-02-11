@@ -13,6 +13,7 @@
 #include <sstream>
 #include "wrapper_msg_to_string.h"
 #include "widgets/OutlinedTextButton.h"
+#include "style/StyleSheet.h"
 
 namespace scxt
 {
@@ -47,7 +48,10 @@ template <typename T> struct ParamRefMixin
     virtual void onRebind() {}
 };
 
-struct FloatParamSlider : public juce::Component, ParamRefMixin<float>
+struct FloatParamSlider : public juce::Component,
+                          ParamRefMixin<float>,
+                          style::DOMParticipant,
+                          data::UIStateProxy::Invalidatable
 {
     enum Style
     {
@@ -56,8 +60,9 @@ struct FloatParamSlider : public juce::Component, ParamRefMixin<float>
     } style{HSLIDER};
 
     FloatParamSlider(const Style &s, data::ParameterProxy<float> &p, data::ActionSender *snd)
-        : juce::Component(), style(s), ParamRefMixin<float>(p, snd)
+        : juce::Component(), style(s), ParamRefMixin<float>(p, snd), DOMParticipant("float_slider")
     {
+        setIsDOMContainer(false);
     }
 
     std::string fallbackLabel;
@@ -70,10 +75,12 @@ struct FloatParamSlider : public juce::Component, ParamRefMixin<float>
     void mouseUp(const juce::MouseEvent &e) override;
 
     void onRebind() override { repaint(); }
+    void onProxyUpdate() override { repaint(); }
 };
 
 struct IntParamMultiSwitch : public juce::Component,
                              ParamRefMixin<int>,
+                             style::DOMParticipant,
                              data::UIStateProxy::Invalidatable
 {
     enum Orientation
@@ -85,10 +92,12 @@ struct IntParamMultiSwitch : public juce::Component,
     int maxValue{0};
     std::vector<std::string> labels;
     IntParamMultiSwitch(const Orientation &o, data::ParameterProxy<int> &p, data::ActionSender *snd)
-        : juce::Component(), orientation(o), ParamRefMixin<int>(p, snd)
+        : juce::Component(), orientation(o), ParamRefMixin<int>(p, snd),
+          DOMParticipant("multiswitch")
     {
         setEnabled(!param.get().disabled);
         setLabelsFromParam();
+        setIsDOMContainer(false);
     }
 
     void setLabels(const std::vector<std::string> &l)
@@ -162,9 +171,11 @@ struct IntParamMultiSwitch : public juce::Component,
     std::vector<juce::Rectangle<int>> hitRects;
 };
 
-template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMixin<T>
+template <typename T>
+struct TParamSpinBox : public juce::Component, ParamRefMixin<T>, style::DOMParticipant
 {
-    TParamSpinBox(data::ParameterProxy<T> &p, data::ActionSender *snd) : ParamRefMixin<T>(p, snd)
+    TParamSpinBox(data::ParameterProxy<T> &p, const style::Selector &sel, data::ActionSender *snd)
+        : ParamRefMixin<T>(p, snd), DOMParticipant(sel)
     {
         textEd = std::make_unique<juce::TextEditor>();
         textEd->setFont(SCXTLookAndFeel::getMonoFontAt(9));
@@ -178,6 +189,7 @@ template <typename T> struct TParamSpinBox : public juce::Component, ParamRefMix
             repaint();
         };
         addChildComponent(*textEd);
+        setIsDOMContainer(false);
     }
 
     std::unique_ptr<juce::TextEditor> textEd;
@@ -286,7 +298,7 @@ template <> inline float TParamSpinBox<float>::valueJoggedBy(int dir)
 struct IntParamSpinBox : public TParamSpinBox<int>
 {
     IntParamSpinBox(data::ParameterProxy<int> &p, data::ActionSender *snd)
-        : TParamSpinBox<int>(p, snd)
+        : TParamSpinBox<int>(p, style::Selector("int_spinbox"), snd)
     {
     }
 };
@@ -294,23 +306,25 @@ struct IntParamSpinBox : public TParamSpinBox<int>
 struct FloatParamSpinBox : public TParamSpinBox<float>
 {
     FloatParamSpinBox(data::ParameterProxy<float> &p, data::ActionSender *snd)
-        : TParamSpinBox<float>(p, snd)
+        : TParamSpinBox<float>(p, style::Selector("float_spinbox"), snd)
     {
     }
 };
 
 struct IntParamComboBox : public ComboBox,
                           ParamRefMixin<int>,
-                          scxt::data::UIStateProxy::Invalidatable
+                          scxt::data::UIStateProxy::Invalidatable,
+                          style::DOMParticipant
 {
     const data::NameList &labels;
     IntParamComboBox(data::ParameterProxy<int> &p, const data::NameList &labelRef,
                      data::ActionSender *snd)
-        : ParamRefMixin<int>(p, snd), labels(labelRef)
+        : ParamRefMixin<int>(p, snd), labels(labelRef), DOMParticipant("combobox")
     {
         updateFromLabels();
         setEnabled(!param.get().disabled);
         onChange = [this]() { sendChange(); };
+        setIsDOMContainer(false);
     }
     ~IntParamComboBox() = default;
 
@@ -365,6 +379,7 @@ struct IntParamToggleButton : public OutlinedTextButton,
             if (ts != pv)
                 sendChange();
         };
+        resetSelector("int_toggle");
     }
 
     void onProxyUpdate() override { updateState(); }
@@ -385,15 +400,17 @@ struct IntParamToggleButton : public OutlinedTextButton,
 
 struct SingleLineTextEditor : public juce::TextEditor,
                               ParamRefMixin<std::string>,
-                              scxt::data::UIStateProxy::Invalidatable
+                              scxt::data::UIStateProxy::Invalidatable,
+                              style::DOMParticipant
 {
     SingleLineTextEditor(data::ParameterProxy<std::string> &p, data::ActionSender *snd)
-        : juce::TextEditor(p.val), ParamRefMixin<std::string>(p, snd)
+        : juce::TextEditor(p.val), ParamRefMixin<std::string>(p, snd), DOMParticipant("textfield")
     {
         setText(p.val, juce::dontSendNotification);
         setFont(SCXTLookAndFeel::getMonoFontAt(10));
         setColour(juce::TextEditor::textColourId, juce::Colours::white);
         onReturnKey = [this]() { sendUpdate(); };
+        setIsDOMContainer(false);
     }
 
     void sendUpdate() { param.get().sendValue(getText().toStdString(), sender); }

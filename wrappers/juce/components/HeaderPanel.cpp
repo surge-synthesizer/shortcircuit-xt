@@ -12,7 +12,7 @@ namespace scxt
 {
 namespace components
 {
-HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed)
+HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed), DOMParticipant("header")
 {
     for (int i = 0; i < n_sampler_parts; ++i)
     {

@@ -7,6 +7,7 @@
 
 #include "SCXTEditor.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include "style/StyleSheet.h"
 
 namespace scxt
 {
@@ -18,7 +19,9 @@ struct OutlinedTextButton;
 } // namespace widgets
 namespace components
 {
-struct HeaderPanel : public juce::Component, public scxt::data::UIStateProxy::Invalidatable
+struct HeaderPanel : public juce::Component,
+                     public scxt::data::UIStateProxy::Invalidatable,
+                     style::DOMParticipant
 {
     HeaderPanel(SCXTEditor *ed);
     ~HeaderPanel();

@@ -31,7 +31,7 @@ typedef scxt::pages::contents::PageContentBase<scxt::pages::ZonePage> ContentBas
 struct NamesAndRanges : public ContentBase
 {
     NamesAndRanges(const scxt::pages::ZonePage &p)
-        : ContentBase(p, "Names & Ranges", juce::Colour(0xFF555555))
+        : ContentBase(p, "names_ranges", "Names & Ranges", juce::Colour(0xFF555555))
     {
         for (const auto &[i, l] :
              sst::cpputils::enumerate(std::array{"xf", "low", "root", "hi", "xf"}))
@@ -145,8 +145,9 @@ struct NamesAndRanges : public ContentBase
 struct Envelope : public ContentBase
 {
     const int whichEnv{-1};
-    Envelope(const scxt::pages::ZonePage &p, const std::string &label, int we)
-        : ContentBase(p, label, juce::Colour(0xFF447744)), whichEnv(we)
+    Envelope(const scxt::pages::ZonePage &p, const scxt::style::Selector &sel,
+             const std::string &label, int we)
+        : ContentBase(p, sel, label, juce::Colour(0xFF447744)), whichEnv(we)
     {
         auto &env = parentPage.editor->currentZone.env[we];
         shapes[0] = bindFloatSpinBox(env.s0);
@@ -191,7 +192,7 @@ struct Envelope : public ContentBase
 struct Routing : public ContentBase
 {
     Routing(const scxt::pages::ZonePage &p)
-        : ContentBase(p, "Modulation Routing", juce::Colour(0xFF555555))
+        : ContentBase(p, "modulation_routing", "Modulation Routing", juce::Colour(0xFF555555))
     {
         auto &mm = p.editor->currentZone.mm;
         for (int i = 0; i < 6; ++i)
@@ -256,7 +257,7 @@ struct Routing : public ContentBase
 
 struct Filters : public ContentBase
 {
-    Filters(const ZonePage &p) : ContentBase(p, "Filters", juce::Colour(0xFF444477))
+    Filters(const ZonePage &p) : ContentBase(p, "filters", "Filters", juce::Colour(0xFF444477))
     {
         for (int i = 0; i < 2; ++i)
         {
@@ -306,7 +307,7 @@ struct Filters : public ContentBase
 
 struct Outputs : public ContentBase
 {
-    Outputs(const ZonePage &p) : ContentBase(p, "Outputs", juce::Colour(0xFF444477))
+    Outputs(const ZonePage &p) : ContentBase(p, "outputs", "Outputs", juce::Colour(0xFF444477))
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -353,7 +354,7 @@ struct Outputs : public ContentBase
 
 struct Pitch : ContentBase
 {
-    Pitch(const ZonePage &p) : ContentBase(p, "Pitch & etc", juce::Colour(0xFF555555))
+    Pitch(const ZonePage &p) : ContentBase(p, "pitch", "Pitch & etc", juce::Colour(0xFF555555))
     {
         for (const auto &[i, l] :
              sst::cpputils::enumerate(std::array{"PB Range", "Coarse", "mute group"}))
@@ -407,16 +408,20 @@ struct Pitch : ContentBase
 
 struct Sample : ContentBase
 {
-    Sample(const ZonePage &p) : ContentBase(p, "Sample", juce::Colour(0xFF444477)) {}
+    Sample(const ZonePage &p) : ContentBase(p, "sample", "Sample", juce::Colour(0xFF444477)) {}
 };
 
 struct LFO : ContentBase
 {
-    struct LFOStepsComponent : public juce::Component
+    struct LFOStepsComponent : public juce::Component, style::DOMParticipant
     {
         LFO &content;
         std::reference_wrapper<data::LFOData> lf;
-        LFOStepsComponent(LFO &c, data::LFOData &lf) : content(c), lf(lf) {}
+        LFOStepsComponent(LFO &c, data::LFOData &lf)
+            : content(c), lf(lf), style::DOMParticipant("lfo_display")
+        {
+            setIsDOMContainer(false);
+        }
 
         void paint(juce::Graphics &g) override
         {
@@ -507,10 +512,7 @@ struct LFO : ContentBase
             if (getLocalBounds().contains(e.position.toInt()))
                 setLFOFromMouseEvent(e);
         }
-        void mouseDrag(const juce::MouseEvent &e) override
-        {
-            setLFOFromMouseEvent(e);
-        }
+        void mouseDrag(const juce::MouseEvent &e) override { setLFOFromMouseEvent(e); }
     };
 
     struct ForceRepaint : data::ParameterProxy<int>::Listener
@@ -521,7 +523,7 @@ struct LFO : ContentBase
     };
     std::unique_ptr<ForceRepaint> repaintL;
 
-    LFO(const ZonePage &p) : ContentBase(p, "LFO", juce::Colour(0xFF447744))
+    LFO(const ZonePage &p) : ContentBase(p, "lfo", "LFO", juce::Colour(0xFF447744))
     {
         repaintL = std::make_unique<ForceRepaint>(*this);
         activateTabs();
@@ -617,7 +619,7 @@ struct LFO : ContentBase
 
 } // namespace zone_contents
 
-ZonePage::ZonePage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
+ZonePage::ZonePage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p, "zone")
 {
     zoneKeyboardDisplay = std::make_unique<components::ZoneKeyboardDisplay>(editor, editor);
     addAndMakeVisible(*zoneKeyboardDisplay);
@@ -644,8 +646,10 @@ ZonePage::ZonePage(SCXTEditor *ed, SCXTEditor::Pages p) : PageBase(ed, p)
     sample = makeContent<zc::Sample>(*this);
     namesAndRanges = makeContent<zc::NamesAndRanges>(*this);
     pitch = makeContent<zone_contents::Pitch>(*this);
-    envelopes[0] = makeContent<zone_contents::Envelope>(*this, "AEG", 0);
-    envelopes[1] = makeContent<zone_contents::Envelope>(*this, "EG2", 1);
+    envelopes[0] =
+        makeContent<zone_contents::Envelope>(*this, scxt::style::Selector{"aeg"}, "AEG", 0);
+    envelopes[1] =
+        makeContent<zone_contents::Envelope>(*this, scxt::style::Selector{"eg2"}, "EG2", 1);
     filters = makeContent<zone_contents::Filters>(*this);
     routing = makeContent<zone_contents::Routing>(*this);
     lfo = makeContent<zone_contents::LFO>(*this);
