@@ -19,6 +19,7 @@
 #include "components/DebugPanel.h"
 #include "data/SCXTData.h"
 #include "SCXTLookAndFeel.h"
+#include "style/StyleSheet.h"
 
 /*
  * This is basically a lock free thread safe FIFO queue of Ts with size qSize
@@ -154,6 +155,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     float scale = 1.0;
     void setScale(float sc);
     float optimalScaleForDisplay();
+    void dumpStyles();
 
   private:
     void sendActionInternal(const actiondata &ad);
@@ -171,7 +173,10 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     std::unique_ptr<SC3IdleTimer> idleTimer;
     std::unique_ptr<SCXTTopLevel> topLevel;
 
+
   public:
+    std::unique_ptr<scxt::style::Sheet> sheet;
+
     std::set<scxt::data::UIStateProxy *> uiStateProxies;
     std::unique_ptr<scxt::proxies::SelectionStateProxy> selectionStateProxy;
     std::unique_ptr<scxt::proxies::VUMeterPolyphonyProxy> vuMeterProxy;

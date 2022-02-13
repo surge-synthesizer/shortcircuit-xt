@@ -18,7 +18,8 @@ namespace fx_contents
 struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
 {
     SingleFX(FXPage &p, int id)
-        : idx(id), contents::PageContentBase<FXPage>(p, "Effect " + std::to_string(id + 1),
+        : idx(id), contents::PageContentBase<FXPage>(p, "effect_" + std::to_string(id + 1),
+                                                     "Effect " + std::to_string(id + 1),
                                                      juce::Colour(0xFF447744))
     {
         auto &mult = parentPage.editor->multi;
@@ -58,7 +59,7 @@ struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
     std::unique_ptr<widgets::IntParamComboBox> outputTarget;
 };
 } // namespace fx_contents
-FXPage::FXPage(SCXTEditor *e, SCXTEditor::Pages p) : PageBase(e, p)
+FXPage::FXPage(SCXTEditor *e, SCXTEditor::Pages p) : PageBase(e, p, scxt::style::Selector{"fx"})
 {
     for (auto i = 0; i < num_fxunits; ++i)
     {

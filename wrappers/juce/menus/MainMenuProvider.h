@@ -19,6 +19,7 @@ struct MainMenuProvider
         res.addSeparator();
         res.addSubMenu("Zoom", createZoomMenu(ed));
         res.addSeparator();
+        res.addItem("Dump Styles", [ed]() { ed->dumpStyles(); });
         res.addItem("About", [ed]() { ed->showPage(SCXTEditor::Pages::ABOUT); });
         return res;
     }

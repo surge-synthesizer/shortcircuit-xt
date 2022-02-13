@@ -19,7 +19,7 @@ typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage> ContentBas
 #define STUB(x, c)                                                                                 \
     struct x : public ContentBase                                                                  \
     {                                                                                              \
-        x(const scxt::pages::PartPage &p) : ContentBase(p, #x, c) {}                               \
+        x(const scxt::pages::PartPage &p) : ContentBase(p, scxt::style::Selector{#x}, #x, c) {}    \
     };
 
 STUB(Polymode, juce::Colours::darkgrey);
@@ -29,7 +29,7 @@ STUB(VelocitySplit, juce::Colours::darkgrey);
 struct Controllers : public ContentBase
 {
     Controllers(const scxt::pages::PartPage &p)
-        : ContentBase(p, "Controllers", juce::Colour(0xFF335533))
+        : ContentBase(p, "controllers", "Controllers", juce::Colour(0xFF335533))
     {
         activateTabs();
         auto &pd = p.editor->currentPart;
@@ -97,7 +97,7 @@ struct Controllers : public ContentBase
 
 struct Main : public ContentBase
 {
-    Main(const scxt::pages::PartPage &p) : ContentBase(p, "Main", juce::Colours::darkgrey)
+    Main(const scxt::pages::PartPage &p) : ContentBase(p, "main", "Main", juce::Colours::darkgrey)
     {
         savePart = std::make_unique<widgets::OutlinedTextButton>("save part");
         savePart->onClick = [this]() { this->savePM(false); };
@@ -150,7 +150,7 @@ struct Main : public ContentBase
 struct ModulationRouting : public ContentBase
 {
     ModulationRouting(const scxt::pages::PartPage &p)
-        : ContentBase(p, "Modulation Routing", juce::Colours::darkgrey)
+        : ContentBase(p, "modulation_routing", "Modulation Routing", juce::Colours::darkgrey)
     {
         auto &mm = p.editor->currentPart.mm;
         for (int i = 0; i < 6; ++i)
@@ -192,7 +192,8 @@ struct ModulationRouting : public ContentBase
 
 struct Effects : public ContentBase
 {
-    Effects(const scxt::pages::PartPage &p) : ContentBase(p, "Effects", juce::Colour(0xFF555577))
+    Effects(const scxt::pages::PartPage &p)
+        : ContentBase(p, "effects", "Effects", juce::Colour(0xFF555577))
     {
         for (int i = 0; i < 2; ++i)
         {
@@ -238,7 +239,8 @@ struct Effects : public ContentBase
 
 struct Output : public ContentBase
 {
-    Output(const scxt::pages::PartPage &p) : ContentBase(p, "Output", juce::Colour(0xFF555577))
+    Output(const scxt::pages::PartPage &p)
+        : ContentBase(p, "output", "Output", juce::Colour(0xFF555577))
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -283,7 +285,7 @@ struct Output : public ContentBase
 };
 
 } // namespace part_contents
-PartPage::PartPage(SCXTEditor *e, SCXTEditor::Pages p) : PageBase(e, p)
+PartPage::PartPage(SCXTEditor *e, SCXTEditor::Pages p) : PageBase(e, p, "part")
 {
     main = makeContent<part_contents::Main>(*this);
     polyMode = makeContent<part_contents::Polymode>(*this);

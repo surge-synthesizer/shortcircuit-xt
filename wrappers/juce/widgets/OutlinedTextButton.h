@@ -7,12 +7,15 @@
 
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "SCXTLookAndFeel.h"
+#include "style/StyleSheet.h"
 
 namespace scxt
 {
 namespace widgets
 {
-struct OutlinedTextButton : public juce::TextButton, ColorRemapper<OutlinedTextButton>
+struct OutlinedTextButton : public juce::TextButton,
+                            style::DOMParticipant,
+                            ColorRemapper<OutlinedTextButton>
 {
     enum ColourIds
     {
@@ -20,7 +23,10 @@ struct OutlinedTextButton : public juce::TextButton, ColorRemapper<OutlinedTextB
         downColour,
         textColour
     };
-    OutlinedTextButton(const std::string &t) : juce::TextButton(t) {}
+    OutlinedTextButton(const std::string &t) : juce::TextButton(t), DOMParticipant("outlined_text")
+    {
+        setIsDOMContainer(false);
+    }
 
     void paintButton(juce::Graphics &g, bool highlighted, bool down) override
     {

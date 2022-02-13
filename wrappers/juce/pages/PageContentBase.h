@@ -10,6 +10,7 @@
 #include "data/SCXTData.h"
 #include "SCXTLookAndFeel.h"
 #include "widgets/OutlinedTextButton.h"
+#include "style/StyleSheet.h"
 
 namespace scxt
 {
@@ -84,11 +85,15 @@ struct SectionDivider
 };
 
 template <typename T>
-struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Invalidatable
+struct PageContentBase : public juce::Component,
+                         scxt::data::UIStateProxy::Invalidatable,
+                         scxt::style::DOMParticipant
 {
-    PageContentBase(const T &p, const std::string &header, const juce::Colour &col)
-        : parentPage(p), header(header), col(col)
+    PageContentBase(const T &p, const scxt::style::Selector &sel, const std::string &header,
+                    const juce::Colour &col)
+        : parentPage(p), scxt::style::DOMParticipant(sel), header(header), col(col)
     {
+        setupJuceAccessibility();
     }
     static constexpr int headerSize = 16;
     void paint(juce::Graphics &g) override
@@ -96,7 +101,7 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
         g.fillAll(col);
         auto h = getLocalBounds().withHeight(headerSize);
         SCXTLookAndFeel::fillWithGradientHeaderBand(g, h, col);
-        g.setColour(juce::Colours::white);
+        g.setColour(parentPage.editor->sheet->resolveColour(*this, style::headerTextColor));
         g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
         g.drawText(header, h, juce::Justification::centred);
 
@@ -194,9 +199,16 @@ struct PageContentBase : public juce::Component, scxt::data::UIStateProxy::Inval
         wid->repaint();
     }
 
+    struct DOMLabel : public juce::Label, style::DOMParticipant
+    {
+        DOMLabel(const juce::String &s) : juce::Label(s), style::DOMParticipant("label")
+        {
+            setIsDOMContainer(false);
+        }
+    };
     auto whiteLabel(const std::string &txt, juce::Justification j = juce::Justification::left)
     {
-        auto q = std::make_unique<juce::Label>(txt);
+        auto q = std::make_unique<DOMLabel>(txt);
         q->setText(txt, juce::dontSendNotification);
         q->setColour(juce::Label::textColourId, juce::Colours::white);
         q->setJustificationType(juce::Justification::centred);

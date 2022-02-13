@@ -51,15 +51,19 @@ struct SC3IdleTimer : juce::Timer
     SCXTEditor *ed;
 };
 
-struct SCXTTopLevel : public juce::Component
+struct SCXTTopLevel : public juce::Component, scxt::style::DOMParticipant
 {
     SCXTEditor *editor{nullptr};
-    SCXTTopLevel(SCXTEditor *e) : editor(e) {}
+    SCXTTopLevel(SCXTEditor *e) : juce::Component(), editor(e), DOMParticipant("scxt")
+    {
+        setupJuceAccessibility();
+    }
     void resized() override;
 };
 
 //==============================================================================
-SCXTEditor::SCXTEditor(SCXTProcessor &p) : AudioProcessorEditor(&p), audioProcessor(p)
+SCXTEditor::SCXTEditor(SCXTProcessor &p)
+    : AudioProcessorEditor(&p), audioProcessor(p), sheet(scxt::style::createDefaultSheet())
 {
     topLevel = std::make_unique<SCXTTopLevel>(this);
     addAndMakeVisible(*topLevel);
@@ -249,6 +253,36 @@ void SCXTEditor::refreshSamplerTextViewInThreadUnsafeWay()
 {
     // Really this isn't thread safe and we should fix it
     debugWindow->setSamplerText(audioProcessor.sc3->generateInternalStateView());
+}
+
+void SCXTEditor::dumpStyles()
+{
+    std::function<void(juce::Component *, const std::string &)> rdump;
+
+    rdump = [&rdump](juce::Component *c, const std::string &pfx) {
+        std::cout << pfx << " " << c << " ";
+        auto dp = dynamic_cast<scxt::style::DOMParticipant *>(c);
+        auto recurse = true;
+        if (dp)
+        {
+            std::cout << dp->getSelector().id;
+            recurse = dp->getIsDOMContainer();
+        }
+        else
+        {
+            std::cout << "[non-dom] " << typeid(*c).name();
+        }
+        std::cout << "\n";
+        if (recurse)
+        {
+            for (auto q : c->getChildren())
+            {
+                rdump(q, pfx + "|--");
+            }
+        }
+    };
+    std::cout << "STYLE STRUCTURE DUMP" << std::endl;
+    rdump(topLevel.get(), "");
 }
 
 void SCXTEditor::idle()
