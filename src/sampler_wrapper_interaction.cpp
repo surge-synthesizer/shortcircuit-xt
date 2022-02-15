@@ -1061,7 +1061,7 @@ void sampler::post_zonedata()
     for (int i = 0; i < n_lfopresets; i++)
     {
         ad.data.i[0] = i;
-        strncpy_0term((char *)&ad.data.str[4], lfopreset_abberations[i], actiondata_maxstring - 4);
+        strncpy_0term((char *)&ad.data.str[4], lfopreset_abbreviations[i], actiondata_maxstring - 4);
         postEventsToWrapper(ad);
     }
     ad.actiontype = vga_intval;
@@ -1377,10 +1377,10 @@ void sampler::post_multi_filterdata(int i, bool send_data)
     ad.subid = -1; // send to all
     ad.data.i[0] = out_fx1 + i;
     if (valid_filtertype(ft))
-        sprintf((char *)&ad.data.str[4], "%s - %s", output_abberations[out_fx1 + i],
+        sprintf((char *)&ad.data.str[4], "%s - %s", output_abbreviations[out_fx1 + i],
                 filter_descname[ft]);
     else
-        sprintf((char *)&ad.data.str[4], "%s", output_abberations[out_fx1 + i]);
+        sprintf((char *)&ad.data.str[4], "%s", output_abbreviations[out_fx1 + i]);
     ad.id = ip_zone_aux_output;
     postEventsToWrapper(ad);
     ad.id = ip_part_aux_output;
@@ -1469,7 +1469,7 @@ void sampler::post_initdata_mm(int zone)
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mmc_num_types; i++)
         {
-            strncpy_0term(ad.data.str, mmc_abberations[i], actiondata_maxstring);
+            strncpy_0term(ad.data.str, mmc_abbreviations[i], actiondata_maxstring);
             postEventsToWrapper(ad);
         }
     }
@@ -1519,7 +1519,7 @@ void sampler::post_initdata_mm_part()
         ad.actiontype = vga_entry_add_ival_from_self;
         for (int i = 0; i < mmc_num_types; i++)
         {
-            strncpy_0term(ad.data.str, mmc_abberations[i], actiondata_maxstring);
+            strncpy_0term(ad.data.str, mmc_abbreviations[i], actiondata_maxstring);
             postEventsToWrapper(ad);
         }
 
@@ -1584,7 +1584,7 @@ void sampler::post_initdata()
     for (int i = out_part; i < n_output_types; i++)
     {
         ad.data.i[0] = i;
-        sprintf((char *)&ad.data.str[4], "%s", output_abberations[i]);
+        sprintf((char *)&ad.data.str[4], "%s", output_abbreviations[i]);
         if (is_output_visible(i, mNumOutputs))
             postEventsToWrapper(ad);
     }
@@ -1599,7 +1599,7 @@ void sampler::post_initdata()
     for (int i = out_output1; i < n_output_types; i++)
     {
         ad.data.i[0] = i;
-        sprintf((char *)&ad.data.str[4], "%s", output_abberations[i]);
+        sprintf((char *)&ad.data.str[4], "%s", output_abbreviations[i]);
         if (is_output_visible(i, mNumOutputs))
             postEventsToWrapper(ad);
     }
@@ -1614,7 +1614,7 @@ void sampler::post_initdata()
     for (int i = out_output1; i < out_fx1; i++)
     {
         ad.data.i[0] = i;
-        sprintf((char *)&ad.data.str[4], "%s", output_abberations[i]);
+        sprintf((char *)&ad.data.str[4], "%s", output_abbreviations[i]);
         if (is_output_visible(i, mNumOutputs))
             postEventsToWrapper(ad);
     }

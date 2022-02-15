@@ -53,13 +53,13 @@ inline bool pm_has_loop(int m)
 }
 
 inline bool pm_has_slices(int m) { return (m == pm_forward_hitpoints); }
-const char playmode_abberations[n_playmodes][16] = {
+const char playmode_abbreviations[n_playmodes][16] = {
     "fwd",        "fwd_loop",   /*"fwd_loop_cf",*/ "fwd_loop_ur", "fwd_loop_bi", "fwd_shot",
     "fwd_sliced", "fwd_release" /*,"rev","rev_shot" */};
 const char playmode_names[n_playmodes][32] = {
-    "Standard",           "Loop", /*"Forward Loop-Crossfade",*/ "Loop-Until-Release",
-    "Loop Bidirectional", "Shot", "Slice Keymapped",
-    "On Release" /*,"Reverse","Reverse Shot"*/};
+    "Standard",           "Loop",    /*"Forward Loop-Crossfade",*/ "Loop Until Release",
+    "Loop Bidirectional", "Oneshot", "Slice Keymapped",
+    "On Release" /*,"Reverse","Reverse Oneshot"*/};
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -90,9 +90,9 @@ inline bool is_output_visible(int id, int n_outputs)
     return (id == out_part) || (id >= out_fx1) || ((id - out_output1) < n_outputs);
 }
 
-const char output_abberations[n_output_types][16] = {
-    "Part bus", "Out1", "Out2", "Out3", "Out4", "Out5", "Out6", "Out7", "Out8",
-    "FX1",      "FX2",  "FX3",  "FX4",  "FX5",  "FX6",  "FX7",  "FX8",
+const char output_abbreviations[n_output_types][16] = {
+    "Part Bus", "Out 1", "Out 2", "Out 3", "Out 4", "Out 5", "Out 6", "Out 7", "Out 8",
+    "FX 1",     "FX 2",  "FX 3",  "FX 4",  "FX 5",  "FX 6",  "FX 7",  "FX 8",
 };
 
 //-------------------------------------------------------------------------------------------------------
@@ -114,9 +114,9 @@ enum lfopresets
     n_lfopresets,
 };
 
-const char lfopreset_abberations[n_lfopresets][16] = {
-    "Load",      "Clear", "Sine",     "Triangle", "Square",        "Ramp up",
-    "Ramp down", "Noise", "Noise m3", "Noise m5", "Tremolo <tri>", "Tremolo (sin)"};
+const char lfopreset_abbreviations[n_lfopresets][16] = {
+    "Load",      "Clear", "Sine",     "Triangle", "Square",        "Ramp Up",
+    "Ramp Down", "Noise", "Noise m3", "Noise m5", "Tremolo (Tri)", "Tremolo (Sin)"};
 
 struct steplfostruct
 {
@@ -211,11 +211,11 @@ enum filtertypes
 
 inline bool valid_filtertype(int i) { return (i > 0) && (i < ft_num_types); }
 
-const char filter_abberations_beta1[14][6] = {"NONE",  "LP2A", "HP2A", "BP2A", "PKA",
-                                              "BP2AD", "PKAD", "BF",   "OD",   "SINS",
-                                              "OCT",   "OSC1", "OSC2", "OSC3"};
+const char filter_abbreviations_beta1[14][6] = {"NONE",  "LP2A", "HP2A", "BP2A", "PKA",
+                                                "BP2AD", "PKAD", "BF",   "OD",   "SINS",
+                                                "OCT",   "OSC1", "OSC2", "OSC3"};
 
-const char filter_abberations[ft_num_types][16] = {
+const char filter_abbreviations[ft_num_types][16] = {
     "NONE",
     //	"LP2A",
     "DELAY", "REVERB", "CHORUS", "PHASER", "ROTARY", "FAUXSTEREO", "FSFLANGE", "FSDELAY", "SBQ",
@@ -333,25 +333,25 @@ enum mm_curves
     mmc_num_types,
 };
 
-const char mmc_abberations[mmc_num_types][8] = {
-    "}x",
+const char mmc_abbreviations[mmc_num_types][8] = {
+    "x",
     "1-x",
-    "x�",
-    "x�",
-    "��", // custom chars in font for sqrt(x)
-    "��", // custom chars in font for cubert(x)
+    "x^2",
+    "x^3",
+    "sqrt", // custom chars in font for sqrt(x)
+    "cbrt", // custom chars in font for cubert(x)
     //"exp",
     "abs",
-    "+��",
-    "��+",
+    "to bi",
+    "to uni",
     "tri",
-    "tr�",
+    "tri bi",
     "pos",
     "neg",
     ">0",
     "<0",
-    ">�",
-    "<�",
+    ">1/2",
+    "<1/2",
     "pol",
     //	"init",		never changes after attack
     "Q1",

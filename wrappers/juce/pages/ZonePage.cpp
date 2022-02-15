@@ -351,9 +351,9 @@ struct Outputs : public ContentBase
 
         auto mutePFG = rg.next().reduced(2, 2);
 
-        auto mbox = mutePFG.withHeight(20).translated(0,20);
+        auto mbox = mutePFG.withHeight(20).translated(0, 20);
         pfg->setBounds(mbox.reduced(1));
-        mbox = mbox.translated(0,20);
+        mbox = mbox.translated(0, 20);
         mute->setBounds(mbox.reduced(1));
     }
 
@@ -370,10 +370,10 @@ struct Pitch : ContentBase
     Pitch(const ZonePage &p) : ContentBase(p, "pitch", "Pitch & etc", juce::Colour(0xFF555555))
     {
         for (const auto &[i, l] :
-             sst::cpputils::enumerate(std::array{"PB Range", "Coarse", "mute group"}))
+             sst::cpputils::enumerate(std::array{"PB Range", "Coarse", "Mute Group"}))
             leftLabel[i] = whiteLabel(l, juce::Justification::right);
         for (const auto &[i, l] :
-             sst::cpputils::enumerate(std::array{"keytrack", "fine", "vel sense"}))
+             sst::cpputils::enumerate(std::array{"Keytrack", "Fine", "Vel Sense"}))
             rightLabel[i] = whiteLabel(l);
         auto &cz = parentPage.editor->currentZone;
 
@@ -387,7 +387,7 @@ struct Pitch : ContentBase
         ignorePM = bind<widgets::IntParamToggleButton>(cz.ignore_part_polymode, "ignore playmode");
         lags[0] = bindFloatSpinBox(cz.lag_generator[0]);
         lags[1] = bindFloatSpinBox(cz.lag_generator[1]);
-        lagLabel = whiteLabel("lag gen 1/2");
+        lagLabel = whiteLabel("Lag Gen 1/2");
     }
 
     void resized() override

@@ -1122,7 +1122,7 @@ static const interactiondata ip_data[] = {
         3,
         (int)sizeof(aux_buss),
         "main/AUX mode",
-        ip_range_and_units::fromLabel("main;AUX off;pre;post", 4),
+        ip_range_and_units::fromLabel("main;off;pre;post", 4),
     },
     {
         ip_part_name,
@@ -1318,7 +1318,7 @@ static const interactiondata ip_data[] = {
         (int)offsetof(sample_part, aux[0].outmode),
         3,
         (int)sizeof(aux_buss),
-        "part off;pre;post",
+        "off;pre;post",
     },
     {
         ip_part_vs_layers,

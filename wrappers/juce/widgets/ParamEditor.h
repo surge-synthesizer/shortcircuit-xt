@@ -325,6 +325,7 @@ struct IntParamComboBox : public ComboBox,
         setEnabled(!param.get().disabled);
         onChange = [this]() { sendChange(); };
         setIsDOMContainer(false);
+        setScrollWheelEnabled(true);
     }
     ~IntParamComboBox() = default;
 

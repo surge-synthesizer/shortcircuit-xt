@@ -42,42 +42,42 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
     this->control = control;
     this->automation = automation;
 
-    add_source(RMS_None, "none", 0);
+    add_source(RMS_None, "none", 0, "None");
     // voice sources
     if (zone) // only available for the zone
     {
-        add_source(RMS_Keytrack, "keytrack", voice ? &voice->keytrack : 0);
-        add_source(RMS_Velocity, "velocity", voice ? &voice->fvelocity : 0);
+        add_source(RMS_Keytrack, "keytrack", voice ? &voice->keytrack : 0, "Keytrack");
+        add_source(RMS_Velocity, "velocity", voice ? &voice->fvelocity : 0, "Velocity");
         add_source(RMS_Modulator1, "AEG", voice ? &voice->AEG.output : 0);
         ss_id[ss_EG2] = (int)src.size();
         add_source(RMS_Modulator2, "EG2", voice ? &voice->EG2.output : 0);
         ss_id[ss_LFO1] = (int)src.size();
-        add_source(RMS_Modulator3, "stepLFO1", voice ? &voice->stepLFO[0].output : 0);
+        add_source(RMS_Modulator3, "stepLFO1", voice ? &voice->stepLFO[0].output : 0, "Step LFO 1");
         ss_id[ss_LFO2] = (int)src.size();
-        add_source(RMS_Modulator4, "stepLFO2", voice ? &voice->stepLFO[1].output : 0);
+        add_source(RMS_Modulator4, "stepLFO2", voice ? &voice->stepLFO[1].output : 0, "Step LFO 2");
         ss_id[ss_LFO3] = (int)src.size();
-        add_source(RMS_Modulator5, "stepLFO3", voice ? &voice->stepLFO[2].output : 0);
+        add_source(RMS_Modulator5, "stepLFO3", voice ? &voice->stepLFO[2].output : 0, "Step LFO 3");
         add_source(RMS_SliceEnv, "slice_env", voice ? &voice->slice_env : 0, "Slice Envelope");
-        add_source(RMS_Random, "random+", voice ? &voice->random : 0);
-        add_source(RMS_RandomBP, "random +/-", voice ? &voice->randombp : 0);
-        add_source(RMS_Gate, "gate", voice ? &voice->fgate : 0);
+        add_source(RMS_Random, "random+", voice ? &voice->random : 0, "Random Uni");
+        add_source(RMS_RandomBP, "random +/-", voice ? &voice->randombp : 0, "Random Bi");
+        add_source(RMS_Gate, "gate", voice ? &voice->fgate : 0, "Gate");
         add_source(RMS_Time, "time", voice ? &voice->time : 0, "Time (s)");
         add_source(RMS_TimeMinutes, "time60", voice ? &voice->time60 : 0, "Time (m)");
         ss_id[ss_lag0] = (int)src.size();
-        add_source(RMS_LagGenerator1, "lag1", voice ? &voice->lag[0] : 0);
+        add_source(RMS_LagGenerator1, "lag1", voice ? &voice->lag[0] : 0, "Lag 1");
         ss_id[ss_lag1] = (int)src.size();
-        add_source(RMS_LagGenerator2, "lag2", voice ? &voice->lag[1] : 0);
+        add_source(RMS_LagGenerator2, "lag2", voice ? &voice->lag[1] : 0, "Lag 2");
         ss_id[ss_envf] = (int)src.size();
         // add_source("envfollow",		voice ? &voice->envelope_follower : 0);
         add_source(RMS_WithinLoop, "loop_gate", voice ? &voice->loop_gate : 0, "Is Within Loop");
         add_source(RMS_LoopPos, "loop_pos", voice ? &voice->loop_pos : 0, "Position In Loop");
         add_source(RMS_Filter1ModOut, "f1modout", voice ? &voice->filter_modout[0] : 0,
-                   "Filter 1 Mod Out");
+                   "F1 Mod Out");
         add_source(RMS_Filter2ModOut, "f2modout", voice ? &voice->filter_modout[1] : 0,
-                   "Filter 2 Mod Out");
+                   "F2 Mod Out");
     }
 
-    add_source(RMS_Noise, "noise", &noisegen, "noise");
+    add_source(RMS_Noise, "noise", &noisegen, "Noise");
     add_source(RMS_Alternate, "alternate", voice ? &voice->alternate : &alternate, "Alternate");
 
     add_source(RMS_PosBeat, "pos_beat", td ? &td->pos_in_beat : 0, "Sync (1 Beat)");
@@ -86,14 +86,14 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
     add_source(RMS_Pos2Bars, "pos_2bars", td ? &td->pos_in_2bars : 0, "Sync (2 Bars)");
     add_source(RMS_Pos4Bars, "pos_4bars", td ? &td->pos_in_4bars : 0, "Sync (4 Bars)");
 
-    add_source(RMS_One, "constant1", &one, "One");
+    add_source(RMS_One, "constant1", &one, "Constant");
     // automation & channel modulation sources
     add_source(RMS_PitchBend, "pitchbend", control ? &control[c_pitch_bend] : 0, "Pitch Bend");
     // add_source("pb_up",			&pb_up,"pitchbend up");
     // add_source("pb_down",		&pb_down,"pitchbend down");
     add_source(RMS_ChAftertouch, "channelAT", control ? &control[c_channel_aftertouch] : 0,
-               "Ch Aftertouch");
-    add_source(RMS_ModulationWheel, "modwheel", control ? &control[c_modwheel] : 0);
+               "Channel AT");
+    add_source(RMS_ModulationWheel, "modwheel", control ? &control[c_modwheel] : 0, "Modwheel");
     int i;
     for (i = 0; i < n_custom_controllers; i++)
     {
@@ -102,8 +102,8 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
                 sprintf(stnice,"c%i:%s",i+1,conf->MIDIcontrol[i].name);
         else
                 sprintf(stnice,"c%i:",i+1);*/
-        sprintf(stnice, "c%i:%s", i + 1, part ? part->userparametername[i] : "");
-        sprintf(st, "c%i", i + 1);
+        sprintf(stnice, "C%i: %s", i + 1, part ? part->userparametername[i] : "");
+        sprintf(st, "C%i", i + 1);
         add_source(RMS_Ctrl1 + i, st, part ? &part->userparameter_smoothed[i] : 0, stnice);
     }
     /*for(i=0; i<n_automation_parameters; i++)
@@ -115,25 +115,27 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
 
     // destinations
 
-    add_destination(RMD_None, md_none, "}none", 0);
+    add_destination(RMD_None, md_none, "none", 0, "None");
     if (zone)
     {
         // zone-level matrix
-        add_destination(RMD_Pitch, md_pitch, "pitch", cm_mod_pitch);
-        add_destination(RMD_Rate, md_rate, "rate", cm_mod_percent, "rate (linear)");
-        add_destination(RMD_Amplitude, md_amplitude, "amplitude", cm_mod_decibel);
-        add_destination(RMD_PreFilterGain, md_prefilter_gain, "pfg", cm_mod_decibel, "p.f. gain");
-        add_destination(RMD_Balance, md_pan, "pan", cm_mod_percent);
-        add_destination(RMD_AmplitudeAux1, md_aux_level, "aux_level", cm_mod_decibel, "aux level");
+        add_destination(RMD_Pitch, md_pitch, "pitch", cm_mod_pitch, "Pitch");
+        add_destination(RMD_Rate, md_rate, "rate", cm_mod_percent, "Rate (Linear)");
+        add_destination(RMD_Amplitude, md_amplitude, "amplitude", cm_mod_decibel, "Amplitude");
+        add_destination(RMD_PreFilterGain, md_prefilter_gain, "pfg", cm_mod_decibel,
+                        "Pre-Filter Gain");
+        add_destination(RMD_Balance, md_pan, "pan", cm_mod_percent, "Pan");
+        add_destination(RMD_AmplitudeAux1, md_aux_level, "aux_level", cm_mod_decibel,
+                        "Aux 1 Level");
         add_destination(RMD_BalanceAux1, md_aux_balance, "aux_balance", cm_mod_percent,
-                        "aux balance");
+                        "Aux 1 Balance");
         add_destination(RMD_AmplitudeAux2, md_aux2_level, "aux2_level", cm_mod_decibel,
-                        "aux2 level");
+                        "Aux 2 Level");
         add_destination(RMD_BalanceAux2, md_aux2_balance, "aux2_balance", cm_mod_percent,
-                        "aux2 balance");
+                        "Aux 2 Balance");
 
-        add_destination(RMD_Filter1Mix, md_filter1mix, "f1mix", cm_mod_percent, "filter 1 mix");
-        add_destination(RMD_Filter2Mix, md_filter2mix, "f2mix", cm_mod_percent, "filter 2 mix");
+        add_destination(RMD_Filter1Mix, md_filter1mix, "f1mix", cm_mod_percent, "Filter 1 Mix");
+        add_destination(RMD_Filter2Mix, md_filter2mix, "f2mix", cm_mod_percent, "Filter 2 Mix");
 
         for (unsigned int fs = 0; fs < 2; fs++)
         {
@@ -149,9 +151,9 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
                 char idname[namelen];
                 sprintf(idname, "f%ip%i", fs + 1, fp + 1);
                 if (tempf)
-                    sprintf(txt, "f%i:%s", fs + 1, tempf->get_parameter_label(fp));
+                    sprintf(txt, "F%i: %s", fs + 1, tempf->get_parameter_label(fp));
                 else
-                    sprintf(txt, "f%i: ---", fs + 1);
+                    sprintf(txt, "F%i: ---", fs + 1);
                 if (tempf)
                     ct = tempf->get_parameter_ctrlmode(fp);
 
@@ -165,30 +167,30 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
         }
 
         add_destination(RMD_SampleStart, md_sample_start, "samplestart", cm_mod_percent,
-                        "zone start");
-        add_destination(RMD_LoopStart, md_loop_start, "loopstart", cm_mod_percent, "loop start");
+                        "Sample Start");
+        add_destination(RMD_LoopStart, md_loop_start, "loopstart", cm_mod_percent, "Loop Start");
         add_destination(RMD_LoopLength, md_loop_length, "looplength", cm_mod_percent,
-                        "loop length");
+                        "Loop Length");
 
         // add_destination(md_granularpos,"granular",cm_mod_percent,"granular pos");
 
-        add_destination(RMD_AEGAttack, md_AEG_a, "eg1a", cm_mod_time, "AEG attack");
-        add_destination(RMD_AEGHold, md_AEG_h, "eg1h", cm_mod_time, "AEG hold");
-        add_destination(RMD_AEGDecay, md_AEG_d, "eg1d", cm_mod_time, "AEG decay");
-        add_destination(RMD_AEGSustain, md_AEG_s, "eg1s", cm_mod_percent, "AEG sustain");
-        add_destination(RMD_AEGRelease, md_AEG_r, "eg1r", cm_mod_time, "AEG release");
-        add_destination(RMD_EG2Attack, md_EG2_a, "eg2a", cm_mod_time, "EG2 attack");
-        add_destination(RMD_EG2Hold, md_EG2_h, "eg2h", cm_mod_time, "EG2 hold");
-        add_destination(RMD_EG2Decay, md_EG2_d, "eg2d", cm_mod_time, "EG2 decay");
-        add_destination(RMD_EG2Sustain, md_EG2_s, "eg2s", cm_mod_percent, "EG2 sustain");
-        add_destination(RMD_EG2Release, md_EG2_r, "eg2r", cm_mod_time, "EG2 release");
+        add_destination(RMD_AEGAttack, md_AEG_a, "eg1a", cm_mod_time, "AEG Attack");
+        add_destination(RMD_AEGHold, md_AEG_h, "eg1h", cm_mod_time, "AEG Hold");
+        add_destination(RMD_AEGDecay, md_AEG_d, "eg1d", cm_mod_time, "AEG Decay");
+        add_destination(RMD_AEGSustain, md_AEG_s, "eg1s", cm_mod_percent, "AEG Sustain");
+        add_destination(RMD_AEGRelease, md_AEG_r, "eg1r", cm_mod_time, "AEG Release");
+        add_destination(RMD_EG2Attack, md_EG2_a, "eg2a", cm_mod_time, "EG2 Attack");
+        add_destination(RMD_EG2Hold, md_EG2_h, "eg2h", cm_mod_time, "EG2 Hold");
+        add_destination(RMD_EG2Decay, md_EG2_d, "eg2d", cm_mod_time, "EG2 Decay");
+        add_destination(RMD_EG2Sustain, md_EG2_s, "eg2s", cm_mod_percent, "EG2 Sustain");
+        add_destination(RMD_EG2Release, md_EG2_r, "eg2r", cm_mod_time, "EG2 Release");
 
-        add_destination(RMD_LFO1Rate, md_LFO1_rate, "lfo1rate", cm_mod_freq, "stepLFO1 rate");
-        add_destination(RMD_LFO2Rate, md_LFO2_rate, "lfo2rate", cm_mod_freq, "stepLFO2 rate");
-        add_destination(RMD_LFO3Rate, md_LFO3_rate, "lfo3rate", cm_mod_freq, "stepLFO3 rate");
+        add_destination(RMD_LFO1Rate, md_LFO1_rate, "lfo1rate", cm_mod_freq, "Step LFO 1 Rate");
+        add_destination(RMD_LFO2Rate, md_LFO2_rate, "lfo2rate", cm_mod_freq, "Step LFO 2 Rate");
+        add_destination(RMD_LFO3Rate, md_LFO3_rate, "lfo3rate", cm_mod_freq, "Step LFO 3 Rate");
 
-        add_destination(RMD_LagGenerator1, md_lag0, "lag1", cm_mod_percent, "lag 1");
-        add_destination(RMD_LagGenerator2, md_lag1, "lag2", cm_mod_percent, "lag 2");
+        add_destination(RMD_LagGenerator1, md_lag0, "lag1", cm_mod_percent, "Lag 1");
+        add_destination(RMD_LagGenerator2, md_lag1, "lag2", cm_mod_percent, "Lag 2");
 
         /*for(i=0; i<mm_entries; i++)
         {
@@ -207,23 +209,22 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
     else
     {
         // part-level matrix
-        add_destination(RMD_PartAmplitude, md_part_amplitude, "amplitude", cm_mod_decibel);
+        add_destination(RMD_PartAmplitude, md_part_amplitude, "amplitude", cm_mod_decibel,
+                        "Amplitude");
         add_destination(RMD_PartPreFilterGain, md_part_prefilter_gain, "pfg", cm_mod_decibel,
-                        "p.f. gain");
-        add_destination(RMD_PartBalance, md_part_pan, "balance", cm_mod_percent);
+                        "Pre-Filter Gain");
+        add_destination(RMD_PartBalance, md_part_pan, "balance", cm_mod_percent, "Balance");
         add_destination(RMD_PartAmplitudeAux1, md_part_aux_level, "aux_level", cm_mod_decibel,
-                        "aux level");
+                        "Aux 1 Level");
         add_destination(RMD_PartBalanceAux1, md_part_aux_balance, "aux_balance", cm_mod_percent,
-                        "aux balance");
+                        "Aux 1 Balance");
         add_destination(RMD_PartAmplitudeAux2, md_part_aux2_level, "aux2_level", cm_mod_decibel,
-                        "aux2 level");
+                        "Aux 2 Level");
         add_destination(RMD_PartBalanceAux2, md_part_aux2_balance, "aux2_balance", cm_mod_percent,
-                        "aux2 balance");
+                        "Aux 2 Balance");
 
-        add_destination(RMD_PartFilter1Mix, md_part_filter1mix, "f1mix", cm_mod_percent,
-                        "filter 1 mix");
-        add_destination(RMD_PartFilter2Mix, md_part_filter2mix, "f2mix", cm_mod_percent,
-                        "filter 2 mix");
+        add_destination(RMD_PartFilter1Mix, md_part_filter1mix, "f1mix", cm_mod_percent, "F1 Mix");
+        add_destination(RMD_PartFilter2Mix, md_part_filter2mix, "f2mix", cm_mod_percent, "F2 Mix");
 
         for (unsigned int fs = 0; fs < 2; fs++)
         {
@@ -239,9 +240,9 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
                 char idname[namelen];
                 sprintf(idname, "f%ip%i", fs + 1, fp + 1);
                 if (tempf)
-                    sprintf(txt, "f%i:%s", fs + 1, tempf->get_parameter_label(fp));
+                    sprintf(txt, "F%i: %s", fs + 1, tempf->get_parameter_label(fp));
                 else
-                    sprintf(txt, "f%i: ---", fs + 1);
+                    sprintf(txt, "F%i: ---", fs + 1);
                 if (tempf)
                     ct = tempf->get_parameter_ctrlmode(fp);
 
