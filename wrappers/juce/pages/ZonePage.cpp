@@ -323,6 +323,10 @@ struct Outputs : public ContentBase
         {
             outLabel[i] = whiteLabel(l, juce::Justification::right);
         }
+
+        auto &cz = parentPage.editor->currentZone;
+        mute = bind<widgets::IntParamToggleButton>(cz.mute, "mute");
+        pfg = bindFloatHSlider(cz.pre_filter_gain);
     }
     void paintContentInto(juce::Graphics &g, const juce::Rectangle<int> &bounds) override
     {
@@ -344,12 +348,21 @@ struct Outputs : public ContentBase
             balance[i]->setBounds(rrg.next());
             outLabel[i]->setBounds(rrg.next());
         }
+
+        auto mutePFG = rg.next().reduced(2, 2);
+
+        auto mbox = mutePFG.withHeight(20).translated(0,20);
+        pfg->setBounds(mbox.reduced(1));
+        mbox = mbox.translated(0,20);
+        mute->setBounds(mbox.reduced(1));
     }
 
     std::array<std::unique_ptr<juce::Label>, 3> outLabel;
     std::array<std::unique_ptr<widgets::IntParamComboBox>, 3> output;
     std::array<std::unique_ptr<widgets::FloatParamSlider>, 3> level, balance;
     std::array<std::unique_ptr<widgets::IntParamMultiSwitch>, 3> outmode; // 0 will be null
+    std::unique_ptr<widgets::IntParamToggleButton> mute;
+    std::unique_ptr<widgets::FloatParamSlider> pfg;
 };
 
 struct Pitch : ContentBase
@@ -408,7 +421,34 @@ struct Pitch : ContentBase
 
 struct Sample : ContentBase
 {
-    Sample(const ZonePage &p) : ContentBase(p, "sample", "Sample", juce::Colour(0xFF444477)) {}
+    Sample(const ZonePage &p) : ContentBase(p, "sample", "Sample", juce::Colour(0xFF444477))
+    {
+        auto &cz = parentPage.editor->currentZone;
+        playmode = bind<widgets::IntParamComboBox>(cz.playmode, parentPage.editor->zonePlaymode);
+        reverse = bind<widgets::IntParamToggleButton>(cz.reverse, "reverse");
+
+        transposeL = whiteLabel("transpose");
+        transpose = bindIntSpinBox(cz.transpose);
+    }
+
+    void resized() override
+    {
+        auto b = getContentsBounds();
+        auto r = b.withHeight(20);
+        playmode->setBounds(r.reduced(1));
+
+        auto q = b.withTrimmedTop(50).withWidth(150);
+        reverse->setBounds(q.reduced(1));
+
+        r = r.translated(0, 22).withTrimmedLeft(100);
+        transposeL->setBounds(r.withWidth(r.getWidth() / 2));
+        transpose->setBounds(r.withTrimmedLeft(r.getWidth() / 2));
+    }
+
+    std::unique_ptr<widgets::IntParamComboBox> playmode;
+    std::unique_ptr<widgets::IntParamToggleButton> reverse;
+    std::unique_ptr<widgets::IntParamSpinBox> transpose;
+    std::unique_ptr<juce::Label> transposeL;
 };
 
 struct LFO : ContentBase
