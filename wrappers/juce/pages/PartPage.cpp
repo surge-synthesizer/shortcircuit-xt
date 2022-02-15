@@ -16,15 +16,135 @@ namespace part_contents
 
 typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage> ContentBase;
 
-#define STUB(x, c)                                                                                 \
-    struct x : public ContentBase                                                                  \
-    {                                                                                              \
-        x(const scxt::pages::PartPage &p) : ContentBase(p, scxt::style::Selector{#x}, #x, c) {}    \
-    };
+struct VelocitySplit : public ContentBase
+{
+    VelocitySplit(const scxt::pages::PartPage &p)
+        : ContentBase(p, "velocitysplit", "Velocity Split/Crossfade", juce::Colours::darkgrey)
+    {
+        auto &cp = parentPage.editor->currentPart;
+        layers = bind<widgets::IntParamMultiSwitch>(
+            widgets::IntParamMultiSwitch::Orientation::HORIZ, cp.part_vs_layers);
+        gains = bind<widgets::IntParamMultiSwitch>(widgets::IntParamMultiSwitch::Orientation::VERT,
+                                                   cp.part_vs_xf_equality);
+        distr = bindFloatHSlider(cp.part_vs_distribution);
+        xfade = bindFloatHSlider(cp.part_vs_xfade);
+    }
+    void resized() override
+    {
+        auto b = getContentsBounds();
+        auto bl = b.withWidth(b.getWidth() / 2);
+        auto br = b.withTrimmedLeft(b.getWidth() / 2);
 
-STUB(Polymode, juce::Colours::darkgrey);
-STUB(LayerRanges, juce::Colours::darkgrey);
-STUB(VelocitySplit, juce::Colours::darkgrey);
+        auto bt = contents::RowGenerator(bl, 2);
+        layers->setBounds(bt.next());
+        gains->setBounds(bt.next());
+
+        auto bq = contents::RowGenerator(br, 2);
+        distr->setBounds(bq.next().withHeight(22).reduced(1));
+        xfade->setBounds(bq.next().withHeight(22).reduced(1));
+    }
+    std::unique_ptr<widgets::IntParamMultiSwitch> layers, gains;
+    std::unique_ptr<widgets::FloatParamSlider> distr, xfade;
+};
+
+struct LayerRanges : public ContentBase
+{
+    LayerRanges(const scxt::pages::PartPage &p)
+        : ContentBase(p, "layerranges", "Layer Ranges", juce::Colours::darkgrey)
+    {
+        // this is "bad"
+        for (int i = 0; i < 8; ++i)
+        {
+            char str[2];
+            str[0] = 'A' + i;
+            str[1] = 0;
+            auto q = std::make_unique<widgets::OutlinedTextButton>(str);
+            q->setClickingTogglesState(true);
+            q->setToggleState(i == 0, juce::NotificationType::dontSendNotification);
+            q->setRadioGroupId(10472, juce::NotificationType::dontSendNotification);
+            q->onClick = [this, i]() { this->rebindToLayer(i); };
+            addAndMakeVisible(*q);
+            layerSelectors[i] = std::move(q);
+        }
+
+        auto &cp = parentPage.editor->currentPart;
+        for (int nc = 0; nc < 2; ++nc)
+        {
+            ncLow[nc] = bindIntSpinBox(cp.nc[nc].low);
+            ncHigh[nc] = bindIntSpinBox(cp.nc[nc].high);
+            ncSource[nc] = bindIntComboBox(cp.nc[nc].source, parentPage.editor->partNCSrc);
+        }
+    }
+    void rebindToLayer(int i)
+    {
+        int off = i * 2;
+        auto &cp = parentPage.editor->currentPart;
+        for (int nc = 0; nc < 2; ++nc)
+        {
+            rebind(ncLow[nc], cp.nc[nc + off].low);
+            rebind(ncHigh[nc], cp.nc[nc + off].high);
+            rebind(ncSource[nc], cp.nc[nc + off].source);
+        }
+    }
+
+    void resized() override
+    {
+        auto b = getContentsBounds();
+        auto t = b.withHeight(24).reduced(1);
+        auto rg = contents::RowDivider(t);
+        for (int i = 0; i < 8; ++i)
+            layerSelectors[i]->setBounds(rg.next(0.125).reduced(1));
+
+        auto row = t.translated(0, 24).withHeight(20);
+        for (int i = 0; i < 2; ++i)
+        {
+            auto ls = row.withWidth(row.getWidth() * 0.25).reduced(1, 1);
+            auto rs = row.withTrimmedLeft(row.getWidth() * 0.75).reduced(1, 1);
+            auto cb = row.withWidth(row.getWidth() * 0.5)
+                          .translated(row.getWidth() * 0.25, 0)
+                          .reduced(1, 1);
+            ncLow[i]->setBounds(ls);
+            ncHigh[i]->setBounds(rs);
+            ncSource[i]->setBounds(cb);
+            row = row.translated(0, 22);
+        }
+    }
+
+    std::array<std::unique_ptr<widgets::IntParamSpinBox>, 2> ncLow;
+    std::array<std::unique_ptr<widgets::IntParamSpinBox>, 2> ncHigh;
+    std::array<std::unique_ptr<widgets::IntParamComboBox>, 2> ncSource;
+
+    std::array<std::unique_ptr<widgets::OutlinedTextButton>, 8> layerSelectors;
+};
+
+struct Polymode : public ContentBase
+{
+    Polymode(const scxt::pages::PartPage &p)
+        : ContentBase(p, "polymode", "Polymode", juce::Colours::darkgrey)
+    {
+        auto &cp = parentPage.editor->currentPart;
+        polymode = bind<widgets::IntParamMultiSwitch>(
+            widgets::IntParamMultiSwitch::Orientation::VERT, cp.polymode);
+        portamento_mode = bind<widgets::IntParamMultiSwitch>(
+            widgets::IntParamMultiSwitch::Orientation::HORIZ, cp.portamento_mode);
+        portamento = bindFloatHSlider(cp.portamento);
+    }
+
+    void resized() override
+    {
+        auto b = getContentsBounds();
+        auto po = b.withWidth(b.getWidth() * 0.6);
+        auto pm = b.withTrimmedLeft(b.getWidth() * 0.65);
+        polymode->setBounds(pm.reduced(1));
+        auto r = po.withHeight(22);
+        portamento_mode->setBounds(r.reduced(1));
+        r = r.translated(0, 22);
+        portamento->setBounds(r.reduced(1));
+    }
+
+    std::unique_ptr<widgets::IntParamMultiSwitch> polymode, portamento_mode;
+    std::unique_ptr<widgets::FloatParamSlider> portamento;
+};
 
 struct Controllers : public ContentBase
 {
@@ -349,9 +469,9 @@ void PartPage::resized()
     y0 += h1 * 0.3;
     polyMode->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.2).reduced(1, 1));
     y0 += h1 * 0.2;
-    layerRanges->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.2).reduced(1, 1));
+    layerRanges->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.25).reduced(1, 1));
     y0 += h1 * 0.2;
-    velocitySplit->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.3).reduced(1, 1));
+    velocitySplit->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.25).reduced(1, 1));
     y0 += h1 * 0.3;
 
     output->setBounds(juce::Rectangle<int>(w1, 0, w - w1, h1 * 0.22).reduced(1, 1));
