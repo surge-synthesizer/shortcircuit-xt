@@ -39,6 +39,8 @@ struct BrowserSidebar : public juce::Component
     std::vector<std::pair<juce::Rectangle<int>, int>> clickZones;
     std::unique_ptr<BrowserDragThingy> dragComponent;
     juce::ComponentDragger dragger;
+
+    bool samplePlaying{false};
 };
 } // namespace components
 } // namespace scxt

@@ -112,6 +112,12 @@ void BrowserSidebar::paint(juce::Graphics &g)
         paintContainer(g, rp, idx++);
     }
 
+    auto r = getLocalBounds().withTrimmedTop(20).withHeight(20).translated(0, idx * 20);
+    g.setFont(SCXTLookAndFeel::getMonoFontAt(8));
+    g.setColour(juce::Colours::white);
+    g.drawText("shift-click to preview", r, juce::Justification::centred);
+    g.setFont(SCXTLookAndFeel::getMonoFontAt(10));
+
     idx++;
     auto idx0 = idx;
     for (auto &c : rp->children)
@@ -120,9 +126,58 @@ void BrowserSidebar::paint(juce::Graphics &g)
     }
 }
 
-void BrowserSidebar::mouseDown(const juce::MouseEvent &e) {}
+void BrowserSidebar::mouseDown(const juce::MouseEvent &e)
+{
+    samplePlaying = false;
+    if (!e.mods.isShiftDown())
+        return;
+
+    for (const auto &[r, idx] : clickZones)
+    {
+        if (r.contains(e.position.toInt()))
+        {
+            if (idx < 0)
+            {
+                content_raw_t rp = root.get();
+                for (const auto &pathI : childStack)
+                {
+                    rp = rp->children[pathI].get();
+                }
+                auto ci = -idx - 1;
+                const auto &k = rp->children[ci];
+
+                switch (k->type)
+                {
+                case content::ContentBrowser::Content::SAMPLE:
+                {
+                    samplePlaying = true;
+                    editor->audioProcessor.sc3->editorProxy.preview_path.set(k->fullPath);
+                    actiondata ad;
+                    ad.id = ip_browser_previewbutton;
+                    ad.subid = -1;
+                    ad.actiontype = vga_nothing;
+                    ad.data.i[0] = 1;
+                    editor->sendActionToEngine(ad);
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+        }
+    }
+}
 void BrowserSidebar::mouseUp(const juce::MouseEvent &e)
 {
+    if (samplePlaying)
+    {
+        actiondata ad;
+        ad.id = ip_browser_previewbutton;
+        ad.subid = -1;
+        ad.actiontype = vga_nothing;
+        ad.data.i[0] = 0;
+        editor->sendActionToEngine(ad);
+    }
     if (dragComponent)
     {
         auto p = e.position.translated(getBounds().getX(), getBounds().getY());

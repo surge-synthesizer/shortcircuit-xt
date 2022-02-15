@@ -524,6 +524,7 @@ void sampler::processWrapperEvents()
                 {
                     if (ad.data.i[0] == 1)
                     {
+                        mpPreview->mFilename = editorProxy.preview_path.get();
                         mpPreview->Start(mpPreview->mFilename);
                     }
                     else

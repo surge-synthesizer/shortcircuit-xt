@@ -27,7 +27,7 @@ struct sample_part;
 struct timedata;
 
 // sampler voice class
-class sampler_voice
+class alignas(16) sampler_voice
 {
   public:
     float output alignas(16)[2][block_size * 2];

@@ -13,7 +13,7 @@
 
 class configuration;
 
-class sample
+class alignas(16) sample
 {
   public:
     /// constructor

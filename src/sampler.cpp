@@ -59,7 +59,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     holdengine = false;
 #endif
 
-    mpPreview = new sampler::Preview(&time_data, this);
+    mpPreview = std::make_unique<sampler::Preview>(&time_data, this);
 
     // MEQ is disabled
     /*	strcpy(end,"\\morphEQ-preset.xml");
@@ -193,7 +193,6 @@ sampler::~sampler(void)
     }
     delete conf;
     delete selected;
-    delete mpPreview;
     if (chunkDataPtr)
         free(chunkDataPtr);
     if (dbSampleListDataPtr)
@@ -1081,9 +1080,8 @@ sampler::Preview::Preview(timedata *pTD, sampler *pParent)
 {
     // Init Preview voice/zone/sample
     mpParent = pParent;
-    mpVoice = (sampler_voice *)_mm_malloc(sizeof(sampler_voice), 16);
-    new (mpVoice) sampler_voice(0, pTD);
-    mpSample = new sample(mpParent->conf);
+    mpVoice = std::make_unique<sampler_voice>(0, pTD);
+    mpSample = std::make_unique<sample>(mpParent->conf);
     mActive = false;
     mAutoPreview = mpParent->conf->mAutoPreview;
     mFilename = fs::path{};
@@ -1096,12 +1094,7 @@ sampler::Preview::Preview(timedata *pTD, sampler *pParent)
 
 //-----------------------------------------------------------------------------------------
 
-sampler::Preview::~Preview()
-{
-    mpVoice->~sampler_voice();
-    _mm_free(mpVoice);
-    delete mpSample;
-}
+sampler::Preview::~Preview() {}
 
 //-----------------------------------------------------------------------------------------
 
@@ -1125,7 +1118,7 @@ void sampler::Preview::Start(const fs::path &Filename)
         mZone.key_root = 60;
         mZone.playmode = pm_forward_shot;
         mZone.aux[0].level = mpParent->conf->mPreviewLevel;
-        mpVoice->play(mpSample, &mZone, &mPart, 60, 127, 0, mpParent->controllers,
+        mpVoice->play(mpSample.get(), &mZone, &mPart, 60, 127, 0, mpParent->controllers,
                       mpParent->automation, 1.f);
 
         SetPlayingState(true);
