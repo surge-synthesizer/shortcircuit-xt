@@ -99,17 +99,51 @@ struct Main : public ContentBase
 {
     Main(const scxt::pages::PartPage &p) : ContentBase(p, "main", "Main", juce::Colours::darkgrey)
     {
+        auto &part = parentPage.editor->currentPart;
+
         savePart = std::make_unique<widgets::OutlinedTextButton>("save part");
         savePart->onClick = [this]() { this->savePM(false); };
         addAndMakeVisible(*savePart);
         saveMulti = std::make_unique<widgets::OutlinedTextButton>("save multi");
         saveMulti->onClick = [this]() { this->savePM(true); };
         addAndMakeVisible(*saveMulti);
+        /*
+         * std::unique_ptr<widgets::IntParamSpinBox> polylimit, midichannel, transpose, formant;
+std::unique_ptr<juce::Label> polyL, midiL, transposeL, formantL;
+std::unique_ptr<widgets::SingleLineTextEditor> name;
+         */
+
+        polylimit = bindIntSpinBox(part.polylimit);
+        polyL = whiteLabel("poly limit");
+        midichannel = bindIntSpinBox(part.midichannel);
+        midiL = whiteLabel("midi channel");
+        transpose = bindIntSpinBox(part.transpose);
+        transposeL = whiteLabel("transpose");
+        formant = bindIntSpinBox(part.formant);
+        formantL = whiteLabel("formant");
+        name = bind<widgets::SingleLineTextEditor>(part.name);
     }
 
     void resized() override
     {
         auto b = getContentsBounds();
+
+        auto nr = b.withHeight(20);
+        name->setBounds(nr.reduced(1));
+
+        nr = nr.translated(0, 22).withWidth(b.getWidth() - 110);
+        polylimit->setBounds(nr.withWidth(100).reduced(1));
+        polyL->setBounds(nr.withTrimmedLeft(103));
+        nr = nr.translated(0, 20);
+        midichannel->setBounds(nr.withWidth(100).reduced(1));
+        midiL->setBounds(nr.withTrimmedLeft(103));
+        nr = nr.translated(0, 20);
+        transpose->setBounds(nr.withWidth(100).reduced(1));
+        transposeL->setBounds(nr.withTrimmedLeft(103));
+        nr = nr.translated(0, 20);
+        formant->setBounds(nr.withWidth(100).reduced(1));
+        formantL->setBounds(nr.withTrimmedLeft(103));
+
         auto mp = b.withTrimmedTop(b.getHeight() - 40).withTrimmedLeft(b.getWidth() - 100);
         mp = mp.withHeight(20);
         savePart->setBounds(mp);
@@ -145,6 +179,9 @@ struct Main : public ContentBase
             });
     }
     std::unique_ptr<widgets::OutlinedTextButton> savePart, saveMulti;
+    std::unique_ptr<widgets::IntParamSpinBox> polylimit, midichannel, transpose, formant;
+    std::unique_ptr<juce::Label> polyL, midiL, transposeL, formantL;
+    std::unique_ptr<widgets::SingleLineTextEditor> name;
 };
 
 struct ModulationRouting : public ContentBase

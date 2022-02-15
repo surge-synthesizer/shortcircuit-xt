@@ -247,12 +247,13 @@ class sampler
       public:
         sample_zone mZone;
         sample_part mPart;
-        sampler_voice *mpVoice;
-        sample *mpSample;
-        sampler *mpParent;
-        bool mActive, mAutoPreview;
+        std::unique_ptr<sampler_voice> mpVoice;
+        std::unique_ptr<sample> mpSample;
+        sampler *mpParent{nullptr};
+        bool mActive{false}, mAutoPreview{false};
         fs::path mFilename;
-    } * mpPreview;
+    };
+    std::unique_ptr<Preview> mpPreview;
 
   public:
     /*
@@ -297,6 +298,7 @@ class sampler
 
         std::mutex editorMutex;
         getset<fs::path> savepart_path{editorMutex};
+        getset<fs::path> preview_path{editorMutex};
     } editorProxy;
 
     int editorpart, editorlayer, editorlfo, editormm;
