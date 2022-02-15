@@ -1175,6 +1175,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "part polymode",
+        ip_range_and_units::fromLabel("poly;mono;legato", 3),
     },
     {
         ip_part_portamento,
@@ -1193,6 +1194,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "part portamento mode",
+        ip_range_and_units::fromLabel("fixed;linear", 2),
     },
     {
         ip_part_userparam_name,
@@ -1325,6 +1327,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "velsplit layers",
+        ip_range_and_units::fromLabel("o;ab;ac;ad;ae;af;ag;ah", 8),
     },
     {
         ip_part_vs_distribution,
@@ -1342,6 +1345,7 @@ static const interactiondata ip_data[] = {
         1,
         0,
         "xfade equality",
+        ip_range_and_units::fromLabel("equal gain;equal power", 2),
     },
     {
         ip_part_vs_xfade,
