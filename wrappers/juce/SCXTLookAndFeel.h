@@ -60,6 +60,7 @@ struct SCXTLookAndFeel : public juce::LookAndFeel_V4
 
     void fillTextEditorBackground(juce::Graphics &g, int /*width*/, int /*height*/,
                                   juce::TextEditor &textEditor) override;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTLookAndFeel);
 };
 
