@@ -128,7 +128,7 @@
         <rect x="738" y="468" x2="842" y2="483"/>
         <data style="0" color="ff000000" null="" action="" action_p1="0" action_p2="0"/>
     </control>
-    <control type="multibutton" parameter="main/AUX off/pre/post" parameter_subid="2" filter="1" filter_entry="0"
+    <control type="multibutton" parameter="main/off/pre/post" parameter_subid="2" filter="1" filter_entry="0"
              offset="0" offset_amount="0">
         <rect x="738" y="485" x2="842" y2="501"/>
         <data style="0" color="ff000000" label="off,Pre,Post" action="" action_p1="0" action_p2="0" action_text=""/>

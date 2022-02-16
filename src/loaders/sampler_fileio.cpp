@@ -268,7 +268,7 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
     tstring = element.Attribute("playmode");
     zone->playmode = pm_forward;
     for (i = 0; i < n_playmodes; i++)
-        if (!strcmp(tstring, playmode_abberations[i]))
+        if (!strcmp(tstring, playmode_abbreviations[i]))
             zone->playmode = i;
 
     element.Attribute("velsense", &d);
@@ -349,10 +349,10 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
             char abb[16];
             if (revision < 2)
             {
-                // convert old (beta1) filter numbers to abberation
+                // convert old (beta1) filter numbers to abbreviation
                 sub->Attribute("type", &i);
                 if ((i >= 0) && (i < 14))
-                    strncpy_0term(abb, filter_abberations_beta1[i], 16);
+                    strncpy_0term(abb, filter_abbreviations_beta1[i], 16);
                 else
                     strcpy(abb, "NONE");
             }
@@ -360,11 +360,11 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
             {
                 strncpy_0term(abb, sub->Attribute("type"), 16);
             }
-            // find filter abberation in list, if not found, set to NONE
+            // find filter abbreviation in list, if not found, set to NONE
             int l, ft = 0;
             for (l = 0; l < ft_num_types; l++)
             {
-                if (strcmp(filter_abberations[l], abb) == 0)
+                if (strcmp(filter_abbreviations[l], abb) == 0)
                     ft = l;
             }
             zone->Filter[j].type = ft;
@@ -626,7 +626,7 @@ void sampler::store_zone_as_element(TiXmlElement &element, sample_zone *zone, co
     element.SetAttribute("transpose", zone->transpose);
     element.SetAttribute("finetune", float_to_str(zone->finetune, tempstr));
     element.SetAttribute("pitchcorrect", float_to_str(zone->pitchcorrection, tempstr));
-    element.SetAttribute("playmode", (char *)playmode_abberations[zone->playmode]);
+    element.SetAttribute("playmode", (char *)playmode_abbreviations[zone->playmode]);
     element.SetAttribute("sample_start", zone->sample_start);
     element.SetAttribute("sample_end", zone->sample_stop);
     element.SetAttribute("loop_start", zone->loop_start);
@@ -656,7 +656,7 @@ void sampler::store_zone_as_element(TiXmlElement &element, sample_zone *zone, co
         TiXmlElement filter("filter");
         filter.Clear();
         filter.SetAttribute("i", i);
-        filter.SetAttribute("type", filter_abberations[zone->Filter[i].type]);
+        filter.SetAttribute("type", filter_abbreviations[zone->Filter[i].type]);
         filter.SetAttribute("bypass", yes_no(zone->Filter[i].bypass, tempstr));
         filter.SetAttribute("mix", float_to_str(zone->Filter[i].mix, tempstr));
 
@@ -858,7 +858,7 @@ void store_part_as_element(TiXmlElement &element, sample_part *part, configurati
         TiXmlElement filter("filter");
         filter.Clear();
         filter.SetAttribute("i", i);
-        filter.SetAttribute("type", filter_abberations[part->Filter[i].type]);
+        filter.SetAttribute("type", filter_abbreviations[part->Filter[i].type]);
         filter.SetAttribute("bypass", yes_no(part->Filter[i].bypass != 0, tempstr));
         filter.SetAttribute("mix", float_to_str(part->Filter[i].mix, tempstr));
 
@@ -980,11 +980,11 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
             char abb[16];
             strncpy_0term(abb, sub->Attribute("type"), 16);
 
-            // find filter abberation in list, if not found, set to NONE
+            // find filter abbreviation in list, if not found, set to NONE
             int l, ft = 0;
             for (l = 0; l < ft_num_types; l++)
             {
-                if (strcmp(filter_abberations[l], abb) == 0)
+                if (strcmp(filter_abbreviations[l], abb) == 0)
                     ft = l;
             }
             part->Filter[j].type = ft;
