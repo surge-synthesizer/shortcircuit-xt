@@ -14,7 +14,15 @@
 //==============================================================================
 SCXTProcessor::SCXTProcessor()
     : mLogger(this),
-      AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+      AudioProcessor(BusesProperties()
+                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+                         .withOutput("Out 02", juce::AudioChannelSet::stereo(), false)
+                         .withOutput("Out 03", juce::AudioChannelSet::stereo(), false)
+                         .withOutput("Out 04", juce::AudioChannelSet::stereo(), false)
+                         .withOutput("Out 05", juce::AudioChannelSet::stereo(), false)
+                         .withOutput("Out 06", juce::AudioChannelSet::stereo(), false)
+                         .withOutput("Out 07", juce::AudioChannelSet::stereo(), false)
+                         .withOutput("Out 08", juce::AudioChannelSet::stereo(), false)),
       blockPos(0)
 {
     // This is a good place for VS mem leak debugging:
@@ -30,7 +38,7 @@ SCXTProcessor::SCXTProcessor()
     mConfigFileName = configFile;
     std::cout << "CONFIG LOCATION IS " << configLoc << std::endl;
 
-    sc3 = std::make_unique<sampler>(nullptr, 2, nullptr, this);
+    sc3 = std::make_unique<sampler>(nullptr, 8, nullptr, this);
     if (!sc3->loadUserConfiguration(mConfigFileName))
     {
         LOGINFO(mLogger) << "Configuration file did not load" << std::flush;
@@ -92,16 +100,25 @@ void SCXTProcessor::releaseResources()
     // spare memory, etc.
 }
 
-#ifndef JucePlugin_PreferredChannelConfigurations
 bool SCXTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 {
-    // There are obviously other options here
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
-    return true;
+    // OK three cases we support. 1 out, 4 out, 8 out
+    bool oneOut = true, fourOut = true, eightOut = true;
+    for (int i = 0; i < 8; ++i)
+    {
+        auto co = layouts.getNumChannels(false, i);
+        auto isSt = (co == 2);
+        auto isOf = (co == 0);
+        oneOut = oneOut & (i == 0 ? isSt : isOf);
+        fourOut = fourOut & (i < 4 ? isSt : isOf);
+        eightOut = eightOut & isSt;
+    }
+
+    return oneOut || eightOut;
 }
-#endif
 
 void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
 {
@@ -136,7 +153,23 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
         nextMidi = (*midiIt).samplePosition;
     }
 
-    auto mainInputOutput = getBusBuffer(buffer, false, 0);
+    int activeBusCount = 0;
+    for (int i = 0; i < 8; ++i)
+    {
+        auto iob = getBusBuffer(buffer, false, i);
+        if (iob.getNumChannels() != 2)
+        {
+            break;
+        }
+
+        auto outL = iob.getWritePointer(0, 0);
+        auto outR = iob.getWritePointer(1, 0);
+        if (!(outL && outR))
+        {
+            break;
+        }
+        activeBusCount++;
+    }
 
     for (int i = 0; i < buffer.getNumSamples(); i++)
     {
@@ -154,14 +187,19 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
             }
         }
 
-        auto outL = mainInputOutput.getWritePointer(0, i);
-        auto outR = mainInputOutput.getWritePointer(1, i);
-
         if (blockPos == 0)
             sc3->process_audio();
 
-        *outL = sc3->output[0][blockPos];
-        *outR = sc3->output[1][blockPos];
+        for (int bus = 0; bus < activeBusCount; bus++)
+        {
+            auto iob = getBusBuffer(buffer, false, bus);
+
+            auto outL = iob.getWritePointer(0, i);
+            auto outR = iob.getWritePointer(1, i);
+
+            *outL = sc3->output[2 * bus][blockPos];
+            *outR = sc3->output[2 * bus + 1][blockPos];
+        }
 
         blockPos++;
 

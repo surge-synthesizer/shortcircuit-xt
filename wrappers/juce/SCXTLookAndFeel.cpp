@@ -28,7 +28,7 @@ SCXTLookAndFeel::SCXTLookAndFeel()
     setColour(scxt::widgets::OutlinedTextButton::textColour, juce::Colours::white);
 }
 
-struct TypefaceHolder : public juce::DeletedAtShutdown
+struct TypefaceHolder // : public juce::DeletedAtShutdown leak this for now
 {
     TypefaceHolder()
     {
