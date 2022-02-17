@@ -7,7 +7,7 @@
 //-------------------------------------------------------------------------------------------------------
 
 #include "modmatrix.h"
-#include "configuration.h"
+#include "sampler.h"
 #include "controllers.h"
 #include "loaders/shortcircuit2_RIFF_format.h"
 #include "parameterids.h"
@@ -98,10 +98,6 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
     for (i = 0; i < n_custom_controllers; i++)
     {
         char stnice[namelen], st[namelen];
-        /*if (conf)
-                sprintf(stnice,"c%i:%s",i+1,conf->MIDIcontrol[i].name);
-        else
-                sprintf(stnice,"c%i:",i+1);*/
         sprintf(stnice, "C%i: %s", i + 1, part ? part->userparametername[i] : "");
         sprintf(st, "C%i", i + 1);
         add_source(RMS_Ctrl1 + i, st, part ? &part->userparameter_smoothed[i] : 0, stnice);

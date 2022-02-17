@@ -54,6 +54,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
 {
     LOGINFO(mLogger) << "scxt engine " << scxt::build::FullVersionStr << std::flush;
     conf = new configuration(mLogger);
+    memset(externalControllers, 0, sizeof(external_controller) * n_custom_controllers);
 
 #if WINDOWS
     holdengine = false;
@@ -155,6 +156,12 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
 
     setupUserDocumentDirectory();
     browser.initialize(userDocumentDirectory);
+
+    mPreviewLevel =
+        defaultsProvider->getUserDefaultValue(scxt::defaults::DefaultKeys::previewLevel, -1200) /
+        100.0;
+    mAutoPreview =
+        defaultsProvider->getUserDefaultValue(scxt::defaults::DefaultKeys::previewAuto, false);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -197,11 +204,14 @@ sampler::~sampler(void)
         free(chunkDataPtr);
     if (dbSampleListDataPtr)
         free(dbSampleListDataPtr);
+
+    if (mPreviewConfigChanged)
+    {
+        defaultsProvider->updateUserDefaultValue(scxt::defaults::DefaultKeys::previewLevel,
+                                                 (int)(round(mPreviewLevel * 100.0)));
+        defaultsProvider->updateUserDefaultValue(scxt::defaults::previewAuto, mAutoPreview);
+    }
 }
-
-bool sampler::loadUserConfiguration(const fs::path &configFile) { return conf->load(configFile); }
-
-bool sampler::saveUserConfiguration(const fs::path &configFile) { return conf->save(configFile); }
 
 bool sampler::zone_exist(int id)
 {
@@ -270,9 +280,9 @@ void sampler::RPNForPart(int Part, int ControllerIdx, bool IsNRPN, int value)
     // search for any nrpn/rpns among the custom controllers
     for (int i = 0; i < n_custom_controllers; i++)
     {
-        if ((conf->MIDIcontrol[i].number == ControllerIdx) &&
-            ((IsNRPN && (conf->MIDIcontrol[i].type == mct_nrpn)) ||
-             (!IsNRPN && (conf->MIDIcontrol[i].type == mct_rpn))))
+        if ((externalControllers[i].number == ControllerIdx) &&
+            ((IsNRPN && (externalControllers[i].type == extctrl_midinrpn)) ||
+             (!IsNRPN && (externalControllers[i].type == extctrl_midirpn))))
         {
             SetCustomController(Part, i, (float)value * (1.f / 16384.0f));
         }
@@ -294,7 +304,8 @@ void sampler::ChannelControllerForPart(int Part, int cc, int value)
     // Check for Custom controllers
     for (int i = 0; i < n_custom_controllers; i++)
     {
-        if ((conf->MIDIcontrol[i].type == mct_cc) && (conf->MIDIcontrol[i].number == cc))
+        if ((externalControllers[i].type == extctrl_midicc) &&
+            (externalControllers[i].number == cc))
         {
             SetCustomController(Part, i, value * (1.f / 127.f));
         }
@@ -1083,7 +1094,7 @@ sampler::Preview::Preview(timedata *pTD, sampler *pParent)
     mpVoice = std::make_unique<sampler_voice>(0, pTD);
     mpSample = std::make_unique<sample>(mpParent->conf);
     mActive = false;
-    mAutoPreview = mpParent->conf->mAutoPreview;
+    mAutoPreview = mpParent->mAutoPreview;
     mFilename = fs::path{};
 
     memset(&mPart, 0, sizeof(sample_part));
@@ -1117,7 +1128,7 @@ void sampler::Preview::Start(const fs::path &Filename)
         mZone.sample_stop = mpSample->sample_length;
         mZone.key_root = 60;
         mZone.playmode = pm_forward_shot;
-        mZone.aux[0].level = mpParent->conf->mPreviewLevel;
+        mZone.aux[0].level = mpParent->mPreviewLevel;
         mpVoice->play(mpSample.get(), &mZone, &mPart, 60, 127, 0, mpParent->controllers,
                       mpParent->automation, 1.f);
 

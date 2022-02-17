@@ -14,6 +14,8 @@ namespace defaults
 enum DefaultKeys
 {
     zoomLevel,
+    previewAuto,
+    previewLevel,
     nKeys
 };
 inline std::string defaultKeyToString(DefaultKeys k)
@@ -22,6 +24,10 @@ inline std::string defaultKeyToString(DefaultKeys k)
     {
     case zoomLevel:
         return "zoomLevel";
+    case previewAuto:
+        return "previewAuto";
+    case previewLevel:
+        return "previewLevel";
     case nKeys:
         return "nKeys";
     default:

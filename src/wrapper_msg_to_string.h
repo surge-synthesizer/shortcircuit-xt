@@ -26,8 +26,6 @@ inline std::string debug_wrapper_ip_to_string(int in)
         return "ip_browser_searchtext";
     case ip_browser_previewbutton:
         return "ip_browser_previewbutton";
-    case ip_config_outputs:
-        return "ip_config_outputs";
     case ip_config_slidersensitivity:
         return "ip_config_slidersensitivity";
     case ip_config_controller_id:
@@ -38,14 +36,10 @@ inline std::string debug_wrapper_ip_to_string(int in)
         return "ip_config_browserdirs";
     case ip_config_refresh_db:
         return "ip_config_refresh_db";
-    case ip_config_kbdmode:
-        return "ip_config_kbdmode";
     case ip_config_autopreview:
         return "ip_config_autopreview";
     case ip_config_previewvolume:
         return "ip_config_previewvolume";
-    case ip_config_save:
-        return "ip_config_save";
     case ip_sample_prevnext:
         return "ip_sample_prevnext";
     case ip_patch_prevnext:

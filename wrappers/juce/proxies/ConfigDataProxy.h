@@ -22,10 +22,6 @@ struct ConfigDataProxy : public scxt::data::UIStateProxy
 
         if (applyActionDataIf(ad, ip_config_previewvolume, cd.previewLevel))
             return true;
-        if (applyActionDataIf(ad, ip_config_kbdmode, cd.kbdMode))
-            return true;
-        if (applyActionDataIf(ad, ip_config_outputs, cd.outputs))
-            return true;
         if (applyActionDataIf(ad, ip_config_autopreview, cd.autoPreview))
             return true;
 

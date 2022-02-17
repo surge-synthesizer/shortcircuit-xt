@@ -488,36 +488,31 @@ void sampler::processWrapperEvents()
                 break;
                 // case ip_config_h_or_v:
                 // case ip_config_slidersensitivity:
-                case ip_config_outputs:
-                    if (at == vga_intval)
-                        conf->stereo_outputs = max(1, min(ad.data.i[0] + 1, 8));
-                    break;
                 case ip_config_controller_id:
                     if (at == vga_intval)
-                        conf->MIDIcontrol[ad.subid & 0xf].number = ad.data.i[0];
+                        externalControllers[ad.subid & 0xf].number = ad.data.i[0];
                     break;
                 case ip_config_controller_mode:
                     if (at == vga_intval)
-                        conf->MIDIcontrol[ad.subid & 0xf].type = (midi_controller_type)ad.data.i[0];
+                        externalControllers[ad.subid & 0xf].type =
+                            (external_controller_type)ad.data.i[0];
                     break;
                 case ip_config_refresh_db:
-                    break;
-                case ip_config_kbdmode:
-                    if (at == vga_intval)
-                        conf->keyboardmode = ad.data.i[0];
                     break;
                 case ip_config_autopreview:
                     if (at == vga_intval)
                     {
-                        conf->mAutoPreview = ad.data.i[0] != 0;
+                        mAutoPreview = ad.data.i[0] != 0;
                         mpPreview->mAutoPreview = ad.data.i[0] != 0;
+                        mPreviewConfigChanged = true;
                     }
                     break;
                 case ip_config_previewvolume:
                     if (at == vga_floatval)
                     {
-                        conf->mPreviewLevel = ad.data.f[0];
-                        mpPreview->mZone.aux[0].level = conf->mPreviewLevel;
+                        mPreviewLevel = ad.data.f[0];
+                        mpPreview->mZone.aux[0].level = mPreviewLevel;
+                        mPreviewConfigChanged = true;
                     }
                     break;
                 case ip_browser_previewbutton:
@@ -533,9 +528,6 @@ void sampler::processWrapperEvents()
                     }
                 }
                 break;
-                case ip_config_save:
-                    conf->save(string_to_path(""));
-                    break;
                 case ip_solo:
                     selected->set_solo(ad.data.i[0]);
                     post_zonedata();
@@ -1048,7 +1040,7 @@ void sampler::post_zonedata()
 
         ad.actiontype = vga_datamode;
         postEventsToWrapper(ad);
-        // strncpy_0term((char*)ad.data.str,conf->MIDIcontrol[i].name[0]?conf->MIDIcontrol[i].name:"-",actiondata_maxstring);
+        // strncpy_0term((char*)ad.data.str,externalControllers[i].name[0]?externalControllers[i].name:"-",actiondata_maxstring);
         // strncpy_0term((char*)ad.data.str,parts[p].userparametername[i][0]?parts[p].userparametername[i]:"-",actiondata_maxstring);
     }
 
@@ -1061,7 +1053,8 @@ void sampler::post_zonedata()
     for (int i = 0; i < n_lfopresets; i++)
     {
         ad.data.i[0] = i;
-        strncpy_0term((char *)&ad.data.str[4], lfopreset_abbreviations[i], actiondata_maxstring - 4);
+        strncpy_0term((char *)&ad.data.str[4], lfopreset_abbreviations[i],
+                      actiondata_maxstring - 4);
         postEventsToWrapper(ad);
     }
     ad.actiontype = vga_intval;
@@ -1662,39 +1655,28 @@ void sampler::post_initdata()
     ip_config_controller_id,
     ip_config_controller_mode,	*/
 
-    ad.id = ip_config_outputs;
-    ad.subid = 0;
-    ad.actiontype = vga_intval;
-    ad.data.i[0] = conf->stereo_outputs - 1;
-    postEventsToWrapper(ad);
     for (int i = 0; i < n_custom_controllers; i++)
     {
         ad.id = ip_config_controller_id;
         ad.subid = i;
         ad.actiontype = vga_intval;
-        ad.data.i[0] = conf->MIDIcontrol[i].number;
+        ad.data.i[0] = externalControllers[i].number;
         postEventsToWrapper(ad);
 
         ad.id = ip_config_controller_mode;
         ad.actiontype = vga_intval;
-        ad.data.i[0] = conf->MIDIcontrol[i].type;
+        ad.data.i[0] = externalControllers[i].type;
         postEventsToWrapper(ad);
     }
 
-    ad.id = ip_config_kbdmode;
-    ad.subid = 0;
-    ad.actiontype = vga_intval;
-    ad.data.i[0] = conf->keyboardmode;
-    postEventsToWrapper(ad);
-
     ad.id = ip_config_previewvolume;
     ad.actiontype = vga_floatval;
-    ad.data.f[0] = conf->mPreviewLevel;
+    ad.data.f[0] = mPreviewLevel;
     postEventsToWrapper(ad);
 
     ad.id = ip_config_autopreview;
     ad.actiontype = vga_intval;
-    ad.data.i[0] = conf->mAutoPreview ? 1 : 0;
+    ad.data.i[0] = mAutoPreview ? 1 : 0;
     postEventsToWrapper(ad);
 
     ad.id = ip_browser_previewbutton;
