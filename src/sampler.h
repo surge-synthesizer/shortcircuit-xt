@@ -46,6 +46,27 @@ struct voicestate
     uint32 zone_id;
 };
 
+static constexpr int n_custom_controllers = 16;
+
+enum external_controller_type
+{
+    extctrl_none = 0,
+    extctrl_midicc,
+    extctrl_midirpn,
+    extctrl_midinrpn,
+    extctrl_vstparam,
+    n_ctypes,
+};
+
+const char ct_titles[n_ctypes][8] = {("none"), ("CC"), ("RPN"), ("NRPN"), ("VST")};
+
+struct external_controller
+{
+    external_controller_type type;
+    int number;
+    char name[16];
+};
+
 class sampler
 {
   public:
@@ -74,9 +95,6 @@ class sampler
     sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect = 0,
             scxt::log::LoggingCallback *cb = 0);
     virtual ~sampler(void);
-
-    bool loadUserConfiguration(const fs::path &configFile);
-    bool saveUserConfiguration(const fs::path &configFile);
 
     /*
      * User Directory
@@ -254,6 +272,9 @@ class sampler
         fs::path mFilename;
     };
     std::unique_ptr<Preview> mpPreview;
+    float mPreviewLevel;
+    bool mAutoPreview;
+    bool mPreviewConfigChanged{false};
 
   public:
     /*
@@ -322,6 +343,8 @@ class sampler
     multiselect *selected;
     std::recursive_mutex cs_patch, cs_gui, cs_engine;
     configuration *conf;
+    external_controller externalControllers[n_custom_controllers];
+
     char sample_replace_filename[256];
     char keystate[16][128];
     float adsr[4], mastergain;

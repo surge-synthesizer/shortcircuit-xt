@@ -131,7 +131,7 @@ struct MultiData
 struct ConfigData
 {
     ParameterProxy<float> previewLevel;
-    ParameterProxy<int> autoPreview, kbdMode, outputs;
+    ParameterProxy<int> autoPreview;
 
     ParameterProxy<int> controllerId[n_custom_controllers], controllerMode[n_custom_controllers];
 };
