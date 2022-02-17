@@ -575,7 +575,11 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
     GD.SampleStart = zone->sample_start;
     GD.SampleStop = zone->sample_stop;
     GD.Gated = gate;
+    GD.InvertedBounds = 1.f / std::max(1, GD.UpperBound - GD.LowerBound);
     Generator(&GD, &GDIO);
+
+    loop_gate = GD.IsInLoop;
+    loop_pos = GD.PositionWithinLoop;
 
     if (GD.IsFinished)
     {

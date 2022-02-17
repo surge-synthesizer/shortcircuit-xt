@@ -113,6 +113,9 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     float *__restrict OutputL;
     float *__restrict OutputR;
 
+    GD->PositionWithinLoop = 0.f;
+    GD->IsInLoop = false;
+
     if (fp)
         SampleDataFL = (float *)IO->SampleDataL;
     else
@@ -430,6 +433,32 @@ store:
     GD->SamplePos = SamplePos;
     GD->SampleSubPos = SampleSubPos;
     GD->IsFinished = IsFinished;
+
+    switch (playmode)
+    {
+    case GSM_Loop:
+    case GSM_Bidirectional:
+        GD->IsInLoop = (SamplePos >= GD->LowerBound);
+        GD->PositionWithinLoop =
+            std::clamp((SamplePos - GD->LowerBound) * GD->InvertedBounds, 0.f, 1.f);
+        break;
+
+    case GSM_LoopUntilRelease:
+        if (GD->Gated)
+        {
+            GD->IsInLoop = (SamplePos >= GD->LowerBound);
+            GD->PositionWithinLoop =
+                std::clamp((SamplePos - GD->LowerBound) * GD->InvertedBounds, 0.f, 1.f);
+        }
+        else
+        {
+            GD->IsInLoop = false;
+            GD->PositionWithinLoop =
+                std::clamp((SamplePos - GD->LowerBound) * GD->InvertedBounds, 0.f, 1.f);
+        }
+    default:
+        break;
+    }
 }
 
 /*
