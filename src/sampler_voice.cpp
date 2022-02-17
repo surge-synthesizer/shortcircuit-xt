@@ -311,7 +311,6 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
         gmode = 0;
         break;
     case pm_forward_loop:
-    case pm_forward_loop_until_release: // TODO specialize
         gmode = 1;
         break;
     case pm_forward_loop_bidirectional:
@@ -320,6 +319,9 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
     case pm_forward_release:
     case pm_forward_shot:
         gmode = 3;
+        break;
+    case pm_forward_loop_until_release:
+        gmode = 4;
         break;
     }
 
@@ -570,6 +572,9 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
         GD.UpperBound = Max(ls, le);
     }
 
+    GD.SampleStart = zone->sample_start;
+    GD.SampleStop = zone->sample_stop;
+    GD.Gated = gate;
     Generator(&GD, &GDIO);
 
     if (GD.IsFinished)
