@@ -33,6 +33,8 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
                 return GeneratorSample<1, 1, 2, 1>;
             case 3:
                 return GeneratorSample<1, 1, 3, 1>;
+            case 4:
+                return GeneratorSample<1, 1, 4, 1>;
             }
         }
         else
@@ -47,6 +49,8 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
                 return GeneratorSample<1, 0, 2, 2>;
             case 3:
                 return GeneratorSample<1, 0, 3, 2>;
+            case 4:
+                return GeneratorSample<1, 0, 4, 2>;
             }
         }
     }
@@ -64,6 +68,8 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
                 return GeneratorSample<0, 1, 2, 1>;
             case 3:
                 return GeneratorSample<0, 1, 3, 1>;
+            case 4:
+                return GeneratorSample<0, 1, 4, 1>;
             }
         }
         else
@@ -78,6 +84,8 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
                 return GeneratorSample<0, 0, 2, 2>;
             case 3:
                 return GeneratorSample<0, 0, 3, 2>;
+            case 4:
+                return GeneratorSample<0, 0, 4, 2>;
             }
         }
     }
@@ -296,6 +304,75 @@ upper:
 store:					
 					; make sure its within wavesize
 					cmp eax, WaveSize 
+					cmova eax, UpperBound
+
+					mov SamplePos, eax
+            }
+#endif
+        }
+        break;
+        case GSM_LoopUntilRelease:
+        {
+            if (GD->Gated)
+            {
+                auto offset = SamplePos;
+                if (Direction)
+                {
+                    // Upper
+                    if (offset > UpperBound)
+                        offset -= LoopOffset;
+                }
+                else
+                {
+                    // Lower
+                    if (offset < LowerBound)
+                        offset += LoopOffset;
+                }
+
+                if (offset > WaveSize || offset < 0)
+                    offset = UpperBound;
+
+                SamplePos = offset;
+            }
+            else
+            {
+                // In this mode the Lower/Upper are the loop markers so use the zone sample
+                // start/stop
+                if (SamplePos > GD->SampleStop)
+                {
+                    SamplePos = GD->SampleStop;
+                    SampleSubPos = 0;
+                    IsFinished = 1;
+                }
+                if (SamplePos < GD->SampleStart)
+                {
+                    SamplePos = GD->SampleStart;
+                    SampleSubPos = 0;
+                }
+            }
+
+#if ASM_I_REWROTE // Leaving this here for reference while we port
+            __asm {
+					; load
+					mov eax, SamplePos
+					mov ecx, eax
+					mov edx, eax
+
+					sub ecx, LoopOffset
+					add edx, LoopOffset
+
+					cmp Direction, 0			; v�lj path beroende p� direction (som �r tokl�tt att predicta)
+					jg upper
+;lower
+					cmp eax, LowerBound
+					cmovl eax, edx
+					jmp store
+upper:
+					cmp eax, UpperBound
+					cmovg eax, ecx
+store:
+					; make sure its within wavesize
+					cmp eax, WaveSize
 					cmova eax, UpperBound
 
 					mov SamplePos, eax

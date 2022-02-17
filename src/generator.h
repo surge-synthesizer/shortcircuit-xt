@@ -10,6 +10,9 @@ struct GeneratorState
     int Ratio;
     int BlockSize;
     int IsFinished;
+    int SampleStart;
+    int SampleStop;
+    bool Gated;
 };
 
 typedef void (*ReleaseCallback)();
@@ -37,6 +40,7 @@ enum GeneratorSampleModes
     GSM_Loop = 1,
     GSM_Bidirectional = 2,
     GSM_Shot = 3, // can stop voice
+    GSM_LoopUntilRelease = 4
 };
 
 typedef void (*GeneratorFPtr)(GeneratorState *__restrict, GeneratorIO *__restrict);
