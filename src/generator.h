@@ -5,14 +5,18 @@ struct GeneratorState
     int Direction;
     int SamplePos;
     int SampleSubPos;
-    int LowerBound; // inclusive
-    int UpperBound; // inclusive
+    int LowerBound;       // inclusive
+    int UpperBound;       // inclusive
+    float InvertedBounds; // 1 / (UB-LB)
     int Ratio;
     int BlockSize;
     int IsFinished;
     int SampleStart;
     int SampleStop;
     bool Gated;
+
+    float PositionWithinLoop;
+    bool IsInLoop;
 };
 
 typedef void (*ReleaseCallback)();
