@@ -6,6 +6,20 @@
 #include "BinaryUIAssets.h"
 #include "widgets/OutlinedTextButton.h"
 
+struct TypefaceHolder // : public juce::DeletedAtShutdown leak this for now
+{
+    TypefaceHolder()
+    {
+        monoTypeface = juce::Typeface::createSystemTypefaceFor(
+            SCXTUIAssets::AnonymousProRegular_ttf, SCXTUIAssets::AnonymousProRegular_ttfSize);
+    }
+    juce::ReferenceCountedObjectPtr<juce::Typeface> monoTypeface;
+};
+
+// this is all single threaded UI time only so I don't really even need this atomic
+static std::unique_ptr<TypefaceHolder> faces{nullptr};
+static std::atomic<int> facesCount{0};
+
 SCXTLookAndFeel::SCXTLookAndFeel()
 {
     setColour(SCXTColours::headerBackground, juce::Colour(0xFF303050));
@@ -26,21 +40,26 @@ SCXTLookAndFeel::SCXTLookAndFeel()
     setColour(scxt::widgets::OutlinedTextButton::upColour, juce::Colour(0xFF151515));
     setColour(scxt::widgets::OutlinedTextButton::downColour, juce::Colour(0xFFAA1515));
     setColour(scxt::widgets::OutlinedTextButton::textColour, juce::Colours::white);
+
+    if (facesCount == 0)
+    {
+        faces = std::make_unique<TypefaceHolder>();
+    }
+    facesCount++;
 }
 
-struct TypefaceHolder // : public juce::DeletedAtShutdown leak this for now
+SCXTLookAndFeel::~SCXTLookAndFeel()
 {
-    TypefaceHolder()
+    facesCount--;
+    if (facesCount == 0)
     {
-        monoTypeface = juce::Typeface::createSystemTypefaceFor(
-            SCXTUIAssets::AnonymousProRegular_ttf, SCXTUIAssets::AnonymousProRegular_ttfSize);
+        faces = nullptr;
     }
-    juce::ReferenceCountedObjectPtr<juce::Typeface> monoTypeface;
-};
+}
 
 juce::Font SCXTLookAndFeel::getMonoFontAt(int sz)
 {
-    static auto faces = new TypefaceHolder();
+    jassert(faces);
     return juce::Font(faces->monoTypeface).withHeight(sz);
 }
 

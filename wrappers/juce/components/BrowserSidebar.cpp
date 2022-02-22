@@ -46,7 +46,7 @@ struct BrowserDragThingy : public juce::Component
 BrowserSidebar::BrowserSidebar(SCXTEditor *ed)
     : editor(ed), root(editor->audioProcessor.sc3->browser.root)
 {
-    rdump(root, std::string());
+    // rdump(root, std::string());
 }
 
 BrowserSidebar::~BrowserSidebar() = default;
