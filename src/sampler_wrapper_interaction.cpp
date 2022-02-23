@@ -146,7 +146,7 @@ void sampler::processWrapperEvents()
             {
                 if (is_multisample_file(f.p))
                 {
-                    if (!load_file(f.p, nullptr, &nz, nullptr, 0, 0, true))
+                    if (!load_file(f.p, nullptr, &nz, nullptr, editorpart & 0xF, 0, true))
                     {
                         LOGDEBUG(mLogger) << "Did a loadFile for multi. What to do here?";
                     }
