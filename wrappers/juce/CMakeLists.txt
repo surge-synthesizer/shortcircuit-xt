@@ -36,6 +36,10 @@ juce_add_binary_data(UIAssets
         ${CMAKE_SOURCE_DIR}/resources/fonts/Anonymous_Pro/AnonymousPro-Bold.ttf
         )
 
+clap_juce_extensions_plugin(TARGET ShortcircuitXT
+        CLAP_ID "org.surge-synth-team.shortcircuit-xt"
+        CLAP_FEATURES "instrument" "sampler")
+
 set_target_properties(UIAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 
