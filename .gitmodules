@@ -19,3 +19,6 @@
 [submodule "libs/readerwriterqueue"]
 	path = libs/readerwriterqueue
 	url = https://github.com/cameron314/readerwriterqueue
+[submodule "libs/clap-juce-extensions"]
+	path = libs/clap-juce-extensions
+	url = https://github.com/free-audio/clap-juce-extensions

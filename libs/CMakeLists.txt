@@ -3,6 +3,8 @@ if (${CMAKE_SIZEOF_VOID_P} EQUAL 8)
     add_subdirectory(pybind11)
 endif ()
 add_subdirectory(JUCE)
+add_subdirectory(clap-juce-extensions clap-extensions EXCLUDE_FROM_ALL)
+
 add_subdirectory(fmt)
 
 add_subdirectory(sst/sst-cpputils)
