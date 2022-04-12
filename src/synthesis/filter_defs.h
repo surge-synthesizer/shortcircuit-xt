@@ -1,3 +1,20 @@
+/*
+** Shortcircuit XT is Free and Open Source Software
+**
+** Shortcircuit is made available under the Gnu General Public License, v3.0
+** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
+** reserve the right to re-license their contributions under the MIT license in the
+** future at the discretion of the project maintainers.
+**
+** Copyright 2004-2022 by various individuals as described by the git transaction log
+**
+** All source at: https://github.com/surge-synthesizer/shortcircuit-xt.git
+**
+** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
+** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
+** open source in December 2020.
+*/
+
 #pragma once
 #include "filter.h"
 #include "morphEQ.h"
@@ -1231,8 +1248,7 @@ class alignas(16) chorus : public filter
     lipol_ps feedback, width;
     __m128 voicepanL4 alignas(16)[4], voicepanR4 alignas(16)[4];
     biquadunit lp, hp;
-    float buffer alignas(
-        16)[max_delay_length + FIRipol_N];
+    float buffer alignas(16)[max_delay_length + FIRipol_N];
     // s� kan den interpoleras med SSE utan wrap
   public:
     chorus(float *, int *);

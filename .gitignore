@@ -16,3 +16,4 @@ CMakeSettings.json
 ignore/
 
 minst.sh
+.cache/
