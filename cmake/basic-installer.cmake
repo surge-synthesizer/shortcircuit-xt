@@ -91,14 +91,26 @@ if (APPLE)
             COMMAND ${CMAKE_SOURCE_DIR}/libs/sst/sst-plugininfra/scripts/installer_mac/make_installer.sh "Shortcircuit XT" ${CMAKE_BINARY_DIR}/shortcircuit-products ${CMAKE_SOURCE_DIR}/resources/installer_mac ${CMAKE_BINARY_DIR}/installer "${SCXT_DATE}-${VERSION_CHUNK}"
     )
 elseif (WIN32)
-    message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
+    message(STATUS "Configuring for win installer")
     add_custom_command(
             TARGET shortcircuit-installer
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMAND ${CMAKE_COMMAND} -E make_directory installer
             COMMAND 7z a -r installer/${SCXT_ZIP} ${SCXT_PRODUCT_DIR}/
-            COMMAND ${CMAKE_COMMAND} -E echo "Installer in: installer/${SCXT_ZIP}")
+            COMMAND ${CMAKE_COMMAND} -E echo "ZIP Installer in: installer/${SCXT_ZIP}")
+    find_program(SHORTCIRCUIT_NUGET_EXE nuget.exe PATHS ENV "PATH")
+    if(SHORTCIRCUIT_NUGET_EXE)
+        message(STATUS "NuGet found at ${SHORTCIRCUIT_NUGET_EXE}, creating InnoSetup installer")
+        add_custom_command(
+            TARGET shortcircuit-installer
+            POST_BUILD
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.0
+            COMMAND Tools.InnoSetup.6.2.0/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DSCXT_VERSION="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${SCXT_BITNESS}.iss")
+    else()
+        message(STATUS "NuGet not found, not creating InnoSetup installer")
+    endif()
 else ()
     message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
     add_custom_command(
