@@ -6,9 +6,9 @@
 ** reserve the right to re-license their contributions under the MIT license in the
 ** future at the discretion of the project maintainers.
 **
-** Copyright 2004-2021 by various individuals as described by the git transaction log
+** Copyright 2004-2022 by various individuals as described by the git transaction log
 **
-** All source at: https://github.com/surge-synthesizer/surge.git
+** All source at: https://github.com/surge-synthesizer/shortcircuit-xt.git
 **
 ** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
 ** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
