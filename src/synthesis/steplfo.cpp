@@ -109,7 +109,7 @@ void load_lfo_preset(int id, steplfostruct *settings)
 
         for (t = 0; t < 32; t++)
         {
-            noisev[t] = (((float)rand() / RAND_MAX) * 2 - 1);
+            noisev[t] = (((float)rand() / (float)RAND_MAX) * 2 - 1);
             noisev[t] /= (float)nmean;
         }
         for (t = 0; t < 32; t++)
@@ -185,7 +185,7 @@ void steplfo::assign(steplfostruct *settings, float *rate, timedata *td)
     if (settings->triggermode == 2)
     {
         // simulate free running lfo by randomizing start phase
-        phase = (float)rand() / RAND_MAX;
+        phase = (float)rand() / (float)RAND_MAX;
         state = rand() % settings->repeat;
     }
     else if (settings->triggermode == 1)
