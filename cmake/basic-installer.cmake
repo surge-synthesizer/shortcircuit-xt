@@ -74,7 +74,6 @@ endif ()
 
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
 if (WIN32)
-    math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
     set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${BITS}bit.zip)
 else ()
     set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
@@ -101,15 +100,15 @@ elseif (WIN32)
             COMMAND ${CMAKE_COMMAND} -E echo "ZIP Installer in: installer/${SCXT_ZIP}")
     find_program(SHORTCIRCUIT_NUGET_EXE nuget.exe PATHS ENV "PATH")
     if(SHORTCIRCUIT_NUGET_EXE)
-        message(STATUS "NuGet found at ${SHORTCIRCUIT_NUGET_EXE}, creating InnoSetup installer")
+        message(STATUS "NuGet found at ${SHORTCIRCUIT_NUGET_EXE}")
         add_custom_command(
             TARGET shortcircuit-installer
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.0
-            COMMAND Tools.InnoSetup.6.2.0/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DSCXT_VERSION="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${SCXT_BITNESS}.iss")
+            COMMAND Tools.InnoSetup.6.2.0/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DSCXT_VERSION="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
     else()
-        message(STATUS "NuGet not found, not creating InnoSetup installer")
+        message(STATUS "NuGet not found")
     endif()
 else ()
     message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")

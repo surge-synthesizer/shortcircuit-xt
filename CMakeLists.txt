@@ -21,16 +21,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 project(ShortCircuit VERSION 0.5.0.0 LANGUAGES C CXX ASM)
 
 # Calculate bitness
-math(EXPR SCXT_BITNESS "${CMAKE_SIZEOF_VOID_P} * 8" OUTPUT_FORMAT DECIMAL)
+math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
+message(STATUS "Targeting ${BITS}-bit configuration")
 
 # Share some information about the  build
 message(STATUS "ShortCircuit ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
-if (${CMAKE_SIZEOF_VOID_P} EQUAL 4)
-    message(STATUS "Building in 32 bit configuration")
-else ()
-    message(STATUS "Building in 64 bit configuration")
-endif ()
 
 
 # Optional variables
