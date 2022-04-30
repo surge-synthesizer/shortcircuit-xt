@@ -52,12 +52,6 @@ elseif (UNIX AND NOT APPLE)
     set(OS_LINK_LIBRARIES
             )
 else ()
-    if (SCXT_INCLUDE_ASIO_SUPPORT)
-        execute_process(COMMAND powershell
-                -ExecutionPolicy Bypass
-                -File "scripts/win_dl_asiosdk.ps1"
-                )
-    endif ()
     set(OS_COMPILE_OPTIONS
             /wd4244   # convert float from double
             /wd4305   # truncate from double to float
