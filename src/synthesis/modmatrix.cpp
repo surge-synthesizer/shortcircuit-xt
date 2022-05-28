@@ -111,7 +111,7 @@ void modmatrix::assign(configuration *conf, sample_zone *zone, sample_part *part
         sprintf(st, "C%i", i + 1);
         add_source(RMS_Ctrl1 + i, st, part ? &part->userparameter_smoothed[i] : 0, stnice);
     }
-    /*for(i=0; i<n_automation_parameters; i++)
+    /*for(i=0; i<N_AUTOMATION_PARAMETERS; i++)
     {
             char st[namelen];
             sprintf(st,"auto%02i",i);

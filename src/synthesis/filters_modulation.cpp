@@ -39,7 +39,7 @@ RING::RING(float *fp) : filter(fp), pre(2, false), post(4, false)
     ctrlmode[0] = cm_frequency_audible;
     strcpy(ctrllabel[1], "amount");
     ctrlmode[1] = cm_percent;
-    amount.setBlockSize(block_size * 2);
+    amount.setBlockSize(BLOCK_SIZE * 2);
 
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
@@ -60,10 +60,10 @@ void RING::process_stereo(float *datainL, float *datainR, float *dataoutL, float
                           float pitch)
 {
     amount.newValue(limit_range(param[1], 0.f, 1.f));
-    double omega = 0.5 * 440 * powf(2, param[0]) * pi2 * samplerate_inv;
+    double omega = 0.5 * 440 * powf(2, param[0]) * PI_2 * samplerate_inv;
     qosc.set_rate(omega);
 
-    const int bs2 = block_size << 1;
+    const int bs2 = BLOCK_SIZE << 1;
     float OS alignas(16)[2][bs2];
 
     pre.process_block_U2(datainL, datainR, OS[0], OS[1], bs2);
@@ -82,10 +82,10 @@ void RING::process_stereo(float *datainL, float *datainR, float *dataoutL, float
 void RING::process(float *datain, float *dataout, float pitch)
 {
     amount.newValue(limit_range(param[1], 0.f, 1.f));
-    double omega = 0.5 * 440 * powf(2, param[0]) * pi2 * samplerate_inv;
+    double omega = 0.5 * 440 * powf(2, param[0]) * PI_2 * samplerate_inv;
     qosc.set_rate(omega);
 
-    const int bs2 = block_size << 1;
+    const int bs2 = BLOCK_SIZE << 1;
     float OS alignas(16)[2][bs2];
 
     pre.process_block_U2(datain, datain, OS[0], OS[1], bs2);
@@ -131,18 +131,18 @@ void FREQSHIFT::process_stereo(float *datainL, float *datainR, float *dataoutL, 
 {
     double omega;
     if (iparam[0])
-        omega = (1000 * param[0] + 440 * pow((double)1.05946309435, (double)pitch)) * pi2 *
+        omega = (1000 * param[0] + 440 * pow((double)1.05946309435, (double)pitch)) * PI_2 *
                 samplerate_inv;
     else
-        omega = 1000 * param[0] * pi2 * samplerate_inv;
+        omega = 1000 * param[0] * PI_2 * samplerate_inv;
 
     o1.set_rate(M_PI * 0.5 - min(0.0, omega));
     o2.set_rate(M_PI * 0.5 + max(0.0, omega));
 
-    float L_R alignas(16)[block_size], L_I alignas(16)[block_size], R_R alignas(16)[block_size],
-        R_I alignas(16)[block_size];
+    float L_R alignas(16)[BLOCK_SIZE], L_I alignas(16)[BLOCK_SIZE], R_R alignas(16)[BLOCK_SIZE],
+        R_I alignas(16)[BLOCK_SIZE];
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         // quadrature oscillator 1
         o1.process();
@@ -152,10 +152,10 @@ void FREQSHIFT::process_stereo(float *datainL, float *datainR, float *dataoutL, 
         R_I[k] = datainR[k] * o1.i;
     }
 
-    fcL.process_block(L_R, L_I, block_size);
-    fcR.process_block(R_R, R_I, block_size);
+    fcL.process_block(L_R, L_I, BLOCK_SIZE);
+    fcR.process_block(R_R, R_I, BLOCK_SIZE);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         // quadrature oscillator 2
         o2.process();
@@ -173,17 +173,17 @@ void FREQSHIFT::process(float *datain, float *dataout, float pitch)
 {
     double omega;
     if (iparam[0])
-        omega = (1000.0 * param[0] + 440.0 * pow((double)1.05946309435, (double)pitch)) * pi2 *
+        omega = (1000.0 * param[0] + 440.0 * pow((double)1.05946309435, (double)pitch)) * PI_2 *
                 samplerate_inv;
     else
-        omega = 1000.0 * param[0] * pi2 * samplerate_inv;
+        omega = 1000.0 * param[0] * PI_2 * samplerate_inv;
 
     o1.set_rate(M_PI * 0.5 - min(0.0, omega));
     o2.set_rate(M_PI * 0.5 + max(0.0, omega));
 
-    float L_R alignas(16)[block_size], L_I alignas(16)[block_size];
+    float L_R alignas(16)[BLOCK_SIZE], L_I alignas(16)[BLOCK_SIZE];
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         // quadrature oscillator 1
         o1.process();
@@ -191,9 +191,9 @@ void FREQSHIFT::process(float *datain, float *dataout, float pitch)
         L_I[k] = datain[k] * o1.i;
     }
 
-    fcL.process_block(L_R, L_I, block_size);
+    fcL.process_block(L_R, L_I, BLOCK_SIZE);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         // quadrature oscillator 2
         o2.process();
@@ -255,16 +255,16 @@ void PMOD::init_params()
 
 void PMOD::process(float *datain, float *dataout, float pitch)
 {
-    omega.newValue(0.5 * 440 * note_to_pitch(pitch + param[0]) * pi2 * samplerate_inv);
+    omega.newValue(0.5 * 440 * note_to_pitch(pitch + param[0]) * PI_2 * samplerate_inv);
     // amp.newValue(3.1415 * dB_to_linear(param[1]));
 
     pregain.set_target(3.1415 * dB_to_linear(param[1]));
     // postgain.set_target(dB_to_linear(max(0,-param[1])));
 
-    const int bs2 = block_size << 1;
+    const int bs2 = BLOCK_SIZE << 1;
     float OS alignas(16)[2][bs2];
 
-    pregain.multiply_block_to(datain, OS[0], block_size_quad);
+    pregain.multiply_block_to(datain, OS[0], BLOCK_SIZE_QUAD);
     pre.process_block_U2(OS[0], OS[0], OS[0], OS[1], bs2);
 
     for (int k = 0; k < bs2; k++)
@@ -275,19 +275,19 @@ void PMOD::process(float *datain, float *dataout, float pitch)
         OS[0][k] = 0.5 * (sin((float)phase[0] + OS[0][k]) - sin(phase[0]));
     }
     post.process_block_D2(OS[0], OS[0], bs2, dataout, 0);
-    // postgain.multiply_block(dataout,block_size_quad);
+    // postgain.multiply_block(dataout,BLOCK_SIZE_QUAD);
 }
 void PMOD::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                           float pitch)
 {
-    omega.newValue(0.5 * 440 * note_to_pitch(pitch + param[0]) * pi2 * samplerate_inv);
+    omega.newValue(0.5 * 440 * note_to_pitch(pitch + param[0]) * PI_2 * samplerate_inv);
     pregain.set_target(3.1415 * dB_to_linear(param[1]));
     // postgain.set_target(dB_to_linear(max(0,-param[1])));
 
-    const int bs2 = block_size << 1;
+    const int bs2 = BLOCK_SIZE << 1;
     float OS alignas(16)[2][bs2];
 
-    pregain.multiply_2_blocks_to(datainL, datainR, OS[0], OS[1], block_size_quad);
+    pregain.multiply_2_blocks_to(datainL, datainR, OS[0], OS[1], BLOCK_SIZE_QUAD);
     pre.process_block_U2(OS[0], OS[1], OS[0], OS[1], bs2);
 
     for (int k = 0; k < bs2; k++)
@@ -370,7 +370,7 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
 {
     const int mindelay = 64; // 33?
 
-    lfo.set_rate(2 * M_PI * powf(2, param[rsp_rate]) * samplerate_inv * block_size);
+    lfo.set_rate(2 * M_PI * powf(2, param[rsp_rate]) * samplerate_inv * BLOCK_SIZE);
     lf_lfo.set_rate(0.7 * 2 * M_PI * powf(2, param[rsp_rate]) * samplerate_inv);
 
     float precalc0 = (-2 - (float)lfo.i);
@@ -391,15 +391,15 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
 
     lfo.process();
 
-    float upper alignas(16)[block_size];
-    float lower alignas(16)[block_size];
-    float lower_sub alignas(16)[block_size];
-    float tbufferL alignas(16)[block_size];
-    float tbufferR alignas(16)[block_size];
+    float upper alignas(16)[BLOCK_SIZE];
+    float lower alignas(16)[BLOCK_SIZE];
+    float lower_sub alignas(16)[BLOCK_SIZE];
+    float tbufferL alignas(16)[BLOCK_SIZE];
+    float tbufferR alignas(16)[BLOCK_SIZE];
 
     int k;
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         // float input = (float)tanh_fast(0.5f*dataL[k]+dataR[k]*drive.v);
         float input = 0.5f * (datainL[k] + datainR[k]);
@@ -411,7 +411,7 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
     xover.process_block(lower);
     // xover->process(lower,0);
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         // feed delay input
         int wp = (wpos + k) & (max_delay_length - 1);
@@ -419,8 +419,8 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
         upper[k] -= lower[k];
         buffer[wp] = upper[k];
 
-        int i_dtimeL = max(block_size, min((unsigned int)dL.v, max_delay_length - FIRipol_N - 1));
-        int i_dtimeR = max(block_size, min((unsigned int)dR.v, max_delay_length - FIRipol_N - 1));
+        int i_dtimeL = max(BLOCK_SIZE, min((unsigned int)dL.v, max_delay_length - FIRipol_N - 1));
+        int i_dtimeR = max(BLOCK_SIZE, min((unsigned int)dR.v, max_delay_length - FIRipol_N - 1));
 
         int rpL = (wpos - i_dtimeL + k);
         int rpR = (wpos - i_dtimeR + k);
@@ -446,7 +446,7 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
 
     lowbass.process_block(lower_sub);
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         lower[k] -= lower_sub[k];
 
@@ -459,7 +459,7 @@ void rotary_speaker::process_stereo(float *datainL, float *datainR, float *dataL
         hornamp[1].process();
     }
 
-    wpos += block_size;
+    wpos += BLOCK_SIZE;
     wpos = wpos & (max_delay_length - 1);
 }
 
@@ -511,7 +511,7 @@ phaser::phaser(float *fp, int *ip) : filter(fp)
         memset(biquad[i], 0, sizeof(biquadunit));
         new (biquad[i]) biquadunit();
     }
-    feedback.setBlockSize(block_size * slowrate);
+    feedback.setBlockSize(BLOCK_SIZE * slowrate);
     bi = 0;
 }
 
@@ -543,8 +543,8 @@ void phaser::init()
         // notch[i]->coeff_LP(1.0,1.0);
         biquad[i]->suspend();
     }
-    clear_block(L, block_size_quad);
-    clear_block(R, block_size_quad);
+    clear_block(L, BLOCK_SIZE_QUAD);
+    clear_block(R, BLOCK_SIZE_QUAD);
     bi = 0;
     dL = 0;
     dR = 0;
@@ -592,7 +592,7 @@ void phaser::process_stereo(float *datainL, float *datainR, float *dataL, float 
     if (bi == 0)
         setvars();
     bi = (bi + 1) & slowrate_m1;
-    for (int i = 0; i < block_size; i++)
+    for (int i = 0; i < BLOCK_SIZE; i++)
     {
 #if USE_SSE2
         feedback.process();

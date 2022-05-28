@@ -54,23 +54,23 @@ void sampler_group::process_controlpath()
 		mm = new modmatrix(0,0,group,0,this,&ctrl[num_controllers*group->channel],autom,true,true);	
 		last_channel = group->channel;
 	}
-	groupLFO->process(block_size);
+	groupLFO->process(BLOCK_SIZE);
 	mm->process();
 }
 	
 void sampler_group::clear_busses()
 {
-	/*memset(e1L,0,sizeof(float)*block_size);
-	memset(e1R,0,sizeof(float)*block_size);
-	memset(e2L,0,sizeof(float)*block_size);
-	memset(e2R,0,sizeof(float)*block_size);*/
-	//memset(left,0,sizeof(float)*block_size);
-	//memset(right,0,sizeof(float)*block_size);
+	/*memset(e1L,0,sizeof(float)*BLOCK_SIZE);
+	memset(e1R,0,sizeof(float)*BLOCK_SIZE);
+	memset(e2L,0,sizeof(float)*BLOCK_SIZE);
+	memset(e2R,0,sizeof(float)*BLOCK_SIZE);*/
+	//memset(left,0,sizeof(float)*BLOCK_SIZE);
+	//memset(right,0,sizeof(float)*BLOCK_SIZE);
 
 	// joxa in brus ist�llet f�r att hindra denormals
 	
 	int k;
-	for(k=0; k<(block_size>>1); k++)
+	for(k=0; k<(BLOCK_SIZE>>1); k++)
 	{
 		left[k<<1] = 1E-15f;
 		left[(k<<1)+1] = -1E-15f;
@@ -116,7 +116,7 @@ void sampler_group::process(bool bypass_fx)
 		fx[1]->process(left, right);
 	}
 
-	for(i=0; i<block_size; i++)
+	for(i=0; i<BLOCK_SIZE; i++)
 	{
 		left[i]		*= ampL.v;
 		right[i]	*= ampR.v;

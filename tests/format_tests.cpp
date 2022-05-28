@@ -51,7 +51,7 @@ TEST_CASE("Simple SF2 Load", "[formats]")
                     sc3->ReleaseNote(0, n, 0);
 
                 sc3->process_audio();
-                for (int k = 0; k < block_size; ++k)
+                for (int k = 0; k < BLOCK_SIZE; ++k)
                 {
                     rms += sc3->output[0][k] * sc3->output[0][k] +
                            sc3->output[1][k] * sc3->output[1][k];
@@ -90,7 +90,7 @@ TEST_CASE("Simple WAV Load", "[formats]")
                 sc3->ReleaseNote(0, n, 0);
 
             sc3->process_audio();
-            for (int k = 0; k < block_size; ++k)
+            for (int k = 0; k < BLOCK_SIZE; ++k)
             {
                 rms +=
                     sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
@@ -132,7 +132,7 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
                 sc3->ReleaseNote(0, n, 0);
 
             sc3->process_audio();
-            for (int k = 0; k < block_size; ++k)
+            for (int k = 0; k < BLOCK_SIZE; ++k)
             {
                 rms +=
                     sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
@@ -163,7 +163,7 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
                     sc3->ReleaseNote(0, n, 0);
 
             sc3->process_audio();
-            for (int k = 0; k < block_size; ++k)
+            for (int k = 0; k < BLOCK_SIZE; ++k)
             {
                 rms +=
                     sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
@@ -200,7 +200,7 @@ TEST_CASE("Simple SFZ+WAV Load", "[formats]")
                         sc3->ReleaseNote(0, n, 0);
 
             sc3->process_audio();
-            for (int k = 0; k < block_size; ++k)
+            for (int k = 0; k < BLOCK_SIZE; ++k)
             {
                 rms +=
                     sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] * sc3->output[1][k];
@@ -255,7 +255,7 @@ TEST_CASE("Akai S6k patch load", "[formats]")
                         sc3->ReleaseNote(0, n, 0);
 
                     sc3->process_audio();
-                    for (int k = 0; k < block_size; ++k)
+                    for (int k = 0; k < BLOCK_SIZE; ++k)
                     {
                         rms +=
                             sc3->output[0][k] * sc3->output[0][k] + sc3->output[1][k] *

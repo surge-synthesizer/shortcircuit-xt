@@ -99,19 +99,19 @@ void SuperSVF::calc_coeffs()
         // Set interpolators
         __m128 nFreq = SplatVector(F1);
         dFreq = _mm_sub_ps(nFreq, Freq);
-        dFreq = _mm_mul_ps(dFreq, inv_2block_size_128);
+        dFreq = _mm_mul_ps(dFreq, INV_2BLOCK_SIZE_128);
 
         __m128 nQ = SplatVector(Q1);
         dQ = _mm_sub_ps(nQ, Q);
-        dQ = _mm_mul_ps(dQ, inv_2block_size_128);
+        dQ = _mm_mul_ps(dQ, INV_2BLOCK_SIZE_128);
 
         __m128 nClipDamp = SplatVector(NewClipDamp);
         dClipDamp = _mm_sub_ps(nClipDamp, ClipDamp);
-        dClipDamp = _mm_mul_ps(dClipDamp, inv_2block_size_128);
+        dClipDamp = _mm_mul_ps(dClipDamp, INV_2BLOCK_SIZE_128);
 
         __m128 nGain = SplatVector(NewGain);
         dGain = _mm_sub_ps(nGain, Gain);
-        dGain = _mm_mul_ps(dGain, inv_2block_size_128);
+        dGain = _mm_mul_ps(dGain, INV_2BLOCK_SIZE_128);
 
         // Update paramtriggers
         lastparam[0] = param[0];
@@ -140,11 +140,11 @@ void SuperSVF::ProcessT(float *DataInL, float *DataInR, float *DataOutL, float *
     assert(iparam[1] >= 0);
     assert(iparam[1] < 2);
 
-    const int bs2 = block_size << 1;
+    const int bs2 = BLOCK_SIZE << 1;
     float PolyphaseInL alignas(16)[bs2];
     float PolyphaseInR alignas(16)[bs2];
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         __m128 Input;
         if (Stereo)

@@ -217,7 +217,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
         uint8_t ch1, ch2;
         bool clip1, clip2;
     };
-    std::array<VUData, max_outputs> vuData;
+    std::array<VUData, MAX_OUTPUTS> vuData;
     int polyphony{0};
 
     int selectedPart{0};
@@ -227,18 +227,18 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     void selectPart(int i);
     void selectLayer(int i);
 
-    bool activeZones[max_zones];
-    bool selectedZones[max_zones];
+    bool activeZones[MAX_ZONES];
+    bool selectedZones[MAX_ZONES];
 
     int freeParamsC[n_ip_free_items][16];
 
-    // scxt::data::PartData parts[n_sampler_parts];
+    // scxt::data::PartData parts[N_SAMPLER_PARTS];
     scxt::data::MultiData multi;
     scxt::data::ConfigData config;
     scxt::data::ZoneData currentZone;
     scxt::data::PartData currentPart;
 
-    sample_zone zonesCopy[max_zones];
+    sample_zone zonesCopy[MAX_ZONES];
     std::string currentSampleName, currentSampleMetadata;
 
     /*
@@ -254,7 +254,7 @@ class SCXTEditor : public juce::AudioProcessorEditor,
     scxt::data::NameList zonePlaymode, zoneAuxOutput, zoneFilterType;
     scxt::data::NameList zoneMMSrc, zoneMMSrc2, zoneMMDst, zoneMMCurve, zoneNCSrc, zoneLFOPresets;
 
-    std::array<database_samplelist, max_samples> samplesCopy;
+    std::array<database_samplelist, MAX_SAMPLES> samplesCopy;
     uint32_t samplesCopyActiveCount{0};
 
     // implement logging interface for logs generated on ui side

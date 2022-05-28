@@ -122,7 +122,7 @@ void ZoneKeyboardDisplay::paint(juce::Graphics &g)
 
     // This obviously sucks
 
-    for (int i = 0; i < max_zones; ++i)
+    for (int i = 0; i < MAX_ZONES; ++i)
     {
         if (editor->activeZones[i] && editor->zonesCopy[i].part == editor->selectedPart &&
             editor->zonesCopy[i].layer == editor->selectedLayer)
@@ -200,7 +200,7 @@ void ZoneKeyboardDisplay::mouseMove(const juce::MouseEvent &event)
             keyXBounds.push_back(std::make_pair(xpos, xpos + keyWidth - 1));
         }
 
-        for (int i = 0; i < max_zones; ++i)
+        for (int i = 0; i < MAX_ZONES; ++i)
         {
             if (editor->activeZones[i])
             {

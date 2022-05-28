@@ -62,16 +62,16 @@ void fauxstereo::process_stereo(float *datainL, float *datainR, float *dataoutL,
     l_amplitude.set_target_smoothed(db_to_linear(param[0]));
     l_source.set_target_smoothed(clamp01(param[2]));
 
-    float mid alignas(16)[block_size], side alignas(16)[block_size],
-        side_comb alignas(16)[block_size];
+    float mid alignas(16)[BLOCK_SIZE], side alignas(16)[BLOCK_SIZE],
+        side_comb alignas(16)[BLOCK_SIZE];
 
-    encodeMS(datainL, datainR, mid, side, block_size_quad);
-    l_source.fade_block_to(mid, side, side_comb, block_size_quad);
+    encodeMS(datainL, datainR, mid, side, BLOCK_SIZE_QUAD);
+    l_source.fade_block_to(mid, side, side_comb, BLOCK_SIZE_QUAD);
 
     combfilter->process(side_comb, 0);
 
-    l_amplitude.MAC_block_to(side_comb, side, block_size_quad);
-    decodeMS(mid, side, dataoutL, dataoutR, block_size_quad);
+    l_amplitude.MAC_block_to(side_comb, side, BLOCK_SIZE_QUAD);
+    decodeMS(mid, side, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 }
 
 /*	fs_flange			*/
@@ -98,7 +98,7 @@ fs_flange::fs_flange(float *ep, int *pi) : filter(ep)
     strcpy(ctrlmode_desc[1], str_percentbpdef);
     strcpy(ctrlmode_desc[2], str_dbdef);
 
-    memset(fs_buf, 0, 2 * block_size * sizeof(float));
+    memset(fs_buf, 0, 2 * BLOCK_SIZE * sizeof(float));
 }
 
 fs_flange::~fs_flange()
@@ -125,7 +125,7 @@ void fs_flange::process_stereo(float *datainL, float *datainR, float *dataoutL, 
     feedback.newValue(db_to_linear(param[2]));
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         fs_buf[0][k] =
             (float)tanh_fast(datainL[k] + feedback.v * fs_buf[0][k]); // denormal honk i fs_buf?
@@ -143,7 +143,7 @@ void fs_flange::process_stereo(float *datainL, float *datainR, float *dataoutL, 
     freqshift[0]->process(fs_buf[0], fs_buf[0], 0);
     freqshift[1]->process(fs_buf[1], fs_buf[1], 0);
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         dataoutL[k] = fs_buf[0][k];
         dataoutR[k] = fs_buf[1][k];
@@ -219,14 +219,14 @@ void freqshiftdelay::process_stereo(float *datainL, float *datainR, float *datao
 
     delaytime = (float)(samplerate * powf(2, param[0]));
 
-    float tbuffer[block_size];
+    float tbuffer[BLOCK_SIZE];
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         const float a = 0.0001f;
         delaytime_filtered = (1 - a) * delaytime_filtered + a * delaytime;
-        int i_dtime = max((int)block_size, min((int)delaytime_filtered, dltemp - 1));
+        int i_dtime = max((int)BLOCK_SIZE, min((int)delaytime_filtered, dltemp - 1));
 
         int rp = (wpos - i_dtime + k) & (dltemp - 1);
         tbuffer[k] = buffer[rp];
@@ -234,7 +234,7 @@ void freqshiftdelay::process_stereo(float *datainL, float *datainR, float *datao
 
     freqshift->process(tbuffer, tbuffer, 0);
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         int wp = (wpos + k) & (dltemp - 1);
 
@@ -244,6 +244,6 @@ void freqshiftdelay::process_stereo(float *datainL, float *datainR, float *datao
         dataoutR[k] = tbuffer[k];
     }
 
-    wpos += block_size;
+    wpos += BLOCK_SIZE;
     wpos = wpos & (dltemp - 1);
 }

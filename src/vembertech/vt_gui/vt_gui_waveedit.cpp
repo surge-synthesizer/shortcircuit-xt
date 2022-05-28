@@ -155,12 +155,12 @@ void vg_waveeditor::draw_wave(bool be_quick, bool skip_wave_redraw)
     unsigned int column[2048];
     int column_d[2048];
 
-    const int max_samples = 16;
+    const int MAX_SAMPLES = 16;
     int aa_p2 = ((ratio > 8) ? 4 : ((ratio > 4) ? 3 : ((ratio > 2) ? 2 : ((ratio > 1) ? 1 : 0))));
     // int sample_inc = 1 << aa_p2;
     ratio = max(1 << aa_p2, ratio);
     zoom = ratio;
-    int sample_inc = max(1, ratio / max_samples);
+    int sample_inc = max(1, ratio / MAX_SAMPLES);
     int n_samples = ratio / sample_inc;
 
     if (be_quick)

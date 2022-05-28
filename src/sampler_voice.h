@@ -40,7 +40,7 @@ struct timedata;
 class alignas(16) sampler_voice
 {
   public:
-    float output alignas(16)[2][block_size * 2];
+    float output alignas(16)[2][BLOCK_SIZE * 2];
     lipol_ps vca, faderL, faderR, pfg, aux1L, aux1R, aux2L, aux2R, fmix1, fmix2;
 
     sampler_voice(uint32 voice_id, timedata *);

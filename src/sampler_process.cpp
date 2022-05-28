@@ -60,7 +60,7 @@ void sampler::part_check_filtertypes(int p, int f)
 
 void sampler::process_global_effects()
 {
-    for (int f = 0; f < n_sampler_effects; f++)
+    for (int f = 0; f < N_SAMPLER_EFFECTS; f++)
     {
         //	have the filtertype changed?
         if (multiv.last_ft[f] != multi.Filter[f].type)
@@ -75,7 +75,7 @@ void sampler::process_global_effects()
 
         if ((multiv.pFilter[f]) && (!multi.Filter[f].bypass))
         {
-            _MM_ALIGN16 float tempbuf[2][block_size];
+            _MM_ALIGN16 float tempbuf[2][BLOCK_SIZE];
 
             float *L = output_fx[f << 1];
             float *R = output_fx[(f << 1) + 1];
@@ -86,10 +86,10 @@ void sampler::process_global_effects()
             multiv.postgain.set_target_smoothed(db_to_linear(multi.filter_postgain[f]));
 
             multiv.pFilter[f]->process_stereo(L, R, tempbuf[0], tempbuf[1], 0);
-            // multiv.postgain.fade_2_blocks_to(L,tempbuf[0],R,tempbuf[1],L,R,block_size_quad);
+            // multiv.postgain.fade_2_blocks_to(L,tempbuf[0],R,tempbuf[1],L,R,BLOCK_SIZE_QUAD);
 
-            accumulate_block(tempbuf[0], mainL, block_size_quad);
-            accumulate_block(tempbuf[1], mainR, block_size_quad);
+            accumulate_block(tempbuf[0], mainL, BLOCK_SIZE_QUAD);
+            accumulate_block(tempbuf[1], mainR, BLOCK_SIZE_QUAD);
         }
     }
 }
@@ -108,7 +108,7 @@ void sampler::process_part(int p)
     float *L = output_part[(p << 1)];
     float *R = output_part[(p << 1) + 1];
 
-    _MM_ALIGN16 float tempbuf[2][block_size], postfader_buf[2][block_size];
+    _MM_ALIGN16 float tempbuf[2][BLOCK_SIZE], postfader_buf[2][BLOCK_SIZE];
 
     // smooth controllers
 
@@ -151,48 +151,48 @@ void sampler::process_part(int p)
     part_check_filtertypes(p, 0);
     part_check_filtertypes(p, 1);
 
-    partv[p].pfg.multiply_2_blocks(L, R, block_size_quad);
+    partv[p].pfg.multiply_2_blocks(L, R, BLOCK_SIZE_QUAD);
     if ((partv[p].pFilter[0]) && (!parts[p].Filter[0].bypass))
     {
         partv[p].pFilter[0]->process_stereo(L, R, tempbuf[0], tempbuf[1], 0);
-        partv[p].fmix1.fade_2_blocks_to(L, tempbuf[0], R, tempbuf[1], L, R, block_size_quad);
+        partv[p].fmix1.fade_2_blocks_to(L, tempbuf[0], R, tempbuf[1], L, R, BLOCK_SIZE_QUAD);
     }
     if ((partv[p].pFilter[1]) && (!parts[p].Filter[1].bypass))
     {
         partv[p].pFilter[1]->process_stereo(L, R, tempbuf[0], tempbuf[1], 0);
-        partv[p].fmix2.fade_2_blocks_to(L, tempbuf[0], R, tempbuf[1], L, R, block_size_quad);
+        partv[p].fmix2.fade_2_blocks_to(L, tempbuf[0], R, tempbuf[1], L, R, BLOCK_SIZE_QUAD);
     }
 
     // process output
-    partv[p].ampL.multiply_block_to(L, postfader_buf[0], block_size_quad);
-    partv[p].ampR.multiply_block_to(R, postfader_buf[1], block_size_quad);
-    accumulate_block(postfader_buf[0], mainL, block_size_quad);
-    accumulate_block(postfader_buf[1], mainR, block_size_quad);
+    partv[p].ampL.multiply_block_to(L, postfader_buf[0], BLOCK_SIZE_QUAD);
+    partv[p].ampR.multiply_block_to(R, postfader_buf[1], BLOCK_SIZE_QUAD);
+    accumulate_block(postfader_buf[0], mainL, BLOCK_SIZE_QUAD);
+    accumulate_block(postfader_buf[1], mainR, BLOCK_SIZE_QUAD);
 
     if (aux1L && aux1R && parts[p].aux[1].outmode)
     {
         if (parts[p].aux[1].outmode == 2)
         {
-            partv[p].aux1L.MAC_block_to(postfader_buf[0], aux1L, block_size_quad);
-            partv[p].aux1R.MAC_block_to(postfader_buf[1], aux1R, block_size_quad);
+            partv[p].aux1L.MAC_block_to(postfader_buf[0], aux1L, BLOCK_SIZE_QUAD);
+            partv[p].aux1R.MAC_block_to(postfader_buf[1], aux1R, BLOCK_SIZE_QUAD);
         }
         else
         {
-            partv[p].aux1L.MAC_block_to(L, aux1L, block_size_quad);
-            partv[p].aux1R.MAC_block_to(R, aux1R, block_size_quad);
+            partv[p].aux1L.MAC_block_to(L, aux1L, BLOCK_SIZE_QUAD);
+            partv[p].aux1R.MAC_block_to(R, aux1R, BLOCK_SIZE_QUAD);
         }
     }
     if (aux2L && aux2R && parts[p].aux[2].outmode)
     {
         if (parts[p].aux[2].outmode == 2)
         {
-            partv[p].aux2L.MAC_block_to(postfader_buf[0], aux2L, block_size_quad);
-            partv[p].aux2R.MAC_block_to(postfader_buf[1], aux2R, block_size_quad);
+            partv[p].aux2L.MAC_block_to(postfader_buf[0], aux2L, BLOCK_SIZE_QUAD);
+            partv[p].aux2R.MAC_block_to(postfader_buf[1], aux2R, BLOCK_SIZE_QUAD);
         }
         else
         {
-            partv[p].aux2L.MAC_block_to(L, aux2L, block_size_quad);
-            partv[p].aux2R.MAC_block_to(R, aux2R, block_size_quad);
+            partv[p].aux2L.MAC_block_to(L, aux2L, BLOCK_SIZE_QUAD);
+            partv[p].aux2R.MAC_block_to(R, aux2R, BLOCK_SIZE_QUAD);
         }
     }
 }
@@ -205,7 +205,7 @@ void sampler::process_audio()
     if (holdengine)
     {
         for (unsigned int op = 0; op < (mNumOutputs); op++)
-            clear_block(output[op], block_size_quad << 1);
+            clear_block(output[op], BLOCK_SIZE_QUAD << 1);
         return;
     }
     processWrapperEvents();
@@ -225,11 +225,11 @@ void sampler::process_audio()
 
     // memset(output,0,sizeof(output));
     for (unsigned int op = 0; op < (mNumOutputs << 1); op++)
-        clear_block_antidenormalnoise(output_ptr[op], block_size_quad);
-    for (unsigned int op = 0; op < (n_sampler_effects << 1); op++)
-        clear_block(output_fx[op], block_size_quad);
-    for (unsigned int op = 0; op < (n_sampler_parts << 1); op++)
-        clear_block(output_part[op], block_size_quad);
+        clear_block_antidenormalnoise(output_ptr[op], BLOCK_SIZE_QUAD);
+    for (unsigned int op = 0; op < (N_SAMPLER_EFFECTS << 1); op++)
+        clear_block(output_fx[op], BLOCK_SIZE_QUAD);
+    for (unsigned int op = 0; op < (N_SAMPLER_PARTS << 1); op++)
+        clear_block(output_part[op], BLOCK_SIZE_QUAD);
 
     // clear buffers & process controls
     {
@@ -267,7 +267,7 @@ void sampler::process_audio()
         }
 
         // process parts
-        for (int p = 0; p < n_sampler_parts; p++)
+        for (int p = 0; p < N_SAMPLER_PARTS; p++)
         {
             process_part(p);
         }
@@ -292,13 +292,13 @@ void sampler::process_audio()
     /*
     for(op=0; op<(output_pairs*2); op++)
     {
-            vu_peak[op] = max(vu_peak[op],get_absmax(output[op],block_size_quad));
-            for(i=0; i<block_size; i++)
+            vu_peak[op] = max(vu_peak[op],get_absmax(output[op],BLOCK_SIZE_QUAD));
+            for(i=0; i<BLOCK_SIZE; i++)
             {
                     this->output[op][i] *= (float)this->headroom_linear;
             }
     }
-    vu_time += block_size;
+    vu_time += BLOCK_SIZE;
     */
 }
 
@@ -306,7 +306,7 @@ void sampler::processVUsAndPolyphonyUpdates()
 {
     for (int op = 0; op < (mNumOutputs * 2); op++)
     {
-        vu_peak[op] = max(vu_peak[op], get_absmax(output[op], block_size_quad));
+        vu_peak[op] = max(vu_peak[op], get_absmax(output[op], BLOCK_SIZE_QUAD));
     }
 
     VUidx--;

@@ -536,7 +536,7 @@ void sampler::processWrapperEvents()
                 {
                     selected->deselect_zones();
                     bool first = true;
-                    for (int i = 0; i < max_zones; i++)
+                    for (int i = 0; i < MAX_ZONES; i++)
                     {
                         if (zone_exists[i] && (zones[i].part == editorpart))
                         {
@@ -553,7 +553,7 @@ void sampler::processWrapperEvents()
                 {
                     selected->deselect_zones();
                     bool first = true;
-                    for (int i = 0; i < max_zones; i++)
+                    for (int i = 0; i < MAX_ZONES; i++)
                     {
                         if (zone_exists[i] && (zones[i].part == editorpart) &&
                             (zones[i].layer == editorlayer))
@@ -759,7 +759,7 @@ void sampler::post_kgvdata()
     postEventsToWrapper(ad);
     // populate list/kgv
     ad.actiontype = vga_zonelist_populate;
-    for (int i = 0; i < max_zones; i++)
+    for (int i = 0; i < MAX_ZONES; i++)
     {
         if (zone_exist(i) && (zones[i].part == editorpart) && (zones[i].layer == editorlayer))
         {
@@ -1763,7 +1763,7 @@ void sampler::post_samplelist()
 
     int n_samples = 0;
     int j = 0;
-    for (int i = 0; i < max_samples; i++)
+    for (int i = 0; i < MAX_SAMPLES; i++)
     {
         if (samples[i])
         {
@@ -1786,7 +1786,7 @@ void sampler::post_samplelist()
 
     dbSampleListDataPtr = (void *)malloc(sizeof(database_samplelist) * n_samples);
 
-    for (int i = 0; i < max_samples; i++)
+    for (int i = 0; i < MAX_SAMPLES; i++)
     {
         if (samples[i])
         {

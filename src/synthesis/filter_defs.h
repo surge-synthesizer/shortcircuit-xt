@@ -1107,7 +1107,7 @@ class alignas(16) rotary_speaker : public filter
 
 class alignas(16) phaser : public filter
 {
-    float L alignas(16)[block_size], R alignas(16)[block_size];
+    float L alignas(16)[BLOCK_SIZE], R alignas(16)[BLOCK_SIZE];
     biquadunit *biquad alignas(16)[8];
 
   public:
@@ -1171,7 +1171,7 @@ class alignas(16) fs_flange : public filter
     filter *freqshift[2];
     float f_fs[2][n_filter_parameters];
     int i_fs[2][n_filter_iparameters];
-    float fs_buf[2][block_size];
+    float fs_buf[2][BLOCK_SIZE];
 };
 
 //-------------------------------------------------------------------------------------------------------

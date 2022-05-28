@@ -70,7 +70,7 @@ void COMB1::process_stereo(float *datainL, float *datainR, float *dataoutL, floa
     feedback.newValue(clamp1bp(param[1]));
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float outputL = 0.f;
         float outputR = 0.f;
@@ -110,7 +110,7 @@ void COMB1::process(float *datain, float *dataout, float pitch)
     feedback.newValue(clamp1bp(param[1]));
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float input = datain[k];
         float output = 0.f;
@@ -178,7 +178,7 @@ void COMB3::process(float *data, float pitch)
     feedback.newValue(clamp1bp(param[1]));
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float output = 0.f;
         delayloop[wpos] = data[k];

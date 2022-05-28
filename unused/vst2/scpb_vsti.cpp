@@ -540,7 +540,7 @@ void scpb_vsti::processT(float **inputs, float **outputs, long sampleFrames)
             // move clock
             float ipart;
             timedata *td = &(sobj->time_data);
-            td->ppqPos += (double)block_size * sobj->time_data.tempo / (60. * sampleRate);
+            td->ppqPos += (double)BLOCK_SIZE * sobj->time_data.tempo / (60. * sampleRate);
             td->pos_in_beat = modf(td->ppqPos, &ipart);
             td->pos_in_2beats = modf(td->ppqPos * 0.5, &ipart);
             td->pos_in_bar = modf(td->ppqPos * 0.25, &ipart);
@@ -580,7 +580,7 @@ void scpb_vsti::processT(float **inputs, float **outputs, long sampleFrames)
                     sobj->output[outputs_mono_index + outp][blockpos]; // adding
         }
         blockpos++;
-        if (blockpos >= block_size)
+        if (blockpos >= BLOCK_SIZE)
             blockpos = 0;
     }
 

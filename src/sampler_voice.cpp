@@ -106,16 +106,16 @@ sampler_voice::sampler_voice(uint32 voice_id, timedata *td)
         sinc_initialized = true;
     }
 
-    faderL.set_blocksize(block_size);
-    faderR.set_blocksize(block_size);
-    vca.set_blocksize(block_size);
-    pfg.set_blocksize(block_size);
-    aux1L.set_blocksize(block_size);
-    aux1R.set_blocksize(block_size);
-    aux2L.set_blocksize(block_size);
-    aux2R.set_blocksize(block_size);
-    fmix1.set_blocksize(block_size);
-    fmix2.set_blocksize(block_size);
+    faderL.set_blocksize(BLOCK_SIZE);
+    faderR.set_blocksize(BLOCK_SIZE);
+    vca.set_blocksize(BLOCK_SIZE);
+    pfg.set_blocksize(BLOCK_SIZE);
+    aux1L.set_blocksize(BLOCK_SIZE);
+    aux1R.set_blocksize(BLOCK_SIZE);
+    aux2L.set_blocksize(BLOCK_SIZE);
+    aux2R.set_blocksize(BLOCK_SIZE);
+    fmix1.set_blocksize(BLOCK_SIZE);
+    fmix2.set_blocksize(BLOCK_SIZE);
 }
 
 sampler_voice::~sampler_voice()
@@ -298,15 +298,15 @@ void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uin
     use_oversampling = abs(GD.Ratio) > 18000000;
     use_stereo = (wave->channels == 2);
 
-    GD.BlockSize = use_oversampling ? (block_size * 2) : block_size;
+    GD.BlockSize = use_oversampling ? (BLOCK_SIZE * 2) : BLOCK_SIZE;
 
     if (use_oversampling)
     {
-        pfg.set_blocksize(block_size * 2);
+        pfg.set_blocksize(BLOCK_SIZE * 2);
     }
     else
     {
-        pfg.set_blocksize(block_size);
+        pfg.set_blocksize(BLOCK_SIZE);
     }
 
     // choose generator function pointer
@@ -412,10 +412,10 @@ void sampler_voice::check_filtertypes()
 void sampler_voice::update_lag_gen(int id)
 {
     // lag generators
-    const float integratorconst = samplerate_inv * block_size;
+    const float integratorconst = samplerate_inv * BLOCK_SIZE;
     if (zone->lag_generator[id] != 0)
     {
-        float x = pi1 * note_to_pitch(-12 * zone->lag_generator[id]) * integratorconst;
+        float x = PI_1 * note_to_pitch(-12 * zone->lag_generator[id]) * integratorconst;
         float tm = 2 - cos(x);
         float p = tm - sqrt(tm * tm - 1);
         lag[id] = mm.get_destination_value(md_lag0) * (1 - p) + p * lag[id];
@@ -429,7 +429,7 @@ void sampler_voice::update_portamento()
     float ratemult = 1.f;
     if (part->portamento_mode)
         ratemult = 12.f / (0.00001f + fabs(((float)key + 0.01f * detune) - portasrc_key));
-    portaphase += block_size * note_to_pitch(-12.f * part->portamento) * samplerate_inv * ratemult;
+    portaphase += BLOCK_SIZE * note_to_pitch(-12.f * part->portamento) * samplerate_inv * ratemult;
     if (portaphase < 1.f)
     {
         fkey = (1.f - portaphase) * portasrc_key + (float)portaphase * (key + 0.01f * detune);
@@ -486,17 +486,17 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
     perfslot(1);
 
     // process envelopes & stepLFO's
-    bool continue_playing = AEG.Process(block_size);
+    bool continue_playing = AEG.Process(BLOCK_SIZE);
 
     if (VE & ve_EG2)
-        EG2.Process(block_size);
+        EG2.Process(BLOCK_SIZE);
     perfslot(2);
     if (VE & ve_LFO1)
-        stepLFO[0].process(block_size);
+        stepLFO[0].process(BLOCK_SIZE);
     if (VE & ve_LFO2)
-        stepLFO[1].process(block_size);
+        stepLFO[1].process(BLOCK_SIZE);
     if (VE & ve_LFO3)
-        stepLFO[2].process(block_size);
+        stepLFO[2].process(BLOCK_SIZE);
 
     perfslot(3);
     mm.process();
@@ -592,7 +592,7 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
 
     if (GD.IsFinished)
     {
-        RingOut -= block_size;
+        RingOut -= BLOCK_SIZE;
         if (RingOut < 0)
         {
             continue_playing = false;
@@ -603,20 +603,20 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
 
     if (use_stereo)
         pfg.multiply_2_blocks(output[0], output[1],
-                              use_oversampling ? (block_size_quad << 1) : block_size_quad);
+                              use_oversampling ? (BLOCK_SIZE_QUAD << 1) : BLOCK_SIZE_QUAD);
     else
-        pfg.multiply_block(output[0], use_oversampling ? (block_size_quad << 1) : block_size_quad);
+        pfg.multiply_block(output[0], use_oversampling ? (BLOCK_SIZE_QUAD << 1) : BLOCK_SIZE_QUAD);
 
     if (use_oversampling)
     {
-        halfrate->process_block_D2(output[0], output[1], block_size << 1);
+        halfrate->process_block_D2(output[0], output[1], BLOCK_SIZE << 1);
     }
 
     perfslot(8);
 
     // envelope follower
     /*{
-            const float integratorconst = samplerate_inv * block_size;
+            const float integratorconst = samplerate_inv * BLOCK_SIZE;
             float bs_inv = (float)1/bs;
             float ef_newvalue = sqrt(block_rms*bs_inv);
             if (stereo) ef_newvalue *= 0.5;
@@ -635,7 +635,7 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
             envelope_follower = envelope_follower*p + (1-p)*ef_newvalue;
     }*/
 
-    _MM_ALIGN16 float tempbuf[2][block_size], postfader_buf[2][block_size];
+    _MM_ALIGN16 float tempbuf[2][BLOCK_SIZE], postfader_buf[2][BLOCK_SIZE];
 
     if (use_stereo)
     {
@@ -644,14 +644,14 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
             voice_filter[0]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
             filter_modout[0] = voice_filter[0]->modulation_output;
             fmix1.fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
-                                   output[1], block_size_quad);
+                                   output[1], BLOCK_SIZE_QUAD);
         }
         if ((voice_filter[1]) && (!zone->Filter[1].bypass))
         {
             voice_filter[1]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
             filter_modout[1] = voice_filter[1]->modulation_output;
             fmix2.fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
-                                   output[1], block_size_quad);
+                                   output[1], BLOCK_SIZE_QUAD);
         }
     }
     else
@@ -660,56 +660,56 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
         {
             voice_filter[0]->process(output[0], tempbuf[0], fpitch);
             filter_modout[0] = voice_filter[0]->modulation_output;
-            fmix1.fade_block_to(output[0], tempbuf[0], output[0], block_size_quad);
+            fmix1.fade_block_to(output[0], tempbuf[0], output[0], BLOCK_SIZE_QUAD);
         }
         if ((voice_filter[1]) && (!zone->Filter[1].bypass))
         {
             voice_filter[1]->process(output[0], tempbuf[0], fpitch);
             filter_modout[1] = voice_filter[1]->modulation_output;
-            fmix2.fade_block_to(output[0], tempbuf[0], output[0], block_size_quad);
+            fmix2.fade_block_to(output[0], tempbuf[0], output[0], BLOCK_SIZE_QUAD);
         }
-        copy_block(output[0], output[1], block_size_quad);
+        copy_block(output[0], output[1], BLOCK_SIZE_QUAD);
     }
 
     perfslot(9);
 
-    const unsigned int bufof = block_size;
-    vca.multiply_2_blocks(output[0], output[1], block_size_quad);
-    faderL.multiply_block_to(output[0], postfader_buf[0], block_size_quad);
-    faderR.multiply_block_to(output[1], postfader_buf[1], block_size_quad);
-    accumulate_block(postfader_buf[0], p_L, block_size_quad);
-    accumulate_block(postfader_buf[1], p_R, block_size_quad);
+    const unsigned int bufof = BLOCK_SIZE;
+    vca.multiply_2_blocks(output[0], output[1], BLOCK_SIZE_QUAD);
+    faderL.multiply_block_to(output[0], postfader_buf[0], BLOCK_SIZE_QUAD);
+    faderR.multiply_block_to(output[1], postfader_buf[1], BLOCK_SIZE_QUAD);
+    accumulate_block(postfader_buf[0], p_L, BLOCK_SIZE_QUAD);
+    accumulate_block(postfader_buf[1], p_R, BLOCK_SIZE_QUAD);
 
     if (zone->aux[1].outmode && p_aux1L)
     {
         if (zone->aux[1].outmode == 2)
         {
-            aux1L.MAC_block_to(postfader_buf[0], p_aux1L, block_size_quad);
-            aux1R.MAC_block_to(postfader_buf[1], p_aux1R, block_size_quad);
+            aux1L.MAC_block_to(postfader_buf[0], p_aux1L, BLOCK_SIZE_QUAD);
+            aux1R.MAC_block_to(postfader_buf[1], p_aux1R, BLOCK_SIZE_QUAD);
         }
         else
         {
-            aux1L.MAC_block_to(output[0], p_aux1L, block_size_quad);
-            aux1R.MAC_block_to(output[1], p_aux1R, block_size_quad);
+            aux1L.MAC_block_to(output[0], p_aux1L, BLOCK_SIZE_QUAD);
+            aux1R.MAC_block_to(output[1], p_aux1R, BLOCK_SIZE_QUAD);
         }
     }
     if (zone->aux[2].outmode && p_aux2R)
     {
         if (zone->aux[2].outmode == 2)
         {
-            aux2L.MAC_block_to(postfader_buf[0], p_aux2L, block_size_quad);
-            aux2R.MAC_block_to(postfader_buf[1], p_aux2R, block_size_quad);
+            aux2L.MAC_block_to(postfader_buf[0], p_aux2L, BLOCK_SIZE_QUAD);
+            aux2R.MAC_block_to(postfader_buf[1], p_aux2R, BLOCK_SIZE_QUAD);
         }
         else
         {
-            aux2L.MAC_block_to(output[0], p_aux2L, block_size_quad);
-            aux2R.MAC_block_to(output[1], p_aux2R, block_size_quad);
+            aux2L.MAC_block_to(output[0], p_aux2L, BLOCK_SIZE_QUAD);
+            aux2R.MAC_block_to(output[1], p_aux2R, BLOCK_SIZE_QUAD);
         }
     }
 
     perfslot(10)
 
-        time += block_size * samplerate_inv;
+        time += BLOCK_SIZE * samplerate_inv;
     time60 = time * 0.0166666666666667f;
 
     first_run = false;

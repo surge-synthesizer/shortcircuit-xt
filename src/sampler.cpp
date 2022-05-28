@@ -57,10 +57,10 @@ void sampler::set_samplerate(float sr)
 {
     samplerate = sr;
     samplerate_inv = 1.f / sr;
-    multiplier_freq2omega = pi2 * filter_freqrange / samplerate;
+    multiplier_freq2omega = PI_2 * FILTER_FREQRANGE / samplerate;
     VUidx = 0;
-    VUrate = (int)(sr / ((float)block_size * 30.f));
-    init_tables(sr, block_size);
+    VUrate = (int)(sr / ((float)BLOCK_SIZE * 30.f));
+    init_tables(sr, BLOCK_SIZE);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -92,11 +92,11 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
 
     AudioHalted = true;
 
-    polyphony_cap = max_voices;
+    polyphony_cap = MAX_VOICES;
 
     //	this->effect = effect;
     uint32_t i, c;
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         voices[i] = (sampler_voice *)_mm_malloc(sizeof(sampler_voice), 16);
         new (voices[i]) sampler_voice(i, &time_data);
@@ -106,9 +106,9 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
 
     multi_init();
 
-    assert(n_sampler_parts <= 16);
+    assert(N_SAMPLER_PARTS <= 16);
 
-    for (c = 0; c < n_sampler_parts; c++)
+    for (c = 0; c < N_SAMPLER_PARTS; c++)
     {
         hold[c] = false;
         for (i = 0; i < n_controllers; i++)
@@ -135,15 +135,15 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
         customcontrollers_bp[i] = false;
     }
 
-    for (i = 0; i < max_samples; i++)
+    for (i = 0; i < MAX_SAMPLES; i++)
         samples[i] = nullptr;
-    for (i = 0; i < max_zones; i++)
+    for (i = 0; i < MAX_ZONES; i++)
         zone_exists[i] = false;
 
-    for (i = 0; i < n_automation_parameters; i++)
+    for (i = 0; i < N_AUTOMATION_PARAMETERS; i++)
         automation[i] = 0;
 
-    for (i = 0; i < (max_outputs); i++)
+    for (i = 0; i < (MAX_OUTPUTS); i++)
     {
         vu_peak[i] = 0;
         vu_rms[i] = 0;
@@ -201,7 +201,7 @@ sampler::~sampler(void)
 {
     free_all();
     int i;
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if (voices[i])
         {
@@ -230,7 +230,7 @@ sampler::~sampler(void)
 
 bool sampler::zone_exist(int id)
 {
-    if (id >= max_zones)
+    if (id >= MAX_ZONES)
         return false;
     if (id < 0)
         return false;
@@ -265,7 +265,7 @@ void sampler::SetCustomController(int Part, int ControllerIdx, float NormalizedV
 
 void sampler::PitchBend(char channel, int value)
 {
-    for (int p = 0; p < n_sampler_parts; p++)
+    for (int p = 0; p < N_SAMPLER_PARTS; p++)
     {
         if (parts[p].MIDIchannel == channel)
         {
@@ -278,7 +278,7 @@ void sampler::PitchBend(char channel, int value)
 
 void sampler::ChannelAftertouch(char channel, int value)
 {
-    for (int p = 0; p < n_sampler_parts; p++)
+    for (int p = 0; p < N_SAMPLER_PARTS; p++)
     {
         if (parts[p].MIDIchannel == channel)
         {
@@ -377,7 +377,7 @@ void sampler::ChannelController(char channel, int cc, int value)
             cnum = (rpn[channel][1] << 7) + rpn[channel][0];
         }
 
-        for (int p = 0; p < n_sampler_parts; p++)
+        for (int p = 0; p < N_SAMPLER_PARTS; p++)
         {
             if (parts[p].MIDIchannel == channel)
             {
@@ -387,7 +387,7 @@ void sampler::ChannelController(char channel, int cc, int value)
     }
     else
     {
-        for (int p = 0; p < n_sampler_parts; p++)
+        for (int p = 0; p < N_SAMPLER_PARTS; p++)
         {
             if (parts[p].MIDIchannel == channel)
             {
@@ -531,7 +531,7 @@ bool sampler::slices_to_zones(int zone_id)
 
 bool sampler::get_key_name(char *str, int channel, int key)
 {
-    for (int z = 0; z < max_zones; z++)
+    for (int z = 0; z < MAX_ZONES; z++)
     {
         if (zone_exists[z])
         {
@@ -568,11 +568,11 @@ bool sampler::get_sample_id(const fs::path &filename, int *s_id)
     {
         if (s_id)
             *s_id = atoi(fnstr.c_str() + 6);
-        return (samples[*s_id & (max_samples - 1)] != NULL);
+        return (samples[*s_id & (MAX_SAMPLES - 1)] != NULL);
     }
 
     int s;
-    for (s = 0; s < max_samples; s++)
+    for (s = 0; s < MAX_SAMPLES; s++)
     {
         if (samples[s])
         {
@@ -917,7 +917,7 @@ bool sampler::free_zone(uint32_t zoneid)
 void sampler::free_all()
 {
     int i;
-    for (i = 0; i < max_zones; i++)
+    for (i = 0; i < MAX_ZONES; i++)
     {
         if (zone_exists[i])
         {
@@ -949,7 +949,7 @@ void sampler::free_all()
 int sampler::GetFreeSampleId()
 {
     int i;
-    for (i = 0; i < max_samples; i++)
+    for (i = 0; i < MAX_SAMPLES; i++)
     {
         if (!samples[i])
         {
@@ -964,7 +964,7 @@ int sampler::GetFreeSampleId()
 int sampler::GetFreeZoneId()
 {
     int i;
-    for (i = 0; i < max_zones; i++)
+    for (i = 0; i < MAX_ZONES; i++)
     {
         if (!zone_exists[i])
         {
@@ -989,7 +989,7 @@ int sampler::find_next_free_key(int part)
 {
     int i, key = 35;
     // find highest key
-    for (i = 0; i < max_zones; i++)
+    for (i = 0; i < MAX_ZONES; i++)
     {
         if (zone_exists[i] && (zones[i].part == part))
         {
@@ -1022,7 +1022,7 @@ void sampler::part_clear_zones(int p)
 {
     std::lock_guard g(cs_patch);
     int i;
-    for (i = 0; i < max_zones; i++)
+    for (i = 0; i < MAX_ZONES; i++)
     {
         if ((zone_exists[i]) && (zones[i].part == p))
         {

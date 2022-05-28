@@ -527,7 +527,7 @@ void MultiGenerator::InitGenerator(int PitchRatio, int StartSample, int EndSampl
 {
     int Voice = 0;
 
-    mState[Voice].BlockSize = block_size;
+    mState[Voice].BlockSize = BLOCK_SIZE;
     mState[Voice].Direction = 1;
     mState[Voice].LowerBound = StartSample;
     mState[Voice].UpperBound = EndSample;

@@ -49,7 +49,7 @@ morphEQ::morphEQ(float *fp, void *loader, int *ip) : filter(fp, loader, true, ip
     strcpy(ctrlmode_desc[2], str_dbbpdef);
     strcpy(ctrlmode_desc[3], str_percentmoddef);
 
-    gain.set_blocksize(block_size);
+    gain.set_blocksize(BLOCK_SIZE);
 
     if (loader && fp)
     {
@@ -159,7 +159,7 @@ void morphEQ::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
                              float pitch)
 {
     calc_coeffs();
-    gain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, block_size_quad);
+    gain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
     if (b_active[0])
         b[0].process_block_to(dataoutL, dataoutR, dataoutL, dataoutR);
     if (b_active[1])
@@ -182,7 +182,7 @@ void morphEQ::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
 
-    gain.multiply_block_to(datain, dataout, block_size_quad);
+    gain.multiply_block_to(datain, dataout, BLOCK_SIZE_QUAD);
     if (b_active[0])
         b[0].process_block(dataout);
     if (b_active[1])
@@ -420,7 +420,7 @@ void EQ6B::calc_coeffs()
     if ((lastparam[0] != param[0]) || (lastparam[1] != param[1]) || (lastparam[2] != param[2]) ||
         (lastparam[3] != param[3]) || (lastparam[4] != param[4]) || (lastparam[5] != param[5]))
     {
-        double a = pi2 * samplerate_inv;
+        double a = PI_2 * samplerate_inv;
         const double bw = 3;
 
         parametric[0].coeff_peakEQ(100 * a, bw, param[0]);
@@ -489,7 +489,7 @@ void LP2HP2_morph::init_params()
 void LP2HP2_morph::calc_coeffs()
 {
     assert(param);
-    double omega = pi2 * min(0.499, 440.0 * powf(2.f, param[0]) * samplerate_inv);
+    double omega = PI_2 * min(0.499, 440.0 * powf(2.f, param[0]) * samplerate_inv);
     double q = M_SQRT1_2 / (1.0 - limit_range(param[1], 0.f, 0.999f));
 
     f.coeff_LPHPmorph(omega, q, param[2]);
@@ -532,13 +532,13 @@ void COMB2::process(float *data, float pitch)
 {
     assert(param);
 
-    double omega = pi2 * min(0.499, 440.0 * powf(2, param[0]) * samplerate_inv);
+    double omega = PI_2 * min(0.499, 440.0 * powf(2, param[0]) * samplerate_inv);
     double q = 1.0 / (1.02 - clamp01(param[1]));
     fbval.newValue(limit_range(param[2], -0.99f, 0.99f));
 
     f.coeff_APF(omega, q);
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         feedback = f.process_sample(data[k] + feedback);
         data[k] += feedback;

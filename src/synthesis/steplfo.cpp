@@ -206,7 +206,7 @@ void steplfo::assign(steplfostruct *settings, float *rate, timedata *td)
 
 void steplfo::UpdatePhaseIncrement()
 {
-    phaseInc = block_size * note_to_pitch(12 * (*rate)) * samplerate_inv *
+    phaseInc = BLOCK_SIZE * note_to_pitch(12 * (*rate)) * samplerate_inv *
                (settings->cyclemode ? 1 : settings->repeat) *
                (settings->temposync ? (td->tempo * (1.f / 120.f)) : 1);
 }

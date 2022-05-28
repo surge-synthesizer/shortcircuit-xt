@@ -498,5 +498,5 @@ class vg_VU : public vg_control
 
   protected:
     int NumChannels;
-    int ChannelData[max_outputs];
+    int ChannelData[MAX_OUTPUTS];
 };

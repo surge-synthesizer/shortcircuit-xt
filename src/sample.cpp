@@ -72,7 +72,7 @@ float *sample::GetSamplePtrF32(int Channel)
 
 bool sample::AllocateI16(int Channel, int Samples)
 {
-    // int samplesizewithmargin = Samples + 2*FIRipol_N + block_size + FIRoffset;
+    // int samplesizewithmargin = Samples + 2*FIRipol_N + BLOCK_SIZE + FIRoffset;
     int samplesizewithmargin = Samples + FIRipol_N;
     if (SampleData[Channel])
         free(SampleData[Channel]);

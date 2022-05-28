@@ -336,7 +336,7 @@ void scpb_sampler::process_audio()
 
 	scpb_amplitude.newValue(controllers[c_custom0 + kAmplitude]*controllers[c_custom0 + kAmplitude]);
 
-	for(int k=0; k<block_size; k++)
+	for(int k=0; k<BLOCK_SIZE; k++)
 	{	
 		scpb_amplitude.process();
 		output[0][k] *= scpb_amplitude.v;

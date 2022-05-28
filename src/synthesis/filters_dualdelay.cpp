@@ -53,9 +53,9 @@ dualdelay::dualdelay(float *fp, int *ip)
     strcpy(ctrlmode_desc[7], str_percentdef);
     strcpy(ctrlmode_desc[8], str_percentbpdef);
 
-    pan.set_blocksize(block_size);
-    feedback.set_blocksize(block_size);
-    crossfeed.set_blocksize(block_size);
+    pan.set_blocksize(BLOCK_SIZE);
+    feedback.set_blocksize(BLOCK_SIZE);
+    crossfeed.set_blocksize(BLOCK_SIZE);
     init();
 }
 
@@ -108,7 +108,7 @@ void dualdelay::setvars(bool init)
         LFOdirection = !LFOdirection;
     }
 
-    float lfo_increment = (0.00000000001f + powf(2, param[7] * (1.f / 12.f)) - 1.f) * block_size;
+    float lfo_increment = (0.00000000001f + powf(2, param[7] * (1.f / 12.f)) - 1.f) * BLOCK_SIZE;
     // small bias to avoid denormals
 
     const float ca = 0.99f;
@@ -127,7 +127,7 @@ void dualdelay::setvars(bool init)
     float maxfb = max(db96, fb + cf);
     if (maxfb < 1.f)
     {
-        float f = inv_block_size * max(timeL.v, timeR.v) * (1.f + log(db96) / log(maxfb));
+        float f = INV_BLOCK_SIZE * max(timeL.v, timeR.v) * (1.f + log(db96) / log(maxfb));
         ringout_time = (int)f;
     }
     else
@@ -158,19 +158,19 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
 {
     setvars(false);
 
-    float wbL alignas(16)[block_size]; // wb = write-buffer
-    float wbR alignas(16)[block_size];
+    float wbL alignas(16)[BLOCK_SIZE]; // wb = write-buffer
+    float wbR alignas(16)[BLOCK_SIZE];
     int k;
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         timeL.process();
         timeR.process();
 
         int i_dtimeL =
-            max(block_size, min((unsigned int)timeL.v, max_delay_length - FIRipol_N - 1));
+            max(BLOCK_SIZE, min((unsigned int)timeL.v, max_delay_length - FIRipol_N - 1));
         int i_dtimeR =
-            max(block_size, min((unsigned int)timeR.v, max_delay_length - FIRipol_N - 1));
+            max(BLOCK_SIZE, min((unsigned int)timeR.v, max_delay_length - FIRipol_N - 1));
 
         int rpL = ((wpos - i_dtimeL + k) - FIRipol_N) & (max_delay_length - 1);
         int rpR = ((wpos - i_dtimeR + k) - FIRipol_N) & (max_delay_length - 1);
@@ -197,20 +197,20 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
         _mm_store_ss(&dataoutR[k], R);
     }
 
-    softclip_block(dataoutL, block_size_quad);
-    softclip_block(dataoutR, block_size_quad);
+    softclip_block(dataoutL, BLOCK_SIZE_QUAD);
+    softclip_block(dataoutR, BLOCK_SIZE_QUAD);
 
     lp.process_block_to(dataoutL, dataoutR, dataoutL, dataoutR);
     hp.process_block_to(dataoutL, dataoutR, dataoutL, dataoutR);
 
-    pan.trixpan_blocks(datainL, datainR, wbL, wbR, block_size_quad);
+    pan.trixpan_blocks(datainL, datainR, wbL, wbR, BLOCK_SIZE_QUAD);
 
-    feedback.MAC_2_blocks_to(dataoutL, dataoutR, wbL, wbR, block_size_quad);
-    crossfeed.MAC_2_blocks_to(dataoutL, dataoutR, wbR, wbL, block_size_quad);
+    feedback.MAC_2_blocks_to(dataoutL, dataoutR, wbL, wbR, BLOCK_SIZE_QUAD);
+    crossfeed.MAC_2_blocks_to(dataoutL, dataoutR, wbR, wbL, BLOCK_SIZE_QUAD);
 
-    if (wpos + block_size >= max_delay_length)
+    if (wpos + BLOCK_SIZE >= max_delay_length)
     {
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             buffer[0][(wpos + k) & (max_delay_length - 1)] = wbL[k];
             buffer[1][(wpos + k) & (max_delay_length - 1)] = wbR[k];
@@ -218,8 +218,8 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
     }
     else
     {
-        copy_block(wbL, &buffer[0][wpos], block_size_quad);
-        copy_block(wbR, &buffer[1][wpos], block_size_quad);
+        copy_block(wbL, &buffer[0][wpos], BLOCK_SIZE_QUAD);
+        copy_block(wbR, &buffer[1][wpos], BLOCK_SIZE_QUAD);
     }
 
     if (wpos == 0)
@@ -232,7 +232,7 @@ void dualdelay::process_stereo(float *datainL, float *datainR, float *dataoutL, 
         }
     }
 
-    wpos += block_size;
+    wpos += BLOCK_SIZE;
     wpos = wpos & (max_delay_length - 1);
 }
 

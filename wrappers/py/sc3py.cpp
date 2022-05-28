@@ -39,7 +39,7 @@ struct SC3PY : public sampler
 
     py::array_t<float> getOutput()
     {
-        return py::array_t<float>({{2, (long)block_size}}, {2 * sizeof(float), sizeof(float)},
+        return py::array_t<float>({{2, (long)BLOCK_SIZE}}, {2 * sizeof(float), sizeof(float)},
                                   (const float *)(&output[0][0]));
     }
 };

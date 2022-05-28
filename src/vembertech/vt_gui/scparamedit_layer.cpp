@@ -176,13 +176,13 @@ void scpe_get_limits(int cmode, float *fmin, float *fmax, float *fdefault, int *
 #ifdef SCFREE
         setIntMax(2);
 #else
-        // setIntMax(max_voices);
+        // setIntMax(MAX_VOICES);
         setIntMax(256);
 #endif
         break;
     case cm_mutegroup:
         setIntMin(0);
-        // setIntMax(n_mute_groups);
+        // setIntMax(N_MUTE_GROUPS);
         setIntMax(64);
         break;
     case cm_envshape:

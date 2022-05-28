@@ -104,7 +104,7 @@ void osc_pulse::process_stereo(float *datainL, float *datainR, float *dataoutL, 
                                float pitch)
 {
     process(0, dataoutL, pitch);
-    copy_block(dataoutL, dataoutR, block_size_quad);
+    copy_block(dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 }
 void osc_pulse::process(float *datain, float *dataout, float pitch)
 {
@@ -123,7 +123,7 @@ void osc_pulse::process(float *datain, float *dataout, float pitch)
 
     this->pitch = pitch;
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         oscstate -= large;
         while (oscstate < 0)
@@ -235,7 +235,7 @@ void osc_pulse_sync::process_stereo(float *datainL, float *datainR, float *datao
                                     float *dataoutR, float pitch)
 {
     process(0, dataoutL, pitch);
-    copy_block(dataoutL, dataoutR, block_size_quad);
+    copy_block(dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 }
 void osc_pulse_sync::process(float *datain, float *dataout, float pitch)
 {
@@ -254,7 +254,7 @@ void osc_pulse_sync::process(float *datain, float *dataout, float pitch)
     }
     this->pitch = pitch;
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         oscstate -= large;
         syncstate -= large;
@@ -401,7 +401,7 @@ void osc_saw::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
                              float pitch)
 {
     process(datainL, dataoutL, pitch);
-    copy_block(dataoutL, dataoutR, block_size_quad);
+    copy_block(dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 }
 void osc_saw::process(float *datain, float *dataout, float pitch)
 {
@@ -421,7 +421,7 @@ void osc_saw::process(float *datain, float *dataout, float pitch)
     }
     this->pitch = pitch;
     int k, l;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         dc = 0;
         for (l = 0; l < n_unison; l++)
@@ -469,10 +469,10 @@ void osc_sin::init_params()
 
 void osc_sin::process(float *datain, float *dataout, float pitch)
 {
-    osc.set_rate(440.0 * pi2 * pow((double)1.05946309435, (double)pitch + param[0]) *
+    osc.set_rate(440.0 * PI_2 * pow((double)1.05946309435, (double)pitch + param[0]) *
                  samplerate_inv);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         dataout[k] = osc.r;
         osc.process();
@@ -482,10 +482,10 @@ void osc_sin::process(float *datain, float *dataout, float pitch)
 void osc_sin::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                              float pitch)
 {
-    osc.set_rate(440.0 * pi2 * pow((double)1.05946309435, (double)pitch + param[0]) *
+    osc.set_rate(440.0 * PI_2 * pow((double)1.05946309435, (double)pitch + param[0]) *
                  samplerate_inv);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         dataoutL[k] = osc.r;
         dataoutR[k] = osc.r;
