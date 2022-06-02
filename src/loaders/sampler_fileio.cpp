@@ -1197,14 +1197,14 @@ bool sampler::load_all_from_xml(const void *data, int datasize, const fs::path &
         p_id &= 0xf;
 
         part_init(p_id, true, !is_multi);
-        recall_part_from_element(*part, &parts[p_id], revision, conf, is_multi, is_multi);
+        recall_part_from_element(*part, &parts[p_id], revision, conf.get(), is_multi, is_multi);
 
         TiXmlElement *zone = part->FirstChild("zone")->ToElement();
         while (zone)
         {
             int zone_id = this->GetFreeZoneId();
             InitZone(zone_id);
-            recall_zone_from_element(*zone, &zones[zone_id], revision, conf);
+            recall_zone_from_element(*zone, &zones[zone_id], revision, conf.get());
 
             zones[zone_id].part = p_id;
 
@@ -1236,7 +1236,7 @@ bool sampler::load_all_from_xml(const void *data, int datasize, const fs::path &
                 else
                 {
                     sample_id = this->GetFreeSampleId();
-                    samples[sample_id] = new sample(conf);
+                    samples[sample_id] = std::make_shared<sample>(conf.get());
                     if (samples[sample_id]->load(string_to_path(samplefname)))
                     {
                         zones[zone_id].sample_id = sample_id;
@@ -1332,7 +1332,6 @@ bool sampler::load_all_from_xml(const void *data, int datasize, const fs::path &
                         }
                         else
                         {
-                            delete samples[sample_id];
                             samples[sample_id] = 0;
                             zones[zone_id].sample_id = -1;
                             zone_exists[zone_id] = true;
@@ -1400,14 +1399,14 @@ bool sampler::load_all_from_sc1_xml(const void *data, int datasize, const fs::pa
         p_id &= 0xf;
 
         part_init(p_id, true, !is_multi);
-        recall_part_from_element(*part, &parts[p_id], revision, conf, is_multi, is_multi);
+        recall_part_from_element(*part, &parts[p_id], revision, conf.get(), is_multi, is_multi);
 
         TiXmlElement *zone = part->FirstChild("zone")->ToElement();
         while (zone)
         {
             int zone_id = this->GetFreeZoneId();
             InitZone(zone_id);
-            recall_zone_from_element(*zone, &zones[zone_id], revision, conf);
+            recall_zone_from_element(*zone, &zones[zone_id], revision, conf.get());
 
             zones[zone_id].part = p_id;
 
@@ -1439,7 +1438,7 @@ bool sampler::load_all_from_sc1_xml(const void *data, int datasize, const fs::pa
                 else
                 {
                     sample_id = this->GetFreeSampleId();
-                    samples[sample_id] = new sample(conf);
+                    samples[sample_id] = std::make_shared<sample>(conf.get());
                     if (samples[sample_id]->load(string_to_path(samplefname)))
                     {
                         zones[zone_id].sample_id = sample_id;
@@ -1535,7 +1534,6 @@ bool sampler::load_all_from_sc1_xml(const void *data, int datasize, const fs::pa
                         }
                         else
                         {
-                            delete samples[sample_id];
                             samples[sample_id] = 0;
                             zones[zone_id].sample_id = -1;
                             zone_exists[zone_id] = true;

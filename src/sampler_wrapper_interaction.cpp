@@ -599,7 +599,7 @@ void sampler::processWrapperEvents()
                 ad2.subid = ad.subid;
                 ad2.actiontype = vga_datamode;
                 modmatrix mm;
-                mm.assign(conf, &zones[z], &parts[editorpart]);
+                mm.assign(conf.get(), &zones[z], &parts[editorpart]);
                 int cmode = mm.get_destination_ctrlmode(zones[z].mm[ad.subid].destination);
                 string s = datamode_from_cmode(cmode);
                 strncpy_0term((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
@@ -614,7 +614,7 @@ void sampler::processWrapperEvents()
             ad2.subid = ad.subid;
             ad2.actiontype = vga_datamode;
             modmatrix mm;
-            mm.assign(conf, 0, &parts[editorpart]);
+            mm.assign(conf.get(), 0, &parts[editorpart]);
             int cmode = mm.get_destination_ctrlmode(parts[editorpart].mm[ad.subid].destination);
             string s = datamode_from_cmode(cmode);
             strncpy_0term((char *)ad2.data.str, s.c_str(), actiondata_maxstring);
@@ -861,7 +861,7 @@ void sampler::post_zonedata()
             if (zones[z].sample_id < 0)
                 sptr = 0;
             else
-                sptr = samples[zones[z].sample_id];
+                sptr = samples[zones[z].sample_id].get();
             postEventsToWrapper(ActionWaveDisplaySample(
                 sptr, zones[z].playmode, zones[z].sample_start, zones[z].sample_stop,
                 zones[z].loop_start, zones[z].loop_end, zones[z].loop_crossfade_length,
@@ -915,7 +915,7 @@ void sampler::post_zonedata()
 
         // modmatrix
         modmatrix mm;
-        mm.assign(conf, &zones[z], &parts[editorpart]);
+        mm.assign(conf.get(), &zones[z], &parts[editorpart]);
         post_initdata_mm(z);
 
         for (int i = 0; i < mm_entries; i++)
@@ -1428,7 +1428,7 @@ void sampler::post_initdata_mm(int zone)
     {
         // zone matrix
         modmatrix mm;
-        mm.assign(conf, &zones[zone], &parts[editorpart]);
+        mm.assign(conf.get(), &zones[zone], &parts[editorpart]);
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
         ad.id = ip_mm_src;
@@ -1478,7 +1478,7 @@ void sampler::post_initdata_mm_part()
     actiondata ad;
     {
         modmatrix mm;
-        mm.assign(conf, 0, &parts[editorpart]);
+        mm.assign(conf.get(), 0, &parts[editorpart]);
         ad.subid = -1; // send to all
         ad.actiontype = vga_entry_clearall;
         ad.id = ip_part_mm_src;

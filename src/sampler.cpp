@@ -70,7 +70,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     : mLogger(cb), mNumOutputs(NumOutputs), actionBuffer(0x4000)
 {
     LOGINFO(mLogger) << "scxt engine " << scxt::build::FullVersionStr << std::flush;
-    conf = new configuration(mLogger);
+    conf = std::make_unique<configuration>(mLogger);
     memset(externalControllers, 0, sizeof(external_controller) * n_custom_controllers);
 
 #if WINDOWS
@@ -85,7 +85,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
             strcpy(end,"\\morphEQ-custom.xml");
             meq_loader.load(1,path);*/
 
-    selected = new multiselect(this);
+    selected = std::make_unique<multiselect>(this);
 
     chunkDataPtr = 0;
     dbSampleListDataPtr = 0;
@@ -125,8 +125,8 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
 
         partv[c].mm = (modmatrix *)_mm_malloc(sizeof(modmatrix), 16);
         new (partv[c].mm) modmatrix();
-        partv[c].mm->assign(conf, 0, &parts[c], 0, &controllers[n_controllers * c], automation,
-                            &time_data);
+        partv[c].mm->assign(conf.get(), 0, &parts[c], 0, &controllers[n_controllers * c],
+                            automation, &time_data);
     }
 
     for (int i = 0; i < 16; i++)
@@ -215,8 +215,6 @@ sampler::~sampler(void)
         partv[c].mm->~modmatrix();
         _mm_free(partv[c].mm);
     }
-    delete conf;
-    delete selected;
     if (chunkDataPtr)
         free(chunkDataPtr);
     if (dbSampleListDataPtr)
@@ -438,7 +436,7 @@ void sampler::update_zone_switches(int z)
         return;
 
     modmatrix mm;
-    mm.assign(conf, &zones[z], 0);
+    mm.assign(conf.get(), &zones[z], 0);
     zones[z].element_active =
         (mm.is_source_used(ss_LFO1) & ve_LFO1) | (mm.is_source_used(ss_LFO2) & ve_LFO2) |
         (mm.is_source_used(ss_LFO3) & ve_LFO3) | (mm.is_source_used(ss_EG2) & ve_EG2);
@@ -711,11 +709,10 @@ bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use
             if (s < 0)
                 return false;
 
-            samples[s] = new sample(conf);
+            samples[s] = std::make_shared<sample>(conf.get());
 
             if (!(samples[s]->load(filename)))
             {
-                delete samples[s];
                 samples[s] = 0;
                 // return false;
                 s = -1; // failed to load
@@ -821,12 +818,11 @@ bool sampler::replace_zone(int z, const fs::path &fileName)
         s = GetFreeSampleId();
         if (s < 0)
             return false;
-        samples[s] = new sample(conf);
+        samples[s] = std::make_shared<sample>(conf.get());
     }
 
     if (!(samples[s]->load(fileName)))
     {
-        delete samples[s];
         samples[s] = 0;
         return false;
     }
@@ -834,7 +830,6 @@ bool sampler::replace_zone(int z, const fs::path &fileName)
     std::lock_guard lockUntilEnd(cs_patch);
     if ((s_old >= 0) && samples[s_old]->forget())
     {
-        delete samples[s_old];
         samples[s_old] = 0;
     }
 
@@ -912,7 +907,6 @@ bool sampler::free_zone(uint32_t zoneid)
     zone_exists[zoneid] = false;
     if ((zones[zoneid].sample_id >= 0) && samples[zones[zoneid].sample_id]->forget())
     {
-        delete samples[zones[zoneid].sample_id];
         samples[zones[zoneid].sample_id] = 0;
     }
     return true;
@@ -1109,7 +1103,7 @@ sampler::Preview::Preview(timedata *pTD, sampler *pParent)
     // Init Preview voice/zone/sample
     mpParent = pParent;
     mpVoice = std::make_unique<sampler_voice>(0, pTD);
-    mpSample = std::make_unique<sample>(mpParent->conf);
+    mpSample = std::make_unique<sample>(mpParent->conf.get());
     mActive = false;
     mAutoPreview = mpParent->mAutoPreview;
     mFilename = fs::path{};
