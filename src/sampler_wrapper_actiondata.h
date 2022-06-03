@@ -69,6 +69,7 @@
 #pragma once
 #include <cassert>
 #include <variant>
+#include <vector>
 #include "interaction_parameters.h"
 #include "filesystem/import.h"
 

@@ -46,7 +46,7 @@ LP2A::LP2A(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
 
-    lastparam[0] = -1654816816;
+    lastparam[0] = -1654816816.0f;
 }
 
 void LP2A::init_params()
@@ -88,7 +88,7 @@ LP2B::LP2B(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
 
-    lastparam[0] = -1654816816;
+    lastparam[0] = -1654816816.0f;
 }
 
 void LP2B::init_params()
@@ -151,7 +151,7 @@ superbiquad::superbiquad(float *fp, int *ip, int mode) : filter(fp, 0, true, ip)
     initmode = mode;
 
     assert(iparam);
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 
     // memset(&d,0,sizeof(d));
 }
@@ -334,7 +334,7 @@ HP2A::HP2A(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
 
-    lastparam[0] = -1654816816;
+    lastparam[0] = -1654816816.0f;
 }
 
 void HP2A::init_params()
@@ -383,7 +383,7 @@ BP2A::BP2A(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_bwdef);
 
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 }
 
 void BP2A::init_params()
@@ -426,7 +426,7 @@ BP2B::BP2B(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_bwdef);
 
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 }
 
 void BP2B::init_params()
@@ -477,7 +477,7 @@ BP2AD::BP2AD(float *fp) : filter(fp)
     ctrlmode[2] = cm_frequency0_2k;
     strcpy(ctrllabel[3], ("rel. offset"));
     ctrlmode[3] = cm_mod_freq;
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
@@ -511,7 +511,7 @@ void BP2AD::calcfreq(float *a, float *b)
     *a = (float)(1.442695040889f * log(freq0 / 440));
     freq1 = min(20000.f, max(freq1, 20.f));
     *b = (float)(1.442695040889f * log(freq1 / 440));
-    lastparam[0] = -1656816816;
+    lastparam[0] = -1656816816.0f;
 }
 
 void BP2AD::calc_coeffs()
@@ -562,7 +562,7 @@ PKA::PKA(float *fp) : filter(fp)
     ctrlmode[0] = cm_frequency_audible;
     strcpy(ctrllabel[1], ("resonance"));
     ctrlmode[1] = cm_percent;
-    lastparam[0] = -1654616816;
+    lastparam[0] = -1654616816.0f;
 
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
@@ -618,7 +618,7 @@ PKAD::PKAD(float *fp) : filter(fp)
     ctrlmode[2] = cm_frequency0_2k;
     strcpy(ctrllabel[3], ("rel. offset"));
     ctrlmode[3] = cm_mod_freq;
-    lastparam[0] = -1654616816;
+    lastparam[0] = -1654616816.0f;
 
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
@@ -702,7 +702,7 @@ NOTCH::NOTCH(float *fp) : filter(fp)
     ctrlmode[1] = cm_percent;
     strcpy(ctrlmode_desc[0], str_freqdef);
     strcpy(ctrlmode_desc[1], str_percentdef);
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 }
 
 void NOTCH::init_params()
@@ -761,7 +761,7 @@ LPHP_ser::LPHP_ser(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[1], str_percentdef);
     strcpy(ctrlmode_desc[2], str_freqdef);
     strcpy(ctrlmode_desc[3], str_percentdef);
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 }
 
 LPHP_ser::~LPHP_ser() {}
@@ -823,7 +823,7 @@ LPHP_par::LPHP_par(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[1], str_percentdef);
     strcpy(ctrlmode_desc[2], str_freqdef);
     strcpy(ctrlmode_desc[3], str_percentdef);
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 }
 
 LPHP_par::~LPHP_par() {}

@@ -778,7 +778,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
                         z->Filter[0].p[0] =
                             -4.45943f + float(i_generators[initialFilterFc].wAmount - 1500) / 1200;
                         z->Filter[0].p[1] =
-                            max(0.f, min(1.f, float(i_generators[initialFilterQ].wAmount / 960)));
+                            max(0.f, min(1.f, float(i_generators[initialFilterQ].wAmount / 960.f)));
                         update_zone_switches(newzone);
                     }
                 }

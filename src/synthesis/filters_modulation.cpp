@@ -555,7 +555,7 @@ void phaser::init()
 #endif
 }
 
-float basefreq[4] = {1.5 / 12, 19.5 / 12, 35 / 12, 50 / 12};
+float basefreq[4] = {1.5 / 12, 19.5 / 12, 35.0 / 12, 50.0 / 12};
 float basespan[4] = {2.0, 1.5, 1.0, 0.5};
 
 void phaser::suspend() { init(); }

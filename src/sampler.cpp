@@ -792,7 +792,7 @@ bool sampler::add_zone(const fs::path &filename, int *new_z, char part, bool use
             }
         }
 
-        sprintf(zones[i].name, samples[s]->GetName());
+        sprintf(zones[i].name, "%s", samples[s]->GetName());
     }
     else
     {

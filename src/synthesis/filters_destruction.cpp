@@ -741,7 +741,7 @@ fslewer::fslewer(float *fp) : filter(fp)
 
     v[0] = 0;
     v[1] = 0;
-    lastparam[1] = -165464684;
+    lastparam[1] = -165464684.0f;
 }
 
 fslewer::~fslewer() {}

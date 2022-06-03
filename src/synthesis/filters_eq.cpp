@@ -68,7 +68,7 @@ morphEQ::morphEQ(float *fp, void *loader, int *ip) : filter(fp, loader, true, ip
             b_active[i] = snap[0].bands[i].active || snap[1].bands[i].active;
     }
     gaintarget = 1.f;
-    lastparam[0] = -165464686; // make sure cal_coeffs altlid is executed for the first time
+    lastparam[0] = -165464686.0f; // make sure cal_coeffs altlid is executed for the first time
 }
 
 void morphEQ::init_params()
@@ -226,7 +226,7 @@ EQ2BP_A::EQ2BP_A(float *fp, int *ip) : filter(fp, 0, true, ip)
     strcpy(ctrlmode_desc[4], str_freqdef);
     strcpy(ctrlmode_desc[5], str_bwdef);
 
-    lastparam[0] = -1654646816; // make sure cal_coeffs altlid is executed for the first time
+    lastparam[0] = -1654646816.0f; // make sure cal_coeffs altlid is executed for the first time
 }
 
 void EQ2BP_A::init_params()
@@ -396,7 +396,7 @@ EQ6B::EQ6B(float *fp) : filter(fp)
     strcpy(ctrlmode_desc[4], str_dbbpdef);
     strcpy(ctrlmode_desc[5], str_dbbpdef);
 
-    lastparam[0] = -1654646816;
+    lastparam[0] = -1654646816.0f;
 }
 
 void EQ6B::init_params()
