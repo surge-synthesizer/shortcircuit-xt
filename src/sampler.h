@@ -339,7 +339,7 @@ class sampler
 
     bool toggled_samplereplace;
 
-    sample *samples[max_samples];
+    std::shared_ptr<sample> samples[max_samples];
     int polyphony;
     int mNumOutputs;
     timedata time_data;
@@ -350,9 +350,9 @@ class sampler
     float automation[n_automation_parameters];
 
     // AudioEffectX	*effect;
-    multiselect *selected;
+    std::unique_ptr<multiselect> selected;
     std::recursive_mutex cs_patch, cs_gui, cs_engine;
-    configuration *conf;
+    std::unique_ptr<configuration> conf;
     external_controller externalControllers[n_custom_controllers];
 
     char sample_replace_filename[256];

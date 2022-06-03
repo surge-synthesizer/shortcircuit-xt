@@ -300,7 +300,7 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const fs::path &fileName, int Part
             result = find(SampleListID.begin(), SampleListID.end(), s);
             if (result == SampleListID.end())
             {
-                size = RIFF_StoreSample(samples[s], 0);
+                size = RIFF_StoreSample(samples[s].get(), 0);
                 ZoneListSampleID.push_back(SampleListID.size());
                 SampleListSize.push_back(size);
                 SampleListID.push_back(s);
@@ -379,7 +379,7 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const fs::path &fileName, int Part
 
     for (unsigned int i = 0; i < SampleListID.size(); i++)
     {
-        RIFF_StoreSample(samples[SampleListID[i]], mf.ReadPtr(SampleListSize[i]));
+        RIFF_StoreSample(samples[SampleListID[i]].get(), mf.ReadPtr(SampleListSize[i]));
     }
 
     // Phase 4
@@ -604,14 +604,13 @@ bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, i
                     assert(s >= 0);
                     if (s < 0)
                         return false;
-                    samples[s] = new sample(conf);
+                    samples[s] = std::make_shared<sample>(conf.get());
                     assert(samples[s]);
                     samples[s]->forget(); // to set refcounter=0
                     SampleIDMap.push_back(s);
 
                     if (!samples[s]->parse_riff_wave(mf.GetPtr(), WAVEsize, true))
                     {
-                        delete samples[s];
                         samples[s] = 0;
                     }
                     mf.RIFFAscend();

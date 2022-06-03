@@ -188,7 +188,7 @@ void sampler::play_zone(int z)
     int resultchannel = zones[z].part;
     int ch = parts[zones[z].part].MIDIchannel;
     update_zone_switches(z);
-    voices[v]->play(samples[zones[z].sample_id], &zones[z], &parts[zones[z].part & 0xf],
+    voices[v]->play(samples[zones[z].sample_id].get(), &zones[z], &parts[zones[z].part & 0xf],
                     zones[z].key_root, 100, 0, &controllers[n_controllers * ch], automation, 1.f);
     voice_state[v].active = true;
     voice_state[v].key = zones[z].key_root;
@@ -391,7 +391,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
         if ((zones[z].sample_id >= 0) && samples[zones[z].sample_id])
         {
             update_zone_switches(z);
-            voices[v]->play(samples[zones[z].sample_id], &zones[z], &parts[p], key, velocity,
+            voices[v]->play(samples[zones[z].sample_id].get(), &zones[z], &parts[p], key, velocity,
                             detune, &controllers[n_controllers * channel], automation,
                             crossfade_amp);
             voice_state[v].active = true;
