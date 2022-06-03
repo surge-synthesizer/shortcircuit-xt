@@ -123,7 +123,7 @@ bool sample::load_recycle(const char *fname)
 
             // allocate memory;
             uint32 samplesizewithmargin =
-                this->sample_length + 2 * FIRipol_N + block_size + FIRoffset;
+                this->sample_length + 2 * FIRipol_N + BLOCK_SIZE + FIRoffset;
             sample_data = new float[samplesizewithmargin];
             int i;
             for (i = 0; i < samplesizewithmargin; i++)

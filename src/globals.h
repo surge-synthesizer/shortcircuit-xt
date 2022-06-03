@@ -37,33 +37,33 @@
 
 typedef uint32_t uint32;
 
-const uint32 block_size = 32; // must be a multiple of 4 (SIMD)
-const uint32 block_size_quad = block_size >> 2;
-const float inv_block_size = 1.f / float(block_size);
-const float inv_2block_size = 1.f / float(block_size << 1);
-const __m128 inv_block_size_128 = _mm_set1_ps(inv_block_size);
-const __m128 inv_2block_size_128 = _mm_set1_ps(inv_2block_size);
+const uint32 BLOCK_SIZE = 32; // must be a multiple of 4 (SIMD)
+const uint32 BLOCK_SIZE_QUAD = BLOCK_SIZE >> 2;
+const float INV_BLOCK_SIZE = 1.f / float(BLOCK_SIZE);
+const float INV_2BLOCK_SIZE = 1.f / float(BLOCK_SIZE << 1);
+const __m128 INV_BLOCK_SIZE_128 = _mm_set1_ps(INV_BLOCK_SIZE);
+const __m128 INV_2BLOCK_SIZE_128 = _mm_set1_ps(INV_2BLOCK_SIZE);
 
 #ifdef SCFREE
-const uint32 max_voices = 4;
+const uint32 MAX_VOICES = 4;
 #else
-const uint32 max_voices = 256;
+const uint32 MAX_VOICES = 256;
 #endif
 
-const uint32 max_samples = 2048;
-const uint32 max_zones = 2048;
-const uint32 max_groups = 64;
-const uint32 max_outputs = 8; // stereo outs
+const uint32 MAX_SAMPLES = 2048;
+const uint32 MAX_ZONES = 2048;
+const uint32 MAX_GROUPS = 64;
+const uint32 MAX_OUTPUTS = 8; // stereo outs
 // extern uint32 n_outputs;
-const uint32 n_sampler_parts = 16;
-const uint32 n_sampler_effects = 8;
-const uint32 n_automation_parameters = 32;
-const uint32 n_mute_groups = 64;
-const unsigned int pathlength = 1024;
+const uint32 N_SAMPLER_PARTS = 16;
+const uint32 N_SAMPLER_EFFECTS = 8;
+const uint32 N_AUTOMATION_PARAMETERS = 32;
+const uint32 N_MUTE_GROUPS = 64;
+const unsigned int PATHLENGTH = 1024;
 
-const float pi1 = 3.1415926535898f;
-const float pi2 = 6.2831853071796f;
-const float filter_freqrange = 20000.0f; // Hz
+const float PI_1 = 3.1415926535898f;
+const float PI_2 = 6.2831853071796f;
+const float FILTER_FREQRANGE = 20000.0f; // Hz
 extern float samplerate;
 extern float samplerate_inv;
 extern float multiplier_freq2omega;

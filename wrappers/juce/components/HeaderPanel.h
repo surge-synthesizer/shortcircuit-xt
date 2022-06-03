@@ -42,7 +42,7 @@ struct HeaderPanel : public juce::Component,
 
     void resized() override;
 
-    std::array<std::unique_ptr<widgets::OutlinedTextButton>, n_sampler_parts> partsButtons;
+    std::array<std::unique_ptr<widgets::OutlinedTextButton>, N_SAMPLER_PARTS> partsButtons;
 
     std::unique_ptr<widgets::CompactVUMeter> vuMeter0;
     std::unique_ptr<widgets::PolyphonyDisplay> polyDisplay;

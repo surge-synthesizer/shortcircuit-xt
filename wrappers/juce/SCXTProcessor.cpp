@@ -192,10 +192,10 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
 
         blockPos++;
 
-        if (blockPos >= block_size)
+        if (blockPos >= BLOCK_SIZE)
         {
             blockPos = 0;
-            sc3->time_data.ppqPos += (double)block_size * sc3->time_data.tempo / (60. * samplerate);
+            sc3->time_data.ppqPos += (double)BLOCK_SIZE * sc3->time_data.tempo / (60. * samplerate);
         }
     }
 

@@ -93,7 +93,7 @@ SCXTEditor::SCXTEditor(SCXTProcessor &p)
     lookAndFeel = std::make_unique<SCXTLookAndFeel>();
     setLookAndFeel(lookAndFeel.get());
 
-    for (int i = 0; i < max_zones; ++i)
+    for (int i = 0; i < MAX_ZONES; ++i)
         activeZones[i] = false;
     for (int i = 0; i < 128; ++i)
         playingMidiNotes[i] = 0;

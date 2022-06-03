@@ -286,7 +286,7 @@ size_t sampler::SaveAllAsRIFF(void **dataptr, const fs::path &fileName, int Part
         PartsSize = RIFF_StorePart(&parts[PartID], 0);
     }
 
-    for (unsigned int z = 0; z < max_zones; z++)
+    for (unsigned int z = 0; z < MAX_ZONES; z++)
     {
         if (zone_exist(z) && ((zones[z].part == PartID) || (PartID < 0)))
         {

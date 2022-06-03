@@ -47,5 +47,5 @@ class alignas(16) halfrate_stereo
     int M;
     bool steep;
     float oldoutL, oldoutR;
-    // unsigned int block_size;
+    // unsigned int BLOCK_SIZE;
 };

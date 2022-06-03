@@ -27,7 +27,7 @@ namespace components
 {
 HeaderPanel::HeaderPanel(SCXTEditor *ed) : editor(ed), DOMParticipant("header")
 {
-    for (int i = 0; i < n_sampler_parts; ++i)
+    for (int i = 0; i < N_SAMPLER_PARTS; ++i)
     {
         auto b = std::make_unique<scxt::widgets::OutlinedTextButton>(std::to_string(i + 1));
         b->setClickingTogglesState(true);
@@ -107,7 +107,7 @@ void HeaderPanel::resized()
     auto r = getLocalBounds().reduced(2, 2);
     r = r.withWidth(r.getHeight());
 
-    for (int i = 0; i < n_sampler_parts; ++i)
+    for (int i = 0; i < N_SAMPLER_PARTS; ++i)
     {
         partsButtons[i]->setBounds(r);
         r = r.translated(r.getHeight(), 0);
@@ -145,7 +145,7 @@ void HeaderPanel::resized()
 
 void HeaderPanel::onProxyUpdate()
 {
-    if (editor->selectedPart >= 0 && editor->selectedPart < n_sampler_parts)
+    if (editor->selectedPart >= 0 && editor->selectedPart < N_SAMPLER_PARTS)
     {
         partsButtons[editor->selectedPart]->setToggleState(
             true, juce::NotificationType::dontSendNotification);

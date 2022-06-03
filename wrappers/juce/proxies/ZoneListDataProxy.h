@@ -44,7 +44,7 @@ struct ZoneListDataProxy : public scxt::data::UIStateProxy
         {
         case vga_zonelist_clear:
         {
-            for (int i = 0; i < max_zones; ++i)
+            for (int i = 0; i < MAX_ZONES; ++i)
                 editor->activeZones[i] = false;
             handled = true;
             break;

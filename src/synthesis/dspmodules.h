@@ -62,7 +62,7 @@ template <class T, bool first_run_checks = true> class lipol
         new_v = 0;
         v = 0;
         dv = 0;
-        setBlockSize(block_size);
+        setBlockSize(BLOCK_SIZE);
     }
     inline void newValue(T f)
     {
@@ -96,7 +96,7 @@ template <class T, bool first_run_checks = true> class lag
         lpinv = 1 - lp;
         v = 0;
         target_v = 0;
-        setBlockSize(block_size);
+        setBlockSize(BLOCK_SIZE);
         if (first_run_checks)
             first_run = true;
     }
@@ -106,7 +106,7 @@ template <class T, bool first_run_checks = true> class lag
         lpinv = 1 - lp;
         v = 0;
         target_v = 0;
-        setBlockSize(block_size);
+        setBlockSize(BLOCK_SIZE);
         if (first_run_checks)
             first_run = true;
     }

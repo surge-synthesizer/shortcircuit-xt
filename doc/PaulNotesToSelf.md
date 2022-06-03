@@ -22,7 +22,7 @@ Each zone holds a single sample ID and a collection of playback features
 
 ### How is it created 
 
-- sampler has a `sample_zone zone[max_zones]` member
+- sampler has a `sample_zone zone[MAX_ZONES]` member
 
 ### What is the lifecycle
 

@@ -100,7 +100,7 @@ void BF::process_stereo(float *datainL, float *datainR, float *dataoutL, float *
     lp_params[1] = param[4];
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float inputL = datainL[k];
         float inputR = datainR[k];
@@ -138,7 +138,7 @@ void BF::process(float *datain, float *dataout, float pitch)
     lp_params[1] = param[4];
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float inputL = datain[k];
         time[0] -= t;
@@ -220,12 +220,12 @@ void OD::process(float *data, float pitch)
     drive = std::max(0.f, std::min(drive, 1.f));
 
     // peak filter
-    float pkbuffer[block_size];
-    memcpy(pkbuffer, data, block_size * sizeof(float));
+    float pkbuffer[BLOCK_SIZE];
+    memcpy(pkbuffer, data, BLOCK_SIZE * sizeof(float));
     peak->process(pkbuffer, pkbuffer, 0);
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float input = data[k] + pkbuffer[k] * pk_amp;
 
@@ -266,8 +266,8 @@ treemonster::treemonster(float *fp, int *ip) : filter(fp, 0, true, ip)
     length[1] = 0.f;
     osc[0].set_rate(0.0);
     osc[1].set_rate(0.0);
-    gain[0].set_blocksize(block_size);
-    gain[1].set_blocksize(block_size);
+    gain[0].set_blocksize(BLOCK_SIZE);
+    gain[1].set_blocksize(BLOCK_SIZE);
 }
 
 treemonster::~treemonster() {}
@@ -291,7 +291,7 @@ void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL
     // makes it possible to change the pitch continuously and not only on triggers
     gain[0].set_target(limit_range(param[2], 0.f, 1.f));
 
-    float tbuf alignas(16)[2][block_size];
+    float tbuf alignas(16)[2][BLOCK_SIZE];
     if (iparam[0])
         locut.coeff_LP2B(biquadunit::calc_omega(param[3]), 0.707);
     else
@@ -299,7 +299,7 @@ void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL
 
     locut.process_block_to(datainL, datainR, tbuf[0], tbuf[1]);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         if ((lastval[0] < 0.f) && (tbuf[0][k] >= 0.f))
         {
@@ -325,25 +325,25 @@ void treemonster::process_stereo(float *datainL, float *datainR, float *dataoutL
         lastval[1] = tbuf[1][k];
     }
 
-    mul_block(dataoutL, datainL, tbuf[0], block_size_quad);
-    mul_block(dataoutR, datainR, tbuf[1], block_size_quad);
+    mul_block(dataoutL, datainL, tbuf[0], BLOCK_SIZE_QUAD);
+    mul_block(dataoutR, datainR, tbuf[1], BLOCK_SIZE_QUAD);
 
     gain[0].fade_2_blocks_to(tbuf[0], dataoutL, tbuf[1], dataoutR, dataoutL, dataoutR,
-                             block_size_quad);
+                             BLOCK_SIZE_QUAD);
 }
 
 void treemonster::process(float *datain, float *dataout, float pitch)
 {
     gain[0].set_target(limit_range(param[2], 0.f, 1.f));
 
-    float tbuf alignas(16)[block_size];
+    float tbuf alignas(16)[BLOCK_SIZE];
     if (iparam[0])
         locut.coeff_LP2B(biquadunit::calc_omega(param[3]), 0.707);
     else
         locut.coeff_HP(biquadunit::calc_omega(param[3]), 0.707);
     locut.process_block_to(datain, tbuf);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         if ((lastval[0] < 0.f) && (tbuf[k] >= 0.f))
         {
@@ -356,8 +356,8 @@ void treemonster::process(float *datain, float *dataout, float pitch)
         length[0] += 1.0f;
         lastval[0] = tbuf[k];
     }
-    mul_block(dataout, datain, tbuf, block_size_quad);
-    gain[0].fade_block_to(tbuf, dataout, dataout, block_size_quad);
+    mul_block(dataout, datain, tbuf, BLOCK_SIZE_QUAD);
+    gain[0].fade_block_to(tbuf, dataout, dataout, BLOCK_SIZE_QUAD);
 }
 
 int treemonster::get_ip_count() { return 1; }
@@ -417,10 +417,10 @@ void clipper::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
     pregain.set_target(db_to_linear(param[0] - param[1]));
     postgain.set_target(db_to_linear(param[1]));
 
-    pregain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, block_size_quad);
-    hardclip_block(dataoutL, block_size_quad);
-    hardclip_block(dataoutR, block_size_quad);
-    postgain.multiply_2_blocks(dataoutL, dataoutR, block_size_quad);
+    pregain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
+    hardclip_block(dataoutL, BLOCK_SIZE_QUAD);
+    hardclip_block(dataoutR, BLOCK_SIZE_QUAD);
+    postgain.multiply_2_blocks(dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 }
 
 void clipper::process(float *datain, float *dataout, float pitch)
@@ -428,9 +428,9 @@ void clipper::process(float *datain, float *dataout, float pitch)
     pregain.set_target(db_to_linear(param[0] - param[1]));
     postgain.set_target(db_to_linear(param[1]));
 
-    pregain.multiply_block_to(datain, dataout, block_size_quad);
-    hardclip_block(dataout, block_size_quad);
-    postgain.multiply_block(dataout, block_size_quad);
+    pregain.multiply_block_to(datain, dataout, BLOCK_SIZE_QUAD);
+    hardclip_block(dataout, BLOCK_SIZE_QUAD);
+    postgain.multiply_block(dataout, BLOCK_SIZE_QUAD);
 }
 
 /*	distortion		*/
@@ -444,7 +444,7 @@ fdistortion::fdistortion(float *fp) : filter(fp), pre(4, false), post(4, false)
 
     strcpy(ctrlmode_desc[0], str_dbmoddef);
 
-    gain.set_blocksize(block_size << 1); // 2X oversampling
+    gain.set_blocksize(BLOCK_SIZE << 1); // 2X oversampling
 }
 
 fdistortion::~fdistortion() {}
@@ -465,40 +465,40 @@ void fdistortion::process_stereo(float *datainL, float *datainR, float *dataoutL
                                  float pitch)
 {
     gain.set_target(2.f * db_to_linear(param[0]));
-    float osbuffer alignas(16)[2][block_size * 2];
+    float osbuffer alignas(16)[2][BLOCK_SIZE * 2];
 
-    pre.process_block_U2(datainL, datainR, osbuffer[0], osbuffer[1], block_size << 1);
+    pre.process_block_U2(datainL, datainR, osbuffer[0], osbuffer[1], BLOCK_SIZE << 1);
 
     if (dataoutR)
     {
-        gain.multiply_2_blocks(osbuffer[0], osbuffer[1], block_size_quad << 1);
-        tanh7_block(osbuffer[0], block_size_quad << 1);
-        tanh7_block(osbuffer[1], block_size_quad << 1);
+        gain.multiply_2_blocks(osbuffer[0], osbuffer[1], BLOCK_SIZE_QUAD << 1);
+        tanh7_block(osbuffer[0], BLOCK_SIZE_QUAD << 1);
+        tanh7_block(osbuffer[1], BLOCK_SIZE_QUAD << 1);
     }
     else
     {
-        gain.multiply_block(osbuffer[0], block_size_quad << 1);
-        tanh7_block(osbuffer[0], block_size_quad << 1);
+        gain.multiply_block(osbuffer[0], BLOCK_SIZE_QUAD << 1);
+        tanh7_block(osbuffer[0], BLOCK_SIZE_QUAD << 1);
     }
 
-    post.process_block_D2(osbuffer[0], osbuffer[1], block_size << 1, dataoutL, dataoutR);
+    post.process_block_D2(osbuffer[0], osbuffer[1], BLOCK_SIZE << 1, dataoutL, dataoutR);
 }
 
 /*void fdistortion::process(float *data, float pitch)
 {
         gain.newValue(db_to_linear(param[0]));
 
-        float osbuffer[block_size*2];
+        float osbuffer[BLOCK_SIZE*2];
 
         int k;
         // upsample
-        for(k=0; k<block_size; k++)
+        for(k=0; k<BLOCK_SIZE; k++)
         {
                 osbuffer[(k<<1)] = data[k];
                 osbuffer[(k<<1)+1] = data[k];
         }
 
-        for(k=0; k<(block_size<<1); k++)
+        for(k=0; k<(BLOCK_SIZE<<1); k++)
         {
                 osbuffer[k] = pre.process(osbuffer[k]);
                 //osbuffer[k] = tanh_fast(gain.v*osbuffer[k]);
@@ -508,7 +508,7 @@ void fdistortion::process_stereo(float *datainL, float *datainR, float *dataoutL
         }
 
         // downsample
-        for(k=0; k<block_size; k++)
+        for(k=0; k<BLOCK_SIZE; k++)
         {
                 data[k] = osbuffer[(k<<1)];
         }
@@ -576,11 +576,11 @@ void microgate::process_stereo(float *datainL, float *datainR, float *dataoutL, 
     float reduction = db_to_linear(param[3]);
     int ihtime = (int)(float)(samplerate * note_to_pitch(12 * param[0]));
 
-    copy_block(datainL, dataoutL, block_size_quad);
-    copy_block(datainR, dataoutR, block_size_quad);
+    copy_block(datainL, dataoutL, BLOCK_SIZE_QUAD);
+    copy_block(datainR, dataoutR, BLOCK_SIZE_QUAD);
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float input = max(fabs(datainL[k]), fabs(datainR[k]));
 
@@ -664,10 +664,10 @@ void microgate::process(float *datain, float *dataout, float pitch)
     float reduction = db_to_linear(param[3]);
     int ihtime = (int)(float)(samplerate * note_to_pitch(12 * param[0]));
 
-    copy_block(datain, dataout, block_size_quad);
+    copy_block(datain, dataout, BLOCK_SIZE_QUAD);
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float input = fabs(datain[k]);
 
@@ -785,7 +785,7 @@ void fslewer::process(float *datain, float *dataout, float pitch)
 
     bq[0].process_block_to(datain, dataout);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         if (dataout[k] > v[0])
             v[0] = min(dataout[k], v[0] + rate.v);
@@ -804,7 +804,7 @@ void fslewer::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
 
     bq[0].process_block_to(datainL, datainR, dataoutL, dataoutR);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         if (dataoutL[k] > v[0])
             v[0] = min(dataoutL[k], v[0] + rate.v);

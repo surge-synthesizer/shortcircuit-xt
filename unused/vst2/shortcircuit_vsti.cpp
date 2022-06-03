@@ -38,7 +38,7 @@ static int InstanceCount = 0;
 
 //-------------------------------------------------------------------------------------------------------
 shortcircuit_vsti::shortcircuit_vsti(audioMasterCallback audioMaster)
-    : AudioEffectX(audioMaster, 1, n_automation_parameters) // 1 program, 1 parameter only
+    : AudioEffectX(audioMaster, 1, N_AUTOMATION_PARAMETERS) // 1 program, 1 parameter only
 {
     // load configuration
     configuration conf;
@@ -440,7 +440,7 @@ void shortcircuit_vsti::ProcessInternal(float **inputs, float **outputs, VstInt3
             // move clock
             float ipart;
             timedata *td = &(sobj->time_data);
-            td->ppqPos += (double)block_size * sobj->time_data.tempo / (60. * sampleRate);
+            td->ppqPos += (double)BLOCK_SIZE * sobj->time_data.tempo / (60. * sampleRate);
             td->pos_in_beat = modf((float)td->ppqPos, &ipart);
             td->pos_in_2beats = modf((float)td->ppqPos * 0.5f, &ipart);
             td->pos_in_bar = modf((float)td->ppqPos * 0.25f, &ipart);
@@ -463,10 +463,10 @@ void shortcircuit_vsti::ProcessInternal(float **inputs, float **outputs, VstInt3
             sobj->process_audio();
         }
 
-        int ns = min(sampleFrames - i, block_size - blockpos);
+        int ns = min(sampleFrames - i, BLOCK_SIZE - blockpos);
 
         assert(ns > 0);
-        assert(ns <= block_size);
+        assert(ns <= BLOCK_SIZE);
 
         for (unsigned int outp = 0; outp < (mNumOutputs << 1); outp++)
         {
@@ -485,7 +485,7 @@ void shortcircuit_vsti::ProcessInternal(float **inputs, float **outputs, VstInt3
         blockpos += ns;
         i += ns;
 
-        blockpos = blockpos & (block_size - 1);
+        blockpos = blockpos & (BLOCK_SIZE - 1);
     }
 
     assert(i == sampleFrames);

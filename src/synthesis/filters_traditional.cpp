@@ -221,27 +221,27 @@ void superbiquad::process(float *datain, float *dataout, float pitch)
     calc_coeffs();
     bq[0].process_block_to(datain, dataout);
 
-    // copy_block(datain,dataout,block_size_quad);
+    // copy_block(datain,dataout,BLOCK_SIZE_QUAD);
     // bq[0].process_block_DF2SOFTCLIP(dataout);
 
     int n = min(4, (iparam[1] + 1));
     for (int i = 1; i < n; i++)
     {
-        softclip_block(dataout, block_size_quad);
+        softclip_block(dataout, BLOCK_SIZE_QUAD);
         bq[i].process_block(dataout);
     }
     /*
             coeff_LP2_sd(d,param[0],param[1]);
 
-            double tmp[block_size];
-            for(int i=0; i<block_size; i++)
+            double tmp[BLOCK_SIZE];
+            for(int i=0; i<BLOCK_SIZE; i++)
             {
                     tmp[i] = datain[i];
             }
 
-            iir_lattice_sd(d,tmp,block_size);
+            iir_lattice_sd(d,tmp,BLOCK_SIZE);
 
-            for(int i=0; i<block_size; i++)
+            for(int i=0; i<BLOCK_SIZE; i++)
             {
                     dataout[i] = tmp[i];
             }*/
@@ -256,8 +256,8 @@ void superbiquad::process_stereo(float *datainL, float *datainR, float *dataoutL
     int n = min(4, (iparam[1] + 1));
     for (int i = 1; i < n; i++)
     {
-        softclip_block(dataoutL, block_size_quad);
-        softclip_block(dataoutR, block_size_quad);
+        softclip_block(dataoutL, BLOCK_SIZE_QUAD);
+        softclip_block(dataoutR, BLOCK_SIZE_QUAD);
         bq[i].process_block_to(dataoutL, dataoutR, dataoutL, dataoutR);
     }
 }
@@ -536,20 +536,20 @@ void BP2AD::process_stereo(float *datainL, float *datainR, float *dataoutL, floa
                            float pitch)
 {
     calc_coeffs();
-    float d alignas(16)[2][block_size];
+    float d alignas(16)[2][BLOCK_SIZE];
     bq[0].process_block_to(datainL, datainR, d[0], d[1]);
     bq[1].process_block_to(datainL, datainR, dataoutL, dataoutR);
-    accumulate_block(d[0], dataoutL, block_size_quad);
-    accumulate_block(d[1], dataoutR, block_size_quad);
+    accumulate_block(d[0], dataoutL, BLOCK_SIZE_QUAD);
+    accumulate_block(d[1], dataoutR, BLOCK_SIZE_QUAD);
 }
 
 void BP2AD::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
-    float d alignas(16)[block_size];
+    float d alignas(16)[BLOCK_SIZE];
     bq[0].process_block_to(datain, d);
     bq[1].process_block_to(datain, dataout);
-    accumulate_block(d, dataout, block_size_quad);
+    accumulate_block(d, dataout, BLOCK_SIZE_QUAD);
 }
 
 /*	PKA		*/
@@ -675,20 +675,20 @@ void PKAD::process_stereo(float *datainL, float *datainR, float *dataoutL, float
                           float pitch)
 {
     calc_coeffs();
-    float d alignas(16)[2][block_size];
+    float d alignas(16)[2][BLOCK_SIZE];
     bq[0].process_block_to(datainL, datainR, d[0], d[1]);
     bq[1].process_block_to(datainL, datainR, dataoutL, dataoutR);
-    accumulate_block(d[0], dataoutL, block_size_quad);
-    accumulate_block(d[1], dataoutR, block_size_quad);
+    accumulate_block(d[0], dataoutL, BLOCK_SIZE_QUAD);
+    accumulate_block(d[1], dataoutR, BLOCK_SIZE_QUAD);
 }
 
 void PKAD::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
-    float d alignas(16)[block_size];
+    float d alignas(16)[BLOCK_SIZE];
     bq[0].process_block_to(datain, d);
     bq[1].process_block_to(datain, dataout);
-    accumulate_block(d, dataout, block_size_quad);
+    accumulate_block(d, dataout, BLOCK_SIZE_QUAD);
 }
 /*	NOTCH		*/
 
@@ -856,18 +856,18 @@ void LPHP_par::process_stereo(float *datainL, float *datainR, float *dataoutL, f
                               float pitch)
 {
     calc_coeffs();
-    float d alignas(16)[2][block_size];
+    float d alignas(16)[2][BLOCK_SIZE];
     bq[0].process_block_to(datainL, datainR, d[0], d[1]);
     bq[1].process_block_to(datainL, datainR, dataoutL, dataoutR);
-    accumulate_block(d[0], dataoutL, block_size_quad);
-    accumulate_block(d[1], dataoutR, block_size_quad);
+    accumulate_block(d[0], dataoutL, BLOCK_SIZE_QUAD);
+    accumulate_block(d[1], dataoutR, BLOCK_SIZE_QUAD);
 }
 
 void LPHP_par::process(float *datain, float *dataout, float pitch)
 {
     calc_coeffs();
-    float d alignas(16)[block_size];
+    float d alignas(16)[BLOCK_SIZE];
     bq[0].process_block_to(datain, d);
     bq[1].process_block_to(datain, dataout);
-    accumulate_block(d, dataout, block_size_quad);
+    accumulate_block(d, dataout, BLOCK_SIZE_QUAD);
 }

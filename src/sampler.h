@@ -81,23 +81,23 @@ class sampler
 {
   public:
     // Aligned members
-    float output alignas(16)[max_outputs << 1][block_size],
-        output_part alignas(16)[n_sampler_parts << 1][block_size],
-        output_fx alignas(16)[n_sampler_effects << 1][block_size];
+    float output alignas(16)[MAX_OUTPUTS << 1][BLOCK_SIZE],
+        output_part alignas(16)[N_SAMPLER_PARTS << 1][BLOCK_SIZE],
+        output_fx alignas(16)[N_SAMPLER_EFFECTS << 1][BLOCK_SIZE];
     struct alignas(16) partvoice
     {
         lipol_ps fmix1, fmix2, ampL, ampR, pfg, aux1L, aux1R, aux2L, aux2R;
         filter *pFilter[2];
         int last_ft[2];
         modmatrix *mm;
-    } partv[n_sampler_parts];
+    } partv[N_SAMPLER_PARTS];
     struct alignas(16) multivoice
     {
         lipol_ps pregain, postgain;
-        filter *pFilter[n_sampler_effects];
-        int last_ft[n_sampler_effects];
+        filter *pFilter[N_SAMPLER_EFFECTS];
+        int last_ft[N_SAMPLER_EFFECTS];
     } multiv;
-    float *output_ptr[max_outputs << 1];
+    float *output_ptr[MAX_OUTPUTS << 1];
     scxt::log::StreamLogger mLogger;
 
     // Public Interface
@@ -144,8 +144,8 @@ class sampler
 
     std::string generateInternalStateView() const;
 
-    // float output[outputs_total_max][block_size];
-    float vu_rms[max_outputs << 1], vu_peak[max_outputs << 1];
+    // float output[outputs_total_max][BLOCK_SIZE];
+    float vu_rms[MAX_OUTPUTS << 1], vu_peak[MAX_OUTPUTS << 1];
     int vu_time;
 
     int get_headroom() { return headroom; };
@@ -290,8 +290,8 @@ class sampler
     /*
      * These are the data representations of the innards of the synth.
      */
-    sample_zone zones[max_zones];
-    sample_part parts[n_sampler_parts];
+    sample_zone zones[MAX_ZONES];
+    sample_part parts[N_SAMPLER_PARTS];
 
     /*
      * Multi contains the global FX state. It configures at runtime 'multiv' which contains
@@ -339,7 +339,7 @@ class sampler
 
     bool toggled_samplereplace;
 
-    std::shared_ptr<sample> samples[max_samples];
+    std::shared_ptr<sample> samples[MAX_SAMPLES];
     int polyphony;
     int mNumOutputs;
     timedata time_data;
@@ -347,7 +347,7 @@ class sampler
     void resetStateFromTimeData() {}
 
     int VUrate, VUidx, lastSentPolyphony{-1};
-    float automation[n_automation_parameters];
+    float automation[N_AUTOMATION_PARAMETERS];
 
     // AudioEffectX	*effect;
     std::unique_ptr<multiselect> selected;
@@ -365,10 +365,10 @@ class sampler
 
     bool volatile AudioHalted; // don't care to wait for the process thread
   protected:
-    bool zone_exists[max_zones];
+    bool zone_exists[MAX_ZONES];
     bool holdengine;
-    sampler_voice *voices[max_voices];
-    voicestate voice_state[max_voices];
+    sampler_voice *voices[MAX_VOICES];
+    voicestate voice_state[MAX_VOICES];
     double headroom_linear;
     int headroom;
     bool hold[16];

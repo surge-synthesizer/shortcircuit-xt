@@ -54,7 +54,7 @@ std::string sampler::generateInternalStateView() const
 
     auto g1 = pfx.up();
     oss << pfx << "samples:\n";
-    for (auto i = 0; i < max_samples; ++i)
+    for (auto i = 0; i < MAX_SAMPLES; ++i)
     {
         auto g2 = pfx.up();
         auto s = samples[i];
@@ -110,7 +110,7 @@ std::string sampler::generateInternalStateView() const
     }
 
     oss << pfx << "zones:\n";
-    for (auto i = 0; i < max_zones; ++i)
+    for (auto i = 0; i < MAX_ZONES; ++i)
     {
         auto g2 = pfx.up();
         if (zone_exists[i])
@@ -254,7 +254,7 @@ std::string sampler::generateInternalStateView() const
         }
     }
     oss << pfx << "parts:\n";
-    for (int i = 0; i < n_sampler_parts; ++i)
+    for (int i = 0; i < N_SAMPLER_PARTS; ++i)
     {
         auto g2 = pfx.up();
         auto p = &parts[i];
@@ -270,7 +270,7 @@ std::string sampler::generateInternalStateView() const
         auto gmutli = pfx.up();
         bool anyfx = false;
         oss << pfx << "effects:\n";
-        for (int i = 0; i < n_sampler_effects; ++i)
+        for (int i = 0; i < N_SAMPLER_EFFECTS; ++i)
         {
             auto f = multiv.pFilter[i];
             if (f)

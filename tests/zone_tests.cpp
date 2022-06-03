@@ -56,7 +56,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
         }
 
         INFO("Checking zone existence is correct");
-        for (int i = 0; i < max_zones; ++i)
+        for (int i = 0; i < MAX_ZONES; ++i)
             REQUIRE(sc3->zone_exist(i) == (i < z));
     }
 
@@ -74,7 +74,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             z++;
         }
 
-        for (auto i = 0; i < max_zones; ++i)
+        for (auto i = 0; i < MAX_ZONES; ++i)
         {
             if (sc3->zone_exist(i))
             {
@@ -103,7 +103,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
             REQUIRE(sc3);
             sc3->set_samplerate(48000);
 
-            auto oneSecInBlocks = (int)(48000 / block_size);
+            auto oneSecInBlocks = (int)(48000 / BLOCK_SIZE);
 
             for (auto item : kit)
             {
@@ -111,7 +111,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
                 REQUIRE(sc3->load_file(item, &newG, &newZ));
             }
 
-            for (auto i = 0; i < max_zones; ++i)
+            for (auto i = 0; i < MAX_ZONES; ++i)
             {
                 if (sc3->zone_exist(i))
                 {
@@ -145,7 +145,7 @@ TEST_CASE("Zones from 3 Wavs", "[zones]")
                         sc3->ReleaseNote(0, n, 0);
 
                     sc3->process_audio();
-                    for (int k = 0; k < block_size; ++k)
+                    for (int k = 0; k < BLOCK_SIZE; ++k)
                     {
                         rms += sc3->output[0][k] * sc3->output[0][k] +
                                sc3->output[1][k] * sc3->output[1][k];

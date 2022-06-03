@@ -232,7 +232,7 @@ void reverb::update_rtime()
         max_dt = std::max(max_dt, delay_time[t]);
     }
     lastf[rp_decaytime] = param[rp_decaytime];
-    float t = inv_block_size * ((float)(max_dt >> 8) + samplerate * powf(2.f, param[rp_decaytime]) *
+    float t = INV_BLOCK_SIZE * ((float)(max_dt >> 8) + samplerate * powf(2.f, param[rp_decaytime]) *
                                                            2.f); // *2 is to get the db120 time
     ringout_time = (int)t;
 }
@@ -249,7 +249,7 @@ void reverb::update_rsize()
 void reverb::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                             float pitch)
 {
-    float wetL alignas(16)[block_size], wetR alignas(16)[block_size];
+    float wetL alignas(16)[BLOCK_SIZE], wetR alignas(16)[BLOCK_SIZE];
 
     if (iparam[0] != shape)
         loadpreset(iparam[0]);
@@ -274,7 +274,7 @@ void reverb::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
     __m128 damp4 = _mm_load1_ps(&param[rp_damping]);
     __m128 damp4m1 = _mm_sub_ps(one4, damp4);
 
-    for (int k = 0; k < block_size; k++)
+    for (int k = 0; k < BLOCK_SIZE; k++)
     {
         for (int t = 0; t < rev_taps; t += 4)
         {
@@ -336,12 +336,12 @@ void reverb::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
     hicut.process_block_slowlag(wetL, wetR);
 
     // scale width
-    float M alignas(16)[block_size], S alignas(16)[block_size];
-    encodeMS(wetL, wetR, M, S, block_size_quad);
-    width.multiply_block(S, block_size_quad);
-    decodeMS(M, S, dataoutL, dataoutR, block_size_quad);
+    float M alignas(16)[BLOCK_SIZE], S alignas(16)[BLOCK_SIZE];
+    encodeMS(wetL, wetR, M, S, BLOCK_SIZE_QUAD);
+    width.multiply_block(S, BLOCK_SIZE_QUAD);
+    decodeMS(M, S, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 
-    // mix.fade_2_blocks_to(dataL,wetL,dataR,wetR,dataL,dataR, block_size_quad);
+    // mix.fade_2_blocks_to(dataL,wetL,dataR,wetR,dataL,dataR, BLOCK_SIZE_QUAD);
 }
 
 void reverb::suspend() { init(); }

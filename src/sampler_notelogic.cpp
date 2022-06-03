@@ -29,7 +29,7 @@ using std::min;
 void sampler::kill_notes(uint32 zone_id)
 {
     int i;
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active && (voice_state[i].zone_id == zone_id))
         {
@@ -42,7 +42,7 @@ void sampler::kill_notes(uint32 zone_id)
 void sampler::AllNotesOff()
 {
     int i;
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
         voice_state[i].active = false;
 
     polyphony = 0;
@@ -63,7 +63,7 @@ int sampler::softkill_oldest_note(int group_id)
     int i, oldest_id = -1;
     float oldest = 0.f;
 
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active)
         {
@@ -77,7 +77,7 @@ int sampler::softkill_oldest_note(int group_id)
     }
     if (oldest_id < 0) // no notes in the release state found, check ALL notes..
     {
-        for (i = 0; i < max_voices; i++)
+        for (i = 0; i < MAX_VOICES; i++)
         {
             if (voice_state[i].active)
             {
@@ -102,7 +102,7 @@ int sampler::GetFreeVoiceId(int group_id)
     int v_free = -1;
     int oldest_id = -1;
 
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active /* && (!voices[i]->is_uberrelease)*/)
         {
@@ -163,7 +163,7 @@ int sampler::GetFreeVoiceId(int group_id)
 
 void sampler::update_highest_voice_id()
 {
-    for (int i = 0; i < max_voices; i++)
+    for (int i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active)
             highest_voice_id = i + 1;
@@ -201,7 +201,7 @@ void sampler::play_zone(int z)
 void sampler::release_zone(int zone_id)
 {
     int i;
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if ((voice_state[i].zone_id == zone_id) && voice_state[i].active)
             voices[i]->release(127);
@@ -222,7 +222,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
     bool require_ignore = false;
     if (!is_release) // look for legato notes
     {
-        for (int tv = 0; tv < max_voices; tv++)
+        for (int tv = 0; tv < MAX_VOICES; tv++)
         {
             if (voice_state[tv].active &&
                 (parts[voice_state[tv].part].polymode == polymode_legato) &&
@@ -244,7 +244,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
     }
 
     // find matching zone
-    for (int z = 0; z < max_zones; z++)
+    for (int z = 0; z < MAX_ZONES; z++)
     {
         int p = 0, v = 0, n_split = 0, zkey = 0;
         float crossfade_amp = 1.f;
@@ -361,7 +361,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
         if (!zones[z].ignore_part_polymode && (parts[p].polymode == polymode_mono))
         {
             int tv;
-            for (tv = 0; tv < max_voices; tv++)
+            for (tv = 0; tv < MAX_VOICES; tv++)
             {
                 if (voice_state[tv].active && (voice_state[tv].part == p) &&
                     !zones[voice_state[tv].zone_id].ignore_part_polymode)
@@ -375,7 +375,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
         {
             int tv;
             int mg = zones[z].mute_group;
-            for (tv = 0; tv < max_voices; tv++)
+            for (tv = 0; tv < MAX_VOICES; tv++)
             {
                 if (voice_state[tv].active && (zones[voice_state[tv].zone_id].mute_group ==
                                                mg) /* && (z!=voice_state[tv].zone_id)*/)
@@ -447,7 +447,7 @@ int sampler::get_zone_poly(int zone)
 {
     int n = 0, i;
 
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active && (voice_state[i].zone_id == zone))
             n++;
@@ -459,7 +459,7 @@ int sampler::get_group_poly(int group)
 {
     unsigned int n = 0;
     /*
-            for(unsigned i=0; i<max_voices; i++)
+            for(unsigned i=0; i<MAX_VOICES; i++)
             {
                     if (voice_state[i].active && (zones[voice_state[i].zone_id].group_id == group))
                             n++;
@@ -471,7 +471,7 @@ bool sampler::get_slice_state(int zone, int slice)
 {
     int n = 0, i;
 
-    for (i = 0; i < max_voices; i++)
+    for (i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active && (voice_state[i].zone_id == zone) &&
             (voices[i]->slice_id == slice))
@@ -488,7 +488,7 @@ void sampler::ReleaseNote(char channel, char key, char velocity)
     keystate[channel][key] = 0;
 
     // find note
-    for (int i = 0; i < max_voices; i++)
+    for (int i = 0; i < MAX_VOICES; i++)
     {
         if (voice_state[i].active && (voice_state[i].key == key) &&
             (voice_state[i].channel == channel))

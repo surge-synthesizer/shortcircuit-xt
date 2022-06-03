@@ -30,7 +30,7 @@ extern float SincOffsetF32[(FIRipol_M)*FIRipol_N];
 
 chorus::chorus(float *fp, int *ip) : filter(fp, 0, true, ip)
 {
-    feedback.set_blocksize(block_size);
+    feedback.set_blocksize(BLOCK_SIZE);
 
     strcpy(filtername, "Chorus");
     parameter_count = 7;
@@ -127,12 +127,12 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
 {
     setvars(false);
 
-    float tbufferL alignas(16)[block_size];
-    float tbufferR alignas(16)[block_size];
-    float fbblock alignas(16)[block_size];
+    float tbufferL alignas(16)[BLOCK_SIZE];
+    float tbufferR alignas(16)[BLOCK_SIZE];
+    float fbblock alignas(16)[BLOCK_SIZE];
     int k;
 
-    /*for(k=0; k<block_size; k++)
+    /*for(k=0; k<BLOCK_SIZE; k++)
     {
             tbufferL[k] = 0;
             tbufferR[k] = 0;
@@ -140,7 +140,7 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
             {
                     time[j].process();
                     float vtime = time[j].v;
-                    int i_dtime = max(block_size,min((int)vtime,max_delay_length-FIRipol_N-1));
+                    int i_dtime = max(BLOCK_SIZE,min((int)vtime,max_delay_length-FIRipol_N-1));
                     int rp = (wpos-i_dtime+k);
                     int sinc = FIRipol_N*limit_range((int)(FIRipol_M*(float(i_dtime +
     1)-vtime)),0,FIRipol_M-1);
@@ -159,10 +159,10 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
             tbufferR[k] *= gainscale;
     }	*/
 
-    clear_block_antidenormalnoise(tbufferL, block_size_quad);
-    clear_block_antidenormalnoise(tbufferR, block_size_quad);
+    clear_block_antidenormalnoise(tbufferL, BLOCK_SIZE_QUAD);
+    clear_block_antidenormalnoise(tbufferR, BLOCK_SIZE_QUAD);
 
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         __m128 L = _mm_setzero_ps(), R = _mm_setzero_ps();
 
@@ -171,7 +171,7 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
             time[j].process();
             float vtime = time[j].v;
             int i_dtime =
-                std::max((uint32_t)block_size,
+                std::max((uint32_t)BLOCK_SIZE,
                          (uint32_t)std::min((int)vtime, (int)(max_delay_length - FIRipol_N - 1)));
             int rp = ((wpos - i_dtime + k) - FIRipol_N) & (max_delay_length - 1);
             int sinc = FIRipol_N * limit_range((int)(FIRipol_M * (float(i_dtime + 1) - vtime)), 0,
@@ -195,26 +195,26 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
 
     lp.process_block(tbufferL, tbufferR);
     hp.process_block(tbufferL, tbufferR);
-    add_block(tbufferL, tbufferR, fbblock, block_size_quad);
-    feedback.multiply_block(fbblock, block_size_quad);
-    hardclip_block(fbblock, block_size_quad);
-    accumulate_block(datainL, fbblock, block_size_quad);
-    accumulate_block(datainR, fbblock, block_size_quad);
+    add_block(tbufferL, tbufferR, fbblock, BLOCK_SIZE_QUAD);
+    feedback.multiply_block(fbblock, BLOCK_SIZE_QUAD);
+    hardclip_block(fbblock, BLOCK_SIZE_QUAD);
+    accumulate_block(datainL, fbblock, BLOCK_SIZE_QUAD);
+    accumulate_block(datainR, fbblock, BLOCK_SIZE_QUAD);
 
-    if (wpos + block_size >= max_delay_length)
+    if (wpos + BLOCK_SIZE >= max_delay_length)
     {
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             buffer[(wpos + k) & (max_delay_length - 1)] = fbblock[k];
         }
     }
     else
     {
-        /*for(k=0; k<block_size; k++)
+        /*for(k=0; k<BLOCK_SIZE; k++)
         {
                 buffer[wpos+k] = fbblock[k];
         }*/
-        copy_block(fbblock, &buffer[wpos], block_size_quad);
+        copy_block(fbblock, &buffer[wpos], BLOCK_SIZE_QUAD);
     }
 
     if (wpos == 0)
@@ -223,12 +223,12 @@ void chorus::process_stereo(float *datainL, float *datainR, float *dataoutL, flo
                 buffer[k]; // copy buffer so FIR-core doesn't have to wrap
 
     // scale width
-    float M alignas(16)[block_size], S alignas(16)[block_size];
-    encodeMS(tbufferL, tbufferR, M, S, block_size_quad);
-    width.multiply_block(S, block_size_quad);
-    decodeMS(M, S, dataoutL, dataoutR, block_size_quad);
+    float M alignas(16)[BLOCK_SIZE], S alignas(16)[BLOCK_SIZE];
+    encodeMS(tbufferL, tbufferR, M, S, BLOCK_SIZE_QUAD);
+    width.multiply_block(S, BLOCK_SIZE_QUAD);
+    decodeMS(M, S, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 
-    wpos += block_size;
+    wpos += BLOCK_SIZE;
     wpos = wpos & (max_delay_length - 1);
 }
 

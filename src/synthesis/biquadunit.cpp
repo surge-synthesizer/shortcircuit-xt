@@ -71,13 +71,14 @@ void biquadunit::coeff_LP2B(double omega, double Q)
 
     {
         double w_sq = omega * omega;
-        double den = (w_sq * w_sq) + (pi1 * pi1 * pi1 * pi1) + w_sq * (pi1 * pi1) * (1 / Q - 2);
+        double den =
+            (w_sq * w_sq) + (PI_1 * PI_1 * PI_1 * PI_1) + w_sq * (PI_1 * PI_1) * (1 / Q - 2);
         double G1 = std::min(1.0, sqrt((w_sq * w_sq) / den) * 0.5);
 
         double cosi = cos(omega), sinu = sin(omega),
                // alpha = sinu*sinh((log(2.0)/2.0) * (BW) * omega / sinu),
             alpha = sinu / (2 * Q),
-               // G1 = 0.05, //powf(2,-log(pi1/omega)/log(2.0)),
+               // G1 = 0.05, //powf(2,-log(PI_1/omega)/log(2.0)),
                // set aa to 6 db
 
             A = 2 * sqrt(G1) * sqrt(2 - G1), b0 = (1 - cosi + G1 * (1 + cosi) + A * sinu) * 0.5,
@@ -209,12 +210,12 @@ void biquadunit::coeff_peakEQ(double omega, double BW, double gain)
 void biquadunit::coeff_orfanidisEQ(double omega, double BW, double G, double GB, double G0)
 {
     double limit = 0.95;
-    double w0 = omega; // min(pi1-0.000001,omega);
+    double w0 = omega; // min(PI_1-0.000001,omega);
     BW = std::max(minBW, BW);
     double Dww = 2 * w0 * sinh((log(2.0) / 2.0) * BW); // sinh = (e^x - e^-x)/2
 
     double gainscale = 1;
-    // if(omega>pi1) gainscale = 1 / (1 + (omega-pi1)*(4/Dw));
+    // if(omega>PI_1) gainscale = 1 / (1 + (omega-PI_1)*(4/Dw));
 
     if (abs(G - G0) > 0.00001)
     {
@@ -222,14 +223,14 @@ void biquadunit::coeff_orfanidisEQ(double omega, double BW, double G, double GB,
         double G00 = abs(G * G - G0 * G0);
         double F00 = abs(GB * GB - G0 * G0);
         double num =
-            G0 * G0 * square(w0 * w0 - (pi1 * pi1)) + G * G * F00 * (pi1 * pi1) * Dww * Dww / F;
-        double den = square(w0 * w0 - pi1 * pi1) + F00 * pi1 * pi1 * Dww * Dww / F;
+            G0 * G0 * square(w0 * w0 - (PI_1 * PI_1)) + G * G * F00 * (PI_1 * PI_1) * Dww * Dww / F;
+        double den = square(w0 * w0 - PI_1 * PI_1) + F00 * PI_1 * PI_1 * Dww * Dww / F;
         double G1 = sqrt(num / den);
 
-        if (omega > pi1)
+        if (omega > PI_1)
         {
             G = G1 * 0.9999;
-            w0 = pi1 - 0.00001;
+            w0 = PI_1 - 0.00001;
             G00 = abs(G * G - G0 * G0);
             F00 = abs(GB * GB - G0 * G0);
         }
@@ -306,7 +307,7 @@ void biquadunit::set_coef(double a0, double a1, double a2, double b0, double b1,
 
 void biquadunit::process_block(double *data)
 {
-    for (int k = 0; k < block_size; k += 2)
+    for (int k = 0; k < BLOCK_SIZE; k += 2)
     {
         __m128d input = _mm_load_sd(data + k);
         a1.process();
@@ -334,7 +335,7 @@ void biquadunit::process_block(double *data)
 
 void biquadunit::process_block(float *data)
 {
-    for (int k = 0; k < block_size; k += 4)
+    for (int k = 0; k < BLOCK_SIZE; k += 4)
     {
         // load
         __m128 vl = _mm_load_ps(data + k);
@@ -391,7 +392,7 @@ void biquadunit::process_block(float *data)
 
 void biquadunit::process_block_to(float *data, float *dataout)
 {
-    for (int k = 0; k < block_size; k += 4)
+    for (int k = 0; k < BLOCK_SIZE; k += 4)
     {
         // load
         __m128 vl = _mm_load_ps(data + k);
@@ -448,7 +449,7 @@ void biquadunit::process_block_to(float *data, float *dataout)
 
 void biquadunit::process_block(float *dataL, float *dataR)
 {
-    for (int k = 0; k < block_size; k += 4)
+    for (int k = 0; k < BLOCK_SIZE; k += 4)
     {
         // load
         __m128 vl = _mm_load_ps(dataL + k);
@@ -522,7 +523,7 @@ void biquadunit::process_block_slowlag(float *dataL, float *dataR)
     b1.process();
     b2.process();
 
-    for (int k = 0; k < block_size; k += 4)
+    for (int k = 0; k < BLOCK_SIZE; k += 4)
     {
         // load
         __m128 vl = _mm_load_ps(dataL + k);
@@ -570,7 +571,7 @@ void biquadunit::process_block_slowlag(float *dataL, float *dataR)
 
 void biquadunit::process_block_to(float *dataL, float *dataR, float *dstL, float *dstR)
 {
-    for (int k = 0; k < block_size; k += 4)
+    for (int k = 0; k < BLOCK_SIZE; k += 4)
     {
         // load
         __m128 vl = _mm_load_ps(dataL + k);
@@ -644,7 +645,7 @@ void biquadunit::process_block(float *data)
     else*/
     {
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             a1.process();
             a2.process();
@@ -672,7 +673,7 @@ void biquadunit::process_block_to(float *data, float *dataout)
     else*/
     {
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             a1.process();
             a2.process();
@@ -706,7 +707,7 @@ void biquadunit::process_block_slowlag(float *dataL, float *dataR)
         b2.process();
 
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             double input = dataL[k];
             double op;
@@ -737,7 +738,7 @@ void biquadunit::process_block(float *dataL, float *dataR)
     else*/
     {
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             a1.process();
             a2.process();
@@ -774,7 +775,7 @@ void biquadunit::process_block_to(float *dataL, float *dataR, float *dstL, float
     else*/
     {
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             a1.process();
             a2.process();
@@ -811,7 +812,7 @@ void biquadunit::process_block(double *data)
     else*/
     {
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             a1.process();
             a2.process();
@@ -838,7 +839,7 @@ void biquadunit::process_block_DF2SOFTCLIP(float *data)
 {
     {
         int k;
-        for (k = 0; k < block_size; k++)
+        for (k = 0; k < BLOCK_SIZE; k++)
         {
             a1.process();
             a2.process();

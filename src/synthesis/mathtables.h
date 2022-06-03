@@ -26,14 +26,14 @@ extern float waveshapers[8][1024]; // typ?
 
 inline double shafted_tanh(double x) { return (exp(x) - exp(-x * 1.2)) / (exp(x) + exp(-x)); }
 
-inline void init_tables(double samplerate, int block_size)
+inline void init_tables(double samplerate, int BLOCK_SIZE)
 {
     float db60 = powf(10.f, 0.05f * -60.f);
     for (int i = 0; i < 512; i++)
     {
         table_dB[i] = powf(10.f, 0.05f * ((float)i - 384.f));
         table_pitch[i] = powf(2.f, ((float)i - 256.f) * (1.f / 12.f));
-        double k = samplerate * pow(2.0, (((double)i - 256.0) / 16.0)) / (double)block_size;
+        double k = samplerate * pow(2.0, (((double)i - 256.0) / 16.0)) / (double)BLOCK_SIZE;
         table_envrate_lpf[i] = (float)(1.f - exp(log(db60) / k));
         table_envrate_linear[i] = 1 / k;
     }

@@ -110,8 +110,8 @@ void limiter::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
 
     // TODO sidechain.. disabled atm (needs cunning strategy for feed back.. can be better
     // with separate filter for that)
-    // Align16 float sidechainL[block_size];
-    // Align16 float sidechainR[block_size];
+    // Align16 float sidechainL[BLOCK_SIZE];
+    // Align16 float sidechainR[BLOCK_SIZE];
     // bq.coeff_peakEQ(bq.calc_omega(param[4]),1,param[5]);
 
     /*if(lastparam[1] != param[1])
@@ -133,9 +133,9 @@ void limiter::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
         // feedback design
         __m128 postgainv = _mm_rsqrt_ss(pregain.target);
         postgain.set_target(postgainv);
-        pregain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, block_size_quad);
+        pregain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 
-        for (unsigned int k = 0; k < block_size; k++)
+        for (unsigned int k = 0; k < BLOCK_SIZE; k++)
         {
             __m128 xL = _mm_load_ss(dataoutL + k);
             __m128 xR = _mm_load_ss(dataoutR + k);
@@ -168,18 +168,18 @@ void limiter::process_stereo(float *datainL, float *datainR, float *dataoutL, fl
             _mm_store_ss(dataoutL + k, xL);
             _mm_store_ss(dataoutR + k, xR);
         }
-        postgain.multiply_2_blocks(dataoutL, dataoutR, block_size_quad);
+        postgain.multiply_2_blocks(dataoutL, dataoutR, BLOCK_SIZE_QUAD);
     }
     else
     {
         // feedforward design
-        pregain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, block_size_quad);
+        pregain.multiply_2_blocks_to(datainL, datainR, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
 
         // bq.process_block_to(dataoutL,dataoutR,sidechainL,sidechainR);
 
         const __m128 postg = _mm_set_ss(0.3333f);
 
-        for (unsigned int k = 0; k < block_size; k++)
+        for (unsigned int k = 0; k < BLOCK_SIZE; k++)
         {
             __m128 xL = _mm_load_ss(dataoutL + k);
             __m128 xR = _mm_load_ss(dataoutR + k);
@@ -246,9 +246,9 @@ void limiter::process(float *datain, float *dataout, float pitch)
         // feedback design
         __m128 postgainv = _mm_rsqrt_ss(pregain.target);
         postgain.set_target(postgainv);
-        pregain.multiply_block_to(datain, dataout, block_size_quad);
+        pregain.multiply_block_to(datain, dataout, BLOCK_SIZE_QUAD);
 
-        for (unsigned int k = 0; k < block_size; k++)
+        for (unsigned int k = 0; k < BLOCK_SIZE; k++)
         {
             __m128 x = _mm_load_ss(dataout + k);
             __m128 mef = _mm_max_ss(_mm_load_ss(&ef), m128_one);
@@ -276,15 +276,15 @@ void limiter::process(float *datain, float *dataout, float pitch)
             _mm_store_ss(&ef, ef_c);
             _mm_store_ss(dataout + k, x);
         }
-        postgain.multiply_block(dataout, block_size_quad);
+        postgain.multiply_block(dataout, BLOCK_SIZE_QUAD);
     }
     else
     {
         // feedforward design
-        pregain.multiply_block_to(datain, dataout, block_size_quad);
+        pregain.multiply_block_to(datain, dataout, BLOCK_SIZE_QUAD);
         const __m128 postg = _mm_set_ss(0.3333f);
 
-        for (unsigned int k = 0; k < block_size; k++)
+        for (unsigned int k = 0; k < BLOCK_SIZE; k++)
         {
             __m128 x = _mm_load_ss(dataout + k);
 
@@ -363,11 +363,11 @@ void gate::process_stereo(float *datainL, float *datainR, float *dataoutL, float
     float reduction = db_to_linear(param[2]);
     int ihtime = (int)(float)(samplerate * powf(2, param[0]));
 
-    copy_block(datainL, dataoutL, block_size_quad);
-    copy_block(datainR, dataoutR, block_size_quad);
+    copy_block(datainL, dataoutL, BLOCK_SIZE_QUAD);
+    copy_block(datainR, dataoutR, BLOCK_SIZE_QUAD);
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float input = max(fabs(datainL[k]), fabs(datainR[k]));
 
@@ -402,10 +402,10 @@ void gate::process(float *datain, float *dataout, float pitch)
     float reduction = db_to_linear(param[2]);
     int ihtime = (int)(float)(samplerate * powf(2, param[0]));
 
-    copy_block(datain, dataout, block_size_quad);
+    copy_block(datain, dataout, BLOCK_SIZE_QUAD);
 
     int k;
-    for (k = 0; k < block_size; k++)
+    for (k = 0; k < BLOCK_SIZE; k++)
     {
         float input = datain[k];
 
@@ -441,7 +441,7 @@ void gate::process(float *datain, float *dataout, float pitch)
 
         strcpy(ctrlmode_desc[0], str_dbmoddef);
 
-        amount.setBlockSize(block_size*2);	// 2X oversampling
+        amount.setBlockSize(BLOCK_SIZE*2);	// 2X oversampling
 
         reg = 0;
 }
@@ -461,17 +461,17 @@ void fexciter::process(float *data, float pitch)
 {
         amount.newValue(db_to_linear(param[0]));
 
-        float osbuffer[block_size*2];
+        float osbuffer[BLOCK_SIZE*2];
 
         int k;
         // upsample
-        for(k=0; k<block_size; k++)
+        for(k=0; k<BLOCK_SIZE; k++)
         {
                 osbuffer[(k<<1)] = data[k];
                 osbuffer[(k<<1)+1] = data[k];
         }
 
-        for(k=0; k<(block_size<<1); k++)
+        for(k=0; k<(BLOCK_SIZE<<1); k++)
         {
                 float in = pre.process(osbuffer[k]);
                 float out = in + amount.v*(in-reg)*in;
@@ -481,7 +481,7 @@ void fexciter::process(float *data, float pitch)
         }
 
         // downsample
-        for(k=0; k<block_size; k++)
+        for(k=0; k<BLOCK_SIZE; k++)
         {
                 data[k] = osbuffer[(k<<1)];
         }
@@ -501,9 +501,9 @@ stereotools::stereotools(float *fp, int *ip) : filter(fp, 0, true, ip)
     strcpy(ctrlmode_desc[0], str_percentbpdef);
     strcpy(ctrlmode_desc[1], "f,-2,0.005,2,1,%");
 
-    ampL.set_blocksize(block_size);
-    ampR.set_blocksize(block_size);
-    width.set_blocksize(block_size);
+    ampL.set_blocksize(BLOCK_SIZE);
+    ampR.set_blocksize(BLOCK_SIZE);
+    width.set_blocksize(BLOCK_SIZE);
 }
 
 stereotools::~stereotools() {}
@@ -524,27 +524,27 @@ void stereotools::process_stereo(float *datainL, float *datainR, float *dataoutL
     ampL.set_target_smoothed(clamp1bp(1 - param[0]));
     ampR.set_target_smoothed(clamp1bp(1 + param[0]) * ((iparam[0] == 1) ? -1.f : 1.f));
 
-    float M alignas(16)[block_size], S alignas(16)[block_size];
+    float M alignas(16)[BLOCK_SIZE], S alignas(16)[BLOCK_SIZE];
 
     if (iparam[0] == 2)
     {
-        copy_block(datainL, M, block_size_quad);
-        copy_block(datainR, S, block_size_quad);
+        copy_block(datainL, M, BLOCK_SIZE_QUAD);
+        copy_block(datainR, S, BLOCK_SIZE_QUAD);
     }
     else
     {
-        encodeMS(datainL, datainR, M, S, block_size_quad);
+        encodeMS(datainL, datainR, M, S, BLOCK_SIZE_QUAD);
     }
 
-    width.multiply_block(S, block_size_quad);
-    decodeMS(M, S, dataoutL, dataoutR, block_size_quad);
-    ampL.multiply_block(dataoutL, block_size_quad);
-    ampR.multiply_block(dataoutR, block_size_quad);
+    width.multiply_block(S, BLOCK_SIZE_QUAD);
+    decodeMS(M, S, dataoutL, dataoutR, BLOCK_SIZE_QUAD);
+    ampL.multiply_block(dataoutL, BLOCK_SIZE_QUAD);
+    ampR.multiply_block(dataoutR, BLOCK_SIZE_QUAD);
 }
 
 void stereotools::process(float *datain, float *dataout, float pitch)
 {
-    copy_block(datain, dataout, block_size_quad); // do nothing
+    copy_block(datain, dataout, BLOCK_SIZE_QUAD); // do nothing
 }
 
 int stereotools::get_ip_count() { return 1; }

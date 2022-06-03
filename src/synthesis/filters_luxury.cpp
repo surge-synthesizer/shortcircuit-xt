@@ -53,9 +53,9 @@ LP4M_sat::LP4M_sat(float *fp, int *ip)
 
     memset(reg, 0, sizeof(float) * 10);
 
-    g.setBlockSize(LP4M_oversampling * block_size);
-    r.setBlockSize(LP4M_oversampling * block_size);
-    gain.set_blocksize(block_size);
+    g.setBlockSize(LP4M_oversampling * BLOCK_SIZE);
+    r.setBlockSize(LP4M_oversampling * BLOCK_SIZE);
+    gain.set_blocksize(BLOCK_SIZE);
 
     first_run = true;
 }
@@ -127,12 +127,12 @@ void LP4M_sat::process_stereo(float *datainL, float *datainR, float *dataoutL, f
     float *ypoleL = &reg[limit_range(iparam[0], 0, 3)];
     float *ypoleR = &reg[5 + limit_range(iparam[0], 0, 3)];
 
-    float dataOS alignas(16)[2][block_size << 1];
+    float dataOS alignas(16)[2][BLOCK_SIZE << 1];
 
-    gain.multiply_2_blocks_to(datainL, datainR, dataOS[0], dataOS[1], block_size_quad);
-    pre_filter.process_block_U2(dataOS[0], dataOS[1], dataOS[0], dataOS[1], block_size << 1);
+    gain.multiply_2_blocks_to(datainL, datainR, dataOS[0], dataOS[1], BLOCK_SIZE_QUAD);
+    pre_filter.process_block_U2(dataOS[0], dataOS[1], dataOS[0], dataOS[1], BLOCK_SIZE << 1);
 
-    for (int k = 0; k < (block_size << 1); k++)
+    for (int k = 0; k < (BLOCK_SIZE << 1); k++)
     {
         float inL = dataOS[0][k];
         float inR = dataOS[1][k];
@@ -158,7 +158,7 @@ void LP4M_sat::process_stereo(float *datainL, float *datainR, float *dataoutL, f
         r.process();
     }
 
-    post_filter.process_block_D2(dataOS[0], dataOS[1], block_size << 1, dataoutL, dataoutR);
+    post_filter.process_block_D2(dataOS[0], dataOS[1], BLOCK_SIZE << 1, dataoutL, dataoutR);
 }
 
 void LP4M_sat::process(float *datain, float *dataout, float pitch)
@@ -178,13 +178,13 @@ void LP4M_sat::process(float *datain, float *dataout, float pitch)
 
     float *ypole = &reg[limit_range(iparam[0], 0, 3)];
 
-    float dataOS alignas(16)[2][block_size << 1];
+    float dataOS alignas(16)[2][BLOCK_SIZE << 1];
 
-    gain.multiply_block_to(datain, dataOS[0], block_size_quad);
-    clear_block(dataOS[1], block_size_quad);
-    pre_filter.process_block_U2(dataOS[0], dataOS[1], dataOS[0], dataOS[1], block_size << 1);
+    gain.multiply_block_to(datain, dataOS[0], BLOCK_SIZE_QUAD);
+    clear_block(dataOS[1], BLOCK_SIZE_QUAD);
+    pre_filter.process_block_U2(dataOS[0], dataOS[1], dataOS[0], dataOS[1], BLOCK_SIZE << 1);
 
-    for (int k = 0; k < (block_size << 1); k++)
+    for (int k = 0; k < (BLOCK_SIZE << 1); k++)
     {
         float in = dataOS[0][k];
         reg[0] = reg[0] + g.v * (((in - r.v * (reg[3] + reg[4]))) - reg[0]);
@@ -199,7 +199,7 @@ void LP4M_sat::process(float *datain, float *dataout, float pitch)
         r.process();
     }
 
-    post_filter.process_block_D2(dataOS[0], dataOS[1], block_size << 1, dataout);
+    post_filter.process_block_D2(dataOS[0], dataOS[1], BLOCK_SIZE << 1, dataout);
 }
 
 /* moog 4-pole SVF without saturation	*/
@@ -232,8 +232,8 @@ LP4M::LP4M(float *fp) : filter(fp)
         wb_d = 0;
         wc_d = 0;
 
-        g.setBlockSize(LP4M_oversampling*block_size);
-        r.setBlockSize(LP4M_oversampling*block_size);
+        g.setBlockSize(LP4M_oversampling*BLOCK_SIZE);
+        r.setBlockSize(LP4M_oversampling*BLOCK_SIZE);
 
         first_run = true;
 }
@@ -280,16 +280,16 @@ limit_range((440*pow((double)2,(double)param[0])*(double)samplerate_inv*0.5),0,0
                 break;
         };
 
-        double dataOS[block_size*LP4M_oversampling];
+        double dataOS[BLOCK_SIZE*LP4M_oversampling];
 
         int k;
-        for(k=0; k<block_size; k++)
+        for(k=0; k<BLOCK_SIZE; k++)
         {
                 dataOS[2*k] = data[k];
                 dataOS[2*k+1] = data[k];
         }
 
-        int bsos = block_size*LP4M_oversampling;
+        int bsos = BLOCK_SIZE*LP4M_oversampling;
         for(k=0; k<bsos; k++)
         {
                 double in = dataOS[k];
@@ -307,7 +307,7 @@ limit_range((440*pow((double)2,(double)param[0])*(double)samplerate_inv*0.5),0,0
 
         }
 
-        for(k=0; k<block_size; k++)
+        for(k=0; k<BLOCK_SIZE; k++)
         {
                 data[k] = 0.5*(dataOS[2*k]+dataOS[2*k+1]);
         }
