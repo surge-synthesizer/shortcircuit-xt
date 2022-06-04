@@ -16,7 +16,7 @@ jobs:
         mac:
           imageName: 'macos-10.15'
           cmakeRelArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
-          cmakeDebArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
+          cmakeDebArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           isMac: True
         win:
           imageName: 'windows-2019'
