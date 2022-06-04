@@ -40,10 +40,10 @@ fauxstereo::fauxstereo(float *ep, int *ip) : filter(ep)
     strcpy(ctrlmode_desc[1], ("f,-10,0.05,-5,4,s"));
     strcpy(ctrlmode_desc[2], str_percentdef);
 
-    combfilter = new COMB3(fp);
+    combfilter = std::make_unique<COMB3>(fp);
 }
 
-fauxstereo::~fauxstereo() { delete combfilter; }
+fauxstereo::~fauxstereo() {}
 
 void fauxstereo::init_params()
 {

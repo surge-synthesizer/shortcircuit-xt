@@ -22,6 +22,7 @@
 #include "resampling.h"
 #include "sampler_state.h"
 #include "synthesis/biquadunit.h"
+#include <memory>
 #include <vt_dsp/basic_dsp.h>
 #include <vt_dsp/halfratefilter.h>
 #include <vt_dsp/lattice.h>
@@ -648,7 +649,7 @@ class alignas(16) OD : public filter
 
   protected:
     float time, level, postslew, lp_params[6], pk_params[6];
-    filter *lp2a, *peak;
+    std::unique_ptr<filter> lp2a, peak;
 };
 
 //-------------------------------------------------------------------------------------------------------
@@ -1150,7 +1151,7 @@ class alignas(16) fauxstereo : public filter
     // virtual void suspend();
   protected:
     // lag<float,true> l_amplitude,l_source;
-    COMB3 *combfilter;
+    std::unique_ptr<COMB3> combfilter;
     float fp[n_filter_parameters];
 };
 

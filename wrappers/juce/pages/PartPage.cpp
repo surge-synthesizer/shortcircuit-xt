@@ -348,7 +348,7 @@ struct ModulationRouting : public ContentBase
             active[i]->setBounds(div.next(0.05));
             source[i]->setBounds(div.next(0.23));
             source2[i]->setBounds(div.next(0.23));
-            strength[i]->setBounds(div.next(0.16));
+            strength[i]->setBounds(div.next(0.10));
             destination[i]->setBounds(div.next(0.23));
             curve[i]->setBounds(div.rest());
             row = row.translated(0, rh);

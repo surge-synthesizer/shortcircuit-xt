@@ -160,7 +160,7 @@ void BF::process(float *datain, float *dataout, float pitch)
 
 OD::OD(float *fp) : filter(fp)
 {
-    strcpy(filtername, ("m�rder OD"));
+    strcpy(filtername, ("murder OD"));
     parameter_count = 5;
     strcpy(ctrllabel[0], ("drive"));
     ctrlmode[0] = cm_percent;
@@ -187,15 +187,11 @@ OD::OD(float *fp) : filter(fp)
         lp_params[1] = fp[4];
         pk_params[0] = fp[1];
     }
-    lp2a = new LP2A(lp_params);
-    peak = new PKA(pk_params);
+    lp2a = std::make_unique<LP2A>(lp_params);
+    peak = std::make_unique<PKA>(pk_params);
 }
 
-OD::~OD()
-{
-    delete lp2a;
-    delete peak;
-}
+OD::~OD() {}
 
 void OD::init_params()
 {
