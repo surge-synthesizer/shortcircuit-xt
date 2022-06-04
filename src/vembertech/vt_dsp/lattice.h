@@ -15,6 +15,8 @@
 ** open source in December 2020.
 */
 
+#include <emmintrin.h>
+
 struct lattice_sd
 {
     struct
