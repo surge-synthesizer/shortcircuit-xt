@@ -31,6 +31,7 @@ struct build
 
     // Some features from cmake
     static const char *CMAKE_INSTALL_PREFIX;
+    static const char *BuildCompiler;
 };
 } // namespace scxt
 

@@ -312,7 +312,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 					sub ecx, LoopOffset
 					add edx, LoopOffset
 
-					cmp Direction, 0			; v�lj path beroende p� direction (som �r tokl�tt att predicta)
+					cmp Direction, 0			; follow path depending on direction (which is hard to predict)
 					jg upper
 ;lower										
 					cmp eax, LowerBound					
