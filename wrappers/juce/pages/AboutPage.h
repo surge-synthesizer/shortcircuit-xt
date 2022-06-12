@@ -43,8 +43,9 @@ struct AboutPage : PageBase
         icon = juce::Drawable::createFromImageData(SCXTUIAssets::SCicon_svg,
                                                    SCXTUIAssets::SCicon_svgSize);
         info.push_back({"Version", scxt::build::FullVersionStr});
-        info.push_back(
-            {"Build Time", std::string(scxt::build::BuildDate) + " at " + scxt::build::BuildTime});
+        info.push_back({"Build Time", std::string(scxt::build::BuildDate) + " at " +
+                                          scxt::build::BuildTime + " using " +
+                                          scxt::build::BuildCompiler});
 
 #if MAC
         std::string platform = "macOS";

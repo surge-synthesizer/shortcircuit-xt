@@ -88,4 +88,3 @@ target_link_libraries(ShortcircuitXT PRIVATE
         juce::juce_audio_processors
         juce::juce_dsp
         )
-

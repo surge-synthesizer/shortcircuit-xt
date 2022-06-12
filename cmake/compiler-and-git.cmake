@@ -21,6 +21,8 @@ add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         -D SHORTCBLD=${CMAKE_BINARY_DIR}
         -D AZURE_PIPELINE=${AZURE_PIPELINE}
         -D WIN32=${WIN32}
+        -D CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
+        -D CMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
         -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
         )
 
