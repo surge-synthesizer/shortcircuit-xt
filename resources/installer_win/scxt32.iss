@@ -54,7 +54,7 @@ Name: "SA"; Description: "{#MyAppName} Standalone (32-bit)"; Types: full standal
 
 [Files]
 Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.vst3\*"; DestDir: "{autocf}\VST3\{#MyAppPublisher}\{#MyAppName}.vst3\"; Components: VST3; Flags: ignoreversion recursesubdirs
-Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.clap"; DestDir: "{autocf}\Clap\{#MyAppPublisher}\"; Components: CLAP; Flags: ignoreversion
+Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.clap"; DestDir: "{autocf}\CLAP\{#MyAppPublisher}\"; Components: CLAP; Flags: ignoreversion
 Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.exe"; DestDir: "{app}"; Components: SA; Flags: ignoreversion
 
 [Icons]
