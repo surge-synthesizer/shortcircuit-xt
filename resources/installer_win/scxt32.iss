@@ -4,6 +4,10 @@
 #define MyAppNameCondensed "ShortcircuitXT"
 #define MyID "8BDBC849-F102-44A0-9BFA-B28556BDE40C"
 
+#ifndef MyAppVersion
+#define MyAppVersion "0.0.0"
+#endif
+
 ;uncomment these two lines if building the installer locally!
 ;#define SCXT_SRC "..\..\"
 ;#define SCXT_BIN "..\..\build\"
@@ -12,7 +16,7 @@
 AppId={#MyID}
 AppName={#MyAppName}
 AppVerName={#MyAppName}
-AppVersion={#SCXT_VERSION}
+AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -29,7 +33,7 @@ UninstallDisplayIcon={uninstallexe}
 UsePreviousAppDir=yes
 Compression=lzma
 SolidCompression=yes
-UninstallFilesDir={app}\uninstall
+UninstallFilesDir={autoappdata}\{#MyAppName}\uninstall
 CloseApplicationsFilter=*.exe,*.vst3
 WizardStyle=modern
 WizardSizePercent=100
