@@ -105,8 +105,8 @@ elseif (WIN32)
             TARGET shortcircuit-installer
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.0
-            COMMAND Tools.InnoSetup.6.2.0/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DSCXT_VERSION="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
+            COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.1
+            COMMAND Tools.InnoSetup.6.2.1/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
     else()
         message(STATUS "NuGet not found")
     endif()
