@@ -23,8 +23,6 @@
 #include "tinyxml/tinyxml.h"
 #if WINDOWS
 #include <windows.h>
-#else
-#include "windows_compat.h"
 #endif
 #include "globals.h"
 #include "synthesis/mathtables.h"

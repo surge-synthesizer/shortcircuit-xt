@@ -31,12 +31,13 @@
 #include <windows.h>
 #include <mmiscapi.h>
 #else
-#include <windows_compat.h>
 #include <iostream>
 #include <memory>
 
 #include "infrastructure/logfile.h"
 #include "riff_memfile.h"
+
+typedef void *HPSTR;
 
 struct sc3mmio_hand
 {

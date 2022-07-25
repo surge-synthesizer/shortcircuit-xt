@@ -132,14 +132,14 @@ int parse_dls_patchlist(void *data, size_t filesize, void **plist)
         return 0;
     if (!mf.riff_descend('colh', &datasize))
         return 0;
-    DWORD patchcount = mf.ReadDWORD();
+    uint32_t patchcount = mf.ReadDWORD();
     mf.SeekI(startpos);
     if (!mf.riff_descend_RIFF_or_LIST('lins', &datasize))
         return 0;
 
     midipatch *mp = new midipatch[patchcount];
     *plist = mp;
-    for (DWORD i = 0; i < patchcount; i++)
+    for (uint32_t i = 0; i < patchcount; i++)
     {
         if (!mf.riff_descend_RIFF_or_LIST('ins ', &datasize))
             return 0;

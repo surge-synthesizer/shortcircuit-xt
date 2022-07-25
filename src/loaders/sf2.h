@@ -18,10 +18,6 @@
 #pragma once
 #pragma pack(push, 1)
 
-#if !WINDOWS
-#include "windows_compat.h"
-#endif
-
 typedef enum
 {
     monoSample = 1,
@@ -36,69 +32,69 @@ typedef enum
 
 struct sf2_Sample
 {
-    CHAR achSampleName[20];
-    DWORD dwStart;
-    DWORD dwEnd;
-    DWORD dwStartloop;
-    DWORD dwEndloop;
-    DWORD dwSampleRate;
-    BYTE byOriginalKey;
-    CHAR chCorrection;
-    WORD wSampleLink;
-    WORD sfSampleType;
+    char achSampleName[20];
+    uint32_t dwStart;
+    uint32_t dwEnd;
+    uint32_t dwStartloop;
+    uint32_t dwEndloop;
+    uint32_t dwSampleRate;
+    uint8_t byOriginalKey;
+    char chCorrection;
+    uint16_t wSampleLink;
+    uint16_t sfSampleType;
 };
 
 struct sf2_PresetHeader
 {
-    CHAR achPresetName[20];
-    WORD wPreset;
-    WORD wBank;
-    WORD wPresetBagNdx;
-    DWORD dwLibrary;
-    DWORD dwGenre;
-    DWORD dwMorphology;
+    char achPresetName[20];
+    uint16_t wPreset;
+    uint16_t wBank;
+    uint16_t wPresetBagNdx;
+    uint32_t dwLibrary;
+    uint32_t dwGenre;
+    uint32_t dwMorphology;
 };
 
 struct sf2_PresetBag
 {
-    WORD wGenNdx;
-    WORD wModNdx;
+    uint16_t wGenNdx;
+    uint16_t wModNdx;
 };
 
 typedef struct
 {
-    BYTE byLo;
-    BYTE byHi;
+    uint8_t byLo;
+    uint8_t byHi;
 } rangesType;
 
 typedef union
 {
     rangesType ranges;
-    SHORT shAmount;
-    WORD wAmount;
+    int16_t shAmount;
+    uint16_t wAmount;
 } genAmountType;
 
 struct sf2_PresetGenList
 {
-    WORD sfGenOper;
+    uint16_t sfGenOper;
     genAmountType genAmount;
 };
 
 struct sf2_InstHeader
 {
-    CHAR achInstName[20];
-    WORD wInstBagNdx;
+    char achInstName[20];
+    uint16_t wInstBagNdx;
 };
 
 struct sf2_InstBag
 {
-    WORD wInstGenNdx;
-    WORD wInstModNdx;
+    uint16_t wInstGenNdx;
+    uint16_t wInstModNdx;
 };
 
 struct sf2_InstGenList
 {
-    WORD sfGenOper;
+    uint16_t sfGenOper;
     genAmountType genAmount;
 };
 

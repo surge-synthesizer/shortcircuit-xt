@@ -153,14 +153,6 @@ class sampler
     bool zone_exist(int id);
     bool verify_zone_validity(int zone_id);
 
-    // automation interface
-
-    unsigned int auto_get_n_parameters();
-    const char *auto_get_parameter_name(unsigned int);
-    const char *auto_get_parameter_display(unsigned int);
-    float auto_get_parameter_value(unsigned int);
-    void auto_set_parameter_value(unsigned int, float);
-
     // Interface to GUI wrapeprs
     struct WrapperListener
     {

@@ -34,8 +34,6 @@
 #if WINDOWS
 #include <shlobj.h>
 #include <windows.h>
-#else
-#include "windows_compat.h"
 #endif
 
 #include <string>

@@ -635,7 +635,7 @@ bool sampler_voice::process_block(float *p_L, float *p_R, float *p_aux1L, float 
             envelope_follower = envelope_follower*p + (1-p)*ef_newvalue;
     }*/
 
-    _MM_ALIGN16 float tempbuf[2][BLOCK_SIZE], postfader_buf[2][BLOCK_SIZE];
+    float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
 
     if (use_stereo)
     {

@@ -23,8 +23,6 @@
 #include "sample.h"
 #include "sampler.h"
 
-#include "vt_gui/browserdata.h"
-
 #include "components/DebugPanel.h"
 #include "data/SCXTData.h"
 #include "SCXTLookAndFeel.h"

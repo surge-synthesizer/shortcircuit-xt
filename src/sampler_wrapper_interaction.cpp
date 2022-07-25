@@ -26,7 +26,7 @@
 #include "synthesis/steplfo.h"
 #include "sampler_wrapper_actiondata.h"
 
-#include <vt_gui/browserdata.h>
+#include "browser/ContentBrowser.h"
 
 #include "util/scxtstring.h"
 

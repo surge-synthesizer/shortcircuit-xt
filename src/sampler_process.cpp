@@ -75,7 +75,7 @@ void sampler::process_global_effects()
 
         if ((multiv.pFilter[f]) && (!multi.Filter[f].bypass))
         {
-            _MM_ALIGN16 float tempbuf[2][BLOCK_SIZE];
+            float tempbuf alignas(16)[2][BLOCK_SIZE];
 
             float *L = output_fx[f << 1];
             float *R = output_fx[(f << 1) + 1];
@@ -108,7 +108,7 @@ void sampler::process_part(int p)
     float *L = output_part[(p << 1)];
     float *R = output_part[(p << 1) + 1];
 
-    _MM_ALIGN16 float tempbuf[2][BLOCK_SIZE], postfader_buf[2][BLOCK_SIZE];
+    float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
 
     // smooth controllers
 
