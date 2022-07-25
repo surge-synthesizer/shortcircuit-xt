@@ -23,11 +23,24 @@
 #include <thread>
 #include <mutex>
 
+/**
+ * This is the one class still used from the old vt_gui stuff.
+ */
+struct database_samplelist
+{
+    char name[64];
+    int id;
+    size_t size;
+    int refcount;
+    int type; // hddref = 0, embedded = 1...
+};
+
 namespace scxt
 {
 namespace content
 {
-/*
+
+/**
  * The ContentBrowser is a replacement for the browser database vt_gui object
  * reworked with more, well, filesystemy goodness and stuff in mind.
  * It is thread safe, but at a cost which is it takes internal locks on rescans

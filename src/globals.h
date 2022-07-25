@@ -75,5 +75,11 @@ extern float multiplier_freq2omega;
 const char SCXT_CONFIG_DIRECTORY[] = "ShortCircuitXT";
 
 #if !WINDOWS
-#include "windows_compat.h"
+#include <cstring>
+#if LINUX
+#include <strings.h>
+#endif
+
+#define stricmp strcasecmp
+#define strnicmp strncasecmp
 #endif

@@ -35,7 +35,6 @@ set(SHORTCIRCUIT_SOURCE
         multiselect.cpp
         sample.cpp
         sampler.cpp
-        sampler_automation.cpp
         sampler_wrapper_interaction.cpp
         loaders/sampler_fileio.cpp
         loaders/sampler_fileio_riff.cpp

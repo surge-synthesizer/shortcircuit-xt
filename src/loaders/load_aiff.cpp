@@ -70,22 +70,22 @@ double ConvertFromIeeeExtended(unsigned char *bytes /* LCN */)
 
 struct aiff_CommonChunk
 {
-    WORD numChannels;
-    DWORD numSampleFrames;
-    WORD sampleSize;
+    uint16_t numChannels;
+    uint32_t numSampleFrames;
+    uint16_t sampleSize;
     unsigned char sampleRate[10];
 };
 
 struct aiff_loop
 {
-    WORD playmode;
-    WORD marker_start, marker_end;
+    uint16_t playmode;
+    uint16_t marker_start, marker_end;
 };
 
 struct aiff_marker
 {
-    WORD id;
-    DWORD pos;
+    uint16_t id;
+    uint32_t pos;
     // pstring comes here
 };
 struct aiff_INST_chunk
@@ -130,8 +130,8 @@ bool sample::parse_aiff(void *data, size_t filesize)
     mf.SeekI(wr);
     if (!mf.iff_descend('SSND', &datasize))
         return false;
-    DWORD offset = scxt::Memfile::swap_endian_32(mf.ReadDWORD());
-    DWORD blocksize = scxt::Memfile::swap_endian_32(mf.ReadDWORD());
+    uint32_t offset = scxt::Memfile::swap_endian_32(mf.ReadDWORD());
+    uint32_t blocksize = scxt::Memfile::swap_endian_32(mf.ReadDWORD());
     mf.SeekI(offset, scxt::Memfile::mf_FromCurrent); // skip comment
 
     unsigned char *loaddata = (unsigned char *)mf.ReadPtr(datasize - 8);
@@ -188,7 +188,7 @@ bool sample::parse_aiff(void *data, size_t filesize)
     mf.SeekI(wr);
     if (mf.iff_descend('MARK', &datasize))
     {
-        WORD markercount = scxt::Memfile::swap_endian_16(mf.ReadWORD());
+        uint16_t markercount = scxt::Memfile::swap_endian_16(mf.ReadWORD());
 
         meta.slice_start = new int[markercount];
         meta.slice_end = new int[markercount];
@@ -199,7 +199,7 @@ bool sample::parse_aiff(void *data, size_t filesize)
             aiff_marker marker;
             mf.Read(&marker, sizeof(marker));
             mf.SkipPSTRING();
-            WORD id = scxt::Memfile::swap_endian_16(marker.id);
+            uint16_t id = scxt::Memfile::swap_endian_16(marker.id);
             if (id < markercount)
             {
                 meta.slice_start[id] = scxt::Memfile::swap_endian_32(marker.pos);

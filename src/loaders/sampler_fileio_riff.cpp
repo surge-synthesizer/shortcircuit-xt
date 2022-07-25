@@ -23,9 +23,6 @@
 
 #if WINDOWS
 #include <windows.h>
-#else
-#include "windows_compat.h"
-#include <limits.h>
 #endif
 
 #include <iostream>

@@ -22,22 +22,27 @@
 #include <memory>
 #include "filesystem/import.h"
 
-/*
+namespace scxt
+{
+/**
  * This class provides a mechanism to do a MapViewOfFile/mmap in a portable
  * way. The intent is that you would use it with a unique_ptr where you needed
- * the map scope. So, for instance
+ * the map scope.
  *
+ * ```cpp
  * fs::path p = string_to_path("foo.bin");
  * auto mapper = std::make_unique<scxt::FileMapView>(p);
  * auto d = mapper->data; // valid until mapper is destroyed
  * auto s = mapper->dataSize;
+ * ```
  */
-
-namespace scxt
-{
 class FileMapView
 {
   public:
+    /**
+     * Construct a view of a file
+     * @param filename the path to the file to be mapped. If unavabiable, isMapped will return false
+     */
     FileMapView(const fs::path &filename);
     ~FileMapView();
 

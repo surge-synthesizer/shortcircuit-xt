@@ -2,7 +2,7 @@
 
 #define vFloat vector float
 
-#define vAlign _MM_ALIGN16
+#define vAlign _M_UNUSED_M_ALIGN16
 
 #define vZero ((vector float)(0.f))
 
