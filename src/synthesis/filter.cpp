@@ -41,7 +41,11 @@ template <typename T, bool takesIP = true> void spawn_internal(filter *&t, float
 #if MAC
     t = (filter *)malloc(sizeof(T));
 #else
+#if WIN
+    t = (filter *)_aligned_alloc(16, sizeof(T));
+#else
     t = (filter *)std::aligned_alloc(16, sizeof(T));
+#endif
 #endif
     if constexpr (takesIP)
         new (t) T(fp, ip);
@@ -54,7 +58,11 @@ template <> void spawn_internal<superbiquad, true>(filter *&t, float *fp, int *i
 #if MAC
     t = (filter *)malloc(sizeof(superbiquad));
 #else
+#if WIN
+    t = (filter *)_aligned_alloc(16, sizeof(superbiquad));
+#else
     t = (filter *)std::aligned_alloc(16, sizeof(superbiquad));
+#endif
 #endif
     new (t) superbiquad(fp, ip, 0);
 }

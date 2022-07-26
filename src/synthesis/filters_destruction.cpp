@@ -70,7 +70,11 @@ BF::BF(float *fp) : filter(fp)
 #if MAC
     lp = (LP2B *)malloc(sizeof(LP2B));
 #else
+#if WIN
+    lp = (LP2B *)_aligned_alloc(16, sizeof(LP2B));
+#else
     lp = (LP2B *)std::aligned_alloc(16, sizeof(LP2B));
+#endif
 #endif
 
     new (lp) LP2B(lp_params);
