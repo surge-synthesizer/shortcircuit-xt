@@ -28,6 +28,10 @@
 #endif
 #endif
 
+#if WIN
+#include <malloc.h>
+#endif
+
 #include <cmath>
 #include <cstdint>
 

@@ -42,7 +42,7 @@ template <typename T, bool takesIP = true> void spawn_internal(filter *&t, float
     t = (filter *)malloc(sizeof(T));
 #else
 #if WIN
-    t = (filter *)_aligned_alloc(16, sizeof(T));
+    t = (filter *)_aligned_malloc(16, sizeof(T));
 #else
     t = (filter *)std::aligned_alloc(16, sizeof(T));
 #endif
@@ -59,7 +59,7 @@ template <> void spawn_internal<superbiquad, true>(filter *&t, float *fp, int *i
     t = (filter *)malloc(sizeof(superbiquad));
 #else
 #if WIN
-    t = (filter *)_aligned_alloc(16, sizeof(superbiquad));
+    t = (filter *)_aligned_malloc(16, sizeof(superbiquad));
 #else
     t = (filter *)std::aligned_alloc(16, sizeof(superbiquad));
 #endif

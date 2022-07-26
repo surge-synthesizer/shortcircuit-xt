@@ -71,7 +71,7 @@ BF::BF(float *fp) : filter(fp)
     lp = (LP2B *)malloc(sizeof(LP2B));
 #else
 #if WIN
-    lp = (LP2B *)_aligned_alloc(16, sizeof(LP2B));
+    lp = (LP2B *)_aligned_malloc(16, sizeof(LP2B));
 #else
     lp = (LP2B *)std::aligned_alloc(16, sizeof(LP2B));
 #endif

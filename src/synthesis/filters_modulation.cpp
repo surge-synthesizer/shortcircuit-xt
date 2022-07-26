@@ -511,7 +511,7 @@ phaser::phaser(float *fp, int *ip) : filter(fp)
         biquad[i] = (biquadunit *)malloc(sizeof(biquadunit));
 #else
 #if WIN
-        biquad[i] = (biquadunit *)_aligned_alloc(16, sizeof(biquadunit));
+        biquad[i] = (biquadunit *)_aligned_malloc(16, sizeof(biquadunit));
 #else
         biquad[i] = (biquadunit *)std::aligned_alloc(16, sizeof(biquadunit));
 #endif
