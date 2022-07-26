@@ -273,7 +273,7 @@ bool sampler::PlayNote(char channel, char key, char velocity, bool is_release, c
             goto skipzone;
         if (zkey > (zones[z].key_high + zones[z].key_high_fade))
             goto skipzone;
-        if (!partv[p].mm->check_NC(&zones[z]))
+        if (!partv[p].mm->check_trigger_condition(&zones[z]))
             goto skipzone;
 
         if (zones[z].key_low_fade || zones[z].key_high_fade)

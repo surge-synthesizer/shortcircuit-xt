@@ -94,7 +94,7 @@ struct ZoneData
     FilterData filter[2];
 
     MMEntryData mm[mm_entries];
-    NCEntryData nc[nc_entries];
+    NCEntryData nc[num_zone_trigger_conditions];
     EnvelopeData env[2];
     LFOData lfo[3];
 
@@ -128,7 +128,7 @@ struct PartData
 
     AuxBusData aux[num_aux_busses];
     MMEntryData mm[mm_part_entries];
-    NCEntryData nc[num_part_ncs];
+    NCEntryData nc[num_part_trigger_conditions];
 
     ParameterProxy<float> userparameter[num_userparams];
     ParameterProxy<std::string> userparameter_name[num_userparams];

@@ -974,20 +974,24 @@
         <data style="0" color="ff000000" label="A,B,C,D,E,F,G,H" action="filter" action_p1="5" action_p2="1"
               action_text=""/>
     </control>
-    <control type="optionmenu" parameter="part nc src" filter="1" filter_entry="1" offset="5" offset_amount="2">
+    <control type="optionmenu" parameter="part trigger_conditions src" filter="1" filter_entry="1" offset="5"
+             offset_amount="2">
         <rect x="63" y="277" x2="225" y2="292"/>
         <data style="0" color="ff000000" null="" action="" action_p1="0" action_p2="0"/>
     </control>
-    <control type="optionmenu" parameter="part nc src" parameter_subid="1" filter="1" filter_entry="1" offset="5"
+    <control type="optionmenu" parameter="part trigger_conditions src" parameter_subid="1" filter="1" filter_entry="1"
+             offset="5"
              offset_amount="2">
         <rect x="63" y="292" x2="225" y2="307"/>
         <data style="0" color="ff000000" null="" action="" action_p1="0" action_p2="0"/>
     </control>
-    <control type="paramedit" parameter="part nc high" filter="1" filter_entry="1" offset="5" offset_amount="2">
+    <control type="paramedit" parameter="part trigger_conditions high" filter="1" filter_entry="1" offset="5"
+             offset_amount="2">
         <rect x="227" y="277" x2="276" y2="292"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,128,0,"/>
     </control>
-    <control type="paramedit" parameter="part nc high" parameter_subid="1" filter="1" filter_entry="1" offset="5"
+    <control type="paramedit" parameter="part trigger_conditions high" parameter_subid="1" filter="1" filter_entry="1"
+             offset="5"
              offset_amount="2">
         <rect x="227" y="292" x2="276" y2="307"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,128,0,"/>
@@ -1027,20 +1031,24 @@
         <rect x="8" y="92" x2="131" y2="107"/>
         <data style="0" label="MIDI channel" labelcol="ff000000" labelsplit="-10" datamode="i,0,15,1,"/>
     </control>
-    <control type="optionmenu" parameter="zone nc src" filter="1" filter_entry="0" offset="0" offset_amount="0">
+    <control type="optionmenu" parameter="zone trigger_conditions src" filter="1" filter_entry="0" offset="0"
+             offset_amount="0">
         <rect x="218" y="421" x2="334" y2="436"/>
         <data style="0" color="ff000000" null="" action="" action_p1="0" action_p2="0"/>
     </control>
-    <control type="paramedit" parameter="zone nc high" filter="1" filter_entry="0" offset="0" offset_amount="0">
+    <control type="paramedit" parameter="zone trigger_conditions high" filter="1" filter_entry="0" offset="0"
+             offset_amount="0">
         <rect x="334" y="421" x2="364" y2="436"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,127,0,"/>
     </control>
-    <control type="optionmenu" parameter="zone nc src" parameter_subid="1" filter="1" filter_entry="0" offset="0"
+    <control type="optionmenu" parameter="zone trigger_conditions src" parameter_subid="1" filter="1" filter_entry="0"
+             offset="0"
              offset_amount="0">
         <rect x="218" y="436" x2="334" y2="451"/>
         <data style="0" color="ff000000" null="" action="" action_p1="0" action_p2="0"/>
     </control>
-    <control type="paramedit" parameter="zone nc high" parameter_subid="1" filter="1" filter_entry="0" offset="0"
+    <control type="paramedit" parameter="zone trigger_conditions high" parameter_subid="1" filter="1" filter_entry="0"
+             offset="0"
              offset_amount="0">
         <rect x="334" y="436" x2="364" y2="451"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,127,0,"/>
@@ -1754,20 +1762,24 @@
         <rect x="173" y="512" x2="223" y2="527"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="f,0.0,0.010,1.0,0,"/>
     </control>
-    <control type="paramedit" parameter="zone nc low" filter="1" filter_entry="0" offset="0" offset_amount="0">
+    <control type="paramedit" parameter="zone trigger_conditions low" filter="1" filter_entry="0" offset="0"
+             offset_amount="0">
         <rect x="188" y="421" x2="218" y2="436"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,127,0,"/>
     </control>
-    <control type="paramedit" parameter="zone nc low" parameter_subid="1" filter="1" filter_entry="0" offset="0"
+    <control type="paramedit" parameter="zone trigger_conditions low" parameter_subid="1" filter="1" filter_entry="0"
+             offset="0"
              offset_amount="0">
         <rect x="188" y="436" x2="218" y2="451"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,127,0,"/>
     </control>
-    <control type="paramedit" parameter="part nc low" filter="1" filter_entry="1" offset="5" offset_amount="2">
+    <control type="paramedit" parameter="part trigger_conditions low" filter="1" filter_entry="1" offset="5"
+             offset_amount="2">
         <rect x="8" y="277" x2="61" y2="292"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,128,0,"/>
     </control>
-    <control type="paramedit" parameter="part nc low" parameter_subid="1" filter="1" filter_entry="1" offset="5"
+    <control type="paramedit" parameter="part trigger_conditions low" parameter_subid="1" filter="1" filter_entry="1"
+             offset="5"
              offset_amount="2">
         <rect x="8" y="292" x2="61" y2="307"/>
         <data style="0" label="" labelcol="ff000000" labelsplit="8" datamode="i,0,128,0,"/>

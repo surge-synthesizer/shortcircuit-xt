@@ -361,11 +361,11 @@ bool sampler::parse_dls_preset(void *data, size_t filesize, char channel, int pa
                             };
                             if (ncsource)
                             {
-                                if (ncid < nc_entries)
+                                if (ncid < num_zone_trigger_conditions)
                                 {
-                                    z->nc[ncid].source = ncsource;
-                                    z->nc[ncid].low = dims[k].low;
-                                    z->nc[ncid].high = dims[k].high;
+                                    z->trigger_conditions[ncid].source = ncsource;
+                                    z->trigger_conditions[ncid].low = dims[k].low;
+                                    z->trigger_conditions[ncid].high = dims[k].high;
                                     ncid++;
                                 }
                             }

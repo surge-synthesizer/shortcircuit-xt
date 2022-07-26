@@ -660,11 +660,11 @@ void sampler::SInitZone(sample_zone *pZone)
         pZone->mm[mm].curve = 0;
         pZone->mm[mm].active = 1;
     }
-    for (mm = 0; mm < nc_entries; mm++)
+    for (mm = 0; mm < num_zone_trigger_conditions; mm++)
     {
-        pZone->nc[mm].source = 0;
-        pZone->nc[mm].low = 0;
-        pZone->nc[mm].high = 127;
+        pZone->trigger_conditions[mm].source = 0;
+        pZone->trigger_conditions[mm].low = 0;
+        pZone->trigger_conditions[mm].high = 127;
     }
 
     pZone->LFO[0].repeat = 16;
@@ -1064,9 +1064,9 @@ void sampler::part_init(int p, bool clear_zones, bool leave_outputs)
         parts[p].mm[mm].active = 1;
     }
 
-    for (int mm = 0; mm < num_part_ncs; mm++)
+    for (int mm = 0; mm < num_part_trigger_conditions; mm++)
     {
-        parts[p].nc[mm].high = 127;
+        parts[p].trigger_conditions[mm].high = 127;
     }
 
     parts[p].Filter[0].mix = 1.f;

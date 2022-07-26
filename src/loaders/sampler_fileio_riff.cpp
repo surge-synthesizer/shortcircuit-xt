@@ -83,8 +83,9 @@ size_t RIFF_StoreZone(sample_zone *z, void *data, int SampleID)
     mm.assign(0, z, 0);
 
     size_t subsize = 2 * (12 + 8 + sizeof(RIFF_FILTER)) + mm_entries * (8 + sizeof(RIFF_MM_ENTRY)) +
-                     nc_entries * (8 + sizeof(RIFF_NC_ENTRY)) + 2 * (8 + sizeof(RIFF_AHDSR)) +
-                     3 * (8 + sizeof(RIFF_LFO)) + 3 * (8 + sizeof(RIFF_AUX_BUSS)) +
+                     num_zone_trigger_conditions * (8 + sizeof(RIFF_NC_ENTRY)) +
+                     2 * (8 + sizeof(RIFF_AHDSR)) + 3 * (8 + sizeof(RIFF_LFO)) +
+                     3 * (8 + sizeof(RIFF_AUX_BUSS)) +
                      z->n_hitpoints * (8 + sizeof(RIFF_HITPOINT)) + (8 + sizeof(RIFF_ZONE)) +
                      scxt::Memfile::RIFFMemFile::RIFFTextChunkSize(z->name);
 
@@ -148,10 +149,10 @@ size_t RIFF_StoreZone(sample_zone *z, void *data, int SampleID)
     }
 
     // NCen
-    for (int i = 0; i < nc_entries; i++)
+    for (int i = 0; i < num_zone_trigger_conditions; i++)
     {
         RIFF_NC_ENTRY e;
-        WriteChunkNCen(&e, &z->nc[i], &mm);
+        WriteChunkNCen(&e, &z->trigger_conditions[i], &mm);
         mf.RIFFCreateChunk('NCen', &e, sizeof(RIFF_NC_ENTRY));
     }
 
@@ -177,8 +178,10 @@ size_t RIFF_StorePart(sample_part *p, void *data)
 
     size_t subsize =
         2 * (12 + 8 + sizeof(RIFF_FILTER)) +
-        mm_part_entries * (8 + sizeof(RIFF_MM_ENTRY)) + /*nc_entries*(8 + sizeof(RIFF_NC_ENTRY)) +*/
-        num_layers * (12 + num_layer_ncs * (sizeof(RIFF_NC_ENTRY) + 8)) +
+        mm_part_entries *
+            (8 +
+             sizeof(RIFF_MM_ENTRY)) + /*num_zone_trigger_conditions*(8 + sizeof(RIFF_NC_ENTRY)) +*/
+        num_layers * (12 + num_layer_trigger_conditions * (sizeof(RIFF_NC_ENTRY) + 8)) +
         n_custom_controllers * (12 + 8 + sizeof(RIFF_CONTROLLER)) + ctrltxtsize +
         3 * (8 + sizeof(RIFF_AUX_BUSS)) + (8 + sizeof(RIFF_PART)) +
         scxt::Memfile::RIFFMemFile::RIFFTextChunkSize(p->name);
@@ -238,13 +241,13 @@ size_t RIFF_StorePart(sample_part *p, void *data)
 
     for (int j = 0; j < num_layers; j++)
     {
-        mf.RIFFCreateLISTHeader('Layr', num_layer_ncs * (sizeof(RIFF_NC_ENTRY) + 8));
+        mf.RIFFCreateLISTHeader('Layr', num_layer_trigger_conditions * (sizeof(RIFF_NC_ENTRY) + 8));
 
         // NCen
-        for (int i = 0; i < num_layer_ncs; i++)
+        for (int i = 0; i < num_layer_trigger_conditions; i++)
         {
             RIFF_NC_ENTRY e;
-            WriteChunkNCen(&e, &p->nc[i + j * num_layer_ncs], &mm);
+            WriteChunkNCen(&e, &p->trigger_conditions[i + j * num_layer_trigger_conditions], &mm);
             mf.RIFFCreateChunk('NCen', &e, sizeof(RIFF_NC_ENTRY));
         }
     }
@@ -496,9 +499,12 @@ bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, i
                                 if (tag == 'NCen')
                                 {
                                     RIFF_NC_ENTRY *nc = (RIFF_NC_ENTRY *)mf.RIFFReadChunk();
-                                    if (NCID < num_layer_ncs)
-                                        ReadChunkNCen(nc, &p->nc[NCID + LayerID * num_layer_ncs],
-                                                      &mmpart);
+                                    if (NCID < num_layer_trigger_conditions)
+                                        ReadChunkNCen(
+                                            nc,
+                                            &p->trigger_conditions
+                                                 [NCID + LayerID * num_layer_trigger_conditions],
+                                            &mmpart);
                                     NCID++;
                                 }
                                 else
@@ -701,8 +707,8 @@ bool sampler::LoadAllFromRIFF(const void *data, size_t datasize, bool Replace, i
                         case 'NCen':
                         {
                             RIFF_NC_ENTRY *nc = (RIFF_NC_ENTRY *)mf.RIFFReadChunk();
-                            if (NCID < nc_entries)
-                                ReadChunkNCen(nc, &z->nc[NCID], &mmzone);
+                            if (NCID < num_zone_trigger_conditions)
+                                ReadChunkNCen(nc, &z->trigger_conditions[NCID], &mmzone);
                             NCID++;
                         }
                         break;

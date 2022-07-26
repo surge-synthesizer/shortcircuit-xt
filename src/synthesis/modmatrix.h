@@ -154,7 +154,7 @@ class alignas(16) modmatrix
     void assign(configuration *conf, sample_zone *zone, sample_part *part, sampler_voice *voice = 0,
                 float *control = 0, float *automation = 0, timedata *td = 0);
 
-    bool check_NC(sample_zone *z);
+    bool check_trigger_condition(sample_zone *z);
     void process_part();
     void process_group();
     int get_controltype(int destination);

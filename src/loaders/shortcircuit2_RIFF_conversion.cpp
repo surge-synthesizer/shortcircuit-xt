@@ -266,14 +266,14 @@ void WriteChunkAuxB(RIFF_AUX_BUSS *E, aux_buss *e)
     E->UD0[1] = 0;
 }
 
-void ReadChunkNCen(RIFF_NC_ENTRY *E, nc_entry *e, modmatrix *mm)
+void ReadChunkNCen(RIFF_NC_ENTRY *E, trigger_condition_entry *e, modmatrix *mm)
 {
     e->source = mm->SourceRiffIDToInternal(E->Source);
     e->low = E->Low;
     e->high = E->High;
 }
 
-void WriteChunkNCen(RIFF_NC_ENTRY *E, nc_entry *e, modmatrix *mm)
+void WriteChunkNCen(RIFF_NC_ENTRY *E, trigger_condition_entry *e, modmatrix *mm)
 {
     E->Source = mm->SourceInternalToRiffID(e->source);
     E->Low = e->low;

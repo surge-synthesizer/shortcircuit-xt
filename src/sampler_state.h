@@ -381,7 +381,7 @@ const char mmc_abbreviations[mmc_num_types][8] = {
 
 //-------------------------------------------------------------------------------------------------------
 
-struct nc_entry
+struct trigger_condition_entry
 {
     int source, low, high;
 };
@@ -418,9 +418,9 @@ struct aux_buss
 
 static constexpr int num_layers = 8;
 static constexpr int num_fxunits = 8;
-static constexpr int num_layer_ncs = 2;
-static constexpr int nc_entries = 2;
-static constexpr int num_part_ncs = num_layers * num_layer_ncs;
+static constexpr int num_layer_trigger_conditions = 2;
+static constexpr int num_zone_trigger_conditions = 2;
+static constexpr int num_part_trigger_conditions = num_layers * num_layer_trigger_conditions;
 
 static constexpr int num_midi_channels = 16;
 static constexpr int num_aux_busses = 3;
@@ -470,7 +470,8 @@ struct sample_part
     float vs_xfade;
     int zonelist_mode;
 
-    nc_entry nc[num_part_ncs]; // 8 layers, 4 slots each
+    trigger_condition_entry
+        trigger_conditions[num_part_trigger_conditions]; // 8 layers, 4 slots each
 
     int last_note;
     int activelayer; // editor state
@@ -501,7 +502,7 @@ struct sample_zone
     envelope_AHDSR AEG, EG2;
     steplfostruct LFO[3];
     mm_entry mm[mm_entries];
-    nc_entry nc[nc_entries];
+    trigger_condition_entry trigger_conditions[num_zone_trigger_conditions];
     hitpoint hp[max_hitpoints];
     int n_hitpoints;
 

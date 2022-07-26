@@ -542,12 +542,12 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
         sub = sub->NextSibling("modulation")->ToElement();
     }
 
-    sub = element.FirstChild("nc")->ToElement();
+    sub = element.FirstChild("trigger_conditions")->ToElement();
     while (sub)
     {
         int id;
         sub->Attribute("i", &id);
-        if (id < nc_entries)
+        if (id < num_zone_trigger_conditions)
         {
             int x;
             char msrc[256];
@@ -556,13 +556,13 @@ void sampler::recall_zone_from_element(TiXmlElement &element, sample_zone *zone,
             for (x = 0; x < t_mm.get_n_sources(); x++)
             {
                 if (stricmp(t_mm.get_source_idname(x), msrc) == 0)
-                    zone->nc[id].source = x;
+                    zone->trigger_conditions[id].source = x;
             }
 
-            sub->Attribute("low", &zone->nc[id].low);
-            sub->Attribute("high", &zone->nc[id].high);
+            sub->Attribute("low", &zone->trigger_conditions[id].low);
+            sub->Attribute("high", &zone->trigger_conditions[id].high);
         }
-        sub = sub->NextSibling("nc")->ToElement();
+        sub = sub->NextSibling("trigger_conditions")->ToElement();
     }
 
     sub = element.FirstChild("slice")->ToElement();
@@ -763,19 +763,19 @@ void sampler::store_zone_as_element(TiXmlElement &element, sample_zone *zone, co
         }
     }
 
-    for (i = 0; i < nc_entries; i++)
+    for (i = 0; i < num_zone_trigger_conditions; i++)
     {
-        if (zone->nc[i].source > 0)
+        if (zone->trigger_conditions[i].source > 0)
         {
             modmatrix t_mm;
             t_mm.assign(conf, zone, &parts[0]);
 
-            TiXmlElement nc("nc");
+            TiXmlElement nc("trigger_conditions");
             nc.Clear();
             nc.SetAttribute("i", i);
-            nc.SetAttribute("src", t_mm.get_source_idname(zone->nc[i].source));
-            nc.SetAttribute("low", zone->nc[i].low);
-            nc.SetAttribute("high", zone->nc[i].high);
+            nc.SetAttribute("src", t_mm.get_source_idname(zone->trigger_conditions[i].source));
+            nc.SetAttribute("low", zone->trigger_conditions[i].low);
+            nc.SetAttribute("high", zone->trigger_conditions[i].high);
             element.InsertEndChild(nc);
         }
     }
@@ -826,19 +826,20 @@ void store_part_as_element(TiXmlElement &element, sample_part *part, configurati
         TiXmlElement layer("layer");
         layer.Clear();
         layer.SetAttribute("i", i);
-        for (int j = 0; j < num_layer_ncs; j++)
+        for (int j = 0; j < num_layer_trigger_conditions; j++)
         {
-            int ncid = i * num_layer_ncs + j;
-            if (part->nc[ncid].source > 0)
+            int ncid = i * num_layer_trigger_conditions + j;
+            if (part->trigger_conditions[ncid].source > 0)
             {
-                TiXmlElement nc("nc");
+                TiXmlElement nc("trigger_conditions");
                 nc.Clear();
                 nc.SetAttribute("i", j);
                 // TODO, add to the same routines as modmatrix src
 
-                nc.SetAttribute("src", t_mm.get_source_idname(part->nc[ncid].source));
-                nc.SetAttribute("low", part->nc[ncid].low);
-                nc.SetAttribute("high", part->nc[ncid].high);
+                nc.SetAttribute("src",
+                                t_mm.get_source_idname(part->trigger_conditions[ncid].source));
+                nc.SetAttribute("low", part->trigger_conditions[ncid].low);
+                nc.SetAttribute("high", part->trigger_conditions[ncid].high);
                 layer.InsertEndChild(nc);
                 used = true;
             }
@@ -1081,12 +1082,12 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
         int lid;
         sub->Attribute("i", &lid);
 
-        subsub = sub->FirstChild("nc")->ToElement();
+        subsub = sub->FirstChild("trigger_conditions")->ToElement();
         while (sub)
         {
             int id;
             sub->Attribute("i", &id);
-            if ((id < num_layer_ncs) && (lid < num_layers))
+            if ((id < num_layer_trigger_conditions) && (lid < num_layers))
             {
                 int x;
                 char msrc[256];
@@ -1095,13 +1096,17 @@ void recall_part_from_element(TiXmlElement &element, sample_part *part, int revi
                 for (x = 0; x < t_mm.get_n_sources(); x++)
                 {
                     if (stricmp(t_mm.get_source_idname(x), msrc) == 0)
-                        part->nc[lid * num_layer_ncs + id].source = x;
+                        part->trigger_conditions[lid * num_layer_trigger_conditions + id].source =
+                            x;
                 }
 
-                sub->Attribute("low", &part->nc[lid * num_layer_ncs + id].low);
-                sub->Attribute("high", &part->nc[lid * num_layer_ncs + id].high);
+                sub->Attribute(
+                    "low", &part->trigger_conditions[lid * num_layer_trigger_conditions + id].low);
+                sub->Attribute(
+                    "high",
+                    &part->trigger_conditions[lid * num_layer_trigger_conditions + id].high);
             }
-            subsub = subsub->NextSibling("nc")->ToElement();
+            subsub = subsub->NextSibling("trigger_conditions")->ToElement();
         }
         sub = sub->NextSibling("modulation")->ToElement();
     }
