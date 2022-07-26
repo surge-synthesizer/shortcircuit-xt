@@ -16,6 +16,8 @@
 */
 #pragma once
 
+#include <cstdlib> // for aligned alloc
+
 const int max_fparams = 9;
 const int labelsize = 32;
 
