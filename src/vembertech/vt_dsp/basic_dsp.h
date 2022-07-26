@@ -18,10 +18,6 @@
 #pragma once
 #include "shared.h"
 
-#if PPC
-#include <ppc_intrinsics.h>
-#endif
-
 int Min(int a, int b);
 int Max(int a, int b);
 double Max(double a, double b);

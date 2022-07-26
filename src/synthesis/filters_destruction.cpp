@@ -67,14 +67,23 @@ BF::BF(float *fp) : filter(fp)
         lp_params[1] = fp[4];
     }
     // lp = new LP2B(lp_params);
-    lp = (LP2B *)_mm_malloc(sizeof(LP2B), 16);
+#if MAC
+    lp = (LP2B *)malloc(sizeof(LP2B));
+#else
+#if WIN
+    lp = (LP2B *)_aligned_malloc(16, sizeof(LP2B));
+#else
+    lp = (LP2B *)std::aligned_alloc(16, sizeof(LP2B));
+#endif
+#endif
+
     new (lp) LP2B(lp_params);
 }
 
 BF::~BF()
 {
     // delete lp;
-    _mm_free(lp);
+    free(lp);
 }
 
 void BF::init_params()

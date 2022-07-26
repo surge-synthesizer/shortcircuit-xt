@@ -239,7 +239,7 @@ void WaveDisplay::renderWave(bool quick)
         juce::Image(juce::Image::PixelFormat::ARGB, imgw, imgh, true, juce::SoftwareImageType());
     juce::Image::BitmapData pixelsBmp(mWavePixels, juce::Image::BitmapData::writeOnly);
     // gain access to the raw pixels which we'll be modifying
-    uint32 *img = (unsigned int *)pixelsBmp.data;
+    uint32_t *img = (uint32_t *)pixelsBmp.data;
 
     // float fratio = (float)(s->sample_length) / (float)(imgw);
     int ratio = mZoom;
@@ -442,10 +442,10 @@ int WaveDisplay::pixelPosToSamplePos(int pos) { return pos * mZoom + mLeftMostSa
 void WaveDisplay::drawDetails(juce::Graphics &g, juce::Rectangle<int> bounds)
 {
 
-    uint32 bgcola = juce::Colour(juce::Colours::red).getARGB(); // background
-    juce::Colour wfcola = juce::Colours::white;                 // text color
-    juce::Colour bgcold = juce::Colours::lightcoral;            // disabled
-    juce::Colour wfcold = juce::Colours::lightgrey;             // text disabled
+    uint32_t bgcola = juce::Colour(juce::Colours::red).getARGB(); // background
+    juce::Colour wfcola = juce::Colours::white;                   // text color
+    juce::Colour bgcold = juce::Colours::lightcoral;              // disabled
+    juce::Colour wfcold = juce::Colours::lightgrey;               // text disabled
     juce::Colour zlcol = juce::Colour(0xff808080);
     juce::Colour zmcol = juce::Colour(0xff5d6c7d);
     juce::Colour lmcol = juce::Colour(0xff0462c2);

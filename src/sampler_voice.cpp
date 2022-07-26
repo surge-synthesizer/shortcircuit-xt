@@ -17,11 +17,12 @@
 
 #include <cassert>
 
+#include "sst/filters/HalfRateFilter.h"
+
 #include "sampler_voice.h"
 #include "controllers.h"
 #include "sampler.h"
 #include "util/tools.h"
-// #include <intrin.h>
 #include "generator.h"
 #include "synthesis/mathtables.h"
 #include "sample.h"
@@ -29,7 +30,6 @@
 #include "synthesis/filter.h"
 
 #include <vt_dsp/basic_dsp.h>
-#include <vt_dsp/halfratefilter.h>
 
 using std::max;
 using std::min;
@@ -44,10 +44,9 @@ float waveshapers[8][1024]; // typ?
 
 bool sinc_initialized = false;
 
-sampler_voice::sampler_voice(uint32 voice_id, timedata *td)
+sampler_voice::sampler_voice(uint32_t voice_id, timedata *td)
 {
-    halfrate = (halfrate_stereo *)_mm_malloc(sizeof(halfrate_stereo), 16);
-    new (halfrate) halfrate_stereo(4, false);
+    halfrate = new sst::filters::HalfRate::HalfRateFilter(4, false);
 
     voice_filter[0] = nullptr;
     voice_filter[1] = nullptr;
@@ -125,12 +124,11 @@ sampler_voice::~sampler_voice()
     spawn_filter_release(voice_filter[1]);
     voice_filter[1] = nullptr;
 
-    halfrate->~halfrate_stereo();
-    _mm_free(halfrate);
+    delete halfrate;
 }
 
-void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uint32 key,
-                         uint32 velocity, int detune, float *ctrl, float *autom,
+void sampler_voice::play(sample *wave, sample_zone *zone, sample_part *part, uint32_t key,
+                         uint32_t velocity, int detune, float *ctrl, float *autom,
                          float crossfade_amp)
 {
     this->zone = zone;
@@ -356,7 +354,7 @@ void sampler_voice::change_key(int key, int vel, int detune)
     portamento_active = true;
 }
 
-void sampler_voice::release(uint32 velocity)
+void sampler_voice::release(uint32_t velocity)
 {
     if (gate)
     {

@@ -6,6 +6,7 @@ add_subdirectory(fmt)
 
 add_subdirectory(sst/sst-cpputils)
 add_subdirectory(sst/sst-plugininfra)
+add_subdirectory(sst/sst-filters)
 
 # Add a catch2 target
 add_library(catch2 INTERFACE)

@@ -144,7 +144,7 @@ struct mm_dst
     unsigned char RIFFID;
 };
 
-class modmatrix
+class alignas(16) modmatrix
 {
   public:
     modmatrix();

@@ -96,8 +96,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
     uint32_t i, c;
     for (i = 0; i < MAX_VOICES; i++)
     {
-        voices[i] = (sampler_voice *)_mm_malloc(sizeof(sampler_voice), 16);
-        new (voices[i]) sampler_voice(i, &time_data);
+        voices[i] = new sampler_voice(i, &time_data);
 
         voice_state[i].active = false;
     }
@@ -121,8 +120,7 @@ sampler::sampler(EditorClass *editor, int NumOutputs, WrapperClass *effect,
         partv[c].pFilter[0] = 0;
         partv[c].pFilter[1] = 0;
 
-        partv[c].mm = (modmatrix *)_mm_malloc(sizeof(modmatrix), 16);
-        new (partv[c].mm) modmatrix();
+        partv[c].mm = new modmatrix();
         partv[c].mm->assign(conf.get(), 0, &parts[c], 0, &controllers[n_controllers * c],
                             automation, &time_data);
     }
@@ -203,15 +201,13 @@ sampler::~sampler(void)
     {
         if (voices[i])
         {
-            voices[i]->~sampler_voice();
-            _mm_free(voices[i]);
+            delete voices[i];
             voices[i] = 0;
         }
     }
     for (int c = 0; c < 16; c++)
     {
-        partv[c].mm->~modmatrix();
-        _mm_free(partv[c].mm);
+        delete partv[c].mm;
     }
     if (chunkDataPtr)
         free(chunkDataPtr);

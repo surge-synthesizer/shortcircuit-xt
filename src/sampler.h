@@ -53,7 +53,7 @@ struct voicestate
 {
     bool active;
     unsigned char key, channel, part;
-    uint32 zone_id;
+    uint32_t zone_id;
 };
 
 static constexpr int n_custom_controllers = 16;
@@ -131,8 +131,8 @@ class sampler
 
     void play_zone(int zone_id);
     void release_zone(int zone_id);
-    void voice_off(uint32 voice_id);
-    void kill_notes(uint32 zone_id);
+    void voice_off(uint32_t voice_id);
+    void kill_notes(uint32_t zone_id);
     float *get_output_pointer(int id, int channel, int part); // internal
     bool get_key_name(char *str, int channel, int key);
     void process_audio();
@@ -199,7 +199,7 @@ class sampler
     bool slice_to_zone(int zone_id, int slice);
     bool slices_to_zones(int zone_id);
     bool replace_zone(int z, const fs::path &filename);
-    bool free_zone(uint32 zoneid);
+    bool free_zone(uint32_t zoneid);
     void update_zone_switches(int zone);
     bool get_sample_id(const fs::path &filename, int *s_id);
     int find_next_free_key(int part);

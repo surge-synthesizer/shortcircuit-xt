@@ -507,7 +507,15 @@ phaser::phaser(float *fp, int *ip) : filter(fp)
 
     for (int i = 0; i < n_bq_units; i++)
     {
-        biquad[i] = (biquadunit *)_mm_malloc(sizeof(biquadunit), 16);
+#if MAC
+        biquad[i] = (biquadunit *)malloc(sizeof(biquadunit));
+#else
+#if WIN
+        biquad[i] = (biquadunit *)_aligned_malloc(16, sizeof(biquadunit));
+#else
+        biquad[i] = (biquadunit *)std::aligned_alloc(16, sizeof(biquadunit));
+#endif
+#endif
         memset(biquad[i], 0, sizeof(biquadunit));
         new (biquad[i]) biquadunit();
     }
@@ -518,7 +526,7 @@ phaser::phaser(float *fp, int *ip) : filter(fp)
 phaser::~phaser()
 {
     for (int i = 0; i < n_bq_units; i++)
-        _mm_free(biquad[i]);
+        free(biquad[i]);
 }
 
 void phaser::init_params()

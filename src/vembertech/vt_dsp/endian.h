@@ -21,10 +21,6 @@
 #include <cstdint>
 #include <cstring>
 
-#if PPC
-#define DO_SWAP 1
-#endif
-
 #define vt_read_int32LE vt_write_int32LE
 #define vt_read_int32BE vt_write_int32BE
 #define vt_read_int16LE vt_write_int16LE

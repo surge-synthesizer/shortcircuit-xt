@@ -24,9 +24,9 @@
 #include "synthesis/biquadunit.h"
 #include <memory>
 #include <vt_dsp/basic_dsp.h>
-#include <vt_dsp/halfratefilter.h>
 #include <vt_dsp/lattice.h>
 #include <vt_dsp/lipol.h>
+#include "sst/filters/HalfRateFilter.h"
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -99,7 +99,7 @@ class alignas(16) SuperSVF : public filter
   private:
     __m128 Freq, dFreq, Q, dQ, MD, dMD, ClipDamp, dClipDamp, Gain, dGain, Reg[3], LastOutput;
 
-    halfrate_stereo mPolyphase;
+    sst::filters::HalfRate::HalfRateFilter mPolyphase;
 
     inline __m128 process_internal(__m128 x, int Mode);
 
@@ -151,7 +151,7 @@ class alignas(16) LP2B : public filter
 class alignas(16) LP4M_sat : public filter
 {
     lipol_ps gain;
-    halfrate_stereo pre_filter, post_filter;
+    sst::filters::HalfRate::HalfRateFilter pre_filter, post_filter;
     float reg alignas(16)[10];
 
   public:
@@ -749,7 +749,7 @@ class alignas(16) fdistortion : public filter
 {
   public:
     lipol_ps gain;
-    halfrate_stereo pre, post;
+    sst::filters::HalfRate::HalfRateFilter pre, post;
 
     fdistortion(float *);
     virtual ~fdistortion();
@@ -874,7 +874,7 @@ class alignas(16) microgate : public filter
 
 class alignas(16) RING : public filter
 {
-    halfrate_stereo pre, post;
+    sst::filters::HalfRate::HalfRateFilter pre, post;
     quadr_osc qosc;
 
   public:
@@ -896,7 +896,7 @@ class alignas(16) RING : public filter
 class alignas(16) FREQSHIFT : public filter
 {
   protected:
-    halfrate_stereo fcL, fcR;
+    sst::filters::HalfRate::HalfRateFilter fcL, fcR;
     quadr_osc o1, o2;
 
   public:
@@ -919,7 +919,7 @@ class alignas(16) FREQSHIFT : public filter
 class alignas(16) PMOD : public filter
 {
     lipol_ps pregain, postgain;
-    halfrate_stereo pre, post;
+    sst::filters::HalfRate::HalfRateFilter pre, post;
 
   public:
     PMOD(float *);
