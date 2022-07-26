@@ -31,8 +31,32 @@ bool spawn_filter_release(filter *f)
     if (!f)
         return false;
     f->~filter();
-    _mm_free(f);
+    free(f);
     return true;
+}
+
+template <typename T, bool takesIP = true> void spawn_internal(filter *&t, float *fp, int *ip)
+{
+    // static_assert(sizeof(T) < 1024 * 128);
+#if MAC
+    t = (filter *)malloc(sizeof(T));
+#else
+    t = (filter *)std::aligned_alloc(16, sizeof(T));
+#endif
+    if constexpr (takesIP)
+        new (t) T(fp, ip);
+    else
+        new (t) T(fp);
+}
+
+template <> void spawn_internal<superbiquad, true>(filter *&t, float *fp, int *ip)
+{
+#if MAC
+    t = (filter *)malloc(sizeof(superbiquad));
+#else
+    t = (filter *)std::aligned_alloc(16, sizeof(superbiquad));
+#endif
+    new (t) superbiquad(fp, ip, 0);
 }
 
 filter *spawn_filter(int id, float *fp, int *ip, void *loader, bool stereo)
@@ -41,52 +65,41 @@ filter *spawn_filter(int id, float *fp, int *ip, void *loader, bool stereo)
     switch (id)
     {
     case ft_e_delay:
-        t = (filter *)_mm_malloc(sizeof(dualdelay), 16);
-        new (t) dualdelay(fp, ip);
+        spawn_internal<dualdelay>(t, fp, ip);
         break;
     case ft_e_reverb:
-        t = (filter *)_mm_malloc(sizeof(reverb), 16);
-        new (t) reverb(fp, ip);
+        spawn_internal<reverb>(t, fp, ip);
         break;
     case ft_e_chorus:
-        t = (filter *)_mm_malloc(sizeof(chorus), 16);
-        new (t) chorus(fp, ip);
+        spawn_internal<chorus>(t, fp, ip);
         break;
     case ft_e_phaser:
-        t = (filter *)_mm_malloc(sizeof(phaser), 16);
-        new (t) phaser(fp, ip);
+        spawn_internal<phaser>(t, fp, ip);
         break;
     case ft_e_rotary:
-        t = (filter *)_mm_malloc(sizeof(rotary_speaker), 16);
-        new (t) rotary_speaker(fp, ip);
+        spawn_internal<rotary_speaker>(t, fp, ip);
         break;
     case ft_e_fauxstereo:
-        t = (filter *)_mm_malloc(sizeof(fauxstereo), 16);
-        new (t) fauxstereo(fp, ip);
+        spawn_internal<fauxstereo>(t, fp, ip);
         break;
     case ft_e_fsflange:
-        t = (filter *)_mm_malloc(sizeof(fs_flange), 16);
-        new (t) fs_flange(fp, ip);
+        spawn_internal<fs_flange>(t, fp, ip);
         break;
     case ft_e_fsdelay:
-        t = (filter *)_mm_malloc(sizeof(freqshiftdelay), 16);
-        new (t) freqshiftdelay(fp, ip);
+        spawn_internal<freqshiftdelay>(t, fp, ip);
         break;
     /*case ft_biquadLP2B:
             t = (filter*) _mm_malloc(sizeof(LP2B),16);
             new(t) LP2B(fp);
             break;*/
     case ft_SuperSVF:
-        t = (filter *)_mm_malloc(sizeof(SuperSVF), 16);
-        new (t) SuperSVF(fp, ip);
+        spawn_internal<SuperSVF>(t, fp, ip);
         break;
     case ft_biquadSBQ:
-        t = (filter *)_mm_malloc(sizeof(superbiquad), 16);
-        new (t) superbiquad(fp, ip, 0);
+        spawn_internal<superbiquad>(t, fp, ip);
         break;
     case ft_moogLP4sat:
-        t = (filter *)_mm_malloc(sizeof(LP4M_sat), 16);
-        new (t) LP4M_sat(fp, ip);
+        spawn_internal<LP4M_sat>(t, fp, ip);
         break;
         /*case ft_biquadHP2:
                 t = (filter*) _mm_malloc(sizeof(superbiquad),16);
@@ -124,90 +137,71 @@ filter *spawn_filter(int id, float *fp, int *ip, void *loader, bool stereo)
     //	t = new LP2HP2_morph(fp);
     //	break;
     case ft_eq_2band_parametric_A:
-        t = (filter *)_mm_malloc(sizeof(EQ2BP_A), 16);
-        new (t) EQ2BP_A(fp, ip);
+        spawn_internal<EQ2BP_A>(t, fp, ip);
         break;
     case ft_eq_6band:
-        t = (filter *)_mm_malloc(sizeof(EQ6B), 16);
-        new (t) EQ6B(fp);
+        spawn_internal<EQ6B, false>(t, fp, ip);
         break;
         /*	case ft_morpheq:
                         t = (filter*) _mm_malloc(sizeof(morphEQ),16);
                         new(t) morphEQ(fp,loader,ip);
                         break;*/
     case ft_comb1:
-        t = (filter *)_mm_malloc(sizeof(COMB1), 16);
-        new (t) COMB1(fp);
+        spawn_internal<COMB1, false>(t, fp, ip);
         break;
     // case ft_comb2:
     //	t = new COMB2(fp);
     //	break;
     case ft_fx_slewer:
-        t = (filter *)_mm_malloc(sizeof(fslewer), 16);
-        new (t) fslewer(fp);
+        spawn_internal<fslewer, false>(t, fp, ip);
         break;
     case ft_fx_treemonster:
-        t = (filter *)_mm_malloc(sizeof(treemonster), 16);
-        new (t) treemonster(fp, ip);
+        spawn_internal<treemonster>(t, fp, ip);
         break;
     case ft_fx_stereotools:
-        t = (filter *)_mm_malloc(sizeof(stereotools), 16);
-        new (t) stereotools(fp, ip);
+        spawn_internal<stereotools>(t, fp, ip);
         break;
     case ft_fx_limiter:
-        t = (filter *)_mm_malloc(sizeof(limiter), 16);
-        new (t) limiter(fp, ip);
+        spawn_internal<limiter>(t, fp, ip);
         break;
     case ft_fx_bitfucker:
-        t = (filter *)_mm_malloc(sizeof(BF), 16);
-        new (t) BF(fp);
+        spawn_internal<BF, false>(t, fp, ip);
         break;
     case ft_fx_distortion1:
-        t = (filter *)_mm_malloc(sizeof(fdistortion), 16);
-        new (t) fdistortion(fp);
+        spawn_internal<fdistortion, false>(t, fp, ip);
         break;
     // case ft_fx_exciter:
     //	t = new fexciter(fp);
     //	break;
     case ft_fx_clipper:
-        t = (filter *)_mm_malloc(sizeof(clipper), 16);
-        new (t) clipper(fp);
+        spawn_internal<clipper, false>(t, fp, ip);
         break;
     case ft_fx_gate:
-        t = (filter *)_mm_malloc(sizeof(gate), 16);
-        new (t) gate(fp);
+        spawn_internal<gate, false>(t, fp, ip);
         break;
     case ft_fx_microgate:
-        t = (filter *)_mm_malloc(sizeof(microgate), 16);
-        new (t) microgate(fp);
+        spawn_internal<microgate, false>(t, fp, ip);
         break;
     case ft_fx_ringmod:
-        t = (filter *)_mm_malloc(sizeof(RING), 16);
-        new (t) RING(fp);
+        spawn_internal<RING, false>(t, fp, ip);
         break;
     case ft_fx_freqshift:
-        t = (filter *)_mm_malloc(sizeof(FREQSHIFT), 16);
-        new (t) FREQSHIFT(fp, ip);
+        spawn_internal<FREQSHIFT>(t, fp, ip);
         break;
     case ft_fx_phasemod:
-        t = (filter *)_mm_malloc(sizeof(PMOD), 16);
-        new (t) PMOD(fp);
+        spawn_internal<PMOD, false>(t, fp, ip);
         break;
     case ft_osc_pulse:
-        t = (filter *)_mm_malloc(sizeof(osc_pulse), 16);
-        new (t) osc_pulse(fp);
+        spawn_internal<osc_pulse, false>(t, fp, ip);
         break;
     case ft_osc_pulse_sync:
-        t = (filter *)_mm_malloc(sizeof(osc_pulse_sync), 16);
-        new (t) osc_pulse_sync(fp);
+        spawn_internal<osc_pulse_sync, false>(t, fp, ip);
         break;
     case ft_osc_saw:
-        t = (filter *)_mm_malloc(sizeof(osc_saw), 16);
-        new (t) osc_saw(fp, ip);
+        spawn_internal<osc_saw>(t, fp, ip);
         break;
     case ft_osc_sin:
-        t = (filter *)_mm_malloc(sizeof(osc_sin), 16);
-        new (t) osc_sin(fp);
+        spawn_internal<osc_sin, false>(t, fp, ip);
         break;
     };
 

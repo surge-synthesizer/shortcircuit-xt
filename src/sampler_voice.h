@@ -30,7 +30,9 @@
 class sampler_voice;
 class filter;
 class sample;
-class halfrate_stereo;
+namespace sst::filters::HalfRate{
+class HalfRateFilter;
+}
 
 struct sample_zone;
 struct sample_part;
@@ -43,12 +45,12 @@ class alignas(16) sampler_voice
     float output alignas(16)[2][BLOCK_SIZE * 2];
     lipol_ps vca, faderL, faderR, pfg, aux1L, aux1R, aux2L, aux2R, fmix1, fmix2;
 
-    sampler_voice(uint32 voice_id, timedata *);
+    sampler_voice(uint32_t voice_id, timedata *);
     virtual ~sampler_voice();
 
-    void play(sample *wave, sample_zone *zone, sample_part *part, uint32 key, uint32 velocity,
+    void play(sample *wave, sample_zone *zone, sample_part *part, uint32_t key, uint32_t velocity,
               int detune, float *ctrl, float *autom, float crossfade_amp);
-    void release(uint32 velocity);
+    void release(uint32_t velocity);
     void uberrelease();
     void change_key(int key, int vel, int detune);
 
@@ -60,7 +62,7 @@ class alignas(16) sampler_voice
     float fkey, alternate;
     float crossfade_amp;
 
-    uint32 voice_id;
+    uint32_t voice_id;
 
     int32_t key, velocity, channel, detune;
     float *__restrict ctrl;
@@ -74,16 +76,16 @@ class alignas(16) sampler_voice
     GeneratorState GD;
     GeneratorIO GDIO;
     GeneratorFPtr Generator;
-    // uint32 sample_pos;
-    // uint32 sample_subpos;
+    // uint32_t sample_pos;
+    // uint32_t sample_subpos;
     // int32 resample_ratio;
-    uint32 last_loopstart, last_loopend, last_cflength;
-    uint32 *__restrict slice_end;
+    uint32_t last_loopstart, last_loopend, last_cflength;
+    uint32_t *__restrict slice_end;
     int slice_id;
-    uint32 end_offset;
+    uint32_t end_offset;
     // audio path
 
-    halfrate_stereo *halfrate;
+    sst::filters::HalfRate::HalfRateFilter *halfrate;
 
     // modules
     filter *__restrict voice_filter[2];
@@ -108,7 +110,7 @@ class alignas(16) sampler_voice
     bool invert_polarity;
     bool finished;
     int playmode;
-    uint32 grain_id;
+    uint32_t grain_id;
     int32_t RingOut; // when sample playback is finished, this will be decremented until zero
     // template<bool stereo, bool oversampling, bool xfadeloop, int architecture>
     // __declspec(noalias) bool process_t(float *L, float *R, float *aux1L, float *aux1R, float

@@ -26,7 +26,7 @@
 using std::max;
 using std::min;
 
-void sampler::kill_notes(uint32 zone_id)
+void sampler::kill_notes(uint32_t zone_id)
 {
     int i;
     for (i = 0; i < MAX_VOICES; i++)
@@ -553,7 +553,7 @@ void sampler::ReleaseNote(char channel, char key, char velocity)
     PlayNote(channel, key, velocity, true);
 }
 
-void sampler::voice_off(uint32 voice_id)
+void sampler::voice_off(uint32_t voice_id)
 {
     voice_state[voice_id].active = false;
     polyphony--;

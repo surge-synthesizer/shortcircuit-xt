@@ -77,7 +77,7 @@ void osc_pulse::convolute()
     // generate pulse
     float fpol = polarity ? -1.0f : 1.0f;
     int m = ((ipos >> 16) & 0xff) * FIRipol_N;
-    float lipol = ((float)((uint32)(ipos & 0xffff)));
+    float lipol = ((float)((uint32_t)(ipos & 0xffff)));
 
     int k;
     for (k = 0; k < FIRipol_N; k++)
@@ -200,7 +200,7 @@ void osc_pulse_sync::convolute()
     // generate pulse
     float fpol = polarity ? -1.0f : 1.0f;
     int m = ((ipos >> 16) & 0xff) * FIRipol_N;
-    float lipol = ((float)((uint32)(ipos & 0xffff)));
+    float lipol = ((float)((uint32_t)(ipos & 0xffff)));
 
     int k;
     if (!sync || !polarity)
@@ -331,7 +331,7 @@ void osc_saw::convolute(int voice)
     int ipos = (large + oscstate[voice]) >> 16;
     // generate pulse
     int m = ((ipos >> 16) & 0xff) * FIRipol_N;
-    float lipol = ((float)((uint32)(ipos & 0xffff)));
+    float lipol = ((float)((uint32_t)(ipos & 0xffff)));
 
     int k;
     float a, s = 0;

@@ -20,10 +20,6 @@
 #if defined(__aarch64__)
 #define SIMDE_ENABLE_NATIVE_ALIASES
 #include "simde/x86/sse2.h"
-
-// TODO: FixMe on all of these
-#define _mm_malloc(a, b) malloc(a)
-#define _mm_free(a) free(a)
 #else
 #include <xmmintrin.h>
 
@@ -35,35 +31,28 @@
 #include <cmath>
 #include <cstdint>
 
-typedef uint32_t uint32;
+static constexpr uint32_t BLOCK_SIZE = 32; // must be a multiple of 4 (SIMD)
+static constexpr uint32_t BLOCK_SIZE_QUAD = BLOCK_SIZE >> 2;
+static constexpr float INV_BLOCK_SIZE = 1.f / float(BLOCK_SIZE);
+static constexpr float INV_2BLOCK_SIZE = 1.f / float(BLOCK_SIZE << 1);
+static const __m128 INV_BLOCK_SIZE_128 = _mm_set1_ps(INV_BLOCK_SIZE);
+static const __m128 INV_2BLOCK_SIZE_128 = _mm_set1_ps(INV_2BLOCK_SIZE);
 
-const uint32 BLOCK_SIZE = 32; // must be a multiple of 4 (SIMD)
-const uint32 BLOCK_SIZE_QUAD = BLOCK_SIZE >> 2;
-const float INV_BLOCK_SIZE = 1.f / float(BLOCK_SIZE);
-const float INV_2BLOCK_SIZE = 1.f / float(BLOCK_SIZE << 1);
-const __m128 INV_BLOCK_SIZE_128 = _mm_set1_ps(INV_BLOCK_SIZE);
-const __m128 INV_2BLOCK_SIZE_128 = _mm_set1_ps(INV_2BLOCK_SIZE);
+static constexpr uint32_t MAX_VOICES = 256;
 
-#ifdef SCFREE
-const uint32 MAX_VOICES = 4;
-#else
-const uint32 MAX_VOICES = 256;
-#endif
+static constexpr uint32_t MAX_SAMPLES = 2048;
+static constexpr uint32_t MAX_ZONES = 2048;
+static constexpr uint32_t MAX_GROUPS = 64;
+static constexpr uint32_t MAX_OUTPUTS = 8; // stereo outs
+static constexpr uint32_t N_SAMPLER_PARTS = 16;
+static constexpr uint32_t N_SAMPLER_EFFECTS = 8;
+static constexpr uint32_t N_AUTOMATION_PARAMETERS = 32;
+static constexpr uint32_t N_MUTE_GROUPS = 64;
+static constexpr uint32_t PATHLENGTH = 1024;
 
-const uint32 MAX_SAMPLES = 2048;
-const uint32 MAX_ZONES = 2048;
-const uint32 MAX_GROUPS = 64;
-const uint32 MAX_OUTPUTS = 8; // stereo outs
-// extern uint32 n_outputs;
-const uint32 N_SAMPLER_PARTS = 16;
-const uint32 N_SAMPLER_EFFECTS = 8;
-const uint32 N_AUTOMATION_PARAMETERS = 32;
-const uint32 N_MUTE_GROUPS = 64;
-const unsigned int PATHLENGTH = 1024;
-
-const float PI_1 = 3.1415926535898f;
-const float PI_2 = 6.2831853071796f;
-const float FILTER_FREQRANGE = 20000.0f; // Hz
+static constexpr float PI_1 = 3.1415926535898f;
+static constexpr float PI_2 = 6.2831853071796f;
+static constexpr float FILTER_FREQRANGE = 20000.0f; // Hz
 extern float samplerate;
 extern float samplerate_inv;
 extern float multiplier_freq2omega;
@@ -72,7 +61,7 @@ extern float multiplier_freq2omega;
 // this should end up being same location that juce stores it's standalone app settings
 // TODO AS for juce wrappers, we may consider migrating to using juce's cross platform
 //  facility for loading/saving. see stochas configSerialization
-const char SCXT_CONFIG_DIRECTORY[] = "ShortCircuitXT";
+static constexpr char SCXT_CONFIG_DIRECTORY[] = "ShortCircuitXT";
 
 #if !WINDOWS
 #include <cstring>

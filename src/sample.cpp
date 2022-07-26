@@ -234,10 +234,10 @@ void sample::init_grains()
     {
             const int max_grains = 65536;
             const int grainsize = 200;
-            uint32 temp_grains[max_grains];
+            uint32_t temp_grains[max_grains];
 
             num_grains = 0;
-            uint32 samplepos = 1;
+            uint32_t samplepos = 1;
             while(num_grains<max_grains)
             {
                     if(samplepos > sample_length)

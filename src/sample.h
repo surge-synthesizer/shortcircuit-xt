@@ -106,5 +106,5 @@ class alignas(16) sample
     bool load_data_f64(int channel, void *data, unsigned int samplesize, unsigned int stride);
     bool sample_loaded;
     fs::path mFileName;
-    uint32 refcount;
+    uint32_t refcount;
 };
