@@ -5,6 +5,14 @@ else ()
     set(SCXT_COPY_AFTER TRUE)
 endif ()
 
+list(APPEND SCXT_FORMATS VST3)
+list(APPEND SCXT_FORMATS AU)
+list(APPEND SCXT_FORMATS Standalone)
+if ((UNIX AND NOT APPLE) OR SCXT_FORCE_LV2)
+    # list(APPEND SCXT_FORMATS LV2)
+    # As of Juce 7.0.1 this core dumps in the build phase if we turn it on.
+endif ()
+
 juce_add_plugin(ShortcircuitXT
         PRODUCT_NAME "Shortcircuit XT"
         COMPANY_NAME "Surge Synth Team"
@@ -17,7 +25,7 @@ juce_add_plugin(ShortcircuitXT
 
         ICON_BIG "${CMAKE_SOURCE_DIR}/resources/images/SCAppIcon.png"
 
-        FORMATS AU VST3 Standalone
+        FORMATS ${SCXT_FORMATS}
 
         COPY_PLUGIN_AFTER_BUILD ${SCXT_COPY_AFTER}
         )
