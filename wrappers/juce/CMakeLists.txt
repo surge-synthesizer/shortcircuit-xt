@@ -22,7 +22,7 @@ juce_add_plugin(ShortcircuitXT
   PLUGIN_MANUFACTURER_CODE VmbA
   PLUGIN_CODE ScXT
 
-  LV2URI https://surge-synthesizer.github.io/lv2/MoniqueMonosynth
+  LV2URI https://surge-synthesizer.github.io/lv2/ShortcircuitXT
 
   IS_SYNTH TRUE
   NEEDS_MIDI_INPUT TRUE
