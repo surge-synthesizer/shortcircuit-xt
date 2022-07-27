@@ -8,10 +8,12 @@ endif ()
 list(APPEND SCXT_FORMATS VST3)
 list(APPEND SCXT_FORMATS AU)
 list(APPEND SCXT_FORMATS Standalone)
-if ((UNIX AND NOT APPLE) OR SCXT_FORCE_LV2)
-    # list(APPEND SCXT_FORMATS LV2)
-    # As of Juce 7.0.1 this core dumps in the build phase if we turn it on.
+if (BUILD_LV2)
+    message(STATUS "Activating LV2 for testing purpose")
+    list(APPEND SCXT_FORMATS LV2)
 endif ()
+
+message(STATUS "Building Shortcircuit in formats: ${SCXT_FORMATS}" )
 
 juce_add_plugin(ShortcircuitXT
         PRODUCT_NAME "Shortcircuit XT"
@@ -19,6 +21,8 @@ juce_add_plugin(ShortcircuitXT
         BUNDLE_ID "org.surge-synth-team.shortcircuit-xt"
         PLUGIN_MANUFACTURER_CODE VmbA
         PLUGIN_CODE ScXT
+
+        LV2URI https://surge-synthesizer.github.io/lv2/MoniqueMonosynth
 
         IS_SYNTH TRUE
         NEEDS_MIDI_INPUT TRUE
