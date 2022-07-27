@@ -116,16 +116,16 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
     auto playhead = getPlayHead();
     if (playhead)
     {
-        juce::AudioPlayHead::CurrentPositionInfo cp;
-        playhead->getCurrentPosition(cp);
-        sc3->time_data.tempo = cp.bpm;
+        auto posinfo = playhead->getPosition();
+        sc3->time_data.tempo = posinfo->getBpm().orFallback(120);
 
         // isRecording should always imply isPlaying but better safe than sorry
-        if (cp.isPlaying || cp.isRecording)
-            sc3->time_data.ppqPos = cp.ppqPosition;
+        if (posinfo->getIsPlaying())
+            sc3->time_data.ppqPos = posinfo->getPpqPosition().orFallback(sc3->time_data.ppqPos);
 
-        sc3->time_data.timeSigNumerator = cp.timeSigNumerator;
-        sc3->time_data.timeSigDenominator = cp.timeSigDenominator;
+        auto ts = posinfo->getTimeSignature().orFallback(juce::AudioPlayHead::TimeSignature());
+        sc3->time_data.timeSigNumerator = ts.numerator;
+        sc3->time_data.timeSigDenominator = ts.denominator;
         sc3->resetStateFromTimeData();
     }
     else
