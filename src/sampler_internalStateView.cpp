@@ -217,7 +217,7 @@ std::string sampler::generateInternalStateView() const
                 oss << pfx << "coming_soon: true\n";
             }
 
-            oss << pfx << "nc_entry:\n";
+            oss << pfx << "trigger_condition_entry:\n";
             {
                 auto g3 = pfx.up();
                 oss << pfx << "coming_soon: true\n";

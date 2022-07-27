@@ -320,28 +320,29 @@ int modmatrix::get_n_destinations()
         return md_num_part_destinations;
 }
 
-bool modmatrix::check_NC(sample_zone *z)
+bool modmatrix::check_trigger_condition(sample_zone *z)
 {
     // perform per-note variable updates
     alternate *= -1.f;
 
     // checks NCs
-    for (int i = 0; i < nc_entries; i++)
+    for (int i = 0; i < num_zone_trigger_conditions; i++)
     {
-        if (src[z->nc[i].source].fptr)
+        if (src[z->trigger_conditions[i].source].fptr)
         {
-            int val = (int)(float)(*src[z->nc[i].source].fptr * 127.f);
-            if ((val < z->nc[i].low) || (val > z->nc[i].high))
+            int val = (int)(float)(*src[z->trigger_conditions[i].source].fptr * 127.f);
+            if ((val < z->trigger_conditions[i].low) || (val > z->trigger_conditions[i].high))
                 return false;
         }
     }
     unsigned int layer = z->layer & (num_layers - 1);
-    for (int i = (layer * num_layer_ncs); i < (layer * num_layer_ncs + num_layer_ncs); i++)
+    for (int i = (layer * num_layer_trigger_conditions);
+         i < (layer * num_layer_trigger_conditions + num_layer_trigger_conditions); i++)
     {
-        if (src[part->nc[i].source].fptr)
+        if (src[part->trigger_conditions[i].source].fptr)
         {
-            int val = (int)(float)(*src[part->nc[i].source].fptr * 127.f);
-            if ((val < part->nc[i].low) || (val > part->nc[i].high))
+            int val = (int)(float)(*src[part->trigger_conditions[i].source].fptr * 127.f);
+            if ((val < part->trigger_conditions[i].low) || (val > part->trigger_conditions[i].high))
                 return false;
         }
     }
