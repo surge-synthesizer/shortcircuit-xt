@@ -33,7 +33,6 @@ struct FXPage : public PageBase
     FXPage(SCXTEditor *, SCXTEditor::Pages p);
     ~FXPage();
 
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
 
     std::array<std::unique_ptr<fx_contents::SingleFX>, num_fxunits> fxComponents;

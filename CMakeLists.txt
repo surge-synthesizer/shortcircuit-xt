@@ -41,6 +41,33 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SURGE_SKI
     set(CMAKE_EXE_LINKER_FLAGS "-no-pie")
 endif ()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    if (${SCXT_SANITIZE})
+        message(STATUS "Sanitizer is On")
+    endif ()
+
+    # Any Clang or any GCC
+    add_compile_options(
+            -Wno-multichar
+            # Targeting Windows with GCC/Clang is experimental
+            # $<$<NOT:$<BOOL:${WIN32}>>:-Werror>
+
+            # PE/COFF doesn't support visibility
+            $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
+            # Inlines visibility is only relevant with C++
+            $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>
+
+            # BP note: If you want to turn on llvm/gcc sanitize undo this and the link options below
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+    )
+
+    add_link_options(
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+    )
+endif ()
+
 include(cmake/compiler-and-git.cmake)
 
 add_subdirectory(libs)

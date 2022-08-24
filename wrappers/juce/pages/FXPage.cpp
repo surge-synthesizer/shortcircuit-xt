@@ -21,6 +21,7 @@
 #include "widgets/ParamEditor.h"
 #include "widgets/OutlinedTextButton.h"
 #include "sst/cpputils.h"
+#include <sst/jucegui/components/NamedPanel.h>
 
 namespace scxt
 {
@@ -28,15 +29,17 @@ namespace pages
 {
 namespace fx_contents
 {
-struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
+struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage,
+                                                         sst::jucegui::components::NamedPanel>
 {
     SingleFX(FXPage &p, int id)
-        : idx(id), contents::PageContentBase<FXPage>(p, "effect_" + std::to_string(id + 1),
-                                                     "Effect " + std::to_string(id + 1),
-                                                     juce::Colour(0xFF447744))
+        : idx(id), contents::PageContentBase<FXPage, sst::jucegui::components::NamedPanel>(
+                       p, "effect_" + std::to_string(id + 1), "Effect " + std::to_string(id + 1),
+                       juce::Colour(0xFF447744))
     {
         auto &mult = parentPage.editor->multi;
         auto &fx = parentPage.editor->multi.filters[idx];
+
         outputTarget = bind<widgets::IntParamComboBox>(mult.filter_output[idx],
                                                        parentPage.editor->multiFilterOutputNames);
         bind(filter, fx, parentPage.editor->multiFilterTypeNames);
@@ -46,18 +49,20 @@ struct SingleFX : scxt::pages::contents::PageContentBase<scxt::pages::FXPage>
 
     void resized() override
     {
-        auto b = getContentsBounds();
-        auto bl = b.withTrimmedRight(50).reduced(1, 1);
-        auto br = b.withTrimmedLeft(b.getWidth() - 48).reduced(1, 1);
+        constexpr int switchWidth = 48;
 
-        auto rgl = contents::RowGenerator(bl, 4 + n_filter_parameters);
+        auto b = getContentArea();
+        auto bl = b.withTrimmedRight(switchWidth + 2).reduced(1, 1);
+        auto br = b.withTrimmedLeft(b.getWidth() - switchWidth).reduced(1, 1);
+
+        auto rgl = contents::ItemHeightRowGenerator(bl);
         auto rgr = contents::RowGenerator(br, 4 + n_filter_parameters);
 
         filter.type->setBounds(rgl.next());
-        rgl.next();
+        rgl.nextGap();
         for (const auto &q : filter.fp)
             q->setBounds(rgl.next());
-        rgl.next();
+        rgl.nextGap();
         outputTarget->setBounds(rgl.next());
 
         filter.bypass->setBounds(rgr.next());

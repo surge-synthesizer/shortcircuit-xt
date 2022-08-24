@@ -22,3 +22,6 @@
 [submodule "libs/sst/sst-filters"]
 	path = libs/sst/sst-filters
 	url = https://github.com/surge-synthesizer/sst-filters
+[submodule "libs/sst/sst-jucegui"]
+	path = libs/sst/sst-jucegui
+	url = https://github.com/surge-synthesizer/sst-jucegui

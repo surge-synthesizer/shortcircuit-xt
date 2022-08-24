@@ -30,6 +30,7 @@
 
 #include "sst/cpputils.h"
 #include "synthesis/steplfo.h"
+#include <sst/jucegui/components/NamedPanel.h>
 
 namespace scxt
 {
@@ -40,11 +41,14 @@ namespace pages
 namespace zone_contents
 {
 typedef scxt::pages::contents::PageContentBase<scxt::pages::ZonePage> ContentBase;
+typedef scxt::pages::contents::PageContentBase<scxt::pages::ZonePage,
+                                               sst::jucegui::components::NamedPanel>
+    ContentBaseSSTJuceGui;
 
-struct NamesAndRanges : public ContentBase
+struct NamesAndRanges : public ContentBaseSSTJuceGui
 {
     NamesAndRanges(const scxt::pages::ZonePage &p)
-        : ContentBase(p, "names_ranges", "Names & Ranges", juce::Colour(0xFF555555))
+        : ContentBaseSSTJuceGui(p, "names_ranges", "Names & Ranges", juce::Colour(0xFF555555))
     {
         for (const auto &[i, l] :
              sst::cpputils::enumerate(std::array{"xf", "low", "root", "hi", "xf"}))
@@ -155,12 +159,12 @@ struct NamesAndRanges : public ContentBase
     std::array<std::unique_ptr<juce::Label>, 3> ncLabels;
 };
 
-struct Envelope : public ContentBase
+struct Envelope : public ContentBaseSSTJuceGui
 {
     const int whichEnv{-1};
     Envelope(const scxt::pages::ZonePage &p, const scxt::style::Selector &sel,
              const std::string &label, int we)
-        : ContentBase(p, sel, label, juce::Colour(0xFF447744)), whichEnv(we)
+        : ContentBaseSSTJuceGui(p, sel, label, juce::Colour(0xFF447744)), whichEnv(we)
     {
         auto &env = parentPage.editor->currentZone.env[we];
         shapes[0] = bindFloatSpinBox(env.s0);
@@ -218,7 +222,7 @@ struct Routing : public ContentBase
             strength[i] = bindFloatSpinBox(mm[i].strength);
         }
 
-        activateTabs();
+        this->activateTabs();
     }
 
     int getTabCount() const override { return 2; }
@@ -299,7 +303,7 @@ struct Filters : public ContentBase
                 fSide = fSide.translated(sideCol, 0);
                 iSide = iSide.translated(sideCol - b.getWidth(), 0);
             }
-            auto rg = contents::RowGenerator(fSide, 1 + n_filter_parameters);
+            auto rg = contents::ItemHeightRowGenerator(fSide);
             fr.type->setBounds(rg.next());
 
             for (auto q = 0; q < n_filter_parameters; ++q)
@@ -318,9 +322,10 @@ struct Filters : public ContentBase
     std::array<ContentBase::FilterRegion, 2> filters;
 };
 
-struct Outputs : public ContentBase
+struct Outputs : public ContentBaseSSTJuceGui
 {
-    Outputs(const ZonePage &p) : ContentBase(p, "outputs", "Outputs", juce::Colour(0xFF444477))
+    Outputs(const ZonePage &p)
+        : ContentBaseSSTJuceGui(p, "outputs", "Outputs", juce::Colour(0xFF444477))
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -378,9 +383,10 @@ struct Outputs : public ContentBase
     std::unique_ptr<widgets::FloatParamSlider> pfg;
 };
 
-struct Pitch : ContentBase
+struct Pitch : ContentBaseSSTJuceGui
 {
-    Pitch(const ZonePage &p) : ContentBase(p, "pitch", "Pitch & etc", juce::Colour(0xFF555555))
+    Pitch(const ZonePage &p)
+        : ContentBaseSSTJuceGui(p, "pitch", "Pitch & etc", juce::Colour(0xFF555555))
     {
         for (const auto &[i, l] :
              sst::cpputils::enumerate(std::array{"PB Range", "Coarse", "Mute Group"}))
@@ -432,9 +438,10 @@ struct Pitch : ContentBase
     std::unique_ptr<juce::Label> lagLabel;
 };
 
-struct Sample : ContentBase
+struct Sample : ContentBaseSSTJuceGui
 {
-    Sample(const ZonePage &p) : ContentBase(p, "sample", "Sample", juce::Colour(0xFF444477))
+    Sample(const ZonePage &p)
+        : ContentBaseSSTJuceGui(p, "sample", "Sample", juce::Colour(0xFF444477))
     {
         auto &cz = parentPage.editor->currentZone;
         playmode = bind<widgets::IntParamComboBox>(cz.playmode, parentPage.editor->zonePlaymode);

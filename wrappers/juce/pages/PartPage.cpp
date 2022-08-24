@@ -19,6 +19,7 @@
 #include "PageContentBase.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "SCXTLookAndFeel.h"
+#include <sst/jucegui/components/NamedPanel.h>
 
 namespace scxt
 {
@@ -28,6 +29,9 @@ namespace part_contents
 {
 
 typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage> ContentBase;
+typedef scxt::pages::contents::PageContentBase<scxt::pages::PartPage,
+                                               sst::jucegui::components::NamedPanel>
+    ContentBaseSSTJuceGUI;
 
 struct VelocitySplit : public ContentBase
 {
@@ -228,9 +232,10 @@ struct Controllers : public ContentBase
     std::array<std::unique_ptr<widgets::IntParamToggleButton>, 8> bipolars;
 };
 
-struct Main : public ContentBase
+struct Main : public ContentBaseSSTJuceGUI
 {
-    Main(const scxt::pages::PartPage &p) : ContentBase(p, "main", "Main", juce::Colours::darkgrey)
+    Main(const scxt::pages::PartPage &p)
+        : ContentBaseSSTJuceGUI(p, "main", "Main", juce::Colours::darkgrey)
     {
         auto &part = parentPage.editor->currentPart;
 
@@ -388,7 +393,7 @@ struct Effects : public ContentBase
                 fSide = fSide.translated(sideCol, 0);
                 iSide = iSide.translated(sideCol - b.getWidth(), 0);
             }
-            auto rg = contents::RowGenerator(fSide, 1 + n_filter_parameters);
+            auto rg = contents::ItemHeightRowGenerator(fSide);
             fr.type->setBounds(rg.next());
 
             for (auto q = 0; q < n_filter_parameters; ++q)
@@ -478,8 +483,8 @@ void PartPage::resized()
     auto w1 = w * 0.4;
 
     int y0 = 0;
-    main->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.3).reduced(1, 1));
-    y0 += h1 * 0.3;
+    main->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.33).reduced(1, 1));
+    y0 += h1 * 0.33;
     polyMode->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.2).reduced(1, 1));
     y0 += h1 * 0.2;
     layerRanges->setBounds(juce::Rectangle<int>(0, y0, w1, h1 * 0.25).reduced(1, 1));
