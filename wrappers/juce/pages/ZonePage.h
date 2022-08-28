@@ -52,7 +52,6 @@ struct ZonePage : public PageBase
     ZonePage(SCXTEditor *ed, SCXTEditor::Pages p);
     ~ZonePage();
 
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
     virtual void connectProxies() override;
     virtual void onProxyUpdate() override;

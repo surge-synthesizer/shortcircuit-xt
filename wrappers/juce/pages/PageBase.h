@@ -41,10 +41,12 @@ struct PageBase : public juce::Component,
 
     void paint(juce::Graphics &g) override
     {
+        /*
         g.fillAll(juce::Colours::darkred);
         g.setFont(SCXTLookAndFeel::getMonoFontAt(40));
         g.setColour(juce::Colours::white);
         g.drawText(SCXTEditor::pageName(page), getLocalBounds(), juce::Justification::centred);
+         */
     }
 
     virtual void connectProxies() {}

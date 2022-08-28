@@ -158,7 +158,6 @@ class SCXTEditor : public juce::AudioProcessorEditor,
 
     void showPage(const Pages &p);
 
-    static constexpr int scWidth = 970, scHeight = 700;
     float scale = 1.0;
     void setScale(float sc);
     float optimalScaleForDisplay();

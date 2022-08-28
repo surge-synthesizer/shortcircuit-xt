@@ -24,6 +24,8 @@
 
 #include <unordered_map>
 
+#include "SCXTLayoutValues.h"
+
 #include "components/BrowserSidebar.h"
 #include "components/DebugPanel.h"
 #include "components/HeaderPanel.h"
@@ -46,6 +48,8 @@
 #include "widgets/CompactVUMeter.h"
 #include "widgets/PolyphonyDisplay.h"
 
+#include <sst/jucegui/components/WindowPanel.h>
+
 #define DEBUG_UNHANDLED_MESSAGES 1
 
 #if DEBUG_UNHANDLED_MESSAGES
@@ -60,12 +64,16 @@ struct SC3IdleTimer : juce::Timer
     SCXTEditor *ed;
 };
 
-struct SCXTTopLevel : public juce::Component, scxt::style::DOMParticipant
+struct SCXTTopLevel : sst::jucegui::components::WindowPanel, scxt::style::DOMParticipant
 {
     SCXTEditor *editor{nullptr};
-    SCXTTopLevel(SCXTEditor *e) : juce::Component(), editor(e), DOMParticipant("scxt")
+    SCXTTopLevel(SCXTEditor *e)
+        : sst::jucegui::components::WindowPanel(), editor(e), DOMParticipant("scxt")
     {
         setupJuceAccessibility();
+        sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
+        setStyle(sst::jucegui::style::StyleSheet::getBuiltInStyleSheet(
+            sst::jucegui::style::StyleSheet::DARK));
     }
     void resized() override;
 };
@@ -191,12 +199,15 @@ void SCXTEditor::buttonClicked(juce::Button *b) {}
 void SCXTEditor::buttonStateChanged(juce::Button *b) {}
 
 //==============================================================================
-void SCXTEditor::paint(juce::Graphics &g) { g.fillAll(juce::Colours::black); }
+void SCXTEditor::paint(juce::Graphics &g)
+{
+    // g.fillAll(juce::Colours::black);
+}
 
 void SCXTEditor::setScale(float sc)
 {
     scale = sc;
-    setSize(scWidth * sc, scHeight * sc);
+    setSize(scxt::layout::editorWindowWidth * sc, scxt::layout::editorWindowHeight * sc);
     audioProcessor.sc3->defaultsProvider->updateUserDefaultValue(scxt::defaults::zoomLevel,
                                                                  (int)(round(sc * 100)));
 }
@@ -204,8 +215,8 @@ void SCXTEditor::setScale(float sc)
 float SCXTEditor::optimalScaleForDisplay()
 {
     auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->totalArea;
-    float ws = 1.f * scWidth / area.getWidth();
-    float hs = 1.f * scHeight / area.getHeight();
+    float ws = 1.f * scxt::layout::editorWindowWidth / area.getWidth();
+    float hs = 1.f * scxt::layout::editorWindowHeight / area.getHeight();
     auto x = std::max(ws, hs);
 
     float sc = 1.f;
@@ -219,7 +230,8 @@ float SCXTEditor::optimalScaleForDisplay()
 
 void SCXTEditor::resized()
 {
-    topLevel->setBounds(juce::Rectangle<int>(0, 0, scWidth, scHeight));
+    topLevel->setBounds(juce::Rectangle<int>(0, 0, scxt::layout::editorWindowWidth,
+                                             scxt::layout::editorWindowHeight));
     topLevel->setTransform(juce::AffineTransform().scaled(scale));
 }
 
