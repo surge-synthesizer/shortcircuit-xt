@@ -18,6 +18,7 @@
 #include "SCXTProcessor.h"
 #include "SCXTEditor.h"
 #include <iostream>
+#include <string>
 #include "sst/plugininfra/cpufeatures.h"
 
 //==============================================================================
@@ -39,6 +40,10 @@ SCXTProcessor::SCXTProcessor()
 
     sc3 = std::make_unique<sampler>(nullptr, 8, nullptr, this);
     sc3->wrapperType = getWrapperTypeDescription(wrapperType);
+    if (wrapperType == wrapperType_Undefined && is_clap)
+    {
+        sc3->wrapperType = std::string("CLAP");
+    }
 }
 
 SCXTProcessor::~SCXTProcessor()

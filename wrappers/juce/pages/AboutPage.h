@@ -58,7 +58,7 @@ struct AboutPage : PageBase
 #endif
         std::string bitness =
             (sizeof(size_t) == 4 ? std::string("32") : std::string("64")) + "-bit";
-        std::string wrapper = ed->processor.getWrapperTypeDescription(ed->processor.wrapperType);
+        std::string wrapper = ed->audioProcessor.sc3->wrapperType;
 
         info.push_back({"System", platform + " " + bitness + " " + wrapper + " on " +
                                       sst::plugininfra::cpufeatures::brand()});
