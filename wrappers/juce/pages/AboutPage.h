@@ -60,6 +60,12 @@ struct AboutPage : PageBase
             (sizeof(size_t) == 4 ? std::string("32") : std::string("64")) + "-bit";
         std::string wrapper = ed->processor.getWrapperTypeDescription(ed->processor.wrapperType);
 
+        // assuming no new plugin-formats coming out soon (fingers crossed)
+        if (wrapper == "Undefined")
+        {
+            wrapper = "CLAP";
+        }
+
         info.push_back({"System", platform + " " + bitness + " " + wrapper + " on " +
                                       sst::plugininfra::cpufeatures::brand()});
         info.push_back(
