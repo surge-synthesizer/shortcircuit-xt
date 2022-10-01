@@ -19,11 +19,14 @@
 
 #include "sampler.h"
 #include "juce_audio_processors/juce_audio_processors.h"
+#include "clap-juce-extensions/clap-juce-extensions.h"
 
 //==============================================================================
 /**
  */
-class SCXTProcessor : public juce::AudioProcessor, public scxt::log::LoggingCallback
+class SCXTProcessor : public juce::AudioProcessor,
+                      public scxt::log::LoggingCallback,
+                      public clap_juce_extensions::clap_properties
 {
     scxt::log::StreamLogger mLogger;
     fs::path mConfigFileName;

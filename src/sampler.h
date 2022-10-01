@@ -153,7 +153,7 @@ class sampler
     bool zone_exist(int id);
     bool verify_zone_validity(int zone_id);
 
-    // Interface to GUI wrapeprs
+    // Interface to GUI wrappers
     struct WrapperListener
     {
         virtual ~WrapperListener() = default;
