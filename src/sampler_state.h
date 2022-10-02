@@ -458,7 +458,7 @@ struct sample_part
     // int					polymode_partlevel;
     int polymode, polylimit;
     int portamento_mode, transpose, formant;
-    int MIDIchannel; // channel part recieves on (defaults to its id but can be stored in multi, but
+    int MIDIchannel; // channel part receives on (defaults to its id but can be stored in multi, but
                      // not patches)
 
     filterstruct Filter[num_filters_per_part]; // filters / fx

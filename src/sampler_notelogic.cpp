@@ -543,7 +543,7 @@ void sampler::ReleaseNote(char channel, char key, char velocity)
             }
             else
             {
-                // hold pedal is down, add to bufffer
+                // hold pedal is down, add to buffer
                 holdbuffer.push_back(i);
             }
         }

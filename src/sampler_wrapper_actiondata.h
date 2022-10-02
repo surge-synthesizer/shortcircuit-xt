@@ -52,7 +52,7 @@
  * then are what are the messages wrapper -> engine, engine -> wrapper, and the thread
  * patterns of both.
  *
- * Lets do thred patterns first
+ * Let's do thread patterns first
  *
  * 1. The wrapper can call `postEventsFromWrapper` from any thread it wants
  * 2. The engine will process events on the audio thread

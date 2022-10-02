@@ -17,6 +17,7 @@ cmake_policy(SET CMP0091 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(ShortCircuit VERSION 0.5.0.0 LANGUAGES C CXX ASM)
 
@@ -27,11 +28,6 @@ message(STATUS "Targeting ${BITS}-bit configuration")
 # Share some information about the  build
 message(STATUS "ShortCircuit ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
-
-
-# Optional variables
-option(SCXT_SKIP_PYTHON "Skip the Python Wrapper" FALSE)
-
 
 # Everything here is C++ 17 now
 set(CMAKE_CXX_STANDARD 17)

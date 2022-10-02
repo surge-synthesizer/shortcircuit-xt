@@ -82,17 +82,12 @@ cmake -Bbuild
 cmake --build build --config Release --target ShortcircuitXT_Standalone
 ```
 
-This will build the rudimentary standalone app. Other targets exist for Python as a wrapper, as well as `sc3-test`
+This will build the rudimentary standalone app. Other targets exist, such as `sc3-test`
 which runs the existing test suite.
 
-If you don't have the prerequisites for build installed it might fail, but many Windows users don't have python
-installed, which will make cmake complain. So if you want to build skipping the python libs you can also do
-
-```
-git submodule update --init --recursive
-cmake -Bbuild -DSHORTCIRCUIT_XT_SKIP_PYTHON=TRUE
-cmake --build build --config Release --target ShortcircuitXT_Standalone
-```
+If you don't have the prerequisites for build installed it might fail,
+(We will update this section soon. For now please have a look at the Surge XT docs for
+prerequisites and dependencies)
 
 # Issues building
 

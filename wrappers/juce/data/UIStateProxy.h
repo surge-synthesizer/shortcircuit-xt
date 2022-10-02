@@ -20,6 +20,7 @@
 
 #include "sampler_wrapper_actiondata.h"
 #include "data/BasicTypes.h"
+#include <unordered_set>
 
 namespace scxt
 {
@@ -28,8 +29,8 @@ namespace data
 
 /*
  * The UIStateProxy is a class which handles messages and keeps an appropriate state.
- * Components can render it for bulk action. For instance there woudl be a ZoneMapProxy
- * and so on. Each UIStateProxy registerred with the editor gets all the messages.
+ * Components can render it for bulk action. For instance there would be a ZoneMapProxy
+ * and so on. Each UIStateProxy registered with the editor gets all the messages.
  */
 class UIStateProxy
 {

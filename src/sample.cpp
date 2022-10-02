@@ -243,7 +243,7 @@ void sample::init_grains()
                     if(samplepos > sample_length)
                             break;
 
-                    // check if upwards zc has occured
+                    // check if upwards zc has occurred
                     if ((sample_data[samplepos+FIRoffset]>0) &&
     (sample_data[samplepos+FIRoffset-1]<0))
                     {
