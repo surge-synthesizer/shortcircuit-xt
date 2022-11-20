@@ -92,7 +92,8 @@ struct BinaryDiscrete : sst::jucegui::data::BinaryDiscrete
     data::ActionSender *sender{nullptr};
     BinaryDiscrete(data::ParameterProxy<int> &in, data::ActionSender *snd) : p(in), sender(snd) {}
 
-    std::string getLabel() const override {
+    std::string getLabel() const override
+    {
         std::cout << "LABEL IS " << p.getLabel() << std::endl;
         return p.getLabel();
     }
