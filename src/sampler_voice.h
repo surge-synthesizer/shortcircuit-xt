@@ -30,7 +30,8 @@
 class sampler_voice;
 class filter;
 class sample;
-namespace sst::filters::HalfRate{
+namespace sst::filters::HalfRate
+{
 class HalfRateFilter;
 }
 
