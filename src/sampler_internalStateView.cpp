@@ -33,7 +33,7 @@ struct indenter
     g up() { return g(this); }
 };
 
-std::ostream &operator<<(std::ostream &os, const indenter &p)
+std::ostream& operator<<(std::ostream &os, const indenter &p)
 {
     for (int i = 0; i < p.indent; ++i)
         os << "   ";
