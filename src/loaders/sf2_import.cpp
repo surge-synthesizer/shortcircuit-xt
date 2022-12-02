@@ -87,7 +87,7 @@ int get_sf2_patchlist(const fs::path &filename, void **plist, scxt::log::StreamL
         return false;
     }
 
-    // ok, we're in the presets chunk, put all the data in bufffers
+    // ok, we're in the presets chunk, put all the data in buffers
 
     int i;
     int n_ph, n_pb, n_pg, n_ih, n_ib, n_ig, n_shdr;
@@ -295,7 +295,7 @@ bool sampler::load_sf2_preset(const fs::path &filename, int *new_group, char cha
         return false;
     }
 
-    // ok, we're in the presets chunk, put all the data in bufffers
+    // ok, we're in the presets chunk, put all the data in buffers
 
     int i;
     int n_ph, n_pb, n_pg, n_ih, n_ib, n_ig, n_shdr;
@@ -488,7 +488,7 @@ spawn_patch_dialog((HWND)((AEffGUIEditor*)editor)->getFrame()->getSystemWindow()
                 p_generators_set[preset_gen[pg].sfGenOper] = true;
             }
 
-            // traverse trough the instrumentbags
+            // traverse through the instrument bags
             int inst_id = p_generators[instrument].wAmount;
             if (!p_generators_set[instrument])
                 break;

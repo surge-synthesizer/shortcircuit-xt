@@ -220,7 +220,7 @@ typedef struct _DLSHEADER
 
 /*****  For level 1 only WAVELINK_CHANNEL_MONO is valid  ****
   ulChannel allows for up to 32 channels of audio with each bit position
-  specifiying a channel of playback */
+  specifying a channel of playback */
 
 #define WAVELINK_CHANNEL_LEFT 0x0001l
 #define WAVELINK_CHANNEL_RIGHT 0x0002l

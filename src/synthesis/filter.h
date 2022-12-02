@@ -56,7 +56,7 @@ class filter
                                 float pitch)
     {
     }
-    // filters are required to be able to process stereo blocks if stereo is true in the contructor
+    // filters are required to be able to process stereo blocks if stereo is true in the constructor
     virtual void suspend() {}
     virtual int tail_length() { return 1000; }
 

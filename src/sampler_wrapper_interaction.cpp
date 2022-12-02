@@ -1143,7 +1143,7 @@ void sampler::post_data_from_structure(char *pointr, int id_start, int id_end)
             else
             {
                 post = false;
-                std::cout << "Not pusting " << ip_data[i].vtype << std::endl;
+                std::cout << "Not posting " << ip_data[i].vtype << std::endl;
             }
             if (post)
                 postEventsToWrapper(ad);

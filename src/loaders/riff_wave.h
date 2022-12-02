@@ -57,7 +57,7 @@ struct wave_acid_chunk
     /*
     0x01 On: One Shot         Off: Loop
     0x02 On: Root note is Set Off: No root
-    0x04 On: Stretch is On,   Off: Strech is OFF
+    0x04 On: Stretch is On,   Off: Stretch is OFF
     0x08 On: Disk Based       Off: Ram based
     0x10 On: ??????????       Off: ????????? (Acidizer puts that ON)
     */

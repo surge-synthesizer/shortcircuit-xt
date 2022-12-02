@@ -18,13 +18,16 @@
 #ifndef SHORTCIRCUIT_PARAMETERPROXY_H
 #define SHORTCIRCUIT_PARAMETERPROXY_H
 
+#include <algorithm>
 #include <fmt/core.h>
 
 #include "configuration.h"
+#include "juce_core/juce_core.h"
 #include "sampler_wrapper_actiondata.h"
 #include "wrapper_msg_to_string.h"
 #include "data/BasicTypes.h"
 #include <cmath>
+#include <set>
 
 namespace scxt
 {
@@ -393,7 +396,7 @@ template <>
 inline void ParameterProxy<float, vga_steplfo_data_single>::sendValue(const float &value,
                                                                       ActionSender *s)
 {
-    // This shuld never be called; because of the message layout the message is generated
+    // This should never be called; because of the message layout the message is generated
     // specially in the ZonePage
     std::terminate();
 }

@@ -30,7 +30,7 @@
 size_t sample::SaveWaveChunk(void *data)
 {
     // save the sample in a WAVE-compatible chunk
-    // both used for persistance and .wav export
+    // both used for persistence and .wav export
     size_t samplesize = channels * sample_length * (UseInt16 ? 2 : 4);
     size_t datasize = (8 + sizeof(wavheader)) + (8 + samplesize) +
                       (12 + scxt::Memfile::RIFFMemFile::RIFFTextChunkSize(name));

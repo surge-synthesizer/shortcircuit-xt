@@ -15,6 +15,14 @@
 ** open source in December 2020.
 */
 
+#if defined(__aarch64__)
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include "simde/x86/sse2.h"
+
+#else
+#include <emmintrin.h>
+#endif
+
 struct lattice_sd
 {
     struct

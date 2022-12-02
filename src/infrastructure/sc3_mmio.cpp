@@ -86,7 +86,7 @@ int mmioDescend(HMMIO h, MMCKINFO *target, MMCKINFO *parent, int type)
     case MMIO_FINDRIFF:
     {
         /*
-         * A naieve implementation but assume that only first time through is a RIFF
+         * A naive implementation but assume that only first time through is a RIFF
          */
         if (h->memFile.RIFFPeekChunk(&tag, &ds, &has, &ltag))
         {
