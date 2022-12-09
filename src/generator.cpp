@@ -429,7 +429,9 @@ store:
             {
                 Direction = -1;
             }
+            // clang-format off
             else if (SamplePos <= LowerBound) { Direction = 1; }
+            // clang-format on
             SamplePos = limit_range(SamplePos, 0, WaveSize);
         }
         break;
