@@ -19,7 +19,7 @@
 #include "sampler_state.h"
 #include <algorithm>
 #include "util/scxtstring.h"
-//#include <new.h>		// needed for "placement new" to work
+// #include <new.h>		// needed for "placement new" to work
 
 extern float SincTableF32[(FIRipol_M + 1) * FIRipol_N];
 extern float SincOffsetF32[(FIRipol_M)*FIRipol_N];
@@ -31,7 +31,11 @@ bool spawn_filter_release(filter *f)
     if (!f)
         return false;
     f->~filter();
+#if WIN
+    _aligned_free(f);
+#else
     free(f);
+#endif
     return true;
 }
 
@@ -42,7 +46,7 @@ template <typename T, bool takesIP = true> void spawn_internal(filter *&t, float
     t = (filter *)malloc(sizeof(T));
 #else
 #if WIN
-    t = (filter *)_aligned_malloc(16, sizeof(T));
+    t = (filter *)_aligned_malloc(sizeof(T), 16);
 #else
     t = (filter *)std::aligned_alloc(16, sizeof(T));
 #endif
@@ -59,7 +63,7 @@ template <> void spawn_internal<superbiquad, true>(filter *&t, float *fp, int *i
     t = (filter *)malloc(sizeof(superbiquad));
 #else
 #if WIN
-    t = (filter *)_aligned_malloc(16, sizeof(superbiquad));
+    t = (filter *)_aligned_malloc(sizeof(superbiquad), 16);
 #else
     t = (filter *)std::aligned_alloc(16, sizeof(superbiquad));
 #endif
