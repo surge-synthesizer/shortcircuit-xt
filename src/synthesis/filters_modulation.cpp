@@ -526,7 +526,11 @@ phaser::phaser(float *fp, int *ip) : filter(fp)
 phaser::~phaser()
 {
     for (int i = 0; i < n_bq_units; i++)
+#if WIN
+        _aligned_free(biquad[i]);
+#else
         free(biquad[i]);
+#endif
 }
 
 void phaser::init_params()
