@@ -636,7 +636,7 @@ class alignas(16) BF : public filter
     // Switch to a placement-new strategy here first
     LP2B *lp{nullptr};
     static constexpr size_t lps{sizeof(LP2B)};
-    uint8_t lpMemory alignas(16) [lps];
+    uint8_t lpMemory alignas(16)[lps];
     static_assert(lps < 4096); // just in case someone changes the base class to blow out mem
 };
 
