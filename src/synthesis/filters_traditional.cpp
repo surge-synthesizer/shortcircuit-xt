@@ -15,7 +15,6 @@
 ** open source in December 2020.
 */
 
-#define _USE_MATH_DEFINES
 #include "filter_defs.h"
 #include "resampling.h"
 #include "util/tools.h"

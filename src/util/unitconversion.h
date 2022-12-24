@@ -16,6 +16,7 @@
 */
 
 #pragma once
+#include <string>
 
 const float env_phasemulti = 1000 / 44100.f;
 const float lfo_range = 1000;
@@ -27,6 +28,6 @@ double dB_to_linear(double in);
 float timecent_to_seconds(float in);
 float seconds_to_envtime(float in); // ff rev2
 // float log2(float x) noexcept;
-char *get_notename(char *s, int i_value);
+std::string get_notename(int i_value);
 float timecent_to_envtime(float in);
 float timecent_to_envtime_GIGA(float in);

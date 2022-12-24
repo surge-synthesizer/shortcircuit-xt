@@ -19,7 +19,6 @@
 
 #include <cmath>
 #include <math.h>
-#define _USE_MATH_DEFINES
 
 extern float table_dB[512], table_pitch[512], table_envrate_lpf[512], table_envrate_linear[512];
 extern float waveshapers[8][1024]; // typ?
