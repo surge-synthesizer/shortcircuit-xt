@@ -632,7 +632,12 @@ class alignas(16) BF : public filter
 
   protected:
     float time[2], level[2], postslew[2], lp_params[6];
-    LP2B *lp;
+
+    // Switch to a placement-new strategy here first
+    LP2B *lp{nullptr};
+    static constexpr size_t lps{sizeof(LP2B)};
+    uint8_t lpMemory alignas(16) [lps];
+    static_assert(lps < 4096); // just in case someone changes the base class to blow out mem
 };
 
 //-------------------------------------------------------------------------------------------------------
