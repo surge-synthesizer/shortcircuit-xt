@@ -58,13 +58,12 @@ float log2(float x) noexcept
 }
 #endif
 
-char *get_notename(char *s, int i_value)
+std::string get_notename(int i_value)
 {
     int octave = (i_value / 12) - 2;
     char notenames[12][3] = {"C ", "C#", "D ", "D#", "E ", "F ",
                              "F#", "G ", "G#", "A ", "A#", "B "};
-    sprintf(s, "%s%i", notenames[i_value % 12], octave);
-    return s;
+    return std::string(notenames[i_value % 12]) + std::to_string(octave);
 }
 
 float timecent_to_envtime(float in)

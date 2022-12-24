@@ -73,3 +73,6 @@ target_link_libraries(shortcircuit-core PUBLIC
         shortcircuit::compiler-options
         shortcircuit::readerwriterqueue)
 target_include_directories(shortcircuit-core PUBLIC vembertech .)
+if (WIN32 OR APPLE)
+    target_compile_definitions(shortcircuit-core PUBLIC _USE_MATH_DEFINES)
+endif()
