@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0091 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum macOS version")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -66,20 +66,36 @@ endif ()
 
 include(cmake/compiler-and-git.cmake)
 
-add_subdirectory(libs/fmt)
-add_subdirectory(libs/sst/sst-cpputils)
-add_subdirectory(libs/sst/sst-filters)
-if (APPLE)
-    set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
-endif()
-set(RTMIDI_BUILD_STATIC_LIBS TRUE CACHE BOOL "static rdmidi")
-add_subdirectory(libs/rtmidi)
+add_subdirectory(libs)
+add_subdirectory(src)
+add_subdirectory(wrappers)
+add_subdirectory(tests)
 
-# FIX THIS
-add_library(simde INTERFACE)
-target_include_directories(simde INTERFACE libs/simde)
-add_library(shortcircuit::simde ALIAS simde)
+if (DEFINED ENV{ASIOSDK_DIR} OR BUILD_USING_MY_ASIO_LICENSE)
+    if (BUILD_USING_MY_ASIO_LICENSE)
+        message(STATUS "** BUILD USING OWN ASIO LICENSE **")
+        message(STATUS "The resulting Shortcircuit XT standalone executable is not licensed for distribution!")
+        message(STATUS "Fetching ASIO SDK...")
 
+        set(ASIOSDK_DIR ${CMAKE_BINARY_DIR}/asio/asiosdk)
+        add_custom_target(scxt-get-local-asio)
+        add_custom_command(
+                TARGET scxt-get-local-asio
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/asio
+                COMMAND ${CMAKE_COMMAND} -D ASIO_SDK_DESTINATION=${CMAKE_BINARY_DIR}/asio -P cmake/get-asio.cmake
+        )
+        add_dependencies(ShortcircuitXT scxt-get-local-asio)
+    else ()
+        file(TO_CMAKE_PATH "$ENV{ASIOSDK_DIR}" ASIOSDK_DIR)
+        message(STATUS "ASIO SDK found at ${ASIOSDK_DIR}")
+        message(STATUS "The resulting Shortcircuit XT standalone executable is not licensed for distribution!")
+    endif ()
 
-add_subdirectory(src-next)
-add_subdirectory(clients)
+    target_compile_definitions(ShortcircuitXT PUBLIC JUCE_ASIO=1)
+    target_include_directories(ShortcircuitXT PUBLIC ${ASIOSDK_DIR}/common)
+    set(JUCE_ASIO_SUPPORT TRUE)
+endif ()
+
+include(cmake/code-quality.cmake)
+include(cmake/basic-installer.cmake)
