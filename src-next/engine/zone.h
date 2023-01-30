@@ -32,6 +32,7 @@ struct Zone : NonCopyable<Zone>
     }
 
     KeyboardRange keyboardRange;
+    uint8_t rootKey{60};
 
     Group *parentGroup{nullptr};
 };

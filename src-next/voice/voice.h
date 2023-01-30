@@ -21,6 +21,8 @@ struct alignas(16) Voice : NonCopyable<Voice>
     dsp::GeneratorIO GDIO;
     dsp::GeneratorFPtr Generator;
 
+    uint8_t key{60};
+
     Voice(const engine::Zone &z) : zone(z)
     {
         memset(output, 0, 2 * blockSize * sizeof(float));
@@ -42,6 +44,8 @@ struct alignas(16) Voice : NonCopyable<Voice>
      * Calculates the playback speed. This is also where we put tuning
      */
     void calculateGeneratorRatio();
+
+    double sampleRate{-1}, sampleRateInv{-1};
 
     // TODO This is obvious garbage from hereon down
     size_t sp{0};

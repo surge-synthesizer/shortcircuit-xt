@@ -23,6 +23,7 @@
 #include "resampling.h"
 #include "sinc_table.h"
 #include <iostream>
+#include <algorithm>
 
 namespace scxt::dsp
 {

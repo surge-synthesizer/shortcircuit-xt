@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <cassert>
 
 #include <sst/cpputils.h>
 
@@ -45,7 +46,7 @@ struct Group : NonCopyable<Group>
         auto idx = getZoneIndex(zid);
         if (idx < 0 || idx >= zones.size())
             throw SCXTError("Unable to locate part " + zid.to_string() + " in patch " +
-                              id.to_string());
+                            id.to_string());
         return zones[idx];
     }
 

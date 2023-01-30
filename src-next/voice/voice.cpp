@@ -84,7 +84,10 @@ void Voice::calculateGeneratorRatio()
                                  mm.get_destination_value(md_rate)));
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
-    GD.ratio = 1 << 24;
+    // gross for now
+    auto ndiff = key - zone.rootKey;
+    auto fac = pow(2.0, ndiff / 12.0);
+    GD.ratio = (int32_t)((1 << 24) * fac * zone.sample->sample_rate * sampleRateInv);
 #endif
 }
 } // namespace scxt::voice

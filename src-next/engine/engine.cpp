@@ -23,7 +23,7 @@ Engine::Engine()
 
 Engine::~Engine()
 {
-    for (auto & v : voices)
+    for (auto &v : voices)
     {
         if (v)
         {
@@ -47,6 +47,9 @@ void Engine::initiateVoice(const pathToZone_t &path)
             }
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
             voices[idx] = new (dp) voice::Voice(*(zoneByPath(path)));
+            voices[idx]->key = path.key;
+            voices[idx]->sampleRate = sampleRate;
+            voices[idx]->sampleRateInv = sampleRateInv;
             voices[idx]->attack();
             return;
         }
@@ -58,7 +61,8 @@ void Engine::releaseVoice(const pathToZone_t &path)
     auto targetId = zoneByPath(path)->id;
     for (auto &v : voices)
     {
-        if (v && v->playState != voice::Voice::OFF && v->zone.id == targetId)
+        if (v && v->playState != voice::Voice::OFF &&
+            v->zone.id == targetId && v->key == path.key)
         {
             v->release();
         }

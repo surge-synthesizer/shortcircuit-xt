@@ -14,6 +14,7 @@
 
 #include <filesystem>
 #include <set>
+#include <cassert>
 
 namespace scxt::voice
 {
@@ -38,6 +39,16 @@ struct Engine : NonCopyable<Engine>
     float output alignas(16)[maxOutputs][2][blockSize];
 
     /**
+     * Sample Rate
+     */
+    double sampleRate{1}, sampleRateInv{1};
+    void setSampleRate(double d)
+    {
+        sampleRate = d;
+        sampleRateInv = 1.0 / d;
+    }
+
+    /**
      * Process into an array of size stereoOutputs * 2 * blocksize.
      * Returns true if processing should continue
      */
@@ -50,7 +61,16 @@ struct Engine : NonCopyable<Engine>
 
     // TODO: This is obviusly a pretty inefficient search method. We can definitel
     // pre-cache some of this lookup when the patch mutates
-    typedef std::tuple<int, int, int> pathToZone_t;
+    struct pathToZone_t
+    {
+        size_t part{0};
+        size_t group{0};
+        size_t zone{0};
+
+        int16_t channel{-1};
+        int16_t key{-1};
+        int32_t noteid{-1};
+    };
     std::vector<pathToZone_t> findZone(int16_t channel, int16_t key, int32_t noteId)
     {
         std::vector<pathToZone_t> res;
@@ -64,7 +84,8 @@ struct Engine : NonCopyable<Engine>
                     {
                         if (zone->keyboardRange.includes(key))
                         {
-                            res.emplace_back(pidx, gidx, zidx);
+                            res.push_back(
+                                {(size_t)pidx, (size_t)gidx, (size_t)zidx, channel, key, noteId});
                         }
                     }
                 }
@@ -83,6 +104,9 @@ struct Engine : NonCopyable<Engine>
     }
     void noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
     {
+        std::cout << "Engine::noteOff c=" << channel << " k=" << key << " nid=" << noteId
+                  << std::endl;
+
         for (const auto &path : findZone(channel, key, noteId))
         {
             releaseVoice(path);
@@ -91,7 +115,7 @@ struct Engine : NonCopyable<Engine>
 
     const std::unique_ptr<Zone> &zoneByPath(const pathToZone_t &path) const
     {
-        const auto &[p, g, z] = path;
+        const auto &[p, g, z, c, k, n] = path;
         return patch->getPart(p)->getGroup(g)->getZone(z);
     }
     void initiateVoice(const pathToZone_t &path);

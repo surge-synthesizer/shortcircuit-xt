@@ -68,6 +68,10 @@ include(cmake/compiler-and-git.cmake)
 
 add_subdirectory(libs/fmt)
 add_subdirectory(libs/sst/sst-cpputils)
+if (APPLE)
+    set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
+endif()
+add_subdirectory(libs/rtmidi)
 
 # FIX THIS
 add_library(simde INTERFACE)
