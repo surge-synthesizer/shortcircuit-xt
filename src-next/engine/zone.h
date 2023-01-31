@@ -4,11 +4,13 @@
 #include "utils.h"
 #include "keyboard.h"
 #include "sample/sample_manager.h"
+#include "dsp/filter/filter.h"
 
 namespace scxt::engine
 {
 struct Group;
 
+constexpr int filtersPerZone{2};
 struct Zone : NonCopyable<Zone>
 {
     Zone() : id(ZoneID::next()) {}
@@ -31,8 +33,11 @@ struct Zone : NonCopyable<Zone>
         return sample != nullptr;
     }
 
+    // TODO: This becomes 'meta' eventually probably
     KeyboardRange keyboardRange;
     uint8_t rootKey{60};
+
+    dsp::filter::FilterType filterType[filtersPerZone]{dsp::filter::ft_none, dsp::filter::ft_none};
 
     Group *parentGroup{nullptr};
 };

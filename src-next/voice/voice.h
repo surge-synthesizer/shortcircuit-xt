@@ -8,6 +8,11 @@
 #include "engine/zone.h"
 #include "dsp/sinc_table.h"
 #include "dsp/generator.h"
+
+#include "dsp/filter/filter.h"
+
+#include "vembertech/vt_dsp/lipol.h"
+
 #include "configuration.h"
 
 namespace scxt::voice
@@ -26,14 +31,22 @@ struct alignas(16) Voice : NonCopyable<Voice>
     Voice(const engine::Zone &z) : zone(z)
     {
         memset(output, 0, 2 * blockSize * sizeof(float));
-        dsp::sincTable.init();
+
+        initializeFromZone();
     }
+
+    ~Voice();
 
     /**
      * Generate the next blocksize of data into output
      * @return false if you cant
      */
     bool process();
+
+    /**
+     * Snap values on construction from the zone
+     */
+    void initializeFromZone();
 
     /**
      * Initialize the dsp generator state
@@ -46,6 +59,20 @@ struct alignas(16) Voice : NonCopyable<Voice>
     void calculateGeneratorRatio();
 
     double sampleRate{-1}, sampleRateInv{-1};
+
+    /**
+     * Filters: Storage, memory blocks, types, and more
+     */
+    dsp::filter::Filter *filters[engine::filtersPerZone]{nullptr, nullptr};
+    dsp::filter::FilterType filterType[engine::filtersPerZone]{dsp::filter::ft_none,
+                                                               dsp::filter::ft_none};
+    uint8_t filterStorage alignas(16)[engine::filtersPerZone][dsp::filter::filterMemoryBufferSize];
+    float filterFloatParams alignas(16)[engine::filtersPerZone][dsp::filter::maxFilterFloatParams];
+    int32_t filterIntParams alignas(16)[engine::filtersPerZone][dsp::filter::maxFilterIntParams];
+
+    void initializeFilters();
+
+    lipol_ps fmix[engine::filtersPerZone];
 
     // TODO This is obvious garbage from hereon down
     size_t sp{0};
@@ -61,6 +88,7 @@ struct alignas(16) Voice : NonCopyable<Voice>
         std::cout << "   Voice Attack " << zone.sample->getPath().u8string() << std::endl;
         playState = GATED;
         initializeGenerator();
+        initializeFilters();
     }
     void release() { playState = OFF; }
 };

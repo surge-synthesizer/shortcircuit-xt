@@ -3,14 +3,31 @@
 //
 
 #include "voice.h"
+#include <cassert>
+#include "vembertech/vt_dsp/basic_dsp.h"
+
 namespace scxt::voice
 {
+
+Voice::~Voice()
+{
+    for (int i = 0; i < engine::filtersPerZone; ++i)
+    {
+        dsp::filter::unspawnFilter(filters[i]);
+    }
+}
+
+void Voice::initializeFromZone() {}
+
 bool Voice::process()
 {
     // TODO: This is obvious garbage
     auto &s = zone.sample;
     if (!s)
         return false;
+
+    // TODO : Proper pitch calculation
+    auto fpitch = key - 69;
 
     calculateGeneratorRatio();
 
@@ -27,6 +44,23 @@ bool Voice::process()
     if (GD.isFinished)
     {
         playState = OFF;
+    }
+
+    float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
+
+    for (int i = 0; i < engine::filtersPerZone; ++i)
+    {
+        if (filters[i]) // TODO && (!zone->Filter[0].bypass))
+        {
+            filters[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
+            fmix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
+                                     output[1], BLOCK_SIZE_QUAD);
+
+            // TODO: What is the filter_modout?
+            /*
+            filter_modout[0] = voice_filter[0]->modulation_output;
+                                   */
+        }
     }
 
     return true;
@@ -53,7 +87,9 @@ void Voice::initializeGenerator()
     GD.isFinished = false;
 
     // TODO reverse and playmodes and stuff
-    // TODO Oversampling
+    // TODO Oversampling if ratio too big
+    calculateGeneratorRatio();
+
     GD.blockSize = blockSize;
 
     Generator = nullptr;
@@ -89,5 +125,38 @@ void Voice::calculateGeneratorRatio()
     auto fac = pow(2.0, ndiff / 12.0);
     GD.ratio = (int32_t)((1 << 24) * fac * zone.sample->sample_rate * sampleRateInv);
 #endif
+}
+
+void Voice::initializeFilters()
+{
+    for (int i = 0; i < engine::filtersPerZone; ++i)
+    {
+        fmix[i].set_target(i == 0 ? 0.1 : 1.0);
+        fmix[i].instantize();
+
+        filterType[i] = zone.filterType[i];
+        assert(dsp::filter::isZoneFilter(filterType[i]));
+
+        if (dsp::filter::canInPlaceNew(filterType[i]))
+        {
+            // TODO: Stereo
+            filters[i] = dsp::filter::spawnFilterInPlace(
+                filterType[i], filterStorage[i], dsp::filter::filterMemoryBufferSize,
+                filterFloatParams[i], filterIntParams[i], false);
+        }
+        else
+        {
+            filters[i] = dsp::filter::spawnFilterAllocating(filterType[i], filterFloatParams[i],
+                                                            filterIntParams[i], false);
+        }
+
+        if (filters[i])
+        {
+            filters[i]->setSampleRate(sampleRate);
+            filters[i]->init();
+            // TODO: This init_params is temporary until we get values through the model
+            filters[i]->init_params();
+        }
+    }
 }
 } // namespace scxt::voice

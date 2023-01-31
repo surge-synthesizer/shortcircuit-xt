@@ -319,20 +319,9 @@ void accumulate_block(float *__restrict src, float *__restrict dst,
 
 void copy_block(float *__restrict src, float *__restrict dst, unsigned int nquads)
 {
-    float *fdst, *fsrc;
-    fdst = (float *)dst;
-    fsrc = (float *)src;
-
-    for (unsigned int i = 0; i < (nquads << 2); i += (8 << 2))
+    for (int i = 0; i < nquads << 2; ++i)
     {
-        _mm_store_ps(&fdst[i], _mm_load_ps(&fsrc[i]));
-        _mm_store_ps(&fdst[i + 4], _mm_load_ps(&fsrc[i + 4]));
-        _mm_store_ps(&fdst[i + 8], _mm_load_ps(&fsrc[i + 8]));
-        _mm_store_ps(&fdst[i + 12], _mm_load_ps(&fsrc[i + 12]));
-        _mm_store_ps(&fdst[i + 16], _mm_load_ps(&fsrc[i + 16]));
-        _mm_store_ps(&fdst[i + 20], _mm_load_ps(&fsrc[i + 20]));
-        _mm_store_ps(&fdst[i + 24], _mm_load_ps(&fsrc[i + 24]));
-        _mm_store_ps(&fdst[i + 28], _mm_load_ps(&fsrc[i + 28]));
+        dst[i] = src[i];
     }
 }
 

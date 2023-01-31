@@ -68,6 +68,7 @@ include(cmake/compiler-and-git.cmake)
 
 add_subdirectory(libs/fmt)
 add_subdirectory(libs/sst/sst-cpputils)
+add_subdirectory(libs/sst/sst-filters)
 if (APPLE)
     set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
 endif()

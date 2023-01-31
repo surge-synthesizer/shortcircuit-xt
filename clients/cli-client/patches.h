@@ -16,7 +16,8 @@ bool basicTestPatch(engine::Engine &engine)
     for (const auto &[s, k0, k1] : {std::make_tuple(std::string("Kick.wav"), 60, 64),
                                     {"Beep.wav", 60, 62},
                                     {"Hat.wav", 65, 67},
-                                    {"PulseSaw.wav", 48, 59}})
+                                    {"PulseSaw.wav", 48, 59},
+                                    {"Beep.wav", 48, 52}})
     {
         auto sid = engine.getSampleManager()->loadSampleByPath(dir / s);
 
@@ -28,6 +29,8 @@ bool basicTestPatch(engine::Engine &engine)
         auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
         zptr->keyboardRange = {k0, k1};
         zptr->rootKey = k0;
+        zptr->filterType[0] = dsp::filter::ft_osc_pulse_sync;
+        zptr->filterType[1] = dsp::filter::ft_SuperSVF;
         zptr->attachToSample(*engine.getSampleManager());
 
         engine.getPatch()->getPart(0)->getGroup(0)->addZone(zptr);

@@ -4,12 +4,17 @@
 
 #include "engine.h"
 #include "voice/voice.h"
+#include "dsp/sinc_table.h"
+#include "tuning/equal.h"
 
 namespace scxt::engine
 {
 
 Engine::Engine()
 {
+    dsp::sincTable.init();
+    tuning::equalTuning.init();
+
     sampleManager = std::make_unique<sample::SampleManager>();
     patch = std::make_unique<Patch>();
 
