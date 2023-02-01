@@ -28,12 +28,7 @@ struct alignas(16) Voice : NonCopyable<Voice>
 
     uint8_t key{60};
 
-    Voice(const engine::Zone &z) : zone(z)
-    {
-        memset(output, 0, 2 * blockSize * sizeof(float));
-
-        initializeFromZone();
-    }
+    Voice(const engine::Zone &z);
 
     ~Voice();
 

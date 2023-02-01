@@ -2,6 +2,7 @@
 #define __SCXT_ENGINE_KEYBOARD_H
 
 #include <utility>
+#include <cassert>
 
 namespace scxt::engine
 {

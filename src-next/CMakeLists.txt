@@ -29,5 +29,5 @@ target_include_directories(${PROJECT_NAME}-core PUBLIC .)
 target_link_libraries(${PROJECT_NAME}-core PUBLIC fmt sst-cpputils sst-filters simde)
 
 if (WIN32)
-    target_compile_definitions(${PROJECT_NAME}-core PUBLIC _USE_MATH_DEFINES)
+    target_compile_definitions(${PROJECT_NAME}-core PUBLIC _USE_MATH_DEFINES WINDOWS=1)
 endif()

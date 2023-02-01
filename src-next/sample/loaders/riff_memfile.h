@@ -347,8 +347,8 @@ class RIFFMemFile
     {
         char txt[1024];
         snprintf(txt, 1024, "Invalid RIFF-structure.\n\nOffset: 0x%X", (unsigned int)loc);
-#if WINDOWS
-        MessageBox(GetActiveWindow(), txt, "File I/O Error", MB_OK | MB_ICONERROR);
+        // TODO: Fix This
+#if _WINDOWS
 #else
 #warning Implement user feedback
 #endif

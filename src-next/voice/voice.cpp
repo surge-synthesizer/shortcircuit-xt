@@ -4,10 +4,19 @@
 
 #include "voice.h"
 #include <cassert>
+#include <cmath>
 #include "vembertech/vt_dsp/basic_dsp.h"
 
 namespace scxt::voice
 {
+
+Voice::Voice(const engine::Zone &z) : zone(z)
+{
+    memset(output, 0, 2 * blockSize * sizeof(float));
+    memset(filterFloatParams, 0, sizeof(filterFloatParams));
+    memset(filterIntParams, 0, sizeof(filterIntParams));
+    initializeFromZone();
+}
 
 Voice::~Voice()
 {
@@ -122,7 +131,7 @@ void Voice::calculateGeneratorRatio()
 #else
     // gross for now
     auto ndiff = key - zone.rootKey;
-    auto fac = pow(2.0, ndiff / 12.0);
+    auto fac = std::pow(2.0, ndiff / 12.0);
     GD.ratio = (int32_t)((1 << 24) * fac * zone.sample->sample_rate * sampleRateInv);
 #endif
 }

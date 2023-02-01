@@ -72,6 +72,7 @@ add_subdirectory(libs/sst/sst-filters)
 if (APPLE)
     set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
 endif()
+set(RTMIDI_BUILD_STATIC_LIBS TRUE CACHE BOOL "static rdmidi")
 add_subdirectory(libs/rtmidi)
 
 # FIX THIS

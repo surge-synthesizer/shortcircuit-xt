@@ -14,6 +14,11 @@ ma_device device;
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
+    if (frameCount % scxt::blockSize != 0)
+    {
+        std::cout << "fc " << frameCount << " " << scxt::blockSize << std::endl;
+    }
+
     assert(frameCount % scxt::blockSize == 0);
     auto ps = (PlaybackState *)pDevice->pUserData;
 
@@ -70,8 +75,8 @@ bool startAudioThread(PlaybackState *pd, bool autoPlay)
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
-    config.sampleRate = 44100;
-    // config.sampleRate = 48000;
+    // config.sampleRate = 44100;
+    config.sampleRate = 48000;
     config.dataCallback = data_callback;
     config.pUserData = pd;
 
