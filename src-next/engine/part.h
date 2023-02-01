@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <optional>
+#include <cassert>
 
 #include "utils.h"
 #include "group.h"
@@ -16,7 +17,15 @@ struct Part : NonCopyable<Part>
 
     PartID id;
     int16_t channel;
+
+    float output alignas(16)[maxOutputs][2][blockSize];
+    void process();
+
+    // TODO: have a channel mode like OMNI and MPE and everything
     static constexpr int omniChannel{-1};
+
+    // TODO: Multiple outputs
+    size_t getNumOutputs() const { return 1; }
 
     size_t addGroup()
     {
@@ -33,6 +42,15 @@ struct Part : NonCopyable<Part>
     {
         assert(i >= 0 && i < groups.size());
         return groups[i];
+    }
+
+    uint32_t activeGroups{0};
+    bool isActive() { return activeGroups != 0; }
+    void addActiveGroup() { activeGroups++; }
+    void removeActiveGroup()
+    {
+        assert(activeGroups);
+        activeGroups--;
     }
 
     // TODO: A group by ID which throws an SCXTError

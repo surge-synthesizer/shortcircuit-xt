@@ -10,8 +10,9 @@
 namespace scxt::voice
 {
 
-Voice::Voice(const engine::Zone &z) : zone(z)
+Voice::Voice(engine::Zone *z) : zone(z)
 {
+    assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
     memset(filterFloatParams, 0, sizeof(filterFloatParams));
     memset(filterIntParams, 0, sizeof(filterIntParams));
@@ -30,8 +31,14 @@ void Voice::initializeFromZone() {}
 
 bool Voice::process()
 {
+    assert(zone);
+    if (playState == CLEANUP)
+    {
+        memset(output, 0, sizeof(output));
+        return true;
+    }
     // TODO: This is obvious garbage
-    auto &s = zone.sample;
+    auto &s = zone->sample;
     if (!s)
         return false;
 
@@ -52,7 +59,12 @@ bool Voice::process()
     // TODO Ringout - this is obvioulsy wrong
     if (GD.isFinished)
     {
-        playState = OFF;
+        if (playState == RELEASED)
+        {
+            playState = CLEANUP;
+        }
+        else
+            playState = FINISHED;
     }
 
     float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
@@ -77,7 +89,7 @@ bool Voice::process()
 
 void Voice::initializeGenerator()
 {
-    auto &s = zone.sample;
+    auto &s = zone->sample;
     assert(s);
 
     GDIO.outputL = output[0];
@@ -130,9 +142,9 @@ void Voice::calculateGeneratorRatio()
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
     // gross for now
-    auto ndiff = key - zone.rootKey;
+    auto ndiff = key - zone->rootKey;
     auto fac = std::pow(2.0, ndiff / 12.0);
-    GD.ratio = (int32_t)((1 << 24) * fac * zone.sample->sample_rate * sampleRateInv);
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv);
 #endif
 }
 
@@ -143,7 +155,7 @@ void Voice::initializeFilters()
         fmix[i].set_target(i == 0 ? 0.1 : 1.0);
         fmix[i].instantize();
 
-        filterType[i] = zone.filterType[i];
+        filterType[i] = zone->filterType[i];
         assert(dsp::filter::isZoneFilter(filterType[i]));
 
         if (dsp::filter::canInPlaceNew(filterType[i]))

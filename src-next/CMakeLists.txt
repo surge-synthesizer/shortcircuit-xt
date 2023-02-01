@@ -9,6 +9,9 @@ add_library(${PROJECT_NAME}-core STATIC
         dsp/filter/filter_oscillators.cpp
 
         engine/engine.cpp
+        engine/zone.cpp
+        engine/group.cpp
+        engine/part.cpp
 
         sample/sample.cpp
         sample/sample_manager.cpp

@@ -73,6 +73,7 @@ struct Engine : NonCopyable<Engine>
     };
     std::vector<pathToZone_t> findZone(int16_t channel, int16_t key, int32_t noteId)
     {
+        // TODO: This allocates which is a bummer
         std::vector<pathToZone_t> res;
         for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
         {

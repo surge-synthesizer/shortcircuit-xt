@@ -6,6 +6,7 @@
 #include "voice/voice.h"
 #include "dsp/sinc_table.h"
 #include "tuning/equal.h"
+#include "vembertech/vt_dsp/basic_dsp.h"
 
 namespace scxt::engine
 {
@@ -34,7 +35,9 @@ Engine::~Engine()
         {
             if (v->playState != voice::Voice::OFF)
                 v->release();
+
             v->~Voice();
+            v = nullptr;
         }
     }
 }
@@ -51,8 +54,13 @@ void Engine::initiateVoice(const pathToZone_t &path)
                 voices[idx]->~Voice();
             }
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
-            voices[idx] = new (dp) voice::Voice(*(zoneByPath(path)));
+            const auto &z = zoneByPath(path);
+            voices[idx] = new (dp) voice::Voice(z.get());
+
+            voices[idx]->channel = path.channel;
             voices[idx]->key = path.key;
+            voices[idx]->noteId = path.noteid;
+
             voices[idx]->sampleRate = sampleRate;
             voices[idx]->sampleRateInv = sampleRateInv;
             voices[idx]->attack();
@@ -66,8 +74,7 @@ void Engine::releaseVoice(const pathToZone_t &path)
     auto targetId = zoneByPath(path)->id;
     for (auto &v : voices)
     {
-        if (v && v->playState != voice::Voice::OFF &&
-            v->zone.id == targetId && v->key == path.key)
+        if (v && v->playState != voice::Voice::OFF && v->zone->id == targetId && v->key == path.key)
         {
             v->release();
         }
@@ -76,21 +83,21 @@ void Engine::releaseVoice(const pathToZone_t &path)
 
 bool Engine::processAudio()
 {
-    // TODO This is stereo only now
-    memset(output[0], 0, sizeof(output[0]));
-    for (auto &v : voices)
+    // TODO these memsets are probably gratuitous
+    memset(output, 0, sizeof(output));
+    for (const auto &part : *patch)
     {
-        if (v && v->playState != voice::Voice::OFF)
+        if (part->isActive())
         {
-            if (v->process())
+            part->process();
+            for (int i = 0; i < part->getNumOutputs(); ++i)
             {
-                // TODO SIMDIZE
-                for (int c = 0; c < 2; ++c)
-                    for (int s = 0; s < blockSize; ++s)
-                        output[0][c][s] += v->output[c][s];
+                accumulate_block(part->output[i][0], output[i][0], blockSizeQuad);
+                accumulate_block(part->output[i][1], output[i][1], blockSizeQuad);
             }
         }
     }
+
     return true;
 }
 } // namespace scxt::engine

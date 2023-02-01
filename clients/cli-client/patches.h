@@ -14,7 +14,7 @@ bool basicTestPatch(engine::Engine &engine)
 {
     auto dir = fs::path{"resources/test_samples/next"};
     for (const auto &[s, k0, k1] : {std::make_tuple(std::string("Kick.wav"), 60, 64),
-                                    {"Beep.wav", 60, 62},
+                                    std::make_tuple(std::string("Beep.wav"), 60, 62),
                                     {"Hat.wav", 65, 67},
                                     {"PulseSaw.wav", 48, 59},
                                     {"Beep.wav", 48, 52}})

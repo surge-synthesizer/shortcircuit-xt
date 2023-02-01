@@ -308,6 +308,7 @@ void clear_block_antidenormalnoise(float *in, unsigned int nquads)
 void accumulate_block(float *__restrict src, float *__restrict dst,
                       unsigned int nquads) // dst += src
 {
+    /*
     for (unsigned int i = 0; i < nquads; i += 4)
     {
         ((__m128 *)dst)[i] = _mm_add_ps(((__m128 *)dst)[i], ((__m128 *)src)[i]);
@@ -315,6 +316,10 @@ void accumulate_block(float *__restrict src, float *__restrict dst,
         ((__m128 *)dst)[i + 2] = _mm_add_ps(((__m128 *)dst)[i + 2], ((__m128 *)src)[i + 2]);
         ((__m128 *)dst)[i + 3] = _mm_add_ps(((__m128 *)dst)[i + 3], ((__m128 *)src)[i + 3]);
     }
+     */
+    // Let the compiler handle this
+    for (int i=0; i<nquads<<2; ++i)
+        dst[i] += src[i];
 }
 
 void copy_block(float *__restrict src, float *__restrict dst, unsigned int nquads)

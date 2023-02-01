@@ -20,6 +20,12 @@ struct Group : NonCopyable<Group>
 
     Part *parentPart{nullptr};
 
+    float output alignas(16)[maxOutputs][2][blockSize];
+    void process();
+
+    // TODO: Multi-output
+    size_t getNumOutputs() const { return 1; }
+
     size_t addZone(std::unique_ptr<Zone> &z)
     {
         z->parentGroup = this;
@@ -61,6 +67,12 @@ struct Group : NonCopyable<Group>
         res->parentGroup = nullptr;
         return res;
     }
+
+    bool isActive() { return activeZones != 0; }
+    void addActiveZone();
+    void removeActiveZone();
+
+    uint32_t activeZones{0};
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
     zoneContainer_t::iterator begin() noexcept { return zones.begin(); }

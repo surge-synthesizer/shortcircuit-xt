@@ -1,12 +1,9 @@
 # Baconpauls next sprints
 
-- Zone level Filters  
-  - And review the super svf
-- DSP for group; DSP for part. Engine shouldn't go directly to voice.
-    - Include faster voice lookup in here
 - ModMatrix Design - what is it and how does it fit?
 - Zone level Modulators - AEG
 - Voice Design for real
+    - Lifecycle with GATED FINISHED CLEANUP etc
     - What are the params and how do they get there
     - Pitch
     - Mod Targets
