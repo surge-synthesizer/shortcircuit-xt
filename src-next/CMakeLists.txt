@@ -21,6 +21,9 @@ add_library(${PROJECT_NAME}-core STATIC
 
         infrastructure/file_map_view.cpp
 
+        modulation/voice_matrix.cpp
+        modulation/modulators/steplfo.cpp
+
         vembertech/vt_dsp/basic_dsp.cpp
         vembertech/vt_dsp/lipol.cpp
 

@@ -60,9 +60,7 @@ void Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->channel = path.channel;
             voices[idx]->key = path.key;
             voices[idx]->noteId = path.noteid;
-
-            voices[idx]->sampleRate = sampleRate;
-            voices[idx]->sampleRateInv = sampleRateInv;
+            voices[idx]->setSampleRate(sampleRate, sampleRateInv);
             voices[idx]->attack();
             return;
         }

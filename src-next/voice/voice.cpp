@@ -16,7 +16,6 @@ Voice::Voice(engine::Zone *z) : zone(z)
     memset(output, 0, 2 * blockSize * sizeof(float));
     memset(filterFloatParams, 0, sizeof(filterFloatParams));
     memset(filterIntParams, 0, sizeof(filterIntParams));
-    initializeFromZone();
 }
 
 Voice::~Voice()
@@ -27,7 +26,27 @@ Voice::~Voice()
     }
 }
 
-void Voice::initializeFromZone() {}
+void Voice::voiceStarted()
+{
+    initializeGenerator();
+    initializeFilters();
+
+    modMatrix.snapRoutingFromZone(zone);
+    modMatrix.copyBaseValuesFromZone(zone);
+    modMatrix.attachSourcesFromVoice(this);
+
+    for (int i = 0; i < engine::lfosPerZone; ++i)
+    {
+        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+
+        lfos[i].assign(&zone->lfoStorage[i],
+                       modMatrix.getValuePtr(
+                           (modulation::VoiceModMatrixDestination)(modulation::vmd_LFO1_Rate + i)),
+                       nullptr);
+    }
+
+    zone->addVoice(this);
+}
 
 bool Voice::process()
 {
@@ -37,10 +56,19 @@ bool Voice::process()
         memset(output, 0, sizeof(output));
         return true;
     }
-    // TODO: This is obvious garbage
     auto &s = zone->sample;
-    if (!s)
-        return false;
+    assert(s);
+
+    modMatrix.copyBaseValuesFromZone(zone);
+
+    // Run Modulators
+    for (int i = 0; i < engine::lfosPerZone; ++i)
+    {
+        // TODO - only if we need it
+        lfos[i].process(blockSize);
+    }
+
+    modMatrix.process();
 
     // TODO : Proper pitch calculation
     auto fpitch = key - 69;
@@ -73,6 +101,8 @@ bool Voice::process()
     {
         if (filters[i]) // TODO && (!zone->Filter[0].bypass))
         {
+            fmix[i].set_target(modMatrix.getValue(
+                (modulation::VoiceModMatrixDestination)(modulation::vmd_Filter1_Mix + i)));
             filters[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
             fmix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
                                      output[1], BLOCK_SIZE_QUAD);
@@ -152,7 +182,8 @@ void Voice::initializeFilters()
 {
     for (int i = 0; i < engine::filtersPerZone; ++i)
     {
-        fmix[i].set_target(i == 0 ? 0.1 : 1.0);
+        fmix[i].set_target(modMatrix.getValue(
+            (modulation::VoiceModMatrixDestination)(modulation::vmd_Filter1_Mix + i)));
         fmix[i].instantize();
 
         filterType[i] = zone->filterType[i];

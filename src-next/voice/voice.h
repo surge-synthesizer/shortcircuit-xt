@@ -8,16 +8,18 @@
 #include "engine/zone.h"
 #include "dsp/sinc_table.h"
 #include "dsp/generator.h"
-
 #include "dsp/filter/filter.h"
 
+#include "modulation/voice_matrix.h"
+
 #include "vembertech/vt_dsp/lipol.h"
+#include "modulation/modulators/steplfo.h"
 
 #include "configuration.h"
 
 namespace scxt::voice
 {
-struct alignas(16) Voice : NonCopyable<Voice>
+struct alignas(16) Voice : NonCopyable<Voice>, SampleRateSupport
 {
     float output alignas(16)[2][blockSize];
     engine::Zone *zone{nullptr}; // I do *not* own this. The engine guarantees it outlives the voice
@@ -30,6 +32,9 @@ struct alignas(16) Voice : NonCopyable<Voice>
     uint8_t key{60};
     int32_t noteId{-1};
 
+    modulation::VoiceModMatrix modMatrix;
+    modulation::modulators::StepLFO lfos[engine::lfosPerZone];
+
     Voice(engine::Zone *z);
 
     ~Voice();
@@ -41,9 +46,9 @@ struct alignas(16) Voice : NonCopyable<Voice>
     bool process();
 
     /**
-     * Snap values on construction from the zone
+     * Voice Setup
      */
-    void initializeFromZone();
+    void voiceStarted();
 
     /**
      * Initialize the dsp generator state
@@ -54,8 +59,6 @@ struct alignas(16) Voice : NonCopyable<Voice>
      * Calculates the playback speed. This is also where we put tuning
      */
     void calculateGeneratorRatio();
-
-    double sampleRate{-1}, sampleRateInv{-1};
 
     /**
      * Filters: Storage, memory blocks, types, and more
@@ -86,10 +89,7 @@ struct alignas(16) Voice : NonCopyable<Voice>
         assert(zone->sample);
         std::cout << "   Voice Attack " << zone->sample->getPath().u8string() << std::endl;
         playState = GATED;
-        initializeGenerator();
-        initializeFilters();
-
-        zone->addVoice(this);
+        voiceStarted();
     }
     void release()
     {

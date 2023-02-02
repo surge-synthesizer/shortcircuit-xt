@@ -80,7 +80,7 @@ static constexpr size_t filterMemoryBufferSize{1028 * 8};
 
 static constexpr int tailInfinite = 0x1000000;
 
-struct Filter : NonCopyable<Filter>
+struct Filter : NonCopyable<Filter>, SampleRateSupport
 {
   public:
     virtual ~Filter() = default;
@@ -91,17 +91,10 @@ struct Filter : NonCopyable<Filter>
     {
     }
     FilterType myType;
-    double samplerate, samplerate_inv;
 
   public:
     FilterType getType() { return myType; }
     std::string getName() { return getFilterName(getType()); }
-
-    void setSampleRate(double sr)
-    {
-        samplerate = sr;
-        samplerate_inv = 1.0 / sr;
-    }
 
     // TODO: Review and rename everything below here once the filters are all ported
     int get_parameter_count() { return parameter_count; }

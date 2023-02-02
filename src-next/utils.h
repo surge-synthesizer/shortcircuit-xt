@@ -97,6 +97,34 @@ struct SCXTError : std::runtime_error
 {
     SCXTError(const std::string &w) : std::runtime_error(w) {}
 };
+struct SampleRateSupport
+{
+    void setSampleRate(double sr)
+    {
+        sampleRate = sr;
+        sampleRateInv = 1.0 / sr;
+        sync();
+    }
+    void setSampleRate(double sr, double sri)
+    {
+        sampleRate = sr;
+        sampleRateInv = sri;
+        sync();
+    }
+
+    void sync()
+    {
+        samplerate = sampleRate;
+        samplerate_inv = sampleRateInv;
+    }
+
+  protected:
+    double sampleRate{1}, sampleRateInv{1};
+
+    // TODO remove these aliase
+    double samplerate, samplerate_inv;
+};
+
 } // namespace scxt
 
 // Make the ID hashable so we can use it as a map key

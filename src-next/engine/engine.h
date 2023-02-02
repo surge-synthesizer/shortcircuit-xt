@@ -22,7 +22,7 @@ struct Voice;
 }
 namespace scxt::engine
 {
-struct Engine : NonCopyable<Engine>
+struct Engine : NonCopyable<Engine>, SampleRateSupport
 {
     Engine();
     ~Engine();
@@ -37,16 +37,6 @@ struct Engine : NonCopyable<Engine>
     void setStereoOutputs(int s) { assert(s == 1); }
 
     float output alignas(16)[maxOutputs][2][blockSize];
-
-    /**
-     * Sample Rate
-     */
-    double sampleRate{1}, sampleRateInv{1};
-    void setSampleRate(double d)
-    {
-        sampleRate = d;
-        sampleRateInv = 1.0 / d;
-    }
 
     /**
      * Process into an array of size stereoOutputs * 2 * blocksize.
