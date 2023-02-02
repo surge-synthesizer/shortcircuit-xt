@@ -40,7 +40,7 @@ int main(int argc, char **argv)
         else
         {
             using namespace std::chrono_literals;
-            std::this_thread::sleep_for(5s);
+            std::this_thread::sleep_for(10s);
         }
         scxt::cli_client::stopMIDI(ps);
         scxt::cli_client::stopAudioThread(ps);

@@ -14,12 +14,6 @@ ma_device device;
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
-    if (frameCount % scxt::blockSize != 0)
-    {
-        std::cout << "fc " << frameCount << " " << scxt::blockSize << std::endl;
-    }
-
-    assert(frameCount % scxt::blockSize == 0);
     auto ps = (PlaybackState *)pDevice->pUserData;
 
     auto engine = ps->engine;
@@ -54,18 +48,17 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uin
         ps->readPoint++;
     }
 
-    int op{0};
     for (int i = 0; i < frameCount; ++i)
     {
-        if (i % scxt::blockSize == 0)
+        if (ps->outpos == scxt::blockSize)
         {
-            op = 0;
+            ps->outpos = 0;
             engine->processAudio();
         }
         // block-wise engine process
-        f[2 * i] = engine->output[0][0][op];
-        f[2 * i + 1] = engine->output[0][1][op];
-        op++;
+        f[2 * i] = engine->output[0][0][ps->outpos];
+        f[2 * i + 1] = engine->output[0][1][ps->outpos];
+        ps->outpos++;
     }
 }
 bool startAudioThread(PlaybackState *pd, bool autoPlay)

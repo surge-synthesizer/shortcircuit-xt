@@ -29,6 +29,7 @@ bool basicTestPatch(engine::Engine &engine)
         auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
         zptr->keyboardRange = {k0, k1};
         zptr->rootKey = k0;
+
         zptr->filterType[0] = dsp::filter::ft_osc_pulse_sync;
         zptr->filterMix[0] = 0.5;
         zptr->routingTable[0].src = modulation::vms_LFO1;

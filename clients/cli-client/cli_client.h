@@ -26,6 +26,8 @@ struct PlaybackState
     std::atomic<int> readPoint{0}, writePoint{0};
     static constexpr int maxMsg{2048};
     uint8_t msgs[maxMsg][3];
+
+    size_t outpos{0};
 };
 
 bool startMIDI(PlaybackState *s, const std::string &device);
