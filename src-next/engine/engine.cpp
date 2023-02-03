@@ -18,6 +18,7 @@ Engine::Engine()
 
     sampleManager = std::make_unique<sample::SampleManager>();
     patch = std::make_unique<Patch>();
+    patch->parentEngine = this;
 
     for (auto &v : voices)
         v = nullptr;

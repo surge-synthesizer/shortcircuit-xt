@@ -10,7 +10,7 @@
 namespace scxt::cli_client
 {
 
-bool basicTestPatch(engine::Engine &engine)
+bool basicTestPatch(engine::Engine &engine, const fs::path &sampleRoot)
 {
     auto dir = fs::path{"resources/test_samples/next"};
     for (const auto &[s, k0, k1] : {std::make_tuple(std::string("Kick.wav"), 60, 64),
@@ -19,7 +19,7 @@ bool basicTestPatch(engine::Engine &engine)
                                     {"PulseSaw.wav", 48, 59},
                                     {"Beep.wav", 48, 52}})
     {
-        auto sid = engine.getSampleManager()->loadSampleByPath(dir / s);
+        auto sid = engine.getSampleManager()->loadSampleByPath(sampleRoot / dir / s);
 
         if (!sid.has_value())
         {
@@ -30,14 +30,14 @@ bool basicTestPatch(engine::Engine &engine)
         zptr->keyboardRange = {k0, k1};
         zptr->rootKey = k0;
 
-        zptr->filterType[0] = dsp::filter::ft_osc_pulse_sync;
-        zptr->filterMix[0] = 0.5;
+        zptr->filterStorage[0].type = dsp::filter::ft_osc_pulse_sync;
+        zptr->filterStorage[0].mix = 0.2;
         zptr->routingTable[0].src = modulation::vms_LFO1;
         zptr->routingTable[0].dst = modulation::vmd_Filter1_Mix;
         zptr->routingTable[0].depth = 0.5;
 
-        zptr->filterType[1] = dsp::filter::ft_SuperSVF;
-        zptr->filterMix[1] = 1.0;
+        zptr->filterStorage[1].type = dsp::filter::ft_SuperSVF;
+        zptr->filterStorage[1].mix = 1.0;
 
         modulation::modulators::load_lfo_preset(modulation::modulators::lp_sine,
                                                 &zptr->lfoStorage[0]);

@@ -1,31 +1,36 @@
 # Baconpauls next sprints
 
-- ModMatrix Design - what is it and how does it fit?
-- Zone level Modulators - AEG
-- Voice Design for real
+- JSON Patch Streaming
+   - Patch/Content stream unstream is first
+   - A 'reset' method on unstream.
+   - SapmleMaanger unstream
+- JSON Message Infrastructure
+   - Do this as a sparate sprintlet 
+- kill all the unsized 'int' and replace with 'int32' etc.. as appropriate
+- NEXT branch readme and CLI from clap-info
+- Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
+    - AEG/FEG
+    - All the properties on the zone with the correct structures
     - What are the params and how do they get there
-    - Pitch
+    - Pitch, pitch bend, etc...
+    - Playmodes, Loops and start/stop points
     - Mod Targets
 - vembertech factoring is probably sooner than later; copyblock etc
-- The rest of the filters
-- Zone Metadata
-- Other Sample Formats other than .wav
+- All that round robin discord chat
+- Find samples when streamed by path
+- Samples in the patch
+- Port in the rest of the filters
 - Bring back the SST Libs and CMake fix up
   - including git version 
-- What to do with the tests
-- JSON Message Infrastructure and a new CLI tool
+- What to do with the tests? Maybe just start new ones
+- Zone Metadata
+- Other Sample Formats other than .wav
 - Content Browser
 - Error reporting
    - those warnigns in riff_memfile
    - what sort of object?
 - A plugin client which can at least configure a zone
-- Other Sample Formats other than .wav
-- Use Parts and Groups for something
-- PlayModes and LoopModes
-  - play modes
-  - sample start and end points
-  - loops and the like  
 - State streaming
 - Engine Path to Keyboard Lookup way way faster (probably precache)
 

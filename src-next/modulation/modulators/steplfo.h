@@ -17,22 +17,36 @@
 #pragma once
 #include "datamodel/timedata.h"
 #include "utils.h"
+#include <array>
 
 namespace scxt::modulation::modulators
 {
+static constexpr int stepLfoSteps{32};
 
 struct StepLFOStorage
 {
-    float data[32];
-    int repeat;
-    float rate;
-    float smooth;
-    float shuffle;
-    int temposync;
-    int triggermode; // 0 = voice, 1 = freerun/songsync, 2 = random
-    int cyclemode;
-    int onlyonce;
+    StepLFOStorage() { std::fill(data.begin(), data.end(), 0.f); }
+    std::array<float, stepLfoSteps> data;
+    int repeat{16};
+    float rate{0.f};
+    float smooth{0.f};
+    float shuffle{0.f};
+    bool temposync{false};
+
+    // TODO make this an enum
+    int triggermode{0}; // 0 = voice, 1 = freerun/songsync, 2 = random
+    bool cyclemode{true};
+    bool onlyonce{false};
     // add midi sync capabilities
+
+    bool operator==(const StepLFOStorage &other) const
+    {
+        return data == other.data && repeat == other.repeat && rate == other.rate &&
+               smooth == other.smooth && shuffle == other.shuffle && temposync == other.temposync &&
+               triggermode == other.triggermode && cyclemode == other.cyclemode &&
+               onlyonce == other.onlyonce;
+    }
+    bool operator!=(const StepLFOStorage &other) const { return !(*this == other); }
 };
 
 enum LFOPresets
@@ -55,7 +69,7 @@ enum LFOPresets
 void load_lfo_preset(LFOPresets preset, StepLFOStorage *settings);
 float lfo_ipol(float *step_history, float phase, float smooth, int odd);
 
-struct StepLFO : NonCopyable<StepLFO>, SampleRateSupport
+struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
 {
   public:
     StepLFO();

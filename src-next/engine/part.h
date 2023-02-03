@@ -11,12 +11,15 @@
 
 namespace scxt::engine
 {
-struct Part : NonCopyable<Part>
+struct Patch;
+
+struct Part : MoveableOnly<Part>
 {
     Part(int c) : id(PartID::next()), channel(c) { addGroup(); }
 
     PartID id;
     int16_t channel;
+    Patch *parentPatch{nullptr};
 
     float output alignas(16)[maxOutputs][2][blockSize];
     void process();
@@ -56,6 +59,9 @@ struct Part : NonCopyable<Part>
     // TODO: A group by ID which throws an SCXTError
 
     typedef std::vector<std::unique_ptr<Group>> groupContainer_t;
+
+    const groupContainer_t &getGroups() const { return groups; }
+    void clearGroups() { groups.clear(); }
 
     groupContainer_t::iterator begin() noexcept { return groups.begin(); }
     groupContainer_t::const_iterator cbegin() const noexcept { return groups.cbegin(); }

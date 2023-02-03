@@ -7,9 +7,10 @@
 namespace scxt::sample
 {
 
-struct alignas(16) Sample : NonCopyable<Sample>
+struct alignas(16) Sample : MoveableOnly<Sample>
 {
     Sample() : id(SampleID::next()) {}
+    Sample(const SampleID &sid) : id(sid) {}
     virtual ~Sample() = default;
 
     bool load(const fs::path &path);

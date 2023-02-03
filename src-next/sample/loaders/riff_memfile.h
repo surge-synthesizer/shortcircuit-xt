@@ -347,11 +347,7 @@ class RIFFMemFile
     {
         char txt[1024];
         snprintf(txt, 1024, "Invalid RIFF-structure.\n\nOffset: 0x%X", (unsigned int)loc);
-        // TODO: Fix This
-#if _WINDOWS
-#else
-#warning Implement user feedback
-#endif
+        // TODO: Fix This error condition
     }
 
     bool RIFFIsContainer() // Returns true if the following Chunk is RIFF or LIST

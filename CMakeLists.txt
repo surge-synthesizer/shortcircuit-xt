@@ -69,6 +69,7 @@ include(cmake/compiler-and-git.cmake)
 add_subdirectory(libs/fmt)
 add_subdirectory(libs/sst/sst-cpputils)
 add_subdirectory(libs/sst/sst-filters)
+add_subdirectory(libs/taocpp_json)
 if (APPLE)
     set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
 endif()
@@ -80,6 +81,12 @@ add_library(simde INTERFACE)
 target_include_directories(simde INTERFACE libs/simde)
 add_library(shortcircuit::simde ALIAS simde)
 
+add_library(catch2 INTERFACE)
+target_include_directories(catch2 INTERFACE libs/catch2/include)
+add_library(shortcircuit::catch2 ALIAS catch2)
 
+
+# Next for now
 add_subdirectory(src-next)
+add_subdirectory(tests-next)
 add_subdirectory(clients)

@@ -38,13 +38,13 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage *settings)
     case lp_clear:
         settings->repeat = 16;
         settings->smooth = 0.0f;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = 0.f;
         break;
     case lp_sine:
         settings->repeat = 4;
         settings->smooth = 2.0f;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = 0.f;
         for (t = 0; t < 4; t++)
             settings->data[t] = (t & 2) ? -1.f : 1.f;
@@ -52,65 +52,65 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage *settings)
     case lp_tri:
         settings->repeat = 2;
         settings->smooth = 1.0f;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = 0.f;
         for (t = 0; t < 2; t++)
             settings->data[t] = (t & 1) ? -1.f : 1.f;
         break;
     case lp_square:
-        settings->repeat = 32;
+        settings->repeat = stepLfoSteps;
         settings->smooth = 0.0f;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = (float)((t > 15) ? -1 : 1);
         break;
     case lp_ramp_up:
     case lp_ramp_down:
     {
-        settings->repeat = 32;
+        settings->repeat = stepLfoSteps;
         settings->smooth = 1.0f;
         float polarity = 1;
         if (id == lp_ramp_down)
             polarity = -1;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = polarity * ((((t + 16) & 31) / 16.0f) - 1);
         break;
     }
     case lp_tremolo_tri:
-        settings->repeat = 32;
+        settings->repeat = stepLfoSteps;
         settings->smooth = 1.0f;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = (float)(-1 + fabs(((t - 16) / 16.0f)));
         break;
     case lp_tremolo_sin:
-        settings->repeat = 32;
+        settings->repeat = stepLfoSteps;
         settings->smooth = 1.0f;
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
             settings->data[t] = (float)-powf(sin(3.1415 * t / 16), 2);
         break;
     case lp_noise:
     case lp_noise_mean3:
     case lp_noise_mean5:
     {
-        settings->repeat = 32;
+        settings->repeat = stepLfoSteps;
         if (id == lp_noise)
             settings->smooth = 0.0f;
         else
             settings->smooth = 2.0f;
 
-        float noisev[32];
+        float noisev[stepLfoSteps];
         int nmean = 1, j;
         if (id == lp_noise_mean3)
             nmean = 3;
         if (id == lp_noise_mean5)
             nmean = 5;
 
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
         {
             // TODO: Managed RNGs
             noisev[t] = (((float)rand() / (float)RAND_MAX) * 2 - 1);
             noisev[t] /= (float)nmean;
         }
-        for (t = 0; t < 32; t++)
+        for (t = 0; t < stepLfoSteps; t++)
         {
             settings->data[t] = 0;
             for (j = 0; j < nmean; j++)
@@ -120,7 +120,6 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage *settings)
     }
     case n_lfopresets:
         break;
-
     };
 }
 

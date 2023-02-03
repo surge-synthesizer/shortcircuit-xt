@@ -38,6 +38,9 @@ enum VoiceModMatrixDestination
     numVoiceMatrixDestinations
 };
 
+std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &dest);
+std::optional<VoiceModMatrixDestination> fromVoiceModMatrixDestStreamingName(const std::string &s);
+
 // These values are streamed so order matters. Basically "always add at the end" is the answer
 enum VoiceModMatrixSource
 {
@@ -50,7 +53,10 @@ enum VoiceModMatrixSource
     numVoiceMatrixSources,
 };
 
-struct VoiceModMatrix : public NonCopyable<VoiceModMatrix>
+std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest);
+std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s);
+
+struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
 {
     VoiceModMatrix() { clear(); }
     struct Routing
@@ -58,6 +64,12 @@ struct VoiceModMatrix : public NonCopyable<VoiceModMatrix>
         VoiceModMatrixSource src{vms_none};
         VoiceModMatrixDestination dst{vmd_none};
         float depth{0};
+
+        bool operator==(const Routing &other) const
+        {
+            return src == other.src && dst == other.dst && depth == other.depth;
+        }
+        bool operator!=(const Routing &other) const { return !(*this == other); }
     };
 
     std::array<Routing, numVoiceRoutingSlots> routingTable;
@@ -67,11 +79,7 @@ struct VoiceModMatrix : public NonCopyable<VoiceModMatrix>
         return &modulatedValues[dest];
     }
 
-    float getValue(VoiceModMatrixDestination dest) const
-    {
-        return modulatedValues[dest];
-    }
-
+    float getValue(VoiceModMatrixDestination dest) const { return modulatedValues[dest]; }
 
     void clear();
     void snapRoutingFromZone(engine::Zone *z);

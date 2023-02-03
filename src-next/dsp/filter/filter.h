@@ -6,6 +6,7 @@
 #define __SCXT_DSP_FILTER_FILTER_H
 
 #include <cstdint>
+#include <array>
 #include "datamodel/parameter.h"
 #include "utils.h"
 
@@ -17,7 +18,9 @@ static constexpr size_t maxFilterIntParams{2};
 static constexpr size_t filterLabelSize{32};
 
 /**
- * Filter Type: These are streamed so their order matters
+ * Filter Type: These are streamed as strings using the toStreamingName / frommStreamingName
+ * so we can reorder them. The only requirement is they are contiguous
+ * (so don't assign values) and the last is the num_filters thing
  */
 enum FilterType
 {
@@ -49,7 +52,6 @@ enum FilterType
     ft_fx_freqshift,
     ft_fx_phasemod, // last part/fx filter
 
-
     ft_fx_treemonster,
     ft_osc_pulse,
     ft_osc_pulse_sync,
@@ -71,6 +73,8 @@ bool isZoneFilter(FilterType id);
 bool isPartFilter(FilterType id);
 bool isFXFilter(FilterType id);
 const char *getFilterName(FilterType id);
+const char *getFilterStreamingName(FilterType id);
+std::optional<FilterType> fromFilterStreamingName(const std::string &s);
 
 /**
  * If you choose to spawnFilterOnto you need a block at least this size.
@@ -80,7 +84,27 @@ static constexpr size_t filterMemoryBufferSize{1028 * 8};
 
 static constexpr int tailInfinite = 0x1000000;
 
-struct Filter : NonCopyable<Filter>, SampleRateSupport
+struct FilterStorage : MoveableOnly<FilterStorage>
+{
+    FilterStorage()
+    {
+        std::fill(floatParams.begin(), floatParams.end(), 0);
+        std::fill(intParams.begin(), intParams.end(), 0);
+    }
+    FilterType type{ft_none};
+    float mix{0};
+    std::array<float, maxFilterFloatParams> floatParams;
+    std::array<int, maxFilterIntParams> intParams;
+
+    bool operator==(const FilterStorage &other) const
+    {
+        return (type == other.type && mix == other.mix && floatParams == other.floatParams &&
+                intParams == other.intParams);
+    }
+    bool operator!=(const FilterStorage &other) const { return !(*this == other); }
+};
+
+struct Filter : MoveableOnly<Filter>, SampleRateSupport
 {
   public:
     virtual ~Filter() = default;

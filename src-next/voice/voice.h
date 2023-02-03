@@ -19,7 +19,7 @@
 
 namespace scxt::voice
 {
-struct alignas(16) Voice : NonCopyable<Voice>, SampleRateSupport
+struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 {
     float output alignas(16)[2][blockSize];
     engine::Zone *zone{nullptr}; // I do *not* own this. The engine guarantees it outlives the voice

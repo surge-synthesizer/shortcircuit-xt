@@ -13,7 +13,7 @@
 namespace scxt::engine
 {
 struct Part;
-struct Group : NonCopyable<Group>
+struct Group : MoveableOnly<Group>
 {
     Group() : id(GroupID::next()) {}
     GroupID id;
@@ -32,6 +32,15 @@ struct Group : NonCopyable<Group>
         zones.push_back(std::move(z));
         return zones.size();
     }
+    
+    size_t addZone(std::unique_ptr<Zone> &&z)
+    {
+        z->parentGroup = this;
+        zones.push_back(std::move(z));
+        return zones.size();
+    }
+
+    void clearZones() { zones.clear(); }
 
     int getZoneIndex(const ZoneID &zid) const
     {
@@ -75,6 +84,9 @@ struct Group : NonCopyable<Group>
     uint32_t activeZones{0};
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
+
+    const zoneContainer_t &getZones() const { return zones; }
+
     zoneContainer_t::iterator begin() noexcept { return zones.begin(); }
     zoneContainer_t::const_iterator cbegin() const noexcept { return zones.cbegin(); }
 

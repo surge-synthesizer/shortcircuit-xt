@@ -125,6 +125,23 @@ template <size_t... Is> auto getFilterName(size_t ft, std::index_sequence<Is...>
     return fnc[ft]();
 }
 
+template <size_t I> const char *implGetFilterStreamingName()
+{
+    if constexpr (I == FilterType::ft_none)
+        return "none";
+
+    if constexpr (std::is_same<typename FilterImplementor<(FilterType)I>::T, unimpl_t>::value)
+        return "error";
+    else
+        return FilterImplementor<(FilterType)I>::T::filterStreamingName;
+}
+
+template <size_t... Is> auto getFilterStreamingName(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr constCharOp_t fnc[] = {detail::implGetFilterStreamingName<Is>...};
+    return fnc[ft]();
+}
+
 template <size_t I> Filter *returnSpawnOnto(uint8_t *m, float *fp, int *ip, bool st)
 {
     if constexpr (I == FilterType::ft_none)
@@ -179,6 +196,23 @@ bool isFXFilter(FilterType id)
 const char *getFilterName(FilterType id)
 {
     return detail::getFilterName(id, std::make_index_sequence<(size_t)FilterType::ft_num_types>());
+}
+
+const char *getFilterStreamingName(FilterType id)
+{
+    return detail::getFilterStreamingName(
+        id, std::make_index_sequence<(size_t)FilterType::ft_num_types>());
+}
+
+std::optional<FilterType> fromFilterStreamingName(const std::string &s)
+{
+    // A bit gross but hey
+    for( auto i=0; i<ft_num_types; ++i)
+    {
+        if (getFilterStreamingName((FilterType)i) == s)
+            return (FilterType)i;
+    }
+    return {};
 }
 
 /**

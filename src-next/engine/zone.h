@@ -23,10 +23,11 @@ struct Group;
 constexpr int filtersPerZone{2};
 constexpr int lfosPerZone{3};
 
-struct Zone : NonCopyable<Zone>
+struct Zone : MoveableOnly<Zone>
 {
     Zone() : id(ZoneID::next()) { initialize(); }
     Zone(SampleID sid) : id(ZoneID::next()), sampleID(sid) { initialize(); }
+    Zone(Zone &&) = default;
 
     ZoneID id;
     SampleID sampleID;
@@ -55,9 +56,7 @@ struct Zone : NonCopyable<Zone>
     KeyboardRange keyboardRange;
     uint8_t rootKey{60};
 
-    // TODO - this should probably be a filterstorage object
-    dsp::filter::FilterType filterType[filtersPerZone]{dsp::filter::ft_none, dsp::filter::ft_none};
-    float filterMix[filtersPerZone]{0, 0};
+    std::array<dsp::filter::FilterStorage, filtersPerZone> filterStorage;
 
     Group *parentGroup{nullptr};
 
@@ -79,7 +78,24 @@ struct Zone : NonCopyable<Zone>
     void removeVoice(voice::Voice *);
 
     std::array<modulation::VoiceModMatrix::Routing, modulation::numVoiceRoutingSlots> routingTable;
-    modulation::modulators::StepLFOStorage lfoStorage[lfosPerZone];
+    std::array<modulation::modulators::StepLFOStorage, lfosPerZone> lfoStorage;
+
+    bool operator==(const Zone &other) const
+    {
+        auto res = sampleID.id == other.sampleID.id;
+        res = res && rootKey == other.rootKey && keyboardRange == other.keyboardRange;
+        // Bail out before the expensive checks
+        if (!res)
+            return false;
+        res = res && (filterStorage == other.filterStorage) &&
+            (routingTable == other.routingTable) &&
+        (lfoStorage == other.lfoStorage);
+        return res;
+    }
+    bool operator!=(const Zone &other) const
+    {
+        return !(*this == other);
+    }
 };
 } // namespace scxt::engine
 

@@ -21,7 +21,7 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 {
     for (int i = 0; i < engine::filtersPerZone; ++i)
     {
-        baseValues[vmd_Filter1_Mix + i] = z->filterMix[i];
+        baseValues[vmd_Filter1_Mix + i] = z->filterStorage[i].mix;
     }
 }
 
@@ -45,4 +45,72 @@ void VoiceModMatrix::process()
         modulatedValues[r.dst] += (*(sourcePointers[r.src])) * r.depth;
     }
 }
+
+std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &dest)
+{
+    switch (dest)
+    {
+    case vmd_none:
+        return "vmd_none";
+
+    case vmd_LFO1_Rate:
+        return "vmd_lfo1_rate";
+    case vmd_LFO2_Rate:
+        return "vmd_lfo2_rate";
+    case vmd_LFO3_Rate:
+        return "vmd_lfo3_rate";
+
+    case vmd_Filter1_Mix:
+        return "vmd_filter1_mix";
+    case vmd_Filter2_Mix:
+        return "vmd_filter2_mix";
+
+    case numVoiceMatrixDestinations:
+        throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");
+    }
+
+    throw std::logic_error("Invalid enum");
+}
+std::optional<VoiceModMatrixDestination> fromVoiceModMatrixDestStreamingName(const std::string &s)
+{
+    for (int i = vmd_none; i < numVoiceMatrixDestinations; ++i)
+    {
+        if (getVoiceModMatrixDestStreamingName((VoiceModMatrixDestination)i) == s)
+        {
+            return ((VoiceModMatrixDestination)i);
+        }
+    }
+    return vmd_none;
+}
+
+std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest)
+{
+    switch (dest)
+    {
+    case vms_none:
+        return "vms_none";
+    case vms_LFO1:
+        return "vms_lfo1";
+    case vms_LFO2:
+        return "vms_lfo2";
+    case vms_LFO3:
+        return "vms_lfo3";
+    case numVoiceMatrixSources:
+        throw std::logic_error("Don't call with numVoiceMatrixSources");
+    }
+
+    throw std::logic_error("Mysterious unhandled condition");
+}
+std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s)
+{
+    for (int i = vmd_none; i < numVoiceMatrixSources; ++i)
+    {
+        if (getVoiceModMatrixSourceStreamingName((VoiceModMatrixSource)i) == s)
+        {
+            return ((VoiceModMatrixSource)i);
+        }
+    }
+    return vms_none;
+}
+
 } // namespace scxt::modulation

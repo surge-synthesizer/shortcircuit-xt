@@ -171,7 +171,7 @@ void Voice::calculateGeneratorRatio()
                                  mm.get_destination_value(md_rate)));
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
-    // gross for now
+    // TODO gross for now - correct
     auto ndiff = key - zone->rootKey;
     auto fac = std::pow(2.0, ndiff / 12.0);
     GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv);
@@ -186,7 +186,7 @@ void Voice::initializeFilters()
             (modulation::VoiceModMatrixDestination)(modulation::vmd_Filter1_Mix + i)));
         fmix[i].instantize();
 
-        filterType[i] = zone->filterType[i];
+        filterType[i] = zone->filterStorage[i].type;
         assert(dsp::filter::isZoneFilter(filterType[i]));
 
         if (dsp::filter::canInPlaceNew(filterType[i]))

@@ -17,28 +17,29 @@ namespace scxt
  * which are quick to copy but type differentiated so we don't accidentally use
  * a ZoneID on a Sample or some such.
  */
-template <int idType> struct ID
+template <int32_t idType_v> struct ID
 {
     int32_t id{-1};
+    int32_t idType{idType_v};
 
-    static int nextID;
+    static int32_t nextID;
     bool isValid() { return id > 0; }
-    static ID<idType> next()
+    static ID<idType_v> next()
     {
-        ID<idType> res;
+        ID<idType_v> res;
         res.id = nextID;
         nextID++;
         return res;
     }
 
-    bool operator==(const ID<idType> &other) const { return (id == other.id); }
-    bool operator!=(const ID<idType> &other) const { return !(id == other.id); }
+    bool operator==(const ID<idType_v> &other) const { return (id == other.id); }
+    bool operator!=(const ID<idType_v> &other) const { return !(id == other.id); }
 
     const std::string to_string() const { return fmt::format("{}::{}", display_name(), id); }
     const std::string display_name() const { return "ERROR(" + std::to_string(idType) + ")"; }
 };
 
-template <int idType> int ID<idType>::nextID{1};
+template <int idType> int32_t ID<idType>::nextID{1};
 
 typedef ID<2> PatchID;
 template <> inline const std::string PatchID::display_name() const { return "Patch"; }
@@ -58,24 +59,25 @@ void showLeakLog();
 #endif
 
 /**
- * A class which stops copies and makes sure cleanup happens at exit
+ * A class which forces move semantics and optionally runs a naive leak detector
  *
- * @tparam T - use this in the standard mixin/CRTP way namely struct A : NonCopyable<A>
+ * @tparam T - use this in the standard mixin/CRTP way namely struct A : MoveableOnly<A>
  */
-template <typename T> class NonCopyable
+template <typename T> class MoveableOnly
 {
   public:
-    NonCopyable(const NonCopyable &) = delete;
-    NonCopyable &operator=(const NonCopyable &) = delete;
+    MoveableOnly(MoveableOnly &&) = default;
+    MoveableOnly(const MoveableOnly &) = delete;
+    MoveableOnly &operator=(const MoveableOnly &) = delete;
 
   protected:
-    NonCopyable()
+    MoveableOnly()
     {
 #if USE_SIMPLE_LEAK_DETECTOR
         leakDetect(+1);
 #endif
     };
-    ~NonCopyable()
+    ~MoveableOnly()
     {
 #if USE_SIMPLE_LEAK_DETECTOR
         leakDetect(-1);

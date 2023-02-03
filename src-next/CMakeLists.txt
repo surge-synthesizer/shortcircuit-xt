@@ -13,6 +13,8 @@ add_library(${PROJECT_NAME}-core STATIC
         engine/group.cpp
         engine/part.cpp
 
+        json/stream.cpp
+
         sample/sample.cpp
         sample/sample_manager.cpp
         sample/loaders/load_riff_wave.cpp
@@ -32,8 +34,10 @@ add_library(${PROJECT_NAME}-core STATIC
         utils.cpp
         )
 target_include_directories(${PROJECT_NAME}-core PUBLIC .)
-target_link_libraries(${PROJECT_NAME}-core PUBLIC fmt sst-cpputils sst-filters simde)
+target_link_libraries(${PROJECT_NAME}-core PUBLIC fmt sst-cpputils sst-filters simde taocpp::json)
 
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME}-core PUBLIC _USE_MATH_DEFINES WINDOWS=1)
+else()
+    target_compile_options(${PROJECT_NAME}-core PUBLIC -Werror)
 endif()

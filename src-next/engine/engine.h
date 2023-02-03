@@ -22,7 +22,7 @@ struct Voice;
 }
 namespace scxt::engine
 {
-struct Engine : NonCopyable<Engine>, SampleRateSupport
+struct Engine : MoveableOnly<Engine>, SampleRateSupport
 {
     Engine();
     ~Engine();

@@ -64,11 +64,11 @@ struct alignas(16) SuperSVF : public Filter
     inline __m128 process_internal(__m128 x, int Mode);
 
   public:
-
     static constexpr bool isZoneFilter{true};
     static constexpr bool isPartFilter{true};
     static constexpr bool isFXFilter{false};
     static constexpr const char *filterName{"Super SVF"};
+    static constexpr const char *filterStreamingName{"super-svf"};
 
     SuperSVF(float *, int *, bool);
     void process(float *datain, float *dataout, float pitch);
@@ -104,7 +104,8 @@ struct alignas(16) OscPulseSync : public Filter
     static constexpr bool isZoneFilter{true};
     static constexpr bool isPartFilter{false};
     static constexpr bool isFXFilter{false};
-    static constexpr const char *filterName{"OSC Pulse"};
+    static constexpr const char *filterName{"OSC Pulse Sync"};
+    static constexpr const char *filterStreamingName{"osc-pulse-sync"};
 
     OscPulseSync(float *f, int32_t *i, bool s);
 
