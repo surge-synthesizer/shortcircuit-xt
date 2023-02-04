@@ -20,12 +20,18 @@ namespace scxt::voice
 {
 struct Voice;
 }
+namespace scxt::messaging
+{
+struct MessageController;
+}
 namespace scxt::engine
 {
 struct Engine : MoveableOnly<Engine>, SampleRateSupport
 {
     Engine();
     ~Engine();
+
+    EngineID id;
 
     const std::unique_ptr<Patch> &getPatch() const { return patch; }
     const std::unique_ptr<sample::SampleManager> &getSampleManager() const { return sampleManager; }
@@ -112,11 +118,17 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void initiateVoice(const pathToZone_t &path);
     void releaseVoice(const pathToZone_t &path);
 
+    const std::unique_ptr<messaging::MessageController> &getMessageController() const
+    {
+        return messageController;
+    }
+
   private:
     std::unique_ptr<Patch> patch;
     std::unique_ptr<sample::SampleManager> sampleManager;
     std::array<voice::Voice *, maxVoices> voices;
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};
+    std::unique_ptr<messaging::MessageController> messageController;
 };
 } // namespace scxt::engine
 #endif

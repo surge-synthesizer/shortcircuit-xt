@@ -7,12 +7,14 @@
 #include "dsp/sinc_table.h"
 #include "tuning/equal.h"
 #include "vembertech/vt_dsp/basic_dsp.h"
+#include "messaging/messaging.h"
 
 namespace scxt::engine
 {
 
 Engine::Engine()
 {
+    id.id = rand() % 1024;
     dsp::sincTable.init();
     tuning::equalTuning.init();
 
@@ -26,6 +28,9 @@ Engine::Engine()
     voiceInPlaceBuffer.reset(new uint8_t[sizeof(scxt::voice::Voice) * maxVoices]);
 
     setStereoOutputs(1);
+
+    messageController = std::make_unique<messaging::MessageController>(*this);
+    messageController->start();
 }
 
 Engine::~Engine()
@@ -41,10 +46,12 @@ Engine::~Engine()
             v = nullptr;
         }
     }
+    messageController->stop();
 }
 
 void Engine::initiateVoice(const pathToZone_t &path)
 {
+    messageController->audioToSerializationQueue.try_enqueue(path.key);
     assert(zoneByPath(path));
     for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
     {
@@ -82,6 +89,12 @@ void Engine::releaseVoice(const pathToZone_t &path)
 
 bool Engine::processAudio()
 {
+    messaging::MessageController::serializationToAudioMessage_t msg;
+    while (messageController->serializationToAudioQueue.try_dequeue(msg))
+    {
+        std::cout << "GOT PROCESSOR MESSAGE" << msg << std::endl;
+    }
+
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
     for (const auto &part : *patch)

@@ -51,6 +51,8 @@ typedef ID<5> ZoneID;
 template <> inline const std::string ZoneID::display_name() const { return "Zone"; }
 typedef ID<6> SampleID;
 template <> inline const std::string SampleID::display_name() const { return "Sample"; }
+typedef ID<7> EngineID;
+template <> inline const std::string EngineID::display_name() const { return "Engine"; }
 
 #define USE_SIMPLE_LEAK_DETECTOR 1
 #if USE_SIMPLE_LEAK_DETECTOR

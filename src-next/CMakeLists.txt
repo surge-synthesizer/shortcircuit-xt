@@ -34,7 +34,12 @@ add_library(${PROJECT_NAME}-core STATIC
         utils.cpp
         )
 target_include_directories(${PROJECT_NAME}-core PUBLIC .)
-target_link_libraries(${PROJECT_NAME}-core PUBLIC fmt sst-cpputils sst-filters simde taocpp::json)
+target_link_libraries(${PROJECT_NAME}-core PUBLIC
+        fmt
+        sst-cpputils sst-filters
+        shortcircuit::simde
+        shortcircuit::readerwriterqueue
+        taocpp::json)
 
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME}-core PUBLIC _USE_MATH_DEFINES WINDOWS=1)
