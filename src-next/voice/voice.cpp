@@ -20,7 +20,7 @@ Voice::Voice(engine::Zone *z) : zone(z)
 
 Voice::~Voice()
 {
-    for (int i = 0; i < engine::filtersPerZone; ++i)
+    for (auto i = 0; i < engine::filtersPerZone; ++i)
     {
         dsp::filter::unspawnFilter(filters[i]);
     }
@@ -35,7 +35,7 @@ void Voice::voiceStarted()
     modMatrix.copyBaseValuesFromZone(zone);
     modMatrix.attachSourcesFromVoice(this);
 
-    for (int i = 0; i < engine::lfosPerZone; ++i)
+    for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
@@ -62,7 +62,7 @@ bool Voice::process()
     modMatrix.copyBaseValuesFromZone(zone);
 
     // Run Modulators
-    for (int i = 0; i < engine::lfosPerZone; ++i)
+    for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
         // TODO - only if we need it
         lfos[i].process(blockSize);
@@ -97,7 +97,7 @@ bool Voice::process()
 
     float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
 
-    for (int i = 0; i < engine::filtersPerZone; ++i)
+    for (auto i = 0; i < engine::filtersPerZone; ++i)
     {
         if (filters[i]) // TODO && (!zone->Filter[0].bypass))
         {
@@ -180,7 +180,7 @@ void Voice::calculateGeneratorRatio()
 
 void Voice::initializeFilters()
 {
-    for (int i = 0; i < engine::filtersPerZone; ++i)
+    for (auto i = 0; i < engine::filtersPerZone; ++i)
     {
         fmix[i].set_target(modMatrix.getValue(
             (modulation::VoiceModMatrixDestination)(modulation::vmd_Filter1_Mix + i)));

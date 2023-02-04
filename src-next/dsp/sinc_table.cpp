@@ -50,7 +50,7 @@ inline double BESSI0(double X)
     }
 }
 
-inline double SymmetricKaiser(double x, int nint, double Alpha)
+inline double SymmetricKaiser(double x, uint16_t nint, double Alpha)
 {
     double N = (double)nint;
     x += N * 0.5;
@@ -72,10 +72,9 @@ void SincTable::init()
 
     float cutoff = 0.95f;
     float cutoffI16 = 0.95f;
-    int j;
-    for (j = 0; j < FIRipol_M + 1; j++)
+    for (auto j = 0U; j < FIRipol_M + 1; j++)
     {
-        for (int i = 0; i < FIRipol_N; i++)
+        for (auto i = 0U; i < FIRipol_N; i++)
         {
             double t = -double(i) + double(FIRipol_N / 2.0) + double(j) / double(FIRipol_M) - 1.0;
             double val = (float)(SymmetricKaiser(t, FIRipol_N, 5.0) * cutoff * sincf(cutoff * t));
@@ -83,9 +82,9 @@ void SincTable::init()
             SincTableF32[j * FIRipol_N + i] = val;
         }
     }
-    for (j = 0; j < FIRipol_M; j++)
+    for (auto j = 0U; j < FIRipol_M; j++)
     {
-        for (int i = 0; i < FIRipol_N; i++)
+        for (auto i = 0U; i < FIRipol_N; i++)
         {
             SincOffsetF32[j * FIRipol_N + i] =
                 (float)((SincTableF32[(j + 1) * FIRipol_N + i] - SincTableF32[j * FIRipol_N + i]) *
@@ -93,9 +92,9 @@ void SincTable::init()
         }
     }
 
-    for (j = 0; j < FIRipol_M + 1; j++)
+    for (auto j = 0U; j < FIRipol_M + 1; j++)
     {
-        for (int i = 0; i < FIRipolI16_N; i++)
+        for (auto i = 0U; i < FIRipolI16_N; i++)
         {
             double t =
                 -double(i) + double(FIRipolI16_N / 2.0) + double(j) / double(FIRipol_M) - 1.0;
@@ -105,9 +104,9 @@ void SincTable::init()
             SincTableI16[j * FIRipolI16_N + i] = val * 16384;
         }
     }
-    for (j = 0; j < FIRipol_M; j++)
+    for (auto j = 0U; j < FIRipol_M; j++)
     {
-        for (int i = 0; i < FIRipolI16_N; i++)
+        for (auto i = 0U; i < FIRipolI16_N; i++)
         {
             SincOffsetI16[j * FIRipolI16_N + i] =
                 (SincTableI16[(j + 1) * FIRipolI16_N + i] - SincTableI16[j * FIRipolI16_N + i]);

@@ -15,7 +15,7 @@ struct Patch;
 
 struct Part : MoveableOnly<Part>
 {
-    Part(int c) : id(PartID::next()), channel(c) { addGroup(); }
+    Part(int16_t c) : id(PartID::next()), channel(c) { addGroup(); }
 
     PartID id;
     int16_t channel;
@@ -25,7 +25,7 @@ struct Part : MoveableOnly<Part>
     void process();
 
     // TODO: have a channel mode like OMNI and MPE and everything
-    static constexpr int omniChannel{-1};
+    static constexpr int16_t omniChannel{-1};
 
     // TODO: Multiple outputs
     size_t getNumOutputs() const { return 1; }
@@ -41,9 +41,9 @@ struct Part : MoveableOnly<Part>
     // TODO GroupID -> index
     // TODO: Remove Group by both - Copy from group basically
 
-    const std::unique_ptr<Group> &getGroup(int i) const
+    const std::unique_ptr<Group> &getGroup(size_t i) const
     {
-        assert(i >= 0 && i < groups.size());
+        assert(i < groups.size());
         return groups[i];
     }
 

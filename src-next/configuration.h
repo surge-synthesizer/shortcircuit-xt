@@ -5,16 +5,18 @@
 #ifndef __SCXT__CONFIGURATION_H
 #define __SCXT__CONFIGURATION_H
 
+#include <cstdint>
+
 namespace scxt
 {
-static constexpr int blockSize{16};
-static constexpr int blockSizeQuad{16 >> 2};
-static constexpr int maxOutputs{16};
-static constexpr int maxVoices{256};
+static constexpr uint16_t blockSize{16};
+static constexpr uint16_t blockSizeQuad{16 >> 2};
+static constexpr uint16_t maxOutputs{16};
+static constexpr uint16_t maxVoices{256};
 
 // some battles are not worth it
-static constexpr int BLOCK_SIZE{blockSize};
-static constexpr int BLOCK_SIZE_QUAD{blockSizeQuad};
+static constexpr uint16_t BLOCK_SIZE{blockSize};
+static constexpr uint16_t BLOCK_SIZE_QUAD{blockSizeQuad};
 
 } // namespace scxt
 #endif // __SCXT__CONFIGURATION_H

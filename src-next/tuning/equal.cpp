@@ -10,13 +10,13 @@ namespace scxt::tuning
 {
 void EqualTuningProvider::init()
 {
-    for (int i = 0; i < tuning_table_size; i++)
+    for (auto i = 0U; i < tuning_table_size; i++)
     {
         table_pitch[i] = powf(2.f, ((float)i - 256.f) * (1.f / 12.f));
         table_pitch_inv[i] = 1.f / table_pitch[i];
     }
 
-    for (int i = 0; i < 1001; ++i)
+    for (auto i = 0U; i < 1001; ++i)
     {
         double twelths = i * 1.0 / 12.0 / 1000.0;
         table_two_to_the[i] = pow(2.0, twelths);
@@ -28,7 +28,7 @@ float EqualTuningProvider::note_to_pitch(float note)
 {
     auto x = std::clamp(note + 256, 1.e-4f, tuning_table_size - (float)1.e-4);
     // x += 256;
-    int e = (int)x;
+    auto e = (int16_t)x;
     float a = x - (float)e;
 
     float pow2pos = a * 1000.0;

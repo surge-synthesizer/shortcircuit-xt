@@ -1,12 +1,9 @@
 # Baconpauls next sprints
 
-- JSON Patch Streaming
-   - Patch/Content stream unstream is first
-   - A 'reset' method on unstream.
-   - SapmleMaanger unstream
+
 - JSON Message Infrastructure
    - Do this as a sparate sprintlet 
-- kill all the unsized 'int' and replace with 'int32' etc.. as appropriate
+   - A crude two process UI? What to do about the 'other side' structure?
 - NEXT branch readme and CLI from clap-info
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
@@ -35,6 +32,7 @@
 - Engine Path to Keyboard Lookup way way faster (probably precache)
 
 Open Questions and ToDos and Reviews:
+- int vs sized type (int32_t etc)
 - riff_memfile and riff_wave review
 - what's all the stuff in samplevoice which didnt make it
    - oversampling
