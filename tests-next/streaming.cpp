@@ -40,19 +40,19 @@ TEST_CASE("Stream a engine::KeyboardRange")
     }
 }
 
-TEST_CASE("Stream a dsp::filter::FilterStorage")
+TEST_CASE("Stream a dsp::filter::ProcessorStorage")
 {
     SECTION("Compiles")
     {
-        dsp::filter::FilterStorage k1, k2;
+        dsp::processor::ProcessorStorage k1, k2;
         auto s = testStream(k1);
         testUnstream(s, k2);
     }
 
     SECTION("Type Streams")
     {
-        dsp::filter::FilterStorage k1, k2;
-        k1.type = dsp::filter::ft_osc_pulse_sync;
+        dsp::processor::ProcessorStorage k1, k2;
+        k1.type = dsp::processor::proct_osc_pulse_sync;
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
         testUnstream(s, k2);
@@ -61,8 +61,8 @@ TEST_CASE("Stream a dsp::filter::FilterStorage")
 
     SECTION("Expanded Values Stream")
     {
-        dsp::filter::FilterStorage k1, k2;
-        k1.type = dsp::filter::ft_osc_pulse_sync;
+        dsp::processor::ProcessorStorage k1, k2;
+        k1.type = dsp::processor::proct_osc_pulse_sync;
         k1.mix = 0.23;
         for (auto &fv : k1.floatParams)
             fv = 1.0 * (rand() % 10000) / 7842.2;
@@ -88,7 +88,7 @@ TEST_CASE("Test modulation::VoiceModMatrix::Routing")
     {
         modulation::VoiceModMatrix::Routing k1, k2;
         k1.src = scxt::modulation::vms_LFO1;
-        k1.dst = scxt::modulation::vmd_Filter2_Mix;
+        k1.dst = scxt::modulation::vmd_Processor2_Mix;
         k1.depth = 0.03;
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
@@ -142,7 +142,7 @@ TEST_CASE("Stream engine::Zone")
     {
         engine::Zone k1, k2;
         k1.routingTable[3].src = scxt::modulation::vms_LFO2;
-        k1.routingTable[3].dst = scxt::modulation::vmd_Filter1_Mix;
+        k1.routingTable[3].dst = scxt::modulation::vmd_Processor1_Mix;
         k1.routingTable[3].depth = 0.24;
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
@@ -154,7 +154,7 @@ TEST_CASE("Stream engine::Zone")
     {
         engine::Zone k1, k2;
         k1.routingTable[3].src = scxt::modulation::vms_LFO2;
-        k1.routingTable[3].dst = scxt::modulation::vmd_Filter1_Mix;
+        k1.routingTable[3].dst = scxt::modulation::vmd_Processor1_Mix;
         k1.routingTable[3].depth = 0.24;
 
         k2.routingTable[4].dst = scxt::modulation::vmd_LFO1_Rate;

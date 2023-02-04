@@ -19,9 +19,9 @@ void VoiceModMatrix::snapRoutingFromZone(engine::Zone *z) { routingTable = z->ro
 
 void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 {
-    for (int i = 0; i < engine::filtersPerZone; ++i)
+    for (int i = 0; i < engine::processorsPerZone; ++i)
     {
-        baseValues[vmd_Filter1_Mix + i] = z->filterStorage[i].mix;
+        baseValues[vmd_Processor1_Mix + i] = z->processorStorage[i].mix;
     }
 }
 
@@ -60,10 +60,10 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &
     case vmd_LFO3_Rate:
         return "vmd_lfo3_rate";
 
-    case vmd_Filter1_Mix:
-        return "vmd_filter1_mix";
-    case vmd_Filter2_Mix:
-        return "vmd_filter2_mix";
+    case vmd_Processor1_Mix:
+        return "vmd_processor1_mix";
+    case vmd_Processor2_Mix:
+        return "vmd_processor2_mix";
 
     case numVoiceMatrixDestinations:
         throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");

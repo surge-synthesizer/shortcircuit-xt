@@ -30,14 +30,14 @@ bool basicTestPatch(engine::Engine &engine, const fs::path &sampleRoot)
         zptr->keyboardRange = {k0, k1};
         zptr->rootKey = k0;
 
-        zptr->filterStorage[0].type = dsp::filter::ft_osc_pulse_sync;
-        zptr->filterStorage[0].mix = 0.2;
+        zptr->processorStorage[0].type = dsp::processor::proct_osc_pulse_sync;
+        zptr->processorStorage[0].mix = 0.2;
         zptr->routingTable[0].src = modulation::vms_LFO1;
-        zptr->routingTable[0].dst = modulation::vmd_Filter1_Mix;
+        zptr->routingTable[0].dst = modulation::vmd_Processor1_Mix;
         zptr->routingTable[0].depth = 0.5;
 
-        zptr->filterStorage[1].type = dsp::filter::ft_SuperSVF;
-        zptr->filterStorage[1].mix = 1.0;
+        zptr->processorStorage[1].type = dsp::processor::proct_SuperSVF;
+        zptr->processorStorage[1].mix = 1.0;
 
         modulation::modulators::load_lfo_preset(modulation::modulators::lp_sine,
                                                 &zptr->lfoStorage[0]);

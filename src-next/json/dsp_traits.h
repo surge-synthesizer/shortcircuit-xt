@@ -9,14 +9,15 @@
 #include <tao/json/from_string.hpp>
 #include <tao/json/contrib/traits.hpp>
 
-#include "dsp/filter/filter.h"
+#include "dsp/processor/processor.h"
 
-template <> struct tao::json::traits<scxt::dsp::filter::FilterStorage>
+template <> struct tao::json::traits<scxt::dsp::processor::ProcessorStorage>
 {
     template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::dsp::filter::FilterStorage &t)
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::dsp::processor::ProcessorStorage &t)
     {
-        v = {{"type", scxt::dsp::filter::getFilterStreamingName(t.type)},
+        v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
              {"mix", t.mix},
              {"floatParams", t.floatParams},
              {"intParams", t.intParams}};
@@ -24,17 +25,17 @@ template <> struct tao::json::traits<scxt::dsp::filter::FilterStorage>
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::dsp::filter::FilterStorage &result)
+                   scxt::dsp::processor::ProcessorStorage &result)
     {
         const auto &object = v.get_object();
 
-        auto optType =
-            scxt::dsp::filter::fromFilterStreamingName(v.at("type").template as<std::string>());
+        auto optType = scxt::dsp::processor::fromProcessorStreamingName(
+            v.at("type").template as<std::string>());
 
         if (optType.has_value())
             result.type = *optType;
         else
-            result.type = scxt::dsp::filter::ft_none;
+            result.type = scxt::dsp::processor::proct_none;
 
         v.at("mix").to(result.mix);
         v.at("floatParams").to(result.floatParams);

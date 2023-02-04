@@ -74,6 +74,7 @@ if (APPLE)
     set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
 endif()
 set(RTMIDI_BUILD_STATIC_LIBS TRUE CACHE BOOL "static rdmidi")
+set(RTMIDI_BUILD_TESTING OFF CACHE BOOL "no tests from rtmidi")
 add_subdirectory(libs/rtmidi)
 
 # FIX THIS

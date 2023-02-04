@@ -135,7 +135,7 @@ template <> struct tao::json::traits<scxt::engine::Zone>
 
         v = {{"sampleID", t.sampleID}, //
              {"keyboardRange", t.keyboardRange}, {"rootKey", t.rootKey},
-             {"filterStorage", t.filterStorage}, {"routingTable", rtArray},
+             {"processorStorage", t.processorStorage}, {"routingTable", rtArray},
              {"lfoStorage", t.lfoStorage}};
     }
 
@@ -147,7 +147,7 @@ template <> struct tao::json::traits<scxt::engine::Zone>
         v.at("sampleID").to(zone.sampleID);
         v.at("keyboardRange").to(zone.keyboardRange);
         v.at("rootKey").to(zone.rootKey);
-        v.at("filterStorage").to(zone.filterStorage);
+        v.at("processorStorage").to(zone.processorStorage);
 
         std::fill(zone.routingTable.begin(), zone.routingTable.end(),
                   scxt::modulation::VoiceModMatrix::Routing());

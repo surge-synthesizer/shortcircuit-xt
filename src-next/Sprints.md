@@ -17,7 +17,7 @@
 - All that round robin discord chat
 - Find samples when streamed by path
 - Samples in the patch
-- Port in the rest of the filters
+- Port in the rest of the processors
 - Bring back the SST Libs and CMake fix up
   - including git version 
 - What to do with the tests? Maybe just start new ones
@@ -41,4 +41,4 @@ Open Questions and ToDos and Reviews:
 - Sample Reload All / Refresh
 
 Ideas for the future
-- Parallel or Serial Filters on zone for instance
+- Parallel or Serial Processors on zone for instance

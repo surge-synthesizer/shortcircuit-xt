@@ -2,7 +2,7 @@
 // Created by Paul Walker on 1/31/23.
 //
 
-#include "filter_defs.h"
+#include "processor_defs.h"
 #include "dsp/resampling.h"
 #include "configuration.h"
 #include "dsp/sinc_table.h"
@@ -10,14 +10,14 @@
 #include <cmath>
 #include <algorithm>
 
-namespace scxt::dsp::filter
+namespace scxt::dsp::processor
 {
 
 static constexpr int64_t large = 0x10000000000;
 static constexpr float integrator_hpf = 0.99999999f;
 
 OscPulseSync::OscPulseSync(float *fp, int32_t *ip, bool stereo)
-    : Filter(FilterType::ft_osc_pulse_sync, fp, ip, stereo)
+    : Processor(ProcessorType::proct_osc_pulse_sync, fp, ip, stereo)
 {
     parameter_count = 3;
 
@@ -140,4 +140,4 @@ void OscPulseSync::process(float *datain, float *dataout, float pitch)
     }
 }
 
-} // namespace scxt::dsp::filter
+} // namespace scxt::dsp::processor

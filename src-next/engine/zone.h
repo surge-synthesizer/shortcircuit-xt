@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "keyboard.h"
 #include "sample/sample_manager.h"
-#include "dsp/filter/filter.h"
+#include "dsp/processor/processor.h"
 #include "configuration.h"
 #include "modulation/voice_matrix.h"
 #include "modulation/modulators/steplfo.h"
@@ -20,7 +20,7 @@ namespace scxt::engine
 {
 struct Group;
 
-constexpr int filtersPerZone{2};
+constexpr int processorsPerZone{2};
 constexpr int lfosPerZone{3};
 
 struct Zone : MoveableOnly<Zone>
@@ -56,7 +56,7 @@ struct Zone : MoveableOnly<Zone>
     KeyboardRange keyboardRange;
     uint8_t rootKey{60};
 
-    std::array<dsp::filter::FilterStorage, filtersPerZone> filterStorage;
+    std::array<dsp::processor::ProcessorStorage, processorsPerZone> processorStorage;
 
     Group *parentGroup{nullptr};
 
@@ -87,15 +87,11 @@ struct Zone : MoveableOnly<Zone>
         // Bail out before the expensive checks
         if (!res)
             return false;
-        res = res && (filterStorage == other.filterStorage) &&
-            (routingTable == other.routingTable) &&
-        (lfoStorage == other.lfoStorage);
+        res = res && (processorStorage == other.processorStorage) &&
+              (routingTable == other.routingTable) && (lfoStorage == other.lfoStorage);
         return res;
     }
-    bool operator!=(const Zone &other) const
-    {
-        return !(*this == other);
-    }
+    bool operator!=(const Zone &other) const { return !(*this == other); }
 };
 } // namespace scxt::engine
 

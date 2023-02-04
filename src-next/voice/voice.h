@@ -8,7 +8,7 @@
 #include "engine/zone.h"
 #include "dsp/sinc_table.h"
 #include "dsp/generator.h"
-#include "dsp/filter/filter.h"
+#include "dsp/processor/processor.h"
 
 #include "modulation/voice_matrix.h"
 
@@ -61,18 +61,21 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     void calculateGeneratorRatio();
 
     /**
-     * Filters: Storage, memory blocks, types, and more
+     * Processors: Storage, memory blocks, types, and more
      */
-    dsp::filter::Filter *filters[engine::filtersPerZone]{nullptr, nullptr};
-    dsp::filter::FilterType filterType[engine::filtersPerZone]{dsp::filter::ft_none,
-                                                               dsp::filter::ft_none};
-    uint8_t filterStorage alignas(16)[engine::filtersPerZone][dsp::filter::filterMemoryBufferSize];
-    float filterFloatParams alignas(16)[engine::filtersPerZone][dsp::filter::maxFilterFloatParams];
-    int32_t filterIntParams alignas(16)[engine::filtersPerZone][dsp::filter::maxFilterIntParams];
+    dsp::processor::Processor *processors[engine::processorsPerZone]{nullptr, nullptr};
+    dsp::processor::ProcessorType processorType[engine::processorsPerZone]{dsp::processor::proct_none,
+                                                                           dsp::processor::proct_none};
+    uint8_t processorPlacementStorage alignas(
+        16)[engine::processorsPerZone][dsp::processor::processorMemoryBufferSize];
+    float processorFloatParams alignas(
+        16)[engine::processorsPerZone][dsp::processor::maxProcessorFloatParams];
+    int32_t processorIntParams alignas(
+        16)[engine::processorsPerZone][dsp::processor::maxProcessorIntParams];
 
-    void initializeFilters();
+    void initializeProcessors();
 
-    lipol_ps fmix[engine::filtersPerZone];
+    lipol_ps processorMix[engine::processorsPerZone];
 
     // TODO This is obvious garbage from hereon down
     size_t sp{0};

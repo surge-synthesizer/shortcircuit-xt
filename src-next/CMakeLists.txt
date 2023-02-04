@@ -3,10 +3,10 @@ project(scxt-next LANGUAGES CXX)
 add_library(${PROJECT_NAME}-core STATIC
         dsp/generator.cpp
         dsp/sinc_table.cpp
-        dsp/filter/filter.cpp
+        dsp/processor/processor.cpp
 
-        dsp/filter/filter_supersvf.cpp
-        dsp/filter/filter_oscillators.cpp
+        dsp/processor/processor_supersvf.cpp
+        dsp/processor/processor_oscillators.cpp
 
         engine/engine.cpp
         engine/zone.cpp

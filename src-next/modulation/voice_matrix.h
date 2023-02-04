@@ -32,8 +32,8 @@ enum VoiceModMatrixDestination
     vmd_LFO2_Rate,
     vmd_LFO3_Rate, // We assume these are contiguous in voice.cpp (that is LVO3 = LVO1 + 2)
 
-    vmd_Filter1_Mix,
-    vmd_Filter2_Mix,
+    vmd_Processor1_Mix,
+    vmd_Processor2_Mix,
 
     numVoiceMatrixDestinations
 };

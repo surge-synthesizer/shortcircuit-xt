@@ -14,22 +14,22 @@ Voice::Voice(engine::Zone *z) : zone(z)
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
-    memset(filterFloatParams, 0, sizeof(filterFloatParams));
-    memset(filterIntParams, 0, sizeof(filterIntParams));
+    memset(processorFloatParams, 0, sizeof(processorFloatParams));
+    memset(processorIntParams, 0, sizeof(processorIntParams));
 }
 
 Voice::~Voice()
 {
-    for (auto i = 0; i < engine::filtersPerZone; ++i)
+    for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
-        dsp::filter::unspawnFilter(filters[i]);
+        dsp::processor::unspawnProcessor(processors[i]);
     }
 }
 
 void Voice::voiceStarted()
 {
     initializeGenerator();
-    initializeFilters();
+    initializeProcessors();
 
     modMatrix.snapRoutingFromZone(zone);
     modMatrix.copyBaseValuesFromZone(zone);
@@ -97,17 +97,17 @@ bool Voice::process()
 
     float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
 
-    for (auto i = 0; i < engine::filtersPerZone; ++i)
+    for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
-        if (filters[i]) // TODO && (!zone->Filter[0].bypass))
+        if (processors[i]) // TODO && (!zone->processors[0].bypass))
         {
-            fmix[i].set_target(modMatrix.getValue(
-                (modulation::VoiceModMatrixDestination)(modulation::vmd_Filter1_Mix + i)));
-            filters[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-            fmix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
+            processorMix[i].set_target(modMatrix.getValue(
+                (modulation::VoiceModMatrixDestination)(modulation::vmd_Processor1_Mix + i)));
+            processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
+            processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
                                      output[1], BLOCK_SIZE_QUAD);
 
-            // TODO: What is the filter_modout?
+            // TODO: What was the filter_modout? Seems SC2 never finished it
             /*
             filter_modout[0] = voice_filter[0]->modulation_output;
                                    */
@@ -178,36 +178,36 @@ void Voice::calculateGeneratorRatio()
 #endif
 }
 
-void Voice::initializeFilters()
+void Voice::initializeProcessors()
 {
-    for (auto i = 0; i < engine::filtersPerZone; ++i)
+    for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
-        fmix[i].set_target(modMatrix.getValue(
-            (modulation::VoiceModMatrixDestination)(modulation::vmd_Filter1_Mix + i)));
-        fmix[i].instantize();
+        processorMix[i].set_target(modMatrix.getValue(
+            (modulation::VoiceModMatrixDestination)(modulation::vmd_Processor1_Mix + i)));
+        processorMix[i].instantize();
 
-        filterType[i] = zone->filterStorage[i].type;
-        assert(dsp::filter::isZoneFilter(filterType[i]));
+        processorType[i] = zone->processorStorage[i].type;
+        assert(dsp::processor::isZoneProcessor(processorType[i]));
 
-        if (dsp::filter::canInPlaceNew(filterType[i]))
+        if (dsp::processor::canInPlaceNew(processorType[i]))
         {
             // TODO: Stereo
-            filters[i] = dsp::filter::spawnFilterInPlace(
-                filterType[i], filterStorage[i], dsp::filter::filterMemoryBufferSize,
-                filterFloatParams[i], filterIntParams[i], false);
+            processors[i] = dsp::processor::spawnProcessorInPlace(
+                processorType[i], processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, processorFloatParams[i],
+                processorIntParams[i], false);
         }
         else
         {
-            filters[i] = dsp::filter::spawnFilterAllocating(filterType[i], filterFloatParams[i],
-                                                            filterIntParams[i], false);
+            processors[i] = dsp::processor::spawnProcessorAllocating(
+                processorType[i], processorFloatParams[i], processorIntParams[i], false);
         }
 
-        if (filters[i])
+        if (processors[i])
         {
-            filters[i]->setSampleRate(sampleRate);
-            filters[i]->init();
+            processors[i]->setSampleRate(sampleRate);
+            processors[i]->init();
             // TODO: This init_params is temporary until we get values through the model
-            filters[i]->init_params();
+            processors[i]->init_params();
         }
     }
 }

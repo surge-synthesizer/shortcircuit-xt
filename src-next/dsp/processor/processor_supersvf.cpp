@@ -18,13 +18,13 @@
 #include <algorithm>
 #include <cmath>
 
-#include "filter_defs.h"
+#include "processor_defs.h"
 #include "infrastructure/sse_include.h"
 #include "datamodel/parameter.h"
 #include "tuning/equal.h"
 #include "configuration.h"
 
-namespace scxt::dsp::filter
+namespace scxt::dsp::processor
 {
 //-------------------------------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ enum
 //-------------------------------------------------------------------------------------------------------
 
 SuperSVF::SuperSVF(float *fp, int *ip, bool stereo)
-    : Filter(FilterType::ft_SuperSVF, fp, ip, true), mPolyphase(2, true)
+    : Processor(ProcessorType::proct_SuperSVF, fp, ip, true), mPolyphase(2, true)
 {
     parameter_count = 2;
     setStr(ctrllabel[0], ("cutoff"));
@@ -351,4 +351,4 @@ const char *SuperSVF::get_ip_entry_label(int ip_id, int c_id)
 }
 
 //-------------------------------------------------------------------------------------------------------
-} // namespace scxt::dsp::filter
+} // namespace scxt::dsp::processor

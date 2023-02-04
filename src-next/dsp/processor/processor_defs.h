@@ -2,28 +2,32 @@
 // Created by Paul Walker on 1/31/23.
 //
 
-#ifndef __SCXT_FILTER_DEFS_H
-#define __SCXT_FILTER_DEFS_H
+#ifndef __SCXT_PROCESSOR_DEFS_H
+#define __SCXT_PROCESSOR_DEFS_H
 
-#include "filter.h"
+#include "processor.h"
 #include "datamodel/parameter.h"
 #include "infrastructure/sse_include.h"
 
 #include <sst/filters/HalfRateFilter.h>
 
 /**
- * Adding a filter here. Used to be we had a bunch of case staements. But now we are all
- * driven by templates (see "filter.cpp" for some hairy template code you never need to touch).
- * So to add a filter
+ * Adding a processor here. Used to be we had a bunch of case staements. But now we are all
+ * driven by templates (see "processor.cpp" for some hairy template code you never need to touch).
+ * So to add a processor
  *
- * 1. Add it here as a subtype of Filter
+ * 1. Add it here as a subtype of Processor
  * 2. Implement these four constexpr values
- *       static constexpr bool isZoneFilter{true};
- *       static constexpr bool isPartFilter{false};
- *       static constexpr bool isFXFilter{false};
- *       static constexpr const char *filterName{"OSC Pulse"};
+ *       static constexpr bool isZoneProcessor{true};
+ *       static constexpr bool isPartProcessor{false};
+ *       static constexpr bool isFXProcessor{false};
+ *       static constexpr const char *processorName{"OSC Pulse"};
+ *       static constexpr const char *processorStreamingName{"osc-pulse"};
+ *
+ *       The streaming name has to be stable across versions
+ *
  * 3. Specialize the id-to-type structure
- *      template <> struct FilterImplementor<FilterType::ft_osc_pulse_sync>
+ *      template <> struct ProcessorImplementor<ProcessorType::proct_osc_pulse_sync>
  *      {
  *          typedef OscPulseSync T;
  *      };
@@ -31,10 +35,10 @@
  *  and then evyerthing else will work
  */
 
-namespace scxt::dsp::filter
+namespace scxt::dsp::processor
 {
 typedef uint8_t unimpl_t;
-template <FilterType ft> struct FilterImplementor
+template <ProcessorType ft> struct ProcessorImplementor
 {
     typedef unimpl_t T;
 };
@@ -54,7 +58,7 @@ static constexpr datamodel::ControlDescription cdPercentDef{
  * Standard filters
  */
 
-struct alignas(16) SuperSVF : public Filter
+struct alignas(16) SuperSVF : public Processor
 {
   private:
     __m128 Freq, dFreq, Q, dQ, MD, dMD, ClipDamp, dClipDamp, Gain, dGain, Reg[3], LastOutput;
@@ -64,11 +68,11 @@ struct alignas(16) SuperSVF : public Filter
     inline __m128 process_internal(__m128 x, int Mode);
 
   public:
-    static constexpr bool isZoneFilter{true};
-    static constexpr bool isPartFilter{true};
-    static constexpr bool isFXFilter{false};
-    static constexpr const char *filterName{"Super SVF"};
-    static constexpr const char *filterStreamingName{"super-svf"};
+    static constexpr bool isZoneProcessor{true};
+    static constexpr bool isPartProcessor{true};
+    static constexpr bool isFXProcessor{false};
+    static constexpr const char *processorName{"Super SVF"};
+    static constexpr const char *processorStreamingName{"super-svf"};
 
     SuperSVF(float *, int *, bool);
     void process(float *datain, float *dataout, float pitch);
@@ -88,7 +92,7 @@ struct alignas(16) SuperSVF : public Filter
     virtual int tail_length() { return tailInfinite; }
 };
 
-template <> struct FilterImplementor<FilterType::ft_SuperSVF>
+template <> struct ProcessorImplementor<ProcessorType::proct_SuperSVF>
 {
     typedef SuperSVF T;
 };
@@ -99,13 +103,13 @@ template <> struct FilterImplementor<FilterType::ft_SuperSVF>
 
 static constexpr int oscillatorBufferLength{16}; // TODO should this be block size really?
 
-struct alignas(16) OscPulseSync : public Filter
+struct alignas(16) OscPulseSync : public Processor
 {
-    static constexpr bool isZoneFilter{true};
-    static constexpr bool isPartFilter{false};
-    static constexpr bool isFXFilter{false};
-    static constexpr const char *filterName{"OSC Pulse Sync"};
-    static constexpr const char *filterStreamingName{"osc-pulse-sync"};
+    static constexpr bool isZoneProcessor{true};
+    static constexpr bool isPartProcessor{false};
+    static constexpr bool isFXProcessor{false};
+    static constexpr const char *processorName{"OSC Pulse Sync"};
+    static constexpr const char *processorStreamingName{"osc-pulse-sync"};
 
     OscPulseSync(float *f, int32_t *i, bool s);
 
@@ -126,10 +130,10 @@ struct alignas(16) OscPulseSync : public Filter
     float osc_out{0};
     size_t bufpos{0};
 };
-template <> struct FilterImplementor<FilterType::ft_osc_pulse_sync>
+template <> struct ProcessorImplementor<ProcessorType::proct_osc_pulse_sync>
 {
     typedef OscPulseSync T;
 };
 
-} // namespace scxt::dsp::filter
-#endif // __SCXT_FILTER_DEFS_H
+} // namespace scxt::dsp::processor
+#endif // __SCXT_PROCESSOR_DEFS_H
