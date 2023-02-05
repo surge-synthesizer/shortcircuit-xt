@@ -115,10 +115,6 @@ template <> struct tao::json::traits<scxt::engine::Group>
                 group.parentPart->parentPatch->parentEngine)
                 group.getZone(idx)->attachToSample(
                     *(group.parentPart->parentPatch->parentEngine->getSampleManager()));
-            else
-            {
-                std::cout << "BROKEN LINK" << std::endl;
-            }
         }
     }
 };
@@ -134,8 +130,10 @@ template <> struct tao::json::traits<scxt::engine::Zone>
         });
 
         v = {{"sampleID", t.sampleID}, //
-             {"keyboardRange", t.keyboardRange}, {"rootKey", t.rootKey},
-             {"processorStorage", t.processorStorage}, {"routingTable", rtArray},
+             {"keyboardRange", t.keyboardRange},
+             {"rootKey", t.rootKey},
+             {"processorStorage", t.processorStorage},
+             {"routingTable", rtArray},
              {"lfoStorage", t.lfoStorage}};
     }
 

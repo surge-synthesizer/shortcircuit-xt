@@ -14,55 +14,71 @@ namespace scxt::ui
 struct SCXTEditor : juce::Component
 {
     messaging::MessageController &msgCont;
-    std::unique_ptr<juce::Button> button;
 
     struct IdleTimer : juce::Timer
     {
         SCXTEditor *editor{nullptr};
         IdleTimer(SCXTEditor *ed) : editor(ed) {}
-        void timerCallback() override {
-            editor->idle();
-        }
+        void timerCallback() override { editor->idle(); }
     };
     std::unique_ptr<IdleTimer> idleTimer;
 
     SCXTEditor(messaging::MessageController &e) : msgCont(e)
     {
-        msgCont.registerClient("SCXTEditor", [this](auto &s) { onCallback(s);});
-
-        button = std::make_unique<juce::TextButton>("PressMe");
-        button->setBounds(10, 10, 100, 30);
-        button->onClick = [this]() { this->goForIt(); };
-        addAndMakeVisible(*button);
-
         idleTimer = std::make_unique<IdleTimer>(this);
-        idleTimer->startTimer(1000/60);
-    }
-    ~SCXTEditor() { msgCont.unregisterClient(); }
+        idleTimer->startTimer(1000 / 60);
 
-    void goForIt()
-    {
-        std::cout << "Going for it " << std::endl;
-        msgCont.sendFromClient("hi " + std::to_string(rand() % 100));
+        namespace cmsg = scxt::messaging::client;
+        msgCont.registerClient("SCXTEditor", [this](auto &s) { onMessageCallback(s); });
+
+        cmsg::clientSendMessage(cmsg::RefreshPatchRequest(), msgCont);
     }
+    ~SCXTEditor()
+    {
+        idleTimer->stopTimer();
+        msgCont.unregisterClient();
+    }
+
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::yellow); }
 
-    void onCallback(const std::string &s)
+    // This runs on the serialization thread and needs to toss to the UI thread
+    void onMessageCallback(const std::string &s)
     {
         std::lock_guard<std::mutex> g(callbackMutex);
         callbackQueue.push(s);
     }
 
-    void idle()
+    void idle() { drainCallbackQueue(); }
+
+    void drainCallbackQueue()
     {
+        namespace cmsg = scxt::messaging::client;
+
+        bool itemsToDrain{true};
+        while (itemsToDrain)
         {
-            std::lock_guard<std::mutex> g(callbackMutex);
-            while (!callbackQueue.empty())
+            itemsToDrain = false;
+            std::string qmsg;
             {
-                std::cout << "Callback " << callbackQueue.front() << std::endl;
-                callbackQueue.pop();
+                std::lock_guard<std::mutex> g(callbackMutex);
+                if (!callbackQueue.empty())
+                {
+                    qmsg = callbackQueue.front();
+                    itemsToDrain = true;
+                    callbackQueue.pop();
+                }
+            }
+            if (itemsToDrain)
+            {
+                cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
             }
         }
+    }
+
+    void onPatchStreamed(const engine::Patch &p)
+    {
+        std::cout << "Patch Streamed "
+                  << p.getPart(0)->getGroup(0)->getZone(0)->sampleID.to_string() << std::endl;
     }
 
     std::mutex callbackMutex;

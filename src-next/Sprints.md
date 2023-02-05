@@ -1,9 +1,10 @@
 # Baconpauls next sprints
 
-
-- JSON Message Infrastructure
-   - Do this as a sparate sprintlet 
-   - A crude two process UI? What to do about the 'other side' structure?
+- Next THreading Sprint
+   - move to custom traits class with bool for running vs readonly
+   - audio <-> serialization
+   - Throw guards in the right spots
+   - non-fiction novel
 - Cleanup header guards
 - NEXT branch readme and CLI from clap-info
 - Voice Design for real and zone level modulators
@@ -25,6 +26,7 @@
 - Zone Metadata
 - Other Sample Formats other than .wav
 - Content Browser
+- The UI can work if theres no audio thread
 - Error reporting
    - those warnigns in riff_memfile
    - what sort of object?
@@ -40,6 +42,7 @@ Open Questions and ToDos and Reviews:
    - fades
 - Sample GC
 - Sample Reload All / Refresh
+- fs:: to std::filesystem
 
 Ideas for the future
 - Parallel or Serial Processors on zone for instance
@@ -47,6 +50,14 @@ Ideas for the future
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 7 (2023-02-05)
+All the message threads are hooked up and talking to each other 
+and the JUCE app shows this. I can use object patterns to send 
+messages between the UI and the Serialization thread. Upon a 
+request the UI gets a readonly copy of the Patch object in its 
+memory space. Next up is the proper object pattern for 
+Serialization <> Audio Thread
 
 ## Day 6 (2023-02-04)
 

@@ -12,6 +12,7 @@
 #include <chrono>
 
 #include "readerwriterqueue.h"
+#include "client/client_serial.h"
 
 namespace scxt::messaging
 {
@@ -155,12 +156,12 @@ struct MessageController : MoveableOnly<MessageController>
             {
                 if (receivedMessageFromClient)
                 {
-                    std::cout << "Got an inbound message " << inbound << std::endl;
-                    serializationToAudioQueue.try_enqueue(17);
-                    auto res = "backatcha " + inbound;
-                    clientCallback(res);
-                    // TODO: handle the inbounds
+                    client::serializationThreadExecuteClientMessage(inbound,
+                                                                    engine,
+                                                                    *this);
                 }
+
+                // TODO: Drain SerToAudioQ if there's no audio thread
 
                 // TODO: Drain audioToSerialization
                 audioToSerializationMessage_t msg;
@@ -199,5 +200,9 @@ struct MessageController : MoveableOnly<MessageController>
 
     std::unique_ptr<std::thread> serializationThread;
 };
+
 } // namespace scxt::messaging
+
+#include "client/client_serial_impl.h"
+#include "client/client_messages.h"
 #endif // SHORTCIRCUIT_MESSAGING_H
