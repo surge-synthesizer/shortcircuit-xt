@@ -2,6 +2,7 @@
 
 - Next THreading Sprint
    - audio <-> serialization
+     - start with audio -> client voice count 
    - Throw guards in the right spots
    - non-fiction novel
 - True/False readonly traits percolate by having

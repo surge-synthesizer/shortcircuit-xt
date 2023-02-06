@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SCXT_SRC_VEMBERTECH_VT_DSP_SHARED_H
+#define SCXT_SRC_VEMBERTECH_VT_DSP_SHARED_H
 
 #if defined(__aarch64__)
 #define SIMDE_ENABLE_NATIVE_ALIASES
@@ -27,3 +28,5 @@ const __m128 m128_two = _mm_set1_ps(2.0f);
 const __m128 m128_four = _mm_set1_ps(4.0f);
 const __m128 m128_1234 = _mm_set_ps(1.f, 2.f, 3.f, 4.f);
 const __m128 m128_0123 = _mm_set_ps(0.f, 1.f, 2.f, 3.f);
+
+#endif // SCXT_SRC_VEMBERTECH_VT_DSP_SHARED_H

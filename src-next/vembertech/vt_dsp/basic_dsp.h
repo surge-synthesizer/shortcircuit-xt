@@ -15,7 +15,8 @@
 ** open source in December 2020.
 */
 
-#pragma once
+#ifndef SCXT_SRC_VEMBERTECH_VT_DSP_BASIC_DSP_H
+#define SCXT_SRC_VEMBERTECH_VT_DSP_BASIC_DSP_H
 #include "shared.h"
 
 int Min(int a, int b);
@@ -275,3 +276,5 @@ inline float megapanR(float pos)
         pos = -2.f;
     return (1 + 0.75f * pos - 0.25f * pos * pos);
 }
+
+#endif // SCXT_SRC_VEMBERTECH_VT_DSP_BASIC_DSP_H

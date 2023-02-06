@@ -14,7 +14,8 @@
 ** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
 ** open source in December 2020.
 */
-#pragma once
+#ifndef SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
+#define SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
 #include "datamodel/timedata.h"
 #include "utils.h"
 #include <array>
@@ -92,3 +93,5 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     StepLFOStorage *settings;
 };
 } // namespace scxt::modulation::modulators
+
+#endif // SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H

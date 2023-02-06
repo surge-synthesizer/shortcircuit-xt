@@ -15,7 +15,8 @@
 ** open source in December 2020.
 */
 
-#pragma once
+#ifndef SCXT_SRC_DSP_RESAMPLING_H
+#define SCXT_SRC_DSP_RESAMPLING_H
 
 #include <cstdint>
 
@@ -27,3 +28,4 @@ static constexpr uint32_t FIRipol_N = 16;
 static constexpr uint32_t FIRipolI16_N = 16;
 static constexpr uint32_t FIRoffset = 8;
 } // namespace scxt::dsp
+#endif // SCXT_SRC_DSP_RESAMPLING_H

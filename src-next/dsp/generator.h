@@ -15,7 +15,8 @@
 ** open source in December 2020.
 */
 
-#pragma once
+#ifndef SCXT_SRC_DSP_GENERATOR_H
+#define SCXT_SRC_DSP_GENERATOR_H
 #include <cstdint>
 #include "configuration.h"
 
@@ -63,3 +64,4 @@ typedef void (*GeneratorFPtr)(GeneratorState *__restrict, GeneratorIO *__restric
 GeneratorFPtr GetFPtrGeneratorSample(bool isStereo, bool isFloat, int LoopMode);
 
 } // namespace scxt::dsp
+#endif // SCXT_SRC_DSP_GENERATOR_H

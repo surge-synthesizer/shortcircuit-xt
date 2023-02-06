@@ -15,7 +15,8 @@
 ** open source in December 2020.
 */
 
-#pragma once
+#ifndef SCXT_SRC_VEMBERTECH_VT_DSP_LIPOL_H
+#define SCXT_SRC_VEMBERTECH_VT_DSP_LIPOL_H
 #include "vt_dsp.h"
 #include "shared.h"
 
@@ -92,3 +93,5 @@ class alignas(16) lipol_ps
         y = _mm_add_ps(y, _mm_mul_ps(dy, m128_lipolstarter));
     }
 };
+
+#endif // SCXT_SRC_VEMBERTECH_VT_DSP_LIPOL_H

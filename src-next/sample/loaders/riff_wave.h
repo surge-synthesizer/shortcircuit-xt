@@ -15,7 +15,8 @@
 ** open source in December 2020.
 */
 
-#pragma once
+#ifndef SCXT_SRC_SAMPLE_LOADERS_RIFF_WAVE_H
+#define SCXT_SRC_SAMPLE_LOADERS_RIFF_WAVE_H
 
 #pragma pack(push, 1)
 #include <cstdint>
@@ -255,3 +256,5 @@ struct wave_inst_chunk
 #define WAVE_FORMAT_NORRIS 0x1400                     /* Norris Communications, Inc. */
 #define WAVE_FORMAT_SOUNDSPACE_MUSICOMPRESS 0x1500    /* AT&T Labs, Inc. */
 #define WAVE_FORMAT_DVM 0x2000                        /* FAST Multimedia AG */
+
+#endif // SCXT_SRC_SAMPLE_LOADERS_RIFF_WAVE_H

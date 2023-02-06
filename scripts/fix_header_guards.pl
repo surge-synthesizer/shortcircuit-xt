@@ -40,6 +40,7 @@ sub findfiles
         open(OUT, "> ${q}.bak") || die "Cant open BAK $!";
 
         $tg = "notyet";
+        $pragmaOnce = 0;
         while(<IN>)
         {
             if (m/\#ifndef\s+(\S*)/)
@@ -51,10 +52,19 @@ sub findfiles
             {
                 print OUT "#define $hg\n";
             }
+            elsif (m/#pragma\s*once/)
+            {
+                print OUT "#ifndef $hg\n#define $hg\n";
+                $pragmaOnce = ff;
+            }
             else
             {
                 print OUT;
             }
+        }
+        if ($pragmaOnce)
+        {
+            print OUT "\n#endif // $hg\n";
         }
         close(IN);
         close(OUT);
