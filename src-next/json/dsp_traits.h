@@ -10,8 +10,12 @@
 #include <tao/json/contrib/traits.hpp>
 
 #include "dsp/processor/processor.h"
+#include "scxt_traits.h"
 
-template <> struct tao::json::traits<scxt::dsp::processor::ProcessorStorage>
+namespace scxt::json
+{
+
+template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v,
@@ -42,4 +46,5 @@ template <> struct tao::json::traits<scxt::dsp::processor::ProcessorStorage>
         v.at("intParams").to(result.intParams);
     }
 };
+} // namespace scxt::json
 #endif // SHORTCIRCUIT_DSP_TRAITS_H

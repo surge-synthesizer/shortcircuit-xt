@@ -12,8 +12,11 @@
 #include "stream.h"
 
 #include "sample/sample_manager.h"
+#include "scxt_traits.h"
 
-template <> struct tao::json::traits<scxt::sample::SampleManager>
+namespace scxt::json
+{
+template <> struct scxt_traits<scxt::sample::SampleManager>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::sample::SampleManager &e)
@@ -37,5 +40,5 @@ template <> struct tao::json::traits<scxt::sample::SampleManager>
         }
     }
 };
-
+} // namespace scxt::json
 #endif // SHORTCIRCUIT_SAMPLE_TRAITS_H

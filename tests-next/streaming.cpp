@@ -7,12 +7,15 @@ using namespace scxt;
 
 template <typename T> std::string testStream(const T &in)
 {
-    return tao::json::to_string(tao::json::value(in));
+    return tao::json::to_string(scxt::json::scxt_value(in));
 }
 
 template <typename T> void testUnstream(const std::string &s, T &in)
 {
-    auto val = tao::json::from_string(s);
+    tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>> consumer;
+    tao::json::events::from_string(consumer, s);
+    auto val = std::move(consumer.value);
+
     val.to(in);
 }
 

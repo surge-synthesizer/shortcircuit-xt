@@ -19,12 +19,16 @@
 #include "engine/keyboard.h"
 #include "engine/engine.h"
 
+#include "scxt_traits.h"
+
 #include "utils_traits.h"
 #include "sample_traits.h"
 #include "dsp_traits.h"
 #include "modulation_traits.h"
 
-template <> struct tao::json::traits<scxt::engine::Engine>
+namespace scxt::json
+{
+template <> struct scxt_traits<scxt::engine::Engine>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Engine &e)
@@ -44,7 +48,7 @@ template <> struct tao::json::traits<scxt::engine::Engine>
     }
 };
 
-template <> struct tao::json::traits<scxt::engine::Patch>
+template <> struct scxt_traits<scxt::engine::Patch>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Patch &t)
@@ -69,7 +73,7 @@ template <> struct tao::json::traits<scxt::engine::Patch>
     }
 };
 
-template <> struct tao::json::traits<scxt::engine::Part>
+template <> struct scxt_traits<scxt::engine::Part>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Part &t)
@@ -93,7 +97,7 @@ template <> struct tao::json::traits<scxt::engine::Part>
     }
 };
 
-template <> struct tao::json::traits<scxt::engine::Group>
+template <> struct scxt_traits<scxt::engine::Group>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Group &t)
@@ -119,7 +123,7 @@ template <> struct tao::json::traits<scxt::engine::Group>
     }
 };
 
-template <> struct tao::json::traits<scxt::engine::Zone>
+template <> struct scxt_traits<scxt::engine::Zone>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Zone &t)
@@ -155,7 +159,7 @@ template <> struct tao::json::traits<scxt::engine::Zone>
     }
 };
 
-template <> struct tao::json::traits<scxt::engine::KeyboardRange>
+template <> struct scxt_traits<scxt::engine::KeyboardRange>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::KeyboardRange &t)
@@ -176,5 +180,5 @@ template <> struct tao::json::traits<scxt::engine::KeyboardRange>
         v.at("fadeEnd").to(r.fadeEnd);
     }
 };
-
+} // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H

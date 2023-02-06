@@ -1,7 +1,6 @@
 # Baconpauls next sprints
 
 - Next THreading Sprint
-   - move to custom traits class with bool for running vs readonly
    - audio <-> serialization
    - Throw guards in the right spots
    - non-fiction novel
