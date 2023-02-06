@@ -1,5 +1,5 @@
-#ifndef __SCXT_ENGINE_KEYBOARD_H
-#define __SCXT_ENGINE_KEYBOARD_H
+#ifndef SCXT_SRC_ENGINE_KEYBOARD_H
+#define SCXT_SRC_ENGINE_KEYBOARD_H
 
 #include <utility>
 #include <cassert>

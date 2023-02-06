@@ -1,6 +1,6 @@
 
-#ifndef __SCXT_ENGINE_SAMPLE_MANAGER_H
-#define __SCXT_ENGINE_SAMPLE_MANAGER_H
+#ifndef SCXT_SRC_SAMPLE_SAMPLE_MANAGER_H
+#define SCXT_SRC_SAMPLE_SAMPLE_MANAGER_H
 
 #include "utils.h"
 #include "sample.h"

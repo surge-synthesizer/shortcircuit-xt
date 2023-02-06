@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/30/23.
 //
 
-#ifndef __SCXT__CONFIGURATION_H
-#define __SCXT__CONFIGURATION_H
+#ifndef SCXT_SRC_CONFIGURATION_H
+#define SCXT_SRC_CONFIGURATION_H
 
 #include <cstdint>
 

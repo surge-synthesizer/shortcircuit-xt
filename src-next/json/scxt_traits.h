@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/5/23.
 //
 
-#ifndef SHORTCIRCUIT_SCXT_TRAITS_H
-#define SHORTCIRCUIT_SCXT_TRAITS_H
+#ifndef SCXT_SRC_JSON_SCXT_TRAITS_H
+#define SCXT_SRC_JSON_SCXT_TRAITS_H
 
 #include "tao/json/traits.hpp"
 

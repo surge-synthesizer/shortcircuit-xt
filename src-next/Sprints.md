@@ -4,7 +4,8 @@
    - audio <-> serialization
    - Throw guards in the right spots
    - non-fiction novel
-- Cleanup header guards
+- True/False readonly traits percolate by having
+   template<bool T> scxt_traits
 - NEXT branch readme and CLI from clap-info
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc

@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/1/23.
 //
 
-#ifndef SHORTCIRCUIT_TIMEDATA_H
-#define SHORTCIRCUIT_TIMEDATA_H
+#ifndef SCXT_SRC_DATAMODEL_TIMEDATA_H
+#define SCXT_SRC_DATAMODEL_TIMEDATA_H
 
 namespace scxt::datamodel
 {

@@ -15,8 +15,8 @@
 ** open source in December 2020.
 */
 
-#ifndef SHORTCIRCUIT_FILE_MAP_VIEW_H
-#define SHORTCIRCUIT_FILE_MAP_VIEW_H
+#ifndef SCXT_SRC_INFRASTRUCTURE_FILE_MAP_VIEW_H
+#define SCXT_SRC_INFRASTRUCTURE_FILE_MAP_VIEW_H
 
 #include <string>
 #include <memory>

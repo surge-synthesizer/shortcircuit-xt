@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/31/23.
 //
 
-#ifndef __SCXT_PROCESSOR_DEFS_H
-#define __SCXT_PROCESSOR_DEFS_H
+#ifndef SCXT_SRC_DSP_PROCESSOR_PROCESSOR_DEFS_H
+#define SCXT_SRC_DSP_PROCESSOR_PROCESSOR_DEFS_H
 
 #include "processor.h"
 #include "datamodel/parameter.h"

@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/3/23.
 //
 
-#ifndef SHORTCIRCUIT_JSON_EXTENSIONS_H
-#define SHORTCIRCUIT_JSON_EXTENSIONS_H
+#ifndef SCXT_SRC_JSON_EXTENSIONS_H
+#define SCXT_SRC_JSON_EXTENSIONS_H
 
 #include <tao/json/basic_value.hpp>
 #include <tao/json/contrib/traits.hpp>

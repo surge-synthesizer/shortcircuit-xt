@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/5/23.
 //
 
-#ifndef SHORTCIRCUIT_CLIENT_SERIAL_H
-#define SHORTCIRCUIT_CLIENT_SERIAL_H
+#ifndef SCXT_SRC_MESSAGING_CLIENT_CLIENT_SERIAL_H
+#define SCXT_SRC_MESSAGING_CLIENT_CLIENT_SERIAL_H
 
 #include "messaging/messaging.h"
 

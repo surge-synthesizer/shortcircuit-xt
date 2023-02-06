@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/30/23.
 //
 
-#ifndef __SCXT_VOICE_VOICE_H
-#define __SCXT_VOICE_VOICE_H
+#ifndef SCXT_SRC_VOICE_VOICE_H
+#define SCXT_SRC_VOICE_VOICE_H
 
 #include "engine/zone.h"
 #include "dsp/sinc_table.h"

@@ -15,8 +15,8 @@
 ** open source in December 2020.
 */
 
-#ifndef __VTDSP_ENDIAN_INCLUDE
-#define __VTDSP_ENDIAN_INCLUDE
+#ifndef SCXT_SRC_VEMBERTECH_VT_DSP_ENDIAN_H
+#define SCXT_SRC_VEMBERTECH_VT_DSP_ENDIAN_H
 
 #include <cstdint>
 #include <cstring>

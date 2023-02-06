@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/4/23.
 //
 
-#ifndef SHORTCIRCUIT_MESSAGING_H
-#define SHORTCIRCUIT_MESSAGING_H
+#ifndef SCXT_SRC_MESSAGING_MESSAGING_H
+#define SCXT_SRC_MESSAGING_MESSAGING_H
 #include "engine/engine.h"
 #include "utils.h"
 

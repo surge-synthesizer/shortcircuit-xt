@@ -1,5 +1,5 @@
-#ifndef __SCXT_ENGINE_ZONE_H
-#define __SCXT_ENGINE_ZONE_H
+#ifndef SCXT_SRC_ENGINE_ZONE_H
+#define SCXT_SRC_ENGINE_ZONE_H
 
 #include <array>
 

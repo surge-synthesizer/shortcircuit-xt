@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/2/23.
 //
 
-#ifndef SHORTCIRCUIT_STREAM_H
-#define SHORTCIRCUIT_STREAM_H
+#ifndef SCXT_SRC_JSON_STREAM_H
+#define SCXT_SRC_JSON_STREAM_H
 
 #include "engine/patch.h"
 #include "engine/engine.h"

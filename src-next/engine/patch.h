@@ -1,5 +1,5 @@
-#ifndef __SCXT_ENGINE_PATCH_H
-#define __SCXT_ENGINE_PATCH_H
+#ifndef SCXT_SRC_ENGINE_PATCH_H
+#define SCXT_SRC_ENGINE_PATCH_H
 
 #include "utils.h"
 #include "part.h"

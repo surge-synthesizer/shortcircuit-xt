@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/2/23.
 //
 
-#ifndef SHORTCIRCUIT_ENGINE_TRAITS_H
-#define SHORTCIRCUIT_ENGINE_TRAITS_H
+#ifndef SCXT_SRC_JSON_ENGINE_TRAITS_H
+#define SCXT_SRC_JSON_ENGINE_TRAITS_H
 
 #include <tao/json/to_string.hpp>
 #include <tao/json/from_string.hpp>

@@ -1,5 +1,5 @@
-#ifndef __SCXT_ENGINE_GROUP_H
-#define __SCXT_ENGINE_GROUP_H
+#ifndef SCXT_SRC_ENGINE_GROUP_H
+#define SCXT_SRC_ENGINE_GROUP_H
 
 #include <memory>
 #include <vector>

@@ -1,5 +1,5 @@
-#ifndef __SCXT_ENGINE_SAMPLE_H
-#define __SCXT_ENGINE_SAMPLE_H
+#ifndef SCXT_SRC_SAMPLE_SAMPLE_H
+#define SCXT_SRC_SAMPLE_SAMPLE_H
 
 #include "utils.h"
 #include "infrastructure/filesystem_import.h"

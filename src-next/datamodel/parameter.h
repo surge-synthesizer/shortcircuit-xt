@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/31/23.
 //
 
-#ifndef __SCXT_PARAMETER_H
-#define __SCXT_PARAMETER_H
+#ifndef SCXT_SRC_DATAMODEL_PARAMETER_H
+#define SCXT_SRC_DATAMODEL_PARAMETER_H
 
 namespace scxt::datamodel
 {

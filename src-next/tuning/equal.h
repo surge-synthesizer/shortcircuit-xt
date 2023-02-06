@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/1/23.
 //
 
-#ifndef __SCXT_EQUAL_H
-#define __SCXT_EQUAL_H
+#ifndef SCXT_SRC_TUNING_EQUAL_H
+#define SCXT_SRC_TUNING_EQUAL_H
 
 #include <cstddef>
 

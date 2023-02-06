@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/30/23.
 //
 
-#ifndef __SCXT_DSP_SINC_TABLES_H
-#define __SCXT_DSP_SINC_TABLES_H
+#ifndef SCXT_SRC_DSP_SINC_TABLE_H
+#define SCXT_SRC_DSP_SINC_TABLE_H
 
 #include "resampling.h"
 

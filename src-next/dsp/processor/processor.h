@@ -2,8 +2,8 @@
 // Created by Paul Walker on 1/31/23.
 //
 
-#ifndef __SCXT_DSP_PROCESSOR_PROCESSOR_H
-#define __SCXT_DSP_PROCESSOR_PROCESSOR_H
+#ifndef SCXT_SRC_DSP_PROCESSOR_PROCESSOR_H
+#define SCXT_SRC_DSP_PROCESSOR_PROCESSOR_H
 
 #include <cstdint>
 #include <array>

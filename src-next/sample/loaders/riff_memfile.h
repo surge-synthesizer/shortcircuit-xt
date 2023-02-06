@@ -15,8 +15,8 @@
 ** open source in December 2020.
 */
 
-#ifndef __SCXT_MEMFILE_H
-#define __SCXT_MEMFILE_H
+#ifndef SCXT_SRC_SAMPLE_LOADERS_RIFF_MEMFILE_H
+#define SCXT_SRC_SAMPLE_LOADERS_RIFF_MEMFILE_H
 
 #include <list>
 #include <cassert>

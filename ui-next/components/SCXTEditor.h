@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/4/23.
 //
 
-#ifndef SHORTCIRCUIT_SCXTEDITOR_H
-#define SHORTCIRCUIT_SCXTEDITOR_H
+#ifndef SCXT_UI_COMPONENTS_SCXTEDITOR_H
+#define SCXT_UI_COMPONENTS_SCXTEDITOR_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
