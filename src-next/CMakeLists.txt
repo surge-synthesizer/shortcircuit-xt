@@ -23,6 +23,9 @@ add_library(${PROJECT_NAME}-core STATIC
 
         infrastructure/file_map_view.cpp
 
+        messaging/audio/audio_messages.cpp
+        messaging/messaging.cpp
+
         modulation/voice_matrix.cpp
         modulation/modulators/steplfo.cpp
 

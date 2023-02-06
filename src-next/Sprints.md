@@ -7,6 +7,7 @@
    - non-fiction novel
 - True/False readonly traits percolate by having
    template<bool T> scxt_traits
+- IsClientConnected behavior?
 - NEXT branch readme and CLI from clap-info
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
@@ -51,6 +52,10 @@ Ideas for the future
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 8 (2023-02-06)
+
+Audio->Serialization->Client works.
 
 ## Day 7 (2023-02-05)
 All the message threads are hooked up and talking to each other 

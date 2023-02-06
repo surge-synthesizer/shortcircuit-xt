@@ -24,7 +24,8 @@ enum ClientToSerializationMessagesIds
 enum SerializationToClientMessageIds
 {
     s2c_patch_stream,
-
+    s2c_voice_count,
+    
     num_seralizationToClientMessages
 };
 

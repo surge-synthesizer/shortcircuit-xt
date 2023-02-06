@@ -13,6 +13,7 @@
 
 #include "readerwriterqueue.h"
 #include "client/client_serial.h"
+#include "audio/audio_serial.h"
 
 namespace scxt::messaging
 {
@@ -156,9 +157,7 @@ struct MessageController : MoveableOnly<MessageController>
             {
                 if (receivedMessageFromClient)
                 {
-                    client::serializationThreadExecuteClientMessage(inbound,
-                                                                    engine,
-                                                                    *this);
+                    client::serializationThreadExecuteClientMessage(inbound, engine, *this);
                 }
 
                 // TODO: Drain SerToAudioQ if there's no audio thread
@@ -167,7 +166,7 @@ struct MessageController : MoveableOnly<MessageController>
                 audioToSerializationMessage_t msg;
                 while (audioToSerializationQueue.try_dequeue(msg))
                 {
-                    std::cout << "INBOUND " << msg << std::endl;
+                    parseAudioMessageAndSendToClient(msg);
                 }
             }
             else
@@ -177,12 +176,20 @@ struct MessageController : MoveableOnly<MessageController>
         }
     }
 
+    void parseAudioMessageAndSendToClient(const audio::AudioToSerialization &);
+
     friend class engine::Engine;
 
-  private:
     // TODO: Fix these types
     typedef int serializationToAudioMessage_t;
-    typedef int audioToSerializationMessage_t;
+    typedef audio::AudioToSerialization audioToSerializationMessage_t;
+
+    void sendFromAudio(const audioToSerializationMessage_t &m)
+    {
+        audioToSerializationQueue.try_emplace(m);
+    }
+
+  private:
     moodycamel::ReaderWriterQueue<serializationToAudioMessage_t, 1024> serializationToAudioQueue{
         128};
     moodycamel::ReaderWriterQueue<audioToSerializationMessage_t, 1024> audioToSerializationQueue{

@@ -8,6 +8,7 @@
 #include "tuning/equal.h"
 #include "vembertech/vt_dsp/basic_dsp.h"
 #include "messaging/messaging.h"
+#include "messaging/audio/audio_messages.h"
 
 namespace scxt::engine
 {
@@ -51,7 +52,6 @@ Engine::~Engine()
 
 void Engine::initiateVoice(const pathToZone_t &path)
 {
-    messageController->audioToSerializationQueue.try_enqueue(path.key);
     assert(zoneByPath(path));
     for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
     {
@@ -95,6 +95,9 @@ bool Engine::processAudio()
         std::cout << "GOT PROCESSOR MESSAGE" << msg << std::endl;
     }
 
+    // TODO This gets ripped out when voice management imporves
+    auto av = activeVoiceCount();
+
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
     for (const auto &part : *patch)
@@ -110,6 +113,45 @@ bool Engine::processAudio()
         }
     }
 
+    auto pav = activeVoiceCount();
+    if (pav != av)
+    {
+        messaging::audio::sendVoiceCount(pav, *messageController);
+    }
+
     return true;
 }
+
+void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune)
+{
+    std::cout << "Engine::noteOn c=" << channel << " k=" << key << " nid=" << noteId
+              << " v=" << velocity << std::endl;
+    for (const auto &path : findZone(channel, key, noteId))
+    {
+        initiateVoice(path);
+    }
+    messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
+}
+void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
+{
+    std::cout << "Engine::noteOff c=" << channel << " k=" << key << " nid=" << noteId << std::endl;
+
+    for (const auto &path : findZone(channel, key, noteId))
+    {
+        releaseVoice(path);
+    }
+    messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
+}
+
+uint32_t Engine::activeVoiceCount()
+{
+    uint32_t res{0};
+    for (const auto v : voices)
+    {
+        if (v)
+            res += (v->playState != voice::Voice::OFF);
+    }
+    return res;
+}
+
 } // namespace scxt::engine

@@ -81,6 +81,11 @@ struct SCXTEditor : juce::Component
                   << p.getPart(0)->getGroup(0)->getZone(0)->sampleID.to_string() << std::endl;
     }
 
+    void onVoiceCount(const uint32_t &v)
+    {
+        std::cout << "SCXT EDITOR:: Vouce Count " << v << std::endl;
+    }
+
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
 };

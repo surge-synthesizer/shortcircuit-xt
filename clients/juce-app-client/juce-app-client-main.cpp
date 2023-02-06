@@ -53,7 +53,7 @@ struct SCXTAppComponent : public juce::Component
             engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
         }
         scxt::juce_app::startMIDI(&playbackState, "LPK");
-        scxt::juce_app::startAudioThread(&playbackState, false);
+        scxt::juce_app::startAudioThread(&playbackState, true);
     }
 
     void stopEngine()

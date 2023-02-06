@@ -90,25 +90,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         }
         return res;
     }
-    void noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune)
-    {
-        std::cout << "Engine::noteOn c=" << channel << " k=" << key << " nid=" << noteId
-                  << " v=" << velocity << std::endl;
-        for (const auto &path : findZone(channel, key, noteId))
-        {
-            initiateVoice(path);
-        }
-    }
-    void noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
-    {
-        std::cout << "Engine::noteOff c=" << channel << " k=" << key << " nid=" << noteId
-                  << std::endl;
-
-        for (const auto &path : findZone(channel, key, noteId))
-        {
-            releaseVoice(path);
-        }
-    }
+    void noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune);
+    void noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity);
 
     const std::unique_ptr<Zone> &zoneByPath(const pathToZone_t &path) const
     {
@@ -117,6 +100,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     }
     void initiateVoice(const pathToZone_t &path);
     void releaseVoice(const pathToZone_t &path);
+
+    // TODO: All this gets ripped out when voice management is fixed
+    uint32_t activeVoiceCount();
 
     const std::unique_ptr<messaging::MessageController> &getMessageController() const
     {

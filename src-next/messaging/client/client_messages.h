@@ -10,6 +10,12 @@
 
 namespace scxt::messaging::client
 {
+/**
+ * TODO Expand Document
+ * request and response have id
+ * request has 'hasState' which means the object itself can stream
+ * response has a 'payload_t' which is what is streamed
+ */
 struct RefreshPatchRequest
 {
     static constexpr ClientToSerializationMessagesIds id{c2s_refresh_patch};
@@ -40,6 +46,17 @@ template <typename Client> struct PatchStreamResponse
 template <typename Client> struct SerializationClientType<s2c_patch_stream, Client>
 {
     typedef PatchStreamResponse<Client> T;
+};
+
+template <typename Client> struct VoiceCountResponse
+{
+    static constexpr SerializationToClientMessageIds id{s2c_patch_stream};
+    typedef uint32_t payload_t;
+    static void executeOnResponse(Client *c, const payload_t &payload) { c->onVoiceCount(payload); }
+};
+template <typename Client> struct SerializationClientType<s2c_voice_count, Client>
+{
+    typedef VoiceCountResponse<Client> T;
 };
 
 } // namespace scxt::messaging::client

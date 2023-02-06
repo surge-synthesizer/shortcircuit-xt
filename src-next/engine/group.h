@@ -32,7 +32,7 @@ struct Group : MoveableOnly<Group>
         zones.push_back(std::move(z));
         return zones.size();
     }
-    
+
     size_t addZone(std::unique_ptr<Zone> &&z)
     {
         z->parentGroup = this;
