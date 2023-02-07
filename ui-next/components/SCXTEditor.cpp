@@ -18,8 +18,8 @@ struct dc : sst::jucegui::data::ContinunousModulatable
     float value{0.f};
     float getValue() const override { return value; }
     void setValueFromGUI(const float &f) override {
-        messaging::client::clientSendMessage(messaging::client::TemporarySetZone0Filter1Mix(f),
-                                             mc);
+        messaging::client::clientSendToSerialization(
+            messaging::client::TemporarySetZone0Filter1Mix(f), mc);
         value = f;
     }
     void setValueFromModel(const float &f) override { value = f; }
@@ -45,6 +45,6 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
     sliderHack->setSource(leakThis);
     addAndMakeVisible(*sliderHack);
 
-    cmsg::clientSendMessage(cmsg::RefreshPatchRequest(), msgCont);
+    cmsg::clientSendToSerialization(cmsg::RefreshPatchRequest(), msgCont);
 }
 } // namespace scxt::ui

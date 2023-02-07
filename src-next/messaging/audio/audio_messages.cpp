@@ -15,7 +15,7 @@ void sendVoiceCount(uint32_t voiceCount, MessageController &mc)
     a2s.id = a2s_voice_count;
     a2s.payloadType = AudioToSerialization::UINT;
     a2s.payload.u[0] = voiceCount;
-    mc.sendFromAudio(a2s);
+    mc.sendAudioToSerialization(a2s);
 }
 
 } // namespace scxt::messaging::audio

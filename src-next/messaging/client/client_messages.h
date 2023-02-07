@@ -5,7 +5,7 @@
 #ifndef SCXT_SRC_MESSAGING_CLIENT_CLIENT_MESSAGES_H
 #define SCXT_SRC_MESSAGING_CLIENT_CLIENT_MESSAGES_H
 
-#include "client_json_details.h"
+#include "messaging/client/detail/client_json_details.h"
 #include "json/engine_traits.h"
 
 namespace scxt::messaging::client
@@ -66,7 +66,7 @@ template <typename Client> struct PatchStreamResponse
     }
 };
 
-template <typename Client> struct SerializationClientType<s2c_patch_stream, Client>
+template <typename Client> struct SerializationToClientType<s2c_patch_stream, Client>
 {
     typedef PatchStreamResponse<Client> T;
 };
@@ -77,7 +77,7 @@ template <typename Client> struct VoiceCountResponse
     typedef uint32_t payload_t;
     static void executeOnResponse(Client *c, const payload_t &payload) { c->onVoiceCount(payload); }
 };
-template <typename Client> struct SerializationClientType<s2c_voice_count, Client>
+template <typename Client> struct SerializationToClientType<s2c_voice_count, Client>
 {
     typedef VoiceCountResponse<Client> T;
 };

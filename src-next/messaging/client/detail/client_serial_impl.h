@@ -5,15 +5,15 @@
 #ifndef SCXT_SRC_MESSAGING_CLIENT_CLIENT_SERIAL_IMPL_H
 #define SCXT_SRC_MESSAGING_CLIENT_CLIENT_SERIAL_IMPL_H
 
-#include <tao/json/to_string.hpp>
-#include <tao/json/from_string.hpp>
-#include "client_json_details.h"
+#include "tao/json/to_string.hpp"
+#include "tao/json/from_string.hpp"
+#include "messaging/client/detail/client_json_details.h"
 
 // This is a 'details only' file which you can safely ignore
 // once it works, basically.
 namespace scxt::messaging::client
 {
-namespace details
+namespace detail
 {
 template <typename T> struct MessageWrapper
 {
@@ -90,7 +90,7 @@ auto executeOnSerializationFor(size_t ft, typename tao::json::basic_value<Traits
 {
     using vtOp_t =
         void (*)(tao::json::basic_value<Traits> &, const engine::Engine &, MessageController &);
-    constexpr vtOp_t fnc[] = {details::doExecOnSerialization<Is>...};
+    constexpr vtOp_t fnc[] = {detail::doExecOnSerialization<Is>...};
     return fnc[ft](o, e, mc);
 }
 
@@ -98,7 +98,7 @@ template <size_t I, typename Client, template <typename...> class Traits>
 void doExecOnClient(tao::json::basic_value<Traits> &o, Client *c)
 {
     typedef
-        typename SerializationClientType<(SerializationToClientMessageIds)I, Client>::T handler_t;
+        typename SerializationToClientType<(SerializationToClientMessageIds)I, Client>::T handler_t;
     if constexpr (std::is_same<handler_t, unimpl_t>::value)
     {
         return;
@@ -118,26 +118,27 @@ auto executeOnClientFor(size_t ft, typename tao::json::basic_value<Traits> &o, C
                         std::index_sequence<Is...>)
 {
     using vtOp_t = void (*)(tao::json::basic_value<Traits> &, Client *);
-    constexpr vtOp_t fnc[] = {details::doExecOnClient<Is>...};
+    constexpr vtOp_t fnc[] = {detail::doExecOnClient<Is>...};
     return fnc[ft](o, c);
 }
 
-} // namespace details
+} // namespace detail
 
-template <typename T> inline void clientSendMessage(const T &msg, messaging::MessageController &mc)
+template <typename T>
+inline void clientSendToSerialization(const T &msg, messaging::MessageController &mc)
 {
-    auto mw = details::MessageWrapper(msg);
-    details::client_message_value v = mw;
+    auto mw = detail::MessageWrapper(msg);
+    detail::client_message_value v = mw;
     auto res = tao::json::to_string(v);
-    mc.sendFromClient(res);
+    mc.sendRawFromClient(res);
 }
 
 template <typename T>
 inline void serializationSendToClient(SerializationToClientMessageIds id, const T &msg,
                                       messaging::MessageController &mc)
 {
-    auto mw = details::ResponseWrapper<T>(msg, id);
-    details::client_message_value v = mw;
+    auto mw = detail::ResponseWrapper<T>(msg, id);
+    detail::client_message_value v = mw;
     auto res = tao::json::to_string(v);
     mc.clientCallback(res);
 }
@@ -148,7 +149,7 @@ inline void serializationThreadExecuteClientMessage(const std::string &msgView,
     using namespace tao::json;
 
     // We need to unpack with the client message traits
-    events::transformer<events::to_basic_value<details::client_message_traits>> consumer;
+    events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
     events::from_string(consumer, msgView);
     auto jv = std::move(consumer.value);
 
@@ -156,7 +157,7 @@ inline void serializationThreadExecuteClientMessage(const std::string &msgView,
     int idv{-1};
     o["id"].to(idv);
 
-    details::executeOnSerializationFor(
+    detail::executeOnSerializationFor(
         (ClientToSerializationMessagesIds)idv, jv, e, mc,
         std::make_index_sequence<(
             size_t)ClientToSerializationMessagesIds::num_clientToSerializationMessages>());
@@ -168,7 +169,7 @@ inline void clientThreadExecuteSerializationMessage(const std::string &msgView, 
     using namespace tao::json;
 
     // We need to unpack with the client message traits
-    events::transformer<events::to_basic_value<details::client_message_traits>> consumer;
+    events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
     events::from_string(consumer, msgView);
     auto jv = std::move(consumer.value);
 
@@ -176,7 +177,7 @@ inline void clientThreadExecuteSerializationMessage(const std::string &msgView, 
     int idv{-1};
     o["id"].to(idv);
 
-    details::executeOnClientFor(
+    detail::executeOnClientFor(
         (SerializationToClientMessageIds)idv, jv, c,
         std::make_index_sequence<(
             size_t)SerializationToClientMessageIds::num_seralizationToClientMessages>());

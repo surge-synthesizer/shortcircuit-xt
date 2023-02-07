@@ -88,128 +88,104 @@ struct MessageController : MoveableOnly<MessageController>
     ~MessageController();
 
     /**
-     * start / stop
-     * called from thread which constructs the Engine once.
+     * start. Called from the startup thread after the engine is created.
+     * Will begin a serialization thread.
      */
-    void start()
-    {
-        shouldRun = true;
-        serializationThread = std::make_unique<std::thread>([this]() { this->runSerialization(); });
-    }
-    void stop()
-    {
-        // TODO: Send queue goes away interrupt message
-        shouldRun = false;
-        clientToSerializationConditionVar.notify_all();
+    void start();
 
-        serializationThread->join();
-        serializationThread.reset(nullptr);
-    }
+    /**
+     * stop. Called from the startup thread when the engine is destroyed.
+     * Will end and join the serialization thread. Cannot be called from
+     * the serialization thread.
+     */
+    void stop();
 
-    typedef std::function<void(const std::string &)> clientCallback_t;
+    /**
+     * The client callback is a function a client registers which will
+     * get called on the serialization thread when there's a message
+     * to send to the client. A typical implementation would be to lock
+     * a queue which the client polls in an idle loop.
+     */
+    typedef std::string serialToClientMessage_t;
+    typedef std::string clientToSerializationMessage_t;
+
+    typedef std::function<void(const serialToClientMessage_t &)> clientCallback_t;
     clientCallback_t clientCallback{nullptr};
-    void registerClient(const std::string &nm, clientCallback_t &&f)
-    {
-        std::lock_guard<std::mutex> g(clientToSerializationMutex);
 
-        assert(!clientCallback);
-        clientCallback = std::move(f);
-        // TODO increase atomic
-    }
-    void unregisterClient()
-    {
-        std::lock_guard<std::mutex> g(clientToSerializationMutex);
+    /**
+     * Register a client. Called from the client thread.
+     *
+     * @param nm The client name
+     * @param f The client callback function
+     */
+    void registerClient(const std::string &nm, clientCallback_t &&f);
 
-        assert(clientCallback);
-        clientCallback = nullptr;
-        // TODO decrease atomic
-    }
-    void sendFromClient(const std::string &s)
-    {
-        {
-            std::lock_guard<std::mutex> g(clientToSerializationMutex);
-            clientToSerializationQueue.push(s);
-        }
-        clientToSerializationConditionVar.notify_one();
-    }
+    /**
+     * Unregister client. Called from the client thread.
+     */
+    void unregisterClient();
 
-    void runSerialization()
-    {
-        while (shouldRun)
-        {
-            using namespace std::chrono_literals;
+    /**
+     * Allows the client to send a raw message on the client thread.
+     * Used in the serialization implementation under the covers. Users
+     * should use messaging::client::clientSendToSerialization instead
+     * @param s
+     */
+    void sendRawFromClient(const clientToSerializationMessage_t &s);
 
-            clientToSerializationMessage_t inbound;
-            bool receivedMessageFromClient{false};
-            {
-                std::unique_lock<std::mutex> lock(clientToSerializationMutex);
-                while (shouldRun && clientToSerializationQueue.empty() &&
-                       !(audioToSerializationQueue.peek()))
-                {
-                    clientToSerializationConditionVar.wait_for(lock, 50ms);
-                }
-                if (!clientToSerializationQueue.empty())
-                {
-                    inbound = clientToSerializationQueue.front();
-                    clientToSerializationQueue.pop();
-                    receivedMessageFromClient = true;
-                }
-            }
-            if (shouldRun)
-            {
-                if (receivedMessageFromClient)
-                {
-                    client::serializationThreadExecuteClientMessage(inbound, engine, *this);
-                }
 
-                // TODO: Drain SerToAudioQ if there's no audio thread
-
-                // TODO: Drain audioToSerialization
-                audioToSerializationMessage_t msg;
-                while (audioToSerializationQueue.try_dequeue(msg))
-                {
-                    parseAudioMessageOnSerializationThread(msg);
-                }
-            }
-            else
-            {
-                std::cout << "Goodnight from the serial thread!" << std::endl;
-            }
-        }
-    }
-
-    void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);
-
-    friend class engine::Engine;
-
-    // TODO: Fix these types
     typedef audio::SerializationToAudio serializationToAudioMessage_t;
     typedef audio::AudioToSerialization audioToSerializationMessage_t;
 
-    void sendFromAudio(const audioToSerializationMessage_t &m)
+    /**
+     * Send a message to the serialization thread from the audio thread.
+     * Call from the audio thread.
+     *
+     * @param m The message object
+     */
+    void sendAudioToSerialization(const audioToSerializationMessage_t &m)
     {
         audioToSerializationQueue.try_emplace(m);
     }
 
+    /**
+     * Send a message from the serialization thread to the audio thread.
+     * Called from the serialization queue.
+     *
+     * @param m
+     */
+    void sendSerializationToAudio(const serializationToAudioMessage_t &m)
+    {
+        serializationToAudioQueue.try_emplace(m);
+    }
+
+    /**
+     * Schedule a function on the audio thread from the serialization thread.
+     * @param f
+     */
     void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f);
     struct AudioThreadCallback
     {
         std::function<void(engine::Engine &)> f;
     };
 
+    // The engine has direct access to the audio queues
+    friend class engine::Engine;
+
   private:
+    void runSerialization();
+    void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);
+
     // serialization thread only please
     AudioThreadCallback *getAudioThreadCallback();
     void returnAudioThreadCallback(AudioThreadCallback *);
     std::stack<AudioThreadCallback *> cbStore;
 
-  private:
     moodycamel::ReaderWriterQueue<serializationToAudioMessage_t, 1024> serializationToAudioQueue{
         128};
     moodycamel::ReaderWriterQueue<audioToSerializationMessage_t, 1024> audioToSerializationQueue{
         128};
 
-    typedef std::string clientToSerializationMessage_t;
     std::queue<clientToSerializationMessage_t> clientToSerializationQueue;
     std::mutex clientToSerializationMutex;
     std::condition_variable clientToSerializationConditionVar;
@@ -224,6 +200,6 @@ struct MessageController : MoveableOnly<MessageController>
 
 } // namespace scxt::messaging
 
-#include "client/client_serial_impl.h"
+#include "messaging/client/detail/client_serial_impl.h"
 #include "client/client_messages.h"
 #endif // SHORTCIRCUIT_MESSAGING_H

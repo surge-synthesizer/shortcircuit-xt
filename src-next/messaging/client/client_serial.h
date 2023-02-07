@@ -26,12 +26,9 @@ enum SerializationToClientMessageIds
 {
     s2c_patch_stream,
     s2c_voice_count,
-    
+
     num_seralizationToClientMessages
 };
-
-template <typename T> void clientSendMessage(const T &message, MessageController &mc);
-template <typename T> void serializationSendToClient(const T &message, MessageController &mc);
 
 typedef uint8_t unimpl_t;
 template <ClientToSerializationMessagesIds id> struct ClientToSerializationType
@@ -39,18 +36,18 @@ template <ClientToSerializationMessagesIds id> struct ClientToSerializationType
     typedef unimpl_t T;
 };
 
-template <SerializationToClientMessageIds id, typename Client> struct SerializationClientType
+template <SerializationToClientMessageIds id, typename Client> struct SerializationToClientType
 {
     typedef unimpl_t T;
 };
 
-void serializationThreadExecuteClientMessage(const std::string &msgView, const engine::Engine &e,
-                                             MessageController &mc);
-
+template <typename T> void clientSendToSerialization(const T &message, MessageController &mc);
 template <typename T>
 void serializationSendToClient(SerializationToClientMessageIds id, const T &payload,
                                messaging::MessageController &mc);
 
+void serializationThreadExecuteClientMessage(const std::string &msgView, const engine::Engine &e,
+                                             MessageController &mc);
 template <typename Client>
 void clientThreadExecuteSerializationMessage(const std::string &msgView, Client *c);
 
