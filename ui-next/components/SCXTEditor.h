@@ -12,6 +12,11 @@
 
 namespace scxt::ui
 {
+
+struct HeaderRegion;
+struct MultiScreen;
+struct SendFXScreen;
+
 struct SCXTEditor : juce::Component
 {
     messaging::MessageController &msgCont;
@@ -24,61 +29,37 @@ struct SCXTEditor : juce::Component
     };
     std::unique_ptr<IdleTimer> idleTimer;
 
+    std::unique_ptr<HeaderRegion> headerRegion;
+    std::unique_ptr<MultiScreen> multiScreen;
+    std::unique_ptr<SendFXScreen> sendFxScreen;
+
     std::unique_ptr<sst::jucegui::components::HSlider> sliderHack;
 
     SCXTEditor(messaging::MessageController &e);
-    
-    ~SCXTEditor()
+    virtual ~SCXTEditor() noexcept;
+
+    enum ActiveScreen
     {
-        idleTimer->stopTimer();
-        msgCont.unregisterClient();
-    }
+        MULTI,
+        SEND_FX
+    };
+    void setActiveScreen(ActiveScreen s);
 
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
+    void resized() override;
 
-    // This runs on the serialization thread and needs to toss to the UI thread
-    void onMessageCallback(const std::string &s)
-    {
-        std::lock_guard<std::mutex> g(callbackMutex);
-        callbackQueue.push(s);
-    }
-
-    void idle() { drainCallbackQueue(); }
-
-    void drainCallbackQueue()
-    {
-        namespace cmsg = scxt::messaging::client;
-
-        bool itemsToDrain{true};
-        while (itemsToDrain)
-        {
-            itemsToDrain = false;
-            std::string qmsg;
-            {
-                std::lock_guard<std::mutex> g(callbackMutex);
-                if (!callbackQueue.empty())
-                {
-                    qmsg = callbackQueue.front();
-                    itemsToDrain = true;
-                    callbackQueue.pop();
-                }
-            }
-            if (itemsToDrain)
-            {
-                cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
-            }
-        }
-    }
-
-    void onPatchStreamed(const engine::Patch &p)
-    {
-        std::cout << "Patch Streamed "
-                  << p.getPart(0)->getGroup(0)->getZone(0)->sampleID.to_string() << std::endl;
-    }
+    void idle();
+    void drainCallbackQueue();
 
     void onVoiceCount(const uint32_t &v)
     {
         std::cout << "SCXT EDITOR:: Vouce Count " << v << std::endl;
+    }
+
+    void onProcessorUpdated(const engine::Engine::processorAddress_t &,
+                            const dsp::processor::ProcessorStorage &)
+    {
+        std::cout << "Processor udpated" << std::endl;
     }
 
     std::mutex callbackMutex;

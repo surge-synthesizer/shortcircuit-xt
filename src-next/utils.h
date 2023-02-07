@@ -58,28 +58,31 @@ template <> inline const std::string EngineID::display_name() const { return "En
 #if USE_SIMPLE_LEAK_DETECTOR
 extern std::map<std::string, std::pair<int, int>> allocLog;
 void showLeakLog();
+#else
+inline void showLeakLog() {}
 #endif
 
-/**
- * A class which forces move semantics and optionally runs a naive leak detector
- *
- * @tparam T - use this in the standard mixin/CRTP way namely struct A : MoveableOnly<A>
- */
-template <typename T> class MoveableOnly
+template <typename T> class LeakDetected
 {
-  public:
-    MoveableOnly(MoveableOnly &&) = default;
-    MoveableOnly(const MoveableOnly &) = delete;
-    MoveableOnly &operator=(const MoveableOnly &) = delete;
-
   protected:
-    MoveableOnly()
+    LeakDetected()
     {
 #if USE_SIMPLE_LEAK_DETECTOR
         leakDetect(+1);
 #endif
     };
-    ~MoveableOnly()
+    LeakDetected(LeakDetected &&) {
+#if USE_SIMPLE_LEAK_DETECTOR
+        leakDetect(+1);
+#endif
+    }
+    LeakDetected(const LeakDetected &) {
+#if USE_SIMPLE_LEAK_DETECTOR
+        leakDetect(+1);
+#endif
+    }
+
+    ~LeakDetected()
     {
 #if USE_SIMPLE_LEAK_DETECTOR
         leakDetect(-1);
@@ -95,6 +98,23 @@ template <typename T> class MoveableOnly
             allocLog[tn].second++;
     }
 #endif
+};
+
+/**
+ * A class which forces move semantics and optionally runs a naive leak detector
+ *
+ * @tparam T - use this in the standard mixin/CRTP way namely struct A : MoveableOnly<A>
+ */
+template <typename T> class MoveableOnly : public LeakDetected<T>
+{
+  public:
+    MoveableOnly(MoveableOnly &&) = default;
+    MoveableOnly(const MoveableOnly &) = delete;
+    MoveableOnly &operator=(const MoveableOnly &) = delete;
+
+  protected:
+    MoveableOnly() : LeakDetected<T>() {}
+    ~MoveableOnly() = default;
 };
 
 struct SCXTError : std::runtime_error

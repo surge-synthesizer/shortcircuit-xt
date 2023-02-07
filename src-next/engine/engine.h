@@ -109,6 +109,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         return messageController;
     }
 
+    /*
+     * Data Query APIs
+     */
+    typedef std::tuple<int32_t, int32_t, int32_t, int32_t> processorAddress_t;
+    const std::optional<dsp::processor::ProcessorStorage> getProcessorStorage(const processorAddress_t &addr) const;
+
+
   private:
     std::unique_ptr<Patch> patch;
     std::unique_ptr<sample::SampleManager> sampleManager;

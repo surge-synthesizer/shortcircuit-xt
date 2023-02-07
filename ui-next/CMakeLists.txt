@@ -1,7 +1,13 @@
 project(scxt-ui LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
-        components/SCXTEditor.cpp)
+
+        components/SCXTEditor.cpp
+        components/HeaderRegion.cpp
+        components/MultiScreen.cpp
+        components/SendFXScreen.cpp
+
+        )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-next-core

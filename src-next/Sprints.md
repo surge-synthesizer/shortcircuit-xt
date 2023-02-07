@@ -1,10 +1,10 @@
 # Baconpauls next sprints
 
+- Lets do a little UI sprint tomorrow instead then...
 - Next Threading Sprint
    - The non-leak client side model and synchronizing it
    - Factoring into appropriate granularity of objects
    - the "current" state in the serializer for the views
-   - True/False readonly traits percolate by having template<bool T> scxt_traits (maybe)
 - Final Threading Sprint
   - Throw guards in the right spots
   - non-fiction novel
@@ -45,13 +45,24 @@ Open Questions and ToDos and Reviews:
 - Sample GC
 - Sample Reload All / Refresh
 - fs:: to std::filesystem
+- I think we don't need this but: True/False readonly traits percolate by having template<bool T> scxt_traits (maybe)
 
-Ideas for the future
-- Parallel or Serial Processors on zone for instance
 
+
+Notes
+- Font is Intermedium
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 9 (2023-02-07)
+
+Some renames and cleanups at the open while I get ready for the next big
+structure-of-the-ui change. Got the UI laying out regions and have the
+classes starting to get named and stuff. Most importantly have a request
+response pattern emerging for client data queries which will let me go
+very quickly on building the UI once I've done my second "thing". Tomorrow
+is some UI work for a change of pace. Tired of looking at templates.
 
 ## Day 8 (2023-02-06)
 

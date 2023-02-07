@@ -16,16 +16,18 @@ namespace scxt::messaging::client
  */
 enum ClientToSerializationMessagesIds
 {
-    c2s_refresh_patch,
-    c2s_set_zone0_f1_mix,
+    c2s_request_processor_metadata,
+    c2s_request_processor_data,
 
     num_clientToSerializationMessages
 };
 
 enum SerializationToClientMessageIds
 {
-    s2c_patch_stream,
     s2c_voice_count,
+
+    s2c_respond_processor_metadata,
+    s2c_respond_processor_data,
 
     num_seralizationToClientMessages
 };

@@ -3,6 +3,7 @@
 //
 
 #include "engine.h"
+#include "part.h"
 #include "voice/voice.h"
 #include "dsp/sinc_table.h"
 #include "tuning/equal.h"
@@ -92,11 +93,12 @@ bool Engine::processAudio()
     messaging::MessageController::serializationToAudioMessage_t msg;
     while (messageController->serializationToAudioQueue.try_dequeue(msg))
     {
-        switch(msg.id)
+        switch (msg.id)
         {
         case messaging::audio::s2a_dispatch_to_pointer:
         {
-            auto cb = static_cast<messaging::MessageController::AudioThreadCallback *>(msg.payload.p);
+            auto cb =
+                static_cast<messaging::MessageController::AudioThreadCallback *>(msg.payload.p);
             cb->f(*this);
 
             messaging::audio::AudioToSerialization rt;
@@ -105,7 +107,7 @@ bool Engine::processAudio()
             rt.payload.p = (void *)cb;
             messageController->audioToSerializationQueue.try_emplace(rt);
         }
-            break;
+        break;
         case messaging::audio::s2a_none:
             break;
         }
@@ -168,6 +170,31 @@ uint32_t Engine::activeVoiceCount()
             res += (v->playState != voice::Voice::OFF);
     }
     return res;
+}
+
+const std::optional<dsp::processor::ProcessorStorage>
+Engine::getProcessorStorage(const processorAddress_t &addr) const
+{
+    auto [part, group, zone, which] = addr;
+    assert(part >= 0 && part < Patch::numParts);
+    const auto &pref = getPatch()->getPart(part);
+
+    if (!pref || group < 0)
+        return {};
+
+    const auto &gref = pref->getGroup(group);
+
+    if (!gref || zone < 0)
+        return {};
+
+    const auto &zref = gref->getZone(zone);
+    if (!zref || which < 0)
+        return {};
+
+    if (which < processorsPerZone)
+        return zref->processorStorage[which];
+
+    return {};
 }
 
 } // namespace scxt::engine

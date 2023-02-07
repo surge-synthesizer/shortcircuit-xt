@@ -2,8 +2,8 @@
 // Created by Paul Walker on 2/5/23.
 //
 
-#ifndef SCXT_SRC_MESSAGING_CLIENT_CLIENT_SERIAL_IMPL_H
-#define SCXT_SRC_MESSAGING_CLIENT_CLIENT_SERIAL_IMPL_H
+#ifndef SCXT_SRC_MESSAGING_CLIENT_DETAIL_CLIENT_SERIAL_IMPL_H
+#define SCXT_SRC_MESSAGING_CLIENT_DETAIL_CLIENT_SERIAL_IMPL_H
 
 #include "tao/json/to_string.hpp"
 #include "tao/json/from_string.hpp"
@@ -62,6 +62,8 @@ void doExecOnSerialization(tao::json::basic_value<Traits> &o, const engine::Engi
                       typename ClientToSerializationType<(ClientToSerializationMessagesIds)I>::T,
                       unimpl_t>::value)
     {
+        // If you hit this assert you have not specialized ClientToSerializationType for the ID
+        assert(false);
         return;
     }
     else
@@ -101,6 +103,7 @@ void doExecOnClient(tao::json::basic_value<Traits> &o, Client *c)
         typename SerializationToClientType<(SerializationToClientMessageIds)I, Client>::T handler_t;
     if constexpr (std::is_same<handler_t, unimpl_t>::value)
     {
+        assert(false);
         return;
     }
     else

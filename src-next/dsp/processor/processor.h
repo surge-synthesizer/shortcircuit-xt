@@ -84,7 +84,7 @@ static constexpr size_t processorMemoryBufferSize{1028 * 8};
 
 static constexpr int tailInfinite = 0x1000000;
 
-struct ProcessorStorage : MoveableOnly<ProcessorStorage>
+struct ProcessorStorage : LeakDetected<ProcessorStorage>
 {
     ProcessorStorage()
     {

@@ -14,6 +14,7 @@
 
 #include "readerwriterqueue.h"
 #include "client/client_serial.h"
+#include "client/client_state.h"
 #include "audio/audio_serial.h"
 
 namespace scxt::messaging
@@ -133,7 +134,6 @@ struct MessageController : MoveableOnly<MessageController>
      */
     void sendRawFromClient(const clientToSerializationMessage_t &s);
 
-
     typedef audio::SerializationToAudio serializationToAudioMessage_t;
     typedef audio::AudioToSerialization audioToSerializationMessage_t;
 
@@ -171,6 +171,8 @@ struct MessageController : MoveableOnly<MessageController>
 
     // The engine has direct access to the audio queues
     friend class engine::Engine;
+
+    client::ClientState clientState;
 
   private:
     void runSerialization();

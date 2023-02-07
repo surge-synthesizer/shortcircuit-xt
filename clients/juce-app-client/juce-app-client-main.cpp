@@ -88,8 +88,7 @@ class SCXTAppWindow : public juce::DocumentWindow
         setResizeLimits(400, 400, 10000, 10000);
 
         setBounds((int)(0.1f * (float)getParentWidth()), (int)(0.1f * (float)getParentHeight()),
-                  std::max(850, (int)(0.5f * (float)getParentWidth())),
-                  std::max(600, (int)(0.7f * (float)getParentHeight())));
+                  1186, 810);
 
         auto ac = new SCXTAppComponent();
         setContentOwned(ac, false);

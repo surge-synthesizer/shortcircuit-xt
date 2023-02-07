@@ -10,70 +10,57 @@
 
 namespace scxt::messaging::client
 {
-/**
- * TODO Expand Document
- * request and response have id
- * request has 'hasPayload' which means the object has a payload member it can stream
- * response has a 'payload_t' which is what is streamed
- */
-struct RefreshPatchRequest
-{
-    static constexpr ClientToSerializationMessagesIds id{c2s_refresh_patch};
-    static constexpr bool hasPayload{false};
 
-    static void executeOnSerialization(const engine::Engine &engine, MessageController &cont)
-    {
-        serializationSendToClient(s2c_patch_stream, *(engine.getPatch()), cont);
-    }
-};
-
-template <> struct ClientToSerializationType<c2s_refresh_patch>
+struct ProcessorDataRequest
 {
-    typedef RefreshPatchRequest T;
-};
-
-struct TemporarySetZone0Filter1Mix
-{
-    static constexpr ClientToSerializationMessagesIds id{c2s_set_zone0_f1_mix};
+    static constexpr ClientToSerializationMessagesIds id{c2s_request_processor_data};
     static constexpr bool hasPayload{true};
-    typedef float payload_t;
-    payload_t payload{0.f};
+    typedef engine::Engine::processorAddress_t payload_t;
+    typedef std::pair<engine::Engine::processorAddress_t, dsp::processor::ProcessorStorage>
+        response_t;
 
-    TemporarySetZone0Filter1Mix(const float f) : payload(f) {}
+    payload_t payload;
 
-    static void executeOnSerialization(const payload_t &mix, const engine::Engine &engine,
+    ProcessorDataRequest(const payload_t &t) : payload(t) {}
+
+    static void executeOnSerialization(const payload_t &address, const engine::Engine &engine,
                                        MessageController &cont)
     {
-        cont.scheduleAudioThreadCallback([m = mix](auto &engine) {
-            engine.getPatch()->getPart(0)->getGroup(0)->getZone(0)->processorStorage[0].mix = m;
-        });
+        // TODO: Check cascade of -1s but for now assume
+        const auto &p = engine.getProcessorStorage(address);
+
+        if (p.has_value())
+        {
+            serializationSendToClient(s2c_respond_processor_data, response_t{address, *p}, cont);
+        }
     }
 };
 
-template <> struct ClientToSerializationType<c2s_set_zone0_f1_mix>
+template <> struct ClientToSerializationType<ProcessorDataRequest::id>
 {
-    typedef TemporarySetZone0Filter1Mix T;
+    typedef ProcessorDataRequest T;
 };
 
-template <typename Client> struct PatchStreamResponse
+template <typename Client> struct ProcessorDataResponse
 {
-    static constexpr SerializationToClientMessageIds id{s2c_patch_stream};
-    typedef engine::Patch payload_t;
+    static constexpr SerializationToClientMessageIds id{s2c_respond_processor_data};
+    typedef ProcessorDataRequest::response_t payload_t;
 
     static void executeOnResponse(Client *c, const payload_t &payload)
     {
-        c->onPatchStreamed(payload);
+        const auto &[address, proc] = payload;
+        c->onProcessorUpdated(address, proc);
     }
 };
 
-template <typename Client> struct SerializationToClientType<s2c_patch_stream, Client>
+template <typename Client> struct SerializationToClientType<s2c_respond_processor_data, Client>
 {
-    typedef PatchStreamResponse<Client> T;
+    typedef ProcessorDataResponse<Client> T;
 };
 
 template <typename Client> struct VoiceCountResponse
 {
-    static constexpr SerializationToClientMessageIds id{s2c_patch_stream};
+    static constexpr SerializationToClientMessageIds id{s2c_voice_count};
     typedef uint32_t payload_t;
     static void executeOnResponse(Client *c, const payload_t &payload) { c->onVoiceCount(payload); }
 };
