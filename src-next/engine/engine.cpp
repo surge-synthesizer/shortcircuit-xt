@@ -92,7 +92,23 @@ bool Engine::processAudio()
     messaging::MessageController::serializationToAudioMessage_t msg;
     while (messageController->serializationToAudioQueue.try_dequeue(msg))
     {
-        std::cout << "GOT PROCESSOR MESSAGE" << msg << std::endl;
+        switch(msg.id)
+        {
+        case messaging::audio::s2a_dispatch_to_pointer:
+        {
+            auto cb = static_cast<messaging::MessageController::AudioThreadCallback *>(msg.payload.p);
+            cb->f(*this);
+
+            messaging::audio::AudioToSerialization rt;
+            rt.id = messaging::audio::a2s_pointer_complete;
+            rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
+            rt.payload.p = (void *)cb;
+            messageController->audioToSerializationQueue.try_emplace(rt);
+        }
+            break;
+        case messaging::audio::s2a_none:
+            break;
+        }
     }
 
     // TODO This gets ripped out when voice management imporves

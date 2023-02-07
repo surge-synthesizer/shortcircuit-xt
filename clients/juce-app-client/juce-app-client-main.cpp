@@ -50,6 +50,10 @@ struct SCXTAppComponent : public juce::Component
             zptr->keyboardRange = {48, 72};
             zptr->rootKey = 60;
             zptr->attachToSample(*(engine->getSampleManager()));
+
+            zptr->processorStorage[0].type = scxt::dsp::processor::proct_SuperSVF;
+            zptr->processorStorage[0].mix = 1.0;
+
             engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
         }
         scxt::juce_app::startMIDI(&playbackState, "LPK");

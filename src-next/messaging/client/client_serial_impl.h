@@ -26,9 +26,9 @@ template <typename T> struct client_message_traits<MessageWrapper<T>>
     static void assign(tao::json::basic_value<Traits> &v, const MessageWrapper<T> &t)
     {
         auto iid = (int)T::id;
-        if constexpr (T::hasState)
+        if constexpr (T::hasPayload)
         {
-            client_message_value vt = t.msg;
+            client_message_value vt = t.msg.payload;
             v = {{"id", iid}, {"object", vt}};
         }
         else
@@ -69,14 +69,17 @@ void doExecOnSerialization(tao::json::basic_value<Traits> &o, const engine::Engi
         typedef
             typename ClientToSerializationType<(ClientToSerializationMessagesIds)I>::T handler_t;
 
-        handler_t handler;
-
-        if constexpr (handler_t::hasState)
+        if constexpr (handler_t::hasPayload)
         {
+            typename handler_t::payload_t payload;
             client_message_value mv = o.get_object()["object"];
-            mv.to(handler);
+            mv.to(payload);
+            handler_t::executeOnSerialization(payload, e, mc);
         }
-        handler.executeOnSerialization(e, mc);
+        else
+        {
+            handler_t::executeOnSerialization(e, mc);
+        }
     }
 }
 

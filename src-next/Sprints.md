@@ -1,14 +1,13 @@
 # Baconpauls next sprints
 
-- Next THreading Sprint
-   - audio <-> serialization
-     - start with audio -> client voice count 
-   - Throw guards in the right spots
-   - non-fiction novel
-- True/False readonly traits percolate by having
-   template<bool T> scxt_traits
-- IsClientConnected behavior?
-- NEXT branch readme and CLI from clap-info
+- Next Threading Sprint
+   - The non-leak client side model and synchronizing it
+   - Factoring into appropriate granularity of objects
+   - the "current" state in the serializer for the views
+   - True/False readonly traits percolate by having template<bool T> scxt_traits (maybe)
+- Final Threading Sprint
+  - Throw guards in the right spots
+  - non-fiction novel
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
     - AEG/FEG
@@ -17,6 +16,7 @@
     - Pitch, pitch bend, etc...
     - Playmodes, Loops and start/stop points
     - Mod Targets
+- Two big "is" questions: IsClientConnected; IsAudioRunning
 - vembertech factoring is probably sooner than later; copyblock etc
 - All that round robin discord chat
 - Find samples when streamed by path
@@ -55,7 +55,11 @@ Sprint Log I posted on Discord
 
 ## Day 8 (2023-02-06)
 
-Audio->Serialization->Client works.
+Audio->Serialization->Client works, with voice count messages going from the 
+engine up to the UI. Client->Serialization->Audio works with mutatino from a UI
+slider changing the value of the engine parameter. Also some internal refactoring 
+to simplify the streaming requirements of messages by using the 'payload' pattern
+and a variety of other code cleanup things.
 
 ## Day 7 (2023-02-05)
 All the message threads are hooked up and talking to each other 

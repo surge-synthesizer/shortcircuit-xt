@@ -5,6 +5,7 @@ add_library(${PROJECT_NAME} STATIC
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-next-core
+        sst-jucegui
         juce::juce_gui_basics
         )
 

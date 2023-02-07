@@ -9,6 +9,7 @@
 
 #include <thread>
 #include <queue>
+#include <stack>
 #include <chrono>
 
 #include "readerwriterqueue.h"
@@ -84,6 +85,7 @@ struct MessageController : MoveableOnly<MessageController>
 
   public:
     MessageController(engine::Engine &e) : engine(e) {}
+    ~MessageController();
 
     /**
      * start / stop
@@ -166,7 +168,7 @@ struct MessageController : MoveableOnly<MessageController>
                 audioToSerializationMessage_t msg;
                 while (audioToSerializationQueue.try_dequeue(msg))
                 {
-                    parseAudioMessageAndSendToClient(msg);
+                    parseAudioMessageOnSerializationThread(msg);
                 }
             }
             else
@@ -176,18 +178,30 @@ struct MessageController : MoveableOnly<MessageController>
         }
     }
 
-    void parseAudioMessageAndSendToClient(const audio::AudioToSerialization &);
+    void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);
 
     friend class engine::Engine;
 
     // TODO: Fix these types
-    typedef int serializationToAudioMessage_t;
+    typedef audio::SerializationToAudio serializationToAudioMessage_t;
     typedef audio::AudioToSerialization audioToSerializationMessage_t;
 
     void sendFromAudio(const audioToSerializationMessage_t &m)
     {
         audioToSerializationQueue.try_emplace(m);
     }
+
+    void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f);
+    struct AudioThreadCallback
+    {
+        std::function<void(engine::Engine &)> f;
+    };
+
+  private:
+    // serialization thread only please
+    AudioThreadCallback *getAudioThreadCallback();
+    void returnAudioThreadCallback(AudioThreadCallback *);
+    std::stack<AudioThreadCallback *> cbStore;
 
   private:
     moodycamel::ReaderWriterQueue<serializationToAudioMessage_t, 1024> serializationToAudioQueue{

@@ -17,6 +17,7 @@ namespace scxt::messaging::client
 enum ClientToSerializationMessagesIds
 {
     c2s_refresh_patch,
+    c2s_set_zone0_f1_mix,
 
     num_clientToSerializationMessages
 };

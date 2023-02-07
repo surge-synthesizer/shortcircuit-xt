@@ -13,15 +13,15 @@ namespace scxt::messaging::client
 /**
  * TODO Expand Document
  * request and response have id
- * request has 'hasState' which means the object itself can stream
+ * request has 'hasPayload' which means the object has a payload member it can stream
  * response has a 'payload_t' which is what is streamed
  */
 struct RefreshPatchRequest
 {
     static constexpr ClientToSerializationMessagesIds id{c2s_refresh_patch};
-    static constexpr bool hasState{false};
+    static constexpr bool hasPayload{false};
 
-    void executeOnSerialization(const engine::Engine &engine, MessageController &cont)
+    static void executeOnSerialization(const engine::Engine &engine, MessageController &cont)
     {
         serializationSendToClient(s2c_patch_stream, *(engine.getPatch()), cont);
     }
@@ -30,6 +30,29 @@ struct RefreshPatchRequest
 template <> struct ClientToSerializationType<c2s_refresh_patch>
 {
     typedef RefreshPatchRequest T;
+};
+
+struct TemporarySetZone0Filter1Mix
+{
+    static constexpr ClientToSerializationMessagesIds id{c2s_set_zone0_f1_mix};
+    static constexpr bool hasPayload{true};
+    typedef float payload_t;
+    payload_t payload{0.f};
+
+    TemporarySetZone0Filter1Mix(const float f) : payload(f) {}
+
+    static void executeOnSerialization(const payload_t &mix, const engine::Engine &engine,
+                                       MessageController &cont)
+    {
+        cont.scheduleAudioThreadCallback([m = mix](auto &engine) {
+            engine.getPatch()->getPart(0)->getGroup(0)->getZone(0)->processorStorage[0].mix = m;
+        });
+    }
+};
+
+template <> struct ClientToSerializationType<c2s_set_zone0_f1_mix>
+{
+    typedef TemporarySetZone0Filter1Mix T;
 };
 
 template <typename Client> struct PatchStreamResponse

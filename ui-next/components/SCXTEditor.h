@@ -8,6 +8,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "messaging/messaging.h"
+#include "sst/jucegui/components/HSlider.h"
 
 namespace scxt::ui
 {
@@ -23,23 +24,17 @@ struct SCXTEditor : juce::Component
     };
     std::unique_ptr<IdleTimer> idleTimer;
 
-    SCXTEditor(messaging::MessageController &e) : msgCont(e)
-    {
-        idleTimer = std::make_unique<IdleTimer>(this);
-        idleTimer->startTimer(1000 / 60);
+    std::unique_ptr<sst::jucegui::components::HSlider> sliderHack;
 
-        namespace cmsg = scxt::messaging::client;
-        msgCont.registerClient("SCXTEditor", [this](auto &s) { onMessageCallback(s); });
-
-        cmsg::clientSendMessage(cmsg::RefreshPatchRequest(), msgCont);
-    }
+    SCXTEditor(messaging::MessageController &e);
+    
     ~SCXTEditor()
     {
         idleTimer->stopTimer();
         msgCont.unregisterClient();
     }
 
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::yellow); }
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
 
     // This runs on the serialization thread and needs to toss to the UI thread
     void onMessageCallback(const std::string &s)
