@@ -31,19 +31,11 @@
 #include <list>
 #include <cassert>
 
-#include "vembertech/vt_dsp/endian.h"
+#include "sst/basic-blocks/mechanics/endian-ops.h"
 
 // @TODO: Consistent Names
-// @TODO: Refactor vembertech
 namespace scxt::sample::loaders
 {
-
-inline uint16_t swap_endian_16(uint16_t x) { return ((x & 0xFF) << 8) | ((x & 0xFF00) >> 8); }
-inline uint32_t swap_endian_32(uint32_t x)
-{
-    return ((x & 0xFF) << 24) | ((x & 0xFF00) << 8) | ((x & 0xFF0000) >> 8) |
-           ((x & 0xFF000000) >> 24);
-}
 
 struct riffheader
 {
@@ -82,16 +74,16 @@ class RIFFMemFile
     size_t readWaveEndianLittle(uint32_t inp)
     {
         if (useWaveEndian)
-            return vt_read_int32LE(inp);
+            return sst::basic_blocks::mechanics::endian_read_int32LE(inp);
         else
-            return vt_read_int32BE(inp);
+            return sst::basic_blocks::mechanics::endian_read_int32BE(inp);
     }
     size_t readWaveEndianBig(uint32_t inp)
     {
         if (useWaveEndian)
-            return vt_read_int32BE(inp);
+            return sst::basic_blocks::mechanics::endian_read_int32BE(inp);
         else
-            return vt_read_int32LE(inp);
+            return sst::basic_blocks::mechanics::endian_read_int32LE(inp);
     }
 
     virtual char Peek()
@@ -137,7 +129,7 @@ class RIFFMemFile
             return 0;
         uint32_t val = *(uint32_t *)(data + loc);
         loc += 4;
-        return vt_read_int32BE(val);
+        return sst::basic_blocks::mechanics::endian_read_int32BE(val);
     }
 
     void WriteDWORD(uint32_t dw)
@@ -152,7 +144,7 @@ class RIFFMemFile
     {
         if ((4 + loc) > size)
             return;
-        *(uint32_t *)(data + loc) = vt_write_int32BE(dw);
+        *(uint32_t *)(data + loc) = sst::basic_blocks::mechanics::endian_write_int32BE(dw);
         loc += 4;
     }
 
@@ -255,7 +247,7 @@ class RIFFMemFile
         {
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
-            rh.datasize = swap_endian_32(rh.datasize);
+            rh.datasize = sst::basic_blocks::mechanics::swap_endian_32(rh.datasize);
             if (rh.id == 'MROF')
             {
                 uint32_t subtag;
@@ -313,7 +305,7 @@ class RIFFMemFile
             return false;
 
         if (tag)
-            *tag = vt_read_int32BE(rh.id);
+            *tag = sst::basic_blocks::mechanics::endian_read_int32BE(rh.id);
         if (datasize)
             *datasize = rh.datasize;
         return true;
@@ -327,7 +319,7 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return false;
-        int ChunkTag = vt_read_int32BE(*(int *)(data + loc));
+        int ChunkTag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
         if (Tag)
             *Tag = ChunkTag;
         size_t dataSize = readWaveEndianLittle(*(int *)(data + loc + 4));
@@ -339,7 +331,8 @@ class RIFFMemFile
         if (LISTTag)
         {
             if (hasSubchunks)
-                *LISTTag = vt_read_int32BE(*(int *)(data + loc + 8));
+                *LISTTag =
+                    sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc + 8));
             else
                 *LISTTag = 0;
         }
@@ -365,7 +358,7 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return false;
-        int ChunkTag = vt_read_int32BE(*(int *)(data + loc));
+        int ChunkTag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
         return (ChunkTag == 'RIFF') || (ChunkTag == 'LIST');
     }
 
@@ -377,7 +370,7 @@ class RIFFMemFile
             return nullptr;
         size_t chunksize = readWaveEndianLittle(*(int *)(data + loc + 4));
         if (Tag)
-            *Tag = vt_read_int32BE(*(int *)(data + loc));
+            *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
         if (DataSize)
             *DataSize = size;
         void *dataptr = data + loc + 8;
@@ -399,7 +392,7 @@ class RIFFMemFile
             return false;
         size_t ChunkSize = readWaveEndianLittle(*(int *)(data + loc + 4));
         if (Tag)
-            *Tag = vt_read_int32BE(*(int *)(data + loc));
+            *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
         if (DataSize)
             *DataSize = ChunkSize;
         if ((loc + 8 + ChunkSize) > EndStack.front())
@@ -437,11 +430,11 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 12) > EndStack.front())
             return false;
-        int Tag = vt_read_int32BE(*(int *)(data + loc));
+        int Tag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
         if ((Tag != 'LIST') && (Tag != 'RIFF'))
             return false;
         size_t chunksize = readWaveEndianLittle(*(int *)(data + loc + 4));
-        int LISTTag = vt_read_int32BE(*(int *)(data + loc + 8));
+        int LISTTag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc + 8));
         loc += 12;
 
         StartStack.push_front(loc);
@@ -465,14 +458,14 @@ class RIFFMemFile
         {
             if (!Read(&rh, sizeof(riffheader)))
                 return false;
-            rh.id = vt_read_int32BE(rh.id);
+            rh.id = sst::basic_blocks::mechanics::endian_read_int32BE(rh.id);
             rh.datasize = readWaveEndianLittle(rh.datasize);
             if ((rh.id == 'RIFF') || (rh.id == 'LIST'))
             {
                 uint32_t subtag;
                 if (!Read(&subtag, 4))
                     return false;
-                subtag = vt_read_int32BE(subtag);
+                subtag = sst::basic_blocks::mechanics::endian_read_int32BE(subtag);
                 if (subtag == tag)
                 {
                     if (entry)
@@ -504,7 +497,7 @@ class RIFFMemFile
 
     uint32_t RIFFGetFileType() // Read the ID of the RIFF chunk
     {
-        return vt_read_int32BE(*(uint32_t *)(data + 8));
+        return sst::basic_blocks::mechanics::endian_read_int32BE(*(uint32_t *)(data + 8));
     };
 
     bool RIFFCreateChunk(uint32_t tag, void *indata, size_t datasize)
@@ -514,9 +507,9 @@ class RIFFMemFile
             invalid();
             return false;
         }
-        *(uint32_t *)(data + loc) = vt_write_int32BE(tag);
+        *(uint32_t *)(data + loc) = sst::basic_blocks::mechanics::endian_write_int32BE(tag);
         loc += 4;
-        *(uint32_t *)(data + loc) = vt_write_int32LE(datasize);
+        *(uint32_t *)(data + loc) = sst::basic_blocks::mechanics::endian_write_int32LE(datasize);
         loc += 4;
 
         memcpy(data + loc, indata, datasize);
@@ -532,9 +525,10 @@ class RIFFMemFile
             invalid();
             return false;
         }
-        *(uint32_t *)(data + loc) = vt_write_int32BE('LIST');
-        *(uint32_t *)(data + loc + 4) = vt_write_int32LE(subsize + 4);
-        *(uint32_t *)(data + loc + 8) = vt_write_int32BE(tag);
+        *(uint32_t *)(data + loc) = sst::basic_blocks::mechanics::endian_write_int32BE('LIST');
+        *(uint32_t *)(data + loc + 4) =
+            sst::basic_blocks::mechanics::endian_write_int32LE(subsize + 4);
+        *(uint32_t *)(data + loc + 8) = sst::basic_blocks::mechanics::endian_write_int32BE(tag);
         loc += 12;
         return true;
     }
@@ -568,8 +562,9 @@ class RIFFMemFile
             invalid();
             return false;
         }
-        *(uint32_t *)(data + loc) = vt_write_int32BE(tag);
-        *(uint32_t *)(data + loc + 4) = vt_write_int32LE(datasize);
+        *(uint32_t *)(data + loc) = sst::basic_blocks::mechanics::endian_write_int32BE(tag);
+        *(uint32_t *)(data + loc + 4) =
+            sst::basic_blocks::mechanics::endian_write_int32LE(datasize);
         loc += 8;
 
         memset(data + loc, 0, datasize);

@@ -1,6 +1,7 @@
 # Baconpauls next sprints
 
 - Voice AEG in place
+- Vembertech lipol_ps then its gone
 - Lets do a little UI sprint tomorrow instead then...
 - Next Threading Sprint
    - The non-leak client side model and synchronizing it
@@ -20,7 +21,6 @@
     - Mod Targets
 - Generator play modes (onRelease needs a change)
 - Two big "is" questions: IsClientConnected; IsAudioRunning
-- vembertech factoring is probably sooner than later; copyblock etc
 - All that round robin discord chat
 - Find samples when streamed by path
 - Samples in the patch
@@ -63,7 +63,9 @@ Sprint Log I posted on Discord
 Not a big dev day. Finished the rack refactoring to basic blocks and
 made sc depend on it. Also added a new airwindows rack feature while back
 in rack land (distractions distractions). Moved a bunch of vembertech
-stuff into basic-blocks and reworked some of it. 
+stuff into basic-blocks and reworked some of it. Also scripted a
+consistent file comment / consistent header guard applier and applied it.
+
 
 ## Day 10 (2023-02-08)
 

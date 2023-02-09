@@ -19,9 +19,9 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uin
     auto engine = ps->engine;
     auto f = (float *)pOutput;
 
-    auto fcp = ps->samplesPassed % (blockSize * 6000);
+    auto fcp = ps->samplesPassed % (blockSize * 2000);
     ps->samplesPassed += frameCount;
-    auto fnp = ps->samplesPassed % (blockSize * 6000);
+    auto fnp = ps->samplesPassed % (blockSize * 2000);
 
     if (ps->autoPlay && (fcp == 0 || (fnp != 0 && fcp > fnp)))
     {
@@ -88,4 +88,4 @@ bool stopAudioThread(PlaybackState *s)
     ma_device_uninit(&device); // This will stop the device so no need to do that manually.
     return true;
 }
-} // namespace scxt::cli_client
+} // namespace scxt::juce_app

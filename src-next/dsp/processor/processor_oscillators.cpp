@@ -29,12 +29,13 @@
 #include "dsp/resampling.h"
 #include "configuration.h"
 #include "dsp/sinc_table.h"
-#include "vembertech/vt_dsp/basic_dsp.h"
 #include <cmath>
 #include <algorithm>
+#include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::dsp::processor
 {
+namespace mech = sst::basic_blocks::mechanics;
 
 static constexpr int64_t large = 0x10000000000;
 static constexpr float integrator_hpf = 0.99999999f;
@@ -127,7 +128,7 @@ void OscPulseSync::process_stereo(float *datainL, float *datainR, float *dataout
                                   float pitch)
 {
     process(0, dataoutL, pitch);
-    copy_block(dataoutL, dataoutR, blockSizeQuad);
+    mech::copy_from_to<blockSize>(dataoutL, dataoutR);
 }
 void OscPulseSync::process(float *datain, float *dataout, float pitch)
 {
