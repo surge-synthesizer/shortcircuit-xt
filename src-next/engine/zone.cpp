@@ -21,16 +21,10 @@ void Zone::process()
     {
         if (v && v->playState != voice::Voice::OFF)
         {
-            if (v->playState == voice::Voice::CLEANUP)
-            {
-                int x = 1;
-            }
             if (v->process())
             {
-                // TODO SIMDIZE
-                for (int c = 0; c < 2; ++c)
-                    for (int s = 0; s < blockSize; ++s)
-                        output[0][c][s] += v->output[c][s];
+                accumulate_block(v->output[0], output[0][0], blockSizeQuad);
+                accumulate_block(v->output[1], output[0][1], blockSizeQuad);
             }
             if (v->playState == voice::Voice::CLEANUP)
             {

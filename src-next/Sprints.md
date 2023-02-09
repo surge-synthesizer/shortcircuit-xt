@@ -1,5 +1,6 @@
 # Baconpauls next sprints
 
+- Voice AEG in place
 - Lets do a little UI sprint tomorrow instead then...
 - Next Threading Sprint
    - The non-leak client side model and synchronizing it
@@ -8,6 +9,7 @@
 - Final Threading Sprint
   - Throw guards in the right spots
   - non-fiction novel
+- Zone Variants and the zone-sample-wrapper data object
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
     - AEG/FEG
@@ -16,6 +18,7 @@
     - Pitch, pitch bend, etc...
     - Playmodes, Loops and start/stop points
     - Mod Targets
+- Generator play modes (onRelease needs a change)
 - Two big "is" questions: IsClientConnected; IsAudioRunning
 - vembertech factoring is probably sooner than later; copyblock etc
 - All that round robin discord chat
@@ -46,7 +49,7 @@ Open Questions and ToDos and Reviews:
 - Sample Reload All / Refresh
 - fs:: to std::filesystem
 - I think we don't need this but: True/False readonly traits percolate by having template<bool T> scxt_traits (maybe)
-
+- Loop cleanup wave alignment stuff
 
 
 Notes
@@ -54,6 +57,14 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 10 (2023-02-08)
+
+A design day. 2 Hours on the phone with evil and we hashed out a lot
+and thought about "group lock" mode; a tiny bit of code cleanup; start
+refactoring some of the modulator code since we relaized a good first
+target is the zone AEG working. Went back to rack to clean up that code
+into sst-basic-blocks. Updated notes in sprints doc too!
 
 ## Day 9 (2023-02-07)
 
@@ -156,3 +167,62 @@ at my workspace.
 
 No update posted but basically I started getting the data structures
 together on the night of 28th and 29th and that became "day 1"
+
+
+-------------------
+Convo with Evil
+
+- saving
+  multi as a directory
+  multi as a zip
+  part with patch references
+  part with patches copied to folder
+  part with patches in a zip
+
+part box
+- omni / mpe / channel
+- s m are solo mute
+- output is default output which is the 'part' output in group
+- part tuning control: off is pitch bend wheen; modify incoming midi note
+- poly will have mono and legato modes. legato (no retrigger) mono (retrigger) or 2+
+- start with one part and have + button; part has a concept of 'active'. How to remove?
+- rmb for emtpy / clear / duplicate
+
+envelope and lfo boxes
+- preset menu
+
+mdoulation section
+- obvious
+
+output section
+- mute is post fader probably
+
+Processor block
+- dropdown selects the effect
+- dry wet mix is on the panel
+- should be able to fit 6-8 knobs
+- want a layout per effect basically. so crib from the rack code
+
+Browser section
+- for every sample aptch or multi get a "*" for favoriting
+- colored hearts for favorite categories which you name
+- draggable separator for the split. probably remembered as global setting.
+- auto preview is speaker at bottom - click a sample to play it back at volume. press play
+- auto load means as soon as you click you replace the zone. don't do that until i do undo :)
+- search button replaces devices with search over file list by file name
+- probably borrow the surge sql implementation
+- need to add a back button
+- keyboard navigation is a must
+
+Group List
+- selection sync with zone display
+- alternates show under a zone as expansion
+- Do we want group level filters? no; we just need group lock
+
+Mapping
+- drop a sample switch to group if you are on part automatically
+- selection links to group/part etc...
+- Exclusive groups and choke clusters
+- File: Just samples inside the current folder
+- Sample page - plus to add variants.
+- Macros at part level (uni, bi, toggle)

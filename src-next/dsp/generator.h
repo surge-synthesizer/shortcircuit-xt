@@ -61,6 +61,7 @@ enum GeneratorSampleModes
 };
 
 typedef void (*GeneratorFPtr)(GeneratorState *__restrict, GeneratorIO *__restrict);
+// TODO Loop Mode should be an enum
 GeneratorFPtr GetFPtrGeneratorSample(bool isStereo, bool isFloat, int LoopMode);
 
 } // namespace scxt::dsp
