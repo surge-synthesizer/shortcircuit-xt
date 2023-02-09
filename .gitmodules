@@ -31,3 +31,6 @@
 [submodule "libs/taocpp_json"]
 	path = libs/taocpp_json
 	url = https://github.com/taocpp/json.git
+[submodule "libs/sst/sst-basic-blocks"]
+	path = libs/sst/sst-basic-blocks
+	url = https://github.com/surge-synthesizer/sst-basic-blocks

@@ -18,7 +18,6 @@
 #include "steplfo.h"
 #include <algorithm>
 #include <cmath>
-#include "vembertech/vt_dsp/basic_dsp.h"
 #include "tuning/equal.h"
 #include "configuration.h"
 
@@ -237,7 +236,7 @@ void StepLFO::process(int)
             UpdatePhaseIncrement();
     }
 
-    output = limit_range(lfo_ipol(wf_history, phase, settings->smooth, state & 1), -1.f, 1.f);
+    output = std::clamp(lfo_ipol(wf_history, phase, settings->smooth, state & 1), -1.f, 1.f);
 }
 
 float lfo_ipol(float *wf_history, float phase, float smooth, int odd)

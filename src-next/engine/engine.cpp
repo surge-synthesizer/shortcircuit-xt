@@ -7,9 +7,9 @@
 #include "voice/voice.h"
 #include "dsp/sinc_table.h"
 #include "tuning/equal.h"
-#include "vembertech/vt_dsp/basic_dsp.h"
 #include "messaging/messaging.h"
 #include "messaging/audio/audio_messages.h"
+#include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::engine
 {
@@ -90,6 +90,8 @@ void Engine::releaseVoice(const pathToZone_t &path)
 
 bool Engine::processAudio()
 {
+    namespace blk = sst::basic_blocks::mechanics;
+
     messaging::MessageController::serializationToAudioMessage_t msg;
     while (messageController->serializationToAudioQueue.try_dequeue(msg))
     {
@@ -125,8 +127,8 @@ bool Engine::processAudio()
             part->process();
             for (int i = 0; i < part->getNumOutputs(); ++i)
             {
-                accumulate_block(part->output[i][0], output[i][0], blockSizeQuad);
-                accumulate_block(part->output[i][1], output[i][1], blockSizeQuad);
+                blk::accumulate_from_to<blockSize>(part->output[i][0], output[i][0]);
+                blk::accumulate_from_to<blockSize>(part->output[i][1], output[i][1]);
             }
         }
     }

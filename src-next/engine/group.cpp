@@ -4,14 +4,17 @@
 
 #include "group.h"
 #include "part.h"
+#include "sst/basic-blocks/mechanics/block-ops.h"
+
 #include <cassert>
-#include "vembertech/vt_dsp/basic_dsp.h"
 
 namespace scxt::engine
 {
 
 void Group::process()
 {
+    namespace blk = sst::basic_blocks::mechanics;
+
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
 
@@ -22,8 +25,8 @@ void Group::process()
             z->process();
             for (int i = 0; i < z->getNumOutputs(); ++i)
             {
-                accumulate_block(z->output[i][0], output[i][0], blockSizeQuad);
-                accumulate_block(z->output[i][1], output[i][1], blockSizeQuad);
+                blk::accumulate_from_to<blockSize>(z->output[i][0], output[i][0]);
+                blk::accumulate_from_to<blockSize>(z->output[i][1], output[i][1]);
             }
         }
     }

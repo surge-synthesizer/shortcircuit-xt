@@ -58,6 +58,13 @@ Notes
 ----------
 Sprint Log I posted on Discord
 
+## Day 11 (2023-02-09)
+
+Not a big dev day. Finished the rack refactoring to basic blocks and
+made sc depend on it. Also added a new airwindows rack feature while back
+in rack land (distractions distractions). Moved a bunch of vembertech
+stuff into basic-blocks and reworked some of it. 
+
 ## Day 10 (2023-02-08)
 
 A design day. 2 Hours on the phone with evil and we hashed out a lot

@@ -19,9 +19,9 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uin
     auto engine = ps->engine;
     auto f = (float *)pOutput;
 
-    auto fcp = ps->samplesPassed % 44000;
+    auto fcp = ps->samplesPassed % (blockSize * 6000);
     ps->samplesPassed += frameCount;
-    auto fnp = ps->samplesPassed % 44000;
+    auto fnp = ps->samplesPassed % (blockSize * 6000);
 
     if (ps->autoPlay && (fcp == 0 || (fnp != 0 && fcp > fnp)))
     {

@@ -18,12 +18,12 @@
 #include "generator.h"
 #include "infrastructure/sse_include.h"
 
-#include "vembertech/vt_dsp/basic_dsp.h"
-
 #include "resampling.h"
 #include "sinc_table.h"
 #include <iostream>
 #include <algorithm>
+
+#include "sst/basic-blocks/mechanics/simd-ops.h"
 
 namespace scxt::dsp
 {
@@ -169,7 +169,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[1], _mm_loadu_ps(&SampleDataFL[SamplePos + 4])));
             sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[2], _mm_loadu_ps(&SampleDataFL[SamplePos + 8])));
             sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[3], _mm_loadu_ps(&SampleDataFL[SamplePos + 12])));
-            sL4 = sum_ps_to_ss(sL4);
+            sL4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sL4);
             _mm_store_ss(&OutputL[i], sL4);
             if (stereo)
             {
@@ -180,7 +180,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(&SampleDataFR[SamplePos + 8])));
                 sR4 = _mm_add_ps(sR4,
                                  _mm_mul_ps(tmp[3], _mm_loadu_ps(&SampleDataFR[SamplePos + 12])));
-                sR4 = sum_ps_to_ss(sR4);
+                sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
                 _mm_store_ss(&OutputR[i], sR4);
             }
         }

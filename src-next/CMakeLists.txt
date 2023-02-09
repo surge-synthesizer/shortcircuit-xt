@@ -39,7 +39,7 @@ add_library(${PROJECT_NAME}-core STATIC
 target_include_directories(${PROJECT_NAME}-core PUBLIC .)
 target_link_libraries(${PROJECT_NAME}-core PUBLIC
         fmt
-        sst-cpputils sst-filters
+        sst-cpputils sst-filters sst-basic-blocks
         shortcircuit::simde
         shortcircuit::readerwriterqueue
         taocpp::json)

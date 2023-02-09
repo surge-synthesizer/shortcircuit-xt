@@ -1,11 +1,15 @@
 
 #include "sample.h"
 #include "infrastructure/file_map_view.h"
-#include "vembertech/vt_dsp/endian.h"
 #include "dsp/resampling.h"
+#include "sst/basic-blocks/mechanics/endian-ops.h"
 
 namespace scxt::sample
 {
+
+// Fine in a cpp
+using namespace sst::basic_blocks::mechanics;
+
 bool Sample::load(const fs::path &path)
 {
     if (!fs::exists(path))
@@ -110,7 +114,7 @@ bool Sample::load_data_i16(int channel, void *data, unsigned int samplesize, uns
 
     for (int i = 0; i < samplesize; i++)
     {
-        sampledata[i] = vt_read_int16LE(*(short *)((char *)data + i * stride));
+        sampledata[i] = endian_read_int16LE(*(short *)((char *)data + i * stride));
     }
     return true;
 }
@@ -122,7 +126,7 @@ bool Sample::load_data_i16BE(int channel, void *data, unsigned int samplesize, u
 
     for (int i = 0; i < samplesize; i++)
     {
-        sampledata[i] = vt_read_int16BE(*(short *)((char *)data + i * stride));
+        sampledata[i] = endian_read_int16BE(*(short *)((char *)data + i * stride));
     }
     return true;
 }
@@ -133,7 +137,7 @@ bool Sample::load_data_i32(int channel, void *data, unsigned int samplesize, uns
 
     for (int i = 0; i < samplesize; i++)
     {
-        int x = vt_read_int32LE(*(int *)((char *)data + i * stride));
+        int x = endian_read_int32LE(*(int *)((char *)data + i * stride));
         sampledata[i] = (4.6566128730772E-10f) * (float)x;
     }
     return true;
@@ -146,7 +150,7 @@ bool Sample::load_data_i32BE(int channel, void *data, unsigned int samplesize, u
 
     for (int i = 0; i < samplesize; i++)
     {
-        int x = vt_read_int32BE(*(int *)((char *)data + i * stride));
+        int x = endian_read_int32BE(*(int *)((char *)data + i * stride));
         sampledata[i] = (4.6566128730772E-10f) * (float)x;
     }
     return true;

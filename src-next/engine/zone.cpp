@@ -6,12 +6,13 @@
 #include "group.h"
 #include "voice/voice.h"
 
-#include "vembertech/vt_dsp/basic_dsp.h"
+#include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::engine
 {
 void Zone::process()
 {
+    namespace blk = sst::basic_blocks::mechanics;
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
 
@@ -23,8 +24,8 @@ void Zone::process()
         {
             if (v->process())
             {
-                accumulate_block(v->output[0], output[0][0], blockSizeQuad);
-                accumulate_block(v->output[1], output[0][1], blockSizeQuad);
+                blk::accumulate_from_to<blockSize>(v->output[0], output[0][0]);
+                blk::accumulate_from_to<blockSize>(v->output[1], output[0][1]);
             }
             if (v->playState == voice::Voice::CLEANUP)
             {

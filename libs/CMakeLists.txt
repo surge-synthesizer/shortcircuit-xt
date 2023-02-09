@@ -9,6 +9,7 @@ add_subdirectory(sst/sst-cpputils)
 add_subdirectory(sst/sst-plugininfra)
 add_subdirectory(sst/sst-filters)
 add_subdirectory(sst/sst-jucegui)
+add_subdirectory(sst/sst-basic-blocks)
 
 # Add a catch2 target
 add_library(catch2 INTERFACE)

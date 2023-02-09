@@ -5,7 +5,6 @@
 #include "voice.h"
 #include <cassert>
 #include <cmath>
-#include "vembertech/vt_dsp/basic_dsp.h"
 
 namespace scxt::voice
 {
@@ -104,8 +103,8 @@ bool Voice::process()
             processorMix[i].set_target(modMatrix.getValue(
                 (modulation::VoiceModMatrixDestination)(modulation::vmd_Processor1_Mix + i)));
             processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-            processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1], output[0],
-                                     output[1], BLOCK_SIZE_QUAD);
+            processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
+                                             output[0], output[1], BLOCK_SIZE_QUAD);
 
             // TODO: What was the filter_modout? Seems SC2 never finished it
             /*
@@ -193,7 +192,8 @@ void Voice::initializeProcessors()
         {
             // TODO: Stereo
             processors[i] = dsp::processor::spawnProcessorInPlace(
-                processorType[i], processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, processorFloatParams[i],
+                processorType[i], processorPlacementStorage[i],
+                dsp::processor::processorMemoryBufferSize, processorFloatParams[i],
                 processorIntParams[i], false);
         }
         else
