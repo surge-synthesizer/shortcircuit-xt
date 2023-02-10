@@ -32,6 +32,7 @@
 
 #include "messaging/messaging.h"
 #include "sst/jucegui/components/HSlider.h"
+#include "datamodel/adsr_storage.h"
 
 namespace scxt::ui
 {
@@ -84,6 +85,8 @@ struct SCXTEditor : juce::Component
     {
         std::cout << "Processor udpated" << std::endl;
     }
+
+    void onEnvelopeUpdated(const int &which, const datamodel::AdsrStorage &);
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;

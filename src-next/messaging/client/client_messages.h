@@ -30,6 +30,7 @@
 
 #include "messaging/client/detail/client_json_details.h"
 #include "json/engine_traits.h"
+#include "json/datamodel_traits.h"
 
 namespace scxt::messaging::client
 {
@@ -90,6 +91,84 @@ template <typename Client> struct VoiceCountResponse
 template <typename Client> struct SerializationToClientType<s2c_voice_count, Client>
 {
     typedef VoiceCountResponse<Client> T;
+};
+
+struct AdsrSelectedZoneViewRequest
+{
+    static constexpr ClientToSerializationMessagesIds id{c2s_request_zone_adsr_view};
+    static constexpr bool hasPayload{true};
+    typedef int payload_t;
+    typedef std::tuple<int, datamodel::AdsrStorage> response_t;
+
+    payload_t payload;
+
+    AdsrSelectedZoneViewRequest(int whichEnv) : payload(whichEnv) {}
+
+    static void executeOnSerialization(const payload_t &which, const engine::Engine &engine,
+                                       MessageController &cont)
+    {
+        // TODO Selected Zone State
+        const auto &selectedZone = engine.getPatch()->getPart(0)->getGroup(0)->getZone(0);
+
+        if (which == 0)
+            serializationSendToClient(s2c_respond_zone_adsr_view,
+                                      response_t{which, selectedZone->aegStorage}, cont);
+        if (which == 1)
+            serializationSendToClient(s2c_respond_zone_adsr_view,
+                                      response_t{which, selectedZone->eg2Storage}, cont);
+    }
+};
+
+template <> struct ClientToSerializationType<AdsrSelectedZoneViewRequest::id>
+{
+    typedef AdsrSelectedZoneViewRequest T;
+};
+
+template <typename Client> struct AdsrSelectedZoneViewResponse
+{
+    static constexpr SerializationToClientMessageIds id{s2c_respond_zone_adsr_view};
+    typedef AdsrSelectedZoneViewRequest::response_t payload_t;
+
+    static void executeOnResponse(Client *c, const payload_t &payload)
+    {
+        const auto &[which, env] = payload;
+        c->onEnvelopeUpdated(which, env);
+    }
+};
+
+template <typename Client> struct SerializationToClientType<s2c_respond_zone_adsr_view, Client>
+{
+    typedef AdsrSelectedZoneViewResponse<Client> T;
+};
+
+struct AdsrSelectedZoneUpdateRequest
+{
+    static constexpr ClientToSerializationMessagesIds id{c2s_update_zone_adsr_view};
+    static constexpr bool hasPayload{true};
+    typedef std::tuple<int, datamodel::AdsrStorage> payload_t;
+
+    payload_t payload;
+
+    AdsrSelectedZoneUpdateRequest(int whichEnv, const datamodel::AdsrStorage &a)
+        : payload{whichEnv, a}
+    {
+    }
+
+    static void executeOnSerialization(const payload_t &payload, const engine::Engine &engine,
+                                       MessageController &cont)
+    {
+        // TODO Selected Zone State
+        const auto &[e, adsr] = payload;
+        cont.scheduleAudioThreadCallback([ew = e, adsrv = adsr](auto &eng) {
+            if (ew == 0)
+                eng.getPatch()->getPart(0)->getGroup(0)->getZone(0)->aegStorage = adsrv;
+        });
+    }
+};
+
+template <> struct ClientToSerializationType<AdsrSelectedZoneUpdateRequest::id>
+{
+    typedef AdsrSelectedZoneUpdateRequest T;
 };
 
 } // namespace scxt::messaging::client

@@ -3,9 +3,13 @@ project(scxt-ui LANGUAGES CXX)
 add_library(${PROJECT_NAME} STATIC
 
         components/SCXTEditor.cpp
+        components/SCXTEditorResponseHandlers.cpp
+
         components/HeaderRegion.cpp
         components/MultiScreen.cpp
         components/SendFXScreen.cpp
+
+        components/multi/AdsrPane.cpp
 
         )
 

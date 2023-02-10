@@ -58,6 +58,24 @@ enum VoiceModMatrixDestination
     vmd_Processor1_Mix,
     vmd_Processor2_Mix,
 
+    vmd_aeg_A,
+    vmd_aeg_D,
+    vmd_aeg_S,
+    vmd_aeg_R,
+
+    vmd_aeg_AShape,
+    vmd_aeg_DShape,
+    vmd_aeg_RShape,
+
+    vmd_eg2_A,
+    vmd_eg2_D,
+    vmd_eg2_S,
+    vmd_eg2_R,
+
+    vmd_eg2_AShape,
+    vmd_eg2_DShape,
+    vmd_eg2_RShape,
+
     numVoiceMatrixDestinations
 };
 
@@ -108,6 +126,7 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
     void snapRoutingFromZone(engine::Zone *z);
     void copyBaseValuesFromZone(engine::Zone *z);
     void attachSourcesFromVoice(voice::Voice *v);
+    void initializeModulationValues();
     void process();
 
   protected:

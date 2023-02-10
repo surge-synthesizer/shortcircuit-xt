@@ -54,6 +54,8 @@ struct SCXTAppComponent : public juce::Component
             zptr->processorStorage[0].type = scxt::dsp::processor::proct_SuperSVF;
             zptr->processorStorage[0].mix = 1.0;
 
+            zptr->aegStorage.a = 0.7;
+
             engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
         }
         scxt::juce_app::startMIDI(&playbackState, "LPK");

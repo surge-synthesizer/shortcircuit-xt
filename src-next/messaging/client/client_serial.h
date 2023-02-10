@@ -41,6 +41,8 @@ enum ClientToSerializationMessagesIds
 {
     c2s_request_processor_metadata,
     c2s_request_processor_data,
+    c2s_request_zone_adsr_view,
+    c2s_update_zone_adsr_view,
 
     num_clientToSerializationMessages
 };
@@ -51,6 +53,7 @@ enum SerializationToClientMessageIds
 
     s2c_respond_processor_metadata,
     s2c_respond_processor_data,
+    s2c_respond_zone_adsr_view,
 
     num_seralizationToClientMessages
 };

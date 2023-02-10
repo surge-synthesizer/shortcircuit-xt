@@ -25,35 +25,28 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_UI_COMPONENTS_HEADERREGION_H
-#define SCXT_UI_COMPONENTS_HEADERREGION_H
+#ifndef SCXT_SRC_DATAMODEL_ADSR_STORAGE_H
+#define SCXT_SRC_DATAMODEL_ADSR_STORAGE_H
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include "HasEditor.h"
+#include <tuple>
 
-namespace scxt::ui
+namespace scxt::datamodel
 {
-struct SCXTEditor;
-
-struct HeaderRegion : juce::Component, HasEditor
+struct AdsrStorage
 {
-    std::unique_ptr<juce::Button> multiPage, sendPage;
+    /*
+     * Each of the ADR are 0..1 and scaled to time by the envelope. S is a 0..1 pct
+     */
+    float a{0.5}, d{0.5}, s{0.5}, r{0.5};
+    bool isDigital{true};
 
-    HeaderRegion(SCXTEditor *);
+    // TODO: What are these going to be when they grow up?
+    float aShape{0}, dShape{0}, rShape{0};
 
-    void paint(juce::Graphics &g) override
-    {
-        g.fillAll(juce::Colours::pink);
-        g.setColour(juce::Colours::pink.contrasting());
-        g.drawText("HEADER", getLocalBounds(), juce::Justification::centred);
-    }
-
-    void resized() override
-    {
-        multiPage->setBounds(2, 2, 98, getHeight() - 4);
-        sendPage->setBounds(102, 2, 98, getHeight() - 4);
-    }
+    auto asTuple() const { return std::tie(a, d, s, r, isDigital, aShape, dShape, rShape); }
+    bool operator==(const AdsrStorage &other) const { return asTuple() == other.asTuple(); }
+    bool operator!=(const AdsrStorage &other) const { return !(*this == other); }
 };
-} // namespace scxt::ui
+} // namespace scxt::datamodel
 
-#endif // SHORTCIRCUIT_HEADERREGION_H
+#endif // SHORTCIRCUIT_ADSR_STORAGE_H

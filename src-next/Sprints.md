@@ -1,15 +1,21 @@
 # Baconpauls next sprints
 
-- Voice AEG in place
+Week of Feb 13:
+- The Selection and State Management Object
+- Toss my test client for a proper JUCE standalone (with a button to send test notes)
+  and make a next nightly; move to surge-synthesizer
+- Revisit all the interaction code c
+   - Classes and patterns 
+   - better file class and enum names (like client messages gets split up)
+   - non-fiction novel
+   - Throw guards around json parses
+- Then: Processor views
+- Then: Two Zones - select
+- Then: A bit of UI work to make it look pixel-exact to wireframe
+
+once that's done
 - Vembertech lipol_ps then its gone
-- Lets do a little UI sprint tomorrow instead then...
-- Next Threading Sprint
-   - The non-leak client side model and synchronizing it
-   - Factoring into appropriate granularity of objects
-   - the "current" state in the serializer for the views
-- Final Threading Sprint
-  - Throw guards in the right spots
-  - non-fiction novel
+- Generator keeps runnign after AEG is complete; don't
 - Zone Variants and the zone-sample-wrapper data object
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
@@ -38,6 +44,7 @@
 - A plugin client which can at least configure a zone
 - State streaming
 - Engine Path to Keyboard Lookup way way faster (probably precache)
+- The curve from SC Envelope into the ADSR
 
 Open Questions and ToDos and Reviews:
 - int vs sized type (int32_t etc)
@@ -57,6 +64,14 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 12 (2023-02-10 - 2023-02-11)
+
+But of code burnout so sort of slow down across the weekend for a two day "day 12".
+Not much on Friday but on Saturday I got the pipeline from UI->serial->engine and back
+all working with udpates from the engine to the ui or the ui to the engine bound
+properly into the streaming and also into the sst-jucegui pattern. Cleanup to do but
+the design is "completely in principle" even though the code is still overly verbose.
 
 ## Day 11 (2023-02-09)
 

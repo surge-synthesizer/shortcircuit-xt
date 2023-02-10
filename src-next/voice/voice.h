@@ -40,6 +40,8 @@
 
 #include "configuration.h"
 
+#include "sst/basic-blocks/modulators/ADSREnvelope.h"
+
 namespace scxt::voice
 {
 struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
@@ -57,6 +59,18 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 
     modulation::VoiceModMatrix modMatrix;
     modulation::modulators::StepLFO lfos[engine::lfosPerZone];
+    typedef
+    sst::basic_blocks::modulators::ADSREnvelope<Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
+        adsrenv_t;
+    adsrenv_t aeg, eg2;
+    // TODO obviously this sucks move to a table
+    inline float envelope_rate_linear_nowrap(float f)
+    {
+        return blockSize * sampleRateInv * pow(2.f, -f);
+    }
+
+    template<typename ET, int EB, typename ER>
+    friend struct sst::basic_blocks::modulators::ADSREnvelope;
 
     Voice(engine::Zone *z);
 
@@ -87,8 +101,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
      * Processors: Storage, memory blocks, types, and more
      */
     dsp::processor::Processor *processors[engine::processorsPerZone]{nullptr, nullptr};
-    dsp::processor::ProcessorType processorType[engine::processorsPerZone]{dsp::processor::proct_none,
-                                                                           dsp::processor::proct_none};
+    dsp::processor::ProcessorType processorType[engine::processorsPerZone]{
+        dsp::processor::proct_none, dsp::processor::proct_none};
     uint8_t processorPlacementStorage alignas(
         16)[engine::processorsPerZone][dsp::processor::processorMemoryBufferSize];
     float processorFloatParams alignas(
@@ -98,7 +112,11 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 
     void initializeProcessors();
 
+    // TODO - this should be more carefully structured for modulation onto the entire filter
     lipol_ps processorMix[engine::processorsPerZone];
+
+
+
 
     // TODO This is obvious garbage from hereon down
     size_t sp{0};

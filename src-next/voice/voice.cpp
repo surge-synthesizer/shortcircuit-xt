@@ -29,10 +29,12 @@
 #include <cassert>
 #include <cmath>
 
+#include "sst/basic-blocks/mechanics/block-ops.h"
+
 namespace scxt::voice
 {
 
-Voice::Voice(engine::Zone *z) : zone(z)
+Voice::Voice(engine::Zone *z) : zone(z), aeg(this), eg2(this)
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
@@ -56,6 +58,7 @@ void Voice::voiceStarted()
     modMatrix.snapRoutingFromZone(zone);
     modMatrix.copyBaseValuesFromZone(zone);
     modMatrix.attachSourcesFromVoice(this);
+    modMatrix.initializeModulationValues();
 
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
@@ -67,11 +70,20 @@ void Voice::voiceStarted()
                        nullptr);
     }
 
+    aeg.attackFrom(0.0, modMatrix.getValue(modulation::vmd_aeg_A),
+                   1, // this needs fixing in legato mode
+                   zone->aegStorage.isDigital);
+    eg2.attackFrom(0.0, modMatrix.getValue(modulation::vmd_eg2_A),
+                   1, // this needs fixing in legato mode
+                   zone->aegStorage.isDigital);
+
     zone->addVoice(this);
 }
 
 bool Voice::process()
 {
+    namespace mech = sst::basic_blocks::mechanics;
+
     assert(zone);
     if (playState == CLEANUP)
     {
@@ -90,6 +102,16 @@ bool Voice::process()
         lfos[i].process(blockSize);
     }
 
+    // TODO probably want to process LFO modulations at this point so the AEG and EG2
+    // are modulatable
+
+    // TODO SHape Fixes
+    aeg.processBlock(modMatrix.getValue(modulation::vmd_aeg_A),
+                     modMatrix.getValue(modulation::vmd_aeg_D),
+                     modMatrix.getValue(modulation::vmd_aeg_S),
+                     modMatrix.getValue(modulation::vmd_aeg_R), 1, 1, 1, playState == GATED);
+
+    // TODO and probably just want to process the envelopes here
     modMatrix.process();
 
     // TODO : Proper pitch calculation
@@ -136,6 +158,8 @@ bool Voice::process()
         }
     }
 
+    mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
+   
     return true;
 }
 

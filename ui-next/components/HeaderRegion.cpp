@@ -31,7 +31,7 @@
 namespace scxt::ui
 {
 
-HeaderRegion::HeaderRegion(SCXTEditor *e) : editor{e}
+HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 {
     multiPage = std::make_unique<juce::TextButton>("multi");
     multiPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::MULTI); };

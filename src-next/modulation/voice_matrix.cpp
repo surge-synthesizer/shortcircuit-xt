@@ -46,6 +46,17 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
     {
         baseValues[vmd_Processor1_Mix + i] = z->processorStorage[i].mix;
     }
+
+    // TODO : Shapes
+    baseValues[vmd_aeg_A] = z->aegStorage.a;
+    baseValues[vmd_aeg_D] = z->aegStorage.d;
+    baseValues[vmd_aeg_S] = z->aegStorage.s;
+    baseValues[vmd_aeg_R] = z->aegStorage.r;
+
+    baseValues[vmd_eg2_A] = z->eg2Storage.a;
+    baseValues[vmd_eg2_D] = z->eg2Storage.d;
+    baseValues[vmd_eg2_S] = z->eg2Storage.s;
+    baseValues[vmd_eg2_R] = z->eg2Storage.r;
 }
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
@@ -56,6 +67,11 @@ void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
     {
         sourcePointers[vms_LFO1 + i] = &(v->lfos[i].output);
     }
+}
+
+void VoiceModMatrix::initializeModulationValues()
+{
+    memcpy(modulatedValues, baseValues, sizeof(modulatedValues));
 }
 
 void VoiceModMatrix::process()
@@ -87,6 +103,38 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &
         return "vmd_processor1_mix";
     case vmd_Processor2_Mix:
         return "vmd_processor2_mix";
+
+    case vmd_aeg_A:
+        return "vmd_aeg_a";
+    case vmd_aeg_D:
+        return "vmd_aeg_d";
+    case vmd_aeg_S:
+        return "vmd_aeg_s";
+    case vmd_aeg_R:
+        return "vmd_aeg_r";
+
+    case vmd_aeg_AShape:
+        return "vmd_aeg_ashape";
+    case vmd_aeg_DShape:
+        return "vmd_aeg_dshape";
+    case vmd_aeg_RShape:
+        return "vmd_aeg_rshape";
+
+    case vmd_eg2_A:
+        return "vmd_eg2_a";
+    case vmd_eg2_D:
+        return "vmd_eg2_d";
+    case vmd_eg2_S:
+        return "vmd_eg2_s";
+    case vmd_eg2_R:
+        return "vmd_eg2_r";
+
+    case vmd_eg2_AShape:
+        return "vmd_eg2_ashape";
+    case vmd_eg2_DShape:
+        return "vmd_eg2_dshape";
+    case vmd_eg2_RShape:
+        return "vmd_eg2_rshape";
 
     case numVoiceMatrixDestinations:
         throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");

@@ -29,13 +29,17 @@
 
 #include <array>
 
+#include "configuration.h"
 #include "utils.h"
+
 #include "keyboard.h"
+
 #include "sample/sample_manager.h"
 #include "dsp/processor/processor.h"
-#include "configuration.h"
 #include "modulation/voice_matrix.h"
 #include "modulation/modulators/steplfo.h"
+
+#include "datamodel/adsr_storage.h"
 
 namespace scxt::voice
 {
@@ -105,6 +109,8 @@ struct Zone : MoveableOnly<Zone>
 
     std::array<modulation::VoiceModMatrix::Routing, modulation::numVoiceRoutingSlots> routingTable;
     std::array<modulation::modulators::StepLFOStorage, lfosPerZone> lfoStorage;
+
+    datamodel::AdsrStorage aegStorage, eg2Storage;
 
     bool operator==(const Zone &other) const
     {

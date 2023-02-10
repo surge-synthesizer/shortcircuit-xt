@@ -81,7 +81,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
     headerRegion = std::make_unique<HeaderRegion>(this);
     addAndMakeVisible(*headerRegion);
 
-    multiScreen = std::make_unique<MultiScreen>();
+    multiScreen = std::make_unique<MultiScreen>(this);
     addAndMakeVisible(*multiScreen);
 
     sendFxScreen = std::make_unique<SendFXScreen>();
