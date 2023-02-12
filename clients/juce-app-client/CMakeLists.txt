@@ -25,7 +25,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
-        scxt-next-core
+        scxt-core
         scxt-ui
 
         rtmidi

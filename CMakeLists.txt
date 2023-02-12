@@ -50,6 +50,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 
             # PE/COFF doesn't support visibility
             $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
+
             # Inlines visibility is only relevant with C++
             $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>
 
@@ -69,7 +70,7 @@ include(cmake/compiler-and-git.cmake)
 add_subdirectory(libs)
 
 # Next for now
-add_subdirectory(src-next)
-add_subdirectory(ui-next)
-add_subdirectory(tests-next)
+add_subdirectory(src)
+add_subdirectory(src-ui)
+add_subdirectory(tests)
 add_subdirectory(clients)

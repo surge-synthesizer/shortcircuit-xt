@@ -1,19 +1,29 @@
 /*
-** Shortcircuit XT is Free and Open Source Software
-**
-** Shortcircuit is made available under the Gnu General Public License, v3.0
-** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
-** reserve the right to re-license their contributions under the MIT license in the
-** future at the discretion of the project maintainers.
-**
-** Copyright 2004-2022 by various individuals as described by the git transaction log
-**
-** All source at: https://github.com/surge-synthesizer/shortcircuit-xt.git
-**
-** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
-** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
-** open source in December 2020.
-*/
+ * Shortcircuit XT - a Surge Synth Team product
+ *
+ * A fully featured creative sampler, available as a standalone
+ * and plugin for multiple platforms.
+ *
+ * Copyright 2019 - 2023, Various authors, as described in the github
+ * transaction log.
+ *
+ * ShortcircuitXT is released under the Gnu General Public Licence
+ * V3 or later (GPL-3.0-or-later). The license is found in the file
+ * "LICENSE" in the root of this repository or at
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * Individual sections of code which comprises ShortcircuitXT in this
+ * repository may also be used under an MIT license. Please see the
+ * section  "Licensing" in "README.md" for details.
+ *
+ * ShortcircuitXT is inspired by, and shares code with, the
+ * commercial product Shortcircuit 1 and 2, released by VemberTech
+ * in the mid 2000s. The code for Shortcircuit 2 was opensourced in
+ * 2020 at the outset of this project.
+ *
+ * All source for ShortcircuitXT is available at
+ * https://github.com/surge-synthesizer/shortcircuit-xt
+ */
 
 #include "basic_dsp.h"
 #include <cassert>
@@ -308,6 +318,7 @@ void clear_block_antidenormalnoise(float *in, unsigned int nquads)
 void accumulate_block(float *__restrict src, float *__restrict dst,
                       unsigned int nquads) // dst += src
 {
+    /*
     for (unsigned int i = 0; i < nquads; i += 4)
     {
         ((__m128 *)dst)[i] = _mm_add_ps(((__m128 *)dst)[i], ((__m128 *)src)[i]);
@@ -315,24 +326,17 @@ void accumulate_block(float *__restrict src, float *__restrict dst,
         ((__m128 *)dst)[i + 2] = _mm_add_ps(((__m128 *)dst)[i + 2], ((__m128 *)src)[i + 2]);
         ((__m128 *)dst)[i + 3] = _mm_add_ps(((__m128 *)dst)[i + 3], ((__m128 *)src)[i + 3]);
     }
+     */
+    // Let the compiler handle this
+    for (int i=0; i<nquads<<2; ++i)
+        dst[i] += src[i];
 }
 
 void copy_block(float *__restrict src, float *__restrict dst, unsigned int nquads)
 {
-    float *fdst, *fsrc;
-    fdst = (float *)dst;
-    fsrc = (float *)src;
-
-    for (unsigned int i = 0; i < (nquads << 2); i += (8 << 2))
+    for (int i = 0; i < nquads << 2; ++i)
     {
-        _mm_store_ps(&fdst[i], _mm_load_ps(&fsrc[i]));
-        _mm_store_ps(&fdst[i + 4], _mm_load_ps(&fsrc[i + 4]));
-        _mm_store_ps(&fdst[i + 8], _mm_load_ps(&fsrc[i + 8]));
-        _mm_store_ps(&fdst[i + 12], _mm_load_ps(&fsrc[i + 12]));
-        _mm_store_ps(&fdst[i + 16], _mm_load_ps(&fsrc[i + 16]));
-        _mm_store_ps(&fdst[i + 20], _mm_load_ps(&fsrc[i + 20]));
-        _mm_store_ps(&fdst[i + 24], _mm_load_ps(&fsrc[i + 24]));
-        _mm_store_ps(&fdst[i + 28], _mm_load_ps(&fsrc[i + 28]));
+        dst[i] = src[i];
     }
 }
 
@@ -512,7 +516,7 @@ __m128 sine_ps_nowrap(__m128 x)
     const __m128 B = _mm_set1_ps(4.f / M_PI);
     const __m128 C = _mm_set1_ps(-4.f / (M_PI * M_PI));
 
-    // todo wrap x [0..1] ?
+    // TODO wrap x [0..1] ?
 
     // y = B * x + C * x * abs(x);
     __m128 y =

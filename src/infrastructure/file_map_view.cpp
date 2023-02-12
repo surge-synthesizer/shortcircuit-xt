@@ -1,22 +1,31 @@
 /*
-** Shortcircuit XT is Free and Open Source Software
-**
-** Shortcircuit is made available under the Gnu General Public License, v3.0
-** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
-** reserve the right to re-license their contributions under the MIT license in the
-** future at the discretion of the project maintainers.
-**
-** Copyright 2004-2022 by various individuals as described by the git transaction log
-**
-** All source at: https://github.com/surge-synthesizer/shortcircuit-xt.git
-**
-** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
-** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
-** open source in December 2020.
-*/
+ * Shortcircuit XT - a Surge Synth Team product
+ *
+ * A fully featured creative sampler, available as a standalone
+ * and plugin for multiple platforms.
+ *
+ * Copyright 2019 - 2023, Various authors, as described in the github
+ * transaction log.
+ *
+ * ShortcircuitXT is released under the Gnu General Public Licence
+ * V3 or later (GPL-3.0-or-later). The license is found in the file
+ * "LICENSE" in the root of this repository or at
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * Individual sections of code which comprises ShortcircuitXT in this
+ * repository may also be used under an MIT license. Please see the
+ * section  "Licensing" in "README.md" for details.
+ *
+ * ShortcircuitXT is inspired by, and shares code with, the
+ * commercial product Shortcircuit 1 and 2, released by VemberTech
+ * in the mid 2000s. The code for Shortcircuit 2 was opensourced in
+ * 2020 at the outset of this project.
+ *
+ * All source for ShortcircuitXT is available at
+ * https://github.com/surge-synthesizer/shortcircuit-xt
+ */
 
 #include "infrastructure/file_map_view.h"
-#include "util/scxtstring.h"
 #include <cstdio>
 #if WINDOWS
 #include <windows.h>
@@ -32,7 +41,7 @@
 #include <limits.h>
 #endif
 
-namespace scxt
+namespace scxt::infrastructure
 {
 
 #if WINDOWS
@@ -105,8 +114,7 @@ struct posixImpl : FileMapView::Impl
     void init(const fs::path &fname)
     {
         struct stat sb;
-        // TODO AS does open assume utf8?
-        fd = open(path_to_string(fname).c_str(), O_RDONLY);
+        fd = open(fname.u8string().c_str(), O_RDONLY);
         if (!fd)
         {
             isMapped = false;
@@ -152,4 +160,4 @@ size_t FileMapView::dataSize() { return as(impl.get())->dataSize; }
 
 bool FileMapView::isMapped() { return as(impl.get())->isMapped; }
 
-} // namespace scxt
+} // namespace scxt::infrastructure

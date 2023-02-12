@@ -1,56 +1,45 @@
 /*
-** Shortcircuit XT is Free and Open Source Software
-**
-** Shortcircuit is made available under the Gnu General Public License, v3.0
-** https://www.gnu.org/licenses/gpl-3.0.en.html; The authors of the code
-** reserve the right to re-license their contributions under the MIT license in the
-** future at the discretion of the project maintainers.
-**
-** Copyright 2004-2022 by various individuals as described by the git transaction log
-**
-** All source at: https://github.com/surge-synthesizer/shortcircuit-xt.git
-**
-** Shortcircuit was a commercial product from 2004-2018, with copyright and ownership
-** in that period held by Claes Johanson at Vember Audio. Claes made Shortcircuit
-** open source in December 2020.
-*/
+ * Shortcircuit XT - a Surge Synth Team product
+ *
+ * A fully featured creative sampler, available as a standalone
+ * and plugin for multiple platforms.
+ *
+ * Copyright 2019 - 2023, Various authors, as described in the github
+ * transaction log.
+ *
+ * ShortcircuitXT is released under the Gnu General Public Licence
+ * V3 or later (GPL-3.0-or-later). The license is found in the file
+ * "LICENSE" in the root of this repository or at
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * Individual sections of code which comprises ShortcircuitXT in this
+ * repository may also be used under an MIT license. Please see the
+ * section  "Licensing" in "README.md" for details.
+ *
+ * ShortcircuitXT is inspired by, and shares code with, the
+ * commercial product Shortcircuit 1 and 2, released by VemberTech
+ * in the mid 2000s. The code for Shortcircuit 2 was opensourced in
+ * 2020 at the outset of this project.
+ *
+ * All source for ShortcircuitXT is available at
+ * https://github.com/surge-synthesizer/shortcircuit-xt
+ */
 
-#pragma once
+#ifndef SCXT_SRC_CONFIGURATION_H
+#define SCXT_SRC_CONFIGURATION_H
 
-#include "globals.h"
-#include <string>
-#include <filesystem/import.h>
-#include "infrastructure/logfile.h"
+#include <cstdint>
 
-class configuration
+namespace scxt
 {
-    fs::path mRelative;
-    fs::path mConfFilename;
+static constexpr uint16_t blockSize{16};
+static constexpr uint16_t blockSizeQuad{16 >> 2};
+static constexpr uint16_t maxOutputs{16};
+static constexpr uint16_t maxVoices{256};
 
-  public:
-    // TODO probably this doesn't belong here in the object hierarchy
-    scxt::log::StreamLogger &mLogger; // logger which is owned by sampler
-    configuration(scxt::log::StreamLogger &logger);
-    // replace <relative> in filename
-    fs::path resolve_path(const fs::path &in);
-    void set_relative_path(const fs::path &in);
-};
+// some battles are not worth it
+static constexpr uint16_t BLOCK_SIZE{blockSize};
+static constexpr uint16_t BLOCK_SIZE_QUAD{blockSizeQuad};
 
-// parse a path into components. All outputs are optional. Example:
-// c:\file\name.EXT>1|2
-// outputs:
-//  out: c:\file\name.EXT (full valid path)
-//  extension: ext (extension, lowercased)
-//  name_only: name (name without ext)
-//  path_only: c:\file (path without file)
-//  program_id: 1
-//  sample_id: 2
-// returns the extension as lowercase
-void decode_path(const fs::path &in, fs::path *out, std::string *extension = 0,
-                 std::string *name_only = 0, fs::path *path_only = 0, int *program_id = 0,
-                 int *sample_id = 0);
-
-// construct a full path from dir and filename and optionally ext
-// if ext is supplied it's delimited with .
-fs::path build_path(const fs::path &in, const std::string &filename,
-                    const std::string &ext = std::string());
+} // namespace scxt
+#endif // __SCXT__CONFIGURATION_H

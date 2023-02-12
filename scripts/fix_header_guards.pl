@@ -8,13 +8,19 @@ find(
     {
         wanted => \&findfiles,
     },
-    'src-next'
+    'src'
 );
 find(
     {
         wanted => \&findfiles,
     },
     'ui-next'
+);
+find(
+    {
+        wanted => \&findfiles,
+    },
+    'clients/juce-plugin'
 );
 
 sub findfiles
@@ -27,8 +33,9 @@ sub findfiles
         $hg = $f;
         $hg =~ s:/:_:g;
         $hg =~ s:\.:_:g;
-        $hg =~ s:src-next:scxt_src:;
-        $hg =~ s:ui-next:scxt_ui:;
+        $hg =~ s:-:_:g;
+        $hg =~ s:src:scxt_src:;
+        $hg =~ s:src-ui:scxt_ui:;
         $hg = uc($hg);
         print "$f -> $hg\n";
 
