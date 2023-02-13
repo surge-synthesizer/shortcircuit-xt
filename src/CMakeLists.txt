@@ -29,7 +29,7 @@ add_library(${PROJECT_NAME} STATIC
         modulation/voice_matrix.cpp
         modulation/modulators/steplfo.cpp
 
-        selection/SelectionManager.cpp
+        selection/selection_manager.cpp
 
         vembertech/vt_dsp/basic_dsp.cpp
         vembertech/vt_dsp/lipol.cpp

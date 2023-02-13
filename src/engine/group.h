@@ -49,6 +49,9 @@ struct Group : MoveableOnly<Group>
     float output alignas(16)[maxOutputs][2][blockSize];
     void process();
 
+    // ToDo editable name
+    std::string getName() const { return id.to_string(); }
+
     // TODO: Multi-output
     size_t getNumOutputs() const { return 1; }
 

@@ -37,7 +37,6 @@
 
 #include "readerwriterqueue.h"
 #include "client/client_serial.h"
-#include "client/client_state.h"
 #include "audio/audio_serial.h"
 
 namespace scxt::messaging
@@ -195,8 +194,6 @@ struct MessageController : MoveableOnly<MessageController>
     // The engine has direct access to the audio queues
     friend class engine::Engine;
 
-    client::ClientState clientState;
-
   private:
     void runSerialization();
     void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);
@@ -227,4 +224,5 @@ struct MessageController : MoveableOnly<MessageController>
 
 #include "messaging/client/detail/client_serial_impl.h"
 #include "client/client_messages.h"
+
 #endif // SHORTCIRCUIT_MESSAGING_H

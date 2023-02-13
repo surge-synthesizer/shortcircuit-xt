@@ -32,7 +32,7 @@
 #include "tuning/equal.h"
 #include "messaging/messaging.h"
 #include "messaging/audio/audio_messages.h"
-#include "selection/SelectionManager.h"
+#include "selection/selection_manager.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::engine
@@ -224,4 +224,33 @@ Engine::getProcessorStorage(const processorAddress_t &addr) const
     return {};
 }
 
+Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
+{
+    Engine::pgzStructure_t res;
+    int32_t partidx{0};
+    for (const auto &part : *patch)
+    {
+        if (partFilter >= 0 && partFilter != partidx)
+            continue;
+
+        res.push_back({{partidx, -1, -1}, part->getName()});
+
+        int32_t groupidx{0};
+        for (const auto &group : *part)
+        {
+            res.push_back({{partidx, groupidx, -1}, group->getName()});
+            int32_t zoneidx{0};
+            for (const auto &zone : *group)
+            {
+                res.push_back({{partidx, groupidx, zoneidx}, zone->getName()});
+                zoneidx++;
+            }
+
+            groupidx++;
+        }
+
+        partidx++;
+    }
+    return res;
+}
 } // namespace scxt::engine

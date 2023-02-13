@@ -39,8 +39,12 @@ namespace scxt::messaging::client
  */
 enum ClientToSerializationMessagesIds
 {
+    c2s_on_register,
+
     c2s_request_zone_adsr_view,
     c2s_update_zone_adsr_view,
+
+    c2s_request_pgz_structure,
 
     num_clientToSerializationMessages
 };
@@ -48,10 +52,10 @@ enum ClientToSerializationMessagesIds
 enum SerializationToClientMessageIds
 {
     s2c_voice_count,
-
     s2c_respond_zone_adsr_view,
+    s2c_send_pgz_structure,
 
-    num_seralizationToClientMessages
+    num_serializationToClientMessages
 };
 
 typedef uint8_t unimpl_t;

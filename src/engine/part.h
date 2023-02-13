@@ -41,7 +41,7 @@ struct Patch;
 
 struct Part : MoveableOnly<Part>
 {
-    Part(int16_t c) : id(PartID::next()), channel(c) { addGroup(); }
+    Part(int16_t c) : id(PartID::next()), channel(c) {}
 
     PartID id;
     int16_t channel;
@@ -53,6 +53,9 @@ struct Part : MoveableOnly<Part>
     // TODO: have a channel mode like OMNI and MPE and everything
     static constexpr int16_t omniChannel{-1};
 
+    // TODO: editable name
+    std::string getName() const { return id.to_string(); }
+
     // TODO: Multiple outputs
     size_t getNumOutputs() const { return 1; }
 
@@ -62,6 +65,12 @@ struct Part : MoveableOnly<Part>
         g->parentPart = this;
         groups.push_back(std::move(g));
         return groups.size();
+    }
+
+    void guaranteeGroup(size_t count)
+    {
+        while (groups.size() < count)
+            addGroup();
     }
 
     // TODO GroupID -> index

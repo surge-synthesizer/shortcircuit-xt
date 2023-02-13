@@ -25,4 +25,42 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "SelectionManager.h"
+#ifndef SCXT_SRC_SELECTION_SELECTIONMANAGER_H
+#define SCXT_SRC_SELECTION_SELECTIONMANAGER_H
+
+#include <optional>
+#include <vector>
+#include <cstdint>
+#include <map>
+
+namespace scxt::selection
+{
+struct SelectionManager
+{
+    enum MainSelection
+    {
+        MULTI,
+        PART
+    };
+
+    struct ZoneAddress
+    {
+        ZoneAddress() {}
+        ZoneAddress(int32_t p, int32_t g, int32_t z) : part(p), group(g), zone(z) {}
+        int32_t part{-1};
+        int32_t group{-1};
+        int32_t zone{-1};
+    };
+
+    std::optional<ZoneAddress> getSelectedZone() const { return {}; }
+
+  protected:
+    MainSelection mainSelection{MULTI};
+    std::vector<ZoneAddress> allSelectedZones;
+    ZoneAddress leadZone;
+    size_t selectedPart{0};
+    std::map<size_t, std::vector<size_t>> selectedGroupByPart;
+};
+} // namespace scxt::selection
+
+#endif // SHORTCIRCUIT_SELECTIONMANAGER_H

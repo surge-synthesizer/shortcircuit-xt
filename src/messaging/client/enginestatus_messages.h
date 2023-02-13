@@ -25,41 +25,31 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SELECTION_SELECTIONMANAGER_H
-#define SCXT_SRC_SELECTION_SELECTIONMANAGER_H
+#ifndef SCXT_SRC_MESSAGING_CLIENT_ENGINESTATUS_MESSAGES_H
+#define SCXT_SRC_MESSAGING_CLIENT_ENGINESTATUS_MESSAGES_H
 
-#include "engine/engine.h"
+#include "messaging/client/detail/client_json_details.h"
+#include "json/engine_traits.h"
+#include "json/datamodel_traits.h"
+#include "selection/selection_manager.h"
 
-namespace scxt::selection
+namespace scxt::messaging::client
 {
-struct SelectionManager
+struct VoiceCountUpdate
 {
-    enum MainSelection
+    static constexpr SerializationToClientMessageIds s2c_id{s2c_voice_count};
+    typedef uint32_t s2c_payload_t;
+    template <typename Client> static void executeOnClient(Client *c, const s2c_payload_t &payload)
     {
-        MULTI,
-        PART
-    };
-
-    struct ZoneAddress
-    {
-        size_t part;
-        size_t group;
-        size_t zone;
-    };
-
-    std::optional<ZoneAddress> getSelectedZone() const
-    {
-        return {};
+        c->onVoiceCount(payload);
     }
-
-  protected:
-    MainSelection mainSelection{MULTI};
-    std::vector<ZoneAddress> allSelectedZones;
-    ZoneAddress leadZone;
-    size_t selectedPart{0};
-    std::map<size_t, std::vector<size_t>> selectedGroupByPart;
-
 };
-} // namespace scxt::selection
 
-#endif // SHORTCIRCUIT_SELECTIONMANAGER_H
+template <> struct SerializationToClientType<VoiceCountUpdate::s2c_id>
+{
+    typedef VoiceCountUpdate T;
+};
+
+} // namespace scxt::messaging::client
+
+#endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H

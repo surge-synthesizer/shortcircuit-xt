@@ -41,6 +41,7 @@
 #include <filesystem>
 #include <set>
 #include <cassert>
+#include "selection/selection_manager.h"
 
 namespace scxt::voice
 {
@@ -50,10 +51,6 @@ namespace scxt::messaging
 {
 struct MessageController;
 }
-namespace scxt::selection
-{
-struct SelectionManager;
-};
 namespace scxt::engine
 {
 struct Engine : MoveableOnly<Engine>, SampleRateSupport
@@ -148,6 +145,18 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     typedef std::tuple<int32_t, int32_t, int32_t, int32_t> processorAddress_t;
     const std::optional<dsp::processor::ProcessorStorage>
     getProcessorStorage(const processorAddress_t &addr) const;
+
+    typedef std::vector<std::pair<selection::SelectionManager::ZoneAddress, std::string>> pgzStructure_t;
+    /**
+     * Get the Part/Group/Zone structure as a set o fzone addreses. A part with
+     * no groups will be (p,-1,-1); a group with no zones will be (p,g,-1).
+     *
+     * @param partFilter -1 for all parts; 0-16 for a specific part
+     * @return The vector of zones matching the filter in the running engine
+     * independent of selection.
+     */
+    pgzStructure_t
+    getPartGroupZoneStructure(int partFilter) const;
 
   private:
     std::unique_ptr<Patch> patch;

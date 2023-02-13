@@ -190,7 +190,7 @@ inline void clientThreadExecuteSerializationMessage(const std::string &msgView, 
     detail::executeOnClientFor(
         (SerializationToClientMessageIds)idv, jv, c,
         std::make_index_sequence<(
-            size_t)SerializationToClientMessageIds::num_seralizationToClientMessages>());
+            size_t)SerializationToClientMessageIds::num_serializationToClientMessages>());
 }
 
 } // namespace scxt::messaging::client

@@ -274,19 +274,35 @@ void SCXTProcessor::temporaryInitPatch()
     }
     if (fs::exists(samplePath / rm))
     {
-        auto sid = engine->getSampleManager()->loadSampleByPath(
-            samplePath / "resources/test_samples/next/PulseSaw.wav");
-        auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
-        zptr->keyboardRange = {48, 72};
-        zptr->rootKey = 60;
-        zptr->attachToSample(*(engine->getSampleManager()));
+        {
+            auto sid = engine->getSampleManager()->loadSampleByPath(
+                samplePath / "resources/test_samples/next/PulseSaw.wav");
+            auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
+            zptr->keyboardRange = {48, 72};
+            zptr->rootKey = 60;
+            zptr->attachToSample(*(engine->getSampleManager()));
 
-        zptr->processorStorage[0].type = scxt::dsp::processor::proct_SuperSVF;
-        zptr->processorStorage[0].mix = 1.0;
+            zptr->processorStorage[0].type = scxt::dsp::processor::proct_SuperSVF;
+            zptr->processorStorage[0].mix = 1.0;
 
-        zptr->aegStorage.a = 0.7;
+            zptr->aegStorage.a = 0.7;
 
-        engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
+            engine->getPatch()->getPart(0)->guaranteeGroup(1);
+            engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
+        }
+        {
+            auto sid = engine->getSampleManager()->loadSampleByPath(
+                samplePath / "resources/test_samples/next/Beep.wav");
+            auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
+            zptr->keyboardRange = {60, 72};
+            zptr->rootKey = 60;
+            zptr->attachToSample(*(engine->getSampleManager()));
+
+            zptr->aegStorage.a = 0.1;
+
+            engine->getPatch()->getPart(0)->guaranteeGroup(1);
+            engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
+        }
     }
 }
 

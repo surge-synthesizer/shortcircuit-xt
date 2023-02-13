@@ -152,11 +152,14 @@ void MessageController::runSerialization()
 
 void MessageController::registerClient(const std::string &nm, clientCallback_t &&f)
 {
-    std::lock_guard<std::mutex> g(clientToSerializationMutex);
+    {
+        std::lock_guard<std::mutex> g(clientToSerializationMutex);
 
-    assert(!clientCallback);
-    clientCallback = std::move(f);
-    // TODO increase atomic
+        assert(!clientCallback);
+        clientCallback = std::move(f);
+    }
+
+    client::clientSendToSerialization(client::OnRegister(true), *this);
 }
 void MessageController::unregisterClient()
 {
