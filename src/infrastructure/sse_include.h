@@ -33,10 +33,7 @@
 #include "simde/x86/sse2.h"
 #else
 #include <xmmintrin.h>
-
-#if LINUX
 #include <immintrin.h>
-#endif
 #endif
 
 

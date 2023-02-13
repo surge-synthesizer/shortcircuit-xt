@@ -112,7 +112,7 @@ struct ProcessorStorage : LeakDetected<ProcessorStorage>
 {
     ProcessorStorage()
     {
-        std::fill(floatParams.begin(), floatParams.end(), 0);
+        std::fill(floatParams.begin(), floatParams.end(), 0.f);
         std::fill(intParams.begin(), intParams.end(), 0);
     }
     ProcessorType type{proct_none};
