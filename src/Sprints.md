@@ -81,7 +81,10 @@ I finally start on the selection mechanics, but in doing so see
 the pattern to fix up the Request/Response verbosity so implement
 that quickly, as well as clean up the pre-juce clients and unneeded
 submodules. Then turned to the registration time. With my refactored
-messages I added a part/group/zone view and onregister message.
+messages I added a part/group/zone view and onregister message. The
+onregister even sends me the full group/zone list at startup with names.
+
+Also got it building on lin/win again.
 
 ## Day 13 (2023-02-12)
 

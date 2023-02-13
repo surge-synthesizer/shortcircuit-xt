@@ -25,6 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <optional>
+
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"

@@ -30,6 +30,7 @@
 
 #include <cstdint>
 #include <array>
+#include <optional>
 #include "datamodel/parameter.h"
 #include "utils.h"
 
