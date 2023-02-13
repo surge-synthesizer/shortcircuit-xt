@@ -70,7 +70,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         slR = std::move(s);
     }
 
-    cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneViewRequest(index), e->msgCont);
+    cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
 }
 
 void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
@@ -87,6 +87,11 @@ void AdsrPane::adsrChangedFromGui()
 {
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest(index, adsrView),
                                     editor->msgCont);
+}
+
+void AdsrPane::adsrDeactivated()
+{
+    std::cout << "DEACTIVATED" << std::endl;
 }
 
 void AdsrPane::resized()

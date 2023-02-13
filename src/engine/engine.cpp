@@ -32,6 +32,7 @@
 #include "tuning/equal.h"
 #include "messaging/messaging.h"
 #include "messaging/audio/audio_messages.h"
+#include "selection/SelectionManager.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::engine
@@ -53,6 +54,7 @@ Engine::Engine()
     voiceInPlaceBuffer.reset(new uint8_t[sizeof(scxt::voice::Voice) * maxVoices]);
 
     setStereoOutputs(1);
+    selectionManager = std::make_unique<selection::SelectionManager>();
 
     messageController = std::make_unique<messaging::MessageController>(*this);
     messageController->start();

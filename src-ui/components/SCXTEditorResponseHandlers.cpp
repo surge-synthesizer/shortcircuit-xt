@@ -31,9 +31,16 @@
 
 namespace scxt::ui
 {
-void SCXTEditor::onEnvelopeUpdated(const int &which, const datamodel::AdsrStorage &v)
+void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &v)
 {
-    // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-    multiScreen->eg[which]->adsrChangedFromModel(v);
+    if (active)
+    {
+        // TODO - do I want a multiScreen->onEnvelopeUpdated or just
+        multiScreen->eg[which]->adsrChangedFromModel(v);
+    }
+    else
+    {
+        multiScreen->eg[which]->adsrDeactivated();
+    }
 }
 } // namespace scxt::ui

@@ -25,20 +25,4 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "SCXTProcessor.h"
-#include "SCXTPluginEditor.h"
-
-//==============================================================================
-SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &mc)
-    : juce::AudioProcessorEditor(&p)
-{
-    ed = std::make_unique<scxt::ui::SCXTEditor>(mc);
-    addAndMakeVisible(*ed);
-    setSize(1186, 810);
-    ed->setBounds(0, 0, getWidth(), getHeight());
-    setResizable(false, false);
-}
-
-SCXTPluginEditor::~SCXTPluginEditor() {}
-
-void SCXTPluginEditor::resized() {}
+#include "SelectionManager.h"

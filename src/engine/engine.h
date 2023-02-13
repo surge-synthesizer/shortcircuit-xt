@@ -50,6 +50,10 @@ namespace scxt::messaging
 {
 struct MessageController;
 }
+namespace scxt::selection
+{
+struct SelectionManager;
+};
 namespace scxt::engine
 {
 struct Engine : MoveableOnly<Engine>, SampleRateSupport
@@ -134,13 +138,16 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         return messageController;
     }
-
+    const std::unique_ptr<selection::SelectionManager> &getSelectionManager() const
+    {
+        return selectionManager;
+    }
     /*
      * Data Query APIs
      */
     typedef std::tuple<int32_t, int32_t, int32_t, int32_t> processorAddress_t;
-    const std::optional<dsp::processor::ProcessorStorage> getProcessorStorage(const processorAddress_t &addr) const;
-
+    const std::optional<dsp::processor::ProcessorStorage>
+    getProcessorStorage(const processorAddress_t &addr) const;
 
   private:
     std::unique_ptr<Patch> patch;
@@ -148,6 +155,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::array<voice::Voice *, maxVoices> voices;
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};
     std::unique_ptr<messaging::MessageController> messageController;
+    std::unique_ptr<selection::SelectionManager> selectionManager;
 };
 } // namespace scxt::engine
 #endif

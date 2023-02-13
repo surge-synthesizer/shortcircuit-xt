@@ -25,20 +25,41 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "SCXTProcessor.h"
-#include "SCXTPluginEditor.h"
+#ifndef SCXT_SRC_SELECTION_SELECTIONMANAGER_H
+#define SCXT_SRC_SELECTION_SELECTIONMANAGER_H
 
-//==============================================================================
-SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &mc)
-    : juce::AudioProcessorEditor(&p)
+#include "engine/engine.h"
+
+namespace scxt::selection
 {
-    ed = std::make_unique<scxt::ui::SCXTEditor>(mc);
-    addAndMakeVisible(*ed);
-    setSize(1186, 810);
-    ed->setBounds(0, 0, getWidth(), getHeight());
-    setResizable(false, false);
-}
+struct SelectionManager
+{
+    enum MainSelection
+    {
+        MULTI,
+        PART
+    };
 
-SCXTPluginEditor::~SCXTPluginEditor() {}
+    struct ZoneAddress
+    {
+        size_t part;
+        size_t group;
+        size_t zone;
+    };
 
-void SCXTPluginEditor::resized() {}
+    std::optional<ZoneAddress> getSelectedZone() const
+    {
+        return {};
+    }
+
+  protected:
+    MainSelection mainSelection{MULTI};
+    std::vector<ZoneAddress> allSelectedZones;
+    ZoneAddress leadZone;
+    size_t selectedPart{0};
+    std::map<size_t, std::vector<size_t>> selectedGroupByPart;
+
+};
+} // namespace scxt::selection
+
+#endif // SHORTCIRCUIT_SELECTIONMANAGER_H

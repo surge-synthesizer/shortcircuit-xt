@@ -53,8 +53,8 @@ struct dc : sst::jucegui::data::ContinunousModulatable
     float getValue() const override { return value; }
     void setValueFromGUI(const float &f) override
     {
-        //messaging::client::clientSendToSerialization(
-        //    messaging::client::TemporarySetZone0Filter1Mix(f), mc);
+        // messaging::client::clientSendToSerialization(
+        //     messaging::client::TemporarySetZone0Filter1Mix(f), mc);
         value = f;
     }
     void setValueFromModel(const float &f) override { value = f; }
@@ -86,9 +86,6 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
 
     sendFxScreen = std::make_unique<SendFXScreen>();
     addChildComponent(*sendFxScreen);
-
-    // TODO: This is les garbage but still a bit odd
-    cmsg::clientSendToSerialization(cmsg::ProcessorDataRequest({0, 0, 0, 1}), msgCont);
 }
 
 SCXTEditor::~SCXTEditor() noexcept

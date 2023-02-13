@@ -48,16 +48,9 @@ template <typename T> struct client_message_traits<MessageWrapper<T>>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const MessageWrapper<T> &t)
     {
-        auto iid = (int)T::id;
-        if constexpr (T::hasPayload)
-        {
-            client_message_value vt = t.msg.payload;
-            v = {{"id", iid}, {"object", vt}};
-        }
-        else
-        {
-            v = {{"id", iid}};
-        }
+        auto iid = (int)T::c2s_id;
+        client_message_value vt = t.msg.payload;
+        v = {{"id", iid}, {"object", vt}};
     }
 };
 
@@ -94,17 +87,10 @@ void doExecOnSerialization(tao::json::basic_value<Traits> &o, const engine::Engi
         typedef
             typename ClientToSerializationType<(ClientToSerializationMessagesIds)I>::T handler_t;
 
-        if constexpr (handler_t::hasPayload)
-        {
-            typename handler_t::payload_t payload;
-            client_message_value mv = o.get_object()["object"];
-            mv.to(payload);
-            handler_t::executeOnSerialization(payload, e, mc);
-        }
-        else
-        {
-            handler_t::executeOnSerialization(e, mc);
-        }
+        typename handler_t::c2s_payload_t payload;
+        client_message_value mv = o.get_object()["object"];
+        mv.to(payload);
+        handler_t::executeOnSerialization(payload, e, mc);
     }
 }
 
@@ -122,8 +108,7 @@ auto executeOnSerializationFor(size_t ft, typename tao::json::basic_value<Traits
 template <size_t I, typename Client, template <typename...> class Traits>
 void doExecOnClient(tao::json::basic_value<Traits> &o, Client *c)
 {
-    typedef
-        typename SerializationToClientType<(SerializationToClientMessageIds)I, Client>::T handler_t;
+    typedef typename SerializationToClientType<(SerializationToClientMessageIds)I>::T handler_t;
     if constexpr (std::is_same<handler_t, unimpl_t>::value)
     {
         assert(false);
@@ -131,12 +116,11 @@ void doExecOnClient(tao::json::basic_value<Traits> &o, Client *c)
     }
     else
     {
-        handler_t handler;
-        typename handler_t::payload_t payload;
+        typename handler_t::s2c_payload_t payload;
 
         client_message_value mv = o.get_object()["object"];
         mv.to(payload);
-        handler_t::executeOnResponse(c, payload);
+        handler_t::template executeOnClient<Client>(c, payload);
     }
 }
 template <typename Client, template <typename...> class Traits, size_t... Is>

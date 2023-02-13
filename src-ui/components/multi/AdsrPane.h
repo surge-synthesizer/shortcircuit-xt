@@ -72,6 +72,7 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void resized() override;
 
     void adsrChangedFromModel(const datamodel::AdsrStorage &);
+    void adsrDeactivated();
     void adsrChangedFromGui();
 };
 } // namespace scxt::ui::multi

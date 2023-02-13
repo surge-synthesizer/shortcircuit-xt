@@ -27,13 +27,3 @@ add_library(readerwriterqueue INTERFACE)
 target_include_directories(readerwriterqueue INTERFACE readerwriterqueue)
 add_library(shortcircuit::readerwriterqueue ALIAS readerwriterqueue)
 
-add_library(miniaudio INTERFACE)
-target_include_directories(miniaudio INTERFACE miniaudio/include)
-add_library(shortcircuit::miniaudio ALIAS miniaudio)
-
-if (APPLE)
-    set(RTMIDI_API_JACK FALSE CACHE BOOL "skip jack")
-endif()
-set(RTMIDI_BUILD_STATIC_LIBS TRUE CACHE BOOL "static rdmidi")
-set(RTMIDI_BUILD_TESTING OFF CACHE BOOL "no tests from rtmidi")
-add_subdirectory(rtmidi)

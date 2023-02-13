@@ -86,7 +86,7 @@ struct SCXTEditor : juce::Component
         std::cout << "Processor udpated" << std::endl;
     }
 
-    void onEnvelopeUpdated(const int &which, const datamodel::AdsrStorage &);
+    void onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &);
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;

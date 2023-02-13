@@ -2,6 +2,14 @@
 
 Week of Feb 13:
 - The Selection and State Management Object
+    - Message to get current part/group/zone hierarchy for a part 
+      and current list of parts and to select part 0 as startup
+    - Sidebar ui does bad display of said hierarchy with a juce::list or so
+    - builtin patch has 3 zones again in one group
+    - selection ui changes selection state (single select for now)
+    - including no select
+    - selection changes envelopes
+    - If you can get that far, commit
 - Remove the old clients and their subordinate libraries
 - Revisit all the interaction code c
    - Classes and patterns 
@@ -66,6 +74,22 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 14 (2023-02-13)
+
+I finally start on the selection mechanics, but in doing so see
+the pattern to fix up the Request/Response verbosity so implement
+that quickly, as well as clean up the pre-juce clients and unneeded
+submodules. 
+
+## Day 13 (2023-02-12)
+
+Unexpected hour of dev so I did some **Day 13** code shuffling. 
+Basically made src-next into src and stuff; but also rewrote the 
+client to be a proper juce plugin. And its great. The editor can't 
+even see the engine - the engine is private on the processor. 
+And so now I can run the standalone and play it wiht my midi 
+keyboard. Selections and cleanup tomorrow.
 
 ## Day 12 (2023-02-10 - 2023-02-11)
 
