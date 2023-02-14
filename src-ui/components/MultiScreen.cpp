@@ -27,12 +27,13 @@
 
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
+#include "multi/PartGroupSidebar.h"
 
 namespace scxt::ui
 {
 MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 {
-    parts = std::make_unique<DebugRect>(juce::Colour(100, 120, 200), "Parts");
+    parts = std::make_unique<multi::PartGroupSidebar>(editor);
     addAndMakeVisible(*parts);
     mainSection = std::make_unique<DebugRect>(juce::Colour(80, 80, 80), "Main");
     addAndMakeVisible(*mainSection);
@@ -69,9 +70,8 @@ void MultiScreen::layout()
     parts->setBounds(pad, pad, sideWidths, getHeight() - 3 * pad);
     browser->setBounds(getWidth() - sideWidths - pad, pad, sideWidths, getHeight() - 3 * pad);
 
-    auto mainRect =
-        juce::Rectangle<int>(sideWidths + 3 * pad, pad, getWidth() - 2 * sideWidths - 6 * pad,
-                             getHeight() - 3 * pad);
+    auto mainRect = juce::Rectangle<int>(
+        sideWidths + 3 * pad, pad, getWidth() - 2 * sideWidths - 6 * pad, getHeight() - 3 * pad);
     mainSection->setBounds(mainRect);
 
     auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
@@ -92,8 +92,7 @@ void MultiScreen::layout()
     auto xw = modRect.getWidth() * 0.250;
     mix->setBounds(modRect.withWidth(xw).translated(mw, 0));
 
-    auto envRect =
-        mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
+    auto envRect = mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
     auto ew = envRect.getWidth() * 0.25;
     eg[0]->setBounds(envRect.withWidth(ew));
     eg[1]->setBounds(envRect.withWidth(ew).translated(ew, 0));

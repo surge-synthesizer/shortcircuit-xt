@@ -75,6 +75,10 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
 
 void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 {
+    slA->setEnabled(true);
+    slD->setEnabled(true);
+    slS->setEnabled(true);
+    slR->setEnabled(true);
     atA->setValueFromModel(d.a);
     atD->setValueFromModel(d.d);
     atS->setValueFromModel(d.s);
@@ -91,7 +95,11 @@ void AdsrPane::adsrChangedFromGui()
 
 void AdsrPane::adsrDeactivated()
 {
-    std::cout << "DEACTIVATED" << std::endl;
+    slA->setEnabled(false);
+    slD->setEnabled(false);
+    slS->setEnabled(false);
+    slR->setEnabled(false);
+    repaint();
 }
 
 void AdsrPane::resized()

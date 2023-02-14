@@ -25,39 +25,30 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_JSON_SELECTION_TRAITS_H
-#define SCXT_SRC_JSON_SELECTION_TRAITS_H
+#ifndef SHORTCIRCUIT_PARTGROUPSIDEBAR_H
+#define SHORTCIRCUIT_PARTGROUPSIDEBAR_H
 
-#include <tao/json/to_string.hpp>
-#include <tao/json/from_string.hpp>
-#include <tao/json/contrib/traits.hpp>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "sst/jucegui/components/NamedPanel.h"
+#include "components/HasEditor.h"
+#include "engine/engine.h"
 
-#include "stream.h"
-#include "extensions.h"
-
-#include "selection/selection_manager.h"
-
-#include "scxt_traits.h"
-
-namespace scxt::json
+namespace scxt::ui::multi
 {
-template <> struct scxt_traits<scxt::selection::SelectionManager::ZoneAddress>
+struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
 {
-    typedef scxt::selection::SelectionManager::ZoneAddress za_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const za_t &e)
-    {
-        v = {{"part", e.part}, {"group", e.group}, {"zone", e.zone}};
-    }
+    PartGroupSidebar(SCXTEditor *);
+    ~PartGroupSidebar();
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, za_t &z)
-    {
-        v.at("part").to(z.part);
-        v.at("group").to(z.group);
-        v.at("zone").to(z.zone);
-    }
+    // TODO this is all just temporary hackitude of course
+    std::unique_ptr<juce::ListBox> pgzList;
+    std::unique_ptr<juce::ListBoxModel> pgzListModel;
+
+    engine::Engine::pgzStructure_t pgzStructure;
+    void setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p);
+
+    void resized() override;
 };
-} // namespace scxt::json
+} // namespace scxt::ui::multi
 
-#endif // SHORTCIRCUIT_SELECTION_TRAITS_H
+#endif // SHORTCIRCUIT_PARTGROUPSIDEBAR_H

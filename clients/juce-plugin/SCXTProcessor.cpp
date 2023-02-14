@@ -268,7 +268,8 @@ void SCXTProcessor::temporaryInitPatch()
 
     auto rm = fs::path{"resources/test_samples/next/README.md"};
 
-    while (samplePath.has_parent_path() && !(fs::exists(samplePath / rm)))
+    while (!samplePath.empty() && samplePath.has_parent_path() &&
+           samplePath.parent_path() != samplePath && !(fs::exists(samplePath / rm)))
     {
         samplePath = samplePath.parent_path();
     }
@@ -303,6 +304,12 @@ void SCXTProcessor::temporaryInitPatch()
             engine->getPatch()->getPart(0)->guaranteeGroup(1);
             engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
         }
+    }
+    else
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                               "Can't find test samples",
+                                               "Please run this from the source directory for now.");
     }
 }
 

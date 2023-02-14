@@ -40,8 +40,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_REPORT_APP_USAGE=0
 
-    JUCE_ALSA=0
-    JUCE_JACK=0
+    JUCE_ALSA=1
+    JUCE_JACK=1
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC

@@ -62,7 +62,7 @@ struct PartGroupZoneStructure
 
     template <typename Client> static void executeOnClient(Client *c, const s2c_payload_t &payload)
     {
-        // c->onStructureUpdate(payload);
+        c->onStructureUpdated(payload);
     }
 };
 
@@ -91,6 +91,7 @@ struct OnRegister
                                        MessageController &cont)
     {
         PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
+        engine.getSelectionManager()->singleSelect({});
     }
 };
 

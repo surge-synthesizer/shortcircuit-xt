@@ -75,18 +75,12 @@ struct SCXTEditor : juce::Component
     void idle();
     void drainCallbackQueue();
 
-    void onVoiceCount(const uint32_t &v)
-    {
-        std::cout << "SCXT EDITOR:: Vouce Count " << v << std::endl;
-    }
-
-    void onProcessorUpdated(const engine::Engine::processorAddress_t &,
-                            const dsp::processor::ProcessorStorage &)
-    {
-        std::cout << "Processor udpated" << std::endl;
-    }
+    void onVoiceCount(const uint32_t &v);
 
     void onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &);
+    void onStructureUpdated(const engine::Engine::pgzStructure_t &);
+
+    void singleSelectItem(const selection::SelectionManager::ZoneAddress &);
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;

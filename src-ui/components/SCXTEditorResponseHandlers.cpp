@@ -28,10 +28,19 @@
 #include "SCXTEditor.h"
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
+#include "multi/PartGroupSidebar.h"
+#include "HeaderRegion.h"
 
 namespace scxt::ui
 {
-void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &v)
+void SCXTEditor::onVoiceCount(const uint32_t &v)
+{
+    if (headerRegion)
+        headerRegion->setVoiceCount(v);
+}
+
+void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active,
+                                   const datamodel::AdsrStorage &v)
 {
     if (active)
     {
@@ -42,5 +51,11 @@ void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active, const d
     {
         multiScreen->eg[which]->adsrDeactivated();
     }
+}
+
+void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
+{
+    if (multiScreen && multiScreen->parts)
+        multiScreen->parts->setPartGroupZoneStructure(s);
 }
 } // namespace scxt::ui

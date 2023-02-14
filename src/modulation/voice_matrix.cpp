@@ -63,7 +63,6 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
 {
-    std::cout << "Attaching to voice " << v << std::endl;
     sourcePointers[vms_none] = nullptr;
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {

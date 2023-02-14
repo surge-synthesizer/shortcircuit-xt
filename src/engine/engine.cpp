@@ -54,7 +54,7 @@ Engine::Engine()
     voiceInPlaceBuffer.reset(new uint8_t[sizeof(scxt::voice::Voice) * maxVoices]);
 
     setStereoOutputs(1);
-    selectionManager = std::make_unique<selection::SelectionManager>();
+    selectionManager = std::make_unique<selection::SelectionManager>(*this);
 
     messageController = std::make_unique<messaging::MessageController>(*this);
     messageController->start();
@@ -169,8 +169,8 @@ bool Engine::processAudio()
 
 void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune)
 {
-    std::cout << "Engine::noteOn c=" << channel << " k=" << key << " nid=" << noteId
-              << " v=" << velocity << std::endl;
+    // std::cout << "Engine::noteOn c=" << channel << " k=" << key << " nid=" << noteId
+    //           << " v=" << velocity << std::endl;
     for (const auto &path : findZone(channel, key, noteId))
     {
         initiateVoice(path);
@@ -179,7 +179,8 @@ void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity
 }
 void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
 {
-    std::cout << "Engine::noteOff c=" << channel << " k=" << key << " nid=" << noteId << std::endl;
+    // std::cout << "Engine::noteOff c=" << channel << " k=" << key << " nid=" << noteId <<
+    // std::endl;
 
     for (const auto &path : findZone(channel, key, noteId))
     {

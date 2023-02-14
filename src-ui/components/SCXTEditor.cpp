@@ -73,9 +73,12 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
 
     namespace cmsg = scxt::messaging::client;
     msgCont.registerClient("SCXTEditor", [this](auto &s) {
-        // Remember this runs on the serialization thread so needs to be thread safe
-        std::lock_guard<std::mutex> g(callbackMutex);
-        callbackQueue.push(s);
+        {
+            // Remember this runs on the serialization thread so needs to be thread safe
+            std::lock_guard<std::mutex> g(callbackMutex);
+            callbackQueue.push(s);
+        }
+        juce::MessageManager::callAsync([this]() { drainCallbackQueue(); });
     });
 
     headerRegion = std::make_unique<HeaderRegion>(this);
@@ -123,7 +126,14 @@ void SCXTEditor::resized()
         sendFxScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
 }
 
-void SCXTEditor::idle() { drainCallbackQueue(); }
+void SCXTEditor::idle() {
+    // This drain queue should in theory not be needed
+    // since the message recipient schedules a drain queue.
+    // In fact it might be the case that we don't need an
+    // idle at all in SCXT. Leave it here for now while I think
+    // about it though.
+    // drainCallbackQueue();
+}
 
 void SCXTEditor::drainCallbackQueue()
 {
@@ -148,6 +158,12 @@ void SCXTEditor::drainCallbackQueue()
             cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
         }
     }
+}
+
+void SCXTEditor::singleSelectItem(const selection::SelectionManager::ZoneAddress &a)
+{
+    namespace cmsg = scxt::messaging::client;
+    cmsg::clientSendToSerialization(cmsg::SingleSelectAddress(a), msgCont);
 }
 
 } // namespace scxt::ui

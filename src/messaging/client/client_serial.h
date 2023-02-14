@@ -41,6 +41,8 @@ enum ClientToSerializationMessagesIds
 {
     c2s_on_register,
 
+    c2s_single_select_address,
+
     c2s_request_zone_adsr_view,
     c2s_update_zone_adsr_view,
 

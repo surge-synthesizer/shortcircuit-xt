@@ -55,8 +55,6 @@ struct AdsrSelectedZoneView
         // const auto &selectedZone = engine.getPatch()->getPart(0)->getGroup(0)->getZone(0);
         auto addr = engine.getSelectionManager()->getSelectedZone();
 
-        // Temporary hack
-        addr = {0, 0, 0};
         if (addr.has_value())
         {
             const auto &selectedZone =
@@ -114,10 +112,18 @@ struct AdsrSelectedZoneUpdateRequest
     {
         // TODO Selected Zone State
         const auto &[e, adsr] = payload;
-        cont.scheduleAudioThreadCallback([ew = e, adsrv = adsr](auto &eng) {
-            if (ew == 0)
-                eng.getPatch()->getPart(0)->getGroup(0)->getZone(0)->aegStorage = adsrv;
-        });
+        auto sz = engine.getSelectionManager()->getSelectedZone();
+        if (sz.has_value())
+        {
+            auto [ps, gs, zs] = *sz;
+            cont.scheduleAudioThreadCallback(
+                [p = ps, g = gs, z = zs, ew = e, adsrv = adsr](auto &eng) {
+                    if (ew == 0)
+                        eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->aegStorage = adsrv;
+                    if (ew == 1)
+                        eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->eg2Storage = adsrv;
+                });
+        }
     }
 };
 

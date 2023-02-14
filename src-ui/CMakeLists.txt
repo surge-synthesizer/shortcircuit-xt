@@ -10,6 +10,7 @@ add_library(${PROJECT_NAME} STATIC
         components/SendFXScreen.cpp
 
         components/multi/AdsrPane.cpp
+        components/multi/PartGroupSidebar.cpp
 
         )
 

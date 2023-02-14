@@ -59,8 +59,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 
     modulation::VoiceModMatrix modMatrix;
     modulation::modulators::StepLFO lfos[engine::lfosPerZone];
-    typedef
-    sst::basic_blocks::modulators::ADSREnvelope<Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
+    typedef sst::basic_blocks::modulators::ADSREnvelope<
+        Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
         adsrenv_t;
     adsrenv_t aeg, eg2;
     // TODO obviously this sucks move to a table
@@ -69,7 +69,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         return blockSize * sampleRateInv * pow(2.f, -f);
     }
 
-    template<typename ET, int EB, typename ER>
+    template <typename ET, int EB, typename ER>
     friend struct sst::basic_blocks::modulators::ADSREnvelope;
 
     Voice(engine::Zone *z);
@@ -115,9 +115,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     // TODO - this should be more carefully structured for modulation onto the entire filter
     lipol_ps processorMix[engine::processorsPerZone];
 
-
-
-
     // TODO This is obvious garbage from hereon down
     size_t sp{0};
     enum PlayState
@@ -128,10 +125,10 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         CLEANUP,
         OFF
     } playState{OFF};
+
     void attack()
     {
         assert(zone->sample);
-        std::cout << "   Voice Attack " << zone->sample->getPath().u8string() << std::endl;
         playState = GATED;
         voiceStarted();
     }

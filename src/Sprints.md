@@ -1,32 +1,19 @@
 # Baconpauls next sprints
 
 Week of Feb 13:
-- The Selection and State Management Object
-    - Message to get current part/group/zone hierarchy for a part 
-      and current list of parts and to select part 0 as startup
-    - Sidebar ui does bad display of said hierarchy with a juce::list or so
-    - builtin patch has 3 zones again in one group
-    - selection ui changes selection state (single select for now)
-    - including no select
-    - selection changes envelopes
-    - If you can get that far, commit
-- Remove the old clients and their subordinate libraries
-- Revisit all the interaction code c
-   - Classes and patterns 
-   - better file class and enum names (like client messages gets split up)
+- Revisit all the interaction code
    - non-fiction novel
    - Throw guards around json parses
 - Then: Processor views
+- Then: Zone views
 - Then: Add a zone by sample
-- Then: Two Zones - select
 - Then: A bit of UI work to make it look pixel-exact to wireframe
 - A VU Meter
 - Set up a 'next' nightly
-
-once that's done
 - Vembertech lipol_ps then its gone
 - Generator keeps runnign after AEG is complete; don't
 - Zone Variants and the zone-sample-wrapper data object
+- Big Punt: Multi-Select
 - Voice Design for real and zone level modulators
     - Lifecycle with GATED FINISHED CLEANUP etc
     - AEG/FEG
@@ -41,8 +28,6 @@ once that's done
 - Find samples when streamed by path
 - Samples in the patch
 - Port in the rest of the processors
-- Bring back the SST Libs and CMake fix up
-  - including git version 
 - What to do with the tests? Maybe just start new ones
 - Zone Metadata
 - Other Sample Formats other than .wav
@@ -55,8 +40,10 @@ once that's done
 - State streaming
 - Engine Path to Keyboard Lookup way way faster (probably precache)
 - The curve from SC Envelope into the ADSR
+- Samples load off thread
 
 Open Questions and ToDos and Reviews:
+- Bring back ASIO
 - int vs sized type (int32_t etc)
 - riff_memfile and riff_wave review
 - what's all the stuff in samplevoice which didnt make it
@@ -74,6 +61,18 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 15 (2023-02-14)
+
+More than 2 weeks at it. But going strong. Started by doing 
+some cleanup from the overnight reports on other systems 
+like show the voice count in the header and so forth. I also
+changed something in the UI threading which greatly speeds up
+response to inbound messages and may mean SCXT doesn't need an
+idle loop. Right now idle does nothing.
+
+But the real meat today was part group zone selection. Start bu
+making a crap juce view of the structure which I can select into.
 
 ## Day 14 (2023-02-13)
 

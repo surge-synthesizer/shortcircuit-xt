@@ -25,39 +25,32 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_JSON_SELECTION_TRAITS_H
-#define SCXT_SRC_JSON_SELECTION_TRAITS_H
-
-#include <tao/json/to_string.hpp>
-#include <tao/json/from_string.hpp>
-#include <tao/json/contrib/traits.hpp>
-
-#include "stream.h"
-#include "extensions.h"
+#ifndef SCXT_SRC_MESSAGING_CLIENT_SELECTION_MESSAGES_H
+#define SCXT_SRC_MESSAGING_CLIENT_SELECTION_MESSAGES_H
 
 #include "selection/selection_manager.h"
 
-#include "scxt_traits.h"
-
-namespace scxt::json
+namespace scxt::messaging::client
 {
-template <> struct scxt_traits<scxt::selection::SelectionManager::ZoneAddress>
+struct SingleSelectAddress
 {
-    typedef scxt::selection::SelectionManager::ZoneAddress za_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const za_t &e)
-    {
-        v = {{"part", e.part}, {"group", e.group}, {"zone", e.zone}};
-    }
+    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_single_select_address};
+    typedef selection::SelectionManager::ZoneAddress
+        c2s_payload_t; // the part number, or -1 for all parts
+    c2s_payload_t payload{-1, -1, -1};
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, za_t &z)
+    SingleSelectAddress(const c2s_payload_t &p) : payload(p) {}
+
+    static void executeOnSerialization(const c2s_payload_t &which, const engine::Engine &engine,
+                                       MessageController &cont)
     {
-        v.at("part").to(z.part);
-        v.at("group").to(z.group);
-        v.at("zone").to(z.zone);
+        engine.getSelectionManager()->singleSelect(which);
     }
 };
-} // namespace scxt::json
 
-#endif // SHORTCIRCUIT_SELECTION_TRAITS_H
+template <> struct ClientToSerializationType<SingleSelectAddress::c2s_id>
+{
+    typedef SingleSelectAddress T;
+};
+} // namespace scxt::messaging::client
+#endif // SHORTCIRCUIT_SELECTION_MESSAGES_H

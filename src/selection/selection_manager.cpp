@@ -26,7 +26,41 @@
  */
 
 #include "selection_manager.h"
+#include <iostream>
+#include "engine/engine.h"
+#include "messaging/messaging.h"
+#include "messaging/client/client_serial.h"
 
 namespace scxt::selection
 {
+void SelectionManager::singleSelect(const ZoneAddress &a)
+{
+    auto [p, g, z] = a;
+    if (z >= 0 && g >= 0 && p >= 0)
+    {
+        singleSelection = a;
+        // TODO: The 'full zone' becomes a single function obviously
+        const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+        serializationSendToClient(
+            messaging::client::s2c_respond_zone_adsr_view,
+            messaging::client::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
+            *(engine.getMessageController()));
+        serializationSendToClient(
+            messaging::client::s2c_respond_zone_adsr_view,
+            messaging::client::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
+            *(engine.getMessageController()));
+    }
+    else
+    {
+        singleSelection = {};
+        serializationSendToClient(
+            messaging::client::s2c_respond_zone_adsr_view,
+            messaging::client::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
+            *(engine.getMessageController()));
+        serializationSendToClient(
+            messaging::client::s2c_respond_zone_adsr_view,
+            messaging::client::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
+            *(engine.getMessageController()));
+    }
+}
 } // namespace scxt::selection
