@@ -100,7 +100,52 @@ namespace scxt::messaging
  *
  * We encapsulate this in a few objects here.
  *
- * The MessageController is an object owned by the engine, constructed with an engine & blah
+ * The MessageController is an object owned by the engine, constructed with an
+ * engine. This is the object which can send messages between the various parts.
+ * Those messages take a couple of forms
+ *
+ * Client <-> Serialization Messages (clients/client_serial.h)
+ *
+ * The pattern we use here is to make request and response objects. Request
+ * objects are C2S and response are S2C, basically. There is a unique set of
+ * IDs for each message.
+ *
+ * To be a C2S object you implement an object which has a constecxpr id c2s_id
+ * and a typedef to c2s_payload_t. That payload should be json streamable (so
+ * should be a basic type supported by jsoncpp or implement a traint in src/json).
+ * Finally the object should implement static executeOnSerialization which is called
+ * with a payload, an engine, and a controller. A client sends a message with
+ * template<T> messaging::client::clientSendToSerialization(T &msg, MessageController &)
+ * which uses these template properties to serialize the payload, deliver it to the
+ * seralization thread, and execute it.
+ *
+ * To be an S2C object you do the inverse. Implement a constexpr s2c_id
+ * and typedef an s2c_payload_t which again is json streamable. Then implement
+ * template<Client> executeOnClient(Client *, s2c_payload &). This allows the
+ * serialization thread to call MessageController::serializationToClient(s2cid, payload)
+ * and have that delivered to the client for execution. Obviously the union of the
+ * functions called on the Client template type by executeOnClient imply an API for
+ * the client object which unpacks messages.
+ *
+ * Audio <-> Serlization Messages (audio/audio_serial.h)
+ *
+ * The audio thread messaging is more constrained since it has to be non allocating
+ * and lock free. As a result the message payloads are fixed sized unions
+ * AudiotoSerialization and SerializationToAudio, which you enqueue or
+ * dequeue with a type for a switch.
+ *
+ * For the specific case of the serialization thread interacting with
+ * the audio thread, though, we have used this mechanism to make a
+ * fucntion callback which is audio-thread alloc free. The function
+ * MessageController::scheduleAudioThreadCallback(cb) hides most of these
+ * mechanics by sending a function to the audio thread with all of the
+ * required allocation and deallocation happening on the serialization
+ * thread.
+ *
+ * The other common pattern of the audio thread initiates a message is
+ * really just done by explicitly constructing the message on the audio
+ * thread, sending it, and then unpacking it in
+ * MessageController::praseAudioMessageOnSerializationThread
  *
  */
 

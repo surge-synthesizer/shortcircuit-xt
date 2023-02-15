@@ -1,9 +1,6 @@
 # Baconpauls next sprints
 
 Week of Feb 13:
-- Revisit all the interaction code
-   - non-fiction novel
-   - Throw guards around json parses
 - Then: Processor views
 - Then: Zone views
 - Then: Add a zone by sample
@@ -41,6 +38,7 @@ Week of Feb 13:
 - Engine Path to Keyboard Lookup way way faster (probably precache)
 - The curve from SC Envelope into the ADSR
 - Samples load off thread
+- Throw guards around json parses
 
 Open Questions and ToDos and Reviews:
 - Bring back ASIO
@@ -73,6 +71,8 @@ idle loop. Right now idle does nothing.
 
 But the real meat today was part group zone selection. Start bu
 making a crap juce view of the structure which I can select into.
+And that lets me write the single selection message which switches
+the active zone server side and updates the view client side.
 
 ## Day 14 (2023-02-13)
 
