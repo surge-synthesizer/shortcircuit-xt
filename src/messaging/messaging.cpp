@@ -159,7 +159,7 @@ void MessageController::runSerialization()
         }
         else
         {
-            std::cout << "Serial thread complete" << std::endl;
+            SCDBGCOUT << "Serial thread complete" << std::endl;
         }
     }
 }

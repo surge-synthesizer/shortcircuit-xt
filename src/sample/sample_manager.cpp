@@ -24,7 +24,10 @@
  * All source for ShortcircuitXT is available at
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
+
+#include <cassert>
 #include "sample_manager.h"
+
 
 namespace scxt::sample
 {
