@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "HasEditor.h"
+#include "sst/jucegui/components/NamedPanel.h"
 
 namespace scxt::ui
 {
@@ -37,35 +38,21 @@ namespace multi
 {
 struct AdsrPane;
 struct PartGroupSidebar;
-}
+} // namespace multi
 
 struct MultiScreen : juce::Component, HasEditor
 {
-    struct DebugRect : public juce::Component
-    {
-        juce::Colour color;
-        std::string label;
-        DebugRect(const juce::Colour &c, const std::string &s) : color(c), label(s) {}
-        void paint(juce::Graphics &g) override
-        {
-            g.fillAll(color);
-            g.setColour(color.contrasting());
-            g.drawText(label, getLocalBounds(), juce::Justification::centred);
-        }
-    };
-
     static constexpr int sideWidths = 196;
     static constexpr int edgeDistance = 6;
 
     static constexpr int envHeight = 160, modHeight = 160, fxHeight = 176;
     static constexpr int pad = 0;
 
-    std::unique_ptr<juce::Component> browser, mainSection, sample, fx[4], mod, mix, lfo;
+    std::unique_ptr<juce::Component> browser, sample, fx[4], mod, mix, lfo;
     std::unique_ptr<multi::PartGroupSidebar> parts;
     std::unique_ptr<multi::AdsrPane> eg[2];
     MultiScreen(SCXTEditor *e);
     ~MultiScreen();
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override { layout(); }
 
     void layout();

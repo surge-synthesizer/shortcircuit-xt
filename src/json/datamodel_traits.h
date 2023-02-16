@@ -43,24 +43,18 @@ namespace scxt::json
 template <> struct scxt_traits<datamodel::AdsrStorage>
 {
     template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const datamodel::AdsrStorage &t)
+    static void assign(tao::json::basic_value<Traits> &v, const datamodel::AdsrStorage &t)
     {
-        v = { {"a", t.a},
-             {"d", t.d},
-             {"s", t.s},
-             {"r", t.r},
-             {"isDigital", t.isDigital},
-             {"aShape", t.aShape},
-             {"dShape", t.dShape},
-             {"rShape", t.rShape}};
+        v = {{"a", t.a},           {"h", t.h},           {"d", t.d},
+             {"s", t.s},           {"r", t.r},           {"isDigital", t.isDigital},
+             {"aShape", t.aShape}, {"dShape", t.dShape}, {"rShape", t.rShape}};
     }
 
     template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   datamodel::AdsrStorage &result)
+    static void to(const tao::json::basic_value<Traits> &v, datamodel::AdsrStorage &result)
     {
         v.at("a").to(result.a);
+        v.at("h").to(result.h);
         v.at("d").to(result.d);
         v.at("s").to(result.s);
         v.at("r").to(result.r);

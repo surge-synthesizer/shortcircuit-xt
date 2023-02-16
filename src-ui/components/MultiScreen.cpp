@@ -31,12 +31,36 @@
 
 namespace scxt::ui
 {
+
+struct DebugRect : public sst::jucegui::components::NamedPanel
+{
+    struct CL : juce::Component
+    {
+        juce::Colour color;
+        std::string label;
+        void paint(juce::Graphics &g) override
+        {
+            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+
+            g.setColour(color);
+            g.drawText(label, getLocalBounds(), juce::Justification::centred);
+        }
+    };
+    std::unique_ptr<CL> cl;
+    DebugRect(const juce::Colour &c, const std::string &s) : sst::jucegui::components::NamedPanel(s)
+    {
+        cl = std::make_unique<CL>();
+        cl->color = c;
+        cl->label = s;
+        addAndMakeVisible(*cl);
+    }
+    void resized() override { cl->setBounds(getContentArea()); }
+};
+
 MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 {
     parts = std::make_unique<multi::PartGroupSidebar>(editor);
     addAndMakeVisible(*parts);
-    mainSection = std::make_unique<DebugRect>(juce::Colour(80, 80, 80), "Main");
-    addAndMakeVisible(*mainSection);
     browser = std::make_unique<DebugRect>(juce::Colour(200, 120, 100), "Browser");
     addAndMakeVisible(*browser);
     sample = std::make_unique<DebugRect>(juce::Colour(200, 100, 0), "Sample");
@@ -44,7 +68,7 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 
     for (int i = 0; i < 4; ++i)
     {
-        fx[i] = std::make_unique<DebugRect>(juce::Colour(i * 60, 0, (4 - i) * 60),
+        fx[i] = std::make_unique<DebugRect>(juce::Colour(i * 60, 255, (4 - i) * 60),
                                             "FX" + std::to_string(i));
         addAndMakeVisible(*(fx[i]));
     }
@@ -72,7 +96,6 @@ void MultiScreen::layout()
 
     auto mainRect = juce::Rectangle<int>(
         sideWidths + 3 * pad, pad, getWidth() - 2 * sideWidths - 6 * pad, getHeight() - 3 * pad);
-    mainSection->setBounds(mainRect);
 
     auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
     sample->setBounds(mainRect.withHeight(wavHeight));

@@ -30,59 +30,74 @@
 
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
+#include "connectors/SCXTStyleSheetCreator.h"
+#include "sst/jucegui/components/Label.h"
 
 namespace scxt::ui::multi
 {
 namespace cmsg = scxt::messaging::client;
 
 AdsrPane::AdsrPane(SCXTEditor *e, int index)
-    : HasEditor(e), sst::jucegui::components::NamedPanel(index == 0 ? "AEG" : "EG2"), index(index)
+    : HasEditor(e), sst::jucegui::components::NamedPanel(index == 0 ? "AMP EG" : "EG 2"),
+      index(index)
 {
-    auto attach =
-        [this](const std::string &l,
-               float &v) -> std::tuple<std::unique_ptr<attachment>,
-                                       std::unique_ptr<sst::jucegui::components::VSlider>> {
-        auto at = std::make_unique<attachment>(this, l, v);
+    auto attachSlider = [this](Ctrl c, const std::string &l, const auto &fn, float &v) {
+        auto at = std::make_unique<attachment_t>(
+            this, l, [this]() { this->adsrChangedFromGui(); }, fn, v);
         auto sl = std::make_unique<sst::jucegui::components::VSlider>();
         sl->setSource(at.get());
+        sl->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
         addAndMakeVisible(*sl);
-        return {std::move(at), std::move(sl)};
+        auto lb = std::make_unique<sst::jucegui::components::Label>();
+        lb->setText(l);
+        addAndMakeVisible(*lb);
+        attachments[c] = std::move(at);
+        sliders[c] = std::move(sl);
+        labels[c] = std::move(lb);
     };
 
-    {
-        auto [a, s] = attach("A", adsrView.a);
-        atA = std::move(a);
-        slA = std::move(s);
-    }
-    {
-        auto [a, s] = attach("D", adsrView.d);
-        atD = std::move(a);
-        slD = std::move(s);
-    }
-    {
-        auto [a, s] = attach("S", adsrView.s);
-        atS = std::move(a);
-        slS = std::move(s);
-    }
-    {
-        auto [a, s] = attach("R", adsrView.r);
-        atR = std::move(a);
-        slR = std::move(s);
-    }
+    attachSlider(
+        Ctrl::A, "A", [](const auto &pl) { return pl.a; }, adsrView.a);
+    attachSlider(
+        Ctrl::H, "H", [](const auto &pl) { return pl.h; }, adsrView.h);
+    attachSlider(
+        Ctrl::D, "D", [](const auto &pl) { return pl.d; }, adsrView.d);
+    attachSlider(
+        Ctrl::S, "S", [](const auto &pl) { return pl.s; }, adsrView.s);
+    attachSlider(
+        Ctrl::R, "R", [](const auto &pl) { return pl.r; }, adsrView.r);
+
+    auto attachKnob = [this](Ctrl c, const std::string &l, const auto &fn, float &v) {
+        auto at = std::make_unique<attachment_t>(
+            this, l, [this]() { this->adsrChangedFromGui(); }, fn, v);
+        auto kn = std::make_unique<sst::jucegui::components::Knob>();
+        kn->setSource(at.get());
+        kn->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+        addAndMakeVisible(*kn);
+        attachments[c] = std::move(at);
+        knobs[c] = std::move(kn);
+    };
+
+    attachKnob(
+        Ctrl::Ash, "A Shape", [](const auto &pl) { return pl.aShape; }, adsrView.aShape);
+    attachKnob(
+        Ctrl::Dsh, "D Shape", [](const auto &pl) { return pl.dShape; }, adsrView.dShape);
+    attachKnob(
+        Ctrl::Rsh, "R Shape", [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
 
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
 }
 
 void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 {
-    slA->setEnabled(true);
-    slD->setEnabled(true);
-    slS->setEnabled(true);
-    slR->setEnabled(true);
-    atA->setValueFromModel(d.a);
-    atD->setValueFromModel(d.d);
-    atS->setValueFromModel(d.s);
-    atR->setValueFromModel(d.r);
+    for (const auto &[c, sl] : sliders)
+        sl->setEnabled(true);
+
+    for (const auto &[c, sl] : knobs)
+        sl->setEnabled(true);
+
+    for (const auto &[c, at] : attachments)
+        at->setValueFromPayload(d);
 
     repaint();
 }
@@ -95,29 +110,46 @@ void AdsrPane::adsrChangedFromGui()
 
 void AdsrPane::adsrDeactivated()
 {
-    slA->setEnabled(false);
-    slD->setEnabled(false);
-    slS->setEnabled(false);
-    slR->setEnabled(false);
+    for (const auto &[c, sl] : sliders)
+        sl->setEnabled(false);
+
+    for (const auto &[c, sl] : knobs)
+        sl->setEnabled(false);
+
     repaint();
 }
 
 void AdsrPane::resized()
 {
     auto r = getContentArea();
-    auto h = r.getHeight();
+    auto lh = 16.f;
+    auto kh = 20.f;
+    auto h = r.getHeight() - lh - kh;
     auto x = r.getX();
-    auto y = r.getY();
-    auto w = 18;
-    auto pad = 2;
+    auto y = r.getY() + kh;
+    auto w = 34.f;
+    x = x + (r.getWidth() - w * 5) * 0.5;
 
-    slA->setBounds(x, y, w, h);
-    x += w + pad;
-    slD->setBounds(x, y, w, h);
-    x += w + pad;
-    slS->setBounds(x, y, w, h);
-    x += w + pad;
-    slR->setBounds(x, y, w, h);
+    for (const auto &c : {Ctrl::A, H, D, S, R})
+    {
+        switch (c)
+        {
+        case A:
+            knobs[Ash]->setBounds(x + (w - lh) * 0.5, y - lh, kh, kh);
+            break;
+        case D:
+            knobs[Dsh]->setBounds(x + (w - lh) * 0.5, y - lh, kh, kh);
+            break;
+        case R:
+            knobs[Rsh]->setBounds(x + (w - lh) * 0.5, y - lh, kh, kh);
+            break;
+        default:
+            break;
+        }
+        sliders[c]->setBounds(x, y, w, h);
+        labels[c]->setBounds(x, y + h, w, lh);
+        x += w;
+    }
 }
 
 } // namespace scxt::ui::multi

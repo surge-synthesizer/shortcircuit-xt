@@ -1,10 +1,13 @@
 # Baconpauls next sprints
 
 Week of Feb 13:
+- Then: A bit of UI work to make it look pixel-exact to wireframe
+    - Upcase the headers
+    - Header not hot pink any more at least
+- At least make the standalone available as a zip from main repo next
 - Then: Processor views
 - Then: Zone views
 - Then: Add a zone by sample
-- Then: A bit of UI work to make it look pixel-exact to wireframe
 - A VU Meter
 - Set up a 'next' nightly
 - Vembertech lipol_ps then its gone
@@ -39,6 +42,7 @@ Week of Feb 13:
 - The curve from SC Envelope into the ADSR
 - Samples load off thread
 - Throw guards around json parses
+- Restricts in the copy blocks in the mechanics helpers in basic blocks
 
 Open Questions and ToDos and Reviews:
 - Bring back ASIO
@@ -59,6 +63,15 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 16 (2023-02-15)
+
+Slower day with some busyness keeping me away from dev but did some
+UI focus. Moved to using more of hte jucegui components properly, including
+a clever factoring of how the model hooks up to the UI which is really super
+easy, and doing a closer but not perfect layout of the ADSR, plus some style
+sheet work to accomadate and start thinking about chasing the figma. Probably 
+processors or maybe add zone next.
 
 ## Day 15 (2023-02-14)
 

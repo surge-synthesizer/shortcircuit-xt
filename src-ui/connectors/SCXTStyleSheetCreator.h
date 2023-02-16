@@ -25,28 +25,20 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_DATAMODEL_ADSR_STORAGE_H
-#define SCXT_SRC_DATAMODEL_ADSR_STORAGE_H
+#ifndef SHORTCIRCUIT_SCXTSTYLESHEET_H
+#define SHORTCIRCUIT_SCXTSTYLESHEET_H
 
-#include <tuple>
+#include "sst/jucegui/style/StyleSheet.h"
 
-namespace scxt::datamodel
+namespace scxt::ui::connectors
 {
-struct AdsrStorage
+struct SCXTStyleSheetCreator
 {
-    /*
-     * Each of the ADR are 0..1 and scaled to time by the envelope. S is a 0..1 pct
-     */
-    float a{0.5}, h{0.0}, d{0.5}, s{0.5}, r{0.5};
-    bool isDigital{true};
+    using sheet_t = sst::jucegui::style::StyleSheet;
 
-    // TODO: What are these going to be when they grow up?
-    float aShape{0}, dShape{0}, rShape{0};
+    static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
 
-    auto asTuple() const { return std::tie(a, d, s, r, isDigital, aShape, dShape, rShape); }
-    bool operator==(const AdsrStorage &other) const { return asTuple() == other.asTuple(); }
-    bool operator!=(const AdsrStorage &other) const { return !(*this == other); }
+    static const sheet_t::ptr_t setup();
 };
-} // namespace scxt::datamodel
-
-#endif // SHORTCIRCUIT_ADSR_STORAGE_H
+} // namespace scxt::ui::connectors
+#endif // SHORTCIRCUIT_SCXTSTYLESHEET_H

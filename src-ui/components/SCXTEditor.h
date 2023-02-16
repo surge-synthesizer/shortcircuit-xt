@@ -33,6 +33,7 @@
 #include "messaging/messaging.h"
 #include "sst/jucegui/components/HSlider.h"
 #include "datamodel/adsr_storage.h"
+#include "sst/jucegui/components/WindowPanel.h"
 
 namespace scxt::ui
 {
@@ -41,7 +42,7 @@ struct HeaderRegion;
 struct MultiScreen;
 struct SendFXScreen;
 
-struct SCXTEditor : juce::Component
+struct SCXTEditor : sst::jucegui::components::WindowPanel
 {
     messaging::MessageController &msgCont;
 
@@ -69,7 +70,6 @@ struct SCXTEditor : juce::Component
     };
     void setActiveScreen(ActiveScreen s);
 
-    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::black); }
     void resized() override;
 
     void idle();

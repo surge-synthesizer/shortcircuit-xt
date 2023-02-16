@@ -32,41 +32,14 @@
 #include "HeaderRegion.h"
 #include "MultiScreen.h"
 #include "SendFXScreen.h"
+#include "connectors/SCXTStyleSheetCreator.h"
 
 namespace scxt::ui
 {
-
-struct dc : sst::jucegui::data::ContinunousModulatable
-{
-    /*
-  auto leakThis = new dc(msgCont);
-  sliderHack = std::make_unique<sst::jucegui::components::HSlider>();
-  sliderHack->setBounds(10, 10, 300, 40);
-  sliderHack->setSource(leakThis);
-  addAndMakeVisible(*sliderHack);
-*/
-    messaging::MessageController &mc;
-    dc(messaging::MessageController &m) : mc(m) {}
-
-    std::string getLabel() const override { return "Filter 1 Mix"; }
-    float value{0.f};
-    float getValue() const override { return value; }
-    void setValueFromGUI(const float &f) override
-    {
-        // messaging::client::clientSendToSerialization(
-        //     messaging::client::TemporarySetZone0Filter1Mix(f), mc);
-        value = f;
-    }
-    void setValueFromModel(const float &f) override { value = f; }
-
-    float getModulationValuePM1() const override { return 0; }
-    void setModulationValuePM1(const float &f) override {}
-    bool isModulationBipolar() const override { return false; }
-};
-
 SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
+    setStyle(connectors::SCXTStyleSheetCreator::setup());
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
@@ -89,6 +62,8 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
 
     sendFxScreen = std::make_unique<SendFXScreen>();
     addChildComponent(*sendFxScreen);
+
+    onStyleChanged();
 }
 
 SCXTEditor::~SCXTEditor() noexcept
@@ -126,7 +101,8 @@ void SCXTEditor::resized()
         sendFxScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
 }
 
-void SCXTEditor::idle() {
+void SCXTEditor::idle()
+{
     // This drain queue should in theory not be needed
     // since the message recipient schedules a drain queue.
     // In fact it might be the case that we don't need an
