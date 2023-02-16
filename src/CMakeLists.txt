@@ -37,6 +37,8 @@ add_library(${PROJECT_NAME} STATIC
         voice/voice.cpp
 
         utils.cpp
+
+        ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         )
 target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC

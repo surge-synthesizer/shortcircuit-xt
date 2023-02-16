@@ -31,6 +31,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "HasEditor.h"
 #include "fmt/core.h"
+#include "version.h"
 
 namespace scxt::ui
 {
@@ -48,7 +49,10 @@ struct HeaderRegion : juce::Component, HasEditor
         g.setColour(juce::Colours::pink.contrasting());
         g.drawText("header", getLocalBounds(), juce::Justification::centred);
         auto vc = fmt::format("Voices: {}", voiceCount);
-        g.drawText(vc, getLocalBounds(), juce::Justification::right);
+        g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::topRight);
+
+        g.drawText(scxt::build::FullVersionStr, getLocalBounds().reduced(3, 1),
+                   juce::Justification::bottomRight);
     }
 
     void resized() override
