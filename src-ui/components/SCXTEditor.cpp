@@ -131,6 +131,7 @@ void SCXTEditor::drainCallbackQueue()
         }
         if (itemsToDrain)
         {
+            assert(msgCont.threadingChecker.isClientThread());
             cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
         }
     }
@@ -141,5 +142,20 @@ void SCXTEditor::singleSelectItem(const selection::SelectionManager::ZoneAddress
     namespace cmsg = scxt::messaging::client;
     cmsg::clientSendToSerialization(cmsg::SingleSelectAddress(a), msgCont);
 }
+
+bool SCXTEditor::isInterestedInFileDrag(const juce::StringArray &files)
+{
+    // TODO be more parsimonious
+    return files.size() == 1;
+}
+
+void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
+{
+    assert(files.size() == 1);
+    namespace cmsg = scxt::messaging::client;
+    cmsg::clientSendToSerialization(cmsg::AddSample(fs::path{(const char*)(files[0].toUTF8())}), msgCont);
+}
+
+
 
 } // namespace scxt::ui

@@ -41,10 +41,12 @@ namespace scxt::engine
 Engine::Engine()
 {
     id.id = rand() % 1024;
+
+    messageController = std::make_unique<messaging::MessageController>(*this);
     dsp::sincTable.init();
     tuning::equalTuning.init();
 
-    sampleManager = std::make_unique<sample::SampleManager>();
+    sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);
     patch = std::make_unique<Patch>();
     patch->parentEngine = this;
 
@@ -56,7 +58,6 @@ Engine::Engine()
     setStereoOutputs(1);
     selectionManager = std::make_unique<selection::SelectionManager>(*this);
 
-    messageController = std::make_unique<messaging::MessageController>(*this);
     messageController->start();
 }
 
@@ -116,6 +117,9 @@ void Engine::releaseVoice(const pathToZone_t &path)
 bool Engine::processAudio()
 {
     namespace blk = sst::basic_blocks::mechanics;
+#if BUILD_IS_DEBUG
+    messageController->threadingChecker.registerAsAudioThread();
+#endif
 
     messaging::MessageController::serializationToAudioMessage_t msg;
     while (messageController->serializationToAudioQueue.try_dequeue(msg))
@@ -126,7 +130,7 @@ bool Engine::processAudio()
         {
             auto cb =
                 static_cast<messaging::MessageController::AudioThreadCallback *>(msg.payload.p);
-            cb->f(*this);
+            cb->exec(*this);
 
             messaging::audio::AudioToSerialization rt;
             rt.id = messaging::audio::a2s_pointer_complete;
@@ -254,4 +258,46 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
     }
     return res;
 }
+
+void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    // OK so what we want to do now is
+    // 1. Load this sample on this thread
+    auto sid = sampleManager->loadSampleByPath(p);
+
+    if (!sid.has_value())
+    {
+        SCDBGCOUT << "Unable to load sample " << p.u8string() << std::endl;
+        return;
+    }
+
+    // 2. Create a zone object on this thread but don't add it
+    auto zptr = std::make_unique<Zone>(*sid);
+    // TODO fixme
+    zptr->keyboardRange = {48, 72};
+    zptr->rootKey = 60;
+    zptr->attachToSample(*sampleManager);
+
+    auto [sp, sg, sz] =
+        selectionManager->getSelectedZone().value_or(selection::SelectionManager::ZoneAddress());
+    if (sp < 0)
+        sp = 0;
+    if (sg < 0)
+        sg = 0;
+
+    // 3. Send a message to the audio thread saying to add that zone and
+    messageController->scheduleAudioThreadCallback(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+
+            // 4. have the audio thread message back here to refresh the ui
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        });
+}
+
 } // namespace scxt::engine

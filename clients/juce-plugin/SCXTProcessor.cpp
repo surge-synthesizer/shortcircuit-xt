@@ -43,7 +43,10 @@ SCXTProcessor::SCXTProcessor()
       blockPos(0)
 {
     engine = std::make_unique<scxt::engine::Engine>();
+
+    engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
     temporaryInitPatch();
+    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }
 
 SCXTProcessor::~SCXTProcessor() {}
@@ -288,7 +291,7 @@ void SCXTProcessor::temporaryInitPatch()
 
             zptr->aegStorage.a = 0.7;
 
-            engine->getPatch()->getPart(0)->guaranteeGroup(1);
+            engine->getPatch()->getPart(0)->guaranteeGroupCount(1);
             engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
         }
         {
@@ -301,7 +304,7 @@ void SCXTProcessor::temporaryInitPatch()
 
             zptr->aegStorage.a = 0.1;
 
-            engine->getPatch()->getPart(0)->guaranteeGroup(1);
+            engine->getPatch()->getPart(0)->guaranteeGroupCount(1);
             engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
         }
     }

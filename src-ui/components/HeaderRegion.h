@@ -47,6 +47,7 @@ struct HeaderRegion : juce::Component, HasEditor
     {
         g.fillAll(juce::Colours::pink);
         g.setColour(juce::Colours::pink.contrasting());
+        g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
         g.drawText("header", getLocalBounds(), juce::Justification::centred);
         auto vc = fmt::format("Voices: {}", voiceCount);
         g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::topRight);

@@ -34,9 +34,11 @@ namespace scxt::ui
 {
 struct SendFXScreen : juce::Component
 {
-    void paint(juce::Graphics &g) {
+    void paint(juce::Graphics &g)
+    {
         g.fillAll(juce::Colours::green);
         g.setColour(juce::Colours::green.contrasting());
+        g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
         g.drawText("Send FX", getLocalBounds(), juce::Justification::centred);
     }
 };

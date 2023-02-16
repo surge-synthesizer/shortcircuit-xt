@@ -71,6 +71,7 @@ struct PGZListBoxModel : juce::ListBoxModel
         g.fillRect(0, 0, width, height);
 
         g.setColour(col.contrasting());
+        g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
         g.drawText(name, off, 0, width - off, height, juce::Justification::centredLeft);
     }
 

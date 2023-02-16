@@ -48,6 +48,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         shortcircuit::readerwriterqueue
         taocpp::json)
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC  $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
+
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES WINDOWS=1)
 else()

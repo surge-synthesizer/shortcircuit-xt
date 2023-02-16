@@ -40,12 +40,12 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     PartGroupSidebar(SCXTEditor *);
     ~PartGroupSidebar();
 
+    engine::Engine::pgzStructure_t pgzStructure;
+    void setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p);
+
     // TODO this is all just temporary hackitude of course
     std::unique_ptr<juce::ListBox> pgzList;
     std::unique_ptr<juce::ListBoxModel> pgzListModel;
-
-    engine::Engine::pgzStructure_t pgzStructure;
-    void setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p);
 
     void resized() override;
 };

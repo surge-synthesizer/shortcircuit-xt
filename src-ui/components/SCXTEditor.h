@@ -42,7 +42,7 @@ struct HeaderRegion;
 struct MultiScreen;
 struct SendFXScreen;
 
-struct SCXTEditor : sst::jucegui::components::WindowPanel
+struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
 {
     messaging::MessageController &msgCont;
 
@@ -72,14 +72,20 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel
 
     void resized() override;
 
+    // File Drag and Drop Interface
+    bool isInterestedInFileDrag(const juce::StringArray &files) override;
+    void filesDropped(const juce::StringArray &, int, int) override;
+
+    // Deal with message queues.
     void idle();
     void drainCallbackQueue();
 
+    // Serialization to Client Messages
     void onVoiceCount(const uint32_t &v);
-
     void onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &);
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
 
+    // Originate client to serialization messages
     void singleSelectItem(const selection::SelectionManager::ZoneAddress &);
 
     std::mutex callbackMutex;

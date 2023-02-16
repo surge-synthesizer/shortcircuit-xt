@@ -100,6 +100,30 @@ template <> struct ClientToSerializationType<OnRegister::c2s_id>
     typedef OnRegister T;
 };
 
+/*
+ * A message the client auto-sends when it registers just so we can respond
+ */
+struct AddSample
+{
+    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_add_sample};
+    typedef std::string c2s_payload_t; // the part number, or -1 for all parts
+    c2s_payload_t payload{};
+
+    AddSample(const fs::path &p) : payload(p.u8string()) {}
+
+    static void executeOnSerialization(const c2s_payload_t &pathu8, engine::Engine &engine,
+                                       MessageController &cont)
+    {
+        auto p = fs::path{pathu8};
+        engine.loadSampleIntoSelectedPartAndGroup(p);
+    }
+};
+
+template <> struct ClientToSerializationType<AddSample::c2s_id>
+{
+    typedef AddSample T;
+};
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_STRUCTURE_MESSAGES_H

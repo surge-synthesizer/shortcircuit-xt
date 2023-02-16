@@ -67,7 +67,7 @@ struct Part : MoveableOnly<Part>
         return groups.size();
     }
 
-    void guaranteeGroup(size_t count)
+    void guaranteeGroupCount(size_t count)
     {
         while (groups.size() < count)
             addGroup();

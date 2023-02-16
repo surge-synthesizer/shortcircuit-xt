@@ -71,7 +71,7 @@ template <typename T> struct client_message_traits<ResponseWrapper<T>>
 };
 
 template <size_t I, template <typename...> class Traits>
-void doExecOnSerialization(tao::json::basic_value<Traits> &o, const engine::Engine &e,
+void doExecOnSerialization(tao::json::basic_value<Traits> &o, engine::Engine &e,
                            MessageController &mc)
 {
     if constexpr (std::is_same<
@@ -96,11 +96,10 @@ void doExecOnSerialization(tao::json::basic_value<Traits> &o, const engine::Engi
 
 template <template <typename...> class Traits, size_t... Is>
 auto executeOnSerializationFor(size_t ft, typename tao::json::basic_value<Traits> &o,
-                               const engine::Engine &e, MessageController &mc,
-                               std::index_sequence<Is...>)
+                               engine::Engine &e, MessageController &mc, std::index_sequence<Is...>)
 {
     using vtOp_t =
-        void (*)(tao::json::basic_value<Traits> &, const engine::Engine &, MessageController &);
+        void (*)(tao::json::basic_value<Traits> &, engine::Engine &, MessageController &);
     constexpr vtOp_t fnc[] = {detail::doExecOnSerialization<Is>...};
     return fnc[ft](o, e, mc);
 }
@@ -137,6 +136,7 @@ auto executeOnClientFor(size_t ft, typename tao::json::basic_value<Traits> &o, C
 template <typename T>
 inline void clientSendToSerialization(const T &msg, messaging::MessageController &mc)
 {
+    assert(mc.threadingChecker.isClientThread());
     auto mw = detail::MessageWrapper(msg);
     detail::client_message_value v = mw;
     auto res = tao::json::to_string(v);
@@ -147,15 +147,17 @@ template <typename T>
 inline void serializationSendToClient(SerializationToClientMessageIds id, const T &msg,
                                       messaging::MessageController &mc)
 {
+    assert(mc.threadingChecker.isSerialThread());
     auto mw = detail::ResponseWrapper<T>(msg, id);
     detail::client_message_value v = mw;
     auto res = tao::json::to_string(v);
     mc.clientCallback(res);
 }
 
-inline void serializationThreadExecuteClientMessage(const std::string &msgView,
-                                                    const engine::Engine &e, MessageController &mc)
+inline void serializationThreadExecuteClientMessage(const std::string &msgView, engine::Engine &e,
+                                                    MessageController &mc)
 {
+    assert(mc.threadingChecker.isSerialThread());
     using namespace tao::json;
 
     // We need to unpack with the client message traits

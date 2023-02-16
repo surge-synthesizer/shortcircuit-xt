@@ -35,6 +35,7 @@
 
 #include <iostream>
 #include <map>
+#include <thread>
 
 namespace scxt
 {
@@ -97,12 +98,14 @@ template <typename T> class LeakDetected
         leakDetect(+1);
 #endif
     };
-    LeakDetected(LeakDetected &&) {
+    LeakDetected(LeakDetected &&)
+    {
 #if USE_SIMPLE_LEAK_DETECTOR
         leakDetect(+1);
 #endif
     }
-    LeakDetected(const LeakDetected &) {
+    LeakDetected(const LeakDetected &)
+    {
 #if USE_SIMPLE_LEAK_DETECTOR
         leakDetect(+1);
 #endif
@@ -174,6 +177,46 @@ struct SampleRateSupport
     // TODO remove these aliase
     double samplerate, samplerate_inv;
 };
+
+struct ThreadingChecker
+{
+    // TODO: Remove this workaround once I have startup working
+    std::atomic<bool> bypassThreadChecks{false};
+
+    std::thread::id clientThreadId{}, serialThreadId{}, audioThreadId{};
+    void registerAsClientThread() { clientThreadId = std::this_thread::get_id(); }
+    inline bool isClientThread() const
+    {
+#if BUILD_IS_DEBUG
+        return (bypassThreadChecks || clientThreadId == std::thread::id() ||
+                clientThreadId == std::this_thread::get_id());
+#else
+        return true;
+#endif
+    }
+    void registerAsSerialThread() { serialThreadId = std::this_thread::get_id(); }
+    inline bool isSerialThread() const
+    {
+#if BUILD_IS_DEBUG
+        return (bypassThreadChecks || serialThreadId == std::thread::id() ||
+                serialThreadId == std::this_thread::get_id());
+#else
+        return true;
+#endif
+    }
+    void registerAsAudioThread() { audioThreadId = std::this_thread::get_id(); }
+    inline bool isAudioThread() const
+    {
+#if BUILD_IS_DEBUG
+        return (bypassThreadChecks || audioThreadId == std::thread::id() ||
+                audioThreadId == std::this_thread::get_id());
+#else
+        return true;
+#endif
+    }
+};
+
+#define SCDBGCOUT std::cout << __FILE__ << ":" << __LINE__ << " "
 
 } // namespace scxt
 

@@ -139,6 +139,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         return selectionManager;
     }
+
+    /*
+     * Serialization thread originated mutation apis
+     */
+    void loadSampleIntoSelectedPartAndGroup(const fs::path &);
+
     /*
      * Data Query APIs
      */
@@ -146,7 +152,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     const std::optional<dsp::processor::ProcessorStorage>
     getProcessorStorage(const processorAddress_t &addr) const;
 
-    typedef std::vector<std::pair<selection::SelectionManager::ZoneAddress, std::string>> pgzStructure_t;
+    typedef std::vector<std::pair<selection::SelectionManager::ZoneAddress, std::string>>
+        pgzStructure_t;
     /**
      * Get the Part/Group/Zone structure as a set o fzone addreses. A part with
      * no groups will be (p,-1,-1); a group with no zones will be (p,g,-1).
@@ -155,8 +162,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * @return The vector of zones matching the filter in the running engine
      * independent of selection.
      */
-    pgzStructure_t
-    getPartGroupZoneStructure(int partFilter) const;
+    pgzStructure_t getPartGroupZoneStructure(int partFilter) const;
 
   private:
     std::unique_ptr<Patch> patch;

@@ -49,7 +49,8 @@ enum AudioToSerializationMessageId
     a2s_pointer_complete,
     a2s_voice_count,
     a2s_note_on,
-    a2s_note_off
+    a2s_note_off,
+    a2s_structure_refresh
 };
 
 /**
@@ -72,6 +73,7 @@ struct AudioToSerialization
 
     enum PayloadType : uint8_t
     {
+        NONE,
         INT,
         UINT,
         FLOAT,
@@ -113,6 +115,7 @@ struct SerializationToAudio
 
     enum PayloadType : uint8_t
     {
+        NONE,
         INT,
         UINT,
         FLOAT,

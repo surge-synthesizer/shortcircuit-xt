@@ -48,6 +48,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_request_pgz_structure,
 
+    c2s_add_sample,
+
     num_clientToSerializationMessages
 };
 
@@ -76,7 +78,7 @@ template <typename T>
 void serializationSendToClient(SerializationToClientMessageIds id, const T &payload,
                                messaging::MessageController &mc);
 
-void serializationThreadExecuteClientMessage(const std::string &msgView, const engine::Engine &e,
+void serializationThreadExecuteClientMessage(const std::string &msgView, engine::Engine &e,
                                              MessageController &mc);
 template <typename Client>
 void clientThreadExecuteSerializationMessage(const std::string &msgView, Client *c);

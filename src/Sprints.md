@@ -1,15 +1,12 @@
 # Baconpauls next sprints
 
 Week of Feb 13:
-- Then: A bit of UI work to make it look pixel-exact to wireframe
-    - Upcase the headers
-    - Header not hot pink any more at least
-- At least make the standalone available as a zip from main repo next
-- Then: Processor views
 - Then: Zone views
-- Then: Add a zone by sample
+- Then: Processor views
+- Then: Mod Matrix
+- Then: Add a zone by sample revisit
+- At least make the standalone available as a zip from main repo next
 - A VU Meter
-- Set up a 'next' nightly
 - Vembertech lipol_ps then its gone
 - Generator keeps runnign after AEG is complete; don't
 - Zone Variants and the zone-sample-wrapper data object
@@ -63,6 +60,14 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 17 (2023-02-16)
+
+Lighter dev day again. Make Comic Sans the error font everywhere. Phew.
+Then onto the add zone gesture. So actually plumb up the drop -> path 
+-> serial -> load -> audio -> configure -> serial -> notify pipeline and
+voila you can drop a sample on and it maps into part 1 group 1 from 
+48..72 with root note 60 reliably! Huge! And thats it for the day today.
 
 ## Day 16 (2023-02-15)
 

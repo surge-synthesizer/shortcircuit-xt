@@ -236,11 +236,25 @@ struct MessageController : MoveableOnly<MessageController>
     void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f);
     struct AudioThreadCallback
     {
+      public:
+        void setFunction(std::function<void(engine::Engine &)> &to) { f = std::move(to); }
+        inline void exec(engine::Engine &e)
+        {
+            assert(e.getMessageController()->threadingChecker.isAudioThread());
+            f(e);
+        }
+
+      private:
         std::function<void(engine::Engine &)> f;
     };
 
     // The engine has direct access to the audio queues
     friend class engine::Engine;
+
+    /*
+     * Various utilitues
+     */
+    ThreadingChecker threadingChecker;
 
   private:
     void runSerialization();

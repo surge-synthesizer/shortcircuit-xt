@@ -30,6 +30,7 @@
 #include "client/client_serial.h"
 #include "messaging/client/detail/client_serial_impl.h"
 #include "client/client_messages.h"
+#include "messaging/client/client_serial.h"
 
 namespace scxt::messaging
 {
@@ -37,6 +38,7 @@ namespace scxt::messaging
 void MessageController::parseAudioMessageOnSerializationThread(
     const audio::AudioToSerialization &as)
 {
+    assert(threadingChecker.isSerialThread());
     // TODO - we could do the template shuffle later if this becomes too big
     switch (as.id)
     {
@@ -49,6 +51,11 @@ void MessageController::parseAudioMessageOnSerializationThread(
     case audio::a2s_note_on:
     case audio::a2s_note_off:
         throw std::logic_error("Implement this");
+    case audio::a2s_structure_refresh:
+        // TODO: Factor this a bit better
+        serializationSendToClient(client::s2c_send_pgz_structure,
+                                  engine.getPartGroupZoneStructure(-1), *this);
+        break;
     case audio::a2s_none:
         break;
     }
@@ -83,6 +90,7 @@ void MessageController::stop()
 }
 MessageController::AudioThreadCallback *MessageController::getAudioThreadCallback()
 {
+    assert(threadingChecker.isSerialThread());
     if (cbStore.empty())
     {
         return new AudioThreadCallback();
@@ -92,12 +100,17 @@ MessageController::AudioThreadCallback *MessageController::getAudioThreadCallbac
     return res;
 }
 
-void MessageController::returnAudioThreadCallback(AudioThreadCallback *r) { cbStore.push(r); }
+void MessageController::returnAudioThreadCallback(AudioThreadCallback *r)
+{
+    assert(threadingChecker.isSerialThread());
+    cbStore.push(r);
+}
 
 void MessageController::scheduleAudioThreadCallback(std::function<void(engine::Engine &)> cb)
 {
+    assert(threadingChecker.isSerialThread());
     auto pt = getAudioThreadCallback();
-    pt->f = std::move(cb);
+    pt->setFunction(cb);
     auto s2a = audio::SerializationToAudio();
     s2a.id = audio::s2a_dispatch_to_pointer;
     s2a.payload.p = (void *)pt;
@@ -108,6 +121,7 @@ void MessageController::scheduleAudioThreadCallback(std::function<void(engine::E
 
 void MessageController::runSerialization()
 {
+    threadingChecker.registerAsSerialThread();
     while (shouldRun)
     {
         using namespace std::chrono_literals;
@@ -159,6 +173,7 @@ void MessageController::registerClient(const std::string &nm, clientCallback_t &
         clientCallback = std::move(f);
     }
 
+    threadingChecker.registerAsClientThread();
     client::clientSendToSerialization(client::OnRegister(true), *this);
 }
 void MessageController::unregisterClient()

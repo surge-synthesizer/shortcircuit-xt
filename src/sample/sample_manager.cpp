@@ -36,6 +36,7 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 
 std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, const SampleID &id)
 {
+    assert(threadingChecker.isSerialThread());
     for (const auto &[id, sm] : samples)
     {
         if (sm->getPath() == p)
