@@ -49,7 +49,15 @@ SCXTProcessor::SCXTProcessor()
     engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }
 
-SCXTProcessor::~SCXTProcessor() {}
+SCXTProcessor::~SCXTProcessor()
+{
+    if (wrapperType == juce::AudioProcessor::wrapperType_Standalone)
+    {
+        // explicitly memory check on exit in the standalone
+        engine.reset(nullptr);
+        scxt::showLeakLog();
+    }
+}
 
 //==============================================================================
 const juce::String SCXTProcessor::getName() const { return JucePlugin_Name; }
@@ -310,9 +318,9 @@ void SCXTProcessor::temporaryInitPatch()
     }
     else
     {
-        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
-                                               "Can't find test samples",
-                                               "Please run this from the source directory for now.");
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::WarningIcon, "Can't find test samples",
+            "Please run this from the source directory for now.");
     }
 }
 

@@ -53,8 +53,10 @@ bool Sample::load(const fs::path &path)
         bool r = parse_riff_wave(data, datasize);
         sample_loaded = true;
         mFileName = path;
+        return true;
     }
-    return true;
+
+    return false;
 }
 
 // TODO: Rename these
