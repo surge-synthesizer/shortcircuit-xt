@@ -25,21 +25,38 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_SCXTSTYLESHEET_H
-#define SHORTCIRCUIT_SCXTSTYLESHEET_H
+#include "LFOPane.h"
+#include "connectors/SCXTStyleSheetCreator.h"
 
-#include "sst/jucegui/style/StyleSheet.h"
-
-namespace scxt::ui::connectors
+namespace scxt::ui::multi
 {
-struct SCXTStyleSheetCreator
+
+LFOPane::LFOPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
-    using sheet_t = sst::jucegui::style::StyleSheet;
+    setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
+    hasHamburger = true;
+    isTabbed = true;
+    tabNames = {"LFO 1", "LFO 2", "LFO 3"};
 
-    static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
-    static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
+    resetTabState();
 
-    static const sheet_t::ptr_t setup();
-};
-} // namespace scxt::ui::connectors
-#endif // SHORTCIRCUIT_SCXTSTYLESHEET_H
+    onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
+        if (wt)
+            wt->selectedTab(i);
+    };
+
+    label = std::make_unique<juce::Label>("LFO 1", "LFO 1");
+    label->setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+    label->setColour(juce::Label::textColourId, juce::Colour(255, 220, 0));
+    label->setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(*label);
+}
+
+void LFOPane::resized() { label->setBounds(getContentArea()); }
+
+void LFOPane::selectedTab(int i)
+{
+    label->setText("LFO " + std::to_string(i + 1), juce::dontSendNotification);
+}
+
+} // namespace scxt::ui::multi

@@ -87,6 +87,11 @@ struct PGZListBoxModel : juce::ListBoxModel
 PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     : HasEditor(e), sst::jucegui::components::NamedPanel("Parts n Groups")
 {
+    isTabbed = true;
+    hasHamburger = true;
+    tabNames = {"PARTS", "GROUPS"};
+    resetTabState();
+
     pgzList = std::make_unique<juce::ListBox>();
     pgzListModel = std::make_unique<PGZListBoxModel>(this);
     pgzList->setModel(pgzListModel.get());

@@ -71,6 +71,8 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void adsrChangedFromModel(const datamodel::AdsrStorage &);
     void adsrDeactivated();
     void adsrChangedFromGui();
+
+    void showHamburgerMenu();
 };
 } // namespace scxt::ui::multi
 

@@ -28,6 +28,7 @@
 #include "SCXTBinary.h"
 #include "SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/NamedPanel.h"
 
 namespace scxt::ui::connectors
 {
@@ -37,6 +38,8 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
 {
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorVSlider)
         .withBaseClass(comp::VSlider::Styles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::ModulationTabs)
+        .withBaseClass(comp::NamedPanel::Styles::styleClass);
     const auto &base = sheet_t::getBuiltInStyleSheet(sheet_t::DARK);
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::guttercol,
                     juce::Colour(0x39, 0x39, 0x39));
@@ -44,9 +47,11 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::handlecol,
                     juce::Colour(0xC4, 0xC4, 0xC4));
+    base->setColour(ModulationTabs, comp::NamedPanel::Styles::selectedtabcol,
+                    juce::Colour(0x27, 0x88, 0xD6));
 
-    auto interMed = juce::Typeface::createSystemTypefaceFor(
-        scxt::ui::binary::InterMedium_ttf, scxt::ui::binary::InterMedium_ttfSize);
+    auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
+                                                            scxt::ui::binary::InterMedium_ttfSize);
     base->replaceFontsWithTypeface(interMed);
 
     return base;

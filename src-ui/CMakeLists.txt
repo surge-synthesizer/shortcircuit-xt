@@ -19,6 +19,10 @@ add_library(${PROJECT_NAME} STATIC
         components/SendFXScreen.cpp
 
         components/multi/AdsrPane.cpp
+        components/multi/LFOPane.cpp
+        components/multi/MappingPane.cpp
+        components/multi/ModPane.cpp
+        components/multi/OutputPane.cpp
         components/multi/PartGroupSidebar.cpp
 
         connectors/SCXTStyleSheetCreator.cpp

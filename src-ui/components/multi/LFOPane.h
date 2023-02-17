@@ -25,21 +25,25 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_SCXTSTYLESHEET_H
-#define SHORTCIRCUIT_SCXTSTYLESHEET_H
+#ifndef SHORTCIRCUIT_LFOPANE_H
+#define SHORTCIRCUIT_LFOPANE_H
 
-#include "sst/jucegui/style/StyleSheet.h"
+#include "sst/jucegui/components/NamedPanel.h"
+#include "components/HasEditor.h"
 
-namespace scxt::ui::connectors
+namespace scxt::ui::multi
 {
-struct SCXTStyleSheetCreator
+struct LFOPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    using sheet_t = sst::jucegui::style::StyleSheet;
+    LFOPane(SCXTEditor *);
 
-    static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
-    static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
+    void selectedTab(int i);
 
-    static const sheet_t::ptr_t setup();
+    void resized() override;
+
+    std::unique_ptr<juce::Label> label;
+
 };
-} // namespace scxt::ui::connectors
-#endif // SHORTCIRCUIT_SCXTSTYLESHEET_H
+} // namespace scxt::ui::components
+
+#endif // SHORTCIRCUIT_LFOPANE_H

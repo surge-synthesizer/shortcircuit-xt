@@ -25,21 +25,30 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_SCXTSTYLESHEET_H
-#define SHORTCIRCUIT_SCXTSTYLESHEET_H
+#include "OutputPane.h"
 
-#include "sst/jucegui/style/StyleSheet.h"
-
-namespace scxt::ui::connectors
+namespace scxt::ui::multi
 {
-struct SCXTStyleSheetCreator
+
+OutputPane::OutputPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
-    using sheet_t = sst::jucegui::style::StyleSheet;
+    hasHamburger = false;
+    isTabbed = true;
+    tabNames = {"MAIN", "OUT 1", "OUT 2", "ROUTE"};
 
-    static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
-    static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
+    resetTabState();
 
-    static const sheet_t::ptr_t setup();
-};
-} // namespace scxt::ui::connectors
-#endif // SHORTCIRCUIT_SCXTSTYLESHEET_H
+    onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
+        if (wt)
+            wt->label->setText(wt->tabNames[i], juce::dontSendNotification);
+    };
+
+    label = std::make_unique<juce::Label>("MAPPING", "MAIN");
+    label->setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+    label->setColour(juce::Label::textColourId, juce::Colour(105, 225, 105));
+    label->setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(*label);
+}
+
+void OutputPane::resized() { label->setBounds(getContentArea()); }
+} // namespace scxt::ui::multi

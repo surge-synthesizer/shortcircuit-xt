@@ -41,6 +41,8 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     : HasEditor(e), sst::jucegui::components::NamedPanel(index == 0 ? "AMP EG" : "EG 2"),
       index(index)
 {
+    hasHamburger = true;
+
     auto attachSlider = [this](Ctrl c, const std::string &l, const auto &fn, float &v) {
         auto at = std::make_unique<attachment_t>(
             this, l, [this]() { this->adsrChangedFromGui(); }, fn, v);
@@ -86,6 +88,12 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         Ctrl::Rsh, "R Shape", [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
 
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
+
+    onHamburger = [safeThis = juce::Component::SafePointer(this)]()
+    {
+        if (safeThis)
+            safeThis->showHamburgerMenu();
+    };
 }
 
 void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
@@ -150,6 +158,16 @@ void AdsrPane::resized()
         labels[c]->setBounds(x, y + h, w, lh);
         x += w;
     }
+}
+
+void AdsrPane::showHamburgerMenu()
+{
+    juce::PopupMenu p;
+    p.addSectionHeader("Menu");
+    p.addItem("Coming", [](){});
+    p.addItem("Soon", [](){});
+
+    p.showMenuAsync(juce::PopupMenu::Options());
 }
 
 } // namespace scxt::ui::multi

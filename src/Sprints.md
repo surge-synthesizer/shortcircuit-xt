@@ -1,12 +1,15 @@
 # Baconpauls next sprints
 
 Week of Feb 13:
+- Tabbed Named Panels
 - Then: Zone views
+- ADSR Slider formatting; what's the data and method? Also attachment bipolar.
 - Then: Processor views
 - Then: Mod Matrix
 - Then: Add a zone by sample revisit
 - At least make the standalone available as a zip from main repo next
 - A VU Meter
+- Hover Gestures in Named Panel
 - Vembertech lipol_ps then its gone
 - Generator keeps runnign after AEG is complete; don't
 - Zone Variants and the zone-sample-wrapper data object
@@ -60,6 +63,12 @@ Notes
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 18 (2023-02-17)
+
+Last day before a 4 day hard break (no laptop travel). Try to get the ui components
+in place so I can start writing some of the zone work, so add tabbed and hamburgered
+named panel and use in some spots and use those to add some features to the UI.
 
 ## Day 17 (2023-02-16)
 

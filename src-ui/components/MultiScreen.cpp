@@ -27,6 +27,10 @@
 
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
+#include "multi/LFOPane.h"
+#include "multi/MappingPane.h"
+#include "multi/ModPane.h"
+#include "multi/OutputPane.h"
 #include "multi/PartGroupSidebar.h"
 
 namespace scxt::ui
@@ -61,20 +65,25 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 {
     parts = std::make_unique<multi::PartGroupSidebar>(editor);
     addAndMakeVisible(*parts);
-    browser = std::make_unique<DebugRect>(juce::Colour(200, 120, 100), "Browser");
+
+    auto br = std::make_unique<DebugRect>(juce::Colour(200, 120, 100), "BROWSER");
+    br->hasHamburger = true;
+    browser = std::move(br);
     addAndMakeVisible(*browser);
-    sample = std::make_unique<DebugRect>(juce::Colour(200, 100, 0), "Sample");
+    sample = std::make_unique<multi::MappingPane>(editor);
     addAndMakeVisible(*sample);
 
     for (int i = 0; i < 4; ++i)
     {
-        fx[i] = std::make_unique<DebugRect>(juce::Colour(i * 60, 255, (4 - i) * 60),
-                                            "FX" + std::to_string(i));
+        auto ff = std::make_unique<DebugRect>(juce::Colour(i * 60, 255, (4 - i) * 60),
+                                            "FX " + std::to_string(i));
+        ff->hasHamburger = true;
+        fx[i] = std::move(ff);
         addAndMakeVisible(*(fx[i]));
     }
-    mod = std::make_unique<DebugRect>(juce::Colour(100, 200, 150), "Mod");
+    mod = std::make_unique<multi::ModPane>(editor);
     addAndMakeVisible(*mod);
-    mix = std::make_unique<DebugRect>(juce::Colour(150, 220, 100), "Mix");
+    mix = std::make_unique<multi::OutputPane>(editor);
     addAndMakeVisible(*mix);
 
     for (int i = 0; i < 2; ++i)
@@ -82,7 +91,7 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
         eg[i] = std::make_unique<multi::AdsrPane>(editor, i);
         addAndMakeVisible(*(eg[i]));
     }
-    lfo = std::make_unique<DebugRect>(juce::Colour(250, 80, 120), "LFO");
+    lfo = std::make_unique<multi::LFOPane>(editor);
     addAndMakeVisible(*lfo);
 }
 
