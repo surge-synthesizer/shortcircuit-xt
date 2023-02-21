@@ -72,10 +72,27 @@ template <ProcessorType ft> struct ProcessorImplementor
            str_dbbpdef[] = ("f,-48,0.1,48,0,dB"), str_dbmoddef[] = ("f,-96,0.1,96,0,dB"),
            str_mpitch[] = ("f,-96,0.04,96,0,cents"), str_bwdef[] = ("f,0.001,0.005,6,0,oct");*/
 
-static constexpr datamodel::ControlDescription cdPercentDef{
-    datamodel::ControlDescription::FLOAT, 0, 0.005, 1, 1, "%"},
-    cdMPitch{datamodel::ControlDescription::FLOAT, -96, 0.04, 96, 0, "cents"},
-    cdFreqDef{datamodel::ControlDescription::FLOAT, -5, 0.04, 6, 5, "Hz"};
+static constexpr datamodel::ControlDescription cdPercentDef{datamodel::ControlDescription::FLOAT,
+                                                            datamodel::ControlDescription::LINEAR,
+                                                            0,
+                                                            0.005,
+                                                            1,
+                                                            1,
+                                                            "%"},
+    cdMPitch{datamodel::ControlDescription::FLOAT,
+             datamodel::ControlDescription::LINEAR,
+             -96,
+             0.04,
+             96,
+             0,
+             "cents"},
+    cdFreqDef{datamodel::ControlDescription::FLOAT,
+              datamodel::ControlDescription::FREQUENCY,
+              -5,
+              0.04,
+              6,
+              5,
+              "Hz"};
 
 /**
  * Standard filters

@@ -58,7 +58,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     std::unique_ptr<MultiScreen> multiScreen;
     std::unique_ptr<SendFXScreen> sendFxScreen;
 
-    std::unique_ptr<sst::jucegui::components::HSlider> sliderHack;
+    // TODO fix me with a proper tooltip type
+    std::unique_ptr<juce::Component> toolTip;
 
     SCXTEditor(messaging::MessageController &e);
     virtual ~SCXTEditor() noexcept;
@@ -87,6 +88,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     // Originate client to serialization messages
     void singleSelectItem(const selection::SelectionManager::ZoneAddress &);
+
+    void showTooltip(const juce::Component &relativeTo);
+    void hideTooltip();
+    void setTooltipContents(const std::string &s);
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;

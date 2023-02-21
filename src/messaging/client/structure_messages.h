@@ -90,6 +90,7 @@ struct OnRegister
     static void executeOnSerialization(const c2s_payload_t &which, const engine::Engine &engine,
                                        MessageController &cont)
     {
+        engine.sendMetadataToClient();
         PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
         engine.getSelectionManager()->singleSelect({});
     }

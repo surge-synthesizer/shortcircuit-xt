@@ -2,9 +2,11 @@
 
 trigger:
   - main
+  - next
 
 pr:
   - main
+  - next
 
 variables:
   - group: mac-signing
@@ -23,11 +25,6 @@ jobs:
           cmakeRelArgs: -A x64
           cmakeDebArgs: -A x64
           isWindows: True
-        win-32bit:
-          imageName: 'windows-2019'
-          cmakeRelArgs: -A Win32
-          cmakeDebArgs: -A Win32
-          isWindows32: True
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
@@ -165,13 +162,6 @@ jobs:
 
       - task: PublishPipelineArtifact@0
         inputs:
-          artifactName: 'INSTALLER_WIN32_DIST'
-          targetPath: 'build/installer'
-        condition: and(variables.isWindows32,not(eq(variables['Build.Reason'], 'PullRequest')))
-        displayName: win - publish win zip
-
-      - task: PublishPipelineArtifact@0
-        inputs:
           artifactName: 'INSTALLER_LIN_DIST'
           targetPath: 'build/installer'
         condition: and(variables.isLinux,not(eq(variables['Build.Reason'], 'PullRequest')))
@@ -212,11 +202,6 @@ jobs:
       - task: DownloadPipelineArtifact@0
         inputs:
           artifactName: 'INSTALLER_WIN_DIST'
-          targetPath: $(System.DefaultWorkingDirectory)
-
-      - task: DownloadPipelineArtifact@0
-        inputs:
-          artifactName: 'INSTALLER_WIN32_DIST'
           targetPath: $(System.DefaultWorkingDirectory)
 
       - task: DownloadPipelineArtifact@0
@@ -269,7 +254,7 @@ jobs:
           gitHubConnection: surge-rackupdater
           repositoryName: surge-synthesizer/shortcircuit-xt
           action: 'edit'
-          tag: Nightly
+          tag: NextNightly
           target: '$(Build.SourceVersion)'
           addChangeLog: false
           assetUploadMode: 'delete'

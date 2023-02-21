@@ -29,6 +29,7 @@
 #define SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H
 
 #include "sst/jucegui/data/Continuous.h"
+#include "datamodel/parameter.h"
 #include <functional>
 
 namespace scxt::ui::connectors
@@ -39,27 +40,39 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
 {
     float &value;
     std::string label;
-    std::function<void()> onGuiValueChanged;
+    std::function<void(const PayloadDataAttachment<Parent, Payload> &at)> onGuiValueChanged;
     std::function<float(const Payload &)> extractFromPayload;
 
-    PayloadDataAttachment(Parent *p, const std::string &l, std::function<void()> oGVC,
-                          std::function<float(const Payload &)> efp, float &v)
-        : value(v), label(l), extractFromPayload(efp), onGuiValueChanged(std::move(oGVC))
+    PayloadDataAttachment(
+        Parent *p, const datamodel::ControlDescription &cd, const std::string &l,
+        std::function<void(const PayloadDataAttachment<Parent, Payload> &at)> oGVC,
+        std::function<float(const Payload &)> efp, float &v)
+        : description(cd), value(v), label(l), extractFromPayload(efp),
+          onGuiValueChanged(std::move(oGVC))
     {
     }
+
+    // TODO maybe. For now we have these descriptions as constexpr
+    // in the code and apply them directly in many cases. We could
+    // stream each and every one but don't. Maybe fix that one day.
+    // Would def need to fix that to make web ui consistent if we write it
+    datamodel::ControlDescription description;
 
     std::string getLabel() const override { return label; }
     float getValue() const override { return value; }
     void setValueFromGUI(const float &f) override
     {
         value = f;
-        onGuiValueChanged();
+        onGuiValueChanged(*this);
     }
     void setValueFromModel(const float &f) override { value = f; }
-
     void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
 
-    float getDefaultValue() const override { return 0; }
+    float getMin() const override { return description.min; }
+    float getMax() const override { return description.max; }
+    float getDefaultValue() const override { return description.def; }
+
+    bool isBipolar() const override { return description.min * description.max < 0; }
 
     float getModulationValuePM1() const override { return 0; }
     void setModulationValuePM1(const float &f) override {}

@@ -146,6 +146,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void loadSampleIntoSelectedPartAndGroup(const fs::path &);
 
     /*
+     * OnRegister generate and send all the metdata the client needs
+     */
+    void sendMetadataToClient() const;
+
+    /*
      * Data Query APIs
      */
     typedef std::tuple<int32_t, int32_t, int32_t, int32_t> processorAddress_t;

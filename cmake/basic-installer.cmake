@@ -14,10 +14,11 @@ add_custom_target(shortcircuit-products ALL)
 add_custom_target(shortcircuit-installer)
 
 function(shortcircuit_package format)
-    get_target_property(output_dir ShortcircuitXT RUNTIME_OUTPUT_DIRECTORY)
+    get_target_property(output_dir scxt_plugin RUNTIME_OUTPUT_DIRECTORY)
 
-    if (TARGET ShortcircuitXT_${format})
-        add_dependencies(shortcircuit-products ShortcircuitXT_${format})
+    if (TARGET scxt_plugin_${format})
+        message(STATUS "Adding scxt_plugin_${format} to installer")
+        add_dependencies(shortcircuit-products scxt_plugin_${format})
         add_custom_command(
                 TARGET shortcircuit-products
                 POST_BUILD

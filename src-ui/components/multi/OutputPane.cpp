@@ -34,7 +34,7 @@ OutputPane::OutputPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("")
 {
     hasHamburger = false;
     isTabbed = true;
-    tabNames = {"MAIN", "OUT 1", "OUT 2", "ROUTE"};
+    tabNames = {"MAIN", "AUX", "ROUTE"};
 
     resetTabState();
 

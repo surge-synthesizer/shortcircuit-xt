@@ -28,9 +28,13 @@
 #ifndef SCXT_SRC_DATAMODEL_PARAMETER_H
 #define SCXT_SRC_DATAMODEL_PARAMETER_H
 
+#include <string>
+#include <optional>
+
 namespace scxt::datamodel
 {
 
+// TODO: Do we need this if we have robust descriptions? I think "no"
 enum ControlMode
 {
     cm_none = 0,
@@ -82,11 +86,23 @@ struct ControlDescription
         INT,
         FLOAT
     } type{FLOAT};
+    enum DisplayMode
+    {
+        LINEAR,       // mapScale * value + mapBase
+        TWO_TO_THE_X, // 2 ^ (mapScale * value + mapBase)
+        FREQUENCY,    // 261.5etc * 2 ^ (mapScale * value + mapBase) / 12
+        DECIBEL
+    } displayMode{LINEAR};
     float min{0};
     float step{0.01};
     float max{1};
     float def{0.5};
     char unit[32]{}; // fixed size makes in place news easier
+    float mapScale{1.f};
+    float mapBase{0.f};
+
+    std::string valueToString(float value) const;
+    std::optional<float> stringToValue(const std::string &s) const;
 };
 } // namespace scxt::datamodel
 

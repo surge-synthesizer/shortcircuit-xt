@@ -43,12 +43,15 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
 {
     hasHamburger = true;
 
-    auto attachSlider = [this](Ctrl c, const std::string &l, const auto &fn, float &v) {
+    auto attachSlider = [this](Ctrl c, const std::string &aLabel, const std::string &l,
+                               const auto &desc, const auto &fn, float &v) {
         auto at = std::make_unique<attachment_t>(
-            this, l, [this]() { this->adsrChangedFromGui(); }, fn, v);
+            this, desc, aLabel, [this](const auto &at) { this->adsrChangedFromGui(at); }, fn, v);
         auto sl = std::make_unique<sst::jucegui::components::VSlider>();
         sl->setSource(at.get());
         sl->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+        sl->onBeginEdit = [this, &slRef = *sl]() { editor->showTooltip(slRef); };
+        sl->onEndEdit = [this]() { editor->hideTooltip(); };
         addAndMakeVisible(*sl);
         auto lb = std::make_unique<sst::jucegui::components::Label>();
         lb->setText(l);
@@ -59,19 +62,25 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     };
 
     attachSlider(
-        Ctrl::A, "A", [](const auto &pl) { return pl.a; }, adsrView.a);
+        Ctrl::A, "Attack", "A", datamodel::AdsrStorage::ahdrDescription,
+        [](const auto &pl) { return pl.a; }, adsrView.a);
     attachSlider(
-        Ctrl::H, "H", [](const auto &pl) { return pl.h; }, adsrView.h);
+        Ctrl::H, "Hold", "H", datamodel::AdsrStorage::sDescription,
+        [](const auto &pl) { return pl.h; }, adsrView.h);
     attachSlider(
-        Ctrl::D, "D", [](const auto &pl) { return pl.d; }, adsrView.d);
+        Ctrl::D, "Decay", "D", datamodel::AdsrStorage::ahdrDescription,
+        [](const auto &pl) { return pl.d; }, adsrView.d);
     attachSlider(
-        Ctrl::S, "S", [](const auto &pl) { return pl.s; }, adsrView.s);
+        Ctrl::S, "Sustain", "S", datamodel::AdsrStorage::sDescription,
+        [](const auto &pl) { return pl.s; }, adsrView.s);
     attachSlider(
-        Ctrl::R, "R", [](const auto &pl) { return pl.r; }, adsrView.r);
+        Ctrl::R, "Release", "R", datamodel::AdsrStorage::ahdrDescription,
+        [](const auto &pl) { return pl.r; }, adsrView.r);
 
-    auto attachKnob = [this](Ctrl c, const std::string &l, const auto &fn, float &v) {
+    auto attachKnob = [this](Ctrl c, const std::string &l, const auto &d, const auto &fn,
+                             float &v) {
         auto at = std::make_unique<attachment_t>(
-            this, l, [this]() { this->adsrChangedFromGui(); }, fn, v);
+            this, d, l, [this](const auto &at) { this->adsrChangedFromGui(at); }, fn, v);
         auto kn = std::make_unique<sst::jucegui::components::Knob>();
         kn->setSource(at.get());
         kn->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
@@ -81,16 +90,18 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     };
 
     attachKnob(
-        Ctrl::Ash, "A Shape", [](const auto &pl) { return pl.aShape; }, adsrView.aShape);
+        Ctrl::Ash, "A Shape", datamodel::AdsrStorage::shapeDescription,
+        [](const auto &pl) { return pl.aShape; }, adsrView.aShape);
     attachKnob(
-        Ctrl::Dsh, "D Shape", [](const auto &pl) { return pl.dShape; }, adsrView.dShape);
+        Ctrl::Dsh, "D Shape", datamodel::AdsrStorage::shapeDescription,
+        [](const auto &pl) { return pl.dShape; }, adsrView.dShape);
     attachKnob(
-        Ctrl::Rsh, "R Shape", [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
+        Ctrl::Rsh, "R Shape", datamodel::AdsrStorage::shapeDescription,
+        [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
 
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
 
-    onHamburger = [safeThis = juce::Component::SafePointer(this)]()
-    {
+    onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
             safeThis->showHamburgerMenu();
     };
@@ -110,8 +121,9 @@ void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
     repaint();
 }
 
-void AdsrPane::adsrChangedFromGui()
+void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
+    editor->setTooltipContents(at.label + "=" + at.description.valueToString(at.value));
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest(index, adsrView),
                                     editor->msgCont);
 }
@@ -164,8 +176,8 @@ void AdsrPane::showHamburgerMenu()
 {
     juce::PopupMenu p;
     p.addSectionHeader("Menu");
-    p.addItem("Coming", [](){});
-    p.addItem("Soon", [](){});
+    p.addItem("Coming", []() {});
+    p.addItem("Soon", []() {});
 
     p.showMenuAsync(juce::PopupMenu::Options());
 }

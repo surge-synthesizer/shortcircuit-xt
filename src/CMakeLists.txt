@@ -1,6 +1,8 @@
 project(scxt-core LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
+        datamodel/parameter.cpp
+
         dsp/generator.cpp
         dsp/sinc_table.cpp
         dsp/processor/processor.cpp

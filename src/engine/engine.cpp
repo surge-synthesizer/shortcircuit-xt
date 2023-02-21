@@ -300,4 +300,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
         });
 }
 
+void Engine::sendMetadataToClient() const {
+    // On register send metadata
+}
 } // namespace scxt::engine

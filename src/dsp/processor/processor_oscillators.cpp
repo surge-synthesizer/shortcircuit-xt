@@ -55,7 +55,7 @@ OscPulseSync::OscPulseSync(float *fp, int32_t *ip, bool stereo)
 
     setStr(ctrllabel[2], "sync");
     ctrlmode[2] = datamodel::cm_mod_pitch;
-    ctrlmode_desc[2] = scxt::datamodel::ControlDescription{datamodel::ControlDescription::FLOAT, 0, 0.05, 96, 0, "semitones"};
+    ctrlmode_desc[2] = scxt::datamodel::ControlDescription{datamodel::ControlDescription::FLOAT, datamodel::ControlDescription::LINEAR, 0, 0.05, 96, 0, "semitones"};
 
     first_run = true;
     oscstate = 0;

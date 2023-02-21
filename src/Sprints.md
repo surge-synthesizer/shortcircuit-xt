@@ -1,12 +1,13 @@
 # Baconpauls next sprints
 
-Week of Feb 13:
-- Tabbed Named Panels
+Week of Feb 21:
+- ADSR Slider formatting; what's the data and method? 
+    Also attachment bipolar. Tooltips. Knobs drawn better.
 - Then: Zone views
-- ADSR Slider formatting; what's the data and method? Also attachment bipolar.
 - Then: Processor views
 - Then: Mod Matrix
 - Then: Add a zone by sample revisit
+- A proper tooltip
 - At least make the standalone available as a zip from main repo next
 - A VU Meter
 - Hover Gestures in Named Panel
@@ -57,12 +58,13 @@ Open Questions and ToDos and Reviews:
 - I think we don't need this but: True/False readonly traits percolate by having template<bool T> scxt_traits (maybe)
 - Loop cleanup wave alignment stuff
 
-
-Notes
-- Font is Intermedium
-
 ----------
 Sprint Log I posted on Discord
+
+## Day 19 (2023-02-21 for a smidge then really the 22)
+
+Push ControlDescriptions down to the connector. Do we even need the enum? But
+this is path to get tooltips and so on on the ADSR sliders. 
 
 ## Day 18 (2023-02-17)
 

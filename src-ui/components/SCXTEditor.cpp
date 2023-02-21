@@ -153,9 +153,21 @@ void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
 {
     assert(files.size() == 1);
     namespace cmsg = scxt::messaging::client;
-    cmsg::clientSendToSerialization(cmsg::AddSample(fs::path{(const char*)(files[0].toUTF8())}), msgCont);
+    cmsg::clientSendToSerialization(cmsg::AddSample(fs::path{(const char *)(files[0].toUTF8())}),
+                                    msgCont);
 }
 
+void SCXTEditor::showTooltip(const juce::Component &relativeTo)
+{
+    auto fb = getLocalArea(&relativeTo, relativeTo.getBounds());
+    std::cout << "SHOW " << fb.toString() << " / " << relativeTo.getBounds().toString()
+              << std::endl;
+}
 
+void SCXTEditor::hideTooltip() { std::cout << "Hide Tooltip" << std::endl; }
+
+void SCXTEditor::setTooltipContents(const std::string &s) {
+    std::cout << "Setting tooltip to " << s << std::endl;
+}
 
 } // namespace scxt::ui
