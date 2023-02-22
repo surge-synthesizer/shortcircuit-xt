@@ -4,6 +4,7 @@
 
 #include "parameter.h"
 #include <cmath>
+#include <cassert>
 #include <fmt/core.h>
 
 namespace scxt::datamodel

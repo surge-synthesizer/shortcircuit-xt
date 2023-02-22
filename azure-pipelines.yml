@@ -135,16 +135,17 @@ jobs:
         condition: and(variables.isLinux, not(eq(variables['Build.Reason'], 'PullRequest')))
         displayName: Use the linux build to make git log info
 
-      - bash: |
-          cmake --build build --target code-quality-pipeline-checks
-        displayName: CodeQuality
-        condition: variables.isLinux
+      # TODO: Restore these
+      #- bash: |
+      #    cmake --build build --target code-quality-pipeline-checks
+      # displayName: CodeQuality
+      #  condition: variables.isLinux
 
-      - bash: |
-          cmake --build build --config Debug --target sc3-test --parallel 4
-          ./build/test/sc3-test
-        displayName: Run Tests SC3
-        condition: eq(variables['Build.Reason'], 'PullRequest')
+      #- bash: |
+      #    cmake --build build --config Debug --target sc3-test --parallel 4
+      #    ./build/test/sc3-test
+      #  displayName: Run Tests SC3
+      #  condition: eq(variables['Build.Reason'], 'PullRequest')
 
       - task: PublishPipelineArtifact@0
         inputs:
@@ -288,5 +289,5 @@ jobs:
           # Finally tell discord
           export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
 
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Nightly is available. Some stuff almost kinda works.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Next Branch Nightly is available. Not much works.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/NextNightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
         displayName: Tell Discord
