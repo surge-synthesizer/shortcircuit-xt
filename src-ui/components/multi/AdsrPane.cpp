@@ -50,7 +50,10 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         auto sl = std::make_unique<sst::jucegui::components::VSlider>();
         sl->setSource(at.get());
         sl->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
-        sl->onBeginEdit = [this, &slRef = *sl]() { editor->showTooltip(slRef); };
+        sl->onBeginEdit = [this, &slRef = *sl, &atRef = *at]() {
+            editor->showTooltip(slRef);
+            updateTooltip(atRef);
+        };
         sl->onEndEdit = [this]() { editor->hideTooltip(); };
         addAndMakeVisible(*sl);
         auto lb = std::make_unique<sst::jucegui::components::Label>();
@@ -84,6 +87,11 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         auto kn = std::make_unique<sst::jucegui::components::Knob>();
         kn->setSource(at.get());
         kn->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+        kn->onBeginEdit = [this, &knRef = *kn, &atRef = *at]() {
+            editor->showTooltip(knRef);
+            updateTooltip(atRef);
+        };
+        kn->onEndEdit = [this]() { editor->hideTooltip(); };
         addAndMakeVisible(*kn);
         attachments[c] = std::move(at);
         knobs[c] = std::move(kn);
@@ -121,9 +129,13 @@ void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
     repaint();
 }
 
+void AdsrPane::updateTooltip(const attachment_t &at)
+{
+    editor->setTooltipContents(at.label + " = " + at.description.valueToString(at.value));
+}
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
-    editor->setTooltipContents(at.label + "=" + at.description.valueToString(at.value));
+    updateTooltip(at);
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest(index, adsrView),
                                     editor->msgCont);
 }
@@ -155,13 +167,13 @@ void AdsrPane::resized()
         switch (c)
         {
         case A:
-            knobs[Ash]->setBounds(x + (w - lh) * 0.5, y - lh, kh, kh);
+            knobs[Ash]->setBounds(x + (w - kh) * 0.5, y - lh, kh, kh);
             break;
         case D:
-            knobs[Dsh]->setBounds(x + (w - lh) * 0.5, y - lh, kh, kh);
+            knobs[Dsh]->setBounds(x + (w - kh) * 0.5, y - lh, kh, kh);
             break;
         case R:
-            knobs[Rsh]->setBounds(x + (w - lh) * 0.5, y - lh, kh, kh);
+            knobs[Rsh]->setBounds(x + (w - kh) * 0.5, y - lh, kh, kh);
             break;
         default:
             break;
