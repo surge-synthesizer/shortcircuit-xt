@@ -1,11 +1,12 @@
 # Baconpauls next sprints
 
 Week of Feb 21:
-- Then: Zone metadata Layouts
 - Then: Processor views
 - Then: Mod Matrix
+- ReallY: Can ADSR and Mapping message be more share-y with tempaltes?
 - Then: Add a zone by sample revisit
 - A VU Meter
+- Restore State Threading
 - Hover Gestures in Named Panel
 - Vembertech lipol_ps then its gone
 - Generator keeps runnign after AEG is complete; don't
@@ -62,6 +63,13 @@ Sprint Log I posted on Discord
 Push ControlDescriptions down to the connector. This allows formatting and
 is path to get tooltips and so on on the ADSR sliders. Add a crude tooltip.
 Then push next up to the main repo and turn on azure again.
+
+Then turn to zone mapping. Make a zone mapping metadata object, stream it, 
+run it through the UI and so on, and make it all just work so you can edit
+zone mapping. While in there, make the juce streaming work (but this is of 
+course not stable) so we can save sessions and turn off the default patch.
+
+Solid day.
 
 ## Day 18 (2023-02-17)
 

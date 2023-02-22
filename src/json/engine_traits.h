@@ -48,6 +48,7 @@
 #include "sample_traits.h"
 #include "dsp_traits.h"
 #include "modulation_traits.h"
+#include "datamodel_traits.h"
 
 namespace scxt::json
 {
@@ -146,6 +147,43 @@ template <> struct scxt_traits<scxt::engine::Group>
     }
 };
 
+template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::engine::Zone::ZoneMappingData &t)
+    {
+        v = {
+            {"keyboardRange", t.keyboardRange},
+            {"velocityRange", t.velocityRange},
+            {"pbDown", t.pbDown},
+            {"pbUp", t.pbUp},
+
+            {"exclusiveGroup", t.exclusiveGroup},
+            {"velocitySens", t.velocitySens},
+            {"amplitude", t.amplitude},
+            {"pan", t.pan},
+            {"pitchOffset", t.pitchOffset},
+
+        };
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   scxt::engine::Zone::ZoneMappingData &zmd)
+    {
+        v.at("keyboardRange").to(zmd.keyboardRange);
+        v.at("velocityRange").to(zmd.velocityRange);
+        v.at("pbDown").to(zmd.pbDown);
+        v.at("pbUp").to(zmd.pbUp);
+        v.at("amplitude").to(zmd.amplitude);
+        v.at("pan").to(zmd.pan);
+        v.at("pitchOffset").to(zmd.pitchOffset);
+        findOr(v, "velocitySens", 1.0, zmd.velocitySens);
+        findOr(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
+    }
+};
+
 template <> struct scxt_traits<scxt::engine::Zone>
 {
     template <template <typename...> class Traits>
@@ -156,22 +194,20 @@ template <> struct scxt_traits<scxt::engine::Zone>
                     r.depth != 0);
         });
 
-        v = {{"sampleID", t.sampleID}, //
-             {"keyboardRange", t.keyboardRange},
-             {"rootKey", t.rootKey},
+        v = {{"sampleID", t.sampleID},
+             {"mappingData", t.mapping},
              {"processorStorage", t.processorStorage},
              {"routingTable", rtArray},
-             {"lfoStorage", t.lfoStorage}};
+             {"lfoStorage", t.lfoStorage},
+             {"aegStorage", t.aegStorage},
+             {"eg2Storage", t.eg2Storage}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone &zone)
     {
-        const auto &object = v.get_object();
-        // TODO : Stream and unstream IDs
         v.at("sampleID").to(zone.sampleID);
-        v.at("keyboardRange").to(zone.keyboardRange);
-        v.at("rootKey").to(zone.rootKey);
+        v.at("mappingData").to(zone.mapping);
         v.at("processorStorage").to(zone.processorStorage);
 
         std::fill(zone.routingTable.begin(), zone.routingTable.end(),
@@ -179,6 +215,8 @@ template <> struct scxt_traits<scxt::engine::Zone>
         fromIndexedArray<Traits>(v.at("routingTable"), zone.routingTable);
 
         v.at("lfoStorage").to(zone.lfoStorage);
+        findOr(v, "aegStorage", zone.aegStorage);
+        findOr(v, "eg2Storage", zone.eg2Storage);
     }
 };
 
@@ -199,6 +237,28 @@ template <> struct scxt_traits<scxt::engine::KeyboardRange>
         const auto &object = v.get_object();
         v.at("keyStart").to(r.keyStart);
         v.at("keyEnd").to(r.keyEnd);
+        v.at("fadeStart").to(r.fadeStart);
+        v.at("fadeEnd").to(r.fadeEnd);
+    }
+};
+
+template <> struct scxt_traits<scxt::engine::VelocityRange>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::VelocityRange &t)
+    {
+        v = {{"velStart", t.velStart},
+             {"velEnd", t.velEnd},
+             {"fadeStart", t.fadeStart},
+             {"fadeEnd", t.fadeEnd}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::VelocityRange &r)
+    {
+        const auto &object = v.get_object();
+        v.at("velStart").to(r.velStart);
+        v.at("velEnd").to(r.velEnd);
         v.at("fadeStart").to(r.fadeStart);
         v.at("fadeEnd").to(r.fadeEnd);
     }

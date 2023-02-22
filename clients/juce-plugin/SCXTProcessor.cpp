@@ -44,9 +44,9 @@ SCXTProcessor::SCXTProcessor()
 {
     engine = std::make_unique<scxt::engine::Engine>();
 
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
-    temporaryInitPatch();
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    // engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
+    // temporaryInitPatch();
+    // engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }
 
 SCXTProcessor::~SCXTProcessor()
@@ -269,9 +269,24 @@ juce::AudioProcessorEditor *SCXTProcessor::createEditor()
 }
 
 //==============================================================================
-void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData) {}
+void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
+{
+    auto xml = scxt::json::streamEngineState(*engine);
+    destData.replaceAll(xml.c_str(), xml.size() + 1);
+}
 
-void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes) {}
+void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
+{
+    const char *cd = (const char *)data;
+    assert(cd[sizeInBytes - 1] == '\0');
+
+    auto xml = std::string(cd);
+
+    // TODO obviously fix this by pushing this xml to the serialization thread
+    engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
+    scxt::json::unstreamEngineState(*engine, xml);
+    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+}
 
 void SCXTProcessor::temporaryInitPatch()
 {
@@ -290,8 +305,8 @@ void SCXTProcessor::temporaryInitPatch()
             auto sid = engine->getSampleManager()->loadSampleByPath(
                 samplePath / "resources/test_samples/next/PulseSaw.wav");
             auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
-            zptr->keyboardRange = {48, 72};
-            zptr->rootKey = 60;
+            zptr->mapping.keyboardRange = {48, 72};
+            zptr->mapping.rootKey = 60;
             zptr->attachToSample(*(engine->getSampleManager()));
 
             zptr->processorStorage[0].type = scxt::dsp::processor::proct_SuperSVF;
@@ -306,8 +321,8 @@ void SCXTProcessor::temporaryInitPatch()
             auto sid = engine->getSampleManager()->loadSampleByPath(
                 samplePath / "resources/test_samples/next/Beep.wav");
             auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
-            zptr->keyboardRange = {60, 72};
-            zptr->rootKey = 60;
+            zptr->mapping.keyboardRange = {60, 72};
+            zptr->mapping.rootKey = 60;
             zptr->attachToSample(*(engine->getSampleManager()));
 
             zptr->aegStorage.a = 0.1;

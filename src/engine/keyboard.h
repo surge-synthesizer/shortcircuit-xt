@@ -67,15 +67,46 @@ struct KeyboardRange
 
     bool operator==(const KeyboardRange &other) const
     {
-        return (keyStart == other.keyStart &&
-                keyEnd == other.keyEnd &&
-                fadeStart == other.fadeStart &&
-                fadeEnd == other.fadeEnd);
+        return (keyStart == other.keyStart && keyEnd == other.keyEnd &&
+                fadeStart == other.fadeStart && fadeEnd == other.fadeEnd);
     }
-    bool operator!=(const KeyboardRange &other) const
+    bool operator!=(const KeyboardRange &other) const { return !(*this == other); }
+};
+
+struct VelocityRange
+{
+    int16_t velStart{0}, velEnd{127}; // Start is >= end is <= so a single note has start == end
+    int16_t fadeStart{0}, fadeEnd{0};
+
+    VelocityRange() = default;
+    VelocityRange(int s, int e) : velStart(s), velEnd(e) { normalize(); }
+
+    void normalize()
     {
-        return ! (*this == other);
+        if (velEnd < velStart)
+            std::swap(velStart, velEnd);
+        if (fadeStart + fadeEnd > velEnd - velStart)
+        {
+            // TODO: Handle this case
+            assert(false);
+        }
     }
+
+    bool includes(int16_t vel)
+    {
+        if (vel < 0)
+            return false;
+        if (vel >= velStart && vel <= velEnd)
+            return true;
+        return false;
+    }
+
+    bool operator==(const VelocityRange &other) const
+    {
+        return (velStart == other.velStart && velEnd == other.velEnd &&
+                fadeStart == other.fadeStart && fadeEnd == other.fadeEnd);
+    }
+    bool operator!=(const VelocityRange &other) const { return !(*this == other); }
 };
 } // namespace scxt::engine
 #endif // __SCXT_ENGINE_KEYBOARD_H

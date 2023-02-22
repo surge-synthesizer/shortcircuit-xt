@@ -94,6 +94,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     // Serialization to Client Messages
     void onVoiceCount(const uint32_t &v);
     void onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &);
+    void onMappingUpdated(const bool &active, const engine::Zone::ZoneMappingData &);
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
 
     // Originate client to serialization messages

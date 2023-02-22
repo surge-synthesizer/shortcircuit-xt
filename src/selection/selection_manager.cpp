@@ -42,6 +42,10 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         // TODO: The 'full zone' becomes a single function obviously
         const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
         serializationSendToClient(
+            messaging::client::s2c_respond_zone_mapping,
+            messaging::client::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
+            *(engine.getMessageController()));
+        serializationSendToClient(
             messaging::client::s2c_respond_zone_adsr_view,
             messaging::client::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
             *(engine.getMessageController()));

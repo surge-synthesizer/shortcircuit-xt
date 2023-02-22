@@ -30,6 +30,7 @@
 #include "multi/AdsrPane.h"
 #include "multi/PartGroupSidebar.h"
 #include "HeaderRegion.h"
+#include "components/multi/MappingPane.h"
 
 namespace scxt::ui
 {
@@ -50,6 +51,19 @@ void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active,
     else
     {
         multiScreen->eg[which]->adsrDeactivated();
+    }
+}
+
+void SCXTEditor::onMappingUpdated(const bool &active, const engine::Zone::ZoneMappingData &m)
+{
+    if (active)
+    {
+        multiScreen->sample->setMappingData(m);
+    }
+    else
+    {
+        // TODO
+        // multiScreen->sample->deactivate();
     }
 }
 
