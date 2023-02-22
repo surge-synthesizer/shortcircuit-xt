@@ -48,19 +48,19 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Types]
 Name: "full"; Description: "Full installation"
-Name: "clap"; Description: "CLAP installation"
-Name: "vst3"; Description: "VST3 installation"
+; Name: "clap"; Description: "CLAP installation"
+; Name: "vst3"; Description: "VST3 installation"
 Name: "standalone"; Description: "Standalone installation"
 Name: "custom"; Description: "Custom"; Flags: iscustom
 
 [Components]
-Name: "CLAP"; Description: "{#MyAppName} CLAP (64-bit)"; Types: full clap custom
-Name: "VST3"; Description: "{#MyAppName} VST3 (64-bit)"; Types: full vst3 custom
+; Name: "CLAP"; Description: "{#MyAppName} CLAP (64-bit)"; Types: full clap custom
+; Name: "VST3"; Description: "{#MyAppName} VST3 (64-bit)"; Types: full vst3 custom
 Name: "SA"; Description: "{#MyAppName} Standalone (64-bit)"; Types: full standalone custom
 
 [Files]
-Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.clap"; DestDir: "{autocf}\CLAP\{#MyAppPublisher}\"; Components: CLAP; Flags: ignoreversion
-Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.vst3\*"; DestDir: "{autocf}\VST3\{#MyAppPublisher}\{#MyAppName}.vst3\"; Components: VST3; Flags: ignoreversion recursesubdirs
+; Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.clap"; DestDir: "{autocf}\CLAP\{#MyAppPublisher}\"; Components: CLAP; Flags: ignoreversion
+; Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.vst3\*"; DestDir: "{autocf}\VST3\{#MyAppPublisher}\{#MyAppName}.vst3\"; Components: VST3; Flags: ignoreversion recursesubdirs
 Source: "{#SCXT_BIN}\shortcircuit-products\{#MyAppName}.exe"; DestDir: "{app}"; Components: SA; Flags: ignoreversion
 
 [Icons]
