@@ -1,14 +1,10 @@
 # Baconpauls next sprints
 
 Week of Feb 21:
-- ADSR Slider formatting; what's the data and method? 
-    Also attachment bipolar. Tooltips. Knobs drawn better.
-- Then: Zone views
+- Then: Zone metadata Layouts
 - Then: Processor views
 - Then: Mod Matrix
 - Then: Add a zone by sample revisit
-- A proper tooltip
-- At least make the standalone available as a zip from main repo next
 - A VU Meter
 - Hover Gestures in Named Panel
 - Vembertech lipol_ps then its gone
@@ -63,8 +59,9 @@ Sprint Log I posted on Discord
 
 ## Day 19 (2023-02-21 for a smidge then really the 22)
 
-Push ControlDescriptions down to the connector. Do we even need the enum? But
-this is path to get tooltips and so on on the ADSR sliders. 
+Push ControlDescriptions down to the connector. This allows formatting and
+is path to get tooltips and so on on the ADSR sliders. Add a crude tooltip.
+Then push next up to the main repo and turn on azure again.
 
 ## Day 18 (2023-02-17)
 

@@ -59,7 +59,17 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     std::unique_ptr<SendFXScreen> sendFxScreen;
 
     // TODO fix me with a proper tooltip type
-    std::unique_ptr<juce::Component> toolTip;
+    struct Tooltip : juce::Component
+    {
+        void paint(juce::Graphics &g);
+        void setTooltipText(const std::string &t)
+        {
+            tooltipText = t;
+            repaint();
+        }
+        std::string tooltipText{};
+    };
+    std::unique_ptr<Tooltip> toolTip;
 
     SCXTEditor(messaging::MessageController &e);
     virtual ~SCXTEditor() noexcept;

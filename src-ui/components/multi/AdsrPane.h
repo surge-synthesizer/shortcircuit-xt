@@ -71,6 +71,7 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void adsrChangedFromModel(const datamodel::AdsrStorage &);
     void adsrDeactivated();
     void adsrChangedFromGui(const attachment_t &);
+    void updateTooltip(const attachment_t &);
 
     void showHamburgerMenu();
 };

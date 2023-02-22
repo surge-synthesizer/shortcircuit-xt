@@ -36,6 +36,19 @@
 
 namespace scxt::ui
 {
+
+void SCXTEditor::Tooltip::paint(juce::Graphics &g)
+{
+    g.setColour(juce::Colours::black.withAlpha(0.25f));
+    g.fillRect(getLocalBounds());
+    g.setColour(juce::Colour(0xFF, 0x90, 0x00));
+    g.drawRect(getLocalBounds(), 2);
+
+    g.setColour(juce::Colour(0xFF, 0x90, 0x00));
+    g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
+    g.drawText(tooltipText, getLocalBounds().reduced(2), juce::Justification::centred);
+}
+
 SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
@@ -43,6 +56,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
+
+    toolTip = std::make_unique<SCXTEditor::Tooltip>();
+    addChildComponent(*toolTip);
 
     namespace cmsg = scxt::messaging::client;
     msgCont.registerClient("SCXTEditor", [this](auto &s) {
@@ -159,15 +175,14 @@ void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
 
 void SCXTEditor::showTooltip(const juce::Component &relativeTo)
 {
-    auto fb = getLocalArea(&relativeTo, relativeTo.getBounds());
-    std::cout << "SHOW " << fb.toString() << " / " << relativeTo.getBounds().toString()
-              << std::endl;
+    auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
+    toolTip->setVisible(true);
+    toolTip->toFront(false);
+    toolTip->setBounds(fb.getWidth() + fb.getX(), fb.getY(), 200, 30);
 }
 
-void SCXTEditor::hideTooltip() { std::cout << "Hide Tooltip" << std::endl; }
+void SCXTEditor::hideTooltip() { toolTip->setVisible(false); }
 
-void SCXTEditor::setTooltipContents(const std::string &s) {
-    std::cout << "Setting tooltip to " << s << std::endl;
-}
+void SCXTEditor::setTooltipContents(const std::string &s) { toolTip->setTooltipText(s); }
 
 } // namespace scxt::ui
