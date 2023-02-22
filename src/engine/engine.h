@@ -106,7 +106,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                 {
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
-                        if (zone->keyboardRange.includes(key))
+                        if (zone->mapping.keyboardRange.includes(key))
                         {
                             res.push_back(
                                 {(size_t)pidx, (size_t)gidx, (size_t)zidx, channel, key, noteId});

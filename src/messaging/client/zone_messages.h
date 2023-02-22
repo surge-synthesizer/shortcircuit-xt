@@ -131,6 +131,84 @@ template <> struct ClientToSerializationType<AdsrSelectedZoneUpdateRequest::c2s_
 {
     typedef AdsrSelectedZoneUpdateRequest T;
 };
+
+struct MappingSelectedZoneView
+{
+    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_request_zone_mapping};
+    static constexpr SerializationToClientMessageIds s2c_id{s2c_respond_zone_mapping};
+
+    typedef uint8_t c2s_payload_t;
+    typedef std::tuple<bool, engine::Zone::ZoneMappingData> s2c_payload_t;
+
+    c2s_payload_t payload{0};
+
+    MappingSelectedZoneView() {}
+
+    static void executeOnSerialization(const c2s_payload_t &which, const engine::Engine &engine,
+                                       MessageController &cont)
+    {
+        // TODO Selected Zone State
+        // const auto &selectedZone = engine.getPatch()->getPart(0)->getGroup(0)->getZone(0);
+        auto addr = engine.getSelectionManager()->getSelectedZone();
+
+        if (addr.has_value())
+        {
+            const auto &selectedZone =
+                engine.getPatch()->getPart(addr->part)->getGroup(addr->group)->getZone(addr->zone);
+            serializationSendToClient(s2c_id, s2c_payload_t{true, selectedZone->mapping}, cont);
+        }
+        else
+        {
+            serializationSendToClient(s2c_id, s2c_payload_t{false, {}}, cont);
+        }
+    }
+
+    template <typename Client> static void executeOnClient(Client *c, const s2c_payload_t &payload)
+    {
+        const auto &[active, map] = payload;
+        c->onMappingUpdated(active, map);
+    }
+};
+
+template <> struct ClientToSerializationType<MappingSelectedZoneView::c2s_id>
+{
+    typedef MappingSelectedZoneView T;
+};
+
+template <> struct SerializationToClientType<MappingSelectedZoneView::s2c_id>
+{
+    typedef MappingSelectedZoneView T;
+};
+
+struct MappingSelectedZoneUpdateRequest
+{
+    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_update_zone_mapping};
+    typedef std::tuple<engine::Zone::ZoneMappingData> c2s_payload_t;
+
+    c2s_payload_t payload;
+
+    MappingSelectedZoneUpdateRequest(const engine::Zone::ZoneMappingData &a) : payload{a} {}
+
+    static void executeOnSerialization(const c2s_payload_t &payload, const engine::Engine &engine,
+                                       MessageController &cont)
+    {
+        // TODO Selected Zone State
+        const auto &[mapping] = payload;
+        auto sz = engine.getSelectionManager()->getSelectedZone();
+        if (sz.has_value())
+        {
+            auto [ps, gs, zs] = *sz;
+            cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, mapv = mapping](auto &eng) {
+                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->mapping = mapv;
+            });
+        }
+    }
+};
+
+template <> struct ClientToSerializationType<MappingSelectedZoneUpdateRequest::c2s_id>
+{
+    typedef MappingSelectedZoneUpdateRequest T;
+};
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H

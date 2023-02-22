@@ -30,16 +30,27 @@
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
+#include "engine/zone.h"
 
 namespace scxt::ui::multi
 {
+// Each of these are in the cpp file
+struct MappingDisplay;
+struct SampleDisplay;
+struct MacroDisplay;
+
 struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     MappingPane(SCXTEditor *e);
+    ~MappingPane();
 
     void resized() override;
 
-    std::unique_ptr<juce::Label> label;
+    void setMappingData(const engine::Zone::ZoneMappingData &);
+
+    std::unique_ptr<MappingDisplay> mappingDisplay;
+    std::unique_ptr<SampleDisplay> sampleDisplay;
+    std::unique_ptr<MacroDisplay> macroDisplay;
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H

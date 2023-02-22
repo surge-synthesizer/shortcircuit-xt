@@ -35,18 +35,17 @@
 namespace scxt::ui::connectors
 {
 // TODO Factor this better obviously
-template <typename Parent, typename Payload>
+template <typename Parent, typename Payload, typename ValueType = float>
 struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
 {
-    float &value;
+    ValueType &value;
     std::string label;
-    std::function<void(const PayloadDataAttachment<Parent, Payload> &at)> onGuiValueChanged;
+    std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged;
     std::function<float(const Payload &)> extractFromPayload;
 
-    PayloadDataAttachment(
-        Parent *p, const datamodel::ControlDescription &cd, const std::string &l,
-        std::function<void(const PayloadDataAttachment<Parent, Payload> &at)> oGVC,
-        std::function<float(const Payload &)> efp, float &v)
+    PayloadDataAttachment(Parent *p, const datamodel::ControlDescription &cd, const std::string &l,
+                          std::function<void(const PayloadDataAttachment &at)> oGVC,
+                          std::function<float(const Payload &)> efp, ValueType &v)
         : description(cd), value(v), label(l), extractFromPayload(efp),
           onGuiValueChanged(std::move(oGVC))
     {
@@ -59,13 +58,13 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     datamodel::ControlDescription description;
 
     std::string getLabel() const override { return label; }
-    float getValue() const override { return value; }
+    float getValue() const override { return (float)value; }
     void setValueFromGUI(const float &f) override
     {
-        value = f;
+        value = (ValueType)f;
         onGuiValueChanged(*this);
     }
-    void setValueFromModel(const float &f) override { value = f; }
+    void setValueFromModel(const float &f) override { value = (ValueType)f; }
     void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
 
     float getMin() const override { return description.min; }

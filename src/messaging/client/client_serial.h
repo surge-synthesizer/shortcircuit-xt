@@ -46,6 +46,9 @@ enum ClientToSerializationMessagesIds
     c2s_request_zone_adsr_view,
     c2s_update_zone_adsr_view,
 
+    c2s_request_zone_mapping,
+    c2s_update_zone_mapping,
+
     c2s_request_pgz_structure,
 
     c2s_add_sample,
@@ -58,6 +61,7 @@ enum SerializationToClientMessageIds
     s2c_send_initial_metadata,
     s2c_voice_count,
     s2c_respond_zone_adsr_view,
+    s2c_respond_zone_mapping,
     s2c_send_pgz_structure,
 
     num_serializationToClientMessages

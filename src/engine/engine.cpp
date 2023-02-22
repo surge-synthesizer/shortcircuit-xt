@@ -276,8 +276,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     // 2. Create a zone object on this thread but don't add it
     auto zptr = std::make_unique<Zone>(*sid);
     // TODO fixme
-    zptr->keyboardRange = {48, 72};
-    zptr->rootKey = 60;
+    zptr->mapping.keyboardRange = {48, 72};
+    zptr->mapping.rootKey = 60;
     zptr->attachToSample(*sampleManager);
 
     auto [sp, sg, sz] =

@@ -159,7 +159,7 @@ bool Voice::process()
     }
 
     mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
-   
+
     return true;
 }
 
@@ -218,7 +218,7 @@ void Voice::calculateGeneratorRatio()
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
     // TODO gross for now - correct
-    auto ndiff = key - zone->rootKey;
+    auto ndiff = key - zone->mapping.rootKey;
     auto fac = std::pow(2.0, ndiff / 12.0);
     GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv);
 #endif

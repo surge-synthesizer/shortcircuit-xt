@@ -40,6 +40,7 @@
 #include "modulation/modulators/steplfo.h"
 
 #include "datamodel/adsr_storage.h"
+#include <fmt/core.h>
 
 namespace scxt::voice
 {
@@ -67,7 +68,12 @@ struct Zone : MoveableOnly<Zone>
     void process();
 
     // TODO: editable name
-    std::string getName() const { return id.to_string(); }
+    std::string getName() const
+    {
+        if (sample)
+            return fmt::format("Z{} : {}", id.id, sample->getPath().filename().u8string());
+        return id.to_string();
+    }
 
     // TODO: Multi-output
     size_t getNumOutputs() const { return 1; }
@@ -85,9 +91,28 @@ struct Zone : MoveableOnly<Zone>
         return sample != nullptr;
     }
 
-    // TODO: This becomes 'meta' eventually probably
-    KeyboardRange keyboardRange;
-    uint8_t rootKey{60};
+    struct ZoneMappingData
+    {
+        uint8_t rootKey{60};
+        KeyboardRange keyboardRange;
+        VelocityRange velocityRange;
+
+        int16_t pbDown{-2}, pbUp{2};
+
+        int16_t exclusiveGroup;
+
+        float velocitySens{1.0};
+        float amplitude{1.0};   // linear
+        float pan{0.0};         // -1..1
+        float pitchOffset{0.0}; // semitones/keys
+
+        auto asTuple() const
+        {
+            return std::tie(rootKey, keyboardRange, velocityRange, pbDown, pbUp, amplitude, pan,
+                            pitchOffset, exclusiveGroup, velocitySens);
+        }
+        bool operator==(const ZoneMappingData &other) const { return asTuple() == other.asTuple(); }
+    } mapping;
 
     std::array<dsp::processor::ProcessorStorage, processorsPerZone> processorStorage;
 
@@ -118,7 +143,7 @@ struct Zone : MoveableOnly<Zone>
     bool operator==(const Zone &other) const
     {
         auto res = sampleID.id == other.sampleID.id;
-        res = res && rootKey == other.rootKey && keyboardRange == other.keyboardRange;
+        res = res && mapping == other.mapping;
         // Bail out before the expensive checks
         if (!res)
             return false;

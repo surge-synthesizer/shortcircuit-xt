@@ -77,4 +77,12 @@ void unstreamEngineState(engine::Engine &e, const fs::path &path)
     auto jv = std::move(consumer.value);
     jv.to(e);
 }
+
+void unstreamEngineState(engine::Engine &e, const std::string &xml)
+{
+    tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
+    tao::json::events::from_string(consumer, xml);
+    auto jv = std::move(consumer.value);
+    jv.to(e);
+}
 } // namespace scxt::json
