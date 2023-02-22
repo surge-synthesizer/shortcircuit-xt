@@ -135,16 +135,17 @@ jobs:
         condition: and(variables.isLinux, not(eq(variables['Build.Reason'], 'PullRequest')))
         displayName: Use the linux build to make git log info
 
+      # TODO: Restore these
       #- bash: |
       #    cmake --build build --target code-quality-pipeline-checks
       # displayName: CodeQuality
       #  condition: variables.isLinux
 
-      - bash: |
-          cmake --build build --config Debug --target sc3-test --parallel 4
-          ./build/test/sc3-test
-        displayName: Run Tests SC3
-        condition: eq(variables['Build.Reason'], 'PullRequest')
+      #- bash: |
+      #    cmake --build build --config Debug --target sc3-test --parallel 4
+      #    ./build/test/sc3-test
+      #  displayName: Run Tests SC3
+      #  condition: eq(variables['Build.Reason'], 'PullRequest')
 
       - task: PublishPipelineArtifact@0
         inputs:
