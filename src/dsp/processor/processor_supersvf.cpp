@@ -56,9 +56,7 @@ SuperSVF::SuperSVF(float *fp, int *ip, bool stereo)
 {
     parameter_count = 2;
     setStr(ctrllabel[0], ("cutoff"));
-    ctrlmode[0] = datamodel::ControlMode::cm_frequency_audible;
     setStr(ctrllabel[1], ("resonance"));
-    ctrlmode[1] = datamodel::ControlMode::cm_percent;
 
     ctrlmode_desc[0] = cdFreqDef;
     ctrlmode_desc[1] = cdPercentDef;

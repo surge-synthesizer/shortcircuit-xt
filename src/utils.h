@@ -59,6 +59,12 @@ template <int32_t idType_v> struct ID
         return res;
     }
 
+    static void guaranteeNextAbove(const ID<idType_v> &other)
+    {
+        if (nextID <= other.id)
+            nextID = other.id + 1;
+    }
+
     bool operator==(const ID<idType_v> &other) const { return (id == other.id); }
     bool operator!=(const ID<idType_v> &other) const { return !(id == other.id); }
 

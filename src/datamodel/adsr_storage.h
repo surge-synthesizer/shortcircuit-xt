@@ -45,21 +45,8 @@ struct AdsrStorage
     // TODO: What are these going to be when they grow up?
     float aShape{0}, dShape{0}, rShape{0};
 
-    static constexpr ControlDescription ahdrDescription{
-        ControlDescription::FLOAT,
-        ControlDescription::TWO_TO_THE_X,
-        0,
-        0.01,
-        1,
-        0.5,
-        "seconds",
-        sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
-            sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
-        sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin},
-        sDescription{
-            ControlDescription::FLOAT, ControlDescription::LINEAR, 0, 0.01, 1, 0.5, "percent"},
-        shapeDescription{
-            ControlDescription::FLOAT, ControlDescription::LINEAR, -1, 0.01, 1, 0.0, "percent"};
+    static constexpr ControlDescription cdAHDR{cdEnvelopeThirtyTwo}, cdS{cdPercent},
+        cdShape{cdPercentBipolar};
 
     auto asTuple() const { return std::tie(a, d, s, r, isDigital, aShape, dShape, rShape); }
     bool operator==(const AdsrStorage &other) const { return asTuple() == other.asTuple(); }

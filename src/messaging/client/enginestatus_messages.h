@@ -32,24 +32,11 @@
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
+#include "client_macros.h"
 
 namespace scxt::messaging::client
 {
-struct VoiceCountUpdate
-{
-    static constexpr SerializationToClientMessageIds s2c_id{s2c_voice_count};
-    typedef uint32_t s2c_payload_t;
-    template <typename Client> static void executeOnClient(Client *c, const s2c_payload_t &payload)
-    {
-        c->onVoiceCount(payload);
-    }
-};
-
-template <> struct SerializationToClientType<VoiceCountUpdate::s2c_id>
-{
-    typedef VoiceCountUpdate T;
-};
-
+SERIAL_TO_CLIENT(VoiceCountUpdate, s2c_voice_count, uint32_t, onVoiceCount);
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H

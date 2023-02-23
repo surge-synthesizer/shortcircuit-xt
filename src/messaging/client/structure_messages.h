@@ -32,6 +32,7 @@
 #include "json/selection_traits.h"
 #include "selection/selection_manager.h"
 #include "engine/engine.h"
+#include "client_macros.h"
 
 namespace scxt::messaging::client
 {
@@ -39,91 +40,42 @@ namespace scxt::messaging::client
  * Send the full structure of all groups and zones or for a single part
  * in a single message
  */
-struct PartGroupZoneStructure
+inline void pgzSerialSide(const int &partNum, const engine::Engine &engine, MessageController &cont)
 {
-    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_request_pgz_structure};
-    static constexpr SerializationToClientMessageIds s2c_id{s2c_send_pgz_structure};
+    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(partNum),
+                              cont);
+}
 
-    typedef int32_t c2s_payload_t; // the part number, or -1 for all parts
+CLIENT_SERIAL_REQUEST_RESPONSE(PartGroupZoneStructure, c2s_request_pgz_structure, int32_t,
+                               s2c_send_pgz_structure, engine::Engine::pgzStructure_t,
+                               pgzSerialSide(payload, engine, cont), onStructureUpdated);
 
-    // -1 group means empty part; -1 zone means empty group
-    typedef engine::Engine::pgzStructure_t s2c_payload_t;
-
-    c2s_payload_t payload{-1};
-
-    PartGroupZoneStructure(const c2s_payload_t &p = -1) : payload(p) {}
-
-    static void executeOnSerialization(const c2s_payload_t &which, const engine::Engine &engine,
-                                       MessageController &cont)
-    {
-        serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(which),
-                                  cont);
-    }
-
-    template <typename Client> static void executeOnClient(Client *c, const s2c_payload_t &payload)
-    {
-        c->onStructureUpdated(payload);
-    }
-};
-
-template <> struct ClientToSerializationType<PartGroupZoneStructure::c2s_id>
-{
-    typedef PartGroupZoneStructure T;
-};
-
-template <> struct SerializationToClientType<PartGroupZoneStructure::s2c_id>
-{
-    typedef PartGroupZoneStructure T;
-};
+SERIAL_TO_CLIENT(SendAllProcessorDescriptions, s2c_send_all_processor_descriptions,
+                 std::vector<dsp::processor::ProcessorDescription>, onAllProcessorDescriptions);
 
 /*
  * A message the client auto-sends when it registers just so we can respond
  */
-struct OnRegister
+
+inline void onRegister(engine::Engine &engine, MessageController &cont)
 {
-    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_on_register};
-    typedef bool c2s_payload_t; // the part number, or -1 for all parts
-    c2s_payload_t payload{true};
-
-    OnRegister(const c2s_payload_t &p = true) : payload(p) {}
-
-    static void executeOnSerialization(const c2s_payload_t &which, const engine::Engine &engine,
-                                       MessageController &cont)
-    {
-        engine.sendMetadataToClient();
-        PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
-        engine.getSelectionManager()->singleSelect({});
-    }
-};
-
-template <> struct ClientToSerializationType<OnRegister::c2s_id>
-{
-    typedef OnRegister T;
-};
+    assert(cont.threadingChecker.isSerialThread());
+    engine.sendMetadataToClient();
+    PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
+    engine.getSelectionManager()->singleSelect({});
+}
+CLIENT_TO_SERIAL(OnRegister, c2s_on_register, bool, onRegister(engine, cont));
 
 /*
  * A message the client auto-sends when it registers just so we can respond
  */
-struct AddSample
+inline void addSample(const std::string &payload, engine::Engine &engine, MessageController &cont)
 {
-    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_add_sample};
-    typedef std::string c2s_payload_t; // the part number, or -1 for all parts
-    c2s_payload_t payload{};
-
-    AddSample(const fs::path &p) : payload(p.u8string()) {}
-
-    static void executeOnSerialization(const c2s_payload_t &pathu8, engine::Engine &engine,
-                                       MessageController &cont)
-    {
-        auto p = fs::path{pathu8};
-        engine.loadSampleIntoSelectedPartAndGroup(p);
-    }
-};
-
-template <> struct ClientToSerializationType<AddSample::c2s_id>
-{
-    typedef AddSample T;
-};
+    assert(cont.threadingChecker.isSerialThread());
+    auto p = fs::path{payload};
+    engine.loadSampleIntoSelectedPartAndGroup(p);
+}
+CLIENT_TO_SERIAL(AddSample, c2s_add_sample, std::string, addSample(payload, engine, cont);)
 
 } // namespace scxt::messaging::client
 

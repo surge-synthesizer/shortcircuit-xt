@@ -25,37 +25,36 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include <cassert>
-#include "sample_manager.h"
+#ifndef SHORTCIRCUIT_PROCESSORPANE_H
+#define SHORTCIRCUIT_PROCESSORPANE_H
 
+#include <unordered_map>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "sst/jucegui/components/NamedPanel.h"
+#include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/data/Continuous.h"
+#include "dsp/processor/processor.h"
+#include "components/HasEditor.h"
+#include "connectors/PayloadDataAttachment.h"
 
-namespace scxt::sample
+namespace scxt::ui::multi
 {
-std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
+struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    return loadSampleByPathToID(p, SampleID::next());
-}
+    // ToDo: shapes of course
+    typedef connectors::PayloadDataAttachment<ProcessorPane, dsp::processor::ProcessorStorage> attachment_t;
 
+    dsp::processor::ProcessorStorage processorView;
+    int index{0};
+    ProcessorPane(SCXTEditor *, int index);
 
-std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, const SampleID &id)
-{
-    assert(threadingChecker.isSerialThread());
-    SampleID::guaranteeNextAbove(id);
+    void resized() override;
 
-    for (const auto &[id, sm] : samples)
-    {
-        if (sm->getPath() == p)
-        {
-            return id;
-        }
-    }
+    void updateTooltip(const attachment_t &);
 
-    auto sp = std::make_shared<Sample>(id);
+    void showHamburgerMenu();
+};
+} // namespace scxt::ui::multi
 
-    if (!sp->load(p))
-        return {};
-
-    samples[sp->id] = sp;
-    return sp->id;
-}
-} // namespace scxt::sample
+#endif // SHORTCIRCUIT_ADSRPANE_H

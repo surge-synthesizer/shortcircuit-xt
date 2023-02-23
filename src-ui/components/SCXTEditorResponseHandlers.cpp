@@ -40,13 +40,14 @@ void SCXTEditor::onVoiceCount(const uint32_t &v)
         headerRegion->setVoiceCount(v);
 }
 
-void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active,
-                                   const datamodel::AdsrStorage &v)
+void SCXTEditor::onEnvelopeUpdated(
+    const scxt::messaging::client::adsrViewResponsePayload_t &payload)
 {
+    const auto &[which, active, env] = payload;
     if (active)
     {
         // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-        multiScreen->eg[which]->adsrChangedFromModel(v);
+        multiScreen->eg[which]->adsrChangedFromModel(env);
     }
     else
     {
@@ -54,8 +55,9 @@ void SCXTEditor::onEnvelopeUpdated(const int &which, const bool &active,
     }
 }
 
-void SCXTEditor::onMappingUpdated(const bool &active, const engine::Zone::ZoneMappingData &m)
+void SCXTEditor::onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &payload)
 {
+    const auto &[active, m] = payload;
     if (active)
     {
         multiScreen->sample->setMappingData(m);

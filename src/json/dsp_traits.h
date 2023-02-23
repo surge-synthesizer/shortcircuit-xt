@@ -69,5 +69,33 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         v.at("intParams").to(result.intParams);
     }
 };
+
+template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::dsp::processor::ProcessorDescription &t)
+    {
+        v = {
+            {"id", (int32_t)t.id},          {"streamingName", t.streamingName},
+            {"displayName", t.displayName}, {"isZone", t.isZone},
+            {"isPart", t.isZone},           {"isFX", t.isZone},
+        };
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   scxt::dsp::processor::ProcessorDescription &result)
+    {
+        int32_t tr;
+        v.at("id").to(tr);
+        result.id = (dsp::processor::ProcessorType)tr;
+        v.at("streamingName").to(result.streamingName);
+        v.at("displayName").to(result.displayName);
+        v.at("isZone").to(result.isZone);
+        v.at("isPart").to(result.isPart);
+        v.at("isFX").to(result.isFX);
+    }
+};
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DSP_TRAITS_H

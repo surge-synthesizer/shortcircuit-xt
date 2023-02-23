@@ -24,6 +24,7 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/ModPane.cpp
         components/multi/OutputPane.cpp
         components/multi/PartGroupSidebar.cpp
+        components/multi/ProcessorPane.cpp
 
         connectors/SCXTStyleSheetCreator.cpp
 

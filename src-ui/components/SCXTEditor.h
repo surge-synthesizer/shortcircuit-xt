@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/HSlider.h"
 #include "datamodel/adsr_storage.h"
 #include "sst/jucegui/components/WindowPanel.h"
+#include "messaging/client/zone_messages.h"
 
 namespace scxt::ui
 {
@@ -93,9 +94,15 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     // Serialization to Client Messages
     void onVoiceCount(const uint32_t &v);
-    void onEnvelopeUpdated(const int &which, const bool &active, const datamodel::AdsrStorage &);
-    void onMappingUpdated(const bool &active, const engine::Zone::ZoneMappingData &);
+    void onEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
+    void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
+
+    std::vector<dsp::processor::ProcessorDescription> allProcessors;
+    void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
+    {
+        allProcessors = v;
+    }
 
     // Originate client to serialization messages
     void singleSelectItem(const selection::SelectionManager::ZoneAddress &);
