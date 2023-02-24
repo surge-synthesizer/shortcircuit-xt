@@ -38,7 +38,6 @@ Voice::Voice(engine::Zone *z) : zone(z), aeg(this), eg2(this)
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
-    memset(processorFloatParams, 0, sizeof(processorFloatParams));
     memset(processorIntParams, 0, sizeof(processorIntParams));
 }
 
@@ -60,20 +59,18 @@ void Voice::voiceStarted()
     modMatrix.attachSourcesFromVoice(this);
     modMatrix.initializeModulationValues();
 
-    for (auto i = 0; i < engine::lfosPerZone; ++i)
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&zone->lfoStorage[i],
-                       modMatrix.getValuePtr(
-                           (modulation::VoiceModMatrixDestination)(modulation::vmd_LFO1_Rate + i)),
+        lfos[i].assign(&zone->lfoStorage[i], modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i),
                        nullptr);
     }
 
-    aeg.attackFrom(0.0, modMatrix.getValue(modulation::vmd_aeg_A),
+    aeg.attackFrom(0.0, modMatrix.getValue(modulation::vmd_eg_A, 0),
                    1, // this needs fixing in legato mode
                    zone->aegStorage.isDigital);
-    eg2.attackFrom(0.0, modMatrix.getValue(modulation::vmd_eg2_A),
+    eg2.attackFrom(0.0, modMatrix.getValue(modulation::vmd_eg_A, 1),
                    1, // this needs fixing in legato mode
                    zone->aegStorage.isDigital);
 
@@ -106,10 +103,10 @@ bool Voice::process()
     // are modulatable
 
     // TODO SHape Fixes
-    aeg.processBlock(modMatrix.getValue(modulation::vmd_aeg_A),
-                     modMatrix.getValue(modulation::vmd_aeg_D),
-                     modMatrix.getValue(modulation::vmd_aeg_S),
-                     modMatrix.getValue(modulation::vmd_aeg_R), 1, 1, 1, playState == GATED);
+    aeg.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 0),
+                     modMatrix.getValue(modulation::vmd_eg_D, 0),
+                     modMatrix.getValue(modulation::vmd_eg_S, 0),
+                     modMatrix.getValue(modulation::vmd_eg_R, 0), 1, 1, 1, playState == GATED);
 
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
@@ -145,8 +142,7 @@ bool Voice::process()
     {
         if (processors[i]) // TODO && (!zone->processors[0].bypass))
         {
-            processorMix[i].set_target(modMatrix.getValue(
-                (modulation::VoiceModMatrixDestination)(modulation::vmd_Processor1_Mix + i)));
+            processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
             processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
             processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
                                              output[0], output[1], BLOCK_SIZE_QUAD);
@@ -228,31 +224,25 @@ void Voice::initializeProcessors()
 {
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
-        processorMix[i].set_target(modMatrix.getValue(
-            (modulation::VoiceModMatrixDestination)(modulation::vmd_Processor1_Mix + i)));
+        processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
         processorMix[i].instantize();
 
         processorType[i] = zone->processorStorage[i].type;
         assert(dsp::processor::isZoneProcessor(processorType[i]));
 
-        // TODO this is a hack
-        memcpy(&processorFloatParams[i][0], &zone->processorStorage[i].floatParams[0],
-               sizeof(processorFloatParams[i]));
-        // memcpy(&processorIntParams[0], &zone->processorStorage[i].intParams[0],
-        // sizeof(processorIntParams));
-
+        auto fp = modMatrix.getValuePtr(modulation::vmd_Processor_FP1, i);
         if (dsp::processor::canInPlaceNew(processorType[i]))
         {
             // TODO: Stereo
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], processorPlacementStorage[i],
-                dsp::processor::processorMemoryBufferSize, processorFloatParams[i],
+                dsp::processor::processorMemoryBufferSize, fp,
                 processorIntParams[i], false);
         }
         else
         {
             processors[i] = dsp::processor::spawnProcessorAllocating(
-                processorType[i], processorFloatParams[i], processorIntParams[i], false);
+                processorType[i], fp, processorIntParams[i], false);
         }
 
         if (processors[i])

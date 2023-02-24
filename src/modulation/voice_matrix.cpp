@@ -46,19 +46,25 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 {
     for (int i = 0; i < engine::processorsPerZone; ++i)
     {
-        baseValues[vmd_Processor1_Mix + i] = z->processorStorage[i].mix;
+        // TODO - skip off
+        baseValues[destIndex(vmd_Processor_Mix, i)] = z->processorStorage[i].mix;
+        memcpy(&baseValues[destIndex(vmd_Processor_FP1, i)],
+               z->processorStorage[i].floatParams.data(),
+               sizeof(float) * dsp::processor::maxProcessorFloatParams);
     }
 
     // TODO : Shapes
-    baseValues[vmd_aeg_A] = z->aegStorage.a;
-    baseValues[vmd_aeg_D] = z->aegStorage.d;
-    baseValues[vmd_aeg_S] = z->aegStorage.s;
-    baseValues[vmd_aeg_R] = z->aegStorage.r;
+    baseValues[destIndex(vmd_eg_A,0)] = z->aegStorage.a;
+    baseValues[destIndex(vmd_eg_H,0)] = z->aegStorage.h;
+    baseValues[destIndex(vmd_eg_D,0)] = z->aegStorage.d;
+    baseValues[destIndex(vmd_eg_S,0)] = z->aegStorage.s;
+    baseValues[destIndex(vmd_eg_R,0)] = z->aegStorage.r;
 
-    baseValues[vmd_eg2_A] = z->eg2Storage.a;
-    baseValues[vmd_eg2_D] = z->eg2Storage.d;
-    baseValues[vmd_eg2_S] = z->eg2Storage.s;
-    baseValues[vmd_eg2_R] = z->eg2Storage.r;
+    baseValues[destIndex(vmd_eg_A,1)] = z->eg2Storage.a;
+    baseValues[destIndex(vmd_eg_H,1)] = z->eg2Storage.h;
+    baseValues[destIndex(vmd_eg_D,1)] = z->eg2Storage.d;
+    baseValues[destIndex(vmd_eg_S,1)] = z->eg2Storage.s;
+    baseValues[destIndex(vmd_eg_R,1)] = z->eg2Storage.r;
 }
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
@@ -80,62 +86,60 @@ void VoiceModMatrix::process()
     memcpy(modulatedValues, baseValues, sizeof(modulatedValues));
     for (const auto &r : routingTable)
     {
-        if (r.dst == vmd_none || r.src == vms_none)
+        if (r.dst.type == vmd_none || r.src == vms_none)
             continue;
         modulatedValues[r.dst] += (*(sourcePointers[r.src])) * r.depth;
     }
 }
 
-std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &dest)
+std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationType &dest)
 {
     switch (dest)
     {
     case vmd_none:
         return "vmd_none";
 
-    case vmd_LFO1_Rate:
-        return "vmd_lfo1_rate";
-    case vmd_LFO2_Rate:
-        return "vmd_lfo2_rate";
-    case vmd_LFO3_Rate:
-        return "vmd_lfo3_rate";
+    case vmd_LFO_Rate:
+        return "vmd_lfo_rate";
 
-    case vmd_Processor1_Mix:
-        return "vmd_processor1_mix";
-    case vmd_Processor2_Mix:
-        return "vmd_processor2_mix";
+    case vmd_Processor_Mix:
+        return "vmd_processor_mix";
+    case vmd_Processor_FP1:
+        return "vmd_processor_fp1";
+    case vmd_Processor_FP2:
+        return "vmd_processor_fp2";
+    case vmd_Processor_FP3:
+        return "vmd_processor_fp3";
+    case vmd_Processor_FP4:
+        return "vmd_processor_fp4";
+    case vmd_Processor_FP5:
+        return "vmd_processor_fp5";
+    case vmd_Processor_FP6:
+        return "vmd_processor_fp6";
+    case vmd_Processor_FP7:
+        return "vmd_processor_fp7";
+    case vmd_Processor_FP8:
+        return "vmd_processor_fp8";
+    case vmd_Processor_FP9:
+        return "vmd_processor_fp9";
 
-    case vmd_aeg_A:
-        return "vmd_aeg_a";
-    case vmd_aeg_D:
-        return "vmd_aeg_d";
-    case vmd_aeg_S:
-        return "vmd_aeg_s";
-    case vmd_aeg_R:
-        return "vmd_aeg_r";
+    case vmd_eg_A:
+        return "vmd_eg_a";
+    case vmd_eg_H:
+        return "vmd_eg_h";
+    case vmd_eg_D:
+        return "vmd_eg_d";
+    case vmd_eg_S:
+        return "vmd_eg_s";
+    case vmd_eg_R:
+        return "vmd_eg_r";
 
-    case vmd_aeg_AShape:
-        return "vmd_aeg_ashape";
-    case vmd_aeg_DShape:
-        return "vmd_aeg_dshape";
-    case vmd_aeg_RShape:
-        return "vmd_aeg_rshape";
-
-    case vmd_eg2_A:
-        return "vmd_eg2_a";
-    case vmd_eg2_D:
-        return "vmd_eg2_d";
-    case vmd_eg2_S:
-        return "vmd_eg2_s";
-    case vmd_eg2_R:
-        return "vmd_eg2_r";
-
-    case vmd_eg2_AShape:
-        return "vmd_eg2_ashape";
-    case vmd_eg2_DShape:
-        return "vmd_eg2_dshape";
-    case vmd_eg2_RShape:
-        return "vmd_eg2_rshape";
+    case vmd_eg_AShape:
+        return "vmd_eg_ashape";
+    case vmd_eg_DShape:
+        return "vmd_eg_dshape";
+    case vmd_eg_RShape:
+        return "vmd_eg_rshape";
 
     case numVoiceMatrixDestinations:
         throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");
@@ -143,13 +147,13 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &
 
     throw std::logic_error("Invalid enum");
 }
-std::optional<VoiceModMatrixDestination> fromVoiceModMatrixDestStreamingName(const std::string &s)
+std::optional<VoiceModMatrixDestinationType> fromVoiceModMatrixDestStreamingName(const std::string &s)
 {
     for (int i = vmd_none; i < numVoiceMatrixDestinations; ++i)
     {
-        if (getVoiceModMatrixDestStreamingName((VoiceModMatrixDestination)i) == s)
+        if (getVoiceModMatrixDestStreamingName((VoiceModMatrixDestinationType)i) == s)
         {
-            return ((VoiceModMatrixDestination)i);
+            return ((VoiceModMatrixDestinationType)i);
         }
     }
     return vmd_none;

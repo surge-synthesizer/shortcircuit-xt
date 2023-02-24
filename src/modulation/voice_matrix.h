@@ -31,6 +31,7 @@
 #include <string>
 #include <array>
 #include "utils.h"
+#include "dsp/processor/processor.h"
 
 namespace scxt::engine
 {
@@ -47,40 +48,60 @@ namespace scxt::modulation
 static constexpr int numVoiceRoutingSlots{32};
 
 // These values are streamed so order matters. Basically "always add at the end" is the answer
-enum VoiceModMatrixDestination
+enum VoiceModMatrixDestinationType
 {
     vmd_none,
 
-    vmd_LFO1_Rate,
-    vmd_LFO2_Rate,
-    vmd_LFO3_Rate, // We assume these are contiguous in voice.cpp (that is LVO3 = LVO1 + 2)
+    vmd_LFO_Rate,
 
-    vmd_Processor1_Mix,
-    vmd_Processor2_Mix,
+    vmd_Processor_Mix,
+    vmd_Processor_FP1,
+    vmd_Processor_FP2,
+    vmd_Processor_FP3,
+    vmd_Processor_FP4,
+    vmd_Processor_FP5,
+    vmd_Processor_FP6,
+    vmd_Processor_FP7,
+    vmd_Processor_FP8,
+    vmd_Processor_FP9, // These should be contiguous and match maxProcessorFloatParams
 
-    vmd_aeg_A,
-    vmd_aeg_D,
-    vmd_aeg_S,
-    vmd_aeg_R,
+    vmd_eg_A,
+    vmd_eg_H,
+    vmd_eg_D,
+    vmd_eg_S,
+    vmd_eg_R,
 
-    vmd_aeg_AShape,
-    vmd_aeg_DShape,
-    vmd_aeg_RShape,
-
-    vmd_eg2_A,
-    vmd_eg2_D,
-    vmd_eg2_S,
-    vmd_eg2_R,
-
-    vmd_eg2_AShape,
-    vmd_eg2_DShape,
-    vmd_eg2_RShape,
+    vmd_eg_AShape,
+    vmd_eg_DShape,
+    vmd_eg_RShape,
 
     numVoiceMatrixDestinations
 };
 
-std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestination &dest);
-std::optional<VoiceModMatrixDestination> fromVoiceModMatrixDestStreamingName(const std::string &s);
+struct VoiceModMatrixDestinationAddress
+{
+    static constexpr int maxIndex{4}; // 4 processors per zone
+    static constexpr int maxDestinations{maxIndex * numVoiceMatrixDestinations};
+    VoiceModMatrixDestinationType type{vmd_none};
+    size_t index{0};
+
+    // want in order, not index interleaved, so we can look at FP as a block etc...
+    operator size_t() const { return (size_t)type + numVoiceMatrixDestinations * index; }
+
+    bool operator==(const VoiceModMatrixDestinationAddress &other) const
+    {
+        return other.type == type && other.index == index;
+    }
+};
+
+static inline size_t destIndex(VoiceModMatrixDestinationType type, size_t index)
+{
+    return (size_t)type + numVoiceMatrixDestinations * index;
+}
+
+std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationType &dest);
+std::optional<VoiceModMatrixDestinationType>
+fromVoiceModMatrixDestStreamingName(const std::string &s);
 
 // These values are streamed so order matters. Basically "always add at the end" is the answer
 enum VoiceModMatrixSource
@@ -103,7 +124,7 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
     struct Routing
     {
         VoiceModMatrixSource src{vms_none};
-        VoiceModMatrixDestination dst{vmd_none};
+        VoiceModMatrixDestinationAddress dst{vmd_none};
         float depth{0};
 
         bool operator==(const Routing &other) const
@@ -115,12 +136,25 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
 
     std::array<Routing, numVoiceRoutingSlots> routingTable;
 
-    const float *getValuePtr(VoiceModMatrixDestination dest) const
+    float *getValuePtr(const VoiceModMatrixDestinationAddress &dest)
     {
         return &modulatedValues[dest];
     }
 
-    float getValue(VoiceModMatrixDestination dest) const { return modulatedValues[dest]; }
+    float *getValuePtr(const VoiceModMatrixDestinationType &type, size_t index)
+    {
+        return &modulatedValues[destIndex(type, index)];
+    }
+
+    float getValue(const VoiceModMatrixDestinationAddress &dest) const
+    {
+        return modulatedValues[dest];
+    }
+
+    float getValue(const VoiceModMatrixDestinationType &type, size_t index) const
+    {
+        return modulatedValues[destIndex(type, index)];
+    }
 
     void clear();
     void snapRoutingFromZone(engine::Zone *z);
@@ -130,9 +164,9 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
     void process();
 
   protected:
-    float *sourcePointers[numVoiceMatrixSources];
-    float baseValues[numVoiceMatrixDestinations];
-    float modulatedValues[numVoiceMatrixDestinations];
+    float *sourcePointers[VoiceModMatrixDestinationAddress::maxDestinations];
+    float baseValues[VoiceModMatrixDestinationAddress::maxDestinations];
+    float modulatedValues[VoiceModMatrixDestinationAddress::maxDestinations];
 };
 } // namespace scxt::modulation
 

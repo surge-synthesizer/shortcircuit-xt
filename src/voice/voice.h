@@ -105,8 +105,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         dsp::processor::proct_none, dsp::processor::proct_none};
     uint8_t processorPlacementStorage alignas(
         16)[engine::processorsPerZone][dsp::processor::processorMemoryBufferSize];
-    float processorFloatParams alignas(
-        16)[engine::processorsPerZone][dsp::processor::maxProcessorFloatParams];
     int32_t processorIntParams alignas(
         16)[engine::processorsPerZone][dsp::processor::maxProcessorIntParams];
 

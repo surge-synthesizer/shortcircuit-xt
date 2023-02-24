@@ -5,7 +5,7 @@ Week of Feb 21:
 - Then: Processor views
   - per-panel view
   - integer parameters 
-- Then: Mod Matrix
+- Then: Mod Matrix expand some more
 - Then: Add a zone by sample revisit
 - Voice Design for real and zone level modulators
   - Lifecycle with GATED FINISHED CLEANUP etc
@@ -63,7 +63,9 @@ Sprint Log I posted on Discord
 ## Day 21 (2023-02-24)
 
 Processors! I got the messages working and the float editors up in the
-UI and they snap at voice on at least. Woof.
+UI and they snap at voice on at least. Woof. Then go change the mod matrix
+so the destinations are indexed and that lets me intermediate the processor
+through it, meaning knob drags while playing change processors.
 
 ## Day 20 (2023-02-22 for a smidge then a smidge more on the 23)
 

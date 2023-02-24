@@ -283,9 +283,16 @@ void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
     auto xml = std::string(cd);
 
     // TODO obviously fix this by pushing this xml to the serialization thread
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
-    scxt::json::unstreamEngineState(*engine, xml);
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    try
+    {
+        engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
+        scxt::json::unstreamEngineState(*engine, xml);
+        engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    }
+    catch (std::exception &e)
+    {
+        std::cerr << "Unstream exception " << e.what() << std::endl;
+    }
 }
 
 void SCXTProcessor::temporaryInitPatch()
