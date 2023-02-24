@@ -57,7 +57,6 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
 
         for (int i = 0; i < engine::processorsPerZone; ++i)
         {
-            std::cout << "Send zone " << i << " " << zp->processorStorage[i].floatParams[0] << std::endl;
             serializationSendToClient(
                 messaging::client::s2c_respond_single_processor_metadata_and_data,
                 messaging::client::ProcessorMetadataAndData::s2c_payload_t{
@@ -80,8 +79,7 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         {
             serializationSendToClient(
                 messaging::client::s2c_respond_single_processor_metadata_and_data,
-                messaging::client::ProcessorMetadataAndData::s2c_payload_t{
-                    i, false, {}, {}},
+                messaging::client::ProcessorMetadataAndData::s2c_payload_t{i, false, {}, {}},
                 *(engine.getMessageController()));
         }
     }

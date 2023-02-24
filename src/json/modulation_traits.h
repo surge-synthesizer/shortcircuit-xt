@@ -35,15 +35,38 @@
 #include "modulation/voice_matrix.h"
 #include "modulation/modulators/steplfo.h"
 
-template <> struct tao::json::traits<scxt::modulation::VoiceModMatrix::Routing>
+namespace scxt::json
+{
+
+template <> struct scxt_traits<modulation::VoiceModMatrixDestinationAddress>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const modulation::VoiceModMatrixDestinationAddress &t)
+    {
+        auto dn = scxt::modulation::getVoiceModMatrixDestStreamingName(t.type);
+        v = {{"type", dn}, {"index", t.index}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   modulation::VoiceModMatrixDestinationAddress &t)
+    {
+        std::string tsn;
+        v.at("type").to(tsn);
+        t.type = scxt::modulation::fromVoiceModMatrixDestStreamingName(tsn).value_or(
+            scxt::modulation::vmd_none);
+        v.at("index").to(t.index);
+    }
+};
+template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
 {
     typedef scxt::modulation::VoiceModMatrix::Routing rt_t;
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        auto dn = scxt::modulation::getVoiceModMatrixDestStreamingName(t.dst);
         auto sn = scxt::modulation::getVoiceModMatrixSourceStreamingName(t.src);
-        v = {{"src", sn}, {"dst", dn}, {"depth", t.depth}};
+        v = {{"src", sn}, {"dst", t.dst}, {"depth", t.depth}};
     }
 
     template <template <typename...> class Traits>
@@ -51,16 +74,14 @@ template <> struct tao::json::traits<scxt::modulation::VoiceModMatrix::Routing>
     {
         const auto &object = v.get_object();
         auto ss = v.at("src").template as<std::string>();
-        auto ds = v.at("dst").template as<std::string>();
         result.src = scxt::modulation::fromVoiceModMatrixSourceStreamingName(ss).value_or(
             scxt::modulation::vms_none);
-        result.dst = scxt::modulation::fromVoiceModMatrixDestStreamingName(ds).value_or(
-            scxt::modulation::vmd_none);
+        v.at("dest").to(result.dst);
         v.at("depth").to(result.depth);
     }
 };
 
-template <> struct tao::json::traits<scxt::modulation::modulators::StepLFOStorage>
+template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
 {
     typedef scxt::modulation::modulators::StepLFOStorage rt_t;
     template <template <typename...> class Traits>
@@ -92,5 +113,6 @@ template <> struct tao::json::traits<scxt::modulation::modulators::StepLFOStorag
         v.at("onlyonce").to(result.onlyonce);
     }
 };
+} // namespace scxt::json
 
 #endif // SHORTCIRCUIT_MODULATION_TRAITS_H

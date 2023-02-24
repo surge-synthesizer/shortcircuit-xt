@@ -120,7 +120,6 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
     {
-        std::cout << "Creating with " << processorView.floatParams[i] << std::endl;
         auto at = std::make_unique<attachment_t>(
             this, processorControlDescription.floatControlDescriptions[i],
             processorControlDescription.floatControlNames[i],
