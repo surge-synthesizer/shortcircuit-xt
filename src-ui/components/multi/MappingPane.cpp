@@ -67,15 +67,11 @@ struct MappingDisplay : juce::Component, HasEditor
         };
 
         attachEditor(
-            Ctrl::KeyStart, "Key Start",
-            datamodel::ControlDescription{datamodel::ControlDescription::INT,
-                                          datamodel::ControlDescription::LINEAR, 0, 1, 127},
+            Ctrl::KeyStart, "Key Start", datamodel::cdMidiNote,
             [](const auto &pl) { return pl.keyboardRange.keyStart; },
             mappingView.keyboardRange.keyStart);
         attachEditor(
-            Ctrl::KeyEnd, "Key Ed",
-            datamodel::ControlDescription{datamodel::ControlDescription::INT,
-                                          datamodel::ControlDescription::LINEAR, 0, 1, 127},
+            Ctrl::KeyEnd, "Key Ed", datamodel::cdMidiNote,
             [](const auto &pl) { return pl.keyboardRange.keyEnd; },
             mappingView.keyboardRange.keyEnd);
     }
@@ -97,7 +93,8 @@ struct MappingDisplay : juce::Component, HasEditor
         textEds[KeyEnd]->setBounds(r);
     }
 
-    void mappingChangedFromGUI(const zone_attachment_t &at) {
+    void mappingChangedFromGUI(const zone_attachment_t &at)
+    {
         cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
                                         editor->msgCont);
     }

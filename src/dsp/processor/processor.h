@@ -31,6 +31,8 @@
 #include <cstdint>
 #include <array>
 #include <optional>
+#include <vector>
+#include <utility>
 #include "datamodel/parameter.h"
 #include "utils.h"
 
@@ -99,6 +101,16 @@ bool isFXProcessor(ProcessorType id);
 const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
+
+struct ProcessorDescription
+{
+    ProcessorType id;
+    std::string streamingName{"ERROR"}, displayName{"ERROR"};
+    bool isZone{false}, isPart{false}, isFX{false};
+};
+
+typedef std::vector<ProcessorDescription> processorList_t;
+processorList_t getAllProcessorDescriptions();
 
 /**
  * If you choose to spawnProcessorOnto you need a block at least this size.
@@ -176,7 +188,6 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     float lastparam[maxProcessorFloatParams];
     int lastiparam[maxProcessorIntParams];
     int parameter_count{0};
-    datamodel::ControlMode ctrlmode[maxProcessorFloatParams];
     char ctrllabel[maxProcessorFloatParams][processorLabelSize];
     datamodel::ControlDescription ctrlmode_desc[maxProcessorFloatParams];
     bool is_stereo{true};

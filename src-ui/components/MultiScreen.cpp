@@ -31,6 +31,7 @@
 #include "multi/MappingPane.h"
 #include "multi/ModPane.h"
 #include "multi/OutputPane.h"
+#include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
 
 namespace scxt::ui
@@ -75,11 +76,10 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 
     for (int i = 0; i < 4; ++i)
     {
-        auto ff = std::make_unique<DebugRect>(juce::Colour(i * 60, 255, (4 - i) * 60),
-                                            "FX " + std::to_string(i));
+        auto ff = std::make_unique<multi::ProcessorPane>(editor, i);
         ff->hasHamburger = true;
-        fx[i] = std::move(ff);
-        addAndMakeVisible(*(fx[i]));
+        processors[i] = std::move(ff);
+        addAndMakeVisible(*(processors[i]));
     }
     mod = std::make_unique<multi::ModPane>(editor);
     addAndMakeVisible(*mod);
@@ -114,7 +114,7 @@ void MultiScreen::layout()
     auto tfr = fxRect.withWidth(fw);
     for (int i = 0; i < 4; ++i)
     {
-        fx[i]->setBounds(tfr);
+        processors[i]->setBounds(tfr);
         tfr.translate(fw, 0);
     }
 

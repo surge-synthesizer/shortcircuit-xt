@@ -169,7 +169,7 @@ void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
 {
     assert(files.size() == 1);
     namespace cmsg = scxt::messaging::client;
-    cmsg::clientSendToSerialization(cmsg::AddSample(fs::path{(const char *)(files[0].toUTF8())}),
+    cmsg::clientSendToSerialization(cmsg::AddSample(std::string{(const char *)(files[0].toUTF8())}),
                                     msgCont);
 }
 

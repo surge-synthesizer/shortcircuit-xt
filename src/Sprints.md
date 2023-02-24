@@ -2,6 +2,13 @@
 
 Week of Feb 21:
 - Then: Processor views
+  - Plan of Attack
+  - Have default be 'none'
+  - if you select one grab the meta data in request one and set the type
+  - Do the filter storage trick the same way we did adsr etc with a generic editor
+  - move to custom editors by type
+  - document how to do the DSP side and the UI side
+  - Set the world on porting
 - Then: Mod Matrix
 - ReallY: Can ADSR and Mapping message be more share-y with tempaltes?
 - Then: Add a zone by sample revisit
@@ -57,6 +64,20 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 20 (2023-02-22 for a smidge then a smidge more on the 23)
+
+Start with some evening cleanup removing the old unused ControlMode enum as
+part of my approach to cleaning up ControlDescriptions and making Processors work.
+Then look at those message types and realize its enough of a pattern to introduce a
+few helper macros; so rewrite the messaging to use those and reduce the code enormously.
+
+With these newfound bits and bobs, start cracking on processors. Begin by
+creating the list of implemetned processors and sending it to the UI on 
+registration. This let me make the hamburger menu on processors which is
+the start of the processor round-trip (which is kinda like a dynamic version
+of the ADSR round trip). But then I ran out of steam, so processors tomorrow.
+
 
 ## Day 19 (2023-02-21 for a smidge then really the 22)
 

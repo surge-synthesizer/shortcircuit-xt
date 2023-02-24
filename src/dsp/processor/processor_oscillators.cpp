@@ -46,15 +46,12 @@ OscPulseSync::OscPulseSync(float *fp, int32_t *ip, bool stereo)
     parameter_count = 3;
 
     setStr(ctrllabel[0], "tune");
-    ctrlmode[0] = datamodel::cm_mod_pitch;
     ctrlmode_desc[0] = cdMPitch;
 
     setStr(ctrllabel[1], "width");
-    ctrlmode[1] = datamodel::cm_percent;
     ctrlmode_desc[1] = cdPercentDef;
 
     setStr(ctrllabel[2], "sync");
-    ctrlmode[2] = datamodel::cm_mod_pitch;
     ctrlmode_desc[2] = scxt::datamodel::ControlDescription{datamodel::ControlDescription::FLOAT, datamodel::ControlDescription::LINEAR, 0, 0.05, 96, 0, "semitones"};
 
     first_run = true;

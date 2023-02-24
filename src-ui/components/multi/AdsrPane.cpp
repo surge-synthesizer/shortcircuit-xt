@@ -65,19 +65,19 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     };
 
     attachSlider(
-        Ctrl::A, "Attack", "A", datamodel::AdsrStorage::ahdrDescription,
-        [](const auto &pl) { return pl.a; }, adsrView.a);
+        Ctrl::A, "Attack", "A", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.a; },
+        adsrView.a);
     attachSlider(
-        Ctrl::H, "Hold", "H", datamodel::AdsrStorage::sDescription,
-        [](const auto &pl) { return pl.h; }, adsrView.h);
+        Ctrl::H, "Hold", "H", datamodel::AdsrStorage::cdS, [](const auto &pl) { return pl.h; },
+        adsrView.h);
     attachSlider(
-        Ctrl::D, "Decay", "D", datamodel::AdsrStorage::ahdrDescription,
-        [](const auto &pl) { return pl.d; }, adsrView.d);
+        Ctrl::D, "Decay", "D", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.d; },
+        adsrView.d);
     attachSlider(
-        Ctrl::S, "Sustain", "S", datamodel::AdsrStorage::sDescription,
-        [](const auto &pl) { return pl.s; }, adsrView.s);
+        Ctrl::S, "Sustain", "S", datamodel::AdsrStorage::cdS, [](const auto &pl) { return pl.s; },
+        adsrView.s);
     attachSlider(
-        Ctrl::R, "Release", "R", datamodel::AdsrStorage::ahdrDescription,
+        Ctrl::R, "Release", "R", datamodel::AdsrStorage::cdAHDR,
         [](const auto &pl) { return pl.r; }, adsrView.r);
 
     auto attachKnob = [this](Ctrl c, const std::string &l, const auto &d, const auto &fn,
@@ -98,13 +98,13 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     };
 
     attachKnob(
-        Ctrl::Ash, "A Shape", datamodel::AdsrStorage::shapeDescription,
+        Ctrl::Ash, "A Shape", datamodel::AdsrStorage::cdShape,
         [](const auto &pl) { return pl.aShape; }, adsrView.aShape);
     attachKnob(
-        Ctrl::Dsh, "D Shape", datamodel::AdsrStorage::shapeDescription,
+        Ctrl::Dsh, "D Shape", datamodel::AdsrStorage::cdShape,
         [](const auto &pl) { return pl.dShape; }, adsrView.dShape);
     attachKnob(
-        Ctrl::Rsh, "R Shape", datamodel::AdsrStorage::shapeDescription,
+        Ctrl::Rsh, "R Shape", datamodel::AdsrStorage::cdShape,
         [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
 
     cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
@@ -136,7 +136,7 @@ void AdsrPane::updateTooltip(const attachment_t &at)
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
     updateTooltip(at);
-    cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest(index, adsrView),
+    cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest({index, adsrView}),
                                     editor->msgCont);
 }
 

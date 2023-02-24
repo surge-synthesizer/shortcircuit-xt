@@ -72,7 +72,7 @@ template <size_t I> bool implIsProcessorImplemented()
     if constexpr (I == ProcessorType::proct_none)
         return true;
 
-    return std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value;
+    return !std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value;
 }
 
 template <size_t... Is> auto isProcessorImplemented(size_t ft, std::index_sequence<Is...>)
@@ -135,7 +135,7 @@ template <size_t... Is> auto isFXProcessor(size_t ft, std::index_sequence<Is...>
 template <size_t I> const char *implGetProcessorName()
 {
     if constexpr (I == ProcessorType::proct_none)
-        return "none";
+        return "Off";
 
     if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
         return "error";
@@ -242,6 +242,23 @@ std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s)
             return (ProcessorType)i;
     }
     return {};
+}
+
+processorList_t getAllProcessorDescriptions()
+{
+    processorList_t res;
+    for (auto i = 0U; i < (size_t)ProcessorType::proct_num_types; ++i)
+    {
+        auto pt = (ProcessorType)i;
+        if (isProcessorImplemented(pt))
+        {
+            res.push_back({pt,
+                             getProcessorStreamingName(pt), getProcessorName(pt),
+                             isZoneProcessor(pt), isPartProcessor(pt), isFXProcessor(pt)}
+                             );
+        }
+    }
+    return res;
 }
 
 /**

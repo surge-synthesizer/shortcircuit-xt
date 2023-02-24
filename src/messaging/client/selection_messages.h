@@ -28,29 +28,17 @@
 #ifndef SCXT_SRC_MESSAGING_CLIENT_SELECTION_MESSAGES_H
 #define SCXT_SRC_MESSAGING_CLIENT_SELECTION_MESSAGES_H
 
+#include "client_macros.h"
 #include "selection/selection_manager.h"
 
 namespace scxt::messaging::client
 {
-struct SingleSelectAddress
+inline void singleSelectAddress(const selection::SelectionManager::ZoneAddress &za,
+                                const engine::Engine &engine)
 {
-    static constexpr ClientToSerializationMessagesIds c2s_id{c2s_single_select_address};
-    typedef selection::SelectionManager::ZoneAddress
-        c2s_payload_t; // the part number, or -1 for all parts
-    c2s_payload_t payload{-1, -1, -1};
-
-    SingleSelectAddress(const c2s_payload_t &p) : payload(p) {}
-
-    static void executeOnSerialization(const c2s_payload_t &which, const engine::Engine &engine,
-                                       MessageController &cont)
-    {
-        engine.getSelectionManager()->singleSelect(which);
-    }
-};
-
-template <> struct ClientToSerializationType<SingleSelectAddress::c2s_id>
-{
-    typedef SingleSelectAddress T;
-};
+    engine.getSelectionManager()->singleSelect(za);
+}
+CLIENT_TO_SERIAL(SingleSelectAddress, c2s_single_select_address,
+                 selection::SelectionManager::ZoneAddress, singleSelectAddress(payload, engine));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_SELECTION_MESSAGES_H
