@@ -252,10 +252,8 @@ processorList_t getAllProcessorDescriptions()
         auto pt = (ProcessorType)i;
         if (isProcessorImplemented(pt))
         {
-            res.push_back({pt,
-                             getProcessorStreamingName(pt), getProcessorName(pt),
-                             isZoneProcessor(pt), isPartProcessor(pt), isFXProcessor(pt)}
-                             );
+            res.push_back({pt, getProcessorStreamingName(pt), getProcessorName(pt),
+                           isZoneProcessor(pt), isPartProcessor(pt), isFXProcessor(pt)});
         }
     }
     return res;
@@ -309,16 +307,31 @@ ProcessorControlDescription Processor::getControlDescription()
     res.type = getType();
     res.typeDisplayName = getName();
     res.numFloatParams = get_parameter_count();
-    for (int i=0; i<res.numFloatParams; ++i)
+    for (int i = 0; i < res.numFloatParams; ++i)
     {
         res.floatControlNames[i] = ctrllabel[i];
         res.floatControlDescriptions[i] = ctrlmode_desc[i];
     }
     res.numIntParams = get_ip_count();
-    for (int i=0; i<res.numIntParams; ++i)
+    for (int i = 0; i < res.numIntParams; ++i)
     {
         res.intControlNames[i] = get_ip_label(i);
-        // TODO IP ENTRY
+        auto cd = datamodel::ControlDescription{datamodel::ControlDescription::INT,
+                                                datamodel::ControlDescription::LINEAR,
+                                                0,
+                                                1,
+                                                (float)get_ip_entry_count(i),
+                                                0,
+                                                "",
+                                                1,
+                                                0};
+        for (int j = 0;
+             j < get_ip_entry_count(i) && j < datamodel::ControlDescription::maxIntChoices; ++j)
+        {
+            strncpy(cd.choices[j], get_ip_entry_label(i, j), 32);
+            cd.choices[j][31] = 0;
+        }
+        res.intControlDescriptions[i] = cd;
     }
     return res;
 }

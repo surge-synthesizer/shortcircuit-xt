@@ -106,17 +106,15 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::dsp::processor::ProcessorControlDescription &t)
     {
-        v = {
-            {"type",
-             (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
-            {"typeDisplayName", t.typeDisplayName},
-            {"numFloatParams", t.numFloatParams},
-            {"floatControlNames", t.floatControlNames},
-            {"floatControlDescriptions", t.floatControlDescriptions},
-            {"numIntParams", t.numIntParams},
-            {"intControlNames", t.intControlNames}
-            //{"intControlDescriptions", t.intControlDescriptions}
-        };
+        v = {{"type",
+              (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
+             {"typeDisplayName", t.typeDisplayName},
+             {"numFloatParams", t.numFloatParams},
+             {"floatControlNames", t.floatControlNames},
+             {"floatControlDescriptions", t.floatControlDescriptions},
+             {"numIntParams", t.numIntParams},
+             {"intControlNames", t.intControlNames},
+             {"intControlDescriptions", t.intControlDescriptions}};
     }
 
     template <template <typename...> class Traits>
@@ -132,6 +130,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
         v.at("floatControlDescriptions").to(t.floatControlDescriptions);
         v.at("numIntParams").to(t.numIntParams);
         v.at("intControlNames").to(t.intControlNames);
+        v.at("intControlDescriptions").to(t.intControlDescriptions);
     }
 };
 } // namespace scxt::json

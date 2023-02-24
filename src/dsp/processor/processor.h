@@ -116,7 +116,7 @@ processorList_t getAllProcessorDescriptions();
  * If you choose to spawnProcessorOnto you need a block at least this size.
  * This should be a multiple of 16 if you enlarge it.
  */
-static constexpr size_t processorMemoryBufferSize{1028 * 8};
+static constexpr size_t processorMemoryBufferSize{1028 * 16};
 
 static constexpr int tailInfinite = 0x1000000;
 
@@ -156,7 +156,7 @@ struct ProcessorControlDescription
 
     int numIntParams{0}; // between 0 and max
     std::array<std::string, maxProcessorIntParams> intControlNames;
-    datamodel::ControlDescription intControlDescriptions[maxProcessorIntParams];
+    std::array<datamodel::ControlDescription, maxProcessorIntParams> intControlDescriptions;
 };
 
 struct Processor : MoveableOnly<Processor>, SampleRateSupport

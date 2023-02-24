@@ -32,6 +32,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/data/Continuous.h"
@@ -47,6 +48,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
     // ToDo: shapes of course
     typedef connectors::PayloadDataAttachment<ProcessorPane, dsp::processor::ProcessorStorage>
         attachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<ProcessorPane,
+                                                      dsp::processor::ProcessorStorage>
+        int_attachment_t;
 
     dsp::processor::ProcessorStorage processorView;
     dsp::processor::ProcessorControlDescription processorControlDescription;
@@ -69,6 +73,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
     }
 
     void processorChangedFromGui(const attachment_t &at);
+    void processorChangedFromGui(const int_attachment_t &at);
 
     void rebuildControlsFromDescription();
     void resetControls();
@@ -87,6 +92,16 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
         floatLabels;
     std::array<std::unique_ptr<attachment_t>, dsp::processor::maxProcessorFloatParams>
         floatAttachments;
+
+    std::array<std::unique_ptr<sst::jucegui::components::MultiSwitch>,
+               dsp::processor::maxProcessorIntParams>
+        intSwitches;
+    std::array<std::unique_ptr<sst::jucegui::components::Label>,
+               dsp::processor::maxProcessorIntParams>
+        intLabels;
+    std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
+        intAttachments;
+
     std::unique_ptr<sst::jucegui::components::Knob> mixKnob;
     std::unique_ptr<sst::jucegui::components::Label> mixLabel;
     std::unique_ptr<attachment_t> mixAttachment;

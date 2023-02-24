@@ -87,6 +87,8 @@ void ProcessorPane::resetControls()
     // we assume the controls clear before attachments so make sure of that
     for (auto &k : floatKnobs)
         k.reset(nullptr);
+    for (auto &i : intSwitches)
+        i.reset(nullptr);
     mixKnob.reset(nullptr);
 }
 
@@ -154,6 +156,37 @@ void ProcessorPane::rebuildControlsFromDescription()
         }
     }
 
+    for (int i = 0; i < processorControlDescription.numIntParams; ++i)
+    {
+        auto at = std::make_unique<int_attachment_t>(
+            this, processorControlDescription.intControlDescriptions[i],
+            processorControlDescription.intControlNames[i],
+            [this](const auto &at) { this->processorChangedFromGui(at); },
+            [idx = i](const auto &pl) { return pl.intParams[idx]; },
+            processorView.intParams[i]);
+        auto kn = std::make_unique<sst::jucegui::components::MultiSwitch>();
+        kn->setSource(at.get());
+        kn->setBounds(kb);
+        addAndMakeVisible(*kn);
+
+        auto label = std::make_unique<sst::jucegui::components::Label>();
+        label->setText(processorControlDescription.intControlNames[i]);
+        label->setBounds(lb);
+        addAndMakeVisible(*label);
+
+        intAttachments[i] = std::move(at);
+        intSwitches[i] = std::move(kn);
+        intLabels[i] = std::move(label);
+
+        kb = kb.translated(kw, 0);
+        lb = lb.translated(kw, 0);
+        if ((i + processorControlDescription.numFloatParams) % 4 == 3)
+        {
+            kb = kb.translated(-getContentArea().getWidth(), kw + labelHeight);
+            lb = lb.translated(-getContentArea().getWidth(), kw + labelHeight);
+        }
+    }
+
     {
         auto label = std::make_unique<sst::jucegui::components::Label>();
         label->setText("mix");
@@ -183,6 +216,12 @@ void ProcessorPane::rebuildControlsFromDescription()
 void ProcessorPane::processorChangedFromGui(const attachment_t &at)
 {
     updateTooltip(at);
+    cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}),
+                                    editor->msgCont);
+}
+
+void ProcessorPane::processorChangedFromGui(const int_attachment_t &at)
+{
     cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}),
                                     editor->msgCont);
 }

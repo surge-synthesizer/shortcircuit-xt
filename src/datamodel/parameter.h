@@ -38,6 +38,9 @@ namespace scxt::datamodel
 
 struct ControlDescription
 {
+    // we want to be able to inplace new so have fixed size please
+    static constexpr int labelLen{32};
+    static constexpr int maxIntChoices{16};
     enum Type
     {
         INT,
@@ -55,9 +58,11 @@ struct ControlDescription
     float step{0.01};
     float max{1};
     float def{0.5};
-    char unit[32]{}; // fixed size makes in place news easier
+    char unit[labelLen]{}; // fixed size makes in place news easier
     float mapScale{1.f};
     float mapBase{0.f};
+
+    char choices[maxIntChoices][32]{};
 
     std::string valueToString(float value) const;
     std::optional<float> stringToValue(const std::string &s) const;

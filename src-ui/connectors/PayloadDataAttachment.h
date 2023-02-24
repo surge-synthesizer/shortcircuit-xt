@@ -29,6 +29,7 @@
 #define SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H
 
 #include "sst/jucegui/data/Continuous.h"
+#include "sst/jucegui/data/Discrete.h"
 #include "datamodel/parameter.h"
 #include <functional>
 
@@ -78,5 +79,46 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     bool isModulationBipolar() const override { return false; }
 };
 
+template <typename Parent, typename Payload, typename ValueType = int>
+struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
+{
+    ValueType &value;
+    std::string label;
+    std::function<void(const DiscretePayloadDataAttachment &at)> onGuiValueChanged;
+    std::function<int(const Payload &)> extractFromPayload;
+
+    DiscretePayloadDataAttachment(Parent *p, const datamodel::ControlDescription &cd,
+                                  const std::string &l,
+                                  std::function<void(const DiscretePayloadDataAttachment &at)> oGVC,
+                                  std::function<int(const Payload &)> efp, ValueType &v)
+        : description(cd), value(v), label(l), extractFromPayload(efp),
+          onGuiValueChanged(std::move(oGVC))
+    {
+    }
+
+    // TODO maybe. For now we have these descriptions as constexpr
+    // in the code and apply them directly in many cases. We could
+    // stream each and every one but don't. Maybe fix that one day.
+    // Would def need to fix that to make web ui consistent if we write it
+    datamodel::ControlDescription description;
+
+    std::string getLabel() const override { return label; }
+    int getValue() const override { return (int)value; }
+    void setValueFromGUI(const int &f) override
+    {
+        value = (ValueType)f;
+        onGuiValueChanged(*this);
+    }
+    void setValueFromModel(const int &f) override { value = (ValueType)f; }
+    void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
+
+    int getMin() const override { return (int)description.min; }
+    int getMax() const override { return (int)description.max; }
+
+    std::string getValueAsStringFor(int i) const override
+    {
+        return description.choices[i];
+    }
+};
 } // namespace scxt::ui::connectors
 #endif // SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H
