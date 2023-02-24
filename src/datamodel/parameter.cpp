@@ -28,6 +28,7 @@
 #include "parameter.h"
 #include <cmath>
 #include <cassert>
+#include <algorithm>
 #include <fmt/core.h>
 
 namespace scxt::datamodel
