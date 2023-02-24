@@ -33,27 +33,63 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "dsp/processor/processor.h"
 #include "components/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
+#include "engine/zone.h"
 
 namespace scxt::ui::multi
 {
 struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     // ToDo: shapes of course
-    typedef connectors::PayloadDataAttachment<ProcessorPane, dsp::processor::ProcessorStorage> attachment_t;
+    typedef connectors::PayloadDataAttachment<ProcessorPane, dsp::processor::ProcessorStorage>
+        attachment_t;
 
     dsp::processor::ProcessorStorage processorView;
+    dsp::processor::ProcessorControlDescription processorControlDescription;
     int index{0};
     ProcessorPane(SCXTEditor *, int index);
+    ~ProcessorPane();
+
+    void
+    setProcessorControlDescriptionAndStorage(const dsp::processor::ProcessorControlDescription &pcd,
+                                             const dsp::processor::ProcessorStorage &ps)
+    {
+        processorControlDescription = pcd;
+        processorView = ps;
+        rebuildControlsFromDescription();
+    }
+    void setProcessorStorage(const dsp::processor::ProcessorStorage &p)
+    {
+        processorView = p;
+        repaint();
+    }
+
+    void processorChangedFromGui(const attachment_t &at);
+
+    void rebuildControlsFromDescription();
+    void resetControls();
 
     void resized() override;
 
     void updateTooltip(const attachment_t &);
 
     void showHamburgerMenu();
+
+    std::array<std::unique_ptr<sst::jucegui::components::Knob>,
+               dsp::processor::maxProcessorFloatParams>
+        floatKnobs;
+    std::array<std::unique_ptr<sst::jucegui::components::Label>,
+               dsp::processor::maxProcessorFloatParams>
+        floatLabels;
+    std::array<std::unique_ptr<attachment_t>, dsp::processor::maxProcessorFloatParams>
+        floatAttachments;
+    std::unique_ptr<sst::jucegui::components::Knob> mixKnob;
+    std::unique_ptr<sst::jucegui::components::Label> mixLabel;
+    std::unique_ptr<attachment_t> mixAttachment;
 };
 } // namespace scxt::ui::multi
 

@@ -28,6 +28,7 @@
 #include "SCXTEditor.h"
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
+#include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
 #include "HeaderRegion.h"
 #include "components/multi/MappingPane.h"
@@ -55,7 +56,8 @@ void SCXTEditor::onEnvelopeUpdated(
     }
 }
 
-void SCXTEditor::onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &payload)
+void SCXTEditor::onMappingUpdated(
+    const scxt::messaging::client::mappingSelectedZoneViewResposne_t &payload)
 {
     const auto &[active, m] = payload;
     if (active)
@@ -73,5 +75,15 @@ void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
 {
     if (multiScreen && multiScreen->parts)
         multiScreen->parts->setPartGroupZoneStructure(s);
+}
+
+void SCXTEditor::onProcessorDataAndMetadata(
+    const scxt::messaging::client::processorDataResponsePayload_t &d)
+{
+    const auto &[which, enabled, control, storage] = d;
+
+    assert(which >=0 && which < MultiScreen::numProcessorDisplays);
+    multiScreen->processors[which]->setEnabled(enabled);
+    multiScreen->processors[which]->setProcessorControlDescriptionAndStorage(control, storage);
 }
 } // namespace scxt::ui

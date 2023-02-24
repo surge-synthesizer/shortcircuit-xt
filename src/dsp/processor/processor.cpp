@@ -302,4 +302,25 @@ void unspawnProcessor(Processor *f)
         delete f;
     }
 }
+
+ProcessorControlDescription Processor::getControlDescription()
+{
+    ProcessorControlDescription res;
+    res.type = getType();
+    res.typeDisplayName = getName();
+    res.numFloatParams = get_parameter_count();
+    for (int i=0; i<res.numFloatParams; ++i)
+    {
+        res.floatControlNames[i] = ctrllabel[i];
+        res.floatControlDescriptions[i] = ctrlmode_desc[i];
+    }
+    res.numIntParams = get_ip_count();
+    for (int i=0; i<res.numIntParams; ++i)
+    {
+        res.intControlNames[i] = get_ip_label(i);
+        // TODO IP ENTRY
+    }
+    return res;
+}
+
 } // namespace scxt::dsp::processor

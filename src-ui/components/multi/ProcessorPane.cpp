@@ -42,7 +42,7 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index)
       index(index)
 {
     hasHamburger = true;
-    // cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
+    cmsg::clientSendToSerialization(cmsg::ProcessorMetadataAndData(index), e->msgCont);
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
@@ -50,28 +50,142 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index)
     };
 }
 
+ProcessorPane::~ProcessorPane() { resetControls(); }
+
 void ProcessorPane::updateTooltip(const attachment_t &at)
 {
     editor->setTooltipContents(at.label + " = " + at.description.valueToString(at.value));
 }
 
-void ProcessorPane::resized()
-{
-    auto r = getContentArea();
-}
+void ProcessorPane::resized() { rebuildControlsFromDescription(); }
 
 void ProcessorPane::showHamburgerMenu()
 {
+    if (!isEnabled())
+        return;
+
     juce::PopupMenu p;
     p.addSectionHeader("Processors");
-    for (const auto &pd: editor->allProcessors)
+    for (const auto &pd : editor->allProcessors)
     {
-        p.addItem(pd.displayName, [idx = pd.id]() {
-            std::cout << "Would Load " << idx << std::endl;
+        p.addItem(pd.displayName, [wt = juce::Component::SafePointer(this), type = pd.id]() {
+            if (wt)
+            {
+                cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorType({wt->index, type}),
+                                                wt->editor->msgCont);
+            }
         });
     }
 
     p.showMenuAsync(juce::PopupMenu::Options());
+}
+
+void ProcessorPane::resetControls()
+{
+    removeAllChildren();
+
+    // we assume the controls clear before attachments so make sure of that
+    for (auto &k : floatKnobs)
+        k.reset(nullptr);
+    mixKnob.reset(nullptr);
+}
+
+void ProcessorPane::rebuildControlsFromDescription()
+{
+    resetControls();
+    // TODO: Am I actually an off type? Then bail.
+
+    if (!isEnabled())
+    {
+        setName("PROCESSOR " + std::to_string(index + 1));
+        repaint();
+        return;
+    }
+
+    setName(processorControlDescription.typeDisplayName);
+
+    if (processorControlDescription.type == dsp::processor::proct_none)
+    {
+        repaint();
+        return;
+    }
+
+    auto labelHeight = 18;
+    auto rc = getContentArea();
+    auto rcw = rc.getWidth();
+    auto kw = rcw * 0.25;
+
+    auto kb = rc.withHeight(kw).withWidth(kw);
+    auto lb = kb.translated(0, kw).withHeight(labelHeight);
+
+    for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
+    {
+        std::cout << "Creating with " << processorView.floatParams[i] << std::endl;
+        auto at = std::make_unique<attachment_t>(
+            this, processorControlDescription.floatControlDescriptions[i],
+            processorControlDescription.floatControlNames[i],
+            [this](const auto &at) { this->processorChangedFromGui(at); },
+            [idx = i](const auto &pl) { return pl.floatParams[idx]; },
+            processorView.floatParams[i]);
+        auto kn = std::make_unique<sst::jucegui::components::Knob>();
+        kn->setSource(at.get());
+        kn->onBeginEdit = [this, &knRef = *kn, &atRef = *at]() {
+            editor->showTooltip(knRef);
+            updateTooltip(atRef);
+        };
+        kn->onEndEdit = [this]() { editor->hideTooltip(); };
+        kn->setBounds(kb);
+        addAndMakeVisible(*kn);
+        floatAttachments[i] = std::move(at);
+        floatKnobs[i] = std::move(kn);
+
+        auto label = std::make_unique<sst::jucegui::components::Label>();
+        label->setText(processorControlDescription.floatControlNames[i]);
+        label->setBounds(lb);
+        addAndMakeVisible(*label);
+
+        floatLabels[i] = std::move(label);
+
+        kb = kb.translated(kw, 0);
+        lb = lb.translated(kw, 0);
+        if (i % 4 == 3)
+        {
+            kb = kb.translated(-getWidth(), kw + labelHeight);
+            lb = lb.translated(-getWidth(), kw + labelHeight);
+        }
+    }
+
+    {
+        auto label = std::make_unique<sst::jucegui::components::Label>();
+        label->setText("mix");
+        label->setBounds(lb);
+        addAndMakeVisible(*label);
+        mixLabel = std::move(label);
+
+        auto at = std::make_unique<attachment_t>(
+            this, datamodel::cdPercent, "Mix",
+            [this](const auto &at) { this->processorChangedFromGui(at); },
+            [](const auto &pl) { return pl.mix; }, processorView.mix);
+        auto kn = std::make_unique<sst::jucegui::components::Knob>();
+        kn->setSource(at.get());
+        kn->onBeginEdit = [this, &knRef = *kn, &atRef = *at]() {
+            editor->showTooltip(knRef);
+            updateTooltip(atRef);
+        };
+        kn->onEndEdit = [this]() { editor->hideTooltip(); };
+        kn->setBounds(kb);
+        addAndMakeVisible(*kn);
+        mixAttachment = std::move(at);
+        mixKnob = std::move(kn);
+    }
+    repaint();
+}
+
+void ProcessorPane::processorChangedFromGui(const attachment_t &at)
+{
+    updateTooltip(at);
+    cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}),
+                                    editor->msgCont);
 }
 
 } // namespace scxt::ui::multi

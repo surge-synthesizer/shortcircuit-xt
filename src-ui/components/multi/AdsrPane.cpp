@@ -133,6 +133,7 @@ void AdsrPane::updateTooltip(const attachment_t &at)
 {
     editor->setTooltipContents(at.label + " = " + at.description.valueToString(at.value));
 }
+
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
     updateTooltip(at);

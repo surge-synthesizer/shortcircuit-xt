@@ -103,14 +103,20 @@ MessageController::AudioThreadCallback *MessageController::getAudioThreadCallbac
 void MessageController::returnAudioThreadCallback(AudioThreadCallback *r)
 {
     assert(threadingChecker.isSerialThread());
+    r->execCompleteOnSer(engine);
     cbStore.push(r);
 }
 
-void MessageController::scheduleAudioThreadCallback(std::function<void(engine::Engine &)> cb)
+void MessageController::scheduleAudioThreadCallback(
+    std::function<void(engine::Engine &)> cb, std::function<void(const engine::Engine &)> sercb)
 {
     assert(threadingChecker.isSerialThread());
     auto pt = getAudioThreadCallback();
     pt->setFunction(cb);
+    if (sercb)
+        pt->setSerialCompleteFunction(sercb);
+    else
+        pt->nullSerialCompleteFunction();
     auto s2a = audio::SerializationToAudio();
     s2a.id = audio::s2a_dispatch_to_pointer;
     s2a.payload.p = (void *)pt;

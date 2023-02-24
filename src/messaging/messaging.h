@@ -233,19 +233,32 @@ struct MessageController : MoveableOnly<MessageController>
      * Schedule a function on the audio thread from the serialization thread.
      * @param f
      */
-    void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f);
+    void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f,
+                                     std::function<void(const engine::Engine &)> cb = nullptr);
     struct AudioThreadCallback
     {
       public:
         void setFunction(std::function<void(engine::Engine &)> &to) { f = std::move(to); }
+        void setSerialCompleteFunction(std::function<void(const engine::Engine &)> &q)
+        {
+            serialOnComplete = std::move(q);
+        }
+        void nullSerialCompleteFunction() { serialOnComplete = nullptr; }
         inline void exec(engine::Engine &e)
         {
             assert(e.getMessageController()->threadingChecker.isAudioThread());
             f(e);
         }
+        inline void execCompleteOnSer(const engine::Engine &e)
+        {
+            assert(e.getMessageController()->threadingChecker.isSerialThread());
+            if (serialOnComplete)
+                serialOnComplete(e);
+        }
 
       private:
-        std::function<void(engine::Engine &)> f;
+        std::function<void(engine::Engine &)> f{nullptr};
+        std::function<void(const engine::Engine &)> serialOnComplete{nullptr};
     };
 
     // The engine has direct access to the audio queues

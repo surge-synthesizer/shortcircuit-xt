@@ -170,6 +170,10 @@ struct SampleRateSupport
         sampleRateInv = sri;
         sync();
     }
+    double getSampleRate() const
+    {
+        return sampleRate;
+    }
 
     void sync()
     {

@@ -30,6 +30,7 @@
 #include "engine/engine.h"
 #include "messaging/messaging.h"
 #include "messaging/client/client_serial.h"
+#include "messaging/client/processor_messages.h"
 
 namespace scxt::selection
 {
@@ -53,6 +54,16 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
             messaging::client::s2c_respond_zone_adsr_view,
             messaging::client::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
             *(engine.getMessageController()));
+
+        for (int i = 0; i < engine::processorsPerZone; ++i)
+        {
+            std::cout << "Send zone " << i << " " << zp->processorStorage[i].floatParams[0] << std::endl;
+            serializationSendToClient(
+                messaging::client::s2c_respond_single_processor_metadata_and_data,
+                messaging::client::ProcessorMetadataAndData::s2c_payload_t{
+                    i, true, zp->processorDescription[i], zp->processorStorage[i]},
+                *(engine.getMessageController()));
+        }
     }
     else
     {
@@ -65,6 +76,14 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
             messaging::client::s2c_respond_zone_adsr_view,
             messaging::client::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
             *(engine.getMessageController()));
+        for (int i = 0; i < engine::processorsPerZone; ++i)
+        {
+            serializationSendToClient(
+                messaging::client::s2c_respond_single_processor_metadata_and_data,
+                messaging::client::ProcessorMetadataAndData::s2c_payload_t{
+                    i, false, {}, {}},
+                *(engine.getMessageController()));
+        }
     }
 }
 } // namespace scxt::selection

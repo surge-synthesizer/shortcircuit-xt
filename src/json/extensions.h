@@ -56,13 +56,23 @@ void fromIndexedArray(const tao::json::basic_value<Traits> &s, Target &t)
 {
     const auto &arr = s.get_array();
 
-
     for (int i = 0U; i < arr.size(); ++i)
     {
         auto elo = arr[i].get_object();
         size_t idx;
         elo.at("idx").to(idx);
         elo.at("entry").to(t[idx]);
+    }
+}
+
+template <template <typename...> class Traits, typename Target>
+void fromArrayWithSizeDifference(const tao::json::basic_value<Traits> &s, Target &t)
+{
+    const auto &arr = s.get_array();
+
+    for (int i = 0U; i < arr.size() && i < t.size(); ++i)
+    {
+        arr[i].to(t[i]);
     }
 }
 #endif // SHORTCIRCUIT_EXTENSIONS_H

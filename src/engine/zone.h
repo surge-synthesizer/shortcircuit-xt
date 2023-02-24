@@ -50,8 +50,9 @@ struct Voice;
 namespace scxt::engine
 {
 struct Group;
+struct Engine;
 
-constexpr int processorsPerZone{2};
+constexpr int processorsPerZone{4};
 constexpr int lfosPerZone{3};
 
 struct Zone : MoveableOnly<Zone>
@@ -115,6 +116,7 @@ struct Zone : MoveableOnly<Zone>
     } mapping;
 
     std::array<dsp::processor::ProcessorStorage, processorsPerZone> processorStorage;
+    std::array<dsp::processor::ProcessorControlDescription, processorsPerZone> processorDescription;
 
     Group *parentGroup{nullptr};
 
@@ -135,10 +137,17 @@ struct Zone : MoveableOnly<Zone>
     void addVoice(voice::Voice *);
     void removeVoice(voice::Voice *);
 
+    void setProcessorType(int whichProcessor, dsp::processor::ProcessorType type);
+    void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
+                                           dsp::processor::Processor *tmpProcessor = nullptr);
+
     std::array<modulation::VoiceModMatrix::Routing, modulation::numVoiceRoutingSlots> routingTable;
     std::array<modulation::modulators::StepLFOStorage, lfosPerZone> lfoStorage;
 
     datamodel::AdsrStorage aegStorage, eg2Storage;
+
+    void setupOnUnstream(const engine::Engine &e);
+    engine::Engine *getEngine();
 
     bool operator==(const Zone &other) const
     {

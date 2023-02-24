@@ -27,6 +27,9 @@
 
 #include "zone.h"
 #include "group.h"
+#include "part.h"
+#include "engine.h"
+#include "messaging/messaging.h"
 #include "voice/voice.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
@@ -96,4 +99,105 @@ void Zone::removeVoice(voice::Voice *v)
     }
     assert(false);
 }
+
+engine::Engine *Zone::getEngine()
+{
+    if (parentGroup && parentGroup->parentPart && parentGroup->parentPart->parentPatch)
+        return parentGroup->parentPart->parentPatch->parentEngine;
+    return nullptr;
+}
+
+void Zone::setProcessorType(int whichProcessor, dsp::processor::ProcessorType type)
+{
+    assert(getEngine() && getEngine()->getMessageController()->threadingChecker.isAudioThread());
+
+    auto &ps = processorStorage[whichProcessor];
+    ps.type = type;
+    ps.mix = 1.0;
+
+    uint8_t memory[dsp::processor::processorMemoryBufferSize];
+    dsp::processor::Processor *tmpProcessor{nullptr};
+    float pfp[dsp::processor::maxProcessorFloatParams];
+    int ifp[dsp::processor::maxProcessorIntParams];
+
+    if (dsp::processor::canInPlaceNew(type))
+    {
+        tmpProcessor = dsp::processor::spawnProcessorInPlace(
+            type, memory, dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
+    }
+    else
+    {
+        tmpProcessor = dsp::processor::spawnProcessorAllocating(type, pfp, ifp, false);
+    }
+
+    if (type != dsp::processor::proct_none)
+    {
+        assert(tmpProcessor);
+        assert(getEngine());
+        tmpProcessor->setSampleRate(getEngine()->getSampleRate());
+        tmpProcessor->init();
+        tmpProcessor->init_params();
+
+        memcpy(&(ps.floatParams[0]), pfp, sizeof(ps.floatParams));
+        memcpy(&(ps.intParams[0]), ifp, sizeof(ps.intParams));
+        setupProcessorControlDescriptions(whichProcessor, type, tmpProcessor);
+
+        // TODO: The control descriptions get populated now also
+        dsp::processor::unspawnProcessor(tmpProcessor);
+    }
+    else
+    {
+        assert(!tmpProcessor);
+        setupProcessorControlDescriptions(whichProcessor, type, tmpProcessor);
+    }
+}
+
+void Zone::setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
+                                             dsp::processor::Processor *tmpProcessorFromAfar)
+{
+    if (type == dsp::processor::proct_none)
+    {
+        processorDescription[whichProcessor] = {};
+        processorDescription[whichProcessor].typeDisplayName = "Off";
+        return;
+    }
+
+    auto *tmpProcessor = tmpProcessorFromAfar;
+
+    assert(getEngine() && getEngine()->getMessageController()->threadingChecker.isAudioThread());
+
+    uint8_t memory[dsp::processor::processorMemoryBufferSize];
+    float pfp[dsp::processor::maxProcessorFloatParams];
+    int ifp[dsp::processor::maxProcessorIntParams];
+
+    if (!tmpProcessor)
+    {
+        if (dsp::processor::canInPlaceNew(type))
+        {
+            tmpProcessor = dsp::processor::spawnProcessorInPlace(
+                type, memory, dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
+        }
+        else
+        {
+            tmpProcessor = dsp::processor::spawnProcessorAllocating(type, pfp, ifp, false);
+        }
+    }
+
+    assert(tmpProcessor);
+
+    processorDescription[whichProcessor] = tmpProcessor->getControlDescription();
+
+    if (!tmpProcessorFromAfar)
+        dsp::processor::unspawnProcessor(tmpProcessor);
+}
+
+void Zone::setupOnUnstream(const engine::Engine &e)
+{
+    attachToSample(*(e.getSampleManager()));
+    for (int p = 0; p < processorsPerZone; ++p)
+    {
+        setupProcessorControlDescriptions(p, processorStorage[p].type);
+    }
+}
+
 } // namespace scxt::engine
