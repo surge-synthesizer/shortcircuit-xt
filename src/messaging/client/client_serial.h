@@ -51,6 +51,10 @@ enum ClientToSerializationMessagesIds
 
     c2s_request_pgz_structure,
 
+    c2s_request_single_processor_metadata_and_data,
+    c2s_update_single_processor_data,
+    c2s_set_processor_type,
+
     c2s_add_sample,
 
     num_clientToSerializationMessages
@@ -64,6 +68,8 @@ enum SerializationToClientMessageIds
     s2c_respond_zone_mapping,
     s2c_send_pgz_structure,
     s2c_send_all_processor_descriptions,
+
+    s2c_respond_single_processor_metadata_and_data,
 
     num_serializationToClientMessages
 };

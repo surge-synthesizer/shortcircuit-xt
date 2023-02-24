@@ -120,24 +120,43 @@ static constexpr size_t processorMemoryBufferSize{1028 * 8};
 
 static constexpr int tailInfinite = 0x1000000;
 
-struct ProcessorStorage : LeakDetected<ProcessorStorage>
+struct ProcessorStorage
 {
     ProcessorStorage()
     {
         std::fill(floatParams.begin(), floatParams.end(), 0.f);
         std::fill(intParams.begin(), intParams.end(), 0);
     }
+
     ProcessorType type{proct_none};
     float mix{0};
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int, maxProcessorIntParams> intParams;
+    bool isBypassed{false};
 
     bool operator==(const ProcessorStorage &other) const
     {
         return (type == other.type && mix == other.mix && floatParams == other.floatParams &&
-                intParams == other.intParams);
+                intParams == other.intParams && isBypassed == other.isBypassed);
     }
     bool operator!=(const ProcessorStorage &other) const { return !(*this == other); }
+};
+
+struct ProcessorControlDescription
+{
+    ProcessorControlDescription() = default;
+    ~ProcessorControlDescription() = default;
+
+    ProcessorType type;
+    std::string typeDisplayName{};
+
+    int numFloatParams{0}; // between 0 and max
+    std::array<std::string, maxProcessorFloatParams> floatControlNames;
+    std::array<datamodel::ControlDescription, maxProcessorFloatParams> floatControlDescriptions;
+
+    int numIntParams{0}; // between 0 and max
+    std::array<std::string, maxProcessorIntParams> intControlNames;
+    datamodel::ControlDescription intControlDescriptions[maxProcessorIntParams];
 };
 
 struct Processor : MoveableOnly<Processor>, SampleRateSupport
@@ -155,6 +174,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
   public:
     ProcessorType getType() { return myType; }
     std::string getName() { return getProcessorName(getType()); }
+
+    ProcessorControlDescription getControlDescription();
 
     // TODO: Review and rename everything below here once the procesors are all ported
     int get_parameter_count() { return parameter_count; }

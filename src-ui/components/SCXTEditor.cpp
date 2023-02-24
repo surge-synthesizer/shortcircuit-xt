@@ -108,7 +108,7 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
 
 void SCXTEditor::resized()
 {
-    static constexpr uint32_t headerHeight{34};
+    static constexpr uint32_t headerHeight{40};
     headerRegion->setBounds(0, 0, getWidth(), headerHeight);
 
     if (multiScreen->isVisible())

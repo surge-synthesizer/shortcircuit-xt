@@ -34,7 +34,7 @@ SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageCon
 {
     ed = std::make_unique<scxt::ui::SCXTEditor>(mc);
     addAndMakeVisible(*ed);
-    setSize(1186, 810);
+    setSize(1186, 816);
     ed->setBounds(0, 0, getWidth(), getHeight());
     setResizable(false, false);
 }

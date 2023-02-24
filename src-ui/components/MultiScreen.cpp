@@ -37,6 +37,8 @@
 namespace scxt::ui
 {
 
+static_assert(engine::processorsPerZone == MultiScreen::numProcessorDisplays);
+
 struct DebugRect : public sst::jucegui::components::NamedPanel
 {
     struct CL : juce::Component

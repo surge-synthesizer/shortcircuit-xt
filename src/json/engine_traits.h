@@ -141,8 +141,10 @@ template <> struct scxt_traits<scxt::engine::Group>
             vz.to(*(group.getZone(idx)));
             if (group.parentPart && group.parentPart->parentPatch &&
                 group.parentPart->parentPatch->parentEngine)
-                group.getZone(idx)->attachToSample(
-                    *(group.parentPart->parentPatch->parentEngine->getSampleManager()));
+            {
+                // TODO: MOve this somewhere more intelligent
+                group.getZone(idx)->setupOnUnstream(*(group.parentPart->parentPatch->parentEngine));
+            }
         }
     }
 };
@@ -208,7 +210,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
     {
         v.at("sampleID").to(zone.sampleID);
         v.at("mappingData").to(zone.mapping);
-        v.at("processorStorage").to(zone.processorStorage);
+        fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 
         std::fill(zone.routingTable.begin(), zone.routingTable.end(),
                   scxt::modulation::VoiceModMatrix::Routing());

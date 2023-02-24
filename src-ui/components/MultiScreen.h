@@ -44,6 +44,7 @@ struct ProcessorPane;
 
 struct MultiScreen : juce::Component, HasEditor
 {
+    static constexpr int numProcessorDisplays{4};
     static constexpr int sideWidths = 196;
     static constexpr int edgeDistance = 6;
 
@@ -54,7 +55,7 @@ struct MultiScreen : juce::Component, HasEditor
     std::unique_ptr<multi::MappingPane> sample;
     std::unique_ptr<multi::PartGroupSidebar> parts;
     std::unique_ptr<multi::AdsrPane> eg[2];
-    std::unique_ptr<multi::ProcessorPane> processors[4];
+    std::unique_ptr<multi::ProcessorPane> processors[numProcessorDisplays];
     MultiScreen(SCXTEditor *e);
     ~MultiScreen();
     void resized() override { layout(); }

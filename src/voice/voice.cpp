@@ -235,6 +235,12 @@ void Voice::initializeProcessors()
         processorType[i] = zone->processorStorage[i].type;
         assert(dsp::processor::isZoneProcessor(processorType[i]));
 
+        // TODO this is a hack
+        memcpy(&processorFloatParams[i][0], &zone->processorStorage[i].floatParams[0],
+               sizeof(processorFloatParams[i]));
+        // memcpy(&processorIntParams[0], &zone->processorStorage[i].intParams[0],
+        // sizeof(processorIntParams));
+
         if (dsp::processor::canInPlaceNew(processorType[i]))
         {
             // TODO: Stereo
@@ -253,8 +259,6 @@ void Voice::initializeProcessors()
         {
             processors[i]->setSampleRate(sampleRate);
             processors[i]->init();
-            // TODO: This init_params is temporary until we get values through the model
-            processors[i]->init_params();
         }
     }
 }

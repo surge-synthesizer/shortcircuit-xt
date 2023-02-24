@@ -47,7 +47,8 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
              {"mix", t.mix},
              {"floatParams", t.floatParams},
-             {"intParams", t.intParams}};
+             {"intParams", t.intParams},
+             {"isBypassed", t.isBypassed}};
     }
 
     template <template <typename...> class Traits>
@@ -67,6 +68,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         v.at("mix").to(result.mix);
         v.at("floatParams").to(result.floatParams);
         v.at("intParams").to(result.intParams);
+        findOr(v, "isBypassed", false, result.isBypassed);
     }
 };
 
@@ -95,6 +97,41 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
         v.at("isZone").to(result.isZone);
         v.at("isPart").to(result.isPart);
         v.at("isFX").to(result.isFX);
+    }
+};
+
+template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::dsp::processor::ProcessorControlDescription &t)
+    {
+        v = {
+            {"type",
+             (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
+            {"typeDisplayName", t.typeDisplayName},
+            {"numFloatParams", t.numFloatParams},
+            {"floatControlNames", t.floatControlNames},
+            {"floatControlDescriptions", t.floatControlDescriptions},
+            {"numIntParams", t.numIntParams},
+            {"intControlNames", t.intControlNames}
+            //{"intControlDescriptions", t.intControlDescriptions}
+        };
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   scxt::dsp::processor::ProcessorControlDescription &t)
+    {
+        int tInt{dsp::processor::proct_none};
+        findOr(v, "type", (int32_t)dsp::processor::proct_none, tInt);
+        t.type = (dsp::processor::ProcessorType)tInt;
+        v.at("typeDisplayName").to(t.typeDisplayName);
+        v.at("numFloatParams").to(t.numFloatParams);
+        v.at("floatControlNames").to(t.floatControlNames);
+        v.at("floatControlDescriptions").to(t.floatControlDescriptions);
+        v.at("numIntParams").to(t.numIntParams);
+        v.at("intControlNames").to(t.intControlNames);
     }
 };
 } // namespace scxt::json

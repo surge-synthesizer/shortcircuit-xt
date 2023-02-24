@@ -1,17 +1,20 @@
 # Baconpauls next sprints
 
+
 Week of Feb 21:
 - Then: Processor views
-  - Plan of Attack
-  - Have default be 'none'
-  - if you select one grab the meta data in request one and set the type
-  - Do the filter storage trick the same way we did adsr etc with a generic editor
-  - move to custom editors by type
-  - document how to do the DSP side and the UI side
-  - Set the world on porting
+  - per-panel view
+  - integer parameters 
 - Then: Mod Matrix
-- ReallY: Can ADSR and Mapping message be more share-y with tempaltes?
 - Then: Add a zone by sample revisit
+- Voice Design for real and zone level modulators
+  - Lifecycle with GATED FINISHED CLEANUP etc
+  - AEG/FEG
+  - All the properties on the zone with the correct structures
+  - What are the params and how do they get there
+  - Pitch, pitch bend, etc...
+  - Playmodes, Loops and start/stop points
+  - Mod Targets
 - A VU Meter
 - Restore State Threading
 - Hover Gestures in Named Panel
@@ -19,14 +22,6 @@ Week of Feb 21:
 - Generator keeps runnign after AEG is complete; don't
 - Zone Variants and the zone-sample-wrapper data object
 - Big Punt: Multi-Select
-- Voice Design for real and zone level modulators
-    - Lifecycle with GATED FINISHED CLEANUP etc
-    - AEG/FEG
-    - All the properties on the zone with the correct structures
-    - What are the params and how do they get there
-    - Pitch, pitch bend, etc...
-    - Playmodes, Loops and start/stop points
-    - Mod Targets
 - Generator play modes (onRelease needs a change)
 - Two big "is" questions: IsClientConnected; IsAudioRunning
 - All that round robin discord chat
@@ -64,6 +59,11 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 21 (2023-02-24)
+
+Processors! I got the messages working and the float editors up in the
+UI and they snap at voice on at least. Woof.
 
 ## Day 20 (2023-02-22 for a smidge then a smidge more on the 23)
 

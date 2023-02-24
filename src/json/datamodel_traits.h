@@ -64,5 +64,45 @@ template <> struct scxt_traits<datamodel::AdsrStorage>
         v.at("rShape").to(result.rShape);
     }
 };
+
+template <> struct scxt_traits<datamodel::ControlDescription>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const datamodel::ControlDescription &t)
+    {
+        v = {{"type", (int32_t)t.type},
+             {"displayMode", (int32_t)t.displayMode},
+             {"min", t.min},
+             {"step", t.step},
+             {"max", t.max},
+             {"def", t.def},
+             {"unit", std::string(t.unit)},
+             {"mapScale", t.mapScale},
+             {"mapBase", t.mapBase}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, datamodel::ControlDescription &t)
+    {
+        int32_t ph;
+        v.at("type").to(ph);
+        t.type = (datamodel::ControlDescription::Type)(ph);
+
+        v.at("displayMode").to(ph);
+        t.displayMode = (datamodel::ControlDescription::DisplayMode)(ph);
+
+        v.at("min").to(t.min);
+        v.at("step").to(t.step);
+        v.at("max").to(t.max);
+        v.at("def").to(t.def);
+
+        std::string un;
+        v.at("unit").to(un);
+        strncpy(t.unit, un.c_str(), 32);
+        t.unit[31] = 0;
+        v.at("mapScale").to(t.mapScale);
+        v.at("mapBase").to(t.mapBase);
+    }
+};
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DATAMODEL_TRAITS_H
