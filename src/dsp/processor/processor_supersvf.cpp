@@ -307,11 +307,11 @@ void SuperSVF::suspend()
 
 //-------------------------------------------------------------------------------------------------------
 
-int SuperSVF::get_ip_count() { return 2; }
+size_t SuperSVF::getIntParameterCount() { return 2; }
 
 //-------------------------------------------------------------------------------------------------------
 
-const char *SuperSVF::get_ip_label(int ip_id)
+const char *SuperSVF::getIntParameterLabel(int ip_id)
 {
     if (ip_id == 0)
         return ("mode");
@@ -322,7 +322,7 @@ const char *SuperSVF::get_ip_label(int ip_id)
 
 //-------------------------------------------------------------------------------------------------------
 
-int SuperSVF::get_ip_entry_count(int ip_id)
+size_t SuperSVF::getIntParameterChoicesCount(int ip_id)
 {
     if (ip_id == 0)
         return 3;
@@ -331,7 +331,7 @@ int SuperSVF::get_ip_entry_count(int ip_id)
 
 //-------------------------------------------------------------------------------------------------------
 
-const char *SuperSVF::get_ip_entry_label(int ip_id, int c_id)
+const char *SuperSVF::getIntParameterChoicesLabel(int ip_id, int c_id)
 {
     if (ip_id == 0)
     {

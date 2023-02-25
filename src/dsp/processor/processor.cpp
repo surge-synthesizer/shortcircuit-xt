@@ -306,29 +306,29 @@ ProcessorControlDescription Processor::getControlDescription()
     ProcessorControlDescription res;
     res.type = getType();
     res.typeDisplayName = getName();
-    res.numFloatParams = get_parameter_count();
+    res.numFloatParams = getFloatParameterCount();
     for (int i = 0; i < res.numFloatParams; ++i)
     {
         res.floatControlNames[i] = ctrllabel[i];
         res.floatControlDescriptions[i] = ctrlmode_desc[i];
     }
-    res.numIntParams = get_ip_count();
+    res.numIntParams = getIntParameterCount();
     for (int i = 0; i < res.numIntParams; ++i)
     {
-        res.intControlNames[i] = get_ip_label(i);
+        res.intControlNames[i] = getIntParameterLabel(i);
         auto cd = datamodel::ControlDescription{datamodel::ControlDescription::INT,
                                                 datamodel::ControlDescription::LINEAR,
                                                 0,
                                                 1,
-                                                (float)get_ip_entry_count(i),
+                                                (float)getIntParameterChoicesCount(i),
                                                 0,
                                                 "",
                                                 1,
                                                 0};
         for (int j = 0;
-             j < get_ip_entry_count(i) && j < datamodel::ControlDescription::maxIntChoices; ++j)
+             j < getIntParameterChoicesCount(i) && j < datamodel::ControlDescription::maxIntChoices; ++j)
         {
-            strncpy(cd.choices[j], get_ip_entry_label(i, j), 32);
+            strncpy(cd.choices[j], getIntParameterChoicesLabel(i, j), 32);
             cd.choices[j][31] = 0;
         }
         res.intControlDescriptions[i] = cd;

@@ -115,21 +115,21 @@ struct alignas(16) SuperSVF : public Processor
     static constexpr const char *processorStreamingName{"super-svf"};
 
     SuperSVF(float *, int *, bool);
-    void process(float *datain, float *dataout, float pitch);
+    void process(float *datain, float *dataout, float pitch) override;
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
-                        float pitch);
+                        float pitch) override;
 
     template <bool Stereo, bool FourPole>
     void ProcessT(float *datainL, float *datainR, float *dataoutL, float *dataoutR, float pitch);
 
-    virtual void init_params();
-    virtual void suspend();
+    void init_params() override;
+    void suspend() override;
     void calc_coeffs();
-    virtual int get_ip_count();
-    virtual const char *get_ip_label(int ip_id);
-    virtual int get_ip_entry_count(int ip_id);
-    virtual const char *get_ip_entry_label(int ip_id, int c_id);
-    virtual int tail_length() { return tailInfinite; }
+    size_t getIntParameterCount() override;
+    const char *getIntParameterLabel(int ip_id) override;
+    size_t getIntParameterChoicesCount(int ip_id) override;
+    const char *getIntParameterChoicesLabel(int ip_id, int c_id) override;
+    int tail_length() override { return tailInfinite; }
 };
 
 template <> struct ProcessorImplementor<ProcessorType::proct_SuperSVF>
