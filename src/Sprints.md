@@ -3,8 +3,12 @@
 
 Week of Feb 21:
 - Then: Processor views
-  - per-panel view 
-  - Change the processor _ip_ api names which all are too short
+  - per-panel view in place 
+  - microgate db_to_linear hack
+  - microgate hold units
+  - Bipolar doesn't mean centered at 0! Fix the knob render
+- Implement the memory pool more intelligently
+- Remove a processor-allocate-in-place option and instead static assert size
 - Then: Mod Matrix expand some more
 - Then: Add a zone by sample revisit especially filters borked on add
 - Voice Design for real and zone level modulators
@@ -59,6 +63,14 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 22 (2023-02-25)
+
+Start with trying to port microgate which leads to some fun changes like
+implementing a memory pool, writing a bunch of documentation, and changing
+a few apis. Most importantly, all processors are stereo in stereo out by default
+and the complexity of maintaining an infrequently used mono side is gone. But
+buy the afternoon have the microgate ready for merge 1.
 
 ## Day 21 (2023-02-24)
 

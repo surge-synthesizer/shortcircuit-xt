@@ -51,8 +51,8 @@ enum
 
 //-------------------------------------------------------------------------------------------------------
 
-SuperSVF::SuperSVF(float *fp, int *ip, bool stereo)
-    : Processor(ProcessorType::proct_SuperSVF, fp, ip, true), mPolyphase(2, true)
+SuperSVF::SuperSVF(engine::MemoryPool *mp, float *fp, int *ip)
+    : Processor(ProcessorType::proct_SuperSVF, mp, fp, ip), mPolyphase(2, true)
 {
     parameter_count = 2;
     setStr(ctrllabel[0], ("cutoff"));
@@ -256,20 +256,6 @@ inline __m128 SuperSVF::process_internal(__m128 x, int Mode)
 
     // mode switch needed
     return _mm_mul_ps(Out[Mode], Gain);
-}
-
-//-------------------------------------------------------------------------------------------------------
-
-void SuperSVF::process(float *DataInL, float *DataOutL, float pitch)
-{
-    if (iparam[1] > 0)
-    {
-        ProcessT<false, true>(DataInL, 0, DataOutL, 0, pitch);
-    }
-    else
-    {
-        ProcessT<false, false>(DataInL, 0, DataOutL, 0, pitch);
-    }
 }
 
 //-------------------------------------------------------------------------------------------------------

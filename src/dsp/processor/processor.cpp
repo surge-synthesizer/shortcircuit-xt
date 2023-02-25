@@ -166,7 +166,8 @@ template <size_t... Is> auto getProcessorStreamingName(size_t ft, std::index_seq
     return fnc[ft]();
 }
 
-template <size_t I> Processor *returnSpawnOnto(uint8_t *m, float *fp, int *ip, bool st)
+template <size_t I>
+Processor *returnSpawnOnto(uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip)
 {
     if constexpr (I == ProcessorType::proct_none)
         return nullptr;
@@ -177,17 +178,18 @@ template <size_t I> Processor *returnSpawnOnto(uint8_t *m, float *fp, int *ip, b
     }
     else
     {
-        auto mem = new (m) typename ProcessorImplementor<(ProcessorType)I>::T(fp, ip, st);
+        auto mem = new (m) typename ProcessorImplementor<(ProcessorType)I>::T(mp, fp, ip);
         return mem;
     }
 }
 
 template <size_t... Is>
-auto spawnOnto(size_t ft, uint8_t *m, float *fp, int *ip, bool st, std::index_sequence<Is...>)
+auto spawnOnto(size_t ft, uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip,
+               std::index_sequence<Is...>)
 {
-    using FuncType = Processor *(*)(uint8_t *, float *, int *, bool);
+    using FuncType = Processor *(*)(uint8_t *, engine::MemoryPool *, float *, int *);
     constexpr FuncType arFuncs[] = {detail::returnSpawnOnto<Is>...};
-    return arFuncs[ft](m, fp, ip, st);
+    return arFuncs[ft](m, mp, fp, ip);
 }
 } // namespace detail
 
@@ -263,11 +265,11 @@ processorList_t getAllProcessorDescriptions()
  * Spawn with in-place new onto a pre-allocated block. The memory must
  * be a 16byte aligned block of at least size processorMemoryBufferSize.
  */
-Processor *spawnProcessorInPlace(ProcessorType id, uint8_t *memory, size_t memorySize, float *fp,
-                                 int *ip, bool stereo)
+Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
+                                 size_t memorySize, float *fp, int *ip)
 {
     assert(memorySize >= processorMemoryBufferSize);
-    return detail::spawnOnto(id, memory, fp, ip, stereo,
+    return detail::spawnOnto(id, memory, mp, fp, ip,
                              std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
@@ -326,7 +328,8 @@ ProcessorControlDescription Processor::getControlDescription()
                                                 1,
                                                 0};
         for (int j = 0;
-             j < getIntParameterChoicesCount(i) && j < datamodel::ControlDescription::maxIntChoices; ++j)
+             j < getIntParameterChoicesCount(i) && j < datamodel::ControlDescription::maxIntChoices;
+             ++j)
         {
             strncpy(cd.choices[j], getIntParameterChoicesLabel(i, j), 32);
             cd.choices[j][31] = 0;
