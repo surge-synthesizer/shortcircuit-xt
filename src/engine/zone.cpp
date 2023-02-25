@@ -123,7 +123,8 @@ void Zone::setProcessorType(int whichProcessor, dsp::processor::ProcessorType ty
     if (dsp::processor::canInPlaceNew(type))
     {
         tmpProcessor = dsp::processor::spawnProcessorInPlace(
-            type, memory, dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
+            type, getEngine()->getMemoryPool().get(), memory,
+            dsp::processor::processorMemoryBufferSize, pfp, ifp);
     }
     else
     {
@@ -186,7 +187,8 @@ void Zone::setupProcessorControlDescriptions(int whichProcessor, dsp::processor:
         if (dsp::processor::canInPlaceNew(type))
         {
             tmpProcessor = dsp::processor::spawnProcessorInPlace(
-                type, memory, dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
+                type, getEngine()->getMemoryPool().get(), memory,
+                dsp::processor::processorMemoryBufferSize, pfp, ifp);
         }
         else
         {

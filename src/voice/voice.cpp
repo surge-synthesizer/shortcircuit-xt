@@ -30,6 +30,7 @@
 #include <cmath>
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "engine/engine.h"
 
 namespace scxt::voice
 {
@@ -222,6 +223,8 @@ void Voice::calculateGeneratorRatio()
 
 void Voice::initializeProcessors()
 {
+    assert(zone);
+    assert(zone->getEngine());
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
         processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
@@ -235,10 +238,10 @@ void Voice::initializeProcessors()
                sizeof(processorIntParams[i]));
         if (dsp::processor::canInPlaceNew(processorType[i]))
         {
-            // TODO: Stereo
             processors[i] = dsp::processor::spawnProcessorInPlace(
-                processorType[i], processorPlacementStorage[i],
-                dsp::processor::processorMemoryBufferSize, fp, processorIntParams[i], false);
+                processorType[i], zone->getEngine()->getMemoryPool().get(),
+                processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
+                processorIntParams[i]);
         }
         else
         {

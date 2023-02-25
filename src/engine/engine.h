@@ -42,6 +42,7 @@
 #include <set>
 #include <cassert>
 #include "selection/selection_manager.h"
+#include "memory_pool.h"
 
 namespace scxt::voice
 {
@@ -169,8 +170,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     pgzStructure_t getPartGroupZoneStructure(int partFilter) const;
 
+    const std::unique_ptr<MemoryPool> &getMemoryPool() { return memoryPool; }
+
   private:
     std::unique_ptr<Patch> patch;
+    std::unique_ptr<MemoryPool> memoryPool;
     std::unique_ptr<sample::SampleManager> sampleManager;
     std::array<voice::Voice *, maxVoices> voices;
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};

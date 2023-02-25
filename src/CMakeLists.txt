@@ -9,11 +9,13 @@ add_library(${PROJECT_NAME} STATIC
 
         dsp/processor/processor_supersvf.cpp
         dsp/processor/processor_oscillators.cpp
+        dsp/processor/processor_distortions.cpp
 
         engine/engine.cpp
         engine/zone.cpp
         engine/group.cpp
         engine/part.cpp
+        engine/memory_pool.cpp
 
         json/stream.cpp
 

@@ -151,8 +151,8 @@ void ProcessorPane::rebuildControlsFromDescription()
         lb = lb.translated(kw, 0);
         if (i % 4 == 3)
         {
-            kb = kb.translated(-getWidth(), kw + labelHeight);
-            lb = lb.translated(-getWidth(), kw + labelHeight);
+            kb = kb.translated(-getContentArea().getWidth(), kw + labelHeight);
+            lb = lb.translated(-getContentArea().getWidth(), kw + labelHeight);
         }
     }
 
@@ -162,8 +162,7 @@ void ProcessorPane::rebuildControlsFromDescription()
             this, processorControlDescription.intControlDescriptions[i],
             processorControlDescription.intControlNames[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
-            [idx = i](const auto &pl) { return pl.intParams[idx]; },
-            processorView.intParams[i]);
+            [idx = i](const auto &pl) { return pl.intParams[idx]; }, processorView.intParams[i]);
         auto kn = std::make_unique<sst::jucegui::components::MultiSwitch>();
         kn->setSource(at.get());
         kn->setBounds(kb);

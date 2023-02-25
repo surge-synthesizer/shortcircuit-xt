@@ -58,6 +58,8 @@ Engine::Engine()
     setStereoOutputs(1);
     selectionManager = std::make_unique<selection::SelectionManager>(*this);
 
+    memoryPool = std::make_unique<MemoryPool>();
+
     messageController->start();
 }
 

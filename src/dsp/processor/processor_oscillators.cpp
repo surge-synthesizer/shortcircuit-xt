@@ -40,8 +40,8 @@ namespace mech = sst::basic_blocks::mechanics;
 static constexpr int64_t large = 0x10000000000;
 static constexpr float integrator_hpf = 0.99999999f;
 
-OscPulseSync::OscPulseSync(float *fp, int32_t *ip, bool stereo)
-    : Processor(ProcessorType::proct_osc_pulse_sync, fp, ip, stereo)
+OscPulseSync::OscPulseSync(engine::MemoryPool *mp, float *fp, int32_t *ip)
+    : Processor(ProcessorType::proct_osc_pulse_sync, mp, fp, ip)
 {
     parameter_count = 3;
 
@@ -121,13 +121,8 @@ void OscPulseSync::convolute()
     polarity = !polarity;
 }
 
-void OscPulseSync::process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
+void OscPulseSync::process_stereo(float *datain, float *datainR, float *dataout, float *dataoutR,
                                   float pitch)
-{
-    process(0, dataoutL, pitch);
-    mech::copy_from_to<blockSize>(dataoutL, dataoutR);
-}
-void OscPulseSync::process(float *datain, float *dataout, float pitch)
 {
     if (first_run)
     {
@@ -159,6 +154,9 @@ void OscPulseSync::process(float *datain, float *dataout, float pitch)
         bufpos++;
         bufpos = bufpos & (oscillatorBufferLength - 1);
     }
+
+    // This is a mono effect
+    mech::copy_from_to<blockSize>(dataout, dataoutR);
 }
 
 } // namespace scxt::dsp::processor
