@@ -3,8 +3,8 @@
 
 Week of Feb 21:
 - Then: Processor views
-  - per-panel view
-  - integer parameters 
+  - per-panel view 
+  - Change the processor _ip_ api names which all are too short
 - Then: Mod Matrix expand some more
 - Then: Add a zone by sample revisit
 - Voice Design for real and zone level modulators
@@ -65,7 +65,11 @@ Sprint Log I posted on Discord
 Processors! I got the messages working and the float editors up in the
 UI and they snap at voice on at least. Woof. Then go change the mod matrix
 so the destinations are indexed and that lets me intermediate the processor
-through it, meaning knob drags while playing change processors.
+through it, meaning knob drags while playing change processors. So to finish off
+the day, which in retrospect was pretty productive, I also made int params express
+themselves as control descriptions, blasted them to the ui, and painted them
+as a multi-switch.
+
 
 ## Day 20 (2023-02-22 for a smidge then a smidge more on the 23)
 

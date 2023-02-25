@@ -231,18 +231,19 @@ void Voice::initializeProcessors()
         assert(dsp::processor::isZoneProcessor(processorType[i]));
 
         auto fp = modMatrix.getValuePtr(modulation::vmd_Processor_FP1, i);
+        memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
+               sizeof(processorIntParams[i]));
         if (dsp::processor::canInPlaceNew(processorType[i]))
         {
             // TODO: Stereo
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], processorPlacementStorage[i],
-                dsp::processor::processorMemoryBufferSize, fp,
-                processorIntParams[i], false);
+                dsp::processor::processorMemoryBufferSize, fp, processorIntParams[i], false);
         }
         else
         {
-            processors[i] = dsp::processor::spawnProcessorAllocating(
-                processorType[i], fp, processorIntParams[i], false);
+            processors[i] = dsp::processor::spawnProcessorAllocating(processorType[i], fp,
+                                                                     processorIntParams[i], false);
         }
 
         if (processors[i])
