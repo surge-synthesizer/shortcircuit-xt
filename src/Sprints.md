@@ -3,7 +3,6 @@
 
 Week of Feb 21:
 - Then: Processor views
-  - per-panel view in place 
   - microgate db_to_linear hack
   - microgate hold units
   - Bipolar doesn't mean centered at 0! Fix the knob render
