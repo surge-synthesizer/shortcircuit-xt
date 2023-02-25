@@ -26,6 +26,7 @@
  */
 
 #include "memory_pool.h"
+#include <cassert>
 
 namespace scxt::engine
 {

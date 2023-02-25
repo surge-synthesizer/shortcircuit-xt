@@ -7,6 +7,8 @@ Week of Feb 21:
   - microgate db_to_linear hack
   - microgate hold units
   - Bipolar doesn't mean centered at 0! Fix the knob render
+- Implement the memory pool more intelligently
+- Remove a processor-allocate-in-place option and instead static assert size
 - Then: Mod Matrix expand some more
 - Then: Add a zone by sample revisit especially filters borked on add
 - Voice Design for real and zone level modulators
