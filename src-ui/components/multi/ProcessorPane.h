@@ -76,17 +76,23 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
     void processorChangedFromGui(const int_attachment_t &at);
 
     void rebuildControlsFromDescription();
+
+    void layoutControls();
+    void layoutControlsSuperSVF();
+
+    template <typename T = sst::jucegui::components::Knob>
+    std::unique_ptr<T> attachContinuousTo(const std::unique_ptr<attachment_t> &);
+
     void resetControls();
 
     void resized() override;
 
     void updateTooltip(const attachment_t &);
-
     void showHamburgerMenu();
 
-    std::array<std::unique_ptr<sst::jucegui::components::Knob>,
+    std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
                dsp::processor::maxProcessorFloatParams>
-        floatKnobs;
+        floatEditors;
     std::array<std::unique_ptr<sst::jucegui::components::Label>,
                dsp::processor::maxProcessorFloatParams>
         floatLabels;
@@ -102,7 +108,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
 
-    std::unique_ptr<sst::jucegui::components::Knob> mixKnob;
+    std::unique_ptr<sst::jucegui::components::Knob> mixEditor;
     std::unique_ptr<sst::jucegui::components::Label> mixLabel;
     std::unique_ptr<attachment_t> mixAttachment;
 };
