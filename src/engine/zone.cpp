@@ -152,6 +152,17 @@ void Zone::setProcessorType(int whichProcessor, dsp::processor::ProcessorType ty
     }
 }
 
+void Zone::initialize()
+{
+    for (auto &v : voiceWeakPointers)
+        v = nullptr;
+
+    for (auto &l : lfoStorage)
+    {
+        modulation::modulators::load_lfo_preset(modulation::modulators::lp_clear, &l);
+    }
+}
+
 void Zone::setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
                                              dsp::processor::Processor *tmpProcessorFromAfar)
 {

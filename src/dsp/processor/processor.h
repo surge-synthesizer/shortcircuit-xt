@@ -147,8 +147,8 @@ struct ProcessorControlDescription
     ProcessorControlDescription() = default;
     ~ProcessorControlDescription() = default;
 
-    ProcessorType type;
-    std::string typeDisplayName{};
+    ProcessorType type{proct_none};
+    std::string typeDisplayName{"Off"};
 
     int numFloatParams{0}; // between 0 and max
     std::array<std::string, maxProcessorFloatParams> floatControlNames;
@@ -176,15 +176,13 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     std::string getName() { return getProcessorName(getType()); }
 
     ProcessorControlDescription getControlDescription();
+    int getFloatParameterCount() { return parameter_count; }
+    virtual size_t getIntParameterCount() { return 0; }
+    virtual const char *getIntParameterLabel(int ip_id) { return (""); }
+    virtual size_t getIntParameterChoicesCount(int ip_id) { return 0; }
+    virtual const char *getIntParameterChoicesLabel(int ip_id, int c_id) { return (""); }
 
     // TODO: Review and rename everything below here once the procesors are all ported
-    int get_parameter_count() { return parameter_count; }
-    char *get_parameter_label(int p_id);
-    char *get_parameter_ctrlmode_descriptor(int p_id);
-    virtual int get_ip_count() { return 0; }
-    virtual const char *get_ip_label(int ip_id) { return (""); }
-    virtual int get_ip_entry_count(int ip_id) { return 0; }
-    virtual const char *get_ip_entry_label(int ip_id, int c_id) { return (""); }
 
     virtual bool init_freq_graph() { return false; } // old z-plot honk (visa p� waveformdisplay)
     virtual float get_freq_graph(float f) { return 0; }

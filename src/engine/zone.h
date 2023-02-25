@@ -123,16 +123,7 @@ struct Zone : MoveableOnly<Zone>
     bool isActive() { return activeVoices != 0; }
     uint32_t activeVoices{0};
     std::array<voice::Voice *, maxVoices> voiceWeakPointers;
-    void initialize()
-    {
-        for (auto &v : voiceWeakPointers)
-            v = nullptr;
-
-        for (auto &l : lfoStorage)
-        {
-            modulation::modulators::load_lfo_preset(modulation::modulators::lp_clear, &l);
-        }
-    }
+    void initialize();
     // Just a weak ref - don't take ownership. engine manages lifetime
     void addVoice(voice::Voice *);
     void removeVoice(voice::Voice *);

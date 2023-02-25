@@ -6,7 +6,7 @@ Week of Feb 21:
   - per-panel view 
   - Change the processor _ip_ api names which all are too short
 - Then: Mod Matrix expand some more
-- Then: Add a zone by sample revisit
+- Then: Add a zone by sample revisit especially filters borked on add
 - Voice Design for real and zone level modulators
   - Lifecycle with GATED FINISHED CLEANUP etc
   - AEG/FEG
