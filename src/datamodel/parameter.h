@@ -43,9 +43,10 @@ struct ControlDescription
     static constexpr int maxIntChoices{16};
     enum Type
     {
+        NONE,
         INT,
         FLOAT
-    } type{FLOAT};
+    } type{NONE};
     enum DisplayMode
     {
         LINEAR,       // mapScale * value + mapBase

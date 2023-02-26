@@ -27,9 +27,70 @@
 
 #include "ModPane.h"
 #include "connectors/SCXTStyleSheetCreator.h"
+#include "sst/jucegui/components/HSlider.h"
 
 namespace scxt::ui::multi
 {
+struct ModRow : juce::Component, HasEditor
+{
+    int index{0};
+    ModPane *parent{nullptr};
+    std::unique_ptr<juce::Label> rowL;
+    std::unique_ptr<juce::ToggleButton> power;
+    std::unique_ptr<juce::TextButton> source, sourceVia, curve, target;
+    std::unique_ptr<juce::TextButton> slider;
+    // std::unique_ptr<sst::jucegui::components::HSlider> slider;
+    ModRow(SCXTEditor *e, int i, ModPane *p) : HasEditor(e), index(i), parent(p)
+    {
+        rowL = std::make_unique<juce::Label>("Row", std::to_string(index + 1));
+        addAndMakeVisible(*rowL);
+
+        power = std::make_unique<juce::ToggleButton>();
+        addAndMakeVisible(*power);
+
+        source = std::make_unique<juce::TextButton>("Source", "Source");
+        addAndMakeVisible(*source);
+
+        sourceVia = std::make_unique<juce::TextButton>("Via", "Via");
+        addAndMakeVisible(*sourceVia);
+
+        slider = std::make_unique<juce::TextButton>("Slider", "Slider");
+        addAndMakeVisible(*slider);
+
+        curve = std::make_unique<juce::TextButton>("Crv", "Crv");
+        addAndMakeVisible(*curve);
+
+        target = std::make_unique<juce::TextButton>("Target", "Target");
+        addAndMakeVisible(*target);
+    }
+
+    void resized()
+    {
+        auto b = getLocalBounds().reduced(1, 1);
+
+        rowL->setBounds(b.withWidth(b.getHeight() + 10));
+        b = b.translated(b.getHeight() + 12, 0);
+
+        power->setBounds(b.withWidth(b.getHeight()));
+        b = b.translated(b.getHeight() + 2, 0);
+        source->setBounds(b.withWidth(90));
+        b = b.translated(92, 0);
+        sourceVia->setBounds(b.withWidth(90));
+        b = b.translated(92, 0);
+        slider->setBounds(b.withWidth(170));
+        b = b.translated(172, 0);
+        curve->setBounds(b.withWidth(60));
+        b = b.translated(62, 0);
+        target->setBounds(b.withWidth(90));
+    }
+    void refreshRow() { repaint(); }
+
+    void paint(juce::Graphics &g)
+    {
+        g.setColour(juce::Colour(255, (index / 6) * 128, (index % 6) * 255 / 6).withAlpha(0.6f));
+        g.fillRect(getLocalBounds());
+    }
+};
 
 ModPane::ModPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
@@ -42,16 +103,63 @@ ModPane::ModPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasE
     resetTabState();
 
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
-        if (wt)
-            wt->label->setText(wt->tabNames[i], juce::dontSendNotification);
+        if (!wt)
+            return;
+
+        wt->tabRange = i;
+        wt->rebuildMatrix();
     };
 
-    label = std::make_unique<juce::Label>("MAPPING", "MOD 1-6");
-    label->setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-    label->setColour(juce::Label::textColourId, juce::Colour(105, 106, 225));
-    label->setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(*label);
+    setActive(false);
 }
 
-void ModPane::resized() { label->setBounds(getContentArea()); }
+ModPane::~ModPane() = default;
+
+void ModPane::resized()
+{
+    auto en = isEnabled();
+    if (!en)
+        return;
+    auto r = getContentArea().toFloat();
+    auto rh = r.getHeight() * 1.f / numRowsOnScreen;
+    r = r.withHeight(rh);
+    for (int i = 0; i < numRowsOnScreen; ++i)
+    {
+        if (rows[i])
+            rows[i]->setBounds(r.toNearestIntEdges());
+        r = r.translated(0, rh);
+    }
+}
+
+void ModPane::setActive(bool b)
+{
+    setEnabled(b);
+    rebuildMatrix();
+}
+
+void ModPane::rebuildMatrix()
+{
+    auto en = isEnabled();
+    removeAllChildren();
+    for (auto &a : rows)
+        a.reset(nullptr);
+    if (!en)
+        return;
+    for (int i = 0; i < numRowsOnScreen; ++i)
+    {
+        rows[i] = std::make_unique<ModRow>(editor, i + tabRange * numRowsOnScreen, this);
+        addAndMakeVisible(*(rows[i]));
+    }
+    resized();
+}
+
+void ModPane::refreshMatrix()
+{
+    assert(isEnabled());
+    for (auto &r : rows)
+    {
+        if (r)
+            r->refreshRow();
+    }
+}
 } // namespace scxt::ui::multi

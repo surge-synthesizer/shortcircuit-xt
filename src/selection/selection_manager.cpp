@@ -34,6 +34,7 @@
 
 namespace scxt::selection
 {
+namespace cms = messaging::client;
 void SelectionManager::singleSelect(const ZoneAddress &a)
 {
     auto [p, g, z] = a;
@@ -42,46 +43,52 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         singleSelection = a;
         // TODO: The 'full zone' becomes a single function obviously
         const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-        serializationSendToClient(
-            messaging::client::s2c_respond_zone_mapping,
-            messaging::client::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
-            *(engine.getMessageController()));
-        serializationSendToClient(
-            messaging::client::s2c_respond_zone_adsr_view,
-            messaging::client::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
-            *(engine.getMessageController()));
-        serializationSendToClient(
-            messaging::client::s2c_respond_zone_adsr_view,
-            messaging::client::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
-            *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_respond_zone_mapping,
+                                  cms::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                                  cms::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                                  cms::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
+                                  *(engine.getMessageController()));
 
         for (int i = 0; i < engine::processorsPerZone; ++i)
         {
             serializationSendToClient(
-                messaging::client::s2c_respond_single_processor_metadata_and_data,
-                messaging::client::ProcessorMetadataAndData::s2c_payload_t{
-                    i, true, zp->processorDescription[i], zp->processorStorage[i]},
+                cms::s2c_respond_single_processor_metadata_and_data,
+                cms::ProcessorMetadataAndData::s2c_payload_t{i, true, zp->processorDescription[i],
+                                                             zp->processorStorage[i]},
                 *(engine.getMessageController()));
         }
+
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+                                  modulation::getVoiceModMatrixMetadata(*zp),
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix,
+                                  zp->routingTable,
+                                  *(engine.getMessageController()));
     }
     else
     {
         singleSelection = {};
-        serializationSendToClient(
-            messaging::client::s2c_respond_zone_adsr_view,
-            messaging::client::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
-            *(engine.getMessageController()));
-        serializationSendToClient(
-            messaging::client::s2c_respond_zone_adsr_view,
-            messaging::client::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
-            *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                                  cms::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                                  cms::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
+                                  *(engine.getMessageController()));
         for (int i = 0; i < engine::processorsPerZone; ++i)
         {
             serializationSendToClient(
-                messaging::client::s2c_respond_single_processor_metadata_and_data,
-                messaging::client::ProcessorMetadataAndData::s2c_payload_t{i, false, {}, {}},
+                cms::s2c_respond_single_processor_metadata_and_data,
+                cms::ProcessorMetadataAndData::s2c_payload_t{i, false, {}, {}},
                 *(engine.getMessageController()));
         }
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+                                  modulation::voiceModMatrixMetadata_t{false, {}, {}},
+                                  *(engine.getMessageController()));
+
     }
 }
 } // namespace scxt::selection

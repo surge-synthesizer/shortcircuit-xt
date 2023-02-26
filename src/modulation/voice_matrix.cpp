@@ -54,17 +54,17 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
     }
 
     // TODO : Shapes
-    baseValues[destIndex(vmd_eg_A,0)] = z->aegStorage.a;
-    baseValues[destIndex(vmd_eg_H,0)] = z->aegStorage.h;
-    baseValues[destIndex(vmd_eg_D,0)] = z->aegStorage.d;
-    baseValues[destIndex(vmd_eg_S,0)] = z->aegStorage.s;
-    baseValues[destIndex(vmd_eg_R,0)] = z->aegStorage.r;
+    baseValues[destIndex(vmd_eg_A, 0)] = z->aegStorage.a;
+    baseValues[destIndex(vmd_eg_H, 0)] = z->aegStorage.h;
+    baseValues[destIndex(vmd_eg_D, 0)] = z->aegStorage.d;
+    baseValues[destIndex(vmd_eg_S, 0)] = z->aegStorage.s;
+    baseValues[destIndex(vmd_eg_R, 0)] = z->aegStorage.r;
 
-    baseValues[destIndex(vmd_eg_A,1)] = z->eg2Storage.a;
-    baseValues[destIndex(vmd_eg_H,1)] = z->eg2Storage.h;
-    baseValues[destIndex(vmd_eg_D,1)] = z->eg2Storage.d;
-    baseValues[destIndex(vmd_eg_S,1)] = z->eg2Storage.s;
-    baseValues[destIndex(vmd_eg_R,1)] = z->eg2Storage.r;
+    baseValues[destIndex(vmd_eg_A, 1)] = z->eg2Storage.a;
+    baseValues[destIndex(vmd_eg_H, 1)] = z->eg2Storage.h;
+    baseValues[destIndex(vmd_eg_D, 1)] = z->eg2Storage.d;
+    baseValues[destIndex(vmd_eg_S, 1)] = z->eg2Storage.s;
+    baseValues[destIndex(vmd_eg_R, 1)] = z->eg2Storage.r;
 }
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
@@ -147,7 +147,8 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationTy
 
     throw std::logic_error("Invalid enum");
 }
-std::optional<VoiceModMatrixDestinationType> fromVoiceModMatrixDestStreamingName(const std::string &s)
+std::optional<VoiceModMatrixDestinationType>
+fromVoiceModMatrixDestStreamingName(const std::string &s)
 {
     for (int i = vmd_none; i < numVoiceMatrixDestinations; ++i)
     {
@@ -171,6 +172,12 @@ std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &des
         return "vms_lfo2";
     case vms_LFO3:
         return "vms_lfo3";
+
+    case vms_AEG:
+        return "vms_aeg";
+    case vms_EG2:
+        return "vms_eg2";
+
     case numVoiceMatrixSources:
         throw std::logic_error("Don't call with numVoiceMatrixSources");
     }
@@ -187,6 +194,117 @@ std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const 
         }
     }
     return vms_none;
+}
+
+std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
+{
+    switch (dest)
+    {
+    case vms_none:
+        return "None";
+    case vms_LFO1:
+        return "LFO1";
+    case vms_LFO2:
+        return "LFO2";
+    case vms_LFO3:
+        return "LFO3";
+
+    case vms_AEG:
+        return "AEG";
+    case vms_EG2:
+        return "EG2";
+
+    case numVoiceMatrixSources:
+        throw std::logic_error("Don't call with numVoiceMatrixSources");
+    }
+
+    throw std::logic_error("Mysterious unhandled condition");
+}
+
+std::string getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                             const engine::Zone &z)
+{
+    // TODO: This is obviously .... wrong
+    /*
+     * These are a bit trickier since they are indexed so
+     */
+    const auto &[vmd, idx] = dest;
+
+    if (vmd >= vmd_LFO_Rate && vmd <= vmd_LFO_Rate)
+    {
+        return "LFO " + std::to_string(idx + 1) + " Rate";
+    }
+
+    if (vmd >= vmd_Processor_Mix && vmd <= vmd_Processor_FP9)
+    {
+        auto pfx = std::string("P") + std::to_string(idx + 1) + ": ";
+        if (z.processorStorage[idx].type == dsp::processor::proct_none)
+        {
+            // this should in theory get filtered out of the user choices
+            return pfx + " --";
+        }
+        pfx += z.processorDescription[idx].typeDisplayName + " ";
+        if (vmd == vmd_Processor_Mix)
+            return pfx + "mix";
+        else
+        {
+            return pfx +
+                   z.processorDescription[idx].floatControlNames[(int)(vmd - vmd_Processor_FP1)];
+        }
+    }
+
+    if (vmd >= vmd_eg_A && vmd <= vmd_eg_RShape)
+    {
+        auto pfx = (idx == 0 ? std::string("AEG") : std::string("EG2"));
+
+        switch (vmd)
+        {
+        case vmd_eg_A:
+            pfx += " Attack";
+            break;
+        case vmd_eg_H:
+            pfx += " Hold";
+            break;
+        case vmd_eg_D:
+            pfx += " Decay";
+            break;
+        case vmd_eg_S:
+            pfx += " Sustain";
+            break;
+        case vmd_eg_R:
+            pfx += " Release";
+            break;
+        case vmd_eg_AShape:
+            pfx += " Attack Shape";
+            break;
+        case vmd_eg_DShape:
+            pfx += " Decay Shape";
+            break;
+        case vmd_eg_RShape:
+            pfx += " Release Shape";
+            break;
+        default:
+            assert(false);
+        }
+        return pfx;
+    }
+    assert(false);
+    return fmt::format("ERR {} {}", vmd, idx);
+}
+
+voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &)
+{
+    return {};
+}
+voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z)
+{
+    voiceModMatrixSourceNames_t res;
+    for (int s = (int)vms_none; s < numVoiceMatrixSources; ++s)
+    {
+        auto vms = (VoiceModMatrixSource)s;
+        res.emplace_back(vms, getVoiceModMatrixSourceDisplayName(vms));
+    }
+    return res;
 }
 
 } // namespace scxt::modulation

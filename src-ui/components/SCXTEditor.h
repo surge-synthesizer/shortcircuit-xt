@@ -99,6 +99,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
     void
     onProcessorDataAndMetadata(const scxt::messaging::client::processorDataResponsePayload_t &);
+    void onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &);
+    void onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &);
 
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)

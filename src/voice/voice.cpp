@@ -108,6 +108,10 @@ bool Voice::process()
                      modMatrix.getValue(modulation::vmd_eg_D, 0),
                      modMatrix.getValue(modulation::vmd_eg_S, 0),
                      modMatrix.getValue(modulation::vmd_eg_R, 0), 1, 1, 1, playState == GATED);
+    eg2.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 1),
+                     modMatrix.getValue(modulation::vmd_eg_D, 1),
+                     modMatrix.getValue(modulation::vmd_eg_S, 1),
+                     modMatrix.getValue(modulation::vmd_eg_R, 1), 1, 1, 1, playState == GATED);
 
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
@@ -240,7 +244,7 @@ void Voice::initializeProcessors()
             processorType[i], zone->getEngine()->getMemoryPool().get(),
             processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
             processorIntParams[i]);
-    
+
         if (processors[i])
         {
             processors[i]->setSampleRate(sampleRate);

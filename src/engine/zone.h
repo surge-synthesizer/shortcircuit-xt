@@ -132,7 +132,7 @@ struct Zone : MoveableOnly<Zone>
     void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
                                            dsp::processor::Processor *tmpProcessor = nullptr);
 
-    std::array<modulation::VoiceModMatrix::Routing, modulation::numVoiceRoutingSlots> routingTable;
+    modulation::VoiceModMatrix::routingTable_t routingTable;
     std::array<modulation::modulators::StepLFOStorage, lfosPerZone> lfoStorage;
 
     datamodel::AdsrStorage aegStorage, eg2Storage;

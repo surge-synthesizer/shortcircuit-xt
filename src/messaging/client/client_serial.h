@@ -68,6 +68,8 @@ enum SerializationToClientMessageIds
     s2c_respond_zone_mapping,
     s2c_send_pgz_structure,
     s2c_send_all_processor_descriptions,
+    s2c_update_zone_voice_matrix_metadata,
+    s2c_update_zone_voice_matrix,
 
     s2c_respond_single_processor_metadata_and_data,
 
