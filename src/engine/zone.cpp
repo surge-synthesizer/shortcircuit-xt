@@ -120,16 +120,9 @@ void Zone::setProcessorType(int whichProcessor, dsp::processor::ProcessorType ty
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
-    if (dsp::processor::canInPlaceNew(type))
-    {
-        tmpProcessor = dsp::processor::spawnProcessorInPlace(
-            type, getEngine()->getMemoryPool().get(), memory,
-            dsp::processor::processorMemoryBufferSize, pfp, ifp);
-    }
-    else
-    {
-        tmpProcessor = dsp::processor::spawnProcessorAllocating(type, pfp, ifp, false);
-    }
+    tmpProcessor = dsp::processor::spawnProcessorInPlace(
+        type, getEngine()->getMemoryPool().get(), memory,
+        dsp::processor::processorMemoryBufferSize, pfp, ifp);
 
     if (type != dsp::processor::proct_none)
     {
@@ -184,16 +177,9 @@ void Zone::setupProcessorControlDescriptions(int whichProcessor, dsp::processor:
 
     if (!tmpProcessor)
     {
-        if (dsp::processor::canInPlaceNew(type))
-        {
-            tmpProcessor = dsp::processor::spawnProcessorInPlace(
-                type, getEngine()->getMemoryPool().get(), memory,
-                dsp::processor::processorMemoryBufferSize, pfp, ifp);
-        }
-        else
-        {
-            tmpProcessor = dsp::processor::spawnProcessorAllocating(type, pfp, ifp, false);
-        }
+        tmpProcessor = dsp::processor::spawnProcessorInPlace(
+            type, getEngine()->getMemoryPool().get(), memory,
+            dsp::processor::processorMemoryBufferSize, pfp, ifp);
     }
 
     assert(tmpProcessor);

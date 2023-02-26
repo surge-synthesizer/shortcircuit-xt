@@ -135,11 +135,6 @@ enum ProcessorType
 };
 
 /**
- * Can we in-place new if we are handed a buffer of at least processorMemoryBufferSize?
- */
-bool canInPlaceNew(ProcessorType id);
-
-/**
  * Can this processor be used in a zone, part, or FX position
  */
 bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
@@ -271,14 +266,6 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
  */
 Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
                                  size_t memorySize, float *fp, int *ip);
-
-/**
- * Spawn a processors, potentially allocating memory. Call this if canInPlaceNew
- * returns false.
- *
- * TODO: Make it so we can remove this
- */
-Processor *spawnProcessorAllocating(int id, float *fp, int *ip, bool stereo);
 
 /**
  * Whetner a processor is spawned in place or onto fresh memory, release it here.

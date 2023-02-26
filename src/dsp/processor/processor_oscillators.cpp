@@ -28,7 +28,7 @@
 #include "processor_defs.h"
 #include "dsp/resampling.h"
 #include "configuration.h"
-#include "dsp/sinc_table.h"
+#include "dsp/data_tables.h"
 #include <cmath>
 #include <algorithm>
 #include "sst/basic-blocks/mechanics/block-ops.h"

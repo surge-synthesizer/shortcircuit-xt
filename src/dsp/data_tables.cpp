@@ -25,7 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "sinc_table.h"
+#include "data_tables.h"
 #include <cmath>
 
 namespace scxt::dsp
@@ -139,4 +139,22 @@ void SincTable::init()
     initialized = true;
 }
 SincTable sincTable;
+
+void DbTable::init()
+{
+    for (int i = 0; i < nPoints; i++)
+    {
+        table_dB[i] = powf(10.f, 0.05f * ((float)i - 384.f));
+    }
+}
+
+float DbTable::dbToLinear(float db)
+{
+    db += 384;
+    int e = (int)db;
+    float a = db - (float)e;
+
+    return (1.f-a)*table_dB[e&(nPoints-1)] + a*table_dB[(e+1)&(nPoints-1)];
+}
+DbTable dbTable;
 } // namespace scxt::dsp

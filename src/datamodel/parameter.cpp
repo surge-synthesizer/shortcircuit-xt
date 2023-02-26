@@ -30,6 +30,7 @@
 #include <cassert>
 #include <algorithm>
 #include <fmt/core.h>
+#include "dsp/data_tables.h"
 
 namespace scxt::datamodel
 {
@@ -51,8 +52,10 @@ std::string ControlDescription::valueToString(float value) const
         case TWO_TO_THE_X:
             // TODO improve these of course
             return fmt::format("{:8.4} {}", std::pow(2.0, mv), unit);
+        case DECIBEL:
+            return fmt::format("{:8.4} {}", mv, unit);
         default:
-            return fmt::format("ERROR {} {} {} {}", __FILE__, __LINE__, mv, unit);
+            return fmt::format("{:8.4} ERROR {} {}", mv, unit, (int)displayMode);
         }
     }
 

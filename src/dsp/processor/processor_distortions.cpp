@@ -30,6 +30,7 @@
 #include "configuration.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "tuning/equal.h"
+#include "dsp/data_tables.h"
 
 namespace scxt::dsp::processor
 {
@@ -50,7 +51,7 @@ MicroGate::MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
                                                      0.1,
                                                      10,
                                                      -3,
-                                                     "octaves"};
+                                                     "tbd"};
     setStr(ctrllabel[1], "loop");
     ctrlmode_desc[1] = datamodel::cdPercent;
     setStr(ctrllabel[2], "threshold");
@@ -86,10 +87,8 @@ void MicroGate::process_stereo(float *datainL, float *datainR, float *dataoutL, 
     mech::copy_from_to<blockSize>(datainR, dataoutR);
 
     // TODO fixme
-    auto db_to_linear = [](auto x) { return powf(10.f, 0.1 * x); };
-
-    float threshold = db_to_linear(param[2]);
-    float reduction = db_to_linear(param[3]);
+    float threshold = dbTable.dbToLinear(param[2]);
+    float reduction = dbTable.dbToLinear(param[3]);
     int ihtime = (int)(float)(samplerate * tuning::equalTuning.note_to_pitch(12 * param[0]));
 
     for (int k = 0; k < BLOCK_SIZE; k++)

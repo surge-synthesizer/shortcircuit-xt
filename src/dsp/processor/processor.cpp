@@ -49,30 +49,17 @@ namespace detail
 using boolOp_t = bool (*)();
 using constCharOp_t = const char *(*)();
 
-template <size_t I> bool implCanInPlace()
-{
-    if constexpr (I == ProcessorType::proct_none)
-        return true;
-
-    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
-        return false;
-    else
-        return sizeof(typename ProcessorImplementor<(ProcessorType)I>::T) <
-               processorMemoryBufferSize;
-}
-
-template <size_t... Is> auto canInPlace(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr boolOp_t fnc[] = {detail::implCanInPlace<Is>...};
-    return fnc[ft]();
-}
-
 template <size_t I> bool implIsProcessorImplemented()
 {
     if constexpr (I == ProcessorType::proct_none)
         return true;
+    else
+    {
+        static_assert(sizeof(typename ProcessorImplementor<(ProcessorType)I>::T) <
+            processorMemoryBufferSize);
 
-    return !std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value;
+        return !std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value;
+    }
 }
 
 template <size_t... Is> auto isProcessorImplemented(size_t ft, std::index_sequence<Is...>)
@@ -193,12 +180,6 @@ auto spawnOnto(size_t ft, uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip
 }
 } // namespace detail
 
-bool canInPlaceNew(ProcessorType id)
-{
-    return detail::canInPlace(id,
-                              std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
-}
-
 bool isProcessorImplemented(ProcessorType id)
 {
     return detail::isProcessorImplemented(
@@ -293,14 +274,7 @@ void unspawnProcessor(Processor *f)
     if (!f)
         return;
 
-    if (canInPlaceNew(f->getType()))
-    {
-        f->~Processor();
-    }
-    else
-    {
-        delete f;
-    }
+    f->~Processor();
 }
 
 ProcessorControlDescription Processor::getControlDescription()

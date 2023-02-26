@@ -25,10 +25,13 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_DSP_SINC_TABLE_H
-#define SCXT_SRC_DSP_SINC_TABLE_H
+#ifndef SCXT_SRC_DSP_DATA_TABLES_H
+#define SCXT_SRC_DSP_DATA_TABLES_H
 
 #include "resampling.h"
+#include <cctype>
+#include <cstdint>
+#include <stddef.h> // for size_t on some linuxes it seems
 
 namespace scxt::dsp
 {
@@ -47,6 +50,20 @@ struct SincTable
 };
 
 extern SincTable sincTable;
+
+struct DbTable
+{
+    static constexpr size_t nPoints{512};
+    static_assert(!(nPoints & (nPoints - 1)));
+
+    void init();
+    float dbToLinear(float db);
+
+  private:
+    float table_dB[nPoints];
+};
+
+extern DbTable dbTable;
 } // namespace scxt::dsp
 
 #endif // __SCXT_DSP_SINC_TABLES_H
