@@ -39,7 +39,7 @@ namespace scxt::ui
 
 void SCXTEditor::Tooltip::paint(juce::Graphics &g)
 {
-    g.setColour(juce::Colours::black.withAlpha(0.25f));
+    g.setColour(juce::Colours::black.withAlpha(0.60f));
     g.fillRect(getLocalBounds());
     g.setColour(juce::Colour(0xFF, 0x90, 0x00));
     g.drawRect(getLocalBounds(), 2);

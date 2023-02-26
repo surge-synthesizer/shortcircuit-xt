@@ -46,12 +46,12 @@ MicroGate::MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
     // TODO What are the actual units here for HOLD?
     setStr(ctrllabel[0], "hold");
     ctrlmode_desc[0] = datamodel::ControlDescription{datamodel::ControlDescription::FLOAT,
-                                                     datamodel::ControlDescription::LINEAR,
-                                                     -10,
+                                                     datamodel::ControlDescription::TWO_TO_THE_X,
+                                                     -8,
                                                      0.1,
-                                                     10,
+                                                     5,
                                                      -3,
-                                                     "tbd"};
+                                                     "s"};
     setStr(ctrllabel[1], "loop");
     ctrlmode_desc[1] = datamodel::cdPercent;
     setStr(ctrllabel[2], "threshold");
@@ -63,10 +63,14 @@ MicroGate::MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
 void MicroGate::init()
 {
     assert(memoryPool);
-    auto data = memoryPool->checkoutBlock(microgateBlockSize);
-    memset(data, 0, microgateBlockSize);
-    loopbuffer[0] = (float *)data;
-    loopbuffer[1] = (float *)(data + microgateBufferSize * sizeof(float));
+    assert(!loopbuffer[0]); // in theory we should never double init the same instance
+    if (!loopbuffer[0])
+    {
+        auto data = memoryPool->checkoutBlock(microgateBlockSize);
+        memset(data, 0, microgateBlockSize);
+        loopbuffer[0] = (float *)data;
+        loopbuffer[1] = (float *)(data + microgateBufferSize * sizeof(float));
+    }
 }
 
 void MicroGate::init_params()
