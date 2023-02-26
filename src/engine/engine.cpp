@@ -28,7 +28,7 @@
 #include "engine.h"
 #include "part.h"
 #include "voice/voice.h"
-#include "dsp/sinc_table.h"
+#include "dsp/data_tables.h"
 #include "tuning/equal.h"
 #include "messaging/messaging.h"
 #include "messaging/audio/audio_messages.h"
@@ -44,6 +44,7 @@ Engine::Engine()
 
     messageController = std::make_unique<messaging::MessageController>(*this);
     dsp::sincTable.init();
+    dsp::dbTable.init();
     tuning::equalTuning.init();
 
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);

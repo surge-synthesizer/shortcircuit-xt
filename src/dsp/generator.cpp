@@ -29,7 +29,7 @@
 #include "infrastructure/sse_include.h"
 
 #include "resampling.h"
-#include "sinc_table.h"
+#include "data_tables.h"
 #include <iostream>
 #include <algorithm>
 

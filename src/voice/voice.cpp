@@ -236,19 +236,11 @@ void Voice::initializeProcessors()
         auto fp = modMatrix.getValuePtr(modulation::vmd_Processor_FP1, i);
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
-        if (dsp::processor::canInPlaceNew(processorType[i]))
-        {
-            processors[i] = dsp::processor::spawnProcessorInPlace(
-                processorType[i], zone->getEngine()->getMemoryPool().get(),
-                processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
-                processorIntParams[i]);
-        }
-        else
-        {
-            processors[i] = dsp::processor::spawnProcessorAllocating(processorType[i], fp,
-                                                                     processorIntParams[i], false);
-        }
-
+        processors[i] = dsp::processor::spawnProcessorInPlace(
+            processorType[i], zone->getEngine()->getMemoryPool().get(),
+            processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
+            processorIntParams[i]);
+    
         if (processors[i])
         {
             processors[i]->setSampleRate(sampleRate);

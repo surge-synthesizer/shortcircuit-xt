@@ -1,15 +1,11 @@
 # Baconpauls next sprints
 
 
-Week of Feb 21:
-- Then: Processor views
-  - microgate db_to_linear hack
-  - microgate hold units
-  - Bipolar doesn't mean centered at 0! Fix the knob render
-- Implement the memory pool more intelligently
-- Remove a processor-allocate-in-place option and instead static assert size
-- Then: Mod Matrix expand some more
+Week of Feb 26:
+- Then: Mod Matrix on Display with EG2
+- Then: LFOs
 - Then: Add a zone by sample revisit especially filters borked on add
+- Then: Implement the memory pool more intelligently
 - Voice Design for real and zone level modulators
   - Lifecycle with GATED FINISHED CLEANUP etc
   - AEG/FEG
@@ -19,10 +15,11 @@ Week of Feb 21:
   - Playmodes, Loops and start/stop points
   - Mod Targets
 - A VU Meter
-- Restore State Threading
+- microgate hold units
 - Hover Gestures in Named Panel
 - Vembertech lipol_ps then its gone
 - Generator keeps runnign after AEG is complete; don't
+- AEG doesn't keep running after Generator is done. Do.
 - Zone Variants and the zone-sample-wrapper data object
 - Big Punt: Multi-Select
 - Generator play modes (onRelease needs a change)
@@ -69,7 +66,14 @@ Start with trying to port microgate which leads to some fun changes like
 implementing a memory pool, writing a bunch of documentation, and changing
 a few apis. Most importantly, all processors are stereo in stereo out by default
 and the complexity of maintaining an infrequently used mono side is gone. But
-buy the afternoon have the microgate ready for merge 1.
+by the afternoon have the microgate ready for merge 1. Fix up some straggler stuff
+in the evening, including knbos have their 0 point be 0 in bipolar mode
+
+Then demonstrate the custom panel design. Neat! Works well for SuperSVF.
+
+Finally the MemoryPool makes it clear we can do inplace new for the raw processor
+in all cases, so remove the support for the allocating version, make a static assert
+if your object becomes too big, and just set the course for inplace new only.
 
 ## Day 21 (2023-02-24)
 

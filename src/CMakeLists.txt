@@ -4,7 +4,7 @@ add_library(${PROJECT_NAME} STATIC
         datamodel/parameter.cpp
 
         dsp/generator.cpp
-        dsp/sinc_table.cpp
+        dsp/data_tables.cpp
         dsp/processor/processor.cpp
 
         dsp/processor/processor_supersvf.cpp

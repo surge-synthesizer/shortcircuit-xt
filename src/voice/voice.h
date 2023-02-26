@@ -29,7 +29,7 @@
 #define SCXT_SRC_VOICE_VOICE_H
 
 #include "engine/zone.h"
-#include "dsp/sinc_table.h"
+#include "dsp/data_tables.h"
 #include "dsp/generator.h"
 #include "dsp/processor/processor.h"
 
