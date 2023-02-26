@@ -30,6 +30,8 @@
 
 #include "resampling.h"
 #include <cctype>
+#include <cstdint>
+#include <stddef.h> // for size_t on some linuxes it seems
 
 namespace scxt::dsp
 {
