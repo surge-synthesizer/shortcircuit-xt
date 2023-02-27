@@ -90,7 +90,7 @@ void SCXTEditor::onProcessorDataAndMetadata(
 
 void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &d)
 {
-    const auto &[active, sinf, dinf] = d;
+    const auto &[active, sinf, dinf, cinf] = d;
     multiScreen->mod->setActive(active);
     if (active)
     {

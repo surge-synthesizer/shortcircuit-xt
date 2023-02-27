@@ -88,6 +88,9 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
                     messaging::client::ProcessorMetadataAndData::s2c_payload_t{
                         which, true, z->processorDescription[which], z->processorStorage[which]},
                     *(engine.getMessageController()));
+                serializationSendToClient(messaging::client::s2c_update_zone_voice_matrix_metadata,
+                                          modulation::getVoiceModMatrixMetadata(*z),
+                                          *(engine.getMessageController()));
             });
     }
 }

@@ -74,6 +74,8 @@ void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
     {
         sourcePointers[vms_LFO1 + i] = &(v->lfos[i].output);
     }
+    sourcePointers[vms_AEG] = &(v->aeg.output);
+    sourcePointers[vms_EG2] = &(v->eg2.output);
 }
 
 void VoiceModMatrix::initializeModulationValues()
@@ -86,7 +88,11 @@ void VoiceModMatrix::process()
     memcpy(modulatedValues, baseValues, sizeof(modulatedValues));
     for (const auto &r : routingTable)
     {
+        if (!r.active)
+            continue;
         if (r.dst.type == vmd_none || r.src == vms_none)
+            continue;
+        if (!sourcePointers[r.src])
             continue;
         modulatedValues[r.dst] += (*(sourcePointers[r.src])) * r.depth;
     }
@@ -196,6 +202,33 @@ std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const 
     return vms_none;
 }
 
+std::string getVoiceModMatrixCurveStreamingName(const VoiceModMatrixCurve &dest)
+{
+    switch (dest)
+    {
+    case vmc_none:
+        return "vmc_none";
+    case vmc_cube:
+        return "vmc_cube";
+
+    case numVoiceMatrixCurves:
+        throw std::logic_error("Don't call with numVoiceMatrixCurves");
+    }
+
+    throw std::logic_error("Mysterious unhandled condition");
+}
+std::optional<VoiceModMatrixCurve> fromVoiceModMatrixCurveStreamingName(const std::string &s)
+{
+    for (int i = vmc_none; i < numVoiceMatrixCurves; ++i)
+    {
+        if (getVoiceModMatrixCurveStreamingName((VoiceModMatrixCurve)i) == s)
+        {
+            return ((VoiceModMatrixCurve)i);
+        }
+    }
+    return vmc_none;
+}
+
 std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
 {
     switch (dest)
@@ -221,8 +254,56 @@ std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
     throw std::logic_error("Mysterious unhandled condition");
 }
 
-std::string getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
-                                             const engine::Zone &z)
+std::string getVoiceModMatrixCurveDisplayName(const VoiceModMatrixCurve &dest)
+{
+    switch (dest)
+    {
+    case vmc_none:
+        return "None";
+    case vmc_cube:
+        return "Cube";
+
+    case numVoiceMatrixCurves:
+        throw std::logic_error("Don't call with numVoiceMatrixCurves");
+    }
+
+    throw std::logic_error("Mysterious unhandled condition");
+}
+
+int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &t)
+{
+    switch (t)
+    {
+    case vmd_LFO_Rate:
+        return engine::lfosPerZone;
+    case vmd_Processor_Mix:
+    case vmd_Processor_FP1:
+    case vmd_Processor_FP2:
+    case vmd_Processor_FP3:
+    case vmd_Processor_FP4:
+    case vmd_Processor_FP5:
+    case vmd_Processor_FP6:
+    case vmd_Processor_FP7:
+    case vmd_Processor_FP8:
+    case vmd_Processor_FP9:
+        return engine::processorsPerZone;
+    case vmd_eg_A:
+    case vmd_eg_H:
+    case vmd_eg_D:
+    case vmd_eg_S:
+    case vmd_eg_R:
+    case vmd_eg_AShape:
+    case vmd_eg_DShape:
+    case vmd_eg_RShape:
+        return 2; // aeg eg2
+
+    default:
+        return 1;
+    }
+}
+std::optional<std::string>
+getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                 const engine::Zone &z)
 {
     // TODO: This is obviously .... wrong
     /*
@@ -230,6 +311,10 @@ std::string getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddr
      */
     const auto &[vmd, idx] = dest;
 
+    if (vmd == vmd_none)
+    {
+        return "Off";
+    }
     if (vmd >= vmd_LFO_Rate && vmd <= vmd_LFO_Rate)
     {
         return "LFO " + std::to_string(idx + 1) + " Rate";
@@ -241,13 +326,18 @@ std::string getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddr
         if (z.processorStorage[idx].type == dsp::processor::proct_none)
         {
             // this should in theory get filtered out of the user choices
-            return pfx + " --";
+            return {};
         }
         pfx += z.processorDescription[idx].typeDisplayName + " ";
         if (vmd == vmd_Processor_Mix)
             return pfx + "mix";
         else
         {
+            auto ct = (int)(vmd - vmd_Processor_FP1);
+            if (z.processorDescription[idx].floatControlDescriptions[ct].type ==
+                datamodel::ControlDescription::NONE)
+                return {};
+
             return pfx +
                    z.processorDescription[idx].floatControlNames[(int)(vmd - vmd_Processor_FP1)];
         }
@@ -292,9 +382,27 @@ std::string getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddr
     return fmt::format("ERR {} {}", vmd, idx);
 }
 
-voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &)
+voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &z)
 {
-    return {};
+    voiceModMatrixDestinationNames_t res;
+    // TODO code this way better - index on the 'outside' sorts but is inefficient
+    int maxIndex = std::max({2, engine::processorsPerZone, engine::lfosPerZone});
+    for (int idx = 0; idx < maxIndex; ++idx)
+    {
+        for (int i = vmd_none; i < numVoiceMatrixDestinations; ++i)
+        {
+            auto vd = (VoiceModMatrixDestinationType)i;
+            auto ic = getVoiceModMatrixDestIndexCount(vd);
+            if (idx < ic)
+            {
+                auto addr = VoiceModMatrixDestinationAddress{vd, (size_t)idx};
+                auto dn = getVoiceModMatrixDestDisplayName(addr, z);
+                if (dn.has_value())
+                    res.emplace_back(addr, *dn);
+            }
+        }
+    }
+    return res;
 }
 voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z)
 {
@@ -307,4 +415,14 @@ voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z)
     return res;
 }
 
+voiceModMatrixCurveNames_t getVoiceModMatrixCurveNames(const engine::Zone &)
+{
+    voiceModMatrixCurveNames_t res;
+    for (int s = (int)vmc_none; s < numVoiceMatrixCurves; ++s)
+    {
+        auto vms = (VoiceModMatrixCurve)s;
+        res.emplace_back(vms, getVoiceModMatrixCurveDisplayName(vms));
+    }
+    return res;
+}
 } // namespace scxt::modulation

@@ -192,8 +192,9 @@ template <> struct scxt_traits<scxt::engine::Zone>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Zone &t)
     {
         auto rtArray = toIndexedArrayIf<Traits>(t.routingTable, [](const auto &r) {
+            // TODO we really don't need this we should just stream the table
             return (r.dst != scxt::modulation::vmd_none || r.src != scxt::modulation::vms_none ||
-                    r.depth != 0);
+                    r.depth != 0 || !r.active || r.curve != scxt::modulation::vmc_none);
         });
 
         v = {{"sampleID", t.sampleID},
