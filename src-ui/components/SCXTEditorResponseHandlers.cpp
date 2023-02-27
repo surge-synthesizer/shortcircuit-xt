@@ -28,6 +28,7 @@
 #include "SCXTEditor.h"
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
+#include "multi/LFOPane.h"
 #include "multi/ModPane.h"
 #include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
@@ -104,5 +105,13 @@ void SCXTEditor::onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routi
     assert(multiScreen->mod->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
     multiScreen->mod->routingTable = t;
     multiScreen->mod->refreshMatrix();
+}
+
+void SCXTEditor::onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &payload)
+{
+    const auto &[active, i, r] = payload;
+    multiScreen->lfo->setActive(i, active);
+    multiScreen->lfo->setLfo(i, r);
+
 }
 } // namespace scxt::ui

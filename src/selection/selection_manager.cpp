@@ -62,6 +62,12 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
                 *(engine.getMessageController()));
         }
 
+        for (int i = 0; i < engine::lfosPerZone; ++i)
+        {
+            serializationSendToClient(cms::s2c_update_zone_individual_lfo,
+                                      cms::indexedLfoUpdate_t{true, i, zp->lfoStorage[i]},
+                                      *(engine.getMessageController()));
+        }
         serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
                                   modulation::getVoiceModMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
