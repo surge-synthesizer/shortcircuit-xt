@@ -49,6 +49,8 @@ enum ClientToSerializationMessagesIds
     c2s_request_zone_mapping,
     c2s_update_zone_mapping,
 
+    c2s_update_zone_routing_row,
+    
     c2s_request_pgz_structure,
 
     c2s_request_single_processor_metadata_and_data,

@@ -65,8 +65,7 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
                                   modulation::getVoiceModMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix,
-                                  zp->routingTable,
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
                                   *(engine.getMessageController()));
     }
     else
@@ -86,9 +85,8 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
                 *(engine.getMessageController()));
         }
         serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
-                                  modulation::voiceModMatrixMetadata_t{false, {}, {}},
+                                  modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
                                   *(engine.getMessageController()));
-
     }
 }
 } // namespace scxt::selection

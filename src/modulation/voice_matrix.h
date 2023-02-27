@@ -106,6 +106,7 @@ static inline size_t destIndex(VoiceModMatrixDestinationType type, size_t index)
 std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationType &dest);
 std::optional<VoiceModMatrixDestinationType>
 fromVoiceModMatrixDestStreamingName(const std::string &s);
+int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &);
 
 // These values are streamed so order matters. Basically "always add at the end" is the answer
 enum VoiceModMatrixSource
@@ -125,22 +126,39 @@ enum VoiceModMatrixSource
 std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest);
 std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s);
 
+enum VoiceModMatrixCurve
+{
+    vmc_none,
+    vmc_cube,
+
+    numVoiceMatrixCurves
+};
+
+std::string getVoiceModMatrixCurveStreamingName(const VoiceModMatrixCurve &);
+std::optional<VoiceModMatrixCurve> fromVoiceModMatrixCurveStreamingName(const std::string &);
+std::string getVoiceModMatrixCurveDisplayName(const VoiceModMatrixCurve &dest);
+
 std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest);
 // Destinations require a zone since we need to interrogate the processors
-std::string getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
-                                             const engine::Zone &z);
+std::optional<std::string>
+getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                 const engine::Zone &z);
 
 typedef std::vector<std::pair<VoiceModMatrixDestinationAddress, std::string>>
     voiceModMatrixDestinationNames_t;
 voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &);
 typedef std::vector<std::pair<VoiceModMatrixSource, std::string>> voiceModMatrixSourceNames_t;
 voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z);
+typedef std::vector<std::pair<VoiceModMatrixCurve, std::string>> voiceModMatrixCurveNames_t;
+voiceModMatrixCurveNames_t getVoiceModMatrixCurveNames(const engine::Zone &z);
 
-typedef std::tuple<bool, voiceModMatrixSourceNames_t, voiceModMatrixDestinationNames_t>
+typedef std::tuple<bool, voiceModMatrixSourceNames_t, voiceModMatrixDestinationNames_t,
+                   voiceModMatrixCurveNames_t>
     voiceModMatrixMetadata_t;
 inline voiceModMatrixMetadata_t getVoiceModMatrixMetadata(const engine::Zone &z)
 {
-    return {true, getVoiceModMatrixSourceNames(z), getVoiceModulationDestinationNames(z)};
+    return {true, getVoiceModMatrixSourceNames(z), getVoiceModulationDestinationNames(z),
+            getVoiceModMatrixCurveNames(z)};
 }
 
 struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
@@ -148,10 +166,11 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
     VoiceModMatrix() { clear(); }
     struct Routing
     {
-        bool active{false};
+        bool active{true};
         VoiceModMatrixSource src{vms_none};
         VoiceModMatrixSource srcVia{vms_none};
         VoiceModMatrixDestinationAddress dst{vmd_none};
+        VoiceModMatrixCurve curve{vmc_none};
         // TODO curves
         float depth{0};
 

@@ -78,21 +78,44 @@ template <> struct scxt_traits<modulation::VoiceModMatrixSource>
             scxt::modulation::vms_none);
     }
 };
+
+template <> struct scxt_traits<modulation::VoiceModMatrixCurve>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const modulation::VoiceModMatrixCurve &t)
+    {
+        auto sn = scxt::modulation::getVoiceModMatrixCurveStreamingName(t);
+        v = {{"vmc_name", sn}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, modulation::VoiceModMatrixCurve &t)
+    {
+        std::string tsn;
+        v.at("vmc_name").to(tsn);
+        t = scxt::modulation::fromVoiceModMatrixCurveStreamingName(tsn).value_or(
+            scxt::modulation::vmc_none);
+    }
+};
+
 template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
 {
     typedef scxt::modulation::VoiceModMatrix::Routing rt_t;
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        v = {{"src", t.src}, {"srcVia", t.srcVia}, {"dst", t.dst}, {"depth", t.depth}};
+        v = {{"active", t.active}, {"src", t.src},     {"srcVia", t.srcVia},
+             {"dst", t.dst},       {"curve", t.curve}, {"depth", t.depth}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
+        findOr(v, "active", true, result.active);
         v.at("src").to(result.src);
         v.at("srcVia").to(result.srcVia);
         v.at("dst").to(result.dst);
+        findOr(v, "curve", modulation::vmc_none, result.curve);
         v.at("depth").to(result.depth);
     }
 };

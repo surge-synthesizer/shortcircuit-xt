@@ -2,10 +2,11 @@
 
 
 Week of Feb 26:
-- Then: Mod Matrix on Display with EG2
+- Then: Mod Matrix on Display with EG2 
 - Then: LFOs
 - Then: Add a zone by sample revisit especially filters borked on add
 - Then: Implement the memory pool more intelligently
+- JSON .at() to findOr almost everywhere and add a stremaing version findIf
 - Voice Design for real and zone level modulators
   - Lifecycle with GATED FINISHED CLEANUP etc
   - AEG/FEG
