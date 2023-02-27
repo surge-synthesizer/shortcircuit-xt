@@ -2,8 +2,8 @@
 
 
 Week of Feb 26:
-- Then: Mod Matrix on Display with EG2 
 - Then: LFOs
+- Then: Mod Matrix Depth
 - Then: Add a zone by sample revisit especially filters borked on add
 - Then: Implement the memory pool more intelligently
 - JSON .at() to findOr almost everywhere and add a stremaing version findIf

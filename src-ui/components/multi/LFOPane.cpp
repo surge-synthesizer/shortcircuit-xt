@@ -31,7 +31,7 @@
 namespace scxt::ui::multi
 {
 
-LFOPane::LFOPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
+LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
     setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
     hasHamburger = true;
@@ -42,7 +42,7 @@ LFOPane::LFOPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasE
 
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
         if (wt)
-            wt->selectedTab(i);
+            wt->tabChanged(i);
     };
 
     label = std::make_unique<juce::Label>("LFO 1", "LFO 1");
@@ -52,11 +52,26 @@ LFOPane::LFOPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasE
     addAndMakeVisible(*label);
 }
 
-void LFOPane::resized() { label->setBounds(getContentArea()); }
+void LfoPane::resized() { label->setBounds(getContentArea()); }
 
-void LFOPane::selectedTab(int i)
+void LfoPane::tabChanged(int i)
 {
-    label->setText("LFO " + std::to_string(i + 1), juce::dontSendNotification);
+    label->setText("LFO " + std::to_string(i + 1) + " " + std::to_string(lfoData[i].rate),
+                   juce::dontSendNotification);
+}
+
+void LfoPane::setActive(int i, bool b) { setEnabled(b); }
+
+void LfoPane::setLfo(int index, const modulation::modulators::StepLFOStorage &lfo)
+{
+    lfoData[index] = lfo;
+    if (!isEnabled())
+        return;
+
+    if (selectedTab == index)
+    {
+        std::cout << "Rebuilding for index " << index << std::endl;
+    }
 }
 
 } // namespace scxt::ui::multi

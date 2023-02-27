@@ -93,7 +93,7 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
         eg[i] = std::make_unique<multi::AdsrPane>(editor, i);
         addAndMakeVisible(*(eg[i]));
     }
-    lfo = std::make_unique<multi::LFOPane>(editor);
+    lfo = std::make_unique<multi::LfoPane>(editor);
     addAndMakeVisible(*lfo);
 }
 

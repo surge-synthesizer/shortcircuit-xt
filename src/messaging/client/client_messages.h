@@ -30,6 +30,7 @@
 
 #include "enginestatus_messages.h"
 #include "structure_messages.h"
+#include "modulation_messages.h"
 #include "zone_messages.h"
 #include "selection_messages.h"
 #include "processor_messages.h"

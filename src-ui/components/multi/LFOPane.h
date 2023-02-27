@@ -30,20 +30,25 @@
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
+#include "modulation/modulators/steplfo.h"
+#include "engine/zone.h"
 
 namespace scxt::ui::multi
 {
-struct LFOPane : sst::jucegui::components::NamedPanel, HasEditor
+struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    LFOPane(SCXTEditor *);
+    LfoPane(SCXTEditor *);
 
-    void selectedTab(int i);
+    void tabChanged(int i);
 
     void resized() override;
 
     std::unique_ptr<juce::Label> label;
+    void setActive(int index, bool active);
+    void setLfo(int index, const modulation::modulators::StepLFOStorage &);
 
+    std::array<modulation::modulators::StepLFOStorage, engine::lfosPerZone> lfoData;
 };
-} // namespace scxt::ui::components
+} // namespace scxt::ui::multi
 
 #endif // SHORTCIRCUIT_LFOPANE_H

@@ -41,6 +41,7 @@ struct PartGroupSidebar;
 struct MappingPane;
 struct ModPane;
 struct ProcessorPane;
+struct LfoPane;
 } // namespace multi
 
 struct MultiScreen : juce::Component, HasEditor
@@ -52,7 +53,8 @@ struct MultiScreen : juce::Component, HasEditor
     static constexpr int envHeight = 160, modHeight = 160, fxHeight = 176;
     static constexpr int pad = 0;
 
-    std::unique_ptr<juce::Component> browser, mix, lfo;
+    std::unique_ptr<juce::Component> browser, mix;
+    std::unique_ptr<multi::LfoPane> lfo;
     std::unique_ptr<multi::MappingPane> sample;
     std::unique_ptr<multi::PartGroupSidebar> parts;
     std::unique_ptr<multi::AdsrPane> eg[2];
