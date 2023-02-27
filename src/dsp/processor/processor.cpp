@@ -56,7 +56,7 @@ template <size_t I> bool implIsProcessorImplemented()
     else
     {
         static_assert(sizeof(typename ProcessorImplementor<(ProcessorType)I>::T) <
-            processorMemoryBufferSize);
+                      processorMemoryBufferSize);
 
         return !std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value;
     }
@@ -283,11 +283,18 @@ ProcessorControlDescription Processor::getControlDescription()
     res.type = getType();
     res.typeDisplayName = getName();
     res.numFloatParams = getFloatParameterCount();
+
     for (int i = 0; i < res.numFloatParams; ++i)
     {
         res.floatControlNames[i] = ctrllabel[i];
         res.floatControlDescriptions[i] = ctrlmode_desc[i];
     }
+    for (int i = res.numFloatParams; i < maxProcessorFloatParams; ++i)
+    {
+        res.floatControlNames[i] = "-";
+        res.floatControlDescriptions[i] = {};
+    }
+
     res.numIntParams = getIntParameterCount();
     for (int i = 0; i < res.numIntParams; ++i)
     {
@@ -309,6 +316,11 @@ ProcessorControlDescription Processor::getControlDescription()
             cd.choices[j][31] = 0;
         }
         res.intControlDescriptions[i] = cd;
+    }
+    for (int i = res.numIntParams; i < maxProcessorIntParams; ++i)
+    {
+        res.intControlNames[i] = "-";
+        res.intControlDescriptions[i] = {};
     }
     return res;
 }

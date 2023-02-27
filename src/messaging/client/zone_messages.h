@@ -131,6 +131,11 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
 CLIENT_TO_SERIAL(MappingSelectedZoneUpdateRequest, c2s_update_zone_mapping,
                  engine::Zone::ZoneMappingData, mappingSelectedZoneUpdate(payload, engine, cont));
 
+SERIAL_TO_CLIENT(UpdateZoneVoiceMatrixMetadata, s2c_update_zone_voice_matrix_metadata,
+                 modulation::voiceModMatrixMetadata_t, onZoneVoiceMatrixMetadata);
+
+SERIAL_TO_CLIENT(UpdateZoneVoiceMatrix, s2c_update_zone_voice_matrix,
+                 modulation::VoiceModMatrix::routingTable_t, onZoneVoiceMatrix);
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H

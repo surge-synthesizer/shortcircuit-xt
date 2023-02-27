@@ -59,24 +59,40 @@ template <> struct scxt_traits<modulation::VoiceModMatrixDestinationAddress>
         v.at("index").to(t.index);
     }
 };
+
+template <> struct scxt_traits<modulation::VoiceModMatrixSource>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const modulation::VoiceModMatrixSource &t)
+    {
+        auto sn = scxt::modulation::getVoiceModMatrixSourceStreamingName(t);
+        v = {{"vms_name", sn}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, modulation::VoiceModMatrixSource &t)
+    {
+        std::string tsn;
+        v.at("vms_name").to(tsn);
+        t = scxt::modulation::fromVoiceModMatrixSourceStreamingName(tsn).value_or(
+            scxt::modulation::vms_none);
+    }
+};
 template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
 {
     typedef scxt::modulation::VoiceModMatrix::Routing rt_t;
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        auto sn = scxt::modulation::getVoiceModMatrixSourceStreamingName(t.src);
-        v = {{"src", sn}, {"dst", t.dst}, {"depth", t.depth}};
+        v = {{"src", t.src}, {"srcVia", t.srcVia}, {"dst", t.dst}, {"depth", t.depth}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
-        const auto &object = v.get_object();
-        auto ss = v.at("src").template as<std::string>();
-        result.src = scxt::modulation::fromVoiceModMatrixSourceStreamingName(ss).value_or(
-            scxt::modulation::vms_none);
-        v.at("dest").to(result.dst);
+        v.at("src").to(result.src);
+        v.at("srcVia").to(result.srcVia);
+        v.at("dst").to(result.dst);
         v.at("depth").to(result.depth);
     }
 };

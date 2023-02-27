@@ -28,6 +28,7 @@
 #include "SCXTEditor.h"
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
+#include "multi/ModPane.h"
 #include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
 #include "HeaderRegion.h"
@@ -82,8 +83,26 @@ void SCXTEditor::onProcessorDataAndMetadata(
 {
     const auto &[which, enabled, control, storage] = d;
 
-    assert(which >=0 && which < MultiScreen::numProcessorDisplays);
+    assert(which >= 0 && which < MultiScreen::numProcessorDisplays);
     multiScreen->processors[which]->setEnabled(enabled);
     multiScreen->processors[which]->setProcessorControlDescriptionAndStorage(control, storage);
+}
+
+void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &d)
+{
+    const auto &[active, sinf, dinf] = d;
+    multiScreen->mod->setActive(active);
+    if (active)
+    {
+        multiScreen->mod->matrixMetadata = d;
+        multiScreen->mod->rebuildMatrix();
+    }
+}
+
+void SCXTEditor::onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &t)
+{
+    assert(multiScreen->mod->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
+    multiScreen->mod->routingTable = t;
+    multiScreen->mod->refreshMatrix();
 }
 } // namespace scxt::ui

@@ -14,7 +14,12 @@ Week of Feb 26:
   - Pitch, pitch bend, etc...
   - Playmodes, Loops and start/stop points
   - Mod Targets
+  - Stereo: So the thing I want is to have processors advertise if 
+    they can accept mono in, if they can produce mono out from mono in, 
+    and if stereo is different from dual mono and also if you consume 
+    or ignore your input
 - A VU Meter
+- Runtime Startup Constraint Checks like streaming names are unique
 - microgate hold units
 - Hover Gestures in Named Panel
 - Vembertech lipol_ps then its gone
@@ -59,6 +64,14 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 23 (2023-02-26)
+
+Start cracking on the mod matrix in earnest. Get quite a bit started but nothing
+done, with messages sending metadata and the routing matrix over, the start of
+display names (and a lot of TODOs about an ugly structure) and a UI which at least
+puts things in place and swaps around. Should be able to get some crude edits going
+soon from here, but definitely a "progress on the path" not a "stopping point" day.
 
 ## Day 22 (2023-02-25)
 

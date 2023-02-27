@@ -30,16 +30,30 @@
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
+#include "modulation/voice_matrix.h"
 
 namespace scxt::ui::multi
 {
+struct ModRow;
+
 struct ModPane : sst::jucegui::components::NamedPanel, HasEditor
 {
+    static constexpr int numRowsOnScreen{6};
     ModPane(SCXTEditor *e);
+    ~ModPane();
 
     void resized() override;
 
-    std::unique_ptr<juce::Label> label;
+    void rebuildMatrix(); // entirely new components
+    void refreshMatrix(); // new routing table, no new components
+    void setActive(bool b);
+
+    std::array<std::unique_ptr<ModRow>, numRowsOnScreen> rows;
+
+    scxt::modulation::voiceModMatrixMetadata_t matrixMetadata;
+    scxt::modulation::VoiceModMatrix::routingTable_t routingTable;
+
+    int tabRange{0};
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
