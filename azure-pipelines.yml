@@ -21,9 +21,9 @@ jobs:
           cmakeDebArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           isMac: True
         win:
-          imageName: 'windows-2019'
-          cmakeRelArgs: -A x64 -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl
-          cmakeDebArgs: -A x64 -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl
+          imageName: 'windows-2022'
+          cmakeRelArgs: -A x64 -T ClangCL
+          cmakeDebArgs: -A x64 -T ClangCL
           isWindows: True
         lin:
           imageName: 'ubuntu-20.04'
