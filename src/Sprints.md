@@ -66,6 +66,14 @@ Open Questions and ToDos and Reviews:
 ----------
 Sprint Log I posted on Discord
 
+## Day 24 (2023-02-27)
+
+Get the mod matrix editable, albeit with depth units still screwed
+and curves and the secondary source ignored, and the ui not finished.
+But all the communication and hookup and streaming and engine mod
+and zone selection works. Then start on making LFO do the same but
+end day early since we have company visiting for a bit!
+
 ## Day 23 (2023-02-26)
 
 Start cracking on the mod matrix in earnest. Get quite a bit started but nothing

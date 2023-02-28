@@ -22,8 +22,8 @@ jobs:
           isMac: True
         win:
           imageName: 'windows-2019'
-          cmakeRelArgs: -A x64
-          cmakeDebArgs: -A x64
+          cmakeRelArgs: -A x64 -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl
+          cmakeDebArgs: -A x64 -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl
           isWindows: True
         lin:
           imageName: 'ubuntu-20.04'
