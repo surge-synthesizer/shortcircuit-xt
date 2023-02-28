@@ -237,7 +237,6 @@ template <> struct scxt_traits<scxt::engine::KeyboardRange>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::KeyboardRange &r)
     {
-        const auto &object = v.get_object();
         v.at("keyStart").to(r.keyStart);
         v.at("keyEnd").to(r.keyEnd);
         v.at("fadeStart").to(r.fadeStart);
@@ -259,7 +258,6 @@ template <> struct scxt_traits<scxt::engine::VelocityRange>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::VelocityRange &r)
     {
-        const auto &object = v.get_object();
         v.at("velStart").to(r.velStart);
         v.at("velEnd").to(r.velEnd);
         v.at("fadeStart").to(r.fadeStart);
