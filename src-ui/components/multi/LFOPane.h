@@ -29,7 +29,13 @@
 #define SHORTCIRCUIT_LFOPANE_H
 
 #include "sst/jucegui/components/NamedPanel.h"
+#include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/Label.h"
+
 #include "components/HasEditor.h"
+#include "connectors/PayloadDataAttachment.h"
 #include "modulation/modulators/steplfo.h"
 #include "engine/zone.h"
 
@@ -37,17 +43,38 @@ namespace scxt::ui::multi
 {
 struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 {
+    typedef connectors::PayloadDataAttachment<LfoPane, modulation::modulators::StepLFOStorage>
+        attachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<LfoPane,
+                                                      modulation::modulators::StepLFOStorage>
+        intAttachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<LfoPane,
+                                                     modulation::modulators::StepLFOStorage>
+        boolAttachment_t;
+
     LfoPane(SCXTEditor *);
+    ~LfoPane();
 
     void tabChanged(int i);
 
     void resized() override;
+    void rebuildLfo(); // entirely new components
+    void resetAllComponents();
 
-    std::unique_ptr<juce::Label> label;
     void setActive(int index, bool active);
     void setLfo(int index, const modulation::modulators::StepLFOStorage &);
 
+    std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, tempoSyncB, cycleB;
+    std::unique_ptr<boolAttachment_t> oneshotA, tempoSyncA, cycleA;
+
+    std::unique_ptr<sst::jucegui::components::Knob> rateK, deformK, stepsK;
+    std::unique_ptr<attachment_t> rateA, deformA, stepsA;
+
+
     std::array<modulation::modulators::StepLFOStorage, engine::lfosPerZone> lfoData;
+
+    void pushCurrentLfoUpdate();
+    void pickPresets();
 };
 } // namespace scxt::ui::multi
 

@@ -132,7 +132,7 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
              {"smooth", t.smooth},
              {"shuffle", t.shuffle},
              {"temposync", t.temposync},
-             {"triggermode", t.triggermode},
+             {"triggermode", (int32_t)t.triggermode},
              {"cyclemode", t.cyclemode},
              {"onlyonce", t.onlyonce}};
     }
@@ -147,7 +147,9 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         v.at("smooth").to(result.smooth);
         v.at("shuffle").to(result.shuffle);
         v.at("temposync").to(result.temposync);
-        v.at("triggermode").to(result.triggermode);
+        int32_t tm;
+        v.at("triggermode").to(tm);
+        result.triggermode = (rt_t::TriggerModes)tm;
         v.at("cyclemode").to(result.cyclemode);
         v.at("onlyonce").to(result.onlyonce);
     }
