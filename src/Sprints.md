@@ -4,6 +4,8 @@
 Week of Feb 26:
 - Then: LFOs
 - Then: Mod Matrix Depth
+- Then modulation for a voice should be "done"
+- Comb Filter
 - Then: Add a zone by sample revisit especially filters borked on add
 - Then: Implement the memory pool more intelligently
 - JSON .at() to findOr almost everywhere and add a stremaing version findIf
@@ -75,7 +77,7 @@ flowing UI <-> Serializer <-> engine and was able to select an LFO
 preset and change the rate and assign it in the modulator and hear
 the effect. With a million caveats, like nothing is labeled, the units
 are wrong, etc.... but probably a good starting point for the weekend
-to kind of finish up all of modulation.
+to kind of finish up all of modulation. 
 
 ## Day 24 (2023-02-27)
 
