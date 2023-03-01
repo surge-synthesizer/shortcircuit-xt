@@ -145,7 +145,7 @@ posixImpl *as(FileMapView::Impl *imp) { return reinterpret_cast<posixImpl *>(imp
 
 FileMapView::FileMapView(const fs::path &fname)
 {
-#if WIN32
+#if WINDOWS
     impl = std::make_unique<WinImpl>(fname);
 #else
     impl = std::make_unique<posixImpl>(fname);

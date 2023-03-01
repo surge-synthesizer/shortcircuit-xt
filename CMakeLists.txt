@@ -63,6 +63,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
+
+    if (WIN32)
+        # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
+        # fix that but not today
+        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    endif()
 endif ()
 
 include(cmake/compiler-and-git.cmake)
