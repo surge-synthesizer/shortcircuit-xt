@@ -108,8 +108,8 @@ void LfoPane::rebuildLfo()
     if (!isEnabled())
         return;
 
-    auto update = [this]() {
-        return [w = juce::Component::SafePointer(this)](const auto &a) {
+    auto update = [r = juce::Component::SafePointer(this)]() {
+        return [w = juce::Component::SafePointer(r)](const auto &a) {
             if (w)
                 w->pushCurrentLfoUpdate();
         };
