@@ -27,6 +27,8 @@
 
 #include "LFOPane.h"
 #include "connectors/SCXTStyleSheetCreator.h"
+#include "messaging/messaging.h"
+#include "components/SCXTEditor.h"
 
 namespace scxt::ui::multi
 {
@@ -44,34 +46,150 @@ LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasE
         if (wt)
             wt->tabChanged(i);
     };
-
-    label = std::make_unique<juce::Label>("LFO 1", "LFO 1");
-    label->setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-    label->setColour(juce::Label::textColourId, juce::Colour(255, 220, 0));
-    label->setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(*label);
+    onHamburger = [wt = juce::Component::SafePointer(this)] {
+        if (wt)
+            wt->pickPresets();
+    };
+    setEnabled(false);
 }
 
-void LfoPane::resized() { label->setBounds(getContentArea()); }
+LfoPane::~LfoPane()
+{
+    removeAllChildren();
+    resetAllComponents();
+}
+
+void LfoPane::resized()
+{
+    removeAllChildren();
+    resetAllComponents();
+    if (isEnabled() && getWidth() > 10 && isEnabled())
+        rebuildLfo();
+}
 
 void LfoPane::tabChanged(int i)
 {
-    label->setText("LFO " + std::to_string(i + 1) + " " + std::to_string(lfoData[i].rate),
-                   juce::dontSendNotification);
+    removeAllChildren();
+    resetAllComponents();
+    rebuildLfo();
 }
 
-void LfoPane::setActive(int i, bool b) { setEnabled(b); }
+void LfoPane::setActive(int i, bool b)
+{
+    setEnabled(b);
+    if (!b)
+    {
+        removeAllChildren();
+        resetAllComponents();
+    }
+}
 
 void LfoPane::setLfo(int index, const modulation::modulators::StepLFOStorage &lfo)
 {
     lfoData[index] = lfo;
+
+    if (index != selectedTab)
+        return;
+
+    removeAllChildren();
+    resetAllComponents();
+
     if (!isEnabled())
         return;
 
     if (selectedTab == index)
     {
-        std::cout << "Rebuilding for index " << index << std::endl;
+        rebuildLfo();
     }
+}
+
+void LfoPane::rebuildLfo()
+{
+    if (!isEnabled())
+        return;
+
+    auto update = [this]() {
+        return [w = juce::Component::SafePointer(this)](const auto &a) {
+            if (w)
+                w->pushCurrentLfoUpdate();
+        };
+    };
+    oneshotA = std::make_unique<boolAttachment_t>(
+        this, "OneShot", update(), [](const auto &pl) { return pl.onlyonce; },
+        lfoData[selectedTab].onlyonce);
+    tempoSyncA = std::make_unique<boolAttachment_t>(
+        this, "TempoSync", update(), [](const auto &pl) { return pl.temposync; },
+        lfoData[selectedTab].temposync);
+    cycleA = std::make_unique<boolAttachment_t>(
+        this, "OneShot", update(), [](const auto &pl) { return pl.cyclemode; },
+        lfoData[selectedTab].cyclemode);
+
+    rateA = std::make_unique<attachment_t>(
+        this, datamodel::cdTimeUnscaledThirtyTwo, "Rate", update(),
+        [](const auto &pl) { return pl.rate; }, lfoData[selectedTab].rate);
+    deformA = std::make_unique<attachment_t>(
+        this, datamodel::cdPercentBipolar, "Deform", update(),
+        [](const auto &pl) { return pl.smooth; }, lfoData[selectedTab].smooth);
+
+    static constexpr int columnOneWidth{60};
+    auto r = getContentArea();
+    auto col = r.withWidth(columnOneWidth).withHeight(20);
+
+    oneshotB = std::make_unique<sst::jucegui::components::ToggleButton>();
+    oneshotB->setSource(oneshotA.get());
+    oneshotB->setLabel("OneShot");
+    oneshotB->setBounds(col);
+    addAndMakeVisible(*oneshotB);
+
+    auto b5 = r.withTop(r.getBottom() - 50).withLeft(r.getWidth() - 50);
+    rateK = std::make_unique<sst::jucegui::components::Knob>();
+    rateK->setSource(rateA.get());
+    rateK->setBounds(b5.translated(-2 * 50, 0));
+    addAndMakeVisible(*rateK);
+
+    deformK = std::make_unique<sst::jucegui::components::Knob>();
+    deformK->setSource(deformA.get());
+    deformK->setBounds(b5.translated(-50, 0));
+    addAndMakeVisible(*deformK);
+}
+
+namespace cmsg = scxt::messaging::client;
+
+void LfoPane::pushCurrentLfoUpdate()
+{
+    cmsg::clientSendToSerialization(
+        cmsg::IndexedLfoUpdated({true, selectedTab, lfoData[selectedTab]}), editor->msgCont);
+}
+
+void LfoPane::resetAllComponents()
+{
+    oneshotB.reset();
+    tempoSyncB.reset();
+    cycleB.reset();
+    rateK.reset();
+    deformK.reset();
+    stepsK.reset();
+}
+
+void LfoPane::pickPresets()
+{
+    // TODO: THIS IS ALL GARBAGE CODE FIXME
+    auto m = juce::PopupMenu();
+    m.addSectionHeader("Presets (SUPER ROUGH)");
+    m.addSeparator();
+    for (int p = modulation::modulators::LFOPresets::lp_clear;
+         p < modulation::modulators::LFOPresets::n_lfopresets; ++p)
+    {
+        auto lp = (modulation::modulators::LFOPresets)p;
+        m.addItem("Preset " + std::to_string(p), [wt = juce::Component::SafePointer(this), lp]() {
+            if (!wt)
+                return;
+            auto &ld = wt->lfoData[wt->selectedTab];
+            modulation::modulators::load_lfo_preset(lp, &ld);
+            wt->pushCurrentLfoUpdate();
+        });
+    }
+    m.showMenuAsync(juce::PopupMenu::Options());
 }
 
 } // namespace scxt::ui::multi

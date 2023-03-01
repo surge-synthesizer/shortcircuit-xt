@@ -66,6 +66,17 @@ Open Questions and ToDos and Reviews:
 ----------
 Sprint Log I posted on Discord
 
+## Day 25 (2023-03-01)
+
+A busy day with not much time, but did two things. First I got
+clang building as a compiler option on windows in CI and turned
+it on as default for now. Second I got all the LFO data and messages
+flowing UI <-> Serializer <-> engine and was able to select an LFO
+preset and change the rate and assign it in the modulator and hear
+the effect. With a million caveats, like nothing is labeled, the units
+are wrong, etc.... but probably a good starting point for the weekend
+to kind of finish up all of modulation.
+
 ## Day 24 (2023-02-27)
 
 Get the mod matrix editable, albeit with depth units still screwed

@@ -24,11 +24,15 @@
  * All source for ShortcircuitXT is available at
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
+
 #ifndef SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
 #define SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
+
 #include "datamodel/timedata.h"
 #include "utils.h"
 #include <array>
+#include <vector>
+#include <utility>
 
 namespace scxt::modulation::modulators
 {
@@ -44,8 +48,15 @@ struct StepLFOStorage
     float shuffle{0.f};
     bool temposync{false};
 
-    // TODO make this an enum
-    int triggermode{0}; // 0 = voice, 1 = freerun/songsync, 2 = random
+    // These enum values are streamed. Do not change them.
+    enum TriggerModes
+    {
+        VOICE = 0,
+        FREERUN = 1,
+        RANDOM = 2,
+        RELEASE = 3
+    } triggermode{VOICE};
+
     bool cyclemode{true};
     bool onlyonce{false};
     // add midi sync capabilities
@@ -76,6 +87,9 @@ enum LFOPresets
     lp_tremolo_sin,
     n_lfopresets,
 };
+
+typedef std::vector<std::pair<LFOPresets, std::string>> lfoPresetsNames_t;
+inline lfoPresetsNames_t getLfoPresetsWithNames() { return {}; }
 
 void load_lfo_preset(LFOPresets preset, StepLFOStorage *settings);
 float lfo_ipol(float *step_history, float phase, float smooth, int odd);

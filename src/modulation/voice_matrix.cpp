@@ -53,6 +53,11 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
                sizeof(float) * dsp::processor::maxProcessorFloatParams);
     }
 
+    for (int i=0; i<engine::lfosPerZone; ++i)
+    {
+        baseValues[destIndex(vmd_LFO_Rate, i)] = z->lfoStorage[i].rate;
+    }
+
     // TODO : Shapes
     baseValues[destIndex(vmd_eg_A, 0)] = z->aegStorage.a;
     baseValues[destIndex(vmd_eg_H, 0)] = z->aegStorage.h;

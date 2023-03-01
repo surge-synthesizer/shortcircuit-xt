@@ -78,6 +78,8 @@ static constexpr ControlDescription cdPercent{
         ControlDescription::FLOAT, ControlDescription::LINEAR, -1, 0.01, 1, 0, "%", 100.0},
     cdMidiNote{ControlDescription::INT, ControlDescription::MIDI_NOTE, 0, 1, 127, 60, "note"},
     cdDecibel{ControlDescription::FLOAT, ControlDescription::DECIBEL, -96, 0.1, 12, 0, "dB"},
+    cdTimeUnscaledThirtyTwo{
+        ControlDescription::FLOAT, ControlDescription::TWO_TO_THE_X, -8, 0.01, 5, 0.0, "seconds"},
     cdEnvelopeThirtyTwo{ControlDescription::FLOAT,
                         ControlDescription::TWO_TO_THE_X,
                         0,

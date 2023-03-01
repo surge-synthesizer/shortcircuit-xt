@@ -1,5 +1,28 @@
 # Shortcircuit XT
 
+# Welcome To The Next Branch
+
+We are reubilding shortcircuit on this 'next' branch. The readme below
+is for the first attempt at this in 2022, after the zeroth attempt in 2021.
+2023 will be different. But that means everything below this section *except*
+the licensing and CLA section is wrong. The code is authoritative
+
+To build
+
+```bash
+git clone -b next <this repo or your fork> scxt-next
+cd scxt-next
+git submodule update --init --recursive
+cmake -Bignore/build -DCMAKE_BUILD_TYPE=Release
+cmake --build ignore/build --config Release --target scxt_plugin_All
+```
+
+there are other targets too. Use your favorite tool or read the cmake file.
+
+Thanks
+
+# This is the prior readme
+
 [![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit-xt?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit-xt/_build/latest?definitionId=2&branchName=main)
 
 What? Shortcircuit is open source? Well yes, but there are big big caveats. Right now we are in the middle of rebuilding
