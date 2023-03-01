@@ -22,8 +22,8 @@ jobs:
           isMac: True
         win:
           imageName: 'windows-2022'
-          cmakeRelArgs: -GNinja -T ClangCL
-          cmakeDebArgs: -GNinja -T ClangCL
+          cmakeRelArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+          cmakeDebArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
         lin:
           imageName: 'ubuntu-20.04'
