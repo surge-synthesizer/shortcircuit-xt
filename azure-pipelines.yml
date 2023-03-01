@@ -20,14 +20,22 @@ jobs:
           cmakeRelArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           cmakeDebArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           isMac: True
+          isRelease: True
         win:
           imageName: 'windows-2022'
           cmakeRelArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           cmakeDebArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
+          isRelease: True
+        win-msvc:
+          imageName: 'windows-2022'
+          cmakeRelArgs: -A x64
+          cmakeDebArgs: -A x64
+          isWindowsMSVC: True
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
+          isRelease: True
           cmakeRelArgs:
           cmakeDebArgs:
 
@@ -109,12 +117,12 @@ jobs:
           echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeRelArgs)
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release $(cmakeRelArgs)
         displayName: Run CMake (Release)
-        condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+        condition: and(variables.isRelease,not(eq(variables['Build.Reason'], 'PullRequest')))
 
       - bash: |
           cmake --build build --config Release --target shortcircuit-installer --parallel 4
         displayName: Build SCXT Installer for Main
-        condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+        condition: and(variables.isRelease,not(eq(variables['Build.Reason'], 'PullRequest')))
         env:
           MAC_INSTALLING_CERT: $(MAC_INSTALLING_CERT)
           MAC_SIGNING_1UPW: $(MAC_SIGNING_1UPW)
