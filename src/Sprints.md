@@ -2,10 +2,17 @@
 
 
 Week of Feb 26:
-- Then: LFOs
 - Then: Mod Matrix Depth
+- Then: LFO Editor Finished
+  - Show the waveform
+  - steps as discrete choice
+  - the multiswitches
+  - the arrows (which we can do locally)
+  - Probably un-screw the streaming of the presets maybe
+- Add some more modulation sources
+  - the midi ones (keytrack, velocity, etc...)
 - Then modulation for a voice should be "done"
-- Comb Filter
+- Comb Filter and Processor Stereo Revisit
 - Then: Add a zone by sample revisit especially filters borked on add
 - Then: Implement the memory pool more intelligently
 - JSON .at() to findOr almost everywhere and add a stremaing version findIf

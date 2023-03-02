@@ -33,6 +33,74 @@
 namespace scxt::ui::multi
 {
 
+// TODO: A Million things of course
+struct LfoDataRender : juce::Component
+{
+    LfoPane *parent{nullptr};
+    LfoDataRender(LfoPane *p) : parent{p} {}
+
+    void paint(juce::Graphics &g) override
+    {
+        g.setColour(juce::Colours::white);
+        g.drawRect(getLocalBounds(), 1);
+        if (!parent)
+            return;
+
+        int sp = modulation::modulators::stepLfoSteps;
+        auto &ls = parent->lfoData[parent->selectedTab];
+        auto w = getWidth() * 1.f / ls.repeat;
+        auto bx = getLocalBounds().toFloat().withWidth(w);
+        auto hm = bx.getHeight() * 0.5;
+        for (int i = 0; i < ls.repeat; ++i)
+        {
+            g.setColour(juce::Colours::darkblue);
+            g.fillRect(bx);
+
+            auto d = ls.data[i];
+
+            if (d > 0)
+            {
+                g.setColour(juce::Colours::white);
+                auto r = bx.withTrimmedTop((1.f - d) * hm).withBottom(hm);
+                g.fillRect(r);
+            }
+            else
+            {
+                g.setColour(juce::Colours::white);
+                auto r = bx.withTop(hm).withTrimmedBottom((1.f + d) * hm);
+                g.fillRect(r);
+            }
+
+            g.setColour(juce::Colours::blue.brighter(0.4));
+            g.drawRect(bx, 1);
+            bx = bx.translated(w, 0);
+        }
+    }
+
+    void handleMouseAt(const juce::Point<float> &f)
+    {
+        if (!getLocalBounds().toFloat().contains(f))
+            return;
+        if (!parent)
+            return;
+
+        int sp = modulation::modulators::stepLfoSteps;
+        auto &ls = parent->lfoData[parent->selectedTab];
+        auto w = getWidth() * 1.f / ls.repeat;
+
+        auto idx = std::clamp((int)std::floor(f.x / w), 0, sp);
+        auto d = ( 1 - f.y / getHeight() ) * 2 - 1;
+        parent->lfoData[parent->selectedTab].data[idx] = d;
+        parent->pushCurrentLfoUpdate();
+    }
+    void mouseDown(const juce::MouseEvent &event) override {
+        handleMouseAt(event.position);
+    }
+    void mouseDrag(const juce::MouseEvent &event) override {
+        handleMouseAt(event.position);
+    }
+};
+
 LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
     setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
@@ -111,7 +179,10 @@ void LfoPane::rebuildLfo()
     auto update = [r = juce::Component::SafePointer(this)]() {
         return [w = juce::Component::SafePointer(r)](const auto &a) {
             if (w)
+            {
                 w->pushCurrentLfoUpdate();
+                w->repaint();
+            }
         };
     };
     oneshotA = std::make_unique<boolAttachment_t>(
@@ -125,10 +196,10 @@ void LfoPane::rebuildLfo()
         lfoData[selectedTab].cyclemode);
 
     rateA = std::make_unique<attachment_t>(
-        this, datamodel::cdTimeUnscaledThirtyTwo, "Rate", update(),
-        [](const auto &pl) { return pl.rate; }, lfoData[selectedTab].rate);
+        this, datamodel::cdModulationRate, "Rate", update(), [](const auto &pl) { return pl.rate; },
+        lfoData[selectedTab].rate);
     deformA = std::make_unique<attachment_t>(
-        this, datamodel::cdPercentBipolar, "Deform", update(),
+        this, datamodel::cdModulationSmoothing, "Deform", update(),
         [](const auto &pl) { return pl.smooth; }, lfoData[selectedTab].smooth);
 
     static constexpr int columnOneWidth{60};
@@ -151,6 +222,10 @@ void LfoPane::rebuildLfo()
     deformK->setSource(deformA.get());
     deformK->setBounds(b5.translated(-50, 0));
     addAndMakeVisible(*deformK);
+
+    lfoDataRender = std::make_unique<LfoDataRender>(this);
+    lfoDataRender->setBounds(r.withTrimmedLeft(columnOneWidth + 5).withTrimmedBottom(55));
+    addAndMakeVisible(*lfoDataRender);
 }
 
 namespace cmsg = scxt::messaging::client;
@@ -159,6 +234,8 @@ void LfoPane::pushCurrentLfoUpdate()
 {
     cmsg::clientSendToSerialization(
         cmsg::IndexedLfoUpdated({true, selectedTab, lfoData[selectedTab]}), editor->msgCont);
+
+    repaint();
 }
 
 void LfoPane::resetAllComponents()
@@ -169,11 +246,13 @@ void LfoPane::resetAllComponents()
     rateK.reset();
     deformK.reset();
     stepsK.reset();
+    lfoDataRender.reset();
 }
 
 void LfoPane::pickPresets()
 {
-    // TODO: THIS IS ALL GARBAGE CODE FIXME
+    // TODO: it is safe to get this data in the UI thread but I should
+    // really send it across as metadata soon!
     auto m = juce::PopupMenu();
     m.addSectionHeader("Presets (SUPER ROUGH)");
     m.addSeparator();
@@ -181,7 +260,8 @@ void LfoPane::pickPresets()
          p < modulation::modulators::LFOPresets::n_lfopresets; ++p)
     {
         auto lp = (modulation::modulators::LFOPresets)p;
-        m.addItem("Preset " + std::to_string(p), [wt = juce::Component::SafePointer(this), lp]() {
+        auto nm = modulation::modulators::getLfoPresetName(lp);
+        m.addItem(nm, [wt = juce::Component::SafePointer(this), lp]() {
             if (!wt)
                 return;
             auto &ld = wt->lfoData[wt->selectedTab];

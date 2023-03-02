@@ -195,6 +195,7 @@ void StepLFO::assign(StepLFOStorage *settings, const float *rate, datamodel::Tim
     {
         // simulate free running lfo by randomizing start phase
         // TODO: Managed RNGS
+        // TODO: Use songpos for freerun properly maybe?
         phase = (float)rand() / (float)RAND_MAX;
         state = rand() % settings->repeat;
     }

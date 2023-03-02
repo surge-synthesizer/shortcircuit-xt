@@ -88,8 +88,40 @@ enum LFOPresets
     n_lfopresets,
 };
 
-typedef std::vector<std::pair<LFOPresets, std::string>> lfoPresetsNames_t;
-inline lfoPresetsNames_t getLfoPresetsWithNames() { return {}; }
+inline std::string getLfoPresetName(LFOPresets p)
+{
+    switch (p)
+    {
+    case lp_custom:
+        return "custom";
+    case lp_clear:
+        return "clear";
+    case lp_sine:
+        return "sine";
+    case lp_tri:
+        return "tri";
+    case lp_square:
+        return "square";
+    case lp_ramp_up:
+        return "ramp_up";
+    case lp_ramp_down:
+        return "ramp_down";
+    case lp_noise:
+        return "noise";
+    case lp_noise_mean3:
+        return "noise_mean3";
+    case lp_noise_mean5:
+        return "noise_mean5";
+    case lp_tremolo_tri:
+        return "tremolo_tri";
+    case lp_tremolo_sin:
+        return "tremolo_sin";
+    case n_lfopresets:
+        throw std::logic_error("Called with n_lfopresets");
+        return "ERROR";
+    }
+    throw std::logic_error("Called with non-switchable preset");
+}
 
 void load_lfo_preset(LFOPresets preset, StepLFOStorage *settings);
 float lfo_ipol(float *step_history, float phase, float smooth, int odd);
