@@ -3,6 +3,7 @@
 
 Week of Feb 26:
 - Then: Mod Matrix Depth
+  - Calculated but how to share with UI? 
 - Then: LFO Editor Finished
   - Show the waveform
   - steps as discrete choice
@@ -74,6 +75,13 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 26 (2023-03-02)
+
+A bit of unexpected time. So get enough of an LFO editor together
+that we can at least screw with values and rates and know what the
+presets are supposed to do. Then add a hook for the proper depth scaling
+for the modulation matrix, and set it up for processors properly.
 
 ## Day 25 (2023-03-01)
 

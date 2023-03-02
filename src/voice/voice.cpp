@@ -56,6 +56,7 @@ void Voice::voiceStarted()
     initializeProcessors();
 
     modMatrix.snapRoutingFromZone(zone);
+    modMatrix.snapDepthScalesFromZone(zone);
     modMatrix.copyBaseValuesFromZone(zone);
     modMatrix.attachSourcesFromVoice(this);
     modMatrix.initializeModulationValues();
