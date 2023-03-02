@@ -42,6 +42,34 @@ void VoiceModMatrix::clear()
 
 void VoiceModMatrix::snapRoutingFromZone(engine::Zone *z) { routingTable = z->routingTable; }
 
+void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
+{
+    // The default is a depth of 1. Override other things
+    for (auto &d : depthScales)
+        d = 1.0;
+
+    /*
+     * LFOs
+     */
+    for (int idx = 0; idx < engine::lfosPerZone; ++idx)
+    {
+        depthScales[destIndex(vmd_LFO_Rate, idx)] =
+            datamodel::cdModulationRate.max - datamodel::cdModulationRate.min;
+    }
+
+    // Processor Depth is by-processor
+    for (int idx = 0; idx < engine::processorsPerZone; ++idx)
+    {
+        for (int q = vmd_Processor_FP1; q <= vmd_Processor_FP9; ++q)
+        {
+            auto di = destIndex((VoiceModMatrixDestinationType)q, idx);
+            auto pd = q - vmd_Processor_FP1;
+            const auto &cd = z->processorDescription[idx].floatControlDescriptions[pd];
+            depthScales[di] = cd.max - cd.min;
+        }
+    }
+}
+
 void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 {
     for (int i = 0; i < engine::processorsPerZone; ++i)
@@ -53,7 +81,7 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
                sizeof(float) * dsp::processor::maxProcessorFloatParams);
     }
 
-    for (int i=0; i<engine::lfosPerZone; ++i)
+    for (int i = 0; i < engine::lfosPerZone; ++i)
     {
         baseValues[destIndex(vmd_LFO_Rate, i)] = z->lfoStorage[i].rate;
     }
@@ -99,7 +127,7 @@ void VoiceModMatrix::process()
             continue;
         if (!sourcePointers[r.src])
             continue;
-        modulatedValues[r.dst] += (*(sourcePointers[r.src])) * r.depth;
+        modulatedValues[r.dst] += (*(sourcePointers[r.src])) * r.depth * depthScales[r.dst];
     }
 }
 

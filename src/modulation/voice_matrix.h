@@ -50,7 +50,8 @@ static constexpr int numVoiceRoutingSlots{32};
 /* These values are not streamed, but the blocks do matter since in the
  * display value conversion we assume that (say) all the EG are together.
  * So if you add stuff here think quickly about how you will make
- * getVoiceModMatrixDestDisplayName work.
+ * getVoiceModMatrixDestDisplayName work and also adjust the switches
+ * and the depth scales if appropriate.
  */
 enum VoiceModMatrixDestinationType
 {
@@ -206,6 +207,7 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
 
     void clear();
     void snapRoutingFromZone(engine::Zone *z);
+    void snapDepthScalesFromZone(engine::Zone *z);
     void copyBaseValuesFromZone(engine::Zone *z);
     void attachSourcesFromVoice(voice::Voice *v);
     void initializeModulationValues();
@@ -213,6 +215,7 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
 
   protected:
     float *sourcePointers[VoiceModMatrixDestinationAddress::maxDestinations];
+    float depthScales[VoiceModMatrixDestinationAddress::maxDestinations];
     float baseValues[VoiceModMatrixDestinationAddress::maxDestinations];
     float modulatedValues[VoiceModMatrixDestinationAddress::maxDestinations];
 };
