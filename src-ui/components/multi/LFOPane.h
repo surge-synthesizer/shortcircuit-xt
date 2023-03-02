@@ -41,6 +41,8 @@
 
 namespace scxt::ui::multi
 {
+struct LfoDataRender;
+
 struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     typedef connectors::PayloadDataAttachment<LfoPane, modulation::modulators::StepLFOStorage>
@@ -70,6 +72,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<sst::jucegui::components::Knob> rateK, deformK, stepsK;
     std::unique_ptr<attachment_t> rateA, deformA, stepsA;
 
+    std::unique_ptr<LfoDataRender> lfoDataRender;
 
     std::array<modulation::modulators::StepLFOStorage, engine::lfosPerZone> lfoData;
 
