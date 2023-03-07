@@ -40,27 +40,25 @@ namespace scxt::ui::multi
 
 namespace cmsg = scxt::messaging::client;
 
+struct MappingDisplay;
 struct MappingZonesAndKeyboard : juce::Component
 {
-    void paint(juce::Graphics &g)
-    {
-        g.setColour(juce::Colours::darkred);
-        g.fillAll();
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-        g.drawText("Zones and Kbd", getLocalBounds(), juce::Justification::centred);
-    }
+    MappingDisplay *display{nullptr};
+    MappingZonesAndKeyboard(MappingDisplay *d) : display(d) {}
+    void paint(juce::Graphics &g);
 };
 
 struct MappingZoneHeader : juce::Component
 {
+    int paints{0};
     void paint(juce::Graphics &g)
     {
         g.setColour(juce::Colours::darkgreen);
         g.fillAll();
         g.setColour(juce::Colours::white);
         g.setFont(juce::Font("Comic Sans MS", 20, juce::Font::plain));
-        g.drawText("Zones Header", getLocalBounds(), juce::Justification::centred);
+        g.drawText("Zones Header " + std::to_string(paints++), getLocalBounds(),
+                   juce::Justification::centred);
     }
 };
 
@@ -94,7 +92,7 @@ struct MappingDisplay : juce::Component, HasEditor
 
     MappingDisplay(SCXTEditor *e) : HasEditor(e)
     {
-        zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>();
+        zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>(this);
         addAndMakeVisible(*zonesAndKeyboard);
         zoneHeader = std::make_unique<MappingZoneHeader>();
         addAndMakeVisible(*zoneHeader);
@@ -265,7 +263,46 @@ struct MappingDisplay : juce::Component, HasEditor
         for (const auto &[k, t] : textEds)
             t->setVisible(b);
     }
+
+    void setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
+    {
+        summary = d;
+        zonesAndKeyboard->repaint();
+        repaint();
+    }
+    engine::Group::zoneMappingSummary_t summary{};
 };
+
+void MappingZonesAndKeyboard::paint(juce::Graphics &g)
+{
+    if (!display)
+        g.fillAll(juce::Colours::red);
+
+    auto lb = getLocalBounds().toFloat();
+    auto displayRegion = lb.withTrimmedBottom(15);
+    auto kw = displayRegion.getWidth() / 127.0;
+    auto vh = displayRegion.getHeight() / 127.0;
+
+    for (const auto &[kb, vel, idx, name] : display->summary)
+    {
+        auto x0 = kb.keyStart * kw;
+        auto x1 = kb.keyEnd * kw;
+        if (x1 < x0)
+            std::swap(x1, x0);
+        auto y0 = (127 - vel.velStart) * vh;
+        auto y1 = (127 - vel.velEnd) * vh;
+        if (y1 < y0)
+            std::swap(y1, y0);
+        g.setColour(juce::Colours::yellow.withAlpha(0.2f));
+        auto r = juce::Rectangle<float>(x0, y0, x1 - x0, y1 - y0);
+        g.fillRect(r);
+        g.setColour(juce::Colours::yellow);
+        g.drawRect(r, 2.f);
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
+        g.drawText(name, r, juce::Justification::centred);
+    }
+}
 
 struct SampleDisplay : juce::Component
 {
@@ -330,4 +367,9 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 }
 
 void MappingPane::setActive(bool b) { mappingDisplay->setActive(b); }
+
+void MappingPane::setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
+{
+    mappingDisplay->setGroupZoneMappingSummary(d);
+}
 } // namespace scxt::ui::multi

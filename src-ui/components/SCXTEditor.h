@@ -103,6 +103,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &);
     void onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
 
+    void onGroupZoneMappingSummary(const scxt::engine::Group::zoneMappingSummary_t &);
+
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
     {

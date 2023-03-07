@@ -110,6 +110,10 @@ struct Group : MoveableOnly<Group>
     void addActiveZone();
     void removeActiveZone();
 
+    typedef std::tuple<KeyboardRange, VelocityRange, int32_t, std::string> zoneMappingItem_t;
+    typedef std::vector<zoneMappingItem_t> zoneMappingSummary_t;
+    zoneMappingSummary_t getZoneMappingSummary();
+
     uint32_t activeZones{0};
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
@@ -121,6 +125,7 @@ struct Group : MoveableOnly<Group>
 
     zoneContainer_t::iterator end() noexcept { return zones.end(); }
     zoneContainer_t::const_iterator cend() const noexcept { return zones.cend(); }
+
 
   private:
     zoneContainer_t zones;

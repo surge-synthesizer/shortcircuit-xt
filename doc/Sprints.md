@@ -3,8 +3,8 @@
 
 Early March
 - Zone Edits
-   - Put some UI up
-   - Show the zones in the current group on the display
+   - Make it so adding a zone refreshes by factorig that better 
+   - a2s_structure_refresh can just be the two lambda form
    - Sample waveform
    - Header
    - That kiudna thing

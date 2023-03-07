@@ -34,5 +34,6 @@
 #include "zone_messages.h"
 #include "selection_messages.h"
 #include "processor_messages.h"
+#include "group_messages.h"
 
 #endif // SHORTCIRCUIT_CLIENT_MESSAGE_IMPLS_H
