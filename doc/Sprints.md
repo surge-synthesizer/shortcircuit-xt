@@ -1,7 +1,13 @@
 # Baconpauls next sprints
 
 
-Week of Feb 26:
+Early March
+- Zone Edits
+   - Put some UI up
+   - Show the zones in the current group on the display
+   - Sample waveform
+   - Header
+   - That kiudna thing
 - Then: Mod Matrix Depth
   - Calculated but how to share with UI? 
 - Then: LFO Editor Finished
@@ -75,6 +81,11 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 27 (2023-03-07)
+
+Ugh not feeling it. Got some more of the zone display on the screen
+at least. Then called it.
 
 ## Day 26 (2023-03-02)
 

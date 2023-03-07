@@ -120,9 +120,9 @@ void Zone::setProcessorType(int whichProcessor, dsp::processor::ProcessorType ty
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
-    tmpProcessor = dsp::processor::spawnProcessorInPlace(
-        type, getEngine()->getMemoryPool().get(), memory,
-        dsp::processor::processorMemoryBufferSize, pfp, ifp);
+    tmpProcessor =
+        dsp::processor::spawnProcessorInPlace(type, getEngine()->getMemoryPool().get(), memory,
+                                              dsp::processor::processorMemoryBufferSize, pfp, ifp);
 
     if (type != dsp::processor::proct_none)
     {

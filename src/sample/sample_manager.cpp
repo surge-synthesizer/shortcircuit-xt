@@ -28,14 +28,12 @@
 #include <cassert>
 #include "sample_manager.h"
 
-
 namespace scxt::sample
 {
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {
     return loadSampleByPathToID(p, SampleID::next());
 }
-
 
 std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, const SampleID &id)
 {

@@ -28,14 +28,41 @@
 #include "MappingPane.h"
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/Label.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
+
+#include "components/GlyphPainter.h"
 
 namespace scxt::ui::multi
 {
 
 namespace cmsg = scxt::messaging::client;
+
+struct MappingZonesAndKeyboard : juce::Component
+{
+    void paint(juce::Graphics &g)
+    {
+        g.setColour(juce::Colours::darkred);
+        g.fillAll();
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+        g.drawText("Zones and Kbd", getLocalBounds(), juce::Justification::centred);
+    }
+};
+
+struct MappingZoneHeader : juce::Component
+{
+    void paint(juce::Graphics &g)
+    {
+        g.setColour(juce::Colours::darkgreen);
+        g.fillAll();
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font("Comic Sans MS", 20, juce::Font::plain));
+        g.drawText("Zones Header", getLocalBounds(), juce::Justification::centred);
+    }
+};
 
 struct MappingDisplay : juce::Component, HasEditor
 {
@@ -45,15 +72,32 @@ struct MappingDisplay : juce::Component, HasEditor
 
     enum Ctrl
     {
+        RootKey,
         KeyStart,
-        KeyEnd
+        KeyEnd,
+        FadeStart,
+        FadeEnd,
+        VelStart,
+        VelEnd,
+        VelFadeStart,
+        VelFadeEnd,
+        PBDown,
+        PBUp,
     };
+    std::unique_ptr<MappingZonesAndKeyboard> zonesAndKeyboard;
+    std::unique_ptr<MappingZoneHeader> zoneHeader;
+
     std::unordered_map<Ctrl, std::unique_ptr<zone_attachment_t>> attachments;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         textEds;
+    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
 
     MappingDisplay(SCXTEditor *e) : HasEditor(e)
     {
+        zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>();
+        addAndMakeVisible(*zonesAndKeyboard);
+        zoneHeader = std::make_unique<MappingZoneHeader>();
+        addAndMakeVisible(*zoneHeader);
         auto attachEditor = [this](Ctrl c, const std::string &aLabel, const auto &desc,
                                    const auto &fn, auto &v) {
             auto at = std::make_unique<zone_attachment_t>(
@@ -66,14 +110,75 @@ struct MappingDisplay : juce::Component, HasEditor
             attachments[c] = std::move(at);
         };
 
+        auto addLabel = [this](Ctrl c, const std::string &label) {
+            auto l = std::make_unique<sst::jucegui::components::Label>();
+            l->setText(label);
+            addAndMakeVisible(*l);
+            labels[c] = std::move(l);
+        };
+
+        attachEditor(
+            Ctrl::RootKey, "RootKey", datamodel::cdMidiNote,
+            [](const auto &pl) { return pl.rootKey; }, mappingView.rootKey);
+        addLabel(Ctrl::RootKey, "Root Key");
+        attachments[Ctrl::RootKey]->setAsMidiNote();
+
         attachEditor(
             Ctrl::KeyStart, "Key Start", datamodel::cdMidiNote,
             [](const auto &pl) { return pl.keyboardRange.keyStart; },
             mappingView.keyboardRange.keyStart);
+        attachments[Ctrl::KeyStart]->setAsMidiNote();
         attachEditor(
-            Ctrl::KeyEnd, "Key Ed", datamodel::cdMidiNote,
+            Ctrl::KeyEnd, "Key End", datamodel::cdMidiNote,
             [](const auto &pl) { return pl.keyboardRange.keyEnd; },
             mappingView.keyboardRange.keyEnd);
+        attachments[Ctrl::KeyEnd]->setAsMidiNote();
+        addLabel(Ctrl::KeyStart, "Key Range");
+        attachEditor(
+            Ctrl::FadeStart, "Fade Start", datamodel::cdMidiDistance,
+            [](const auto &pl) { return pl.keyboardRange.fadeStart; },
+            mappingView.keyboardRange.fadeStart);
+        attachments[Ctrl::FadeStart]->setAsInteger();
+        attachEditor(
+            Ctrl::FadeEnd, "Fade End", datamodel::cdMidiDistance,
+            [](const auto &pl) { return pl.keyboardRange.fadeEnd; },
+            mappingView.keyboardRange.fadeEnd);
+        attachments[Ctrl::FadeEnd]->setAsInteger();
+        addLabel(Ctrl::FadeStart, "Crossfade");
+
+        attachEditor(
+            Ctrl::VelStart, "Vel Start", datamodel::cdMidiNote,
+            [](const auto &pl) { return pl.velocityRange.velStart; },
+            mappingView.velocityRange.velStart);
+        attachments[Ctrl::VelStart]->setAsInteger();
+        attachEditor(
+            Ctrl::VelEnd, "Vel End", datamodel::cdMidiNote,
+            [](const auto &pl) { return pl.velocityRange.velEnd; },
+            mappingView.velocityRange.velEnd);
+        attachments[Ctrl::VelEnd]->setAsInteger();
+        addLabel(Ctrl::VelStart, "Vel Range");
+
+        attachEditor(
+            Ctrl::VelFadeStart, "Vel Fade Start", datamodel::cdMidiDistance,
+            [](const auto &pl) { return pl.velocityRange.fadeStart; },
+            mappingView.velocityRange.fadeStart);
+        attachments[Ctrl::VelFadeStart]->setAsInteger();
+        attachEditor(
+            Ctrl::VelFadeEnd, "Vel Fade End", datamodel::cdMidiDistance,
+            [](const auto &pl) { return pl.velocityRange.fadeEnd; },
+            mappingView.velocityRange.fadeEnd);
+        attachments[Ctrl::VelFadeEnd]->setAsInteger();
+        addLabel(Ctrl::VelFadeStart, "Crossfade");
+
+        attachEditor(
+            Ctrl::PBDown, "PBDown", datamodel::cdMidiDistance,
+            [](const auto &pl) { return pl.pbDown; }, mappingView.pbDown);
+        attachments[Ctrl::PBDown]->setAsInteger();
+        attachEditor(
+            Ctrl::PBUp, "PBUp", datamodel::cdMidiDistance, [](const auto &pl) { return pl.pbUp; },
+            mappingView.pbUp);
+        attachments[Ctrl::PBUp]->setAsInteger();
+        addLabel(Ctrl::PBDown, "Pitch Bend");
     }
     void paint(juce::Graphics &g) override
     {
@@ -86,17 +191,79 @@ struct MappingDisplay : juce::Component, HasEditor
 
     void resized() override
     {
+        static constexpr int mapSize{620};
+        static constexpr int headerSize{22};
+
+        // Header
         auto b = getLocalBounds();
-        auto r = b.withLeft(b.getWidth() - 100).withHeight(20).translated(-2, 2);
-        textEds[KeyStart]->setBounds(r);
-        r = r.translated(0, 30);
-        textEds[KeyEnd]->setBounds(r);
+        zoneHeader->setBounds(b.withHeight(headerSize));
+
+        // Mapping Display
+        auto z = b.withTrimmedTop(headerSize);
+        zonesAndKeyboard->setBounds(z.withWidth(mapSize));
+
+        // Side Pane
+        static constexpr int rowHeight{16}, rowMargin{4};
+        static constexpr int typeinWidth{32};
+        static constexpr int typeinPad{4}, typeinMargin{2};
+        auto r = z.withLeft(mapSize + 2);
+        auto cr = r.withHeight(rowHeight);
+
+        auto co2 = [=](auto &c) {
+            return c.withWidth(c.getWidth() - typeinPad - 2 * typeinWidth - 2 * typeinMargin);
+        };
+        auto c2 = [=](auto &c) {
+            return c.withLeft(c.getRight() - typeinPad - typeinMargin - 2 * typeinWidth)
+                .withWidth(typeinWidth);
+        };
+        auto co3 = [=](auto &c) {
+            return c.withWidth(c.getWidth() - typeinPad - typeinWidth - typeinMargin);
+        };
+        auto c3 = [=](auto &c) {
+            return c.withLeft(c.getRight() - typeinPad - typeinWidth).withWidth(typeinWidth);
+        };
+
+        labels[Ctrl::RootKey]->setBounds(co3(cr));
+        textEds[Ctrl::RootKey]->setBounds(c3(cr));
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        textEds[KeyStart]->setBounds(c2(cr));
+        textEds[KeyEnd]->setBounds(c3(cr));
+        labels[KeyStart]->setBounds(co2(cr));
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        textEds[FadeStart]->setBounds(c2(cr));
+        textEds[FadeEnd]->setBounds(c3(cr));
+        labels[FadeStart]->setBounds(co2(cr));
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        textEds[VelStart]->setBounds(c2(cr));
+        textEds[VelEnd]->setBounds(c3(cr));
+        labels[VelStart]->setBounds(co2(cr));
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        textEds[VelFadeStart]->setBounds(c2(cr));
+        textEds[VelFadeEnd]->setBounds(c3(cr));
+        labels[VelFadeStart]->setBounds(co2(cr));
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        textEds[PBDown]->setBounds(c2(cr));
+        textEds[PBUp]->setBounds(c3(cr));
+        labels[PBDown]->setBounds(co2(cr));
     }
 
     void mappingChangedFromGUI(const zone_attachment_t &at)
     {
         cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
                                         editor->msgCont);
+    }
+
+    void setActive(bool b)
+    {
+        for (const auto &[k, l] : labels)
+            l->setVisible(b);
+        for (const auto &[k, t] : textEds)
+            t->setVisible(b);
     }
 };
 
@@ -161,4 +328,6 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
     mappingDisplay->mappingView = m;
     mappingDisplay->repaint();
 }
+
+void MappingPane::setActive(bool b) { mappingDisplay->setActive(b); }
 } // namespace scxt::ui::multi

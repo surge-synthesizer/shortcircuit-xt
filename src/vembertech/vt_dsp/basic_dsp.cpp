@@ -328,7 +328,7 @@ void accumulate_block(float *__restrict src, float *__restrict dst,
     }
      */
     // Let the compiler handle this
-    for (int i=0; i<nquads<<2; ++i)
+    for (int i = 0; i < nquads << 2; ++i)
         dst[i] += src[i];
 }
 

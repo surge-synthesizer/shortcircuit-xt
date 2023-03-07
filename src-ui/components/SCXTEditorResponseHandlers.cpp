@@ -64,12 +64,13 @@ void SCXTEditor::onMappingUpdated(
     const auto &[active, m] = payload;
     if (active)
     {
+        multiScreen->sample->setActive(true);
         multiScreen->sample->setMappingData(m);
     }
     else
     {
         // TODO
-        // multiScreen->sample->deactivate();
+        multiScreen->sample->setActive(false);
     }
 }
 
