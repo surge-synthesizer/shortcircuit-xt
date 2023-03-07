@@ -45,7 +45,7 @@ struct SampleManager : MoveableOnly<SampleManager>
 {
     const ThreadingChecker &threadingChecker;
     SampleManager(const ThreadingChecker &t) : threadingChecker(t) {}
-    
+
     std::optional<SampleID> loadSampleByPath(const fs::path &);
     std::optional<SampleID> loadSampleByPathToID(const fs::path &, const SampleID &id);
     std::shared_ptr<Sample> getSample(const SampleID &id) const

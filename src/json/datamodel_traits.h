@@ -113,7 +113,7 @@ template <> struct scxt_traits<datamodel::ControlDescription>
         findOr(v, "choices", choices);
         if (!choices.empty())
         {
-            for (int i=0; i<choices.size(); ++i)
+            for (int i = 0; i < choices.size(); ++i)
             {
                 strncpy(t.choices[i], choices[i].c_str(), 32);
                 t.choices[i][31] = 0;

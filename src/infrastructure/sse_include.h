@@ -36,5 +36,4 @@
 #include <immintrin.h>
 #endif
 
-
 #endif // SHORTCIRCUIT_SSE_INCLUDE_H

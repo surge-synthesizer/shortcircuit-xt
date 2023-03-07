@@ -52,7 +52,13 @@ OscPulseSync::OscPulseSync(engine::MemoryPool *mp, float *fp, int32_t *ip)
     ctrlmode_desc[1] = cdPercentDef;
 
     setStr(ctrllabel[2], "sync");
-    ctrlmode_desc[2] = scxt::datamodel::ControlDescription{datamodel::ControlDescription::FLOAT, datamodel::ControlDescription::LINEAR, 0, 0.05, 96, 0, "semitones"};
+    ctrlmode_desc[2] = scxt::datamodel::ControlDescription{datamodel::ControlDescription::FLOAT,
+                                                           datamodel::ControlDescription::LINEAR,
+                                                           0,
+                                                           0.05,
+                                                           96,
+                                                           0,
+                                                           "semitones"};
 
     first_run = true;
     oscstate = 0;

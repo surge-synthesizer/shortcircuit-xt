@@ -47,6 +47,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     void resized() override;
 
     void setMappingData(const engine::Zone::ZoneMappingData &);
+    void setActive(bool b);
 
     std::unique_ptr<MappingDisplay> mappingDisplay;
     std::unique_ptr<SampleDisplay> sampleDisplay;

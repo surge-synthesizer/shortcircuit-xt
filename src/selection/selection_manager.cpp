@@ -77,6 +77,9 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
     else
     {
         singleSelection = {};
+        serializationSendToClient(cms::s2c_respond_zone_mapping,
+                                  cms::MappingSelectedZoneView::s2c_payload_t{false, {}},
+                                  *(engine.getMessageController()));
         serializationSendToClient(cms::s2c_respond_zone_adsr_view,
                                   cms::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
                                   *(engine.getMessageController()));

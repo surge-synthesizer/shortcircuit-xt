@@ -303,10 +303,11 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
         });
 }
 
-void Engine::sendMetadataToClient() const {
+void Engine::sendMetadataToClient() const
+{
     // On register send metadata
-    messaging::client::serializationSendToClient(messaging::client::s2c_send_all_processor_descriptions,
-                                                 dsp::processor::getAllProcessorDescriptions(),
-                                                 *messageController);
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_send_all_processor_descriptions,
+        dsp::processor::getAllProcessorDescriptions(), *messageController);
 }
 } // namespace scxt::engine

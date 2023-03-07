@@ -94,11 +94,11 @@ struct Zone : MoveableOnly<Zone>
 
     struct ZoneMappingData
     {
-        uint8_t rootKey{60};
+        int16_t rootKey{60};
         KeyboardRange keyboardRange;
         VelocityRange velocityRange;
 
-        int16_t pbDown{-2}, pbUp{2};
+        int16_t pbDown{2}, pbUp{2};
 
         int16_t exclusiveGroup;
 

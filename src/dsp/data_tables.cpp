@@ -154,7 +154,7 @@ float DbTable::dbToLinear(float db)
     int e = (int)db;
     float a = db - (float)e;
 
-    return (1.f-a)*table_dB[e&(nPoints-1)] + a*table_dB[(e+1)&(nPoints-1)];
+    return (1.f - a) * table_dB[e & (nPoints - 1)] + a * table_dB[(e + 1) & (nPoints - 1)];
 }
 DbTable dbTable;
 } // namespace scxt::dsp

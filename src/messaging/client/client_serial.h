@@ -52,7 +52,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_routing_row,
 
     c2s_update_individual_lfo,
-    
+
     c2s_request_pgz_structure,
 
     c2s_request_single_processor_metadata_and_data,
@@ -75,7 +75,6 @@ enum SerializationToClientMessageIds
     s2c_update_zone_voice_matrix_metadata,
     s2c_update_zone_voice_matrix,
     s2c_update_zone_individual_lfo,
-
 
     s2c_respond_single_processor_metadata_and_data,
 
