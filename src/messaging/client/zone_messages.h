@@ -123,9 +123,16 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
     if (sz.has_value())
     {
         auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, mapv = mapping](auto &eng) {
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->mapping = mapv;
-        });
+        cont.scheduleAudioThreadCallback(
+            [p = ps, g = gs, z = zs, mapv = mapping](auto &eng) {
+                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->mapping = mapv;
+            },
+            [p = ps, g = gs](const auto &eng) {
+                serializationSendToClient(
+                    messaging::client::s2c_send_selected_group_zone_mapping_summary,
+                    eng.getPatch()->getPart(p)->getGroup(g)->getZoneMappingSummary(),
+                    *(eng.getMessageController()));
+            });
     }
 }
 CLIENT_TO_SERIAL(MappingSelectedZoneUpdateRequest, c2s_update_zone_mapping,

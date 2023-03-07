@@ -78,6 +78,8 @@ enum SerializationToClientMessageIds
 
     s2c_respond_single_processor_metadata_and_data,
 
+    s2c_send_selected_group_zone_mapping_summary,
+
     num_serializationToClientMessages
 };
 

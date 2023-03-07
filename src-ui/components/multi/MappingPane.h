@@ -31,6 +31,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
 #include "engine/zone.h"
+#include "engine/group.h"
 
 namespace scxt::ui::multi
 {
@@ -47,6 +48,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     void resized() override;
 
     void setMappingData(const engine::Zone::ZoneMappingData &);
+    void setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &);
     void setActive(bool b);
 
     std::unique_ptr<MappingDisplay> mappingDisplay;

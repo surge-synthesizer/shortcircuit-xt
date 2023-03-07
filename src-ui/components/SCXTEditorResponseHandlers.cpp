@@ -113,6 +113,10 @@ void SCXTEditor::onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdat
     const auto &[active, i, r] = payload;
     multiScreen->lfo->setActive(i, active);
     multiScreen->lfo->setLfo(i, r);
+}
 
+void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Group::zoneMappingSummary_t &d)
+{
+    multiScreen->sample->setGroupZoneMappingSummary(d);
 }
 } // namespace scxt::ui

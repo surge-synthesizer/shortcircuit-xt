@@ -38,6 +38,13 @@ namespace cms = messaging::client;
 void SelectionManager::singleSelect(const ZoneAddress &a)
 {
     auto [p, g, z] = a;
+    if (p >= 0 && g >= 0)
+    {
+        serializationSendToClient(
+            cms::s2c_send_selected_group_zone_mapping_summary,
+            engine.getPatch()->getPart(p)->getGroup(g)->getZoneMappingSummary(),
+            *(engine.getMessageController()));
+    }
     if (z >= 0 && g >= 0 && p >= 0)
     {
         singleSelection = a;
