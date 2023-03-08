@@ -31,6 +31,7 @@
 #include <cmath>
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "sst/basic-blocks/dsp/PanLaws.h"
 #include "engine/engine.h"
 
 namespace scxt::voice
@@ -145,15 +146,67 @@ bool Voice::process()
 
     float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
 
+    /*
+     * Alright so time to document the logic. Remember all processors are required to do
+     * stereo to stereo but may optionally do mono to mono or mono to stereo. Also this is
+     * just for the linear routing case now. revisit this when we add the other routings.
+     *
+     * chainIsMono is the current state of mono down the chain.
+     * If you get to processor[i] and chain is mono
+     *    if the processor consumes mono and produces mono process mono and fade_1_block
+     *    if the processor consumes mono and produces stereo process mono and fade_2 block and
+     * toggle
+     *    if the processor cannot consume mono, copy and proceed and toggle chainIsMon
+     */
+    bool chainIsMono{monoGenerator};
+
+    /*
+     * Implement Sample Pan
+     */
+    auto pvz = modMatrix.getValue(modulation::vmd_Zone_Sample_Pan, 0);
+    if (pvz != 0.f)
+    {
+        panOutputsBy(chainIsMono, pvz);
+        chainIsMono = false;
+    }
+
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
         if (processors[i]) // TODO && (!zone->processors[0].bypass))
         {
             processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
-            processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-            processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
-                                             output[0], output[1], BLOCK_SIZE_QUAD);
 
+            if (chainIsMono && processorConsumesMono[i] && !processorProducesStereo[i])
+            {
+                // mono to mono
+                processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
+                processorMix[i].fade_block_to(output[0], tempbuf[0], output[0], BLOCK_SIZE_QUAD);
+            }
+            else if (chainIsMono && processorConsumesMono[i] && processorProducesStereo[i])
+            {
+                // mono to stereo. process then toggle
+                processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
+                processorMix[i].fade_2_blocks_to(
+                    output[0], tempbuf[0], output[0], // this out[0] is NOT a typo. Input is mono
+                    tempbuf[1], output[0], output[1], BLOCK_SIZE_QUAD);
+                chainIsMono = false;
+            }
+            else if (chainIsMono)
+            {
+                // stereo to stereo. copy L to R then process
+                mech::copy_from_to<blockSize>(output[0], output[1]);
+                chainIsMono = false;
+                processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
+                processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
+                                                 output[0], output[1], BLOCK_SIZE_QUAD);
+            }
+            else
+            {
+                // stereo to stereo. process
+                processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
+                processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
+                                                 output[0], output[1], BLOCK_SIZE_QUAD);
+            }
             // TODO: What was the filter_modout? Seems SC2 never finished it
             /*
             filter_modout[0] = voice_filter[0]->modulation_output;
@@ -161,9 +214,54 @@ bool Voice::process()
         }
     }
 
+    /*
+     * Implement output pan
+     */
+    auto pvo = modMatrix.getValue(modulation::vmd_Zone_Output_Pan, 0);
+    if (pvo != 0.f)
+    {
+        panOutputsBy(chainIsMono, pvo);
+        chainIsMono = false;
+    }
+
+    // At the end of the voice we have to produce stereo
+    if (chainIsMono)
+    {
+        mech::copy_from_to<blockSize>(output[0], output[1]);
+    }
+
     mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
 
     return true;
+}
+
+void Voice::panOutputsBy(bool chainIsMono, float pv)
+{
+    namespace pl = sst::basic_blocks::dsp::pan_laws;
+    pv = (std::clamp(pv, -1.f, 1.f) + 1) * 0.5;
+    pl::panmatrix_t pmat{1, 1, 0, 0};
+    if (chainIsMono)
+    {
+        chainIsMono = false;
+        pl::monoEqualPower(pv, pmat);
+        for (int i = 0; i < blockSize; ++i)
+        {
+            output[1][i] = output[0][i] * pmat[3];
+            output[0][i] = output[0][i] * pmat[0];
+        }
+    }
+    else
+    {
+        pl::stereoEqualPower(pv, pmat);
+
+        for (int i = 0; i < blockSize; ++i)
+        {
+            auto il = output[0][i];
+            auto ir = output[1][i];
+            output[0][i] = pmat[0] * il + pmat[2] * ir;
+            output[1][i] = pmat[1] * ir + pmat[3] * il;
+        }
+    }
 }
 
 void Voice::initializeGenerator()
@@ -197,7 +295,8 @@ void Voice::initializeGenerator()
     // TODO port playmode
     int generateMode = 0; // forwrd or forward hitpoints
 
-    Generator = dsp::GetFPtrGeneratorSample(s->channels == 2, !s->UseInt16, generateMode);
+    monoGenerator = s->channels == 1;
+    Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, !s->UseInt16, generateMode);
 }
 
 void Voice::calculateGeneratorRatio()
@@ -221,10 +320,11 @@ void Voice::calculateGeneratorRatio()
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
     // TODO gross for now - correct
-    float ndiff = (float)key - zone->mapping.rootKey;
+    float ndiff = (float)key - zone->mapping.rootKey +
+                  modMatrix.getValue(modulation::vmd_Sample_Pitch_Offset, 0);
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
     GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv *
-                         (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback, 0)));
+                         (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
 }
 
@@ -252,6 +352,9 @@ void Voice::initializeProcessors()
         {
             processors[i]->setSampleRate(sampleRate);
             processors[i]->init();
+
+            processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
+            processorProducesStereo[i] = processors[i]->monoInputCreatesStereoOutput();
         }
     }
 }

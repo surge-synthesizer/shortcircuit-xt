@@ -232,10 +232,31 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual void init_params() {}
     virtual void init() {}
+
+    /*
+     * The default behavior of a processor is stereo -> stereo and all
+     * processors must implement process_stereo.
+     */
     virtual void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
-                                float pitch)
+                                float pitch) = 0;
+
+    /*
+     * Mono/Stereo processing is slightly changed from SC2. Each
+     * processor has a pair of data methods 'canProcessMono' and
+     * 'monoInputCreatesStereoOutput'. If canProcessMono is true
+     * the processor will implement process_mono which takes a single
+     * input stream. If monoInputCreatesStereoOutput is true that
+     * will populate a left and right buffer, otherwise it will just
+     * populate a left buffer.
+     */
+    virtual bool canProcessMono() { return false; }
+    virtual bool monoInputCreatesStereoOutput() { return false; }
+    virtual void process_mono(float *datain, float *dataoutL, float *dataoutR,
+                              float pitch)
     {
+        assert(false);
     }
+
     // processors are required to be able to process stereo blocks if stereo is true in the
     // constructor
     virtual void suspend() {}

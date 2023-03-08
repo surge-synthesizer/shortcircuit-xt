@@ -52,6 +52,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     dsp::GeneratorState GD;
     dsp::GeneratorIO GDIO;
     dsp::GeneratorFPtr Generator;
+    bool monoGenerator{false};
 
     int16_t channel{0};
     uint8_t key{60};
@@ -107,8 +108,12 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         16)[engine::processorsPerZone][dsp::processor::processorMemoryBufferSize];
     int32_t processorIntParams alignas(
         16)[engine::processorsPerZone][dsp::processor::maxProcessorIntParams];
+    bool processorConsumesMono[engine::processorsPerZone]{false, false, false, false};
+    bool processorProducesStereo[engine::processorsPerZone]{false, false, false, false};
 
     void initializeProcessors();
+
+    void panOutputsBy(bool inputIsMono, float pv);
 
     // TODO - this should be more carefully structured for modulation onto the entire filter
     lipol_ps processorMix[engine::processorsPerZone];
