@@ -180,6 +180,9 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationTy
     case vmd_eg_RShape:
         return "vmd_eg_rshape";
 
+    case vmd_Sample_Playback:
+        return "vmd_sample_playback";
+
     case numVoiceMatrixDestinations:
         throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");
     }
@@ -410,6 +413,14 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
             assert(false);
         }
         return pfx;
+    }
+
+    switch(vmd)
+    {
+    case vmd_Sample_Playback:
+        return "Playback Ratio";
+    default:
+        break;
     }
     assert(false);
     return fmt::format("ERR {} {}", vmd, idx);

@@ -156,6 +156,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
                        const scxt::engine::Zone::ZoneMappingData &t)
     {
         v = {
+            {"rootKey", t.rootKey},
             {"keyboardRange", t.keyboardRange},
             {"velocityRange", t.velocityRange},
             {"pbDown", t.pbDown},
@@ -166,7 +167,6 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
             {"amplitude", t.amplitude},
             {"pan", t.pan},
             {"pitchOffset", t.pitchOffset},
-
         };
     }
 
@@ -174,6 +174,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
     static void to(const tao::json::basic_value<Traits> &v,
                    scxt::engine::Zone::ZoneMappingData &zmd)
     {
+        findOr(v, "rootKey", 60, zmd.rootKey);
         v.at("keyboardRange").to(zmd.keyboardRange);
         v.at("velocityRange").to(zmd.velocityRange);
         v.at("pbDown").to(zmd.pbDown);
