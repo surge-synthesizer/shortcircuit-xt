@@ -3,6 +3,9 @@
 
 Early March
 - Stereo and Mono Samples in the Zone and Processors
+  - Output section 
+  - Pre-and-post modulation
+  - 
 - Zone Edits
    - Make it so adding a zone refreshes by factorig that better 
    - a2s_structure_refresh can just be the two lambda form
@@ -66,6 +69,7 @@ Early March
 - Samples load off thread
 - Throw guards around json parses
 - Restricts in the copy blocks in the mechanics helpers in basic blocks
+- MicroGate gets mono and stereo implementation
 
 Open Questions and ToDos and Reviews:
 - Bring back ASIO

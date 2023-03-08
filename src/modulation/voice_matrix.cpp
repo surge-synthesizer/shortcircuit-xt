@@ -44,6 +44,7 @@ void VoiceModMatrix::snapRoutingFromZone(engine::Zone *z) { routingTable = z->ro
 
 void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
 {
+    // TODO - this is the wrong way to do this
     // The default is a depth of 1. Override other things
     for (auto &d : depthScales)
         d = 1.0;
@@ -56,6 +57,10 @@ void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
         depthScales[destIndex(vmd_LFO_Rate, idx)] =
             datamodel::cdModulationRate.max - datamodel::cdModulationRate.min;
     }
+
+    // Arbitrary
+    depthScales[destIndex(vmd_Sample_Playback_Ratio, 0)] = 0.5;
+    depthScales[destIndex(vmd_Sample_Pitch_Offset, 0)] = 60;
 
     // Processor Depth is by-processor
     for (int idx = 0; idx < engine::processorsPerZone; ++idx)
@@ -98,6 +103,12 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
     baseValues[destIndex(vmd_eg_D, 1)] = z->eg2Storage.d;
     baseValues[destIndex(vmd_eg_S, 1)] = z->eg2Storage.s;
     baseValues[destIndex(vmd_eg_R, 1)] = z->eg2Storage.r;
+
+    baseValues[destIndex(vmd_Sample_Playback_Ratio, 0)] = 0;
+    baseValues[destIndex(vmd_Sample_Pitch_Offset, 0)] = z->mapping.pitchOffset;
+    baseValues[destIndex(vmd_Zone_Sample_Pan, 0)] = z->mapping.pan;
+    // TODO: FixMe when we do output section
+    baseValues[destIndex(vmd_Zone_Output_Pan, 0)] = 0;
 }
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
@@ -180,8 +191,14 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationTy
     case vmd_eg_RShape:
         return "vmd_eg_rshape";
 
-    case vmd_Sample_Playback:
-        return "vmd_sample_playback";
+    case vmd_Sample_Playback_Ratio:
+        return "vmd_sample_playback_ratio";
+    case vmd_Sample_Pitch_Offset:
+        return "vmd_sample_pitch_offset";
+    case vmd_Zone_Sample_Pan:
+        return "vmd_pan";
+    case vmd_Zone_Output_Pan:
+        return "vmd_output_pan";
 
     case numVoiceMatrixDestinations:
         throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");
@@ -415,10 +432,16 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
         return pfx;
     }
 
-    switch(vmd)
+    switch (vmd)
     {
-    case vmd_Sample_Playback:
+    case vmd_Sample_Playback_Ratio:
         return "Playback Ratio";
+    case vmd_Sample_Pitch_Offset:
+        return "Pitch";
+    case vmd_Zone_Sample_Pan:
+        return "Sample Pan";
+    case vmd_Zone_Output_Pan:
+        return "Output Pan";
     default:
         break;
     }

@@ -128,7 +128,12 @@ void OscPulseSync::convolute()
 }
 
 void OscPulseSync::process_stereo(float *datain, float *datainR, float *dataout, float *dataoutR,
-                                  float pitch)
+                                  float pt)
+{
+    process_mono(datain, dataout, dataoutR, pt);
+    mech::copy_from_to<blockSize>(dataout, dataoutR);
+}
+void OscPulseSync::process_mono(float *datain, float *dataout, float *dataoutR, float pt)
 {
     if (first_run)
     {
@@ -143,7 +148,7 @@ void OscPulseSync::process_stereo(float *datain, float *datainR, float *dataout,
         oscstate = 0;
         polarity = 0;
     }
-    this->pitch = pitch;
+    this->pitch = pt;
     int k;
     for (k = 0; k < blockSize; k++)
     {
@@ -160,9 +165,6 @@ void OscPulseSync::process_stereo(float *datain, float *datainR, float *dataout,
         bufpos++;
         bufpos = bufpos & (oscillatorBufferLength - 1);
     }
-
-    // This is a mono effect
-    mech::copy_from_to<blockSize>(dataout, dataoutR);
 }
 
 } // namespace scxt::dsp::processor

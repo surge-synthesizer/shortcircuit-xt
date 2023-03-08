@@ -274,6 +274,18 @@ void SuperSVF::process_stereo(float *DataInL, float *DataInR, float *DataOutL, f
     }
 }
 
+void SuperSVF::process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch)
+{
+    if (iparam[1] > 0)
+    {
+        ProcessT<false, true>(datain, datain, dataoutL, dataoutL, pitch);
+    }
+    else
+    {
+        ProcessT<false, false>(datain, datain, dataoutL, dataoutL, pitch);
+    }
+}
+
 //-------------------------------------------------------------------------------------------------------
 
 void SuperSVF::suspend()

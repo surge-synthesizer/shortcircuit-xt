@@ -117,6 +117,10 @@ struct alignas(16) SuperSVF : public Processor
     SuperSVF(engine::MemoryPool *, float *, int *);
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                         float pitch) override;
+    bool canProcessMono() override { return true; }
+    bool monoInputCreatesStereoOutput() override { return false; }
+    void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override;
+
 
     template <bool Stereo, bool FourPole>
     void ProcessT(float *datainL, float *datainR, float *dataoutL, float *dataoutR, float pitch);
@@ -197,6 +201,11 @@ struct alignas(16) OscPulseSync : public Processor
 
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                         float pitch) override;
+
+    bool canProcessMono() override { return true; }
+    bool monoInputCreatesStereoOutput() override { return false; }
+    void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override;
+
     void init_params() override;
     int tail_length() override { return tailInfinite; }
 

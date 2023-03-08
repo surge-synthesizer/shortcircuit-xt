@@ -68,6 +68,9 @@ struct MappingDisplay : juce::Component, HasEditor
                                               int16_t>
         zone_attachment_t;
 
+    typedef connectors::PayloadDataAttachment<MappingDisplay, engine::Zone::ZoneMappingData, float>
+        zone_float_attachment_t;
+
     enum Ctrl
     {
         RootKey,
@@ -81,14 +84,21 @@ struct MappingDisplay : juce::Component, HasEditor
         VelFadeEnd,
         PBDown,
         PBUp,
+
+        VelocitySens,
+        Level,
+        Pan,
+        Pitch
     };
     std::unique_ptr<MappingZonesAndKeyboard> zonesAndKeyboard;
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 
     std::unordered_map<Ctrl, std::unique_ptr<zone_attachment_t>> attachments;
+    std::unordered_map<Ctrl, std::unique_ptr<zone_float_attachment_t>> floatattachments;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         textEds;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
+    std::unordered_map<Ctrl, std::unique_ptr<glyph::GlyphPainter>> glyphs;
 
     MappingDisplay(SCXTEditor *e) : HasEditor(e)
     {
@@ -108,11 +118,30 @@ struct MappingDisplay : juce::Component, HasEditor
             attachments[c] = std::move(at);
         };
 
+        auto attachFloatEditor = [this](Ctrl c, const std::string &aLabel, const auto &desc,
+                                        const auto &fn, auto &v) {
+            auto at = std::make_unique<zone_float_attachment_t>(
+                this, desc, aLabel, [this](const auto &at) { this->mappingChangedFromGUI(at); }, fn,
+                v);
+            auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
+            sl->setSource(at.get());
+            addAndMakeVisible(*sl);
+            textEds[c] = std::move(sl);
+            floatattachments[c] = std::move(at);
+        };
+
         auto addLabel = [this](Ctrl c, const std::string &label) {
             auto l = std::make_unique<sst::jucegui::components::Label>();
             l->setText(label);
             addAndMakeVisible(*l);
             labels[c] = std::move(l);
+        };
+
+        auto addGlyph = [this](Ctrl c, glyph::GlyphPainter::Glyph g) {
+            // TODO StyleSheet
+            auto l = std::make_unique<glyph::GlyphPainter>(g, juce::Colours::white);
+            addAndMakeVisible(*l);
+            glyphs[c] = std::move(l);
         };
 
         attachEditor(
@@ -177,6 +206,16 @@ struct MappingDisplay : juce::Component, HasEditor
             mappingView.pbUp);
         attachments[Ctrl::PBUp]->setAsInteger();
         addLabel(Ctrl::PBDown, "Pitch Bend");
+
+        attachFloatEditor(
+            Ctrl::Pan, "Pan", datamodel::cdPercentBipolar,
+            [](const auto &pl) -> float { return pl.pan; }, mappingView.pan);
+        addGlyph(Ctrl::Pan, glyph::GlyphPainter::PAN);
+
+        attachFloatEditor(
+            Ctrl::Pitch, "Pitch", datamodel::cdMidiDistanceBipolar,
+            [](const auto &pl) { return pl.pitchOffset; }, mappingView.pitchOffset);
+        addGlyph(Ctrl::Pitch, glyph::GlyphPainter::TUNING);
     }
     void paint(juce::Graphics &g) override
     {
@@ -248,9 +287,29 @@ struct MappingDisplay : juce::Component, HasEditor
         textEds[PBDown]->setBounds(c2(cr));
         textEds[PBUp]->setBounds(c3(cr));
         labels[PBDown]->setBounds(co2(cr));
+
+        auto cQ = [&](int i) {
+            auto w = cr.getWidth() / 4.0;
+            return cr.withTrimmedLeft(w * i).withWidth(w).reduced(1);
+        };
+        cr = cr.translated(0, rowHeight + rowMargin);
+        //  (volume)
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        glyphs[Pan]->setBounds(cQ(2));
+        textEds[Pan]->setBounds(cQ(3));
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        glyphs[Pitch]->setBounds(cQ(2));
+        textEds[Pitch]->setBounds(cQ(3));
     }
 
     void mappingChangedFromGUI(const zone_attachment_t &at)
+    {
+        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
+                                        editor->msgCont);
+    }
+    void mappingChangedFromGUI(const zone_float_attachment_t &at)
     {
         cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
                                         editor->msgCont);
@@ -262,6 +321,8 @@ struct MappingDisplay : juce::Component, HasEditor
             l->setVisible(b);
         for (const auto &[k, t] : textEds)
             t->setVisible(b);
+        for (const auto &[k, g] : glyphs)
+            g->setVisible(b);
     }
 
     void setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)

@@ -64,17 +64,23 @@ struct GlyphPainter : juce::Component
     }
     static void paintPanGlyph(juce::Graphics &g, const juce::Rectangle<int> &into)
     {
-        g.fillRect(into);
+        g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
+        g.setColour(juce::Colours::orange);
+        g.drawFittedText("pan", into, juce::Justification::centred, 1);
     }
 
     static void paintVolumeGlyph(juce::Graphics &g, const juce::Rectangle<int> &into)
     {
-        g.fillRect(into);
+        g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
+        g.setColour(juce::Colours::orange);
+        g.drawFittedText("vol", into, juce::Justification::centred, 1);
     }
 
     static void paintTuningGlyph(juce::Graphics &g, const juce::Rectangle<int> &into)
     {
-        g.fillRect(into);
+        g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
+        g.setColour(juce::Colours::orange);
+        g.drawFittedText("tun", into, juce::Justification::centred, 1);
     }
 };
 } // namespace scxt::ui::glyph
