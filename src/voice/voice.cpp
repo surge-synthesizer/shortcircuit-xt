@@ -26,6 +26,7 @@
  */
 
 #include "voice.h"
+#include "tuning/equal.h"
 #include <cassert>
 #include <cmath>
 
@@ -220,9 +221,10 @@ void Voice::calculateGeneratorRatio()
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
     // TODO gross for now - correct
-    auto ndiff = key - zone->mapping.rootKey;
-    auto fac = std::pow(2.0, ndiff / 12.0);
-    GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv);
+    float ndiff = (float)key - zone->mapping.rootKey;
+    auto fac = tuning::equalTuning.note_to_pitch(ndiff);
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv *
+                         (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback, 0)));
 #endif
 }
 

@@ -2,6 +2,7 @@
 
 
 Early March
+- Stereo and Mono Samples in the Zone and Processors
 - Zone Edits
    - Make it so adding a zone refreshes by factorig that better 
    - a2s_structure_refresh can just be the two lambda form
@@ -85,7 +86,10 @@ Sprint Log I posted on Discord
 ## Day 27 (2023-03-07)
 
 Ugh not feeling it. Got some more of the zone display on the screen
-at least. Then called it.
+at least. Then called it. Then I uncalled it, wrote the zone visualizer
+and fixed a problem with root keys. Then added boice plaback
+as a mod target, fixed a problem with root keys, and generally thought
+about whats next.
 
 ## Day 26 (2023-03-02)
 

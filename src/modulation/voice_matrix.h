@@ -80,6 +80,8 @@ enum VoiceModMatrixDestinationType
     vmd_eg_DShape,
     vmd_eg_RShape,
 
+    vmd_Sample_Playback,
+
     numVoiceMatrixDestinations
 };
 
