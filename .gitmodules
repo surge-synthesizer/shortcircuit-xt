@@ -31,3 +31,6 @@
 [submodule "libs/sst/sst-basic-blocks"]
 	path = libs/sst/sst-basic-blocks
 	url = https://github.com/surge-synthesizer/sst-basic-blocks
+[submodule "libs/sst/libgig-modified"]
+	path = libs/sst/libgig-modified
+	url = https://github.com/surge-synthesizer/libgig-modified.git

@@ -48,6 +48,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt
         sst-cpputils sst-filters sst-basic-blocks
+        libgig libakai
         shortcircuit::simde
         shortcircuit::readerwriterqueue
         taocpp::json)
