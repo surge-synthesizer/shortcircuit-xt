@@ -10,6 +10,7 @@ add_subdirectory(sst/sst-plugininfra)
 add_subdirectory(sst/sst-filters)
 add_subdirectory(sst/sst-jucegui)
 add_subdirectory(sst/sst-basic-blocks)
+add_subdirectory(sst/libgig-modified)
 
 # Add a catch2 target
 add_library(catch2 INTERFACE)

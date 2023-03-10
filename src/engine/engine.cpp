@@ -34,12 +34,17 @@
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
+// TODO - remove this it is just a test
+#include "gig.h"
 
 namespace scxt::engine
 {
 
 Engine::Engine()
 {
+    // TODO : Remove This - it is just a test
+    std::cout << gig::libraryName() << " " << gig::libraryVersion() << std::endl;
+
     id.id = rand() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);
