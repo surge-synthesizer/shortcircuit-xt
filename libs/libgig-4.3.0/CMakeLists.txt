@@ -39,17 +39,22 @@ target_include_directories(libgig PUBLIC src)
 target_compile_definitions(libgig PRIVATE PACKAGE="${PACKAGE_NAME}" VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}")
 target_include_directories(libgig PUBLIC $<INSTALL_INTERFACE:include>)
 
-if (UNIX AND NOT APPLE)
-	target_compile_definitions(libgig PRIVATE HAVE_UUID_GENERATE)
-endif()
-
-if (WIN32)
-	target_compile_definitions(libgig PRIVATE NOMINMAX POSIX=0)
-endif()
-
 #libakai library
 add_library(libakai src/Akai.cpp)
 set_target_properties(libakai PROPERTIES PUBLIC_HEADER src/Akai.h)
 target_include_directories(libakai PUBLIC $<INSTALL_INTERFACE:include>)
 target_include_directories(libakai PUBLIC src)
 target_compile_definitions(libakai PRIVATE PACKAGE="${PACKAGE_NAME}" VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}")
+
+
+if (WIN32)
+	target_compile_definitions(libgig PRIVATE NOMINMAX POSIX=0)
+	target_compile_definitions(libakai PRIVATE NOMINMAX POSIX=0)
+	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+		target_compile_definitions(libgig PRIVATE WINDOWS_CLANG_SCXT)
+		target_compile_definitions(libakai PRIVATE WINDOWS_CLANG_SCXT)
+	else()
+		target_compile_definitions(libgig PRIVATE WINDOWS_MSVC_SCXT)
+		target_compile_definitions(libakai PRIVATE WINDOWS_MSVC_SCXT)
+	endif()
+endif()

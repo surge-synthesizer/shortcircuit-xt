@@ -153,11 +153,16 @@ bool Engine::processAudio()
         }
     }
 
+    // TODO these memsets are probably gratuitous
+    memset(output, 0, sizeof(output));
+    if (enginePauseRequests > 0)
+    {
+        return true;
+    }
+
     // TODO This gets ripped out when voice management imporves
     auto av = activeVoiceCount();
 
-    // TODO these memsets are probably gratuitous
-    memset(output, 0, sizeof(output));
     for (const auto &part : *patch)
     {
         if (part->isActive())

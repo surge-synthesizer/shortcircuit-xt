@@ -588,7 +588,8 @@ namespace DLS {
         pDLSID->usData3 = uuid[6] | uuid[7] << 8;
         memcpy(pDLSID->abData, &uuid[8], 8);
 #else
-# error "Missing support for uuid generation"
+// # error "Missing support for uuid generation"
+        throw std::logic_error("Tried to generate UUID without a generator");
 #endif
     }
     
