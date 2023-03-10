@@ -39,6 +39,13 @@ target_include_directories(libgig PUBLIC src)
 target_compile_definitions(libgig PRIVATE PACKAGE="${PACKAGE_NAME}" VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}")
 target_include_directories(libgig PUBLIC $<INSTALL_INTERFACE:include>)
 
+if (UNIX AND NOT APPLE)
+	target_compile_definitions(libgig PRIVATE HAVE_UUID_GENERATE)
+endif()
+
+if (WIN32)
+	target_compile_definitions(libgig PRIVATE NOMINMAX POSIX=0)
+endif()
 
 #libakai library
 add_library(libakai src/Akai.cpp)
