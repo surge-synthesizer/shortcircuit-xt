@@ -48,8 +48,8 @@ target_compile_definitions(libakai PRIVATE PACKAGE="${PACKAGE_NAME}" VERSION="${
 
 
 if (WIN32)
-	target_compile_definitions(libgig PRIVATE NOMINMAX POSIX=0)
-	target_compile_definitions(libakai PRIVATE NOMINMAX POSIX=0)
+	target_compile_definitions(libgig PRIVATE NOMINMAX WIN32)
+	target_compile_definitions(libakai PRIVATE NOMINMAX WIN32)
 	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 		target_compile_definitions(libgig PRIVATE WINDOWS_CLANG_SCXT)
 		target_compile_definitions(libakai PRIVATE WINDOWS_CLANG_SCXT)
