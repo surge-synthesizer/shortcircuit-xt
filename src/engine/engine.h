@@ -174,6 +174,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     const std::unique_ptr<MemoryPool> &getMemoryPool() { return memoryPool; }
 
+    std::atomic<int32_t> stopEngineRequests{0};
+
   private:
     std::unique_ptr<Patch> patch;
     std::unique_ptr<MemoryPool> memoryPool;

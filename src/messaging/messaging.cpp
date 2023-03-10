@@ -125,6 +125,19 @@ void MessageController::scheduleAudioThreadCallback(
     serializationToAudioQueue.try_emplace(s2a);
 }
 
+void MessageController::stopAudioThreadThenRunOnSerial(
+    std::function<void(const engine::Engine &)> f)
+{
+    assert(threadingChecker.isSerialThread());
+    scheduleAudioThreadCallback([](engine::Engine &e) { e.stopEngineRequests++; }, f);
+}
+
+void MessageController::restartAudioThreadFromSerial()
+{
+    assert(threadingChecker.isSerialThread());
+    scheduleAudioThreadCallback([](engine::Engine &e) { e.stopEngineRequests--; });
+}
+
 void MessageController::runSerialization()
 {
     threadingChecker.registerAsSerialThread();

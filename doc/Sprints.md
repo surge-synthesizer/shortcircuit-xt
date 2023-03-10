@@ -2,7 +2,7 @@
 
 
 Early March
-- MultiSamples - at least SF2 with start/Stop engine
+- MultiSamples - at least SF2 making sound some
 - Stereo and Mono Samples in the Zone and Processors
   - Output section 
 - Zone Edits
@@ -89,7 +89,9 @@ Sprint Log I posted on Discord
 ## Day 29 (2023-03-10)
 
 Start with integrating libgig so we can do SF2, Korg, Akai and GIG files
-as load points.
+as load points. Get it building and use it to at least parse out some SF2
+structure. This weekend lets see if I can make it play those samples!
+(along the way added the mutate-from-audio-thread-safe-stop thing too).
 
 ## Day 28 (2023-03-08)
 

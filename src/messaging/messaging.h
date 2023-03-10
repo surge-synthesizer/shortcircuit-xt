@@ -235,6 +235,8 @@ struct MessageController : MoveableOnly<MessageController>
      */
     void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f,
                                      std::function<void(const engine::Engine &)> cb = nullptr);
+    void stopAudioThreadThenRunOnSerial(std::function<void(const engine::Engine &)> f);
+    void restartAudioThreadFromSerial();
     struct AudioThreadCallback
     {
       public:

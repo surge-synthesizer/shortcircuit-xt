@@ -150,11 +150,16 @@ bool Engine::processAudio()
         }
     }
 
+    // TODO these memsets are probably gratuitous
+    memset(output, 0, sizeof(output));
+    if (stopEngineRequests > 0)
+    {
+        return true;
+    }
+
     // TODO This gets ripped out when voice management imporves
     auto av = activeVoiceCount();
 
-    // TODO these memsets are probably gratuitous
-    memset(output, 0, sizeof(output));
     for (const auto &part : *patch)
     {
         if (part->isActive())
@@ -273,7 +278,13 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     // TODO: Deal with compound types more comprehensively
     if (e == ".sf2")
     {
-        loadSf2MultiSampleIntoSelectedPart(p);
+        // TODO ok this refresh and restart is a bit unsatisfactory
+        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+            loadSf2MultiSampleIntoSelectedPart(p);
+            messageController->restartAudioThreadFromSerial();
+            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                      getPartGroupZoneStructure(-1), *messageController);
+        });
         return;
     }
 
@@ -333,59 +344,32 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         auto riff = std::make_unique<RIFF::File>(p.u8string());
         auto sf = std::make_unique<sf2::File>(riff.get());
 
-        using namespace std;
+        auto sz = getSelectionManager()->getSelectedZone();
+        auto p = 0;
+        if (sz.has_value())
+            p = sz->part;
 
-        cout << "File info:" << endl;
-        cout << "\tVersion: " << sf->pInfo->pVer->Major << "." << sf->pInfo->pVer->Minor << endl;
-        cout << "\tBank Name: " << sf->pInfo->BankName << endl;
-        cout << "\tSound Engine: " << sf->pInfo->SoundEngine << endl;
-        cout << "\tSound ROM Name: " << sf->pInfo->RomName << endl;
-        cout << "\tSound ROM Version: " << sf->pInfo->pRomVer->Major << "."
-             << sf->pInfo->pRomVer->Minor << endl;
-        cout << "\tCreation Date: " << sf->pInfo->CreationDate << endl;
-        cout << "\tEngineers: " << sf->pInfo->Engineers << endl;
-        cout << "\tProduct: " << sf->pInfo->Product << endl;
-        cout << "\tCopyright: " << sf->pInfo->Copyright << endl;
-        cout << "\tComments: " << sf->pInfo->Comments << endl;
-        cout << "\tSoftware: " << sf->pInfo->Software << endl << endl;
-
-        auto GetSampleType = [](auto type) {
-            switch (type)
-            {
-            case sf2::Sample::MONO_SAMPLE:
-                return "Mono Sample";
-            case sf2::Sample::RIGHT_SAMPLE:
-                return "Right Sample";
-            case sf2::Sample::LEFT_SAMPLE:
-                return "Left Sample";
-            case sf2::Sample::LINKED_SAMPLE:
-                return "Linked Sample";
-            case sf2::Sample::ROM_MONO_SAMPLE:
-                return "ROM Mono Sample";
-            case sf2::Sample::ROM_RIGHT_SAMPLE:
-                return "ROM Right Sample";
-            case sf2::Sample::ROM_LEFT_SAMPLE:
-                return "ROM Left Sample";
-            case sf2::Sample::ROM_LINKED_SAMPLE:
-                return "ROM Linked Sample";
-            default:
-                return "Unknown";
-            }
-        };
-        cout << "Samples (" << sf->GetSampleCount() << "): " << endl;
-        for (int i = 0; i < sf->GetSampleCount(); i++)
+        auto &part = getPatch()->getPart(p);
+        for (int i=0; i<sf->GetInstrumentCount(); ++i)
         {
-            sf2::Sample *s = sf->GetSample(i);
-            cout << "\t" << s->Name
-                 << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
-            cout << ", SampleRate: " << s->SampleRate;
-            cout << ", Pitch: " << ((int)s->OriginalPitch);
-            cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
-            cout << "\t\tStart: " << s->Start << ", End: " << s->End;
-            cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
-            cout << "\t\tSample Type: " << GetSampleType(s->SampleType)
-                 << ", Sample Link: " << s->SampleLink << ")" << endl;
+            sf2::Instrument* instr = sf->GetInstrument(i);
+
+            auto grpnum = part->addGroup() - 1;
+            auto &grp = part->getGroup(grpnum);
+
+            if  (instr->pGlobalRegion)
+            {
+                // TODO: Global Region
+            }
+            for (int j=0; j<instr->GetRegionCount(); ++j)
+            {
+                auto region = instr->GetRegion(j);
+                auto zn = std::make_unique<engine::Zone>();
+                zn->mapping.keyboardRange = {region->loKey, region->hiKey};
+                grp->addZone(zn);
+            }
         }
+
     }
     catch (RIFF::Exception e)
     {
