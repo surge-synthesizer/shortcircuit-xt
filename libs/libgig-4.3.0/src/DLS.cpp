@@ -556,6 +556,7 @@ namespace DLS {
     }
 
     void Resource::GenerateDLSID(dlsid_t* pDLSID) {
+#if 0
 #ifdef WIN32
         UUID uuid;
         UuidCreate(&uuid);
@@ -591,6 +592,8 @@ namespace DLS {
 // # error "Missing support for uuid generation"
         throw std::logic_error("Tried to generate UUID without a generator");
 #endif
+#endif
+        throw std::logic_error("Tried to generate UUID without a generator");
     }
     
     /**

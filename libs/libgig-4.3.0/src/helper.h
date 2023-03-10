@@ -53,6 +53,9 @@ typedef SSIZE_T ssize_t;
  */
 #ifdef WINDOWS_CLANG_SCXT
 typedef unsigned int uint;
+
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
 #endif
 #ifdef WINDOWS_MSVC_SCXT
 #define NOMINMAX 1
