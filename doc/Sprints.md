@@ -2,6 +2,9 @@
 
 
 Early March
+- Pause Engine Actions get built in (with a call to engien to stop and
+  response and call to start)
+- libgig for sf2
 - Stereo and Mono Samples in the Zone and Processors
   - Output section 
   - Pre-and-post modulation
@@ -70,6 +73,7 @@ Early March
 - Throw guards around json parses
 - Restricts in the copy blocks in the mechanics helpers in basic blocks
 - MicroGate gets mono and stereo implementation
+- Look at LibGig before I bring other formats in
 
 Open Questions and ToDos and Reviews:
 - Bring back ASIO

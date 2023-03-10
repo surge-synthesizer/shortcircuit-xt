@@ -1,0 +1,17 @@
+default: all
+
+.PHONY: all clean
+
+all:
+	make -f Makefile.svn
+	######################################################################
+	# WARNING: Makefile.cvs is deprecated ! Please use Makefile.svn      #
+	#          instead !                                                 #
+	######################################################################
+
+clean:
+	make -f Makefile.svn clean
+	######################################################################
+	# WARNING: Makefile.cvs is deprecated ! Please use Makefile.svn      #
+	#          instead !                                                 #
+	######################################################################

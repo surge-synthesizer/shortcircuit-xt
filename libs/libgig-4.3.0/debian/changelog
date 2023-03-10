@@ -1,0 +1,180 @@
+libgig (4.3.0) unstable; urgency=low
+
+  * New release.
+  * libgig shared library (libgig.so) is now at version 10.0.0.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 09 May 2021 12:31:44 +0200
+
+libgig (4.2.0) unstable; urgency=low
+
+  * New release.
+  * libgig shared library (libgig.so) is now at version 9.0.0.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Thu, 25 Jul 2019 12:19:30 +0200
+
+libgig (4.1.0-1) unstable; urgency=low
+
+  * New release.
+  * libgig shared library (libgig.so) is now at version 8.0.0.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sat, 25 Nov 2017 01:56:38 +0100
+
+libgig (4.0.0-1+svn33) unreleased; urgency=low
+
+  * Fixed packaging error about invalid "Source-Version" substitution
+    variable.
+  * Raised Debian compatibility level to Debian 9 "Stretch".
+  * Added config file /etc/ld.so.conf.d/libgig.conf instead of fiddling
+    with /etc/ld.so.conf directly with postinst and postrm scripts before.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Fri, 13 Oct 2017 14:55:01 +0200
+
+libgig (4.0.0-1+svn1) unreleased; urgency=low
+
+  * Fixed unnecessary lib dependencies of projects linked against libgig
+    by wiping the 'dependency_libs' fields from all .la files. Note that
+    this might require manual adjustments to projects linking statically
+    against libgig (see https://wiki.debian.org/ReleaseGoals/LAFileRemoval
+    for details).
+  * Assigned linuxsampler-devel@lists.sourceforge.net as maintainer of this
+    package.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Wed, 06 Apr 2016 19:09:13 +0200
+
+libgig (4.0.0-1) unstable; urgency=low
+
+  * New release.
+  * libgig shared library (libgig.so) is now at version 7.0.0.
+  * Script for building from SVN is now Makefile.svn (Makefile.cvs still
+    exists but is deprecated).
+  * Updated to Debian compatibility level 7.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Tue, 14 Jul 2015 11:32:40 +0200
+
+libgig (3.3.0-6) unstable; urgency=low
+
+  * Add postinst and postrm trigger scripts for adding and removing
+    libgig's new .so libdir (/usr/lib/libgig/) to /etc/ld.so.conf.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 01 Jun 2014 19:33:24 +0200
+
+libgig (3.3.0-5) unstable; urgency=low
+
+  * libgig.so and libakai.so files are now under /usr/lib/libgig
+  * Header files are now under /usr/include/libgig
+  * Fixed missing installation of akai.pc
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 01 Jun 2014 00:39:04 +0200
+
+libgig (3.3.0-4) unstable; urgency=low
+
+  * Added Linux/POSIX ported version of libakai. Note that libakai is released
+    under LGPL terms while libgig is released under GPL terms. To handle this
+    license difference appropriately the AKAI support part is built as separate
+    DLL (.so file). Due to its low expected demand however, no separate package
+    is created for the AKAI part for now though.
+  * Updated package descriptions.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Thu, 22 May 2014 00:58:12 +0200
+
+libgig (3.3.0-3) unstable; urgency=low
+
+  * Updated package descriptions.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Thu, 02 Jan 2014 00:28:00 +0100
+
+libgig (3.3.0-2) unstable; urgency=low
+
+  * Included new command line tools "gigmerge" and "gig2mono".
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Tue, 31 Dec 2013 02:11:22 +0100
+
+libgig (3.3.0-1) unstable; urgency=low
+
+  * changed package name to libgig6 according to Debian standards
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Thu, 30 Jul 2009 09:13:47 +0200
+
+libgig (3.2.1-1) unstable; urgency=low
+
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Wed, 05 Dec 2007 16:24:12 +0100
+
+libgig (3.2.0-1) unstable; urgency=low
+
+  * added build dependency to uuid-dev to allow libgig generating DLSIDs
+    for DLS and gig files (not a mandatory but highly recommended
+    dependency)
+  * slightly changed package descriptions
+  * libgig's home has moved to http://www.linuxsampler.org/libgig/
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 14 Oct 2007 01:02:39 +0200
+
+libgig (3.1.1-1) unstable; urgency=low
+
+  * fixed debian rules file for working with official release tarballs as
+    well (expected a Makefile.cvs file)
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sat, 24 Mar 2007 12:14:54 +0100
+
+libgig (3.1.0-1) unstable; urgency=low
+
+  * libgig's home has changed slightly from
+    http://stud.fh-heilbronn.de/~cschoene/projects/libgig/ to
+    http://stud.hs-heilbronn.de/~cschoene/projects/libgig/
+  * include NEWS file on installation
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Fri, 24 Nov 2006 12:16:20 +0100
+
+libgig (3.0.0-1) unstable; urgency=low
+
+  * New release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Fri, 28 Apr 2006 19:22:24 +0200
+
+libgig (2.0.2-1) unstable; urgency=low
+
+  * New release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Mon, 15 Aug 2005 19:19:57 +0200
+
+libgig (2.0.1-1) unstable; urgency=low
+
+  * New release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 12 Jun 2005 14:55:17 +0200
+
+libgig (2.0.cvs20050523-1) unstable; urgency=low
+
+  * fixed debian description (Closes: #310221)
+  * New release. Mostly pre-prepared by Christian Schoenebeck <cuse@users.sourceforge.net>
+
+ -- Matt Flax <flatmax@pgb.unsw.edu.au>  Mon, 09 May 2005 16:10:58 +0200
+
+libgig (1.0.0cvs20050503-1) unstable; urgency=low
+
+  * Updated to cvs version
+
+ -- Matt Flax <flatmax@pgb.unsw.edu.au>  Wed, 2 Mar 2005 11:40:49 +0100
+
+libgig (1.0.0-1) unstable; urgency=low
+
+  * New upstream release (Closes: #279932)
+  * Doxygen API documentation included with libgig-dev
+  * Changed maintainer names from Christian Schoenebeck to MAtt Flax. Note
+    That the original packaging was done by Christian
+  * altered the rules file
+  * fixed various lintian errors
+
+ -- Matt Flax <flatmax@pgb.unsw.edu.au>  Sat, 5 Feb 2005 20:02:26 +0100
+
+libgig (0.7.1-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Tue,  6 Jul 2004 23:12:46 +0200
+

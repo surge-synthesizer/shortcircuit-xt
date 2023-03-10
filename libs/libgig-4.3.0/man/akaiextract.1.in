@@ -1,0 +1,40 @@
+.TH "akaiextract" "1" "22 May 2014" "libgig @VERSION@" "libgig tools"
+.SH NAME
+akaiextract \- Extract audio samples from an AKAI media or AKAI disk image file.
+.SH SYNOPSIS
+.B akaiextract
+SOURCE DESTDIR
+.SH DESCRIPTION
+Reads an AKAI media (i.e. from a CDROM drive, ZIP drive or directly from an
+AKAI hard disk drive) or AKAI disk image file and extracts all its audio samples
+as .wav files to the given output directory. If the given output directory does
+not exist yet, then it will be created.
+.SH OPTIONS
+.TP
+.B \ SOURCE
+On Windows: drive letter of the source disk drive to read from. On POSIX systems
+(i.e. Linux, Mac): path to the input source, which may either be an AKAI disk
+image file already being available on your HD, or a disk drive path (i.e. '/dev/cdrom').
+On Mac: You can omit this argument on Mac, which will cause it to access the
+CDROM drive automatically ('/dev/rdisk1s0').
+.TP
+.B \ DESTDIR
+Output path where all samples should be extracted to. If the directory does not
+exist yet, then it will be created.
+
+.SH "SEE ALSO"
+.BR akaidump(1),
+.BR gigdump(1),
+.BR gigextract(1),
+.BR korgdump(1),
+.BR sf2dump(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+
+.SH "Author"
+This program and its library are based on Sébastien Métrot's libakai. This is a
+fork of libakai and its tools which is now also providing support for LINUX and
+other POSIX compliant operating system, and it does not have a dependency to
+libngl as the original libakai had. Linux port and man page written by
+Christian Schoenebeck <cuse@users.sf.net>

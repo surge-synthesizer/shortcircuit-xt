@@ -82,3 +82,4 @@ add_subdirectory(tests)
 add_subdirectory(clients)
 
 include(cmake/basic-installer.cmake)
+add_dependencies(shortcircuit-products throwaway-test-main)

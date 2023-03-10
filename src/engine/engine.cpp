@@ -35,11 +35,17 @@
 #include "selection/selection_manager.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
+#include "gig.h"
+#include "Akai.h"
+
 namespace scxt::engine
 {
 
 Engine::Engine()
 {
+    std::cout << "libgig " << gig::libraryVersion() << std::endl;
+    AkaiSampleLoop s;
+
     id.id = rand() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);

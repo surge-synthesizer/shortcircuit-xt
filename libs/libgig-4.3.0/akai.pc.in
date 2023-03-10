@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@/libgig
+includedir=@includedir@/libgig
+
+Name: akai
+Description: C++ library for accessing AKAI disk images
+Version: 0.0.0
+Libs: -L${libdir} -lakai
+Cflags: -I${includedir}

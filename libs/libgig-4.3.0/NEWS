@@ -1,0 +1,209 @@
+Version 4.3.0 (9 May 2021)
+
+  From this release on libgig requires at least a C++11 compliant compiler to
+  build from its sources. Another new requirement is the presence of some UUID
+  generating function which must be provided by the underlying OS. Previously
+  the presence of an UUID generating function was optional in libgig for many
+  years. Its absence in the past only meant that you were unable to load your
+  own gig files (e.g. created from scratch with Gigedit by yourself) into
+  Tascam's GigaStudio software, it did not mean though any restriction in
+  conjunction with LinuxSampler in the past. The latter has changed in this
+  release. Without UUIDs in gig files you would now also get misbehaviours
+  even while staying entirely in the Linux eco space, and hence this is now a
+  hard build requirement for libgig.
+
+  Most of the changes in the gig classes in this release are about gig file
+  format extensions used by recent versions of LinuxSampler. For instance you
+  now have much more control over what LFO wave form shall be used (e.g. saw and
+  square, whereas the original GigaStudio was alwas limited to sine only) and
+  other LFO parameters like their start phase. There are also a bunch of new
+  audio filter types available in conjuction with the latest LinuxSampler
+  version, e.g. additional lowpass filter types with 2, 4 and 6 poles,
+  additional highpass filters with 1, 2, 4 and 6 poles, a new bandpass filter
+  with 2 poles and finally also a bandreject filter with 2 poles. Another gig
+  format extension was added concerning NKSP instrument scripts: LinuxSampler's
+  new NKSP "patch" variable type is now supported in this version of libgig.
+  Please refer to the LinuxSampler website for a more detailed explanation about
+  this new NKSP instrument script feature.
+
+  And as always there are a various fixes in this release, foremost sane output
+  compatibility with GigaStudio 3 was broken, so that GigaStudio version might
+  not have accepted gig files changed by you with the prior version of libgig.
+  This issue is now fixed in this release.
+
+  And last but not least the Serialization framework was extended to support now
+  various common C++ STL classes like std::string, std::vector, std::map and
+  std::set out of the box. So no custom code is required aymore to
+  serialize/deserialize such very common native C++ object types, which reduces
+  code complexity for serializing/deserializing complex C++ projects a lot.
+
+Version 4.2.0 (25 Jul 2019)
+
+  This is a maintenance release with important fixes; especially it fixes
+  issues with gig files in GigaStudio v4 format, however this release also
+  introduces some few new features and additions. Most notably it is now
+  possible to write large gig files splitted over extension files (.gx01,
+  .gx02, ...). Previously it was only possible to read gig files with
+  extension files, but libgig only supported to save large gig files as one
+  single, monolithic gig file. The problem with the latter was that gig
+  files >= 2 GB could only be read by libgig, but could not be loaded with
+  any version of GigaStudio. So this solves that legacy support issue.
+  Apart from that, a bunch of convenience methods have been added.
+
+Version 4.1.0 (25 Nov 2017)
+
+  This release adds support for files much larger than 2 GB for GigaStudio /
+  Gigasampler (.gig), DLS, as well as for RIFF files in general. This file size
+  limitation existed for a very long time due to the RIFF format's historical,
+  internal 32 bit file offsets. To circumvent this file size limitation the
+  concept of so called "extension files" was added in the past to the
+  GigaStudio format, which means that the GigaStudio instrument editor splitted
+  the respective overall instrument file into a set of files (.gig, .gx01,
+  .gx02, ...), each being max. 2 GB in size, and all of them were expected to be
+  located in the same directory for the sampler to load the entire large
+  instrument successfully. libgig always supported only reading such gig
+  extension files, however libgig never supported to create .gig files with
+  extension files, nor did it support modifying existing ones. In this release
+  it was necessary to finally get rid of this overall file size limitation in
+  libgig. Now when that concept of extension files was introduced years ago, it
+  made sense at that point, because there were still many systems out there
+  which still had no support for large files (on either OS or file system
+  level). However today even on low end mobile devices support for large files
+  is already a broad standard. Accordingly instead of adding write support for
+  extension files in libgig, the problem was addressed at its root by
+  transparently using appropriate, automatic file offset sizes. So when writing
+  .gig/DLS/RIFF files smaller than 2 GB there are still 32 bit file offsets
+  being used by libgig. Accordingly such files are still backward compatible
+  with older software. However if the overall file size to be written is 2 GB or
+  larger, then 64 bit file offsets are automatically used by libgig instead.
+  Note though that due to that circumstance such files >= 2 GB are not backward
+  compatible with older versions of libgig, nor could they be loaded with the
+  original GigaStudio software.
+
+  Another major new feature in this libgig release is the entirely new
+  serialization API (Serialization.h) which provides a powerful and easy way
+  to serialize and deserialize an arbitrary set of native C++ objects into an
+  abstract data stream. Which means you can simply save the entire runtime state
+  of an application to a file or send it as data over "wire" (i.e. over network
+  or to another process) and restore that runtime state from that data there at
+  any time. In contrast to other C++ serialization frameworks out there, this
+  framework provides two major benefits:
+
+  1. This serialization framework is designed to be very robust regarding
+     potential versioning changes of the native C++ classes being
+     (de)serialized. So even if the C++ classes have seen massive software
+     changes between the point where they were serialized and the point where
+     they are to be deserialized; for example if class member variables of
+     serialized C++ objects were renamed in meantime, or if variable offsets, or
+     variables' data types had been changed, then the deserialization algorithm
+     can still cope with such common software changes automatically in many
+     cases, that is as long as the deserialization algorithm can "guess" what
+     the changes were exactly. If the serialization framework is unable to
+     automatically detect the precise software changes, then it will abort the
+     deserialization task with an exception and an error message stating that
+     the software versions are incompatible.
+
+  2. This serialization framework supports "partial" deserialization. That
+     means it not only allows to restore an entire runtime state, but it also
+     allows to only restore an arbitrary desired subset of information
+     from the previously serialized data stream, while leaving all other data
+     of the running C++ objects untouched. The serialization framework also
+     incorporates a reflection API which allows applications to implement
+     convenient editors on top of such serialized data, i.e. allowing end users
+     to pick or alter specific information within the serialized data.
+
+  The new Serialization framework is already embedded into the gig classes of
+  libgig, and it is used as basis for the new powerful macro features in the
+  gigedit instrument editor application. Refer to the release notes of
+  gigedit 1.1.0 for more information about those new macro features in gigedit.
+
+Version 4.0.0 (14 Jul 2015)
+
+  This major release of libgig adds support for other file formats:
+  SoundFont 2 (.sf2), KORG multi sample instruments (.KSF, .KMP) and AKAI
+  format sounds. The AKAI classes are a fork of Sébastien Métrot's libakai and
+  since it is released under a different license (LGPL) than libgig is (GPL),
+  the AKAI classes are built as separate DLL file. All other classes of those
+  new file formats are built and bundled with the existing libgig DLL. Thanks
+  to Grigor Iliev for his work on the SoundFont 2 classes! Please note that
+  there is currently no support for KORG's .PCG file format yet. That's because
+  this file format changes a lot and is not only dependent to the precise KORG
+  keyboard model, but also to the precise OS version on the same model. And
+  since basic conversion can also be done by just accessing the .KSF and .KMP
+  files (sample data, loop informations), the current classes should be
+  sufficient for many tasks. Adding support for KORG's .PCG files is not
+  planned at the moment.
+
+  Various new command line tools have been added as well to dump, extract and
+  convert between all those file formats now. Each one of it has a man page,
+  so please refer to the respective man page of the individual command line
+  tool for details.
+
+  The GigaStudio/Gigasampler classes received a load of fixes during the last
+  six years. And support for features introduced with the last official
+  GigaStudio 4 software (RIP) were added, for instance support for so called
+  "iMIDI Rules". Those rules allow i.e. to trigger notes by MIDI CC and to
+  define a sample set for legato playing style. In the meantime it seems as if
+  the GigaStudio software has seen its last version with GigaStudio 4, because
+  Tascam discontinued this product and the intellectual property of GigaStudio
+  had been sold several times between companies. It is currently not possible
+  to buy a new copy of GigaStudio anymore and we personally don't expect that
+  this situation will ever change.
+
+  Does this also mean the end of new features for libgig? Not really! Actually
+  we already started to add new features to the GigaStudio/Gigasampler format
+  which never existed with the GigaStudio/Gigasampler software: The most
+  noteworthy new feature added by us is support for real-time instrument
+  scripts. These are little "programs" which you can bundle with your .gig
+  sounds to add a custom behavior to your sounds when playing them with i.e.
+  LinuxSampler. Find out more about this new major feature on:
+
+        http://doc.linuxsampler.org/Instrument_Scripts/
+
+  There are also some more minor extensions to the .gig format, for example
+  support for far more MIDI CC's than originally allowed by the GigaStudio
+  software. Obviously all those custom extensions will not work with any
+  version of the official GigaStudio software, those new features will only
+  work with a recent version of LinuxSampler and gigedit at the moment.
+
+  Besides those major changes, a load of convenient methods have been added to
+  the existing libgig classes to reduce the overall effort working with all
+  those file formats with software applications based on libgig.
+
+Version 3.3.0 (30 Jul 2009)
+
+  Partial support for MIDI rules, the rest are just bug fixes.
+
+Version 3.2.1 (5 Dec 2007)
+
+  Just some minor performance optimizations.
+
+Version 3.2.0 (14 Oct 2007)
+
+  This release once again comes with a huge bunch of fixes regarding
+  Gigasampler write support. Instrument files created from scratch with
+  libgig can finally be loaded into the Gigasampler application as well.
+
+  libgig's home has moved! From now on you can find it on:
+  http://www.linuxsampler.org/libgig/
+  Please update your links and bookmarks!
+
+Version 3.1.1 (24 Mar 2007)
+
+  This is a bugfix release, fixing one important bug regarding gig v3
+  support (custom split points) and a lot of bugs regarding .gig write
+  support. And this is the first official release for the Windows platform.
+
+Version 3.1.0 (24 Nov 2006)
+
+  libgig's home has moved (slightly) from
+  http://stud.fh-heilbronn.de/~cschoene/projects/libgig/ to
+  http://stud.hs-heilbronn.de/~cschoene/projects/libgig/, please update your
+  links and bookmarks! This is due to the recent renaming of the University
+  of Heilbronn, which kindly hosts this and other projects.
+
+Version 3.0.0 (28 Apr 2006)
+
+  This is the first release which allows to create new and modify existing
+  .gig files. Beside that it also includes another bunch of bug fixes and
+  Gigasampler v3 support improvements.

@@ -1,0 +1,152 @@
+
+%define name    @PACKAGE@
+%define version @VERSION@
+%define release 17
+%define prefix  @prefix@
+
+Summary:	C++ library for accessing GigaStudio, DLS, SF, KORG, AKAI files.
+Name:		%{name}
+Version:	%{version}
+Release:	%{release}
+Prefix:		%{prefix}
+License:	GPL / LGPL
+Group:		Sound
+Source0:	%{name}-%{version}.tar.bz2
+URL:		http://www.linuxsampler.org
+BuildRoot:	/var/tmp/%{name}-%{version}-buildroot
+
+%description
+libgig is a C++ library for reading, modifying and creating Gigasampler /
+GigaStudio (.gig) files, DLS (Downloadable Sounds) Level 1/2 files, SoundFont
+version 2 (.sf2) and KORG sound files (.KMP and .KSF). These files are
+typically used in modern day audio waveform samplers and synthesizer keyboards.
+.
+Since the Gigasampler / GigaStudio and DLS formats are based ontop of the
+binary RIFF container format, this library also provides convenient access to
+RIFF files in general.
+.
+This package also contains a Linux/POSIX ported version of libakai, which
+provides support for reading Akai formated medias (CDRoms, HDs, Zip disks).
+Currently Akai S1000, S01, S2000 and S3000 series are supported.
+
+%package devel
+Summary:	C++ library for accessing Gigasampler, DLS, SF, KORG, AKAI files.
+Group:		Development/Libraries
+Requires:	%{name} = %{version}
+
+%description devel
+libgig is a C++ library for reading, modifying and creating Gigasampler /
+GigaStudio (.gig) files, DLS (Downloadable Sounds) Level 1/2 files, SoundFont
+version 2 (.sf2) and KORG sound files (.KMP and .KSF). These files are
+typically used in modern day audio waveform samplers and synthesizer keyboards.
+.
+Since the Gigasampler / GigaStudio and DLS formats are based ontop of the
+binary RIFF container format, this library also provides convenient access to
+RIFF files in general.
+.
+This package also contains a Linux/POSIX ported version of libakai, which
+provides support for reading Akai formated medias (CDRoms, HDs, Zip disks).
+Currently Akai S1000, S01, S2000 and S3000 series are supported.
+.
+This package contains the header files needed for development with libgig.
+You will need this only if you intend to compile programs that use this
+library.
+
+%prep
+
+%setup
+if [ -f Makefile.cvs ]; then make -f Makefile.cvs; fi
+
+%build
+./configure --prefix=%{prefix}
+make
+make docs
+
+%install
+if [ -d $RPM_BUILD_ROOT ]; then rm -rf $RPM_BUILD_ROOT; fi
+mkdir -p $RPM_BUILD_ROOT
+make prefix=$RPM_BUILD_ROOT%{prefix} install
+
+%post
+/sbin/ldconfig
+
+%postun
+/sbin/ldconfig
+
+%clean
+if [ -d $RPM_BUILD_ROOT ]; then rm -rf $RPM_BUILD_ROOT; fi
+
+%files
+%defattr(-,root,root)
+%doc AUTHORS COPYING ChangeLog NEWS README TODO
+%{prefix}/bin/*
+%{prefix}/lib/libgig/libgig.so*
+%{prefix}/lib/libgig/libakai.so*
+%{prefix}/share/man/man1/*
+
+%files devel
+%defattr(-,root,root)
+%doc doc/html/*
+%{prefix}/lib/libgig/libgig.a
+%{prefix}/lib/libgig/libgig.la
+%{prefix}/lib/pkgconfig/gig.pc
+%{prefix}/lib/libgig/libakai.a
+%{prefix}/lib/libgig/libakai.la
+%{prefix}/lib/pkgconfig/akai.pc
+%{prefix}/include/libgig/*
+
+%changelog
+* Sun May 09 2021 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 4.3.0
+* Thu Jul 25 2019 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 4.2.0
+* Sat Nov 25 2017 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 4.1.0
+* Tue Jul 14 2015 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 4.0.0
+* Sun Jun 01 2014 Christian Schoenebeck <cuse@users.sourceforge.net>
+- Fixed installation directories of .so files and header files
+  (fixes #218).
+- libgig.so and libakai.so files are now under /usr/lib/libgig
+- Header files are now under /usr/include/libgig
+* Thu May 22 2014 Christian Schoenebeck <cuse@users.sourceforge.net>
+- Added libakai files. Note that libakai is released under LGPL terms while
+  libgig is released under GPL terms. To handle this license difference
+  appropriately the AKAI support part is built as separate DLL (.so file).
+  Due to its low expected demand however, no separate package is created for
+  the AKAI part for now though.
+- Updated package descriptions.
+* Thu Jul 30 2009 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 3.3.0
+* Wed Dec 03 2008 Christian Schoenebeck <cuse@users.sourceforge.net>
+- fixed rpmbuild error on Fedora Core 8
+  (fixes #86, patch by Devin Anderson)
+* Wed Dec 05 2007 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 3.2.1
+* Sun Oct 14 2007 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for release 3.2.0
+- libgig's home has moved to http://www.linuxsampler.org/libgig/
+* Sat Mar 24 2007 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for 3.1.1
+* Fri Nov 24 2006 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for 3.1.0
+* Thu Jun 01 2006 Rui Nuno Capela <rncbc@users.sourceforge.net>
+- changed deprecated copyright attribute to license
+- added ldconfig to post-(un)install steps
+* Sun May 07 2006 Christian Schoenebeck <cuse@users.sourceforge.net>
+- libgig's home has been slightly changed from stud.fh-heilbronn.de
+  to stud.hs-heilbronn.de
+* Fri Apr 28 2006 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for 3.0.0
+* Mon Aug 15 2005 Christian Schoenebeck <cuse@users.sourceforge.net>
+- prepared for 2.0.2
+* Mon Jun 13 2005 Rui Nuno Capela <rncbc@users.sourceforge.net>
+- prepared for 2.0.1
+* Mon May  9 2005 Rui Nuno Capela <rncbc@users.sourceforge.net>
+- prepared for 2.0.0
+* Wed Nov 24 2004 Rui Nuno Capela <rncbc@users.sourceforge.net>
+- prepared for 1.0.0
+* Sat Jul 10 2004 Christian Schoenebeck <cuse@users.sourceforge.net>
+- renamed 'libgig.pc' to 'gig.pc' as well as the pkg-config lib name
+* Wed Jul 02 2004 Rui Nuno Capela <rncbc@users.sourceforge.net>
+- Created and corrected initial libgig.spec

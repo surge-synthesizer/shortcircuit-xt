@@ -1,0 +1,8 @@
+debian/tmp/usr/include/* usr/include
+debian/tmp/usr/include/libgig/* usr/include/libgig
+debian/tmp/usr/lib/libgig/lib*.a usr/lib/libgig
+debian/tmp/usr/lib/libgig/lib*.la usr/lib/libgig
+debian/tmp/usr/lib/libgig/lib*.so usr/lib/libgig
+debian/tmp/usr/lib/pkgconfig/gig.pc usr/lib/pkgconfig
+debian/tmp/usr/lib/pkgconfig/akai.pc usr/lib/pkgconfig
+doc/html/* usr/share/doc/libgig-dev/html

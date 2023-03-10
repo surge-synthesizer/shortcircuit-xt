@@ -1,0 +1,27 @@
+.TH "dlsdump" "1" "8 May 2005" "libgig @VERSION@" "libgig tools"
+.SH NAME
+dlsdump \- List information about a DLS (Downloadable Sound) file.
+.SH SYNOPSIS
+.B dlsdump
+[ \-v ] DLSFILE
+.SH DESCRIPTION
+Prints out a list of all available samples and instruments within a DLS file along with detailed information about their properties and settings. At the moment DLS Level 1 and 2 is supported.
+.SH OPTIONS
+.TP
+.B \ DLSFILE
+filename of the DLS file
+.TP
+.B \ -v
+print version and exit
+
+.SH "SEE ALSO"
+.BR akaidump(1),
+.BR gigdump(1),
+.BR rifftree(1),
+.BR korgdump(1),
+.BR sf2dump(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+.SH "Author"
+Application and manual page written by Christian Schoenebeck <cuse@users.sf.net>

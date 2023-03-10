@@ -1,0 +1,95 @@
+.TH "korg2gig" "1" "10 May 2014" "libgig @VERSION@" "libgig tools"
+.SH NAME
+korg2gig \- Convert sound files from KORG to GigaStudio format.
+.SH SYNOPSIS
+.B korg2gig
+[\-v] [\-f] [--interpret-names] FILE1 [ FILE2 ... ] NEWFILE
+.SH DESCRIPTION
+
+This tool takes a list of KORG sound files, used with KORG synthesizer keyboards
+like Trinity, Triton, OASYS, M3 or Kronos, and converts them to a
+Gigasampler/GigaStudio (.gig) file. All input KORG files are merged to a single
+(.gig) output file.
+
+For each KORG "multi-sample" (.KMP) file a separate GigaStudio instrument will
+be created in the output (.gig) file. KORG Sample (.KSF) files referenced by
+such multi-sample (.KMP) files are automatically detected, loaded and written to
+the output (.gig) file as well. Assignments of samples to keyboard regions,
+sample loops and other minor articulation information are converted as well.
+But note, the multi-sample (.KMP) form is very primitive. It does NOT save the
+detailed articulation information of your KORG keyboard like envelopes, LFO
+and filter settings. Those information are stored in a separate program (.PCG)
+file.
+
+Unfortunately there is no support for KORG's program/combinations/bank (.PCG)
+files yet. Have a look at option
+.B \ --interpret-names
+for a workaround.
+Because of this lack of support for .PCG files, you still have to adjust the
+articulation settings in the output (.gig) file afterwards with an instrument
+editor application like
+.BR gigedit (1).
+
+If you are explicitly passing KORG sample (.KSF) files as well, and they are not
+referenced by any "multi-sample" (.KMP) file you might have passed, then those
+orphaned samples are added to the output (.gig) file in a separate sample group
+called "Not referenced". That way you can easily distinguish samples in the
+output (.gig) file which are actually used by one of the instruments, and the
+samples that are not used yet.
+
+.B NOTE:
+This tool might need quite a lot RAM at the moment. Approximately it will
+allocate as much RAM as the expected output .gig file will be in size. So make
+sure you have enough free RAM and/or swap space, otherwise this tool might
+crash if it cannot allocate the required RAM space.
+
+.SH OPTIONS
+
+.TP
+.B \ FILE1 [ FILE2 ... ]
+A list of input KORG sound (.KMP or .KSF) files. You must supply at least one
+KORG file. KORG sample (.KSF) files referenced in the so called "multi-sample"
+(.KMP) file(s) are automatically detected and loaded. So in most cases you
+would just pass .KMP file(s) as input file argument(s).
+
+.TP
+.B \ NEWFILE
+Output file in Gigasampler/GigaStudio (.gig) format. If this output file
+already exists,
+.B korg2gig
+will abort with an error message unless you specify
+.B \ -f
+as argument as well.
+
+.TP
+.B \ -v
+print version and exit
+
+.TP
+.B \ -f
+Overwrite output file if it already exists.
+
+.TP
+.B \  --interpret-names
+Try to guess left/right sample pairs and velocity splits. This is a nasty
+workaround for the fact that there is no support for reading KORG .PCG files
+yet. If you manually named the multi-samples (.KMP files) on your keyboard in a
+scheme like "PIANO 003-120 -R" it will interpret the two hints as a) velocity
+split range (in this example from velocity 3 to 120) and b) stereo sample pairs
+(in this case the multi-sample contains the right channel). Of course you can
+also omit one or both hints if you don't want to have a velocity split or stereo
+sample pair for certain instruments or regions.
+
+.SH "SEE ALSO"
+.BR korgdump(1),
+.BR gigedit(1),
+.BR rifftree(1),
+.BR akaidump(1),
+.BR gigdump(1),
+.BR sf2dump(1),
+.BR dlsdump(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+.SH "Author"
+Application and manual page written by Christian Schoenebeck <cuse@users.sf.net>

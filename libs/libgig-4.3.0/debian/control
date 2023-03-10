@@ -1,0 +1,96 @@
+Source: libgig
+Section: devel
+Priority: optional
+Maintainer: LinuxSampler Developers <linuxsampler-devel@lists.sourceforge.net>
+Build-Depends: debhelper (>= 4.0.0), pkg-config, libsndfile1-dev, doxygen, uuid-dev
+Standards-Version: 4.0.0
+
+Package: libgig-dev
+Section: libdevel
+Architecture: any
+Depends: libgig10 (= ${source:Version})
+Description: library for accessing GigaStudio, DLS, SoundFont, KORG, AKAI files
+ libgig is a C++ library for reading, modifying and creating Gigasampler /
+ GigaStudio (.gig) files, DLS (Downloadable Sounds) Level 1/2 files, SoundFont
+ version 2 (.sf2) and KORG sound files (.KMP and .KSF). These files are
+ typically used in modern day audio waveform samplers and synthesizer keyboards.
+ .
+ Since the Gigasampler / GigaStudio and DLS formats are based ontop of the
+ binary RIFF container format, this library also provides convenient access to
+ RIFF files in general.
+ .
+ This package also contains a Linux/POSIX ported version of libakai, which
+ provides support for reading Akai formated medias (CDRoms, HDs, Zip disks).
+ Currently Akai S1000, S01, S2000 and S3000 series are supported.
+ .
+ For more information visit
+ http://www.linuxsampler.org/libgig/
+ .
+ This package contains the header files needed for development with libgig.
+ You will need this only if you intend to compile programs that use this
+ library.
+
+Package: libgig10
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: libgig9, libgig8, libgig7, libgig6, libgig3c2, libgig
+Replaces: libgig9, libgig8, libgig7, libgig6, libgig3c2, libgig
+Description: library for accessing GigaStudio, DLS, SoundFont, KORG, AKAI files
+ libgig is a C++ library for reading, modifying and creating Gigasampler /
+ GigaStudio (.gig) files, DLS (Downloadable Sounds) Level 1/2 files, SoundFont
+ version 2 (.sf2) files and KORG sound files (.KMP and .KSF). These files are
+ typically used in modern day audio waveform samplers and synthesizer keyboards.
+ .
+ Since the Gigasampler / GigaStudio and DLS formats are based ontop of the
+ binary RIFF container format, this library also provides convenient access to
+ RIFF files in general.
+ .
+ This package also contains a Linux/POSIX ported version of libakai, which
+ provides support for reading Akai formated medias (CDRoms, HDs, Zip disks).
+ Currently Akai S1000, S01, S2000 and S3000 series are supported.
+ .
+ For more information visit
+ http://www.linuxsampler.org/libgig/
+
+Package: gigtools
+Section: utils
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: command line tools for GigaStudio, SF2, DLS, KORG and AKAI files
+ Raw file handling for audio sampler files based on either DLS Level 1/2,
+ Gigasampler / GigaStudio, SoundFont version 2 and KORG sound format (.KSF and
+ .KMP). These files are typically used in modern day audio waveform samplers
+ and synthesizer keyboards.
+ .
+ There are also tools for reading Akai formated medias (CDRoms, HDs, Zip disks).
+ Currently Akai S1000, S01, S2000 and S3000 series are supported.
+ .
+ This package contains the following command line tools:
+ .
+ gigdump:
+   Prints out the content of a .gig file.
+ gigextract:
+   Extracts audio samples from a .gig file.
+ gigmerge:
+   Combines multiple .gig files to one .gig file.
+ gig2mono:
+   Converts .gig files from stereo to mono.
+ gig2stereo:
+   Converts .gig files to true interleaved stereo sounds.
+ dlsdump:
+   Prints out the content of a DLS file.
+ rifftree:
+   Prints out the RIFF tree of an arbitrary RIFF container file.
+ sf2dump:
+   Prints out the content of a .sf2 file.
+ sf2extract:
+   Extracts audio samples from a .sf2 file.
+ korgdump:
+   Prints out the content of KORG sound files (.KSF, .KMP).
+ korg2gig:
+   Converts KORG (.KSF, .KMP) sound files to GigaStudio (.gig) files.
+ akaidump:
+   Dump an AKAI media i.e. from a CDROM drive as disk image file to your HD.
+ akaiextract:
+   Extracts audio samples from an AKAI media or from an AKAI disk image file.

@@ -1,0 +1,27 @@
+.TH "sf2dump" "1" "1 Jan 2014" "libgig @VERSION@" "libgig tools"
+.SH NAME
+sf2dump \- Parses SoundFont v2 (.sf2) files and prints out the content.
+.SH SYNOPSIS
+.B sf2dump
+[ \-v ] FILE
+.SH DESCRIPTION
+Prints out a list of all available samples and instruments within a SoundFont version 2 (.sf2) file along with detailed information about their properties and settings.
+.SH OPTIONS
+.TP
+.B \ FILE
+filename of the Soundfont file
+.TP
+.B \ -v
+print version and exit
+
+.SH "SEE ALSO"
+.BR sf2extract(1),
+.BR akaidump(1),
+.BR dlsdump(1),
+.BR gigdump(1),
+.BR korgdump(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+.SH "Author"
+Written by Christian Schoenebeck <cuse@users.sf.net>

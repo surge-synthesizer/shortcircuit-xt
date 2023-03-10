@@ -1,0 +1,170 @@
+/**
+
+@mainpage libgig
+
+
+@section Intro
+
+libgig is a C++ library for accessing audio-sample based instrument files,
+as they are shipped for various software samplers, hardware sampler devices
+and synthesizer keyboards.
+This C++ library was originally created to access Gigasampler files, but in the
+meantime grew to much more than that. At the moment libgig consists of the
+following four major parts:
+
+  - @b 1. @ref gig classes: These provide convenient access to
+    @b Gigasampler / @b GigaStudio files (for all known format version, that is
+    from Gigasampler v1 to GigaStudio v4), allowing to load, modify and save
+    existing .gig files, as well as creating new .gig files from scratch.<br>
+    <br>
+    Since the gig file format was originally designed based on the DLS Level 2
+    format, the gig classes in this library are derived from the DLS classes of
+    this library, where the gig classes provide the necessary extensions for the
+    Gigasampler file format.<br>
+    <br>
+    Besides the fact that libgig supports all aspects of the original
+    Gigasampler / GigaStudio format, it now also provides some own extensions of
+    that original format. Most notably libgig provides an extension to save
+    @ref gig::Script "real-time instrument scripts" with .gig files.
+    Those custom extensions are
+    however currently only supported by the graphical instrument editor
+    application @b gigedit and by @b LinuxSampler, those extensions will
+    obviously not work with the original GigaStudio software.
+
+  - @b 2. @ref sf2 classes: These provide support for loading and modifying
+    @b SoundFont version 2 files. Even though being an older format, the
+    SoundFont format is still one of the most popular sample based instrument
+    file formats and is widely supported by a variety of hardware and software.
+
+  - @b 3. @ref Korg classes: These provide support for loading sample based
+    instrument files of KORG's synthesizer keyboard models <i>Kronos</i>,
+    <i>M3</i>, <i>Oasys</i>, <i>Triton</i> and <i>Trinity</i>. There is
+    currently no support for modifying KORG files yet.
+
+  - @b 4. @b AKAI classes: These provide support for loading sample based disks
+    (CDROMs, hard disks, ZIP disks) and disk image files of AKAI's hardware
+    sampler series <i>S1000</i>, <i>S01</i>, <i>S2000</i> and <i>S3000</i>.<br>
+    <br>
+    The AKAI classes are a branch of <i>libakai</i>. In the AKAI classes of
+    libgig, libakai's original dependency to the so called <i>Carbon</i> C++
+    library has been removed and has been replaced by using ordinay
+    <a href="http://en.wikipedia.org/wiki/Standard_Template_Library">C++ STL</a>
+    classes instead. Further, this branch of libakai also provides support for
+    Linux and other POSIX based OSes (the original libakai was limited to Mac
+    and Windows).<br>
+    <br>
+    Currently the AKAI classes don't have their own dedicated C++ namespace.
+    Refer to class @ref AkaiDisk as toplevel entry class for accessing AKAI
+    sounds.
+
+Besides the mentioned major parts above, libgig also provides the following
+three other components:
+
+  - @b 5. @ref DLS classes: Provide convenient methods to access
+    @b DLS (<i>Downloadable Sounds</i>) Level 1 and 2 files. The DLS file format
+    has been designed as open file format to be adopted by various keyboard
+    manufacturers for their sounds. However it never really made it to a broad
+    standard. You can use the DLS classes of libgig to load, modify and create
+    DLS files from scratch, however you will probably not find many DLS files
+    and/or software or hardware that supports this file format. The main reason
+    why these classes exist in libgig, is because of the fact that the
+    Gigasampler / GigaStudio file format was designed as extension on top of the
+    DLS file format (with quite some radical modifications though).
+
+  - @b 6. @ref RIFF classes: Provide convenient methods to parse and access
+    arbitrary RIFF files. The <i>"Resource Interchange File Format"</i>
+    provides universal data containers ordered in a tree-like structure
+    and can be compared to XML, but with the difference that RIFF is
+    binary encoded.<br>
+    <br>
+    The DLS file format, the gig file format, the sf2 file format and KORG's
+    file format are all based on RIFF on lowest level of their file format. And
+    consequently all those classes mentioned above are using the RIFF classes
+    for that purpose.
+
+  - @b 7. @ref Serialization classes: This is a separate framework on its own,
+    which allows efficient and powerful serialization and deserialization of
+    native C++ objects and is used by @ref gig classes and i.e. the gigedit
+    application for implementing a preset system.
+
+
+@section License
+
+Most parts of libgig and its tools are released under the terms of the
+<a href="http://www.gnu.org/licenses/gpl-2.0.html">GNU General Public License (GPL)</a>.
+This applies to the @ref gig classes, @ref sf2 classes, @ref Korg classes, @ref DLS classes,
+@ref RIFF classes and all of their tools and example programs. We may offer you a
+commercial license for using libgig in commercial products. If you are
+interested in a commercial license,
+<a href="http://www.linuxsampler.org/developers.html">contact us!</a>
+
+The @b AKAI classes and their tools / example programs are released under the terms
+of the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License (LGPL)</a>.
+
+If you have any questions regarding license aspects,
+<a href="http://www.linuxsampler.org/developers.html">contact us!</a>
+
+
+@section Examples
+
+Beside the actual C++ library, there are the following example applications
+which demonstrate how to use the library:
+
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/gigdump.cpp?view=markup">@b gigdump: </a>
+    Prints out the content of a .gig file.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/gigextract.cpp?view=markup">@b gigextract: </a>
+    Extracts audio samples from a .gig file as .wav files.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/gigmerge.cpp?view=markup">@b gigmerge: </a>
+    Combines multiple .gig files to one .gig file.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/gig2mono.cpp?view=markup">@b gig2mono: </a>
+    Converts .gig files from stereo to mono.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/gig2stereo.cpp?view=markup">@b gig2stereo: </a>
+    Converts .gig files from mono sample pairs to true interleaved stereo.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/dlsdump.cpp?view=markup">@b dlsdump: </a>
+    Prints out the content of a DLS file.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/rifftree.cpp?view=markup">@b rifftree: </a>
+    Prints out the RIFF tree of an arbitrary RIFF container file.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/sf2dump.cpp?view=markup">@b sf2dump: </a>
+    Prints out the content of a .sf2 file.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/sf2extract.cpp?view=markup">@b sf2extract: </a>
+    Extracts audio samples from a .sf2 file as .wav files.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/korgdump.cpp?view=markup">@b korgdump: </a>
+    Prints out the content of KORG sound files (.KSF, .KMP).
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/korg2gig.cpp?view=markup">@b korg2gig: </a>
+    Converts KORG (.KSF, .KMP) sound files to GigaStudio (.gig) files.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/akaidump.cpp?view=markup">@b akaidump: </a>
+    Dump an AKAI media i.e. from a CDROM drive as disk image file to your HD.
+  - <a href="http://svn.linuxsampler.org/cgi-bin/viewvc.cgi/libgig/trunk/src/tools/akaiextract.cpp?view=markup">@b akaiextract: </a>
+    Extracts audio samples from an AKAI media or from an AKAI disk image file (as .wav files).
+
+Currently libgig ist most prominently used by LinuxSampler and gigedit.
+
+
+@section Portability
+
+This library is developed and optimized for POSIX compliant operating
+systems like Linux and Mac OS X, as well as for Windows. It is written as cross
+platform C++ library, so libgig should also compile for other operation systems
+as well. Due to this it works on all architectures (i.e. 32 bit x86, 64 bit x86,
+PPC and many more). It works on
+<a href="http://en.wikipedia.org/wiki/Endianness">little endian and big endian</a>
+systems.
+
+
+@section Bugs
+
+Please report bugs on http://bugs.linuxsampler.org/ and/or subscribe to the
+<a href="http://lists.sourceforge.net/lists/listinfo/linuxsampler-devel">LinuxSampler developers mailing list</a>.
+
+@section Outro
+
+For compilation instructions, requirements and further details please refer
+to the README file et al.
+
+That's all folks. Happy hacking!
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>
+
+@see http://www.linuxsampler.org
+
+*/

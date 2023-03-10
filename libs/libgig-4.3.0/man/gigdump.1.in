@@ -1,0 +1,84 @@
+.TH "gigdump" "1" "08 May 2018" "libgig @VERSION@" "libgig tools"
+.SH NAME
+gigdump \- List information about a Gigasampler (.gig) file.
+.SH SYNOPSIS
+.B gigdump
+[OPTIONS] GIGFILE
+.SH DESCRIPTION
+By default it prints out a list of all available samples, real-time instrument
+scripts and instruments within a Gigasampler (.gig) file, along with detailed
+information about their properties and settings.
+.SH OPTIONS
+.TP
+.B \ GIGFILE
+filename of the Gigasampler file
+.TP
+.B \ --instrument-names
+Only list instrument names and their index number.
+.TP
+.B \ --rebuild-checksums
+Rebuild checksum table for all samples. Read description of
+.B \ --verify
+option for more details about sample checksums in general. Usually you only
+need to use
+.B \ --rebuild-checksums
+in case the samples' CRC checksum table itself was damaged. The
+.B \ --verify
+option will tell you if that is really the case and will suggest to you to use
+.B \ --rebuild-checksums
+to repair the table in such cases. If only individual samples were damaged, you
+rather might want to replace only those damaged samples with
+.BR gigedit (1)
+for example. Read description of 
+.B \ --verify
+for reasons to do so. When using
+.B \ --rebuild-checksums
+all checksums of all samples will be regenerated. Hence you should manually
+check all samples once after using this option. That is by using your ears,
+or by exporting the samples, but not by using the
+.B \ --verify
+option. Because the latter cannot identifiy damaged samples that have been
+damaged before the entire checksum table had been regenerated.
+.TP
+.B \ -v
+Print version and exit.
+.TP
+.B \ --verify
+Check raw wave data integrity of all samples and print result of this check.
+For all samples of a gig file a correspondig CRC32 checksum is stored along
+to its raw wave form data whenever a conscious change to the wave form data
+was performed. By calling gigdump with this option all samples are scanned
+and compared with their existing checksums to detect any damage to
+individual samples. The individual damaged samples are listed by gigdump
+in this case. Since essentially the entire file has to be read, this can
+take a long time and hence this check is not by default performed i.e.
+each time a gig file is loaded for regular use for example. Accordingly you
+may use
+.B \ --verify
+from time to time to check explicitly whether your gig files have been
+damaged for some reason, i.e. after modifying them with an instrument editor
+like
+.BR gigedit (1).
+In case damaged samples were found, you may replace those damaged samples with
+.BR gigedit (1).
+By doing this, only the replaced samples' checksums will be
+updated. All other checksums remain untouched. That's why this approach is
+recommended over using 
+.B \ --rebuild-checksums
+in such cases.
+
+.SH "SEE ALSO"
+.BR gigextract(1),
+.BR gigmerge(1),
+.BR gig2mono(1),
+.BR gig2stereo(1),
+.BR dlsdump(1),
+.BR rifftree(1),
+.BR akaidump(1),
+.BR sf2dump(1),
+.BR korgdump(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+.SH "Author"
+Application and manual page written by Christian Schoenebeck <cuse@users.sf.net>

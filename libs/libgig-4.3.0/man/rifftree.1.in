@@ -1,0 +1,107 @@
+.TH "rifftree" "1" "7 May 2014" "libgig @VERSION@" "libgig tools"
+.SH NAME
+rifftree \- Print RIFF tree structure of an arbitrary RIFF file.
+.SH SYNOPSIS
+.B rifftree
+[OPTIONS] FILE
+
+.SH DESCRIPTION
+The Resource Interchange File Format (RIFF) is a simple, binary file format
+intended for tree like data structures. Many proprietary file formats are built
+on top of the RIFF format (e.g. media file formats like WAV, AVI, DLS, GIG).
+Data in a RIFF file is encapsulated into so called "chunks". There are list
+chunks (containers) which can be seen as nodes in the data tree and thus can
+have children (that is can have subchunks) and there are normal data chunks
+which can be seen as leafs in the data tree and thus cannot have children.
+The regular chunks (leafs of the tree) contain the actual data to be stored.
+The list chunks themselves (nodes / containers) contain no data on their own.
+
+Each list chunk and normal chunk has a 32 bit (non unique) ID, which is usually
+a four character human readable ASCII text, reflecting the purpose of the
+respective list or chunk. This application will print out this ID for each chunk
+found. Advantage of human readable list/chunk IDs is that files based on this
+practice can easily be analyzed manually with a hex editor.
+
+A normal RIFF file always starts with a list chunk (either with chunk ID "RIFF"
+or "RIFX), which contains all other chunks. There are no other chunks outside
+the boundaries of that first chunk in a normal RIFF file. You may override this
+expectation with arguments described below though (see argument '--flat'), for
+being able to open other, RIFF-like files.
+
+.SH OPTIONS
+
+.TP
+.B \ FILE
+Filename of the RIFF based file.
+
+.TP
+.B \ -v
+Print version and exit.
+
+.TP
+.B \ -s
+Print the size of each RIFF chunk.
+
+.TP
+.B \ --flat
+First chunk of file is not a list (container) chunk. You might want to use this
+if the file is not a "real" RIFF file. A "real" RIFF file always has a RIFF
+list (container) chunk as very first chunk in a file, and it expects all chunks
+to be contained in that first (list/container) chunk. So in a "real" RIFF file
+there would also be no other chunks outside the scope (that is after end) of the
+file's first chunk. Many primitive file formats though are a flat sequence of
+ordinary data chunks (not list/container chunks). If you are using this option
+then you must also use --first-chunk-id as well.
+
+.TP
+.B \ --first-chunk-id CKID
+Currently only used in combination with --flat. CKID shall be the 32 bit chunk
+ID of the very first chunk in the file. If the first chunk in the file does not
+have the given chunk ID, then this application will abort. This ensures that
+the file is actually the format you expected. The argument expected here shall
+be a four character human readable ASCII text, since RIFF chunk IDs are usually
+human readable ASCII strings.
+
+.TP
+.B \ --big-endian
+File is in big endian format. Currently only used in combination with --flat.
+Without --flat the endian type will automatically be detected. If you are using
+--flat and do neither provide --big-endian nor --little-endian, then the native
+endian type of your machine will be used by default.
+
+.TP
+.B \ --little-endian
+File is in little endian format. Currently only used in combination with --flat.
+Without --flat the endian type will automatically be detected. If you are using
+--flat and do neither provide --big-endian nor --little-endian, then the native
+endian type of your machine will be used by default.
+
+.SH EXAMPLES
+Show the file structure of a standard RIFF file (in the following example a
+Gigasampler/GigaStudio file) and show the exact sizes of each chunk in the file:
+.PP
+.nf
+.RS
+rifftree \-s piano.gig
+.RE
+.fi
+.PP
+Do the same for a Korg Trinity/Triton/OASYS/Kronos sound file (which is not a
+standard RIFF file, but a RIFF-alike file):
+.PP
+.nf
+.RS
+rifftree \-s --flat --first-chunk-id MSP1 --big-endian PIANO_000.KMP
+.RE
+.fi
+.PP
+
+.SH "SEE ALSO"
+.BR dlsdump(1),
+.BR gigdump(1),
+.BR korgdump(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+.SH "Author"
+Application and manual page written by Christian Schoenebeck <cuse@users.sf.net>

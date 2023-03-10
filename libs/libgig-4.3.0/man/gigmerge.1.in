@@ -1,0 +1,34 @@
+.TH "gigmerge" "1" "25 Nov 2013" "libgig @VERSION@" "libgig tools"
+.SH NAME
+gigmerge \- Merges several Gigasampler (.gig) files to one Gigasampler file.
+.SH SYNOPSIS
+.B gigmerge
+[ \-v ] GIGFILE1 GIGFILE2 [ ... ] NEWGIGFILE
+.SH DESCRIPTION
+Takes a list of Gigasampler (.gig) files as input and merges their content to one new single Gigasampler file. Note: There is no check for duplicate (equivalent) samples yet. That means, if for example 2 input files use the exact same sample, then this sample will exist twice in the output file.
+.SH OPTIONS
+.TP
+.B \ GIGFILE1
+filename of input Gigasampler file
+.TP
+.B \ GIGFILE2
+filename of input Gigasampler file
+.TP
+.B \ NEWGIGFILE
+filename of merged output Gigasampler file
+.TP
+.B \ -v
+print version and exit
+
+.SH "SEE ALSO"
+.BR gigextract(1),
+.BR gigdump(1),
+.BR gig2mono(1),
+.BR gig2stereo(1),
+.BR dlsdump(1),
+.BR rifftree(1)
+
+.SH "BUGS"
+Check and report bugs at http://bugs.linuxsampler.org
+.SH "Author"
+Application and manual page written by Christian Schoenebeck <cuse@users.sf.net>

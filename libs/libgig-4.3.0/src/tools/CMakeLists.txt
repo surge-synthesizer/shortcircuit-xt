@@ -1,0 +1,38 @@
+
+macro(add_tool NAME)
+    add_executable(${NAME} ${NAME}.cpp)
+    target_link_libraries(${NAME} PRIVATE libgig)
+endmacro(add_tool)
+
+add_executable(akaidump akaidump.cpp)
+target_link_libraries(akaidump PRIVATE libakai)
+
+if(NOT LibSndFile_FOUND)
+	message(WARNING "sndfile library not found: akaiextract, gigextract and sf2extract will not be built")
+endif()
+#These tools are not yet ported to msvc
+if(NOT MSVC)
+	if(LibSndFile_FOUND)
+		add_executable(akaiextract akaiextract.cpp)
+		target_link_libraries(akaiextract PRIVATE libakai)
+	endif()
+	add_tool(gig2mono)
+	add_tool(gig2stereo)
+else()
+	message(WARNING "akaiextract, gig2mono and gig2stereo aren't yet ported to msvc")
+endif()
+
+if(LibSndFile_FOUND)
+	add_tool(gigextract)
+	target_link_libraries(gigextract PRIVATE sndfile-shared)
+	add_tool(sf2extract)
+	target_link_libraries(sf2extract PRIVATE sndfile-shared)
+endif()
+
+add_tool(dlsdump)
+add_tool(gigdump)
+add_tool(gigmerge)
+add_tool(korg2gig)
+add_tool(korgdump)
+add_tool(rifftree)
+add_tool(sf2dump)

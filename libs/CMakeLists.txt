@@ -11,6 +11,8 @@ add_subdirectory(sst/sst-filters)
 add_subdirectory(sst/sst-jucegui)
 add_subdirectory(sst/sst-basic-blocks)
 
+add_subdirectory(libgig-4.3.0 EXCLUDE_FROM_ALL)
+
 # Add a catch2 target
 add_library(catch2 INTERFACE)
 target_include_directories(catch2 INTERFACE catch2/include)
