@@ -2,10 +2,9 @@
 
 
 Early March
+- MultiSamples - at least SF2 with start/Stop engine
 - Stereo and Mono Samples in the Zone and Processors
   - Output section 
-  - Pre-and-post modulation
-  - 
 - Zone Edits
    - Make it so adding a zone refreshes by factorig that better 
    - a2s_structure_refresh can just be the two lambda form
@@ -86,6 +85,15 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 29 (2023-03-10)
+
+Start with integrating libgig so we can do SF2, Korg, Akai and GIG files
+as load points.
+
+## Day 28 (2023-03-08)
+
+Stereo Processing!
 
 ## Day 27 (2023-03-07)
 

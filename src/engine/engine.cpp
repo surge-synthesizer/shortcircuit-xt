@@ -34,17 +34,15 @@
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
-// TODO - remove this it is just a test
+
 #include "gig.h"
+#include "SF.h"
 
 namespace scxt::engine
 {
 
 Engine::Engine()
 {
-    // TODO : Remove This - it is just a test
-    std::cout << gig::libraryName() << " " << gig::libraryVersion() << std::endl;
-
     id.id = rand() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);
@@ -271,6 +269,14 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
+    auto e = p.extension();
+    // TODO: Deal with compound types more comprehensively
+    if (e == ".sf2")
+    {
+        loadSf2MultiSampleIntoSelectedPart(p);
+        return;
+    }
+
     // OK so what we want to do now is
     // 1. Load this sample on this thread
     auto sid = sampleManager->loadSampleByPath(p);
@@ -314,5 +320,81 @@ void Engine::sendMetadataToClient() const
     messaging::client::serializationSendToClient(
         messaging::client::s2c_send_all_processor_descriptions,
         dsp::processor::getAllProcessorDescriptions(), *messageController);
+}
+
+void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
+{
+    // TODO: Make this (obvioosly) do something else
+    // TODO: Make this stop the engine as well duh
+    SCDBGCOUT << "SF2 Load " << p.u8string() << std::endl;
+
+    try
+    {
+        auto riff = std::make_unique<RIFF::File>(p.u8string());
+        auto sf = std::make_unique<sf2::File>(riff.get());
+
+        using namespace std;
+
+        cout << "File info:" << endl;
+        cout << "\tVersion: " << sf->pInfo->pVer->Major << "." << sf->pInfo->pVer->Minor << endl;
+        cout << "\tBank Name: " << sf->pInfo->BankName << endl;
+        cout << "\tSound Engine: " << sf->pInfo->SoundEngine << endl;
+        cout << "\tSound ROM Name: " << sf->pInfo->RomName << endl;
+        cout << "\tSound ROM Version: " << sf->pInfo->pRomVer->Major << "."
+             << sf->pInfo->pRomVer->Minor << endl;
+        cout << "\tCreation Date: " << sf->pInfo->CreationDate << endl;
+        cout << "\tEngineers: " << sf->pInfo->Engineers << endl;
+        cout << "\tProduct: " << sf->pInfo->Product << endl;
+        cout << "\tCopyright: " << sf->pInfo->Copyright << endl;
+        cout << "\tComments: " << sf->pInfo->Comments << endl;
+        cout << "\tSoftware: " << sf->pInfo->Software << endl << endl;
+
+        auto GetSampleType = [](auto type) {
+            switch (type)
+            {
+            case sf2::Sample::MONO_SAMPLE:
+                return "Mono Sample";
+            case sf2::Sample::RIGHT_SAMPLE:
+                return "Right Sample";
+            case sf2::Sample::LEFT_SAMPLE:
+                return "Left Sample";
+            case sf2::Sample::LINKED_SAMPLE:
+                return "Linked Sample";
+            case sf2::Sample::ROM_MONO_SAMPLE:
+                return "ROM Mono Sample";
+            case sf2::Sample::ROM_RIGHT_SAMPLE:
+                return "ROM Right Sample";
+            case sf2::Sample::ROM_LEFT_SAMPLE:
+                return "ROM Left Sample";
+            case sf2::Sample::ROM_LINKED_SAMPLE:
+                return "ROM Linked Sample";
+            default:
+                return "Unknown";
+            }
+        };
+        cout << "Samples (" << sf->GetSampleCount() << "): " << endl;
+        for (int i = 0; i < sf->GetSampleCount(); i++)
+        {
+            sf2::Sample *s = sf->GetSample(i);
+            cout << "\t" << s->Name
+                 << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
+            cout << ", SampleRate: " << s->SampleRate;
+            cout << ", Pitch: " << ((int)s->OriginalPitch);
+            cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
+            cout << "\t\tStart: " << s->Start << ", End: " << s->End;
+            cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
+            cout << "\t\tSample Type: " << GetSampleType(s->SampleType)
+                 << ", Sample Link: " << s->SampleLink << ")" << endl;
+        }
+    }
+    catch (RIFF::Exception e)
+    {
+        e.PrintMessage();
+        return;
+    }
+    catch (...)
+    {
+        return;
+    }
 }
 } // namespace scxt::engine

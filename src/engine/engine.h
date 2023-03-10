@@ -146,6 +146,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     void loadSampleIntoSelectedPartAndGroup(const fs::path &);
 
+    void loadSf2MultiSampleIntoSelectedPart(const fs::path &);
+
     /*
      * OnRegister generate and send all the metdata the client needs
      */
