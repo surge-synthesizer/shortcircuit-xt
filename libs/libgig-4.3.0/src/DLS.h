@@ -24,6 +24,7 @@
 #ifndef __DLS_H__
 #define __DLS_H__
 
+#include "helper.h"
 #include "RIFF.h"
 
 #if WORDS_BIGENDIAN
