@@ -29,18 +29,37 @@
 
 #include "utils.h"
 #include "infrastructure/filesystem_import.h"
+#include "SF.h"
 
 namespace scxt::sample
 {
 
 struct alignas(16) Sample : MoveableOnly<Sample>
 {
+    enum SourceType
+    {
+        WAV_FILE,
+        SF2_FILE
+    } type{WAV_FILE};
+
     Sample() : id(SampleID::next()) {}
-    Sample(const SampleID &sid) : id(sid) {}
+    Sample(const SampleID &sid) : id(sid), displayName(sid.to_string()) {}
     virtual ~Sample() = default;
 
+    std::string displayName{};
+    std::string getDisplayName() const { return displayName; }
     bool load(const fs::path &path);
+    bool loadFromSF2(sf2::File *f, int inst, int region);
+
     const fs::path &getPath() const { return mFileName; }
+    const int getCompoundInstrument() const { return 0; }
+    const int getCompoundRegion() const { return 0; }
+
+    typedef std::tuple<SourceType, fs::path, int, int> sampleFileAddress_t;
+    sampleFileAddress_t getSampleFileAddress() const
+    {
+        return {type, getPath(), getCompoundInstrument(), getCompoundRegion()};
+    }
 
     size_t getDataSize() const { return sample_length * (UseInt16 ? 2 : 4) * channels; }
     size_t getSampleLength() const { return sample_length; }

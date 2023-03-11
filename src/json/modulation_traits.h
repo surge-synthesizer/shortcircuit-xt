@@ -111,11 +111,11 @@ template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
-        findOr(v, "active", true, result.active);
+        findOrSet(v, "active", true, result.active);
         v.at("src").to(result.src);
         v.at("srcVia").to(result.srcVia);
         v.at("dst").to(result.dst);
-        findOr(v, "curve", modulation::vmc_none, result.curve);
+        findOrSet(v, "curve", modulation::vmc_none, result.curve);
         v.at("depth").to(result.depth);
     }
 };

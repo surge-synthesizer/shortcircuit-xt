@@ -56,4 +56,35 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
     samples[sp->id] = sp;
     return sp->id;
 }
+
+std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2::File *f, int instrument, int region)
+{
+    return loadSampleFromSF2ToID(p, f, instrument, region, SampleID::next());
+}
+
+
+std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, sf2::File *f,
+                                                             int instrument, int region,
+                                                             const SampleID &sid)
+{
+    assert(f);
+
+    for (const auto &[id, sm] : samples)
+    {
+        if (sm->type == Sample::SF2_FILE)
+        {
+            const auto &[type, path, inst, reg] = sm->getSampleFileAddress();
+            if (path == p && instrument == inst && region == reg)
+                return id;
+        }
+    }
+
+    auto sp = std::make_shared<Sample>(sid);
+
+    if (!sp->loadFromSF2(f, instrument, region))
+        return {};
+
+    samples[sp->id] = sp;
+    return sp->id;
+}
 } // namespace scxt::sample

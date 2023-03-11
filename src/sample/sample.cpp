@@ -51,12 +51,52 @@ bool Sample::load(const fs::path &path)
         clear_data(); // clear to a more predictable state
 
         bool r = parse_riff_wave(data, datasize);
+        // TODO deal with return value
         sample_loaded = true;
         mFileName = path;
+        displayName = fmt::format("{}", path.filename().u8string());
         return true;
     }
 
     return false;
+}
+
+bool Sample::loadFromSF2(sf2::File *f, int inst, int region)
+{
+    auto sfsample = f->GetInstrument(inst)->GetRegion(region)->GetSample();
+
+    UseInt16 = sfsample->GetFrameSize() == 2;
+    channels = sfsample->GetChannelCount();
+    sample_length = sfsample->GetTotalFrameCount();
+    sample_rate = sfsample->SampleRate;
+
+    auto s = sfsample;
+    using namespace std;
+    cout << "\t" << s->Name << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
+    cout << ", SampleRate: " << s->SampleRate;
+    cout << ", Pitch: " << ((int)s->OriginalPitch);
+    cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
+    cout << "\t\tStart: " << s->Start << ", End: " << s->End;
+    cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
+    cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink << ")"
+         << endl;
+
+    auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
+    displayName = fmt::format("{} ({}/{}/{})",
+                              s->Name,
+                              fnp.filename().u8string(),
+                              inst, region);
+
+    if (!UseInt16)
+        return false;
+
+    if (sfsample->GetChannelCount() != 1)
+        return false;
+
+    auto buf = sfsample->LoadSampleData();
+    load_data_i16(0, buf.pStart, buf.Size, sfsample->GetFrameSize());
+    sfsample->ReleaseSampleData();
+    return true;
 }
 
 // TODO: Rename these

@@ -335,6 +335,7 @@ void Engine::sendMetadataToClient() const
 
 void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 {
+    assert(messageController->threadingChecker.isSerialThread());
     // TODO: Make this (obvioosly) do something else
     // TODO: Make this stop the engine as well duh
     SCDBGCOUT << "SF2 Load " << p.u8string() << std::endl;
@@ -345,35 +346,42 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         auto sf = std::make_unique<sf2::File>(riff.get());
 
         auto sz = getSelectionManager()->getSelectedZone();
-        auto p = 0;
+        auto pt = 0;
         if (sz.has_value())
-            p = sz->part;
+            pt = sz->part;
 
-        auto &part = getPatch()->getPart(p);
-        for (int i=0; i<sf->GetInstrumentCount(); ++i)
+        auto &part = getPatch()->getPart(pt);
+        for (int i = 0; i < sf->GetInstrumentCount(); ++i)
         {
-            sf2::Instrument* instr = sf->GetInstrument(i);
+            sf2::Instrument *instr = sf->GetInstrument(i);
 
             auto grpnum = part->addGroup() - 1;
             auto &grp = part->getGroup(grpnum);
+            grp->name = instr->GetName();
 
-            if  (instr->pGlobalRegion)
+            if (instr->pGlobalRegion)
             {
                 // TODO: Global Region
             }
-            for (int j=0; j<instr->GetRegionCount(); ++j)
+            for (int j = 0; j < instr->GetRegionCount(); ++j)
             {
+                auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), i, j);
+                if (!sid.has_value())
+                    continue;
+
                 auto region = instr->GetRegion(j);
-                auto zn = std::make_unique<engine::Zone>();
+                auto zn = std::make_unique<engine::Zone>(*sid);
                 zn->mapping.keyboardRange = {region->loKey, region->hiKey};
+                zn->attachToSample(*sampleManager);
                 grp->addZone(zn);
             }
         }
-
     }
     catch (RIFF::Exception e)
     {
-        e.PrintMessage();
+        messaging::client::serializationSendToClient(
+            messaging::client::s2c_report_error,
+            messaging::client::s2cError_t{"SF2 Load Error", e.Message}, *messageController);
         return;
     }
     catch (...)

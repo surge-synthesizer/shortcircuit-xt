@@ -37,8 +37,15 @@ template <typename T> struct scxt_traits : public tao::json::traits<T>
 };
 using scxt_value = tao::json::basic_value<scxt_traits>;
 
+/**
+ * Extract json element key from type v onto r, using d as the default
+ * if the key is not
+ * @param key
+ * @param d
+ * @param r
+ */
 template <typename V, typename D, typename R>
-void findOr(V &v, const std::string &key, const D &d, R &r)
+void findOrSet(V &v, const std::string &key, const D &d, R &r)
 {
     auto vs = v.find(key);
     if (vs)
@@ -47,13 +54,20 @@ void findOr(V &v, const std::string &key, const D &d, R &r)
         r = d;
 }
 
-template <typename V, typename R> void findOr(V &v, const std::string &key, R &r)
+template <typename V, typename R> void findOrDefault(V &v, const std::string &key, R &r)
 {
     auto vs = v.find(key);
     if (vs)
         vs->to(r);
     else
         r = R{};
+}
+
+template <typename V, typename R> void findIf(V &v, const std::string &key, R &r)
+{
+    auto vs = v.find(key);
+    if (vs)
+        vs->to(r);
 }
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SCXT_TRAITS_H

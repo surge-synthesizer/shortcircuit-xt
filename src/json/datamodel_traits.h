@@ -110,7 +110,7 @@ template <> struct scxt_traits<datamodel::ControlDescription>
         v.at("mapBase").to(t.mapBase);
 
         std::vector<std::string> choices;
-        findOr(v, "choices", choices);
+        findOrDefault(v, "choices", choices);
         if (!choices.empty())
         {
             for (int i = 0; i < choices.size(); ++i)
