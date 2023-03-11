@@ -61,14 +61,19 @@ bool Sample::load(const fs::path &path)
     return false;
 }
 
-bool Sample::loadFromSF2(sf2::File *f, int inst, int region)
+bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
 {
+    mFileName = p;
+    instrument = inst;
+    region = reg;
+    type = SF2_FILE;
     auto sfsample = f->GetInstrument(inst)->GetRegion(region)->GetSample();
 
     UseInt16 = sfsample->GetFrameSize() == 2;
     channels = sfsample->GetChannelCount();
     sample_length = sfsample->GetTotalFrameCount();
     sample_rate = sfsample->SampleRate;
+
 
     auto s = sfsample;
     using namespace std;
@@ -82,10 +87,7 @@ bool Sample::loadFromSF2(sf2::File *f, int inst, int region)
          << endl;
 
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
-    displayName = fmt::format("{} ({}/{}/{})",
-                              s->Name,
-                              fnp.filename().u8string(),
-                              inst, region);
+    displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
 
     if (!UseInt16)
         return false;

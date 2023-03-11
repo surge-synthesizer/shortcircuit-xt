@@ -54,7 +54,8 @@ struct Part : MoveableOnly<Part>
     static constexpr int16_t omniChannel{-1};
 
     // TODO: editable name
-    std::string getName() const { return id.to_string(); }
+    std::string getName() const { return fmt::format("Part ch={}",
+                           (channel == omniChannel ? "OMNI" : std::to_string(channel + 1))); }
 
     // TODO: Multiple outputs
     size_t getNumOutputs() const { return 1; }

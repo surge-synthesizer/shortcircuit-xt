@@ -47,8 +47,8 @@ struct SampleManager : MoveableOnly<SampleManager>
     const ThreadingChecker &threadingChecker;
     SampleManager(const ThreadingChecker &t) : threadingChecker(t) {}
 
-    std::optional<SampleID> loadSampleByFileAddress(const Sample::sampleFileAddress_t &);
-    std::optional<SampleID> loadSampleByFileAddressToID(const Sample::sampleFileAddress_t &,
+    std::optional<SampleID> loadSampleByFileAddress(const Sample::SampleFileAddress &);
+    std::optional<SampleID> loadSampleByFileAddressToID(const Sample::SampleFileAddress &,
                                                         const SampleID &);
 
     std::optional<SampleID> loadSampleByPath(const fs::path &);
@@ -70,25 +70,32 @@ struct SampleManager : MoveableOnly<SampleManager>
         return {};
     }
 
-    // TODO int v sample id streaming lazy
-    std::vector<std::pair<SampleID, std::string>> getPathsAndIDs() const
+    typedef std::vector<std::pair<SampleID, Sample::SampleFileAddress>> sampleAddressesAndIds_t;
+    sampleAddressesAndIds_t getSampleAddressesAndIDs() const
     {
-        std::vector<std::pair<SampleID, std::string>> res;
+        sampleAddressesAndIds_t res;
         for (const auto &[k, v] : samples)
         {
-            res.emplace_back(k, v->getPath().u8string());
+            res.emplace_back(k, v->getSampleFileAddress());
         }
         return res;
     }
+    void restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &);
 
     void reset()
     {
         samples.clear();
+        sf2FilesByPath.clear();
         streamingVersion = 0x21120101;
     }
 
     uint64_t streamingVersion{0x21120101}; // see comment in patch.h
     std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
+
+  private:
+    std::unordered_map<std::string,
+                       std::pair<std::unique_ptr<RIFF::File>, std::unique_ptr<sf2::File>>>
+        sf2FilesByPath;
 };
 } // namespace scxt::sample
 #endif // SHORTCIRCUIT_SAMPLE_MANAGER_H

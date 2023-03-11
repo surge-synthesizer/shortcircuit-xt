@@ -30,6 +30,26 @@
 
 namespace scxt::sample
 {
+void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &r)
+{
+    for (const auto &[id,addr] : r)
+    {
+        switch (addr.type)
+        {
+        case Sample::WAV_FILE:
+        {
+            loadSampleByPathToID(addr.path, id);
+        }
+        break;
+        case Sample::SF2_FILE:
+        {
+            loadSampleFromSF2ToID(addr.path, nullptr, addr.instrument, addr.region, id);
+        }
+            break;
+        }
+    }
+}
+
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {
     return loadSampleByPathToID(p, SampleID::next());
@@ -67,8 +87,27 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
                                                              int instrument, int region,
                                                              const SampleID &sid)
 {
-    assert(f);
+    if (!f)
+    {
+        if (sf2FilesByPath.find(p.u8string()) == sf2FilesByPath.end())
+        {
+            try
+            {
+                SCDBGCOUT << "Opening file " << p.u8string() << std::endl;
 
+                auto riff = std::make_unique<RIFF::File>(p.u8string());
+                auto sf = std::make_unique<sf2::File>(riff.get());
+                sf2FilesByPath[p.u8string()] = {std::move(riff), std::move(sf)};
+            }
+            catch (RIFF::Exception e)
+            {
+                return {};
+            }
+        }
+        f = sf2FilesByPath[p.u8string()].second.get();
+    }
+
+    assert(f);
     for (const auto &[id, sm] : samples)
     {
         if (sm->type == Sample::SF2_FILE)
@@ -81,7 +120,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
     auto sp = std::make_shared<Sample>(sid);
 
-    if (!sp->loadFromSF2(f, instrument, region))
+    if (!sp->loadFromSF2(p, f, instrument, region))
         return {};
 
     samples[sp->id] = sp;
