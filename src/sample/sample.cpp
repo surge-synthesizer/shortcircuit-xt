@@ -74,17 +74,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     sample_length = sfsample->GetTotalFrameCount();
     sample_rate = sfsample->SampleRate;
 
-
     auto s = sfsample;
-    using namespace std;
-    cout << "\t" << s->Name << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
-    cout << ", SampleRate: " << s->SampleRate;
-    cout << ", Pitch: " << ((int)s->OriginalPitch);
-    cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
-    cout << "\t\tStart: " << s->Start << ", End: " << s->End;
-    cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
-    cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink << ")"
-         << endl;
 
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
     displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
