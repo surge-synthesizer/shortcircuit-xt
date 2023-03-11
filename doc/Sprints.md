@@ -90,7 +90,8 @@ Sprint Log I posted on Discord
 
 A series of commits to see how much SF2 I can get working. Start with
 at least loading and having samples sound, albeit out of tune, and
-not restoring from a save.
+not restoring from a save. FInally parse out all the envelope data and root
+key and stuff; It's basically starting to work!
 
 ## Day 29 (2023-03-10)
 

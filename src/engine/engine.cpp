@@ -365,14 +365,133 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
             }
             for (int j = 0; j < instr->GetRegionCount(); ++j)
             {
+                auto region = instr->GetRegion(j);
+                auto sfsamp = region->GetSample();
+                if (sfsamp == nullptr)
+                    continue;
+
                 auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), i, j);
                 if (!sid.has_value())
                     continue;
 
-                auto region = instr->GetRegion(j);
                 auto zn = std::make_unique<engine::Zone>(*sid);
-                zn->mapping.keyboardRange = {region->loKey, region->hiKey};
+                if (region->overridingRootKey >= 0)
+                    zn->mapping.rootKey = region->overridingRootKey;
+                zn->mapping.rootKey += sfsamp->OriginalPitch - 60;
+
+                auto lk = region->loKey;
+                auto hk = region->hiKey;
+                if (lk == sf2::NONE)
+                    lk = sfsamp->OriginalPitch;
+                if (hk == sf2::NONE)
+                    hk = sfsamp->OriginalPitch;
+                zn->mapping.keyboardRange = {lk, hk};
+
+                auto lv = region->minVel;
+                auto hv = region->maxVel;
+                if (lv == sf2::NONE)
+                    lv = 0;
+                if (hv == sf2::NONE)
+                    hv = 127;
+                zn->mapping.velocityRange = {lv, hv};
+
+                // TODO check this 256
+                zn->mapping.pitchOffset = 1.0 * sfsamp->PitchCorrection / 256;
                 zn->attachToSample(*sampleManager);
+
+                using namespace std;
+                auto s = sfsamp;
+                auto reg = region;
+
+                zn->mapping.pitchOffset += reg->coarseTune + reg->fineTune * 0.01;
+
+
+
+                if (reg->GetEG1PreAttackDelay() > 0.001)
+                {
+                    std::cout << "ERROR: PreAttach Delay which we don't support" << std::endl;
+                }
+                auto s2a = [](double s)
+                {
+                    auto l2s = log2(s);
+                    auto scs = l2s - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin;
+                    auto ncs = scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
+                    return std::clamp(ncs, 0., 1.);
+                };
+
+                auto sus2l = [](double s)
+                {
+                    auto db = -s / 10;
+                    return pow(10.0, db * 0.05);
+                };
+
+                zn->aegStorage.a = s2a(reg->GetEG1Attack());
+                zn->aegStorage.h = s2a(reg->GetEG1Hold());
+                zn->aegStorage.d = s2a(reg->GetEG1Decay());
+                zn->aegStorage.s = sus2l(reg->GetEG1Sustain());
+                zn->aegStorage.r = s2a(reg->GetEG1Release());
+
+                auto GetValue = [](const auto &val)
+                {
+                    if (val == sf2::NONE) return ToString("NONE");
+                    return ToString(val);
+                };
+
+                zn->eg2Storage.a = s2a(reg->GetEG2Attack());
+                zn->eg2Storage.h = s2a(reg->GetEG2Hold());
+                zn->eg2Storage.d = s2a(reg->GetEG2Decay());
+                zn->eg2Storage.s = sus2l(reg->GetEG2Sustain());
+                zn->eg2Storage.r = s2a(reg->GetEG2Release());
+
+                std::cout << "STUFF I HAVEN'T DEALT WITH YET" << std::endl;
+                cout << "\t\t    Modulation Envelope Generator" << endl;
+                cout << "\t\t\tPitch=" << GetValue(reg->modEnvToPitch) << "cents, Cutoff=";
+                cout << GetValue(reg->modEnvToFilterFc) << "cents" << endl << endl;
+
+                cout << "\t\t    Modulation LFO: Delay=" << ::sf2::ToSeconds(reg->delayModLfo) << "s, Frequency=";
+                cout << ::sf2::ToHz(reg->freqModLfo) << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB";
+                cout << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc;
+                cout << ", LFO to Pitch=" << reg->modLfoToPitch << endl;
+
+                cout << "\t\t    Vibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo) << "s, Frequency=";
+                cout << ::sf2::ToHz(reg->freqVibLfo) << "Hz, LFO to Pitch=" << reg->vibLfoToPitch << endl;
+
+                cout << "\t\t\tModulators (" << reg->modulators.size() << ")" << endl;
+
+                for (int i = 0; i < reg->modulators.size(); i++) {
+                    cout << "\t\t\tModulator " << i << endl;
+                    // PrintModulatorItem(&reg->modulators[i]);
+                }
+
+                cout << "\t" << s->Name << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
+                cout << ", SampleRate: " << s->SampleRate;
+                cout << ", Pitch: " << ((int)s->OriginalPitch);
+                cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
+                cout << "\t\tStart: " << s->Start << ", End: " << s->End;
+                cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
+                cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink << ")"
+                     << endl;
+
+                if (s != NULL) {
+                    if (reg->HasLoop) {
+                        cout << ", Loop Start: " << reg->LoopStart << ", Loop End: " << reg->LoopEnd;
+                    }
+                    cout << endl;
+                }
+                cout << "\t\t    Key range=";
+
+                cout << "\t\t    Initial cutoff frequency=";
+                if (reg->initialFilterFc == ::sf2::NONE) cout << "None" << endl;
+                else cout << reg->initialFilterFc << "cents" << endl;
+
+                cout << "\t\t    Initial resonance=";
+                if (reg->initialFilterQ == ::sf2::NONE) cout << "None" << endl;
+                else cout << (reg->initialFilterQ / 10.0) << "dB" << endl;
+
+                if (reg->exclusiveClass) cout << ", Exclusive group=" << reg->exclusiveClass;
+                cout << endl;
+
+
                 grp->addZone(zn);
             }
         }
