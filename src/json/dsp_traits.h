@@ -68,7 +68,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         v.at("mix").to(result.mix);
         v.at("floatParams").to(result.floatParams);
         v.at("intParams").to(result.intParams);
-        findOr(v, "isBypassed", false, result.isBypassed);
+        findOrSet(v, "isBypassed", false, result.isBypassed);
     }
 };
 
@@ -122,7 +122,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
                    scxt::dsp::processor::ProcessorControlDescription &t)
     {
         int tInt{dsp::processor::proct_none};
-        findOr(v, "type", (int32_t)dsp::processor::proct_none, tInt);
+        findOrSet(v, "type", (int32_t)dsp::processor::proct_none, tInt);
         t.type = (dsp::processor::ProcessorType)tInt;
         v.at("typeDisplayName").to(t.typeDisplayName);
         v.at("numFloatParams").to(t.numFloatParams);

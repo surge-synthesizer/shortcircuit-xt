@@ -72,7 +72,7 @@ struct Zone : MoveableOnly<Zone>
     std::string getName() const
     {
         if (sample)
-            return fmt::format("Z{} : {}", id.id, sample->getPath().filename().u8string());
+            return sample->getDisplayName();
         return id.to_string();
     }
 

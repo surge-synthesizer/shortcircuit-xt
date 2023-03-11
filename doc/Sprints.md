@@ -25,7 +25,7 @@ Early March
 - Comb Filter and Processor Stereo Revisit
 - Then: Add a zone by sample revisit especially filters borked on add
 - Then: Implement the memory pool more intelligently
-- JSON .at() to findOr almost everywhere and add a stremaing version findIf
+- JSON .at() to findOrSet almost everywhere and add a stremaing version findIf
 - Voice Design for real and zone level modulators
   - Lifecycle with GATED FINISHED CLEANUP etc
   - AEG/FEG
@@ -85,6 +85,12 @@ Open Questions and ToDos and Reviews:
 
 ----------
 Sprint Log I posted on Discord
+
+## Day 30 (2023-03-11)
+
+A series of commits to see how much SF2 I can get working. Start with
+at least loading and having samples sound, albeit out of tune, and
+not restoring from a save.
 
 ## Day 29 (2023-03-10)
 

@@ -126,12 +126,13 @@ template <> struct scxt_traits<scxt::engine::Group>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Group &t)
     {
-        v = {{"zones", t.getZones()}};
+        v = {{"zones", t.getZones()}, {"name", t.getName()}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Group &group)
     {
+        findIf(v, "name", group.name);
         group.clearZones();
 
         auto vzones = v.at("zones").get_array();
@@ -174,7 +175,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
     static void to(const tao::json::basic_value<Traits> &v,
                    scxt::engine::Zone::ZoneMappingData &zmd)
     {
-        findOr(v, "rootKey", 60, zmd.rootKey);
+        findOrSet(v, "rootKey", 60, zmd.rootKey);
         v.at("keyboardRange").to(zmd.keyboardRange);
         v.at("velocityRange").to(zmd.velocityRange);
         v.at("pbDown").to(zmd.pbDown);
@@ -182,8 +183,8 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
         v.at("amplitude").to(zmd.amplitude);
         v.at("pan").to(zmd.pan);
         v.at("pitchOffset").to(zmd.pitchOffset);
-        findOr(v, "velocitySens", 1.0, zmd.velocitySens);
-        findOr(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
+        findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
+        findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
     }
 };
 
@@ -219,8 +220,8 @@ template <> struct scxt_traits<scxt::engine::Zone>
         fromIndexedArray<Traits>(v.at("routingTable"), zone.routingTable);
 
         v.at("lfoStorage").to(zone.lfoStorage);
-        findOr(v, "aegStorage", zone.aegStorage);
-        findOr(v, "eg2Storage", zone.eg2Storage);
+        findOrDefault(v, "aegStorage", zone.aegStorage);
+        findOrDefault(v, "eg2Storage", zone.eg2Storage);
     }
 };
 

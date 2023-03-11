@@ -38,6 +38,7 @@
 #include <optional>
 #include <vector>
 #include <utility>
+#include "SF.h"
 
 namespace scxt::sample
 {
@@ -46,8 +47,21 @@ struct SampleManager : MoveableOnly<SampleManager>
     const ThreadingChecker &threadingChecker;
     SampleManager(const ThreadingChecker &t) : threadingChecker(t) {}
 
+    std::optional<SampleID> loadSampleByFileAddress(const Sample::sampleFileAddress_t &);
+    std::optional<SampleID> loadSampleByFileAddressToID(const Sample::sampleFileAddress_t &,
+                                                        const SampleID &);
+
     std::optional<SampleID> loadSampleByPath(const fs::path &);
     std::optional<SampleID> loadSampleByPathToID(const fs::path &, const SampleID &id);
+
+    std::optional<SampleID> loadSampleFromSF2(const fs::path &,
+                                              sf2::File *f, // if this is null I will re-open it
+                                              int instrument, int region);
+
+    std::optional<SampleID> loadSampleFromSF2ToID(const fs::path &,
+                                                  sf2::File *f, // if this is null I will re-open it
+                                                  int instrument, int region, const SampleID &id);
+
     std::shared_ptr<Sample> getSample(const SampleID &id) const
     {
         auto p = samples.find(id);

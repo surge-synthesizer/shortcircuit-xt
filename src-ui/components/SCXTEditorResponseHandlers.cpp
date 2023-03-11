@@ -119,4 +119,10 @@ void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Group::zoneMappin
 {
     multiScreen->sample->setGroupZoneMappingSummary(d);
 }
+
+void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
+{
+    auto &[title, msg] = e;
+    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, title, msg, "OK");
+}
 } // namespace scxt::ui

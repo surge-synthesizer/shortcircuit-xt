@@ -25,16 +25,18 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_MESSAGING_CLIENT_CLIENT_MESSAGES_H
-#define SCXT_SRC_MESSAGING_CLIENT_CLIENT_MESSAGES_H
+#ifndef SCXT_SRC_MESSAGING_CLIENT_INTERACTION_MESSAGES_H
+#define SCXT_SRC_MESSAGING_CLIENT_INTERACTION_MESSAGES_H
 
-#include "enginestatus_messages.h"
-#include "structure_messages.h"
-#include "modulation_messages.h"
-#include "zone_messages.h"
-#include "selection_messages.h"
-#include "processor_messages.h"
-#include "group_messages.h"
-#include "interaction_messages.h"
+#include "messaging/client/detail/client_json_details.h"
+#include "json/selection_traits.h"
+#include "selection/selection_manager.h"
+#include "engine/engine.h"
+#include "client_macros.h"
 
-#endif // SHORTCIRCUIT_CLIENT_MESSAGE_IMPLS_H
+namespace scxt::messaging::client
+{
+typedef std::pair<std::string, std::string> s2cError_t;
+SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
+} // namespace scxt::messaging::client
+#endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H
