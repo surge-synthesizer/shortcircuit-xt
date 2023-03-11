@@ -39,28 +39,77 @@
 
 namespace scxt::json
 {
+template <> struct scxt_traits<scxt::sample::Sample::SourceType>
+{
+    static constexpr const char *key = "sourceType";
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const scxt::sample::Sample::SourceType &e)
+    {
+        switch (e)
+        {
+        case sample::Sample::WAV_FILE:
+            v = {{key, "wav_file"}};
+            break;
+        case sample::Sample::SF2_FILE:
+            v = {{key, "sf2_file"}};
+            break;
+        }
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, scxt::sample::Sample::SourceType &r)
+    {
+        std::string k{};
+        findIf(v, key, k);
+
+        if (k == "wav_file")
+            r = sample::Sample::WAV_FILE;
+        if (k == "sf2_file")
+            r = sample::Sample::SF2_FILE;
+        return;
+    }
+};
+
+template <> struct scxt_traits<sample::Sample::SampleFileAddress>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::sample::Sample::SampleFileAddress &f)
+    {
+        v = {{"type", f.type},
+             {"path", f.path.u8string()},
+             {"instrument", f.instrument},
+             {"region", f.region}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   scxt::sample::Sample::SampleFileAddress &f)
+    {
+        findOrSet(v, "type", sample::Sample::WAV_FILE, f.type);
+        std::string p;
+        findIf(v, "path", p);
+        f.path = fs::path{p};
+        findOrSet(v, "instrument", -1, f.instrument);
+        findOrSet(v, "region", -1, f.region);
+    }
+};
 template <> struct scxt_traits<scxt::sample::SampleManager>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::sample::SampleManager &e)
     {
         // TODO: Probably stream samples better than this
-        v = {{"samplePaths", e.getPathsAndIDs()}};
+        v = {{"sampleAddresses", e.getSampleAddressesAndIDs()}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::sample::SampleManager &mgr)
     {
         mgr.reset();
-        auto arr = v.at("samplePaths").get_array();
-        for (const auto el : arr)
-        {
-            scxt::SampleID id;
-            std::string str;
-            el.get_array()[0].to(id);
-            el.get_array()[1].to(str);
-            mgr.loadSampleByPathToID(fs::path{str}, id);
-        }
+        sample::SampleManager::sampleAddressesAndIds_t res;
+        findIf(v, "sampleAddresses", res);
+        mgr.restoreFromSampleAddressesAndIDs(res);
     }
 };
 } // namespace scxt::json

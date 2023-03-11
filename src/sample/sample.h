@@ -49,14 +49,23 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     std::string displayName{};
     std::string getDisplayName() const { return displayName; }
     bool load(const fs::path &path);
-    bool loadFromSF2(sf2::File *f, int inst, int region);
+    bool loadFromSF2(const fs::path &path, sf2::File *f, int inst, int region);
 
     const fs::path &getPath() const { return mFileName; }
-    const int getCompoundInstrument() const { return 0; }
-    const int getCompoundRegion() const { return 0; }
 
-    typedef std::tuple<SourceType, fs::path, int, int> sampleFileAddress_t;
-    sampleFileAddress_t getSampleFileAddress() const
+    int instrument{-1}, region{-1};
+    const int getCompoundInstrument() const { return instrument; }
+    const int getCompoundRegion() const { return region; }
+
+    struct SampleFileAddress
+    {
+        SourceType type{WAV_FILE};
+        fs::path path{};
+        int instrument{-1};
+        int region{-1};
+    };
+
+    SampleFileAddress getSampleFileAddress() const
     {
         return {type, getPath(), getCompoundInstrument(), getCompoundRegion()};
     }
