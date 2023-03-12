@@ -45,7 +45,15 @@ struct SendFXScreen;
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
 {
+    // The message controller is needed to communicate
     messaging::MessageController &msgCont;
+
+    /* In theory we could have a copy of all the samples in the UI but
+     * their lifetime is well known and their json load is big so for now
+     * lets make the simplifyign assumption that we get a const reference to
+     * the sample manager for our engine.
+     */
+    const sample::SampleManager &sampleManager;
 
     struct IdleTimer : juce::Timer
     {
@@ -72,7 +80,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     };
     std::unique_ptr<Tooltip> toolTip;
 
-    SCXTEditor(messaging::MessageController &e);
+    SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s);
     virtual ~SCXTEditor() noexcept;
 
     enum ActiveScreen
@@ -97,6 +105,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void onVoiceCount(const uint32_t &v);
     void onEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
     void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
+    void onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &);
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
     void
     onProcessorDataAndMetadata(const scxt::messaging::client::processorDataResponsePayload_t &);

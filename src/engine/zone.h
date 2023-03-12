@@ -57,13 +57,31 @@ constexpr int lfosPerZone{3};
 
 struct Zone : MoveableOnly<Zone>
 {
+    static constexpr int maxSamplesPerZone{16};
     Zone() : id(ZoneID::next()) { initialize(); }
-    Zone(SampleID sid) : id(ZoneID::next()), sampleID(sid) { initialize(); }
+    Zone(SampleID sid) : id(ZoneID::next()){
+        samples[0].sampleID = sid;
+        samples[0].active = true;
+        initialize();
+    }
     Zone(Zone &&) = default;
 
     ZoneID id;
-    SampleID sampleID;
-    std::shared_ptr<sample::Sample> sample{nullptr};
+
+    struct AssociatedSample
+    {
+        bool active{false};
+        SampleID sampleID;
+        std::shared_ptr<sample::Sample> sample{nullptr};
+
+        bool operator==(const AssociatedSample &other) const
+        {
+            return active == other.active &&
+            sampleID == other.sampleID;
+        }
+    };
+    typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
+    AssociatedSampleArray  samples;
 
     float output alignas(16)[maxOutputs][2][blockSize];
     void process();
@@ -71,25 +89,26 @@ struct Zone : MoveableOnly<Zone>
     // TODO: editable name
     std::string getName() const
     {
-        if (sample)
-            return sample->getDisplayName();
+        if (samples[0].sample)
+            return samples[0].sample->getDisplayName();
         return id.to_string();
     }
 
     // TODO: Multi-output
     size_t getNumOutputs() const { return 1; }
 
-    bool attachToSample(const sample::SampleManager &manager)
+    bool attachToSample(const sample::SampleManager &manager, int index = 0)
     {
-        if (sampleID.isValid())
+        auto &s = samples[index];
+        if (s.sampleID.isValid())
         {
-            sample = manager.getSample(sampleID);
+            s.sample = manager.getSample(s.sampleID);
         }
         else
         {
-            sample.reset();
+            s.sample.reset();
         }
-        return sample != nullptr;
+        return s.sample != nullptr;
     }
 
     struct ZoneMappingData
@@ -142,7 +161,7 @@ struct Zone : MoveableOnly<Zone>
 
     bool operator==(const Zone &other) const
     {
-        auto res = sampleID.id == other.sampleID.id;
+        auto res = samples == other.samples;
         res = res && mapping == other.mapping;
         // Bail out before the expensive checks
         if (!res)

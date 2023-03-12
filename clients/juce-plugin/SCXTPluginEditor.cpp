@@ -29,10 +29,12 @@
 #include "SCXTPluginEditor.h"
 
 //==============================================================================
-SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &mc)
+SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p,
+                                   scxt::messaging::MessageController &mc,
+                                   const scxt::sample::SampleManager &s)
     : juce::AudioProcessorEditor(&p)
 {
-    ed = std::make_unique<scxt::ui::SCXTEditor>(mc);
+    ed = std::make_unique<scxt::ui::SCXTEditor>(mc, s);
     addAndMakeVisible(*ed);
     setSize(1186, 816);
     ed->setBounds(0, 0, getWidth(), getHeight());

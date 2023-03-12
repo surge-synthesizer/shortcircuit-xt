@@ -107,8 +107,6 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         Ctrl::Rsh, "R Shape", datamodel::AdsrStorage::cdShape,
         [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
 
-    cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneView(index), e->msgCont);
-
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
             safeThis->showHamburgerMenu();

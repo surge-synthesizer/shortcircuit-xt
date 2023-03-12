@@ -57,8 +57,7 @@ struct MappingZoneHeader : juce::Component
         g.fillAll();
         g.setColour(juce::Colours::white);
         g.setFont(juce::Font("Comic Sans MS", 20, juce::Font::plain));
-        g.drawText("Zones Header " + std::to_string(paints++), getLocalBounds(),
-                   juce::Justification::centred);
+        g.drawText("Zones Header", getLocalBounds(), juce::Justification::centred);
     }
 };
 
@@ -365,14 +364,101 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     }
 }
 
-struct SampleDisplay : juce::Component
+struct SampleDisplay : juce::Component, HasEditor
 {
+    SampleDisplay(SCXTEditor *e) : HasEditor(e) {}
+
     void paint(juce::Graphics &g)
     {
-        g.setColour(juce::Colours::pink);
+        if (!active)
+            return;
+
+        g.setColour(juce::Colours::pink.withAlpha(0.2f));
         g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
         g.drawText("Sample Region", getLocalBounds(), juce::Justification::centred);
+
+        auto r = getLocalBounds().withTrimmedRight(150);
+        g.setColour(juce::Colours::white);
+        g.drawRect(r, 1);
+
+        auto samp = editor->sampleManager.getSample(sampleView[0].sampleID);
+        if (!samp)
+        {
+            g.setColour(juce::Colours::red);
+            g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
+            g.drawText("NULL SAMPLE", getLocalBounds(), juce::Justification::centred);
+            return;
+        }
+
+        auto l = samp->getSampleLength();
+        if (samp->UseInt16)
+        {
+            auto fac = 1.0 * l / r.getWidth();
+            auto d = samp->GetSamplePtrI16(0);
+            double c = 0;
+            int ct = 0;
+            int16_t mx = std::numeric_limits<int16_t>::min();
+            int16_t mn = std::numeric_limits<int16_t>::max();
+
+            for (int s = 0; s < l; ++s)
+            {
+                if (c + fac < s)
+                {
+                    double nmx = 1.0 - mx * 1.0 / std::numeric_limits<int16_t>::max();
+                    double nmn = 1.0 - mn * 1.0 / std::numeric_limits<int16_t>::max();
+
+                    nmx = (nmx + 1) * 0.25;
+                    nmn = (nmn + 1) * 0.25;
+
+                    g.drawVerticalLine(ct, getHeight() * nmx, getHeight() * nmn);
+                    c += fac;
+                    ct++;
+                    mx = std::numeric_limits<int16_t>::min();
+                    mn = std::numeric_limits<int16_t>::max();
+                }
+                mx = std::max(d[s], mx);
+                mn = std::min(d[s], mn);
+            }
+        }
+        else
+        {
+            auto fac = 1.0 * l / r.getWidth();
+            auto d = samp->GetSamplePtrF32(0);
+            double c = 0;
+            int ct = 0;
+
+            float mx = -100.f, mn = 100.f;
+
+            for (int s = 0; s < l; ++s)
+            {
+                if (c + fac < s)
+                {
+                    double nmx = 1.0 - mx;
+                    double nmn = 1.0 - mn;
+
+                    nmx = (nmx + 1) * 0.25;
+                    nmn = (nmn + 1) * 0.25;
+
+                    g.drawVerticalLine(ct, getHeight() * nmx, getHeight() * nmn);
+                    c += fac;
+                    ct++;
+                    mx = -100.f;
+                    mn = 100.f;
+                }
+                mx = std::max(d[s], mx);
+                mn = std::min(d[s], mn);
+            }
+        }
     }
+
+    bool active{false};
+    void setActive(bool b)
+    {
+        active = b;
+        repaint();
+    }
+
+    engine::Zone::AssociatedSampleArray sampleView;
 };
 
 struct MacroDisplay : juce::Component
@@ -394,7 +480,7 @@ MappingPane::MappingPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("
     mappingDisplay = std::make_unique<MappingDisplay>(editor);
     addAndMakeVisible(*mappingDisplay);
 
-    sampleDisplay = std::make_unique<SampleDisplay>();
+    sampleDisplay = std::make_unique<SampleDisplay>(editor);
     addChildComponent(*sampleDisplay);
 
     macroDisplay = std::make_unique<MacroDisplay>();
@@ -427,7 +513,17 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
     mappingDisplay->repaint();
 }
 
-void MappingPane::setActive(bool b) { mappingDisplay->setActive(b); }
+void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
+{
+    sampleDisplay->sampleView = m;
+    sampleDisplay->repaint();
+}
+
+void MappingPane::setActive(bool b)
+{
+    mappingDisplay->setActive(b);
+    sampleDisplay->setActive(b);
+}
 
 void MappingPane::setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
 {

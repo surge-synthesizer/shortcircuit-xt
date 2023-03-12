@@ -49,7 +49,8 @@ void SCXTEditor::Tooltip::paint(juce::Graphics &g)
     g.drawText(tooltipText, getLocalBounds().reduced(2), juce::Justification::centred);
 }
 
-SCXTEditor::SCXTEditor(messaging::MessageController &e) : msgCont(e)
+SCXTEditor::SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s)
+    : msgCont(e), sampleManager(s)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
     setStyle(connectors::SCXTStyleSheetCreator::setup());

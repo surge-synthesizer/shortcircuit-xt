@@ -188,6 +188,24 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
     }
 };
 
+template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
+{
+
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::engine::Zone::AssociatedSample &s)
+    {
+        v = {{"active", s.active}, {"id", s.sampleID}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::AssociatedSample &s)
+    {
+        findOrSet(v, "active", false, s.active);
+        findIf(v, "id", s.sampleID);
+    }
+};
+
 template <> struct scxt_traits<scxt::engine::Zone>
 {
     template <template <typename...> class Traits>
@@ -199,7 +217,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
                     r.depth != 0 || !r.active || r.curve != scxt::modulation::vmc_none);
         });
 
-        v = {{"sampleID", t.sampleID},
+        v = {{"associatedSamples", t.samples},
              {"mappingData", t.mapping},
              {"processorStorage", t.processorStorage},
              {"routingTable", rtArray},
@@ -211,7 +229,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone &zone)
     {
-        v.at("sampleID").to(zone.sampleID);
+        findIf(v, "associatedSamples", zone.samples);
         v.at("mappingData").to(zone.mapping);
         fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 
