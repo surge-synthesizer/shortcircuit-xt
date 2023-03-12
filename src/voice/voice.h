@@ -131,7 +131,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 
     void attack()
     {
-        assert(zone->sample);
+        assert(zone->samples[0].sample);
         playState = GATED;
         voiceStarted();
     }
