@@ -91,7 +91,8 @@ bool Voice::process()
         memset(output, 0, sizeof(output));
         return true;
     }
-    auto &s = zone->sample;
+    // TODO round robin state
+    auto &s = zone->samples[0].sample;
     assert(s);
 
     modMatrix.copyBaseValuesFromZone(zone);
@@ -266,7 +267,8 @@ void Voice::panOutputsBy(bool chainIsMono, float pv)
 
 void Voice::initializeGenerator()
 {
-    auto &s = zone->sample;
+    // TODO round robin
+    auto &s = zone->samples[0].sample;
     assert(s);
 
     GDIO.outputL = output[0];
@@ -323,7 +325,8 @@ void Voice::calculateGeneratorRatio()
     float ndiff = (float)key - zone->mapping.rootKey +
                   modMatrix.getValue(modulation::vmd_Sample_Pitch_Offset, 0);
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
-    GD.ratio = (int32_t)((1 << 24) * fac * zone->sample->sample_rate * sampleRateInv *
+    // TODO round robin
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->samples[0].sample->sample_rate * sampleRateInv *
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
 }

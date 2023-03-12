@@ -74,6 +74,25 @@ void SCXTEditor::onMappingUpdated(
     }
 }
 
+void SCXTEditor::onSamplesUpdated(
+    const scxt::messaging::client::sampleSelectedZoneViewResposne_t &payload)
+{
+    const auto &[active, s] = payload;
+    if (active)
+    {
+        multiScreen->sample->setActive(true);
+        multiScreen->sample->setSampleData(s);
+    }
+    else
+    {
+        multiScreen->sample->setActive(false);
+    }
+    for (const auto &ss : s)
+        if (ss.active)
+            std::cout << ss.active << " " << ss.sampleID.to_string() << " "
+                      << sampleManager.getSample(ss.sampleID)->getDisplayName() << std::endl;
+}
+
 void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
 {
     if (multiScreen && multiScreen->parts)

@@ -53,6 +53,9 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         serializationSendToClient(cms::s2c_respond_zone_mapping,
                                   cms::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
                                   *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_respond_zone_samples,
+                                  cms::SampleSelectedZoneView::s2c_payload_t{true, zp->samples},
+                                  *(engine.getMessageController()));
         serializationSendToClient(cms::s2c_respond_zone_adsr_view,
                                   cms::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
                                   *(engine.getMessageController()));
@@ -86,6 +89,10 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         singleSelection = {};
         serializationSendToClient(cms::s2c_respond_zone_mapping,
                                   cms::MappingSelectedZoneView::s2c_payload_t{false, {}},
+                                  *(engine.getMessageController()));
+
+        serializationSendToClient(cms::s2c_respond_zone_samples,
+                                  cms::SampleSelectedZoneView::s2c_payload_t{false, {}},
                                   *(engine.getMessageController()));
         serializationSendToClient(cms::s2c_respond_zone_adsr_view,
                                   cms::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},

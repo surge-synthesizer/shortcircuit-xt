@@ -2,7 +2,6 @@
 
 
 Early March
-- MultiSamples - at least SF2 making sound some
 - Stereo and Mono Samples in the Zone and Processors
   - Output section 
 - Zone Edits
@@ -86,11 +85,16 @@ Open Questions and ToDos and Reviews:
 ----------
 Sprint Log I posted on Discord
 
+## Day 31 (2023-03-12)
+
+Start work on setting up sample parameters (loops, play direction etc) but begin
+that by making the zone have up to 16 samples for future round robin support and so on.
+
 ## Day 30 (2023-03-11)
 
 A series of commits to see how much SF2 I can get working. Start with
 at least loading and having samples sound, albeit out of tune, and
-not restoring from a save. FInally parse out all the envelope data and root
+not restoring from a save. Make it load from a save next. Finally parse out all the envelope data and root
 key and stuff; It's basically starting to work!
 
 ## Day 29 (2023-03-10)

@@ -57,7 +57,6 @@ struct SampleManager : MoveableOnly<SampleManager>
     std::optional<SampleID> loadSampleFromSF2(const fs::path &,
                                               sf2::File *f, // if this is null I will re-open it
                                               int instrument, int region);
-
     std::optional<SampleID> loadSampleFromSF2ToID(const fs::path &,
                                                   sf2::File *f, // if this is null I will re-open it
                                                   int instrument, int region, const SampleID &id);

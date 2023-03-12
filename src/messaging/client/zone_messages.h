@@ -36,37 +36,8 @@
 namespace scxt::messaging::client
 {
 typedef std::tuple<int, bool, datamodel::AdsrStorage> adsrViewResponsePayload_t;
-inline void adsrSelectedViewResponse(const int &which, const engine::Engine &engine,
-                                     MessageController &cont)
-{
-    // TODO Selected Zone State
-    // const auto &selectedZone = engine.getPatch()->getPart(0)->getGroup(0)->getZone(0);
-    auto addr = engine.getSelectionManager()->getSelectedZone();
-
-    if (addr.has_value())
-    {
-        const auto &selectedZone =
-            engine.getPatch()->getPart(addr->part)->getGroup(addr->group)->getZone(addr->zone);
-        if (which == 0)
-            serializationSendToClient(
-                s2c_respond_zone_adsr_view,
-                adsrViewResponsePayload_t{which, true, selectedZone->aegStorage}, cont);
-        if (which == 1)
-            serializationSendToClient(
-                s2c_respond_zone_adsr_view,
-                adsrViewResponsePayload_t{which, true, selectedZone->eg2Storage}, cont);
-    }
-    else
-    {
-        // It is a wee bit wasteful re-sending a default ADSR here but easier
-        // than two messages
-        serializationSendToClient(s2c_respond_zone_adsr_view,
-                                  adsrViewResponsePayload_t{which, false, {}}, cont);
-    }
-}
-CLIENT_SERIAL_REQUEST_RESPONSE(AdsrSelectedZoneView, c2s_request_zone_adsr_view, int,
-                               s2c_respond_zone_adsr_view, adsrViewResponsePayload_t,
-                               adsrSelectedViewResponse(payload, engine, cont), onEnvelopeUpdated);
+SERIAL_TO_CLIENT(AdsrSelectedZoneView, s2c_respond_zone_adsr_view, adsrViewResponsePayload_t,
+                 onEnvelopeUpdated);
 
 typedef std::tuple<int, datamodel::AdsrStorage> adsrSelectedZoneC2SPayload_t;
 inline void adsrSelectedZoneUpdate(const adsrSelectedZoneC2SPayload_t &payload,
@@ -90,29 +61,12 @@ CLIENT_TO_SERIAL(AdsrSelectedZoneUpdateRequest, c2s_update_zone_adsr_view,
                  adsrSelectedZoneC2SPayload_t, adsrSelectedZoneUpdate(payload, engine, cont));
 
 typedef std::tuple<bool, engine::Zone::ZoneMappingData> mappingSelectedZoneViewResposne_t;
-inline void mappingSelectedZoneViewSerial(const engine::Engine &engine, MessageController(&cont))
-{
-    // TODO Selected Zone State
-    // const auto &selectedZone = engine.getPatch()->getPart(0)->getGroup(0)->getZone(0);
-    auto addr = engine.getSelectionManager()->getSelectedZone();
+SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,
+                 mappingSelectedZoneViewResposne_t, onMappingUpdated);
 
-    if (addr.has_value())
-    {
-        const auto &selectedZone =
-            engine.getPatch()->getPart(addr->part)->getGroup(addr->group)->getZone(addr->zone);
-        serializationSendToClient(s2c_respond_zone_mapping,
-                                  mappingSelectedZoneViewResposne_t{true, selectedZone->mapping},
-                                  cont);
-    }
-    else
-    {
-        serializationSendToClient(s2c_respond_zone_mapping,
-                                  mappingSelectedZoneViewResposne_t{false, {}}, cont);
-    }
-}
-CLIENT_SERIAL_REQUEST_RESPONSE(MappingSelectedZoneView, c2s_request_zone_mapping, uint8_t,
-                               s2c_respond_zone_mapping, mappingSelectedZoneViewResposne_t,
-                               mappingSelectedZoneViewSerial(engine, cont), onMappingUpdated);
+typedef std::tuple<bool, engine::Zone::AssociatedSampleArray> sampleSelectedZoneViewResposne_t;
+SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
+                 onSamplesUpdated);
 
 inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &payload,
                                       const engine::Engine &engine, MessageController &cont)

@@ -43,10 +43,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_single_select_address,
 
-    c2s_request_zone_adsr_view,
     c2s_update_zone_adsr_view,
 
-    c2s_request_zone_mapping,
     c2s_update_zone_mapping,
 
     c2s_update_zone_routing_row,
@@ -71,6 +69,7 @@ enum SerializationToClientMessageIds
     s2c_voice_count,
     s2c_respond_zone_adsr_view,
     s2c_respond_zone_mapping,
+    s2c_respond_zone_samples,
     s2c_send_pgz_structure,
     s2c_send_all_processor_descriptions,
     s2c_update_zone_voice_matrix_metadata,
