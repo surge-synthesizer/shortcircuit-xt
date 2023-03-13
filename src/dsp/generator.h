@@ -63,10 +63,10 @@ struct GeneratorIO
 
 enum GeneratorSampleModes
 {
-    GSM_Normal = 0, // can stop voice
+    GSM_Normal = 0, // wont stop voice
     GSM_Loop = 1,
     GSM_Bidirectional = 2,
-    GSM_Shot = 3, // can stop voice
+    GSM_Shot = 3, // will stop voice
     GSM_LoopUntilRelease = 4
 };
 

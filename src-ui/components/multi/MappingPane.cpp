@@ -99,7 +99,7 @@ struct MappingDisplay : juce::Component, HasEditor
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
     std::unordered_map<Ctrl, std::unique_ptr<glyph::GlyphPainter>> glyphs;
 
-    MappingDisplay(SCXTEditor *e) : HasEditor(e)
+    MappingDisplay(MappingPane *p) : HasEditor(p->editor), mappingView(p->mappingView)
     {
         zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>(this);
         addAndMakeVisible(*zonesAndKeyboard);
@@ -223,7 +223,7 @@ struct MappingDisplay : juce::Component, HasEditor
         g.drawText("Mapping Region", getLocalBounds(), juce::Justification::centred);
     }
 
-    engine::Zone::ZoneMappingData mappingView;
+    engine::Zone::ZoneMappingData &mappingView;
 
     void resized() override
     {
@@ -366,7 +366,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
 struct SampleDisplay : juce::Component, HasEditor
 {
-    SampleDisplay(SCXTEditor *e) : HasEditor(e) {}
+    SampleDisplay(MappingPane *p) : HasEditor(p->editor), sampleView(p->sampleView) {}
 
     void paint(juce::Graphics &g)
     {
@@ -458,7 +458,7 @@ struct SampleDisplay : juce::Component, HasEditor
         repaint();
     }
 
-    engine::Zone::AssociatedSampleArray sampleView;
+    engine::Zone::AssociatedSampleArray &sampleView;
 };
 
 struct MacroDisplay : juce::Component
@@ -477,10 +477,10 @@ MappingPane::MappingPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("
     isTabbed = true;
     tabNames = {"MAPPING", "SAMPLE", "MACROS"};
 
-    mappingDisplay = std::make_unique<MappingDisplay>(editor);
+    mappingDisplay = std::make_unique<MappingDisplay>(this);
     addAndMakeVisible(*mappingDisplay);
 
-    sampleDisplay = std::make_unique<SampleDisplay>(editor);
+    sampleDisplay = std::make_unique<SampleDisplay>(this);
     addChildComponent(*sampleDisplay);
 
     macroDisplay = std::make_unique<MacroDisplay>();
@@ -509,13 +509,13 @@ void MappingPane::resized()
 
 void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 {
-    mappingDisplay->mappingView = m;
+    mappingView = m;
     mappingDisplay->repaint();
 }
 
 void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
 {
-    sampleDisplay->sampleView = m;
+    sampleView = m;
     sampleDisplay->repaint();
 }
 

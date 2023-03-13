@@ -150,25 +150,42 @@ template <> struct scxt_traits<scxt::engine::Group>
     }
 };
 
+template <> struct scxt_traits<scxt::engine::Zone::PlayModes>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Zone::PlayModes &t)
+    {
+        v = {{"playMode", scxt::engine::Zone::toStreamingNamePlayModes(t)}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::PlayModes &zmd)
+    {
+        std::string r;
+        zmd = engine::Zone::STANDARD;
+        if (findIf(v, "playMode", r))
+            zmd = engine::Zone::fromStreamingNamePlayModes(r);
+    }
+};
+
 template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::engine::Zone::ZoneMappingData &t)
     {
-        v = {
-            {"rootKey", t.rootKey},
-            {"keyboardRange", t.keyboardRange},
-            {"velocityRange", t.velocityRange},
-            {"pbDown", t.pbDown},
-            {"pbUp", t.pbUp},
+        v = {{"rootKey", t.rootKey},
+             {"keyboardRange", t.keyboardRange},
+             {"velocityRange", t.velocityRange},
+             {"pbDown", t.pbDown},
+             {"pbUp", t.pbUp},
 
-            {"exclusiveGroup", t.exclusiveGroup},
-            {"velocitySens", t.velocitySens},
-            {"amplitude", t.amplitude},
-            {"pan", t.pan},
-            {"pitchOffset", t.pitchOffset},
-        };
+             {"exclusiveGroup", t.exclusiveGroup},
+             {"velocitySens", t.velocitySens},
+             {"amplitude", t.amplitude},
+             {"pan", t.pan},
+             {"pitchOffset", t.pitchOffset},
+             {"playbackMode", t.playbackMode}};
     }
 
     template <template <typename...> class Traits>
@@ -185,6 +202,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
         findIf(v, "pitchOffset", zmd.pitchOffset);
         findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
         findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
+        findOrSet(v, "playbackMode", engine::Zone::STANDARD, zmd.playbackMode);
     }
 };
 
@@ -195,7 +213,11 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::engine::Zone::AssociatedSample &s)
     {
-        v = {{"active", s.active}, {"id", s.sampleID}};
+        v = {{"active", s.active}, {"id", s.sampleID},
+             {"startSample", s.startSample},
+             {"endSample", s.endSample},
+             {"startLoop", s.startLoop},
+             {"endLoop", s.endLoop}};
     }
 
     template <template <typename...> class Traits>
@@ -203,6 +225,10 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
     {
         findOrSet(v, "active", false, s.active);
         findIf(v, "id", s.sampleID);
+        findOrSet(v, "startSample", -1, s.startSample);
+        findOrSet(v, "endSample", -1, s.endSample);
+        findOrSet(v, "startLoop", -1, s.startLoop);
+        findOrSet(v, "endLoop", -1, s.endLoop);
     }
 };
 

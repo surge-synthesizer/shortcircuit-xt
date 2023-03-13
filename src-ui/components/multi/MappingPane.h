@@ -55,6 +55,10 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<MappingDisplay> mappingDisplay;
     std::unique_ptr<SampleDisplay> sampleDisplay;
     std::unique_ptr<MacroDisplay> macroDisplay;
+
+    engine::Zone::ZoneMappingData mappingView;
+    engine::Zone::AssociatedSampleArray sampleView;
+
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H

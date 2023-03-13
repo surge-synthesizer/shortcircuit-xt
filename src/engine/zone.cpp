@@ -199,4 +199,46 @@ void Zone::setupOnUnstream(const engine::Engine &e)
     }
 }
 
+std::string Zone::toStreamingNamePlayModes(PlayModes p)
+{
+    switch (p)
+    {
+    case STANDARD:
+        return "standard";
+    case LOOP:
+        return "loop";
+    case LOOP_UNTIL_RELEASE:
+        return "loopuntilrelease";
+    case LOOP_BIDIRECTIONAL:
+        return "loopbidirectional";
+    case ONESHOT:
+        return "oneshot";
+    case ONRELEASE:
+        return "onrelease";
+    //case SLICED_KEYMAP:
+    //    return "slicedkeymap";
+    }
+    throw std::logic_error("Bad Playmode");
+}
+
+Zone::PlayModes Zone::fromStreamingNamePlayModes(const std::string &s)
+{
+    if (s == "standard")
+        return STANDARD;
+    if (s == "loop")
+        return LOOP;
+    if (s == "loopuntilrelease")
+        return LOOP_UNTIL_RELEASE;
+    if (s == "loopbidirectional")
+        return LOOP_BIDIRECTIONAL;
+    if (s == "oneshot")
+        return ONESHOT;
+    if (s == "onrelease")
+        return ONRELEASE;
+    //if (s == "slicedkeymap")
+    //    return SLICED_KEYMAP;
+
+    return STANDARD;
+}
+
 } // namespace scxt::engine

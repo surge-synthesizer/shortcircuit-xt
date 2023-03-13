@@ -7,6 +7,8 @@ for consideration, turning on the plugins, etc. Then I fix a small tuning bug
 Witker reported which also lets me segregate the playback ratio from the pitch
 shift properly. Update the JSON parsing with a technical issue so Evil has one
 less issue to make I guess. And merge that and start thinking about zone playback modes.
+So add at least the data members for playback mode, start and stop sample point and
+start and stop loop point. Then call it a day.
 
 ## Day 31 (2023-03-12)
 

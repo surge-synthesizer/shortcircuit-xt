@@ -41,6 +41,7 @@
 
 #include "datamodel/adsr_storage.h"
 #include <fmt/core.h>
+#include "dsp/generator.h"
 
 namespace scxt::voice
 {
@@ -59,7 +60,8 @@ struct Zone : MoveableOnly<Zone>
 {
     static constexpr int maxSamplesPerZone{16};
     Zone() : id(ZoneID::next()) { initialize(); }
-    Zone(SampleID sid) : id(ZoneID::next()){
+    Zone(SampleID sid) : id(ZoneID::next())
+    {
         samples[0].sampleID = sid;
         samples[0].active = true;
         initialize();
@@ -72,16 +74,17 @@ struct Zone : MoveableOnly<Zone>
     {
         bool active{false};
         SampleID sampleID;
+        int startSample{-1}, endSample{-1}, startLoop{-1}, endLoop{-1};
         std::shared_ptr<sample::Sample> sample{nullptr};
 
         bool operator==(const AssociatedSample &other) const
         {
-            return active == other.active &&
-            sampleID == other.sampleID;
+            assert(false);
+            return active == other.active && sampleID == other.sampleID;
         }
     };
     typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
-    AssociatedSampleArray  samples;
+    AssociatedSampleArray samples;
 
     float output alignas(16)[maxOutputs][2][blockSize];
     void process();
@@ -111,6 +114,20 @@ struct Zone : MoveableOnly<Zone>
         return s.sample != nullptr;
     }
 
+
+    enum PlayModes
+    {
+        STANDARD,
+        LOOP,
+        LOOP_UNTIL_RELEASE,
+        LOOP_BIDIRECTIONAL,
+        ONESHOT,
+        ONRELEASE,
+        // SLICED_KEYMAP
+    };
+    static std::string toStreamingNamePlayModes(PlayModes p);
+    static PlayModes fromStreamingNamePlayModes(const std::string &s);
+
     struct ZoneMappingData
     {
         int16_t rootKey{60};
@@ -125,6 +142,8 @@ struct Zone : MoveableOnly<Zone>
         float amplitude{1.0};   // linear
         float pan{0.0};         // -1..1
         float pitchOffset{0.0}; // semitones/keys
+
+        PlayModes playbackMode{STANDARD};
 
         auto asTuple() const
         {
