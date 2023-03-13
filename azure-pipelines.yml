@@ -2,11 +2,9 @@
 
 trigger:
   - main
-  - next
 
 pr:
   - main
-  - next
 
 variables:
   - group: mac-signing
@@ -263,7 +261,7 @@ jobs:
           gitHubConnection: surge-rackupdater
           repositoryName: surge-synthesizer/shortcircuit-xt
           action: 'edit'
-          tag: NextNightly
+          tag: Nightly
           target: '$(Build.SourceVersion)'
           addChangeLog: false
           assetUploadMode: 'delete'
@@ -297,5 +295,5 @@ jobs:
           # Finally tell discord
           export GIT_LOG_DISP=`cat git_info/git_nightly_sc3_log_display  | sed -e s/\"//g`
 
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Next Branch Nightly is available. Not much works.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/NextNightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"A ShortcircuitXT Next Branch Nightly is available. Not much works.\n${GIT_LOG_DISP}\nhttps://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly\"}" `cat $AGENT_TEMPDIRECTORY/discord-nightly-shortcircuit.webhook`
         displayName: Tell Discord
