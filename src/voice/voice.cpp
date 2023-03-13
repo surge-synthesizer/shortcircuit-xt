@@ -120,10 +120,9 @@ bool Voice::process()
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
 
-    // TODO : Proper pitch calculation
-    auto fpitch = key - 69;
-
-    calculateGeneratorRatio();
+    auto fpitch = calculateVoicePitch();
+    calculateGeneratorRatio(fpitch);
+    fpitch -= 69;
 
     // TODO : Start and End Points
     GD.sampleStart = 0;
@@ -288,7 +287,7 @@ void Voice::initializeGenerator()
 
     // TODO reverse and playmodes and stuff
     // TODO Oversampling if ratio too big
-    calculateGeneratorRatio();
+    calculateGeneratorRatio(calculateVoicePitch());
 
     GD.blockSize = blockSize;
 
@@ -301,7 +300,13 @@ void Voice::initializeGenerator()
     Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, !s->UseInt16, generateMode);
 }
 
-void Voice::calculateGeneratorRatio()
+float Voice::calculateVoicePitch()
+{
+    auto fpitch = key + modMatrix.getValue(modulation::vmd_Sample_Pitch_Offset, 0);
+    return fpitch;
+}
+
+void Voice::calculateGeneratorRatio(float pitch)
 {
     // TODO all of this obviously
 #if 0
@@ -322,8 +327,7 @@ void Voice::calculateGeneratorRatio()
     fpitch += fkey - 69.f; // relative to A3 (440hz)
 #else
     // TODO gross for now - correct
-    float ndiff = (float)key - zone->mapping.rootKey +
-                  modMatrix.getValue(modulation::vmd_Sample_Pitch_Offset, 0);
+    float ndiff = pitch - zone->mapping.rootKey;
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
     // TODO round robin
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samples[0].sample->sample_rate * sampleRateInv *
