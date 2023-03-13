@@ -1,89 +1,9 @@
-# Baconpauls next sprints
 
+## Day 32 (3032-03-13)
 
-Early March
-- Stereo and Mono Samples in the Zone and Processors
-  - Output section 
-- Zone Edits
-   - Make it so adding a zone refreshes by factorig that better 
-   - a2s_structure_refresh can just be the two lambda form
-   - Sample waveform
-   - Header
-   - That kiudna thing
-- Then: Mod Matrix Depth
-  - Calculated but how to share with UI? 
-- Then: LFO Editor Finished
-  - Show the waveform
-  - steps as discrete choice
-  - the multiswitches
-  - the arrows (which we can do locally)
-  - Probably un-screw the streaming of the presets maybe
-- Add some more modulation sources
-  - the midi ones (keytrack, velocity, etc...)
-- Then modulation for a voice should be "done"
-- Comb Filter and Processor Stereo Revisit
-- Then: Add a zone by sample revisit especially filters borked on add
-- Then: Implement the memory pool more intelligently
-- JSON .at() to findOrSet almost everywhere and add a stremaing version findIf
-- Voice Design for real and zone level modulators
-  - Lifecycle with GATED FINISHED CLEANUP etc
-  - AEG/FEG
-  - All the properties on the zone with the correct structures
-  - What are the params and how do they get there
-  - Pitch, pitch bend, etc...
-  - Playmodes, Loops and start/stop points
-  - Mod Targets
-  - Stereo: So the thing I want is to have processors advertise if 
-    they can accept mono in, if they can produce mono out from mono in, 
-    and if stereo is different from dual mono and also if you consume 
-    or ignore your input
-- A VU Meter
-- Runtime Startup Constraint Checks like streaming names are unique
-- microgate hold units
-- Hover Gestures in Named Panel
-- Vembertech lipol_ps then its gone
-- Generator keeps runnign after AEG is complete; don't
-- AEG doesn't keep running after Generator is done. Do.
-- Zone Variants and the zone-sample-wrapper data object
-- Big Punt: Multi-Select
-- Generator play modes (onRelease needs a change)
-- Two big "is" questions: IsClientConnected; IsAudioRunning
-- All that round robin discord chat
-- Find samples when streamed by path
-- Samples in the patch
-- Port in the rest of the processors
-- What to do with the tests? Maybe just start new ones
-- Zone Metadata
-- Other Sample Formats other than .wav
-- Content Browser
-- The UI can work if theres no audio thread
-- Error reporting
-   - those warnigns in riff_memfile
-   - what sort of object?
-- A plugin client which can at least configure a zone
-- State streaming
-- Engine Path to Keyboard Lookup way way faster (probably precache)
-- The curve from SC Envelope into the ADSR
-- Samples load off thread
-- Throw guards around json parses
-- Restricts in the copy blocks in the mechanics helpers in basic blocks
-- MicroGate gets mono and stereo implementation
-
-Open Questions and ToDos and Reviews:
-- Bring back ASIO
-- int vs sized type (int32_t etc)
-- riff_memfile and riff_wave review
-- what's all the stuff in samplevoice which didnt make it
-   - oversampling
-   - fades
-- Sample GC
-- Sample Reload All / Refresh
-- fs:: to std::filesystem
-- I think we don't need this but: True/False readonly traits percolate by having template<bool T> scxt_traits (maybe)
-- Loop cleanup wave alignment stuff
-
-----------
-Sprint Log I posted on Discord
+Move next to main, admitting that this is the course we are on. Then try
+out a PR by a small tweak to json helpers and adding the next steps document
+for consideration, turning on the plugins, etc
 
 ## Day 31 (2023-03-12)
 

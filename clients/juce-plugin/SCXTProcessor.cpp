@@ -171,7 +171,10 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
     }
 
     // TODO FIX ME obviously
-    assert(activeBusCount == 1);
+    if (activeBusCount == 0)
+        return;
+
+    // assert(activeBusCount == 1);
     if (activeBusCount > 1)
         activeBusCount = 1;
 
