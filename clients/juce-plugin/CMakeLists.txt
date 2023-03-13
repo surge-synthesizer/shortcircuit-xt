@@ -1,4 +1,4 @@
-project(scxt_plugin VERSION 0.9.0 LANGUAGES CXX)
+project(scxt_plugin VERSION 0.6.0 LANGUAGES CXX)
 
 juce_add_plugin(${PROJECT_NAME}
     PRODUCT_NAME "Shortcircuit XT"
@@ -12,14 +12,14 @@ juce_add_plugin(${PROJECT_NAME}
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     
-    FORMATS Standalone # AU VST3
+    FORMATS Standalone AU VST3
 
     COPY_PLUGIN_AFTER_BUILD TRUE
 )
 
-#clap_juce_extensions_plugin(TARGET ${PROJECT_NAME}
-#        CLAP_ID "org.surge-synth-team.shortcircuit-xt"
-#        CLAP_FEATURES instrument sampler)
+clap_juce_extensions_plugin(TARGET ${PROJECT_NAME}
+        CLAP_ID "org.surge-synth-team.shortcircuit-xt"
+        CLAP_FEATURES instrument sampler)
 
 target_include_directories(${PROJECT_NAME}
   PRIVATE
