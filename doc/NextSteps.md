@@ -16,7 +16,6 @@ Ideally this would become the issue list over the next fortnight with the header
 * Technical issues
   * Non-allocating memory pool
   * JSON
-    * JSON un-streaming from `v.at` to `findOr`
     * JSON versioning
     * If json throws how do we not die
   * When do we free/GC samples from the sample manager?

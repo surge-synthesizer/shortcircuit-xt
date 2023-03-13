@@ -65,9 +65,9 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         else
             result.type = scxt::dsp::processor::proct_none;
 
-        v.at("mix").to(result.mix);
-        v.at("floatParams").to(result.floatParams);
-        v.at("intParams").to(result.intParams);
+        findIf(v, "mix", result.mix);
+        findIf(v, "floatParams", result.floatParams);
+        findIf(v, "intParams", result.intParams);
         findOrSet(v, "isBypassed", false, result.isBypassed);
     }
 };
@@ -90,13 +90,13 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
                    scxt::dsp::processor::ProcessorDescription &result)
     {
         int32_t tr;
-        v.at("id").to(tr);
+        findIf(v, "id", tr);
         result.id = (dsp::processor::ProcessorType)tr;
-        v.at("streamingName").to(result.streamingName);
-        v.at("displayName").to(result.displayName);
-        v.at("isZone").to(result.isZone);
-        v.at("isPart").to(result.isPart);
-        v.at("isFX").to(result.isFX);
+        findIf(v, "streamingName", result.streamingName);
+        findIf(v, "displayName", result.displayName);
+        findIf(v, "isZone", result.isZone);
+        findIf(v, "isPart", result.isPart);
+        findIf(v, "isFX", result.isFX);
     }
 };
 
@@ -124,13 +124,13 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
         int tInt{dsp::processor::proct_none};
         findOrSet(v, "type", (int32_t)dsp::processor::proct_none, tInt);
         t.type = (dsp::processor::ProcessorType)tInt;
-        v.at("typeDisplayName").to(t.typeDisplayName);
-        v.at("numFloatParams").to(t.numFloatParams);
-        v.at("floatControlNames").to(t.floatControlNames);
-        v.at("floatControlDescriptions").to(t.floatControlDescriptions);
-        v.at("numIntParams").to(t.numIntParams);
-        v.at("intControlNames").to(t.intControlNames);
-        v.at("intControlDescriptions").to(t.intControlDescriptions);
+        findIf(v, "typeDisplayName", t.typeDisplayName);
+        findIf(v, "numFloatParams", t.numFloatParams);
+        findIf(v, "floatControlNames", t.floatControlNames);
+        findIf(v, "floatControlDescriptions", t.floatControlDescriptions);
+        findIf(v, "numIntParams", t.numIntParams);
+        findIf(v, "intControlNames", t.intControlNames);
+        findIf(v, "intControlDescriptions", t.intControlDescriptions);
     }
 };
 } // namespace scxt::json

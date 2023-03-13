@@ -3,7 +3,10 @@
 
 Move next to main, admitting that this is the course we are on. Then try
 out a PR by a small tweak to json helpers and adding the next steps document
-for consideration, turning on the plugins, etc
+for consideration, turning on the plugins, etc. Then I fix a small tuning bug
+Witker reported which also lets me segregate the playback ratio from the pitch
+shift properly. Update the JSON parsing with a technical issue so Evil has one
+less issue to make I guess. And merge that and start thinking about zone playback modes.
 
 ## Day 31 (2023-03-12)
 

@@ -67,8 +67,8 @@ template <> struct scxt_traits<scxt::engine::Engine>
     {
         // TODO: engine gets a SV? Guess maybe
         // Order matters here. Samples need to be there before the patch
-        v.at("sampleManager").to(*(engine.getSampleManager()));
-        v.at("patch").to(*(engine.getPatch()));
+        findIf(v, "sampleManager", *(engine.getSampleManager()));
+        findIf(v, "patch", *(engine.getPatch()));
     }
 };
 
@@ -84,7 +84,7 @@ template <> struct scxt_traits<scxt::engine::Patch>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Patch &patch)
     {
         patch.reset();
-        v.at("streamingVersion").to(patch.streamingVersion);
+        findIf(v, "streamingVersion", patch.streamingVersion);
 
         // TODO: I could expose the array but I want to go to a limited stream in the future
         auto vzones = v.at("parts").get_array();
@@ -111,7 +111,7 @@ template <> struct scxt_traits<scxt::engine::Part>
     {
         part.clearGroups();
 
-        v.at("channel").to(part.channel);
+        findIf(v, "channel", part.channel);
         auto vzones = v.at("groups").get_array();
         for (const auto vz : vzones)
         {
@@ -176,13 +176,13 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
                    scxt::engine::Zone::ZoneMappingData &zmd)
     {
         findOrSet(v, "rootKey", 60, zmd.rootKey);
-        v.at("keyboardRange").to(zmd.keyboardRange);
-        v.at("velocityRange").to(zmd.velocityRange);
-        v.at("pbDown").to(zmd.pbDown);
-        v.at("pbUp").to(zmd.pbUp);
-        v.at("amplitude").to(zmd.amplitude);
-        v.at("pan").to(zmd.pan);
-        v.at("pitchOffset").to(zmd.pitchOffset);
+        findIf(v, "keyboardRange", zmd.keyboardRange);
+        findIf(v, "velocityRange", zmd.velocityRange);
+        findIf(v, "pbDown", zmd.pbDown);
+        findIf(v, "pbUp", zmd.pbUp);
+        findIf(v, "amplitude", zmd.amplitude);
+        findIf(v, "pan", zmd.pan);
+        findIf(v, "pitchOffset", zmd.pitchOffset);
         findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
         findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
     }
@@ -230,14 +230,14 @@ template <> struct scxt_traits<scxt::engine::Zone>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone &zone)
     {
         findIf(v, "associatedSamples", zone.samples);
-        v.at("mappingData").to(zone.mapping);
+        findIf(v, "mappingData", zone.mapping);
         fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 
         std::fill(zone.routingTable.begin(), zone.routingTable.end(),
                   scxt::modulation::VoiceModMatrix::Routing());
         fromIndexedArray<Traits>(v.at("routingTable"), zone.routingTable);
 
-        v.at("lfoStorage").to(zone.lfoStorage);
+        findIf(v, "lfoStorage", zone.lfoStorage);
         findOrDefault(v, "aegStorage", zone.aegStorage);
         findOrDefault(v, "eg2Storage", zone.eg2Storage);
     }
@@ -257,10 +257,10 @@ template <> struct scxt_traits<scxt::engine::KeyboardRange>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::KeyboardRange &r)
     {
-        v.at("keyStart").to(r.keyStart);
-        v.at("keyEnd").to(r.keyEnd);
-        v.at("fadeStart").to(r.fadeStart);
-        v.at("fadeEnd").to(r.fadeEnd);
+        findIf(v, "keyStart", r.keyStart);
+        findIf(v, "keyEnd", r.keyEnd);
+        findIf(v, "fadeStart", r.fadeStart);
+        findIf(v, "fadeEnd", r.fadeEnd);
     }
 };
 
@@ -278,10 +278,10 @@ template <> struct scxt_traits<scxt::engine::VelocityRange>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::VelocityRange &r)
     {
-        v.at("velStart").to(r.velStart);
-        v.at("velEnd").to(r.velEnd);
-        v.at("fadeStart").to(r.fadeStart);
-        v.at("fadeEnd").to(r.fadeEnd);
+        findIf(v, "velStart", r.velStart);
+        findIf(v, "velEnd", r.velEnd);
+        findIf(v, "fadeStart", r.fadeStart);
+        findIf(v, "fadeEnd", r.fadeEnd);
     }
 };
 } // namespace scxt::json
