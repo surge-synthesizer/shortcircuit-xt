@@ -93,10 +93,16 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
      */
     void initializeGenerator();
 
+
     /**
-     * Calculates the playback speed. This is also where we put tuning
+     * Calculates the pitch of this voice with modulation, MPE, tuning etc in
      */
-    void calculateGeneratorRatio();
+    float calculateVoicePitch();
+
+    /**
+     * Calculates and updates the generator playback speed.
+     */
+    void calculateGeneratorRatio(float pitch);
 
     /**
      * Processors: Storage, memory blocks, types, and more
