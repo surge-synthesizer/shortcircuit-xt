@@ -53,9 +53,9 @@ template <> struct scxt_traits<scxt::selection::SelectionManager::ZoneAddress>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, za_t &z)
     {
-        v.at("part").to(z.part);
-        v.at("group").to(z.group);
-        v.at("zone").to(z.zone);
+        findIf(v, "part", z.part);
+        findIf(v, "group", z.group);
+        findIf(v, "zone", z.zone);
     }
 };
 } // namespace scxt::json

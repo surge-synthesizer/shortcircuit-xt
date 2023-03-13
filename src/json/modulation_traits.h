@@ -53,10 +53,10 @@ template <> struct scxt_traits<modulation::VoiceModMatrixDestinationAddress>
                    modulation::VoiceModMatrixDestinationAddress &t)
     {
         std::string tsn;
-        v.at("type").to(tsn);
+        findIf(v, "type", tsn);
         t.type = scxt::modulation::fromVoiceModMatrixDestStreamingName(tsn).value_or(
             scxt::modulation::vmd_none);
-        v.at("index").to(t.index);
+        findIf(v, "index", t.index);
     }
 };
 
@@ -73,7 +73,7 @@ template <> struct scxt_traits<modulation::VoiceModMatrixSource>
     static void to(const tao::json::basic_value<Traits> &v, modulation::VoiceModMatrixSource &t)
     {
         std::string tsn;
-        v.at("vms_name").to(tsn);
+        findIf(v, "vms_name", tsn);
         t = scxt::modulation::fromVoiceModMatrixSourceStreamingName(tsn).value_or(
             scxt::modulation::vms_none);
     }
@@ -92,7 +92,7 @@ template <> struct scxt_traits<modulation::VoiceModMatrixCurve>
     static void to(const tao::json::basic_value<Traits> &v, modulation::VoiceModMatrixCurve &t)
     {
         std::string tsn;
-        v.at("vmc_name").to(tsn);
+        findIf(v, "vmc_name", tsn);
         t = scxt::modulation::fromVoiceModMatrixCurveStreamingName(tsn).value_or(
             scxt::modulation::vmc_none);
     }
@@ -112,11 +112,11 @@ template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
         findOrSet(v, "active", true, result.active);
-        v.at("src").to(result.src);
-        v.at("srcVia").to(result.srcVia);
-        v.at("dst").to(result.dst);
+        findIf(v, "src", result.src);
+        findIf(v, "srcVia", result.srcVia);
+        findIf(v, "dst", result.dst);
         findOrSet(v, "curve", modulation::vmc_none, result.curve);
-        v.at("depth").to(result.depth);
+        findIf(v, "depth", result.depth);
     }
 };
 
@@ -141,17 +141,17 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
         const auto &object = v.get_object();
-        v.at("data").to(result.data);
-        v.at("repeat").to(result.repeat);
-        v.at("rate").to(result.rate);
-        v.at("smooth").to(result.smooth);
-        v.at("shuffle").to(result.shuffle);
-        v.at("temposync").to(result.temposync);
+        findIf(v, "data", result.data);
+        findIf(v, "repeat", result.repeat);
+        findIf(v, "rate", result.rate);
+        findIf(v, "smooth", result.smooth);
+        findIf(v, "shuffle", result.shuffle);
+        findIf(v, "temposync", result.temposync);
         int32_t tm;
-        v.at("triggermode").to(tm);
+        findIf(v, "triggermode", tm);
         result.triggermode = (rt_t::TriggerModes)tm;
-        v.at("cyclemode").to(result.cyclemode);
-        v.at("onlyonce").to(result.onlyonce);
+        findIf(v, "cyclemode", result.cyclemode);
+        findIf(v, "onlyonce", result.onlyonce);
     }
 };
 } // namespace scxt::json

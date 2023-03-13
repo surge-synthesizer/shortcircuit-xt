@@ -53,15 +53,15 @@ template <> struct scxt_traits<datamodel::AdsrStorage>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, datamodel::AdsrStorage &result)
     {
-        v.at("a").to(result.a);
-        v.at("h").to(result.h);
-        v.at("d").to(result.d);
-        v.at("s").to(result.s);
-        v.at("r").to(result.r);
-        v.at("isDigital").to(result.isDigital);
-        v.at("aShape").to(result.aShape);
-        v.at("dShape").to(result.dShape);
-        v.at("rShape").to(result.rShape);
+        findIf(v, "a", result.a);
+        findIf(v, "h", result.h);
+        findIf(v, "d", result.d);
+        findIf(v, "s", result.s);
+        findIf(v, "r", result.r);
+        findIf(v, "isDigital", result.isDigital);
+        findIf(v, "aShape", result.aShape);
+        findIf(v, "dShape", result.dShape);
+        findIf(v, "rShape", result.rShape);
     }
 };
 
@@ -90,24 +90,24 @@ template <> struct scxt_traits<datamodel::ControlDescription>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, datamodel::ControlDescription &t)
     {
-        int32_t ph;
-        v.at("type").to(ph);
+        int ph;
+        findOrSet(v, "type", datamodel::ControlDescription::Type::NONE, ph);
         t.type = (datamodel::ControlDescription::Type)(ph);
 
-        v.at("displayMode").to(ph);
+        findIf(v, "displayMode", ph);
         t.displayMode = (datamodel::ControlDescription::DisplayMode)(ph);
 
-        v.at("min").to(t.min);
-        v.at("step").to(t.step);
-        v.at("max").to(t.max);
-        v.at("def").to(t.def);
+        findIf(v, "min", t.min);
+        findIf(v, "step", t.step);
+        findIf(v, "max", t.max);
+        findIf(v, "def", t.def);
 
         std::string un;
-        v.at("unit").to(un);
+        findIf(v, "unit", un);
         strncpy(t.unit, un.c_str(), 32);
         t.unit[31] = 0;
-        v.at("mapScale").to(t.mapScale);
-        v.at("mapBase").to(t.mapBase);
+        findIf(v, "mapScale", t.mapScale);
+        findIf(v, "mapBase", t.mapBase);
 
         std::vector<std::string> choices;
         findOrDefault(v, "choices", choices);
