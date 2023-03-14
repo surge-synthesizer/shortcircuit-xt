@@ -150,24 +150,6 @@ template <> struct scxt_traits<scxt::engine::Group>
     }
 };
 
-template <> struct scxt_traits<scxt::engine::Zone::PlayModes>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Zone::PlayModes &t)
-    {
-        v = {{"playMode", scxt::engine::Zone::toStreamingNamePlayModes(t)}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::PlayModes &zmd)
-    {
-        std::string r;
-        zmd = engine::Zone::STANDARD;
-        if (findIf(v, "playMode", r))
-            zmd = engine::Zone::fromStreamingNamePlayModes(r);
-    }
-};
-
 template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
 {
     template <template <typename...> class Traits>
@@ -183,9 +165,14 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
              {"exclusiveGroup", t.exclusiveGroup},
              {"velocitySens", t.velocitySens},
              {"amplitude", t.amplitude},
-             {"pan", t.pan},
+             ASSIGN(t, pan),
              {"pitchOffset", t.pitchOffset},
-             {"playbackMode", t.playbackMode}};
+             ASSIGN(t, triggerOnNoteOff),
+             ASSIGN(t, voiceTerminateWithEnvelope),
+             ASSIGN(t, loopActive),
+             ASSIGN(t, loopOnlyUntilNoteOff),
+             ASSIGN(t, loopBidirectional),
+             ASSIGN(t, playReverse)};
     }
 
     template <template <typename...> class Traits>
@@ -202,7 +189,13 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
         findIf(v, "pitchOffset", zmd.pitchOffset);
         findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
         findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
-        findOrSet(v, "playbackMode", engine::Zone::STANDARD, zmd.playbackMode);
+
+        FINDOR(zmd, triggerOnNoteOff, false);
+        FINDOR(zmd, voiceTerminateWithEnvelope, true);
+        FINDOR(zmd, loopActive, false);
+        FINDOR(zmd, loopOnlyUntilNoteOff, false);
+        FINDOR(zmd, loopBidirectional, false);
+        FINDOR(zmd, playReverse, false);
     }
 };
 
@@ -240,7 +233,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
                     r.depth != 0 || !r.active || r.curve != scxt::modulation::vmc_none);
         });
 
-        v = {{"associatedSamples", t.samples},
+        v = {{"sampleData", t.sampleData},
              {"mappingData", t.mapping},
              {"processorStorage", t.processorStorage},
              {"routingTable", rtArray},
@@ -252,7 +245,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone &zone)
     {
-        findIf(v, "associatedSamples", zone.samples);
+        findIf(v, "sampleData", zone.sampleData);
         findIf(v, "mappingData", zone.mapping);
         fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 

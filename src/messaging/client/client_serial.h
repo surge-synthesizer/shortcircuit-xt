@@ -46,7 +46,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_adsr_view,
 
     c2s_update_zone_mapping,
-
+    c2s_update_zone_samples,
     c2s_update_zone_routing_row,
 
     c2s_update_individual_lfo,

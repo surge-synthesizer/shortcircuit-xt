@@ -86,13 +86,13 @@ bool Voice::process()
     namespace mech = sst::basic_blocks::mechanics;
 
     assert(zone);
-    if (playState == CLEANUP)
+    if (!isVoicePlaying)
     {
         memset(output, 0, sizeof(output));
         return true;
     }
     // TODO round robin state
-    auto &s = zone->samples[0].sample;
+    auto &s = zone->samplePointers[0];
     assert(s);
 
     modMatrix.copyBaseValuesFromZone(zone);
@@ -108,14 +108,18 @@ bool Voice::process()
     // are modulatable
 
     // TODO SHape Fixes
+    bool envGate = isGated || (!zone->mapping.voiceTerminateWithEnvelope && isGeneratorRunning);
     aeg.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 0),
                      modMatrix.getValue(modulation::vmd_eg_D, 0),
                      modMatrix.getValue(modulation::vmd_eg_S, 0),
-                     modMatrix.getValue(modulation::vmd_eg_R, 0), 1, 1, 1, playState == GATED);
+                     modMatrix.getValue(modulation::vmd_eg_R, 0), 1, 1, 1, envGate);
     eg2.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 1),
                      modMatrix.getValue(modulation::vmd_eg_D, 1),
                      modMatrix.getValue(modulation::vmd_eg_S, 1),
-                     modMatrix.getValue(modulation::vmd_eg_R, 1), 1, 1, 1, playState == GATED);
+                     modMatrix.getValue(modulation::vmd_eg_R, 1), 1, 1, 1, envGate);
+
+    // TODO: And output is non zero once we are past attack
+    isAEGRunning = (aeg.stage != adsrenv_t ::s_complete);
 
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
@@ -128,20 +132,17 @@ bool Voice::process()
     GD.sampleStart = 0;
     GD.sampleStop = s->sample_length;
 
-    // TODO Obvious garbage
-    GD.gated = (playState == GATED);
+    GD.gated = isGated;
     GD.invertedBounds = 1.f / std::max(1, GD.upperBound - GD.lowerBound);
-    Generator(&GD, &GDIO);
+    if (!GD.isFinished)
+        Generator(&GD, &GDIO);
+    else
+        memset(output, 0, sizeof(output));
 
     // TODO Ringout - this is obvioulsy wrong
     if (GD.isFinished)
     {
-        if (playState == RELEASED)
-        {
-            playState = CLEANUP;
-        }
-        else
-            playState = FINISHED;
+        isGeneratorRunning = false;
     }
 
     float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
@@ -232,6 +233,14 @@ bool Voice::process()
 
     mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
 
+    /*
+     * Finally do voice state update
+     */
+    if (isAEGRunning)
+        isVoicePlaying = true;
+    else
+        isVoicePlaying = false;
+
     return true;
 }
 
@@ -267,7 +276,7 @@ void Voice::panOutputsBy(bool chainIsMono, float pv)
 void Voice::initializeGenerator()
 {
     // TODO round robin
-    auto &s = zone->samples[0].sample;
+    auto &s = zone->samplePointers[0];
     assert(s);
 
     GDIO.outputL = output[0];
@@ -277,13 +286,24 @@ void Voice::initializeGenerator()
     GDIO.voicePtr = this;
     GDIO.waveSize = s->sample_length;
 
-    // TODO: Correct sample start stop position
-    GD.samplePos = 0;
+    GD.samplePos = zone->sampleData[0].startSample;
     GD.sampleSubPos = 0;
-    GD.lowerBound = 0;
-    GD.upperBound = s->sample_length;
+    GD.lowerBound = zone->sampleData[0].startSample;
+    GD.upperBound = zone->sampleData[0].endSample;
     GD.direction = 1;
     GD.isFinished = false;
+
+    if (zone->mapping.loopActive)
+    {
+        GD.lowerBound = zone->sampleData[0].startLoop;
+        GD.upperBound = zone->sampleData[0].endLoop;
+    }
+
+    if (zone->mapping.playReverse)
+    {
+        GD.samplePos = GD.upperBound;
+        GD.direction = -1;
+    }
 
     // TODO reverse and playmodes and stuff
     // TODO Oversampling if ratio too big
@@ -294,7 +314,20 @@ void Voice::initializeGenerator()
     Generator = nullptr;
 
     // TODO port playmode
-    int generateMode = 0; // forwrd or forward hitpoints
+    int generateMode = dsp::GSM_Normal; // forwrd or forward hitpoints
+    if (!zone->mapping.voiceTerminateWithEnvelope)
+    {
+        generateMode = dsp::GSM_Shot;
+    }
+    if (zone->mapping.loopActive)
+    {
+        if (zone->mapping.loopOnlyUntilNoteOff)
+            generateMode = dsp::GSM_LoopUntilRelease;
+        else if (zone->mapping.loopBidirectional)
+            generateMode = dsp::GSM_Bidirectional;
+        else
+            generateMode = dsp::GSM_Loop;
+    }
 
     monoGenerator = s->channels == 1;
     Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, !s->UseInt16, generateMode);
@@ -330,7 +363,7 @@ void Voice::calculateGeneratorRatio(float pitch)
     float ndiff = pitch - zone->mapping.rootKey;
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
     // TODO round robin
-    GD.ratio = (int32_t)((1 << 24) * fac * zone->samples[0].sample->sample_rate * sampleRateInv *
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[0]->sample_rate * sampleRateInv *
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
 }

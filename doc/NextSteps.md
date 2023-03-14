@@ -4,7 +4,6 @@ Ideally this would become the issue list over the next fortnight with the header
 
 * Voice Management 
   * Voice Lifetime
-      * Active voice data structure not comically bad
       * AEG (not Sample End) terminates voice
       * Optimization: Sample end, no processor, no loop, no repeat, kill voice ahead of AEG
   * Zone from Key Cache (from linear search to cached data structure on noteOn/noteOff)
@@ -128,6 +127,8 @@ Ideally this would become the issue list over the next fortnight with the header
 
 * User Interface
   * Add a robust about screen
+  * Add the User Options code from plugininfra
+  * NoteNames (C3/C4/C5) vs hardcoded "C4 == MIDI 60"
   * User Interface Styling 
     * Map phsyical style sheet to logical style sheet
     * StyleSheet Editable 
@@ -135,6 +136,7 @@ Ideally this would become the issue list over the next fortnight with the header
     * Overall header
       * Save/Restore
       * VU Meter
+      * Playing Zone Display
       * etc
     * etc
 

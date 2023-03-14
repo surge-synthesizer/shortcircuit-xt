@@ -248,12 +248,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 SamplePos = UpperBound;
                 SampleSubPos = 0;
-                IsFinished = true;
+                if (GD->direction == 1)
+                    IsFinished = true;
             }
             if (SamplePos < LowerBound)
             {
                 SamplePos = LowerBound;
                 SampleSubPos = 0;
+                if (GD->direction == -1)
+                    IsFinished = true;
             }
         }
         break;

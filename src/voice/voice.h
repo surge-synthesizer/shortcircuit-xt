@@ -123,39 +123,31 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     // TODO - this should be more carefully structured for modulation onto the entire filter
     lipol_ps processorMix[engine::processorsPerZone];
 
-    // TODO This is obvious garbage from hereon down
-    size_t sp{0};
-    enum PlayState
-    {
-        GATED,
-        RELEASED,
-        FINISHED,
-        CLEANUP,
-        OFF
-    } playState{OFF};
+    /*
+     * Voice State Model.
+     */
+    bool isGated{false};
+    bool isGeneratorRunning{false};
+    bool isAEGRunning{false};
+
+    bool isVoicePlaying{false};
+    bool isVoiceAssigned{false};
 
     void attack()
     {
-        assert(zone->samples[0].sample);
-        playState = GATED;
+        assert(zone->samplePointers[0]);
+        isGated = true;
+        isGeneratorRunning = true;
+        isAEGRunning = true;
+
+        isVoicePlaying = true;
+        isVoiceAssigned = true;
         voiceStarted();
     }
-    void release()
-    {
-        if (playState == FINISHED)
-        {
-            playState = CLEANUP;
-        }
-        else
-        {
-            playState = RELEASED;
-        }
-    }
-
-    void cleanupVoice()
-    {
+    void release() { isGated = false; }
+    void cleanupVoice() {
         zone->removeVoice(this);
-        playState = OFF;
+        isVoiceAssigned = false;
     }
 };
 } // namespace scxt::voice

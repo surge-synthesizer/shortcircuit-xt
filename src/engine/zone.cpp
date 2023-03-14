@@ -46,14 +46,14 @@ void Zone::process()
     size_t cleanupIdx{0};
     for (auto &v : voiceWeakPointers)
     {
-        if (v && v->playState != voice::Voice::OFF)
+        if (v && v->isVoiceAssigned)
         {
             if (v->process())
             {
                 blk::accumulate_from_to<blockSize>(v->output[0], output[0][0]);
                 blk::accumulate_from_to<blockSize>(v->output[1], output[0][1]);
             }
-            if (v->playState == voice::Voice::CLEANUP)
+            if (!v->isVoicePlaying)
             {
                 toCleanUp[cleanupIdx++] = v;
             }
@@ -192,6 +192,7 @@ void Zone::setupProcessorControlDescriptions(int whichProcessor, dsp::processor:
 
 void Zone::setupOnUnstream(const engine::Engine &e)
 {
+    sampleLoadOverridesMapping = false;
     attachToSample(*(e.getSampleManager()));
     for (int p = 0; p < processorsPerZone; ++p)
     {
@@ -199,46 +200,54 @@ void Zone::setupOnUnstream(const engine::Engine &e)
     }
 }
 
-std::string Zone::toStreamingNamePlayModes(PlayModes p)
+bool Zone::attachToSample(const sample::SampleManager &manager, int index)
 {
-    switch (p)
+    auto &s = sampleData[index];
+    if (s.sampleID.isValid())
     {
-    case STANDARD:
-        return "standard";
-    case LOOP:
-        return "loop";
-    case LOOP_UNTIL_RELEASE:
-        return "loopuntilrelease";
-    case LOOP_BIDIRECTIONAL:
-        return "loopbidirectional";
-    case ONESHOT:
-        return "oneshot";
-    case ONRELEASE:
-        return "onrelease";
-        // case SLICED_KEYMAP:
-        //     return "slicedkeymap";
+        samplePointers[index] = manager.getSample(s.sampleID);
     }
-    throw std::logic_error("Bad Playmode");
-}
+    else
+    {
+        samplePointers[index].reset();
+    }
 
-Zone::PlayModes Zone::fromStreamingNamePlayModes(const std::string &s)
-{
-    if (s == "standard")
-        return STANDARD;
-    if (s == "loop")
-        return LOOP;
-    if (s == "loopuntilrelease")
-        return LOOP_UNTIL_RELEASE;
-    if (s == "loopbidirectional")
-        return LOOP_BIDIRECTIONAL;
-    if (s == "oneshot")
-        return ONESHOT;
-    if (s == "onrelease")
-        return ONRELEASE;
-    // if (s == "slicedkeymap")
-    //     return SLICED_KEYMAP;
+    if (sampleLoadOverridesMapping)
+    {
+        if (samplePointers[index] && index == 0)
+        {
+            const auto &m = samplePointers[index]->meta;
 
-    return STANDARD;
+            if (m.rootkey_present)
+                mapping.rootKey = m.key_root;
+            if (m.key_present)
+            {
+                mapping.keyboardRange = {m.key_low, m.key_high};
+            }
+            if (m.vel_present)
+            {
+                mapping.velocityRange = {m.vel_low, m.vel_high};
+            }
+        }
+
+        if (samplePointers[index])
+        {
+            const auto &m = samplePointers[index]->meta;
+            s.startSample = 0;
+            s.endSample = samplePointers[index]->getSampleLength();
+            if (m.loop_present)
+            {
+                s.startLoop = m.loop_start;
+                s.endLoop = m.loop_end;
+            }
+            else
+            {
+                s.startLoop = 0;
+                s.endLoop = s.endSample;
+            }
+        }
+    }
+    return samplePointers[index] != nullptr;
 }
 
 } // namespace scxt::engine

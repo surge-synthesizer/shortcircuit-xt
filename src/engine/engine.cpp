@@ -73,9 +73,6 @@ Engine::~Engine()
     {
         if (v)
         {
-            if (v->playState != voice::Voice::OFF)
-                v->release();
-
             v->~Voice();
             v = nullptr;
         }
@@ -88,7 +85,7 @@ void Engine::initiateVoice(const pathToZone_t &path)
     assert(zoneByPath(path));
     for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
     {
-        if (!v || v->playState == voice::Voice::OFF)
+        if (!v || !v->isVoiceAssigned)
         {
             if (v)
             {
@@ -113,7 +110,7 @@ void Engine::releaseVoice(const pathToZone_t &path)
     auto targetId = zoneByPath(path)->id;
     for (auto &v : voices)
     {
-        if (v && v->playState != voice::Voice::OFF && v->zone->id == targetId && v->key == path.key)
+        if (v && v->isVoiceAssigned && v->zone->id == targetId && v->key == path.key)
         {
             v->release();
         }
@@ -210,7 +207,7 @@ uint32_t Engine::activeVoiceCount()
     for (const auto v : voices)
     {
         if (v)
-            res += (v->playState != voice::Voice::OFF);
+            res += (v->isVoiceAssigned && v->isVoicePlaying);
     }
     return res;
 }

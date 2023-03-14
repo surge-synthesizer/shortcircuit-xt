@@ -29,6 +29,7 @@
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/ToggleButton.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
@@ -366,7 +367,79 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
 struct SampleDisplay : juce::Component, HasEditor
 {
-    SampleDisplay(MappingPane *p) : HasEditor(p->editor), sampleView(p->sampleView) {}
+    static constexpr int sidePanelWidth{150};
+    enum Ctrl
+    {
+        startP,
+        endP,
+        startL,
+        endL
+    };
+
+    std::unordered_map<Ctrl, std::unique_ptr<connectors::SamplePointDataAttachment>>
+        sampleAttachments;
+    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
+        sampleEditors;
+
+    std::unique_ptr<
+        connectors::BooleanPayloadDataAttachment<SampleDisplay, engine::Zone::ZoneMappingData>>
+        loopAttachment;
+    std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive;
+
+    SampleDisplay(MappingPane *p)
+        : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
+    {
+        modeButton = std::make_unique<juce::TextButton>("mode");
+        modeButton->onClick = [this]() { showModeMenu(); };
+        addAndMakeVisible(*modeButton);
+
+        rebuild();
+
+        auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
+            auto at = std::make_unique<connectors::SamplePointDataAttachment>(
+                v, [this](const auto &) { onSamplePointChangedFromGUI(); });
+            auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
+            sl->setSource(at.get());
+            addAndMakeVisible(*sl);
+            sampleEditors[c] = std::move(sl);
+            sampleAttachments[c] = std::move(at);
+        };
+        attachSamplePoint(startP, "StartS", sampleView[0].startSample);
+        attachSamplePoint(endP, "EndS", sampleView[0].endSample);
+        attachSamplePoint(startL, "StartS", sampleView[0].startLoop);
+        attachSamplePoint(endL, "EndS", sampleView[0].endLoop);
+
+        loopAttachment = std::make_unique<
+            connectors::BooleanPayloadDataAttachment<SampleDisplay, engine::Zone::ZoneMappingData>>(
+            this, "Loop",
+            [w = juce::Component::SafePointer(this)](const auto &a) {
+                if (w)
+                    cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(w->mappingView),
+                                                    w->editor->msgCont);
+
+            },
+            [](const auto &pl) { return pl.loopActive; }, mappingView.loopActive);
+        loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
+        loopActive->setLabel("Loop Active");
+        loopActive->setSource(loopAttachment.get());
+        addAndMakeVisible(*loopActive);
+    }
+
+    ~SampleDisplay() { reset(); }
+
+    void reset()
+    {
+        for (auto &[k, c] : sampleEditors)
+            c.reset();
+    }
+
+    void onSamplePointChangedFromGUI()
+    {
+        cmsg::clientSendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest(sampleView),
+                                        editor->msgCont);
+
+        repaint();
+    }
 
     void paint(juce::Graphics &g)
     {
@@ -377,11 +450,12 @@ struct SampleDisplay : juce::Component, HasEditor
         g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
         g.drawText("Sample Region", getLocalBounds(), juce::Justification::centred);
 
-        auto r = getLocalBounds().withTrimmedRight(150);
+        auto r = getLocalBounds().withTrimmedRight(sidePanelWidth);
         g.setColour(juce::Colours::white);
         g.drawRect(r, 1);
 
-        auto samp = editor->sampleManager.getSample(sampleView[0].sampleID);
+        auto &v = sampleView[0];
+        auto samp = editor->sampleManager.getSample(v.sampleID);
         if (!samp)
         {
             g.setColour(juce::Colours::red);
@@ -391,6 +465,7 @@ struct SampleDisplay : juce::Component, HasEditor
         }
 
         auto l = samp->getSampleLength();
+
         if (samp->UseInt16)
         {
             auto fac = 1.0 * l / r.getWidth();
@@ -409,6 +484,21 @@ struct SampleDisplay : juce::Component, HasEditor
 
                     nmx = (nmx + 1) * 0.25;
                     nmn = (nmn + 1) * 0.25;
+
+                    if (c >= v.startLoop && c <= v.endLoop)
+                    {
+                        g.setColour(juce::Colour(80, 80, 170));
+                        g.drawVerticalLine(ct, 0, getHeight());
+                    }
+
+                    if (c < v.startSample || c > v.endSample)
+                    {
+                        g.setColour(juce::Colour(100, 100, 110));
+                    }
+                    else
+                    {
+                        g.setColour(juce::Colours::white);
+                    }
 
                     g.drawVerticalLine(ct, getHeight() * nmx, getHeight() * nmn);
                     c += fac;
@@ -451,14 +541,96 @@ struct SampleDisplay : juce::Component, HasEditor
         }
     }
 
+    void resized()
+    {
+        auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
+
+        p = p.withHeight(18);
+        modeButton->setBounds(p);
+        p = p.translated(0, 20);
+
+        for (const auto m : {startP, endP, startL, endL})
+        {
+            sampleEditors[m]->setBounds(p);
+            p = p.translated(0, 20);
+        }
+        loopActive->setBounds(p);
+    }
+
     bool active{false};
     void setActive(bool b)
     {
         active = b;
+        modeButton->setVisible(b);
+        if (active)
+            rebuild();
         repaint();
     }
 
+    void rebuild()
+    {
+        modeButton->setButtonText(getModeName());
+        auto samp = editor->sampleManager.getSample(sampleView[0].sampleID);
+        size_t end = 0;
+        if (samp)
+        {
+            end = samp->getSampleLength();
+        }
+
+        for (const auto &[k, p] : sampleAttachments)
+            p->sampleCount = end;
+        repaint();
+    }
+
+    void showModeMenu()
+    {
+        juce::PopupMenu p;
+        p.addSectionHeader("PlayMode");
+        p.addSeparator();
+        for (int i = 0; i < modes.size(); ++i)
+        {
+            p.addItem(modes[i].first, [this, i]() { setMode(i); });
+        }
+        p.showMenuAsync({});
+    }
+
+    std::vector<std::pair<std::string, std::array<bool, 5>>> modes{
+        {"Standard", {0, 1, 0, 0, 0}},
+        {"Reverse", {0, 1, 0, 0, 1}},
+        {"Loop Until Release", {0, 1, 1, 0, 0}},
+        {"Loop Bidirectional", {0, 1, 0, 1, 0}},
+        {"OneShot", {0, 0, 0, 0, 0}},
+        {"OnRelease", {1, 0, 0, 0, 0}}};
+
+    std::string getModeName()
+    {
+        for (const auto &[n, b] : modes)
+        {
+            if (mappingView.triggerOnNoteOff == b[0] &&
+                mappingView.voiceTerminateWithEnvelope == b[1] &&
+                mappingView.loopOnlyUntilNoteOff == b[2] && mappingView.loopBidirectional == b[3] &&
+                mappingView.playReverse == b[4])
+                return n;
+        }
+        return "ERROR";
+    }
+    void setMode(int m)
+    {
+        const auto &[n, b] = modes[m];
+        mappingView.triggerOnNoteOff = b[0];
+        mappingView.voiceTerminateWithEnvelope = b[1];
+        mappingView.loopOnlyUntilNoteOff = b[2];
+        mappingView.loopBidirectional = b[3];
+        mappingView.playReverse = b[4];
+
+        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
+                                        editor->msgCont);
+        rebuild();
+    }
+
+    std::unique_ptr<juce::TextButton> modeButton;
     engine::Zone::AssociatedSampleArray &sampleView;
+    engine::Zone::ZoneMappingData &mappingView;
 };
 
 struct MacroDisplay : juce::Component
@@ -516,6 +688,7 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
 {
     sampleView = m;
+    sampleDisplay->rebuild();
     sampleDisplay->repaint();
 }
 

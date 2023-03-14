@@ -87,10 +87,6 @@ void SCXTEditor::onSamplesUpdated(
     {
         multiScreen->sample->setActive(false);
     }
-    for (const auto &ss : s)
-        if (ss.active)
-            std::cout << ss.active << " " << ss.sampleID.to_string() << " "
-                      << sampleManager.getSample(ss.sampleID)->getDisplayName() << std::endl;
 }
 
 void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)

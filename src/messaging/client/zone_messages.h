@@ -64,10 +64,6 @@ typedef std::tuple<bool, engine::Zone::ZoneMappingData> mappingSelectedZoneViewR
 SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,
                  mappingSelectedZoneViewResposne_t, onMappingUpdated);
 
-typedef std::tuple<bool, engine::Zone::AssociatedSampleArray> sampleSelectedZoneViewResposne_t;
-SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
-                 onSamplesUpdated);
-
 inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &payload,
                                       const engine::Engine &engine, MessageController &cont)
 {
@@ -91,6 +87,28 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
 }
 CLIENT_TO_SERIAL(MappingSelectedZoneUpdateRequest, c2s_update_zone_mapping,
                  engine::Zone::ZoneMappingData, mappingSelectedZoneUpdate(payload, engine, cont));
+
+typedef std::tuple<bool, engine::Zone::AssociatedSampleArray> sampleSelectedZoneViewResposne_t;
+SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
+                 onSamplesUpdated);
+
+inline void samplesSelectedZoneUpdate(const engine::Zone::AssociatedSampleArray &payload,
+                                      const engine::Engine &engine, MessageController &cont)
+{
+    // TODO Selected Zone State
+    const auto &samples = payload;
+    auto sz = engine.getSelectionManager()->getSelectedZone();
+    if (sz.has_value())
+    {
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->sampleData = sampv;
+        });
+    }
+}
+CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
+                 engine::Zone::AssociatedSampleArray,
+                 samplesSelectedZoneUpdate(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 
