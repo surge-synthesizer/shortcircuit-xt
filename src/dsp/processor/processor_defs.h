@@ -121,7 +121,6 @@ struct alignas(16) SuperSVF : public Processor
     bool monoInputCreatesStereoOutput() override { return false; }
     void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override;
 
-
     template <bool Stereo, bool FourPole>
     void ProcessT(float *datainL, float *datainR, float *dataoutL, float *dataoutR, float pitch);
 

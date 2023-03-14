@@ -215,8 +215,8 @@ std::string Zone::toStreamingNamePlayModes(PlayModes p)
         return "oneshot";
     case ONRELEASE:
         return "onrelease";
-    //case SLICED_KEYMAP:
-    //    return "slicedkeymap";
+        // case SLICED_KEYMAP:
+        //     return "slicedkeymap";
     }
     throw std::logic_error("Bad Playmode");
 }
@@ -235,8 +235,8 @@ Zone::PlayModes Zone::fromStreamingNamePlayModes(const std::string &s)
         return ONESHOT;
     if (s == "onrelease")
         return ONRELEASE;
-    //if (s == "slicedkeymap")
-    //    return SLICED_KEYMAP;
+    // if (s == "slicedkeymap")
+    //     return SLICED_KEYMAP;
 
     return STANDARD;
 }

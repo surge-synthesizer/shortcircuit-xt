@@ -32,7 +32,7 @@ namespace scxt::sample
 {
 void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &r)
 {
-    for (const auto &[id,addr] : r)
+    for (const auto &[id, addr] : r)
     {
         switch (addr.type)
         {
@@ -45,7 +45,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
         {
             loadSampleFromSF2ToID(addr.path, nullptr, addr.instrument, addr.region, id);
         }
-            break;
+        break;
         }
     }
 }
@@ -77,11 +77,11 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
     return sp->id;
 }
 
-std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2::File *f, int instrument, int region)
+std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2::File *f,
+                                                         int instrument, int region)
 {
     return loadSampleFromSF2ToID(p, f, instrument, region, SampleID::next());
 }
-
 
 std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, sf2::File *f,
                                                              int instrument, int region,

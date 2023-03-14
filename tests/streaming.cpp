@@ -12,7 +12,8 @@ template <typename T> std::string testStream(const T &in)
 
 template <typename T> void testUnstream(const std::string &s, T &in)
 {
-    tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>> consumer;
+    tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
+        consumer;
     tao::json::events::from_string(consumer, s);
     auto val = std::move(consumer.value);
 
@@ -91,7 +92,7 @@ TEST_CASE("Test modulation::VoiceModMatrix::Routing")
     {
         modulation::VoiceModMatrix::Routing k1, k2;
         k1.src = scxt::modulation::vms_LFO1;
-        k1.dst = scxt::modulation::vmd_Processor2_Mix;
+        k1.dst = {scxt::modulation::vmd_Processor_FP1, 0};
         k1.depth = 0.03;
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
@@ -120,7 +121,7 @@ TEST_CASE("Stream modulation::modulators::StepLFOStorage")
         k1.smooth = 0.87;
         k1.shuffle = 0.42;
         k1.temposync = !k1.temposync;
-        k1.triggermode = 4;
+        k1.triggermode = modulation::modulators::StepLFOStorage::TriggerModes::RANDOM;
         k1.cyclemode = !k1.cyclemode;
         k1.onlyonce = !k1.onlyonce;
         REQUIRE(k1 != k2);
@@ -145,7 +146,7 @@ TEST_CASE("Stream engine::Zone")
     {
         engine::Zone k1, k2;
         k1.routingTable[3].src = scxt::modulation::vms_LFO2;
-        k1.routingTable[3].dst = scxt::modulation::vmd_Processor1_Mix;
+        k1.routingTable[3].dst = {scxt::modulation::vmd_Processor_Mix, 0};
         k1.routingTable[3].depth = 0.24;
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
@@ -157,10 +158,10 @@ TEST_CASE("Stream engine::Zone")
     {
         engine::Zone k1, k2;
         k1.routingTable[3].src = scxt::modulation::vms_LFO2;
-        k1.routingTable[3].dst = scxt::modulation::vmd_Processor1_Mix;
+        k1.routingTable[3].dst = {scxt::modulation::vmd_Processor_Mix, 0};
         k1.routingTable[3].depth = 0.24;
 
-        k2.routingTable[4].dst = scxt::modulation::vmd_LFO1_Rate;
+        k2.routingTable[4].dst = {scxt::modulation::vmd_LFO_Rate, 0};
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
         testUnstream(s, k2);

@@ -93,7 +93,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
      */
     void initializeGenerator();
 
-
     /**
      * Calculates the pitch of this voice with modulation, MPE, tuning etc in
      */

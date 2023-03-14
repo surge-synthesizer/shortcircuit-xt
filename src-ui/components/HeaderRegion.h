@@ -45,10 +45,17 @@ struct HeaderRegion : juce::Component, HasEditor
 
     void paint(juce::Graphics &g) override
     {
+#if BUILD_IS_DEBUG
+        g.fillAll(juce::Colours::red);
+        g.setColour(juce::Colours::pink.contrasting());
+        g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
+        g.drawText("DEBUG DEBUG DEBUG", getLocalBounds(), juce::Justification::centred);
+#else
         g.fillAll(juce::Colours::pink);
         g.setColour(juce::Colours::pink.contrasting());
         g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
         g.drawText("header", getLocalBounds(), juce::Justification::centred);
+#endif
         auto vc = fmt::format("Voices: {}", voiceCount);
         g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::topRight);
 
