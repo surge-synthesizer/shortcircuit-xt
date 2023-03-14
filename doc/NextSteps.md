@@ -30,7 +30,6 @@ Ideally this would become the issue list over the next fortnight with the header
     * Allow people to BYOJUCE SIMDE etc... since I'm sure the linux folks will want that one day.
     * Allow people to turn off VST3 for same reason
     * Split azure pipeline on mac for x86 and arm to speed up CI
-    * ClangFormat check in the pipeline for src src-ui and client
   * Review and rememdiate all the `// TODO` points I put in the new code either by making them issues or fixing
 
 * Multi-Output
