@@ -1,3 +1,10 @@
+## Day 33 (2023-03-14)
+
+It's all playmodes, loops, and zones today. Basically get some of this in the UI
+and get some of the play modes working. For now I used the legacy non-parameterized
+play modes from the old generator which map to a set of new cool switches which
+is way better. Fix that, but it's good enough to merge. You can set up loops and
+play them and activate and deactivate them on a sample and it more or less works.
 
 ## Day 32 (3032-03-13)
 

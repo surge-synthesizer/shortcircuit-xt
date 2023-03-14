@@ -32,6 +32,7 @@
 #include "sst/jucegui/data/Discrete.h"
 #include "datamodel/parameter.h"
 #include <functional>
+#include "sample/sample.h"
 
 namespace scxt::ui::connectors
 {
@@ -196,6 +197,44 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Parent, Payl
     int getMax() const override { return (int)1; }
 
     std::string getValueAsStringFor(int i) const override { return i == 0 ? "Off" : "On"; }
+};
+
+struct SamplePointDataAttachment : sst::jucegui::data::ContinunousModulatable
+{
+    int64_t &value;
+    std::string label;
+    int64_t sampleCount{0};
+    std::function<void(const SamplePointDataAttachment &)> onGuiChanged{nullptr};
+
+    SamplePointDataAttachment(int64_t &v,
+                              std::function<void(const SamplePointDataAttachment &)> ogc)
+        : value(v), onGuiChanged(ogc)
+    {
+    }
+
+    float getValue() const override { return value; }
+    std::string getValueAsStringFor(float f) const override
+    {
+        if (f < 0)
+            return "";
+        return fmt::format("{}", (int64_t)f);
+    }
+    void setValueFromGUI(const float &f) override
+    {
+        value = (int64_t)f;
+        if (onGuiChanged)
+            onGuiChanged(*this);
+    }
+    std::string getLabel() const override { return label; }
+    float getQuantizedStepSize() const override { return 1; }
+    float getMin() const override { return -1; }
+    float getMax() const override { return sampleCount; }
+    float getDefaultValue() const override { return 0; }
+    void setValueFromModel(const float &f) override { value = (int64_t)f; }
+
+    float getModulationValuePM1() const override { return 0; }
+    void setModulationValuePM1(const float &f) override {}
+    bool isModulationBipolar() const override { return false; }
 };
 
 } // namespace scxt::ui::connectors

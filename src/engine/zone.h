@@ -62,8 +62,8 @@ struct Zone : MoveableOnly<Zone>
     Zone() : id(ZoneID::next()) { initialize(); }
     Zone(SampleID sid) : id(ZoneID::next())
     {
-        samples[0].sampleID = sid;
-        samples[0].active = true;
+        sampleData[0].sampleID = sid;
+        sampleData[0].active = true;
         initialize();
     }
     Zone(Zone &&) = default;
@@ -74,8 +74,7 @@ struct Zone : MoveableOnly<Zone>
     {
         bool active{false};
         SampleID sampleID;
-        int startSample{-1}, endSample{-1}, startLoop{-1}, endLoop{-1};
-        std::shared_ptr<sample::Sample> sample{nullptr};
+        int64_t startSample{-1}, endSample{-1}, startLoop{-1}, endLoop{-1};
 
         bool operator==(const AssociatedSample &other) const
         {
@@ -85,7 +84,8 @@ struct Zone : MoveableOnly<Zone>
         }
     };
     typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
-    AssociatedSampleArray samples;
+    AssociatedSampleArray sampleData;
+    std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
 
     float output alignas(16)[maxOutputs][2][blockSize];
     void process();
@@ -93,40 +93,17 @@ struct Zone : MoveableOnly<Zone>
     // TODO: editable name
     std::string getName() const
     {
-        if (samples[0].sample)
-            return samples[0].sample->getDisplayName();
+        if (samplePointers[0])
+            return samplePointers[0]->getDisplayName();
         return id.to_string();
     }
 
     // TODO: Multi-output
     size_t getNumOutputs() const { return 1; }
 
-    bool attachToSample(const sample::SampleManager &manager, int index = 0)
-    {
-        auto &s = samples[index];
-        if (s.sampleID.isValid())
-        {
-            s.sample = manager.getSample(s.sampleID);
-        }
-        else
-        {
-            s.sample.reset();
-        }
-        return s.sample != nullptr;
-    }
-
-    enum PlayModes
-    {
-        STANDARD,
-        LOOP,
-        LOOP_UNTIL_RELEASE,
-        LOOP_BIDIRECTIONAL,
-        ONESHOT,
-        ONRELEASE,
-        // SLICED_KEYMAP
-    };
-    static std::string toStreamingNamePlayModes(PlayModes p);
-    static PlayModes fromStreamingNamePlayModes(const std::string &s);
+    // If this is TRUE then sample root notes, ranges, etc... will override the mapping
+    bool sampleLoadOverridesMapping{true};
+    bool attachToSample(const sample::SampleManager &manager, int index = 0);
 
     struct ZoneMappingData
     {
@@ -143,7 +120,16 @@ struct Zone : MoveableOnly<Zone>
         float pan{0.0};         // -1..1
         float pitchOffset{0.0}; // semitones/keys
 
-        PlayModes playbackMode{STANDARD};
+        /*
+         * How a zone plays has a few characteristics
+         */
+        bool triggerOnNoteOff{false};          // trigger on note off vs note on
+        bool voiceTerminateWithEnvelope{true}; // terminate with envelope or not (oneshot)
+        bool loopOnlyUntilNoteOff{false};      // if we loop, do we stop looping on release
+        bool loopBidirectional{false}; // if we loop, do we loop forward only or back and forth
+        bool playReverse{false};       // do we traverse the sample start to end or vice versa
+
+        bool loopActive{false}; // should we loop at all
 
         auto asTuple() const
         {
@@ -180,7 +166,7 @@ struct Zone : MoveableOnly<Zone>
 
     bool operator==(const Zone &other) const
     {
-        auto res = samples == other.samples;
+        auto res = sampleData == other.sampleData;
         res = res && mapping == other.mapping;
         // Bail out before the expensive checks
         if (!res)
