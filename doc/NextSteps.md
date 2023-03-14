@@ -17,7 +17,7 @@ Ideally this would become the issue list over the next fortnight with the header
   * Non-allocating memory pool
   * JSON
     * JSON versioning
-    * If json throws how do we not die
+    * If json throws how do we not die in the client comms
   * When do we free/GC samples from the sample manager?
   * vembertech factoring beyond lipol_ps
   * Error Reporting API for both the engine and serial thread which is thread safe etc...
@@ -29,6 +29,8 @@ Ideally this would become the issue list over the next fortnight with the header
   * Build/CMake time
     * Allow people to BYOJUCE SIMDE etc... since I'm sure the linux folks will want that one day.
     * Allow people to turn off VST3 for same reason
+    * Split azure pipeline on mac for x86 and arm to speed up CI
+    * ClangFormat check in the pipeline for src src-ui and client
   * Review and rememdiate all the `// TODO` points I put in the new code either by making them issues or fixing
 
 * Multi-Output
@@ -49,6 +51,7 @@ Ideally this would become the issue list over the next fortnight with the header
     * AEG/EG2 implement shape
     * LFO Presets are kinda screwed. Revisit them.
     * MPE Modulators
+  * Temposync Support
   * Generator
     * DSP Support for alternate bit depths beyond I16 and F32
       * 24 bit
@@ -97,6 +100,7 @@ Ideally this would become the issue list over the next fortnight with the header
 
 * Formats
   * Do we need riff_memfile with libgig still?
+  * WAV file Loop Markers and Root Note Markers
   * Compound Formats
       * GIG
       * DLS
@@ -117,7 +121,8 @@ Ideally this would become the issue list over the next fortnight with the header
   * What is play mode?
 
 * RegTests
-  * Restore these tests to at least compiling and turn them on in azure
+  * Run them in the pipeline on pull request only 
+  * We should have tests which do stuff as opposed to just test streaming
   
 * Other Items
   * Clap Sample Collection API/Extension

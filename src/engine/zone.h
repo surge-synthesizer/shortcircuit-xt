@@ -79,8 +79,9 @@ struct Zone : MoveableOnly<Zone>
 
         bool operator==(const AssociatedSample &other) const
         {
-            assert(false);
-            return active == other.active && sampleID == other.sampleID;
+            return active == other.active && sampleID == other.sampleID &&
+            startSample == other.startSample && endSample == other.endSample &&
+            startLoop == other.startLoop && endLoop == other.endLoop;
         }
     };
     typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
