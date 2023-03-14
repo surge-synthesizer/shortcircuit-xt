@@ -108,7 +108,7 @@ jobs:
 
       - bash: |
           cmake --build build --config Debug --target scxt-code-checks --parallel 4
-        displayName: Run CMake (Debug)
+        displayName: Code Checks
         condition: variables.isCodeQual
 
       - bash: |
