@@ -109,7 +109,7 @@ jobs:
       - bash: |
           cmake --build build --config Debug --target scxt-code-checks --parallel 4
         displayName: Code Checks
-        condition: variables.isCodeQual
+        condition: and(variables.isCodeQual, eq(variables['Build.Reason'], 'PullRequest'))
 
       - bash: |
           cmake --build build --config Debug --target shortcircuit-products --parallel 4
