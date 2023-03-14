@@ -213,11 +213,8 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::engine::Zone::AssociatedSample &s)
     {
-        v = {{"active", s.active}, {"id", s.sampleID},
-             {"startSample", s.startSample},
-             {"endSample", s.endSample},
-             {"startLoop", s.startLoop},
-             {"endLoop", s.endLoop}};
+        v = {{"active", s.active},       {"id", s.sampleID},         {"startSample", s.startSample},
+             {"endSample", s.endSample}, {"startLoop", s.startLoop}, {"endLoop", s.endLoop}};
     }
 
     template <template <typename...> class Traits>

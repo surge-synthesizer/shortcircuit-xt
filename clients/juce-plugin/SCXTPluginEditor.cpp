@@ -29,8 +29,7 @@
 #include "SCXTPluginEditor.h"
 
 //==============================================================================
-SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p,
-                                   scxt::messaging::MessageController &mc,
+SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &mc,
                                    const scxt::sample::SampleManager &s)
     : juce::AudioProcessorEditor(&p)
 {

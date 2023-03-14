@@ -89,16 +89,12 @@ struct LfoDataRender : juce::Component
         auto w = getWidth() * 1.f / ls.repeat;
 
         auto idx = std::clamp((int)std::floor(f.x / w), 0, sp);
-        auto d = ( 1 - f.y / getHeight() ) * 2 - 1;
+        auto d = (1 - f.y / getHeight()) * 2 - 1;
         parent->lfoData[parent->selectedTab].data[idx] = d;
         parent->pushCurrentLfoUpdate();
     }
-    void mouseDown(const juce::MouseEvent &event) override {
-        handleMouseAt(event.position);
-    }
-    void mouseDrag(const juce::MouseEvent &event) override {
-        handleMouseAt(event.position);
-    }
+    void mouseDown(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
+    void mouseDrag(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
 };
 
 LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)

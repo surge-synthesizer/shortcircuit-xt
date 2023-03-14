@@ -80,8 +80,8 @@ struct Zone : MoveableOnly<Zone>
         bool operator==(const AssociatedSample &other) const
         {
             return active == other.active && sampleID == other.sampleID &&
-            startSample == other.startSample && endSample == other.endSample &&
-            startLoop == other.startLoop && endLoop == other.endLoop;
+                   startSample == other.startSample && endSample == other.endSample &&
+                   startLoop == other.startLoop && endLoop == other.endLoop;
         }
     };
     typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
@@ -114,7 +114,6 @@ struct Zone : MoveableOnly<Zone>
         }
         return s.sample != nullptr;
     }
-
 
     enum PlayModes
     {

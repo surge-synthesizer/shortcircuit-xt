@@ -405,22 +405,19 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 
                 zn->mapping.pitchOffset += reg->coarseTune + reg->fineTune * 0.01;
 
-
-
                 if (reg->GetEG1PreAttackDelay() > 0.001)
                 {
                     std::cout << "ERROR: PreAttach Delay which we don't support" << std::endl;
                 }
-                auto s2a = [](double s)
-                {
+                auto s2a = [](double s) {
                     auto l2s = log2(s);
                     auto scs = l2s - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin;
-                    auto ncs = scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
+                    auto ncs = scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
+                                      sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
                     return std::clamp(ncs, 0., 1.);
                 };
 
-                auto sus2l = [](double s)
-                {
+                auto sus2l = [](double s) {
                     auto db = -s / 10;
                     return pow(10.0, db * 0.05);
                 };
@@ -431,9 +428,9 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 zn->aegStorage.s = sus2l(reg->GetEG1Sustain());
                 zn->aegStorage.r = s2a(reg->GetEG1Release());
 
-                auto GetValue = [](const auto &val)
-                {
-                    if (val == sf2::NONE) return ToString("NONE");
+                auto GetValue = [](const auto &val) {
+                    if (val == sf2::NONE)
+                        return ToString("NONE");
                     return ToString(val);
                 };
 
@@ -448,49 +445,62 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 cout << "\t\t\tPitch=" << GetValue(reg->modEnvToPitch) << "cents, Cutoff=";
                 cout << GetValue(reg->modEnvToFilterFc) << "cents" << endl << endl;
 
-                cout << "\t\t    Modulation LFO: Delay=" << ::sf2::ToSeconds(reg->delayModLfo) << "s, Frequency=";
-                cout << ::sf2::ToHz(reg->freqModLfo) << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB";
+                cout << "\t\t    Modulation LFO: Delay=" << ::sf2::ToSeconds(reg->delayModLfo)
+                     << "s, Frequency=";
+                cout << ::sf2::ToHz(reg->freqModLfo)
+                     << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB";
                 cout << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc;
                 cout << ", LFO to Pitch=" << reg->modLfoToPitch << endl;
 
-                cout << "\t\t    Vibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo) << "s, Frequency=";
-                cout << ::sf2::ToHz(reg->freqVibLfo) << "Hz, LFO to Pitch=" << reg->vibLfoToPitch << endl;
+                cout << "\t\t    Vibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo)
+                     << "s, Frequency=";
+                cout << ::sf2::ToHz(reg->freqVibLfo) << "Hz, LFO to Pitch=" << reg->vibLfoToPitch
+                     << endl;
 
                 cout << "\t\t\tModulators (" << reg->modulators.size() << ")" << endl;
 
-                for (int i = 0; i < reg->modulators.size(); i++) {
+                for (int i = 0; i < reg->modulators.size(); i++)
+                {
                     cout << "\t\t\tModulator " << i << endl;
                     // PrintModulatorItem(&reg->modulators[i]);
                 }
 
-                cout << "\t" << s->Name << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
+                cout << "\t" << s->Name
+                     << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
                 cout << ", SampleRate: " << s->SampleRate;
                 cout << ", Pitch: " << ((int)s->OriginalPitch);
                 cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
                 cout << "\t\tStart: " << s->Start << ", End: " << s->End;
                 cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
-                cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink << ")"
-                     << endl;
+                cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink
+                     << ")" << endl;
 
-                if (s != NULL) {
-                    if (reg->HasLoop) {
-                        cout << ", Loop Start: " << reg->LoopStart << ", Loop End: " << reg->LoopEnd;
+                if (s != NULL)
+                {
+                    if (reg->HasLoop)
+                    {
+                        cout << ", Loop Start: " << reg->LoopStart
+                             << ", Loop End: " << reg->LoopEnd;
                     }
                     cout << endl;
                 }
                 cout << "\t\t    Key range=";
 
                 cout << "\t\t    Initial cutoff frequency=";
-                if (reg->initialFilterFc == ::sf2::NONE) cout << "None" << endl;
-                else cout << reg->initialFilterFc << "cents" << endl;
+                if (reg->initialFilterFc == ::sf2::NONE)
+                    cout << "None" << endl;
+                else
+                    cout << reg->initialFilterFc << "cents" << endl;
 
                 cout << "\t\t    Initial resonance=";
-                if (reg->initialFilterQ == ::sf2::NONE) cout << "None" << endl;
-                else cout << (reg->initialFilterQ / 10.0) << "dB" << endl;
+                if (reg->initialFilterQ == ::sf2::NONE)
+                    cout << "None" << endl;
+                else
+                    cout << (reg->initialFilterQ / 10.0) << "dB" << endl;
 
-                if (reg->exclusiveClass) cout << ", Exclusive group=" << reg->exclusiveClass;
+                if (reg->exclusiveClass)
+                    cout << ", Exclusive group=" << reg->exclusiveClass;
                 cout << endl;
-
 
                 grp->addZone(zn);
             }

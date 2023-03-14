@@ -34,6 +34,7 @@ jobs:
           imageName: 'ubuntu-20.04'
           isLinux: True
           isRelease: True
+          isCodeQual: True
           cmakeRelArgs:
           cmakeDebArgs:
 
@@ -104,6 +105,11 @@ jobs:
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug $(cmakeDebArgs)
         displayName: Run CMake (Debug)
         condition: eq(variables['Build.Reason'], 'PullRequest')
+
+      - bash: |
+          cmake --build build --config Debug --target scxt-code-checks --parallel 4
+        displayName: Run CMake (Debug)
+        condition: variables.isCodeQual
 
       - bash: |
           cmake --build build --config Debug --target shortcircuit-products --parallel 4

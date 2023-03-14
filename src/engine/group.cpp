@@ -76,15 +76,12 @@ void Group::removeActiveZone()
 
 Group::zoneMappingSummary_t Group::getZoneMappingSummary()
 {
-    zoneMappingSummary_t  res;
+    zoneMappingSummary_t res;
 
     int zidx{0};
     for (const auto &z : zones)
     {
-        res.emplace_back(z->mapping.keyboardRange,
-                         z->mapping.velocityRange,
-                         zidx++,
-                         z->getName());
+        res.emplace_back(z->mapping.keyboardRange, z->mapping.velocityRange, zidx++, z->getName());
     }
 
     return res;

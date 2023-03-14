@@ -34,7 +34,7 @@
 namespace scxt::messaging::client
 {
 SERIAL_TO_CLIENT(SelectedGroupZoneMappingSummary, s2c_send_selected_group_zone_mapping_summary,
-                 engine::Group::zoneMappingSummary_t , onGroupZoneMappingSummary);
+                 engine::Group::zoneMappingSummary_t, onGroupZoneMappingSummary);
 
 }
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H
