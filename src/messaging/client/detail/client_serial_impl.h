@@ -148,6 +148,11 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
                                       messaging::MessageController &mc)
 {
     assert(mc.threadingChecker.isSerialThread());
+
+    // TODO - consider waht to do here. Dropping the message is probably best
+    if (!mc.clientCallback)
+        return;
+
     auto mw = detail::ResponseWrapper<T>(msg, id);
     detail::client_message_value v = mw;
     auto res = tao::json::to_string(v);
