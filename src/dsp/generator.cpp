@@ -337,6 +337,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         {
             if (!((SamplePos >= LowerBound) && (SamplePos <= UpperBound)))
             {
+                // TODO this should end the voice no matter what
                 /*sampler_voice *v = (sampler_voice*)IO->voicePtr;
                 if (v) v->uberrelease();*/
                 IsFinished = true;
