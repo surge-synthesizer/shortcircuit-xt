@@ -261,6 +261,7 @@ std::string Zone::toStringPlayMode(const PlayMode &p)
     case ON_RELEASE:
         return "onrelease";
     }
+    return "normal";
 }
 
 Zone::PlayMode Zone::fromStringPlayMode(const std::string &s)
@@ -284,6 +285,7 @@ std::string Zone::toStringLoopMode(const LoopMode &p)
     case LOOP_FOR_COUNT:
         return "for_count";
     }
+    return "during_voice";
 }
 
 Zone::LoopMode Zone::fromStringLoopMode(const std::string &s)
@@ -300,20 +302,21 @@ std::string Zone::toStringLoopDirection(const LoopDirection &p)
 {
     switch (p)
     {
-    case FORWARD:
+    case FORWARD_ONLY:
         return "forward";
-    case ALTERNATE:
+    case ALTERNATE_DIRECTIONS:
         return "alternate";
     }
+    return "forward";
 }
 
 Zone::LoopDirection Zone::fromStringLoopDirection(const std::string &s)
 {
     static auto inverse = makeEnumInverse<Zone::LoopDirection, Zone::toStringLoopDirection>(
-        Zone::LoopDirection::FORWARD, Zone::LoopDirection::ALTERNATE);
+        Zone::LoopDirection::FORWARD_ONLY, Zone::LoopDirection::ALTERNATE_DIRECTIONS);
     auto p = inverse.find(s);
     if (p == inverse.end())
-        return FORWARD;
+        return FORWARD_ONLY;
     return p->second;
 }
 

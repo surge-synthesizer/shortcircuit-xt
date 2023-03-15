@@ -228,7 +228,7 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
         findOrSet(v, "loopActive", false, s.loopActive);
         findOrSet(v, "playReverse", false, s.playReverse);
         findOrSet(v, "loopMode", engine::Zone::LoopMode::LOOP_DURING_VOICE, s.loopMode);
-        findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD, s.loopDirection);
+        findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY, s.loopDirection);
         findOrSet(v, "loopFade", 0, s.loopFade);
         findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
     }

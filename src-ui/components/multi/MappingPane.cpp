@@ -629,10 +629,10 @@ struct SampleDisplay : juce::Component, HasEditor
         }
         switch (sampleView[0].loopDirection)
         {
-        case engine::Zone::FORWARD:
+        case engine::Zone::FORWARD_ONLY:
             loopDirectionButton->setButtonText("Loop Forward");
             break;
-        case engine::Zone::ALTERNATE:
+        case engine::Zone::ALTERNATE_DIRECTIONS:
             loopDirectionButton->setButtonText("Loop Alternate");
             break;
         }
@@ -700,8 +700,8 @@ struct SampleDisplay : juce::Component, HasEditor
                 rebuild();
             });
         };
-        add(engine::Zone::LoopDirection::FORWARD, "Loop Forward");
-        add(engine::Zone::LoopDirection::ALTERNATE, "Loop Alternate");
+        add(engine::Zone::LoopDirection::FORWARD_ONLY, "Loop Forward");
+        add(engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS, "Loop Alternate");
 
         p.showMenuAsync({});
     }

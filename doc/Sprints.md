@@ -1,6 +1,7 @@
-## Day 32 (2023-03-15)
+## Day 34 (2023-03-15)
 
-It's still all playmodes.
+It's still all playmodes. Restructure to the per-variation switches-based version in the UI
+and the data structure and merge it.
 
 ## Day 33 (2023-03-14)
 

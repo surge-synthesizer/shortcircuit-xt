@@ -88,8 +88,8 @@ struct Zone : MoveableOnly<Zone>
 
     enum LoopDirection
     {
-        FORWARD,
-        ALTERNATE
+        FORWARD_ONLY,
+        ALTERNATE_DIRECTIONS
     };
     DECLARE_ENUM_STRING(LoopDirection);
 
@@ -103,7 +103,7 @@ struct Zone : MoveableOnly<Zone>
         bool loopActive{false};
         bool playReverse{false};
         LoopMode loopMode{LOOP_DURING_VOICE};
-        LoopDirection loopDirection{FORWARD};
+        LoopDirection loopDirection{FORWARD_ONLY};
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};

@@ -342,7 +342,7 @@ void Voice::initializeGenerator()
             break;
         }
 
-        if (sampleData.loopDirection == engine::Zone::ALTERNATE)
+        if (sampleData.loopDirection == engine::Zone::ALTERNATE_DIRECTIONS)
             generateMode = dsp::GSM_Bidirectional;
     }
 
