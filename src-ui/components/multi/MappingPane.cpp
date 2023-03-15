@@ -414,9 +414,11 @@ struct SampleDisplay : juce::Component, HasEditor
             this, "Loop",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
-                    cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(w->mappingView),
-                                                    w->editor->msgCont);
-
+                {
+                    cmsg::clientSendToSerialization(
+                        cmsg::MappingSelectedZoneUpdateRequest(w->mappingView), w->editor->msgCont);
+                    w->repaint();
+                }
             },
             [](const auto &pl) { return pl.loopActive; }, mappingView.loopActive);
         loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
@@ -488,11 +490,15 @@ struct SampleDisplay : juce::Component, HasEditor
                     if (c >= v.startLoop && c <= v.endLoop)
                     {
                         g.setColour(juce::Colour(80, 80, 170));
+                        if (!mappingView.loopActive)
+                            g.setColour(juce::Colour(40, 40, 90));
                         g.drawVerticalLine(ct, 0, getHeight());
                     }
 
                     if (c < v.startSample || c > v.endSample)
                     {
+                        g.setColour(juce::Colour(60, 60, 80));
+                        g.drawVerticalLine(ct, 0, getHeight());
                         g.setColour(juce::Colour(100, 100, 110));
                     }
                     else

@@ -145,7 +145,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         voiceStarted();
     }
     void release() { isGated = false; }
-    void cleanupVoice() {
+    void cleanupVoice()
+    {
         zone->removeVoice(this);
         isVoiceAssigned = false;
     }
