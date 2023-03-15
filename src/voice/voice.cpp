@@ -93,6 +93,7 @@ bool Voice::process()
     }
     // TODO round robin state
     auto &s = zone->samplePointers[0];
+    auto &sdata = zone->sampleData[0];
     assert(s);
 
     modMatrix.copyBaseValuesFromZone(zone);
@@ -108,7 +109,9 @@ bool Voice::process()
     // are modulatable
 
     // TODO SHape Fixes
-    bool envGate = isGated || (!zone->mapping.voiceTerminateWithEnvelope && isGeneratorRunning);
+    bool envGate = (sdata.playMode == engine::Zone::NORMAL && isGated) ||
+                   (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
+                   (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
     aeg.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 0),
                      modMatrix.getValue(modulation::vmd_eg_D, 0),
                      modMatrix.getValue(modulation::vmd_eg_S, 0),
@@ -277,6 +280,7 @@ void Voice::initializeGenerator()
 {
     // TODO round robin
     auto &s = zone->samplePointers[0];
+    auto &sampleData = zone->sampleData[0];
     assert(s);
 
     GDIO.outputL = output[0];
@@ -286,20 +290,20 @@ void Voice::initializeGenerator()
     GDIO.voicePtr = this;
     GDIO.waveSize = s->sample_length;
 
-    GD.samplePos = zone->sampleData[0].startSample;
+    GD.samplePos = sampleData.startSample;
     GD.sampleSubPos = 0;
-    GD.lowerBound = zone->sampleData[0].startSample;
-    GD.upperBound = zone->sampleData[0].endSample;
+    GD.lowerBound = sampleData.startSample;
+    GD.upperBound = sampleData.endSample;
     GD.direction = 1;
     GD.isFinished = false;
 
-    if (zone->mapping.loopActive)
+    if (sampleData.loopActive)
     {
-        GD.lowerBound = zone->sampleData[0].startLoop;
-        GD.upperBound = zone->sampleData[0].endLoop;
+        GD.lowerBound = sampleData.startLoop;
+        GD.upperBound = sampleData.endLoop;
     }
 
-    if (zone->mapping.playReverse)
+    if (sampleData.playReverse)
     {
         GD.samplePos = GD.upperBound;
         GD.direction = -1;
@@ -315,18 +319,31 @@ void Voice::initializeGenerator()
 
     // TODO port playmode
     int generateMode = dsp::GSM_Normal; // forwrd or forward hitpoints
-    if (!zone->mapping.voiceTerminateWithEnvelope)
+    switch (sampleData.playMode)
     {
+    case engine::Zone::NORMAL:
+        generateMode = dsp::GSM_Normal;
+        break;
+    case engine::Zone::ON_RELEASE:
+    case engine::Zone::ONE_SHOT:
         generateMode = dsp::GSM_Shot;
+        break;
     }
-    if (zone->mapping.loopActive)
+    if (sampleData.loopActive)
     {
-        if (zone->mapping.loopOnlyUntilNoteOff)
-            generateMode = dsp::GSM_LoopUntilRelease;
-        else if (zone->mapping.loopBidirectional)
-            generateMode = dsp::GSM_Bidirectional;
-        else
+        switch (sampleData.loopMode)
+        {
+        case engine::Zone::LOOP_DURING_VOICE:
+        case engine::Zone::LOOP_FOR_COUNT:
             generateMode = dsp::GSM_Loop;
+            break;
+        case engine::Zone::LOOP_WHILE_GATED:
+            generateMode = dsp::GSM_LoopUntilRelease;
+            break;
+        }
+
+        if (sampleData.loopDirection == engine::Zone::ALTERNATE)
+            generateMode = dsp::GSM_Bidirectional;
     }
 
     monoGenerator = s->channels == 1;

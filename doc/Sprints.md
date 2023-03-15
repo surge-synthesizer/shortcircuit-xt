@@ -1,3 +1,7 @@
+## Day 32 (2023-03-15)
+
+It's still all playmodes.
+
 ## Day 33 (2023-03-14)
 
 It's all playmodes, loops, and zones today. Basically get some of this in the UI

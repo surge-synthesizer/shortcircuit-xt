@@ -166,13 +166,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
              {"velocitySens", t.velocitySens},
              {"amplitude", t.amplitude},
              ASSIGN(t, pan),
-             {"pitchOffset", t.pitchOffset},
-             ASSIGN(t, triggerOnNoteOff),
-             ASSIGN(t, voiceTerminateWithEnvelope),
-             ASSIGN(t, loopActive),
-             ASSIGN(t, loopOnlyUntilNoteOff),
-             ASSIGN(t, loopBidirectional),
-             ASSIGN(t, playReverse)};
+             {"pitchOffset", t.pitchOffset}};
     }
 
     template <template <typename...> class Traits>
@@ -189,15 +183,15 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
         findIf(v, "pitchOffset", zmd.pitchOffset);
         findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
         findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
-
-        FINDOR(zmd, triggerOnNoteOff, false);
-        FINDOR(zmd, voiceTerminateWithEnvelope, true);
-        FINDOR(zmd, loopActive, false);
-        FINDOR(zmd, loopOnlyUntilNoteOff, false);
-        FINDOR(zmd, loopBidirectional, false);
-        FINDOR(zmd, playReverse, false);
     }
 };
+
+STREAM_ENUM(engine::Zone::PlayMode, engine::Zone::toStringPlayMode,
+            engine::Zone::fromStringPlayMode);
+STREAM_ENUM(engine::Zone::LoopMode, engine::Zone::toStringLoopMode,
+            engine::Zone::fromStringLoopMode);
+STREAM_ENUM(engine::Zone::LoopDirection, engine::Zone::toStringLoopDirection,
+            engine::Zone::fromStringLoopDirection);
 
 template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
 {
@@ -206,8 +200,19 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::engine::Zone::AssociatedSample &s)
     {
-        v = {{"active", s.active},       {"id", s.sampleID},         {"startSample", s.startSample},
-             {"endSample", s.endSample}, {"startLoop", s.startLoop}, {"endLoop", s.endLoop}};
+        v = {{"active", s.active},
+             {"id", s.sampleID},
+             {"startSample", s.startSample},
+             {"endSample", s.endSample},
+             {"startLoop", s.startLoop},
+             {"endLoop", s.endLoop},
+             {"playMode", s.playMode},
+             {"loopActive", s.loopActive},
+             {"playReverse", s.playReverse},
+             {"loopMode", s.loopMode},
+             {"loopDirection", s.loopDirection},
+             {"loopCountWhenCounted", s.loopCountWhenCounted},
+             {"loopFade", s.loopFade}};
     }
 
     template <template <typename...> class Traits>
@@ -219,6 +224,13 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
         findOrSet(v, "endSample", -1, s.endSample);
         findOrSet(v, "startLoop", -1, s.startLoop);
         findOrSet(v, "endLoop", -1, s.endLoop);
+        findOrSet(v, "playMode", engine::Zone::PlayMode::NORMAL, s.playMode);
+        findOrSet(v, "loopActive", false, s.loopActive);
+        findOrSet(v, "playReverse", false, s.playReverse);
+        findOrSet(v, "loopMode", engine::Zone::LoopMode::LOOP_DURING_VOICE, s.loopMode);
+        findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD, s.loopDirection);
+        findOrSet(v, "loopFade", 0, s.loopFade);
+        findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
     }
 };
 

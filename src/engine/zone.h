@@ -70,11 +70,43 @@ struct Zone : MoveableOnly<Zone>
 
     ZoneID id;
 
+    enum PlayMode
+    {
+        NORMAL,     // AEG gates; play on note on
+        ONE_SHOT,   // SAMPLE playback gates; play on note on
+        ON_RELEASE, // SAMPLE playback gates. play on note off
+    };
+    DECLARE_ENUM_STRING(PlayMode);
+
+    enum LoopMode
+    {
+        LOOP_DURING_VOICE, // If a loop begins, stay in it for the life of teh voice
+        LOOP_WHILE_GATED,  // If a loop begins, loop while gated
+        LOOP_FOR_COUNT     // Loop exactly (n) times
+    };
+    DECLARE_ENUM_STRING(LoopMode);
+
+    enum LoopDirection
+    {
+        FORWARD,
+        ALTERNATE
+    };
+    DECLARE_ENUM_STRING(LoopDirection);
+
     struct AssociatedSample
     {
         bool active{false};
         SampleID sampleID;
         int64_t startSample{-1}, endSample{-1}, startLoop{-1}, endLoop{-1};
+
+        PlayMode playMode{NORMAL};
+        bool loopActive{false};
+        bool playReverse{false};
+        LoopMode loopMode{LOOP_DURING_VOICE};
+        LoopDirection loopDirection{FORWARD};
+        int loopCountWhenCounted{0};
+
+        int64_t loopFade{0};
 
         bool operator==(const AssociatedSample &other) const
         {
@@ -119,17 +151,6 @@ struct Zone : MoveableOnly<Zone>
         float amplitude{1.0};   // linear
         float pan{0.0};         // -1..1
         float pitchOffset{0.0}; // semitones/keys
-
-        /*
-         * How a zone plays has a few characteristics
-         */
-        bool triggerOnNoteOff{false};          // trigger on note off vs note on
-        bool voiceTerminateWithEnvelope{true}; // terminate with envelope or not (oneshot)
-        bool loopOnlyUntilNoteOff{false};      // if we loop, do we stop looping on release
-        bool loopBidirectional{false}; // if we loop, do we loop forward only or back and forth
-        bool playReverse{false};       // do we traverse the sample start to end or vice versa
-
-        bool loopActive{false}; // should we loop at all
 
         auto asTuple() const
         {
