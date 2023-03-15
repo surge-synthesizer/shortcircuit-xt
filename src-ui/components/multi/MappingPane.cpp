@@ -381,17 +381,25 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         sampleEditors;
 
-    std::unique_ptr<
-        connectors::BooleanPayloadDataAttachment<SampleDisplay, engine::Zone::ZoneMappingData>>
-        loopAttachment;
-    std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive;
+    std::unique_ptr<connectors::BooleanPayloadDataAttachment<SampleDisplay,
+                                                             engine::Zone::AssociatedSampleArray>>
+        loopAttachment, reverseAttachment;
+    std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
 
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
-        modeButton = std::make_unique<juce::TextButton>("mode");
-        modeButton->onClick = [this]() { showModeMenu(); };
-        addAndMakeVisible(*modeButton);
+        playModeButton = std::make_unique<juce::TextButton>("mode");
+        playModeButton->onClick = [this]() { showPlayModeMenu(); };
+        addAndMakeVisible(*playModeButton);
+
+        loopModeButton = std::make_unique<juce::TextButton>("loopmode");
+        loopModeButton->onClick = [this]() { showLoopModeMenu(); };
+        addAndMakeVisible(*loopModeButton);
+
+        loopDirectionButton = std::make_unique<juce::TextButton>("loopdir");
+        loopDirectionButton->onClick = [this]() { showLoopDirectionMenu(); };
+        addAndMakeVisible(*loopDirectionButton);
 
         rebuild();
 
@@ -409,22 +417,35 @@ struct SampleDisplay : juce::Component, HasEditor
         attachSamplePoint(startL, "StartS", sampleView[0].startLoop);
         attachSamplePoint(endL, "EndS", sampleView[0].endLoop);
 
-        loopAttachment = std::make_unique<
-            connectors::BooleanPayloadDataAttachment<SampleDisplay, engine::Zone::ZoneMappingData>>(
+        loopAttachment = std::make_unique<connectors::BooleanPayloadDataAttachment<
+            SampleDisplay, engine::Zone::AssociatedSampleArray>>(
             this, "Loop",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
-                    cmsg::clientSendToSerialization(
-                        cmsg::MappingSelectedZoneUpdateRequest(w->mappingView), w->editor->msgCont);
-                    w->repaint();
+                    w->onSamplePointChangedFromGUI();
                 }
             },
-            [](const auto &pl) { return pl.loopActive; }, mappingView.loopActive);
+            [](const auto &pl) { return pl[0].loopActive; }, sampleView[0].loopActive);
         loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
         loopActive->setLabel("Loop Active");
         loopActive->setSource(loopAttachment.get());
         addAndMakeVisible(*loopActive);
+
+        reverseAttachment = std::make_unique<connectors::BooleanPayloadDataAttachment<
+            SampleDisplay, engine::Zone::AssociatedSampleArray>>(
+            this, "Reverse",
+            [w = juce::Component::SafePointer(this)](const auto &a) {
+                if (w)
+                {
+                    w->onSamplePointChangedFromGUI();
+                }
+            },
+            [](const auto &pl) { return pl[0].playReverse; }, sampleView[0].playReverse);
+        reverseActive = std::make_unique<sst::jucegui::components::ToggleButton>();
+        reverseActive->setLabel("Reverse");
+        reverseActive->setSource(reverseAttachment.get());
+        addAndMakeVisible(*reverseActive);
     }
 
     ~SampleDisplay() { reset(); }
@@ -490,7 +511,7 @@ struct SampleDisplay : juce::Component, HasEditor
                     if (c >= v.startLoop && c <= v.endLoop)
                     {
                         g.setColour(juce::Colour(80, 80, 170));
-                        if (!mappingView.loopActive)
+                        if (!v.loopActive)
                             g.setColour(juce::Colour(40, 40, 90));
                         g.drawVerticalLine(ct, 0, getHeight());
                     }
@@ -552,7 +573,7 @@ struct SampleDisplay : juce::Component, HasEditor
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
         p = p.withHeight(18);
-        modeButton->setBounds(p);
+        playModeButton->setBounds(p);
         p = p.translated(0, 20);
 
         for (const auto m : {startP, endP, startL, endL})
@@ -561,13 +582,19 @@ struct SampleDisplay : juce::Component, HasEditor
             p = p.translated(0, 20);
         }
         loopActive->setBounds(p);
+        p = p.translated(0, 20);
+        reverseActive->setBounds(p);
+        p = p.translated(0, 20);
+        loopModeButton->setBounds(p);
+        p = p.translated(0, 20);
+        loopDirectionButton->setBounds(p);
     }
 
     bool active{false};
     void setActive(bool b)
     {
         active = b;
-        modeButton->setVisible(b);
+        playModeButton->setVisible(b);
         if (active)
             rebuild();
         repaint();
@@ -575,7 +602,41 @@ struct SampleDisplay : juce::Component, HasEditor
 
     void rebuild()
     {
-        modeButton->setButtonText(getModeName());
+        switch (sampleView[0].playMode)
+        {
+        case engine::Zone::NORMAL:
+            playModeButton->setButtonText("Normal");
+            break;
+        case engine::Zone::ONE_SHOT:
+            playModeButton->setButtonText("Oneshot");
+            break;
+        case engine::Zone::ON_RELEASE:
+            playModeButton->setButtonText("On Release (t/k)");
+            break;
+        }
+
+        switch (sampleView[0].loopMode)
+        {
+        case engine::Zone::LOOP_DURING_VOICE:
+            loopModeButton->setButtonText("Loop");
+            break;
+        case engine::Zone::LOOP_WHILE_GATED:
+            loopModeButton->setButtonText("Loop While Gated");
+            break;
+        case engine::Zone::LOOP_FOR_COUNT:
+            loopModeButton->setButtonText("For Count (t/k)");
+            break;
+        }
+        switch (sampleView[0].loopDirection)
+        {
+        case engine::Zone::FORWARD_ONLY:
+            loopDirectionButton->setButtonText("Loop Forward");
+            break;
+        case engine::Zone::ALTERNATE_DIRECTIONS:
+            loopDirectionButton->setButtonText("Loop Alternate");
+            break;
+        }
+
         auto samp = editor->sampleManager.getSample(sampleView[0].sampleID);
         size_t end = 0;
         if (samp)
@@ -588,53 +649,64 @@ struct SampleDisplay : juce::Component, HasEditor
         repaint();
     }
 
-    void showModeMenu()
+    void showPlayModeMenu()
     {
         juce::PopupMenu p;
         p.addSectionHeader("PlayMode");
         p.addSeparator();
-        for (int i = 0; i < modes.size(); ++i)
-        {
-            p.addItem(modes[i].first, [this, i]() { setMode(i); });
-        }
+
+        auto add = [&p, this](auto e, auto n) {
+            p.addItem(n, true, sampleView[0].playMode == e, [this, e]() {
+                sampleView[0].playMode = e;
+                onSamplePointChangedFromGUI();
+                rebuild();
+            });
+        };
+        add(engine::Zone::PlayMode::NORMAL, "Normal");
+        add(engine::Zone::PlayMode::ONE_SHOT, "OneShot");
+        add(engine::Zone::PlayMode::ON_RELEASE, "On Release (t/k)");
+
+        p.showMenuAsync({});
+    }
+    void showLoopModeMenu()
+    {
+        juce::PopupMenu p;
+        p.addSectionHeader("Loop Mode");
+        p.addSeparator();
+
+        auto add = [&p, this](auto e, auto n) {
+            p.addItem(n, true, sampleView[0].loopMode == e, [this, e]() {
+                sampleView[0].loopMode = e;
+                onSamplePointChangedFromGUI();
+                rebuild();
+            });
+        };
+        add(engine::Zone::LoopMode::LOOP_DURING_VOICE, "Loop");
+        add(engine::Zone::LoopMode::LOOP_WHILE_GATED, "Loop While Gated");
+        add(engine::Zone::LoopMode::LOOP_FOR_COUNT, "For Count (t/k)");
+
+        p.showMenuAsync({});
+    }
+    void showLoopDirectionMenu()
+    {
+        juce::PopupMenu p;
+        p.addSectionHeader("Loop Direction");
+        p.addSeparator();
+
+        auto add = [&p, this](auto e, auto n) {
+            p.addItem(n, true, sampleView[0].loopDirection == e, [this, e]() {
+                sampleView[0].loopDirection = e;
+                onSamplePointChangedFromGUI();
+                rebuild();
+            });
+        };
+        add(engine::Zone::LoopDirection::FORWARD_ONLY, "Loop Forward");
+        add(engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS, "Loop Alternate");
+
         p.showMenuAsync({});
     }
 
-    std::vector<std::pair<std::string, std::array<bool, 5>>> modes{
-        {"Standard", {0, 1, 0, 0, 0}},
-        {"Reverse", {0, 1, 0, 0, 1}},
-        {"Loop Until Release", {0, 1, 1, 0, 0}},
-        {"Loop Bidirectional", {0, 1, 0, 1, 0}},
-        {"OneShot", {0, 0, 0, 0, 0}},
-        {"OnRelease", {1, 0, 0, 0, 0}}};
-
-    std::string getModeName()
-    {
-        for (const auto &[n, b] : modes)
-        {
-            if (mappingView.triggerOnNoteOff == b[0] &&
-                mappingView.voiceTerminateWithEnvelope == b[1] &&
-                mappingView.loopOnlyUntilNoteOff == b[2] && mappingView.loopBidirectional == b[3] &&
-                mappingView.playReverse == b[4])
-                return n;
-        }
-        return "ERROR";
-    }
-    void setMode(int m)
-    {
-        const auto &[n, b] = modes[m];
-        mappingView.triggerOnNoteOff = b[0];
-        mappingView.voiceTerminateWithEnvelope = b[1];
-        mappingView.loopOnlyUntilNoteOff = b[2];
-        mappingView.loopBidirectional = b[3];
-        mappingView.playReverse = b[4];
-
-        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
-                                        editor->msgCont);
-        rebuild();
-    }
-
-    std::unique_ptr<juce::TextButton> modeButton;
+    std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
     engine::Zone::AssociatedSampleArray &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
 };

@@ -49,6 +49,7 @@ Ideally this would become the issue list over the next fortnight with the header
     * AEG/EG2 implement shape
     * LFO Presets are kinda screwed. Revisit them.
     * MPE Modulators
+    * What parts of sample etc... are modulatable (list all the targets)
   * Temposync Support
   * Generator
     * DSP Support for alternate bit depths beyond I16 and F32

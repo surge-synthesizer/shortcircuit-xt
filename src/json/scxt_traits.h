@@ -75,5 +75,22 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
 #define FIND(x, y) findIf(v, #y, x.y)
 #define FINDOR(x, y, d) findOrSet(v, #y, d, x.y);
 
+#define STREAM_ENUM(E, toS, fromS)                                                                 \
+    template <> struct scxt_traits<E>                                                              \
+    {                                                                                              \
+        template <template <typename...> class Traits>                                             \
+        static void assign(tao::json::basic_value<Traits> &v, const E &s)                          \
+        {                                                                                          \
+            v = {{#E, toS(s)}};                                                                    \
+        }                                                                                          \
+        template <template <typename...> class Traits>                                             \
+        static void to(const tao::json::basic_value<Traits> &v, E &r)                              \
+        {                                                                                          \
+            std::string s;                                                                         \
+            findIf(v, #E, s);                                                                      \
+            r = fromS(s);                                                                          \
+        }                                                                                          \
+    };
+
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SCXT_TRAITS_H

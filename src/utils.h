@@ -36,6 +36,7 @@
 #include <iostream>
 #include <map>
 #include <thread>
+#include "unordered_map"
 
 namespace scxt
 {
@@ -224,6 +225,22 @@ struct ThreadingChecker
 };
 
 #define SCDBGCOUT std::cout << __FILE__ << ":" << __LINE__ << " "
+#define SCXBGV(x) #x << " = " << (x)
+
+#define DECLARE_ENUM_STRING(E)                                                                     \
+    static std::string toString##E(const E &);                                                     \
+    static E fromString##E(const std::string &);
+
+template <typename E, std::string (*F)(const E &)>
+inline std::unordered_map<std::string, E> makeEnumInverse(const E &from, const E &to)
+{
+    std::unordered_map<std::string, E> res;
+    for (auto i = (int32_t)from; i <= to; ++i)
+    {
+        res[F((E)i)] = (E)i;
+    }
+    return res;
+}
 
 } // namespace scxt
 

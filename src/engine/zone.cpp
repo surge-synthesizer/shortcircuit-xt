@@ -250,4 +250,74 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index)
     return samplePointers[index] != nullptr;
 }
 
+std::string Zone::toStringPlayMode(const PlayMode &p)
+{
+    switch (p)
+    {
+    case NORMAL:
+        return "normal";
+    case ONE_SHOT:
+        return "oneshot";
+    case ON_RELEASE:
+        return "onrelease";
+    }
+    return "normal";
+}
+
+Zone::PlayMode Zone::fromStringPlayMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Zone::PlayMode, Zone::toStringPlayMode>(
+        Zone::PlayMode::NORMAL, Zone::PlayMode::ON_RELEASE);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return NORMAL;
+    return p->second;
+}
+
+std::string Zone::toStringLoopMode(const LoopMode &p)
+{
+    switch (p)
+    {
+    case LOOP_DURING_VOICE:
+        return "during_voice";
+    case LOOP_WHILE_GATED:
+        return "while_gated";
+    case LOOP_FOR_COUNT:
+        return "for_count";
+    }
+    return "during_voice";
+}
+
+Zone::LoopMode Zone::fromStringLoopMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Zone::LoopMode, Zone::toStringLoopMode>(
+        Zone::LoopMode::LOOP_DURING_VOICE, Zone::LoopMode::LOOP_FOR_COUNT);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return LOOP_DURING_VOICE;
+    return p->second;
+}
+
+std::string Zone::toStringLoopDirection(const LoopDirection &p)
+{
+    switch (p)
+    {
+    case FORWARD_ONLY:
+        return "forward";
+    case ALTERNATE_DIRECTIONS:
+        return "alternate";
+    }
+    return "forward";
+}
+
+Zone::LoopDirection Zone::fromStringLoopDirection(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Zone::LoopDirection, Zone::toStringLoopDirection>(
+        Zone::LoopDirection::FORWARD_ONLY, Zone::LoopDirection::ALTERNATE_DIRECTIONS);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return FORWARD_ONLY;
+    return p->second;
+}
+
 } // namespace scxt::engine
