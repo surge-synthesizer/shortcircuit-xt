@@ -35,6 +35,7 @@
 
 #include "sst/basic-blocks/mechanics/simd-ops.h"
 #include <array>
+#include <cassert>
 
 namespace scxt::dsp
 {
