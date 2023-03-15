@@ -19361,14 +19361,14 @@ void XmlReporter::benchmarkEnded(BenchmarkStats<> const &benchmarkStats)
 {
     m_xml.startElement("mean")
         .writeAttribute("value", benchmarkStats.mean.point.count())
-        .writeAttribute("lowerBound", benchmarkStats.mean.lower_bound.count())
-        .writeAttribute("upperBound", benchmarkStats.mean.upper_bound.count())
+        .writeAttribute("loopLowerBound", benchmarkStats.mean.lower_bound.count())
+        .writeAttribute("loopUpperBound", benchmarkStats.mean.upper_bound.count())
         .writeAttribute("ci", benchmarkStats.mean.confidence_interval);
     m_xml.endElement();
     m_xml.startElement("standardDeviation")
         .writeAttribute("value", benchmarkStats.standardDeviation.point.count())
-        .writeAttribute("lowerBound", benchmarkStats.standardDeviation.lower_bound.count())
-        .writeAttribute("upperBound", benchmarkStats.standardDeviation.upper_bound.count())
+        .writeAttribute("loopLowerBound", benchmarkStats.standardDeviation.lower_bound.count())
+        .writeAttribute("loopUpperBound", benchmarkStats.standardDeviation.upper_bound.count())
         .writeAttribute("ci", benchmarkStats.standardDeviation.confidence_interval);
     m_xml.endElement();
     m_xml.startElement("outliers")

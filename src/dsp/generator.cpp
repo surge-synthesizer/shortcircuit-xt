@@ -34,100 +34,68 @@
 #include <algorithm>
 
 #include "sst/basic-blocks/mechanics/simd-ops.h"
+#include <array>
+#include <cassert>
 
 namespace scxt::dsp
 {
 const float I16InvScale = (1.f / (16384.f * 32768.f));
 const __m128 I16InvScale_m128 = _mm_set1_ps(I16InvScale);
 
-template <bool stereo, bool floatingPoint, int loopMode>
+template <int compoundConfig>
 void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO);
 
-GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, int LoopMode)
+int toLoopValue(bool active, bool forward, bool whileGated, bool isFloat, bool isStereo)
 {
-    if (Stereo)
-    {
-        if (Float)
-        {
-            switch (LoopMode)
-            {
-            case 0:
-                return GeneratorSample<1, 1, 0>;
-            case 1:
-                return GeneratorSample<1, 1, 1>;
-            case 2:
-                return GeneratorSample<1, 1, 2>;
-            case 3:
-                return GeneratorSample<1, 1, 3>;
-            case 4:
-                return GeneratorSample<1, 1, 4>;
-            }
-        }
-        else
-        {
-            switch (LoopMode)
-            {
-            case 0:
-                return GeneratorSample<1, 0, 0>;
-            case 1:
-                return GeneratorSample<1, 0, 1>;
-            case 2:
-                return GeneratorSample<1, 0, 2>;
-            case 3:
-                return GeneratorSample<1, 0, 3>;
-            case 4:
-                return GeneratorSample<1, 0, 4>;
-            }
-        }
-    }
-    else
-    {
-        if (Float)
-        {
-            switch (LoopMode)
-            {
-            case 0:
-                return GeneratorSample<0, 1, 0>;
-            case 1:
-                return GeneratorSample<0, 1, 1>;
-            case 2:
-                return GeneratorSample<0, 1, 2>;
-            case 3:
-                return GeneratorSample<0, 1, 3>;
-            case 4:
-                return GeneratorSample<0, 1, 4>;
-            }
-        }
-        else
-        {
-            switch (LoopMode)
-            {
-            case 0:
-                return GeneratorSample<0, 0, 0>;
-            case 1:
-                return GeneratorSample<0, 0, 1>;
-            case 2:
-                return GeneratorSample<0, 0, 2>;
-            case 3:
-                return GeneratorSample<0, 0, 3>;
-            case 4:
-                return GeneratorSample<0, 0, 4>;
-            }
-        }
-    }
-    return 0;
+    return ((isStereo * 1) << 4) + ((isFloat * 1) << 3) + ((active * 1) << 2) +
+           ((forward * 1) << 1) + (whileGated * 1);
 }
 
-template <bool stereo, bool fp, int playmode>
+constexpr std::array<bool, 5> fromLoopValue(int lv)
+{
+    bool whileGated = (lv & (1 << 0));
+    bool forward = (lv & (1 << 1));
+    bool active = (lv & (1 << 2));
+    bool isfl = (lv & (1 << 3));
+    bool stereo = (lv & (1 << 4));
+    return {active, forward, whileGated, isfl, stereo};
+}
+
+namespace detail
+{
+using genOp_t = GeneratorFPtr (*)();
+template <size_t I> GeneratorFPtr implGeneratorGetImpl() { return GeneratorSample<I>; }
+
+template <size_t... Is> auto generatorGet(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr genOp_t fnc[] = {detail::implGeneratorGetImpl<Is>...};
+    return fnc[ft]();
+}
+} // namespace detail
+
+GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, bool loopActive, bool loopForward,
+                                     bool loopWhileGated)
+{
+    auto loopValue = toLoopValue(loopActive, loopForward, loopWhileGated, Float, Stereo);
+    assert(loopValue >= 0 && loopValue < (1 << 5));
+    return detail::generatorGet(loopValue, std::make_index_sequence<(1 << 5) - 1>());
+}
+
+template <int loopValue>
 void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 {
+    static constexpr auto mode = fromLoopValue(loopValue);
+    static constexpr auto loopActive = std::get<0>(mode);
+    static constexpr auto loopForward = std::get<1>(mode);
+    static constexpr auto loopWhileGated = std::get<2>(mode);
+    static constexpr auto fp = std::get<3>(mode);
+    static constexpr auto stereo = std::get<4>(mode);
+
     int SamplePos = GD->samplePos;
     int SampleSubPos = GD->sampleSubPos;
-    int LowerBound = GD->lowerBound;
-    int UpperBound = GD->upperBound;
     int IsFinished = GD->isFinished;
     int WaveSize = IO->waveSize;
-    int LoopOffset = std::max(1, UpperBound - LowerBound);
+    int LoopOffset = std::max(1, GD->loopUpperBound - GD->loopLowerBound);
     int Ratio = GD->ratio;
     int RatioSign = Ratio < 0 ? -1 : 1;
     Ratio = std::abs(Ratio);
@@ -156,7 +124,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     }
     int NSamples = GD->blockSize;
 
-    for (int i = 0; i < NSamples; i++)
+    int i;
+    for (i = 0; i < NSamples && !IsFinished; i++)
     {
         // 2. Resample
         unsigned int m0 = ((SampleSubPos >> 12) & 0xff0);
@@ -239,115 +208,144 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         SamplePos += incr;
         SampleSubPos = SampleSubPos - (incr << 24);
 
-        // if (samplePos > upperBound) samplePos = upperBound;
-        switch (playmode)
+        if constexpr (!loopActive) // these constexprs just remind us not to refactor to break ce
         {
-        case GSM_Normal:
-        {
-            if (SamplePos > UpperBound)
+            // No loop, simple case: Play the bounds then done.
+            if (SamplePos > GD->playbackUpperBound)
             {
-                SamplePos = UpperBound;
+                SamplePos = GD->playbackUpperBound;
                 SampleSubPos = 0;
                 if (GD->direction == 1)
                     IsFinished = true;
             }
-            if (SamplePos < LowerBound)
+            if (SamplePos < GD->playbackLowerBound)
             {
-                SamplePos = LowerBound;
+                SamplePos = GD->playbackLowerBound;
                 SampleSubPos = 0;
                 if (GD->direction == -1)
                     IsFinished = true;
             }
         }
-        break;
-        case GSM_Loop:
+        else if constexpr (!loopWhileGated && loopForward)
         {
             int offset = SamplePos;
 
             if (Direction)
             {
                 // Upper
-                if (offset > UpperBound)
+                if (offset > GD->loopUpperBound)
                     offset -= LoopOffset;
             }
             else
             {
                 // Lower
-                if (offset < LowerBound)
+                if (offset < GD->loopLowerBound)
                     offset += LoopOffset;
             }
 
             if (offset > WaveSize || offset < 0)
-                offset = UpperBound;
+                offset = GD->loopUpperBound;
 
             SamplePos = offset;
         }
-        break;
-        case GSM_LoopUntilRelease:
+        else if constexpr (!loopWhileGated && !loopForward)
         {
+            // bidirectional
+            if (SamplePos >= GD->loopUpperBound)
+            {
+                Direction = -1;
+            }
+            else if (SamplePos <= GD->loopLowerBound)
+            {
+                Direction = 1;
+            }
+
+            SamplePos = std::clamp(SamplePos, 0, WaveSize);
+        }
+        else if constexpr (loopForward)
+        {
+            // gated forward
             if (GD->gated)
             {
-                auto offset = SamplePos;
+                int offset = SamplePos;
+
                 if (Direction)
                 {
-                    // Upper
-                    if (offset > UpperBound)
+                    if (offset > GD->loopUpperBound)
                         offset -= LoopOffset;
                 }
                 else
                 {
-                    // Lower
-                    if (offset < LowerBound)
+                    if (offset < GD->loopLowerBound)
                         offset += LoopOffset;
                 }
 
                 if (offset > WaveSize || offset < 0)
-                    offset = UpperBound;
+                    offset = GD->loopUpperBound;
 
                 SamplePos = offset;
             }
             else
             {
-                // In this mode the Lower/Upper are the loop markers so use the zone sample
-                // start/stop
-                if (SamplePos > GD->sampleStop)
+                if (SamplePos > GD->playbackUpperBound)
                 {
-                    SamplePos = GD->sampleStop;
+                    SamplePos = GD->playbackUpperBound;
                     SampleSubPos = 0;
-                    IsFinished = true;
+                    if (GD->direction == 1)
+                        IsFinished = true;
                 }
-                if (SamplePos < GD->sampleStart)
+                if (SamplePos < GD->playbackLowerBound)
                 {
-                    SamplePos = GD->sampleStart;
+                    SamplePos = GD->playbackLowerBound;
                     SampleSubPos = 0;
+                    if (GD->direction == -1)
+                        IsFinished = true;
                 }
             }
         }
-        break;
-        case GSM_Bidirectional:
+        else if constexpr (!loopForward && loopWhileGated)
         {
-            if (SamplePos >= UpperBound)
+            // gated bidirecational
+            if (GD->gated || (GD->direction != GD->directionAtOutset))
             {
-                Direction = -1;
+                if (SamplePos >= GD->loopUpperBound)
+                {
+                    Direction = -1;
+                }
+                else if (SamplePos <= GD->loopLowerBound)
+                {
+                    Direction = 1;
+                }
+
+                SamplePos = std::clamp(SamplePos, 0, WaveSize);
             }
-            // clang-format off
-            else if (SamplePos <= LowerBound) { Direction = 1; }
-            // clang-format on
-            SamplePos = std::clamp(SamplePos, 0, WaveSize);
-        }
-        break;
-        case GSM_Shot:
-        {
-            if (!((SamplePos >= LowerBound) && (SamplePos <= UpperBound)))
+            else
             {
-                // TODO this should end the voice no matter what
-                /*sampler_voice *v = (sampler_voice*)IO->voicePtr;
-                if (v) v->uberrelease();*/
-                IsFinished = true;
-                SamplePos = std::clamp(SamplePos, LowerBound, UpperBound);
+                // TODO : Careful with releasing a loop while going backwards
+                if (SamplePos > GD->playbackUpperBound)
+                {
+                    SamplePos = GD->playbackUpperBound;
+                    SampleSubPos = 0;
+                    if (GD->direction == 1)
+                        IsFinished = true;
+                }
+                if (SamplePos < GD->playbackLowerBound)
+                {
+                    SamplePos = GD->playbackLowerBound;
+                    SampleSubPos = 0;
+                    if (GD->direction == -1)
+                        IsFinished = true;
+                }
             }
         }
-        }
+    }
+
+    // Clean up any items left
+    for (; i < NSamples; ++i)
+    {
+        OutputL[i] = 0.f;
+        if (stereo)
+            OutputR[i] = 0.f;
     }
 
     GD->direction = Direction * RatioSign;
@@ -355,30 +353,29 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     GD->sampleSubPos = SampleSubPos;
     GD->isFinished = IsFinished;
 
-    switch (playmode)
+    if constexpr (loopActive)
     {
-    case GSM_Loop:
-    case GSM_Bidirectional:
-        GD->isInLoop = (SamplePos >= GD->lowerBound);
-        GD->positionWithinLoop =
-            std::clamp((SamplePos - GD->lowerBound) * GD->invertedBounds, 0.f, 1.f);
-        break;
-
-    case GSM_LoopUntilRelease:
-        if (GD->gated)
+        if (!loopWhileGated)
         {
-            GD->isInLoop = (SamplePos >= GD->lowerBound);
+            GD->isInLoop = (SamplePos >= GD->loopLowerBound);
             GD->positionWithinLoop =
-                std::clamp((SamplePos - GD->lowerBound) * GD->invertedBounds, 0.f, 1.f);
+                std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
         }
         else
         {
-            GD->isInLoop = false;
-            GD->positionWithinLoop =
-                std::clamp((SamplePos - GD->lowerBound) * GD->invertedBounds, 0.f, 1.f);
+            if (GD->gated || (GD->directionAtOutset != GD->direction))
+            {
+                GD->isInLoop = (SamplePos >= GD->loopLowerBound);
+                GD->positionWithinLoop =
+                    std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
+            }
+            else
+            {
+                GD->isInLoop = false;
+                GD->positionWithinLoop =
+                    std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
+            }
         }
-    default:
-        break;
     }
 }
 } // namespace scxt::dsp

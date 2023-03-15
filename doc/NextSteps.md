@@ -4,8 +4,7 @@ Ideally this would become the issue list over the next fortnight with the header
 
 * Voice Management 
   * Voice Lifetime
-      * AEG (not Sample End) terminates voice
-      * Optimization: Sample end, no processor, no loop, no repeat, kill voice ahead of AEG
+    * Optimization: Sample end, no processor, no loop, no repeat, kill voice ahead of AEG
   * Zone from Key Cache (from linear search to cached data structure on noteOn/noteOff)
   * Voice Creation/Delete/Reuse modes
     * Poly mode works (this should be "done" but lets check it) 
@@ -52,10 +51,12 @@ Ideally this would become the issue list over the next fortnight with the header
     * What parts of sample etc... are modulatable (list all the targets)
   * Temposync Support
   * Generator
+    * Loop Fades
     * DSP Support for alternate bit depths beyond I16 and F32
-      * 24 bit
-      * 8 bit
+      * 24 bit - currently upscales to F32. OK?
+      * 8 bit - currently upscales to I16. OK?
       * 12 bit
+      
 
 * Structure
   * Zone
@@ -140,6 +141,7 @@ Ideally this would become the issue list over the next fortnight with the header
       * Playing Zone Display
       * etc
     * etc
+  * Playing Zone indicator and perhaps Playing POsition in Sample Indicator
 
 * User Journeys
   * Each journey would be an issue ideally, and we would close it when we could do it and have it 
