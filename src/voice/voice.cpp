@@ -136,7 +136,8 @@ bool Voice::process()
     GD.sampleStop = s->sample_length;
 
     GD.gated = isGated;
-    GD.invertedBounds = 1.f / std::max(1, GD.upperBound - GD.lowerBound);
+    GD.loopInvertedBounds = 1.f / std::max(1, GD.loopUpperBound - GD.loopLowerBound);
+    GD.playbackInvertedBounds = 1.f / std::max(1, GD.playbackUpperBound - GD.playbackLowerBound);
     if (!GD.isFinished)
         Generator(&GD, &GDIO);
     else
@@ -287,29 +288,30 @@ void Voice::initializeGenerator()
     GDIO.outputR = output[1];
     GDIO.sampleDataL = s->sampleData[0];
     GDIO.sampleDataR = s->sampleData[1];
-    GDIO.voicePtr = this;
     GDIO.waveSize = s->sample_length;
 
     GD.samplePos = sampleData.startSample;
     GD.sampleSubPos = 0;
-    GD.lowerBound = sampleData.startSample;
-    GD.upperBound = sampleData.endSample;
+    GD.loopLowerBound = sampleData.startSample;
+    GD.loopUpperBound = sampleData.endSample;
+    GD.playbackLowerBound = sampleData.startSample;
+    GD.playbackUpperBound = sampleData.endSample;
     GD.direction = 1;
     GD.isFinished = false;
 
     if (sampleData.loopActive)
     {
-        GD.lowerBound = sampleData.startLoop;
-        GD.upperBound = sampleData.endLoop;
+        GD.loopLowerBound = sampleData.startLoop;
+        GD.loopUpperBound = sampleData.endLoop;
     }
 
     if (sampleData.playReverse)
     {
-        GD.samplePos = GD.upperBound;
+        GD.samplePos = GD.playbackUpperBound;
         GD.direction = -1;
     }
+    GD.directionAtOutset = GD.direction;
 
-    // TODO reverse and playmodes and stuff
     // TODO Oversampling if ratio too big
     calculateGeneratorRatio(calculateVoicePitch());
 
@@ -317,37 +319,11 @@ void Voice::initializeGenerator()
 
     Generator = nullptr;
 
-    // TODO port playmode
-    int generateMode = dsp::GSM_Normal; // forwrd or forward hitpoints
-    switch (sampleData.playMode)
-    {
-    case engine::Zone::NORMAL:
-        generateMode = dsp::GSM_Normal;
-        break;
-    case engine::Zone::ON_RELEASE:
-    case engine::Zone::ONE_SHOT:
-        generateMode = dsp::GSM_Shot;
-        break;
-    }
-    if (sampleData.loopActive)
-    {
-        switch (sampleData.loopMode)
-        {
-        case engine::Zone::LOOP_DURING_VOICE:
-        case engine::Zone::LOOP_FOR_COUNT:
-            generateMode = dsp::GSM_Loop;
-            break;
-        case engine::Zone::LOOP_WHILE_GATED:
-            generateMode = dsp::GSM_LoopUntilRelease;
-            break;
-        }
-
-        if (sampleData.loopDirection == engine::Zone::ALTERNATE_DIRECTIONS)
-            generateMode = dsp::GSM_Bidirectional;
-    }
-
     monoGenerator = s->channels == 1;
-    Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, !s->UseInt16, generateMode);
+    Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, s->bitDepth == sample::Sample::BD_F32,
+                                            sampleData.loopActive,
+                                            sampleData.loopDirection == engine::Zone::FORWARD_ONLY,
+                                            sampleData.loopMode == engine::Zone::LOOP_WHILE_GATED);
 }
 
 float Voice::calculateVoicePitch()

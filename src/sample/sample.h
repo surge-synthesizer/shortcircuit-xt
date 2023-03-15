@@ -70,7 +70,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         return {type, getPath(), getCompoundInstrument(), getCompoundRegion()};
     }
 
-    size_t getDataSize() const { return sample_length * (UseInt16 ? 2 : 4) * channels; }
+    size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }
     size_t getSampleLength() const { return sample_length; }
 
     void *__restrict sampleData[2]{nullptr, nullptr};
@@ -92,7 +92,32 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     // TODO: Consistent Names here for goodness sake
     // public data
-    bool UseInt16{false}; // TODO: Make this an enum not a binary
+    enum BitDepth
+    {
+        // Right now 8 -> I16 at load and 24 -> F32 at load and noone supports 12 so just make this
+        // BD_I8,
+        // BD_I12,
+        BD_I16,
+        // BD_I24,
+        BD_F32
+    } bitDepth{BD_F32};
+
+    static constexpr int bitDepthByteSize(BitDepth bd)
+    {
+        switch (bd)
+        {
+            // case BD_I8:
+            return 1;
+        // case BD_I12:
+        case BD_I16:
+            return 2;
+        // case BD_I24:
+        //     return 3; // this maybe should be 4?
+        case BD_F32:
+            return 4;
+        }
+    }
+
     uint8_t channels{0};
     bool Embedded{false}; // if true, sample data will be stored inside the patch/multi
     uint32_t sample_length{0};

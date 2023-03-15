@@ -1,7 +1,9 @@
 ## Day 34 (2023-03-15)
 
 It's still all playmodes. Restructure to the per-variation switches-based version in the UI
-and the data structure and merge it.
+and the data structure and merge it. Then basically rewrite the generator object for every
+part except the sinc window resampler, cleaning up and improving the looping and so on
+support.
 
 ## Day 33 (2023-03-14)
 

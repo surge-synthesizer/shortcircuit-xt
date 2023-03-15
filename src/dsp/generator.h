@@ -34,18 +34,25 @@ namespace scxt::dsp
 {
 struct GeneratorState
 {
-    int16_t direction{0};
+    int16_t direction{0}; // +1 for forward, -1 for back
     int32_t samplePos{0};
     int32_t sampleSubPos{0};
-    int32_t lowerBound{0};     // inclusive
-    int32_t upperBound{1};     // inclusive
-    float invertedBounds{1.f}; // 1 / (UB-LB)
-    int32_t ratio{1 << 24};
+
+    int32_t playbackLowerBound{0};     // inclusive
+    int32_t playbackUpperBound{1};     // inclusive
+    float playbackInvertedBounds{1.f}; // 1 / (UB-LB)
+
+    int32_t loopLowerBound{0};     // inclusive
+    int32_t loopUpperBound{1};     // inclusive
+    float loopInvertedBounds{1.f}; // 1 / (UB-LB)
+    int32_t ratio{1 << 24};        // 1 << 24 is playback-at-tempo
     int16_t blockSize{scxt::blockSize};
     bool isFinished{true};
-    int sampleStart{0};
-    int sampleStop{0};
+    int32_t sampleStart{0};
+    int32_t sampleStop{0};
     bool gated{0};
+    int16_t loopCount{-1};        // if this is positive then we play this many loops no matter what
+    int16_t directionAtOutset{1}; // is our 'ur-' direction forward or backwards?
 
     float positionWithinLoop{0};
     bool isInLoop{false};
@@ -58,21 +65,12 @@ struct GeneratorIO
     void *__restrict sampleDataL{nullptr};
     void *__restrict sampleDataR{nullptr};
     int waveSize{0};
-    void *voicePtr{nullptr}; // TODO: Is this used? Why?
-};
-
-enum GeneratorSampleModes
-{
-    GSM_Normal = 0, // wont stop voice
-    GSM_Loop = 1,
-    GSM_Bidirectional = 2,
-    GSM_Shot = 3, // will stop voice
-    GSM_LoopUntilRelease = 4
 };
 
 typedef void (*GeneratorFPtr)(GeneratorState *__restrict, GeneratorIO *__restrict);
 // TODO Loop Mode should be an enum
-GeneratorFPtr GetFPtrGeneratorSample(bool isStereo, bool isFloat, int LoopMode);
+GeneratorFPtr GetFPtrGeneratorSample(bool isStereo, bool isFloat, bool loopActive, bool loopForward,
+                                     bool loopWhileGated);
 
 } // namespace scxt::dsp
 #endif // SCXT_SRC_DSP_GENERATOR_H

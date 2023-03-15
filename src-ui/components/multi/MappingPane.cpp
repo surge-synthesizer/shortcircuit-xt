@@ -489,7 +489,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
         auto l = samp->getSampleLength();
 
-        if (samp->UseInt16)
+        if (samp->bitDepth == sample::Sample::BD_I16)
         {
             auto fac = 1.0 * l / r.getWidth();
             auto d = samp->GetSamplePtrI16(0);
@@ -537,7 +537,7 @@ struct SampleDisplay : juce::Component, HasEditor
                 mn = std::min(d[s], mn);
             }
         }
-        else
+        else if (samp->bitDepth == sample::Sample::BD_F32)
         {
             auto fac = 1.0 * l / r.getWidth();
             auto d = samp->GetSamplePtrF32(0);
@@ -565,6 +565,10 @@ struct SampleDisplay : juce::Component, HasEditor
                 mx = std::max(d[s], mx);
                 mn = std::min(d[s], mn);
             }
+        }
+        else
+        {
+            jassertfalse;
         }
     }
 

@@ -69,7 +69,11 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     type = SF2_FILE;
     auto sfsample = f->GetInstrument(inst)->GetRegion(region)->GetSample();
 
-    UseInt16 = sfsample->GetFrameSize() == 2;
+    // TODO : review
+    if (sfsample->GetFrameSize() == 2)
+        bitDepth = BD_I16;
+    else
+        bitDepth = BD_F32;
     channels = sfsample->GetChannelCount();
     sample_length = sfsample->GetTotalFrameCount();
     sample_rate = sfsample->SampleRate;
@@ -79,7 +83,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
     displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
 
-    if (!UseInt16)
+    if (bitDepth == BD_I16)
         return false;
 
     if (sfsample->GetChannelCount() != 1)
@@ -94,13 +98,13 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
 // TODO: Rename these
 short *Sample::GetSamplePtrI16(int Channel)
 {
-    if (!UseInt16)
+    if (bitDepth != BD_I16)
         return 0;
     return &((short *)sampleData[Channel])[scxt::dsp::FIRoffset];
 }
 float *Sample::GetSamplePtrF32(int Channel)
 {
-    if (UseInt16)
+    if (bitDepth != BD_F32)
         return 0;
     return &((float *)sampleData[Channel])[scxt::dsp::FIRoffset];
 }
@@ -116,7 +120,7 @@ bool Sample::allocateI16(int Channel, int Samples)
     sampleData[Channel] = malloc(sizeof(short) * samplesizewithmargin);
     if (!sampleData[Channel])
         return false;
-    UseInt16 = true;
+    bitDepth = BD_I16;
 
     // clear pre/post zero area
     memset(sampleData[Channel], 0, scxt::dsp::FIRoffset * sizeof(short));
@@ -133,7 +137,7 @@ bool Sample::allocateF32(int Channel, int Samples)
     sampleData[Channel] = malloc(sizeof(float) * samplesizewithmargin);
     if (!sampleData[Channel])
         return false;
-    UseInt16 = false;
+    bitDepth = BD_F32;
 
     // clear pre/post zero area
     memset(sampleData[Channel], 0, scxt::dsp::FIRoffset * sizeof(float));
