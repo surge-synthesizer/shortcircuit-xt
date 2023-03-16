@@ -181,8 +181,7 @@ bool Engine::processAudio()
 
 void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune)
 {
-    // std::cout << "Engine::noteOn c=" << channel << " k=" << key << " nid=" << noteId
-    //           << " v=" << velocity << std::endl;
+    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << std::endl;
     for (const auto &path : findZone(channel, key, noteId))
     {
         initiateVoice(path);
@@ -191,14 +190,46 @@ void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity
 }
 void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
 {
-    // std::cout << "Engine::noteOff c=" << channel << " k=" << key << " nid=" << noteId <<
-    // std::endl;
-
+    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << std::endl;
     for (const auto &path : findZone(channel, key, noteId))
     {
         releaseVoice(path);
     }
     messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
+}
+
+void Engine::pitchBend(int16_t channel, int16_t value)
+{
+    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(value) << std::endl;
+    auto fv = value / 8192.f;
+    for (const auto &part : *patch)
+    {
+        if (part->channel == -1 || part->channel == channel)
+        {
+            part->pitchBendSmoother.setTarget(fv);
+        }
+    }
+}
+void Engine::midiCC(int16_t channel, int16_t controller, int16_t value)
+{
+    assert(controller >= 0 && controller < 128);
+    auto fv = value / 127.0;
+    for (const auto &part : *patch)
+    {
+        if (part->channel == -1 || part->channel == channel)
+        {
+            part->midiCCSmoothers[controller].setTarget(fv);
+        }
+    }
+}
+void Engine::channelAftertouch(int16_t channel, int16_t value)
+{
+    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(value) << std::endl;
+}
+void Engine::polyAftertouch(int16_t channel, int16_t noteNumber, int16_t value)
+{
+    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(noteNumber) << SCDBGV(value) <<
+    // std::endl;
 }
 
 uint32_t Engine::activeVoiceCount()
@@ -514,5 +545,11 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
     {
         return;
     }
+}
+
+void Engine::onSampleRateChanged()
+{
+    for (const auto &part : *patch)
+        part->setSampleRate(samplerate);
 }
 } // namespace scxt::engine

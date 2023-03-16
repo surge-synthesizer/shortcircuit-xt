@@ -121,6 +121,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune);
     void noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity);
 
+    void pitchBend(int16_t channel, int16_t value);
+    void midiCC(int16_t channel, int16_t controller, int16_t value);
+    void channelAftertouch(int16_t channel, int16_t value);
+    void polyAftertouch(int16_t channel, int16_t noteNumber, int16_t value);
+
+    void onSampleRateChanged() override;
+
     const std::unique_ptr<Zone> &zoneByPath(const pathToZone_t &path) const
     {
         const auto &[p, g, z, c, k, n] = path;

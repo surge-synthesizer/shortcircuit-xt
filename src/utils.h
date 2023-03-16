@@ -177,7 +177,10 @@ struct SampleRateSupport
     {
         samplerate = sampleRate;
         samplerate_inv = sampleRateInv;
+        onSampleRateChanged();
     }
+
+    virtual void onSampleRateChanged() {}
 
   protected:
     double sampleRate{1}, sampleRateInv{1};
@@ -225,7 +228,7 @@ struct ThreadingChecker
 };
 
 #define SCDBGCOUT std::cout << __FILE__ << ":" << __LINE__ << " "
-#define SCXBGV(x) #x << " = " << (x)
+#define SCDBGV(x) #x << "=" << (x) << " "
 
 #define DECLARE_ENUM_STRING(E)                                                                     \
     static std::string toString##E(const E &);                                                     \

@@ -1,3 +1,7 @@
+## Day 35 (2023-03-16)
+
+Busier day. Start with making pitch bend and midi CC work with a crude smoother.
+
 ## Day 34 (2023-03-15)
 
 It's still all playmodes. Restructure to the per-variation switches-based version in the UI

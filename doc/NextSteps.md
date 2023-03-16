@@ -13,6 +13,7 @@ Ideally this would become the issue list over the next fortnight with the header
   
 * Technical issues
   * Non-allocating memory pool
+  * Add the User Options code from plugininfra
   * JSON
     * JSON versioning
     * If json throws how do we not die in the client comms
@@ -60,7 +61,6 @@ Ideally this would become the issue list over the next fortnight with the header
 
 * Structure
   * Zone
-    * Playback mode and Loop Support
     * Round Robin Support
     * Zone edit on Sample (like can we pick a different sample for a zone?)
     * Zone output section and routing
@@ -101,6 +101,8 @@ Ideally this would become the issue list over the next fortnight with the header
 * Formats
   * Do we need riff_memfile with libgig still?
   * WAV file Loop Markers and Root Note Markers
+  * SF2 MultiInstrument should prompt users as opposed to load all as zones.
+  * SF2 Stereo and F32 doesn't work (Macdana Piano)
   * Compound Formats
       * GIG
       * DLS
@@ -111,9 +113,9 @@ Ideally this would become the issue list over the next fortnight with the header
       * FLAC
   
 * MIDI
-  * Pitch Bend bends pitch
-  * Velocity, Release Velocity, Mod Wheel, Channel AT as mod sources
+  * Velocity, Release Velocity, Channel AT as mod sources
   * Poly AT as mod source
+  * That smoother is pretty limited
 
 * Accessibility
 
@@ -129,7 +131,6 @@ Ideally this would become the issue list over the next fortnight with the header
 
 * User Interface
   * Add a robust about screen
-  * Add the User Options code from plugininfra
   * NoteNames (C3/C4/C5) vs hardcoded "C4 == MIDI 60"
   * User Interface Styling 
     * Map phsyical style sheet to logical style sheet
@@ -142,6 +143,7 @@ Ideally this would become the issue list over the next fortnight with the header
       * etc
     * etc
   * Playing Zone indicator and perhaps Playing POsition in Sample Indicator
+  * Do we want to life in the Surge Scope for probing things?
 
 * User Journeys
   * Each journey would be an issue ideally, and we would close it when we could do it and have it 
