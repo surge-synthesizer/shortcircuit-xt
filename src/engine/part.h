@@ -34,14 +34,15 @@
 
 #include "utils.h"
 #include "group.h"
+#include "dsp/smoothers.h"
 
 namespace scxt::engine
 {
 struct Patch;
 
-struct Part : MoveableOnly<Part>
+struct Part : MoveableOnly<Part>, SampleRateSupport
 {
-    Part(int16_t c) : id(PartID::next()), channel(c) {}
+    Part(int16_t c) : id(PartID::next()), channel(c) { pitchBendSmoother.setTarget(0); }
 
     PartID id;
     int16_t channel;
@@ -93,6 +94,15 @@ struct Part : MoveableOnly<Part>
     {
         assert(activeGroups);
         activeGroups--;
+    }
+
+    std::array<dsp::Smoother, 128> midiCCSmoothers;
+    dsp::Smoother pitchBendSmoother;
+    void onSampleRateChanged() override
+    {
+        pitchBendSmoother.setSampleRate(samplerate);
+        for (auto &mcc : midiCCSmoothers)
+            mcc.setSampleRate(samplerate);
     }
 
     // TODO: A group by ID which throws an SCXTError

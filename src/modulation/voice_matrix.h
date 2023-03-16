@@ -126,6 +126,8 @@ enum VoiceModMatrixSource
     vms_AEG,
     vms_EG2,
 
+    vms_ModWheel,
+
     numVoiceMatrixSources,
 };
 

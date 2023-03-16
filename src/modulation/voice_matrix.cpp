@@ -30,6 +30,8 @@
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"
+#include "engine/group.h"
+#include "engine/part.h"
 
 namespace scxt::modulation
 {
@@ -120,6 +122,7 @@ void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
     }
     sourcePointers[vms_AEG] = &(v->aeg.output);
     sourcePointers[vms_EG2] = &(v->eg2.output);
+    sourcePointers[vms_ModWheel] = &(v->zone->parentGroup->parentPart->midiCCSmoothers[1].output);
 }
 
 void VoiceModMatrix::initializeModulationValues()
@@ -138,7 +141,12 @@ void VoiceModMatrix::process()
             continue;
         if (!sourcePointers[r.src])
             continue;
-        modulatedValues[r.dst] += (*(sourcePointers[r.src])) * r.depth * depthScales[r.dst];
+        float viaval = 1.0;
+        if (r.srcVia != vms_none)
+            viaval = *(sourcePointers[r.srcVia]);
+
+        modulatedValues[r.dst] +=
+            (*(sourcePointers[r.src])) * viaval * r.depth * depthScales[r.dst];
     }
 }
 
@@ -237,6 +245,9 @@ std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &des
     case vms_EG2:
         return "vms_eg2";
 
+    case vms_ModWheel:
+        return "vms_modwheel";
+
     case numVoiceMatrixSources:
         throw std::logic_error("Don't call with numVoiceMatrixSources");
     }
@@ -299,6 +310,9 @@ std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
         return "AEG";
     case vms_EG2:
         return "EG2";
+
+    case vms_ModWheel:
+        return "Mod Wheel";
 
     case numVoiceMatrixSources:
         throw std::logic_error("Don't call with numVoiceMatrixSources");

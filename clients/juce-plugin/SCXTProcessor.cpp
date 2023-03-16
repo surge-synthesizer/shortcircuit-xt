@@ -229,9 +229,7 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
 
 void SCXTProcessor::applyMidi(const juce::MidiMessageMetadata &msg)
 {
-    // TODO: All these messages
     // TODO: A clap version with note ids
-    // TODO: Poly AT
     auto m = msg.getMessage();
     if (m.isNoteOn())
     {
@@ -243,16 +241,19 @@ void SCXTProcessor::applyMidi(const juce::MidiMessageMetadata &msg)
     }
     else if (m.isPitchWheel())
     {
-        // sc3->PitchBend(m.getChannel() - 1, m.getPitchWheelValue() - 8192);
+        engine->pitchBend(m.getChannel() - 1, m.getPitchWheelValue() - 8192);
     }
     else if (m.isController())
     {
-        // sc3->ChannelController(m.getChannel() - 1, m.getControllerNumber(),
-        // m.getControllerValue());
+        engine->midiCC(m.getChannel() - 1, m.getControllerNumber(), m.getControllerValue());
+    }
+    else if (m.isChannelPressure())
+    {
+        engine->channelAftertouch(m.getChannel() - 1, m.getChannelPressureValue());
     }
     else if (m.isAftertouch())
     {
-        // sc3->ChannelAftertouch(m.getChannel() - 1, m.getAfterTouchValue());
+        engine->polyAftertouch(m.getChannel() - 1, m.getNoteNumber(), m.getAfterTouchValue());
     }
     else if (m.isAllNotesOff() || m.isAllSoundOff())
     {

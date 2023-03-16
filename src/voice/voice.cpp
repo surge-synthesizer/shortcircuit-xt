@@ -329,6 +329,11 @@ void Voice::initializeGenerator()
 float Voice::calculateVoicePitch()
 {
     auto fpitch = key + modMatrix.getValue(modulation::vmd_Sample_Pitch_Offset, 0);
+
+    auto pitchWheel = zone->parentGroup->parentPart->pitchBendSmoother.output;
+    auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
+    fpitch += pitchWheel * pitchMv;
+
     return fpitch;
 }
 
