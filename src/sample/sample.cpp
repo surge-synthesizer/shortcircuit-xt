@@ -83,7 +83,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
     displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
 
-    if (bitDepth == BD_I16)
+    if (bitDepth != BD_I16)
         return false;
 
     if (sfsample->GetChannelCount() != 1)
