@@ -82,6 +82,10 @@ Engine::~Engine()
 
 void Engine::initiateVoice(const pathToZone_t &path)
 {
+#if DEBUG_VOICE_LIFECYCLE
+    SCDBGCOUT << "Initializing Voice at " << SCDBGV((int)path.key) << std::endl;
+#endif
+
     assert(zoneByPath(path));
     for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
     {
@@ -113,8 +117,21 @@ void Engine::releaseVoice(const pathToZone_t &path)
         if (v && v->isVoiceAssigned && v->zone->id == targetId && v->key == path.key)
         {
             v->release();
+#if DEBUG_VOICE_LIFECYCLE
+            SCDBGCOUT << "Release Voice at " << SCDBGV(path.key) << std::endl;
+#endif
         }
     }
+
+#if DEBUG_VOICE_LIFECYCLE
+    for (auto &v : voices)
+    {
+        if (v && v->isVoiceAssigned)
+        {
+            SCDBGCOUT << "     PostRelease Voice at " << SCDBGV((int)v->key) << std::endl;
+        }
+    }
+#endif
 }
 
 bool Engine::processAudio()

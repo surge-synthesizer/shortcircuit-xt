@@ -47,7 +47,7 @@ namespace scxt::voice
 {
 struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 {
-    float output alignas(16)[2][blockSize];
+    float output alignas(16)[2][blockSize << 1];
     engine::Zone *zone{nullptr}; // I do *not* own this. The engine guarantees it outlives the voice
 
     dsp::GeneratorState GD;
@@ -156,6 +156,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     void cleanupVoice()
     {
         zone->removeVoice(this);
+        zone = nullptr;
         isVoiceAssigned = false;
     }
 };

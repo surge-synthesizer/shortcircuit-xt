@@ -61,6 +61,10 @@ void Zone::process()
     }
     for (int i = 0; i < cleanupIdx; ++i)
     {
+
+#if DEBUG_VOICE_LIFECYCLE
+        SCDBGCOUT << "Cleanup Voice at " << SCDBGV((int)toCleanUp[i]->key) << std::endl;
+#endif
         toCleanUp[i]->cleanupVoice();
     }
 }

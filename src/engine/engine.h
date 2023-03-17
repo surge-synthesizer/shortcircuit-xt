@@ -44,6 +44,8 @@
 #include "selection/selection_manager.h"
 #include "memory_pool.h"
 
+#define DEBUG_VOICE_LIFECYCLE 0
+
 namespace scxt::voice
 {
 struct Voice;
