@@ -53,14 +53,15 @@ float MidikeyRetuner::offsetKeyBy(int channel, int key)
     switch (tuningMode)
     {
     case TWELVE_TET:
-        return 0;
+        return 0.f;
     case MTS_ESP:
     {
         if (!mtsClient)
-            return 0;
+            return 0.f;
         return MTS_RetuningInSemitones(mtsClient, key, channel);
     }
     }
+    return 0.f;
 }
 
 void MidikeyRetuner::setTuningMode(TuningMode tm) { tuningMode = tm; }
