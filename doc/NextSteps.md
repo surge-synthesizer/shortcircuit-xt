@@ -23,21 +23,23 @@ Ideally this would become the issue list over the next fortnight with the header
   * Smaller issues
     * The 'is' questions (isClientConnected; isAudioRunning) and dealing with the queues if not
     * __restrict in the basic-blocks copies etc...
-    * Restore an ASIO build option for self-builders
     * make sure we are using int32_t rather than int etc... everywhere
   * Build/CMake time
     * Allow people to BYOJUCE SIMDE etc... since I'm sure the linux folks will want that one day.
+    * Restore an ASIO build option for self-builders
     * Allow people to turn off VST3 for same reason
     * Split azure pipeline on mac for x86 and arm to speed up CI
   * Review and rememdiate all the `// TODO` points I put in the new code either by making them issues or fixing
 
 * Multi-Output
+  * Where are the mixer and router screens? Group or Part?
+  * Basically: HOw does this work and what are the screens and what are the routings?
 
 * DSP
   * Voice
     * Velocity fade zones
     * Keyboard fade zones
-    * Oversampling from prior code when ratio is high
+    * Pre-Filter Gain
   * Processors
     * What is the list of zone processors we want
     * (for each identified) Port from previous or implement

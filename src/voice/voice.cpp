@@ -37,7 +37,7 @@
 namespace scxt::voice
 {
 
-Voice::Voice(engine::Zone *z) : zone(z), aeg(this), eg2(this)
+Voice::Voice(engine::Zone *z) : zone(z), aeg(this), eg2(this), halfRate(6, true)
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
@@ -129,6 +129,8 @@ bool Voice::process()
 
     auto fpitch = calculateVoicePitch();
     calculateGeneratorRatio(fpitch);
+    if (useOversampling)
+        GD.ratio = GD.ratio >> 1;
     fpitch -= 69;
 
     // TODO : Start and End Points
@@ -139,7 +141,14 @@ bool Voice::process()
     GD.loopInvertedBounds = 1.f / std::max(1, GD.loopUpperBound - GD.loopLowerBound);
     GD.playbackInvertedBounds = 1.f / std::max(1, GD.playbackUpperBound - GD.playbackLowerBound);
     if (!GD.isFinished)
+    {
         Generator(&GD, &GDIO);
+
+        if (useOversampling)
+        {
+            halfRate.process_block_D2(output[0], output[1], blockSize << 1);
+        }
+    }
     else
         memset(output, 0, sizeof(output));
 
@@ -312,10 +321,12 @@ void Voice::initializeGenerator()
     }
     GD.directionAtOutset = GD.direction;
 
-    // TODO Oversampling if ratio too big
     calculateGeneratorRatio(calculateVoicePitch());
 
-    GD.blockSize = blockSize;
+    // TODO: This constant came from SC. Wonder why it is this value. There was a comment comparing
+    // with 167777216 so any speedup at all.
+    useOversampling = std::abs(GD.ratio) > 18000000;
+    GD.blockSize = blockSize * (useOversampling ? 2 : 1);
 
     Generator = nullptr;
 

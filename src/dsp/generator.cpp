@@ -230,7 +230,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         {
             int offset = SamplePos;
 
-            if (Direction)
+            if (Direction > 0)
             {
                 // Upper
                 if (offset > GD->loopUpperBound)
@@ -269,7 +269,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 int offset = SamplePos;
 
-                if (Direction)
+                if (Direction > 0)
                 {
                     if (offset > GD->loopUpperBound)
                         offset -= LoopOffset;

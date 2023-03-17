@@ -1,3 +1,9 @@
+## Day 36 (2023-03-17)
+
+Getting ready for a bit of a vaca and slowdown so make sure the NextSteps is OK. Also
+fix a bug in the reverse-playback-loop-mode and re-add the oversampler for high ratio
+sample playback.
+
 ## Day 35 (2023-03-16)
 
 Busier day. Start with making pitch bend and midi CC work with a crude smoother.
