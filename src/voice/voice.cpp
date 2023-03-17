@@ -85,8 +85,7 @@ bool Voice::process()
 {
     namespace mech = sst::basic_blocks::mechanics;
 
-    assert(zone);
-    if (!isVoicePlaying)
+    if (!isVoicePlaying || !isVoiceAssigned || !zone)
     {
         memset(output, 0, sizeof(output));
         return true;
