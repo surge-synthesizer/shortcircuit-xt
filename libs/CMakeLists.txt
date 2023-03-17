@@ -28,3 +28,6 @@ add_library(readerwriterqueue INTERFACE)
 target_include_directories(readerwriterqueue INTERFACE readerwriterqueue)
 add_library(shortcircuit::readerwriterqueue ALIAS readerwriterqueue)
 
+# OddSound doesn't have a cmake so...
+add_library(mts-esp-client STATIC MTS-ESP/Client/libMTSClient.cpp)
+target_include_directories(mts-esp-client PUBLIC MTS-ESP/Client)

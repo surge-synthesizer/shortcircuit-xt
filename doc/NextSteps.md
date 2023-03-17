@@ -99,6 +99,10 @@ Ideally this would become the issue list over the next fortnight with the header
   * Missing Sample Resolution
 
 * Microtuning
+  * Mode other than "re-zone and shift minimally" 
+  * Native SCL/KBM as well as MTS
+  * Snap on note on vs continuous
+  * Way more robust tuning menu obviously
 
 * Formats
   * Do we need riff_memfile with libgig still?

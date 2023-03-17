@@ -60,6 +60,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     int16_t channel{0};
     uint8_t key{60};
     int32_t noteId{-1};
+    uint8_t originalMidiKey{
+        60}; // the actual physical key pressed not the one I resolved to after tuning
 
     modulation::VoiceModMatrix modMatrix;
     modulation::modulators::StepLFO lfos[engine::lfosPerZone];

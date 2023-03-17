@@ -25,21 +25,42 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_MESSAGING_CLIENT_INTERACTION_MESSAGES_H
-#define SCXT_SRC_MESSAGING_CLIENT_INTERACTION_MESSAGES_H
+#ifndef SCXT_SRC_TUNING_MIDIKEY_RETUNER_H
+#define SCXT_SRC_TUNING_MIDIKEY_RETUNER_H
 
-#include "messaging/client/detail/client_json_details.h"
-#include "json/selection_traits.h"
-#include "selection/selection_manager.h"
-#include "engine/engine.h"
-#include "client_macros.h"
+struct MTSClient;
 
-namespace scxt::messaging::client
+namespace scxt::tuning
 {
-typedef std::pair<std::string, std::string> s2cError_t;
-SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
+struct MidikeyRetuner
+{
+    enum TuningMode
+    {
+        TWELVE_TET,
+        MTS_ESP
+    } tuningMode{TWELVE_TET};
 
-CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, int32_t,
-                 engine.midikeyRetuner.setTuningMode((tuning::MidikeyRetuner::TuningMode)payload));
-} // namespace scxt::messaging::client
-#endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H
+    MidikeyRetuner();
+    ~MidikeyRetuner();
+
+    void setTuningMode(TuningMode);
+
+    /*
+     * Return the number of 12-tet smitones to retune by
+     */
+    float offsetKeyBy(int channel, int key);
+
+    /*
+     * We decompose offsetKeyBy into remapKeyTo and retuneRemappedKey
+     * so we can find the appropriate key then retune it. This is just an
+     * int part and frac part really.
+     */
+    int remapKeyTo(int channel, int key);
+    float retuneRemappedKey(int channel, int key, int preRemappedKey);
+
+  private:
+    MTSClient *mtsClient{nullptr};
+};
+} // namespace scxt::tuning
+
+#endif // SHORTCIRCUIT_MIDIKEY_RETUNER_H

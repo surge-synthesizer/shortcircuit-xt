@@ -80,7 +80,7 @@ Engine::~Engine()
     messageController->stop();
 }
 
-void Engine::initiateVoice(const pathToZone_t &path)
+voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
 {
 #if DEBUG_VOICE_LIFECYCLE
     SCDBGCOUT << "Initializing Voice at " << SCDBGV((int)path.key) << std::endl;
@@ -103,22 +103,22 @@ void Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->key = path.key;
             voices[idx]->noteId = path.noteid;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
-            voices[idx]->attack();
-            return;
+            return voices[idx];
         }
     }
+    return nullptr;
 }
-void Engine::releaseVoice(const pathToZone_t &path)
+void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, float releaseVelocity)
 {
-    assert(zoneByPath(path));
-    auto targetId = zoneByPath(path)->id;
     for (auto &v : voices)
     {
-        if (v && v->isVoiceAssigned && v->zone->id == targetId && v->key == path.key)
+        if (v && v->isVoiceAssigned && (v->originalMidiKey == key || key == -1) &&
+            (v->channel == channel || channel == -1 || v->channel == -1) &&
+            (v->noteId == noteId || v->noteId == -1 || noteId == -1))
         {
             v->release();
 #if DEBUG_VOICE_LIFECYCLE
-            SCDBGCOUT << "Release Voice at " << SCDBGV(path.key) << std::endl;
+            SCDBGCOUT << "Release Voice at " << SCDBGV(key) << std::endl;
 #endif
         }
     }
@@ -198,20 +198,24 @@ bool Engine::processAudio()
 
 void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune)
 {
-    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << std::endl;
-    for (const auto &path : findZone(channel, key, noteId))
+    auto useKey = midikeyRetuner.remapKeyTo(channel, key);
+    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << SCDBGV(useKey) <<
+    // std::endl;
+
+    for (const auto &path : findZone(channel, useKey, noteId))
     {
-        initiateVoice(path);
+        auto v = initiateVoice(path);
+        if (v)
+        {
+            v->originalMidiKey = key;
+            v->attack();
+        }
     }
     messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
 }
 void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
 {
-    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << std::endl;
-    for (const auto &path : findZone(channel, key, noteId))
-    {
-        releaseVoice(path);
-    }
+    releaseVoice(channel, key, noteId, velocity);
     messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
 }
 
