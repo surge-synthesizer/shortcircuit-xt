@@ -59,6 +59,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_add_sample,
 
+    c2s_set_tuning_mode,
+
     num_clientToSerializationMessages
 };
 

@@ -34,3 +34,6 @@
 [submodule "libs/sst/libgig-modified"]
 	path = libs/sst/libgig-modified
 	url = https://github.com/surge-synthesizer/libgig-modified.git
+[submodule "libs/MTS-ESP"]
+	path = libs/MTS-ESP
+	url = https://github.com/ODDSound/MTS-ESP.git

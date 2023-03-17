@@ -31,6 +31,8 @@
 namespace scxt::ui
 {
 
+namespace cmsg = scxt::messaging::client;
+
 HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 {
     multiPage = std::make_unique<juce::TextButton>("multi");
@@ -40,6 +42,35 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     sendPage = std::make_unique<juce::TextButton>("send");
     sendPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::SEND_FX); };
     addAndMakeVisible(*sendPage);
+
+    tunMenu = std::make_unique<juce::TextButton>("tun");
+    tunMenu->onClick = [this]() { showTuningMenu(); };
+    addAndMakeVisible(*tunMenu);
 }
 
+void HeaderRegion::resized()
+{
+
+    multiPage->setBounds(2, 2, 98, getHeight() - 4);
+    sendPage->setBounds(102, 2, 98, getHeight() - 4);
+    tunMenu->setBounds(getWidth() - 200, 2, 98, getHeight() - 4);
+}
+
+void HeaderRegion::showTuningMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Tuning");
+    p.addSeparator();
+    p.addItem("Twelve TET", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            cmsg::clientSendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::TWELVE_TET),
+                                            w->editor->msgCont);
+    });
+    p.addItem("MTS-ESP", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            cmsg::clientSendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::MTS_ESP),
+                                            w->editor->msgCont);
+    });
+    p.showMenuAsync({});
+}
 } // namespace scxt::ui

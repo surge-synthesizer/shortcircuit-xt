@@ -24,6 +24,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_riff_wave.cpp
 
         tuning/equal.cpp
+        tuning/midikey_retuner.cpp
 
         infrastructure/file_map_view.cpp
 
@@ -49,6 +50,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt
         sst-cpputils sst-filters sst-basic-blocks
         libgig libakai
+        mts-esp-client
         shortcircuit::simde
         shortcircuit::readerwriterqueue
         taocpp::json)

@@ -344,6 +344,8 @@ float Voice::calculateVoicePitch()
     auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
     fpitch += pitchWheel * pitchMv;
 
+    fpitch += zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+
     return fpitch;
 }
 

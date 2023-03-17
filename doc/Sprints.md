@@ -2,7 +2,7 @@
 
 Getting ready for a bit of a vaca and slowdown so make sure the NextSteps is OK. Also
 fix a bug in the reverse-playback-loop-mode and re-add the oversampler for high ratio
-sample playback.
+sample playback. Then screw it. Add tuning support.
 
 ## Day 35 (2023-03-16)
 

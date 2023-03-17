@@ -39,7 +39,7 @@ struct SCXTEditor;
 
 struct HeaderRegion : juce::Component, HasEditor
 {
-    std::unique_ptr<juce::Button> multiPage, sendPage;
+    std::unique_ptr<juce::Button> multiPage, sendPage, tunMenu;
 
     HeaderRegion(SCXTEditor *);
 
@@ -63,11 +63,7 @@ struct HeaderRegion : juce::Component, HasEditor
                    juce::Justification::bottomRight);
     }
 
-    void resized() override
-    {
-        multiPage->setBounds(2, 2, 98, getHeight() - 4);
-        sendPage->setBounds(102, 2, 98, getHeight() - 4);
-    }
+    void resized() override;
 
     uint32_t voiceCount{0};
     void setVoiceCount(uint32_t vc)
@@ -75,6 +71,7 @@ struct HeaderRegion : juce::Component, HasEditor
         voiceCount = vc;
         repaint();
     }
+    void showTuningMenu();
 };
 } // namespace scxt::ui
 
