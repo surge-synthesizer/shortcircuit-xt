@@ -599,6 +599,13 @@ struct SampleDisplay : juce::Component, HasEditor
     {
         active = b;
         playModeButton->setVisible(b);
+        loopActive->setVisible(b);
+        loopModeButton->setVisible(b);
+        reverseActive->setVisible(b);
+        loopDirectionButton->setVisible(b);
+        for (const auto &[k, p] : sampleEditors)
+            p->setVisible(b);
+
         if (active)
             rebuild();
         repaint();

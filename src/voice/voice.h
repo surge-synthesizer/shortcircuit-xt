@@ -41,6 +41,7 @@
 #include "configuration.h"
 
 #include "sst/basic-blocks/modulators/ADSREnvelope.h"
+#include "sst/filters/HalfRateFilter.h"
 
 namespace scxt::voice
 {
@@ -53,6 +54,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     dsp::GeneratorIO GDIO;
     dsp::GeneratorFPtr Generator;
     bool monoGenerator{false};
+
+    sst::filters::HalfRate::HalfRateFilter halfRate;
 
     int16_t channel{0};
     uint8_t key{60};
@@ -124,7 +127,12 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     lipol_ps processorMix[engine::processorsPerZone];
 
     /*
-     * Voice State Model.
+     * Voice State on Creation
+     */
+    bool useOversampling{false};
+
+    /*
+     * Voice Playback State Model.
      */
     bool isGated{false};
     bool isGeneratorRunning{false};
