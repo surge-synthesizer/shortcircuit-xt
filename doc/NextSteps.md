@@ -122,6 +122,7 @@ Ideally this would become the issue list over the next fortnight with the header
   * Velocity, Release Velocity, Channel AT as mod sources
   * Poly AT as mod source
   * That smoother is pretty limited
+  * Sustain pedal
 
 * Accessibility
 
