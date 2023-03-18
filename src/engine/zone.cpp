@@ -243,6 +243,7 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index)
             {
                 s.startLoop = m.loop_start;
                 s.endLoop = m.loop_end;
+                s.loopActive = true;
             }
             else
             {

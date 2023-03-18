@@ -1,3 +1,8 @@
+## The 10 day break (2023-03-18 - )
+
+Smaller stuff in this period.
+- Import a looped sample reads loop points *and* turns loop on.
+
 ## Day 36 (2023-03-17)
 
 Getting ready for a bit of a vaca and slowdown so make sure the NextSteps is OK. Also
