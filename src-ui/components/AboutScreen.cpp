@@ -62,9 +62,9 @@ AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
     platform += " on " + sst::plugininfra::cpufeatures::brand();
     info.push_back({"System", platform, false});
     info.push_back({"Build",
-        std::string() + scxt::build::BuildDate + " " + scxt::build::BuildTime + " with " +
-        scxt::build::BuildCompiler, false
-    });
+                    std::string() + scxt::build::BuildDate + " " + scxt::build::BuildTime +
+                        " with " + scxt::build::BuildCompiler,
+                    false});
     info.push_back({"Env", "(PluginType) at (SampleRate)", false});
 }
 void AboutScreen::paint(juce::Graphics &g)
