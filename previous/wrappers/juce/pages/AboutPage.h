@@ -85,6 +85,7 @@ struct AboutPage : PageBase
     void copyInfo()
     {
         std::ostringstream oss;
+        oss << "Shortcircuit XT\n";
         for (auto i : info)
         {
             oss << i.title << ":\t" << i.value << "\n";

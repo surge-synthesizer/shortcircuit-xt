@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_PARTGROUPSIDEBAR_H
-#define SHORTCIRCUIT_PARTGROUPSIDEBAR_H
+#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_PARTGROUPSIDEBAR_H
+#define SCXT_SRC_UI_COMPONENTS_MULTI_PARTGROUPSIDEBAR_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/NamedPanel.h"

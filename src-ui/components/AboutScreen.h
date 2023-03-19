@@ -25,35 +25,39 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_MODPANE_H
-#define SCXT_SRC_UI_COMPONENTS_MULTI_MODPANE_H
+#ifndef SCXT_SRC_UI_COMPONENTS_ABOUTSCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_ABOUTSCREEN_H
 
-#include "sst/jucegui/components/NamedPanel.h"
-#include "components/HasEditor.h"
-#include "modulation/voice_matrix.h"
+#include "HasEditor.h"
+#include <juce_gui_basics/juce_gui_basics.h>
 
-namespace scxt::ui::multi
+namespace scxt::ui
 {
-struct ModRow;
-
-struct ModPane : sst::jucegui::components::NamedPanel, HasEditor
+struct AboutScreen : juce::Component, HasEditor
 {
-    static constexpr int numRowsOnScreen{6};
-    ModPane(SCXTEditor *e);
-    ~ModPane();
+    struct AboutInfo
+    {
+        std::string title;
+        std::string value;
+        bool isBig{true};
+    };
+    std::vector<AboutInfo> info;
 
+    AboutScreen(SCXTEditor *e);
+    void paint(juce::Graphics &g) override;
+
+    std::unique_ptr<juce::Drawable> icon;
+    std::unique_ptr<juce::TextButton> copyButton;
+
+    juce::Font titleFont, subtitleFont, infoFont, aboutFont;
+
+    void copyInfo();
     void resized() override;
 
-    void rebuildMatrix(); // entirely new components
-    void refreshMatrix(); // new routing table, no new components
-    void setActive(bool b);
+    static constexpr int infoh = 23;
 
-    std::array<std::unique_ptr<ModRow>, numRowsOnScreen> rows;
-
-    scxt::modulation::voiceModMatrixMetadata_t matrixMetadata;
-    scxt::modulation::VoiceModMatrix::routingTable_t routingTable;
-
-    int tabRange{0};
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutScreen);
 };
-} // namespace scxt::ui::multi
-#endif // SHORTCIRCUIT_MAPPINGPANE_H
+} // namespace scxt::ui
+
+#endif // SHORTCIRCUIT_ABOUTESCREEN_H

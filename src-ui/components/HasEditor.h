@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_HASEDITOR_H
-#define SHORTCIRCUIT_HASEDITOR_H
+#ifndef SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
+#define SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
 
 namespace scxt::ui
 {

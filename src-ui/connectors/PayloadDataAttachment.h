@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H
-#define SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H
+#ifndef SCXT_SRC_UI_CONNECTORS_PAYLOADDATAATTACHMENT_H
+#define SCXT_SRC_UI_CONNECTORS_PAYLOADDATAATTACHMENT_H
 
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/data/Discrete.h"

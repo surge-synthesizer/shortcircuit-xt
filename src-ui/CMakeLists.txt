@@ -7,6 +7,7 @@ juce_add_binary_data(scxt-ui-binary
         ../resources/fonts/Inter/static/Inter-Regular.ttf
         ../resources/fonts/Inter/static/Inter-Medium.ttf
         ../resources/fonts/Inter/static/Inter-Bold.ttf
+        ../resources/images/SCicon.svg
         )
 
 add_library(${PROJECT_NAME} STATIC
@@ -17,6 +18,7 @@ add_library(${PROJECT_NAME} STATIC
         components/HeaderRegion.cpp
         components/MultiScreen.cpp
         components/SendFXScreen.cpp
+        components/AboutScreen.cpp
 
         components/multi/AdsrPane.cpp
         components/multi/LFOPane.cpp

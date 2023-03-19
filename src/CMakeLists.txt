@@ -48,7 +48,7 @@ add_library(${PROJECT_NAME} STATIC
 target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt
-        sst-cpputils sst-filters sst-basic-blocks
+        sst-cpputils sst-filters sst-basic-blocks sst-plugininfra
         libgig libakai
         mts-esp-client
         shortcircuit::simde
@@ -61,4 +61,9 @@ if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES WINDOWS=1)
 else()
     target_compile_options(${PROJECT_NAME} PUBLIC -Werror)
+    if (APPLE)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC MAC=1)
+    else()
+        target_compile_definitions(${PROJECT_NAME} PUBLIC LINUX=1)
+    endif()
 endif()

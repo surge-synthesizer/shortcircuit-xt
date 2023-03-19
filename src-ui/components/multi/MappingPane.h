@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_MAPPINGPANE_H
-#define SHORTCIRCUIT_MAPPINGPANE_H
+#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_MAPPINGPANE_H
+#define SCXT_SRC_UI_COMPONENTS_MULTI_MAPPINGPANE_H
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"

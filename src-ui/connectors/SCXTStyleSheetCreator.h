@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_SCXTSTYLESHEET_H
-#define SHORTCIRCUIT_SCXTSTYLESHEET_H
+#ifndef SCXT_SRC_UI_CONNECTORS_SCXTSTYLESHEETCREATOR_H
+#define SCXT_SRC_UI_CONNECTORS_SCXTSTYLESHEETCREATOR_H
 
 #include "sst/jucegui/style/StyleSheet.h"
 

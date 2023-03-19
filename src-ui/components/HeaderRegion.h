@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_UI_COMPONENTS_HEADERREGION_H
-#define SCXT_UI_COMPONENTS_HEADERREGION_H
+#ifndef SCXT_SRC_UI_COMPONENTS_HEADERREGION_H
+#define SCXT_SRC_UI_COMPONENTS_HEADERREGION_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "HasEditor.h"
@@ -39,7 +39,7 @@ struct SCXTEditor;
 
 struct HeaderRegion : juce::Component, HasEditor
 {
-    std::unique_ptr<juce::Button> multiPage, sendPage, tunMenu;
+    std::unique_ptr<juce::Button> multiPage, sendPage, aboutPage, tunMenu;
 
     HeaderRegion(SCXTEditor *);
 
@@ -58,9 +58,6 @@ struct HeaderRegion : juce::Component, HasEditor
 #endif
         auto vc = fmt::format("Voices: {}", voiceCount);
         g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::topRight);
-
-        g.drawText(scxt::build::FullVersionStr, getLocalBounds().reduced(3, 1),
-                   juce::Justification::bottomRight);
     }
 
     void resized() override;
