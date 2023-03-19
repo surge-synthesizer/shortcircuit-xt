@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_LFOPANE_H
-#define SHORTCIRCUIT_LFOPANE_H
+#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_LFOPANE_H
+#define SCXT_SRC_UI_COMPONENTS_MULTI_LFOPANE_H
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/ToggleButton.h"

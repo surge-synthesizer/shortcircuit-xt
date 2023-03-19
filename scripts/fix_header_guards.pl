@@ -14,7 +14,7 @@ find(
     {
         wanted => \&findfiles,
     },
-    'ui-next'
+    'src-ui'
 );
 find(
     {

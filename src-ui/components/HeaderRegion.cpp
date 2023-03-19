@@ -43,6 +43,10 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     sendPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::SEND_FX); };
     addAndMakeVisible(*sendPage);
 
+    aboutPage = std::make_unique<juce::TextButton>("about");
+    aboutPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::ABOUT); };
+    addAndMakeVisible(*aboutPage);
+
     tunMenu = std::make_unique<juce::TextButton>("tun");
     tunMenu->onClick = [this]() { showTuningMenu(); };
     addAndMakeVisible(*tunMenu);
@@ -50,9 +54,9 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 
 void HeaderRegion::resized()
 {
-
     multiPage->setBounds(2, 2, 98, getHeight() - 4);
     sendPage->setBounds(102, 2, 98, getHeight() - 4);
+    aboutPage->setBounds(202, 2, 98, getHeight() - 4);
     tunMenu->setBounds(getWidth() - 200, 2, 98, getHeight() - 4);
 }
 

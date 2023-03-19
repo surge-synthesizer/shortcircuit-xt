@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_GLYPHPAINTER_H
-#define SHORTCIRCUIT_GLYPHPAINTER_H
+#ifndef SCXT_SRC_UI_COMPONENTS_GLYPHPAINTER_H
+#define SCXT_SRC_UI_COMPONENTS_GLYPHPAINTER_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

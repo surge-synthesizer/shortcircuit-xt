@@ -29,7 +29,9 @@ Ideally this would become the issue list over the next fortnight with the header
     * Restore an ASIO build option for self-builders
     * Allow people to turn off VST3 for same reason
     * Split azure pipeline on mac for x86 and arm to speed up CI
+  * Turn on SSE 4.1 correctly and use `mm_hadd_ps` in the generator sum
   * Review and rememdiate all the `// TODO` points I put in the new code either by making them issues or fixing
+  
 
 * Multi-Output
   * Where are the mixer and router screens? Group or Part?
@@ -97,6 +99,7 @@ Ideally this would become the issue list over the next fortnight with the header
   * Multi Save and Load
   * Compound (with samples in) file format for Part and Multi
   * Missing Sample Resolution
+  * DAW Extra State concept 
 
 * Microtuning
   * Mode other than "re-zone and shift minimally" 
@@ -137,7 +140,7 @@ Ideally this would become the issue list over the next fortnight with the header
   * Clap Sample Collection API/Extension
 
 * User Interface
-  * Add a robust about screen
+  * About Screen needs filling out quite a bit
   * NoteNames (C3/C4/C5) vs hardcoded "C4 == MIDI 60"
   * User Interface Styling 
     * Map phsyical style sheet to logical style sheet
@@ -151,6 +154,9 @@ Ideally this would become the issue list over the next fortnight with the header
     * etc
   * Playing Zone indicator and perhaps Playing POsition in Sample Indicator
   * Do we want to life in the Surge Scope for probing things?
+  * UI State generally. What tab is selected and so on doesn't survive editor open/close and
+    selection state isn't streamed anywhere beyond the session
+  * JUCE_DECLARE_COPYABLE_ everywhere
 
 * User Journeys
   * Each journey would be an issue ideally, and we would close it when we could do it and have it 

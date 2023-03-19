@@ -33,6 +33,7 @@
 #include "MultiScreen.h"
 #include "SendFXScreen.h"
 #include "connectors/SCXTStyleSheetCreator.h"
+#include "AboutScreen.h"
 
 namespace scxt::ui
 {
@@ -80,6 +81,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, const sample::SampleMana
     sendFxScreen = std::make_unique<SendFXScreen>();
     addChildComponent(*sendFxScreen);
 
+    aboutScreen = std::make_unique<AboutScreen>(this);
+    addChildComponent(*aboutScreen);
+
     onStyleChanged();
 }
 
@@ -96,12 +100,21 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
     case MULTI:
         multiScreen->setVisible(true);
         sendFxScreen->setVisible(false);
+        aboutScreen->setVisible(false);
         resized();
         break;
 
     case SEND_FX:
         multiScreen->setVisible(false);
         sendFxScreen->setVisible(true);
+        aboutScreen->setVisible(false);
+        resized();
+        break;
+
+    case ABOUT:
+        multiScreen->setVisible(false);
+        sendFxScreen->setVisible(false);
+        aboutScreen->setVisible(true);
         resized();
         break;
     }
@@ -116,6 +129,8 @@ void SCXTEditor::resized()
         multiScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
     if (sendFxScreen->isVisible())
         sendFxScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+    if (aboutScreen->isVisible())
+        aboutScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
 }
 
 void SCXTEditor::idle()

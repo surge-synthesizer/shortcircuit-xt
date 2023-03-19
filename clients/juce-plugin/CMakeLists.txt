@@ -11,7 +11,10 @@ juce_add_plugin(${PROJECT_NAME}
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
-    
+
+    ICON_BIG "${CMAKE_SOURCE_DIR}/resources/images/SCAppIcon.png"
+
+
     FORMATS Standalone AU VST3
 
     COPY_PLUGIN_AFTER_BUILD TRUE

@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_UI_COMPONENTS_SCXTEDITOR_H
-#define SCXT_UI_COMPONENTS_SCXTEDITOR_H
+#ifndef SCXT_SRC_UI_COMPONENTS_SCXTEDITOR_H
+#define SCXT_SRC_UI_COMPONENTS_SCXTEDITOR_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -42,6 +42,7 @@ namespace scxt::ui
 struct HeaderRegion;
 struct MultiScreen;
 struct SendFXScreen;
+struct AboutScreen;
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
 {
@@ -66,6 +67,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     std::unique_ptr<HeaderRegion> headerRegion;
     std::unique_ptr<MultiScreen> multiScreen;
     std::unique_ptr<SendFXScreen> sendFxScreen;
+    std::unique_ptr<AboutScreen> aboutScreen;
 
     // TODO fix me with a proper tooltip type
     struct Tooltip : juce::Component
@@ -86,7 +88,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     enum ActiveScreen
     {
         MULTI,
-        SEND_FX
+        SEND_FX,
+        ABOUT
     };
     void setActiveScreen(ActiveScreen s);
 

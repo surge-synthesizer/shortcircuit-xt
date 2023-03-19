@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SHORTCIRCUIT_ADSRPANE_H
-#define SHORTCIRCUIT_ADSRPANE_H
+#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_ADSRPANE_H
+#define SCXT_SRC_UI_COMPONENTS_MULTI_ADSRPANE_H
 
 #include <unordered_map>
 #include <juce_gui_basics/juce_gui_basics.h>

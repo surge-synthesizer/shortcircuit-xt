@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_UI_COMPONENTS_MULTISCREEN_H
-#define SCXT_UI_COMPONENTS_MULTISCREEN_H
+#ifndef SCXT_SRC_UI_COMPONENTS_MULTISCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_MULTISCREEN_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "HasEditor.h"
@@ -65,6 +65,8 @@ struct MultiScreen : juce::Component, HasEditor
     void resized() override { layout(); }
 
     void layout();
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MultiScreen);
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUIT_MULTISCREEN_H
