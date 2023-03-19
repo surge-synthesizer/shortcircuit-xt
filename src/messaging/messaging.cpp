@@ -122,7 +122,7 @@ void MessageController::scheduleAudioThreadCallback(
     s2a.payload.p = (void *)pt;
     s2a.payloadType = audio::SerializationToAudio::VOID_STAR;
 
-    serializationToAudioQueue.try_emplace(s2a);
+    serializationToAudioQueue.push(s2a);
 }
 
 void MessageController::stopAudioThreadThenRunOnSerial(
@@ -150,7 +150,7 @@ void MessageController::runSerialization()
         {
             std::unique_lock<std::mutex> lock(clientToSerializationMutex);
             while (shouldRun && clientToSerializationQueue.empty() &&
-                   !(audioToSerializationQueue.peek()))
+                   (audioToSerializationQueue.empty()))
             {
                 clientToSerializationConditionVar.wait_for(lock, 50ms);
             }
@@ -169,11 +169,14 @@ void MessageController::runSerialization()
             }
 
             // TODO: Drain SerToAudioQ if there's no audio thread
-
-            audioToSerializationMessage_t msg;
-            while (audioToSerializationQueue.try_dequeue(msg))
+            bool tryToDrain{true};
+            while (tryToDrain && !audioToSerializationQueue.empty())
             {
-                parseAudioMessageOnSerializationThread(msg);
+                auto msgopt = audioToSerializationQueue.pop();
+                if (msgopt.has_value())
+                    parseAudioMessageOnSerializationThread(*msgopt);
+                else
+                    tryToDrain = false;
             }
         }
         else
