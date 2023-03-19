@@ -141,22 +141,28 @@ bool Engine::processAudio()
     messageController->threadingChecker.registerAsAudioThread();
 #endif
 
-    messaging::MessageController::serializationToAudioMessage_t msg;
-    while (messageController->serializationToAudioQueue.try_dequeue(msg))
+    bool tryToDrain{true};
+    while (tryToDrain && !messageController->serializationToAudioQueue.empty())
     {
-        switch (msg.id)
+        auto msgopt = messageController->serializationToAudioQueue.pop();
+        if (!msgopt.has_value())
+        {
+            tryToDrain = false;
+            break;
+        }
+        switch (msgopt->id)
         {
         case messaging::audio::s2a_dispatch_to_pointer:
         {
             auto cb =
-                static_cast<messaging::MessageController::AudioThreadCallback *>(msg.payload.p);
+                static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
             cb->exec(*this);
 
             messaging::audio::AudioToSerialization rt;
             rt.id = messaging::audio::a2s_pointer_complete;
             rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
             rt.payload.p = (void *)cb;
-            messageController->audioToSerializationQueue.try_emplace(rt);
+            messageController->audioToSerializationQueue.push(rt);
         }
         break;
         case messaging::audio::s2a_none:

@@ -52,7 +52,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         libgig libakai
         mts-esp-client
         shortcircuit::simde
-        shortcircuit::readerwriterqueue
         taocpp::json)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC  $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)

@@ -38,9 +38,9 @@
 #include <stack>
 #include <chrono>
 
-#include "readerwriterqueue.h"
 #include "client/client_serial.h"
 #include "audio/audio_serial.h"
+#include "sst/cpputils/ring_buffer.h"
 
 namespace scxt::messaging
 {
@@ -155,7 +155,11 @@ struct MessageController : MoveableOnly<MessageController>
     engine::Engine &engine;
 
   public:
-    MessageController(engine::Engine &e) : engine(e) {}
+    MessageController(engine::Engine &e) : engine(e)
+    {
+        serializationToAudioQueue.subscribe();
+        audioToSerializationQueue.subscribe();
+    }
     ~MessageController();
 
     /**
@@ -215,7 +219,7 @@ struct MessageController : MoveableOnly<MessageController>
      */
     void sendAudioToSerialization(const audioToSerializationMessage_t &m)
     {
-        audioToSerializationQueue.try_emplace(m);
+        audioToSerializationQueue.push(m);
     }
 
     /**
@@ -226,7 +230,7 @@ struct MessageController : MoveableOnly<MessageController>
      */
     void sendSerializationToAudio(const serializationToAudioMessage_t &m)
     {
-        serializationToAudioQueue.try_emplace(m);
+        serializationToAudioQueue.push(m);
     }
 
     /**
@@ -280,10 +284,8 @@ struct MessageController : MoveableOnly<MessageController>
     void returnAudioThreadCallback(AudioThreadCallback *);
     std::stack<AudioThreadCallback *> cbStore;
 
-    moodycamel::ReaderWriterQueue<serializationToAudioMessage_t, 1024> serializationToAudioQueue{
-        128};
-    moodycamel::ReaderWriterQueue<audioToSerializationMessage_t, 1024> audioToSerializationQueue{
-        128};
+    sst::cpputils::SimpleRingBuffer<serializationToAudioMessage_t, 1024> serializationToAudioQueue;
+    sst::cpputils::SimpleRingBuffer<audioToSerializationMessage_t, 1024> audioToSerializationQueue;
 
     std::queue<clientToSerializationMessage_t> clientToSerializationQueue;
     std::mutex clientToSerializationMutex;
