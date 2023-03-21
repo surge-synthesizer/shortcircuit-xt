@@ -68,7 +68,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         Ctrl::A, "Attack", "A", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.a; },
         adsrView.a);
     attachSlider(
-        Ctrl::H, "Hold", "H", datamodel::AdsrStorage::cdS, [](const auto &pl) { return pl.h; },
+        Ctrl::H, "Hold", "H", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.h; },
         adsrView.h);
     attachSlider(
         Ctrl::D, "Decay", "D", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.d; },

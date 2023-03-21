@@ -100,11 +100,19 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
     baseValues[destIndex(vmd_eg_S, 0)] = z->aegStorage.s;
     baseValues[destIndex(vmd_eg_R, 0)] = z->aegStorage.r;
 
+    baseValues[destIndex(vmd_eg_AShape, 0)] = z->aegStorage.aShape;
+    baseValues[destIndex(vmd_eg_DShape, 0)] = z->aegStorage.dShape;
+    baseValues[destIndex(vmd_eg_RShape, 0)] = z->aegStorage.rShape;
+
     baseValues[destIndex(vmd_eg_A, 1)] = z->eg2Storage.a;
     baseValues[destIndex(vmd_eg_H, 1)] = z->eg2Storage.h;
     baseValues[destIndex(vmd_eg_D, 1)] = z->eg2Storage.d;
     baseValues[destIndex(vmd_eg_S, 1)] = z->eg2Storage.s;
     baseValues[destIndex(vmd_eg_R, 1)] = z->eg2Storage.r;
+
+    baseValues[destIndex(vmd_eg_AShape, 1)] = z->eg2Storage.aShape;
+    baseValues[destIndex(vmd_eg_DShape, 1)] = z->eg2Storage.dShape;
+    baseValues[destIndex(vmd_eg_RShape, 1)] = z->eg2Storage.rShape;
 
     baseValues[destIndex(vmd_Sample_Playback_Ratio, 0)] = 0;
     baseValues[destIndex(vmd_Sample_Pitch_Offset, 0)] = z->mapping.pitchOffset;

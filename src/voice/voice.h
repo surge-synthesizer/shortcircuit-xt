@@ -41,6 +41,7 @@
 #include "configuration.h"
 
 #include "sst/basic-blocks/modulators/ADSREnvelope.h"
+#include "sst/basic-blocks/modulators/AHDSRShapedSC.h"
 #include "sst/filters/HalfRateFilter.h"
 
 namespace scxt::voice
@@ -65,10 +66,12 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 
     modulation::VoiceModMatrix modMatrix;
     modulation::modulators::StepLFO lfos[engine::lfosPerZone];
-    typedef sst::basic_blocks::modulators::ADSREnvelope<
+
+    typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
-        adsrenv_t;
-    adsrenv_t aeg, eg2;
+        ahdsrenv_t;
+    ahdsrenv_t aeg, eg2;
+
     // TODO obviously this sucks move to a table
     inline float envelope_rate_linear_nowrap(float f)
     {
