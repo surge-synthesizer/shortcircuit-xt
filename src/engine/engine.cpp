@@ -64,6 +64,8 @@ Engine::Engine()
 
     memoryPool = std::make_unique<MemoryPool>();
 
+    voice::Voice::ahdsrenv_t::initializeLuts();
+
     messageController->start();
 }
 
@@ -140,7 +142,6 @@ bool Engine::processAudio()
 #if BUILD_IS_DEBUG
     messageController->threadingChecker.registerAsAudioThread();
 #endif
-
     bool tryToDrain{true};
     while (tryToDrain && !messageController->serializationToAudioQueue.empty())
     {

@@ -3,6 +3,7 @@
 Smaller stuff in this period.
 - Import a looped sample reads loop points *and* turns loop on.
 - Add an about screen
+- Implement AHDSR with Shape (some optimizaiton to do)
 
 ## Day 36 (2023-03-17)
 

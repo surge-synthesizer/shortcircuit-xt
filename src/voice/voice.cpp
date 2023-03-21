@@ -71,12 +71,8 @@ void Voice::voiceStarted()
                        nullptr);
     }
 
-    aeg.attackFrom(0.0, modMatrix.getValue(modulation::vmd_eg_A, 0),
-                   1, // this needs fixing in legato mode
-                   zone->aegStorage.isDigital);
-    eg2.attackFrom(0.0, modMatrix.getValue(modulation::vmd_eg_A, 1),
-                   1, // this needs fixing in legato mode
-                   zone->aegStorage.isDigital);
+    aeg.attackFrom(0.0); // TODO Envelope Legato Mode
+    eg2.attackFrom(0.0);
 
     zone->addVoice(this);
 }
@@ -111,17 +107,25 @@ bool Voice::process()
     bool envGate = (sdata.playMode == engine::Zone::NORMAL && isGated) ||
                    (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
                    (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
-    aeg.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 0),
-                     modMatrix.getValue(modulation::vmd_eg_D, 0),
-                     modMatrix.getValue(modulation::vmd_eg_S, 0),
-                     modMatrix.getValue(modulation::vmd_eg_R, 0), 1, 1, 1, envGate);
-    eg2.processBlock(modMatrix.getValue(modulation::vmd_eg_A, 1),
-                     modMatrix.getValue(modulation::vmd_eg_D, 1),
-                     modMatrix.getValue(modulation::vmd_eg_S, 1),
-                     modMatrix.getValue(modulation::vmd_eg_R, 1), 1, 1, 1, envGate);
+    aeg.processBlock(
+        modMatrix.getValue(modulation::vmd_eg_A, 0), modMatrix.getValue(modulation::vmd_eg_H, 0),
+        modMatrix.getValue(modulation::vmd_eg_D, 0), modMatrix.getValue(modulation::vmd_eg_S, 0),
+        modMatrix.getValue(modulation::vmd_eg_R, 0),
+        modMatrix.getValue(modulation::vmd_eg_AShape, 0),
+        modMatrix.getValue(modulation::vmd_eg_DShape, 0),
+        modMatrix.getValue(modulation::vmd_eg_RShape, 0), envGate);
+    eg2.processBlock(
+        modMatrix.getValue(modulation::vmd_eg_A, 1), modMatrix.getValue(modulation::vmd_eg_H, 1),
+        modMatrix.getValue(modulation::vmd_eg_D, 1), modMatrix.getValue(modulation::vmd_eg_S, 1),
+        modMatrix.getValue(modulation::vmd_eg_R, 1),
+        modMatrix.getValue(modulation::vmd_eg_AShape, 1),
+        modMatrix.getValue(modulation::vmd_eg_DShape, 1),
+        modMatrix.getValue(modulation::vmd_eg_RShape, 1), envGate);
+    // SCDBGCOUT << SCDBGV(aeg.stage) << SCDBGV(aeg.phase) << SCDBGV(aeg.outputCache[0]) <<
+    // std::endl;
 
     // TODO: And output is non zero once we are past attack
-    isAEGRunning = (aeg.stage != adsrenv_t ::s_complete);
+    isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
     // TODO and probably just want to process the envelopes here
     modMatrix.process();

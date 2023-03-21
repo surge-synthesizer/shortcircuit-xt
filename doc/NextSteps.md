@@ -49,11 +49,10 @@ Ideally this would become the issue list over the next fortnight with the header
   * Modulation
     * Un-screw the depth and index stuff (this is a technical baconpaul issue)
     * Modulation sources for all the MIDI and so on
-    * AEG/EG2 implement hold 
-    * AEG/EG2 implement shape
     * LFO Presets are kinda screwed. Revisit them.
     * MPE Modulators
     * What parts of sample etc... are modulatable (list all the targets)
+    * AHDSRShapedSC pow vs fastpow test and profile. (Leave pow on for now)
   * Temposync Support
   * Generator
     * Loop Fades
