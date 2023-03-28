@@ -116,6 +116,26 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 {
     pgzStructure = p;
     pgzList->updateContent();
+    setCurrentSelection(editor->currentSingleSelection);
+    repaint();
+}
+
+void PartGroupSidebar::setCurrentSelection(const selection::SelectionManager::ZoneAddress &a)
+{
+    int selR = -1;
+    for (const auto &[i, r] : sst::cpputils::enumerate(pgzStructure))
+    {
+        if ((r.first.part == a.part) && (r.first.group == a.group) && (r.first.zone == a.zone))
+        {
+            selR = i;
+        }
+    }
+    if (selR > 0)
+    {
+        juce::SparseSet<int> rows;
+        rows.addRange({selR, selR + 1});
+        pgzList->setSelectedRows(rows, juce::dontSendNotification);
+    }
     repaint();
 }
 } // namespace scxt::ui::multi

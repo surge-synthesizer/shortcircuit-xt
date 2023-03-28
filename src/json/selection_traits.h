@@ -58,6 +58,26 @@ template <> struct scxt_traits<scxt::selection::SelectionManager::ZoneAddress>
         findIf(v, "zone", z.zone);
     }
 };
+
+template <> struct scxt_traits<selection::SelectionManager>
+{
+    typedef selection::SelectionManager sm_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const sm_t &e)
+    {
+        v = {{"zone", *(e.getSelectedZone())}, {"tabs", e.otherTabSelection}};
+        auto z = e.getSelectedZone();
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, sm_t &z)
+    {
+        selection::SelectionManager::ZoneAddress za;
+        findIf(v, "tabs", z.otherTabSelection);
+        findIf(v, "zone", za);
+        z.singleSelect(za);
+    }
+};
 } // namespace scxt::json
 
 #endif // SHORTCIRCUIT_SELECTION_TRAITS_H

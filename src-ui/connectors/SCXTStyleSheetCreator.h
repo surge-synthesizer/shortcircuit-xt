@@ -40,6 +40,8 @@ struct SCXTStyleSheetCreator
     static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
 
     static const sheet_t::ptr_t setup();
+
+    static juce::Font interMediumFor(int ht);
 };
 } // namespace scxt::ui::connectors
 #endif // SHORTCIRCUIT_SCXTSTYLESHEET_H

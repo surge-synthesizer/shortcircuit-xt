@@ -40,6 +40,9 @@ namespace scxt::ui::connectors
 template <typename Parent, typename Payload, typename ValueType = float>
 struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
 {
+    typedef Parent parent_t;
+    typedef Payload payload_t;
+
     ValueType &value;
     std::string label;
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged;

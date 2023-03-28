@@ -171,8 +171,9 @@ struct alignas(16) Sample : MoveableOnly<Sample>
   private:
     void clear_data()
     {
-        std::cout << __FILE__ << ":" << __LINE__ << " " << __func__ << std::endl;
-    }; // deletes sample data and marks sample as unused
+        // TODO: Figure Out and Implement clear_data
+        // deletes sample data and marks sample as unused
+    }
 
     bool allocateI16(int Channel, int Samples);
     bool allocateF32(int Channel, int Samples);

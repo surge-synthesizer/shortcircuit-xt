@@ -117,6 +117,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
 
     void onGroupZoneMappingSummary(const scxt::engine::Group::zoneMappingSummary_t &);
+    void onSingleSelection(const scxt::selection::SelectionManager::ZoneAddress &);
 
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
@@ -126,6 +127,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     // Originate client to serialization messages
     void singleSelectItem(const selection::SelectionManager::ZoneAddress &);
+    selection::SelectionManager::ZoneAddress currentSingleSelection;
 
     void showTooltip(const juce::Component &relativeTo);
     void hideTooltip();
