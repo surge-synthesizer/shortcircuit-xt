@@ -229,6 +229,7 @@ struct ThreadingChecker
 
 #define SCDBGCOUT std::cout << __FILE__ << ":" << __LINE__ << " "
 #define SCDBGV(x) #x << "=" << (x) << " "
+#define SCD(x) SCDBGV(x)
 
 #define DECLARE_ENUM_STRING(E)                                                                     \
     static std::string toString##E(const E &);                                                     \

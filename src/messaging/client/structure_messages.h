@@ -62,7 +62,9 @@ inline void onRegister(engine::Engine &engine, MessageController &cont)
     assert(cont.threadingChecker.isSerialThread());
     engine.sendMetadataToClient();
     PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
-    engine.getSelectionManager()->singleSelect({});
+    engine.getSelectionManager()->singleSelect(
+        engine.getSelectionManager()->getSelectedZone().value_or(
+            selection::SelectionManager::ZoneAddress()));
 }
 CLIENT_TO_SERIAL(OnRegister, c2s_on_register, bool, onRegister(engine, cont));
 

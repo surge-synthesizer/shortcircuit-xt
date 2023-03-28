@@ -57,4 +57,11 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
     return base;
 }
 
+juce::Font SCXTStyleSheetCreator::interMediumFor(int ht)
+{
+    static auto interMed = juce::Typeface::createSystemTypefaceFor(
+        scxt::ui::binary::InterMedium_ttf, scxt::ui::binary::InterMedium_ttfSize);
+    return juce::Font(interMed).withHeight(ht);
+}
+
 } // namespace scxt::ui::connectors

@@ -140,4 +140,12 @@ void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
     auto &[title, msg] = e;
     juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, title, msg, "OK");
 }
+
+void SCXTEditor::onSingleSelection(const scxt::selection::SelectionManager::ZoneAddress &s)
+{
+    currentSingleSelection = s;
+    multiScreen->parts->setCurrentSelection(s);
+    multiScreen->sample->setCurrentSelection(s);
+    repaint();
+}
 } // namespace scxt::ui

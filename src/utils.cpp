@@ -34,12 +34,12 @@ namespace scxt
 std::map<std::string, std::pair<int, int>> allocLog;
 void showLeakLog()
 {
-    std::cout << "\nMemory Allocation Log of NoCopy classes\n";
     for (const auto &[k, v] : allocLog)
     {
         auto [a, d] = v;
-        std::cout << "   class=" << k << "  ctor=" << a << " dtor=" << d
-                  << ((a != d) ? " ERROR!!" : " OK") << std::endl;
+        if (a != d)
+            std::cout << "LEAK:   class=" << k << "  ctor=" << a << " dtor=" << d
+                      << ((a != d) ? " ERROR!!" : " OK") << std::endl;
     }
 }
 #endif

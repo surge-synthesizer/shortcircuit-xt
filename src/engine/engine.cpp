@@ -38,11 +38,15 @@
 #include "gig.h"
 #include "SF.h"
 
+#include "version.h"
 namespace scxt::engine
 {
 
 Engine::Engine()
 {
+    std::cout << "Shortcircuit XT : Constructing Engine - Version " << scxt::build::FullVersionStr
+              << std::endl;
+
     id.id = rand() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);

@@ -49,6 +49,7 @@
 #include "dsp_traits.h"
 #include "modulation_traits.h"
 #include "datamodel_traits.h"
+#include "selection_traits.h"
 
 namespace scxt::json
 {
@@ -59,6 +60,7 @@ template <> struct scxt_traits<scxt::engine::Engine>
     {
         v = {{"streamingVersion", scxt::json::currentStreamingVersion},
              {"patch", e.getPatch()},
+             {"selectionManager", e.getSelectionManager()},
              {"sampleManager", e.getSampleManager()}};
     }
 
@@ -66,9 +68,10 @@ template <> struct scxt_traits<scxt::engine::Engine>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Engine &engine)
     {
         // TODO: engine gets a SV? Guess maybe
-        // Order matters here. Samples need to be there before the patch
+        // Order matters here. Samples need to be there before the patch and patch before selection
         findIf(v, "sampleManager", *(engine.getSampleManager()));
         findIf(v, "patch", *(engine.getPatch()));
+        findIf(v, "selectionManager", *(engine.getSelectionManager()));
     }
 };
 

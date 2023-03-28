@@ -1,3 +1,14 @@
+## Day 37 (the plane ride back)
+
+- Selection Manager streamed
+- Attachment pattern gets a bit tigher
+- Mapping Region highlights selected zone in sync with sidebar
+- Keyboard layout which actually plays notes (at fixed velocity)
+- Click Zone to Select works
+- Sidebar shows selection in sync with zones and startup path
+- Drag to edit zone mappings
+
+
 ## The 10 day break (2023-03-18 - )
 
 Smaller stuff in this period.

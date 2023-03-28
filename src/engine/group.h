@@ -35,6 +35,7 @@
 
 #include "utils.h"
 #include "zone.h"
+#include "selection/selection_manager.h"
 
 namespace scxt::engine
 {

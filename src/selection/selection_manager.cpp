@@ -38,6 +38,7 @@ namespace cms = messaging::client;
 void SelectionManager::singleSelect(const ZoneAddress &a)
 {
     auto [p, g, z] = a;
+    serializationSendToClient(cms::s2c_send_single_selection, a, *(engine.getMessageController()));
     if (p >= 0 && g >= 0)
     {
         serializationSendToClient(

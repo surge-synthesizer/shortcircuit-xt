@@ -35,6 +35,7 @@
 #include "messaging/client/client_messages.h"
 
 #include "components/GlyphPainter.h"
+#include "connectors/SCXTStyleSheetCreator.h"
 
 namespace scxt::ui::multi
 {
@@ -46,7 +47,76 @@ struct MappingZonesAndKeyboard : juce::Component
 {
     MappingDisplay *display{nullptr};
     MappingZonesAndKeyboard(MappingDisplay *d) : display(d) {}
-    void paint(juce::Graphics &g);
+    void paint(juce::Graphics &g) override;
+
+    static constexpr int keyboardHeight{25};
+    juce::Rectangle<float> rectangleForZone(const engine::Group::zoneMappingItem_t &sum);
+    juce::Rectangle<float> rectangleForKey(int midiNote);
+
+    void mouseDown(const juce::MouseEvent &e) override;
+    void mouseUp(const juce::MouseEvent &e) override;
+    void mouseDrag(const juce::MouseEvent &e) override;
+    void mouseMove(const juce::MouseEvent &e) override
+    {
+        for (const auto &h : keyboardHotZones)
+        {
+            if (h.contains(e.position))
+            {
+                setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+                return;
+            }
+        }
+        for (const auto &h : velocityHotZones)
+        {
+            if (h.contains(e.position))
+            {
+                setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
+                return;
+            }
+        }
+        for (const auto &h : bothHotZones)
+        {
+            if (h.contains(e.position))
+            {
+                setMouseCursor(juce::MouseCursor::UpDownLeftRightResizeCursor);
+                return;
+            }
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
+    void setActiveZone(const engine::Group::zoneMappingItem_t &az)
+    {
+        auto r = rectangleForZone(az);
+        auto side = r.withWidth(8).translated(0, -2).withTrimmedTop(10).withTrimmedBottom(10);
+        keyboardHotZones.clear();
+        keyboardHotZones.push_back(side);
+        keyboardHotZones.push_back(side.translated(r.getWidth() - 6, 0));
+
+        auto top = r.withHeight(8).translated(-2, 0).withTrimmedLeft(10).withTrimmedRight(10);
+        velocityHotZones.clear();
+        velocityHotZones.push_back(top);
+        velocityHotZones.push_back(top.translated(0, r.getHeight() - 6));
+
+        auto corner = r.withWidth(10).withHeight(10).translated(-2, -2);
+        bothHotZones.clear();
+        bothHotZones.push_back(corner);
+        bothHotZones.push_back(corner.translated(r.getWidth() - 8, 0));
+        bothHotZones.push_back(corner.translated(r.getWidth() - 8, r.getHeight() - 8));
+        bothHotZones.push_back(corner.translated(0, r.getHeight() - 8));
+    }
+
+    enum MouseState
+    {
+        NONE,
+        HELD_NOTE,
+        DRAG_VELOCITY,
+        DRAG_KEY,
+        DRAG_KEY_AND_VEL
+    } mouseState{NONE};
+
+    std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones;
+    int32_t heldNote{-1};
 };
 
 struct MappingZoneHeader : juce::Component
@@ -102,6 +172,7 @@ struct MappingDisplay : juce::Component, HasEditor
 
     MappingDisplay(MappingPane *p) : HasEditor(p->editor), mappingView(p->mappingView)
     {
+        // TODO: Upgrade all these attachments with the new factory style
         zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>(this);
         addAndMakeVisible(*zonesAndKeyboard);
         zoneHeader = std::make_unique<MappingZoneHeader>();
@@ -217,12 +288,6 @@ struct MappingDisplay : juce::Component, HasEditor
             [](const auto &pl) { return pl.pitchOffset; }, mappingView.pitchOffset);
         addGlyph(Ctrl::Pitch, glyph::GlyphPainter::TUNING);
     }
-    void paint(juce::Graphics &g) override
-    {
-        g.setColour(juce::Colours::orchid);
-        g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
-        g.drawText("Mapping Region", getLocalBounds(), juce::Justification::centred);
-    }
 
     engine::Zone::ZoneMappingData &mappingView;
 
@@ -304,6 +369,12 @@ struct MappingDisplay : juce::Component, HasEditor
         textEds[Pitch]->setBounds(cQ(3));
     }
 
+    void mappingChangedFromGUI()
+    {
+        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
+                                        editor->msgCont);
+    }
+
     void mappingChangedFromGUI(const zone_attachment_t &at)
     {
         cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
@@ -328,40 +399,287 @@ struct MappingDisplay : juce::Component, HasEditor
     void setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
     {
         summary = d;
+        setCurrentSelection(activeAddress);
         zonesAndKeyboard->repaint();
         repaint();
     }
+
+    void setCurrentSelection(const selection::SelectionManager::ZoneAddress &za)
+    {
+        activeAddress = za;
+        for (const auto &s : summary)
+        {
+            if (std::get<2>(s) == za.zone)
+            {
+                zonesAndKeyboard->setActiveZone(s);
+            }
+        }
+    }
+
     engine::Group::zoneMappingSummary_t summary{};
+    selection::SelectionManager::ZoneAddress activeAddress{};
 };
+
+void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
+{
+    if (!display)
+        return;
+    mouseState = NONE;
+    if (e.position.y > keyboardHeight)
+    {
+        for (int i = 0; i < 128; ++i)
+        {
+            auto r = rectangleForKey(i);
+            if (r.contains(e.position))
+            {
+                cmsg::clientSendToSerialization(cmsg::NoteFromGUI({i, true}),
+                                                display->editor->msgCont);
+                heldNote = i;
+                mouseState = HELD_NOTE;
+                repaint();
+                return;
+            }
+        }
+    }
+
+    const auto &sel = display->editor->currentSingleSelection;
+
+    for (const auto &ks : keyboardHotZones)
+    {
+        if (ks.contains(e.position))
+        {
+            mouseState = DRAG_KEY;
+            return;
+        }
+    }
+
+    for (const auto &ks : velocityHotZones)
+    {
+        if (ks.contains(e.position))
+        {
+            mouseState = DRAG_VELOCITY;
+            return;
+        }
+    }
+
+    for (const auto &ks : bothHotZones)
+    {
+        if (ks.contains(e.position))
+        {
+            mouseState = DRAG_KEY_AND_VEL;
+            return;
+        }
+    }
+
+    std::vector<int> potentialZones;
+    for (auto &z : display->summary)
+    {
+        auto r = rectangleForZone(z);
+        if (r.contains(e.position))
+            potentialZones.push_back(std::get<2>(z));
+    }
+    if (!potentialZones.empty())
+    {
+        if (potentialZones.size() == 1)
+        {
+            auto newSel = display->editor->currentSingleSelection;
+            newSel.zone = potentialZones[0];
+            display->editor->singleSelectItem(newSel);
+        }
+        else
+        {
+            // OK so now we have a stack. Basically what we want to
+            // do is choose the 'next' one after our currently
+            // selected as a heuristic
+            auto cz = display->editor->currentSingleSelection.zone;
+
+            auto selThis = -1;
+            for (auto l : potentialZones)
+            {
+                if (l > display->editor->currentSingleSelection.zone && selThis < 0)
+                    selThis = l;
+            }
+
+            if (selThis < 0)
+                selThis = potentialZones.front();
+            auto newSel = display->editor->currentSingleSelection;
+            newSel.zone = selThis;
+            display->editor->singleSelectItem(newSel);
+        }
+    }
+}
+
+void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
+{
+    if (mouseState == DRAG_VELOCITY || mouseState == DRAG_KEY || mouseState == DRAG_KEY_AND_VEL)
+    {
+        auto lb = getLocalBounds().toFloat();
+        auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
+        auto kw = displayRegion.getWidth() / 127.0;
+        auto vh = displayRegion.getHeight() / 127.0;
+
+        auto nx = std::clamp((int)std::round(e.position.x / kw), 0, 127);
+        auto vy = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 127);
+
+        auto &vr = display->mappingView.velocityRange;
+        auto &kr = display->mappingView.keyboardRange;
+
+        if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_KEY)
+        {
+            auto drs = abs(kr.keyStart - nx);
+            auto dre = abs(kr.keyEnd - nx);
+            if (drs < dre)
+                kr.keyStart = nx;
+            else
+                kr.keyEnd = nx;
+            if (kr.keyStart > kr.keyEnd)
+                std::swap(kr.keyStart, kr.keyEnd);
+        }
+
+        if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_VELOCITY)
+        {
+            auto vrs = abs(vr.velStart - vy);
+            auto vre = abs(vr.velEnd - vy);
+            if (vrs < vre)
+                vr.velStart = vy;
+            else
+                vr.velEnd = vy;
+            if (vr.velStart > vr.velEnd)
+                std::swap(vr.velStart, vr.velEnd);
+        }
+        display->mappingChangedFromGUI();
+        repaint();
+    }
+}
+
+void MappingZonesAndKeyboard::mouseUp(const juce::MouseEvent &e)
+{
+    if (mouseState == HELD_NOTE && heldNote >= 0)
+    {
+        cmsg::clientSendToSerialization(cmsg::NoteFromGUI({heldNote, false}),
+                                        display->editor->msgCont);
+        heldNote = -1;
+        mouseState = NONE;
+        repaint();
+        return;
+    }
+
+    setMouseCursor(juce::MouseCursor::NormalCursor);
+}
+juce::Rectangle<float>
+MappingZonesAndKeyboard::rectangleForZone(const engine::Group::zoneMappingItem_t &sum)
+{
+    const auto &[kb, vel, x, name] = sum;
+
+    auto lb = getLocalBounds().toFloat();
+    auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
+    auto kw = displayRegion.getWidth() / 127.0;
+    auto vh = displayRegion.getHeight() / 127.0;
+
+    float x0 = kb.keyStart * kw;
+    float x1 = (kb.keyEnd + 1) * kw;
+    if (x1 < x0)
+        std::swap(x1, x0);
+    float y0 = (127 - vel.velStart) * vh;
+    float y1 = (127 - vel.velEnd) * vh;
+    if (y1 < y0)
+        std::swap(y1, y0);
+
+    return {x0, y0, x1 - x0, y1 - y0};
+}
+
+juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForKey(int midiNote)
+{
+    auto lb = getLocalBounds().toFloat();
+    auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
+    auto kw = keyRegion.getWidth() / 127.0;
+
+    keyRegion = keyRegion.withWidth(kw).translated(kw * midiNote, 0);
+
+    return keyRegion;
+}
 
 void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 {
     if (!display)
         g.fillAll(juce::Colours::red);
 
-    auto lb = getLocalBounds().toFloat();
-    auto displayRegion = lb.withTrimmedBottom(15);
-    auto kw = displayRegion.getWidth() / 127.0;
-    auto vh = displayRegion.getHeight() / 127.0;
-
-    for (const auto &[kb, vel, idx, name] : display->summary)
+    // Draw the background
     {
-        auto x0 = kb.keyStart * kw;
-        auto x1 = kb.keyEnd * kw;
-        if (x1 < x0)
-            std::swap(x1, x0);
-        auto y0 = (127 - vel.velStart) * vh;
-        auto y1 = (127 - vel.velEnd) * vh;
-        if (y1 < y0)
-            std::swap(y1, y0);
-        g.setColour(juce::Colours::yellow.withAlpha(0.2f));
-        auto r = juce::Rectangle<float>(x0, y0, x1 - x0, y1 - y0);
+        auto lb = getLocalBounds().toFloat();
+        auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
+
+        auto dashCol = juce::Colour(80, 80, 80);
+        g.setColour(dashCol);
+        g.drawRect(displayRegion, 1.f);
+
+        dashCol = juce::Colour(50, 50, 60);
+        g.setColour(dashCol);
+
+        auto dh = displayRegion.getHeight() / 4.0;
+        for (int i = 1; i < 4; ++i)
+        {
+            g.drawHorizontalLine(i * dh, lb.getX(), lb.getX() + lb.getWidth());
+        }
+
+        auto oct = displayRegion.getWidth() / 127.0 * 12.0;
+        for (int i = 0; i < 127; i += 12)
+        {
+            auto o = i / 12;
+            g.drawVerticalLine(o * oct, lb.getY(), lb.getY() + lb.getHeight());
+        }
+    }
+
+    const auto &sel = display->editor->currentSingleSelection;
+
+    for (const auto &z : display->summary)
+    {
+        if (std::get<2>(z) == sel.zone)
+            continue;
+
+        auto r = rectangleForZone(z);
+
+        auto nonSelZoneColor = juce::Colour(140, 140, 140);
+        g.setColour(nonSelZoneColor.withAlpha(0.2f));
         g.fillRect(r);
-        g.setColour(juce::Colours::yellow);
+        g.setColour(nonSelZoneColor);
         g.drawRect(r, 2.f);
+        g.setColour(nonSelZoneColor.brighter());
+        g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
+        g.drawText(std::get<3>(z), r.reduced(5, 3), juce::Justification::topLeft);
+    }
+
+    // Draw the selected zone
+    if (sel.zone >= 0)
+    {
+        assert(sel.zone < display->summary.size());
+        const auto &z = display->summary[sel.zone];
+
+        auto r = rectangleForZone(z);
+
+        auto selZoneColor = juce::Colour(0xFF, 0x90, 0x00);
+        g.setColour(selZoneColor.withAlpha(0.2f));
+        g.fillRect(r);
+
+        g.setColour(selZoneColor);
+        g.drawRect(r, 2.f);
+
         g.setColour(juce::Colours::white);
-        g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
-        g.drawText(name, r, juce::Justification::centred);
+        g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
+        g.drawText(std::get<3>(z), r.reduced(5, 3), juce::Justification::topLeft);
+    }
+
+    for (int i = 0; i < 128; ++i)
+    {
+        auto n = i % 12;
+        auto isBlackKey = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
+        auto kr = rectangleForKey(i);
+        g.setColour(isBlackKey ? juce::Colours::black : juce::Colours::white);
+        if (i == heldNote)
+            g.setColour(juce::Colours::red);
+        g.fillRect(kr);
+        g.setColour(juce::Colour(140, 140, 140));
+        g.drawRect(kr, 0.5);
     }
 }
 
@@ -790,5 +1108,9 @@ void MappingPane::setActive(bool b)
 void MappingPane::setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
 {
     mappingDisplay->setGroupZoneMappingSummary(d);
+}
+void MappingPane::setCurrentSelection(const selection::SelectionManager::ZoneAddress &s)
+{
+    mappingDisplay->setCurrentSelection(s);
 }
 } // namespace scxt::ui::multi

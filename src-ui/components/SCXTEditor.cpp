@@ -172,7 +172,9 @@ void SCXTEditor::drainCallbackQueue()
 void SCXTEditor::singleSelectItem(const selection::SelectionManager::ZoneAddress &a)
 {
     namespace cmsg = scxt::messaging::client;
+    currentSingleSelection = a;
     cmsg::clientSendToSerialization(cmsg::SingleSelectAddress(a), msgCont);
+    repaint();
 }
 
 bool SCXTEditor::isInterestedInFileDrag(const juce::StringArray &files)

@@ -41,5 +41,31 @@ SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
 CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, int32_t,
                  engine.midikeyRetuner.setTuningMode((tuning::MidikeyRetuner::TuningMode)payload));
+
+typedef std::tuple<int32_t, bool> noteOnOff_t;
+inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engine,
+                               MessageController &cont)
+{
+    auto [n, onoff] = g;
+
+    auto sel = engine.getSelectionManager()->getSelectedZone();
+    if (sel.has_value())
+    {
+        auto p = sel->part;
+        auto ch = engine.getPatch()->getPart(p)->channel;
+
+        if (onoff)
+        {
+            cont.scheduleAudioThreadCallback(
+                [ch, note = n](auto &eng) { eng.noteOn(ch, note, -1, 0.9, 0.f); });
+        }
+        else
+        {
+            cont.scheduleAudioThreadCallback(
+                [ch, note = n](auto &eng) { eng.noteOff(ch, note, -1, 0.9); });
+        }
+    }
+}
+CLIENT_TO_SERIAL(NoteFromGUI, c2s_noteonoff, noteOnOff_t, processMidiFromGUI(payload, engine, cont))
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H

@@ -32,10 +32,13 @@
 #include "messaging/client/client_messages.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/Label.h"
+#include "connectors/Connectors.h"
 
 namespace scxt::ui::multi
 {
 namespace cmsg = scxt::messaging::client;
+using dma = datamodel::AdsrStorage;
+namespace comp = sst::jucegui::components;
 
 AdsrPane::AdsrPane(SCXTEditor *e, int index)
     : HasEditor(e), sst::jucegui::components::NamedPanel(index == 0 ? "AMP EG" : "EG 2"),
@@ -43,69 +46,51 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
 {
     hasHamburger = true;
 
-    auto attachSlider = [this](Ctrl c, const std::string &aLabel, const std::string &l,
-                               const auto &desc, const auto &fn, float &v) {
-        auto at = std::make_unique<attachment_t>(
-            this, desc, aLabel, [this](const auto &at) { this->adsrChangedFromGui(at); }, fn, v);
-        auto sl = std::make_unique<sst::jucegui::components::VSlider>();
-        sl->setSource(at.get());
-        sl->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
-        sl->onBeginEdit = [this, &slRef = *sl, &atRef = *at]() {
+    auto stowOnto = [this](auto &tgt, auto c, auto pair) {
+        auto &[a, s] = pair;
+        attachments[c] = std::move(a);
+        tgt[c] = std::move(s);
+        tgt[c]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+
+        // This is somewhat unsatisfying
+        tgt[c]->onBeginEdit = [this, &slRef = *tgt[c], &atRef = *attachments[c]]() {
             editor->showTooltip(slRef);
             updateTooltip(atRef);
         };
-        sl->onEndEdit = [this]() { editor->hideTooltip(); };
-        addAndMakeVisible(*sl);
+        tgt[c]->onEndEdit = [this]() { editor->hideTooltip(); };
+
+        addAndMakeVisible(*tgt[c]);
+    };
+    auto makeLabel = [this](auto c, const std::string &l) {
         auto lb = std::make_unique<sst::jucegui::components::Label>();
         lb->setText(l);
         addAndMakeVisible(*lb);
-        attachments[c] = std::move(at);
-        sliders[c] = std::move(sl);
         labels[c] = std::move(lb);
     };
 
-    attachSlider(
-        Ctrl::A, "Attack", "A", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.a; },
-        adsrView.a);
-    attachSlider(
-        Ctrl::H, "Hold", "H", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.h; },
-        adsrView.h);
-    attachSlider(
-        Ctrl::D, "Decay", "D", datamodel::AdsrStorage::cdAHDR, [](const auto &pl) { return pl.d; },
-        adsrView.d);
-    attachSlider(
-        Ctrl::S, "Sustain", "S", datamodel::AdsrStorage::cdS, [](const auto &pl) { return pl.s; },
-        adsrView.s);
-    attachSlider(
-        Ctrl::R, "Release", "R", datamodel::AdsrStorage::cdAHDR,
-        [](const auto &pl) { return pl.r; }, adsrView.r);
+    connectors::ConnectorFactory<attachment_t, comp::VSlider> sliderFactory(
+        [this](auto &a) { this->adsrChangedFromGui(a); }, this, adsrView);
+    connectors::ConnectorFactory<attachment_t, comp::Knob> knobFactory(
+        [this](auto &a) { this->adsrChangedFromGui(a); }, this, adsrView);
 
-    auto attachKnob = [this](Ctrl c, const std::string &l, const auto &d, const auto &fn,
-                             float &v) {
-        auto at = std::make_unique<attachment_t>(
-            this, d, l, [this](const auto &at) { this->adsrChangedFromGui(at); }, fn, v);
-        auto kn = std::make_unique<sst::jucegui::components::Knob>();
-        kn->setSource(at.get());
-        kn->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
-        kn->onBeginEdit = [this, &knRef = *kn, &atRef = *at]() {
-            editor->showTooltip(knRef);
-            updateTooltip(atRef);
-        };
-        kn->onEndEdit = [this]() { editor->hideTooltip(); };
-        addAndMakeVisible(*kn);
-        attachments[c] = std::move(at);
-        knobs[c] = std::move(kn);
-    };
+    stowOnto(sliders, Ctrl::A, sliderFactory.attach("Attack", dma::cdAHDR, &dma::a));
+    makeLabel(Ctrl::A, "A");
 
-    attachKnob(
-        Ctrl::Ash, "A Shape", datamodel::AdsrStorage::cdShape,
-        [](const auto &pl) { return pl.aShape; }, adsrView.aShape);
-    attachKnob(
-        Ctrl::Dsh, "D Shape", datamodel::AdsrStorage::cdShape,
-        [](const auto &pl) { return pl.dShape; }, adsrView.dShape);
-    attachKnob(
-        Ctrl::Rsh, "R Shape", datamodel::AdsrStorage::cdShape,
-        [](const auto &pl) { return pl.rShape; }, adsrView.rShape);
+    stowOnto(sliders, Ctrl::H, sliderFactory.attach("Hold", dma::cdAHDR, &dma::h));
+    makeLabel(Ctrl::H, "H");
+
+    stowOnto(sliders, Ctrl::D, sliderFactory.attach("Decay", dma::cdAHDR, &dma::d));
+    makeLabel(Ctrl::D, "D");
+
+    stowOnto(sliders, Ctrl::S, sliderFactory.attach("Sustain", dma::cdS, &dma::s));
+    makeLabel(Ctrl::S, "S");
+
+    stowOnto(sliders, Ctrl::R, sliderFactory.attach("Release", dma::cdAHDR, &dma::r));
+    makeLabel(Ctrl::R, "R");
+
+    stowOnto(knobs, Ctrl::Ash, knobFactory.attach("A Shape", dma::cdShape, &dma::aShape));
+    stowOnto(knobs, Ctrl::Dsh, knobFactory.attach("D Shape", dma::cdShape, &dma::dShape));
+    stowOnto(knobs, Ctrl::Rsh, knobFactory.attach("R Shape", dma::cdShape, &dma::rShape));
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)

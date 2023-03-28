@@ -32,6 +32,8 @@
 #include <vector>
 #include <cstdint>
 #include <map>
+#include <string>
+#include <unordered_map>
 
 namespace scxt::engine
 {
@@ -59,8 +61,10 @@ struct SelectionManager
         int32_t zone{-1};
     };
 
-    std::optional<ZoneAddress> getSelectedZone() { return singleSelection; }
+    std::optional<ZoneAddress> getSelectedZone() const { return singleSelection; }
     void singleSelect(const ZoneAddress &z);
+
+    std::unordered_map<std::string, std::string> otherTabSelection;
 
   protected:
     MainSelection mainSelection{MULTI};

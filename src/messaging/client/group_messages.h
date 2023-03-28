@@ -30,11 +30,13 @@
 
 #include "client_macros.h"
 #include "engine/group.h"
+#include "selection/selection_manager.h"
 
 namespace scxt::messaging::client
 {
 SERIAL_TO_CLIENT(SelectedGroupZoneMappingSummary, s2c_send_selected_group_zone_mapping_summary,
                  engine::Group::zoneMappingSummary_t, onGroupZoneMappingSummary);
-
-}
+SERIAL_TO_CLIENT(SetSingleSelection, s2c_send_single_selection,
+                 selection::SelectionManager::ZoneAddress, onSingleSelection);
+} // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H

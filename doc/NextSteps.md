@@ -31,7 +31,7 @@ Ideally this would become the issue list over the next fortnight with the header
     * Split azure pipeline on mac for x86 and arm to speed up CI
   * Turn on SSE 4.1 correctly and use `mm_hadd_ps` in the generator sum
   * Review and rememdiate all the `// TODO` points I put in the new code either by making them issues or fixing
-  
+  * Promulgate the attachment pattern form ADSR ui to other bits ASAP
 
 * Multi-Output
   * Where are the mixer and router screens? Group or Part?
@@ -156,6 +156,8 @@ Ideally this would become the issue list over the next fortnight with the header
   * UI State generally. What tab is selected and so on doesn't survive editor open/close and
     selection state isn't streamed anywhere beyond the session
   * JUCE_DECLARE_COPYABLE_ everywhere
+  * Inactive knobs shouldn't draw
+  * Waveform draw and edit
 
 * User Journeys
   * Each journey would be an issue ideally, and we would close it when we could do it and have it 
