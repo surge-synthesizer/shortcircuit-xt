@@ -76,7 +76,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
 
-    if (UNIX AND NOT APPLE)
+    if (NOT APPLE)
         # Turn on SSE 4.2. Apple has this by default
         add_compile_options(-march=nehalem)
     endif()
