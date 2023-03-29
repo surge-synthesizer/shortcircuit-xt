@@ -464,6 +464,13 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 zn->mapping.pitchOffset = 1.0 * sfsamp->PitchCorrection / 256;
                 zn->attachToSample(*sampleManager);
 
+                auto p = region->GetPan();
+                // pan in SF2 is -64 to 63 so hackety hack a bit
+                if (p < 0)
+                    zn->mapping.pan = p / 64.f;
+                else
+                    zn->mapping.pan = p / 63.f;
+
                 using namespace std;
                 auto s = sfsamp;
                 auto reg = region;
@@ -576,6 +583,13 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         messaging::client::serializationSendToClient(
             messaging::client::s2c_report_error,
             messaging::client::s2cError_t{"SF2 Load Error", e.Message}, *messageController);
+        return;
+    }
+    catch (const SCXTError &e)
+    {
+        messaging::client::serializationSendToClient(
+            messaging::client::s2c_report_error,
+            messaging::client::s2cError_t{"SF2 Load Error", e.what()}, *messageController);
         return;
     }
     catch (...)
