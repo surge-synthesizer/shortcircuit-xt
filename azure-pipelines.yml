@@ -106,7 +106,7 @@ jobs:
         condition: variables.isLinux
 
   - job: Release Build
-    condition: not(eq(variables['Build.Reason'], 'PullRequest')))
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     strategy:
       matrix:
         mac:
