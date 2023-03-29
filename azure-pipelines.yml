@@ -1,4 +1,4 @@
-# Hacky secret project 3
+# ShortCircuit XT PR and Main Pipeline
 
 trigger:
   - main
@@ -96,7 +96,7 @@ jobs:
         condition: variables.isCodeQual
 
       - bash: |
-          cmake --build build --config Debug --target shortcircuit-products --parallel 4
+          cmake --build build --config Debug --target scxt_plugin_Standalone --parallel 4
         displayName: Build SCXT and scxt-test
 
       - bash: |
