@@ -98,7 +98,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         int16_t key{-1};
         int32_t noteid{-1};
     };
-    std::vector<pathToZone_t> findZone(int16_t channel, int16_t key, int32_t noteId)
+    std::vector<pathToZone_t> findZone(int16_t channel, int16_t key, int32_t noteId,
+                                       int16_t velocity)
     {
         // TODO: This allocates which is a bummer
         std::vector<pathToZone_t> res;
@@ -110,7 +111,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                 {
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
-                        if (zone->mapping.keyboardRange.includes(key))
+                        if (zone->mapping.keyboardRange.includes(key) &&
+                            zone->mapping.velocityRange.includes(velocity))
                         {
                             res.push_back(
                                 {(size_t)pidx, (size_t)gidx, (size_t)zidx, channel, key, noteId});
@@ -124,8 +126,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     tuning::MidikeyRetuner midikeyRetuner;
 
-    void noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune);
-    void noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity);
+    void noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t velocity, float detune);
+    void noteOff(int16_t channel, int16_t key, int32_t noteId, int32_t velocity);
 
     void pitchBend(int16_t channel, int16_t value);
     void midiCC(int16_t channel, int16_t controller, int16_t value);
@@ -140,7 +142,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         return patch->getPart(p)->getGroup(g)->getZone(z);
     }
     voice::Voice *initiateVoice(const pathToZone_t &path);
-    void releaseVoice(int16_t channel, int16_t key, int32_t noteid, float releaseVelocity);
+    void releaseVoice(int16_t channel, int16_t key, int32_t noteid, int32_t releaseVelocity);
 
     // TODO: All this gets ripped out when voice management is fixed
     uint32_t activeVoiceCount();

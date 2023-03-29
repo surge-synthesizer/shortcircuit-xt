@@ -233,11 +233,11 @@ void SCXTProcessor::applyMidi(const juce::MidiMessageMetadata &msg)
     auto m = msg.getMessage();
     if (m.isNoteOn())
     {
-        engine->noteOn(m.getChannel() - 1, m.getNoteNumber(), -1, m.getVelocity() / 127.f, 0.f);
+        engine->noteOn(m.getChannel() - 1, m.getNoteNumber(), -1, m.getVelocity(), 0.f);
     }
     else if (m.isNoteOff())
     {
-        engine->noteOff(m.getChannel() - 1, m.getNoteNumber(), -1, m.getVelocity() / 127.f);
+        engine->noteOff(m.getChannel() - 1, m.getNoteNumber(), -1, m.getVelocity());
     }
     else if (m.isPitchWheel())
     {

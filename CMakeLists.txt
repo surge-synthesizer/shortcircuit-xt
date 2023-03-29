@@ -19,11 +19,23 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(ShortCircuit VERSION 0.5.0.0 LANGUAGES C CXX ASM)
+project(ShortcircuitXT VERSION 0.5.1.0 LANGUAGES C CXX ASM)
+
+# Build Time Options
+option(SCXT_BUILD_VST3 "Build a VST3 Plugin" ON)
+option(SCXT_BUILD_AU "Build an AudioUnit Plugin" ON)
+option(SCXT_BUILD_CLAP "Build a CLAP Plugin" ON)
+option(SCXT_BUILD_STANDALONE "Build a Standalone Executable" ON)
+option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
+option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
+option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
+
 
 # Calculate bitness
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
-message(STATUS "Targeting ${BITS}-bit configuration")
+if (NOT ${BITS} EQUAL 64)
+    message(WARNING "${PROJECT_NAME} has only been tested on 64 bits. This may not work")
+endif()
 
 # Share some information about the  build
 message(STATUS "ShortCircuit ${CMAKE_PROJECT_VERSION}")
@@ -64,12 +76,22 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
 
+    if (NOT APPLE)
+        # Turn on SSE 4.2. Apple has this by default
+        add_compile_options(-march=nehalem)
+    endif()
     if (WIN32)
         # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
         # fix that but not today
         add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     endif()
 endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # Turn on SSE 4.2
+    add_compile_options(/arch:SSE42)
+endif()
+
 
 include(cmake/compiler-and-git.cmake)
 

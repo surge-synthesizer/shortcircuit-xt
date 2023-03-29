@@ -57,12 +57,12 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
         if (onoff)
         {
             cont.scheduleAudioThreadCallback(
-                [ch, note = n](auto &eng) { eng.noteOn(ch, note, -1, 0.9, 0.f); });
+                [ch, note = n](auto &eng) { eng.noteOn(ch, note, -1, 90, 0.f); });
         }
         else
         {
             cont.scheduleAudioThreadCallback(
-                [ch, note = n](auto &eng) { eng.noteOff(ch, note, -1, 0.9); });
+                [ch, note = n](auto &eng) { eng.noteOff(ch, note, -1, 90); });
         }
     }
 }

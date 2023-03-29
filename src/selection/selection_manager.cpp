@@ -38,7 +38,35 @@ namespace cms = messaging::client;
 void SelectionManager::singleSelect(const ZoneAddress &a)
 {
     auto [p, g, z] = a;
+
+    // Check if I deserialized a valid zone and adjust if not
+    if (p >= 0)
+    {
+        if (p >= engine.getPatch()->numParts)
+        {
+            p = -1;
+            g = -1;
+            z = -1;
+        }
+        else if (g >= 0)
+        {
+            if (g >= engine.getPatch()->getPart(p)->getGroups().size())
+            {
+                g = -1;
+                z = -1;
+            }
+            else if (z >= 0)
+            {
+                if (z >= engine.getPatch()->getPart(p)->getGroup(g)->getZones().size())
+                {
+                    z = -1;
+                }
+            }
+        }
+    }
+
     serializationSendToClient(cms::s2c_send_single_selection, a, *(engine.getMessageController()));
+
     if (p >= 0 && g >= 0)
     {
         serializationSendToClient(

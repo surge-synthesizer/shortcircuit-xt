@@ -30,10 +30,11 @@
 
 #if defined(__aarch64__)
 #define SIMDE_ENABLE_NATIVE_ALIASES
-#include "simde/x86/sse2.h"
+#include "simde/x86/sse4.2.h"
 #else
 #include <xmmintrin.h>
 #include <immintrin.h>
+#include <pmmintrin.h>
 #endif
 
 #endif // SHORTCIRCUIT_SSE_INCLUDE_H
