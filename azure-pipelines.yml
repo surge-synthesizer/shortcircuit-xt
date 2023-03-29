@@ -93,7 +93,7 @@ jobs:
       - bash: |
           cmake --build build --config Debug --target scxt-code-checks --parallel 4
         displayName: Code Checks
-        condition: and(variables.isCodeQual)
+        condition: variables.isCodeQual
 
       - bash: |
           cmake --build build --config Debug --target shortcircuit-products --parallel 4
@@ -105,7 +105,7 @@ jobs:
         displayName: Run Tests SCXT
         condition: variables.isLinux
 
-  - job: Release Build
+  - job: ReleaseBuild
     condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     strategy:
       matrix:
