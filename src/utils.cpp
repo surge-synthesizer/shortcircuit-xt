@@ -28,8 +28,36 @@
 #include <iostream>
 #include "utils.h"
 
+#if MAC || LINUX
+#include <execinfo.h>
+#include <stdio.h>
+#include <cstdlib>
+#endif
+
 namespace scxt
 {
+#if MAC || LINUX
+void printStackTrace(int depth)
+{
+    void *callstack[128];
+    int i, frames = backtrace(callstack, 128);
+    char **strs = backtrace_symbols(callstack, frames);
+    if (depth < 0)
+        depth = frames;
+    printf("-------- Stack Trace (%d frames of %d depth showing) --------\n", depth, frames);
+    for (i = 1; i < frames && i < depth; ++i)
+    {
+        printf("  [%3d]: %s\n", i, strs[i]);
+    }
+    free(strs);
+}
+#else
+void printStackTrace(int fd)
+{
+    SCDBGCOUT << "Implement printStackTrace for this OS please" << std::endl;
+}
+#endif
+
 #if USE_SIMPLE_LEAK_DETECTOR
 std::map<std::string, std::pair<int, int>> allocLog;
 void showLeakLog()

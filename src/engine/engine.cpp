@@ -114,7 +114,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
     }
     return nullptr;
 }
-void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, float releaseVelocity)
+void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t releaseVelocity)
 {
     for (auto &v : voices)
     {
@@ -207,13 +207,13 @@ bool Engine::processAudio()
     return true;
 }
 
-void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity, float detune)
+void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t velocity, float detune)
 {
     auto useKey = midikeyRetuner.remapKeyTo(channel, key);
     // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << SCDBGV(useKey) <<
     // std::endl;
 
-    for (const auto &path : findZone(channel, useKey, noteId))
+    for (const auto &path : findZone(channel, useKey, noteId, velocity))
     {
         auto v = initiateVoice(path);
         if (v)
@@ -224,7 +224,7 @@ void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity
     }
     messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
 }
-void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, float velocity)
+void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, int32_t velocity)
 {
     releaseVoice(channel, key, noteId, velocity);
     messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
@@ -382,6 +382,11 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
 
             // 4. have the audio thread message back here to refresh the ui
             messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->singleSelect({sp, sg, zi});
         });
 }
 

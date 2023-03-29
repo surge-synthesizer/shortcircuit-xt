@@ -246,6 +246,7 @@ inline std::unordered_map<std::string, E> makeEnumInverse(const E &from, const E
     return res;
 }
 
+void printStackTrace(int frameDepth = -1);
 } // namespace scxt
 
 // Make the ID hashable so we can use it as a map key

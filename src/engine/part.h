@@ -83,6 +83,10 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
     const std::unique_ptr<Group> &getGroup(size_t i) const
     {
+        if (!(i < groups.size()))
+        {
+            printStackTrace();
+        }
         assert(i < groups.size());
         return groups[i];
     }
