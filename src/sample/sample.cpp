@@ -29,6 +29,7 @@
 #include "infrastructure/file_map_view.h"
 #include "dsp/resampling.h"
 #include "sst/basic-blocks/mechanics/endian-ops.h"
+#include <sstream>
 
 namespace scxt::sample
 {
@@ -70,10 +71,14 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto sfsample = f->GetInstrument(inst)->GetRegion(region)->GetSample();
 
     // TODO : review
-    if (sfsample->GetFrameSize() == 2)
+    if (sfsample->GetFrameSize() == 2 && sfsample->GetChannelCount() == 1)
+        bitDepth = BD_I16;
+    else if (sfsample->GetFrameSize() == 4 && sfsample->GetChannelCount() == 2)
         bitDepth = BD_I16;
     else
-        bitDepth = BD_F32;
+        throw SCXTError("Unable to load SF2 bit-depth " +
+                        std::to_string(sfsample->GetFrameSize() * 8));
+
     channels = sfsample->GetChannelCount();
     sample_length = sfsample->GetTotalFrameCount();
     sample_rate = sfsample->SampleRate;
@@ -83,16 +88,28 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
     displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
 
-    if (bitDepth != BD_I16)
-        return false;
+    if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 1)
+    {
+        auto buf = sfsample->LoadSampleData();
+        load_data_i16(0, buf.pStart, buf.Size, sfsample->GetFrameSize());
+        sfsample->ReleaseSampleData();
+        return true;
+    }
+    if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 2)
+    {
+        auto buf = sfsample->LoadSampleData();
+        channels = 2;
+        load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 1, sfsample->GetFrameSize());
+        load_data_i16(1, (int16_t *)(buf.pStart) + 1, buf.Size >> 1, sfsample->GetFrameSize());
+        sfsample->ReleaseSampleData();
+        return true;
+    }
 
-    if (sfsample->GetChannelCount() != 1)
-        return false;
-
-    auto buf = sfsample->LoadSampleData();
-    load_data_i16(0, buf.pStart, buf.Size, sfsample->GetFrameSize());
-    sfsample->ReleaseSampleData();
-    return true;
+    std::ostringstream oss;
+    oss << "Unable to load sample " << SCD(sfsample->GetFrameSize())
+        << SCD(sfsample->GetChannelCount());
+    throw SCXTError(oss.str());
+    return false;
 }
 
 // TODO: Rename these
