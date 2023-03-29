@@ -10,7 +10,7 @@ variables:
   - group: mac-signing
 
 jobs:
-  - job: PR Build
+  - job: PRBuild
     condition: eq(variables['Build.Reason'], 'PullRequest')
     strategy:
       matrix:
@@ -244,7 +244,7 @@ jobs:
         displayName: lin - publish git info
 
   - job: Release
-    dependsOn: Build
+    dependsOn: ReleaseBuild
     condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
     strategy:
       matrix:
