@@ -10,33 +10,118 @@ variables:
   - group: mac-signing
 
 jobs:
-  - job: Build
+  - job: PR Build
+    condition: eq(variables['Build.Reason'], 'PullRequest')
     strategy:
       matrix:
-        mac:
+        mac-x86:
           imageName: 'macos-12'
-          cmakeRelArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
-          cmakeDebArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+          cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
           isMac: True
-          isRelease: True
-        win:
+        mac-arm:
+          imageName: 'macos-12'
+          cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
+          isMac: True
+        win-clang:
           imageName: 'windows-2022'
-          cmakeRelArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
-          cmakeDebArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+          cmakeArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
-          isRelease: True
         win-msvc:
           imageName: 'windows-2022'
-          cmakeRelArgs: -A x64
-          cmakeDebArgs: -A x64
+          cmakeArgs: -A x64
           isWindowsMSVC: True
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
-          isRelease: True
           isCodeQual: True
-          cmakeRelArgs:
-          cmakeDebArgs:
+          cmakeArgs:
+
+    pool:
+      vmImage: $(imageName)
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      - bash: |
+          set -e
+
+          sudo apt-get update
+
+          sudo apt-get install -y \
+              devscripts \
+              libxcb-cursor-dev \
+              libxcb-keysyms1-dev \
+              libxcb-util-dev \
+              libxkbcommon-dev \
+              libxkbcommon-x11-dev \
+              ninja-build \
+              xcb \
+              libgtk-3-dev \
+              libwebkit2gtk-4.0 \
+              libwebkit2gtk-4.0-dev \
+              libcurl4-openssl-dev \
+              alsa \
+              alsa-tools \
+              libasound2-dev \
+              libjack-dev \
+              libfreetype6-dev \
+              libxinerama-dev \
+              libxcb-xinerama0 \
+              libxinerama1 \
+              x11proto-xinerama-dev \
+              libxrandr-dev \
+              libgl1-mesa-dev \
+              libxcursor-dev \
+              libxcursor1 \
+              libxcb-cursor-dev \
+              libxcb-cursor0
+
+        condition: variables.isLinux
+        displayName: linux - run apt-get
+
+
+      - bash: |
+          git submodule update --depth 1 --init --recursive
+        displayName: Get SubModules
+
+      - bash: |
+          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
+          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
+        displayName: Run CMake (Debug)
+
+      - bash: |
+          cmake --build build --config Debug --target scxt-code-checks --parallel 4
+        displayName: Code Checks
+        condition: and(variables.isCodeQual)
+
+      - bash: |
+          cmake --build build --config Debug --target shortcircuit-products --parallel 4
+        displayName: Build SCXT and scxt-test
+
+      - bash: |
+          cmake --build build --config Debug --target scxt-test --parallel 4
+          ./build/tests/scxt-test
+        displayName: Run Tests SCXT
+        condition: variables.isLinux
+
+  - job: Release Build
+    condition: not(eq(variables['Build.Reason'], 'PullRequest')))
+    strategy:
+      matrix:
+        mac:
+          imageName: 'macos-12'
+          cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+          isMac: True
+        win:
+          imageName: 'windows-2022'
+          cmakeArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+          isWindows: True
+        lin:
+          imageName: 'ubuntu-20.04'
+          isLinux: True
+          cmakeArgs:
+
 
     pool:
       vmImage: $(imageName)
@@ -100,34 +185,15 @@ jobs:
           git submodule update --depth 1 --init --recursive
         displayName: Get SubModules
 
-      - bash: |
-          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeDebArgs)
-          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug $(cmakeDebArgs)
-        displayName: Run CMake (Debug)
-        condition: eq(variables['Build.Reason'], 'PullRequest')
 
       - bash: |
-          cmake --build build --config Debug --target scxt-code-checks --parallel 4
-        displayName: Code Checks
-        condition: and(variables.isCodeQual, eq(variables['Build.Reason'], 'PullRequest'))
-
-      - bash: |
-          cmake --build build --config Debug --target shortcircuit-products --parallel 4
-          cmake --build build --config Debug --target scxt-test --parallel 4
-        displayName: Build SCXT for a Pull Request
-        condition: eq(variables['Build.Reason'], 'PullRequest')
-
-
-      - bash: |
-          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeRelArgs)
-          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release $(cmakeRelArgs)
+          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
+          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release $(cmakeArgs)
         displayName: Run CMake (Release)
-        condition: and(variables.isRelease,not(eq(variables['Build.Reason'], 'PullRequest')))
 
       - bash: |
           cmake --build build --config Release --target shortcircuit-installer --parallel 4
         displayName: Build SCXT Installer for Main
-        condition: and(variables.isRelease,not(eq(variables['Build.Reason'], 'PullRequest')))
         env:
           MAC_INSTALLING_CERT: $(MAC_INSTALLING_CERT)
           MAC_SIGNING_1UPW: $(MAC_SIGNING_1UPW)
@@ -145,40 +211,28 @@ jobs:
 
           cat build/stage_git/git_info/*
 
-        condition: and(variables.isLinux, not(eq(variables['Build.Reason'], 'PullRequest')))
+        condition: variables.isLinux
         displayName: Use the linux build to make git log info
-
-      # TODO: Restore these
-      #- bash: |
-      #    cmake --build build --target code-quality-pipeline-checks
-      # displayName: CodeQuality
-      #  condition: variables.isLinux
-
-      #- bash: |
-      #    cmake --build build --config Debug --target sc3-test --parallel 4
-      #    ./build/test/sc3-test
-      #  displayName: Run Tests SC3
-      #  condition: eq(variables['Build.Reason'], 'PullRequest')
 
       - task: PublishPipelineArtifact@0
         inputs:
           artifactName: 'INSTALLER_MAC_DIST'
           targetPath: 'build/installer'
-        condition: and(variables.isMac,not(eq(variables['Build.Reason'], 'PullRequest')))
+        condition: variables.isMac
         displayName: mac - publish mac zip
 
       - task: PublishPipelineArtifact@0
         inputs:
           artifactName: 'INSTALLER_WIN_DIST'
           targetPath: 'build/installer'
-        condition: and(variables.isWindows,not(eq(variables['Build.Reason'], 'PullRequest')))
+        condition: variables.isWindows
         displayName: win - publish win zip
 
       - task: PublishPipelineArtifact@0
         inputs:
           artifactName: 'INSTALLER_LIN_DIST'
           targetPath: 'build/installer'
-        condition: and(variables.isLinux,not(eq(variables['Build.Reason'], 'PullRequest')))
+        condition: variables.isLinux
         displayName: lin - publish lin zip
 
 
@@ -186,7 +240,7 @@ jobs:
         inputs:
           artifactName: 'GIT_INFO'
           targetPath: 'build/stage_git/'
-        condition: and(variables.isLinux,not(eq(variables['Build.Reason'], 'PullRequest')))
+        condition: variables.isLinux
         displayName: lin - publish git info
 
   - job: Release
