@@ -1,166 +1,150 @@
 # Next Steps (in gropued-by-function order) 
 
-Ideally this would become the issue list over the next fortnight with the headers implying tags 
+This was imported as issues on March 28 2023 and is here just in case those issues don't make sense on review
 
-* Voice Management 
-  * Voice Lifetime
-    * Optimization: Sample end, no processor, no loop, no repeat, kill voice ahead of AEG
-  * Zone from Key Cache (from linear search to cached data structure on noteOn/noteOff)
-  * Voice Creation/Delete/Reuse modes
-    * Poly mode works (this should be "done" but lets check it) 
-    * Mono mode and retriggers in each
-    * MPE mode for a part
+* Voice Management
+  * Voice Lifetime Optimization ! Sample end, no processor, no loop, no repeat, kill voice ahead of AEG
+  * Velocity Sensitive Voice Lookup ! Right now velocity range is mostly ignored I think
+  * Zone from Key Cache ! Move from linear search to cached data structure on noteOn/noteOff
+  * Poly mode works (this should be "done" but lets check it) 
+  * Document Mono modes ! Mono Mode means several things as far as zone loopup on key change and retrigger.
+  * Implement Mono modes ! Once we have them documented, do them.
+  * MPE on a per-part basis
   
 * Technical issues
-  * Non-allocating memory pool
-  * Add the User Options code from plugininfra
-  * JSON
-    * JSON versioning
-    * If json throws how do we not die in the client comms
-  * When do we free/GC samples from the sample manager?
-  * vembertech factoring beyond lipol_ps
-  * Error Reporting API for both the engine and serial thread which is thread safe etc...
-  * Smaller issues
-    * The 'is' questions (isClientConnected; isAudioRunning) and dealing with the queues if not
-    * __restrict in the basic-blocks copies etc...
-    * make sure we are using int32_t rather than int etc... everywhere
-  * Build/CMake time
-    * Allow people to BYOJUCE SIMDE etc... since I'm sure the linux folks will want that one day.
-    * Restore an ASIO build option for self-builders
-    * Allow people to turn off VST3 for same reason
-    * Split azure pipeline on mac for x86 and arm to speed up CI
-  * Turn on SSE 4.1 correctly and use `mm_hadd_ps` in the generator sum
+  * Non-allocating memory pool ! We have the API but right now we just alloc in `scxt::engine::MemoryPool`
+  * Add User Options from pluginInfra
+  * JSON Versioning ! This matters for streaming and there's a start but we can be more intentional
+  * JSON Throws ! Make sure all JSON parses are wraped in a recoverable try/catch
+  * vembertech factoring beyond lipol_ps ! Move everything to templated basic-blocks
+  * Unreferenced Sample Lifetime ! When do we free/GC samples from the sample manager?
+  * Error Reporting API ! Serial, UI and Engine threads all need to generate errors to the UI
+  * The 'is' questions ! isClientConnected; isAudioRunning, etc... and dealing with the queues if not
+  * Code Review for Explicit Types ! make sure we are using int32_t rather than int etc... everywhere
+  * Turn on SSE 4.1 ! Test this by using `mm_hadd_ps` in the generator sum
   * Review and rememdiate all the `// TODO` points I put in the new code either by making them issues or fixing
-  * Promulgate the attachment pattern form ADSR ui to other bits ASAP
+  * CMake BYOJUCE etc ! Allow people to BYOJUCE SIMDE etc... since I'm sure the linux folks will want that one day.
+  * CMake ASIO Build ! Restore an ASIO build option for self-builders
+  * CMake Skip VST3 Build
+  * Improved CI Performance ! Split azure pipeline on mac for x86 and arm to speed up CI
 
 * Multi-Output
-  * Where are the mixer and router screens? Group or Part?
-  * Basically: HOw does this work and what are the screens and what are the routings?
+  * Multi-Output Group Design ! What output paths does a group have
+  * Design the Mixer Screen
 
+* Voice
+  * Velocity fade zones
+  * Keyboard fade zones
+  * Pre-Filter Gain
+  
 * DSP
-  * Voice
-    * Velocity fade zones
-    * Keyboard fade zones
-    * Pre-Filter Gain
-  * Processors
-    * What is the list of zone processors we want
-    * (for each identified) Port from previous or implement
-    * Processor routing
-  * Modulation
-    * Un-screw the depth and index stuff (this is a technical baconpaul issue)
-    * Modulation sources for all the MIDI and so on
-    * LFO Presets are kinda screwed. Revisit them.
-    * MPE Modulators
-    * What parts of sample etc... are modulatable (list all the targets)
-    * AHDSRShapedSC pow vs fastpow test and profile. (Leave pow on for now)
-  * Temposync Support
-  * Generator
-    * Loop Fades
-    * DSP Support for alternate bit depths beyond I16 and F32
-      * 24 bit - currently upscales to F32. OK?
-      * 8 bit - currently upscales to I16. OK?
-      * 12 bit
-      
+  * Generate the Zone Procssor List ! What is the list of zone processors we want. Open an issue for each
+  * Generate the Group Processor List ! What is the list of group processors. Issue for each
+  * Part / Mixer Processor List ! What is the list of part/mixer processors. Issue for each.
+  * Zone Processor routing ! This needs implementing
+  * Finish the AHDSR | AHDSRShapedSC pow vs fastpow test and profile. Test and examine curve shapes.
+  
+* Modulation
+  * Modulation Depth Display ! Un-screw the depth and index stuff (this is a technical baconpaul issue)
+  * MIDI Sources in the Mod Matrix ! Modulation sources for all the MIDI and so on
+  * Poly AT in the Mod Matrix ! It's just different enough to be its own issue
+  * LFO Presets ! LFO Presets are kinda screwed. Revisit them.
+  * MPE Modulators
+  * Identify Sample Targets ! What parts of sample etc... are modulatable (list all the targets)
+  
+* Generator
+  * Loop Fades
+  * DSP Support for alternate bit depths beyond I16 and F32
+    * 24 bit - currently upscales to F32. OK?
+    * 8 bit - currently upscales to I16. OK?
+    * 12 bit
 
-* Structure
-  * Zone
-    * Round Robin Support
-    * Zone edit on Sample (like can we pick a different sample for a zone?)
-    * Zone output section and routing
-    * (An open issue for each section)
-    * Delete/Rename
-    * Solo
-  * Gropus
-    * Fully design all the group functions and document them
-    * Add/Delete/Rename
-    * Trigger Conditions
-    * Group LFO/Modulator
-    * Group Processors
-    * Group output routing
-  * Parts
-  * File Browser
-    * Previews and AutoLoads
-  * Pad View
-  * AutoMapping
-  * Macros
-    * Mapping to MIDI CC
-    * Maping to plugin parameters
-    * CLAP PolyMod
+* Temposync Support
+  * Tempo and Time into the engine ! Get the juce info into the engine in a proper data structure
+
+* Zone
+  * Round Robin Support
+  * Zone edit on Sample (like can we pick a different sample for a zone?)
+  * Zone output section and routing
+  * (An open issue for each section)
+  * Delete/Rename
+  * Solo
+* Groups
+  * Fully design all the group functions and document them
+  * Add/Delete/Rename
+  * Trigger Conditions
+  * Group LFO/Modulator
+  * Group Processors
+  * Group output routing
+* Parts
+  * Design the Part screen view 
+* File Browser
+  * Previews and AutoLoads
+* Pad View
+* AutoMapping
+* Macros
+  * Mapping to MIDI CC
+  * Mapping to plugin parameters
+  * CLAP PolyMod
 
 * Mixer Screen
   * Design
 
 * Multi-Select
-  * Rules and description of how this works
+  * Design MultiSelect ! Rules and description of how this works
   
 * I/O
-  * Part Save and Load
-  * Multi Save and Load
-  * Compound (with samples in) file format for Part and Multi
+  * Part Save and Load ! An individual part streams
+  * Multi Save and Load ! An entire collection streams
+  * Sample-by-value file format ! Compound (with samples in) file format for Part and Multi
   * Missing Sample Resolution
-  * DAW Extra State concept 
-
+  
 * Microtuning
-  * Mode other than "re-zone and shift minimally" 
-  * Native SCL/KBM as well as MTS
-  * Snap on note on vs continuous
-  * Way more robust tuning menu obviously
+  * Microtonal Zone Resolution ! Mode other than `re-zone and shift minimally` 
+  * Native SCL/KBM support
+  * MTS-ESP Snap on note-on ! vs continuous
+  * Tuning Menu and Information
 
 * Formats
-  * Do we need riff_memfile with libgig still?
+  * riff_memfile vs libgig ! Do we need riff_memfile with libgig still?
   * WAV file Loop Markers and Root Note Markers
-  * SF2 MultiInstrument should prompt users as opposed to load all as zones.
-  * SF2 Stereo and F32 doesn't work (Macdana Piano)
-  * Compound Formats
-      * GIG
-      * DLS
-      * Akai (??)
-      * SFZ - what's the plan
-  * Single File Formats
-      * AIFF
-      * FLAC
+  * SF2 MultiInstrument Prompt and Expand ! An SF2 with multi-should prompt users as opposed to load all as zones.
+  * SF2 Float 32 support ! Don't currently do it
+  * GIG/DLS Support ! libgig gives it all to us right?
+  * SFZ Support ! Whats the plan?
+  * AKAI S6K support ! Tricky even with libakai it seems
+  * AIFF File Import
+  * FLAC File Import
+  * OGG/Vorbis File Import
   
 * MIDI
-  * Velocity, Release Velocity, Channel AT as mod sources
-  * Poly AT as mod source
-  * That smoother is pretty limited
-  * Sustain pedal
+  * Improve the Controller Smoother ! That smoother is pretty limited
+  * Sustain pedal and Hold Groups
 
 * Accessibility
+  * Implement Rudimentary Acecssibility
 
-* Play
-  * What is play mode?
+* Play Mode
+  * Design Play Mode
 
 * RegTests
-  * Run them in the pipeline on pull request only 
-  * We should have tests which do stuff as opposed to just test streaming
+  * Run in Pipeline ! Run them in the pipeline on pull request only 
+  * Beef Up Regtests ! We should have tests which do stuff as opposed to just test streaming
   
-* Other Items
+* CLAP Support
   * Clap Sample Collection API/Extension
 
 * User Interface
-  * About Screen needs filling out quite a bit
-  * NoteNames (C3/C4/C5) vs hardcoded "C4 == MIDI 60"
-  * User Interface Styling 
-    * Map phsyical style sheet to logical style sheet
-    * StyleSheet Editable 
-  * Add an issue for each sub-section of the UI matching the wireframe basically  
-    * Overall header
-      * Save/Restore
-      * VU Meter
-      * Playing Zone Display
-      * etc
-    * etc
+  * About Screen ! About Screen needs filling out quite a bit
+  * NoteNames (C3/C4/C5) ! vs hardcoded C4 == MIDI 60
+  * Style Sheet Setup ! Map phyical style sheet to logical style sheet
+  * StyleSheet Editable 
+  * Layout UI Issues ! Add an issue for each sub-section of the UI matching the wireframe basically  
+  * VU Meter
+  * Playing Zone Display
   * Playing Zone indicator and perhaps Playing POsition in Sample Indicator
-  * Do we want to life in the Surge Scope for probing things?
-  * UI State generally. What tab is selected and so on doesn't survive editor open/close and
-    selection state isn't streamed anywhere beyond the session
+  * Bring in the Scope ! Do we want to life in the Surge Scope for probing things?
   * JUCE_DECLARE_COPYABLE_ everywhere
   * Inactive knobs shouldn't draw
   * Waveform draw and edit
-
-* User Journeys
-  * Each journey would be an issue ideally, and we would close it when we could do it and have it 
-    roughed out in the manual
-  
-* The Future
+  * Attachment Pattern ! Promulgate the attachment pattern form ADSR ui to other bits ASAP
