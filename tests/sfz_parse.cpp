@@ -67,7 +67,8 @@ TEST_CASE("SFZ Tokens", "[sfz]")
     {
         auto p = scxt::sfz_support::SFZParser();
 
-        std::string anSFZ = "<region>key= /*hey*/ foo=17 bar=hootie jim=/*hi*/ jon=thisthat/*bar*/ fred=21//yay";
+        std::string anSFZ =
+            "<region>key= /*hey*/ foo=17 bar=hootie jim=/*hi*/ jon=thisthat/*bar*/ fred=21//yay";
         auto res = p.parse(anSFZ);
         REQUIRE(res.size() == 1);
     }
@@ -197,6 +198,6 @@ group=1 off_by=1 off_mode=normal
 <region>sample=e4_ft_f.wav xfin_locc1=64 xfin_hicc1=127
 )SFZ";
         auto res = p.parse(anSFZ);
-        REQUIRE(res.size()==15);
+        REQUIRE(res.size() == 15);
     }
 }
