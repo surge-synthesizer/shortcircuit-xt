@@ -25,19 +25,48 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#define CATCH_CONFIG_RUNNER
-#include "catch2/catch2.hpp"
+#ifndef SCXT_SRC_SFZ_SUPPORT_SFZ_PARSE_H
+#define SCXT_SRC_SFZ_SUPPORT_SFZ_PARSE_H
 
-int main(int argc, char *argv[])
+#include <string>
+#include <variant>
+#include <vector>
+#include <filesystem>
+
+namespace scxt::sfz_support
 {
-    int result = Catch::Session().run(argc, argv);
-
-    return result;
-}
-
-// void *hInstance = 0;
-
-TEST_CASE("Tests Exist", "[basics]")
+struct SFZParser
 {
-    SECTION("Asset True") { REQUIRE(1); }
-}
+    struct Header
+    {
+        enum Type
+        {
+            region,
+            group,
+            control,
+            global,
+            curve,
+            effect,
+            master,
+            midi,
+            sample,
+            unknown
+        } type{unknown};
+        std::string name;
+    };
+    struct OpCode
+    {
+        std::string name;
+        std::variant<float, std::string, bool> value; // the bool means no value
+    };
+
+    typedef std::vector<OpCode> opCodes_t;
+    typedef std::pair<Header, opCodes_t> section_t;
+    typedef std::vector<section_t> document_t;
+
+    document_t parse(const std::string &contents);
+    document_t parse(const std::filesystem::path &file);
+};
+} // namespace scxt::sfz_support
+
+#endif // SHORTCIRCUITXT_SFZ_PARSE_H

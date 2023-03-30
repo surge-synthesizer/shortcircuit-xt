@@ -27,6 +27,14 @@ find(
     'clients/juce-plugin'
 );
 
+find(
+    {
+        wanted => \&findfiles,
+    },
+    'tests'
+);
+
+
 sub findfiles
 {
 

@@ -1,9 +1,14 @@
+## Day 39 (2023-03-30)
+
+Not much dev today. Screw around with SFZ some. Write a complete SFZ parser using pegtl and test it some.
+
 ## Day 38 (2023-03-29)
 
 OK so we are on issues! So we can close some. Like cmake configuration of build type
 (#388) which along the way fixed a problem with auval and the new selection I added yesterday.
 Also turn on SSE 4.2 (#432). And make it so a dropped sample is auto-selected,
-Make velocity-sensitive zone lookuip work (#380). Support Stereo SF2 (#475)
+Make velocity-sensitive zone lookup work (#380). Fix up the pipelines (#389) and have them
+run the super-tiny regtest (#412). Support Stereo SF2 (#475)
 
 ## Day 37 (the plane ride back)
 
