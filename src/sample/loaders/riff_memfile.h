@@ -29,6 +29,9 @@
 #define SCXT_SRC_SAMPLE_LOADERS_RIFF_MEMFILE_H
 
 #include <list>
+#include <cstring>
+#include <cstdio>
+#include <cstdint>
 #include <cassert>
 
 #include "sst/basic-blocks/mechanics/endian-ops.h"

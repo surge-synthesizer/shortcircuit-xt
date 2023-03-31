@@ -25,7 +25,6 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include <cstdint>
 #include "riff_memfile.h"
 #include <cassert>
 #include <cmath>
