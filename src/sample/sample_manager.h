@@ -88,6 +88,9 @@ struct SampleManager : MoveableOnly<SampleManager>
         streamingVersion = 0x21120101;
     }
 
+    std::vector<fs::path> missingList;
+    void resetMissingList() { missingList.clear(); }
+
     uint64_t streamingVersion{0x21120101}; // see comment in patch.h
     std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
 

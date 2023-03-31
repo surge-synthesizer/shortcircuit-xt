@@ -69,6 +69,8 @@ template <> struct scxt_traits<scxt::engine::Engine>
     {
         // TODO: engine gets a SV? Guess maybe
         // Order matters here. Samples need to be there before the patch and patch before selection
+
+        engine.getSampleManager()->resetMissingList();
         findIf(v, "sampleManager", *(engine.getSampleManager()));
         findIf(v, "patch", *(engine.getPatch()));
         findIf(v, "selectionManager", *(engine.getSelectionManager()));

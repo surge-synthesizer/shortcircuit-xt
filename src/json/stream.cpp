@@ -34,6 +34,7 @@
 
 #include "scxt_traits.h"
 #include "engine_traits.h"
+#include "messaging/messaging.h"
 
 namespace scxt::json
 {
@@ -84,5 +85,19 @@ void unstreamEngineState(engine::Engine &e, const std::string &xml)
     tao::json::events::from_string(consumer, xml);
     auto jv = std::move(consumer.value);
     jv.to(e);
+
+    if (!e.getSampleManager()->missingList.empty())
+    {
+        std::ostringstream oss;
+        oss << "On load, sample manager could not locate the following files:\n";
+        for (const auto &p : e.getSampleManager()->missingList)
+        {
+            oss << "  " << p.u8string() << "\n";
+        }
+        messaging::client::serializationSendToClient(
+            messaging::client::s2c_report_error,
+            messaging::client::s2cError_t{"Missing Samples", oss.str()},
+            *(e.getMessageController()));
+    }
 }
 } // namespace scxt::json

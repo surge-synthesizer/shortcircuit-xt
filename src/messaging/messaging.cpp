@@ -196,6 +196,12 @@ void MessageController::registerClient(const std::string &nm, clientCallback_t &
 
     threadingChecker.registerAsClientThread();
     client::clientSendToSerialization(client::OnRegister(true), *this);
+
+    for (const auto &pcc : preClientConnectionCache)
+    {
+        clientCallback(pcc);
+    }
+    preClientConnectionCache.clear();
 }
 void MessageController::unregisterClient()
 {

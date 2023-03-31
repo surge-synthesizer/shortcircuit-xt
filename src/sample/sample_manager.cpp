@@ -34,18 +34,25 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
 {
     for (const auto &[id, addr] : r)
     {
-        switch (addr.type)
+        if (!fs::exists(addr.path))
         {
-        case Sample::WAV_FILE:
-        {
-            loadSampleByPathToID(addr.path, id);
+            missingList.push_back(addr.path);
         }
-        break;
-        case Sample::SF2_FILE:
+        else
         {
-            loadSampleFromSF2ToID(addr.path, nullptr, addr.instrument, addr.region, id);
-        }
-        break;
+            switch (addr.type)
+            {
+            case Sample::WAV_FILE:
+            {
+                loadSampleByPathToID(addr.path, id);
+            }
+            break;
+            case Sample::SF2_FILE:
+            {
+                loadSampleFromSF2ToID(addr.path, nullptr, addr.instrument, addr.region, id);
+            }
+            break;
+            }
         }
     }
 }

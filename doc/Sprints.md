@@ -1,6 +1,8 @@
 ## Day 39 (2023-03-30)
 
-Not much dev today. Screw around with SFZ some. Write a complete SFZ parser using pegtl and test it some.
+Not much dev today. Screw around with SFZ some. Write a complete SFZ parser using pegtl and test it.
+Also make it so missing samples show a clear error message and no lnnger crash if you note on (#488).
+So maybe some dev after all.
 
 ## Day 38 (2023-03-29)
 

@@ -186,6 +186,7 @@ struct MessageController : MoveableOnly<MessageController>
 
     typedef std::function<void(const serialToClientMessage_t &)> clientCallback_t;
     clientCallback_t clientCallback{nullptr};
+    std::vector<std::string> preClientConnectionCache;
 
     /**
      * Register a client. Called from the client thread.
