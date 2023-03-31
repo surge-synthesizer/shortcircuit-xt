@@ -22,6 +22,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/sample.cpp
         sample/sample_manager.cpp
         sample/loaders/load_riff_wave.cpp
+        sample/loaders/load_aiff.cpp
         sample/loaders/load_flac.cpp
         sfz_support/sfz_parse.cpp
 

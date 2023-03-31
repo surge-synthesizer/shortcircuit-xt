@@ -56,6 +56,7 @@ bool Sample::load(const fs::path &path)
         sample_loaded = true;
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
+        type = WAV_FILE;
         return true;
     }
     else if (extension.compare(".flac") == 0)
@@ -63,10 +64,27 @@ bool Sample::load(const fs::path &path)
         if (parseFlac(path))
         {
             sample_loaded = true;
+            type = FLAC_FILE;
             mFileName = path;
             displayName = fmt::format("{}", path.filename().u8string());
             return true;
         }
+    }
+    if (extension.compare(".aif") == 0 || extension.compare(".aiff") == 0)
+    {
+        auto fmv = std::make_unique<infrastructure::FileMapView>(path);
+        auto data = fmv->data();
+        auto datasize = fmv->dataSize();
+
+        clear_data(); // clear to a more predictable state
+
+        bool r = parse_aiff(data, datasize);
+        // TODO deal with return value
+        type = AIFF_FILE;
+        sample_loaded = true;
+        mFileName = path;
+        displayName = fmt::format("{}", path.filename().u8string());
+        return true;
     }
 
     return false;
