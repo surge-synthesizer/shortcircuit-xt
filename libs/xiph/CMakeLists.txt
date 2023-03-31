@@ -9,6 +9,7 @@ if (${SCXT_USE_FLAC})
     set(INSTALL_PKGCONFIG_MODULES OFF CACHE BOOL "Install PkgConfig modules" FORCE)
     set(INSTALL_CMAKE_CONFIG_MODULE OFF CACHE BOOL "Install CMake package-config module" FORCE)
     set(WITH_OGG OFF CACHE BOOL "ogg support (default: test for libogg)" FORCE)
+    set(WITH_AVX OFF CACHE BOOL "scxt is sse4.2 not ACXX" FORCE)
 
     add_subdirectory(flac)
     target_compile_definitions(FLAC++ PUBLIC SCXT_USE_FLAC=1)
