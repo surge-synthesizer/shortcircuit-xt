@@ -94,10 +94,7 @@ void unstreamEngineState(engine::Engine &e, const std::string &xml)
         {
             oss << "  " << p.u8string() << "\n";
         }
-        messaging::client::serializationSendToClient(
-            messaging::client::s2c_report_error,
-            messaging::client::s2cError_t{"Missing Samples", oss.str()},
-            *(e.getMessageController()));
+        e.getMessageController()->reportErrorToClient("Missing Samples", oss.str());
     }
 }
 } // namespace scxt::json

@@ -39,7 +39,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     enum SourceType
     {
         WAV_FILE,
-        SF2_FILE
+        SF2_FILE,
+        FLAC_FILE
     } type{WAV_FILE};
 
     Sample() : id(SampleID::next()) {}
@@ -72,6 +73,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }
     size_t getSampleLength() const { return sample_length; }
+
+    bool parseFlac(const fs::path &p);
 
     void *__restrict sampleData[2]{nullptr, nullptr};
 
@@ -175,6 +178,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         // deletes sample data and marks sample as unused
     }
 
+  public:
     bool allocateI16(int Channel, int Samples);
     bool allocateF32(int Channel, int Samples);
 

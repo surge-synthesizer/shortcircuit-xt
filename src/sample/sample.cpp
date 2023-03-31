@@ -58,6 +58,16 @@ bool Sample::load(const fs::path &path)
         displayName = fmt::format("{}", path.filename().u8string());
         return true;
     }
+    else if (extension.compare(".flac") == 0)
+    {
+        if (parseFlac(path))
+        {
+            sample_loaded = true;
+            mFileName = path;
+            displayName = fmt::format("{}", path.filename().u8string());
+            return true;
+        }
+    }
 
     return false;
 }

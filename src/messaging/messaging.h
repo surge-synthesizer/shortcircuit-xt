@@ -276,6 +276,11 @@ struct MessageController : MoveableOnly<MessageController>
      */
     ThreadingChecker threadingChecker;
 
+    /*
+     * A convenience function to report an error to the UI
+     */
+    void reportErrorToClient(const std::string &title, const std::string &body);
+
   private:
     void runSerialization();
     void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);

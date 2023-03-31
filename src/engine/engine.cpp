@@ -362,7 +362,9 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
 
     if (!sid.has_value())
     {
-        SCDBGCOUT << "Unable to load sample " << p.u8string() << std::endl;
+        messageController->reportErrorToClient(
+            "Unable to load Sample", "Sample load failed on " + p.u8string() + "\n" +
+                                         "It is either an unsupported format or invalid file.");
         return;
     }
 
@@ -588,16 +590,12 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
     }
     catch (RIFF::Exception e)
     {
-        messaging::client::serializationSendToClient(
-            messaging::client::s2c_report_error,
-            messaging::client::s2cError_t{"SF2 Load Error", e.Message}, *messageController);
+        messageController->reportErrorToClient("SF2 Load Error", e.Message);
         return;
     }
     catch (const SCXTError &e)
     {
-        messaging::client::serializationSendToClient(
-            messaging::client::s2c_report_error,
-            messaging::client::s2cError_t{"SF2 Load Error", e.what()}, *messageController);
+        messageController->reportErrorToClient("SF2 Load Error", e.what());
         return;
     }
     catch (...)

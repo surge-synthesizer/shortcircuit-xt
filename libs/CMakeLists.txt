@@ -5,6 +5,8 @@ add_subdirectory(clap-juce-extensions clap-extensions EXCLUDE_FROM_ALL)
 add_subdirectory(fmt)
 add_subdirectory(taocpp_json)
 
+add_subdirectory(xiph)
+
 add_subdirectory(sst/sst-cpputils)
 add_subdirectory(sst/sst-plugininfra)
 add_subdirectory(sst/sst-filters)

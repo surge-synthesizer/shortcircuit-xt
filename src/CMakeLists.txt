@@ -22,6 +22,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/sample.cpp
         sample/sample_manager.cpp
         sample/loaders/load_riff_wave.cpp
+        sample/loaders/load_flac.cpp
         sfz_support/sfz_parse.cpp
 
         tuning/equal.cpp
@@ -53,17 +54,20 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         libgig libakai
         mts-esp-client
         shortcircuit::simde
-        taocpp::json)
+        taocpp::json
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC  $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
+        FLAC++
+        )
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
 
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES WINDOWS=1)
-else()
+else ()
     target_compile_options(${PROJECT_NAME} PUBLIC -Werror)
     if (APPLE)
         target_compile_definitions(${PROJECT_NAME} PUBLIC MAC=1)
-    else()
+    else ()
         target_compile_definitions(${PROJECT_NAME} PUBLIC LINUX=1)
-    endif()
-endif()
+    endif ()
+endif ()
