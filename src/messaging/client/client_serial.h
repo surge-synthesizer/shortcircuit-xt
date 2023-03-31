@@ -88,6 +88,18 @@ enum SerializationToClientMessageIds
     num_serializationToClientMessages
 };
 
+inline bool cacheSerializationMessagesAbsentClient(SerializationToClientMessageIds id)
+{
+    switch (id)
+    {
+    case s2c_report_error:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 typedef uint8_t unimpl_t;
 template <ClientToSerializationMessagesIds id> struct ClientToSerializationType
 {

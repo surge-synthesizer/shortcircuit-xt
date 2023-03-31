@@ -215,11 +215,19 @@ void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t veloci
 
     for (const auto &path : findZone(channel, useKey, noteId, velocity))
     {
-        auto v = initiateVoice(path);
-        if (v)
+        const auto &z = zoneByPath(path);
+        if (!z->samplePointers[0])
         {
-            v->originalMidiKey = key;
-            v->attack();
+            // SCDBGCOUT << "Skipping voice with missing sample data" << std::endl;
+        }
+        else
+        {
+            auto v = initiateVoice(path);
+            if (v)
+            {
+                v->originalMidiKey = key;
+                v->attack();
+            }
         }
     }
     messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
