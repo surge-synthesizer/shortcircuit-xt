@@ -220,4 +220,10 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
     clientToSerializationConditionVar.notify_one();
 }
 
+void MessageController::reportErrorToClient(const std::string &title, const std::string &body)
+{
+    client::serializationSendToClient(client::s2c_report_error, client::s2cError_t{title, body},
+                                      *(this));
+}
+
 } // namespace scxt::messaging

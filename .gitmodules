@@ -34,3 +34,6 @@
 [submodule "libs/MTS-ESP"]
 	path = libs/MTS-ESP
 	url = https://github.com/ODDSound/MTS-ESP.git
+[submodule "libs/xiph/flac"]
+	path = libs/xiph/flac
+	url = https://github.com/xiph/flac.git

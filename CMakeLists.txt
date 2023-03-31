@@ -30,12 +30,14 @@ option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
 option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
 
+option(SCXT_USE_FLAC "Include flac support from xiph/flac" ON)
+
 
 # Calculate bitness
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 if (NOT ${BITS} EQUAL 64)
     message(WARNING "${PROJECT_NAME} has only been tested on 64 bits. This may not work")
-endif()
+endif ()
 
 # Share some information about the  build
 message(STATUS "ShortCircuit ${CMAKE_PROJECT_VERSION}")
@@ -79,18 +81,18 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     if (NOT APPLE)
         # Turn on SSE 4.2. Apple has this by default
         add_compile_options(-march=nehalem)
-    endif()
+    endif ()
     if (WIN32)
         # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
         # fix that but not today
         add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    endif()
+    endif ()
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # Turn on SSE 4.2
     add_compile_options(/arch:SSE42)
-endif()
+endif ()
 
 
 include(cmake/compiler-and-git.cmake)
@@ -112,11 +114,11 @@ add_custom_target(scxt-code-checks)
 find_program(CLANG_FORMAT_EXE NAMES clang-format-12 clang-format)
 set(CLANG_FORMAT_DIRS src src-ui tests clients)
 set(CLANG_FORMAT_EXTS cpp h)
-foreach(dir ${CLANG_FORMAT_DIRS})
-    foreach(ext ${CLANG_FORMAT_EXTS})
+foreach (dir ${CLANG_FORMAT_DIRS})
+    foreach (ext ${CLANG_FORMAT_EXTS})
         list(APPEND CLANG_FORMAT_GLOBS "':(glob)${dir}/**/*.${ext}'")
-    endforeach()
-endforeach()
+    endforeach ()
+endforeach ()
 add_custom_command(TARGET scxt-code-checks
         POST_BUILD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
