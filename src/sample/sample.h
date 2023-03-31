@@ -40,7 +40,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     {
         WAV_FILE,
         SF2_FILE,
-        FLAC_FILE
+        FLAC_FILE,
+        AIFF_FILE,
     } type{WAV_FILE};
 
     Sample() : id(SampleID::next()) {}
@@ -80,12 +81,12 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     // TODO: Review evertyhing from here down before moving it above this comment
     bool parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk = false);
+    bool parse_aiff(void *data, size_t filesize);
     short *GetSamplePtrI16(int Channel);
     float *GetSamplePtrF32(int Channel);
     char *GetName();
 
   private:
-    bool parse_aiff(void *data, size_t filesize);
     bool parse_sf2_sample(void *data, size_t filesize, unsigned int sampleid);
     bool parse_dls_sample(void *data, size_t filesize, unsigned int sampleid);
 
