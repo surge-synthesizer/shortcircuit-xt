@@ -116,7 +116,8 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
     displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
 
-    if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 1)
+    if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 1 &&
+        sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
     {
         auto buf = sfsample->LoadSampleData();
         load_data_i16(0, buf.pStart, buf.Size, sfsample->GetFrameSize());
@@ -126,11 +127,20 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 2)
     {
         auto buf = sfsample->LoadSampleData();
-        channels = 2;
-        load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 1, sfsample->GetFrameSize());
-        load_data_i16(1, (int16_t *)(buf.pStart) + 1, buf.Size >> 1, sfsample->GetFrameSize());
+        channels = 1;
+        bool loaded{false};
+        if (sfsample->SampleType == sf2::Sample::LEFT_SAMPLE)
+        {
+            load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 1, sfsample->GetFrameSize());
+            loaded = true;
+        }
+        else if (sfsample->SampleType == sf2::Sample::RIGHT_SAMPLE)
+        {
+            load_data_i16(0, (int16_t *)(buf.pStart) + 1, buf.Size >> 1, sfsample->GetFrameSize());
+            loaded = true;
+        }
         sfsample->ReleaseSampleData();
-        return true;
+        return loaded;
     }
 
     std::ostringstream oss;

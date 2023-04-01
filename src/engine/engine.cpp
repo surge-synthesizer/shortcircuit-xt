@@ -411,9 +411,6 @@ void Engine::sendMetadataToClient() const
 void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 {
     assert(messageController->threadingChecker.isSerialThread());
-    // TODO: Make this (obvioosly) do something else
-    // TODO: Make this stop the engine as well duh
-    SCDBGCOUT << "SF2 Load " << p.u8string() << std::endl;
 
     try
     {
@@ -521,7 +518,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 zn->eg2Storage.d = s2a(reg->GetEG2Decay());
                 zn->eg2Storage.s = sus2l(reg->GetEG2Sustain());
                 zn->eg2Storage.r = s2a(reg->GetEG2Release());
-
+#if 0
                 std::cout << "STUFF I HAVEN'T DEALT WITH YET" << std::endl;
                 cout << "\t\t    Modulation Envelope Generator" << endl;
                 cout << "\t\t\tPitch=" << GetValue(reg->modEnvToPitch) << "cents, Cutoff=";
@@ -583,6 +580,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 if (reg->exclusiveClass)
                     cout << ", Exclusive group=" << reg->exclusiveClass;
                 cout << endl;
+#endif
 
                 grp->addZone(zn);
             }

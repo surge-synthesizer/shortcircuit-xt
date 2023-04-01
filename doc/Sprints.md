@@ -1,3 +1,7 @@
+## Day 41 (2023-04-01)
+
+Welcome to April! Anyway start by fixing stereo SF2 (#492).
+
 ## Day 40 (2023-03-31)
 
 Again a slow dev day. Added FLAC support; added a single function to push an error to the client.
