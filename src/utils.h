@@ -32,6 +32,7 @@
 #include <cctype>
 #include <atomic>
 #include <functional>
+#include <filesystem>
 
 #include <iostream>
 #include <map>
@@ -247,6 +248,22 @@ inline std::unordered_map<std::string, E> makeEnumInverse(const E &from, const E
 }
 
 void printStackTrace(int frameDepth = -1);
+
+inline bool extensionMatches(const std::filesystem::path &p, const std::string &s)
+{
+    auto pes = p.extension().u8string();
+    if (pes.size() != s.size())
+        return false;
+
+    auto cic = [](const auto &c1, const auto &c2) {
+        if (c1 == c2)
+            return true;
+        else if (std::toupper(c1) == std::toupper(c2))
+            return true;
+        return false;
+    };
+    return std::equal(pes.begin(), pes.end(), s.begin(), cic);
+}
 } // namespace scxt
 
 // Make the ID hashable so we can use it as a map key
