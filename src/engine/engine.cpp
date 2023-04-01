@@ -342,9 +342,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
-    auto e = p.extension();
     // TODO: Deal with compound types more comprehensively
-    if (e == ".sf2")
+    if (extensionMatches(p, ".sf2"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {

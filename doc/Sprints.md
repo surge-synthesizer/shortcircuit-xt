@@ -1,6 +1,7 @@
 ## Day 41 (2023-04-01)
 
-Welcome to April! Anyway start by fixing stereo SF2 (#492).
+Welcome to April! Anyway start by fixing stereo SF2 (#492). Make extension
+checks on files case insnsitive.
 
 ## Day 40 (2023-03-31)
 
