@@ -261,7 +261,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
 
     auto lookAheadForOpcode = [&](auto from, auto &opcode) {
         opcode.clear();
-        while (from < s.size() && s[from] != ' ')
+        while (from < s.size() && s[from] != ' ' && s[from] != '\n' && s[from] != '\r')
         {
             if (s[from] == '=')
                 return true;
@@ -271,7 +271,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
         return false;
     };
 
-    auto readUntilEndOfKey = [&](auto from) -> std::pair<std::string, int> {
+    auto readUntilEndOfKey = [&](auto from, bool isSample) -> std::pair<std::string, int> {
         std::ostringstream oss;
         std::string tmp;
         auto mightBeOpcode{false};
@@ -284,11 +284,11 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
                 mightBeOpcode = true;
                 oss << c;
             }
-            else if (c == '/' && cn == '/')
+            else if (c == '/' && cn == '*')
             {
                 return {oss.str(), from};
             }
-            else if (c == '/' && cn == '*')
+            else if (c == '/' && (!isSample || cn == '/'))
             {
                 return {oss.str(), from};
             }
@@ -333,15 +333,14 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
         {
         case NOTHING:
         {
-            if (c == '/' && cn == '/')
-            {
-                state = IN_SLCOM;
-                c++;
-            }
-            else if (c == '/' && cn == '*')
+            if (c == '/' && cn == '*')
             {
                 state = IN_MLCOM;
-                c++;
+                cp++;
+            }
+            else if (c == '/')
+            {
+                state = IN_SLCOM;
             }
             else if (c == '<')
             {
@@ -354,8 +353,8 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
             else if (lookAheadForOpcode(cp, opcode))
             {
                 cp += opcode.size() + 1;
-                auto [key, pos] = readUntilEndOfKey(cp);
-                cp = pos;
+                auto [key, pos] = readUntilEndOfKey(cp, opcode == "sample");
+                cp = pos - 1;
                 OpCode oc;
                 oc.name = opcode;
                 oc.value = stripTrailing(key);
@@ -398,7 +397,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
         break;
         case IN_SLCOM:
         {
-            if (c == '\n')
+            if (c == '\n' || c == '\r')
             {
                 state = NOTHING;
             }
@@ -409,7 +408,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
             if (c == '*' && cn == '/')
             {
                 state = NOTHING;
-                c++;
+                cp += 2;
             }
         }
         break;

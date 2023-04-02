@@ -74,6 +74,7 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         auto res = p.parse(anSFZ);
         REQUIRE(res.size() == 1);
     }
+
     SECTION("Just a Region and a Comment")
     {
         auto p = scxt::sfz_support::SFZParser();
@@ -96,6 +97,7 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         REQUIRE(opcodes[2].name == "foo");
         REQUIRE((opcodes[2].value) == "myThingy");
     }
+
     SECTION("A Region with two keywords")
     {
         auto p = scxt::sfz_support::SFZParser();
@@ -190,6 +192,42 @@ default_path= // relative path of your samples
         REQUIRE(res.size() == 11);
         REQUIRE(res[2].second.size() == 7);
     }
+    SECTION("Single Slash Comments")
+    {
+        auto p = scxt::sfz_support::SFZParser();
+
+        std::string anSFZ = std::string() + "/ This is a comment\n" +
+                            "<region>key=3 foo=bar/ ueahy\n" +
+                            "sample=foo/bar/x.wav\n"
+                            "<region>\n" +
+                            "sample=foo/bar/y.wav// Does this work\n";
+
+        auto res = p.parse(anSFZ);
+        REQUIRE(res.size() == 2);
+        REQUIRE(res[0].second.size() == 3);
+        REQUIRE(res[0].second[1].value == "bar");
+        REQUIRE(res[0].second[2].value == "foo/bar/x.wav");
+        REQUIRE(res[1].second.size() == 1);
+        REQUIRE(res[1].second[0].value == "foo/bar/y.wav");
+    }
+
+    SECTION("From The Wrench")
+    {
+        auto p = scxt::sfz_support::SFZParser();
+
+        std::string s = R"SFZ(<region>
+sample=the wrench (hard) Samples\whh1.wav
+lokey=c0
+hikey=g#6
+pitch_keycenter=b4
+tune=-45)SFZ";
+        auto res = p.parse(s);
+        REQUIRE(res.size() == 1);
+        auto &k = res[0].second;
+        REQUIRE(k[0].name == "sample");
+        REQUIRE(k[0].value == "the wrench (hard) Samples\\whh1.wav");
+    }
+
     SECTION("More Advanced")
     {
         auto p = scxt::sfz_support::SFZParser();
