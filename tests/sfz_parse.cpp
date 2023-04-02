@@ -61,6 +61,8 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         std::string anSFZ = "<global>";
         auto res = p.parse(anSFZ);
         REQUIRE(res.size() == 1);
+        REQUIRE(res[0].first.name == "global");
+        REQUIRE(res[0].first.type == scxt::sfz_support::SFZParser::Header::global);
     }
 
     SECTION("Grr No Space Comments")
@@ -89,15 +91,11 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         auto &opcodes = res[0].second;
 
         REQUIRE(opcodes[0].name == "key");
-        REQUIRE(std::holds_alternative<float>(opcodes[0].value));
-        REQUIRE(std::get<float>(opcodes[0].value) == 70);
+        REQUIRE((opcodes[0].value) == "70");
         REQUIRE(opcodes[1].name == "blank");
-        REQUIRE(std::holds_alternative<bool>(opcodes[1].value));
         REQUIRE(opcodes[2].name == "foo");
-        REQUIRE(std::holds_alternative<std::string>(opcodes[2].value));
-        REQUIRE(std::get<std::string>(opcodes[2].value) == "myThingy");
+        REQUIRE((opcodes[2].value) == "myThingy");
     }
-
     SECTION("A Region with two keywords")
     {
         auto p = scxt::sfz_support::SFZParser();
@@ -106,6 +104,11 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         auto res = p.parse(anSFZ);
         REQUIRE(res.size() == 1);
         REQUIRE(res[0].second.size() == 2);
+        auto &kv = res[0].second;
+        REQUIRE(kv[0].name == "key");
+        REQUIRE((kv[0].value) == "50");
+        REQUIRE(kv[1].name == "sample");
+        REQUIRE((kv[1].value) == "d4.wav");
     }
 
     SECTION("A Region with two blank keywords")
@@ -126,6 +129,20 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         auto res = p.parse(anSFZ);
         REQUIRE(res.size() == 1);
         REQUIRE(res[0].second.size() == 3);
+    }
+
+    SECTION("Values have Spaces. Because of course they do.")
+    {
+        auto p = scxt::sfz_support::SFZParser();
+
+        std::string anSFZ =
+            "<region>sample=foo bar.wav this=12\n<region>sample=jim bob.wav// yup\n";
+        auto res = p.parse(anSFZ);
+        REQUIRE(res.size() == 2);
+        REQUIRE(res[0].second.size() == 2);
+        REQUIRE((res[0].second[0].value) == "foo bar.wav");
+        REQUIRE(res[1].second.size() == 1);
+        REQUIRE((res[1].second[0].value) == "jim bob.wav");
     }
 
     SECTION("SFZFormat.com template")

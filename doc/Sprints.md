@@ -8,6 +8,10 @@ oddy's linux problem.
 Welcome to April! Anyway start by fixing stereo SF2 (#492). Make extension
 checks on files case insnsitive.
 
+I think my next big swaths of work are: port more of the
+zone processors, make the ui match the wireframe for a zone pixel perfectly, and
+playing state indicators. I may also sneak in rudimentary sfz
+
 ## Day 40 (2023-03-31)
 
 Again a slow dev day. Added FLAC support; added a single function to push an error to the client.

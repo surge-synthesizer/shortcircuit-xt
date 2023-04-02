@@ -33,6 +33,7 @@
 #include "messaging/messaging.h"
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
+#include "sfz_support/sfz_import.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 #include "gig.h"
@@ -348,6 +349,19 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
         // TODO ok this refresh and restart is a bit unsatisfactory
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             loadSf2MultiSampleIntoSelectedPart(p);
+            messageController->restartAudioThreadFromSerial();
+            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                      getPartGroupZoneStructure(-1), *messageController);
+        });
+        return;
+    }
+    else if (extensionMatches(p, ".sfz"))
+    {
+        // TODO ok this refresh and restart is a bit unsatisfactory
+        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+            auto res = sfz_support::importSFZ(p, *this);
+            if (!res)
+                messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(-1), *messageController);

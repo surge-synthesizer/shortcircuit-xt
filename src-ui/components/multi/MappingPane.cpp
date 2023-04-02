@@ -650,7 +650,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     }
 
     // Draw the selected zone
-    if (sel.zone >= 0)
+    if (sel.zone >= 0 && sel.zone < display->summary.size())
     {
         assert(sel.zone < display->summary.size());
         const auto &z = display->summary[sel.zone];
@@ -667,6 +667,11 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         g.setColour(juce::Colours::white);
         g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
         g.drawText(std::get<3>(z), r.reduced(5, 3), juce::Justification::topLeft);
+    }
+    else if (sel.zone >= 0)
+    {
+        SCDBGCOUT << "Inconsistent zone and display data skipping paint" << SCD(sel.zone)
+                  << SCD(display->summary.size()) << std::endl;
     }
 
     for (int i = 0; i < 128; ++i)
