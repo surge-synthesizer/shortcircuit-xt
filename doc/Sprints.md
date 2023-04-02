@@ -1,3 +1,8 @@
+## Day 42 (2023-04-02)
+
+Again a slow dev day. Some more fixes to my SF2 fixes which I think will solve
+oddy's linux problem.
+
 ## Day 41 (2023-04-01)
 
 Welcome to April! Anyway start by fixing stereo SF2 (#492). Make extension

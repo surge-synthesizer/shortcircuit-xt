@@ -122,7 +122,8 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
         sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
     {
         auto buf = sfsample->LoadSampleData();
-        load_data_i16(0, buf.pStart, buf.Size, sfsample->GetFrameSize());
+        // >> 1 here because void* -> int16_t is byte to two bytes
+        load_data_i16(0, buf.pStart, buf.Size >> 1, sfsample->GetFrameSize());
         sfsample->ReleaseSampleData();
         return true;
     }
@@ -133,12 +134,14 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
         bool loaded{false};
         if (sfsample->SampleType == sf2::Sample::LEFT_SAMPLE)
         {
-            load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 1, sfsample->GetFrameSize());
+            // >> 2 here because void* -> int16_t is byte to two bytes, plus two channels with a
+            // stride
+            load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 2, sfsample->GetFrameSize());
             loaded = true;
         }
         else if (sfsample->SampleType == sf2::Sample::RIGHT_SAMPLE)
         {
-            load_data_i16(0, (int16_t *)(buf.pStart) + 1, buf.Size >> 1, sfsample->GetFrameSize());
+            load_data_i16(0, (int16_t *)(buf.pStart) + 1, buf.Size >> 2, sfsample->GetFrameSize());
             loaded = true;
         }
         sfsample->ReleaseSampleData();
