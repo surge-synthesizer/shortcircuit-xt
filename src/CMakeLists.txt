@@ -24,7 +24,9 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_riff_wave.cpp
         sample/loaders/load_aiff.cpp
         sample/loaders/load_flac.cpp
+
         sfz_support/sfz_parse.cpp
+        sfz_support/sfz_import.cpp
 
         tuning/equal.cpp
         tuning/midikey_retuner.cpp

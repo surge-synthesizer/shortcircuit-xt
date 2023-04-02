@@ -26,6 +26,13 @@
  */
 
 #include "sfz_parse.h"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
+// spaces in keys broke me
+#define PARSE_WITH_CRAPPY_CODE 1
+#if PARSE_WITH_PEGTL
 
 #define TAO_PEGTL_NAMESPACE scxt::sfz::pegtl
 #include <iostream>
@@ -98,16 +105,16 @@ struct header : seq< one<'<'>, hdr_name, one< '>'> > {};
 // TODO - later add some custom opcode types as parsed types, especialy the onCC ones
 struct opcode_generic : plus<sor<alnum, one<'_'>>> {};
 struct opcode : sor<opcode_generic> {};
+struct opcode_equals : seq<opcode, one<'='>> {};
 
-struct space_or_comment : sor<space, eof, comment> {};
+struct end_of_opcode : sor<comment, opcode_equals, header, eof> {};
 struct opcode_numvalue : seq<opt<one<'-'>>, seq<plus<digit>, opt<one<'.'>>, star<digit>>> {};
-struct opcode_strvalue : star< not_at<space_or_comment>, any> {};
+struct opcode_strvalue : star< not_at<end_of_opcode>, any> {};
 struct opcode_anyvalue : sor<opcode_numvalue, opcode_strvalue> {};
-struct opcode_value : seq<opcode_anyvalue, space_or_comment> {};
+struct opcode_value : seq<opcode_anyvalue, end_of_opcode> {};
 //struct opcode_value : sor<numvalue, strvalue> {};
 
-
-struct opcode_assignment : seq<opcode, one<'='>, opcode_value> {};
+struct opcode_assignment : seq<opcode_equals, opcode_value> {};
 
 struct expression : sor<pad<header, space>, pad<opcode_assignment, plus<space>>, pad<comment, space>> {};
 struct document : seq<star<expression>, eof> {};
@@ -233,5 +240,190 @@ SFZParser::document_t SFZParser::parse(const std::string &contents)
         std::cout << e.what() << std::endl;
     }
     return {};
+}
+#endif
+
+#if PARSE_WITH_CRAPPY_CODE
+namespace scxt::sfz_support
+{
+
+SFZParser::document_t SFZParser::parse(const std::string &s)
+{
+    enum ParseState
+    {
+        NOTHING,
+        IN_SLCOM,
+        IN_MLCOM,
+        IN_REGION,
+    } state{NOTHING};
+
+    document_t res;
+
+    auto lookAheadForOpcode = [&](auto from, auto &opcode) {
+        opcode.clear();
+        while (from < s.size() && s[from] != ' ' && s[from] != '\n' && s[from] != '\r')
+        {
+            if (s[from] == '=')
+                return true;
+            opcode += s[from];
+            from++;
+        }
+        return false;
+    };
+
+    auto readUntilEndOfKey = [&](auto from, bool isSample) -> std::pair<std::string, int> {
+        std::ostringstream oss;
+        std::string tmp;
+        auto mightBeOpcode{false};
+        while (from < s.size())
+        {
+            auto c = s[from];
+            auto cn = from < s.size() - 1 ? s[from + 1] : c;
+            if (c == ' ')
+            {
+                mightBeOpcode = true;
+                oss << c;
+            }
+            else if (c == '/' && cn == '*')
+            {
+                return {oss.str(), from};
+            }
+            else if (c == '/' && (!isSample || cn == '/'))
+            {
+                return {oss.str(), from};
+            }
+            else if (c == '<')
+            {
+                return {oss.str(), from};
+            }
+            else if (c == '\n' || c == '\r')
+            {
+                return {oss.str(), from};
+            }
+            else if (mightBeOpcode && lookAheadForOpcode(from, tmp))
+            {
+                return {oss.str(), from - 1};
+            }
+            else
+            {
+                oss << c;
+            }
+            from++;
+        }
+        return {oss.str(), from};
+    };
+
+    auto stripTrailing = [](const auto &s) {
+        auto ep = s.size() - 1;
+        while (ep >= 0 && (s[ep] == ' ' || s[ep] == '\n' || s[ep] == '\r'))
+        {
+            ep--;
+        }
+        return s.substr(0, ep + 1);
+    };
+
+    auto e = s.size();
+    std::string opcode;
+    for (auto cp = 0; cp < e; ++cp)
+    {
+        auto c = s[cp];
+        auto cn = (cp < e - 1) ? s[cp + 1] : c;
+
+        switch (state)
+        {
+        case NOTHING:
+        {
+            if (c == '/' && cn == '*')
+            {
+                state = IN_MLCOM;
+                cp++;
+            }
+            else if (c == '/')
+            {
+                state = IN_SLCOM;
+            }
+            else if (c == '<')
+            {
+                state = IN_REGION;
+                res.push_back({{}, {}});
+            }
+            else if (c == ' ' || c == '\n' || c == '\r')
+            {
+            }
+            else if (lookAheadForOpcode(cp, opcode))
+            {
+                cp += opcode.size() + 1;
+                auto [key, pos] = readUntilEndOfKey(cp, opcode == "sample");
+                cp = pos - 1;
+                OpCode oc;
+                oc.name = opcode;
+                oc.value = stripTrailing(key);
+                res.back().second.push_back(oc);
+            }
+            else
+            {
+                // TODO: Report Syntax Error
+            }
+        }
+        break;
+        case IN_REGION:
+        {
+            if (c == '>')
+            {
+                state = NOTHING;
+#define HDR_HELPER(a)                                                                              \
+    if (res.back().first.name == #a)                                                               \
+        res.back().first.type = Header::a;
+                HDR_HELPER(region);
+                HDR_HELPER(group);
+                HDR_HELPER(control);
+                HDR_HELPER(global);
+                HDR_HELPER(curve);
+                HDR_HELPER(effect);
+                HDR_HELPER(master);
+                HDR_HELPER(midi);
+                HDR_HELPER(sample);
+                HDR_HELPER(unknown);
+            }
+            else if (c != ' ')
+            {
+                res.back().first.name += c;
+            }
+            else
+            {
+                // TODO Report Syntax Error
+            }
+        }
+        break;
+        case IN_SLCOM:
+        {
+            if (c == '\n' || c == '\r')
+            {
+                state = NOTHING;
+            }
+        }
+        break;
+        case IN_MLCOM:
+        {
+            if (c == '*' && cn == '/')
+            {
+                state = NOTHING;
+                cp += 2;
+            }
+        }
+        break;
+        }
+    }
+    return res;
+}
+#endif
+
+SFZParser::document_t SFZParser::parse(const std::filesystem::path &f)
+{
+    std::ifstream ifs;
+    ifs.open(f);
+    std::ostringstream sstr;
+    sstr << ifs.rdbuf();
+    return parse(sstr.str());
 }
 } // namespace scxt::sfz_support

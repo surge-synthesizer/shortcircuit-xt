@@ -57,7 +57,8 @@ struct SFZParser
     struct OpCode
     {
         std::string name;
-        std::variant<float, std::string, bool> value; // the bool means no value
+        // std::variant<float, std::string, bool> value; // the bool means no value
+        std::string value;
     };
 
     typedef std::vector<OpCode> opCodes_t;
