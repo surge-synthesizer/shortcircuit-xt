@@ -32,6 +32,8 @@ option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
 
 option(SCXT_USE_FLAC "Include flac support from xiph/flac" ON)
 
+option(SCXT_SANITIZE "Build with CLang/gcc address and undef sanitizer" OFF)
+
 
 # Calculate bitness
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")

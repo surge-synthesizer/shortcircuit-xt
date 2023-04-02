@@ -420,7 +420,10 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         auto pt = 0;
         if (sz.has_value())
             pt = sz->part;
+        if (pt < 0 || pt >= Patch::numParts)
+            pt = 0;
 
+        SCDBGCOUT << "Adding SF2 to part " << SCD(pt) << std::endl;
         auto &part = getPatch()->getPart(pt);
         for (int i = 0; i < sf->GetInstrumentCount(); ++i)
         {

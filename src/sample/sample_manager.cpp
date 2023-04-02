@@ -129,6 +129,8 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
     auto sp = std::make_shared<Sample>(sid);
 
+    SCDBGCOUT << "Loading individual sf2 saample " << SCD(instrument) << SCD(region) << SCD(f)
+              << SCD(p.u8string()) << std::endl;
     if (!sp->loadFromSF2(p, f, instrument, region))
         return {};
 
