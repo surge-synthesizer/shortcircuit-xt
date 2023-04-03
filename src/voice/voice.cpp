@@ -197,15 +197,16 @@ bool Voice::process()
             {
                 // mono to mono
                 processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_block_to(output[0], tempbuf[0], output[0], BLOCK_SIZE_QUAD);
+                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
             }
             else if (chainIsMono && processorConsumesMono[i] && processorProducesStereo[i])
             {
                 // mono to stereo. process then toggle
                 processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_2_blocks_to(
-                    output[0], tempbuf[0], output[0], // this out[0] is NOT a typo. Input is mono
-                    tempbuf[1], output[0], output[1], BLOCK_SIZE_QUAD);
+                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
+                processorMix[i].fade_blocks(output[0], tempbuf[1], output[1]);
+                // this out[0] is NOT a typo. Input is mono
+
                 chainIsMono = false;
             }
             else if (chainIsMono)
@@ -214,15 +215,15 @@ bool Voice::process()
                 mech::copy_from_to<blockSize>(output[0], output[1]);
                 chainIsMono = false;
                 processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
-                                                 output[0], output[1], BLOCK_SIZE_QUAD);
+                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
+                processorMix[i].fade_blocks(output[1], tempbuf[1], output[1]);
             }
             else
             {
                 // stereo to stereo. process
                 processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_2_blocks_to(output[0], tempbuf[0], output[1], tempbuf[1],
-                                                 output[0], output[1], BLOCK_SIZE_QUAD);
+                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
+                processorMix[i].fade_blocks(output[1], tempbuf[1], output[1]);
             }
             // TODO: What was the filter_modout? Seems SC2 never finished it
             /*
@@ -388,8 +389,7 @@ void Voice::initializeProcessors()
     assert(zone->getEngine());
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
-        processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
-        processorMix[i].instantize();
+        processorMix[i].set_target_instant(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
 
         processorType[i] = zone->processorStorage[i].type;
         assert(dsp::processor::isZoneProcessor(processorType[i]));

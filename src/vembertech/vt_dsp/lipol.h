@@ -38,8 +38,11 @@ class alignas(16) lipol_ps
     __m128 m128_lipolstarter;
     __m128 m128_bs4_inv;
 
+  private:
+    // If you hit this, move to the basic blocks one instead
     lipol_ps();
 
+  public:
     inline void set_target(float t)
     {
         currentval = target;

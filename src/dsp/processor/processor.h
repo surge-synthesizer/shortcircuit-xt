@@ -124,7 +124,7 @@ enum ProcessorType
     proct_fx_microgate,
     proct_fx_ringmod,
     proct_fx_freqshift,
-    proct_fx_phasemod, // last part/fx
+    proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,
     proct_osc_pulse,
