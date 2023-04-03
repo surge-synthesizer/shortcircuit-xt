@@ -44,7 +44,6 @@ bool Sample::load(const fs::path &path)
 
     if (extensionMatches(path, ".wav"))
     {
-        SCDBGCOUT << "Loading WAV from " << path.u8string() << std::endl;
         auto fmv = std::make_unique<infrastructure::FileMapView>(path);
         auto data = fmv->data();
         auto datasize = fmv->dataSize();
@@ -61,7 +60,6 @@ bool Sample::load(const fs::path &path)
     }
     else if (extensionMatches(path, ".flac"))
     {
-        SCDBGCOUT << "Loading FLAC from " << path.u8string() << std::endl;
         if (parseFlac(path))
         {
             sample_loaded = true;
@@ -73,7 +71,6 @@ bool Sample::load(const fs::path &path)
     }
     else if (extensionMatches(path, ".aif") || extensionMatches(path, ".aiff"))
     {
-        SCDBGCOUT << "Loading AIF from " << path.u8string() << std::endl;
         auto fmv = std::make_unique<infrastructure::FileMapView>(path);
         auto data = fmv->data();
         auto datasize = fmv->dataSize();
