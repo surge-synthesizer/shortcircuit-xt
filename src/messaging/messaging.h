@@ -163,6 +163,14 @@ struct MessageController : MoveableOnly<MessageController>
     ~MessageController();
 
     /**
+     * State variables for connection
+     */
+    std::atomic<bool> isClientConnected{false}, isAudioRunning{false};
+    std::atomic<int64_t> engineProcessRuns{0}; // each time process is called this updates
+    std::atomic<bool> forceStatusUpdate{false};
+    bool updateAudioRunning(); // returns true if there is a state change
+
+    /**
      * start. Called from the startup thread after the engine is created.
      * Will begin a serialization thread.
      */
@@ -303,6 +311,11 @@ struct MessageController : MoveableOnly<MessageController>
     std::atomic<bool> shouldRun{false};
 
     std::unique_ptr<std::thread> serializationThread;
+
+    int64_t localCopyOfEngineProcessRuns{engineProcessRuns};
+    int64_t localCopyOfIsAudioRunning{isAudioRunning};
+    static constexpr int32_t engineOffCountdownInit{4};
+    int32_t engineOffCountdown{engineOffCountdownInit};
 };
 
 } // namespace scxt::messaging

@@ -111,18 +111,30 @@ void MessageController::scheduleAudioThreadCallback(
     std::function<void(engine::Engine &)> cb, std::function<void(const engine::Engine &)> sercb)
 {
     assert(threadingChecker.isSerialThread());
-    auto pt = getAudioThreadCallback();
-    pt->setFunction(cb);
-    if (sercb)
-        pt->setSerialCompleteFunction(sercb);
-    else
-        pt->nullSerialCompleteFunction();
-    auto s2a = audio::SerializationToAudio();
-    s2a.id = audio::s2a_dispatch_to_pointer;
-    s2a.payload.p = (void *)pt;
-    s2a.payloadType = audio::SerializationToAudio::VOID_STAR;
 
-    serializationToAudioQueue.push(s2a);
+    if (!localCopyOfIsAudioRunning)
+    {
+        SCDBGCOUT << "No audio thread; running callbacks on serial" << std::endl;
+        if (cb)
+            cb(engine);
+        if (sercb)
+            sercb(engine);
+    }
+    else
+    {
+        auto pt = getAudioThreadCallback();
+        pt->setFunction(cb);
+        if (sercb)
+            pt->setSerialCompleteFunction(sercb);
+        else
+            pt->nullSerialCompleteFunction();
+        auto s2a = audio::SerializationToAudio();
+        s2a.id = audio::s2a_dispatch_to_pointer;
+        s2a.payload.p = (void *)pt;
+        s2a.payloadType = audio::SerializationToAudio::VOID_STAR;
+
+        serializationToAudioQueue.push(s2a);
+    }
 }
 
 void MessageController::stopAudioThreadThenRunOnSerial(
@@ -141,18 +153,21 @@ void MessageController::restartAudioThreadFromSerial()
 void MessageController::runSerialization()
 {
     threadingChecker.registerAsSerialThread();
+
     while (shouldRun)
     {
         using namespace std::chrono_literals;
 
         clientToSerializationMessage_t inbound;
+        bool audioStateChanged{false};
         bool receivedMessageFromClient{false};
         {
             std::unique_lock<std::mutex> lock(clientToSerializationMutex);
             while (shouldRun && clientToSerializationQueue.empty() &&
-                   (audioToSerializationQueue.empty()))
+                   (audioToSerializationQueue.empty()) && !audioStateChanged)
             {
                 clientToSerializationConditionVar.wait_for(lock, 50ms);
+                audioStateChanged = updateAudioRunning();
             }
             if (!clientToSerializationQueue.empty())
             {
@@ -166,6 +181,11 @@ void MessageController::runSerialization()
             if (receivedMessageFromClient)
             {
                 client::serializationThreadExecuteClientMessage(inbound, engine, *this);
+            }
+
+            if (audioStateChanged && isClientConnected)
+            {
+                engine.sendEngineStatusToClient();
             }
 
             // TODO: Drain SerToAudioQ if there's no audio thread
@@ -185,6 +205,44 @@ void MessageController::runSerialization()
     }
 }
 
+bool MessageController::updateAudioRunning()
+{
+    assert(threadingChecker.isSerialThread());
+    bool retval = false;
+    if (!isAudioRunning && (localCopyOfEngineProcessRuns != engineProcessRuns))
+    {
+        isAudioRunning = true;
+        retval = true;
+    }
+    else if (isAudioRunning && localCopyOfEngineProcessRuns == engineProcessRuns)
+    {
+        engineOffCountdown--;
+        if (engineOffCountdown <= 0)
+        {
+            engineOffCountdown = engineOffCountdownInit;
+            isAudioRunning = false;
+            retval = true;
+        }
+    }
+    else
+    {
+        engineOffCountdown = engineOffCountdownInit;
+        if (localCopyOfIsAudioRunning != isAudioRunning)
+        {
+            retval = true;
+        }
+        localCopyOfEngineProcessRuns = engineProcessRuns;
+    }
+    localCopyOfIsAudioRunning = isAudioRunning;
+
+    if (forceStatusUpdate)
+    {
+        retval = true;
+        forceStatusUpdate = false;
+    }
+    return retval;
+}
+
 void MessageController::registerClient(const std::string &nm, clientCallback_t &&f)
 {
     {
@@ -202,6 +260,8 @@ void MessageController::registerClient(const std::string &nm, clientCallback_t &
         clientCallback(pcc);
     }
     preClientConnectionCache.clear();
+
+    isClientConnected = true;
 }
 void MessageController::unregisterClient()
 {
@@ -209,7 +269,7 @@ void MessageController::unregisterClient()
 
     assert(clientCallback);
     clientCallback = nullptr;
-    // TODO decrease atomic
+    isClientConnected = false;
 }
 void MessageController::sendRawFromClient(const clientToSerializationMessage_t &s)
 {

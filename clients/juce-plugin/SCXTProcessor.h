@@ -29,8 +29,9 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <engine/engine.h>
+#include "clap-juce-extensions/clap-juce-extensions.h"
 
-class SCXTProcessor : public juce::AudioProcessor
+class SCXTProcessor : public juce::AudioProcessor, public clap_juce_extensions::clap_properties
 {
   public:
     //==============================================================================

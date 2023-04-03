@@ -44,9 +44,16 @@ SCXTProcessor::SCXTProcessor()
 {
     engine = std::make_unique<scxt::engine::Engine>();
 
-    // engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
-    // temporaryInitPatch();
-    // engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    std::string wrapperTypeString = getWrapperTypeDescription(wrapperType);
+    if (wrapperType == wrapperType_Undefined && is_clap)
+        wrapperTypeString = std::string("CLAP");
+
+    std::string phd = juce::PluginHostType().getHostDescription();
+    if (phd != "Unknown")
+    {
+        wrapperTypeString += std::string(" in ") + juce::PluginHostType().getHostDescription();
+    }
+    engine->runningEnvironment = wrapperTypeString;
 }
 
 SCXTProcessor::~SCXTProcessor()

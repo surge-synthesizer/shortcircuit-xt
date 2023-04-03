@@ -50,5 +50,4 @@ void sendStructureRefresh(MessageController &mc)
     a2s.payloadType = AudioToSerialization::NONE;
     mc.sendAudioToSerialization(a2s);
 }
-
 } // namespace scxt::messaging::audio

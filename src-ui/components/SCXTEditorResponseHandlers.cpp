@@ -34,6 +34,7 @@
 #include "multi/PartGroupSidebar.h"
 #include "HeaderRegion.h"
 #include "components/multi/MappingPane.h"
+#include "components/AboutScreen.h"
 
 namespace scxt::ui
 {
@@ -146,6 +147,13 @@ void SCXTEditor::onSingleSelection(const scxt::selection::SelectionManager::Zone
     currentSingleSelection = s;
     multiScreen->parts->setCurrentSelection(s);
     multiScreen->sample->setCurrentSelection(s);
+    repaint();
+}
+
+void SCXTEditor::onEngineStatus(const engine::Engine::EngineStatusMessage &e)
+{
+    engineStatus = e;
+    aboutScreen->resetInfo();
     repaint();
 }
 } // namespace scxt::ui

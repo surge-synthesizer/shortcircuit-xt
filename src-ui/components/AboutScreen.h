@@ -51,8 +51,11 @@ struct AboutScreen : juce::Component, HasEditor
 
     juce::Font titleFont, subtitleFont, infoFont, aboutFont;
 
+    void resetInfo();
     void copyInfo();
     void resized() override;
+
+    void visibilityChanged() override;
 
     static constexpr int infoh = 23;
 

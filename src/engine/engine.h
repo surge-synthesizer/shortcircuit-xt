@@ -68,6 +68,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     const std::unique_ptr<sample::SampleManager> &getSampleManager() const { return sampleManager; }
 
     /**
+     * An option to add a description of your running environment, like "VST3 in Reaper"
+     */
+    std::string runningEnvironment{"Unknown"};
+
+    /**
      * Audio processing
      */
     int getStereoOutputs() const { return 1; }
@@ -167,6 +172,18 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * OnRegister generate and send all the metdata the client needs
      */
     void sendMetadataToClient() const;
+
+    /*
+     * Update the audio playing state
+     */
+    void sendEngineStatusToClient() const;
+
+    struct EngineStatusMessage
+    {
+        bool isAudioRunning;
+        double sampleRate;
+        std::string runningEnvironment;
+    };
 
     /*
      * Data Query APIs

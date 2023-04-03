@@ -106,6 +106,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
     void onVoiceCount(const uint32_t &v);
+    void onEngineStatus(const engine::Engine::EngineStatusMessage &e);
     void onEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
     void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
     void onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &);
@@ -135,6 +136,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
+    engine::Engine::EngineStatusMessage engineStatus;
 };
 } // namespace scxt::ui
 

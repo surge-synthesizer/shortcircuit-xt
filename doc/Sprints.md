@@ -1,6 +1,9 @@
 ## Day 43 (2023-04-03)
 
-Superquickly, select the first new zone when importing an SF2.
+Superquickly, select the first new zone when importing an SF2. Then turn to the
+"is" questions state (isAudioRunning, isClientConnected; #430) which lets me also
+do things like engine status up to the UI properly (although I dont paint the
+audio state now jsut the rest in the about screen).
 
 ## Day 42 (2023-04-02)
 
@@ -13,7 +16,7 @@ very simple SFZs work. Tomorrow is either pixels or processors or playing state.
 ## Day 41 (2023-04-01)
 
 Welcome to April! Anyway start by fixing stereo SF2 (#492). Make extension
-checks on files case insnsitive.
+checks on files case insensitive.
 
 I think my next big swaths of work are: port more of the
 zone processors, make the ui match the wireframe for a zone pixel perfectly, and
