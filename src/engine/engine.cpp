@@ -439,6 +439,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 
         SCDBGCOUT << "Adding SF2 to part " << SCD(pt) << std::endl;
         auto &part = getPatch()->getPart(pt);
+        int firstGroup = -1;
         for (int i = 0; i < sf->GetInstrumentCount(); ++i)
         {
             sf2::Instrument *instr = sf->GetInstrument(i);
@@ -462,6 +463,8 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 if (!sid.has_value())
                     continue;
 
+                if (firstGroup < 0)
+                    firstGroup = grpnum;
                 auto zn = std::make_unique<engine::Zone>(*sid);
                 if (region->overridingRootKey >= 0)
                     zn->mapping.rootKey = region->overridingRootKey;
@@ -601,6 +604,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 grp->addZone(zn);
             }
         }
+        selectionManager->singleSelect({pt, firstGroup, firstGroup >= 0 ? 0 : -1});
     }
     catch (RIFF::Exception e)
     {
