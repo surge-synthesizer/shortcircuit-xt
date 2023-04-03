@@ -1,7 +1,14 @@
+## Day 43 (2023-04-03)
+
+Superquickly, select the first new zone when importing an SF2.
+
 ## Day 42 (2023-04-02)
 
 Again a slow dev day. Some more fixes to my SF2 fixes which I think will solve
-oddy's linux problem.
+oddy's linux problem. Come to grips with the vagueness which is SFZ. Deep breaths
+and rewrite my parser since i don't think you can parse SFZ with a grammar so just
+do a parser like they did in the 17th century. And that makes basic SFZ import on
+very simple SFZs work. Tomorrow is either pixels or processors or playing state. Not sure yet.
 
 ## Day 41 (2023-04-01)
 
