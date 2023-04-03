@@ -41,16 +41,28 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     int firstGroupWithZonesAdded = -1;
     for (const auto &[r, list] : doc)
     {
+        if (r.type != SFZParser::Header::region)
+        {
+            SCDBGCOUT << "Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------"
+                      << std::endl;
+        }
         switch (r.type)
         {
         case SFZParser::Header::group:
         {
             groupId = part->addGroup() - 1;
-            SCDBGCOUT << "Added group; ignoring " << list.size() << " keywords" << std::endl;
+            auto &group = part->getGroup(groupId);
             for (auto &oc : list)
             {
-                SCDBGCOUT << "    Skipped OpCode <group>: " << oc.name << " -> " << oc.value
-                          << std::endl;
+                if (oc.name == "group_label" || oc.name == "name")
+                {
+                    group->name = oc.value;
+                }
+                else
+                {
+                    SCDBGCOUT << "     Skipped OpCode <group>: " << oc.name << " -> " << oc.value
+                              << std::endl;
+                }
             }
         }
         break;
