@@ -173,7 +173,6 @@ void SCXTEditor::singleSelectItem(const selection::SelectionManager::ZoneAddress
 {
     namespace cmsg = scxt::messaging::client;
     currentSingleSelection = a;
-    SCDBGCOUT << __func__ << " " << SCD(a.part) << SCD(a.group) << SCD(a.zone) << std::endl;
     cmsg::clientSendToSerialization(cmsg::SingleSelectAddress(a), msgCont);
     repaint();
 }

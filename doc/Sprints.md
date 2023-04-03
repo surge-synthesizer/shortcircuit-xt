@@ -3,7 +3,8 @@
 Superquickly, select the first new zone when importing an SF2. Then turn to the
 "is" questions state (isAudioRunning, isClientConnected; #430) which lets me also
 do things like engine status up to the UI properly (although I dont paint the
-audio state now jsut the rest in the about screen).
+audio state now jsut the rest in the about screen). Fix some plugininfra lin (#487).
+Add a few more SFZ opcodes so oddy's clarinet loads.
 
 ## Day 42 (2023-04-02)
 

@@ -26,6 +26,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
 
     auto doc = parser.parse(f);
     auto rootDir = f.parent_path();
+    auto sampleDir = rootDir;
     SCDBGCOUT << SCD(rootDir.u8string()) << std::endl;
 
     auto sz = e.getSelectionManager()->getSelectedZone();
@@ -40,15 +41,28 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     int firstGroupWithZonesAdded = -1;
     for (const auto &[r, list] : doc)
     {
+        if (r.type != SFZParser::Header::region)
+        {
+            SCDBGCOUT << "Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------"
+                      << std::endl;
+        }
         switch (r.type)
         {
         case SFZParser::Header::group:
         {
             groupId = part->addGroup() - 1;
-            SCDBGCOUT << "Added group; ignoring " << list.size() << " keywords" << std::endl;
+            auto &group = part->getGroup(groupId);
             for (auto &oc : list)
             {
-                SCDBGCOUT << "  - " << oc.name << " -> " << oc.value << std::endl;
+                if (oc.name == "group_label" || oc.name == "name")
+                {
+                    group->name = oc.value;
+                }
+                else
+                {
+                    SCDBGCOUT << "     Skipped OpCode <group>: " << oc.name << " -> " << oc.value
+                              << std::endl;
+                }
             }
         }
         break;
@@ -71,23 +85,24 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
             }
             // std::filesystem always works with / and on windows also works with back
             std::replace(sampleFile.begin(), sampleFile.end(), '\\', '/');
-            if (!fs::exists(rootDir / sampleFile) && !fs::exists(sampleFile))
+            if (!fs::exists(sampleDir / sampleFile) && !fs::exists(sampleFile))
             {
-                SCDBGCOUT << "Canot find SampleFile" << std::endl;
+                SCDBGCOUT << "Cannot find SampleFile [" << (sampleDir / sampleFile).u8string()
+                          << "]" << std::endl;
                 return false;
             }
 
             SampleID sid;
-            if (fs::exists(rootDir / sampleFile))
+            if (fs::exists(sampleDir / sampleFile))
             {
-                auto lsid = e.getSampleManager()->loadSampleByPath(rootDir / sampleFile);
+                auto lsid = e.getSampleManager()->loadSampleByPath(sampleDir / sampleFile);
                 if (lsid.has_value())
                 {
                     sid = *lsid;
                 }
                 else
                 {
-                    SCDBGCOUT << "Cannot load Sample : " << (rootDir / sampleFile).u8string()
+                    SCDBGCOUT << "Cannot load Sample : " << (sampleDir / sampleFile).u8string()
                               << std::endl;
                     break;
                 }
@@ -122,13 +137,22 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                 {
                     zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
                 }
+                else if (oc.name == "lovel")
+                {
+                    zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
+                }
+                else if (oc.name == "hivel")
+                {
+                    zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
+                }
                 else if (oc.name == "sample")
                 {
                     // dealt with above
                 }
                 else
                 {
-                    SCDBGCOUT << "    Region: " << oc.name << " -> " << oc.value << std::endl;
+                    SCDBGCOUT << "    Skipped OpCode <region>: " << oc.name << " -> " << oc.value
+                              << std::endl;
                 }
             }
             zn->attachToSample(*e.getSampleManager());
@@ -139,10 +163,35 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
             }
         }
         break;
+        case SFZParser::Header::control:
+        {
+            for (const auto &oc : list)
+            {
+                if (oc.name == "default_path")
+                {
+                    auto vv = oc.value;
+                    std::replace(vv.begin(), vv.end(), '\\', '/');
+                    sampleDir = rootDir / vv;
+                    SCDBGCOUT << "Control: Resetting sample dir to " << sampleDir << std::endl;
+                }
+                else
+                {
+                    SCDBGCOUT << "    Skipped OpCode <control>: " << oc.name << " -> " << oc.value
+                              << std::endl;
+                }
+            }
+        }
+        break;
         default:
+        {
             SCDBGCOUT << "Ignoring SFZ Header " << r.name << " with " << list.size() << " keywords"
                       << std::endl;
-            break;
+            for (const auto &oc : list)
+            {
+                SCDBGCOUT << "  " << oc.name << " -> |" << oc.value << "|" << std::endl;
+            }
+        }
+        break;
         }
     }
     e.getSelectionManager()->singleSelect(
