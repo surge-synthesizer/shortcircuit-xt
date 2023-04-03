@@ -31,6 +31,7 @@
 #include "utils.h"
 #include "version.h"
 #include "sst/plugininfra/cpufeatures.h"
+#include "SCXTEditor.h"
 
 namespace scxt::ui
 {
@@ -50,6 +51,12 @@ AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
     aboutFont = juce::Font(interMed);
     aboutFont.setHeight(20);
 
+    resetInfo();
+}
+
+void AboutScreen::resetInfo()
+{
+    info.clear();
     info.push_back({"Version", scxt::build::FullVersionStr, false});
 
     std::string platform = juce::SystemStats::getOperatingSystemName().toStdString();
@@ -65,7 +72,10 @@ AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
                     std::string() + scxt::build::BuildDate + " " + scxt::build::BuildTime +
                         " with " + scxt::build::BuildCompiler,
                     false});
-    info.push_back({"Env", "(PluginType) at (SampleRate)", false});
+    info.push_back({"Env",
+                    fmt::format("{} at {} Hz", editor->engineStatus.runningEnvironment,
+                                (int)editor->engineStatus.sampleRate),
+                    false});
 }
 void AboutScreen::paint(juce::Graphics &g)
 {
@@ -135,5 +145,10 @@ void AboutScreen::resized()
                  .withY(getHeight() - (info.size() + 1.5) * infoh - 5)
                  .withTrimmedLeft(5);
     copyButton->setBounds(r);
+}
+void AboutScreen::visibilityChanged()
+{
+    if (isVisible())
+        resetInfo();
 }
 } // namespace scxt::ui

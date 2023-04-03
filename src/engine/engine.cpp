@@ -147,6 +147,9 @@ bool Engine::processAudio()
 #if BUILD_IS_DEBUG
     messageController->threadingChecker.registerAsAudioThread();
 #endif
+    messageController->engineProcessRuns++;
+    messageController->isAudioRunning = true;
+
     bool tryToDrain{true};
     while (tryToDrain && !messageController->serializationToAudioQueue.empty())
     {
@@ -419,8 +422,19 @@ void Engine::sendMetadataToClient() const
     messaging::client::serializationSendToClient(
         messaging::client::s2c_send_all_processor_descriptions,
         dsp::processor::getAllProcessorDescriptions(), *messageController);
+
+    sendEngineStatusToClient();
 }
 
+void Engine::sendEngineStatusToClient() const
+{
+    EngineStatusMessage ec;
+    ec.isAudioRunning = messageController->isAudioRunning;
+    ec.sampleRate = sampleRate;
+    ec.runningEnvironment = runningEnvironment;
+    messaging::client::serializationSendToClient(messaging::client::s2c_engine_status, ec,
+                                                 *messageController);
+}
 void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 {
     assert(messageController->threadingChecker.isSerialThread());
@@ -626,5 +640,7 @@ void Engine::onSampleRateChanged()
 {
     for (const auto &part : *patch)
         part->setSampleRate(samplerate);
+
+    messageController->forceStatusUpdate = true;
 }
 } // namespace scxt::engine

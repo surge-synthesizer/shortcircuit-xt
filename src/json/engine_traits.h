@@ -317,5 +317,26 @@ template <> struct scxt_traits<scxt::engine::VelocityRange>
         findIf(v, "fadeEnd", r.fadeEnd);
     }
 };
+
+template <> struct scxt_traits<engine::Engine::EngineStatusMessage>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const engine::Engine::EngineStatusMessage &t)
+    {
+        v = {{"isAudioRunning", t.isAudioRunning},
+             {"sampleRate", t.sampleRate},
+             {"runningEnvironment", t.runningEnvironment}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, engine::Engine::EngineStatusMessage &r)
+    {
+        findIf(v, "isAudioRunning", r.isAudioRunning);
+        findIf(v, "sampleRate", r.sampleRate);
+        findIf(v, "runningEnvironment", r.runningEnvironment);
+    }
+};
+
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H

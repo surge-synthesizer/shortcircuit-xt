@@ -37,6 +37,9 @@
 namespace scxt::messaging::client
 {
 SERIAL_TO_CLIENT(VoiceCountUpdate, s2c_voice_count, uint32_t, onVoiceCount);
+
+SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
+                 onEngineStatus);
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H
