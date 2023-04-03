@@ -125,7 +125,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                 {
                     zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
                 }
-                else if (oc.name == "lowvel")
+                else if (oc.name == "lovel")
                 {
                     zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
                 }
