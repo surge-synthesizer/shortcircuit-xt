@@ -25,14 +25,15 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "processor_defs.h"
+#include "microgate.h"
+
 #include "engine/memory_pool.h"
 #include "configuration.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "tuning/equal.h"
 #include "dsp/data_tables.h"
 
-namespace scxt::dsp::processor
+namespace scxt::dsp::processor::distortion
 {
 
 namespace mech = sst::basic_blocks::mechanics;
@@ -180,4 +181,4 @@ MicroGate::~MicroGate()
         memoryPool->returnBlock((engine::MemoryPool::data_t *)loopbuffer[0], microgateBlockSize);
     }
 }
-} // namespace scxt::dsp::processor
+} // namespace scxt::dsp::processor::distortion

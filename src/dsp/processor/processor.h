@@ -293,5 +293,11 @@ Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8
  */
 void unspawnProcessor(Processor *f);
 
+typedef uint8_t unimpl_t;
+template <ProcessorType ft> struct ProcessorImplementor
+{
+    typedef unimpl_t T;
+};
+
 } // namespace scxt::dsp::processor
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H
