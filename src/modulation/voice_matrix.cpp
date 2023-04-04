@@ -128,8 +128,8 @@ void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
     {
         sourcePointers[vms_LFO1 + i] = &(v->lfos[i].output);
     }
-    sourcePointers[vms_AEG] = &(v->aeg.output);
-    sourcePointers[vms_EG2] = &(v->eg2.output);
+    sourcePointers[vms_AEG] = &(v->aeg.outBlock0);
+    sourcePointers[vms_EG2] = &(v->eg2.outBlock0);
     sourcePointers[vms_ModWheel] = &(v->zone->parentGroup->parentPart->midiCCSmoothers[1].output);
 }
 

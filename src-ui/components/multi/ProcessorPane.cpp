@@ -42,7 +42,6 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index)
       index(index)
 {
     hasHamburger = true;
-    cmsg::clientSendToSerialization(cmsg::ProcessorMetadataAndData(index), e->msgCont);
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)

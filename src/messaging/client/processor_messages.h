@@ -38,32 +38,9 @@ namespace scxt::messaging::client
 typedef std::tuple<int, bool, dsp::processor::ProcessorControlDescription,
                    dsp::processor::ProcessorStorage>
     processorDataResponsePayload_t;
-inline void processorDataResponse(const int &which, const engine::Engine &engine,
-                                  MessageController &cont)
-{
-    auto addr = engine.getSelectionManager()->getSelectedZone();
-    assert(which < engine::processorsPerZone && which >= 0);
-    if (addr.has_value() && which < engine::processorsPerZone && which >= 0)
-    {
-        const auto &selectedZone =
-            engine.getPatch()->getPart(addr->part)->getGroup(addr->group)->getZone(addr->zone);
-        serializationSendToClient(
-            s2c_respond_single_processor_metadata_and_data,
-            processorDataResponsePayload_t{which, true, {}, selectedZone->processorStorage[which]},
-            cont);
-    }
-    else
-    {
-        serializationSendToClient(s2c_respond_single_processor_metadata_and_data,
-                                  processorDataResponsePayload_t{which, false, {}, {}}, cont);
-    }
-}
-CLIENT_SERIAL_REQUEST_RESPONSE(ProcessorMetadataAndData,
-                               c2s_request_single_processor_metadata_and_data, int,
-                               s2c_respond_single_processor_metadata_and_data,
-                               processorDataResponsePayload_t,
-                               processorDataResponse(payload, engine, cont),
-                               onProcessorDataAndMetadata);
+
+SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata_and_data,
+                 processorDataResponsePayload_t, onProcessorDataAndMetadata);
 
 // C2S set processor type (sends back data and metadata)
 typedef std::pair<int32_t, int32_t> setProcessorPayload_t;
