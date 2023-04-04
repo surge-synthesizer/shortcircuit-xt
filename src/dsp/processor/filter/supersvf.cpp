@@ -25,18 +25,13 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include <algorithm>
-#include <cmath>
-
-#include "processor_defs.h"
-#include "infrastructure/sse_include.h"
-#include "datamodel/parameter.h"
-#include "tuning/equal.h"
+#include "supersvf.h"
 #include "configuration.h"
+#include "dsp/processor/processor_ctrldescriptions.h"
+#include "tuning/equal.h"
 
-namespace scxt::dsp::processor
+namespace scxt::dsp::processor::filter
 {
-//-------------------------------------------------------------------------------------------------------
 
 // TODO: A bit more of a comprehensive review of this code
 static constexpr float INV_2BLOCK_SIZE{1.f / float(BLOCK_SIZE << 1)};
@@ -357,5 +352,4 @@ const char *SuperSVF::getIntParameterChoicesLabel(int ip_id, int c_id)
     return ("");
 }
 
-//-------------------------------------------------------------------------------------------------------
-} // namespace scxt::dsp::processor
+} // namespace scxt::dsp::processor::filter

@@ -1,3 +1,9 @@
+## Day 44 (2023-04-04)
+
+Start with cleaning up the files for the processors some so you get
+more like a 'one pair per processor' pattern which is way easier to
+navigate.
+
 ## Day 43 (2023-04-03)
 
 Superquickly, select the first new zone when importing an SF2. Then turn to the
