@@ -33,6 +33,9 @@
 #include "infrastructure/sse_include.h"
 
 #include <sst/filters/HalfRateFilter.h>
+#include "vembertech/vt_dsp/lipol.h"
+#include "sst/basic-blocks/dsp/BlockInterpolators.h"
+#include "configuration.h"
 
 /**
  * Adding a processor here. Used to be we had a bunch of case staements. But now we are all
@@ -183,7 +186,7 @@ template <> struct ProcessorImplementor<ProcessorType::proct_fx_microgate>
 };
 
 /**
- * Oscillators
+ * Oscillators and Synthesizers
  */
 
 static constexpr int oscillatorBufferLength{16}; // TODO should this be block size really?
@@ -222,6 +225,37 @@ struct alignas(16) OscPulseSync : public Processor
 template <> struct ProcessorImplementor<ProcessorType::proct_osc_pulse_sync>
 {
     typedef OscPulseSync T;
+};
+
+struct alignas(16) PhaseModulation : public Processor
+{
+    static constexpr bool isZoneProcessor{true};
+    static constexpr bool isPartProcessor{true};
+    static constexpr bool isFXProcessor{true};
+    static constexpr const char *processorName{"Phase Modulation"};
+    static constexpr const char *processorStreamingName{"osc-phase-mod"};
+
+    PhaseModulation(engine::MemoryPool *mp, float *f, int32_t *i);
+
+    void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
+                        float pitch) override;
+
+    bool canProcessMono() override { return true; }
+    bool monoInputCreatesStereoOutput() override { return false; }
+    void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override;
+
+    void init_params() override;
+    int tail_length() override { return tailInfinite; }
+
+  private:
+    double phase{0.0};
+    sst::filters::HalfRate::HalfRateFilter pre, post;
+    sst::basic_blocks::dsp::lipol_sse<BLOCK_SIZE> pregain;
+    sst::basic_blocks::dsp::lipol_sse<BLOCK_SIZE << 1, true> omega;
+};
+template <> struct ProcessorImplementor<ProcessorType::proct_osc_phasemod>
+{
+    typedef PhaseModulation T;
 };
 
 } // namespace scxt::dsp::processor

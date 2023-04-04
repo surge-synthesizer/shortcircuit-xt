@@ -6,6 +6,8 @@ do things like engine status up to the UI properly (although I dont paint the
 audio state now jsut the rest in the about screen). Fix some plugininfra lin (#487).
 Add a few more SFZ opcodes so oddy's clarinet loads.
 
+And a little extra. lipol -> basic blocks and the phase mod ported.
+
 ## Day 42 (2023-04-02)
 
 Again a slow dev day. Some more fixes to my SF2 fixes which I think will solve

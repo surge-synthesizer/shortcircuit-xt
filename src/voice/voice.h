@@ -43,6 +43,7 @@
 #include "sst/basic-blocks/modulators/ADSREnvelope.h"
 #include "sst/basic-blocks/modulators/AHDSRShapedSC.h"
 #include "sst/filters/HalfRateFilter.h"
+#include "sst/basic-blocks/dsp/BlockInterpolators.h"
 
 namespace scxt::voice
 {
@@ -129,7 +130,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     void panOutputsBy(bool inputIsMono, float pv);
 
     // TODO - this should be more carefully structured for modulation onto the entire filter
-    lipol_ps processorMix[engine::processorsPerZone];
+    sst::basic_blocks::dsp::lipol_sse<blockSize, false> processorMix[engine::processorsPerZone];
 
     /*
      * Voice State on Creation
