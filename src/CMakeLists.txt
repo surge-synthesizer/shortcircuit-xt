@@ -10,6 +10,7 @@ add_library(${PROJECT_NAME} STATIC
         dsp/processor/distortion/microgate.cpp
         dsp/processor/filter/supersvf.cpp
         dsp/processor/oscillator/oscpulsesync.cpp
+        dsp/processor/oscillator/oscsin.cpp
         dsp/processor/oscillator/phasemodulation.cpp
 
         engine/engine.cpp

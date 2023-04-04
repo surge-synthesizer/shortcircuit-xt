@@ -2,7 +2,7 @@
 
 Start with cleaning up the files for the processors some so you get
 more like a 'one pair per processor' pattern which is way easier to
-navigate.
+navigate. Add the sin oscillator and a quadrature osc to basic blocks.
 
 ## Day 43 (2023-04-03)
 
