@@ -1,3 +1,7 @@
+## Day 45 (2023-04-06)
+
+Really a micro-day; fix the generator loop if it abuts the end of the sample.
+
 ## Day 44 (2023-04-04)
 
 Start with cleaning up the files for the processors some so you get

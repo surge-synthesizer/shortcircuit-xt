@@ -30,10 +30,12 @@
 
 #include "resampling.h"
 #include "data_tables.h"
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 
 #include "sst/basic-blocks/mechanics/simd-ops.h"
+#include "utils.h"
 #include <array>
 #include <cassert>
 
@@ -100,8 +102,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     int RatioSign = Ratio < 0 ? -1 : 1;
     Ratio = std::abs(Ratio);
     int Direction = GD->direction * RatioSign;
-    short *__restrict SampleDataL;
-    short *__restrict SampleDataR;
+    int16_t *__restrict SampleDataL;
+    int16_t *__restrict SampleDataR;
     float *__restrict SampleDataFL;
     float *__restrict SampleDataFR;
     float *__restrict OutputL;
@@ -122,9 +124,69 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         SampleDataR = (short *)IO->sampleDataR;
         OutputR = IO->outputR;
     }
+
+    static constexpr int resampFIRSize{16};
+    int16_t *__restrict readSampleL = nullptr;
+    int16_t *__restrict readSampleR = nullptr;
+    int16_t loopEndBufferL[resampFIRSize], loopEndBufferR[resampFIRSize];
+    float *__restrict readSampleLF32 = nullptr;
+    float *__restrict readSampleRF32 = nullptr;
+    float loopEndBufferLF32[resampFIRSize], loopEndBufferRF32[resampFIRSize];
+
+    if (fp)
+    {
+        readSampleLF32 = SampleDataFL + SamplePos;
+        if (stereo)
+            readSampleRF32 = SampleDataFR + SamplePos;
+
+        if constexpr (loopActive)
+        {
+            if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
+            {
+                for (int k = 0; k < resampFIRSize; ++k)
+                {
+                    auto q = k + SamplePos;
+                    if (q >= GD->loopUpperBound || q >= WaveSize)
+                        q -= LoopOffset;
+                    loopEndBufferLF32[k] = SampleDataFL[q];
+                    if (stereo)
+                        loopEndBufferRF32[k] = SampleDataFR[q];
+                }
+                readSampleLF32 = loopEndBufferLF32;
+                if (stereo)
+                    readSampleRF32 = loopEndBufferRF32;
+            }
+        }
+    }
+    else
+    {
+        readSampleL = SampleDataL + SamplePos;
+        if (stereo)
+            readSampleR = SampleDataR + SamplePos;
+
+        if constexpr (loopActive)
+        {
+            if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
+            {
+                for (int k = 0; k < resampFIRSize; ++k)
+                {
+                    auto q = k + SamplePos;
+                    if (q >= GD->loopUpperBound || q >= WaveSize)
+                        q -= LoopOffset;
+                    loopEndBufferL[k] = SampleDataL[q];
+                    if (stereo)
+                        loopEndBufferR[k] = SampleDataR[q];
+                }
+                readSampleL = loopEndBufferL;
+                if (stereo)
+                    readSampleR = loopEndBufferR;
+            }
+        }
+    }
+
     int NSamples = GD->blockSize;
 
-    int i;
+    int i{0};
     for (i = 0; i < NSamples && !IsFinished; i++)
     {
         // 2. Resample
@@ -144,10 +206,10 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                                 *((__m128 *)&sincTable.SincTableF32[m0 + 8]));
             tmp[3] = _mm_add_ps(_mm_mul_ps(*((__m128 *)&sincTable.SincOffsetF32[m0 + 12]), lipol0),
                                 *((__m128 *)&sincTable.SincTableF32[m0 + 12]));
-            sL4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(&SampleDataFL[SamplePos]));
-            sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[1], _mm_loadu_ps(&SampleDataFL[SamplePos + 4])));
-            sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[2], _mm_loadu_ps(&SampleDataFL[SamplePos + 8])));
-            sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[3], _mm_loadu_ps(&SampleDataFL[SamplePos + 12])));
+            sL4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readSampleLF32));
+            sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readSampleLF32 + 4)));
+            sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readSampleLF32 + 8)));
+            sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readSampleLF32 + 12)));
             // sL4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sL4);
             sL4 = _mm_hadd_ps(sL4, sL4);
             sL4 = _mm_hadd_ps(sL4, sL4);
@@ -155,13 +217,10 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             _mm_store_ss(&OutputL[i], sL4);
             if (stereo)
             {
-                sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(&SampleDataFR[SamplePos]));
-                sR4 =
-                    _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(&SampleDataFR[SamplePos + 4])));
-                sR4 =
-                    _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(&SampleDataFR[SamplePos + 8])));
-                sR4 = _mm_add_ps(sR4,
-                                 _mm_mul_ps(tmp[3], _mm_loadu_ps(&SampleDataFR[SamplePos + 12])));
+                sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readSampleRF32));
+                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readSampleRF32 + 4)));
+                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readSampleRF32 + 8)));
+                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readSampleRF32 + 12)));
                 // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
                 sR4 = _mm_hadd_ps(sR4, sR4);
                 sR4 = _mm_hadd_ps(sR4, sR4);
@@ -179,16 +238,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
             tmp = _mm_add_epi16(_mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0]), lipol0),
                                 *((__m128i *)&sincTable.SincTableI16[m0]));
-            sL8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)&SampleDataL[SamplePos]));
+            sL8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readSampleL));
             if (stereo)
-                sR8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)&SampleDataR[SamplePos]));
+                sR8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readSampleR));
             tmp2 = _mm_add_epi16(
                 _mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0 + 8]), lipol0),
                 *((__m128i *)&sincTable.SincTableI16[m0 + 8]));
-            sL8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)&SampleDataL[SamplePos + 8]));
+            sL8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readSampleL + 8)));
             if (stereo)
-                sR8B =
-                    _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)&SampleDataR[SamplePos + 8]));
+                sR8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readSampleR + 8)));
             sL8A = _mm_add_epi32(sL8A, sL8B);
             if (stereo)
                 sR8A = _mm_add_epi32(sR8A, sR8B);
@@ -230,6 +288,19 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 SampleSubPos = 0;
                 if (GD->direction == -1)
                     IsFinished = true;
+            }
+
+            if constexpr (fp)
+            {
+                readSampleLF32 = SampleDataFL + SamplePos;
+                if (stereo)
+                    readSampleRF32 = SampleDataFR + SamplePos;
+            }
+            else
+            {
+                readSampleL = SampleDataL + SamplePos;
+                if (stereo)
+                    readSampleR = SampleDataR + SamplePos;
             }
         }
         else if constexpr (!loopWhileGated && loopForward)
@@ -341,6 +412,60 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     SampleSubPos = 0;
                     if (GD->direction == -1)
                         IsFinished = true;
+                }
+            }
+        }
+
+        if constexpr (loopActive)
+        {
+            if constexpr (fp)
+            {
+                if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
+                {
+                    for (int k = 0; k < resampFIRSize; ++k)
+                    {
+                        auto q = k + SamplePos;
+                        if (q >= GD->loopUpperBound || q >= WaveSize)
+                            q -= LoopOffset;
+                        loopEndBufferLF32[k] = SampleDataFL[q];
+                        if (stereo)
+                            loopEndBufferRF32[k] = SampleDataFR[q];
+                    }
+                    readSampleLF32 = loopEndBufferLF32;
+                    if (stereo)
+                        readSampleRF32 = loopEndBufferRF32;
+                }
+                else
+                {
+                    readSampleLF32 = SampleDataFL + SamplePos;
+                    if (stereo)
+                        readSampleRF32 = SampleDataFR + SamplePos;
+                }
+            }
+            else
+            {
+                // we need both checks because if we are just doing a post-release playdown
+                // we don't want to re-pad
+                if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
+                {
+                    for (int k = 0; k < resampFIRSize; ++k)
+                    {
+                        auto q = k + SamplePos;
+                        if (q >= GD->loopUpperBound || q >= WaveSize)
+                            q -= LoopOffset;
+                        loopEndBufferL[k] = SampleDataL[q];
+                        if (stereo)
+                            loopEndBufferR[k] = SampleDataR[q];
+                    }
+                    readSampleL = loopEndBufferL;
+                    if (stereo)
+                        readSampleR = loopEndBufferR;
+                }
+                else
+                {
+                    readSampleL = SampleDataL + SamplePos;
+                    if (stereo)
+                        readSampleR = SampleDataR + SamplePos;
                 }
             }
         }
