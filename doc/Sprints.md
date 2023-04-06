@@ -1,3 +1,7 @@
+## Day 46 (2023-04-07 with a squinch on the 6th)
+
+Start thinking about multi-select and voice state.
+
 ## Day 45 (2023-04-06)
 
 Really a micro-day; fix the generator loop if it abuts the end of the sample.

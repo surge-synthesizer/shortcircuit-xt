@@ -34,7 +34,7 @@
 namespace scxt::messaging::audio
 {
 // Audio thread
-void sendVoiceCount(uint32_t voiceCount, MessageController &mc);
+void sendVoiceState(uint32_t voiceCount, MessageController &mc);
 void sendStructureRefresh(MessageController &mc);
 
 } // namespace scxt::messaging::audio

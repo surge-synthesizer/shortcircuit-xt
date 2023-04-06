@@ -32,13 +32,12 @@
 
 namespace scxt::messaging::audio
 {
-void sendVoiceCount(uint32_t voiceCount, MessageController &mc)
+void sendVoiceState(uint32_t voiceCount, MessageController &mc)
 {
     assert(mc.threadingChecker.isAudioThread());
     AudioToSerialization a2s;
-    a2s.id = a2s_voice_count;
-    a2s.payloadType = AudioToSerialization::UINT;
-    a2s.payload.u[0] = voiceCount;
+    a2s.id = a2s_voice_state;
+    a2s.payloadType = AudioToSerialization::NONE;
     mc.sendAudioToSerialization(a2s);
 }
 
