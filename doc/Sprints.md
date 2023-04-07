@@ -1,6 +1,9 @@
 ## Day 46 (2023-04-07 with a squinch on the 6th)
 
-Start thinking about multi-select and voice state.
+Start thinking about multi-select and voice state. Push voice state up and
+fix up some locking on structure which we needed. Modify the API for
+selection to be more of a doselect type activity even though it just
+pushes to single select now.
 
 ## Day 45 (2023-04-06)
 

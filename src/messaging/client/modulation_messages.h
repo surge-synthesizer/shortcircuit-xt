@@ -48,12 +48,16 @@ inline void indexedRoutingRowUpdated(const indexedRowUpdate_t &payload,
 {
     // TODO Selected Zone State
     const auto &[i, r] = payload;
-    auto sz = engine.getSelectionManager()->getSelectedZone();
-    if (sz.has_value())
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+    if (!sz.empty())
     {
-        auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([index = i, row = r, p = ps, g = gs, z = zs](auto &eng) {
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->routingTable[index] = row;
+        cont.scheduleAudioThreadCallback([index = i, row = r, zs = sz](auto &eng) {
+            for (const auto &z : zs)
+                eng.getPatch()
+                    ->getPart(z.part)
+                    ->getGroup(z.group)
+                    ->getZone(z.zone)
+                    ->routingTable[index] = row;
         });
     }
 }
@@ -65,12 +69,12 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
                               MessageController &cont)
 {
     const auto &[active, i, r] = payload;
-    auto sz = engine.getSelectionManager()->getSelectedZone();
-    if (sz.has_value())
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+    if (!sz.empty())
     {
-        auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([index = i, row = r, p = ps, g = gs, z = zs](auto &eng) {
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->lfoStorage[index] = row;
+        cont.scheduleAudioThreadCallback([row = r, index = i, zs = sz](auto &eng) {
+            for (const auto &[p, g, z] : zs)
+                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->lfoStorage[index] = row;
         });
     }
 }

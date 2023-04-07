@@ -32,8 +32,10 @@
 #include <vector>
 #include <cstdint>
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
+#include "utils.h"
 
 namespace scxt::engine
 {
@@ -59,19 +61,60 @@ struct SelectionManager
         int32_t part{-1};
         int32_t group{-1};
         int32_t zone{-1};
+
+        bool isIn(const engine::Engine &e);
     };
 
-    std::optional<ZoneAddress> getSelectedZone() const { return singleSelection; }
+    struct SelectActionContents
+    {
+        SelectActionContents() {}
+        SelectActionContents(int32_t p, int32_t g, int32_t z) : part(p), group(g), zone(z) {}
+        SelectActionContents(int32_t p, int32_t g, int32_t z, bool s, bool d)
+            : part(p), group(g), zone(z), selecting(s), distinct(d)
+        {
+        }
+        SelectActionContents(const ZoneAddress &z)
+            : part(z.part), group(z.group), zone(z.zone), selecting(true), distinct(true)
+        {
+        }
+        int32_t part{-1};
+        int32_t group{-1};
+        int32_t zone{-1};
+        bool selecting{true}; // am i selecting (T) or deselecting (F) this zone
+        bool distinct{true};  // Is this a single selection or a multi-selection gesture
+    };
+
+    void selectAction(const SelectActionContents &z)
+    {
+        SCDBGCOUT << SCD(z.part) << SCD(z.group) << SCD(z.zone) << SCD(z.selecting)
+                  << SCD(z.distinct) << std::endl;
+        if (true || (z.distinct && z.selecting))
+        {
+            // HACK
+            singleSelect({z.part, z.group, z.zone});
+        }
+    }
+
+    int selectedPart{-1};
+    std::vector<ZoneAddress> currentlySelectedZones() { return allSelectedZones; }
+    std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e)
+    {
+        if (leadZone.isIn(e))
+            return leadZone;
+        return {};
+    }
+
+  private:
     void singleSelect(const ZoneAddress &z);
 
+  public:
     std::unordered_map<std::string, std::string> otherTabSelection;
+    std::vector<ZoneAddress> allSelectedZones;
+    ZoneAddress leadZone;
 
   protected:
     MainSelection mainSelection{MULTI};
-    std::vector<ZoneAddress> allSelectedZones;
-    ZoneAddress leadZone;
-    size_t selectedPart{0};
-    std::map<size_t, std::vector<size_t>> selectedGroupByPart;
+    std::map<size_t, std::set<size_t>> selectedGroupByPart;
 
   private:
     std::optional<ZoneAddress> singleSelection;

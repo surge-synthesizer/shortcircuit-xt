@@ -26,6 +26,7 @@
  */
 
 #include "sfz_import.h"
+#include "selection/selection_manager.h"
 #include "sfz_parse.h"
 #include "messaging/messaging.h"
 #include "engine/engine.h"
@@ -52,12 +53,8 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     auto sampleDir = rootDir;
     SCDBGCOUT << SCD(rootDir.u8string()) << std::endl;
 
-    auto sz = e.getSelectionManager()->getSelectedZone();
-    auto pt = 0;
-    if (sz.has_value())
-        pt = sz->part;
-    if (pt < 0 || pt >= engine::Patch::numParts)
-        pt = 0;
+    auto pt = std::clamp(e.getSelectionManager()->selectedPart, 0, engine::Patch::numParts);
+
     auto &part = e.getPatch()->getPart(pt);
 
     int groupId = -1;
@@ -217,8 +214,9 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
         break;
         }
     }
-    e.getSelectionManager()->singleSelect(
-        selection::SelectionManager::ZoneAddress(pt, firstGroupWithZonesAdded, 0));
+
+    e.getSelectionManager()->selectAction(selection::SelectionManager::SelectActionContents(
+        pt, firstGroupWithZonesAdded, 0, true, true));
     return true;
 }
 } // namespace scxt::sfz_support

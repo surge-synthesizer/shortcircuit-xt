@@ -48,22 +48,22 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
 {
     auto [n, onoff] = g;
 
-    auto sel = engine.getSelectionManager()->getSelectedZone();
-    if (sel.has_value())
-    {
-        auto p = sel->part;
-        auto ch = engine.getPatch()->getPart(p)->channel;
+    auto sel = engine.getSelectionManager()->selectedPart;
+    if (sel < 0)
+        return;
 
-        if (onoff)
-        {
-            cont.scheduleAudioThreadCallback(
-                [ch, note = n](auto &eng) { eng.noteOn(ch, note, -1, 90, 0.f); });
-        }
-        else
-        {
-            cont.scheduleAudioThreadCallback(
-                [ch, note = n](auto &eng) { eng.noteOff(ch, note, -1, 90); });
-        }
+    auto p = sel;
+    auto ch = engine.getPatch()->getPart(p)->channel;
+
+    if (onoff)
+    {
+        cont.scheduleAudioThreadCallback(
+            [ch, note = n](auto &eng) { eng.noteOn(ch, note, -1, 90, 0.f); });
+    }
+    else
+    {
+        cont.scheduleAudioThreadCallback(
+            [ch, note = n](auto &eng) { eng.noteOff(ch, note, -1, 90); });
     }
 }
 CLIENT_TO_SERIAL(NoteFromGUI, c2s_noteonoff, noteOnOff_t, processMidiFromGUI(payload, engine, cont))

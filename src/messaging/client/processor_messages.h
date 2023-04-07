@@ -48,16 +48,21 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
                              messaging::MessageController &cont)
 {
     const auto &[w, id] = whichToType;
-    auto addr = engine.getSelectionManager()->getSelectedZone();
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+    auto lz = engine.getSelectionManager()->currentLeadZone(engine);
 
-    if (addr.has_value() && addr->part >= 0 && addr->group >= 0 && addr->zone >= 0)
+    if (!sz.empty() && lz.has_value())
     {
         cont.scheduleAudioThreadCallback(
-            [a = *addr, which = w, type = id](auto &e) {
-                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                z->setProcessorType(which, (dsp::processor::ProcessorType)type);
+            [zs = sz, which = w, type = id](auto &e) {
+                for (const auto &a : zs)
+                {
+                    const auto &z =
+                        e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                    z->setProcessorType(which, (dsp::processor::ProcessorType)type);
+                }
             },
-            [a = *addr, which = w](const auto &engine) {
+            [a = *lz, which = w](const auto &engine) {
                 const auto &z =
                     engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
                 serializationSendToClient(
@@ -70,6 +75,11 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
                                           *(engine.getMessageController()));
             });
     }
+    else
+    {
+        // This means you have a lead zone and no selected zones
+        assert(sz.empty());
+    }
 }
 CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorPayload_t,
                  setProcessorType(payload, engine, cont));
@@ -80,13 +90,16 @@ inline void setProcessorStorage(const setProcessorStoragePayload_t &payload,
                                 const engine::Engine &engine, messaging::MessageController &cont)
 {
     const auto &[w, st] = payload;
-    auto addr = engine.getSelectionManager()->getSelectedZone();
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
 
-    if (addr.has_value() && addr->part >= 0 && addr->group >= 0 && addr->zone >= 0)
+    if (!sz.empty())
     {
-        cont.scheduleAudioThreadCallback([a = *addr, which = w, storage = st](auto &e) {
-            const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-            z->processorStorage[which] = storage;
+        cont.scheduleAudioThreadCallback([zs = sz, which = w, storage = st](auto &e) {
+            for (const auto &a : zs)
+            {
+                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                z->processorStorage[which] = storage;
+            }
         });
     }
 }

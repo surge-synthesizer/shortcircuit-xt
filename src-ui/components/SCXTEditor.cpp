@@ -27,6 +27,8 @@
 
 #include "SCXTEditor.h"
 
+#include "messaging/client/selection_messages.h"
+#include "selection/selection_manager.h"
 #include "sst/jucegui/style/StyleSheet.h"
 
 #include "HeaderRegion.h"
@@ -173,7 +175,10 @@ void SCXTEditor::singleSelectItem(const selection::SelectionManager::ZoneAddress
 {
     namespace cmsg = scxt::messaging::client;
     currentSingleSelection = a;
-    cmsg::clientSendToSerialization(cmsg::SingleSelectAddress(a), msgCont);
+    cmsg::clientSendToSerialization(
+        cmsg::DoSelectAction(
+            selection::SelectionManager::SelectActionContents{a.part, a.group, a.zone, true, true}),
+        msgCont);
     repaint();
 }
 
