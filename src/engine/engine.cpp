@@ -40,6 +40,7 @@
 #include "SF.h"
 
 #include "version.h"
+#include <mutex>
 namespace scxt::engine
 {
 
@@ -105,7 +106,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
             const auto &z = zoneByPath(path);
             voices[idx] = new (dp) voice::Voice(z.get());
-
+            voices[idx]->zonePath = path;
             voices[idx]->channel = path.channel;
             voices[idx]->key = path.key;
             voices[idx]->noteId = path.noteid;
@@ -149,6 +150,7 @@ bool Engine::processAudio()
 #endif
     messageController->engineProcessRuns++;
     messageController->isAudioRunning = true;
+    auto av = activeVoiceCount();
 
     bool tryToDrain{true};
     while (tryToDrain && !messageController->serializationToAudioQueue.empty())
@@ -186,9 +188,6 @@ bool Engine::processAudio()
         return true;
     }
 
-    // TODO This gets ripped out when voice management imporves
-    auto av = activeVoiceCount();
-
     for (const auto &part : *patch)
     {
         if (part->isActive())
@@ -203,10 +202,47 @@ bool Engine::processAudio()
     }
 
     auto pav = activeVoiceCount();
-    if (pav != av)
+
+    bool doUpdate = messageController->isClientConnected &&
+                    (
+                        // voice count changed
+                        (pav != av) ||
+                        // voices are playing and timer ticked by
+                        ((pav != 0) && sendSamplePosition &&
+                         (lastUpdateVoiceDisplayState >= updateVoiceDisplayStateEvery)) ||
+                        // Midi has arrived
+                        (midiNoteStateCounter != lastMidiNoteStateCounter));
+    if (doUpdate)
     {
-        messaging::audio::sendVoiceCount(pav, *messageController);
+        lastUpdateVoiceDisplayState = 0;
+        lastMidiNoteStateCounter = midiNoteStateCounter;
+
+        if (voiceDisplayStateReadCounter == voiceDisplayStateWriteCounter)
+        {
+            int i{0};
+            for (const auto *v : voices)
+            {
+                if (v && (v->isVoiceAssigned && v->isVoicePlaying))
+                {
+                    voiceDisplayState.items[i].active = true;
+                    voiceDisplayState.items[i].zonePath = v->zonePath;
+                    voiceDisplayState.items[i].samplePos = v->GD.samplePos;
+                    voiceDisplayState.items[i].midiNote = v->originalMidiKey;
+                    voiceDisplayState.items[i].midiChannel = v->channel;
+                    voiceDisplayState.items[i].gated = v->isGated;
+                }
+                else
+                {
+                    voiceDisplayState.items[i].active = false;
+                }
+                i++;
+            }
+            voiceDisplayState.voiceCount = pav;
+            voiceDisplayStateWriteCounter++;
+        }
+        messaging::audio::sendVoiceState(pav, *messageController);
     }
+    lastUpdateVoiceDisplayState++;
 
     return true;
 }
@@ -234,12 +270,12 @@ void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t veloci
             }
         }
     }
-    messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
+    midiNoteStateCounter++;
 }
 void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, int32_t velocity)
 {
     releaseVoice(channel, key, noteId, velocity);
-    messaging::audio::sendVoiceCount(activeVoiceCount(), *messageController);
+    midiNoteStateCounter++;
 }
 
 void Engine::pitchBend(int16_t channel, int16_t value)
@@ -401,6 +437,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallback(
         [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::lock_guard<std::mutex> g(e.modifyStructureMutex);
             std::unique_ptr<Zone> zptr;
             zptr.reset(zone);
             e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);

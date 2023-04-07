@@ -42,9 +42,17 @@ void MessageController::parseAudioMessageOnSerializationThread(
     // TODO - we could do the template shuffle later if this becomes too big
     switch (as.id)
     {
-    case audio::a2s_voice_count:
-        client::serializationSendToClient(client::s2c_voice_count, as.payload.u[0], *this);
-        break;
+    case audio::a2s_voice_state:
+    {
+        if (engine.voiceDisplayStateWriteCounter != engine.voiceDisplayStateReadCounter)
+        {
+            client::serializationSendToClient(client::s2c_voice_display_status,
+                                              engine.voiceDisplayState, *this);
+
+            engine.voiceDisplayStateReadCounter = (int)engine.voiceDisplayStateWriteCounter;
+        }
+    }
+    break;
     case audio::a2s_pointer_complete:
         returnAudioThreadCallback(static_cast<AudioThreadCallback *>(as.payload.p));
         break;
@@ -180,6 +188,7 @@ void MessageController::runSerialization()
         {
             if (receivedMessageFromClient)
             {
+                std::lock_guard<std::mutex> g(engine.modifyStructureMutex);
                 client::serializationThreadExecuteClientMessage(inbound, engine, *this);
             }
 
@@ -194,7 +203,10 @@ void MessageController::runSerialization()
             {
                 auto msgopt = audioToSerializationQueue.pop();
                 if (msgopt.has_value())
+                {
+                    std::lock_guard<std::mutex> g(engine.modifyStructureMutex);
                     parseAudioMessageOnSerializationThread(*msgopt);
+                }
                 else
                     tryToDrain = false;
             }

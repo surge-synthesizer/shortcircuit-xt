@@ -41,6 +41,8 @@
 #include <filesystem>
 #include <set>
 #include <cassert>
+#include <thread>
+
 #include "selection/selection_manager.h"
 #include "memory_pool.h"
 #include "tuning/midikey_retuner.h"
@@ -160,6 +162,62 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         return selectionManager;
     }
+
+    /**
+     * Prepare to play sets up the internal state to prepare us to play. Call it in
+     * your interfaces pre-playing once.
+     */
+    void prepareToPlay(double sampleRate)
+    {
+        setSampleRate(sampleRate);
+        voiceDisplayStateReadCounter = 0;
+        voiceDisplayStateWriteCounter = 0;
+
+        const double updateFrequencyHz{15.0};
+
+        updateVoiceDisplayStateEvery = (int)std::floor(sampleRate / updateFrequencyHz / blockSize);
+        lastUpdateVoiceDisplayState = updateVoiceDisplayStateEvery;
+    }
+
+    /**
+     * This is a mutex which we lock when modifying the structure in the engine.
+     * The structure will only be modified in one of two situations
+     * 1. On the audio thread (wav load for instance)
+     * 2. On the serialization thread after the audio thread has been paused
+     *    (which is how we do SFZ)
+     *
+     * As a result this mutex needs to be locked when serialization reads the structure
+     * or when engine changes it but not when engine traverses it so note on and the
+     * like can avoid a mutex lock.
+     */
+    std::mutex modifyStructureMutex;
+
+    /**
+     * The VoiceDisplayState structure is updated at some relatively low (like 30hz)
+     * frequency by the engine for communication to a potential client if the message
+     * controller has a client connected. Updates will occur only if the read pointer and
+     * write pointer are the same so the client needs to update the write pointer.
+     */
+    std::atomic<int64_t> voiceDisplayStateReadCounter{0}, voiceDisplayStateWriteCounter{0};
+    int32_t updateVoiceDisplayStateEvery{10000000};
+    int32_t lastUpdateVoiceDisplayState{0};
+    int64_t midiNoteStateCounter{0}, lastMidiNoteStateCounter{0};
+    bool sendSamplePosition{false}; // right now turning this on sends too many messages
+    struct VoiceDisplayStateItem
+    {
+        bool active{false};
+        pathToZone_t zonePath{};
+        int64_t samplePos{};
+        int16_t midiNote{-1};
+        int16_t midiChannel{-1};
+        bool gated{false};
+    };
+    // Mark this with a type so we can do more efficient streaming
+    struct VoiceDisplayState
+    {
+        int32_t voiceCount;
+        std::array<VoiceDisplayStateItem, maxVoices> items;
+    } voiceDisplayState;
 
     /*
      * Serialization thread originated mutation apis

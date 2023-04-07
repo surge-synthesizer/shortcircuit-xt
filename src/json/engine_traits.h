@@ -338,5 +338,53 @@ template <> struct scxt_traits<engine::Engine::EngineStatusMessage>
     }
 };
 
+template <> struct scxt_traits<engine::Engine::VoiceDisplayStateItem>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const engine::Engine::VoiceDisplayStateItem &t)
+    {
+        auto zp = std::make_tuple(t.zonePath.part, t.zonePath.group, t.zonePath.zone);
+        v = {{"active", t.active},           {"zoneAddress", zp}, {"midiNote", t.midiNote},
+             {"midiChannel", t.midiChannel}, {"gated", t.gated},  {"samplePos", t.samplePos}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   engine::Engine::VoiceDisplayStateItem &r)
+    {
+        findIf(v, "active", r.active);
+        std::tuple<int32_t, int32_t, int32_t> zp;
+        findIf(v, "zoneAddress", zp);
+        r.zonePath.part = std::get<0>(zp);
+        r.zonePath.group = std::get<1>(zp);
+        r.zonePath.zone = std::get<2>(zp);
+        findIf(v, "samplePos", r.samplePos);
+        findIf(v, "midiNote", r.midiNote);
+        findIf(v, "midiChannel", r.midiChannel);
+        findIf(v, "gated", r.gated);
+    }
+};
+
+template <> struct scxt_traits<engine::Engine::VoiceDisplayState>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const engine::Engine::VoiceDisplayState &t)
+    {
+        auto itemsArray = toIndexedArrayIf<Traits>(t.items, [](const auto &r) { return r.active; });
+        v = {{"items", itemsArray}, {"voiceCount", t.voiceCount}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, engine::Engine::VoiceDisplayState &r)
+    {
+        for (auto &i : r.items)
+            i.active = false;
+        fromIndexedArray<Traits>(v.at("items"), r.items);
+        findOrSet(v, "voiceCount", 0, r.voiceCount);
+    }
+};
+
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H

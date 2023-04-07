@@ -98,7 +98,7 @@ void SCXTProcessor::changeProgramName(int index, const juce::String &newName) {}
 //==============================================================================
 void SCXTProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    engine->setSampleRate(sampleRate);
+    engine->prepareToPlay(sampleRate);
 }
 
 void SCXTProcessor::releaseResources() {}
@@ -298,64 +298,14 @@ void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
     try
     {
         engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
+        std::lock_guard<std::mutex> g(engine->modifyStructureMutex);
         scxt::json::unstreamEngineState(*engine, xml);
-        engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
     }
     catch (std::exception &e)
     {
         std::cerr << "Unstream exception " << e.what() << std::endl;
     }
-}
-
-void SCXTProcessor::temporaryInitPatch()
-{
-    auto samplePath = fs::current_path();
-
-    auto rm = fs::path{"resources/test_samples/next/README.md"};
-
-    while (!samplePath.empty() && samplePath.has_parent_path() &&
-           samplePath.parent_path() != samplePath && !(fs::exists(samplePath / rm)))
-    {
-        samplePath = samplePath.parent_path();
-    }
-    if (fs::exists(samplePath / rm))
-    {
-        {
-            auto sid = engine->getSampleManager()->loadSampleByPath(
-                samplePath / "resources/test_samples/next/PulseSaw.wav");
-            auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
-            zptr->mapping.keyboardRange = {48, 72};
-            zptr->mapping.rootKey = 60;
-            zptr->attachToSample(*(engine->getSampleManager()));
-
-            zptr->processorStorage[0].type = scxt::dsp::processor::proct_SuperSVF;
-            zptr->processorStorage[0].mix = 1.0;
-
-            zptr->aegStorage.a = 0.7;
-
-            engine->getPatch()->getPart(0)->guaranteeGroupCount(1);
-            engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
-        }
-        {
-            auto sid = engine->getSampleManager()->loadSampleByPath(
-                samplePath / "resources/test_samples/next/Beep.wav");
-            auto zptr = std::make_unique<scxt::engine::Zone>(*sid);
-            zptr->mapping.keyboardRange = {60, 72};
-            zptr->mapping.rootKey = 60;
-            zptr->attachToSample(*(engine->getSampleManager()));
-
-            zptr->aegStorage.a = 0.1;
-
-            engine->getPatch()->getPart(0)->guaranteeGroupCount(1);
-            engine->getPatch()->getPart(0)->getGroup(0)->addZone(zptr);
-        }
-    }
-    else
-    {
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::MessageBoxIconType::WarningIcon, "Can't find test samples",
-            "Please run this from the source directory for now.");
-    }
+    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }
 
 //==============================================================================

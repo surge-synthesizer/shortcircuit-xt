@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_MESSAGING_CLIENT_ENGINESTATUS_MESSAGES_H
 #define SCXT_SRC_MESSAGING_CLIENT_ENGINESTATUS_MESSAGES_H
 
+#include "messaging/client/client_serial.h"
 #include "messaging/client/detail/client_json_details.h"
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
@@ -36,8 +37,8 @@
 
 namespace scxt::messaging::client
 {
-SERIAL_TO_CLIENT(VoiceCountUpdate, s2c_voice_count, uint32_t, onVoiceCount);
-
+SERIAL_TO_CLIENT(VoiceDisplayStatusUpdate, s2c_voice_display_status,
+                 engine::Engine::VoiceDisplayState, onVoiceDisplayState);
 SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
                  onEngineStatus);
 } // namespace scxt::messaging::client

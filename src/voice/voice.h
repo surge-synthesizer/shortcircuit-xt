@@ -29,6 +29,7 @@
 #define SCXT_SRC_VOICE_VOICE_H
 
 #include "engine/zone.h"
+#include "engine/engine.h"
 #include "dsp/data_tables.h"
 #include "dsp/generator.h"
 #include "dsp/processor/processor.h"
@@ -51,6 +52,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 {
     float output alignas(16)[2][blockSize << 1];
     engine::Zone *zone{nullptr}; // I do *not* own this. The engine guarantees it outlives the voice
+    engine::Engine::pathToZone_t zonePath{};
 
     dsp::GeneratorState GD;
     dsp::GeneratorIO GDIO;

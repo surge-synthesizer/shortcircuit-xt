@@ -73,7 +73,6 @@ class SCXTProcessor : public juce::AudioProcessor, public clap_juce_extensions::
     std::unique_ptr<scxt::engine::Engine> engine;
     size_t blockPos{0};
 
-    void temporaryInitPatch();
     void applyMidi(const juce::MidiMessageMetadata &msg);
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTProcessor)
