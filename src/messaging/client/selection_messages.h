@@ -29,6 +29,7 @@
 #define SCXT_SRC_MESSAGING_CLIENT_SELECTION_MESSAGES_H
 
 #include "client_macros.h"
+#include "messaging/messaging.h"
 #include "selection/selection_manager.h"
 
 namespace scxt::messaging::client
@@ -42,5 +43,12 @@ inline void doSelectAction(const selection::SelectionManager::SelectActionConten
 CLIENT_TO_SERIAL(DoSelectAction, c2s_do_select_action,
                  selection::SelectionManager::SelectActionContents,
                  doSelectAction(payload, engine));
+
+typedef std::pair<std::optional<selection::SelectionManager::ZoneAddress>,
+                  selection::SelectionManager::selectedZones_t>
+    selectedStateMessage_t;
+SERIAL_TO_CLIENT(SetSelectionState, s2c_send_selection_state, selectedStateMessage_t,
+                 onSelectionState);
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_SELECTION_MESSAGES_H

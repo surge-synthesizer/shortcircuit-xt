@@ -31,7 +31,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
 #include "engine/zone.h"
-#include "engine/group.h"
+#include "engine/part.h"
 #include "selection/selection_manager.h"
 
 namespace scxt::ui::multi
@@ -50,8 +50,8 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void setMappingData(const engine::Zone::ZoneMappingData &);
     void setSampleData(const engine::Zone::AssociatedSampleArray &);
-    void setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &);
-    void setCurrentSelection(const selection::SelectionManager::ZoneAddress &);
+    void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &);
+    void editorSelectionChanged();
     void setActive(bool b);
 
     std::unique_ptr<MappingDisplay> mappingDisplay;

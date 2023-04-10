@@ -32,6 +32,7 @@
 #include <optional>
 #include <cassert>
 
+#include "selection/selection_manager.h"
 #include "utils.h"
 #include "group.h"
 #include "dsp/smoothers.h"
@@ -77,6 +78,14 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         while (groups.size() < count)
             addGroup();
     }
+
+    /**
+     * Utility data structures to allow rapid draws and displays of the structure in clients
+     */
+    typedef std::tuple<KeyboardRange, VelocityRange, std::string> zoneMappingItem_t;
+    typedef std::vector<std::pair<selection::SelectionManager::ZoneAddress, zoneMappingItem_t>>
+        zoneMappingSummary_t;
+    zoneMappingSummary_t getZoneMappingSummary();
 
     // TODO GroupID -> index
     // TODO: Remove Group by both - Copy from group basically

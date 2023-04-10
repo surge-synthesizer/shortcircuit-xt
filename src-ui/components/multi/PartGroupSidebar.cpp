@@ -80,7 +80,9 @@ struct PGZListBoxModel : juce::ListBoxModel
         const auto &s = partGroupSidebar->pgzStructure;
         if (rowNumber < 0 || rowNumber >= s.size())
             return;
-        partGroupSidebar->editor->singleSelectItem(std::get<0>(s[rowNumber]));
+        SCDBGCOUT << "About to select " << SCD(std::get<0>(s[rowNumber])) << std::endl;
+
+        partGroupSidebar->editor->doSelectionAction(std::get<0>(s[rowNumber]), true, true);
     }
 };
 
@@ -116,12 +118,16 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 {
     pgzStructure = p;
     pgzList->updateContent();
-    setCurrentSelection(editor->currentSingleSelection);
+    editorSelectionChanged();
     repaint();
 }
 
-void PartGroupSidebar::setCurrentSelection(const selection::SelectionManager::ZoneAddress &a)
+void PartGroupSidebar::editorSelectionChanged()
 {
+    if (!editor->currentLeadSelection.has_value())
+        return;
+
+    auto a = *(editor->currentLeadSelection);
     int selR = -1;
     for (const auto &[i, r] : sst::cpputils::enumerate(pgzStructure))
     {

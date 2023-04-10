@@ -30,7 +30,9 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
+#include "selection/selection_manager.h"
 #include "sst/jucegui/components/HSlider.h"
 #include "datamodel/adsr_storage.h"
 #include "sst/jucegui/components/WindowPanel.h"
@@ -117,8 +119,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &);
     void onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
 
-    void onGroupZoneMappingSummary(const scxt::engine::Group::zoneMappingSummary_t &);
-    void onSingleSelection(const scxt::selection::SelectionManager::ZoneAddress &);
+    void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &);
+    void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);
 
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
@@ -127,8 +129,14 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     }
 
     // Originate client to serialization messages
-    void singleSelectItem(const selection::SelectionManager::ZoneAddress &);
-    selection::SelectionManager::ZoneAddress currentSingleSelection;
+    void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,
+                           bool distinct);
+    std::optional<selection::SelectionManager::ZoneAddress> currentLeadSelection;
+    selection::SelectionManager::selectedZones_t allSelections;
+    bool isSelected(const selection::SelectionManager::ZoneAddress &a)
+    {
+        return allSelections.find(a) != allSelections.end();
+    }
 
     void showTooltip(const juce::Component &relativeTo);
     void hideTooltip();
