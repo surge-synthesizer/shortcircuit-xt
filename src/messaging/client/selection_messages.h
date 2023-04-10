@@ -33,12 +33,14 @@
 
 namespace scxt::messaging::client
 {
-inline void singleSelectAddress(const selection::SelectionManager::ZoneAddress &za,
-                                const engine::Engine &engine)
+
+inline void doSelectAction(const selection::SelectionManager::SelectActionContents &za,
+                           const engine::Engine &engine)
 {
-    engine.getSelectionManager()->singleSelect(za);
+    engine.getSelectionManager()->selectAction(za);
 }
-CLIENT_TO_SERIAL(SingleSelectAddress, c2s_single_select_address,
-                 selection::SelectionManager::ZoneAddress, singleSelectAddress(payload, engine));
+CLIENT_TO_SERIAL(DoSelectAction, c2s_do_select_action,
+                 selection::SelectionManager::SelectActionContents,
+                 doSelectAction(payload, engine));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_SELECTION_MESSAGES_H

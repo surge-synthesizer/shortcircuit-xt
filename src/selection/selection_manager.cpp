@@ -28,6 +28,7 @@
 #include "selection_manager.h"
 #include <iostream>
 #include "engine/engine.h"
+#include "engine/patch.h"
 #include "messaging/messaging.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
@@ -37,11 +38,16 @@ namespace scxt::selection
 namespace cms = messaging::client;
 void SelectionManager::singleSelect(const ZoneAddress &a)
 {
+    allSelectedZones.clear();
+    allSelectedZones.push_back(a);
+    leadZone = a;
+
     auto [p, g, z] = a;
 
     // Check if I deserialized a valid zone and adjust if not
     if (p >= 0)
     {
+        selectedPart = p;
         if (p >= engine.getPatch()->numParts)
         {
             p = -1;
@@ -140,5 +146,18 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
                                   modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
                                   *(engine.getMessageController()));
     }
+}
+
+bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)
+{
+    if (part < 0 || part > engine::Patch::numParts)
+        return false;
+    const auto &p = e.getPatch()->getPart(part);
+    if (group < 0 || group >= p->getGroups().size())
+        return false;
+    const auto &g = p->getGroup(group);
+    if (zone < 0 || zone >= g->getZones().size())
+        return false;
+    return true;
 }
 } // namespace scxt::selection

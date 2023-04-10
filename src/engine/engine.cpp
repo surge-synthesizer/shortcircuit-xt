@@ -427,8 +427,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     zptr->mapping.rootKey = 60;
     zptr->attachToSample(*sampleManager);
 
-    auto [sp, sg, sz] =
-        selectionManager->getSelectedZone().value_or(selection::SelectionManager::ZoneAddress());
+    auto [sp, sg, sz] = selectionManager->currentLeadZone(*this).value_or(
+        selection::SelectionManager::ZoneAddress());
     if (sp < 0)
         sp = 0;
     if (sg < 0)
@@ -449,7 +449,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->singleSelect({sp, sg, zi});
+            e.getSelectionManager()->selectAction({sp, sg, zi, true, true});
         });
 }
 
@@ -481,7 +481,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         auto riff = std::make_unique<RIFF::File>(p.u8string());
         auto sf = std::make_unique<sf2::File>(riff.get());
 
-        auto sz = getSelectionManager()->getSelectedZone();
+        auto sz = getSelectionManager()->currentLeadZone(*this);
         auto pt = 0;
         if (sz.has_value())
             pt = sz->part;
@@ -655,7 +655,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 grp->addZone(zn);
             }
         }
-        selectionManager->singleSelect({pt, firstGroup, firstGroup >= 0 ? 0 : -1});
+        selectionManager->selectAction({pt, firstGroup, firstGroup >= 0 ? 0 : -1, true, true});
     }
     catch (RIFF::Exception e)
     {

@@ -45,15 +45,17 @@ inline void adsrSelectedZoneUpdate(const adsrSelectedZoneC2SPayload_t &payload,
 {
     // TODO Selected Zone State
     const auto &[e, adsr] = payload;
-    auto sz = engine.getSelectionManager()->getSelectedZone();
-    if (sz.has_value())
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+    if (!sz.empty())
     {
-        auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, ew = e, adsrv = adsr](auto &eng) {
-            if (ew == 0)
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->aegStorage = adsrv;
-            if (ew == 1)
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->eg2Storage = adsrv;
+        cont.scheduleAudioThreadCallback([zs = sz, ew = e, adsrv = adsr](auto &eng) {
+            for (const auto &[p, g, z] : zs)
+            {
+                if (ew == 0)
+                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->aegStorage = adsrv;
+                if (ew == 1)
+                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->eg2Storage = adsrv;
+            }
         });
     }
 }
@@ -69,15 +71,15 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
 {
     // TODO Selected Zone State
     const auto &mapping = payload;
-    auto sz = engine.getSelectionManager()->getSelectedZone();
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
-        auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback(
-            [p = ps, g = gs, z = zs, mapv = mapping](auto &eng) {
+            [zs = *sz, mapv = mapping](auto &eng) {
+                auto [p, g, z] = zs;
                 eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->mapping = mapv;
             },
-            [p = ps, g = gs](const auto &eng) {
+            [p = sz->part, g = sz->group](const auto &eng) {
                 serializationSendToClient(
                     messaging::client::s2c_send_selected_group_zone_mapping_summary,
                     eng.getPatch()->getPart(p)->getGroup(g)->getZoneMappingSummary(),
@@ -97,7 +99,7 @@ inline void samplesSelectedZoneUpdate(const engine::Zone::AssociatedSampleArray 
 {
     // TODO Selected Zone State
     const auto &samples = payload;
-    auto sz = engine.getSelectionManager()->getSelectedZone();
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
         auto [ps, gs, zs] = *sz;
