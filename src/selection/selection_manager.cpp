@@ -29,6 +29,7 @@
 #include <iostream>
 #include "engine/engine.h"
 #include "engine/patch.h"
+#include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
@@ -39,7 +40,7 @@ namespace cms = messaging::client;
 void SelectionManager::singleSelect(const ZoneAddress &a)
 {
     allSelectedZones.clear();
-    allSelectedZones.push_back(a);
+    allSelectedZones.insert(a);
     leadZone = a;
 
     auto [p, g, z] = a;
@@ -71,14 +72,13 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         }
     }
 
-    serializationSendToClient(cms::s2c_send_single_selection, a, *(engine.getMessageController()));
+    sendSelectionDataToClient(*(engine.getMessageController()));
 
     if (p >= 0 && g >= 0)
     {
-        serializationSendToClient(
-            cms::s2c_send_selected_group_zone_mapping_summary,
-            engine.getPatch()->getPart(p)->getGroup(g)->getZoneMappingSummary(),
-            *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
+                                  engine.getPatch()->getPart(p)->getZoneMappingSummary(),
+                                  *(engine.getMessageController()));
     }
     if (z >= 0 && g >= 0 && p >= 0)
     {
@@ -146,6 +146,13 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
                                   modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
                                   *(engine.getMessageController()));
     }
+}
+
+void SelectionManager::sendSelectionDataToClient(const messaging::MessageController &)
+{
+    serializationSendToClient(cms::s2c_send_selection_state,
+                              cms::selectedStateMessage_t{leadZone, allSelectedZones},
+                              *(engine.getMessageController()));
 }
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)

@@ -42,7 +42,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
 
     engine::Engine::pgzStructure_t pgzStructure;
     void setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p);
-    void setCurrentSelection(const selection::SelectionManager::ZoneAddress &a);
+    void editorSelectionChanged();
 
     // TODO this is all just temporary hackitude of course
     std::unique_ptr<juce::ListBox> pgzList;

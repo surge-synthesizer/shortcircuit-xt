@@ -26,6 +26,7 @@
  */
 
 #include "part.h"
+#include "selection/selection_manager.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::engine
@@ -54,5 +55,29 @@ void Part::process()
             }
         }
     }
+}
+
+Part::zoneMappingSummary_t Part::getZoneMappingSummary()
+{
+    zoneMappingSummary_t res;
+
+    int pidx{0}; // FIXME this is obviously wrong
+    int gidx{0};
+    for (const auto &g : groups)
+    {
+        int zidx{0};
+        for (const auto &z : *g)
+        {
+            // get address for zone
+            auto data =
+                zoneMappingItem_t{z->mapping.keyboardRange, z->mapping.velocityRange, z->getName()};
+            auto addr = selection::SelectionManager::ZoneAddress(pidx, gidx, zidx);
+            // res[addr] = data;
+            res.emplace_back(addr, data);
+            zidx++;
+        }
+        gidx++;
+    }
+    return res;
 }
 } // namespace scxt::engine

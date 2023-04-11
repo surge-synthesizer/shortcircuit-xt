@@ -79,10 +79,10 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
                 auto [p, g, z] = zs;
                 eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->mapping = mapv;
             },
-            [p = sz->part, g = sz->group](const auto &eng) {
+            [p = sz->part](const auto &eng) {
                 serializationSendToClient(
                     messaging::client::s2c_send_selected_group_zone_mapping_summary,
-                    eng.getPatch()->getPart(p)->getGroup(g)->getZoneMappingSummary(),
+                    eng.getPatch()->getPart(p)->getZoneMappingSummary(),
                     *(eng.getMessageController()));
             });
     }

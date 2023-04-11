@@ -27,6 +27,7 @@
 
 #include "MappingPane.h"
 #include "components/SCXTEditor.h"
+#include "selection/selection_manager.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/ToggleButton.h"
@@ -36,6 +37,7 @@
 
 #include "components/GlyphPainter.h"
 #include "connectors/SCXTStyleSheetCreator.h"
+#include "engine/part.h"
 
 namespace scxt::ui::multi
 {
@@ -50,7 +52,7 @@ struct MappingZonesAndKeyboard : juce::Component
     void paint(juce::Graphics &g) override;
 
     static constexpr int keyboardHeight{25};
-    juce::Rectangle<float> rectangleForZone(const engine::Group::zoneMappingItem_t &sum);
+    juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForKey(int midiNote);
 
     void mouseDown(const juce::MouseEvent &e) override;
@@ -85,7 +87,7 @@ struct MappingZonesAndKeyboard : juce::Component
         setMouseCursor(juce::MouseCursor::NormalCursor);
     }
 
-    void setActiveZone(const engine::Group::zoneMappingItem_t &az)
+    void setLeadZoneBounds(const engine::Part::zoneMappingItem_t &az)
     {
         auto r = rectangleForZone(az);
         auto side = r.withWidth(8).translated(0, -2).withTrimmedTop(10).withTrimmedBottom(10);
@@ -396,28 +398,28 @@ struct MappingDisplay : juce::Component, HasEditor
             g->setVisible(b);
     }
 
-    void setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
+    void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
     {
         summary = d;
-        setCurrentSelection(activeAddress);
+        if (editor->currentLeadSelection.has_value())
+            setLeadSelection(*(editor->currentLeadSelection));
         zonesAndKeyboard->repaint();
         repaint();
     }
 
-    void setCurrentSelection(const selection::SelectionManager::ZoneAddress &za)
+    void setLeadSelection(const selection::SelectionManager::ZoneAddress &za)
     {
-        activeAddress = za;
+        // but we need to call setLeadZoneBounds to make the hotspots so rename that too
         for (const auto &s : summary)
         {
-            if (std::get<2>(s) == za.zone)
+            if (s.first == za)
             {
-                zonesAndKeyboard->setActiveZone(s);
+                zonesAndKeyboard->setLeadZoneBounds(s.second);
             }
         }
     }
 
-    engine::Group::zoneMappingSummary_t summary{};
-    selection::SelectionManager::ZoneAddress activeAddress{};
+    engine::Part::zoneMappingSummary_t summary{};
 };
 
 void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
@@ -442,7 +444,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
         }
     }
 
-    const auto &sel = display->editor->currentSingleSelection;
+    // const auto &sel = display->editor->currentSingleSelection;
 
     for (const auto &ks : keyboardHotZones)
     {
@@ -471,41 +473,44 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
         }
     }
 
-    std::vector<int> potentialZones;
+    std::vector<selection::SelectionManager::ZoneAddress> potentialZones;
     for (auto &z : display->summary)
     {
-        auto r = rectangleForZone(z);
+        auto r = rectangleForZone(z.second);
         if (r.contains(e.position))
-            potentialZones.push_back(std::get<2>(z));
+            potentialZones.push_back(z.first);
     }
+    selection::SelectionManager::ZoneAddress nextZone;
     if (!potentialZones.empty())
     {
         if (potentialZones.size() == 1)
         {
-            auto newSel = display->editor->currentSingleSelection;
-            newSel.zone = potentialZones[0];
-            display->editor->singleSelectItem(newSel);
+            nextZone = potentialZones[0];
         }
         else
         {
             // OK so now we have a stack. Basically what we want to
             // do is choose the 'next' one after our currently
             // selected as a heuristic
-            auto cz = display->editor->currentSingleSelection.zone;
+            auto cz = -1;
+            if (display->editor->currentLeadSelection.has_value())
+                cz = display->editor->currentLeadSelection->zone;
 
             auto selThis = -1;
-            for (auto l : potentialZones)
+            for (const auto &[idx, za] : sst::cpputils::enumerate(potentialZones))
             {
-                if (l > display->editor->currentSingleSelection.zone && selThis < 0)
-                    selThis = l;
+                if (za.zone > cz && selThis < 0)
+                    selThis = idx;
             }
 
-            if (selThis < 0)
-                selThis = potentialZones.front();
-            auto newSel = display->editor->currentSingleSelection;
-            newSel.zone = selThis;
-            display->editor->singleSelectItem(newSel);
+            if (selThis < 0 || selThis >= potentialZones.size())
+                nextZone = potentialZones.front();
+            else
+                nextZone = potentialZones[selThis];
         }
+
+        SCDBGCOUT << "About to select " << SCD(nextZone) << std::endl;
+        display->editor->doSelectionAction(nextZone, true, true);
     }
 }
 
@@ -567,9 +572,9 @@ void MappingZonesAndKeyboard::mouseUp(const juce::MouseEvent &e)
     setMouseCursor(juce::MouseCursor::NormalCursor);
 }
 juce::Rectangle<float>
-MappingZonesAndKeyboard::rectangleForZone(const engine::Group::zoneMappingItem_t &sum)
+MappingZonesAndKeyboard::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 {
-    const auto &[kb, vel, x, name] = sum;
+    const auto &[kb, vel, name] = sum;
 
     auto lb = getLocalBounds().toFloat();
     auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
@@ -630,34 +635,41 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
-    const auto &sel = display->editor->currentSingleSelection;
-
-    for (const auto &z : display->summary)
+    for (const auto &drawSelected : {false, true})
     {
-        if (std::get<2>(z) == sel.zone)
-            continue;
+        for (const auto &z : display->summary)
+        {
+            if (display->editor->isSelected(z.first) != drawSelected)
+                continue;
 
-        auto r = rectangleForZone(z);
+            if (z.first == display->editor->currentLeadSelection)
+                continue;
 
-        auto nonSelZoneColor = juce::Colour(140, 140, 140);
-        g.setColour(nonSelZoneColor.withAlpha(0.2f));
-        g.fillRect(r);
-        g.setColour(nonSelZoneColor);
-        g.drawRect(r, 2.f);
-        g.setColour(nonSelZoneColor.brighter());
-        g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
-        g.drawText(std::get<3>(z), r.reduced(5, 3), juce::Justification::topLeft);
+            auto r = rectangleForZone(z.second);
+
+            auto nonSelZoneColor = juce::Colour(140, 140, 140);
+            if (drawSelected)
+                nonSelZoneColor = juce::Colour(0xFF, 0x90, 0x00);
+            g.setColour(nonSelZoneColor.withAlpha(0.2f));
+            g.fillRect(r);
+            g.setColour(nonSelZoneColor);
+            g.drawRect(r, 2.f);
+            g.setColour(nonSelZoneColor.brighter());
+            g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
+            g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+        }
     }
 
-    // Draw the selected zone
-    if (sel.zone >= 0 && sel.zone < display->summary.size())
+    if (display->editor->currentLeadSelection.has_value())
     {
+        const auto &sel = *(display->editor->currentLeadSelection);
+
         assert(sel.zone < display->summary.size());
         const auto &z = display->summary[sel.zone];
 
-        auto r = rectangleForZone(z);
+        auto r = rectangleForZone(z.second);
 
-        auto selZoneColor = juce::Colour(0xFF, 0x90, 0x00);
+        auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
         g.setColour(selZoneColor.withAlpha(0.2f));
         g.fillRect(r);
 
@@ -666,12 +678,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
         g.setColour(juce::Colours::white);
         g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
-        g.drawText(std::get<3>(z), r.reduced(5, 3), juce::Justification::topLeft);
-    }
-    else if (sel.zone >= 0)
-    {
-        SCDBGCOUT << "Inconsistent zone and display data skipping paint" << SCD(sel.zone)
-                  << SCD(display->summary.size()) << std::endl;
+        g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
     }
 
     for (int i = 0; i < 128; ++i)
@@ -1110,12 +1117,16 @@ void MappingPane::setActive(bool b)
     sampleDisplay->setActive(b);
 }
 
-void MappingPane::setGroupZoneMappingSummary(const engine::Group::zoneMappingSummary_t &d)
+void MappingPane::setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
 {
     mappingDisplay->setGroupZoneMappingSummary(d);
 }
-void MappingPane::setCurrentSelection(const selection::SelectionManager::ZoneAddress &s)
+
+void MappingPane::editorSelectionChanged()
 {
-    mappingDisplay->setCurrentSelection(s);
+    if (editor->currentLeadSelection.has_value())
+        mappingDisplay->setLeadSelection(*(editor->currentLeadSelection));
+    repaint();
 }
+
 } // namespace scxt::ui::multi

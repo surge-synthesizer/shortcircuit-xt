@@ -125,7 +125,7 @@ void SCXTEditor::onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdat
     multiScreen->lfo->setLfo(i, r);
 }
 
-void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Group::zoneMappingSummary_t &d)
+void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &d)
 {
     multiScreen->sample->setGroupZoneMappingSummary(d);
 }
@@ -136,11 +136,20 @@ void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
     juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, title, msg, "OK");
 }
 
-void SCXTEditor::onSingleSelection(const scxt::selection::SelectionManager::ZoneAddress &s)
+void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)
 {
-    currentSingleSelection = s;
-    multiScreen->parts->setCurrentSelection(s);
-    multiScreen->sample->setCurrentSelection(s);
+    allSelections = a.second;
+    auto optLead = a.first;
+    if (optLead.has_value())
+    {
+        currentLeadSelection = *optLead;
+    }
+    else
+    {
+        assert(allSelections.empty());
+    }
+    multiScreen->parts->editorSelectionChanged();
+    multiScreen->sample->editorSelectionChanged();
     repaint();
 }
 

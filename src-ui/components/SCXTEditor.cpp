@@ -171,13 +171,14 @@ void SCXTEditor::drainCallbackQueue()
     }
 }
 
-void SCXTEditor::singleSelectItem(const selection::SelectionManager::ZoneAddress &a)
+void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddress &a,
+                                   bool selecting, bool distinct)
 {
     namespace cmsg = scxt::messaging::client;
-    currentSingleSelection = a;
+    currentLeadSelection = a;
     cmsg::clientSendToSerialization(
-        cmsg::DoSelectAction(
-            selection::SelectionManager::SelectActionContents{a.part, a.group, a.zone, true, true}),
+        cmsg::DoSelectAction(selection::SelectionManager::SelectActionContents{
+            a.part, a.group, a.zone, selecting, distinct}),
         msgCont);
     repaint();
 }

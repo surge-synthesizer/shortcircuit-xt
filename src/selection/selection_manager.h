@@ -35,11 +35,16 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include "utils.h"
 
 namespace scxt::engine
 {
 struct Engine;
+}
+namespace scxt::messaging
+{
+struct MessageController;
 }
 namespace scxt::selection
 {
@@ -62,7 +67,26 @@ struct SelectionManager
         int32_t group{-1};
         int32_t zone{-1};
 
+        bool operator==(const ZoneAddress &other) const
+        {
+            return part == other.part && group == other.group && zone == other.zone;
+        }
+
         bool isIn(const engine::Engine &e);
+
+        friend std::ostream &operator<<(std::ostream &os, const ZoneAddress &z)
+        {
+            os << "zoneaddr[p=" << z.part << ",g=" << z.group << ",z=" << z.zone << "]";
+            return os;
+        }
+        struct Hash
+        {
+            size_t operator()(const ZoneAddress &z) const
+            {
+                int64_t value = z.part + (z.group << 6) + (z.zone << (6 + 10));
+                return std::hash<int64_t>()(value);
+            }
+        };
     };
 
     struct SelectActionContents
@@ -82,12 +106,18 @@ struct SelectionManager
         int32_t zone{-1};
         bool selecting{true}; // am i selecting (T) or deselecting (F) this zone
         bool distinct{true};  // Is this a single selection or a multi-selection gesture
+
+        friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
+        {
+            os << "select[p=" << z.part << ",g=" << z.group << ",z=" << z.zone
+               << ",sel=" << z.selecting << "dis=" << z.distinct << "]";
+            return os;
+        }
     };
 
     void selectAction(const SelectActionContents &z)
     {
-        SCDBGCOUT << SCD(z.part) << SCD(z.group) << SCD(z.zone) << SCD(z.selecting)
-                  << SCD(z.distinct) << std::endl;
+        SCDBGCOUT << __func__ << " Implement " << SCD(z) << std::endl;
         if (true || (z.distinct && z.selecting))
         {
             // HACK
@@ -96,20 +126,22 @@ struct SelectionManager
     }
 
     int selectedPart{-1};
-    std::vector<ZoneAddress> currentlySelectedZones() { return allSelectedZones; }
+    typedef std::unordered_set<ZoneAddress, ZoneAddress::Hash> selectedZones_t;
+    selectedZones_t currentlySelectedZones() { return allSelectedZones; }
     std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e)
     {
         if (leadZone.isIn(e))
             return leadZone;
         return {};
     }
+    void sendSelectionDataToClient(const messaging::MessageController &);
 
   private:
     void singleSelect(const ZoneAddress &z);
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;
-    std::vector<ZoneAddress> allSelectedZones;
+    selectedZones_t allSelectedZones;
     ZoneAddress leadZone;
 
   protected:
