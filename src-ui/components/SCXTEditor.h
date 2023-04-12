@@ -130,7 +130,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     // Originate client to serialization messages
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,
-                           bool distinct);
+                           bool distinct, bool asLead);
+    void
+    doMultiSelectionAction(const std::vector<selection::SelectionManager::SelectActionContents> &);
     std::optional<selection::SelectionManager::ZoneAddress> currentLeadSelection;
     selection::SelectionManager::selectedZones_t allSelections;
     bool isSelected(const selection::SelectionManager::ZoneAddress &a)

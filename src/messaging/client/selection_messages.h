@@ -44,6 +44,16 @@ CLIENT_TO_SERIAL(DoSelectAction, c2s_do_select_action,
                  selection::SelectionManager::SelectActionContents,
                  doSelectAction(payload, engine));
 
+inline void
+doMultiSelectAction(const std::vector<selection::SelectionManager::SelectActionContents> &za,
+                    const engine::Engine &engine)
+{
+    engine.getSelectionManager()->multiSelectAction(za);
+}
+CLIENT_TO_SERIAL(DoMultiSelectAction, c2s_do_multi_select_action,
+                 std::vector<selection::SelectionManager::SelectActionContents>,
+                 doMultiSelectAction(payload, engine));
+
 typedef std::pair<std::optional<selection::SelectionManager::ZoneAddress>,
                   selection::SelectionManager::selectedZones_t>
     selectedStateMessage_t;

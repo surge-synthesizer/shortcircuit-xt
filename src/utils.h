@@ -229,6 +229,7 @@ struct ThreadingChecker
 };
 
 #define SCDBGCOUT std::cout << __FILE__ << ":" << __LINE__ << " "
+#define SCFCOUT std::cout << __FILE__ << ":" << __LINE__ << " " << __func__ << " "
 #define SCDBGV(x) #x << "=" << (x) << " "
 #define SCD(x) SCDBGV(x)
 #define SCDBGUNIMPL(msg) SCDBGCOUT << " Unimpl [" << __func__ << "] " << msg << std::endl;
