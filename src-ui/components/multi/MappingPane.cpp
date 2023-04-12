@@ -509,8 +509,29 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
                 nextZone = potentialZones[selThis];
         }
 
-        SCDBGCOUT << "About to select " << SCD(nextZone) << std::endl;
-        display->editor->doSelectionAction(nextZone, true, true);
+        if (display->editor->isSelected(nextZone))
+        {
+            if (e.mods.isCommandDown())
+            {
+                // command click a selected zone deselects it
+                display->editor->doSelectionAction(nextZone, false, false, false);
+            }
+            else if (e.mods.isCtrlDown())
+            {
+                // ctrl click promotes it to lead
+                display->editor->doSelectionAction(nextZone, true, false, true);
+            }
+            else
+            {
+                // single click makes it a single lead
+                display->editor->doSelectionAction(nextZone, true, true, true);
+            }
+        }
+        else
+        {
+            SCDBGCOUT << "About to select " << SCD(nextZone) << std::endl;
+            display->editor->doSelectionAction(nextZone, true, !e.mods.isCommandDown(), true);
+        }
     }
 }
 

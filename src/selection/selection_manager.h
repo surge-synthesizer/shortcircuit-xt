@@ -93,12 +93,18 @@ struct SelectionManager
     {
         SelectActionContents() {}
         SelectActionContents(int32_t p, int32_t g, int32_t z) : part(p), group(g), zone(z) {}
-        SelectActionContents(int32_t p, int32_t g, int32_t z, bool s, bool d)
-            : part(p), group(g), zone(z), selecting(s), distinct(d)
+        SelectActionContents(int32_t p, int32_t g, int32_t z, bool s, bool d, bool ld)
+            : part(p), group(g), zone(z), selecting(s), distinct(d), selectingAsLead(ld)
         {
         }
         SelectActionContents(const ZoneAddress &z)
-            : part(z.part), group(z.group), zone(z.zone), selecting(true), distinct(true)
+            : part(z.part), group(z.group), zone(z.zone), selecting(true), distinct(true),
+              selectingAsLead(true)
+        {
+        }
+        SelectActionContents(const ZoneAddress &z, bool s, bool d, bool ld)
+            : part(z.part), group(z.group), zone(z.zone), selecting(s), distinct(d),
+              selectingAsLead(ld)
         {
         }
         int32_t part{-1};
@@ -106,25 +112,28 @@ struct SelectionManager
         int32_t zone{-1};
         bool selecting{true}; // am i selecting (T) or deselecting (F) this zone
         bool distinct{true};  // Is this a single selection or a multi-selection gesture
+        bool selectingAsLead{true};
 
         friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
         {
             os << "select[p=" << z.part << ",g=" << z.group << ",z=" << z.zone
-               << ",sel=" << z.selecting << "dis=" << z.distinct << "]";
+               << ",sel=" << z.selecting << ",dis=" << z.distinct << ",ld=" << z.selectingAsLead
+               << "]";
             return os;
         }
+
+        operator ZoneAddress() const { return {part, group, zone}; }
     };
 
-    void selectAction(const SelectActionContents &z)
-    {
-        SCDBGCOUT << __func__ << " Implement " << SCD(z) << std::endl;
-        if (true || (z.distinct && z.selecting))
-        {
-            // HACK
-            singleSelect({z.part, z.group, z.zone});
-        }
-    }
+    void selectAction(const SelectActionContents &z);
+    void multiSelectAction(const std::vector<SelectActionContents> &v);
 
+  protected:
+    void adjustInternalStateForAction(const SelectActionContents &);
+    void guaranteeSelectedLead();
+    void debugDumpSelectionState();
+
+  public:
     int selectedPart{-1};
     typedef std::unordered_set<ZoneAddress, ZoneAddress::Hash> selectedZones_t;
     selectedZones_t currentlySelectedZones() { return allSelectedZones; }
@@ -134,10 +143,8 @@ struct SelectionManager
             return leadZone;
         return {};
     }
-    void sendSelectionDataToClient(const messaging::MessageController &);
-
-  private:
-    void singleSelect(const ZoneAddress &z);
+    void sendSelectedZonesToClient();
+    void sendClientDataForSelectionState();
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;
@@ -147,9 +154,6 @@ struct SelectionManager
   protected:
     MainSelection mainSelection{MULTI};
     std::map<size_t, std::set<size_t>> selectedGroupByPart;
-
-  private:
-    std::optional<ZoneAddress> singleSelection;
 };
 } // namespace scxt::selection
 

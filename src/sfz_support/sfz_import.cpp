@@ -216,7 +216,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     }
 
     e.getSelectionManager()->selectAction(selection::SelectionManager::SelectActionContents(
-        pt, firstGroupWithZonesAdded, 0, true, true));
+        pt, firstGroupWithZonesAdded, 0, true, true, true));
     return true;
 }
 } // namespace scxt::sfz_support

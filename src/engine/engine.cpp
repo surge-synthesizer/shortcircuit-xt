@@ -449,7 +449,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->selectAction({sp, sg, zi, true, true});
+            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
         });
 }
 
@@ -655,7 +655,8 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 grp->addZone(zn);
             }
         }
-        selectionManager->selectAction({pt, firstGroup, firstGroup >= 0 ? 0 : -1, true, true});
+        selectionManager->selectAction(
+            {pt, firstGroup, firstGroup >= 0 ? 0 : -1, true, true, true});
     }
     catch (RIFF::Exception e)
     {

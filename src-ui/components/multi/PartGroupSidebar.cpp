@@ -27,9 +27,14 @@
 
 #include "PartGroupSidebar.h"
 #include "components/SCXTEditor.h"
+#include "selection/selection_manager.h"
 
 namespace scxt::ui::multi
 {
+
+struct PGZListBox : public juce::ListBox
+{
+};
 
 struct PGZListBoxModel : juce::ListBoxModel
 {
@@ -77,12 +82,66 @@ struct PGZListBoxModel : juce::ListBoxModel
 
     void selectedRowsChanged(int rowNumber) override
     {
+        const auto &m = partGroupSidebar->pgzList;
         const auto &s = partGroupSidebar->pgzStructure;
-        if (rowNumber < 0 || rowNumber >= s.size())
-            return;
-        SCDBGCOUT << "About to select " << SCD(std::get<0>(s[rowNumber])) << std::endl;
+        std::unordered_set<selection::SelectionManager::ZoneAddress,
+                           selection::SelectionManager::ZoneAddress::Hash>
+            newSelections;
+        selection::SelectionManager::ZoneAddress lead;
+        bool setLead{false};
+        std::unordered_set<selection::SelectionManager::ZoneAddress,
+                           selection::SelectionManager::ZoneAddress::Hash>
+            removeSelections;
+        if (m)
+        {
+            const auto &r = m->getSelectedRows();
+            // Rather than iterating over the ranges, since we need to make
+            // the both-way list we iterate over the entire structure
+            for (const auto &[idx, dat] : sst::cpputils::enumerate(s))
+            {
+                bool selectedUI = r.contains(idx);
+                bool selectedModel = partGroupSidebar->editor->isSelected(dat.first);
 
-        partGroupSidebar->editor->doSelectionAction(std::get<0>(s[rowNumber]), true, true);
+                if (selectedUI || selectedModel)
+                {
+                    SCDBGCOUT << SCD(dat.first) << SCD(idx) << SCD(selectedUI) << SCD(selectedModel)
+                              << std::endl;
+                }
+                if (selectedUI && !selectedModel)
+                {
+                    if (idx == rowNumber)
+                    {
+                        lead = dat.first;
+                        setLead = true;
+                    }
+                    else
+                        newSelections.insert(dat.first);
+                }
+                if (!selectedUI && selectedModel)
+                {
+                    removeSelections.insert(dat.first);
+                }
+            }
+        }
+
+        auto dist = m->getSelectedRows().size() == 1;
+        std::vector<selection::SelectionManager::SelectActionContents> res;
+        for (auto &rm : newSelections)
+        {
+            res.emplace_back(rm, true, dist, false);
+        }
+
+        for (auto &rm : removeSelections)
+        {
+            res.emplace_back(rm, false, false, false);
+        }
+
+        if (setLead)
+        {
+            res.emplace_back(lead, true, false, true);
+        }
+
+        partGroupSidebar->editor->doMultiSelectionAction(res);
     }
 };
 
@@ -94,10 +153,10 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     tabNames = {"PARTS", "GROUPS"};
     resetTabState();
 
-    pgzList = std::make_unique<juce::ListBox>();
+    pgzList = std::make_unique<PGZListBox>();
     pgzListModel = std::make_unique<PGZListBoxModel>(this);
     pgzList->setModel(pgzListModel.get());
-    pgzList->setMultipleSelectionEnabled(false);
+    pgzList->setMultipleSelectionEnabled(true);
     addAndMakeVisible(*pgzList);
 }
 
@@ -127,21 +186,21 @@ void PartGroupSidebar::editorSelectionChanged()
     if (!editor->currentLeadSelection.has_value())
         return;
 
-    auto a = *(editor->currentLeadSelection);
-    int selR = -1;
-    for (const auto &[i, r] : sst::cpputils::enumerate(pgzStructure))
+    juce::SparseSet<int> rows;
+
+    for (const auto &a : editor->allSelections)
     {
-        if ((r.first.part == a.part) && (r.first.group == a.group) && (r.first.zone == a.zone))
+        int selR = -1;
+        for (const auto &[i, r] : sst::cpputils::enumerate(pgzStructure))
         {
-            selR = i;
+            if (r.first == a)
+            {
+                rows.addRange({(int)i, (int)(i + 1)});
+            }
         }
     }
-    if (selR > 0)
-    {
-        juce::SparseSet<int> rows;
-        rows.addRange({selR, selR + 1});
-        pgzList->setSelectedRows(rows, juce::dontSendNotification);
-    }
+
+    pgzList->setSelectedRows(rows, juce::dontSendNotification);
     repaint();
 }
 } // namespace scxt::ui::multi

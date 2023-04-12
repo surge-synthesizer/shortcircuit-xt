@@ -37,13 +37,10 @@
 namespace scxt::selection
 {
 namespace cms = messaging::client;
-void SelectionManager::singleSelect(const ZoneAddress &a)
-{
-    allSelectedZones.clear();
-    allSelectedZones.insert(a);
-    leadZone = a;
 
-    auto [p, g, z] = a;
+void SelectionManager::sendClientDataForSelectionState()
+{
+    auto [p, g, z] = leadZone;
 
     // Check if I deserialized a valid zone and adjust if not
     if (p >= 0)
@@ -72,8 +69,6 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
         }
     }
 
-    sendSelectionDataToClient(*(engine.getMessageController()));
-
     if (p >= 0 && g >= 0)
     {
         serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
@@ -82,7 +77,6 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
     }
     if (z >= 0 && g >= 0 && p >= 0)
     {
-        singleSelection = a;
         // TODO: The 'full zone' becomes a single function obviously
         const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
         serializationSendToClient(cms::s2c_respond_zone_mapping,
@@ -121,7 +115,6 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
     }
     else
     {
-        singleSelection = {};
         serializationSendToClient(cms::s2c_respond_zone_mapping,
                                   cms::MappingSelectedZoneView::s2c_payload_t{false, {}},
                                   *(engine.getMessageController()));
@@ -148,8 +141,85 @@ void SelectionManager::singleSelect(const ZoneAddress &a)
     }
 }
 
-void SelectionManager::sendSelectionDataToClient(const messaging::MessageController &)
+void SelectionManager::multiSelectAction(const std::vector<SelectActionContents> &v)
 {
+    for (const auto &z : v)
+        adjustInternalStateForAction(z);
+    guaranteeSelectedLead();
+    sendClientDataForSelectionState();
+    sendSelectedZonesToClient();
+    debugDumpSelectionState();
+}
+
+void SelectionManager::selectAction(
+    const scxt::selection::SelectionManager::SelectActionContents &z)
+{
+    adjustInternalStateForAction(z);
+    guaranteeSelectedLead();
+    sendClientDataForSelectionState();
+    sendSelectedZonesToClient();
+    debugDumpSelectionState();
+}
+
+void SelectionManager::adjustInternalStateForAction(
+    const scxt::selection::SelectionManager::SelectActionContents &z)
+{
+    SCFCOUT << z << std::endl;
+    auto za = (ZoneAddress)z;
+    // OK so basically theres a few cases
+    if (!z.selecting)
+    {
+        allSelectedZones.erase(za);
+    }
+    else
+    {
+        // So we are selecting
+        if (z.distinct)
+        {
+            allSelectedZones.clear();
+            allSelectedZones.insert(za);
+            leadZone = za;
+        }
+        else
+        {
+            allSelectedZones.insert(za);
+            if (z.selectingAsLead)
+                leadZone = za;
+        }
+    }
+}
+
+void SelectionManager::guaranteeSelectedLead()
+{
+    // Now at the end of this the lead zone could not be selected
+    if (allSelectedZones.find(leadZone) == allSelectedZones.end())
+    {
+        if (allSelectedZones.empty())
+        {
+            // Oh what to do here. Well reject it.
+            SCFCOUT << "Be careful - we are promoting " << SCD(leadZone) << std::endl;
+            allSelectedZones.insert(leadZone);
+        }
+        else
+        {
+            leadZone = *(allSelectedZones.begin());
+        }
+    }
+}
+
+void SelectionManager::debugDumpSelectionState()
+{
+    SCDBGCOUT << "---------------------------" << std::endl;
+    SCDBGCOUT << SCD(leadZone) << std::endl;
+    SCDBGCOUT << "All Selected Zones" << std::endl;
+    for (const auto &s : allSelectedZones)
+        SCDBGCOUT << "    - " << s << std::endl;
+    SCDBGCOUT << "---------------------------" << std::endl;
+}
+
+void SelectionManager::sendSelectedZonesToClient()
+{
+    SCFCOUT << "Sending Data" << std::endl;
     serializationSendToClient(cms::s2c_send_selection_state,
                               cms::selectedStateMessage_t{leadZone, allSelectedZones},
                               *(engine.getMessageController()));
