@@ -29,11 +29,11 @@
 #define SCXT_SRC_DSP_RESAMPLING_H
 
 #include <cstdint>
+#include "sst/basic-blocks/tables/SincTableProvider.h"
 
 namespace scxt::dsp
 {
 static constexpr uint32_t FIRipol_M = 256;
-static constexpr uint32_t FIRipol_M_bits = 8;
 static constexpr uint32_t FIRipol_N = 16;
 static constexpr uint32_t FIRipolI16_N = 16;
 static constexpr uint32_t FIRoffset = 8;

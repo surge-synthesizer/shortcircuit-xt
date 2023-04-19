@@ -28,41 +28,23 @@
 #ifndef SCXT_SRC_DSP_DATA_TABLES_H
 #define SCXT_SRC_DSP_DATA_TABLES_H
 
-#include "resampling.h"
 #include <cctype>
 #include <cstdint>
 #include <stddef.h> // for size_t on some linuxes it seems
 
+#include "sst/basic-blocks/tables/SincTableProvider.h"
+#include "sst/basic-blocks/tables/DbToLinearProvider.h"
+#include "resampling.h"
+
 namespace scxt::dsp
 {
-struct SincTable
-{
-    void init();
-
-    // TODO Rename these when i'm all done
-    float SincTableF32[(FIRipol_M + 1) * FIRipol_N];
-    float SincOffsetF32[(FIRipol_M)*FIRipol_N];
-    short SincTableI16[(FIRipol_M + 1) * FIRipol_N];
-    short SincOffsetI16[(FIRipol_M)*FIRipol_N];
-
-  private:
-    bool initialized{false};
-};
-
+using SincTable = sst::basic_blocks::tables::ShortcircuitSincTableProvider;
 extern SincTable sincTable;
+static_assert(dsp::FIRipol_M == SincTable::FIRipol_M);
+static_assert(dsp::FIRipol_N == SincTable::FIRipol_N);
+static_assert(dsp::FIRipolI16_N == SincTable::FIRipolI16_N);
 
-struct DbTable
-{
-    static constexpr size_t nPoints{512};
-    static_assert(!(nPoints & (nPoints - 1)));
-
-    void init();
-    float dbToLinear(float db);
-
-  private:
-    float table_dB[nPoints];
-};
-
+using DbTable = sst::basic_blocks::tables::DbToLinearProvider;
 extern DbTable dbTable;
 } // namespace scxt::dsp
 

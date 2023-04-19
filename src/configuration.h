@@ -29,6 +29,7 @@
 #define SCXT_SRC_CONFIGURATION_H
 
 #include <cstdint>
+#include "infrastructure/sse_include.h"
 
 namespace scxt
 {

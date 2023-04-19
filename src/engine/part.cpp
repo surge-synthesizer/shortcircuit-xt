@@ -27,6 +27,8 @@
 
 #include "part.h"
 #include "selection/selection_manager.h"
+
+#include "infrastructure/sse_include.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 namespace scxt::engine
