@@ -27,6 +27,8 @@
 
 #include "microgate.h"
 
+#include "infrastructure/sse_include.h"
+
 #include "engine/memory_pool.h"
 #include "configuration.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"

@@ -27,6 +27,9 @@
 
 #include "group.h"
 #include "part.h"
+
+#include "infrastructure/sse_include.h"
+
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 #include <cassert>

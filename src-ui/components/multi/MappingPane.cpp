@@ -685,21 +685,28 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     {
         const auto &sel = *(display->editor->currentLeadSelection);
 
-        assert(sel.zone < display->summary.size());
-        const auto &z = display->summary[sel.zone];
+        if (sel.zone >= display->summary.size())
+        {
+            SCDBGCOUT << "Zone set inconsistently" << std::endl;
+        }
+        else
+        {
+            // assert(sel.zone < display->summary.size());
+            const auto &z = display->summary[sel.zone];
 
-        auto r = rectangleForZone(z.second);
+            auto r = rectangleForZone(z.second);
 
-        auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
-        g.setColour(selZoneColor.withAlpha(0.2f));
-        g.fillRect(r);
+            auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
+            g.setColour(selZoneColor.withAlpha(0.2f));
+            g.fillRect(r);
 
-        g.setColour(selZoneColor);
-        g.drawRect(r, 2.f);
+            g.setColour(selZoneColor);
+            g.drawRect(r, 2.f);
 
-        g.setColour(juce::Colours::white);
-        g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
-        g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+            g.setColour(juce::Colours::white);
+            g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
+            g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+        }
     }
 
     for (int i = 0; i < 128; ++i)
