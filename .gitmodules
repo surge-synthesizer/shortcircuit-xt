@@ -37,3 +37,6 @@
 [submodule "libs/xiph/flac"]
 	path = libs/xiph/flac
 	url = https://github.com/xiph/flac.git
+[submodule "libs/sst/sst-effects"]
+	path = libs/sst/sst-effects
+	url = https://github.com/surge-synthesizer/sst-effects
