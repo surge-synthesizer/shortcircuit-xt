@@ -11,10 +11,11 @@ add_subdirectory(sst/sst-cpputils)
 
 set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform fs")
 set(SST_PLUGININFRA_PROVIDE_TINYXML OFF CACHE BOOL "Skip TinyXML")
+add_subdirectory(sst/sst-basic-blocks)
 add_subdirectory(sst/sst-plugininfra)
 add_subdirectory(sst/sst-filters)
+add_subdirectory(sst/sst-effects)
 add_subdirectory(sst/sst-jucegui)
-add_subdirectory(sst/sst-basic-blocks)
 add_subdirectory(sst/libgig-modified)
 
 # Add a catch2 target
