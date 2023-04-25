@@ -26,16 +26,30 @@
  */
 
 #include "part.h"
+#include "part_effects.h"
+#include "patch.h"
+
 #include "selection/selection_manager.h"
 
 #include "infrastructure/sse_include.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
+
+#define FORCE_REVERB1 0
 
 namespace scxt::engine
 {
 void Part::process()
 {
     namespace blk = sst::basic_blocks::mechanics;
+
+#if FORCE_REVERB1
+    if (!partEffects[0])
+    {
+        SCDBGCOUT << "Spawing a PartEffect" << std::endl;
+        partEffects[0] = createEffect(reverb1, parentPatch->parentEngine, &partEffectStorage[0]);
+        partEffects[0]->init();
+    }
+#endif
 
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
@@ -55,6 +69,14 @@ void Part::process()
                 blk::accumulate_from_to<blockSize>(g->output[i][0], output[i][0]);
                 blk::accumulate_from_to<blockSize>(g->output[i][1], output[i][1]);
             }
+        }
+    }
+
+    for (const auto &fx : partEffects)
+    {
+        if (fx)
+        {
+            fx->process(output[0][0], output[0][1]);
         }
     }
 }

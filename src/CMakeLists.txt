@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME} STATIC
         engine/zone.cpp
         engine/group.cpp
         engine/part.cpp
+        engine/part_effects.cpp
         engine/memory_pool.cpp
 
         json/stream.cpp
@@ -54,7 +55,7 @@ add_library(${PROJECT_NAME} STATIC
 target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt
-        sst-cpputils sst-filters sst-basic-blocks sst-plugininfra
+        sst-cpputils sst-filters sst-basic-blocks sst-effects sst-plugininfra
         libgig libakai
         mts-esp-client
         shortcircuit::simde
