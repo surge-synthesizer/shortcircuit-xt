@@ -37,12 +37,16 @@
 #include "group.h"
 #include "dsp/smoothers.h"
 
+#include "part_effects.h"
+
 namespace scxt::engine
 {
 struct Patch;
 
 struct Part : MoveableOnly<Part>, SampleRateSupport
 {
+    static constexpr int maxEffectsPerPart{4};
+
     Part(int16_t c) : id(PartID::next()), channel(c) { pitchBendSmoother.setTarget(0); }
 
     PartID id;
@@ -109,6 +113,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         activeGroups--;
     }
 
+    std::array<std::unique_ptr<PartEffect>, maxEffectsPerPart> partEffects;
+    std::array<PartEffectStorage, maxEffectsPerPart> partEffectStorage;
+
     std::array<dsp::Smoother, 128> midiCCSmoothers;
     dsp::Smoother pitchBendSmoother;
     void onSampleRateChanged() override
@@ -119,7 +126,6 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     }
 
     // TODO: A group by ID which throws an SCXTError
-
     typedef std::vector<std::unique_ptr<Group>> groupContainer_t;
 
     const groupContainer_t &getGroups() const { return groups; }

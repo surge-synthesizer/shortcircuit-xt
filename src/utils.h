@@ -173,6 +173,7 @@ struct SampleRateSupport
         sync();
     }
     double getSampleRate() const { return sampleRate; }
+    double getSampleRateInv() const { return sampleRateInv; }
 
     void sync()
     {
