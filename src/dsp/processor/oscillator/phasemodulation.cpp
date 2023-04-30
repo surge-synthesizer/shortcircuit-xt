@@ -29,6 +29,7 @@
 
 #include <algorithm>
 
+#include "datamodel/parameter.h"
 #include "oscpulsesync.h"
 
 #include "configuration.h"
@@ -52,11 +53,8 @@ PhaseModulation::PhaseModulation(engine::MemoryPool *mp, float *fp, int32_t *ip)
 {
     parameter_count = 2;
 
-    setStr(ctrllabel[0], "transpose");
-    ctrlmode_desc[0] = cdMPitch;
-
-    setStr(ctrllabel[1], "depth");
-    ctrlmode_desc[1] = datamodel::cdDecibel;
+    ctrlmode_desc[0] = datamodel::pitchTransposition().withName("transpose");
+    ctrlmode_desc[1] = datamodel::decibelRange().withName("depth");
 
     phase = 0;
 }

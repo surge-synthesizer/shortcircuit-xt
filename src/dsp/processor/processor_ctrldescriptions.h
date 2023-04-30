@@ -38,6 +38,7 @@ namespace scxt::dsp::processor
            str_dbbpdef[] = ("f,-48,0.1,48,0,dB"), str_dbmoddef[] = ("f,-96,0.1,96,0,dB"),
            str_mpitch[] = ("f,-96,0.04,96,0,cents"), str_bwdef[] = ("f,0.001,0.005,6,0,oct");*/
 
+#if 0
 static constexpr datamodel::ControlDescription cdPercentDef{datamodel::ControlDescription::FLOAT,
                                                             datamodel::ControlDescription::LINEAR,
                                                             0,
@@ -59,6 +60,7 @@ static constexpr datamodel::ControlDescription cdPercentDef{datamodel::ControlDe
               6,
               5,
               "Hz"};
+#endif
 
 } // namespace scxt::dsp::processor
 

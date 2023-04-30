@@ -45,8 +45,8 @@ struct AdsrStorage
     // TODO: What are these going to be when they grow up?
     float aShape{0}, dShape{0}, rShape{0};
 
-    static constexpr ControlDescription cdAHDR{cdEnvelopeThirtyTwo}, cdS{cdPercent},
-        cdShape{cdPercentBipolar};
+    // The names are not stored on these right now. Fix?
+    static datamodel::pmd paramAHDR, paramS, paramShape;
 
     auto asTuple() const { return std::tie(a, d, s, r, isDigital, aShape, dShape, rShape); }
     bool operator==(const AdsrStorage &other) const { return asTuple() == other.asTuple(); }

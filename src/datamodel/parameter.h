@@ -31,72 +31,75 @@
 #include <string>
 #include <optional>
 
+#include "sst/basic-blocks/params/ParamMetadata.h"
 #include "sst/basic-blocks/modulators/ADSREnvelope.h"
 
 namespace scxt::datamodel
 {
-
-struct ControlDescription
+using pmd = sst::basic_blocks::params::ParamMetaData;
+inline pmd decibelRange(float lower = -96, float upper = 12)
 {
-    // we want to be able to inplace new so have fixed size please
-    static constexpr int labelLen{32};
-    static constexpr int maxIntChoices{16};
-    enum Type
-    {
-        NONE,
-        INT,
-        FLOAT
-    } type{NONE};
-    enum DisplayMode
-    {
-        LINEAR,       // mapScale * value + mapBase
-        TWO_TO_THE_X, // 2 ^ (mapScale * value + mapBase)
-        FREQUENCY,    // 261.5etc * 2 ^ (mapScale * value + mapBase) / 12
-        MIDI_NOTE,
-        DECIBEL
-    } displayMode{LINEAR};
-    float min{0};
-    float step{0.01};
-    float max{1};
-    float def{0.5};
-    char unit[labelLen]{}; // fixed size makes in place news easier
-    float mapScale{1.f};
-    float mapBase{0.f};
+    return pmd()
+        .withType(pmd::FLOAT)
+        .withRange(lower, upper)
+        .withDefault(0)
+        .withLinearScaleFormatting("dB");
+}
 
-    char choices[maxIntChoices][32]{};
+inline pmd semitoneRange(float lower = -96, float upper = 96)
+{
+    return pmd()
+        .withType(pmd::FLOAT)
+        .withRange(lower, upper)
+        .withDefault(0)
+        .withLinearScaleFormatting("semitones");
+}
 
-    std::string valueToString(float value) const;
-    std::optional<float> stringToValue(const std::string &s) const;
+inline pmd secondsLog2Range(float lower, float upper)
+{
+    return pmd()
+        .withType(pmd::FLOAT)
+        .withRange(lower, upper)
+        .withDefault(std::clamp(0.f, lower, upper))
+        .withATwoToTheBFormatting(1, 1, "s");
+}
+
+inline pmd pitchTransposition() { return semitoneRange(-96, 96); }
+
+inline pmd pitchInOctavesFromA440()
+{
+    return pmd()
+        .withType(pmd::FLOAT)
+        .withRange(-6, 5)
+        .withDefault(0)
+        .withATwoToTheBFormatting(440, 1, "Hz");
 };
 
 /*
- * We have commonly used instances here. TODO - do we want to move
- * some of these to namespaces like the modulation ones in the modulation
- * namespace?
+ * A 0...1 parameter scaled to display as etMin..etMax in log2 space
  */
-static constexpr ControlDescription cdPercent{
-    ControlDescription::FLOAT, ControlDescription::LINEAR, 0, 0.01, 1, 0, "%", 100.0},
-    cdPercentBipolar{
-        ControlDescription::FLOAT, ControlDescription::LINEAR, -1, 0.01, 1, 0, "%", 100.0},
-    cdMidiNote{ControlDescription::INT, ControlDescription::MIDI_NOTE, 0, 1, 127, 60, "note"},
-    cdMidiDistance{ControlDescription::INT, ControlDescription::LINEAR, 0, 1, 127, 0, "note"},
-    cdMidiDistanceBipolar{
-        ControlDescription::INT, ControlDescription::LINEAR, -127, 1, 127, 0, "note"},
-    cdDecibel{ControlDescription::FLOAT, ControlDescription::DECIBEL, -96, 0.1, 12, 0, "dB"},
-    cdModulationRate{
-        ControlDescription::FLOAT, ControlDescription::TWO_TO_THE_X, -3, 0.01, 8, 0.0, "Hz"},
-    cdModulationSmoothing{
-        ControlDescription::FLOAT, ControlDescription::LINEAR, 0, 0.01, 2, 1.0, ""},
-    cdEnvelopeThirtyTwo{ControlDescription::FLOAT,
-                        ControlDescription::TWO_TO_THE_X,
-                        0,
-                        0.01,
-                        1,
-                        0.5,
-                        "seconds",
-                        sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
-                            sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
-                        sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin};
+inline pmd envelopeThirtyTwo()
+{
+    return pmd()
+        .withType(pmd::FLOAT)
+        .withRange(0.f, 1.f)
+        .withDefault(0.2f)
+        .withATwoToTheBFormatting(sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
+                                  sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
+                                      sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
+                                  "s");
+}
+
+inline pmd lfoModulationRate()
+{
+    return pmd()
+        .withType(pmd::FLOAT)
+        .withRange(-3, 8)
+        .withDefault(0)
+        .withATwoToTheBFormatting(1, 1, "Hz");
+}
+
+inline pmd lfoSmoothing() { return pmd().withType(pmd::FLOAT).withRange(0, 2).withDefault(0); }
 
 } // namespace scxt::datamodel
 

@@ -28,6 +28,7 @@
 #include <cmath>
 #include <algorithm>
 
+#include "datamodel/parameter.h"
 #include "oscsin.h"
 
 #include "configuration.h"
@@ -51,8 +52,7 @@ OscSin::OscSin(engine::MemoryPool *mp, float *fp, int32_t *ip)
 {
     parameter_count = 1;
 
-    setStr(ctrllabel[0], "tune");
-    ctrlmode_desc[0] = cdMPitch;
+    ctrlmode_desc[0] = datamodel::pitchTransposition().withName("tune");
 }
 
 void OscSin::init_params()

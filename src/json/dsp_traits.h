@@ -110,10 +110,8 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
               (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
              {"typeDisplayName", t.typeDisplayName},
              {"numFloatParams", t.numFloatParams},
-             {"floatControlNames", t.floatControlNames},
              {"floatControlDescriptions", t.floatControlDescriptions},
              {"numIntParams", t.numIntParams},
-             {"intControlNames", t.intControlNames},
              {"intControlDescriptions", t.intControlDescriptions}};
     }
 
@@ -126,10 +124,8 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
         t.type = (dsp::processor::ProcessorType)tInt;
         findIf(v, "typeDisplayName", t.typeDisplayName);
         findIf(v, "numFloatParams", t.numFloatParams);
-        findIf(v, "floatControlNames", t.floatControlNames);
         findIf(v, "floatControlDescriptions", t.floatControlDescriptions);
         findIf(v, "numIntParams", t.numIntParams);
-        findIf(v, "intControlNames", t.intControlNames);
         findIf(v, "intControlDescriptions", t.intControlDescriptions);
     }
 };
