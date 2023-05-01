@@ -27,6 +27,7 @@
 
 #include "SCXTBinary.h"
 #include "SCXTStyleSheetCreator.h"
+#include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
 
@@ -40,15 +41,46 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
         .withBaseClass(comp::VSlider::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationTabs)
         .withBaseClass(comp::NamedPanel::Styles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixToggle)
+        .withBaseClass(comp::ToggleButton::Styles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixMenu)
+        .withBaseClass(SCXTStyleSheetCreator::ModulationMatrixToggle);
+
     const auto &base = sheet_t::getBuiltInStyleSheet(sheet_t::DARK);
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::guttercol,
                     juce::Colour(0x39, 0x39, 0x39));
+    base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::gutterhovcol,
+                    juce::Colour(0x49, 0x49, 0x59));
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::valcol,
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::handlecol,
                     juce::Colour(0xC4, 0xC4, 0xC4));
     base->setColour(ModulationTabs, comp::NamedPanel::Styles::selectedtabcol,
                     juce::Colour(0x27, 0x88, 0xD6));
+
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::onbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::hoveronbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::offbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::hoveroffbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::textoncol,
+                    juce::Colour(0x27, 0x88, 0xD6));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::textoffcol,
+                    juce::Colour(0x88, 0x88, 0x88));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::borderoncol,
+                    juce::Colour(0x27, 0x88, 0xD6));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::bordercol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::texthoveroncol,
+                    juce::Colour(0xD6, 0xD6, 0xD6));
+
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::textoncol,
+                    juce::Colour(0xD6, 0xD6, 0xD6));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::texthoveroncol,
+                    juce::Colour(0xE6, 0xE6, 0xF6));
 
     auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
                                                             scxt::ui::binary::InterMedium_ttfSize);

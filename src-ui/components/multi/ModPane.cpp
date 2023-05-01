@@ -29,13 +29,15 @@
 #include "components/SCXTEditor.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "connectors/PayloadDataAttachment.h"
-#include "sst/jucegui/components/HSlider.h"
+#include "sst/jucegui/components/HSliderFilled.h"
+#include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "messaging/client/client_serial.h"
 
 namespace scxt::ui::multi
 {
 namespace cmsg = scxt::messaging::client;
+namespace jcmp = sst::jucegui::components;
 
 struct ModRow : juce::Component, HasEditor
 {
@@ -46,10 +48,11 @@ struct ModRow : juce::Component, HasEditor
         powerAttachment;
     std::unique_ptr<connectors::PayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>
         depthAttachment;
-    std::unique_ptr<sst::jucegui::components::ToggleButton> power;
-    std::unique_ptr<juce::TextButton> source, sourceVia, curve, target;
-    std::unique_ptr<sst::jucegui::components::HSlider> depth;
-    // std::unique_ptr<sst::jucegui::components::HSlider> slider;
+    std::unique_ptr<jcmp::ToggleButton> power;
+    std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
+
+    std::unique_ptr<jcmp::HSlider> depth;
+    // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane *p) : HasEditor(e), index(i), parent(p)
     {
         auto &row = parent->routingTable[i];
@@ -62,23 +65,28 @@ struct ModRow : juce::Component, HasEditor
                     w->pushRowUpdate();
             },
             [](const auto &pl) { return pl.active; }, row.active);
-        power = std::make_unique<sst::jucegui::components::ToggleButton>();
+        power = std::make_unique<jcmp::ToggleButton>();
         power->setLabel(std::to_string(index + 1));
         power->setSource(powerAttachment.get());
+        power->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         addAndMakeVisible(*power);
 
-        source = std::make_unique<juce::TextButton>("Source", "Source");
-        source->onClick = [w = juce::Component::SafePointer(this)]() {
+        source = std::make_unique<jcmp::MenuButton>();
+        source->setLabel("Source");
+        source->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
                 w->showSourceMenu(false);
-        };
+        });
+        source->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*source);
 
-        sourceVia = std::make_unique<juce::TextButton>("Via", "Via");
-        sourceVia->onClick = [w = juce::Component::SafePointer(this)]() {
+        sourceVia = std::make_unique<jcmp::MenuButton>();
+        sourceVia->setLabel("Via");
+        sourceVia->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
                 w->showSourceMenu(true);
-        };
+        });
+        sourceVia->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*sourceVia);
 
         depthAttachment = std::make_unique<
@@ -89,22 +97,25 @@ struct ModRow : juce::Component, HasEditor
                     w->pushRowUpdate();
             },
             [](const auto &pl) { return pl.depth; }, row.depth);
-        depth = std::make_unique<sst::jucegui::components::HSlider>();
+        depth = std::make_unique<jcmp::HSliderFilled>();
         depth->setSource(depthAttachment.get());
+        depth->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
         addAndMakeVisible(*depth);
 
-        curve = std::make_unique<juce::TextButton>("Crv", "Crv");
-        curve->onClick = [w = juce::Component::SafePointer(this)]() {
+        curve = std::make_unique<jcmp::MenuButton>();
+        curve->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
                 w->showCurveMenu();
-        };
+        });
+        curve->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*curve);
 
-        target = std::make_unique<juce::TextButton>("Target", "Target");
-        target->onClick = [w = juce::Component::SafePointer(this)]() {
+        target = std::make_unique<jcmp::MenuButton>();
+        target->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
                 w->showTargetMenu();
-        };
+        });
+        target->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*target);
 
         refreshRow();
@@ -121,18 +132,17 @@ struct ModRow : juce::Component, HasEditor
     {
         auto b = getLocalBounds().reduced(1, 1);
 
-        power->setBounds(b.withWidth(b.getHeight()));
-        b = b.translated(b.getHeight() + 2, 0);
-        source->setBounds(b.withWidth(90));
-        b = b.translated(92, 0);
-        sourceVia->setBounds(b.withWidth(90));
-        b = b.translated(92, 0);
-        depth->setBounds(b.withWidth(170));
-        b = b.translated(172, 0);
-        curve->setBounds(b.withWidth(60));
-        b = b.translated(62, 0);
-        b = b.withWidth(getWidth() - b.getX());
-        target->setBounds(b);
+        auto map = [&b](const auto &wd, auto sz, int redH = 0) {
+            wd->setBounds(b.withWidth(sz).reduced(0, redH));
+            b = b.translated(sz + 2, 0);
+        };
+
+        map(power, b.getHeight());
+        map(source, 90);
+        map(sourceVia, 90);
+        map(depth, 140, 2);
+        map(curve, 60);
+        map(target, getWidth() - b.getX());
     }
     void refreshRow()
     {
@@ -145,21 +155,65 @@ struct ModRow : juce::Component, HasEditor
         for (const auto &[si, sn] : srcs)
         {
             if (si == row.src)
-                source->setButtonText(sn);
+            {
+                if (sn.empty())
+                {
+                    source->setIsInactiveValue(true);
+                    source->setLabel("Source");
+                }
+                else
+                {
+                    source->setIsInactiveValue(false);
+                    source->setLabel(sn);
+                }
+            }
             if (si == row.srcVia)
-                sourceVia->setButtonText(sn);
+            {
+                if (sn.empty())
+                {
+                    sourceVia->setIsInactiveValue(true);
+                    sourceVia->setLabel("Via");
+                }
+                else
+                {
+                    sourceVia->setIsInactiveValue(false);
+                    sourceVia->setLabel(sn);
+                }
+            }
         }
 
         for (const auto &[di, dn] : dsts)
         {
             if (di == row.dst)
-                target->setButtonText(dn);
+            {
+                if (dn.empty())
+                {
+                    target->setIsInactiveValue(true);
+                    target->setLabel("Target");
+                }
+                else
+                {
+                    target->setIsInactiveValue(false);
+                    target->setLabel(dn);
+                }
+            }
         }
 
         for (const auto &[ci, cn] : crvs)
         {
             if (ci == row.curve)
-                curve->setButtonText(cn);
+            {
+                if (cn.empty())
+                {
+                    curve->setIsInactiveValue(true);
+                    curve->setLabel("Curve");
+                }
+                else
+                {
+                    curve->setIsInactiveValue(false);
+                    curve->setLabel(cn);
+                }
+            }
         }
 
         repaint();
@@ -186,7 +240,8 @@ struct ModRow : juce::Component, HasEditor
         {
             const auto &row = parent->routingTable[index];
             auto selected = isVia ? (row.srcVia == si) : (row.src == si);
-            p.addItem(sn, true, selected,
+
+            p.addItem(sn.empty() ? "Off" : sn, true, selected,
                       [sidx = si, isVia, w = juce::Component::SafePointer(this)]() {
                           if (!w)
                               return;
@@ -215,16 +270,17 @@ struct ModRow : juce::Component, HasEditor
         {
             const auto &row = parent->routingTable[index];
             auto selected = row.curve == si;
-            p.addItem(sn, true, selected, [sidx = si, w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                auto &row = w->parent->routingTable[w->index];
+            p.addItem(sn.empty() ? "Off" : sn, true, selected,
+                      [sidx = si, w = juce::Component::SafePointer(this)]() {
+                          if (!w)
+                              return;
+                          auto &row = w->parent->routingTable[w->index];
 
-                row.curve = sidx;
+                          row.curve = sidx;
 
-                w->pushRowUpdate();
-                w->refreshRow();
-            });
+                          w->pushRowUpdate();
+                          w->refreshRow();
+                      });
         }
 
         p.showMenuAsync({});
@@ -242,23 +298,24 @@ struct ModRow : juce::Component, HasEditor
         {
             const auto &row = parent->routingTable[index];
             auto selected = row.dst == si;
-            p.addItem(sn, true, selected, [sidx = si, w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                auto &row = w->parent->routingTable[w->index];
+            p.addItem(sn.empty() ? "None" : sn, true, selected,
+                      [sidx = si, w = juce::Component::SafePointer(this)]() {
+                          if (!w)
+                              return;
+                          auto &row = w->parent->routingTable[w->index];
 
-                row.dst = sidx;
+                          row.dst = sidx;
 
-                w->pushRowUpdate();
-                w->refreshRow();
-            });
+                          w->pushRowUpdate();
+                          w->refreshRow();
+                      });
         }
 
         p.showMenuAsync({});
     }
 };
 
-ModPane::ModPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
+ModPane::ModPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEditor(e)
 {
     setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
 
@@ -292,7 +349,7 @@ void ModPane::resized()
     for (int i = 0; i < numRowsOnScreen; ++i)
     {
         if (rows[i])
-            rows[i]->setBounds(r.toNearestIntEdges());
+            rows[i]->setBounds(r.toNearestIntEdges().withTrimmedBottom(1));
         r = r.translated(0, rh);
     }
 }

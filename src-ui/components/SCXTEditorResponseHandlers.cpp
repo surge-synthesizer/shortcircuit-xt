@@ -168,15 +168,17 @@ void SCXTEditor::onVoiceDisplayState(const engine::Engine::VoiceDisplayState &e)
     {
         if (i.active)
         {
+            /*
             SCDBGCOUT << SCD(idx) << SCD(i.zonePath.zone) << SCD(i.midiNote) << SCD(i.gated)
                       << std::endl;
+                      */
             ac++;
         }
         idx++;
     }
     if (!ac)
     {
-        SCDBGCOUT << "No active voices" << std::endl;
+        // SCDBGCOUT << "No active voices" << std::endl;
     }
 
     if (headerRegion)
