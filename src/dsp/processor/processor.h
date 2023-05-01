@@ -194,12 +194,12 @@ struct ProcessorControlDescription
     std::string typeDisplayName{"Off"};
 
     int numFloatParams{0}; // between 0 and max
-    std::array<std::string, maxProcessorFloatParams> floatControlNames;
-    std::array<datamodel::ControlDescription, maxProcessorFloatParams> floatControlDescriptions;
+    std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorFloatParams>
+        floatControlDescriptions;
 
     int numIntParams{0}; // between 0 and max
-    std::array<std::string, maxProcessorIntParams> intControlNames;
-    std::array<datamodel::ControlDescription, maxProcessorIntParams> intControlDescriptions;
+    std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorIntParams>
+        intControlDescriptions;
 };
 
 struct Processor : MoveableOnly<Processor>, SampleRateSupport
@@ -270,8 +270,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     float lastparam[maxProcessorFloatParams];
     int lastiparam[maxProcessorIntParams];
     int parameter_count{0};
-    char ctrllabel[maxProcessorFloatParams][processorLabelSize];
-    datamodel::ControlDescription ctrlmode_desc[maxProcessorFloatParams];
+    sst::basic_blocks::params::ParamMetaData ctrlmode_desc[maxProcessorFloatParams];
 
     void setStr(char target[processorLabelSize], const char *v)
     {

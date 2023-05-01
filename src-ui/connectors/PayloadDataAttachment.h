@@ -48,10 +48,10 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged;
     std::function<float(const Payload &)> extractFromPayload;
 
-    PayloadDataAttachment(Parent *p, const datamodel::ControlDescription &cd, const std::string &l,
+    PayloadDataAttachment(Parent *p, const datamodel::pmd &cd,
                           std::function<void(const PayloadDataAttachment &at)> oGVC,
                           std::function<float(const Payload &)> efp, ValueType &v)
-        : description(cd), value(v), label(l), extractFromPayload(efp),
+        : description(cd), value(v), label(cd.name), extractFromPayload(efp),
           onGuiValueChanged(std::move(oGVC))
     {
     }
@@ -60,7 +60,7 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     // in the code and apply them directly in many cases. We could
     // stream each and every one but don't. Maybe fix that one day.
     // Would def need to fix that to make web ui consistent if we write it
-    datamodel::ControlDescription description;
+    datamodel::pmd description;
 
     std::string getLabel() const override { return label; }
     float getValue() const override { return (float)value; }
@@ -94,11 +94,11 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     void setValueFromModel(const float &f) override { value = (ValueType)f; }
     void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
 
-    float getMin() const override { return description.min; }
-    float getMax() const override { return description.max; }
-    float getDefaultValue() const override { return description.def; }
+    float getMin() const override { return description.minVal; }
+    float getMax() const override { return description.maxVal; }
+    float getDefaultValue() const override { return description.defaultVal; }
 
-    bool isBipolar() const override { return description.min * description.max < 0; }
+    bool isBipolar() const override { return description.minVal * description.maxVal < 0; }
 
     float getModulationValuePM1() const override { return 0; }
     void setModulationValuePM1(const float &f) override {}
@@ -154,11 +154,10 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     std::function<void(const DiscretePayloadDataAttachment &at)> onGuiValueChanged;
     std::function<int(const Payload &)> extractFromPayload;
 
-    DiscretePayloadDataAttachment(Parent *p, const datamodel::ControlDescription &cd,
-                                  const std::string &l,
+    DiscretePayloadDataAttachment(Parent *p, const datamodel::pmd &cd,
                                   std::function<void(const DiscretePayloadDataAttachment &at)> oGVC,
                                   std::function<int(const Payload &)> efp, ValueType &v)
-        : description(cd), value(v), label(l), extractFromPayload(efp),
+        : description(cd), value(v), label(cd.name), extractFromPayload(efp),
           onGuiValueChanged(std::move(oGVC))
     {
     }
@@ -167,7 +166,7 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     // in the code and apply them directly in many cases. We could
     // stream each and every one but don't. Maybe fix that one day.
     // Would def need to fix that to make web ui consistent if we write it
-    datamodel::ControlDescription description;
+    datamodel::pmd description;
 
     std::string getLabel() const override { return label; }
     int getValue() const override { return (int)value; }
@@ -179,10 +178,16 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     void setValueFromModel(const int &f) override { value = (ValueType)f; }
     void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
 
-    int getMin() const override { return (int)description.min; }
-    int getMax() const override { return (int)description.max; }
+    int getMin() const override { return (int)description.minVal; }
+    int getMax() const override { return (int)description.maxVal; }
 
-    std::string getValueAsStringFor(int i) const override { return description.choices[i]; }
+    std::string getValueAsStringFor(int i) const override
+    {
+        auto r = description.valueToString((float)i);
+        if (r.has_value())
+            return *r;
+        return "";
+    }
 };
 
 template <typename Parent, typename Payload>
@@ -192,7 +197,8 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Parent, Payl
         Parent *p, const std::string &l,
         std::function<void(const DiscretePayloadDataAttachment<Parent, Payload, bool> &at)> oGVC,
         std::function<bool(const Payload &)> efp, bool &v)
-        : DiscretePayloadDataAttachment<Parent, Payload, bool>(p, {}, l, oGVC, efp, v)
+        : DiscretePayloadDataAttachment<Parent, Payload, bool>(
+              p, datamodel::pmd().withType(datamodel::pmd::BOOL).withName(l), oGVC, efp, v)
     {
     }
 

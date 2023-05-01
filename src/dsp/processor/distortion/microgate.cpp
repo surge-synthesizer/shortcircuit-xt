@@ -27,6 +27,7 @@
 
 #include "microgate.h"
 
+#include "datamodel/parameter.h"
 #include "infrastructure/sse_include.h"
 
 #include "engine/memory_pool.h"
@@ -47,20 +48,10 @@ MicroGate::MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
     parameter_count = 4;
 
     // TODO What are the actual units here for HOLD?
-    setStr(ctrllabel[0], "hold");
-    ctrlmode_desc[0] = datamodel::ControlDescription{datamodel::ControlDescription::FLOAT,
-                                                     datamodel::ControlDescription::TWO_TO_THE_X,
-                                                     -8,
-                                                     0.1,
-                                                     5,
-                                                     -3,
-                                                     "s"};
-    setStr(ctrllabel[1], "loop");
-    ctrlmode_desc[1] = datamodel::cdPercent;
-    setStr(ctrllabel[2], "threshold");
-    ctrlmode_desc[2] = datamodel::cdDecibel;
-    setStr(ctrllabel[3], "reduction");
-    ctrlmode_desc[3] = datamodel::cdDecibel;
+    ctrlmode_desc[0] = datamodel::secondsLog2Range(-8, 5).withDefault(-3).withName("hold");
+    ctrlmode_desc[1] = datamodel::pmd().asPercent().withName("loop");
+    ctrlmode_desc[2] = datamodel::decibelRange().withName("threshold");
+    ctrlmode_desc[3] = datamodel::decibelRange().withName("reduction");
 }
 
 void MicroGate::init()

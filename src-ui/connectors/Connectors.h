@@ -47,10 +47,13 @@ template <typename attachment_t, typename widget_t> struct ConnectorFactory
 
     template <typename D, typename M>
     std::pair<std::unique_ptr<attachment_t>, std::unique_ptr<widget_t>> attach(const std::string &l,
-                                                                               D &d, M m)
+                                                                               const D &d, M m)
     {
+        // take a copy i guess to rename it
+        auto dn = d;
+        dn = dn.withName(l);
         auto at = std::make_unique<attachment_t>(
-            parent, d, l, onGuiChange,
+            parent, dn, onGuiChange,
             [m](const typename attachment_t::payload_t &pl) { return pl.*m; }, payload.*m);
         auto w = std::make_unique<widget_t>();
         w->setSource(at.get());

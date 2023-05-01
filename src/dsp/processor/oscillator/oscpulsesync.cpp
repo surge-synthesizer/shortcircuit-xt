@@ -28,6 +28,7 @@
 #include <cmath>
 #include <algorithm>
 
+#include "datamodel/parameter.h"
 #include "oscpulsesync.h"
 
 #include "configuration.h"
@@ -54,20 +55,9 @@ OscPulseSync::OscPulseSync(engine::MemoryPool *mp, float *fp, int32_t *ip)
 {
     parameter_count = 3;
 
-    setStr(ctrllabel[0], "tune");
-    ctrlmode_desc[0] = cdMPitch;
-
-    setStr(ctrllabel[1], "width");
-    ctrlmode_desc[1] = cdPercentDef;
-
-    setStr(ctrllabel[2], "sync");
-    ctrlmode_desc[2] = scxt::datamodel::ControlDescription{datamodel::ControlDescription::FLOAT,
-                                                           datamodel::ControlDescription::LINEAR,
-                                                           0,
-                                                           0.05,
-                                                           96,
-                                                           0,
-                                                           "semitones"};
+    ctrlmode_desc[0] = datamodel::pitchTransposition().withName("tune");
+    ctrlmode_desc[1] = datamodel::pmd().asPercent().withName("width");
+    ctrlmode_desc[2] = datamodel::semitoneRange(0, 96).withName("sync");
 
     first_run = true;
     oscstate = 0;

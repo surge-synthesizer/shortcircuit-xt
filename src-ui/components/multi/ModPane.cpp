@@ -83,7 +83,7 @@ struct ModRow : juce::Component, HasEditor
 
         depthAttachment = std::make_unique<
             connectors::PayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>(
-            this, datamodel::cdPercentBipolar, "Depth",
+            this, datamodel::pmd().asPercentBipolar().withName("Depth"),
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                     w->pushRowUpdate();

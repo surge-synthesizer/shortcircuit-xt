@@ -53,7 +53,8 @@ ProcessorPane::~ProcessorPane() { resetControls(); }
 
 void ProcessorPane::updateTooltip(const attachment_t &at)
 {
-    editor->setTooltipContents(at.label + " = " + at.description.valueToString(at.value));
+    editor->setTooltipContents(at.label + " = " +
+                               at.description.valueToString(at.value).value_or("Error"));
 }
 
 void ProcessorPane::resized() { rebuildControlsFromDescription(); }
@@ -115,7 +116,6 @@ void ProcessorPane::rebuildControlsFromDescription()
     {
         auto at = std::make_unique<attachment_t>(
             this, processorControlDescription.floatControlDescriptions[i],
-            processorControlDescription.floatControlNames[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
             [idx = i](const auto &pl) { return pl.floatParams[idx]; },
             processorView.floatParams[i]);
@@ -127,14 +127,13 @@ void ProcessorPane::rebuildControlsFromDescription()
     {
         auto at = std::make_unique<int_attachment_t>(
             this, processorControlDescription.intControlDescriptions[i],
-            processorControlDescription.intControlNames[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
             [idx = i](const auto &pl) { return pl.intParams[idx]; }, processorView.intParams[i]);
         intAttachments[i] = std::move(at);
     }
 
     auto at = std::make_unique<attachment_t>(
-        this, datamodel::cdPercent, "Mix",
+        this, datamodel::pmd().asPercent().withName("Mix"),
         [this](const auto &at) { this->processorChangedFromGui(at); },
         [](const auto &pl) { return pl.mix; }, processorView.mix);
     mixAttachment = std::move(at);
@@ -183,7 +182,7 @@ void ProcessorPane::layoutControls()
         floatEditors[i]->setBounds(kb);
 
         auto label = std::make_unique<sst::jucegui::components::Label>();
-        label->setText(processorControlDescription.floatControlNames[i]);
+        label->setText(processorControlDescription.floatControlDescriptions[i].name);
         addAndMakeVisible(*label);
 
         floatLabels[i] = std::move(label);
@@ -206,7 +205,7 @@ void ProcessorPane::layoutControls()
         addAndMakeVisible(*kn);
 
         auto label = std::make_unique<sst::jucegui::components::Label>();
-        label->setText(processorControlDescription.intControlNames[i]);
+        label->setText(processorControlDescription.intControlDescriptions[i].name);
         label->setBounds(lb);
         addAndMakeVisible(*label);
 

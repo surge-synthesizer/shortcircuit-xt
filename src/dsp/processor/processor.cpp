@@ -26,11 +26,13 @@
  */
 
 #include "processor.h"
+#include "datamodel/parameter.h"
 #include "processor_defs.h"
 
 #include <functional>
 #include <new>
 #include <cassert>
+#include <unordered_map>
 
 namespace scxt::dsp::processor
 {
@@ -286,40 +288,33 @@ ProcessorControlDescription Processor::getControlDescription()
 
     for (int i = 0; i < res.numFloatParams; ++i)
     {
-        res.floatControlNames[i] = ctrllabel[i];
         res.floatControlDescriptions[i] = ctrlmode_desc[i];
     }
     for (int i = res.numFloatParams; i < maxProcessorFloatParams; ++i)
     {
-        res.floatControlNames[i] = "-";
         res.floatControlDescriptions[i] = {};
     }
 
     res.numIntParams = getIntParameterCount();
     for (int i = 0; i < res.numIntParams; ++i)
     {
-        res.intControlNames[i] = getIntParameterLabel(i);
-        auto cd = datamodel::ControlDescription{datamodel::ControlDescription::INT,
-                                                datamodel::ControlDescription::LINEAR,
-                                                0,
-                                                1,
-                                                (float)getIntParameterChoicesCount(i),
-                                                0,
-                                                "",
-                                                1,
-                                                0};
-        for (int j = 0;
-             j < getIntParameterChoicesCount(i) && j < datamodel::ControlDescription::maxIntChoices;
-             ++j)
+        std::unordered_map<int, std::string> dVals;
+        for (int j = 0; j < getIntParameterChoicesCount(i); ++j)
         {
-            strncpy(cd.choices[j], getIntParameterChoicesLabel(i, j), 32);
-            cd.choices[j][31] = 0;
+            dVals[j] = getIntParameterChoicesLabel(i, j);
         }
-        res.intControlDescriptions[i] = cd;
+
+        auto pd = datamodel::pmd()
+                      .withType(datamodel::pmd::INT)
+                      .withRange(0, getIntParameterChoicesCount(i))
+                      .withDefault(0)
+                      .withName(getIntParameterLabel(i))
+                      .withUnorderedMapFormatting(dVals);
+
+        res.intControlDescriptions[i] = pd;
     }
     for (int i = res.numIntParams; i < maxProcessorIntParams; ++i)
     {
-        res.intControlNames[i] = "-";
         res.intControlDescriptions[i] = {};
     }
     return res;

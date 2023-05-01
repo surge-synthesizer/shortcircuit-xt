@@ -48,6 +48,19 @@ template <typename V, typename R> bool findIf(V &v, const std::string &key, R &r
     return false;
 }
 
+template <typename V, typename R> bool findEnumIf(V &v, const std::string &key, R &r)
+{
+    auto vs = v.find(key);
+    if (vs)
+    {
+        int rv;
+        vs->to(rv);
+        r = (R)rv;
+        return true;
+    }
+    return false;
+}
+
 /**
  * Extract json element key from type v onto r, using d as the default
  * if the key is not

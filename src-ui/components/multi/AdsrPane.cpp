@@ -73,24 +73,24 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     connectors::ConnectorFactory<attachment_t, comp::Knob> knobFactory(
         [this](auto &a) { this->adsrChangedFromGui(a); }, this, adsrView);
 
-    stowOnto(sliders, Ctrl::A, sliderFactory.attach("Attack", dma::cdAHDR, &dma::a));
+    stowOnto(sliders, Ctrl::A, sliderFactory.attach("Attack", dma::paramAHDR, &dma::a));
     makeLabel(Ctrl::A, "A");
 
-    stowOnto(sliders, Ctrl::H, sliderFactory.attach("Hold", dma::cdAHDR, &dma::h));
+    stowOnto(sliders, Ctrl::H, sliderFactory.attach("Hold", dma::paramAHDR, &dma::h));
     makeLabel(Ctrl::H, "H");
 
-    stowOnto(sliders, Ctrl::D, sliderFactory.attach("Decay", dma::cdAHDR, &dma::d));
+    stowOnto(sliders, Ctrl::D, sliderFactory.attach("Decay", dma::paramAHDR, &dma::d));
     makeLabel(Ctrl::D, "D");
 
-    stowOnto(sliders, Ctrl::S, sliderFactory.attach("Sustain", dma::cdS, &dma::s));
+    stowOnto(sliders, Ctrl::S, sliderFactory.attach("Sustain", dma::paramS, &dma::s));
     makeLabel(Ctrl::S, "S");
 
-    stowOnto(sliders, Ctrl::R, sliderFactory.attach("Release", dma::cdAHDR, &dma::r));
+    stowOnto(sliders, Ctrl::R, sliderFactory.attach("Release", dma::paramAHDR, &dma::r));
     makeLabel(Ctrl::R, "R");
 
-    stowOnto(knobs, Ctrl::Ash, knobFactory.attach("A Shape", dma::cdShape, &dma::aShape));
-    stowOnto(knobs, Ctrl::Dsh, knobFactory.attach("D Shape", dma::cdShape, &dma::dShape));
-    stowOnto(knobs, Ctrl::Rsh, knobFactory.attach("R Shape", dma::cdShape, &dma::rShape));
+    stowOnto(knobs, Ctrl::Ash, knobFactory.attach("A Shape", dma::paramShape, &dma::aShape));
+    stowOnto(knobs, Ctrl::Dsh, knobFactory.attach("D Shape", dma::paramShape, &dma::dShape));
+    stowOnto(knobs, Ctrl::Rsh, knobFactory.attach("R Shape", dma::paramShape, &dma::rShape));
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
@@ -114,7 +114,8 @@ void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 
 void AdsrPane::updateTooltip(const attachment_t &at)
 {
-    editor->setTooltipContents(at.label + " = " + at.description.valueToString(at.value));
+    editor->setTooltipContents(at.label + " = " +
+                               at.description.valueToString(at.value).value_or("Error"));
 }
 
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)

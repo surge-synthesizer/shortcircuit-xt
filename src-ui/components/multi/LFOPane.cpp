@@ -27,6 +27,7 @@
 
 #include "LFOPane.h"
 #include "connectors/SCXTStyleSheetCreator.h"
+#include "datamodel/parameter.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
 
@@ -192,10 +193,10 @@ void LfoPane::rebuildLfo()
         lfoData[selectedTab].cyclemode);
 
     rateA = std::make_unique<attachment_t>(
-        this, datamodel::cdModulationRate, "Rate", update(), [](const auto &pl) { return pl.rate; },
-        lfoData[selectedTab].rate);
+        this, datamodel::lfoModulationRate().withName("Rate"), update(),
+        [](const auto &pl) { return pl.rate; }, lfoData[selectedTab].rate);
     deformA = std::make_unique<attachment_t>(
-        this, datamodel::cdModulationSmoothing, "Deform", update(),
+        this, datamodel::lfoSmoothing().withName("Deform"), update(),
         [](const auto &pl) { return pl.smooth; }, lfoData[selectedTab].smooth);
 
     static constexpr int columnOneWidth{60};

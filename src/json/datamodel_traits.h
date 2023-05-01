@@ -31,6 +31,7 @@
 #include <tao/json/to_string.hpp>
 #include <tao/json/from_string.hpp>
 #include <tao/json/contrib/traits.hpp>
+#include <unordered_map>
 
 #include "scxt_traits.h"
 #include "extensions.h"
@@ -65,60 +66,59 @@ template <> struct scxt_traits<datamodel::AdsrStorage>
     }
 };
 
-template <> struct scxt_traits<datamodel::ControlDescription>
+template <> struct scxt_traits<datamodel::pmd>
 {
     template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const datamodel::ControlDescription &t)
+    static void assign(tao::json::basic_value<Traits> &v, const datamodel::pmd &t)
     {
-        std::vector<std::string> choicesArr;
-        if (t.type == datamodel::ControlDescription::INT)
-            for (int i = t.min; i < t.max; ++i)
-                choicesArr.push_back(t.choices[i]);
+        std::vector<std::pair<int, std::string>> dvStream;
+        for (const auto &[k, mv] : t.discreteValues)
+            dvStream.emplace_back(k, mv);
 
-        v = {{"type", (int32_t)t.type},
-             {"displayMode", (int32_t)t.displayMode},
-             {"min", t.min},
-             {"step", t.step},
-             {"max", t.max},
-             {"def", t.def},
-             {"unit", std::string(t.unit)},
-             {"mapScale", t.mapScale},
-             {"mapBase", t.mapBase},
-             {"choices", choicesArr}};
+        v = {{"type", (int)t.type},
+             {"name", t.name},
+             {"minVal", t.minVal},
+             {"maxVal", t.maxVal},
+             {"defaultVal", t.defaultVal},
+             {"canTemposync", t.canTemposync},
+             {"supportsStringConversion", t.supportsStringConversion},
+             {"displayScale", (int)t.displayScale},
+             {"unit", t.unit},
+             {"customMinDisplay", t.customMinDisplay},
+             {"customMaxDisplay", t.customMaxDisplay},
+             {"discreteValues", dvStream},
+             {"decimalPlaces", t.decimalPlaces},
+             {"svA", t.svA},
+             {"svB", t.svB},
+             {"svC", t.svC},
+             {"svD", t.svD}};
     }
 
     template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, datamodel::ControlDescription &t)
+    static void to(const tao::json::basic_value<Traits> &v, datamodel::pmd &t)
     {
-        int ph;
-        findOrSet(v, "type", datamodel::ControlDescription::Type::NONE, ph);
-        t.type = (datamodel::ControlDescription::Type)(ph);
+        findEnumIf(v, "type", t.type);
+        findIf(v, "name", t.name);
+        findIf(v, "minVal", t.minVal);
+        findIf(v, "maxVal", t.maxVal);
+        findIf(v, "defaultVal", t.defaultVal);
+        findIf(v, "canTemposync", t.canTemposync);
+        findIf(v, "supportsStringConversion", t.supportsStringConversion);
+        findEnumIf(v, "displayScale", t.displayScale);
+        findIf(v, "unit", t.unit);
+        findIf(v, "customMinDisplay", t.customMinDisplay);
+        findIf(v, "customMaxDisplay", t.customMaxDisplay);
 
-        findIf(v, "displayMode", ph);
-        t.displayMode = (datamodel::ControlDescription::DisplayMode)(ph);
+        std::vector<std::pair<int, std::string>> dvStream;
+        findIf(v, "discreteValues", dvStream);
+        for (const auto &[k, mv] : dvStream)
+            t.discreteValues[k] = mv;
 
-        findIf(v, "min", t.min);
-        findIf(v, "step", t.step);
-        findIf(v, "max", t.max);
-        findIf(v, "def", t.def);
-
-        std::string un;
-        findIf(v, "unit", un);
-        strncpy(t.unit, un.c_str(), 32);
-        t.unit[31] = 0;
-        findIf(v, "mapScale", t.mapScale);
-        findIf(v, "mapBase", t.mapBase);
-
-        std::vector<std::string> choices;
-        findOrDefault(v, "choices", choices);
-        if (!choices.empty())
-        {
-            for (int i = 0; i < choices.size(); ++i)
-            {
-                strncpy(t.choices[i], choices[i].c_str(), 32);
-                t.choices[i][31] = 0;
-            }
-        }
+        findIf(v, "decimalPlaces", t.decimalPlaces);
+        findIf(v, "svA", t.svA);
+        findIf(v, "svB", t.svB);
+        findIf(v, "svC", t.svC);
+        findIf(v, "svD", t.svD);
     }
 };
 } // namespace scxt::json

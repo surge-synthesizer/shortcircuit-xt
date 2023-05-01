@@ -50,11 +50,8 @@ SuperSVF::SuperSVF(engine::MemoryPool *mp, float *fp, int *ip)
     : Processor(ProcessorType::proct_SuperSVF, mp, fp, ip), mPolyphase(2, true)
 {
     parameter_count = 2;
-    setStr(ctrllabel[0], ("cutoff"));
-    setStr(ctrllabel[1], ("resonance"));
-
-    ctrlmode_desc[0] = cdFreqDef;
-    ctrlmode_desc[1] = cdPercentDef;
+    ctrlmode_desc[0] = datamodel::pitchInOctavesFromA440().withName("cutoff");
+    ctrlmode_desc[1] = datamodel::pmd().asPercent().withName("resonance");
     assert(iparam);
 
     suspend();

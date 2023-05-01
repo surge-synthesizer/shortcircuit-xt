@@ -27,6 +27,7 @@
 
 #include <optional>
 
+#include "datamodel/parameter.h"
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"
@@ -54,10 +55,10 @@ void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
     /*
      * LFOs
      */
+    auto r = datamodel::lfoModulationRate();
     for (int idx = 0; idx < engine::lfosPerZone; ++idx)
     {
-        depthScales[destIndex(vmd_LFO_Rate, idx)] =
-            datamodel::cdModulationRate.max - datamodel::cdModulationRate.min;
+        depthScales[destIndex(vmd_LFO_Rate, idx)] = r.maxVal - r.minVal;
     }
 
     // Arbitrary
@@ -72,7 +73,7 @@ void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
             auto di = destIndex((VoiceModMatrixDestinationType)q, idx);
             auto pd = q - vmd_Processor_FP1;
             const auto &cd = z->processorDescription[idx].floatControlDescriptions[pd];
-            depthScales[di] = cd.max - cd.min;
+            depthScales[di] = cd.maxVal - cd.minVal;
         }
     }
 }
@@ -409,12 +410,10 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
         else
         {
             auto ct = (int)(vmd - vmd_Processor_FP1);
-            if (z.processorDescription[idx].floatControlDescriptions[ct].type ==
-                datamodel::ControlDescription::NONE)
-                return {};
 
-            return pfx +
-                   z.processorDescription[idx].floatControlNames[(int)(vmd - vmd_Processor_FP1)];
+            return pfx + z.processorDescription[idx]
+                             .floatControlDescriptions[(int)(vmd - vmd_Processor_FP1)]
+                             .name;
         }
     }
 
