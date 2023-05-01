@@ -292,7 +292,7 @@ ProcessorControlDescription Processor::getControlDescription()
     }
     for (int i = res.numFloatParams; i < maxProcessorFloatParams; ++i)
     {
-        res.floatControlDescriptions[i] = {};
+        res.floatControlDescriptions[i] = datamodel::unusedParam();
     }
 
     res.numIntParams = getIntParameterCount();

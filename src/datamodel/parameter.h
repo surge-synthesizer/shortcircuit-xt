@@ -84,10 +84,11 @@ inline pmd envelopeThirtyTwo()
         .withType(pmd::FLOAT)
         .withRange(0.f, 1.f)
         .withDefault(0.2f)
-        .withATwoToTheBFormatting(sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
-                                  sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
-                                      sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
-                                  "s");
+        .withATwoToTheBPlusCFormatting(
+            1.f,
+            sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
+                sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
+            sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin, "s");
 }
 
 inline pmd lfoModulationRate()
@@ -100,6 +101,8 @@ inline pmd lfoModulationRate()
 }
 
 inline pmd lfoSmoothing() { return pmd().withType(pmd::FLOAT).withRange(0, 2).withDefault(0); }
+
+inline pmd unusedParam() { return pmd().withType(pmd::NONE); }
 
 } // namespace scxt::datamodel
 
