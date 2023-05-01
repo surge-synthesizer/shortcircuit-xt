@@ -402,7 +402,7 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
         if (z.processorStorage[idx].type == dsp::processor::proct_none)
         {
             // this should in theory get filtered out of the user choices
-            return {};
+            return std::nullopt;
         }
         pfx += z.processorDescription[idx].typeDisplayName + " ";
         if (vmd == vmd_Processor_Mix)
@@ -411,9 +411,11 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
         {
             auto ct = (int)(vmd - vmd_Processor_FP1);
 
-            return pfx + z.processorDescription[idx]
-                             .floatControlDescriptions[(int)(vmd - vmd_Processor_FP1)]
-                             .name;
+            if (z.processorDescription[idx].floatControlDescriptions[ct].type ==
+                datamodel::pmd::NONE)
+                return std::nullopt;
+
+            return pfx + z.processorDescription[idx].floatControlDescriptions[ct].name;
         }
     }
 
