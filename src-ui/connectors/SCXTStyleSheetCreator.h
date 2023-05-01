@@ -38,6 +38,8 @@ struct SCXTStyleSheetCreator
 
     static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
     static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
+    static constexpr sheet_t::Class ModulationMatrixToggle{"modulation.editor.toggle"};
+    static constexpr sheet_t::Class ModulationMatrixMenu{"modulation.editor.menu"};
 
     static const sheet_t::ptr_t setup();
 

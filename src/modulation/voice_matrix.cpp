@@ -307,7 +307,7 @@ std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
     switch (dest)
     {
     case vms_none:
-        return "None";
+        return "";
     case vms_LFO1:
         return "LFO1";
     case vms_LFO2:
@@ -335,7 +335,7 @@ std::string getVoiceModMatrixCurveDisplayName(const VoiceModMatrixCurve &dest)
     switch (dest)
     {
     case vmc_none:
-        return "None";
+        return "";
     case vmc_cube:
         return "Cube";
 
@@ -389,7 +389,7 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
 
     if (vmd == vmd_none)
     {
-        return "Off";
+        return "";
     }
     if (vmd >= vmd_LFO_Rate && vmd <= vmd_LFO_Rate)
     {

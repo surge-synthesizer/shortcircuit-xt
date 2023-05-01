@@ -34,6 +34,8 @@
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
 
+#define DEBUG_SELECTION 0
+
 namespace scxt::selection
 {
 namespace cms = messaging::client;
@@ -164,7 +166,9 @@ void SelectionManager::selectAction(
 void SelectionManager::adjustInternalStateForAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
+#if DEBUG_SELECTION
     SCFCOUT << z << std::endl;
+#endif
     auto za = (ZoneAddress)z;
     // OK so basically theres a few cases
     if (!z.selecting)
@@ -197,7 +201,9 @@ void SelectionManager::guaranteeSelectedLead()
         if (allSelectedZones.empty())
         {
             // Oh what to do here. Well reject it.
+#if DEBUG_SELECTION
             SCFCOUT << "Be careful - we are promoting " << SCD(leadZone) << std::endl;
+#endif
             allSelectedZones.insert(leadZone);
         }
         else
@@ -209,17 +215,21 @@ void SelectionManager::guaranteeSelectedLead()
 
 void SelectionManager::debugDumpSelectionState()
 {
+#if DEBUG_SELECTION
     SCDBGCOUT << "---------------------------" << std::endl;
     SCDBGCOUT << SCD(leadZone) << std::endl;
     SCDBGCOUT << "All Selected Zones" << std::endl;
     for (const auto &s : allSelectedZones)
         SCDBGCOUT << "    - " << s << std::endl;
     SCDBGCOUT << "---------------------------" << std::endl;
+#endif
 }
 
 void SelectionManager::sendSelectedZonesToClient()
 {
+#if DEBUG_SELECTION
     SCFCOUT << "Sending Data" << std::endl;
+#endif
     serializationSendToClient(cms::s2c_send_selection_state,
                               cms::selectedStateMessage_t{leadZone, allSelectedZones},
                               *(engine.getMessageController()));
