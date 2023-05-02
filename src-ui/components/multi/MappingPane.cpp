@@ -31,12 +31,12 @@
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
 
-#include "components/GlyphPainter.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "engine/part.h"
 
@@ -171,7 +171,7 @@ struct MappingDisplay : juce::Component, HasEditor
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         textEds;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
-    std::unordered_map<Ctrl, std::unique_ptr<glyph::GlyphPainter>> glyphs;
+    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
 
     MappingDisplay(MappingPane *p) : HasEditor(p->editor), mappingView(p->mappingView)
     {
@@ -208,9 +208,9 @@ struct MappingDisplay : juce::Component, HasEditor
             labels[c] = std::move(l);
         };
 
-        auto addGlyph = [this](Ctrl c, glyph::GlyphPainter::Glyph g) {
+        auto addGlyph = [this](Ctrl c, sst::jucegui::components::GlyphPainter::GlyphType g) {
             // TODO StyleSheet
-            auto l = std::make_unique<glyph::GlyphPainter>(g, juce::Colours::white);
+            auto l = std::make_unique<sst::jucegui::components::GlyphPainter>(g);
             addAndMakeVisible(*l);
             glyphs[c] = std::move(l);
         };
@@ -284,12 +284,12 @@ struct MappingDisplay : juce::Component, HasEditor
         attachFloatEditor(
             Ctrl::Pan, datamodel::pmd().asPercentBipolar().withName("Pan"),
             [](const auto &pl) -> float { return pl.pan; }, mappingView.pan);
-        addGlyph(Ctrl::Pan, glyph::GlyphPainter::PAN);
+        addGlyph(Ctrl::Pan, sst::jucegui::components::GlyphPainter::PAN);
 
         attachFloatEditor(
             Ctrl::Pitch, datamodel::pitchTransposition().withName("Pitch"),
             [](const auto &pl) { return pl.pitchOffset; }, mappingView.pitchOffset);
-        addGlyph(Ctrl::Pitch, glyph::GlyphPainter::TUNING);
+        addGlyph(Ctrl::Pitch, sst::jucegui::components::GlyphPainter::TUNING);
     }
 
     engine::Zone::ZoneMappingData &mappingView;

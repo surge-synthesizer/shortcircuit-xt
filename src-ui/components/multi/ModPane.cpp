@@ -29,6 +29,7 @@
 #include "components/SCXTEditor.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "connectors/PayloadDataAttachment.h"
+#include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ToggleButton.h"
@@ -50,6 +51,7 @@ struct ModRow : juce::Component, HasEditor
         depthAttachment;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
+    std::unique_ptr<juce::Component> x1, x2, a1, a2;
 
     std::unique_ptr<jcmp::HSlider> depth;
     // std::unique_ptr<jcmp::HSlider> slider;
@@ -119,6 +121,17 @@ struct ModRow : juce::Component, HasEditor
         addAndMakeVisible(*target);
 
         refreshRow();
+
+        auto mg = [this](auto g) {
+            auto r = std::make_unique<jcmp::GlyphPainter>(g);
+            r->setCustomClass(connectors::SCXTStyleSheetCreator::InformationLabel);
+            addAndMakeVisible(*r);
+            return r;
+        };
+        x1 = mg(jcmp::GlyphPainter::CROSS);
+        x2 = mg(jcmp::GlyphPainter::CROSS);
+        a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
+        a2 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
     }
 
     ~ModRow()
@@ -139,9 +152,13 @@ struct ModRow : juce::Component, HasEditor
 
         map(power, b.getHeight());
         map(source, 90);
+        map(x1, 6);
         map(sourceVia, 90);
-        map(depth, 140, 2);
+        map(x2, 6);
+        map(depth, 120, 2);
+        map(a1, 10);
         map(curve, 60);
+        map(a2, 10);
         map(target, getWidth() - b.getX());
     }
     void refreshRow()

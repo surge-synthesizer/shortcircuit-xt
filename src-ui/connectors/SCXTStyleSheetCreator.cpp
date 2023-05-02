@@ -27,6 +27,7 @@
 
 #include "SCXTBinary.h"
 #include "SCXTStyleSheetCreator.h"
+#include "sst/jucegui/components/BaseStyles.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
@@ -45,6 +46,8 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
         .withBaseClass(comp::ToggleButton::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixMenu)
         .withBaseClass(SCXTStyleSheetCreator::ModulationMatrixToggle);
+    sheet_t::addClass(SCXTStyleSheetCreator::InformationLabel)
+        .withBaseClass(comp::ControlStyles::styleClass);
 
     const auto &base = sheet_t::getBuiltInStyleSheet(sheet_t::DARK);
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::guttercol,
@@ -81,6 +84,9 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
                     juce::Colour(0xD6, 0xD6, 0xD6));
     base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::texthoveroncol,
                     juce::Colour(0xE6, 0xE6, 0xF6));
+
+    base->setColour(InformationLabel, comp::ControlStyles::controlLabelCol,
+                    juce::Colour(0x88, 0x88, 0x88));
 
     auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
                                                             scxt::ui::binary::InterMedium_ttfSize);
