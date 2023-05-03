@@ -25,22 +25,26 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_SENDFXSCREEN_H
-#define SCXT_SRC_UI_COMPONENTS_SENDFXSCREEN_H
+#ifndef SCXT_SRC_UI_COMPONENTS_PLAYSCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_PLAYSCREEN_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
 namespace scxt::ui
 {
-struct SendFXScreen : juce::Component
+struct PlayScreen : juce::Component
 {
     void paint(juce::Graphics &g)
     {
-        g.fillAll(juce::Colours::green);
-        g.setColour(juce::Colours::green.contrasting());
-        g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-        g.drawText("Send FX", getLocalBounds(), juce::Justification::centred);
+        g.fillAll(juce::Colour(0x15, 0x15, 0x15));
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(60, juce::Font::plain));
+        g.drawText("Play Mode", getLocalBounds().withTrimmedBottom(40),
+                   juce::Justification::centred);
+        g.setFont(juce::Font(20, juce::Font::plain));
+        g.drawText("Coming A Bit Less Soon", getLocalBounds().withTrimmedTop(40),
+                   juce::Justification::centred);
     }
 };
 } // namespace scxt::ui
-#endif // SHORTCIRCUIT_SENDFXSCREEN_H
+#endif // SHORTCIRCUITXT_PLAYSCREEN_H

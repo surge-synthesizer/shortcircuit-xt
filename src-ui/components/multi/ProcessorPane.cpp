@@ -77,7 +77,7 @@ void ProcessorPane::showHamburgerMenu()
         });
     }
 
-    p.showMenuAsync(juce::PopupMenu::Options());
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 void ProcessorPane::resetControls()

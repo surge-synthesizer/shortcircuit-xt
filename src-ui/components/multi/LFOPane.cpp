@@ -30,9 +30,14 @@
 #include "datamodel/parameter.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
+#include "sst/jucegui/components/HSliderFilled.h"
+#include "sst/jucegui/components/NamedPanel.h"
+#include "sst/jucegui/components/VSlider.h"
 
 namespace scxt::ui::multi
 {
+
+namespace jcmp = sst::jucegui::components;
 
 // TODO: A Million things of course
 struct LfoDataRender : juce::Component
@@ -42,6 +47,25 @@ struct LfoDataRender : juce::Component
 
     void paint(juce::Graphics &g) override
     {
+        auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
+                                             jcmp::NamedPanel::Styles::regionBG);
+        auto bgq =
+            parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
+                                       jcmp::HSliderFilled::Styles::guttercol);
+        auto boxc =
+            parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
+                                       jcmp::HSliderFilled::Styles::backgroundcol);
+        auto valc =
+            parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
+                                       jcmp::HSliderFilled::Styles::valcol);
+
+        auto hanc =
+            parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
+                                       jcmp::HSliderFilled::Styles::handlecol);
+
+        auto hanhovc =
+            parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
+                                       jcmp::HSliderFilled::Styles::handlehovcol);
         g.setColour(juce::Colours::white);
         g.drawRect(getLocalBounds(), 1);
         if (!parent)
@@ -54,28 +78,39 @@ struct LfoDataRender : juce::Component
         auto hm = bx.getHeight() * 0.5;
         for (int i = 0; i < ls.repeat; ++i)
         {
-            g.setColour(juce::Colours::darkblue);
+            g.setColour(i % 2 == 0 ? bg : bgq);
             g.fillRect(bx);
 
             auto d = ls.data[i];
 
             if (d > 0)
             {
-                g.setColour(juce::Colours::white);
-                auto r = bx.withTrimmedTop((1.f - d) * hm).withBottom(hm);
+                g.setColour(valc);
+                auto r = bx.withTrimmedTop((1.f - d) * hm).withBottom(hm).reduced(0.5, 0);
                 g.fillRect(r);
+
+                g.setColour(hanc);
+                auto rh = bx.withTrimmedTop((1.f - d) * hm)
+                              .withHeight(1)
+                              .reduced(0.5, 0)
+                              .translated(0, -0.5);
+                g.fillRect(rh);
             }
             else
             {
-                g.setColour(juce::Colours::white);
-                auto r = bx.withTop(hm).withTrimmedBottom((1.f + d) * hm);
+                g.setColour(valc);
+                auto r = bx.withTop(hm).withTrimmedBottom((1.f + d) * hm).reduced(0.5, 0);
                 g.fillRect(r);
+                g.setColour(hanc);
+                auto rh = bx.withTrimmedBottom((1.f + d) * hm);
+                rh = rh.withTrimmedTop(rh.getHeight() - 1).reduced(0.5, 0).translated(0, -0.5);
+                g.fillRect(rh);
             }
 
-            g.setColour(juce::Colours::blue.brighter(0.4));
-            g.drawRect(bx, 1);
             bx = bx.translated(w, 0);
         }
+        g.setColour(boxc);
+        g.drawRect(getLocalBounds());
     }
 
     void handleMouseAt(const juce::Point<float> &f)
@@ -96,7 +131,7 @@ struct LfoDataRender : juce::Component
     }
     void mouseDown(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
     void mouseDrag(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
-};
+}; // namespace juce::Component
 
 LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
@@ -266,7 +301,7 @@ void LfoPane::pickPresets()
             wt->pushCurrentLfoUpdate();
         });
     }
-    m.showMenuAsync(juce::PopupMenu::Options());
+    m.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 } // namespace scxt::ui::multi

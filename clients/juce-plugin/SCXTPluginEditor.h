@@ -29,6 +29,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "SCXTProcessor.h"
+#include "engine/engine.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
 
@@ -39,7 +40,7 @@ class SCXTPluginEditor : public juce::AudioProcessorEditor
 {
   public:
     SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &,
-                     const scxt::sample::SampleManager &);
+                     const scxt::sample::SampleManager &, scxt::infrastructure::DefaultsProvider &);
     ~SCXTPluginEditor();
 
     //==============================================================================

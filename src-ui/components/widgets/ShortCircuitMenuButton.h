@@ -25,35 +25,20 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_ENGINE_PART_EFFECTS_H
-#define SCXT_SRC_ENGINE_PART_EFFECTS_H
+#ifndef SCXT_SRC_UI_COMPONENTS_WIDGETS_SHORTCIRCUITMENUBUTTON_H
+#define SCXT_SRC_UI_COMPONENTS_WIDGETS_SHORTCIRCUITMENUBUTTON_H
 
-#include <memory>
-namespace scxt::engine
-{
-struct Engine;
+#include <sst/jucegui/components/MenuButton.h>
 
-struct PartEffectStorage
+namespace scxt::ui::widgets
 {
-    static constexpr int maxPartEffectParams{12};
-    float params[maxPartEffectParams];
+struct ShortCircuitMenuButton : sst::jucegui::components::MenuButton
+{
+    std::unique_ptr<juce::Drawable> icon;
+    std::unique_ptr<juce::Drawable> orangeIcon;
+    ShortCircuitMenuButton();
+
+    void paint(juce::Graphics &g) override;
 };
-struct PartEffect
-{
-    PartEffect(Engine *, PartEffectStorage *, float *) {}
-    virtual ~PartEffect() = default;
-
-    virtual void init() = 0;
-    virtual void process(float *__restrict L, float *__restrict R) = 0;
-};
-
-enum AvailablePartEffects
-{
-    reverb1,
-    flanger
-};
-
-std::unique_ptr<PartEffect> createEffect(AvailablePartEffects p, Engine *e, PartEffectStorage *s);
-} // namespace scxt::engine
-
-#endif // SHORTCIRCUITXT_PART_FX_H
+} // namespace scxt::ui::widgets
+#endif // SHORTCIRCUITXT_SHORTCIRCUITMENUBUTTON_H

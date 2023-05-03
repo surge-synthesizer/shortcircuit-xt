@@ -39,6 +39,7 @@
 #include "sample/sample_manager.h"
 
 #include <filesystem>
+#include <memory>
 #include <set>
 #include <cassert>
 #include <thread>
@@ -57,6 +58,10 @@ namespace scxt::messaging
 {
 struct MessageController;
 }
+namespace scxt::infrastructure
+{
+struct DefaultsProvider;
+}
 namespace scxt::engine
 {
 struct Engine : MoveableOnly<Engine>, SampleRateSupport
@@ -68,6 +73,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     const std::unique_ptr<Patch> &getPatch() const { return patch; }
     const std::unique_ptr<sample::SampleManager> &getSampleManager() const { return sampleManager; }
+
+    std::unique_ptr<infrastructure::DefaultsProvider> defaults;
 
     /**
      * An option to add a description of your running environment, like "VST3 in Reaper"

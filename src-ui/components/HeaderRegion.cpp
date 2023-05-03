@@ -27,54 +27,86 @@
 
 #include "HeaderRegion.h"
 #include "SCXTEditor.h"
+#include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/ToggleButtonRadioGroup.h"
+#include "sst/jucegui/data/Discrete.h"
+#include "widgets/ShortCircuitMenuButton.h"
 
 namespace scxt::ui
 {
 
 namespace cmsg = scxt::messaging::client;
 
+struct spData : sst::jucegui::data::Discrete
+{
+    HeaderRegion *headerRegion{nullptr};
+    spData(HeaderRegion *hr) : headerRegion(hr) {}
+    std::string getLabel() const override { return "Page"; }
+    int getValue() const override
+    {
+        if (headerRegion && headerRegion->editor)
+            return headerRegion->editor->activeScreen;
+        return 0;
+    }
+
+    void setValueFromGUI(const int &f) override
+    {
+        if (headerRegion && headerRegion->editor)
+        {
+            headerRegion->editor->setActiveScreen((SCXTEditor::ActiveScreen)f);
+            headerRegion->repaint();
+        }
+    }
+
+    void setValueFromModel(const int &f) override {}
+
+    std::string getValueAsStringFor(int i) const override
+    {
+        if (headerRegion && headerRegion->editor)
+        {
+            switch ((SCXTEditor::ActiveScreen)i)
+            {
+            case SCXTEditor::MULTI:
+                return "MULTI";
+            case SCXTEditor::MIXER:
+                return "MIXER";
+            case SCXTEditor::PLAY:
+                return "PLAY";
+            }
+        }
+        assert(false);
+        return "-error-";
+    }
+
+    int getMax() const override { return 2; }
+};
+
 HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 {
-    multiPage = std::make_unique<juce::TextButton>("multi");
-    multiPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::MULTI); };
-    addAndMakeVisible(*multiPage);
+    selectedPage = std::make_unique<sst::jucegui::components::ToggleButtonRadioGroup>();
+    selectedPageData = std::make_unique<spData>(this);
+    selectedPage->setSource(selectedPageData.get());
 
-    sendPage = std::make_unique<juce::TextButton>("send");
-    sendPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::SEND_FX); };
-    addAndMakeVisible(*sendPage);
+    addAndMakeVisible(*selectedPage);
 
-    aboutPage = std::make_unique<juce::TextButton>("about");
-    aboutPage->onClick = [this]() { editor->setActiveScreen(SCXTEditor::ABOUT); };
-    addAndMakeVisible(*aboutPage);
+    scMenu = std::make_unique<widgets::ShortCircuitMenuButton>();
+    scMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->editor->showMainMenu();
+    });
+    addAndMakeVisible(*scMenu);
+}
 
-    tunMenu = std::make_unique<juce::TextButton>("tun");
-    tunMenu->onClick = [this]() { showTuningMenu(); };
-    addAndMakeVisible(*tunMenu);
+HeaderRegion::~HeaderRegion()
+{
+    if (selectedPage)
+        selectedPage->setSource(nullptr);
 }
 
 void HeaderRegion::resized()
 {
-    multiPage->setBounds(2, 2, 98, getHeight() - 4);
-    sendPage->setBounds(102, 2, 98, getHeight() - 4);
-    aboutPage->setBounds(202, 2, 98, getHeight() - 4);
-    tunMenu->setBounds(getWidth() - 200, 2, 98, getHeight() - 4);
+    selectedPage->setBounds(4, 4, 170, getHeight() - 8);
+    scMenu->setBounds(getWidth() - getHeight() - 8, 4, getHeight() - 8, getHeight() - 8);
 }
 
-void HeaderRegion::showTuningMenu()
-{
-    auto p = juce::PopupMenu();
-    p.addSectionHeader("Tuning");
-    p.addSeparator();
-    p.addItem("Twelve TET", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            cmsg::clientSendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::TWELVE_TET),
-                                            w->editor->msgCont);
-    });
-    p.addItem("MTS-ESP", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            cmsg::clientSendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::MTS_ESP),
-                                            w->editor->msgCont);
-    });
-    p.showMenuAsync({});
-}
 } // namespace scxt::ui

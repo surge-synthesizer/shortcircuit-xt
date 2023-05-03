@@ -29,6 +29,8 @@
 #include "SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/BaseStyles.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
 
@@ -61,6 +63,44 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
     base->setColour(ModulationTabs, comp::NamedPanel::Styles::selectedtabcol,
                     juce::Colour(0x27, 0x88, 0xD6));
 
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::onbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::hoveronbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::offbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::hoveroffbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::textoncol,
+                    juce::Colour(0xFF, 0x90, 0x00));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::textoffcol,
+                    juce::Colour(0x88, 0x88, 0x88));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::borderoncol,
+                    juce::Colour(0xFF, 0x90, 0x00));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::bordercol,
+                    juce::Colour(0x35, 0x35, 0x35));
+    base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::texthoveroncol,
+                    juce::Colour(0xD6, 0xD6, 0xD6));
+
+    base->setColour(comp::ToggleButton::Styles::styleClass, comp::ToggleButton::Styles::onbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::ToggleButton::Styles::styleClass,
+                    comp::ToggleButton::Styles::hoveronbgcol, juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::ToggleButton::Styles::styleClass, comp::ToggleButton::Styles::offbgcol,
+                    juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::ToggleButton::Styles::styleClass,
+                    comp::ToggleButton::Styles::hoveroffbgcol, juce::Colour(0x15, 0x15, 0x15));
+    base->setColour(comp::ToggleButton::Styles::styleClass, comp::ToggleButton::Styles::textoncol,
+                    juce::Colour(0xFF, 0x90, 0x00));
+    base->setColour(comp::ToggleButton::Styles::styleClass, comp::ToggleButton::Styles::textoffcol,
+                    juce::Colour(0x88, 0x88, 0x88));
+    base->setColour(comp::ToggleButton::Styles::styleClass, comp::ToggleButton::Styles::borderoncol,
+                    juce::Colour(0xFF, 0x90, 0x00));
+    base->setColour(comp::ToggleButton::Styles::styleClass, comp::ToggleButton::Styles::bordercol,
+                    juce::Colour(0x35, 0x35, 0x35));
+    base->setColour(comp::ToggleButton::Styles::styleClass,
+                    comp::ToggleButton::Styles::texthoveroncol, juce::Colour(0xD6, 0xD6, 0xD6));
+
     base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::onbgcol,
                     juce::Colour(0x15, 0x15, 0x15));
     base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::hoveronbgcol,
@@ -87,6 +127,9 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
 
     base->setColour(InformationLabel, comp::ControlStyles::controlLabelCol,
                     juce::Colour(0x88, 0x88, 0x88));
+
+    base->setFont(comp::NamedPanel::Styles::styleClass, comp::NamedPanel::Styles::regionLabelFont,
+                  juce::Font(11));
 
     auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
                                                             scxt::ui::binary::InterMedium_ttfSize);

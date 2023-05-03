@@ -29,8 +29,14 @@
 #define SCXT_SRC_UI_COMPONENTS_HEADERREGION_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <sst/jucegui/components/ToggleButton.h>
+#include <fmt/core.h>
+
+#include "sst/jucegui/components/ToggleButtonRadioGroup.h"
+#include "sst/jucegui/data/Discrete.h"
+#include "widgets/ShortCircuitMenuButton.h"
 #include "HasEditor.h"
-#include "fmt/core.h"
+
 #include "version.h"
 
 namespace scxt::ui
@@ -39,12 +45,16 @@ struct SCXTEditor;
 
 struct HeaderRegion : juce::Component, HasEditor
 {
-    std::unique_ptr<juce::Button> multiPage, sendPage, aboutPage, tunMenu;
+    std::unique_ptr<widgets::ShortCircuitMenuButton> scMenu;
+    std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedPage;
+    std::unique_ptr<sst::jucegui::data::Discrete> selectedPageData;
 
     HeaderRegion(SCXTEditor *);
+    ~HeaderRegion();
 
     void paint(juce::Graphics &g) override
     {
+        return;
 #if BUILD_IS_DEBUG
         g.fillAll(juce::Colours::red);
         g.setColour(juce::Colours::pink.contrasting());
@@ -68,7 +78,6 @@ struct HeaderRegion : juce::Component, HasEditor
         voiceCount = vc;
         repaint();
     }
-    void showTuningMenu();
 };
 } // namespace scxt::ui
 

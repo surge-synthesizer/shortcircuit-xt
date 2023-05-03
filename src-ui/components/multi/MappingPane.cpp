@@ -1038,7 +1038,7 @@ struct SampleDisplay : juce::Component, HasEditor
         add(engine::Zone::PlayMode::ONE_SHOT, "OneShot");
         add(engine::Zone::PlayMode::ON_RELEASE, "On Release (t/k)");
 
-        p.showMenuAsync({});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     void showLoopModeMenu()
     {
@@ -1057,7 +1057,7 @@ struct SampleDisplay : juce::Component, HasEditor
         add(engine::Zone::LoopMode::LOOP_WHILE_GATED, "Loop While Gated");
         add(engine::Zone::LoopMode::LOOP_FOR_COUNT, "For Count (t/k)");
 
-        p.showMenuAsync({});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     void showLoopDirectionMenu()
     {
@@ -1075,7 +1075,7 @@ struct SampleDisplay : juce::Component, HasEditor
         add(engine::Zone::LoopDirection::FORWARD_ONLY, "Loop Forward");
         add(engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS, "Loop Alternate");
 
-        p.showMenuAsync({});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;

@@ -13,6 +13,7 @@ juce_add_binary_data(scxt-ui-binary
 add_library(${PROJECT_NAME} STATIC
 
         components/SCXTEditor.cpp
+        components/SCXTEditorMenus.cpp
         components/SCXTEditorResponseHandlers.cpp
 
         components/HeaderRegion.cpp
@@ -27,6 +28,8 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/OutputPane.cpp
         components/multi/PartGroupSidebar.cpp
         components/multi/ProcessorPane.cpp
+
+        components/widgets/ShortCircuitMenuButton.cpp
 
         connectors/SCXTStyleSheetCreator.cpp
 

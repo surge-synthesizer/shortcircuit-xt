@@ -2,7 +2,7 @@ project(scxt-core LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
         datamodel/adsr_storage.cpp
-        
+
         dsp/generator.cpp
         dsp/data_tables.cpp
         dsp/processor/processor.cpp
@@ -55,7 +55,7 @@ add_library(${PROJECT_NAME} STATIC
 target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt
-        sst-cpputils sst-filters sst-basic-blocks sst-effects sst-plugininfra
+        sst-cpputils sst-filters sst-basic-blocks sst-effects sst-plugininfra sst-plugininfra::tinyxml
         libgig libakai
         mts-esp-client
         shortcircuit::simde
