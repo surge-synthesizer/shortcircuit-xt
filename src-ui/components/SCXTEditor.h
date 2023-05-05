@@ -29,7 +29,11 @@
 #define SCXT_SRC_UI_COMPONENTS_SCXTEDITOR_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <memory>
 
+#include "PlayScreen.h"
+#include "SCXTJuceLookAndFeel.h"
+#include "engine/engine.h"
 #include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
 #include "selection/selection_manager.h"
@@ -43,8 +47,9 @@ namespace scxt::ui
 
 struct HeaderRegion;
 struct MultiScreen;
-struct SendFXScreen;
+struct MixerScreen;
 struct AboutScreen;
+struct SCXTJuceLookAndFeel;
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
 {
@@ -58,6 +63,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
      */
     const sample::SampleManager &sampleManager;
 
+    infrastructure::DefaultsProvider &defaultsProvider;
+
+    static constexpr int edWidth{1186}, edHeight{816};
+
+    std::unique_ptr<SCXTJuceLookAndFeel> lnf;
+
     struct IdleTimer : juce::Timer
     {
         SCXTEditor *editor{nullptr};
@@ -68,7 +79,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     std::unique_ptr<HeaderRegion> headerRegion;
     std::unique_ptr<MultiScreen> multiScreen;
-    std::unique_ptr<SendFXScreen> sendFxScreen;
+    std::unique_ptr<MixerScreen> mixerScreen;
+    std::unique_ptr<PlayScreen> playScreen;
     std::unique_ptr<AboutScreen> aboutScreen;
 
     // TODO fix me with a proper tooltip type
@@ -84,18 +96,25 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     };
     std::unique_ptr<Tooltip> toolTip;
 
-    SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s);
+    SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s,
+               infrastructure::DefaultsProvider &d);
     virtual ~SCXTEditor() noexcept;
 
     enum ActiveScreen
     {
         MULTI,
-        SEND_FX,
-        ABOUT
-    };
+        MIXER,
+        PLAY
+    } activeScreen{MULTI};
     void setActiveScreen(ActiveScreen s);
+    void showAboutOverlay();
+
+    float zoomFactor{1.f};
+    void setZoomFactor(float zoomFactor); // 1.0 == 100%
+    std::function<void(float)> onZoomChanged{nullptr};
 
     void resized() override;
+    void parentHierarchyChanged() override;
 
     // File Drag and Drop Interface
     bool isInterestedInFileDrag(const juce::StringArray &files) override;
@@ -104,6 +123,13 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     // Deal with message queues.
     void idle();
     void drainCallbackQueue();
+
+    // Popup Menu Options
+    juce::PopupMenu::Options defaultPopupMenuOptions()
+    {
+        auto r = juce::PopupMenu::Options().withParentComponent(this);
+        return r;
+    }
 
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
@@ -143,6 +169,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void showTooltip(const juce::Component &relativeTo);
     void hideTooltip();
     void setTooltipContents(const std::string &s);
+
+    void showMainMenu();
+    void addTuningMenu(juce::PopupMenu &into, bool addTitle = true);
+    void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;

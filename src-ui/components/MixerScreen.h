@@ -25,35 +25,25 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_ENGINE_PART_EFFECTS_H
-#define SCXT_SRC_ENGINE_PART_EFFECTS_H
+#ifndef SCXT_SRC_UI_COMPONENTS_MIXERSCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_MIXERSCREEN_H
 
-#include <memory>
-namespace scxt::engine
-{
-struct Engine;
+#include <juce_gui_basics/juce_gui_basics.h>
 
-struct PartEffectStorage
+namespace scxt::ui
 {
-    static constexpr int maxPartEffectParams{12};
-    float params[maxPartEffectParams];
+struct MixerScreen : juce::Component
+{
+    void paint(juce::Graphics &g)
+    {
+        g.fillAll(juce::Colour(0x15, 0x15, 0x15));
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(60, juce::Font::plain));
+        g.drawText("Mixer", getLocalBounds().withTrimmedBottom(40), juce::Justification::centred);
+        g.setFont(juce::Font(20, juce::Font::plain));
+        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(40),
+                   juce::Justification::centred);
+    }
 };
-struct PartEffect
-{
-    PartEffect(Engine *, PartEffectStorage *, float *) {}
-    virtual ~PartEffect() = default;
-
-    virtual void init() = 0;
-    virtual void process(float *__restrict L, float *__restrict R) = 0;
-};
-
-enum AvailablePartEffects
-{
-    reverb1,
-    flanger
-};
-
-std::unique_ptr<PartEffect> createEffect(AvailablePartEffects p, Engine *e, PartEffectStorage *s);
-} // namespace scxt::engine
-
-#endif // SHORTCIRCUITXT_PART_FX_H
+} // namespace scxt::ui
+#endif // SHORTCIRCUIT_SENDFXSCREEN_H

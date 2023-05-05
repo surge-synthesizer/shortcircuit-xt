@@ -176,7 +176,7 @@ void AdsrPane::showHamburgerMenu()
     p.addItem("Coming", []() {});
     p.addItem("Soon", []() {});
 
-    p.showMenuAsync(juce::PopupMenu::Options());
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 } // namespace scxt::ui::multi

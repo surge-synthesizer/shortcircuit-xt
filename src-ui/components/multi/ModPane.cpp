@@ -272,7 +272,7 @@ struct ModRow : juce::Component, HasEditor
                       });
         }
 
-        p.showMenuAsync({});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
     void showCurveMenu()
@@ -300,7 +300,7 @@ struct ModRow : juce::Component, HasEditor
                       });
         }
 
-        p.showMenuAsync({});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
     void showTargetMenu()
@@ -328,7 +328,7 @@ struct ModRow : juce::Component, HasEditor
                       });
         }
 
-        p.showMenuAsync({});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 };
 

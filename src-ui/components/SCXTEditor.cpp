@@ -27,15 +27,20 @@
 
 #include "SCXTEditor.h"
 
+#include "PlayScreen.h"
+#include "engine/engine.h"
 #include "messaging/client/selection_messages.h"
 #include "selection/selection_manager.h"
 #include "sst/jucegui/style/StyleSheet.h"
 
+#include "infrastructure/user_defaults.h"
+
 #include "HeaderRegion.h"
 #include "MultiScreen.h"
-#include "SendFXScreen.h"
+#include "MixerScreen.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "AboutScreen.h"
+#include "SCXTJuceLookAndFeel.h"
 
 namespace scxt::ui
 {
@@ -52,11 +57,16 @@ void SCXTEditor::Tooltip::paint(juce::Graphics &g)
     g.drawText(tooltipText, getLocalBounds().reduced(2), juce::Justification::centred);
 }
 
-SCXTEditor::SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s)
-    : msgCont(e), sampleManager(s)
+SCXTEditor::SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s,
+                       infrastructure::DefaultsProvider &d)
+    : msgCont(e), sampleManager(s), defaultsProvider(d)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
     setStyle(connectors::SCXTStyleSheetCreator::setup());
+
+    // TODO what happens with two windows open when I go away?
+    lnf = std::make_unique<SCXTJuceLookAndFeel>();
+    juce::LookAndFeel::setDefaultLookAndFeel(lnf.get());
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
@@ -80,13 +90,19 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, const sample::SampleMana
     multiScreen = std::make_unique<MultiScreen>(this);
     addAndMakeVisible(*multiScreen);
 
-    sendFxScreen = std::make_unique<SendFXScreen>();
-    addChildComponent(*sendFxScreen);
+    mixerScreen = std::make_unique<MixerScreen>();
+    addChildComponent(*mixerScreen);
+
+    playScreen = std::make_unique<PlayScreen>();
+    addChildComponent(*playScreen);
 
     aboutScreen = std::make_unique<AboutScreen>(this);
     addChildComponent(*aboutScreen);
 
     onStyleChanged();
+
+    auto zfi = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::zoomLevel, 100);
+    setZoomFactor(zfi * 0.01);
 }
 
 SCXTEditor::~SCXTEditor() noexcept
@@ -97,29 +113,39 @@ SCXTEditor::~SCXTEditor() noexcept
 
 void SCXTEditor::setActiveScreen(ActiveScreen s)
 {
+    activeScreen = s;
+    aboutScreen->setVisible(false);
     switch (s)
     {
     case MULTI:
         multiScreen->setVisible(true);
-        sendFxScreen->setVisible(false);
-        aboutScreen->setVisible(false);
+        mixerScreen->setVisible(false);
+        playScreen->setVisible(false);
         resized();
         break;
 
-    case SEND_FX:
+    case MIXER:
         multiScreen->setVisible(false);
-        sendFxScreen->setVisible(true);
-        aboutScreen->setVisible(false);
+        mixerScreen->setVisible(true);
+        playScreen->setVisible(false);
         resized();
         break;
 
-    case ABOUT:
+    case PLAY:
         multiScreen->setVisible(false);
-        sendFxScreen->setVisible(false);
-        aboutScreen->setVisible(true);
+        mixerScreen->setVisible(false);
+        playScreen->setVisible(true);
         resized();
         break;
     }
+    repaint();
+}
+
+void SCXTEditor::showAboutOverlay()
+{
+    aboutScreen->toFront(true);
+    aboutScreen->setVisible(true);
+    resized();
 }
 
 void SCXTEditor::resized()
@@ -129,8 +155,10 @@ void SCXTEditor::resized()
 
     if (multiScreen->isVisible())
         multiScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
-    if (sendFxScreen->isVisible())
-        sendFxScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+    if (mixerScreen->isVisible())
+        mixerScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+    if (playScreen->isVisible())
+        playScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
     if (aboutScreen->isVisible())
         aboutScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
 }
@@ -216,5 +244,17 @@ void SCXTEditor::showTooltip(const juce::Component &relativeTo)
 void SCXTEditor::hideTooltip() { toolTip->setVisible(false); }
 
 void SCXTEditor::setTooltipContents(const std::string &s) { toolTip->setTooltipText(s); }
+
+void SCXTEditor::parentHierarchyChanged() { setZoomFactor(zoomFactor); }
+
+void SCXTEditor::setZoomFactor(float zf)
+{
+    zoomFactor = zf;
+    setTransform(juce::AffineTransform().scaled(zoomFactor));
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::zoomLevel,
+                                            zoomFactor * 100);
+    if (onZoomChanged)
+        onZoomChanged(zoomFactor);
+}
 
 } // namespace scxt::ui

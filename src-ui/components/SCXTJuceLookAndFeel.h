@@ -25,35 +25,24 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_ENGINE_PART_EFFECTS_H
-#define SCXT_SRC_ENGINE_PART_EFFECTS_H
+#ifndef SCXT_SRC_UI_COMPONENTS_SCXTJUCELOOKANDFEEL_H
+#define SCXT_SRC_UI_COMPONENTS_SCXTJUCELOOKANDFEEL_H
 
-#include <memory>
-namespace scxt::engine
-{
-struct Engine;
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "SCXTBinary.h"
 
-struct PartEffectStorage
+namespace scxt::ui
 {
-    static constexpr int maxPartEffectParams{12};
-    float params[maxPartEffectParams];
+struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
+{
+    juce::Typeface::Ptr interMedTF;
+    SCXTJuceLookAndFeel()
+    {
+        interMedTF = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
+                                                             scxt::ui::binary::InterMedium_ttfSize);
+    }
+
+    juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(14); }
 };
-struct PartEffect
-{
-    PartEffect(Engine *, PartEffectStorage *, float *) {}
-    virtual ~PartEffect() = default;
-
-    virtual void init() = 0;
-    virtual void process(float *__restrict L, float *__restrict R) = 0;
-};
-
-enum AvailablePartEffects
-{
-    reverb1,
-    flanger
-};
-
-std::unique_ptr<PartEffect> createEffect(AvailablePartEffects p, Engine *e, PartEffectStorage *s);
-} // namespace scxt::engine
-
-#endif // SHORTCIRCUITXT_PART_FX_H
+} // namespace scxt::ui
+#endif // SHORTCIRCUITXT_SCXTJUCELOOKANDFEEL_H

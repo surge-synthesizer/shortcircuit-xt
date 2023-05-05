@@ -34,12 +34,16 @@
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
 #include "sfz_support/sfz_import.h"
+#include "infrastructure/user_defaults.h"
+
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "sst/plugininfra/paths.h"
 
 #include "gig.h"
 #include "SF.h"
 
 #include "version.h"
+#include <filesystem>
 #include <mutex>
 namespace scxt::engine
 {
@@ -59,6 +63,21 @@ Engine::Engine()
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);
     patch = std::make_unique<Patch>();
     patch->parentEngine = this;
+
+    auto docpath = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
+    try
+    {
+        if (!fs::is_directory(docpath))
+            fs::create_directory(docpath);
+    }
+    catch (std::exception &e)
+    {
+    }
+
+    defaults = std::make_unique<infrastructure::DefaultsProvider>(
+        docpath, "ShortcircuitXT",
+        [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
+        [](auto em, auto t) { std::cerr << "PARSE ERROR FIXME " << em << t << std::endl; });
 
     for (auto &v : voices)
         v = nullptr;

@@ -57,6 +57,8 @@ struct AboutScreen : juce::Component, HasEditor
 
     void visibilityChanged() override;
 
+    void mouseUp(const juce::MouseEvent &e) override { setVisible(false); }
+
     static constexpr int infoh = 23;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutScreen);
