@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_UI_COMPONENTS_MULTI_LFOPANE_H
 #define SCXT_SRC_UI_COMPONENTS_MULTI_LFOPANE_H
 
+#include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/MultiSwitch.h"
@@ -38,6 +39,7 @@
 #include "connectors/PayloadDataAttachment.h"
 #include "modulation/modulators/steplfo.h"
 #include "engine/zone.h"
+#include <memory>
 
 namespace scxt::ui::multi
 {
@@ -66,6 +68,9 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     void setActive(int index, bool active);
     void setLfo(int index, const modulation::modulators::StepLFOStorage &);
 
+    void rotate(int dir);
+    void shiftBy(float amt);
+
     std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, tempoSyncB, cycleB;
     std::unique_ptr<boolAttachment_t> oneshotA, tempoSyncA, cycleA;
 
@@ -73,6 +78,8 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<attachment_t> rateA, deformA, stepsA;
 
     std::unique_ptr<LfoDataRender> lfoDataRender;
+
+    std::array<std::unique_ptr<sst::jucegui::components::GlyphButton>, 4> jog;
 
     std::array<modulation::modulators::StepLFOStorage, engine::lfosPerZone> lfoData;
 

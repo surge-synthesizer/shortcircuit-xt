@@ -28,6 +28,7 @@
 #include "SCXTBinary.h"
 #include "SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/BaseStyles.h"
+#include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/NamedPanel.h"
@@ -42,6 +43,8 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
 {
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorVSlider)
         .withBaseClass(comp::VSlider::Styles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorKnob)
+        .withBaseClass(comp::Knob::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationTabs)
         .withBaseClass(comp::NamedPanel::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixToggle)
@@ -60,8 +63,20 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::handlecol,
                     juce::Colour(0xC4, 0xC4, 0xC4));
+
     base->setColour(ModulationTabs, comp::NamedPanel::Styles::selectedtabcol,
                     juce::Colour(0x27, 0x88, 0xD6));
+
+    base->setColour(ModulationEditorKnob, comp::Knob::Styles::guttercol,
+                    juce::Colour(0x39, 0x39, 0x39));
+    base->setColour(ModulationEditorKnob, comp::Knob::Styles::gutterhovcol,
+                    juce::Colour(0x49, 0x49, 0x59));
+    base->setColour(ModulationEditorKnob, comp::Knob::Styles::valcol,
+                    juce::Colour(0x27, 0x88, 0xD6));
+    base->setColour(ModulationEditorKnob, comp::Knob::Styles::handlecol,
+                    juce::Colour(0xC4, 0xC4, 0xC4));
+    base->setColour(ModulationEditorKnob, comp::Knob::Styles::gradientcenter,
+                    juce::Colour(0x27, 0x68, 0xA6));
 
     base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::onbgcol,
                     juce::Colour(0x15, 0x15, 0x15));
