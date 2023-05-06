@@ -28,8 +28,11 @@
 #include "LFOPane.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "datamodel/parameter.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
+#include "sst/jucegui/components/GlyphButton.h"
+#include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
@@ -248,16 +251,94 @@ void LfoPane::rebuildLfo()
     rateK = std::make_unique<sst::jucegui::components::Knob>();
     rateK->setSource(rateA.get());
     rateK->setBounds(b5.translated(-2 * 50, 0));
+    rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
     addAndMakeVisible(*rateK);
 
     deformK = std::make_unique<sst::jucegui::components::Knob>();
     deformK->setSource(deformA.get());
     deformK->setBounds(b5.translated(-50, 0));
+    deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
     addAndMakeVisible(*deformK);
 
     lfoDataRender = std::make_unique<LfoDataRender>(this);
     lfoDataRender->setBounds(r.withTrimmedLeft(columnOneWidth + 5).withTrimmedBottom(55));
     addAndMakeVisible(*lfoDataRender);
+
+    jog[0] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_UP);
+    jog[0]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->shiftBy(0.05);
+    });
+
+    jog[1] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_DOWN);
+    jog[1]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->shiftBy(-0.05);
+    });
+    jog[2] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_LEFT);
+    jog[2]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->rotate(-1);
+    });
+    jog[3] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_RIGHT);
+    jog[3]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->rotate(1);
+    });
+
+    auto jogbx =
+        r.withTrimmedLeft(columnOneWidth + 5).withTop(getHeight() - 55).withWidth(55).reduced(2);
+
+    for (const auto &j : jog)
+    {
+        addAndMakeVisible(*j);
+        j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+    }
+    auto bthrd = jogbx.getWidth() / 3;
+    std::array<juce::Rectangle<float>, 4> boxes;
+    auto rc = jogbx.toFloat().withWidth(bthrd);
+    jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
+    rc = rc.translated(bthrd, 0);
+    jog[0]->setBounds(rc.withHeight(bthrd).toNearestInt());
+    jog[1]->setBounds(rc.withHeight(bthrd).translated(0, 2 * bthrd).toNearestInt());
+
+    rc = rc.translated(bthrd, 0);
+    jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
+}
+
+void LfoPane::rotate(int dir)
+{
+    auto &ls = lfoData[selectedTab];
+
+    if (dir == -1)
+    {
+        auto p0 = ls.data[0];
+        for (int i = 0; i < ls.repeat; ++i)
+        {
+            ls.data[i] = (i == ls.repeat - 1 ? p0 : ls.data[i + 1]);
+        }
+    }
+    else
+    {
+        auto p0 = ls.data[ls.repeat - 1];
+        for (int i = ls.repeat - 1; i >= 0; --i)
+        {
+            ls.data[i] = (i == 0 ? p0 : ls.data[i - 1]);
+        }
+    }
+    pushCurrentLfoUpdate();
+}
+
+void LfoPane::shiftBy(float amt)
+{
+    auto &ls = lfoData[selectedTab];
+
+    for (int i = 0; i < ls.repeat; ++i)
+    {
+        ls.data[i] = std::clamp(ls.data[i] + amt, -1.f, 1.f);
+    }
+
+    pushCurrentLfoUpdate();
 }
 
 namespace cmsg = scxt::messaging::client;
@@ -279,6 +360,9 @@ void LfoPane::resetAllComponents()
     deformK.reset();
     stepsK.reset();
     lfoDataRender.reset();
+
+    for (auto &j : jog)
+        j.reset();
 }
 
 void LfoPane::pickPresets()

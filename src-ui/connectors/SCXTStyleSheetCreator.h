@@ -37,6 +37,7 @@ struct SCXTStyleSheetCreator
     using sheet_t = sst::jucegui::style::StyleSheet;
 
     static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
+    static constexpr sheet_t::Class ModulationEditorKnob{"modulation.editor.knob"};
     static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
     static constexpr sheet_t::Class ModulationMatrixToggle{"modulation.editor.toggle"};
     static constexpr sheet_t::Class ModulationMatrixMenu{"modulation.editor.menu"};
