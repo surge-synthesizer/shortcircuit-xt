@@ -37,24 +37,27 @@
 #include "group.h"
 #include "dsp/smoothers.h"
 
-#include "part_effects.h"
+#include "bus.h"
 
 namespace scxt::engine
 {
 struct Patch;
+struct Engine;
 
 struct Part : MoveableOnly<Part>, SampleRateSupport
 {
-    static constexpr int maxEffectsPerPart{4};
-
-    Part(int16_t c) : id(PartID::next()), channel(c) { pitchBendSmoother.setTarget(0); }
+    Part(int16_t c) : id(PartID::next()), channel(c), partNumber(c)
+    {
+        pitchBendSmoother.setTarget(0);
+    }
 
     PartID id;
+    int16_t partNumber;
     int16_t channel;
     Patch *parentPatch{nullptr};
 
-    float output alignas(16)[maxOutputs][2][blockSize];
-    void process();
+    BusAddress routeTo{DEFAULT_BUS};
+    void process(Engine &onto);
 
     // TODO: have a channel mode like OMNI and MPE and everything
     static constexpr int16_t omniChannel{-1};
@@ -112,9 +115,6 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         assert(activeGroups);
         activeGroups--;
     }
-
-    std::array<std::unique_ptr<PartEffect>, maxEffectsPerPart> partEffects;
-    std::array<PartEffectStorage, maxEffectsPerPart> partEffectStorage;
 
     std::array<dsp::Smoother, 128> midiCCSmoothers;
     dsp::Smoother pitchBendSmoother;

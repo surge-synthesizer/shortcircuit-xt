@@ -26,8 +26,9 @@
  */
 
 #include "part.h"
-#include "part_effects.h"
+#include "bus.h"
 #include "patch.h"
+#include "engine.h"
 
 #include "selection/selection_manager.h"
 
@@ -38,7 +39,7 @@
 
 namespace scxt::engine
 {
-void Part::process()
+void Part::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
 
@@ -51,9 +52,6 @@ void Part::process()
     }
 #endif
 
-    // TODO these memsets are probably gratuitous
-    memset(output, 0, sizeof(output));
-
     for (auto &sm : midiCCSmoothers)
         if (sm.active)
             sm.step();
@@ -63,20 +61,15 @@ void Part::process()
     {
         if (g->isActive())
         {
-            g->process();
-            for (int i = 0; i < g->getNumOutputs(); ++i)
-            {
-                blk::accumulate_from_to<blockSize>(g->output[i][0], output[i][0]);
-                blk::accumulate_from_to<blockSize>(g->output[i][1], output[i][1]);
-            }
-        }
-    }
+            g->process(e);
 
-    for (const auto &fx : partEffects)
-    {
-        if (fx)
-        {
-            fx->process(output[0][0], output[0][1]);
+            auto bi = g->routeTo;
+            if (bi == DEFAULT_BUS)
+            {
+                bi = (BusAddress)(MAIN_0 + partNumber);
+            }
+            blk::accumulate_from_to<blockSize>(g->output[0], e.busses.partBusses[bi].output[0]);
+            blk::accumulate_from_to<blockSize>(g->output[1], e.busses.partBusses[bi].output[1]);
         }
     }
 }

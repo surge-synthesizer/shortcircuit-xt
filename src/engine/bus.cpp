@@ -25,7 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "part_effects.h"
+#include "bus.h"
+
 #include "configuration.h"
 
 #include "dsp/data_tables.h"
@@ -39,6 +40,10 @@
 #include "sst/effects/EffectCore.h"
 #include "sst/effects/Reverb1.h"
 #include "sst/effects/Flanger.h"
+
+#include "sst/basic-blocks/mechanics/block-ops.h"
+
+namespace mech = sst::basic_blocks::mechanics;
 
 namespace scxt::engine
 {
@@ -56,9 +61,9 @@ struct EngineBiquadAdapter
 struct Config
 {
     static constexpr int blockSize{scxt::blockSize};
-    using BaseClass = PartEffect;
+    using BaseClass = BusEffect;
     using GlobalStorage = Engine;
-    using EffectStorage = PartEffectStorage;
+    using EffectStorage = BusEffectStorage;
     using ValueStorage = float;
 
     using BiquadAdapter = EngineBiquadAdapter;
@@ -99,14 +104,14 @@ struct Config
 
 template <typename T> struct Impl : T
 {
-    static_assert(T::numParams <= PartEffectStorage::maxPartEffectParams);
+    static_assert(T::numParams <= BusEffectStorage::maxBusEffectParams);
     Engine *engine{nullptr};
-    PartEffectStorage *pes{nullptr};
+    BusEffectStorage *pes{nullptr};
     float *values{nullptr};
-    Impl(Engine *e, PartEffectStorage *f, float *v) : engine(e), pes(f), values(v), T(e, f, v) {}
+    Impl(Engine *e, BusEffectStorage *f, float *v) : engine(e), pes(f), values(v), T(e, f, v) {}
     void init() override
     {
-        for (int i = 0; i < T::numParams && i < PartEffectStorage::maxPartEffectParams; ++i)
+        for (int i = 0; i < T::numParams && i < BusEffectStorage::maxBusEffectParams; ++i)
         {
             values[i] = this->paramAt(i).defaultVal;
         }
@@ -115,7 +120,8 @@ template <typename T> struct Impl : T
     void process(float *__restrict L, float *__restrict R) override { T::processBlock(L, R); }
 };
 } // namespace dtl
-std::unique_ptr<PartEffect> createEffect(AvailablePartEffects p, Engine *e, PartEffectStorage *s)
+
+std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s)
 {
     namespace sfx = sst::effects;
     switch (p)
@@ -127,4 +133,34 @@ std::unique_ptr<PartEffect> createEffect(AvailablePartEffects p, Engine *e, Part
     }
     return nullptr;
 }
+
+void Bus::process()
+{
+    if (supportsSends && hasSends && auxLocation == PRE_FX)
+        memcpy(auxoutput, output, sizeof(output));
+
+    if (supportsEffects)
+    {
+        for (auto &fx : busEffects)
+        {
+            if (fx)
+            {
+                fx->process(output[0], output[1]);
+            }
+        }
+    }
+
+    if (supportsSends && hasSends && auxLocation == POST_FX_PRE_VCA)
+        memcpy(auxoutput, output, sizeof(output));
+
+    // If level becomes modulatable we want to lipol this
+    if (level != 1.f)
+    {
+        mech::scale_by<blockSize>(level, output[0], output[1]);
+    }
+    
+    if (supportsSends && hasSends && auxLocation == POST_VCA)
+        memcpy(auxoutput, output, sizeof(output));
+}
+
 } // namespace scxt::engine

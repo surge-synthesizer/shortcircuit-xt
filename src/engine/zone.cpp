@@ -26,6 +26,7 @@
  */
 
 #include "zone.h"
+#include "bus.h"
 #include "group.h"
 #include "part.h"
 #include "engine.h"
@@ -36,7 +37,7 @@
 
 namespace scxt::engine
 {
-void Zone::process()
+void Zone::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
     // TODO these memsets are probably gratuitous
@@ -50,8 +51,15 @@ void Zone::process()
         {
             if (v->process())
             {
-                blk::accumulate_from_to<blockSize>(v->output[0], output[0][0]);
-                blk::accumulate_from_to<blockSize>(v->output[1], output[0][1]);
+                if (routeTo == DEFAULT_BUS)
+                {
+                    blk::accumulate_from_to<blockSize>(v->output[0], output[0]);
+                    blk::accumulate_from_to<blockSize>(v->output[1], output[1]);
+                }
+                else
+                {
+                    assert(false);
+                }
             }
             if (!v->isVoicePlaying)
             {

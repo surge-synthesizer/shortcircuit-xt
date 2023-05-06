@@ -26,6 +26,7 @@
  */
 
 #include "group.h"
+#include "bus.h"
 #include "part.h"
 
 #include "infrastructure/sse_include.h"
@@ -37,7 +38,7 @@
 namespace scxt::engine
 {
 
-void Group::process()
+void Group::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
 
@@ -48,11 +49,15 @@ void Group::process()
     {
         if (z->isActive())
         {
-            z->process();
-            for (int i = 0; i < z->getNumOutputs(); ++i)
+            z->process(e);
+            if (routeTo == DEFAULT_BUS)
             {
-                blk::accumulate_from_to<blockSize>(z->output[i][0], output[i][0]);
-                blk::accumulate_from_to<blockSize>(z->output[i][1], output[i][1]);
+                blk::accumulate_from_to<blockSize>(z->output[0], output[0]);
+                blk::accumulate_from_to<blockSize>(z->output[1], output[1]);
+            }
+            else
+            {
+                assert(false);
             }
         }
     }

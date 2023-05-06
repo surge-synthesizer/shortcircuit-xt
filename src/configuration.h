@@ -35,7 +35,13 @@ namespace scxt
 {
 static constexpr uint16_t blockSize{16};
 static constexpr uint16_t blockSizeQuad{16 >> 2};
-static constexpr uint16_t maxOutputs{16};
+static constexpr uint16_t numParts{16};
+static constexpr uint16_t numAux{16};
+static constexpr uint16_t maxOutputs{1 + numParts + numAux}; // 16 parts, 4 aux, a main
+static constexpr uint16_t mainOutput{0};
+static constexpr uint16_t firstPartOutput{1};
+static constexpr uint16_t firstAuxOutput{firstPartOutput + numParts};
+
 static constexpr uint16_t maxVoices{256};
 
 // some battles are not worth it

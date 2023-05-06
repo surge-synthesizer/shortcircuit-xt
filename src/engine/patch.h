@@ -88,7 +88,6 @@ struct Patch : MoveableOnly<Patch>
                             id.to_string());
         return parts[idx];
     }
-    static constexpr int numParts{16};
 
     typedef std::array<std::unique_ptr<Part>, numParts> partContainer_t;
 

@@ -211,8 +211,15 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
             auto outL = iob.getWritePointer(0, i);
             auto outR = iob.getWritePointer(1, i);
 
-            *outL = engine->output[bus][0][blockPos];
-            *outR = engine->output[bus][1][blockPos];
+            if (bus == 0)
+            {
+                *outL = engine->busses.mainBus.output[0][blockPos];
+                *outR = engine->busses.mainBus.output[1][blockPos];
+            }
+            else
+            {
+                assert(false);
+            }
         }
 
         blockPos++;
