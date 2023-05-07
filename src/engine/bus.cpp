@@ -158,7 +158,7 @@ void Bus::process()
     {
         mech::scale_by<blockSize>(level, output[0], output[1]);
     }
-    
+
     if (supportsSends && hasSends && auxLocation == POST_VCA)
         memcpy(auxoutput, output, sizeof(output));
 }
