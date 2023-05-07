@@ -46,6 +46,7 @@
 
 #include <array>
 #include <memory>
+#include <cassert>
 
 #include "configuration.h"
 #include "utils.h"
