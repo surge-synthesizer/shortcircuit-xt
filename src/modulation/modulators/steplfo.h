@@ -33,6 +33,7 @@
 #include <array>
 #include <vector>
 #include <utility>
+#include "infrastructure/rng_gen.h"
 
 namespace scxt::modulation::modulators
 {
@@ -123,7 +124,8 @@ inline std::string getLfoPresetName(LFOPresets p)
     throw std::logic_error("Called with non-switchable preset");
 }
 
-void load_lfo_preset(LFOPresets preset, StepLFOStorage *settings);
+void clear_lfo(StepLFOStorage &settings);
+void load_lfo_preset(LFOPresets preset, StepLFOStorage &settings, infrastructure::RNGGen &);
 float lfo_ipol(float *step_history, float phase, float smooth, int odd);
 
 struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
@@ -131,7 +133,8 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
   public:
     StepLFO();
     ~StepLFO();
-    void assign(StepLFOStorage *settings, const float *rate, datamodel::TimeData *td);
+    void assign(StepLFOStorage *settings, const float *rate, datamodel::TimeData *td,
+                infrastructure::RNGGen &);
     void sync();
     void process(int samples);
     float output;

@@ -51,7 +51,9 @@ namespace scxt::voice
 struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 {
     float output alignas(16)[2][blockSize << 1];
-    engine::Zone *zone{nullptr}; // I do *not* own this. The engine guarantees it outlives the voice
+    // I do *not* own these. The engine guarantees it outlives the voice
+    engine::Zone *zone{nullptr};
+    engine::Engine *engine{nullptr};
     engine::Engine::pathToZone_t zonePath{};
 
     dsp::GeneratorState GD;
@@ -84,7 +86,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     template <typename ET, int EB, typename ER>
     friend struct sst::basic_blocks::modulators::ADSREnvelope;
 
-    Voice(engine::Zone *z);
+    Voice(engine::Engine *e, engine::Zone *z);
 
     ~Voice();
 

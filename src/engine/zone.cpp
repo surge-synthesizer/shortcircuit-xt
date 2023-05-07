@@ -28,6 +28,7 @@
 #include "zone.h"
 #include "bus.h"
 #include "group.h"
+#include "modulation/modulators/steplfo.h"
 #include "part.h"
 #include "engine.h"
 #include "messaging/messaging.h"
@@ -165,7 +166,7 @@ void Zone::initialize()
 
     for (auto &l : lfoStorage)
     {
-        modulation::modulators::load_lfo_preset(modulation::modulators::lp_clear, &l);
+        modulation::modulators::clear_lfo(l);
     }
 }
 

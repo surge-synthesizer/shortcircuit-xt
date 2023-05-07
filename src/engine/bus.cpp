@@ -84,7 +84,7 @@ struct Config
     static inline bool isDeactivated(EffectStorage *e, int idx) { return false; }
 
     // TODO: Fix Me obvs
-    static inline float rand01(GlobalStorage *s) { return (float)rand() / (float)RAND_MAX; }
+    static inline float rand01(GlobalStorage *s) { return s->rngGen.rand01(); }
 
     static inline double sampleRate(GlobalStorage *s) { return 48000; }
 

@@ -381,7 +381,7 @@ void LfoPane::pickPresets()
             if (!wt)
                 return;
             auto &ld = wt->lfoData[wt->selectedTab];
-            modulation::modulators::load_lfo_preset(lp, &ld);
+            modulation::modulators::load_lfo_preset(lp, ld, wt->editor->rngGen);
             wt->pushCurrentLfoUpdate();
         });
     }

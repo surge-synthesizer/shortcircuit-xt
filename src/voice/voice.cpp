@@ -37,7 +37,8 @@
 namespace scxt::voice
 {
 
-Voice::Voice(engine::Zone *z) : zone(z), aeg(this), eg2(this), halfRate(6, true)
+Voice::Voice(engine::Engine *e, engine::Zone *z)
+    : engine(e), zone(z), aeg(this), eg2(this), halfRate(6, true)
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
@@ -68,7 +69,7 @@ void Voice::voiceStarted()
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
         lfos[i].assign(&zone->lfoStorage[i], modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i),
-                       nullptr);
+                       nullptr, engine->rngGen);
     }
 
     aeg.attackFrom(0.0); // TODO Envelope Legato Mode
