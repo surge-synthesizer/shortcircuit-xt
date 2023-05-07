@@ -53,7 +53,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     auto sampleDir = rootDir;
     SCDBGCOUT << SCD(rootDir.u8string()) << std::endl;
 
-    auto pt = std::clamp(e.getSelectionManager()->selectedPart, 0, engine::Patch::numParts);
+    auto pt = std::clamp(e.getSelectionManager()->selectedPart, 0, (int)numParts);
 
     auto &part = e.getPatch()->getPart(pt);
 

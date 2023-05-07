@@ -48,7 +48,7 @@ void SelectionManager::sendClientDataForSelectionState()
     if (p >= 0)
     {
         selectedPart = p;
-        if (p >= engine.getPatch()->numParts)
+        if (p >= numParts)
         {
             p = -1;
             g = -1;
@@ -237,7 +237,7 @@ void SelectionManager::sendSelectedZonesToClient()
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)
 {
-    if (part < 0 || part > engine::Patch::numParts)
+    if (part < 0 || part > numParts)
         return false;
     const auto &p = e.getPatch()->getPart(part);
     if (group < 0 || group >= p->getGroups().size())

@@ -36,10 +36,13 @@
 #include "utils.h"
 #include "zone.h"
 #include "selection/selection_manager.h"
+#include "bus.h"
 
 namespace scxt::engine
 {
 struct Part;
+struct Engine;
+
 struct Group : MoveableOnly<Group>
 {
     Group() : id(GroupID::next()), name(id.to_string()) {}
@@ -48,14 +51,13 @@ struct Group : MoveableOnly<Group>
     std::string name{};
     Part *parentPart{nullptr};
 
-    float output alignas(16)[maxOutputs][2][blockSize];
-    void process();
+    BusAddress routeTo{DEFAULT_BUS};
+
+    float output alignas(16)[2][blockSize];
+    void process(Engine &onto);
 
     // ToDo editable name
     std::string getName() const { return name; }
-
-    // TODO: Multi-output
-    size_t getNumOutputs() const { return 1; }
 
     size_t addZone(std::unique_ptr<Zone> &z)
     {

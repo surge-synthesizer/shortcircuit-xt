@@ -17,8 +17,8 @@ add_library(${PROJECT_NAME} STATIC
         engine/zone.cpp
         engine/group.cpp
         engine/part.cpp
-        engine/part_effects.cpp
         engine/memory_pool.cpp
+        engine/bus.cpp
 
         json/stream.cpp
 

@@ -27,6 +27,7 @@
 #ifndef SCXT_SRC_ENGINE_ENGINE_H
 #define SCXT_SRC_ENGINE_ENGINE_H
 
+#include "engine/bus.h"
 #include "utils.h"
 #include "part.h"
 #include "group.h"
@@ -71,6 +72,23 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     EngineID id;
 
+    struct Busses
+    {
+        Busses()
+        {
+            std::fill(partToVSTRouting.begin(), partToVSTRouting.end(), 0);
+            std::fill(auxToVSTRouting.begin(), auxToVSTRouting.end(), 0);
+        }
+        Bus mainBus;
+
+        std::array<Bus, numParts> partBusses;
+        // here '0' means main bus
+        std::array<int16_t, numParts> partToVSTRouting{};
+
+        std::array<Bus, numAux> auxBusses;
+        std::array<int16_t, numParts> auxToVSTRouting{};
+    } busses;
+
     const std::unique_ptr<Patch> &getPatch() const { return patch; }
     const std::unique_ptr<sample::SampleManager> &getSampleManager() const { return sampleManager; }
 
@@ -86,8 +104,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     int getStereoOutputs() const { return 1; }
     void setStereoOutputs(int s) { assert(s == 1); }
-
-    float output alignas(16)[maxOutputs][2][blockSize];
 
     /**
      * Process into an array of size stereoOutputs * 2 * blocksize.

@@ -26,7 +26,9 @@
  */
 
 #include "engine.h"
+#include "configuration.h"
 #include "part.h"
+#include "sst/cpputils/iterators.h"
 #include "voice/voice.h"
 #include "dsp/data_tables.h"
 #include "tuning/equal.h"
@@ -163,7 +165,7 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
 
 bool Engine::processAudio()
 {
-    namespace blk = sst::basic_blocks::mechanics;
+    namespace mech = sst::basic_blocks::mechanics;
 #if BUILD_IS_DEBUG
     messageController->threadingChecker.registerAsAudioThread();
 #endif
@@ -200,25 +202,68 @@ bool Engine::processAudio()
         }
     }
 
-    // TODO these memsets are probably gratuitous
-    memset(output, 0, sizeof(output));
+    // TODO - be more parsimonious
+    busses.mainBus.clear();
+    for (auto &b : busses.partBusses)
+        b.clear();
+    for (auto &b : busses.auxBusses)
+        b.clear();
+
     if (stopEngineRequests > 0)
     {
         return true;
     }
 
+    // Run each of the parts, accumulating onto the engine busses
     for (const auto &part : *patch)
     {
         if (part->isActive())
         {
-            part->process();
-            for (int i = 0; i < part->getNumOutputs(); ++i)
-            {
-                blk::accumulate_from_to<blockSize>(part->output[i][0], output[i][0]);
-                blk::accumulate_from_to<blockSize>(part->output[i][1], output[i][1]);
-            }
+            part->process(*this);
         }
     }
+
+    // Then process the part busses
+    for (auto &b : busses.partBusses)
+    {
+        b.process();
+        if (b.supportsSends && b.hasSends)
+        {
+            // TOD accumulate my sends
+        }
+    }
+
+    // Process my send busses
+    for (auto &b : busses.auxBusses)
+        b.process();
+
+    // And finally push onto the main bus
+    for (auto [bi, br] : sst::cpputils::enumerate(busses.partToVSTRouting))
+    {
+        if (br == 0)
+        {
+            // accumulate onto main
+            mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[0],
+                                                busses.mainBus.output[0]);
+            mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[1],
+                                                busses.mainBus.output[1]);
+        }
+    }
+
+    for (auto [bi, br] : sst::cpputils::enumerate(busses.auxToVSTRouting))
+    {
+        if (br == 0)
+        {
+            // accumulate onto main
+            mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[0],
+                                                busses.mainBus.output[0]);
+            mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[1],
+                                                busses.mainBus.output[1]);
+        }
+    }
+
+    // And run the main bus
+    busses.mainBus.process();
 
     auto pav = activeVoiceCount();
 
@@ -346,7 +391,7 @@ const std::optional<dsp::processor::ProcessorStorage>
 Engine::getProcessorStorage(const processorAddress_t &addr) const
 {
     auto [part, group, zone, which] = addr;
-    assert(part >= 0 && part < Patch::numParts);
+    assert(part >= 0 && part < numParts);
     const auto &pref = getPatch()->getPart(part);
 
     if (!pref || group < 0)
@@ -504,7 +549,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         auto pt = 0;
         if (sz.has_value())
             pt = sz->part;
-        if (pt < 0 || pt >= Patch::numParts)
+        if (pt < 0 || pt >= numParts)
             pt = 0;
 
         SCDBGCOUT << "Adding SF2 to part " << SCD(pt) << std::endl;

@@ -42,6 +42,7 @@
 #include "datamodel/adsr_storage.h"
 #include <fmt/core.h>
 #include "dsp/generator.h"
+#include "bus.h"
 
 namespace scxt::voice
 {
@@ -119,8 +120,10 @@ struct Zone : MoveableOnly<Zone>
     AssociatedSampleArray sampleData;
     std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
 
-    float output alignas(16)[maxOutputs][2][blockSize];
-    void process();
+    BusAddress routeTo{DEFAULT_BUS};
+
+    float output alignas(16)[2][blockSize];
+    void process(Engine &onto);
 
     // TODO: editable name
     std::string getName() const
