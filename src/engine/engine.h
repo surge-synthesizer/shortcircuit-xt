@@ -48,6 +48,7 @@
 #include "selection/selection_manager.h"
 #include "memory_pool.h"
 #include "tuning/midikey_retuner.h"
+#include "infrastructure/rng_gen.h"
 
 #define DEBUG_VOICE_LIFECYCLE 0
 
@@ -241,6 +242,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         int32_t voiceCount;
         std::array<VoiceDisplayStateItem, maxVoices> items;
     } voiceDisplayState;
+
+    /*
+     * Random Number support
+     */
+    infrastructure::RNGGen rngGen;
 
     /*
      * Serialization thread originated mutation apis

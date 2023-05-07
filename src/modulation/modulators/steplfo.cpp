@@ -30,81 +30,86 @@
 #include <cmath>
 #include "tuning/equal.h"
 #include "configuration.h"
+#include "infrastructure/rng_gen.h"
 
 namespace scxt::modulation::modulators
 {
 
-void load_lfo_preset(LFOPresets id, StepLFOStorage *settings)
+void clear_lfo(StepLFOStorage &settings)
 {
-    if (!settings)
-        return;
-
+    settings.repeat = 16;
+    settings.smooth = 0.0f;
+    for (auto t = 0; t < stepLfoSteps; t++)
+        settings.data[t] = 0.f;
+}
+void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, infrastructure::RNGGen &rngGen)
+{
     int t;
     switch (id)
     {
     case lp_custom:
         break;
     case lp_clear:
-        settings->repeat = 16;
-        settings->smooth = 0.0f;
+        settings.repeat = 16;
+        settings.smooth = 0.0f;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = 0.f;
+            settings.data[t] = 0.f;
         break;
     case lp_sine:
-        settings->repeat = 4;
-        settings->smooth = 2.0f;
+        settings.repeat = 4;
+        settings.smooth = 2.0f;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = 0.f;
+            settings.data[t] = 0.f;
         for (t = 0; t < 4; t++)
-            settings->data[t] = (t & 2) ? -1.f : 1.f;
+            settings.data[t] = (t & 2) ? -1.f : 1.f;
         break;
     case lp_tri:
-        settings->repeat = 2;
-        settings->smooth = 1.0f;
+        settings.repeat = 2;
+        settings.smooth = 1.0f;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = 0.f;
+            settings.data[t] = 0.f;
         for (t = 0; t < 2; t++)
-            settings->data[t] = (t & 1) ? -1.f : 1.f;
+            settings.data[t] = (t & 1) ? -1.f : 1.f;
         break;
     case lp_square:
-        settings->repeat = stepLfoSteps;
-        settings->smooth = 0.0f;
+        settings.repeat = stepLfoSteps;
+        settings.smooth = 0.0f;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = (float)((t > 15) ? -1 : 1);
+            settings.data[t] = (float)((t > 15) ? -1 : 1);
         break;
     case lp_ramp_up:
     case lp_ramp_down:
     {
-        settings->repeat = stepLfoSteps;
-        settings->smooth = 1.0f;
+        settings.repeat = stepLfoSteps;
+        settings.smooth = 1.0f;
         float polarity = 1;
         if (id == lp_ramp_down)
             polarity = -1;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = polarity * ((((t + 16) & 31) / 16.0f) - 1);
+            settings.data[t] = polarity * ((((t + 16) & 31) / 16.0f) - 1);
         break;
     }
     case lp_tremolo_tri:
-        settings->repeat = stepLfoSteps;
-        settings->smooth = 1.0f;
+        settings.repeat = stepLfoSteps;
+        settings.smooth = 1.0f;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = (float)(-1 + fabs(((t - 16) / 16.0f)));
+            settings.data[t] = (float)(-1 + fabs(((t - 16) / 16.0f)));
         break;
     case lp_tremolo_sin:
-        settings->repeat = stepLfoSteps;
-        settings->smooth = 1.0f;
+        settings.repeat = stepLfoSteps;
+        settings.smooth = 1.0f;
         for (t = 0; t < stepLfoSteps; t++)
-            settings->data[t] = (float)-powf(sin(3.1415 * t / 16), 2);
+            settings.data[t] = (float)-powf(sin(3.1415 * t / 16), 2);
         break;
     case lp_noise:
     case lp_noise_mean3:
     case lp_noise_mean5:
     {
-        settings->repeat = stepLfoSteps;
+        settings.repeat = stepLfoSteps;
         if (id == lp_noise)
-            settings->smooth = 0.0f;
+            settings.smooth = 0.0f;
         else
-            settings->smooth = 2.0f;
+            settings.smooth = 2.0f;
 
         float noisev[stepLfoSteps];
         int nmean = 1, j;
@@ -115,15 +120,14 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage *settings)
 
         for (t = 0; t < stepLfoSteps; t++)
         {
-            // TODO: Managed RNGs
-            noisev[t] = (((float)rand() / (float)RAND_MAX) * 2 - 1);
+            noisev[t] = (rngGen.rand01() * 2 - 1);
             noisev[t] /= (float)nmean;
         }
         for (t = 0; t < stepLfoSteps; t++)
         {
-            settings->data[t] = 0;
+            settings.data[t] = 0;
             for (j = 0; j < nmean; j++)
-                settings->data[t] += noisev[(t + j) & 0x1F];
+                settings.data[t] += noisev[(t + j) & 0x1F];
         }
         break;
     }
@@ -180,7 +184,8 @@ float QuadraticBSpline(float y0, float y1, float y2, float mu)
 
 StepLFO::StepLFO() {}
 
-void StepLFO::assign(StepLFOStorage *settings, const float *rate, datamodel::TimeData *td)
+void StepLFO::assign(StepLFOStorage *settings, const float *rate, datamodel::TimeData *td,
+                     infrastructure::RNGGen &rngGen)
 {
     this->settings = settings;
     this->td = td;
@@ -194,10 +199,9 @@ void StepLFO::assign(StepLFOStorage *settings, const float *rate, datamodel::Tim
     if (settings->triggermode == 2)
     {
         // simulate free running lfo by randomizing start phase
-        // TODO: Managed RNGS
         // TODO: Use songpos for freerun properly maybe?
-        phase = (float)rand() / (float)RAND_MAX;
-        state = rand() % settings->repeat;
+        phase = rngGen.rand01();
+        state = rngGen.randU32() % settings->repeat;
     }
     else if (settings->triggermode == 1)
     {
@@ -317,26 +321,26 @@ float lfo_ipol(float *wf_history, float phase, float smooth, int odd)
 }
 
 /*void StepLFO::process(int samples){
-        if(settings->syncmode)
+        if(settings.syncmode)
         {
-                if (settings->voice_trigger)	// tempo sync, note trigger
+                if (settings.voice_trigger)	// tempo sync, note trigger
                 {
-                        phase += std::min(32,samples * syncratio[settings->syncmode] * td->tempo/60
+                        phase += std::min(32,samples * syncratio[settings.syncmode] * td->tempo/60
 * samplerate_inv); while (phase > 1.0f)
                         {
                                 state_tstd::minus1 = state;
                                 state++;
-                                if (state >= settings->repeat) state = 0;
+                                if (state >= settings.repeat) state = 0;
                                 phase -= 1.0f;
                         }
                 }
                 else	// tempo & position-sync
                 {
                         double ipart;
-                        phase = (float) modf(td->ppqPos*syncratio[settings->syncmode],&ipart);
-                        state = (int)(ipart) % settings->repeat;
+                        phase = (float) modf(td->ppqPos*syncratio[settings.syncmode],&ipart);
+                        state = (int)(ipart) % settings.repeat;
                         state_tstd::minus1 = state - 1;
-                        if (state_tstd::minus1<0) state_tstd::minus1 += settings->repeat;
+                        if (state_tstd::minus1<0) state_tstd::minus1 += settings.repeat;
                 }
         }
         else	// free running
@@ -346,13 +350,13 @@ samplerate_inv * 32); while (phase > 1.0f)
                 {
                         state_tstd::minus1 = state;
                         state++;
-                        if (state >= settings->repeat) state = 0;
+                        if (state >= settings.repeat) state = 0;
                         phase -= 1.0f;
                 }
         }
 
-        float cf = std::min(phase/(settings->smooth+0.00001f),1.0f);
-        output = (1-cf)*settings->data[state_tstd::minus1] + cf*settings->data[state];
+        float cf = std::min(phase/(settings.smooth+0.00001f),1.0f);
+        output = (1-cf)*settings.data[state_tstd::minus1] + cf*settings.data[state];
         output = limit_range(output,-1.f,1.f);
 }*/
 

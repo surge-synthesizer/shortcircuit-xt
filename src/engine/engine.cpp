@@ -55,7 +55,7 @@ Engine::Engine()
     std::cout << "Shortcircuit XT : Constructing Engine - Version " << scxt::build::FullVersionStr
               << std::endl;
 
-    id.id = rand() % 1024;
+    id.id = rngGen.randU32() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);
     dsp::sincTable.init();
@@ -126,7 +126,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             }
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
             const auto &z = zoneByPath(path);
-            voices[idx] = new (dp) voice::Voice(z.get());
+            voices[idx] = new (dp) voice::Voice(this, z.get());
             voices[idx]->zonePath = path;
             voices[idx]->channel = path.channel;
             voices[idx]->key = path.key;

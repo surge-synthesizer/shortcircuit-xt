@@ -41,6 +41,7 @@
 #include "datamodel/adsr_storage.h"
 #include "sst/jucegui/components/WindowPanel.h"
 #include "messaging/client/zone_messages.h"
+#include "infrastructure/rng_gen.h"
 
 namespace scxt::ui
 {
@@ -64,6 +65,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     const sample::SampleManager &sampleManager;
 
     infrastructure::DefaultsProvider &defaultsProvider;
+    infrastructure::RNGGen rngGen;
 
     static constexpr int edWidth{1186}, edHeight{816};
 
