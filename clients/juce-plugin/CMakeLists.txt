@@ -38,6 +38,10 @@ if (SCXT_BUILD_CLAP)
             CLAP_FEATURES instrument sampler)
 endif ()
 
+if(JUCE_ASIO_SUPPORT)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC JUCE_ASIO=1)
+endif()
+
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         .
