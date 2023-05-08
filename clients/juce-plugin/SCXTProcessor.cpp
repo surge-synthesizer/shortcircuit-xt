@@ -69,7 +69,7 @@ SCXTProcessor::~SCXTProcessor()
 //==============================================================================
 const juce::String SCXTProcessor::getName() const { return JucePlugin_Name; }
 
-bool SCXTProcessor::acceptsMidi() const { return false; }
+bool SCXTProcessor::acceptsMidi() const { return true; }
 
 bool SCXTProcessor::producesMidi() const { return false; }
 
