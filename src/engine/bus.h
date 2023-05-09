@@ -79,7 +79,8 @@ struct BusEffect
 enum AvailableBusEffects
 {
     reverb1,
-    flanger
+    flanger,
+    delay
 };
 
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s);

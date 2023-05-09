@@ -40,6 +40,7 @@
 #include "sst/effects/EffectCore.h"
 #include "sst/effects/Reverb1.h"
 #include "sst/effects/Flanger.h"
+#include "sst/effects/Delay.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
@@ -82,13 +83,17 @@ struct Config
     static inline float temposyncRatio(GlobalStorage *s, EffectStorage *e, int idx) { return 1; }
 
     static inline bool isDeactivated(EffectStorage *e, int idx) { return false; }
+    static inline bool isExtended(EffectStorage *e, int idx) { return false; }
 
     // TODO: Fix Me obvs
     static inline float rand01(GlobalStorage *s) { return s->rngGen.rand01(); }
 
-    static inline double sampleRate(GlobalStorage *s) { return 48000; }
+    static inline double sampleRate(GlobalStorage *s) { return s->getSampleRate(); }
 
-    static inline float noteToPitch(GlobalStorage *s, float p) { return 1; }
+    static inline float noteToPitch(GlobalStorage *s, float p)
+    {
+        return noteToPitchIgnoringTuning(s, p);
+    }
     static inline float noteToPitchIgnoringTuning(GlobalStorage *s, float p)
     {
         return tuning::equalTuning.note_to_pitch(p);
@@ -129,7 +134,9 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     case reverb1:
         return std::make_unique<dtl::Impl<sfx::Reverb1<dtl::Config>>>(e, s, s->params);
     case flanger:
-        return nullptr;
+        return std::make_unique<dtl::Impl<sfx::Flanger<dtl::Config>>>(e, s, s->params);
+    case delay:
+        return std::make_unique<dtl::Impl<sfx::Delay<dtl::Config>>>(e, s, s->params);
     }
     return nullptr;
 }
