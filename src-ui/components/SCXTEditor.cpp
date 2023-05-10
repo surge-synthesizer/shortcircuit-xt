@@ -175,6 +175,9 @@ void SCXTEditor::idle()
     {
         lastVoiceDisplayWriteCounter = sharedUiMemoryState.voiceDisplayStateWriteCounter;
         headerRegion->setVoiceCount(sharedUiMemoryState.voiceCount);
+
+        if (multiScreen->isVisible())
+            multiScreen->onVoiceInfoChanged();
     }
 }
 

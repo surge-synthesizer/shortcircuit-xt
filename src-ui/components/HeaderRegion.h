@@ -54,7 +54,6 @@ struct HeaderRegion : juce::Component, HasEditor
 
     void paint(juce::Graphics &g) override
     {
-        std::cout << "HEADER REGION PAINT" << std::endl;
 #if DEBUG_VOICE_COUNT
         auto vc = fmt::format("Voices: {}", voiceCount);
         g.setColour(juce::Colours::white);

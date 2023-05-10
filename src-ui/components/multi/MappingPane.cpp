@@ -712,15 +712,32 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
+    std::array<int, 128> midiState; // 0 == 0ff, 1 == gated, 2 == sounding
+    std::fill(midiState.begin(), midiState.end(), 0);
+    for (const auto &vd : display->editor->sharedUiMemoryState.voiceDisplayItems)
+    {
+        if (vd.active && vd.midiNote >= 0)
+        {
+            midiState[vd.midiNote] = vd.gated ? 1 : 2;
+        }
+    }
     for (int i = 0; i < 128; ++i)
     {
         auto n = i % 12;
         auto isBlackKey = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         auto kr = rectangleForKey(i);
         g.setColour(isBlackKey ? juce::Colours::black : juce::Colours::white);
-        if (i == heldNote)
-            g.setColour(juce::Colours::red);
         g.fillRect(kr);
+        if (midiState[i] != 0)
+        {
+            g.setColour(midiState[i] == 1 ? juce::Colours::orange
+                                          : (isBlackKey ? juce::Colour(0x80, 0x80, 0x90)
+                                                        : juce::Colour(0xC0, 0xC0, 0xD0)));
+            if (i == heldNote)
+                g.setColour(juce::Colours::red);
+
+            g.fillRect(kr);
+        }
         g.setColour(juce::Colour(140, 140, 140));
         g.drawRect(kr, 0.5);
     }

@@ -65,6 +65,7 @@ struct MultiScreen : juce::Component, HasEditor
     void resized() override { layout(); }
 
     void layout();
+    void onVoiceInfoChanged();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MultiScreen);
 };
