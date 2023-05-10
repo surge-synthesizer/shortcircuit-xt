@@ -133,4 +133,5 @@ void MultiScreen::layout()
     lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
 }
 
+void MultiScreen::onVoiceInfoChanged() { sample->repaint(); }
 } // namespace scxt::ui
