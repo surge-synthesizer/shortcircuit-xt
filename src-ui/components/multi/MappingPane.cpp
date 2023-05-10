@@ -422,6 +422,19 @@ struct MappingDisplay : juce::Component, HasEditor
         }
     }
 
+    int voiceCountFor(const selection::SelectionManager::ZoneAddress &z)
+    {
+        int res{0};
+        for (const auto &v : editor->sharedUiMemoryState.voiceDisplayItems)
+        {
+            if (v.active && v.part == z.part && v.group == z.group && v.zone == z.zone)
+            {
+                res++;
+            }
+        }
+        return res;
+    }
+
     engine::Part::zoneMappingSummary_t summary{};
 };
 
@@ -579,6 +592,36 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
         display->mappingChangedFromGUI();
         repaint();
     }
+
+    if (mouseState == HELD_NOTE)
+    {
+        if (e.position.y > keyboardHeight)
+        {
+            for (int i = 0; i < 128; ++i)
+            {
+                auto r = rectangleForKey(i);
+                if (r.contains(e.position))
+                {
+                    if (i == heldNote)
+                    {
+                        // that's OK!
+                    }
+                    else
+                    {
+                        if (heldNote > 0)
+                        {
+                            cmsg::clientSendToSerialization(cmsg::NoteFromGUI({heldNote, false}),
+                                                            display->editor->msgCont);
+                        }
+                        heldNote = i;
+                        cmsg::clientSendToSerialization(cmsg::NoteFromGUI({i, true}),
+                                                        display->editor->msgCont);
+                        repaint();
+                    }
+                }
+            }
+        }
+    }
 }
 
 void MappingZonesAndKeyboard::mouseUp(const juce::MouseEvent &e)
@@ -659,6 +702,37 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
+    auto drawVoiceMarkers = [&g](const juce::Rectangle<float> &c, int ct) {
+        if (ct == 0)
+            return;
+        auto r = c.reduced(2).withTrimmedTop(25);
+
+        int vrad{8};
+        if (r.getWidth() < vrad)
+        {
+            vrad = r.getWidth();
+            auto b = r.withTop(r.getBottom() - vrad).withWidth(vrad);
+            g.setColour(juce::Colours::orange);
+            g.fillRoundedRectangle(b.toFloat(), 1);
+            return;
+        }
+        auto b = r.withTop(r.getBottom() - vrad).withWidth(vrad);
+        g.setColour(juce::Colours::orange);
+        for (int i = 0; i < ct; ++i)
+        {
+            g.fillRoundedRectangle(b.reduced(1).toFloat(), 1);
+            b = b.translated(vrad, 0);
+            if (!r.contains(b))
+            {
+                b.setX(r.getX());
+                b = b.translated(0, -vrad);
+
+                if (!r.contains(b))
+                    return;
+            }
+        }
+    };
+
     for (const auto &drawSelected : {false, true})
     {
         for (const auto &z : display->summary)
@@ -681,6 +755,9 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
             g.setColour(nonSelZoneColor.brighter());
             g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+
+            auto ct = display->voiceCountFor(z.first);
+            drawVoiceMarkers(r, ct);
         }
     }
 
@@ -709,6 +786,9 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
             g.setColour(juce::Colours::white);
             g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+
+            auto ct = display->voiceCountFor(z.first);
+            drawVoiceMarkers(r, ct);
         }
     }
 
