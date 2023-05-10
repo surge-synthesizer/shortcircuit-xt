@@ -37,8 +37,6 @@
 
 namespace scxt::messaging::client
 {
-SERIAL_TO_CLIENT(VoiceDisplayStatusUpdate, s2c_voice_display_status,
-                 engine::Engine::VoiceDisplayState, onVoiceDisplayState);
 SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
                  onEngineStatus);
 } // namespace scxt::messaging::client

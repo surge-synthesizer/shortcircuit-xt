@@ -281,30 +281,30 @@ bool Engine::processAudio()
         lastUpdateVoiceDisplayState = 0;
         lastMidiNoteStateCounter = midiNoteStateCounter;
 
-        if (voiceDisplayStateReadCounter == voiceDisplayStateWriteCounter)
+        int i{0};
+        for (const auto *v : voices)
         {
-            int i{0};
-            for (const auto *v : voices)
+            auto &itm = sharedUIMemoryState.voiceDisplayItems[i];
+
+            if (v && (v->isVoiceAssigned && v->isVoicePlaying))
             {
-                if (v && (v->isVoiceAssigned && v->isVoicePlaying))
-                {
-                    voiceDisplayState.items[i].active = true;
-                    voiceDisplayState.items[i].zonePath = v->zonePath;
-                    voiceDisplayState.items[i].samplePos = v->GD.samplePos;
-                    voiceDisplayState.items[i].midiNote = v->originalMidiKey;
-                    voiceDisplayState.items[i].midiChannel = v->channel;
-                    voiceDisplayState.items[i].gated = v->isGated;
-                }
-                else
-                {
-                    voiceDisplayState.items[i].active = false;
-                }
-                i++;
+                itm.active = true;
+                itm.part = v->zonePath.part;
+                itm.group = v->zonePath.group;
+                itm.zone = v->zonePath.zone;
+                itm.samplePos = v->GD.samplePos;
+                itm.midiNote = v->originalMidiKey;
+                itm.midiChannel = v->channel;
+                itm.gated = v->isGated;
             }
-            voiceDisplayState.voiceCount = pav;
-            voiceDisplayStateWriteCounter++;
+            else
+            {
+                itm.active = false;
+            }
+            i++;
         }
-        messaging::audio::sendVoiceState(pav, *messageController);
+        sharedUIMemoryState.voiceCount = pav;
+        sharedUIMemoryState.voiceDisplayStateWriteCounter++;
     }
     lastUpdateVoiceDisplayState++;
 

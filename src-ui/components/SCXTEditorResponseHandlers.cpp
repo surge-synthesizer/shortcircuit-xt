@@ -159,29 +159,4 @@ void SCXTEditor::onEngineStatus(const engine::Engine::EngineStatusMessage &e)
     aboutScreen->resetInfo();
     repaint();
 }
-
-void SCXTEditor::onVoiceDisplayState(const engine::Engine::VoiceDisplayState &e)
-{
-    int idx{0};
-    int ac{0};
-    for (const auto &i : e.items)
-    {
-        if (i.active)
-        {
-            /*
-            SCDBGCOUT << SCD(idx) << SCD(i.zonePath.zone) << SCD(i.midiNote) << SCD(i.gated)
-                      << std::endl;
-                      */
-            ac++;
-        }
-        idx++;
-    }
-    if (!ac)
-    {
-        // SCDBGCOUT << "No active voices" << std::endl;
-    }
-
-    if (headerRegion)
-        headerRegion->setVoiceCount(e.voiceCount);
-}
 } // namespace scxt::ui

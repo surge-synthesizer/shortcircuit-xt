@@ -54,6 +54,13 @@ struct HeaderRegion : juce::Component, HasEditor
 
     void paint(juce::Graphics &g) override
     {
+        std::cout << "HEADER REGION PAINT" << std::endl;
+#if DEBUG_VOICE_COUNT
+        auto vc = fmt::format("Voices: {}", voiceCount);
+        g.setColour(juce::Colours::white);
+        g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
+#endif
+
         return;
 #if BUILD_IS_DEBUG
         g.fillAll(juce::Colours::red);
@@ -66,8 +73,6 @@ struct HeaderRegion : juce::Component, HasEditor
         g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
         g.drawText("header", getLocalBounds(), juce::Justification::centred);
 #endif
-        auto vc = fmt::format("Voices: {}", voiceCount);
-        g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::topRight);
     }
 
     void resized() override;
@@ -75,8 +80,11 @@ struct HeaderRegion : juce::Component, HasEditor
     uint32_t voiceCount{0};
     void setVoiceCount(uint32_t vc)
     {
-        voiceCount = vc;
-        repaint();
+        if (vc != voiceCount)
+        {
+            voiceCount = vc;
+            repaint();
+        }
     }
 };
 } // namespace scxt::ui

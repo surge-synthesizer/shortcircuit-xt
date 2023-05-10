@@ -71,7 +71,6 @@ enum SerializationToClientMessageIds
 {
     s2c_report_error,
     s2c_send_initial_metadata,
-    s2c_voice_display_status,
     s2c_engine_status,
     s2c_respond_zone_adsr_view,
     s2c_respond_zone_mapping,

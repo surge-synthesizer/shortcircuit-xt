@@ -57,9 +57,10 @@ void SCXTEditor::Tooltip::paint(juce::Graphics &g)
     g.drawText(tooltipText, getLocalBounds().reduced(2), juce::Justification::centred);
 }
 
-SCXTEditor::SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s,
-                       infrastructure::DefaultsProvider &d)
-    : msgCont(e), sampleManager(s), defaultsProvider(d)
+SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
+                       const sample::SampleManager &s,
+                       const engine::Engine::SharedUIMemoryState &st)
+    : msgCont(e), sampleManager(s), defaultsProvider(d), sharedUiMemoryState(st)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
     setStyle(connectors::SCXTStyleSheetCreator::setup());
@@ -165,12 +166,16 @@ void SCXTEditor::resized()
 
 void SCXTEditor::idle()
 {
-    // This drain queue should in theory not be needed
-    // since the message recipient schedules a drain queue.
-    // In fact it might be the case that we don't need an
-    // idle at all in SCXT. Leave it here for now while I think
-    // about it though.
-    // drainCallbackQueue();
+    /*
+     * The SCXT idle is just used for polling the shared memory items,
+     * not for handling events which the message controller does
+     * immediately
+     */
+    if (sharedUiMemoryState.voiceDisplayStateWriteCounter != lastVoiceDisplayWriteCounter)
+    {
+        lastVoiceDisplayWriteCounter = sharedUiMemoryState.voiceDisplayStateWriteCounter;
+        headerRegion->setVoiceCount(sharedUiMemoryState.voiceCount);
+    }
 }
 
 void SCXTEditor::drainCallbackQueue()
