@@ -40,7 +40,8 @@ class SCXTPluginEditor : public juce::AudioProcessorEditor
 {
   public:
     SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &,
-                     const scxt::sample::SampleManager &, scxt::infrastructure::DefaultsProvider &);
+                     scxt::infrastructure::DefaultsProvider &, const scxt::sample::SampleManager &,
+                     const scxt::engine::Engine::SharedUIMemoryState &);
     ~SCXTPluginEditor();
 
     //==============================================================================

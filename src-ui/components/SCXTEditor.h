@@ -64,7 +64,18 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
      */
     const sample::SampleManager &sampleManager;
 
+    /*
+     * We have a reference to the defaults provider from the engine
+     */
     infrastructure::DefaultsProvider &defaultsProvider;
+
+    /* And finally we have shared state with the engine for display
+     * things we don't want to stream. See the comment in engine.h
+     * about this structure. Note this is a const & containing atomics,
+     * and is not writable
+     */
+    const engine::Engine::SharedUIMemoryState &sharedUiMemoryState;
+
     infrastructure::RNGGen rngGen;
 
     static constexpr int edWidth{1186}, edHeight{816};
@@ -98,8 +109,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     };
     std::unique_ptr<Tooltip> toolTip;
 
-    SCXTEditor(messaging::MessageController &e, const sample::SampleManager &s,
-               infrastructure::DefaultsProvider &d);
+    SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
+               const sample::SampleManager &s, const engine::Engine::SharedUIMemoryState &b);
     virtual ~SCXTEditor() noexcept;
 
     enum ActiveScreen
@@ -135,7 +146,6 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
-    void onVoiceDisplayState(const engine::Engine::VoiceDisplayState &e);
     void onEngineStatus(const engine::Engine::EngineStatusMessage &e);
     void onEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
     void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
@@ -179,6 +189,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
     engine::Engine::EngineStatusMessage engineStatus;
+
+    /*
+     * Items to deal with the shared memory reads
+     */
+    int64_t lastVoiceDisplayWriteCounter{-1};
 };
 } // namespace scxt::ui
 

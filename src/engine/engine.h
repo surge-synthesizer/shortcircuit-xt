@@ -80,6 +80,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             std::fill(partToVSTRouting.begin(), partToVSTRouting.end(), 0);
             std::fill(auxToVSTRouting.begin(), auxToVSTRouting.end(), 0);
         }
+
+        static constexpr int busCount{numParts + numAux + 1};
+
         Bus mainBus;
 
         std::array<Bus, numParts> partBusses;
@@ -194,8 +197,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void prepareToPlay(double sampleRate)
     {
         setSampleRate(sampleRate);
-        voiceDisplayStateReadCounter = 0;
-        voiceDisplayStateWriteCounter = 0;
+        sharedUIMemoryState.voiceDisplayStateWriteCounter = 0;
 
         const double updateFrequencyHz{15.0};
 
@@ -216,32 +218,55 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     std::mutex modifyStructureMutex;
 
+    /*
+     * The serialization technique described in messaging.h works
+     * wonderfully especially for
+     * bulk edits and so forth. But the practiczlities of writing an
+     * in process UI makes us want to, for some rapidly changing
+     * engine to ui only properties, want to really have some
+     * std::atomic<blah> which are writable in the engine and
+     * which are const & readable in the ui. The primary use cases
+     * for this today are things like vu meters, sample-play-positions
+     * and the like.
+     *
+     * While we could indeed have lots of messages for these, instead
+     * we have a engine shared UI state object which the ui gets as a
+     * const & and which contains atomic members.
+     *
+     * This is a cheat. But I think its a practical cheat. And it means
+     * we can minimize the requirements of making streaming types just
+     * for display things. By encapsulating it in one place we also know
+     * what would need streaming if we went to a full out of process UI
+     * (or what display features we would lose).
+     */
+    struct SharedUIMemoryState
+    {
+        std::array<std::array<std::atomic<float>, 2>, Busses::busCount> busVULevels;
+
+        std::atomic<int64_t> voiceDisplayStateWriteCounter{0};
+
+        struct VoiceDisplayStateItem
+        {
+            std::atomic<bool> active{false};
+            std::atomic<size_t> part, group, zone;
+
+            std::atomic<int64_t> samplePos{}, midiNote{-1}, midiChannel{-1};
+            std::atomic<bool> gated{false};
+        };
+        std::atomic<int32_t> voiceCount;
+        std::array<VoiceDisplayStateItem, maxVoices> voiceDisplayItems;
+    } sharedUIMemoryState;
+
     /**
      * The VoiceDisplayState structure is updated at some relatively low (like 30hz)
      * frequency by the engine for communication to a potential client if the message
      * controller has a client connected. Updates will occur only if the read pointer and
      * write pointer are the same so the client needs to update the write pointer.
      */
-    std::atomic<int64_t> voiceDisplayStateReadCounter{0}, voiceDisplayStateWriteCounter{0};
     int32_t updateVoiceDisplayStateEvery{10000000};
     int32_t lastUpdateVoiceDisplayState{0};
     int64_t midiNoteStateCounter{0}, lastMidiNoteStateCounter{0};
-    bool sendSamplePosition{false}; // right now turning this on sends too many messages
-    struct VoiceDisplayStateItem
-    {
-        bool active{false};
-        pathToZone_t zonePath{};
-        int64_t samplePos{};
-        int16_t midiNote{-1};
-        int16_t midiChannel{-1};
-        bool gated{false};
-    };
-    // Mark this with a type so we can do more efficient streaming
-    struct VoiceDisplayState
-    {
-        int32_t voiceCount;
-        std::array<VoiceDisplayStateItem, maxVoices> items;
-    } voiceDisplayState;
+    bool sendSamplePosition{false};
 
     /*
      * Random Number support
