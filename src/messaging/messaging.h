@@ -247,7 +247,23 @@ struct MessageController : MoveableOnly<MessageController>
      * @param f
      */
     void scheduleAudioThreadCallback(std::function<void(engine::Engine &)> f,
-                                     std::function<void(const engine::Engine &)> cb = nullptr);
+                                     std::function<void(const engine::Engine &)> cb = nullptr)
+    {
+        scheduleAudioThreadFunctionCallback(audio::s2a_dispatch_to_pointer, f, cb);
+    }
+
+    void scheduleAudioThreadCallbackUnderStructureLock(
+        std::function<void(engine::Engine &)> f,
+        std::function<void(const engine::Engine &)> cb = nullptr)
+    {
+        scheduleAudioThreadFunctionCallback(audio::s2a_dispatch_to_pointer_under_structurelock, f,
+                                            cb);
+    }
+
+    void scheduleAudioThreadFunctionCallback(audio::SerializationToAudioMessageId id,
+                                             std::function<void(engine::Engine &)> f,
+                                             std::function<void(const engine::Engine &)> cb);
+
     void stopAudioThreadThenRunOnSerial(std::function<void(const engine::Engine &)> f);
     void restartAudioThreadFromSerial();
     struct AudioThreadCallback
