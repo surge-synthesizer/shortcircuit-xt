@@ -32,9 +32,10 @@
 #include "multi/ModPane.h"
 #include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
+#include "MixerScreen.h"
 #include "HeaderRegion.h"
-#include "components/multi/MappingPane.h"
-#include "components/AboutScreen.h"
+#include "multi/MappingPane.h"
+#include "AboutScreen.h"
 
 namespace scxt::ui
 {
@@ -159,4 +160,16 @@ void SCXTEditor::onEngineStatus(const engine::Engine::EngineStatusMessage &e)
     aboutScreen->resetInfo();
     repaint();
 }
+
+void SCXTEditor::onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &d)
+{
+    if (mixerScreen)
+    {
+        auto busi = std::get<0>(d);
+        auto slti = std::get<1>(d);
+        const auto &bes = std::get<2>(d);
+        mixerScreen->onBusEffectFullData(busi, slti, bes.first, bes.second);
+    }
+}
+
 } // namespace scxt::ui

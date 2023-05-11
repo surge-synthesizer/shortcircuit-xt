@@ -217,68 +217,14 @@ bool Engine::processAudio()
         }
     }
 
-    // TODO - be more parsimonious
-    busses.mainBus.clear();
-    for (auto &b : busses.partBusses)
-        b.clear();
-    for (auto &b : busses.auxBusses)
-        b.clear();
+    getPatch()->busses.clear();
 
     if (stopEngineRequests > 0)
     {
         return true;
     }
 
-    // Run each of the parts, accumulating onto the engine busses
-    for (const auto &part : *patch)
-    {
-        if (part->isActive())
-        {
-            part->process(*this);
-        }
-    }
-
-    // Then process the part busses
-    for (auto &b : busses.partBusses)
-    {
-        b.process();
-        if (b.supportsSends && b.hasSends)
-        {
-            // TOD accumulate my sends
-        }
-    }
-
-    // Process my send busses
-    for (auto &b : busses.auxBusses)
-        b.process();
-
-    // And finally push onto the main bus
-    for (auto [bi, br] : sst::cpputils::enumerate(busses.partToVSTRouting))
-    {
-        if (br == 0)
-        {
-            // accumulate onto main
-            mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[0],
-                                                busses.mainBus.output[0]);
-            mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[1],
-                                                busses.mainBus.output[1]);
-        }
-    }
-
-    for (auto [bi, br] : sst::cpputils::enumerate(busses.auxToVSTRouting))
-    {
-        if (br == 0)
-        {
-            // accumulate onto main
-            mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[0],
-                                                busses.mainBus.output[0]);
-            mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[1],
-                                                busses.mainBus.output[1]);
-        }
-    }
-
-    // And run the main bus
-    busses.mainBus.process();
+    getPatch()->process(*this);
 
     auto pav = activeVoiceCount();
 
@@ -539,6 +485,8 @@ void Engine::sendMetadataToClient() const
         dsp::processor::getAllProcessorDescriptions(), *messageController);
 
     sendEngineStatusToClient();
+
+    getPatch()->busses.sendBusEffectInfo(*this);
 }
 
 void Engine::sendEngineStatusToClient() const

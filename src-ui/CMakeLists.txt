@@ -17,9 +17,14 @@ add_library(${PROJECT_NAME} STATIC
         components/SCXTEditorResponseHandlers.cpp
 
         components/HeaderRegion.cpp
+        components/MixerScreen.cpp
         components/MultiScreen.cpp
         components/SendFXScreen.cpp
         components/AboutScreen.cpp
+
+        components/browser/BrowserPane.cpp
+
+        components/mixer/PartEffectsPane.cpp
 
         components/multi/AdsrPane.cpp
         components/multi/LFOPane.cpp

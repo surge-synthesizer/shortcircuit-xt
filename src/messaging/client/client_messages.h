@@ -37,5 +37,6 @@
 #include "group_messages.h"
 #include "part_messages.h"
 #include "interaction_messages.h"
+#include "mixer_messages.h"
 
 #endif // SHORTCIRCUIT_CLIENT_MESSAGE_IMPLS_H

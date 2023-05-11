@@ -246,10 +246,13 @@ bool Voice::process()
     // At the end of the voice we have to produce stereo
     if (chainIsMono)
     {
+        mech::scale_by<blockSize>(aeg.outputCache, output[0]);
         mech::copy_from_to<blockSize>(output[0], output[1]);
     }
-
-    mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
+    else
+    {
+        mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
+    }
 
     /*
      * Finally do voice state update

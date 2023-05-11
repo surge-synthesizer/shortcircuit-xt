@@ -28,15 +28,30 @@
 #ifndef SCXT_SRC_UI_COMPONENTS_MIXERSCREEN_H
 #define SCXT_SRC_UI_COMPONENTS_MIXERSCREEN_H
 
+#include "HasEditor.h"
+#include "SCXTEditor.h"
+#include "browser/BrowserPane.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
 namespace scxt::ui
 {
-struct MixerScreen : juce::Component
+namespace browser
 {
-    void paint(juce::Graphics &g)
+struct BrowserPane;
+}
+namespace mixer
+{
+struct PartEffectsPane;
+struct BusPane;
+} // namespace mixer
+struct MixerScreen : juce::Component, HasEditor
+{
+    static constexpr int sideWidths = 196; // copied from multi for now
+
+    MixerScreen(SCXTEditor *e);
+    ~MixerScreen();
+    void paint(juce::Graphics &g) override
     {
-        g.fillAll(juce::Colour(0x15, 0x15, 0x15));
         g.setColour(juce::Colours::white);
         g.setFont(juce::Font(60, juce::Font::plain));
         g.drawText("Mixer", getLocalBounds().withTrimmedBottom(40), juce::Justification::centred);
@@ -44,6 +59,24 @@ struct MixerScreen : juce::Component
         g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(40),
                    juce::Justification::centred);
     }
+    void visibilityChanged() override;
+    void resized() override;
+
+    void onBusEffectFullData(
+        int bus, int slot,
+        const std::array<datamodel::pmd, engine::BusEffectStorage::maxBusEffectParams> &,
+        const engine::BusEffectStorage &);
+
+    std::unique_ptr<browser::BrowserPane> browser;
+    std::array<std::unique_ptr<mixer::PartEffectsPane>, engine::Bus::maxEffectsPerBus> partPanes;
+    std::unique_ptr<mixer::BusPane> busPane;
+
+    using partFXMD_t = std::array<datamodel::pmd, engine::BusEffectStorage::maxBusEffectParams>;
+    using partFXStorage_t = std::pair<partFXMD_t, engine::BusEffectStorage>;
+    using busPartsFX_t = std::array<partFXStorage_t, engine::Bus::maxEffectsPerBus>;
+    using busFX_t = std::array<busPartsFX_t, scxt::maxOutputs>;
+
+    busFX_t busEffectsData;
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUIT_SENDFXSCREEN_H

@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME} STATIC
         engine/zone.cpp
         engine/group.cpp
         engine/part.cpp
+        engine/patch.cpp
         engine/memory_pool.cpp
         engine/bus.cpp
 

@@ -29,7 +29,9 @@
 #define SCXT_SRC_UI_COMPONENTS_MULTISCREEN_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <memory>
 #include "HasEditor.h"
+#include "browser/BrowserPane.h"
 #include "sst/jucegui/components/NamedPanel.h"
 
 namespace scxt::ui
@@ -44,16 +46,22 @@ struct ProcessorPane;
 struct LfoPane;
 } // namespace multi
 
+namespace browser
+{
+struct BrowserPane;
+}
+
 struct MultiScreen : juce::Component, HasEditor
 {
     static constexpr int numProcessorDisplays{4};
-    static constexpr int sideWidths = 196;
+    static constexpr int sideWidths = 196; // copied from mixer for now
     static constexpr int edgeDistance = 6;
 
     static constexpr int envHeight = 160, modHeight = 160, fxHeight = 176;
     static constexpr int pad = 0;
 
-    std::unique_ptr<juce::Component> browser, mix;
+    std::unique_ptr<juce::Component> mix;
+    std::unique_ptr<browser::BrowserPane> browser;
     std::unique_ptr<multi::LfoPane> lfo;
     std::unique_ptr<multi::MappingPane> sample;
     std::unique_ptr<multi::PartGroupSidebar> parts;

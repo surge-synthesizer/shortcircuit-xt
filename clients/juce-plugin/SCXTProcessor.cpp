@@ -213,8 +213,8 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
 
             if (bus == 0)
             {
-                *outL = engine->busses.mainBus.output[0][blockPos];
-                *outR = engine->busses.mainBus.output[1][blockPos];
+                *outL = engine->getPatch()->busses.mainBus.output[0][blockPos];
+                *outR = engine->getPatch()->busses.mainBus.output[1][blockPos];
             }
             else
             {

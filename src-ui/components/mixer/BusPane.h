@@ -25,31 +25,39 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include <random>
-#include <chrono>
+#ifndef SCXT_SRC_UI_COMPONENTS_MIXER_BUSPANE_H
+#define SCXT_SRC_UI_COMPONENTS_MIXER_BUSPANE_H
 
-#ifndef SCXT_SRC_INFRASTRUCTURE_RNG_GEN_H
-#define SCXT_SRC_INFRASTRUCTURE_RNG_GEN_H
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <sst/jucegui/components/NamedPanel.h>
 
-namespace scxt::infrastructure
+namespace scxt::ui::mixer
 {
-struct RNGGen
+struct BusPane : public sst::jucegui::components::NamedPanel
 {
-    RNGGen()
-        : g(std::chrono::system_clock::now().time_since_epoch().count()), pm1(-1.f, 1.f),
-          z1(0.f, 1.f), u32(0, 0xFFFFFFFF)
+    struct CL : juce::Component
     {
+        juce::Colour color;
+        std::string label;
+        void paint(juce::Graphics &g) override
+        {
+            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+
+            g.setColour(color);
+            g.drawText(label, getLocalBounds(), juce::Justification::centred);
+        }
+    };
+    std::unique_ptr<CL> cl;
+    BusPane() : sst::jucegui::components::NamedPanel("BUSSES")
+    {
+        cl = std::make_unique<CL>();
+        cl->color = juce::Colours::cyan;
+        cl->label = "BUSSES";
+        addAndMakeVisible(*cl);
+        hasHamburger = true;
     }
-
-    inline float rand01() { return z1(g); }
-    inline float randPM1() { return pm1(g); }
-    inline uint32_t randU32() { return u32(g); }
-
-  private:
-    std::minstd_rand g;
-    std::uniform_real_distribution<float> pm1, z1;
-    std::uniform_int_distribution<uint32_t> u32;
+    void resized() override { cl->setBounds(getContentArea()); }
 };
-} // namespace scxt::infrastructure
+} // namespace scxt::ui::mixer
 
-#endif // SHORTCIRCUITXT_RNG_GEN_H
+#endif // SHORTCIRCUITXT_BUSPANEL_H

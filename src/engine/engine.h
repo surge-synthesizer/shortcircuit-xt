@@ -73,26 +73,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     EngineID id;
 
-    struct Busses
-    {
-        Busses()
-        {
-            std::fill(partToVSTRouting.begin(), partToVSTRouting.end(), 0);
-            std::fill(auxToVSTRouting.begin(), auxToVSTRouting.end(), 0);
-        }
-
-        static constexpr int busCount{numParts + numAux + 1};
-
-        Bus mainBus;
-
-        std::array<Bus, numParts> partBusses;
-        // here '0' means main bus
-        std::array<int16_t, numParts> partToVSTRouting{};
-
-        std::array<Bus, numAux> auxBusses;
-        std::array<int16_t, numParts> auxToVSTRouting{};
-    } busses;
-
     const std::unique_ptr<Patch> &getPatch() const { return patch; }
     const std::unique_ptr<sample::SampleManager> &getSampleManager() const { return sampleManager; }
 
@@ -241,7 +221,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     struct SharedUIMemoryState
     {
-        std::array<std::array<std::atomic<float>, 2>, Busses::busCount> busVULevels;
+        std::array<std::array<std::atomic<float>, 2>, Patch::Busses::busCount> busVULevels;
 
         std::atomic<int64_t> voiceDisplayStateWriteCounter{0};
 

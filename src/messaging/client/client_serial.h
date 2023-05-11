@@ -64,6 +64,10 @@ enum ClientToSerializationMessagesIds
 
     c2s_noteonoff,
 
+    c2s_initialize_mixer,
+    c2s_set_mixer_effect,
+    c2s_set_mixer_effect_storage,
+
     num_clientToSerializationMessages
 };
 
@@ -85,6 +89,9 @@ enum SerializationToClientMessageIds
 
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,
+
+    s2c_initialize_mixer,
+    s2c_bus_effect_full_data,
 
     num_serializationToClientMessages
 };
