@@ -91,7 +91,8 @@ inline std::string toDebugString(const AudioToSerialization &a)
 enum SerializationToAudioMessageId
 {
     s2a_none,
-    s2a_dispatch_to_pointer
+    s2a_dispatch_to_pointer,
+    s2a_dispatch_to_pointer_under_structurelock
 };
 
 /**

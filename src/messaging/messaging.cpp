@@ -104,18 +104,23 @@ void MessageController::returnAudioThreadCallback(AudioThreadCallback *r)
     cbStore.push(r);
 }
 
-void MessageController::scheduleAudioThreadCallback(
-    std::function<void(engine::Engine &)> cb, std::function<void(const engine::Engine &)> sercb)
+void MessageController::scheduleAudioThreadFunctionCallback(
+    audio::SerializationToAudioMessageId sid, std::function<void(engine::Engine &)> cb,
+    std::function<void(const engine::Engine &)> sercb)
 {
     assert(threadingChecker.isSerialThread());
 
     if (!localCopyOfIsAudioRunning)
     {
-        SCDBGCOUT << "No audio thread; running callbacks on serial" << std::endl;
+        // In this case our audio thread checks will be wrong.
+        // We could elevate ourselves to audio thread for as econd or just...
+        threadingChecker.bypassThreadChecks = true;
         if (cb)
             cb(engine);
         if (sercb)
             sercb(engine);
+
+        threadingChecker.bypassThreadChecks = false;
     }
     else
     {
@@ -126,7 +131,7 @@ void MessageController::scheduleAudioThreadCallback(
         else
             pt->nullSerialCompleteFunction();
         auto s2a = audio::SerializationToAudio();
-        s2a.id = audio::s2a_dispatch_to_pointer;
+        s2a.id = sid;
         s2a.payload.p = (void *)pt;
         s2a.payloadType = audio::SerializationToAudio::VOID_STAR;
 

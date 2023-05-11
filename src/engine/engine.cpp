@@ -27,6 +27,7 @@
 
 #include "engine.h"
 #include "configuration.h"
+#include "messaging/audio/audio_serial.h"
 #include "part.h"
 #include "sst/cpputils/iterators.h"
 #include "voice/voice.h"
@@ -186,6 +187,20 @@ bool Engine::processAudio()
         {
         case messaging::audio::s2a_dispatch_to_pointer:
         {
+            auto cb =
+                static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
+            cb->exec(*this);
+
+            messaging::audio::AudioToSerialization rt;
+            rt.id = messaging::audio::a2s_pointer_complete;
+            rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
+            rt.payload.p = (void *)cb;
+            messageController->audioToSerializationQueue.push(rt);
+        }
+        break;
+        case messaging::audio::s2a_dispatch_to_pointer_under_structurelock:
+        {
+            std::lock_guard<std::mutex> structG(modifyStructureMutex);
             auto cb =
                 static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
             cb->exec(*this);
@@ -499,9 +514,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
         sg = 0;
 
     // 3. Send a message to the audio thread saying to add that zone and
-    messageController->scheduleAudioThreadCallback(
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
-            std::lock_guard<std::mutex> g(e.modifyStructureMutex);
             std::unique_ptr<Zone> zptr;
             zptr.reset(zone);
             e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
