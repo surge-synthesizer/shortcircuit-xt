@@ -129,6 +129,8 @@ std::string PartEffectsPane::effectDisplayName(engine::AvailableBusEffects t, bo
     case engine::reverb1:
         return forMenu ? "Reverb 1" : "REVERB 1";
     }
+
+    return "GCC gives strictly correct, but not useful in this case, warnings";
 }
 
 template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)

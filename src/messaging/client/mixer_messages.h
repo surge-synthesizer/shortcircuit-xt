@@ -70,7 +70,7 @@ using setBusEffectStorage_t = std::tuple<int, int, engine::BusEffectStorage>; //
 inline void setBusEffectStorage(const setBusEffectStorage_t &payload,
                                 messaging::MessageController &cont)
 {
-    cont.scheduleAudioThreadCallbackUnderStructureLock([p = payload](auto &e) {
+    cont.scheduleAudioThreadCallback([p = payload](auto &e) {
         auto [bus, fxslot, bes] = p;
         e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busEffectStorage[fxslot] = bes;
     });
