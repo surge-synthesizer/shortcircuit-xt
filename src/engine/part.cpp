@@ -68,8 +68,10 @@ void Part::process(Engine &e)
             {
                 bi = (BusAddress)(MAIN_0 + partNumber);
             }
-            blk::accumulate_from_to<blockSize>(g->output[0], e.busses.partBusses[bi].output[0]);
-            blk::accumulate_from_to<blockSize>(g->output[1], e.busses.partBusses[bi].output[1]);
+            blk::accumulate_from_to<blockSize>(g->output[0],
+                                               e.getPatch()->busses.partBusses[bi].output[0]);
+            blk::accumulate_from_to<blockSize>(g->output[1],
+                                               e.getPatch()->busses.partBusses[bi].output[1]);
         }
     }
 }

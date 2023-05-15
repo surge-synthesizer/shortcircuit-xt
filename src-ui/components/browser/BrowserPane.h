@@ -25,25 +25,39 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_PLAYSCREEN_H
-#define SCXT_SRC_UI_COMPONENTS_PLAYSCREEN_H
+#ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
+#define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <sst/jucegui/components/NamedPanel.h>
 
-namespace scxt::ui
+namespace scxt::ui::browser
 {
-struct PlayScreen : juce::Component
+struct BrowserPane : public sst::jucegui::components::NamedPanel
 {
-    void paint(juce::Graphics &g)
+    struct CL : juce::Component
     {
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(60, juce::Font::plain));
-        g.drawText("Play Mode", getLocalBounds().withTrimmedBottom(40),
-                   juce::Justification::centred);
-        g.setFont(juce::Font(20, juce::Font::plain));
-        g.drawText("Coming A Bit Less Soon", getLocalBounds().withTrimmedTop(40),
-                   juce::Justification::centred);
+        juce::Colour color;
+        std::string label;
+        void paint(juce::Graphics &g) override
+        {
+            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+
+            g.setColour(color);
+            g.drawText(label, getLocalBounds(), juce::Justification::centred);
+        }
+    };
+    std::unique_ptr<CL> cl;
+    BrowserPane() : sst::jucegui::components::NamedPanel("Browser")
+    {
+        cl = std::make_unique<CL>();
+        cl->color = juce::Colours::cyan;
+        cl->label = "BROWSER";
+        addAndMakeVisible(*cl);
+        hasHamburger = true;
     }
+    void resized() override { cl->setBounds(getContentArea()); }
 };
-} // namespace scxt::ui
-#endif // SHORTCIRCUITXT_PLAYSCREEN_H
+} // namespace scxt::ui::browser
+
+#endif // SHORTCIRCUITXT_BROWSERPANE_H

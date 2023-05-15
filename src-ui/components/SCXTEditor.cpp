@@ -91,7 +91,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     multiScreen = std::make_unique<MultiScreen>(this);
     addAndMakeVisible(*multiScreen);
 
-    mixerScreen = std::make_unique<MixerScreen>();
+    mixerScreen = std::make_unique<MixerScreen>(this);
     addChildComponent(*mixerScreen);
 
     playScreen = std::make_unique<PlayScreen>();

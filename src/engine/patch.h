@@ -40,6 +40,69 @@ struct Patch : MoveableOnly<Patch>
 {
     Patch() : id(PatchID::next()) { reset(); }
 
+    // TODO - does this really belong in the patch? I think it probably does
+    struct Busses
+    {
+        Busses() : mainBus(MAIN_0)
+        {
+            std::fill(partToVSTRouting.begin(), partToVSTRouting.end(), 0);
+            std::fill(auxToVSTRouting.begin(), auxToVSTRouting.end(), 0);
+            int adr = PART_0;
+            for (auto &p : partBusses)
+            {
+                p.address = (BusAddress)adr;
+                adr++;
+            }
+            adr = AUX_0;
+            for (auto &p : auxBusses)
+            {
+                p.address = (BusAddress)adr;
+                adr++;
+            }
+        }
+
+        inline void clear()
+        {
+            // TODO - be more parsimonious - only clear things in use
+            mainBus.clear();
+            for (auto &b : partBusses)
+                b.clear();
+            for (auto &b : auxBusses)
+                b.clear();
+        }
+
+        static constexpr int busCount{numParts + numAux + 1};
+
+        Bus mainBus;
+
+        std::array<Bus, numParts> partBusses;
+        // here '0' means main bus
+        std::array<int16_t, numParts> partToVSTRouting{};
+
+        std::array<Bus, numAux> auxBusses;
+        std::array<int16_t, numAux> auxToVSTRouting{};
+
+        Bus &busByAddress(engine::BusAddress b)
+        {
+            if (b == MAIN_0)
+                return mainBus;
+
+            SCDBGCOUT << "Main Bus returned for address no matter what" << std::endl;
+            return mainBus;
+        }
+
+        void sendBusEffectInfo(const Engine &e)
+        {
+            mainBus.sendAllBusEffectInfoToClient(e);
+            for (auto &p : partBusses)
+                p.sendAllBusEffectInfoToClient(e);
+            for (auto &p : auxBusses)
+                p.sendAllBusEffectInfoToClient(e);
+        }
+    } busses;
+
+    void process(Engine &e);
+
     void reset()
     {
         // If it is the year 2112 and you just had a regtest fail because
@@ -52,6 +115,8 @@ struct Patch : MoveableOnly<Patch>
             parts[i]->parentPatch = this;
         }
     }
+
+    void setupBussesOnUnstream(Engine &e);
     PatchID id;
     uint64_t streamingVersion{0}; // we use hex dates for these
 

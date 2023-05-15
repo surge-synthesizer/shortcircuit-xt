@@ -34,6 +34,7 @@
 #include "PlayScreen.h"
 #include "SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"
+#include "engine/patch.h"
 #include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
 #include "selection/selection_manager.h"
@@ -159,6 +160,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &);
     void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);
+
+    void onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
 
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)

@@ -26,6 +26,7 @@
  */
 
 #include "MultiScreen.h"
+#include "browser/BrowserPane.h"
 #include "multi/AdsrPane.h"
 #include "multi/LFOPane.h"
 #include "multi/MappingPane.h"
@@ -69,8 +70,7 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     parts = std::make_unique<multi::PartGroupSidebar>(editor);
     addAndMakeVisible(*parts);
 
-    auto br = std::make_unique<DebugRect>(juce::Colour(200, 120, 100), "BROWSER");
-    br->hasHamburger = true;
+    auto br = std::make_unique<browser::BrowserPane>();
     browser = std::move(br);
     addAndMakeVisible(*browser);
     sample = std::make_unique<multi::MappingPane>(editor);

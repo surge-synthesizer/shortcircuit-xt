@@ -44,6 +44,8 @@
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
+#include "messaging/messaging.h"
+
 namespace mech = sst::basic_blocks::mechanics;
 
 namespace scxt::engine
@@ -78,14 +80,16 @@ struct Config
         return (int)std::round(v[idx]);
     }
 
-    static inline float envelopeRateLinear(GlobalStorage *s, float f) { return 0; }
+    static inline float envelopeRateLinear(GlobalStorage *s, float f)
+    {
+        return s->getSampleRateInv() * pow(2.0, -f);
+    }
 
     static inline float temposyncRatio(GlobalStorage *s, EffectStorage *e, int idx) { return 1; }
 
     static inline bool isDeactivated(EffectStorage *e, int idx) { return false; }
     static inline bool isExtended(EffectStorage *e, int idx) { return false; }
 
-    // TODO: Fix Me obvs
     static inline float rand01(GlobalStorage *s) { return s->rngGen.rand01(); }
 
     static inline double sampleRate(GlobalStorage *s) { return s->getSampleRate(); }
@@ -114,46 +118,77 @@ template <typename T> struct Impl : T
     BusEffectStorage *pes{nullptr};
     float *values{nullptr};
     Impl(Engine *e, BusEffectStorage *f, float *v) : engine(e), pes(f), values(v), T(e, f, v) {}
-    void init() override
+    void init(bool defaultsOverride) override
     {
-        for (int i = 0; i < T::numParams && i < BusEffectStorage::maxBusEffectParams; ++i)
+        if (defaultsOverride)
         {
-            values[i] = this->paramAt(i).defaultVal;
+            for (int i = 0; i < T::numParams && i < BusEffectStorage::maxBusEffectParams; ++i)
+            {
+                values[i] = this->paramAt(i).defaultVal;
+            }
         }
         T::initialize();
     }
+
     void process(float *__restrict L, float *__restrict R) override { T::processBlock(L, R); }
+
+    datamodel::pmd paramAt(int i) const override { return T::paramAt(i); }
+
+    int numParams() const override { return T::numParams; }
 };
+
 } // namespace dtl
 
+// TODO consider the enum to type trick so these can skip the switch
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s)
 {
     namespace sfx = sst::effects;
+    if (s)
+        s->type = p;
     switch (p)
     {
+    case none:
+        return nullptr;
     case reverb1:
-        return std::make_unique<dtl::Impl<sfx::Reverb1<dtl::Config>>>(e, s, s->params);
+        return std::make_unique<dtl::Impl<sfx::Reverb1<dtl::Config>>>(e, s, s->params.data());
     case flanger:
-        return std::make_unique<dtl::Impl<sfx::Flanger<dtl::Config>>>(e, s, s->params);
+        return std::make_unique<dtl::Impl<sfx::Flanger<dtl::Config>>>(e, s, s->params.data());
     case delay:
-        return std::make_unique<dtl::Impl<sfx::Delay<dtl::Config>>>(e, s, s->params);
+        return std::make_unique<dtl::Impl<sfx::Delay<dtl::Config>>>(e, s, s->params.data());
     }
     return nullptr;
 }
 
+void Bus::setBusEffectType(Engine &e, int idx, scxt::engine::AvailableBusEffects t)
+{
+    assert(idx >= 0 && idx < maxEffectsPerBus);
+    busEffects[idx] = createEffect(t, &e, &busEffectStorage[idx]);
+    if (busEffects[idx])
+        busEffects[idx]->init(true);
+}
+
+void Bus::initializeAfterUnstream(Engine &e)
+{
+    for (int idx = 0; idx < maxEffectsPerBus; ++idx)
+    {
+        busEffects[idx] = createEffect(busEffectStorage[idx].type, &e, &busEffectStorage[idx]);
+        if (busEffects[idx])
+        {
+            busEffects[idx]->init(false);
+            sendBusEffectInfoToClient(e, idx);
+        }
+    }
+}
 void Bus::process()
 {
     if (supportsSends && hasSends && auxLocation == PRE_FX)
         memcpy(auxoutput, output, sizeof(output));
 
-    if (supportsEffects)
+    for (auto &fx : busEffects)
     {
-        for (auto &fx : busEffects)
+        if (fx)
         {
-            if (fx)
-            {
-                fx->process(output[0], output[1]);
-            }
+            fx->process(output[0], output[1]);
         }
     }
 
@@ -168,6 +203,28 @@ void Bus::process()
 
     if (supportsSends && hasSends && auxLocation == POST_VCA)
         memcpy(auxoutput, output, sizeof(output));
+}
+
+void Bus::sendBusEffectInfoToClient(const scxt::engine::Engine &e, int slot)
+{
+    std::array<datamodel::pmd, BusEffectStorage::maxBusEffectParams> pmds;
+
+    int saz{0};
+    if (busEffects[slot])
+    {
+        for (int i = 0; i < busEffects[slot]->numParams(); ++i)
+        {
+            pmds[i] = busEffects[slot]->paramAt(i);
+        }
+        saz = busEffects[slot]->numParams();
+    }
+    for (int i = saz; i < BusEffectStorage::maxBusEffectParams; ++i)
+        pmds[i].type = sst::basic_blocks::params::ParamMetaData::NONE;
+
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_bus_effect_full_data,
+        messaging::client::busEffectFullData_t{(int)address, slot, {pmds, busEffectStorage[slot]}},
+        *(e.getMessageController()));
 }
 
 } // namespace scxt::engine

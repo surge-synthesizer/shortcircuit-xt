@@ -50,37 +50,44 @@
 
 #include "configuration.h"
 #include "utils.h"
+#include "datamodel/parameter.h"
 
 namespace scxt::engine
 {
 enum BusAddress : int16_t
 {
+    ERROR_BUS = -2,
     DEFAULT_BUS = -1,
     MAIN_0,
-    AUX_0 = MAIN_0 + numParts
+    PART_0,
+    AUX_0 = PART_0 + numParts
 };
 
 struct Engine;
 
+enum AvailableBusEffects
+{
+    none,
+    reverb1,
+    flanger,
+    delay
+};
+
 struct BusEffectStorage
 {
     static constexpr int maxBusEffectParams{12};
-    float params[maxBusEffectParams];
+    AvailableBusEffects type;
+    std::array<float, maxBusEffectParams> params;
 };
 struct BusEffect
 {
     BusEffect(Engine *, BusEffectStorage *, float *) {}
     virtual ~BusEffect() = default;
 
-    virtual void init() = 0;
+    virtual void init(bool defaultsOverrideStorage) = 0;
     virtual void process(float *__restrict L, float *__restrict R) = 0;
-};
-
-enum AvailableBusEffects
-{
-    reverb1,
-    flanger,
-    delay
+    virtual datamodel::pmd paramAt(int i) const = 0;
+    virtual int numParams() const = 0;
 };
 
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s);
@@ -89,6 +96,10 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 {
     static constexpr int maxEffectsPerBus{4};
     static constexpr int maxSendsPerBus{4};
+
+    BusAddress address;
+    Bus() : address(ERROR_BUS) {}
+    Bus(BusAddress a) : address(a) { assert(address != DEFAULT_BUS && address != ERROR_BUS); }
 
     float output alignas(16)[2][blockSize];
     float auxoutput alignas(16)[2][blockSize];
@@ -99,7 +110,6 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
     bool hasSends{false};
     bool supportsSends{false};
-    bool supportsEffects{false};
 
     enum AuxLocation
     {
@@ -118,16 +128,49 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
             hasSends = hasSends || (f != 0);
     }
 
-  private:
+    void setBusEffectType(Engine &e, int idx, AvailableBusEffects t);
+    void initializeAfterUnstream(Engine &e);
+    void sendAllBusEffectInfoToClient(const Engine &e)
+    {
+        for (int i = 0; i < maxEffectsPerBus; ++i)
+            sendBusEffectInfoToClient(e, i);
+    }
+    void sendBusEffectInfoToClient(const Engine &, int slot);
+
     // Send levels in 0...1 scale to each bus
     std::array<float, maxSendsPerBus> sendLevels{};
     // VCA level in raw amplitude also. UI will dbIfy this I'm sure
     float level{1.f};
+    std::array<BusEffectStorage, maxEffectsPerBus> busEffectStorage;
 
     std::array<std::unique_ptr<BusEffect>, maxEffectsPerBus> busEffects;
-    std::array<BusEffectStorage, maxEffectsPerBus> busEffectStorage;
 };
 
+inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
+{
+    switch (p)
+    {
+    case none:
+        return "none";
+    case reverb1:
+        return "reverb1";
+    case flanger:
+        return "flanger";
+    case delay:
+        return "delay";
+    }
+    return "normal";
+}
+
+inline AvailableBusEffects fromStringAvailableBusEffects(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<AvailableBusEffects, toStringAvailableBusEffects>(
+        AvailableBusEffects::none, AvailableBusEffects::delay);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return none;
+    return p->second;
+}
 } // namespace scxt::engine
 
 #endif // SHORTCIRCUITXT_BUS_H

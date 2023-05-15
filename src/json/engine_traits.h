@@ -50,6 +50,7 @@
 #include "modulation_traits.h"
 #include "datamodel_traits.h"
 #include "selection_traits.h"
+#include "engine/bus.h"
 
 namespace scxt::json
 {
@@ -74,6 +75,9 @@ template <> struct scxt_traits<scxt::engine::Engine>
         findIf(v, "sampleManager", *(engine.getSampleManager()));
         findIf(v, "patch", *(engine.getPatch()));
         findIf(v, "selectionManager", *(engine.getSelectionManager()));
+
+        // Now we need to restore the bus effects
+        engine.getPatch()->setupBussesOnUnstream(engine);
     }
 };
 
@@ -82,7 +86,9 @@ template <> struct scxt_traits<scxt::engine::Patch>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Patch &t)
     {
-        v = {{"streamingVersion", scxt::json::currentStreamingVersion}, {"parts", t.getParts()}};
+        v = {{"streamingVersion", scxt::json::currentStreamingVersion},
+             {"parts", t.getParts()},
+             {"busses", t.busses}};
     }
 
     template <template <typename...> class Traits>
@@ -99,6 +105,8 @@ template <> struct scxt_traits<scxt::engine::Patch>
             vz.to(*(patch.getPart(idx)));
             idx++;
         }
+
+        findIf(v, "busses", patch.busses);
     }
 };
 
@@ -338,5 +346,67 @@ template <> struct scxt_traits<engine::Engine::EngineStatusMessage>
     }
 };
 
+template <> struct scxt_traits<engine::Bus>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const engine::Bus &t)
+    {
+        v = {{"supportsSends", t.supportsSends},
+             {"auxLocation", (int)t.auxLocation},
+             {"sendLevels", t.sendLevels},
+             {"busEffectStorage", t.busEffectStorage}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, engine::Bus &r)
+    {
+        findIf(v, "supportsSends", r.supportsSends);
+        findEnumIf(v, "auxLocation", r.auxLocation);
+        findIf(v, "sendLevels", r.sendLevels);
+        findIf(v, "busEffectStorage", r.busEffectStorage);
+    }
+};
+
+template <> struct scxt_traits<engine::BusEffectStorage>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const engine::BusEffectStorage &t)
+    {
+        v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)}, {"params", t.params}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, engine::BusEffectStorage &r)
+    {
+        std::string tp;
+        findIf(v, "type", tp);
+        r.type = scxt::engine::fromStringAvailableBusEffects(tp);
+        findIf(v, "params", r.params);
+    }
+};
+
+template <> struct scxt_traits<engine::Patch::Busses>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const engine::Patch::Busses &t)
+    {
+        // TODO fixme don't stream as int
+        v = {{"mainBus", t.mainBus},
+             {"partBusses", t.partBusses},
+             {"partToVSTRouting", t.partToVSTRouting},
+             {"auxBusses", t.auxBusses},
+             {"auxToVSTRouting", t.auxToVSTRouting}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, engine::Patch::Busses &r)
+    {
+        findIf(v, "mainBus", r.mainBus);
+        findIf(v, "partBusses", r.partBusses);
+        findIf(v, "partToVSTRouting", r.partToVSTRouting);
+        findIf(v, "auxBusses", r.auxBusses);
+        findIf(v, "auxToVSTRouting", r.auxToVSTRouting);
+    }
+};
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H
