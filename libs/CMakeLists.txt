@@ -9,7 +9,7 @@ add_subdirectory(xiph)
 
 add_subdirectory(sst/sst-cpputils)
 
-set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform fs")
+set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform filesystem")
 set(SST_PLUGININFRA_PROVIDE_TINYXML ON CACHE BOOL "Skip TinyXML")  # need this for UserDefaults
 add_subdirectory(sst/sst-basic-blocks)
 add_subdirectory(sst/sst-plugininfra)

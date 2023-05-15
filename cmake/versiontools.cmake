@@ -79,7 +79,7 @@ if(${GIT_BRANCH} STREQUAL "main" )
 else()
   string( FIND ${GIT_BRANCH} "release/" RLOC )
   if( ${RLOC} EQUAL 0 )
-    message( STATUS "Configuring a Release Build from '${GIT_BRANCH}'" )
+    message( STATUS "Configuring a Release build from '${GIT_BRANCH}'" )
     string( SUBSTRING ${GIT_BRANCH} 11 100 RV ) # that's release slash 1.7.
     string( FIND ${RV} "." DLOC )
     if( NOT ( DLOC EQUAL -1 ) )
