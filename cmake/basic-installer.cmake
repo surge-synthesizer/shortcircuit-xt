@@ -37,11 +37,11 @@ shortcircuit_package(CLAP)
 shortcircuit_package(Standalone)
 
 if (WIN32)
-    message(STATUS "Including special windows cleanup installer stage")
+    message(STATUS "Including special Windows cleanup installer stage")
     add_custom_command(TARGET shortcircuit-products
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            COMMAND ${CMAKE_COMMAND} -E echo "Cleaning up windows goobits"
+            COMMAND ${CMAKE_COMMAND} -E echo "Cleaning up Windows goobits"
             COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.exp"
             COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.ilk"
             COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.lib"
@@ -82,7 +82,7 @@ endif ()
 
 
 if (APPLE)
-    message(STATUS "Configuring for mac installer.")
+    message(STATUS "Configuring for Mac installer.")
     add_custom_command(
             TARGET shortcircuit-installer
             POST_BUILD
@@ -91,7 +91,7 @@ if (APPLE)
             COMMAND ${CMAKE_SOURCE_DIR}/libs/sst/sst-plugininfra/scripts/installer_mac/make_installer.sh "Shortcircuit XT" ${CMAKE_BINARY_DIR}/shortcircuit-products ${CMAKE_SOURCE_DIR}/resources/installer_mac ${CMAKE_BINARY_DIR}/installer "${SCXT_DATE}-${VERSION_CHUNK}"
     )
 elseif (WIN32)
-    message(STATUS "Configuring for win installer")
+    message(STATUS "Configuring for Windows installer")
     add_custom_command(
             TARGET shortcircuit-installer
             POST_BUILD
@@ -109,10 +109,10 @@ elseif (WIN32)
             COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.1
             COMMAND Tools.InnoSetup.6.2.1/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
     else()
-        message(STATUS "NuGet not found")
+        message(STATUS "NuGet not found!")
     endif()
 else ()
-    message(STATUS "Basic Installer: Target is installer/${SCXT_ZIP}")
+    message(STATUS "Basic installer: Target is installer/${SCXT_ZIP}")
     add_custom_command(
             TARGET shortcircuit-installer
             POST_BUILD

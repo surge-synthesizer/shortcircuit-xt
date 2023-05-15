@@ -22,17 +22,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(ShortcircuitXT VERSION 0.5.1.0 LANGUAGES C CXX ASM)
 
 # Build Time Options
-option(SCXT_BUILD_VST3 "Build a VST3 Plugin" ON)
-option(SCXT_BUILD_AU "Build an AudioUnit Plugin" ON)
-option(SCXT_BUILD_CLAP "Build a CLAP Plugin" ON)
-option(SCXT_BUILD_STANDALONE "Build a Standalone Executable" ON)
+option(SCXT_BUILD_VST3 "Build a VST3 plugin" ON)
+option(SCXT_BUILD_AU "Build an AU plugin" ON)
+option(SCXT_BUILD_CLAP "Build a CLAP" ON)
+option(SCXT_BUILD_STANDALONE "Build a standalone executable" ON)
 option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
 option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
 
-option(SCXT_USE_FLAC "Include flac support from xiph/flac" ON)
+option(SCXT_USE_FLAC "Include FLAC support" ON)
 
-option(SCXT_SANITIZE "Build with CLang/gcc address and undef sanitizer" OFF)
+option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
 
 
 # Calculate bitness
@@ -42,7 +42,7 @@ if (NOT ${BITS} EQUAL 64)
 endif ()
 
 # Share some information about the  build
-message(STATUS "ShortCircuit ${CMAKE_PROJECT_VERSION}")
+message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
 
 # Everything here is C++ 17 now
@@ -55,7 +55,7 @@ endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     if (${SCXT_SANITIZE})
-        message(STATUS "Sanitizer is On")
+        message(STATUS "Sanitizer is ON")
     endif ()
 
     # Any Clang or any GCC

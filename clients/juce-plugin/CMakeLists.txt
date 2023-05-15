@@ -11,7 +11,7 @@ if (SCXT_BUILD_STANDALONE)
     list(APPEND SCXT_FORMATS Standalone)
 endif ()
 
-message(STATUS "Juce Plugin Layer building ${SCXT_FORMATS}")
+message(STATUS "JUCE plugin layer building ${SCXT_FORMATS}")
 
 juce_add_plugin(${PROJECT_NAME}
         PRODUCT_NAME "Shortcircuit XT"
