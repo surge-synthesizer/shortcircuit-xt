@@ -31,6 +31,8 @@
 #include <utility>
 #include <memory>
 #include <string>
+#include <functional>
+
 namespace scxt::ui::connectors
 {
 template <typename attachment_t, typename widget_t> struct ConnectorFactory
