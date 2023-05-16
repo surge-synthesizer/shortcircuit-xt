@@ -247,4 +247,41 @@ bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)
         return false;
     return true;
 }
+
+std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::Engine &e)
+{
+    if (currentLeadZone(e).has_value())
+    {
+        auto [sp, sg, sz] = *currentLeadZone(e);
+        if (sp < 0)
+            sp = 0;
+        if (sg < 0)
+            sg = 0;
+
+        return {sp, sg};
+    }
+    if (allSelectedZones.empty())
+    {
+        return {0, 0};
+    }
+
+    // For now pick the highest group in the lowest part
+    auto pt = 17;
+    auto gp = 0;
+    for (const auto &s : allSelectedZones)
+    {
+        if (s.part >= 0)
+            pt = std::min(pt, s.part);
+    }
+    if (pt == 17)
+        pt = 0;
+
+    for (const auto &s : allSelectedZones)
+    {
+        if (s.part == pt && s.group >= 0)
+            gp = std::max(gp, s.group);
+    }
+
+    return {pt, gp};
+}
 } // namespace scxt::selection

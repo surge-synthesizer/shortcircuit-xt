@@ -35,6 +35,9 @@
 
 namespace scxt::ui::multi
 {
+struct GroupSidebar;
+struct PartSidebar;
+
 struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
 {
     PartGroupSidebar(SCXTEditor *);
@@ -44,9 +47,15 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p);
     void editorSelectionChanged();
 
+    void selectParts() {}
+    void selectGroups() {}
+
     // TODO this is all just temporary hackitude of course
     std::unique_ptr<juce::ListBox> pgzList;
     std::unique_ptr<juce::ListBoxModel> pgzListModel;
+
+    std::unique_ptr<GroupSidebar> groupSidebar;
+    std::unique_ptr<PartSidebar> partSidebar;
 
     void resized() override;
 };

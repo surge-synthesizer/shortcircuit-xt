@@ -149,8 +149,17 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
     {
         assert(allSelections.empty());
     }
+
+    groupsInSelection.clear();
+    for (const auto &sel : allSelections)
+    {
+        if (sel.group >= 0)
+            groupsInSelection.insert(sel.group);
+    }
+
     multiScreen->parts->editorSelectionChanged();
     multiScreen->sample->editorSelectionChanged();
+
     repaint();
 }
 
@@ -178,8 +187,8 @@ void SCXTEditor::onMixerBusSendData(const scxt::messaging::client::busSendData_t
     {
         auto busi = std::get<0>(d);
         const auto &busd = std::get<1>(d);
-        SCDBGUNIMPL("Got Mixer Send Data " << busi);
-        // mixerScreen->onBusSendData(busi, busd);
+        // SCDBGUNIMPL("Got Mixer Send Data " << busi);
+        //  mixerScreen->onBusSendData(busi, busd);
     }
 }
 } // namespace scxt::ui

@@ -143,6 +143,8 @@ struct SelectionManager
             return leadZone;
         return {};
     }
+    std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
+
     void sendSelectedZonesToClient();
     void sendClientDataForSelectionState();
 

@@ -28,9 +28,289 @@
 #include "PartGroupSidebar.h"
 #include "components/SCXTEditor.h"
 #include "selection/selection_manager.h"
+#include "sst/jucegui/components/GlyphButton.h"
+#include "sst/jucegui/components/Label.h"
+#include "messaging/messaging.h"
 
 namespace scxt::ui::multi
 {
+namespace jcmp = sst::jucegui::components;
+namespace cmsg = scxt::messaging::client;
+
+struct PartSidebar : juce::Component, HasEditor
+{
+    PartGroupSidebar *partGroupSidebar{nullptr};
+    PartSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
+    void paint(juce::Graphics &g) override
+    {
+        auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
+                                           jcmp::Label::Styles::controlLabelFont);
+        g.setFont(ft.withHeight(20));
+        g.setColour(juce::Colours::white);
+        g.drawText("Parts", getLocalBounds().withTrimmedBottom(20), juce::Justification::centred);
+
+        g.setFont(ft.withHeight(14));
+        g.setColour(juce::Colours::white);
+        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(20),
+                   juce::Justification::centred);
+    }
+};
+
+struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
+{
+    struct GroupListBoxModel : juce::ListBoxModel
+    {
+        GroupSidebar *sidebar{nullptr};
+        engine::Engine::pgzStructure_t thisGroup;
+        GroupListBoxModel(GroupSidebar *sb) : sidebar(sb) { rebuild(); }
+        void rebuild()
+        {
+            auto &sbo = sidebar->editor->currentLeadSelection;
+            sidebar->part = 0;
+            if (sbo.has_value())
+                sidebar->part = sbo->part;
+            auto &pgz = sidebar->partGroupSidebar->pgzStructure;
+            thisGroup.clear();
+            for (const auto &el : pgz)
+                if (el.first.part == sidebar->part && el.first.group >= 0)
+                    thisGroup.push_back(el);
+        }
+        int getNumRows() override { return thisGroup.size() + 1; /* for the plus */ }
+
+        struct rowComponent : juce::Component, juce::DragAndDropTarget
+        {
+            int rowNumber{-1};
+            bool isSelected{false};
+            GroupListBoxModel *lbm{nullptr};
+            GroupSidebar *gsb{nullptr};
+
+            void paint(juce::Graphics &g) override
+            {
+                if (!gsb)
+                    return;
+                auto &tgl = lbm->thisGroup;
+                if (rowNumber < 0 || rowNumber >= tgl.size())
+                    return;
+
+                auto &sg = tgl[rowNumber];
+
+                auto st = gsb->partGroupSidebar->style();
+                g.setFont(st->getFont(jcmp::Label::Styles::styleClass,
+                                      jcmp::Label::Styles::controlLabelFont));
+
+                // TODO: Style all of these
+                auto borderColor = juce::Colour(0xFF, 0x90, 0x00).darker(0.4);
+                auto textColor = juce::Colour(190, 190, 190);
+                auto lowTextColor = textColor.darker(0.4);
+                auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
+
+                if (isSelected)
+                    fillColor = juce::Colour(0x40, 0x20, 0x00);
+                int zonePad = 20;
+                if (sg.first.zone < 0)
+                {
+                    g.setColour(fillColor);
+                    g.fillRect(getLocalBounds());
+
+                    g.setColour(borderColor);
+                    g.drawLine(0, getHeight(), getWidth(), getHeight());
+
+                    auto bx = getLocalBounds().withWidth(zonePad);
+                    auto nb = getLocalBounds().withTrimmedLeft(zonePad);
+                    g.setColour(lowTextColor);
+                    g.drawText(std::to_string(sg.first.group + 1), bx,
+                               juce::Justification::centredLeft);
+                    g.setColour(textColor);
+                    g.drawText(sg.second, nb, juce::Justification::centredLeft);
+                }
+                else
+                {
+                    auto bx = getLocalBounds().withTrimmedLeft(zonePad);
+                    g.setColour(fillColor);
+                    g.fillRect(bx);
+                    g.setColour(borderColor);
+                    g.drawLine(zonePad, 0, zonePad, getHeight());
+                    g.drawLine(zonePad, getHeight(), getWidth(), getHeight());
+
+                    g.setColour(textColor);
+                    g.drawText(sg.second, getLocalBounds().translated(zonePad + 2, 0),
+                               juce::Justification::centredLeft);
+                }
+            }
+
+            bool isDragging{false};
+            selection::SelectionManager::ZoneAddress getZoneAddress()
+            {
+                auto &tgl = lbm->thisGroup;
+                if (rowNumber < 0 || rowNumber >= tgl.size())
+                    return {};
+                auto &sad = tgl[rowNumber].first;
+                return sad;
+            }
+            bool isZone() { return getZoneAddress().zone >= 0; }
+            bool isGroup() { return getZoneAddress().zone == -1; }
+
+            // big thanks to https://forum.juce.com/t/listbox-drag-to-reorder-solved/28477
+            void mouseDrag(const juce::MouseEvent &e) override
+            {
+                if (!isZone())
+                    return;
+
+                if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+                {
+                    if (!isDragging)
+                        container->startDragging("ZoneRow", this);
+                    isDragging = true;
+                }
+            }
+
+            void mouseUp(const juce::MouseEvent &event) override
+            {
+                if (isDragging)
+                {
+                    isDragging = false;
+                    return;
+                }
+                auto se = selection::SelectionManager::SelectActionContents(getZoneAddress());
+                se.selecting = !isSelected;
+                se.distinct = !event.mods.isCommandDown();
+                se.selectingAsLead = se.selecting;
+                gsb->editor->doMultiSelectionAction({se});
+            }
+
+            bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+            {
+                return !isZone();
+            }
+
+            void itemDropped(const SourceDetails &dragSourceDetails) override
+            {
+                auto sc = dragSourceDetails.sourceComponent;
+                if (!sc) // weak component
+                    return;
+
+                auto rd = dynamic_cast<rowComponent *>(sc.get());
+                if (rd)
+                {
+                    auto tgt = getZoneAddress();
+                    auto src = rd->getZoneAddress();
+
+                    cmsg::clientSendToSerialization(cmsg::MoveZoneFromTo({src, tgt}),
+                                                    gsb->partGroupSidebar->editor->msgCont);
+                }
+            }
+        };
+        struct rowAddComponent : juce::Component
+        {
+            GroupSidebar *gsb{nullptr};
+            std::unique_ptr<jcmp::GlyphButton> gBut;
+            rowAddComponent()
+            {
+                gBut = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::BIG_PLUS);
+                addAndMakeVisible(*gBut);
+                gBut->glyphButtonPad = 3;
+                gBut->setOnCallback([this]() { gsb->addGroup(); });
+            }
+
+            void resized()
+            {
+                auto b =
+                    getLocalBounds().withSizeKeepingCentre(getHeight(), getHeight()).reduced(1);
+                gBut->setBounds(b);
+            }
+        };
+
+        juce::Component *refreshComponentForRow(int rowNumber, bool isRowSelected,
+                                                juce::Component *existingComponentToUpdate) override
+        {
+            if (rowNumber < thisGroup.size())
+            {
+                auto rc = dynamic_cast<rowComponent *>(existingComponentToUpdate);
+
+                if (!rc)
+                {
+                    // Should never happen but
+                    if (existingComponentToUpdate)
+                    {
+                        delete existingComponentToUpdate;
+                        existingComponentToUpdate = nullptr;
+                    }
+
+                    rc = new rowComponent();
+                    rc->lbm = this;
+                    rc->gsb = sidebar;
+                }
+
+                rc->isSelected = isRowSelected;
+                rc->rowNumber = rowNumber;
+                return rc;
+            }
+            else
+            {
+                auto rc = dynamic_cast<rowAddComponent *>(existingComponentToUpdate);
+
+                if (!rc)
+                {
+                    // Should never happen but
+                    if (existingComponentToUpdate)
+                    {
+                        delete existingComponentToUpdate;
+                        existingComponentToUpdate = nullptr;
+                    }
+
+                    rc = new rowAddComponent();
+                    rc->gsb = sidebar;
+                }
+
+                return rc;
+            }
+        }
+        void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height,
+                              bool rowIsSelected) override
+        {
+        }
+    };
+    PartGroupSidebar *partGroupSidebar{nullptr};
+    int part{0};
+    std::unique_ptr<juce::ListBox> listBox;
+    std::unique_ptr<GroupListBoxModel> listBoxModel;
+    GroupSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
+    {
+        listBoxModel = std::make_unique<GroupListBoxModel>(this);
+        listBoxModel->rebuild();
+        listBox = std::make_unique<juce::ListBox>();
+        listBox->setModel(listBoxModel.get());
+        listBox->setRowHeight(18);
+        listBox->setColour(juce::ListBox::backgroundColourId, juce::Colour(0, 0, 0).withAlpha(0.f));
+
+        addAndMakeVisible(*listBox);
+    }
+
+    void addGroup()
+    {
+        auto &mc = partGroupSidebar->editor->msgCont;
+        cmsg::clientSendToSerialization(cmsg::CreateGroup(part), mc);
+    }
+    void resized() override { listBox->setBounds(getLocalBounds().withTrimmedBottom(200)); }
+
+    void updateSelection()
+    {
+        juce::SparseSet<int> rows;
+
+        for (const auto &a : partGroupSidebar->editor->allSelections)
+        {
+            int selR = -1;
+            for (const auto &[i, r] : sst::cpputils::enumerate(listBoxModel->thisGroup))
+            {
+                if (r.first == a)
+                {
+                    rows.addRange({(int)i, (int)(i + 1)});
+                }
+            }
+        }
+        listBox->setSelectedRows(rows);
+    }
+};
 
 struct PGZListBox : public juce::ListBox
 {
@@ -151,13 +431,34 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     isTabbed = true;
     hasHamburger = true;
     tabNames = {"PARTS", "GROUPS"};
+    selectedTab = 1;
+    onTabSelected = [w = juce::Component::SafePointer(this)](int t) {
+        if (!w)
+            return;
+
+        if (!w->partSidebar || !w->groupSidebar)
+            return;
+
+        bool p = (t == 0), g = (t == 1);
+        w->partSidebar->setVisible(p);
+        w->groupSidebar->setVisible(g);
+    };
     resetTabState();
 
+    selectGroups();
+
+    groupSidebar = std::make_unique<GroupSidebar>(this);
+    addAndMakeVisible(*groupSidebar);
+    partSidebar = std::make_unique<PartSidebar>(this);
+    addChildComponent(*partSidebar);
+
+    // TODO kill all this
     pgzList = std::make_unique<PGZListBox>();
     pgzListModel = std::make_unique<PGZListBoxModel>(this);
     pgzList->setModel(pgzListModel.get());
     pgzList->setMultipleSelectionEnabled(true);
-    addAndMakeVisible(*pgzList);
+    // addAndMakeVisible(*pgzList);
+    addChildComponent(*pgzList);
 }
 
 PartGroupSidebar::~PartGroupSidebar()
@@ -171,36 +472,27 @@ void PartGroupSidebar::resized()
 {
     if (pgzList)
         pgzList->setBounds(getContentArea());
+    if (partSidebar)
+        partSidebar->setBounds(getContentArea());
+    if (groupSidebar)
+        groupSidebar->setBounds(getContentArea());
 }
 
 void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p)
 {
     pgzStructure = p;
-    pgzList->updateContent();
+    groupSidebar->listBoxModel->rebuild();
+    groupSidebar->listBox->updateContent();
     editorSelectionChanged();
     repaint();
 }
 
 void PartGroupSidebar::editorSelectionChanged()
 {
-    if (!editor->currentLeadSelection.has_value())
-        return;
-
-    juce::SparseSet<int> rows;
-
-    for (const auto &a : editor->allSelections)
+    if (groupSidebar)
     {
-        int selR = -1;
-        for (const auto &[i, r] : sst::cpputils::enumerate(pgzStructure))
-        {
-            if (r.first == a)
-            {
-                rows.addRange({(int)i, (int)(i + 1)});
-            }
-        }
+        groupSidebar->updateSelection();
     }
-
-    pgzList->setSelectedRows(rows, juce::dontSendNotification);
     repaint();
 }
 } // namespace scxt::ui::multi

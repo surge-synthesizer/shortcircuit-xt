@@ -86,8 +86,11 @@ struct Patch : MoveableOnly<Patch>
         {
             if (b == MAIN_0)
                 return mainBus;
+            else if (b >= PART_0 && b < AUX_0)
+                return partBusses[b - PART_0];
+            else if (b < AUX_0 + numAux)
+                return auxBusses[b - AUX_0];
 
-            SCDBGCOUT << "Main Bus returned for address no matter what" << std::endl;
             return mainBus;
         }
 

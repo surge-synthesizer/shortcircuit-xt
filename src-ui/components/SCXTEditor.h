@@ -177,6 +177,13 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     doMultiSelectionAction(const std::vector<selection::SelectionManager::SelectActionContents> &);
     std::optional<selection::SelectionManager::ZoneAddress> currentLeadSelection;
     selection::SelectionManager::selectedZones_t allSelections;
+    // TODO: Do we allow part multi-select? I think we don't
+    std::set<int> groupsInSelection;
+    bool isGroupSelected(int gidx)
+    {
+        return groupsInSelection.find(gidx) != groupsInSelection.end();
+    }
+
     bool isSelected(const selection::SelectionManager::ZoneAddress &a)
     {
         return allSelections.find(a) != allSelections.end();

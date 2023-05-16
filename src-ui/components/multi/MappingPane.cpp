@@ -493,7 +493,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
     for (auto &z : display->summary)
     {
         auto r = rectangleForZone(z.second);
-        if (r.contains(e.position))
+        if (r.contains(e.position) && display->editor->isGroupSelected(z.first.group))
             potentialZones.push_back(z.first);
     }
     selection::SelectionManager::ZoneAddress nextZone;
@@ -737,6 +737,9 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     {
         for (const auto &z : display->summary)
         {
+            if (!display->editor->isGroupSelected(z.first.group))
+                continue;
+
             if (display->editor->isSelected(z.first) != drawSelected)
                 continue;
 
@@ -765,14 +768,10 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     {
         const auto &sel = *(display->editor->currentLeadSelection);
 
-        if (sel.zone >= display->summary.size())
+        for (const auto &z : display->summary)
         {
-            SCDBGCOUT << "Zone set inconsistently" << std::endl;
-        }
-        else
-        {
-            // assert(sel.zone < display->summary.size());
-            const auto &z = display->summary[sel.zone];
+            if (!(z.first == sel))
+                continue;
 
             auto r = rectangleForZone(z.second);
 
