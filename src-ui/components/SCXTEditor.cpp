@@ -179,6 +179,9 @@ void SCXTEditor::idle()
         if (multiScreen->isVisible())
             multiScreen->onVoiceInfoChanged();
     }
+
+    headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],
+                             sharedUiMemoryState.busVULevels[0][1]);
 }
 
 void SCXTEditor::drainCallbackQueue()

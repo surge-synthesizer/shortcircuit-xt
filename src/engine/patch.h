@@ -91,13 +91,20 @@ struct Patch : MoveableOnly<Patch>
             return mainBus;
         }
 
-        void sendBusEffectInfo(const Engine &e)
+        void sendInitialBusInfo(const Engine &e)
         {
             mainBus.sendAllBusEffectInfoToClient(e);
+            mainBus.sendBusSendStorageToClient(e);
             for (auto &p : partBusses)
+            {
                 p.sendAllBusEffectInfoToClient(e);
+                p.sendBusSendStorageToClient(e);
+            }
             for (auto &p : auxBusses)
+            {
                 p.sendAllBusEffectInfoToClient(e);
+                p.sendBusSendStorageToClient(e);
+            }
         }
     } busses;
 

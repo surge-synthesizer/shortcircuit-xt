@@ -90,8 +90,8 @@ enum SerializationToClientMessageIds
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,
 
-    s2c_initialize_mixer,
     s2c_bus_effect_full_data,
+    s2c_bus_send_data,
 
     num_serializationToClientMessages
 };

@@ -46,7 +46,7 @@ void Patch::process(Engine &e)
     for (auto &b : busses.partBusses)
     {
         b.process();
-        if (b.supportsSends && b.hasSends)
+        if (b.busSendStorage.supportsSends && b.busSendStorage.hasSends)
         {
             // TOD accumulate my sends
         }

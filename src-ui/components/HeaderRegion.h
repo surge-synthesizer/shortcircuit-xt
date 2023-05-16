@@ -48,6 +48,7 @@ struct HeaderRegion : juce::Component, HasEditor
     std::unique_ptr<widgets::ShortCircuitMenuButton> scMenu;
     std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedPage;
     std::unique_ptr<sst::jucegui::data::Discrete> selectedPageData;
+    std::unique_ptr<juce::Component> vuMeter;
 
     HeaderRegion(SCXTEditor *);
     ~HeaderRegion();
@@ -85,6 +86,9 @@ struct HeaderRegion : juce::Component, HasEditor
             repaint();
         }
     }
+
+    float vuLevel[2];
+    void setVULevel(float L, float R);
 };
 } // namespace scxt::ui
 
