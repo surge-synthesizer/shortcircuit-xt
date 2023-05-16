@@ -162,6 +162,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);
 
     void onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
+    void onMixerBusSendData(const scxt::messaging::client::busSendData_t &);
 
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)

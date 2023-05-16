@@ -44,6 +44,9 @@ using busEffectFullData_t =
 SERIAL_TO_CLIENT(SendBusEffectFullData, s2c_bus_effect_full_data, busEffectFullData_t,
                  onMixerBusEffectFullData);
 
+using busSendData_t = std::tuple<int, engine::Bus::BusSendStorage>;
+SERIAL_TO_CLIENT(SendBusSendData, s2c_bus_send_data, busSendData_t, onMixerBusSendData);
+
 using setBusEffectToType_t = std::tuple<int, int, int>; // bus, fx, type
 inline void setBusEffectToType(const setBusEffectToType_t &payload,
                                messaging::MessageController &cont)

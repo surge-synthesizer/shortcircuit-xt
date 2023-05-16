@@ -181,7 +181,8 @@ void Bus::initializeAfterUnstream(Engine &e)
 }
 void Bus::process()
 {
-    if (supportsSends && hasSends && auxLocation == PRE_FX)
+    if (busSendStorage.supportsSends && busSendStorage.hasSends &&
+        busSendStorage.auxLocation == BusSendStorage::PRE_FX)
         memcpy(auxoutput, output, sizeof(output));
 
     for (auto &fx : busEffects)
@@ -192,16 +193,18 @@ void Bus::process()
         }
     }
 
-    if (supportsSends && hasSends && auxLocation == POST_FX_PRE_VCA)
+    if (busSendStorage.supportsSends && busSendStorage.hasSends &&
+        busSendStorage.auxLocation == BusSendStorage::POST_FX_PRE_VCA)
         memcpy(auxoutput, output, sizeof(output));
 
     // If level becomes modulatable we want to lipol this
-    if (level != 1.f)
+    if (busSendStorage.level != 1.f)
     {
-        mech::scale_by<blockSize>(level, output[0], output[1]);
+        mech::scale_by<blockSize>(busSendStorage.level, output[0], output[1]);
     }
 
-    if (supportsSends && hasSends && auxLocation == POST_VCA)
+    if (busSendStorage.supportsSends && busSendStorage.hasSends &&
+        busSendStorage.auxLocation == BusSendStorage::POST_VCA)
         memcpy(auxoutput, output, sizeof(output));
 }
 
@@ -224,6 +227,14 @@ void Bus::sendBusEffectInfoToClient(const scxt::engine::Engine &e, int slot)
     messaging::client::serializationSendToClient(
         messaging::client::s2c_bus_effect_full_data,
         messaging::client::busEffectFullData_t{(int)address, slot, {pmds, busEffectStorage[slot]}},
+        *(e.getMessageController()));
+}
+
+void Bus::sendBusSendStorageToClient(const scxt::engine::Engine &e)
+{
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_bus_send_data,
+        messaging::client::busSendData_t{(int)address, busSendStorage},
         *(e.getMessageController()));
 }
 

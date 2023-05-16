@@ -183,6 +183,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
         updateVoiceDisplayStateEvery = (int)std::floor(sampleRate / updateFrequencyHz / blockSize);
         lastUpdateVoiceDisplayState = updateVoiceDisplayStateEvery;
+
+        vuFalloff = exp(-2 * M_PI * (60.f / samplerate));
     }
 
     /**
@@ -247,6 +249,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     int32_t lastUpdateVoiceDisplayState{0};
     int64_t midiNoteStateCounter{0}, lastMidiNoteStateCounter{0};
     bool sendSamplePosition{false};
+
+    float vuFalloff;
 
     /*
      * Random Number support

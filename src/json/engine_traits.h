@@ -351,19 +351,40 @@ template <> struct scxt_traits<engine::Bus>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const engine::Bus &t)
     {
-        v = {{"supportsSends", t.supportsSends},
-             {"auxLocation", (int)t.auxLocation},
-             {"sendLevels", t.sendLevels},
-             {"busEffectStorage", t.busEffectStorage}};
+        v = {{"busSendStorage", t.busSendStorage}, {"busEffectStorage", t.busEffectStorage}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, engine::Bus &r)
     {
+        findIf(v, "busSendStorage", r.busSendStorage);
+        findIf(v, "busEffectStorage", r.busEffectStorage);
+    }
+};
+
+template <> struct scxt_traits<engine::Bus::BusSendStorage>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const engine::Bus::BusSendStorage &t)
+    {
+        // TODO
+        if (t.auxLocation != engine::Bus::BusSendStorage::POST_FX_PRE_VCA)
+        {
+            SCDBGCOUT << "Stream Aux Location as String please" << std::endl;
+        }
+        v = {{"supportsSends", t.supportsSends},
+             {"auxLocation", (int)t.auxLocation},
+             {"sendLevels", t.sendLevels},
+             {"level", t.level}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, engine::Bus::BusSendStorage &r)
+    {
         findIf(v, "supportsSends", r.supportsSends);
         findEnumIf(v, "auxLocation", r.auxLocation);
         findIf(v, "sendLevels", r.sendLevels);
-        findIf(v, "busEffectStorage", r.busEffectStorage);
+        findIf(v, "level", r.level);
     }
 };
 

@@ -172,4 +172,14 @@ void SCXTEditor::onMixerBusEffectFullData(const scxt::messaging::client::busEffe
     }
 }
 
+void SCXTEditor::onMixerBusSendData(const scxt::messaging::client::busSendData_t &d)
+{
+    if (mixerScreen)
+    {
+        auto busi = std::get<0>(d);
+        const auto &busd = std::get<1>(d);
+        SCDBGUNIMPL("Got Mixer Send Data " << busi);
+        // mixerScreen->onBusSendData(busi, busd);
+    }
+}
 } // namespace scxt::ui

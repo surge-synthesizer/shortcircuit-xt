@@ -226,6 +226,21 @@ bool Engine::processAudio()
 
     getPatch()->process(*this);
 
+    // VU Update. Very crude for now.
+    float a = vuFalloff;
+    sharedUIMemoryState.busVULevels[0][0] =
+        std::min(2.f, a * sharedUIMemoryState.busVULevels[0][0]);
+    sharedUIMemoryState.busVULevels[0][1] =
+        std::min(2.f, a * sharedUIMemoryState.busVULevels[0][1]);
+    sharedUIMemoryState.busVULevels[0][0] =
+        std::max((float)sharedUIMemoryState.busVULevels[0][0],
+                 mech::blockAbsMax<BLOCK_SIZE>(getPatch()->busses.mainBus.output[0]));
+    sharedUIMemoryState.busVULevels[0][1] =
+        std::max((float)sharedUIMemoryState.busVULevels[0][1],
+                 mech::blockAbsMax<BLOCK_SIZE>(getPatch()->busses.mainBus.output[1]));
+
+    auto ml = getPatch()->busses.mainBus.output[0][0] + getPatch()->busses.mainBus.output[1][0];
+
     auto pav = activeVoiceCount();
 
     bool doUpdate = messageController->isClientConnected &&
@@ -486,7 +501,7 @@ void Engine::sendMetadataToClient() const
 
     sendEngineStatusToClient();
 
-    getPatch()->busses.sendBusEffectInfo(*this);
+    getPatch()->busses.sendInitialBusInfo(*this);
 }
 
 void Engine::sendEngineStatusToClient() const

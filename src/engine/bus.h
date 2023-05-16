@@ -108,24 +108,14 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
     void process();
 
-    bool hasSends{false};
-    bool supportsSends{false};
-
-    enum AuxLocation
-    {
-        PRE_FX,
-        POST_FX_PRE_VCA,
-        POST_VCA
-    } auxLocation{POST_FX_PRE_VCA};
-
     void setAuxSendLevel(int idx, float slevel)
     {
         assert(idx >= 0 && idx < maxSendsPerBus);
-        assert(supportsSends);
-        sendLevels[idx] = slevel;
-        hasSends = false;
-        for (const auto &f : sendLevels)
-            hasSends = hasSends || (f != 0);
+        assert(busSendStorage.supportsSends);
+        busSendStorage.sendLevels[idx] = slevel;
+        busSendStorage.hasSends = false;
+        for (const auto &f : busSendStorage.sendLevels)
+            busSendStorage.hasSends = busSendStorage.hasSends || (f != 0);
     }
 
     void setBusEffectType(Engine &e, int idx, AvailableBusEffects t);
@@ -136,11 +126,26 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
             sendBusEffectInfoToClient(e, i);
     }
     void sendBusEffectInfoToClient(const Engine &, int slot);
+    void sendBusSendStorageToClient(const Engine &e);
 
-    // Send levels in 0...1 scale to each bus
-    std::array<float, maxSendsPerBus> sendLevels{};
-    // VCA level in raw amplitude also. UI will dbIfy this I'm sure
-    float level{1.f};
+    struct BusSendStorage
+    {
+        bool hasSends{false};
+        bool supportsSends{false};
+
+        enum AuxLocation
+        {
+            PRE_FX,
+            POST_FX_PRE_VCA,
+            POST_VCA
+        } auxLocation{POST_FX_PRE_VCA};
+
+        // Send levels in 0...1 scale to each bus
+        std::array<float, maxSendsPerBus> sendLevels{};
+        // VCA level in raw amplitude also. UI will dbIfy this I'm sure
+        float level{1.f};
+    } busSendStorage;
+
     std::array<BusEffectStorage, maxEffectsPerBus> busEffectStorage;
 
     std::array<std::unique_ptr<BusEffect>, maxEffectsPerBus> busEffects;
