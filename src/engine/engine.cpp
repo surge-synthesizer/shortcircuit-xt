@@ -467,12 +467,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     zptr->mapping.rootKey = 60;
     zptr->attachToSample(*sampleManager);
 
-    auto [sp, sg, sz] = selectionManager->currentLeadZone(*this).value_or(
-        selection::SelectionManager::ZoneAddress());
-    if (sp < 0)
-        sp = 0;
-    if (sg < 0)
-        sg = 0;
+    // Drop into selected group logic goes here
+    auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(

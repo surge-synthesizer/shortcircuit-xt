@@ -59,6 +59,8 @@ enum ClientToSerializationMessagesIds
     c2s_set_processor_type,
 
     c2s_add_sample,
+    c2s_create_group,
+    c2s_move_zone,
 
     c2s_set_tuning_mode,
 

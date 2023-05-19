@@ -79,6 +79,48 @@ inline void addSample(const std::string &payload, engine::Engine &engine, Messag
 }
 CLIENT_TO_SERIAL(AddSample, c2s_add_sample, std::string, addSample(payload, engine, cont);)
 
+inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
+{
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [p = partNumber](auto &e) { e.getPatch()->getPart(p)->addGroup(); },
+        [p = partNumber](auto &engine) {
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(p),
+                                      *(engine.getMessageController()));
+        });
+    SCDBGCOUT << "Create group in part " << partNumber << std::endl;
+}
+CLIENT_TO_SERIAL(CreateGroup, c2s_create_group, int, createGroupIn(payload, engine, cont));
+
+using zoneAddressFromTo_t =
+    std::pair<selection::SelectionManager::ZoneAddress, selection::SelectionManager::ZoneAddress>;
+inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &engine,
+                           MessageController &cont)
+{
+    auto &src = payload.first;
+    auto &tgt = payload.second;
+
+    auto nad = engine.getPatch()->getPart(tgt.part)->getGroup(tgt.group)->getZones().size();
+
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [s = src, t = tgt](auto &e) {
+            auto zid = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id;
+            auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
+            if (z)
+                e.getPatch()->getPart(t.part)->getGroup(t.group)->addZone(z);
+        },
+        [nad, t = tgt](auto &engine) {
+            auto tc = t;
+            tc.zone = nad;
+            auto act = selection::SelectionManager::SelectActionContents(tc, true, true, true);
+            engine.getSelectionManager()->selectAction(act);
+            serializationSendToClient(s2c_send_pgz_structure,
+                                      engine.getPartGroupZoneStructure(t.part),
+                                      *(engine.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(MoveZoneFromTo, c2s_move_zone, zoneAddressFromTo_t,
+                 moveZoneFromTo(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_STRUCTURE_MESSAGES_H
