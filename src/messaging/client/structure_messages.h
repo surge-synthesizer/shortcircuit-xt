@@ -86,10 +86,43 @@ inline void createGroupIn(int partNumber, engine::Engine &engine, MessageControl
         [p = partNumber](auto &engine) {
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(p),
                                       *(engine.getMessageController()));
+
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(p)->getZoneMappingSummary(),
+                                      *(engine.getMessageController()));
         });
     SCDBGCOUT << "Create group in part " << partNumber << std::endl;
 }
 CLIENT_TO_SERIAL(CreateGroup, c2s_create_group, int, createGroupIn(payload, engine, cont));
+
+inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
+                       MessageController &cont)
+{
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [s = a](auto &e) {
+            auto zid = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id;
+            auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
+        },
+        [t = a](auto &engine) {
+            serializationSendToClient(s2c_send_pgz_structure,
+                                      engine.getPartGroupZoneStructure(t.part),
+                                      *(engine.getMessageController()));
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
+                                      *(engine.getMessageController()));
+        });
+    SCDBGCOUT << "Deleting zone " << a << std::endl;
+}
+CLIENT_TO_SERIAL(DeleteZone, c2s_delete_zone, selection::SelectionManager::ZoneAddress,
+                 removeZone(payload, engine, cont));
+
+inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
+                        MessageController &cont)
+{
+    SCDBGCOUT << "Deleting group " << a << std::endl;
+}
+CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
+                 removeGroup(payload, engine, cont));
 
 using zoneAddressFromTo_t =
     std::pair<selection::SelectionManager::ZoneAddress, selection::SelectionManager::ZoneAddress>;
@@ -115,6 +148,9 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
             engine.getSelectionManager()->selectAction(act);
             serializationSendToClient(s2c_send_pgz_structure,
                                       engine.getPartGroupZoneStructure(t.part),
+                                      *(engine.getMessageController()));
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
                                       *(engine.getMessageController()));
         });
 }
