@@ -138,7 +138,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                 }
             }
 
-            bool isDragging{false};
+            bool isDragging{false}, isPopup{false};
             selection::SelectionManager::ZoneAddress getZoneAddress()
             {
                 auto &tgl = lbm->thisGroup;
@@ -150,27 +150,69 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
             bool isZone() { return getZoneAddress().zone >= 0; }
             bool isGroup() { return getZoneAddress().zone == -1; }
 
+            void mouseDown(const juce::MouseEvent &e) override
+            {
+                isPopup = false;
+                if (e.mods.isPopupMenu())
+                {
+                    juce::PopupMenu p;
+                    if (isZone())
+                    {
+                        p.addSectionHeader("Zone");
+                        p.addSeparator();
+                        p.addItem("Rename", []() {});
+                        p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
+                            if (!w)
+                                return;
+                            auto za = w->getZoneAddress();
+                            cmsg::clientSendToSerialization(cmsg::DeleteZone(za),
+                                                            w->gsb->editor->msgCont);
+                        });
+                    }
+                    else if (isGroup())
+                    {
+                        p.addSectionHeader("Group");
+                        p.addSeparator();
+                        p.addItem("Rename", []() {});
+                        p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
+                            if (!w)
+                                return;
+                            auto za = w->getZoneAddress();
+                            cmsg::clientSendToSerialization(cmsg::DeleteGroup(za),
+                                                            w->gsb->editor->msgCont);
+                        });
+                    }
+                    isPopup = true;
+                    p.showMenuAsync(gsb->editor->defaultPopupMenuOptions());
+                }
+            }
+
             // big thanks to https://forum.juce.com/t/listbox-drag-to-reorder-solved/28477
             void mouseDrag(const juce::MouseEvent &e) override
             {
                 if (!isZone())
                     return;
 
-                if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+                if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
                 {
-                    if (!isDragging)
+                    if (auto *container =
+                            juce::DragAndDropContainer::findParentDragContainerFor(this))
+                    {
                         container->startDragging("ZoneRow", this);
-                    isDragging = true;
+                        isDragging = true;
+                    }
                 }
             }
 
             void mouseUp(const juce::MouseEvent &event) override
             {
-                if (isDragging)
+                if (isDragging || isPopup)
                 {
                     isDragging = false;
+                    isPopup = false;
                     return;
                 }
+
                 auto se = selection::SelectionManager::SelectActionContents(getZoneAddress());
                 se.selecting = !isSelected;
                 se.distinct = !event.mods.isCommandDown();
