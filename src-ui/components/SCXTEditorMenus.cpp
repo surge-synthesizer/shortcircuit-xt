@@ -109,5 +109,22 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
                 w->setZoomFactor(v * 0.01);
         });
     }
+
+    auto r = juce::PopupMenu();
+    r.addSectionHeader("Hacky Mapping Zoom");
+    r.addSeparator();
+    r.addItem("Full Midi", [w = juce::Component::SafePointer(this)] {
+        if (w)
+            w->multiScreen->sample->temporarySetKeyboardCenter(-1);
+    });
+    for (auto v : {24, 36, 48, 60, 72, 84})
+    {
+        r.addItem("2 Oct Around " + std::to_string(v), [v, w = juce::Component::SafePointer(this)] {
+            if (w)
+                w->multiScreen->sample->temporarySetKeyboardCenter(v);
+        });
+    }
+    p.addSeparator();
+    p.addSubMenu("Mapping Zoom Hack", r);
 }
 } // namespace scxt::ui

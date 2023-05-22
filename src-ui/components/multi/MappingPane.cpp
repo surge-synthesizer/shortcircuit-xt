@@ -52,6 +52,8 @@ struct MappingZonesAndKeyboard : juce::Component
     MappingZonesAndKeyboard(MappingDisplay *d) : display(d) {}
     void paint(juce::Graphics &g) override;
 
+    int firstMidiNote{0}, lastMidiNote{128};
+
     static constexpr int keyboardHeight{25};
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForKey(int midiNote);
@@ -445,7 +447,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
     mouseState = NONE;
     if (e.position.y > keyboardHeight)
     {
-        for (int i = 0; i < 128; ++i)
+        for (int i = firstMidiNote; i < lastMidiNote; ++i)
         {
             auto r = rectangleForKey(i);
             if (r.contains(e.position))
@@ -597,7 +599,7 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
     {
         if (e.position.y > keyboardHeight)
         {
-            for (int i = 0; i < 128; ++i)
+            for (int i = firstMidiNote; i < lastMidiNote; ++i)
             {
                 auto r = rectangleForKey(i);
                 if (r.contains(e.position))
@@ -645,11 +647,11 @@ MappingZonesAndKeyboard::rectangleForZone(const engine::Part::zoneMappingItem_t 
 
     auto lb = getLocalBounds().toFloat();
     auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
-    auto kw = displayRegion.getWidth() / 127.0;
+    auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
     auto vh = displayRegion.getHeight() / 127.0;
 
-    float x0 = kb.keyStart * kw;
-    float x1 = (kb.keyEnd + 1) * kw;
+    float x0 = (kb.keyStart - firstMidiNote) * kw;
+    float x1 = (kb.keyEnd - firstMidiNote + 1) * kw;
     if (x1 < x0)
         std::swap(x1, x0);
     float y0 = (127 - vel.velStart) * vh;
@@ -662,11 +664,12 @@ MappingZonesAndKeyboard::rectangleForZone(const engine::Part::zoneMappingItem_t 
 
 juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForKey(int midiNote)
 {
+    assert(lastMidiNote > firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / 127.0;
+    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
 
-    keyRegion = keyRegion.withWidth(kw).translated(kw * midiNote, 0);
+    keyRegion = keyRegion.withWidth(kw).translated(kw * (midiNote - firstMidiNote), 0);
 
     return keyRegion;
 }
@@ -800,7 +803,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
             midiState[vd.midiNote] = vd.gated ? 1 : 2;
         }
     }
-    for (int i = 0; i < 128; ++i)
+    for (int i = firstMidiNote; i < lastMidiNote; ++i)
     {
         auto n = i % 12;
         auto isBlackKey = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
@@ -1254,6 +1257,13 @@ void MappingPane::editorSelectionChanged()
     if (editor->currentLeadSelection.has_value())
         mappingDisplay->setLeadSelection(*(editor->currentLeadSelection));
     repaint();
+}
+
+void MappingPane::temporarySetKeyboardCenter(int i)
+{
+    mappingDisplay->zonesAndKeyboard->firstMidiNote = (i == -1 ? 0 : i - 24);
+    mappingDisplay->zonesAndKeyboard->lastMidiNote = (i == -1 ? 128 : i + 24);
+    mappingDisplay->zonesAndKeyboard->repaint();
 }
 
 } // namespace scxt::ui::multi

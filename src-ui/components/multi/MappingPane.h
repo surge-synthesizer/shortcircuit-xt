@@ -60,6 +60,8 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
 
     engine::Zone::ZoneMappingData mappingView;
     engine::Zone::AssociatedSampleArray sampleView;
+
+    void temporarySetKeyboardCenter(int i);
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
