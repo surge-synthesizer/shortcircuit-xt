@@ -41,6 +41,7 @@
 #include "sst/effects/Reverb1.h"
 #include "sst/effects/Flanger.h"
 #include "sst/effects/Delay.h"
+#include "sst/effects/Bonsai.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
@@ -155,6 +156,8 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
         return std::make_unique<dtl::Impl<sfx::Flanger<dtl::Config>>>(e, s, s->params.data());
     case delay:
         return std::make_unique<dtl::Impl<sfx::Delay<dtl::Config>>>(e, s, s->params.data());
+    case bonsai:
+        return std::make_unique<dtl::Impl<sfx::Bonsai<dtl::Config>>>(e, s, s->params.data());
     }
     return nullptr;
 }

@@ -57,6 +57,7 @@ void PartEffectsPane::showHamburger()
     add(engine::AvailableBusEffects::reverb1);
     add(engine::AvailableBusEffects::delay);
     add(engine::AvailableBusEffects::flanger);
+    add(engine::AvailableBusEffects::bonsai);
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
@@ -128,6 +129,8 @@ std::string PartEffectsPane::effectDisplayName(engine::AvailableBusEffects t, bo
         return forMenu ? "Delay" : "DELAY";
     case engine::reverb1:
         return forMenu ? "Reverb 1" : "REVERB 1";
+    case engine::bonsai:
+        return forMenu ? "Bonsai" : "BONSAI";
     }
 
     return "GCC gives strictly correct, but not useful in this case, warnings";
