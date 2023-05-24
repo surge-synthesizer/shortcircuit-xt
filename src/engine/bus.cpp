@@ -151,13 +151,16 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     case none:
         return nullptr;
     case reverb1:
-        return std::make_unique<dtl::Impl<sfx::Reverb1<dtl::Config>>>(e, s, s->params.data());
+        return std::make_unique<dtl::Impl<sfx::reverb1::Reverb1<dtl::Config>>>(e, s,
+                                                                               s->params.data());
     case flanger:
-        return std::make_unique<dtl::Impl<sfx::Flanger<dtl::Config>>>(e, s, s->params.data());
+        return std::make_unique<dtl::Impl<sfx::flanger::Flanger<dtl::Config>>>(e, s,
+                                                                               s->params.data());
     case delay:
-        return std::make_unique<dtl::Impl<sfx::Delay<dtl::Config>>>(e, s, s->params.data());
+        return std::make_unique<dtl::Impl<sfx::delay::Delay<dtl::Config>>>(e, s, s->params.data());
     case bonsai:
-        return std::make_unique<dtl::Impl<sfx::Bonsai<dtl::Config>>>(e, s, s->params.data());
+        return std::make_unique<dtl::Impl<sfx::bonsai::Bonsai<dtl::Config>>>(e, s,
+                                                                             s->params.data());
     }
     return nullptr;
 }
