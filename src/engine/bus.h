@@ -70,7 +70,8 @@ enum AvailableBusEffects
     none,
     reverb1,
     flanger,
-    delay
+    delay,
+    bonsai
 };
 
 struct BusEffectStorage
@@ -163,6 +164,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "flanger";
     case delay:
         return "delay";
+    case bonsai:
+        return "bonsai";
     }
     return "normal";
 }
