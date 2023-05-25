@@ -67,7 +67,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
         {
             auto &sbo = sidebar->editor->currentLeadSelection;
             sidebar->part = 0;
-            if (sbo.has_value())
+            if (sbo.has_value() && sbo->part >= 0)
                 sidebar->part = sbo->part;
             auto &pgz = sidebar->partGroupSidebar->pgzStructure;
             thisGroup.clear();
@@ -523,6 +523,11 @@ void PartGroupSidebar::resized()
 void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p)
 {
     pgzStructure = p;
+    SCDBGCOUT << "PartGroupZone in Sidebar" << std::endl;
+    for (const auto &a : pgzStructure)
+    {
+        SCDBGCOUT << "  | " << a.second << " -> " << a.first << std::endl;
+    }
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();
     editorSelectionChanged();
@@ -531,6 +536,13 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 
 void PartGroupSidebar::editorSelectionChanged()
 {
+    SCDBGCOUT << "Editor Selection Changed " << SCD(editor->allSelections.size())
+              << SCD(editor->currentLeadSelection.has_value()) << std::endl;
+
+    if (editor->currentLeadSelection.has_value())
+        SCDBGCOUT << " OL " << *(editor->currentLeadSelection) << std::endl;
+    for (const auto &as : editor->allSelections)
+        SCDBGCOUT << " AS " << as << std::endl;
     if (groupSidebar)
     {
         groupSidebar->updateSelection();

@@ -27,7 +27,6 @@
 
 #include "supersvf.h"
 #include "configuration.h"
-#include "dsp/processor/processor_ctrldescriptions.h"
 #include "tuning/equal.h"
 
 namespace scxt::dsp::processor::filter

@@ -415,6 +415,11 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
 
         partidx++;
     }
+    /*
+    SCDBGCOUT << "Returning partgroup structure size " << res.size() << std::endl;
+    for (const auto &pg : res)
+        SCDBGCOUT << "   " << pg.first << std::endl;
+        */
     return res;
 }
 

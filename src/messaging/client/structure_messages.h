@@ -81,6 +81,8 @@ CLIENT_TO_SERIAL(AddSample, c2s_add_sample, std::string, addSample(payload, engi
 
 inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
 {
+    if (partNumber < 0 || partNumber > numParts)
+        partNumber = 0;
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [p = partNumber](auto &e) { e.getPatch()->getPart(p)->addGroup(); },
         [p = partNumber](auto &engine) {
@@ -90,8 +92,14 @@ inline void createGroupIn(int partNumber, engine::Engine &engine, MessageControl
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
                                       engine.getPatch()->getPart(p)->getZoneMappingSummary(),
                                       *(engine.getMessageController()));
+            if (engine.getSelectionManager()->currentlySelectedZones().empty())
+            {
+                // ooof what to do
+                int32_t g = engine.getPatch()->getPart(p)->getGroups().size() - 1;
+                engine.getSelectionManager()->selectAction(
+                    selection::SelectionManager::SelectActionContents(p, g, -1, true, true, true));
+            }
         });
-    SCDBGCOUT << "Create group in part " << partNumber << std::endl;
 }
 CLIENT_TO_SERIAL(CreateGroup, c2s_create_group, int, createGroupIn(payload, engine, cont));
 

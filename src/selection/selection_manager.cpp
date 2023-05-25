@@ -198,12 +198,10 @@ void SelectionManager::guaranteeSelectedLead()
     // Now at the end of this the lead zone could not be selected
     if (allSelectedZones.find(leadZone) == allSelectedZones.end())
     {
-        if (allSelectedZones.empty())
+        if (allSelectedZones.empty() && leadZone.part >= 0)
         {
             // Oh what to do here. Well reject it.
-#if DEBUG_SELECTION
             SCFCOUT << "Be careful - we are promoting " << SCD(leadZone) << std::endl;
-#endif
             allSelectedZones.insert(leadZone);
         }
         else
