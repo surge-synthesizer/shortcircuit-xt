@@ -38,7 +38,6 @@
 
 #include "dsp/resampling.h"
 #include "dsp/data_tables.h"
-#include "dsp/processor/processor_ctrldescriptions.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/basic-blocks/dsp/FastMath.h"

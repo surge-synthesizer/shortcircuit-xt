@@ -147,6 +147,7 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
     }
     else
     {
+        currentLeadSelection = std::nullopt;
         assert(allSelections.empty());
     }
 
