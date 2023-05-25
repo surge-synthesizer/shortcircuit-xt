@@ -28,6 +28,7 @@
 #include <iostream>
 #include "utils.h"
 #include <thread>
+#include <mutex>
 #include <deque>
 
 #if MAC || LINUX
