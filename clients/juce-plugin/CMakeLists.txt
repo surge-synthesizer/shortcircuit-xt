@@ -1,5 +1,7 @@
-project(scxt_plugin VERSION 0.6.0 LANGUAGES CXX)
 
+project(scxt_plugin VERSION ${ShortcircuitXT_VERSION} LANGUAGES CXX)
+
+message(STATUS "Plugin Version number is ${PROJECT_VERSION}")
 
 if (SCXT_BUILD_VST3)
     list(APPEND SCXT_FORMATS VST3)
@@ -38,9 +40,9 @@ if (SCXT_BUILD_CLAP)
             CLAP_FEATURES instrument sampler)
 endif ()
 
-if(JUCE_ASIO_SUPPORT)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC JUCE_ASIO=1)
-endif()
+if (JUCE_ASIO_SUPPORT)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC JUCE_ASIO=1)
+endif ()
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE

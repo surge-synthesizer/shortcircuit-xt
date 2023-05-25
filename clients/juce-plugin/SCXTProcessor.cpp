@@ -32,14 +32,27 @@
 //==============================================================================
 SCXTProcessor::SCXTProcessor()
     : juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
-                               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-                               .withOutput("Out 02", juce::AudioChannelSet::stereo(), false)
-                               .withOutput("Out 03", juce::AudioChannelSet::stereo(), false)
-                               .withOutput("Out 04", juce::AudioChannelSet::stereo(), false)
-                               .withOutput("Out 05", juce::AudioChannelSet::stereo(), false)
-                               .withOutput("Out 06", juce::AudioChannelSet::stereo(), false)
-                               .withOutput("Out 07", juce::AudioChannelSet::stereo(), false)
-                               .withOutput("Out 08", juce::AudioChannelSet::stereo(), false)),
+                               .withOutput("Main Output", juce::AudioChannelSet::stereo(), true)
+                               .withOutput("Part 01", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 02", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 03", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 04", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 05", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 06", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 07", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 08", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 09", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 10", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 11", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 12", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 13", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 14", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 15", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Part 16", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Aux 01", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Aux 02", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Aux 03", juce::AudioChannelSet::stereo(), false)
+                               .withOutput("Aux 04", juce::AudioChannelSet::stereo(), false)),
       blockPos(0)
 {
     engine = std::make_unique<scxt::engine::Engine>();
@@ -108,19 +121,19 @@ bool SCXTProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
-    // OK three cases we support. 1 out, 4 out, 8 out
-    bool oneOut = true, fourOut = true, eightOut = true;
-    for (int i = 0; i < 8; ++i)
+    // OK three cases we support. 1 out, 17 out (stereo + parts) or 21 out (stereo + parts + aux)
+    bool oneOut = true, partsOut = true, partsAndAuxOut = true;
+    for (int i = 0; i < scxt::maxOutputs; ++i)
     {
         auto co = layouts.getNumChannels(false, i);
         auto isSt = (co == 2);
         auto isOf = (co == 0);
         oneOut = oneOut & (i == 0 ? isSt : isOf);
-        fourOut = fourOut & (i < 4 ? isSt : isOf);
-        eightOut = eightOut & isSt;
+        partsOut = partsOut & (i < scxt::numParts + 1 ? isSt : isOf);
+        partsAndAuxOut = partsAndAuxOut & isSt;
     }
 
-    return oneOut || eightOut;
+    return oneOut || partsOut || partsAndAuxOut;
 }
 
 void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)

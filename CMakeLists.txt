@@ -19,7 +19,17 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(ShortcircuitXT VERSION 0.5.1.0 LANGUAGES C CXX ASM)
+# TODO Remove This before we ship non beta version. Remember
+# the AU rescans only when versions change even if binaries are
+# different.
+message(STATUS "Using date-driven version while in alpha")
+string(TIMESTAMP DAY_OF_YEAR "%j")
+string(TIMESTAMP YEAR "%Y")
+math(EXPR PART0 "${YEAR}-2023 + 6")
+math(EXPR PART1 "${DAY_OF_YEAR} + 1")
+
+project(ShortcircuitXT VERSION 0.${PART0}.${PART1}.0 LANGUAGES C CXX ASM)
+set(ShortcircuitXT_VERSION ${PROJECT_VERSION})
 
 # Build Time Options
 option(SCXT_BUILD_VST3 "Build a VST3 plugin" ON)
