@@ -27,6 +27,8 @@
 
 #include <iostream>
 #include "utils.h"
+#include <thread>
+#include <deque>
 
 #if MAC || LINUX
 #include <execinfo.h>
@@ -90,6 +92,18 @@ void postToLog(const std::string &s)
     {
         logMessages.erase(logMessages.begin(), logMessages.begin() + 25);
     }
+}
+
+std::string getFullLog()
+{
+    std::ostringstream oss;
+    {
+        // TODO - obviously this sucks
+        std::lock_guard<std::mutex> g(scxt::logMutex);
+        for (const auto row : scxt::logMessages)
+            oss << row;
+    }
+    return oss.str();
 }
 
 } // namespace scxt

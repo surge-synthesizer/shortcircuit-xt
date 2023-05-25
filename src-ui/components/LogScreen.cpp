@@ -68,17 +68,7 @@ void LogScreen::visibilityChanged()
     }
 }
 
-void LogScreen::reshowLog()
-{
-    std::ostringstream oss;
-    {
-        // TODO - obviously this sucks
-        std::lock_guard<std::mutex> g(scxt::logMutex);
-        for (const auto row : scxt::logMessages)
-            oss << row;
-    }
-    logDisplay->setText(oss.str(), juce::dontSendNotification);
-}
+void LogScreen::reshowLog() { logDisplay->setText(scxt::getFullLog(), juce::dontSendNotification); }
 
 void LogScreen::resized()
 {

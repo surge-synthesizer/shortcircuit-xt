@@ -231,8 +231,7 @@ struct ThreadingChecker
 };
 
 void postToLog(const std::string &s);
-extern std::mutex logMutex;
-extern std::deque<std::string> logMessages;
+std::string getFullLog();
 #define SCLOG(...)                                                                                 \
     {                                                                                              \
         std::ostringstream oss_macr;                                                               \
