@@ -119,7 +119,6 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
                                       engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
                                       *(engine.getMessageController()));
         });
-    SCDBGCOUT << "Deleting zone " << a << std::endl;
 }
 CLIENT_TO_SERIAL(DeleteZone, c2s_delete_zone, selection::SelectionManager::ZoneAddress,
                  removeZone(payload, engine, cont));
@@ -127,7 +126,7 @@ CLIENT_TO_SERIAL(DeleteZone, c2s_delete_zone, selection::SelectionManager::ZoneA
 inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                         MessageController &cont)
 {
-    SCDBGCOUT << "Deleting group " << a << std::endl;
+    SCLOG_UNIMPL("Deleting group " << a);
 }
 CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
                  removeGroup(payload, engine, cont));

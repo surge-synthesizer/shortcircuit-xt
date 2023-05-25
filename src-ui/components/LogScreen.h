@@ -25,19 +25,33 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
-#define SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
+#ifndef SCXT_SRC_UI_COMPONENTS_LOGSCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_LOGSCREEN_H
+
+#include "HasEditor.h"
+#include <juce_gui_basics/juce_gui_basics.h>
 
 namespace scxt::ui
 {
-struct SCXTEditor;
-
-struct HasEditor
+struct LogScreen : juce::Component, HasEditor
 {
-    SCXTEditor *editor{nullptr};
-    HasEditor(SCXTEditor *e) : editor(e) {}
+    LogScreen(SCXTEditor *e);
 
-    template <typename T> void sendToSerialization(const T &msg);
+    std::unique_ptr<juce::TextEditor> logDisplay;
+    std::unique_ptr<juce::TextButton> copyButton, closeButton;
+
+    juce::Font displayFont;
+
+    void visibilityChanged() override;
+    void reshowLog();
+    void resized() override;
+
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colour(0x90, 0x90, 0x90)); }
+
+    bool keyPressed(const juce::KeyPress &key) override;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LogScreen);
 };
 } // namespace scxt::ui
-#endif // SHORTCIRCUIT_HASEDITOR_H
+
+#endif // SHORTCIRCUIT_ABOUTESCREEN_H

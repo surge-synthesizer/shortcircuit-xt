@@ -51,7 +51,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     auto doc = parser.parse(f);
     auto rootDir = f.parent_path();
     auto sampleDir = rootDir;
-    SCDBGCOUT << SCD(rootDir.u8string()) << std::endl;
+    SCLOG(SCD(rootDir.u8string()));
 
     auto pt = std::clamp(e.getSelectionManager()->selectedPart, 0, (int)numParts);
 
@@ -63,8 +63,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
     {
         if (r.type != SFZParser::Header::region)
         {
-            SCDBGCOUT << "Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------"
-                      << std::endl;
+            SCLOG("Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------");
         }
         switch (r.type)
         {
@@ -80,8 +79,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCDBGCOUT << "     Skipped OpCode <group>: " << oc.name << " -> " << oc.value
-                              << std::endl;
+                    SCLOG("     Skipped OpCode <group>: " << oc.name << " -> " << oc.value);
                 }
             }
         }
@@ -107,8 +105,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
             std::replace(sampleFile.begin(), sampleFile.end(), '\\', '/');
             if (!fs::exists(sampleDir / sampleFile) && !fs::exists(sampleFile))
             {
-                SCDBGCOUT << "Cannot find SampleFile [" << (sampleDir / sampleFile).u8string()
-                          << "]" << std::endl;
+                SCLOG("Cannot find SampleFile [" << (sampleDir / sampleFile).u8string() << "]");
                 return false;
             }
 
@@ -122,8 +119,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCDBGCOUT << "Cannot load Sample : " << (sampleDir / sampleFile).u8string()
-                              << std::endl;
+                    SCLOG("Cannot load Sample : " << (sampleDir / sampleFile).u8string());
                     break;
                 }
             }
@@ -136,7 +132,8 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCDBGCOUT << "Cannot load Sample : " << sampleFile << std::endl;
+                    SCLOG("Cannot load Sample : " << sampleFile);
+                    ;
                     return false;
                 }
             }
@@ -171,8 +168,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCDBGCOUT << "    Skipped OpCode <region>: " << oc.name << " -> " << oc.value
-                              << std::endl;
+                    SCLOG("    Skipped OpCode <region>: " << oc.name << " -> " << oc.value);
                 }
             }
             zn->attachToSample(*e.getSampleManager());
@@ -192,23 +188,22 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                     auto vv = oc.value;
                     std::replace(vv.begin(), vv.end(), '\\', '/');
                     sampleDir = rootDir / vv;
-                    SCDBGCOUT << "Control: Resetting sample dir to " << sampleDir << std::endl;
+                    SCLOG("Control: Resetting sample dir to " << sampleDir);
+                    ;
                 }
                 else
                 {
-                    SCDBGCOUT << "    Skipped OpCode <control>: " << oc.name << " -> " << oc.value
-                              << std::endl;
+                    SCLOG("    Skipped OpCode <control>: " << oc.name << " -> " << oc.value);
                 }
             }
         }
         break;
         default:
         {
-            SCDBGCOUT << "Ignoring SFZ Header " << r.name << " with " << list.size() << " keywords"
-                      << std::endl;
+            SCLOG("Ignoring SFZ Header " << r.name << " with " << list.size() << " keywords");
             for (const auto &oc : list)
             {
-                SCDBGCOUT << "  " << oc.name << " -> |" << oc.value << "|" << std::endl;
+                SCLOG("  " << oc.name << " -> |" << oc.value << "|");
             }
         }
         break;

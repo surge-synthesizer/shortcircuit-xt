@@ -121,8 +121,7 @@ void AdsrPane::updateTooltip(const attachment_t &at)
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
     updateTooltip(at);
-    cmsg::clientSendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest({index, adsrView}),
-                                    editor->msgCont);
+    sendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest({index, adsrView}));
 }
 
 void AdsrPane::adsrDeactivated()

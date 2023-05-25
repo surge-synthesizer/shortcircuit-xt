@@ -71,8 +71,7 @@ void ProcessorPane::showHamburgerMenu()
         p.addItem(pd.displayName, [wt = juce::Component::SafePointer(this), type = pd.id]() {
             if (wt)
             {
-                cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorType({wt->index, type}),
-                                                wt->editor->msgCont);
+                wt->sendToSerialization(cmsg::SetSelectedProcessorType({wt->index, type}));
             }
         });
     }
@@ -290,14 +289,12 @@ void ProcessorPane::layoutControlsSuperSVF()
 void ProcessorPane::processorChangedFromGui(const attachment_t &at)
 {
     updateTooltip(at);
-    cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}),
-                                    editor->msgCont);
+    sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
 }
 
 void ProcessorPane::processorChangedFromGui(const int_attachment_t &at)
 {
-    cmsg::clientSendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}),
-                                    editor->msgCont);
+    sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
 }
 
 } // namespace scxt::ui::multi

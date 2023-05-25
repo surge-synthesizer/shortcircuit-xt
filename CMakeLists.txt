@@ -96,6 +96,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_options(/arch:SSE42)
 endif ()
 
+add_compile_definitions(SCXT_ROOT_BUILD_DIR="${CMAKE_SOURCE_DIR}")
 
 include(cmake/compiler-and-git.cmake)
 

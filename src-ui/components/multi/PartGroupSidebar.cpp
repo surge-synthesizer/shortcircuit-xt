@@ -165,8 +165,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                             if (!w)
                                 return;
                             auto za = w->getZoneAddress();
-                            cmsg::clientSendToSerialization(cmsg::DeleteZone(za),
-                                                            w->gsb->editor->msgCont);
+                            w->gsb->sendToSerialization(cmsg::DeleteZone(za));
                         });
                     }
                     else if (isGroup())
@@ -178,8 +177,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                             if (!w)
                                 return;
                             auto za = w->getZoneAddress();
-                            cmsg::clientSendToSerialization(cmsg::DeleteGroup(za),
-                                                            w->gsb->editor->msgCont);
+                            w->gsb->sendToSerialization(cmsg::DeleteGroup(za));
                         });
                     }
                     isPopup = true;
@@ -237,8 +235,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                     auto tgt = getZoneAddress();
                     auto src = rd->getZoneAddress();
 
-                    cmsg::clientSendToSerialization(cmsg::MoveZoneFromTo({src, tgt}),
-                                                    gsb->partGroupSidebar->editor->msgCont);
+                    gsb->sendToSerialization(cmsg::MoveZoneFromTo({src, tgt}));
                 }
             }
         };
@@ -331,7 +328,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
     void addGroup()
     {
         auto &mc = partGroupSidebar->editor->msgCont;
-        cmsg::clientSendToSerialization(cmsg::CreateGroup(part), mc);
+        partGroupSidebar->sendToSerialization(cmsg::CreateGroup(part));
     }
     void resized() override { listBox->setBounds(getLocalBounds().withTrimmedBottom(200)); }
 
@@ -424,11 +421,6 @@ struct PGZListBoxModel : juce::ListBoxModel
                 bool selectedUI = r.contains(idx);
                 bool selectedModel = partGroupSidebar->editor->isSelected(dat.first);
 
-                if (selectedUI || selectedModel)
-                {
-                    SCDBGCOUT << SCD(dat.first) << SCD(idx) << SCD(selectedUI) << SCD(selectedModel)
-                              << std::endl;
-                }
                 if (selectedUI && !selectedModel)
                 {
                     if (idx == rowNumber)
@@ -523,10 +515,10 @@ void PartGroupSidebar::resized()
 void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p)
 {
     pgzStructure = p;
-    SCDBGCOUT << "PartGroupZone in Sidebar" << std::endl;
+    SCLOG("PartGroupZone in Sidebar");
     for (const auto &a : pgzStructure)
     {
-        SCDBGCOUT << "  | " << a.second << " -> " << a.first << std::endl;
+        SCLOG("  | " << a.second << " -> " << a.first);
     }
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();
@@ -536,13 +528,13 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 
 void PartGroupSidebar::editorSelectionChanged()
 {
-    SCDBGCOUT << "Editor Selection Changed " << SCD(editor->allSelections.size())
-              << SCD(editor->currentLeadSelection.has_value()) << std::endl;
+    SCLOG("Editor Selection Changed " << SCD(editor->allSelections.size())
+                                      << SCD(editor->currentLeadSelection.has_value()));
 
     if (editor->currentLeadSelection.has_value())
-        SCDBGCOUT << " OL " << *(editor->currentLeadSelection) << std::endl;
+        SCLOG(" OL " << *(editor->currentLeadSelection));
     for (const auto &as : editor->allSelections)
-        SCDBGCOUT << " AS " << as << std::endl;
+        SCLOG(" AS " << as);
     if (groupSidebar)
     {
         groupSidebar->updateSelection();

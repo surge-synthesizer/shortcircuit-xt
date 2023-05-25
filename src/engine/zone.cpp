@@ -76,7 +76,7 @@ void Zone::process(Engine &e)
     {
 
 #if DEBUG_VOICE_LIFECYCLE
-        SCDBGCOUT << "Cleanup Voice at " << SCDBGV((int)toCleanUp[i]->key) << std::endl;
+        SCLOG("Cleanup Voice at " << SCDBGV((int)toCleanUp[i]->key));
 #endif
         toCleanUp[i]->cleanupVoice();
     }

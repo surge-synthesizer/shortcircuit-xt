@@ -102,7 +102,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
         {
             try
             {
-                SCDBGCOUT << "Opening file " << p.u8string() << std::endl;
+                SCLOG("Opening file " << p.u8string());
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 auto sf = std::make_unique<sf2::File>(riff.get());
@@ -129,8 +129,8 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
     auto sp = std::make_shared<Sample>(sid);
 
-    SCDBGCOUT << "Loading individual sf2 saample " << SCD(instrument) << SCD(region) << SCD(f)
-              << SCD(p.u8string()) << std::endl;
+    SCLOG("Loading individual sf2 saample " << SCD(instrument) << SCD(region) << SCD(f)
+                                            << SCD(p.u8string()));
     if (!sp->loadFromSF2(p, f, instrument, region))
         return {};
 

@@ -40,6 +40,7 @@
 #include "MixerScreen.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "AboutScreen.h"
+#include "LogScreen.h"
 #include "SCXTJuceLookAndFeel.h"
 
 namespace scxt::ui
@@ -100,6 +101,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     aboutScreen = std::make_unique<AboutScreen>(this);
     addChildComponent(*aboutScreen);
 
+    logScreen = std::make_unique<LogScreen>(this);
+    addChildComponent(*logScreen);
+
     onStyleChanged();
 
     auto zfi = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::zoomLevel, 100);
@@ -116,6 +120,7 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
 {
     activeScreen = s;
     aboutScreen->setVisible(false);
+    logScreen->setVisible(false);
     switch (s)
     {
     case MULTI:
@@ -146,6 +151,15 @@ void SCXTEditor::showAboutOverlay()
 {
     aboutScreen->toFront(true);
     aboutScreen->setVisible(true);
+    logScreen->setVisible(false);
+    resized();
+}
+
+void SCXTEditor::showLogOverlay()
+{
+    logScreen->toFront(true);
+    logScreen->setVisible(true);
+    aboutScreen->setVisible(false);
     resized();
 }
 
@@ -162,6 +176,8 @@ void SCXTEditor::resized()
         playScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
     if (aboutScreen->isVisible())
         aboutScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+    if (logScreen->isVisible())
+        logScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
 }
 
 void SCXTEditor::idle()
@@ -215,10 +231,8 @@ void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddres
 {
     namespace cmsg = scxt::messaging::client;
     currentLeadSelection = a;
-    cmsg::clientSendToSerialization(
-        cmsg::DoSelectAction(selection::SelectionManager::SelectActionContents{
-            a.part, a.group, a.zone, selecting, distinct, asLead}),
-        msgCont);
+    sendToSerialization(cmsg::DoSelectAction(selection::SelectionManager::SelectActionContents{
+        a.part, a.group, a.zone, selecting, distinct, asLead}));
     repaint();
 }
 
@@ -226,7 +240,7 @@ void SCXTEditor::doMultiSelectionAction(
     const std::vector<selection::SelectionManager::SelectActionContents> &p)
 {
     namespace cmsg = scxt::messaging::client;
-    cmsg::clientSendToSerialization(cmsg::DoMultiSelectAction(p), msgCont);
+    sendToSerialization(cmsg::DoMultiSelectAction(p));
     repaint();
 }
 
@@ -240,8 +254,7 @@ void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
 {
     assert(files.size() == 1);
     namespace cmsg = scxt::messaging::client;
-    cmsg::clientSendToSerialization(cmsg::AddSample(std::string{(const char *)(files[0].toUTF8())}),
-                                    msgCont);
+    sendToSerialization(cmsg::AddSample(std::string{(const char *)(files[0].toUTF8())}));
 }
 
 void SCXTEditor::showTooltip(const juce::Component &relativeTo)

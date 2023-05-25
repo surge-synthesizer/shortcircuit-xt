@@ -46,10 +46,10 @@ namespace scxt::ui::multi
 namespace cmsg = scxt::messaging::client;
 
 struct MappingDisplay;
-struct MappingZonesAndKeyboard : juce::Component
+struct MappingZonesAndKeyboard : juce::Component, HasEditor
 {
     MappingDisplay *display{nullptr};
-    MappingZonesAndKeyboard(MappingDisplay *d) : display(d) {}
+    MappingZonesAndKeyboard(MappingDisplay *d);
     void paint(juce::Graphics &g) override;
 
     int firstMidiNote{0}, lastMidiNote{128};
@@ -376,19 +376,16 @@ struct MappingDisplay : juce::Component, HasEditor
 
     void mappingChangedFromGUI()
     {
-        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
-                                        editor->msgCont);
+        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
     }
 
     void mappingChangedFromGUI(const zone_attachment_t &at)
     {
-        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
-                                        editor->msgCont);
+        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
     }
     void mappingChangedFromGUI(const zone_float_attachment_t &at)
     {
-        cmsg::clientSendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView),
-                                        editor->msgCont);
+        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
     }
 
     void setActive(bool b)
@@ -440,6 +437,11 @@ struct MappingDisplay : juce::Component, HasEditor
     engine::Part::zoneMappingSummary_t summary{};
 };
 
+MappingZonesAndKeyboard::MappingZonesAndKeyboard(scxt::ui::multi::MappingDisplay *d)
+    : HasEditor(d->editor), display(d)
+{
+}
+
 void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
 {
     if (!display)
@@ -452,8 +454,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
             auto r = rectangleForKey(i);
             if (r.contains(e.position))
             {
-                cmsg::clientSendToSerialization(cmsg::NoteFromGUI({i, true}),
-                                                display->editor->msgCont);
+                sendToSerialization(cmsg::NoteFromGUI({i, true}));
                 heldNote = i;
                 mouseState = HELD_NOTE;
                 repaint();
@@ -547,7 +548,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
         }
         else
         {
-            SCDBGCOUT << "About to select " << SCD(nextZone) << std::endl;
+            SCLOG("About to select " << SCD(nextZone));
             display->editor->doSelectionAction(nextZone, true, !e.mods.isCommandDown(), true);
         }
     }
@@ -612,12 +613,10 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
                     {
                         if (heldNote > 0)
                         {
-                            cmsg::clientSendToSerialization(cmsg::NoteFromGUI({heldNote, false}),
-                                                            display->editor->msgCont);
+                            sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
                         }
                         heldNote = i;
-                        cmsg::clientSendToSerialization(cmsg::NoteFromGUI({i, true}),
-                                                        display->editor->msgCont);
+                        sendToSerialization(cmsg::NoteFromGUI({i, true}));
                         repaint();
                     }
                 }
@@ -630,8 +629,7 @@ void MappingZonesAndKeyboard::mouseUp(const juce::MouseEvent &e)
 {
     if (mouseState == HELD_NOTE && heldNote >= 0)
     {
-        cmsg::clientSendToSerialization(cmsg::NoteFromGUI({heldNote, false}),
-                                        display->editor->msgCont);
+        sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
         heldNote = -1;
         mouseState = NONE;
         repaint();
@@ -918,8 +916,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
     void onSamplePointChangedFromGUI()
     {
-        cmsg::clientSendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest(sampleView),
-                                        editor->msgCont);
+        sendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest(sampleView));
 
         repaint();
     }
