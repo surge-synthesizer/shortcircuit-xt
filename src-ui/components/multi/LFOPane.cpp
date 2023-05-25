@@ -216,18 +216,29 @@ void LfoPane::rebuildLfo()
             if (w)
             {
                 w->pushCurrentLfoUpdate();
+                w->updateTooltip(a);
+                w->repaint();
+            }
+        };
+    };
+
+    auto updateNoTT = [r = juce::Component::SafePointer(this)]() {
+        return [w = juce::Component::SafePointer(r)](const auto &a) {
+            if (w)
+            {
+                w->pushCurrentLfoUpdate();
                 w->repaint();
             }
         };
     };
     oneshotA = std::make_unique<boolAttachment_t>(
-        this, "OneShot", update(), [](const auto &pl) { return pl.onlyonce; },
+        this, "OneShot", updateNoTT(), [](const auto &pl) { return pl.onlyonce; },
         lfoData[selectedTab].onlyonce);
     tempoSyncA = std::make_unique<boolAttachment_t>(
-        this, "TempoSync", update(), [](const auto &pl) { return pl.temposync; },
+        this, "TempoSync", updateNoTT(), [](const auto &pl) { return pl.temposync; },
         lfoData[selectedTab].temposync);
     cycleA = std::make_unique<boolAttachment_t>(
-        this, "OneShot", update(), [](const auto &pl) { return pl.cyclemode; },
+        this, "OneShot", updateNoTT(), [](const auto &pl) { return pl.cyclemode; },
         lfoData[selectedTab].cyclemode);
 
     rateA = std::make_unique<attachment_t>(
@@ -247,17 +258,40 @@ void LfoPane::rebuildLfo()
     oneshotB->setBounds(col);
     addAndMakeVisible(*oneshotB);
 
+    // TODO - a cleaner way to do this copy and paste
     auto b5 = r.withTop(r.getBottom() - 50).withLeft(r.getWidth() - 50);
     rateK = std::make_unique<sst::jucegui::components::Knob>();
     rateK->setSource(rateA.get());
     rateK->setBounds(b5.translated(-2 * 50, 0));
     rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+    rateK->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->showTooltip(*(w->rateK));
+        w->updateTooltip(*(w->rateA));
+    };
+    rateK->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->hideTooltip();
+    };
     addAndMakeVisible(*rateK);
 
     deformK = std::make_unique<sst::jucegui::components::Knob>();
     deformK->setSource(deformA.get());
     deformK->setBounds(b5.translated(-50, 0));
     deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+    deformK->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->showTooltip(*(w->deformK));
+        w->updateTooltip(*(w->deformA));
+    };
+    deformK->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->hideTooltip();
+    };
     addAndMakeVisible(*deformK);
 
     lfoDataRender = std::make_unique<LfoDataRender>(this);
@@ -384,6 +418,13 @@ void LfoPane::pickPresets()
         });
     }
     m.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void LfoPane::updateTooltip(const attachment_t &at)
+{
+    auto vs = at.description.valueToString(at.value).value_or("Error");
+    // auto vv = std::to_string(at.getValue());
+    editor->setTooltipContents(at.label, vs); // {vs, vv});
 }
 
 } // namespace scxt::ui::multi

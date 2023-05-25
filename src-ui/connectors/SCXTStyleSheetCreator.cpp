@@ -35,12 +35,16 @@
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
 
+#include "components/widgets/Tooltip.h"
+
 namespace scxt::ui::connectors
 {
 using sheet_t = sst::jucegui::style::StyleSheet;
 namespace comp = sst::jucegui::components;
 const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
 {
+    widgets::Tooltip::Styles::initialize();
+
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorVSlider)
         .withBaseClass(comp::VSlider::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorKnob)
@@ -55,6 +59,10 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
         .withBaseClass(comp::ControlStyles::styleClass);
 
     const auto &base = sheet_t::getBuiltInStyleSheet(sheet_t::DARK);
+    base->setColour(widgets::Tooltip::Styles::styleClass, widgets::Tooltip::Styles::bordercol,
+                    base->getColour(sst::jucegui::components::NamedPanel::Styles::styleClass,
+                                    sst::jucegui::components::NamedPanel::Styles::labelrulecol));
+
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::guttercol,
                     juce::Colour(0x39, 0x39, 0x39));
     base->setColour(ModulationEditorVSlider, comp::VSlider::Styles::gutterhovcol,
@@ -149,6 +157,12 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
     auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
                                                             scxt::ui::binary::InterMedium_ttfSize);
     base->replaceFontsWithTypeface(interMed);
+
+    auto fixedWidth = juce::Typeface::createSystemTypefaceFor(
+        scxt::ui::binary::AnonymousProRegular_ttf, scxt::ui::binary::AnonymousProRegular_ttfSize);
+
+    auto fw = juce::Font(fixedWidth).withHeight(11);
+    base->setFont(widgets::Tooltip::Styles::styleClass, widgets::Tooltip::Styles::datafont, fw);
 
     return base;
 }

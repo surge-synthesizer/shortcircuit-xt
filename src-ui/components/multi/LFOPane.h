@@ -85,6 +85,8 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void pushCurrentLfoUpdate();
     void pickPresets();
+
+    void updateTooltip(const attachment_t &at);
 };
 } // namespace scxt::ui::multi
 

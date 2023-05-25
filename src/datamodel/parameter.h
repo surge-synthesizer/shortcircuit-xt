@@ -100,7 +100,10 @@ inline pmd lfoModulationRate()
         .withATwoToTheBFormatting(1, 1, "Hz");
 }
 
-inline pmd lfoSmoothing() { return pmd().withType(pmd::FLOAT).withRange(0, 2).withDefault(0); }
+inline pmd lfoSmoothing()
+{
+    return pmd().withType(pmd::FLOAT).withRange(0, 2).withDefault(0).withLinearScaleFormatting("");
+}
 
 inline pmd unusedParam() { return pmd().withType(pmd::NONE); }
 

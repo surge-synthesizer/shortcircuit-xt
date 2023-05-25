@@ -53,8 +53,7 @@ ProcessorPane::~ProcessorPane() { resetControls(); }
 
 void ProcessorPane::updateTooltip(const attachment_t &at)
 {
-    editor->setTooltipContents(at.label + " = " +
-                               at.description.valueToString(at.value).value_or("Error"));
+    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
 }
 
 void ProcessorPane::resized() { rebuildControlsFromDescription(); }

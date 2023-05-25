@@ -42,21 +42,10 @@
 #include "AboutScreen.h"
 #include "LogScreen.h"
 #include "SCXTJuceLookAndFeel.h"
+#include "widgets/Tooltip.h"
 
 namespace scxt::ui
 {
-
-void SCXTEditor::Tooltip::paint(juce::Graphics &g)
-{
-    g.setColour(juce::Colours::black.withAlpha(0.60f));
-    g.fillRect(getLocalBounds());
-    g.setColour(juce::Colour(0xFF, 0x90, 0x00));
-    g.drawRect(getLocalBounds(), 2);
-
-    g.setColour(juce::Colour(0xFF, 0x90, 0x00));
-    g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
-    g.drawText(tooltipText, getLocalBounds().reduced(2), juce::Justification::centred);
-}
 
 SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                        const sample::SampleManager &s,
@@ -73,7 +62,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
 
-    toolTip = std::make_unique<SCXTEditor::Tooltip>();
+    toolTip = std::make_unique<widgets::Tooltip>();
     addChildComponent(*toolTip);
 
     namespace cmsg = scxt::messaging::client;
@@ -260,14 +249,19 @@ void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
 void SCXTEditor::showTooltip(const juce::Component &relativeTo)
 {
     auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
+    toolTip->resetSizeFromData();
     toolTip->setVisible(true);
     toolTip->toFront(false);
-    toolTip->setBounds(fb.getWidth() + fb.getX(), fb.getY(), 200, 30);
+    toolTip->setBounds(fb.getWidth() + fb.getX(), fb.getY(), toolTip->getWidth(),
+                       toolTip->getHeight());
 }
 
 void SCXTEditor::hideTooltip() { toolTip->setVisible(false); }
 
-void SCXTEditor::setTooltipContents(const std::string &s) { toolTip->setTooltipText(s); }
+void SCXTEditor::setTooltipContents(const std::string &title, const std::vector<std::string> &data)
+{
+    toolTip->setTooltipTitleAndData(title, data);
+}
 
 void SCXTEditor::parentHierarchyChanged() { setZoomFactor(zoomFactor); }
 
