@@ -238,8 +238,7 @@ struct ModRow : juce::Component, HasEditor
 
     void pushRowUpdate()
     {
-        cmsg::clientSendToSerialization(
-            cmsg::IndexedRoutingRowUpdated({index, parent->routingTable[index]}), editor->msgCont);
+        sendToSerialization(cmsg::IndexedRoutingRowUpdated({index, parent->routingTable[index]}));
     }
 
     void showSourceMenu(bool isVia)

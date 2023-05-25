@@ -122,8 +122,6 @@ bool Voice::process()
         modMatrix.getValue(modulation::vmd_eg_AShape, 1),
         modMatrix.getValue(modulation::vmd_eg_DShape, 1),
         modMatrix.getValue(modulation::vmd_eg_RShape, 1), envGate);
-    // SCDBGCOUT << SCDBGV(aeg.stage) << SCDBGV(aeg.phase) << SCDBGV(aeg.outputCache[0]) <<
-    // std::endl;
 
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);

@@ -53,8 +53,7 @@ namespace scxt::engine
 
 Engine::Engine()
 {
-    std::cout << "Shortcircuit XT : Constructing Engine - Version " << scxt::build::FullVersionStr
-              << std::endl;
+    SCLOG("Shortcircuit XT : Constructing Engine - Version " << scxt::build::FullVersionStr);
 
     id.id = rngGen.randU32() % 1024;
 
@@ -113,7 +112,8 @@ Engine::~Engine()
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
 {
 #if DEBUG_VOICE_LIFECYCLE
-    SCDBGCOUT << "Initializing Voice at " << SCDBGV((int)path.key) << std::endl;
+    SCLOG("Initializing Voice at " << SCDBGV((int)path.key));
+    ;
 #endif
 
     assert(zoneByPath(path));
@@ -148,7 +148,7 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
         {
             v->release();
 #if DEBUG_VOICE_LIFECYCLE
-            SCDBGCOUT << "Release Voice at " << SCDBGV(key) << std::endl;
+            SCLOG("Release Voice at " << SCDBGV(key));
 #endif
         }
     }
@@ -158,7 +158,7 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
     {
         if (v && v->isVoiceAssigned)
         {
-            SCDBGCOUT << "     PostRelease Voice at " << SCDBGV((int)v->key) << std::endl;
+            SCLOG("     PostRelease Voice at " << SCDBGV((int)v->key));
         }
     }
 #endif
@@ -290,15 +290,14 @@ bool Engine::processAudio()
 void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t velocity, float detune)
 {
     auto useKey = midikeyRetuner.remapKeyTo(channel, key);
-    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(key) << SCDBGV(useKey) <<
-    // std::endl;
+    // SCLOG_WFUNC( SCDBGV(channel) << SCDBGV(key) << SCDBGV(useKey):
 
     for (const auto &path : findZone(channel, useKey, noteId, velocity))
     {
         const auto &z = zoneByPath(path);
         if (!z->samplePointers[0])
         {
-            // SCDBGCOUT << "Skipping voice with missing sample data" << std::endl;
+            // SCLOG( "Skipping voice with missing sample data" );
         }
         else
         {
@@ -320,7 +319,7 @@ void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, int32_t veloc
 
 void Engine::pitchBend(int16_t channel, int16_t value)
 {
-    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(value) << std::endl;
+    // SCLOG( __func__ << " " << SCDBGV(channel) << SCDBGV(value) );
     auto fv = value / 8192.f;
     for (const auto &part : *patch)
     {
@@ -344,12 +343,11 @@ void Engine::midiCC(int16_t channel, int16_t controller, int16_t value)
 }
 void Engine::channelAftertouch(int16_t channel, int16_t value)
 {
-    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(value) << std::endl;
+    // SCLOG(  SCDBGV(channel) << SCDBGV(value) );
 }
 void Engine::polyAftertouch(int16_t channel, int16_t noteNumber, int16_t value)
 {
-    // SCDBGCOUT << __func__ << " " << SCDBGV(channel) << SCDBGV(noteNumber) << SCDBGV(value) <<
-    // std::endl;
+    // SCLOG_WFUNC(SCDBGV(channel) << SCDBGV(noteNumber) << SCDBGV(value));
 }
 
 uint32_t Engine::activeVoiceCount()
@@ -416,9 +414,9 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
         partidx++;
     }
     /*
-    SCDBGCOUT << "Returning partgroup structure size " << res.size() << std::endl;
+    SCLOG( "Returning partgroup structure size " << res.size() );;
     for (const auto &pg : res)
-        SCDBGCOUT << "   " << pg.first << std::endl;
+        SCLOG( "   " << pg.first );;
         */
     return res;
 }
@@ -530,7 +528,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         if (pt < 0 || pt >= numParts)
             pt = 0;
 
-        SCDBGCOUT << "Adding SF2 to part " << SCD(pt) << std::endl;
+        SCLOG("Adding SF2 to part " << SCD(pt));
         auto &part = getPatch()->getPart(pt);
         int firstGroup = -1;
         for (int i = 0; i < sf->GetInstrumentCount(); ++i)

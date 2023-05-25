@@ -370,7 +370,7 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
         // TODO
         if (t.auxLocation != engine::Bus::BusSendStorage::POST_FX_PRE_VCA)
         {
-            SCDBGCOUT << "Stream Aux Location as String please" << std::endl;
+            SCLOG("Stream Aux Location as String please");
         }
         v = {{"supportsSends", t.supportsSends},
              {"auxLocation", (int)t.auxLocation},

@@ -31,7 +31,6 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
 
-#include "PlayScreen.h"
 #include "SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"
 #include "engine/patch.h"
@@ -44,6 +43,8 @@
 #include "messaging/client/zone_messages.h"
 #include "infrastructure/rng_gen.h"
 
+#include "HasEditor.h"
+
 namespace scxt::ui
 {
 
@@ -51,6 +52,8 @@ struct HeaderRegion;
 struct MultiScreen;
 struct MixerScreen;
 struct AboutScreen;
+struct PlayScreen;
+struct LogScreen;
 struct SCXTJuceLookAndFeel;
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
@@ -96,6 +99,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     std::unique_ptr<MixerScreen> mixerScreen;
     std::unique_ptr<PlayScreen> playScreen;
     std::unique_ptr<AboutScreen> aboutScreen;
+    std::unique_ptr<LogScreen> logScreen;
 
     // TODO fix me with a proper tooltip type
     struct Tooltip : juce::Component
@@ -122,6 +126,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     } activeScreen{MULTI};
     void setActiveScreen(ActiveScreen s);
     void showAboutOverlay();
+    void showLogOverlay();
 
     float zoomFactor{1.f};
     void setZoomFactor(float zoomFactor); // 1.0 == 100%
@@ -205,7 +210,20 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
      * Items to deal with the shared memory reads
      */
     int64_t lastVoiceDisplayWriteCounter{-1};
+
+    friend struct HasEditor;
+
+  protected:
+    template <typename T> void sendToSerialization(const T &msg)
+    {
+        scxt::messaging::client::clientSendToSerialization(msg, msgCont);
+    }
 };
+
+template <typename T> inline void HasEditor::sendToSerialization(const T &msg)
+{
+    editor->sendToSerialization(msg);
+}
 } // namespace scxt::ui
 
 #endif // SHORTCIRCUIT_SCXTEDITOR_H

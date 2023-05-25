@@ -29,6 +29,7 @@
 
 #include "fmt/core.h"
 #include <string>
+#include <sstream>
 #include <cctype>
 #include <atomic>
 #include <functional>
@@ -229,11 +230,19 @@ struct ThreadingChecker
     }
 };
 
-#define SCDBGCOUT std::cout << __FILE__ << ":" << __LINE__ << " "
-#define SCFCOUT std::cout << __FILE__ << ":" << __LINE__ << " " << __func__ << " "
-#define SCDBGV(x) #x << "=" << (x) << " "
-#define SCD(x) SCDBGV(x)
-#define SCDBGUNIMPL(msg) SCDBGCOUT << " Unimpl [" << __func__ << "] " << msg << std::endl;
+void postToLog(const std::string &s);
+extern std::mutex logMutex;
+extern std::deque<std::string> logMessages;
+#define SCLOG(...)                                                                                 \
+    {                                                                                              \
+        std::ostringstream oss_macr;                                                               \
+        oss_macr << __FILE__ << ":" << __LINE__ << " " << __VA_ARGS__ << "\n";                     \
+        postToLog(oss_macr.str());                                                                 \
+    }
+
+#define SCLOG_WFUNC(...) SCLOG(__func__ << " " << __VA_ARGS__)
+#define SCLOG_UNIMPL(...) SCLOG(" Unimpl [" << __func__ << "] " << __VA_ARGS__);
+#define SCD(x) #x << "=" << (x) << " "
 
 #define DECLARE_ENUM_STRING(E)                                                                     \
     static std::string toString##E(const E &);                                                     \

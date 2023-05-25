@@ -201,7 +201,7 @@ void SelectionManager::guaranteeSelectedLead()
         if (allSelectedZones.empty() && leadZone.part >= 0)
         {
             // Oh what to do here. Well reject it.
-            SCFCOUT << "Be careful - we are promoting " << SCD(leadZone) << std::endl;
+            SCLOG_WFUNC("Be careful - we are promoting " << SCD(leadZone));
             allSelectedZones.insert(leadZone);
         }
         else
@@ -214,12 +214,12 @@ void SelectionManager::guaranteeSelectedLead()
 void SelectionManager::debugDumpSelectionState()
 {
 #if DEBUG_SELECTION
-    SCDBGCOUT << "---------------------------" << std::endl;
-    SCDBGCOUT << SCD(leadZone) << std::endl;
-    SCDBGCOUT << "All Selected Zones" << std::endl;
+    SCLOG("---------------------------");
+    SCLOG(SCD(leadZone));
+    SCLOG("All Selected Zones");
     for (const auto &s : allSelectedZones)
-        SCDBGCOUT << "    - " << s << std::endl;
-    SCDBGCOUT << "---------------------------" << std::endl;
+        SCLOG("    - " << s);
+    SCLOG("---------------------------");
 #endif
 }
 

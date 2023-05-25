@@ -345,9 +345,7 @@ namespace cmsg = scxt::messaging::client;
 
 void LfoPane::pushCurrentLfoUpdate()
 {
-    cmsg::clientSendToSerialization(
-        cmsg::IndexedLfoUpdated({true, selectedTab, lfoData[selectedTab]}), editor->msgCont);
-
+    sendToSerialization(cmsg::IndexedLfoUpdated({true, selectedTab, lfoData[selectedTab]}));
     repaint();
 }
 

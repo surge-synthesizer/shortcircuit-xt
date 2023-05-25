@@ -44,18 +44,16 @@ void printStackTrace(int depth)
     char **strs = backtrace_symbols(callstack, frames);
     if (depth < 0)
         depth = frames;
-    printf("-------- Stack Trace (%d frames of %d depth showing) --------\n", depth, frames);
+    SCLOG("-------- Stack Trace (" << depth << " frames of " << frames
+                                   << " depth showing) --------");
     for (i = 1; i < frames && i < depth; ++i)
     {
-        printf("  [%3d]: %s\n", i, strs[i]);
+        SCLOG("  [" << i << "]:  " << strs[i]);
     }
     free(strs);
 }
 #else
-void printStackTrace(int fd)
-{
-    SCDBGCOUT << "Implement printStackTrace for this OS please" << std::endl;
-}
+void printStackTrace(int fd) { SCLOG("printStackTrace unavailable on this platform"); }
 #endif
 
 #if USE_SIMPLE_LEAK_DETECTOR
@@ -71,5 +69,27 @@ void showLeakLog()
     }
 }
 #endif
+
+std::mutex logMutex;
+std::deque<std::string> logMessages;
+void postToLog(const std::string &s)
+{
+    // TODO this sucks also
+    auto q = s;
+    auto sp = q.find(SCXT_ROOT_BUILD_DIR);
+
+    if (sp == 0)
+    {
+        q = q.substr(sp + strlen(SCXT_ROOT_BUILD_DIR) + 1);
+    }
+    std::cout << q << std::flush;
+    std::lock_guard<std::mutex> g(logMutex);
+    logMessages.push_back(q);
+
+    if (logMessages.size() > 525)
+    {
+        logMessages.erase(logMessages.begin(), logMessages.begin() + 25);
+    }
+}
 
 } // namespace scxt

@@ -69,6 +69,10 @@ void SCXTEditor::showMainMenu()
         if (w)
             w->showAboutOverlay();
     });
+    m.addItem("Log", [w = juce::Component::SafePointer(this)] {
+        if (w)
+            w->showLogOverlay();
+    });
     m.addItem("Source", [] {
         juce::URL("https://github.com/surge-synthesizer/shortcircuit-xt").launchInDefaultBrowser();
     });
@@ -85,13 +89,11 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
     }
     p.addItem("Twelve TET", [w = juce::Component::SafePointer(this)]() {
         if (w)
-            cmsg::clientSendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::TWELVE_TET),
-                                            w->msgCont);
+            w->sendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::TWELVE_TET));
     });
     p.addItem("MTS-ESP", [w = juce::Component::SafePointer(this)]() {
         if (w)
-            cmsg::clientSendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::MTS_ESP),
-                                            w->msgCont);
+            w->sendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::MTS_ESP));
     });
 }
 

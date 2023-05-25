@@ -47,8 +47,7 @@ void PartEffectsPane::showHamburger()
         return [w, q]() {
             if (w)
             {
-                cmsg::clientSendToSerialization(
-                    cmsg::SetBusEffectToType({w->busAddress, w->fxSlot, q}), w->editor->msgCont);
+                w->sendToSerialization(cmsg::SetBusEffectToType({w->busAddress, w->fxSlot, q}));
             }
         };
     };
@@ -210,9 +209,8 @@ juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
                             r->repaint();
                         }
 
-                        cmsg::clientSendToSerialization(
-                            cmsg::SetBusEffectStorage({w->busAddress, w->fxSlot, bes}),
-                            w->editor->msgCont);
+                        w->sendToSerialization(
+                            cmsg::SetBusEffectStorage({w->busAddress, w->fxSlot, bes}));
                     }
                 });
         }
@@ -263,7 +261,7 @@ void PartEffectsPane::rebuildDefaultLayout()
             }
             else
             {
-                SCDBGCOUT << "No widget for type " << p.type << " / " << p.name << std::endl;
+                SCLOG("No widget for type " << p.type << " / " << p.name);
             }
 
             r = r.translated(bx, 0);
@@ -282,8 +280,7 @@ void PartEffectsPane::floatParameterChangedFromGui(
     updateTooltip(at);
     auto &data = mixer->busEffectsData[busAddress][fxSlot];
 
-    cmsg::clientSendToSerialization(cmsg::SetBusEffectStorage({busAddress, fxSlot, data.second}),
-                                    editor->msgCont);
+    sendToSerialization(cmsg::SetBusEffectStorage({busAddress, fxSlot, data.second}));
 }
 
 void PartEffectsPane::updateTooltip(const attachment_t &at)
