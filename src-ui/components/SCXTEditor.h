@@ -61,7 +61,9 @@ namespace widgets
 struct Tooltip;
 }
 
-struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
+struct SCXTEditor : sst::jucegui::components::WindowPanel,
+                    juce::FileDragAndDropTarget,
+                    juce::DragAndDropContainer
 {
     // The message controller is needed to communicate
     messaging::MessageController &msgCont;

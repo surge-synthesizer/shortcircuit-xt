@@ -43,7 +43,7 @@
 
 namespace scxt::ui::multi
 {
-struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
+struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::DragAndDropTarget
 {
     // ToDo: shapes of course
     typedef connectors::PayloadDataAttachment<ProcessorPane, dsp::processor::ProcessorStorage>
@@ -87,8 +87,15 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void resized() override;
 
+    bool isDragging{false};
+    void mouseDrag(const juce::MouseEvent &e) override;
+    void mouseUp(const juce::MouseEvent &e) override;
+
     void updateTooltip(const attachment_t &);
     void showHamburgerMenu();
+
+    bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
+    void itemDropped(const SourceDetails &dragSourceDetails) override;
 
     std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
                dsp::processor::maxProcessorFloatParams>

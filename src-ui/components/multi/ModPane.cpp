@@ -47,13 +47,15 @@ struct ModRow : juce::Component, HasEditor
     std::unique_ptr<
         connectors::BooleanPayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>
         powerAttachment;
-    std::unique_ptr<connectors::PayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>
-        depthAttachment;
+    using attachment_t =
+        connectors::PayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>;
+    std::unique_ptr<attachment_t> depthAttachment;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
     std::unique_ptr<juce::Component> x1, x2, a1, a2;
 
     std::unique_ptr<jcmp::HSlider> depth;
+
     // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane *p) : HasEditor(e), index(i), parent(p)
     {
@@ -91,17 +93,31 @@ struct ModRow : juce::Component, HasEditor
         sourceVia->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*sourceVia);
 
-        depthAttachment = std::make_unique<
-            connectors::PayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>(
+        depthAttachment = std::make_unique<attachment_t>(
             this, datamodel::pmd().asPercentBipolar().withName("Depth"),
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
+                {
                     w->pushRowUpdate();
+                    w->updateTooltip(a);
+                }
             },
             [](const auto &pl) { return pl.depth; }, row.depth);
         depth = std::make_unique<jcmp::HSliderFilled>();
         depth->setSource(depthAttachment.get());
         depth->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+        depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->editor->showTooltip(*(w->depth));
+            w->updateTooltip(*(w->depthAttachment));
+        };
+        depth->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->editor->hideTooltip();
+        };
+
         addAndMakeVisible(*depth);
 
         curve = std::make_unique<jcmp::MenuButton>();
@@ -234,6 +250,29 @@ struct ModRow : juce::Component, HasEditor
         }
 
         repaint();
+    }
+
+    void updateTooltip(const attachment_t &at)
+    {
+        // TODO: This should be in modulation units of the target not in percentage depth
+        auto sl = source->getLabel();
+        auto vl = sourceVia->getLabel();
+        auto tl = target->getLabel();
+
+        if (sl == "Source")
+            sl = "Unmapped";
+        if (vl == "Via")
+        {
+            vl = "";
+        }
+        else
+        {
+            vl = " x " + vl;
+        }
+        sl += vl;
+
+        editor->setTooltipContents(sl + " " + u8"\U00002192" + " " + tl,
+                                   at.description.valueToString(at.value).value_or("Error"));
     }
 
     void pushRowUpdate()

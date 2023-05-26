@@ -296,4 +296,46 @@ void ProcessorPane::processorChangedFromGui(const int_attachment_t &at)
     sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
 }
 
+bool ProcessorPane::isInterestedInDragSource(
+    const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
+{
+    if (dragSourceDetails.sourceComponent)
+    {
+        auto pp = dynamic_cast<ProcessorPane *>(dragSourceDetails.sourceComponent.get());
+        if (pp && pp != this)
+            return true;
+    }
+
+    return false;
+}
+
+void ProcessorPane::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
+{
+    auto pp = dynamic_cast<ProcessorPane *>(dragSourceDetails.sourceComponent.get());
+    if (!pp)
+        return;
+
+    SCLOG("Swapping processors " << SCD(index) << SCD(pp->index));
+    sendToSerialization(cmsg::SwapZoneProcessors({index, pp->index}));
+}
+
+void ProcessorPane::mouseDrag(const juce::MouseEvent &e)
+{
+    if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
+    {
+        if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+        {
+            container->startDragging("Processor", this);
+            isDragging = true;
+        }
+    }
+    sst::jucegui::components::NamedPanel::mouseDrag(e);
+}
+
+void ProcessorPane::mouseUp(const juce::MouseEvent &e)
+{
+    isDragging = false;
+    sst::jucegui::components::NamedPanel::mouseUp(e);
+}
+
 } // namespace scxt::ui::multi
