@@ -56,6 +56,11 @@ struct PlayScreen;
 struct LogScreen;
 struct SCXTJuceLookAndFeel;
 
+namespace widgets
+{
+struct Tooltip;
+}
+
 struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDropTarget
 {
     // The message controller is needed to communicate
@@ -101,18 +106,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
     std::unique_ptr<AboutScreen> aboutScreen;
     std::unique_ptr<LogScreen> logScreen;
 
-    // TODO fix me with a proper tooltip type
-    struct Tooltip : juce::Component
-    {
-        void paint(juce::Graphics &g);
-        void setTooltipText(const std::string &t)
-        {
-            tooltipText = t;
-            repaint();
-        }
-        std::string tooltipText{};
-    };
-    std::unique_ptr<Tooltip> toolTip;
+    std::unique_ptr<widgets::Tooltip> toolTip;
 
     SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                const sample::SampleManager &s, const engine::Engine::SharedUIMemoryState &b);
@@ -196,7 +190,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::FileDragAndDrop
 
     void showTooltip(const juce::Component &relativeTo);
     void hideTooltip();
-    void setTooltipContents(const std::string &s);
+    void setTooltipContents(const std::string &title, const std::vector<std::string> &display);
+    void setTooltipContents(const std::string &title, const std::string &display)
+    {
+        setTooltipContents(title, std::vector<std::string>{display});
+    }
 
     void showMainMenu();
     void addTuningMenu(juce::PopupMenu &into, bool addTitle = true);

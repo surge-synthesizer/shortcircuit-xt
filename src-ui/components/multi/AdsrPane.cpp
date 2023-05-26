@@ -46,11 +46,15 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
 {
     hasHamburger = true;
 
-    auto stowOnto = [this](auto &tgt, auto c, auto pair) {
+    auto stowOnto = [this](auto &tgt, auto c, auto pair, bool slider = true) {
         auto &[a, s] = pair;
         attachments[c] = std::move(a);
         tgt[c] = std::move(s);
-        tgt[c]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+
+        if (slider)
+            tgt[c]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+        else
+            tgt[c]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
 
         // This is somewhat unsatisfying
         tgt[c]->onBeginEdit = [this, &slRef = *tgt[c], &atRef = *attachments[c]]() {
@@ -88,9 +92,9 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     stowOnto(sliders, Ctrl::R, sliderFactory.attach("Release", dma::paramAHDR, &dma::r));
     makeLabel(Ctrl::R, "R");
 
-    stowOnto(knobs, Ctrl::Ash, knobFactory.attach("A Shape", dma::paramShape, &dma::aShape));
-    stowOnto(knobs, Ctrl::Dsh, knobFactory.attach("D Shape", dma::paramShape, &dma::dShape));
-    stowOnto(knobs, Ctrl::Rsh, knobFactory.attach("R Shape", dma::paramShape, &dma::rShape));
+    stowOnto(knobs, Ctrl::Ash, knobFactory.attach("A Shape", dma::paramShape, &dma::aShape), false);
+    stowOnto(knobs, Ctrl::Dsh, knobFactory.attach("D Shape", dma::paramShape, &dma::dShape), false);
+    stowOnto(knobs, Ctrl::Rsh, knobFactory.attach("R Shape", dma::paramShape, &dma::rShape), false);
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
@@ -114,8 +118,7 @@ void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 
 void AdsrPane::updateTooltip(const attachment_t &at)
 {
-    editor->setTooltipContents(at.label + " = " +
-                               at.description.valueToString(at.value).value_or("Error"));
+    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
 }
 
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)

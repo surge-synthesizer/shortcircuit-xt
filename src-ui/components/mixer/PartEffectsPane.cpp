@@ -285,8 +285,7 @@ void PartEffectsPane::floatParameterChangedFromGui(
 
 void PartEffectsPane::updateTooltip(const attachment_t &at)
 {
-    editor->setTooltipContents(at.label + " = " +
-                               at.description.valueToString(at.value).value_or("Error"));
+    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
 }
 
 } // namespace scxt::ui::mixer
