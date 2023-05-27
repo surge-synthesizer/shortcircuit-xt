@@ -149,23 +149,33 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
 {
     assert(mc.threadingChecker.isSerialThread());
 
-    // TODO - consider waht to do here. Dropping the message is probably best
-    if (!mc.clientCallback)
+    try
     {
-        if (cacheSerializationMessagesAbsentClient(id))
+        // TODO - consider waht to do here. Dropping the message is probably best
+        if (!mc.clientCallback)
         {
-            auto mw = detail::ResponseWrapper<T>(msg, id);
-            detail::client_message_value v = mw;
-            auto res = tao::json::to_string(v);
-            mc.preClientConnectionCache.push_back(res);
+            if (cacheSerializationMessagesAbsentClient(id))
+            {
+                auto mw = detail::ResponseWrapper<T>(msg, id);
+                detail::client_message_value v = mw;
+                auto res = tao::json::to_string(v);
+                mc.preClientConnectionCache.push_back(res);
+            }
+            return;
         }
-        return;
-    }
 
-    auto mw = detail::ResponseWrapper<T>(msg, id);
-    detail::client_message_value v = mw;
-    auto res = tao::json::to_string(v);
-    mc.clientCallback(res);
+        auto mw = detail::ResponseWrapper<T>(msg, id);
+        detail::client_message_value v = mw;
+        auto res = tao::json::to_string(v);
+        mc.clientCallback(res);
+    }
+    catch (const std::exception &e)
+    {
+        if (id != s2c_report_error)
+        {
+            mc.reportErrorToClient("JSON Streaming Error", e.what());
+        }
+    }
 }
 
 inline void serializationThreadExecuteClientMessage(const std::string &msgView, engine::Engine &e,
