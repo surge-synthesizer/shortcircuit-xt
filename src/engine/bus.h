@@ -76,9 +76,10 @@ enum AvailableBusEffects
 
 struct BusEffectStorage
 {
+    BusEffectStorage() { std::fill(params.begin(), params.end(), 0.f); }
     static constexpr int maxBusEffectParams{12};
-    AvailableBusEffects type;
-    std::array<float, maxBusEffectParams> params;
+    AvailableBusEffects type{AvailableBusEffects::none};
+    std::array<float, maxBusEffectParams> params{};
 };
 struct BusEffect
 {
@@ -131,6 +132,7 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
     struct BusSendStorage
     {
+        BusSendStorage() { std::fill(sendLevels.begin(), sendLevels.end(), 0.f); }
         bool hasSends{false};
         bool supportsSends{false};
 
