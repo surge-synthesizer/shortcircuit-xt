@@ -531,10 +531,6 @@ void PartGroupSidebar::editorSelectionChanged()
     SCLOG("Editor Selection Changed " << SCD(editor->allSelections.size())
                                       << SCD(editor->currentLeadSelection.has_value()));
 
-    if (editor->currentLeadSelection.has_value())
-        SCLOG(" OL " << *(editor->currentLeadSelection));
-    for (const auto &as : editor->allSelections)
-        SCLOG(" AS " << as);
     if (groupSidebar)
     {
         groupSidebar->updateSelection();

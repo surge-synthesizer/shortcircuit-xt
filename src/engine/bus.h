@@ -71,7 +71,7 @@ enum AvailableBusEffects
     reverb1,
     flanger,
     delay,
-    bonsai
+    bonsai // if you make bonsai not last, make sure to update the fromString range
 };
 
 struct BusEffectStorage
@@ -175,7 +175,7 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
 inline AvailableBusEffects fromStringAvailableBusEffects(const std::string &s)
 {
     static auto inverse = makeEnumInverse<AvailableBusEffects, toStringAvailableBusEffects>(
-        AvailableBusEffects::none, AvailableBusEffects::delay);
+        AvailableBusEffects::none, AvailableBusEffects::bonsai);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return none;

@@ -34,7 +34,7 @@
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
 
-#define DEBUG_SELECTION 0
+#define DEBUG_SELECTION 1
 
 namespace scxt::selection
 {
@@ -167,12 +167,13 @@ void SelectionManager::adjustInternalStateForAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
 #if DEBUG_SELECTION
-    SCFCOUT << z << std::endl;
+    SCLOG_WFUNC(z);
 #endif
     auto za = (ZoneAddress)z;
     // OK so basically theres a few cases
     if (!z.selecting)
     {
+        SCLOG("All selected zones: removing " << za)
         allSelectedZones.erase(za);
     }
     else
@@ -226,7 +227,7 @@ void SelectionManager::debugDumpSelectionState()
 void SelectionManager::sendSelectedZonesToClient()
 {
 #if DEBUG_SELECTION
-    SCFCOUT << "Sending Data" << std::endl;
+    SCLOG("Sending selection data to client");
 #endif
     serializationSendToClient(cms::s2c_send_selection_state,
                               cms::selectedStateMessage_t{leadZone, allSelectedZones},

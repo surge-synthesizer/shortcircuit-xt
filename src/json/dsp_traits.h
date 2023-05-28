@@ -48,7 +48,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
              {"mix", t.mix},
              {"floatParams", t.floatParams},
              {"intParams", t.intParams},
-             {"isBypassed", t.isBypassed}};
+             {"isActive", t.isActive}};
     }
 
     template <template <typename...> class Traits>
@@ -68,7 +68,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         findIf(v, "mix", result.mix);
         findIf(v, "floatParams", result.floatParams);
         findIf(v, "intParams", result.intParams);
-        findOrSet(v, "isBypassed", false, result.isBypassed);
+        findOrSet(v, "isActive", false, result.isActive);
     }
 };
 

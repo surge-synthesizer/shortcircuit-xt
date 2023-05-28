@@ -188,7 +188,7 @@ bool Voice::process()
 
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
-        if (processors[i]) // TODO && (!zone->processors[0].bypass))
+        if (processors[i])
         {
             processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
 
@@ -391,6 +391,7 @@ void Voice::initializeProcessors()
     assert(zone->getEngine());
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
+        processorIsActive[i] = zone->processorStorage[i].isActive;
         processorMix[i].set_target_instant(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
 
         processorType[i] = zone->processorStorage[i].type;
@@ -399,11 +400,18 @@ void Voice::initializeProcessors()
         auto fp = modMatrix.getValuePtr(modulation::vmd_Processor_FP1, i);
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
-        processors[i] = dsp::processor::spawnProcessorInPlace(
-            processorType[i], zone->getEngine()->getMemoryPool().get(),
-            processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
-            processorIntParams[i]);
 
+        if (processorIsActive[i])
+        {
+            processors[i] = dsp::processor::spawnProcessorInPlace(
+                processorType[i], zone->getEngine()->getMemoryPool().get(),
+                processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
+                processorIntParams[i]);
+        }
+        else
+        {
+            processors[i] = nullptr;
+        }
         if (processors[i])
         {
             processors[i]->setSampleRate(sampleRate);

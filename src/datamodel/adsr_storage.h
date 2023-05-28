@@ -46,7 +46,7 @@ struct AdsrStorage
     float aShape{0}, dShape{0}, rShape{0};
 
     // The names are not stored on these right now. Fix?
-    static datamodel::pmd paramAHDR, paramS, paramShape;
+    static datamodel::pmd paramAHD, paramR, paramS, paramShape;
 
     auto asTuple() const { return std::tie(a, d, s, r, isDigital, aShape, dShape, rShape); }
     bool operator==(const AdsrStorage &other) const { return asTuple() == other.asTuple(); }

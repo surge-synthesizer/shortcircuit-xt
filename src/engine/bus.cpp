@@ -145,7 +145,9 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
 {
     namespace sfx = sst::effects;
     if (s)
+    {
         s->type = p;
+    }
     switch (p)
     {
     case none:

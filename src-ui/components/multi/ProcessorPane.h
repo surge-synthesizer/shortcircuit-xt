@@ -51,6 +51,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     typedef connectors::DiscretePayloadDataAttachment<ProcessorPane,
                                                       dsp::processor::ProcessorStorage>
         int_attachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<ProcessorPane,
+                                                     dsp::processor::ProcessorStorage>
+        bool_attachment_t;
 
     dsp::processor::ProcessorStorage processorView;
     dsp::processor::ProcessorControlDescription processorControlDescription;
@@ -97,6 +100,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
 
+    std::unique_ptr<juce::Component> processorRegion;
+
     std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
                dsp::processor::maxProcessorFloatParams>
         floatEditors;
@@ -114,6 +119,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         intLabels;
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
+    std::unique_ptr<bool_attachment_t> bypassAttachment;
 
     std::unique_ptr<sst::jucegui::components::Knob> mixEditor;
     std::unique_ptr<sst::jucegui::components::Label> mixLabel;

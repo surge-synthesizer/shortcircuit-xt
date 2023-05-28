@@ -175,12 +175,12 @@ struct ProcessorStorage
     float mix{0};
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int, maxProcessorIntParams> intParams;
-    bool isBypassed{false};
+    bool isActive{true};
 
     bool operator==(const ProcessorStorage &other) const
     {
         return (type == other.type && mix == other.mix && floatParams == other.floatParams &&
-                intParams == other.intParams && isBypassed == other.isBypassed);
+                intParams == other.intParams && isActive == other.isActive);
     }
     bool operator!=(const ProcessorStorage &other) const { return !(*this == other); }
 };
