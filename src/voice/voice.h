@@ -126,6 +126,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         16)[engine::processorsPerZone][dsp::processor::processorMemoryBufferSize];
     int32_t processorIntParams alignas(
         16)[engine::processorsPerZone][dsp::processor::maxProcessorIntParams];
+    bool processorIsActive[engine::processorsPerZone]{false, false, false, false};
     bool processorConsumesMono[engine::processorsPerZone]{false, false, false, false};
     bool processorProducesStereo[engine::processorsPerZone]{false, false, false, false};
 

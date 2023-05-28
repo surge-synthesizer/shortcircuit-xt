@@ -77,19 +77,19 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     connectors::ConnectorFactory<attachment_t, comp::Knob> knobFactory(
         [this](auto &a) { this->adsrChangedFromGui(a); }, this, adsrView);
 
-    stowOnto(sliders, Ctrl::A, sliderFactory.attach("Attack", dma::paramAHDR, &dma::a));
+    stowOnto(sliders, Ctrl::A, sliderFactory.attach("Attack", dma::paramAHD, &dma::a));
     makeLabel(Ctrl::A, "A");
 
-    stowOnto(sliders, Ctrl::H, sliderFactory.attach("Hold", dma::paramAHDR, &dma::h));
+    stowOnto(sliders, Ctrl::H, sliderFactory.attach("Hold", dma::paramAHD, &dma::h));
     makeLabel(Ctrl::H, "H");
 
-    stowOnto(sliders, Ctrl::D, sliderFactory.attach("Decay", dma::paramAHDR, &dma::d));
+    stowOnto(sliders, Ctrl::D, sliderFactory.attach("Decay", dma::paramAHD, &dma::d));
     makeLabel(Ctrl::D, "D");
 
     stowOnto(sliders, Ctrl::S, sliderFactory.attach("Sustain", dma::paramS, &dma::s));
     makeLabel(Ctrl::S, "S");
 
-    stowOnto(sliders, Ctrl::R, sliderFactory.attach("Release", dma::paramAHDR, &dma::r));
+    stowOnto(sliders, Ctrl::R, sliderFactory.attach("Release", dma::paramR, &dma::r));
     makeLabel(Ctrl::R, "R");
 
     stowOnto(knobs, Ctrl::Ash, knobFactory.attach("A Shape", dma::paramShape, &dma::aShape), false);
@@ -100,6 +100,8 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         if (safeThis)
             safeThis->showHamburgerMenu();
     };
+
+    adsrDeactivated();
 }
 
 void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)

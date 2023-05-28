@@ -30,8 +30,9 @@
 namespace scxt::datamodel
 {
 // The names are not stored on these right now. Fix?
-datamodel::pmd AdsrStorage::paramAHDR{datamodel::envelopeThirtyTwo()},
-    AdsrStorage::paramS{datamodel::pmd().asPercent()},
-    AdsrStorage::paramShape{datamodel::pmd().asPercentBipolar()};
+datamodel::pmd AdsrStorage::paramAHD = datamodel::envelopeThirtyTwo().withDefault(0.f),
+               AdsrStorage::paramR = datamodel::envelopeThirtyTwo().withDefault(0.5f),
+               AdsrStorage::paramS = datamodel::pmd().asPercent().withDefault(1.f),
+               AdsrStorage::paramShape = datamodel::pmd().asPercentBipolar().withDefault(0.f);
 
 } // namespace scxt::datamodel

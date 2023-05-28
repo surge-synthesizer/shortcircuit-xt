@@ -41,12 +41,15 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index)
     : HasEditor(e), sst::jucegui::components::NamedPanel("PROCESSOR " + std::to_string(index + 1)),
       index(index)
 {
+    setContentAreaComponent(std::make_unique<juce::Component>());
     hasHamburger = true;
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
             safeThis->showHamburgerMenu();
     };
+
+    setTogglable(true);
 }
 
 ProcessorPane::~ProcessorPane() { resetControls(); }
@@ -56,7 +59,11 @@ void ProcessorPane::updateTooltip(const attachment_t &at)
     editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
 }
 
-void ProcessorPane::resized() { rebuildControlsFromDescription(); }
+void ProcessorPane::resized()
+{
+    sst::jucegui::components::NamedPanel::resized();
+    rebuildControlsFromDescription();
+}
 
 void ProcessorPane::showHamburgerMenu()
 {
@@ -80,7 +87,7 @@ void ProcessorPane::showHamburgerMenu()
 
 void ProcessorPane::resetControls()
 {
-    removeAllChildren();
+    getContentAreaComponent()->removeAllChildren();
 
     // we assume the controls clear before attachments so make sure of that
     for (auto &k : floatEditors)
@@ -88,6 +95,7 @@ void ProcessorPane::resetControls()
     for (auto &i : intSwitches)
         i.reset(nullptr);
     mixEditor.reset(nullptr);
+    setToggleDataSource(nullptr);
 }
 
 void ProcessorPane::rebuildControlsFromDescription()
@@ -97,7 +105,7 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     if (!isEnabled())
     {
-        setName("PROCESSOR " + std::to_string(index + 1));
+        setToggleDataSource(nullptr);
         repaint();
         return;
     }
@@ -106,6 +114,7 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     if (processorControlDescription.type == dsp::processor::proct_none)
     {
+        setToggleDataSource(nullptr);
         repaint();
         return;
     }
@@ -131,7 +140,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     }
 
     auto at = std::make_unique<attachment_t>(
-        this, datamodel::pmd().asPercent().withName("Mix"),
+        this, datamodel::pmd().asPercent().withName("Mix").withDefault(1.0),
         [this](const auto &at) { this->processorChangedFromGui(at); },
         [](const auto &pl) { return pl.mix; }, processorView.mix);
     mixAttachment = std::move(at);
@@ -145,6 +154,15 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControls();
         break;
     }
+
+    setToggleDataSource(nullptr);
+    bypassAttachment = std::make_unique<bool_attachment_t>(
+        this, "Bypass",
+        [this](const auto &at) {
+            sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
+        },
+        [](const auto &pl) { return pl.isActive; }, processorView.isActive);
+    setToggleDataSource(bypassAttachment.get());
 
     repaint();
 }
@@ -160,14 +178,14 @@ std::unique_ptr<T> ProcessorPane::attachContinuousTo(const std::unique_ptr<attac
     };
     kn->onEndEdit = [this]() { editor->hideTooltip(); };
 
-    addAndMakeVisible(*kn);
+    getContentAreaComponent()->addAndMakeVisible(*kn);
     return std::move(kn);
 }
 
 void ProcessorPane::layoutControls()
 {
     auto labelHeight = 18;
-    auto rc = getContentArea();
+    auto rc = getContentAreaComponent()->getLocalBounds();
     auto rcw = rc.getWidth();
     auto kw = rcw * 0.25;
 
@@ -181,7 +199,7 @@ void ProcessorPane::layoutControls()
 
         auto label = std::make_unique<sst::jucegui::components::Label>();
         label->setText(processorControlDescription.floatControlDescriptions[i].name);
-        addAndMakeVisible(*label);
+        getContentAreaComponent()->addAndMakeVisible(*label);
 
         floatLabels[i] = std::move(label);
         floatLabels[i]->setBounds(lb);
@@ -200,12 +218,12 @@ void ProcessorPane::layoutControls()
         auto kn = std::make_unique<sst::jucegui::components::MultiSwitch>();
         kn->setSource(intAttachments[i].get());
         kn->setBounds(kb);
-        addAndMakeVisible(*kn);
+        getContentAreaComponent()->addAndMakeVisible(*kn);
 
         auto label = std::make_unique<sst::jucegui::components::Label>();
         label->setText(processorControlDescription.intControlDescriptions[i].name);
         label->setBounds(lb);
-        addAndMakeVisible(*label);
+        getContentAreaComponent()->addAndMakeVisible(*label);
 
         intSwitches[i] = std::move(kn);
         intLabels[i] = std::move(label);
@@ -223,7 +241,7 @@ void ProcessorPane::layoutControls()
         auto label = std::make_unique<sst::jucegui::components::Label>();
         label->setText("mix");
         label->setBounds(lb);
-        addAndMakeVisible(*label);
+        getContentAreaComponent()->addAndMakeVisible(*label);
         mixLabel = std::move(label);
 
         mixEditor = attachContinuousTo<sst::jucegui::components::Knob>(mixAttachment);
@@ -238,7 +256,7 @@ void ProcessorPane::layoutControlsSuperSVF()
     assert(processorControlDescription.numIntParams == 2);
 
     auto labelHeight = 18;
-    auto rc = getContentArea();
+    auto rc = getContentAreaComponent()->getLocalBounds();
     auto rcw = rc.getWidth();
     auto pct = 0.35;
     auto kw = rcw * pct;
@@ -250,7 +268,7 @@ void ProcessorPane::layoutControlsSuperSVF()
     floatLabels[0] = std::make_unique<sst::jucegui::components::Label>();
     floatLabels[0]->setText("Cutoff");
     floatLabels[0]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    addAndMakeVisible(*floatLabels[0]);
+    getContentAreaComponent()->addAndMakeVisible(*floatLabels[0]);
 
     kb = kb.translated(rcw * 0.5, 0);
     floatEditors[1] = attachContinuousTo(floatAttachments[1]);
@@ -258,7 +276,7 @@ void ProcessorPane::layoutControlsSuperSVF()
     floatLabels[1] = std::make_unique<sst::jucegui::components::Label>();
     floatLabels[1]->setText("Resonance");
     floatLabels[1]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    addAndMakeVisible(*floatLabels[1]);
+    getContentAreaComponent()->addAndMakeVisible(*floatLabels[1]);
 
     auto okb = floatLabels[0]->getBounds().expanded((0.5 - pct) * 0.5 * rcw, 0);
 
@@ -269,7 +287,7 @@ void ProcessorPane::layoutControlsSuperSVF()
             sst::jucegui::components::MultiSwitch::HORIZONTAL);
         intSwitches[i]->setSource(intAttachments[i].get());
         intSwitches[i]->setBounds(okb);
-        addAndMakeVisible(*intSwitches[i]);
+        getContentAreaComponent()->addAndMakeVisible(*intSwitches[i]);
         okb = okb.translated(0, 28);
     }
 
@@ -277,12 +295,12 @@ void ProcessorPane::layoutControlsSuperSVF()
     mixr = mixr.withHeight(mixr.getWidth());
     mixEditor = attachContinuousTo(mixAttachment);
     mixEditor->setBounds(mixr);
-    addAndMakeVisible(*mixEditor);
+    getContentAreaComponent()->addAndMakeVisible(*mixEditor);
 
     mixLabel = std::make_unique<sst::jucegui::components::Label>();
     mixLabel->setText("Mix");
     mixLabel->setBounds(mixr.translated(0, mixr.getHeight()).withHeight(18));
-    addAndMakeVisible(*mixLabel);
+    getContentAreaComponent()->addAndMakeVisible(*mixLabel);
 }
 
 void ProcessorPane::processorChangedFromGui(const attachment_t &at)
