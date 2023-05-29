@@ -34,7 +34,7 @@
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
 
-#define DEBUG_SELECTION 1
+#define DEBUG_SELECTION 0
 
 namespace scxt::selection
 {
