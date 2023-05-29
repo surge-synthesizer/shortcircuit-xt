@@ -116,24 +116,40 @@ struct LfoDataRender : juce::Component
         g.drawRect(getLocalBounds());
     }
 
-    void handleMouseAt(const juce::Point<float> &f)
+    int indexForPosition(const juce::Point<float> &f)
     {
         if (!getLocalBounds().toFloat().contains(f))
-            return;
+            return -1;
         if (!parent)
-            return;
+            return -1;
 
         int sp = modulation::modulators::stepLfoSteps;
         auto &ls = parent->lfoData[parent->selectedTab];
         auto w = getWidth() * 1.f / ls.repeat;
 
         auto idx = std::clamp((int)std::floor(f.x / w), 0, sp);
+        return idx;
+    }
+    void handleMouseAt(const juce::Point<float> &f)
+    {
+        auto idx = indexForPosition(f);
+        if (idx < 0)
+            return;
+
         auto d = (1 - f.y / getHeight()) * 2 - 1;
         parent->lfoData[parent->selectedTab].data[idx] = d;
         parent->pushCurrentLfoUpdate();
     }
     void mouseDown(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
     void mouseDrag(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
+    void mouseDoubleClick(const juce::MouseEvent &event) override
+    {
+        auto idx = indexForPosition(event.position);
+        if (idx < 0)
+            return;
+        parent->lfoData[parent->selectedTab].data[idx] = 0.f;
+        parent->pushCurrentLfoUpdate();
+    }
 }; // namespace juce::Component
 
 LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)

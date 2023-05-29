@@ -77,6 +77,48 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
         }
         int getNumRows() override { return thisGroup.size() + 1; /* for the plus */ }
 
+        // Selection can come from server update or from juce keypress etc
+        // for keypress etc... we need to push back to the server
+        bool selectionFromServer{false};
+        void selectedRowsChanged(int lastRowSelected) override
+        {
+            if (!selectionFromServer)
+            {
+                // We want a modified verion of the old PGZ::selectedRowsChanged
+                const auto &r = sidebar->listBox->getSelectedRows();
+                if (r.size() == 1)
+                {
+                    auto rg = r.getRange(0);
+                    auto rs = rg.getStart();
+                    auto re = rg.getEnd();
+                    if (re != rs + 1)
+                    {
+                        SCLOG("TODO: Multi-ui driven sidevar selection");
+                        return;
+                    }
+                    auto se = selection::SelectionManager::SelectActionContents(getZoneAddress(rs));
+                    se.selecting = true;
+                    se.distinct = true;
+                    se.selectingAsLead = true;
+                    sidebar->editor->doMultiSelectionAction({se});
+                }
+                else
+                {
+                    SCLOG("TODO: Multi-ui driven sidebar selection");
+                    return;
+                }
+            }
+        }
+
+        selection::SelectionManager::ZoneAddress getZoneAddress(int rowNumber)
+        {
+            auto &tgl = thisGroup;
+            if (rowNumber < 0 || rowNumber >= tgl.size())
+                return {};
+            auto &sad = tgl[rowNumber].first;
+            return sad;
+        }
+
         struct rowComponent : juce::Component, juce::DragAndDropTarget
         {
             int rowNumber{-1};
@@ -141,11 +183,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
             bool isDragging{false}, isPopup{false};
             selection::SelectionManager::ZoneAddress getZoneAddress()
             {
-                auto &tgl = lbm->thisGroup;
-                if (rowNumber < 0 || rowNumber >= tgl.size())
-                    return {};
-                auto &sad = tgl[rowNumber].first;
-                return sad;
+                return lbm->getZoneAddress(rowNumber);
             }
             bool isZone() { return getZoneAddress().zone >= 0; }
             bool isGroup() { return getZoneAddress().zone == -1; }
@@ -347,7 +385,9 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                 }
             }
         }
+        listBoxModel->selectionFromServer = true;
         listBox->setSelectedRows(rows);
+        listBoxModel->selectionFromServer = false;
     }
 };
 
@@ -515,10 +555,11 @@ void PartGroupSidebar::resized()
 void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p)
 {
     pgzStructure = p;
-    SCLOG("PartGroupZone in Sidebar");
+    SCLOG("PartGroupZone in Sidebar: Showing Part0 Entries");
     for (const auto &a : pgzStructure)
     {
-        SCLOG("  | " << a.second << " -> " << a.first);
+        if (a.first.part == 0)
+            SCLOG("  | " << a.second << " -> " << a.first);
     }
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();
