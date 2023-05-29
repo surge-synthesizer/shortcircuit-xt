@@ -224,12 +224,13 @@ struct MappingDisplay : juce::Component, HasEditor
         attachments[Ctrl::RootKey]->setAsMidiNote();
 
         attachEditor(
-            Ctrl::KeyStart, datamodel::pmd().asMIDINote().withName("Key Start"),
+            Ctrl::KeyStart,
+            datamodel::pmd().asMIDINote().withName("Key Start").withDefault(60 - 12),
             [](const auto &pl) { return pl.keyboardRange.keyStart; },
             mappingView.keyboardRange.keyStart);
         attachments[Ctrl::KeyStart]->setAsMidiNote();
         attachEditor(
-            Ctrl::KeyEnd, datamodel::pmd().asMIDINote().withName("Key End"),
+            Ctrl::KeyEnd, datamodel::pmd().asMIDINote().withName("Key End").withDefault(60 + 12),
             [](const auto &pl) { return pl.keyboardRange.keyEnd; },
             mappingView.keyboardRange.keyEnd);
         attachments[Ctrl::KeyEnd]->setAsMidiNote();
@@ -238,53 +239,53 @@ struct MappingDisplay : juce::Component, HasEditor
         auto mDist = []() { return datamodel::pmd().asMIDINote(); };
 
         attachEditor(
-            Ctrl::FadeStart, mDist().withName("Fade Start"),
+            Ctrl::FadeStart, mDist().withName("Fade Start").withDefault(0),
             [](const auto &pl) { return pl.keyboardRange.fadeStart; },
             mappingView.keyboardRange.fadeStart);
         attachments[Ctrl::FadeStart]->setAsInteger();
         attachEditor(
-            Ctrl::FadeEnd, mDist().withName("Fade End"),
+            Ctrl::FadeEnd, mDist().withName("Fade End").withDefault(0),
             [](const auto &pl) { return pl.keyboardRange.fadeEnd; },
             mappingView.keyboardRange.fadeEnd);
         attachments[Ctrl::FadeEnd]->setAsInteger();
         addLabel(Ctrl::FadeStart, "Crossfade");
 
         attachEditor(
-            Ctrl::VelStart, datamodel::pmd().asMIDINote().withName("Vel Start"),
+            Ctrl::VelStart, datamodel::pmd().asMIDINote().withName("Vel Start").withDefault(0),
             [](const auto &pl) { return pl.velocityRange.velStart; },
             mappingView.velocityRange.velStart);
         attachments[Ctrl::VelStart]->setAsInteger();
         attachEditor(
-            Ctrl::VelEnd, datamodel::pmd().asMIDINote().withName("Vel End"),
+            Ctrl::VelEnd, datamodel::pmd().asMIDINote().withName("Vel End").withDefault(127),
             [](const auto &pl) { return pl.velocityRange.velEnd; },
             mappingView.velocityRange.velEnd);
         attachments[Ctrl::VelEnd]->setAsInteger();
         addLabel(Ctrl::VelStart, "Vel Range");
 
         attachEditor(
-            Ctrl::VelFadeStart, mDist().withName("Vel Fade Start"),
+            Ctrl::VelFadeStart, mDist().withName("Vel Fade Start").withDefault(0),
             [](const auto &pl) { return pl.velocityRange.fadeStart; },
             mappingView.velocityRange.fadeStart);
         attachments[Ctrl::VelFadeStart]->setAsInteger();
         attachEditor(
-            Ctrl::VelFadeEnd, mDist().withName("Vel Fade End"),
+            Ctrl::VelFadeEnd, mDist().withName("Vel Fade End").withDefault(0),
             [](const auto &pl) { return pl.velocityRange.fadeEnd; },
             mappingView.velocityRange.fadeEnd);
         attachments[Ctrl::VelFadeEnd]->setAsInteger();
         addLabel(Ctrl::VelFadeStart, "Crossfade");
 
         attachEditor(
-            Ctrl::PBDown, mDist().withName("PBDown"), [](const auto &pl) { return pl.pbDown; },
-            mappingView.pbDown);
+            Ctrl::PBDown, mDist().withName("PBDown").withDefault(2),
+            [](const auto &pl) { return pl.pbDown; }, mappingView.pbDown);
         attachments[Ctrl::PBDown]->setAsInteger();
         attachEditor(
-            Ctrl::PBUp, mDist().withName("PBUp"), [](const auto &pl) { return pl.pbUp; },
-            mappingView.pbUp);
+            Ctrl::PBUp, mDist().withName("PBUp").withDefault(2),
+            [](const auto &pl) { return pl.pbUp; }, mappingView.pbUp);
         attachments[Ctrl::PBUp]->setAsInteger();
         addLabel(Ctrl::PBDown, "Pitch Bend");
 
         attachFloatEditor(
-            Ctrl::Pan, datamodel::pmd().asPercentBipolar().withName("Pan"),
+            Ctrl::Pan, datamodel::pmd().asPercentBipolar().withName("Pan").withDefault(0),
             [](const auto &pl) -> float { return pl.pan; }, mappingView.pan);
         addGlyph(Ctrl::Pan, sst::jucegui::components::GlyphPainter::PAN);
 
@@ -560,10 +561,10 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
     {
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
-        auto kw = displayRegion.getWidth() / 127.0;
+        auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote + 1);
         auto vh = displayRegion.getHeight() / 127.0;
 
-        auto nx = std::clamp((int)std::round(e.position.x / kw), 0, 127);
+        auto nx = std::clamp((int)std::round(e.position.x / kw) + firstMidiNote, 0, 127);
         auto vy = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 127);
 
         auto &vr = display->mappingView.velocityRange;
@@ -1260,6 +1261,8 @@ void MappingPane::temporarySetKeyboardCenter(int i)
 {
     mappingDisplay->zonesAndKeyboard->firstMidiNote = (i == -1 ? 0 : i - 24);
     mappingDisplay->zonesAndKeyboard->lastMidiNote = (i == -1 ? 128 : i + 24);
+    if (editor->currentLeadSelection.has_value())
+        mappingDisplay->setLeadSelection(*(editor->currentLeadSelection));
     mappingDisplay->zonesAndKeyboard->repaint();
 }
 
