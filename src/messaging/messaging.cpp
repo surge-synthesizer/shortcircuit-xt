@@ -288,6 +288,14 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
 
 void MessageController::reportErrorToClient(const std::string &title, const std::string &body)
 {
+    SCLOG("Error: [" << title << "]");
+    auto blog = body;
+    auto pos{0};
+    while ((pos = blog.find("\n", pos)) != std::string::npos)
+    {
+        blog[pos] = ' ';
+    }
+    SCLOG(blog);
     client::serializationSendToClient(client::s2c_report_error, client::s2cError_t{title, body},
                                       *(this));
 }

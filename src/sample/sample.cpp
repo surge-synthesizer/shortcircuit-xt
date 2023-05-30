@@ -51,7 +51,9 @@ bool Sample::load(const fs::path &path)
         clear_data(); // clear to a more predictable state
 
         bool r = parse_riff_wave(data, datasize);
-        // TODO deal with return value
+        if (!r)
+            return false;
+
         sample_loaded = true;
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
