@@ -285,6 +285,11 @@ struct MappingDisplay : juce::Component, HasEditor
         addLabel(Ctrl::PBDown, "Pitch Bend");
 
         attachFloatEditor(
+            Ctrl::Level, datamodel::pmd().asPercent().withName("Amplitude").withDefault(1.0),
+            [](const auto &pl) -> float { return pl.amplitude; }, mappingView.amplitude);
+        addGlyph(Ctrl::Level, sst::jucegui::components::GlyphPainter::VOLUME);
+
+        attachFloatEditor(
             Ctrl::Pan, datamodel::pmd().asPercentBipolar().withName("Pan").withDefault(0),
             [](const auto &pl) -> float { return pl.pan; }, mappingView.pan);
         addGlyph(Ctrl::Pan, sst::jucegui::components::GlyphPainter::PAN);
@@ -365,6 +370,10 @@ struct MappingDisplay : juce::Component, HasEditor
         };
         cr = cr.translated(0, rowHeight + rowMargin);
         //  (volume)
+
+        cr = cr.translated(0, rowHeight + rowMargin);
+        glyphs[Level]->setBounds(cQ(2));
+        textEds[Level]->setBounds(cQ(3));
 
         cr = cr.translated(0, rowHeight + rowMargin);
         glyphs[Pan]->setBounds(cQ(2));

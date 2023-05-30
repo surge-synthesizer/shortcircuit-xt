@@ -132,10 +132,13 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
 
     void initializeProcessors();
 
-    void panOutputsBy(bool inputIsMono, float pv);
+    using lipol = sst::basic_blocks::dsp::lipol_sse<blockSize, false>;
+
+    lipol samplePan, sampleAmp, outputPan, outputAmp;
+    void panOutputsBy(bool inputIsMono, const lipol &pv);
 
     // TODO - this should be more carefully structured for modulation onto the entire filter
-    sst::basic_blocks::dsp::lipol_sse<blockSize, false> processorMix[engine::processorsPerZone];
+    lipol processorMix[engine::processorsPerZone];
 
     /*
      * Voice State on Creation

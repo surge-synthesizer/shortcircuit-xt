@@ -82,6 +82,10 @@ enum VoiceModMatrixDestinationType
 
     vmd_Zone_Sample_Pan,
     vmd_Zone_Output_Pan,
+
+    vmd_Zone_Sample_Amplitude,
+    vmd_Zone_Output_Amplitude,
+
     vmd_Sample_Playback_Ratio,
     vmd_Sample_Pitch_Offset,
 
