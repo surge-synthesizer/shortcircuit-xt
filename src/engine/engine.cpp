@@ -458,8 +458,10 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     if (!sid.has_value())
     {
         messageController->reportErrorToClient(
-            "Unable to load Sample", "Sample load failed on " + p.u8string() + "\n" +
-                                         "It is either an unsupported format or invalid file.");
+            "Unable to load Sample",
+            "Sample load failed:\n\n" + p.u8string() + "\n\n" +
+                "It is either an unsupported format or invalid file. "
+                "More information may be available in the log file (menu/log)");
         return;
     }
 

@@ -66,6 +66,7 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 
 std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, const SampleID &id)
 {
+    SCLOG("Loading sample " << p.u8string() << " into " << id.to_string());
     assert(threadingChecker.isSerialThread());
     SampleID::guaranteeNextAbove(id);
 
@@ -80,7 +81,9 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
     auto sp = std::make_shared<Sample>(id);
 
     if (!sp->load(p))
-        return {};
+    {
+        return std::nullopt;
+    }
 
     samples[sp->id] = sp;
     return sp->id;
