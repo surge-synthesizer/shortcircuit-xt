@@ -118,8 +118,11 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
     baseValues[destIndex(vmd_Sample_Playback_Ratio, 0)] = 0;
     baseValues[destIndex(vmd_Sample_Pitch_Offset, 0)] = z->mapping.pitchOffset;
     baseValues[destIndex(vmd_Zone_Sample_Pan, 0)] = z->mapping.pan;
+    baseValues[destIndex(vmd_Zone_Sample_Amplitude, 0)] = z->mapping.amplitude;
+
     // TODO: FixMe when we do output section
     baseValues[destIndex(vmd_Zone_Output_Pan, 0)] = 0;
+    baseValues[destIndex(vmd_Zone_Output_Amplitude, 0)] = 1.f;
 }
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
@@ -216,6 +219,11 @@ std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationTy
         return "vmd_pan";
     case vmd_Zone_Output_Pan:
         return "vmd_output_pan";
+
+    case vmd_Zone_Sample_Amplitude:
+        return "vmd_amp";
+    case vmd_Zone_Output_Amplitude:
+        return "vmd_output_amp";
 
     case numVoiceMatrixDestinations:
         throw std::logic_error("Can't convert numVoiceMatrixDestinations to string");
@@ -465,6 +473,10 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
         return "Sample Pan";
     case vmd_Zone_Output_Pan:
         return "Output Pan";
+    case vmd_Zone_Sample_Amplitude:
+        return "Sample Amplitude";
+    case vmd_Zone_Output_Amplitude:
+        return "Output Amplitude";
     default:
         break;
     }

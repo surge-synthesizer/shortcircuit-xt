@@ -182,8 +182,20 @@ bool Voice::process()
     auto pvz = modMatrix.getValue(modulation::vmd_Zone_Sample_Pan, 0);
     if (pvz != 0.f)
     {
-        panOutputsBy(chainIsMono, pvz);
+        samplePan.set_target(pvz);
+        panOutputsBy(chainIsMono, samplePan);
         chainIsMono = false;
+    }
+
+    auto pva = modMatrix.getValue(modulation::vmd_Zone_Sample_Amplitude, 0);
+    sampleAmp.set_target(pva);
+    if (chainIsMono)
+    {
+        sampleAmp.multiply_block(output[0]);
+    }
+    else
+    {
+        sampleAmp.multiply_2_blocks(output[0], output[1]);
     }
 
     for (auto i = 0; i < engine::processorsPerZone; ++i)
@@ -237,8 +249,20 @@ bool Voice::process()
     auto pvo = modMatrix.getValue(modulation::vmd_Zone_Output_Pan, 0);
     if (pvo != 0.f)
     {
-        panOutputsBy(chainIsMono, pvo);
+        outputPan.set_target(pvo);
+        panOutputsBy(chainIsMono, outputPan);
         chainIsMono = false;
+    }
+
+    auto pao = modMatrix.getValue(modulation::vmd_Zone_Output_Amplitude, 0);
+    outputAmp.set_target(pao);
+    if (chainIsMono)
+    {
+        outputAmp.multiply_block(output[0]);
+    }
+    else
+    {
+        outputAmp.multiply_2_blocks(output[0], output[1]);
     }
 
     // At the end of the voice we have to produce stereo
@@ -263,10 +287,11 @@ bool Voice::process()
     return true;
 }
 
-void Voice::panOutputsBy(bool chainIsMono, float pv)
+void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
 {
     namespace pl = sst::basic_blocks::dsp::pan_laws;
-    pv = (std::clamp(pv, -1.f, 1.f) + 1) * 0.5;
+    // For now we don't interpolate over the block for pan
+    auto pv = (std::clamp(plip.target, -1.f, 1.f) + 1) * 0.5;
     pl::panmatrix_t pmat{1, 1, 0, 0};
     if (chainIsMono)
     {
@@ -389,6 +414,10 @@ void Voice::initializeProcessors()
 {
     assert(zone);
     assert(zone->getEngine());
+    samplePan.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Sample_Pan, 0));
+    sampleAmp.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Sample_Amplitude, 0));
+    outputPan.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Output_Pan, 0));
+    outputAmp.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Output_Amplitude, 0));
     for (auto i = 0; i < engine::processorsPerZone; ++i)
     {
         processorIsActive[i] = zone->processorStorage[i].isActive;
