@@ -30,25 +30,62 @@
 namespace scxt::ui::multi
 {
 
+struct cc : juce::Component
+{
+    juce::Colour c;
+    cc(juce::Colour ci) : c(ci) {}
+    void paint(juce::Graphics &g) { g.fillAll(c); }
+};
+
+struct OutputTab : juce::Component, HasEditor
+{
+    OutputTab(SCXTEditor *e) : HasEditor(e) {}
+
+    engine::Zone::ZoneOutputInfo info;
+};
+
 OutputPane::OutputPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
     hasHamburger = false;
     isTabbed = true;
-    tabNames = {"MAIN", "AUX", "ROUTE"};
+    tabNames = {"OUTPUT", "PROC ROUTING"};
+
+    output = std::make_unique<OutputTab>(editor);
+    addAndMakeVisible(*output);
+    proc = std::make_unique<cc>(juce::Colours::black.withAlpha(0.f));
+    addChildComponent(*proc);
 
     resetTabState();
 
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
-        if (wt)
-            wt->label->setText(wt->tabNames[i], juce::dontSendNotification);
+        if (!wt)
+            return;
+        if (i == 0)
+        {
+            wt->output->setVisible(true);
+            wt->proc->setVisible(false);
+        }
+        else
+        {
+            wt->output->setVisible(false);
+            wt->proc->setVisible(true);
+        }
     };
-
-    label = std::make_unique<juce::Label>("MAPPING", "MAIN");
-    label->setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-    label->setColour(juce::Label::textColourId, juce::Colour(105, 225, 105));
-    label->setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(*label);
 }
 
-void OutputPane::resized() { label->setBounds(getContentArea()); }
+OutputPane::~OutputPane() {}
+
+void OutputPane::resized()
+{
+    output->setBounds(getContentArea());
+    proc->setBounds(getContentArea());
+}
+
+void OutputPane::setActive(bool b) { SCLOG_UNIMPL("setActive " << (b ? "ON" : "OFF")); }
+
+void OutputPane::setOutputData(const engine::Zone::ZoneOutputInfo &d)
+{
+    output->info = d;
+    output->repaint();
+}
 } // namespace scxt::ui::multi

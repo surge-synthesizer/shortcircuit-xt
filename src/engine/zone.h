@@ -120,7 +120,11 @@ struct Zone : MoveableOnly<Zone>
     AssociatedSampleArray sampleData;
     std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
 
-    BusAddress routeTo{DEFAULT_BUS};
+    struct ZoneOutputInfo
+    {
+        float amplitude{1.f}, pan{0.f};
+        BusAddress routeTo{DEFAULT_BUS};
+    } outputInfo;
 
     float output alignas(16)[2][blockSize];
     void process(Engine &onto);

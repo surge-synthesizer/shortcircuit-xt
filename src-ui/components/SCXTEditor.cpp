@@ -211,6 +211,11 @@ void SCXTEditor::drainCallbackQueue()
         {
             assert(msgCont.threadingChecker.isClientThread());
             cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
+            inboundMessageCount++;
+            if (inboundMessageCount % 100 == 0)
+            {
+                SCLOG("Serial -> Client Message Count: " << inboundMessageCount);
+            }
         }
     }
 }

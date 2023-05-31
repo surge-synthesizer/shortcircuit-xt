@@ -30,12 +30,25 @@
 
 #include "tao/json/to_string.hpp"
 #include "tao/json/from_string.hpp"
+#include "tao/json/msgpack.hpp"
 #include "messaging/client/detail/client_json_details.h"
 
 // This is a 'details only' file which you can safely ignore
 // once it works, basically.
 namespace scxt::messaging::client
 {
+/*
+ * Inter-process messages can pack as JSON (the streaming format we use)
+ * or as msgpack messages which are a lot smaller and faster. PROCESS_AS_JSON
+ * is really just useful for debugging where you actually want to see a message
+ */
+#define PROCESS_AS_JSON 0
+#if PROCESS_AS_JSON
+namespace encoder = tao::json;
+#else
+namespace encoder = tao::json::msgpack;
+#endif
+
 namespace detail
 {
 template <typename T> struct MessageWrapper
@@ -139,7 +152,7 @@ inline void clientSendToSerialization(const T &msg, messaging::MessageController
     assert(mc.threadingChecker.isClientThread());
     auto mw = detail::MessageWrapper(msg);
     detail::client_message_value v = mw;
-    auto res = tao::json::to_string(v);
+    auto res = encoder::to_string(v);
     mc.sendRawFromClient(res);
 }
 
@@ -158,7 +171,7 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
             {
                 auto mw = detail::ResponseWrapper<T>(msg, id);
                 detail::client_message_value v = mw;
-                auto res = tao::json::to_string(v);
+                auto res = encoder::to_string(v);
                 mc.preClientConnectionCache.push_back(res);
             }
             return;
@@ -166,7 +179,7 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
 
         auto mw = detail::ResponseWrapper<T>(msg, id);
         detail::client_message_value v = mw;
-        auto res = tao::json::to_string(v);
+        auto res = encoder::to_string(v);
         mc.clientCallback(res);
     }
     catch (const std::exception &e)
@@ -186,7 +199,7 @@ inline void serializationThreadExecuteClientMessage(const std::string &msgView, 
 
     // We need to unpack with the client message traits
     events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
-    events::from_string(consumer, msgView);
+    encoder::events::from_string(consumer, msgView);
     auto jv = std::move(consumer.value);
 
     auto o = jv.get_object();
@@ -206,7 +219,7 @@ inline void clientThreadExecuteSerializationMessage(const std::string &msgView, 
 
     // We need to unpack with the client message traits
     events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
-    events::from_string(consumer, msgView);
+    encoder::events::from_string(consumer, msgView);
     auto jv = std::move(consumer.value);
 
     auto o = jv.get_object();

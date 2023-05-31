@@ -138,6 +138,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // Deal with message queues.
     void idle();
     void drainCallbackQueue();
+    uint64_t inboundMessageCount{0};
 
     // Popup Menu Options
     juce::PopupMenu::Options defaultPopupMenuOptions()
@@ -158,6 +159,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &);
     void onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &);
     void onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
+    void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p);
 
     void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &);
     void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);

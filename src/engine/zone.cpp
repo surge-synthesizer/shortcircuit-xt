@@ -52,18 +52,18 @@ void Zone::process(Engine &e)
         {
             if (v->process())
             {
-                if (routeTo == DEFAULT_BUS)
+                if (outputInfo.routeTo == DEFAULT_BUS)
                 {
                     blk::accumulate_from_to<blockSize>(v->output[0], output[0]);
                     blk::accumulate_from_to<blockSize>(v->output[1], output[1]);
                 }
-                else if (routeTo >= 0)
+                else if (outputInfo.routeTo >= 0)
                 {
                     auto &bs = getEngine()->getPatch()->busses;
-                    blk::accumulate_from_to<blockSize>(v->output[0],
-                                                       bs.busByAddress(routeTo).output[0]);
-                    blk::accumulate_from_to<blockSize>(v->output[1],
-                                                       bs.busByAddress(routeTo).output[1]);
+                    blk::accumulate_from_to<blockSize>(
+                        v->output[0], bs.busByAddress(outputInfo.routeTo).output[0]);
+                    blk::accumulate_from_to<blockSize>(
+                        v->output[1], bs.busByAddress(outputInfo.routeTo).output[1]);
                 }
             }
             if (!v->isVoicePlaying)
