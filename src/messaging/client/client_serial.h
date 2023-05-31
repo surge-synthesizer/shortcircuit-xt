@@ -89,6 +89,7 @@ enum SerializationToClientMessageIds
     s2c_update_zone_voice_matrix_metadata,
     s2c_update_zone_voice_matrix,
     s2c_update_zone_individual_lfo,
+    s2c_update_zone_output_info,
 
     s2c_respond_single_processor_metadata_and_data,
 

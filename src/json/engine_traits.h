@@ -163,6 +163,26 @@ template <> struct scxt_traits<scxt::engine::Group>
     }
 };
 
+template <> struct scxt_traits<scxt::engine::Zone::ZoneOutputInfo>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::engine::Zone::ZoneOutputInfo &t)
+    {
+        v = {{"amplitude", t.amplitude}, {"pan", t.pan}, {"routeTo", (int)t.routeTo}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::ZoneOutputInfo &zo)
+    {
+        int rt;
+        findIf(v, "amplitude", zo.amplitude);
+        findIf(v, "pan", zo.pan);
+        findIf(v, "routeTo", rt);
+        zo.routeTo = (engine::BusAddress)(rt);
+    }
+};
+
 template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
 {
     template <template <typename...> class Traits>
@@ -258,13 +278,10 @@ template <> struct scxt_traits<scxt::engine::Zone>
                     r.depth != 0 || !r.active || r.curve != scxt::modulation::vmc_none);
         });
 
-        v = {{"sampleData", t.sampleData},
-             {"mappingData", t.mapping},
-             {"processorStorage", t.processorStorage},
-             {"routingTable", rtArray},
-             {"lfoStorage", t.lfoStorage},
-             {"aegStorage", t.aegStorage},
-             {"eg2Storage", t.eg2Storage}};
+        v = {{"sampleData", t.sampleData}, {"mappingData", t.mapping},
+             {"outputInfo", t.outputInfo}, {"processorStorage", t.processorStorage},
+             {"routingTable", rtArray},    {"lfoStorage", t.lfoStorage},
+             {"aegStorage", t.aegStorage}, {"eg2Storage", t.eg2Storage}};
     }
 
     template <template <typename...> class Traits>
@@ -272,6 +289,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
     {
         findIf(v, "sampleData", zone.sampleData);
         findIf(v, "mappingData", zone.mapping);
+        findIf(v, "outputInfo", zone.outputInfo);
         fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 
         std::fill(zone.routingTable.begin(), zone.routingTable.end(),

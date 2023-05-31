@@ -85,8 +85,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     }
     mod = std::make_unique<multi::ModPane>(editor);
     addAndMakeVisible(*mod);
-    mix = std::make_unique<multi::OutputPane>(editor);
-    addAndMakeVisible(*mix);
+    output = std::make_unique<multi::OutputPane>(editor);
+    addAndMakeVisible(*output);
 
     for (int i = 0; i < 2; ++i)
     {
@@ -124,7 +124,7 @@ void MultiScreen::layout()
     auto mw = modRect.getWidth() * 0.750;
     mod->setBounds(modRect.withWidth(mw));
     auto xw = modRect.getWidth() * 0.250;
-    mix->setBounds(modRect.withWidth(xw).translated(mw, 0));
+    output->setBounds(modRect.withWidth(xw).translated(mw, 0));
 
     auto envRect = mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
     auto ew = envRect.getWidth() * 0.25;

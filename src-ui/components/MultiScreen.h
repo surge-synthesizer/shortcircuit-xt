@@ -39,6 +39,7 @@ namespace scxt::ui
 namespace multi
 {
 struct AdsrPane;
+struct OutputPane;
 struct PartGroupSidebar;
 struct MappingPane;
 struct ModPane;
@@ -60,7 +61,7 @@ struct MultiScreen : juce::Component, HasEditor
     static constexpr int envHeight = 160, modHeight = 160, fxHeight = 176;
     static constexpr int pad = 0;
 
-    std::unique_ptr<juce::Component> mix;
+    std::unique_ptr<multi::OutputPane> output;
     std::unique_ptr<browser::BrowserPane> browser;
     std::unique_ptr<multi::LfoPane> lfo;
     std::unique_ptr<multi::MappingPane> sample;

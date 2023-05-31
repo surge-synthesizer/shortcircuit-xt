@@ -121,8 +121,8 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
     baseValues[destIndex(vmd_Zone_Sample_Amplitude, 0)] = z->mapping.amplitude;
 
     // TODO: FixMe when we do output section
-    baseValues[destIndex(vmd_Zone_Output_Pan, 0)] = 0;
-    baseValues[destIndex(vmd_Zone_Output_Amplitude, 0)] = 1.f;
+    baseValues[destIndex(vmd_Zone_Output_Pan, 0)] = z->outputInfo.pan;
+    baseValues[destIndex(vmd_Zone_Output_Amplitude, 0)] = z->outputInfo.amplitude;
 }
 
 void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)

@@ -114,6 +114,9 @@ void SelectionManager::sendClientDataForSelectionState()
                                   *(engine.getMessageController()));
         serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
                                   *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_output_info,
+                                  cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
+                                  *(engine.getMessageController()));
     }
     else
     {
@@ -139,6 +142,9 @@ void SelectionManager::sendClientDataForSelectionState()
         }
         serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
                                   modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_output_info,
+                                  cms::zoneOutputInfoUpdate_t{false, {}},
                                   *(engine.getMessageController()));
     }
 }

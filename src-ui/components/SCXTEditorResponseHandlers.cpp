@@ -32,6 +32,7 @@
 #include "multi/ModPane.h"
 #include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
+#include "multi/OutputPane.h"
 #include "MixerScreen.h"
 #include "HeaderRegion.h"
 #include "multi/MappingPane.h"
@@ -124,6 +125,16 @@ void SCXTEditor::onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdat
     const auto &[active, i, r] = payload;
     multiScreen->lfo->setActive(i, active);
     multiScreen->lfo->setLfo(i, r);
+}
+
+void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
+{
+    auto [active, inf] = p;
+    multiScreen->output->setActive(active);
+    if (active)
+    {
+        multiScreen->output->setOutputData(inf);
+    }
 }
 
 void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &d)

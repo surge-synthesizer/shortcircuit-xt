@@ -184,6 +184,11 @@ void MessageController::runSerialization()
             {
                 std::lock_guard<std::mutex> g(engine.modifyStructureMutex);
                 client::serializationThreadExecuteClientMessage(inbound, engine, *this);
+                inboundClientMessageCount++;
+                if (inboundClientMessageCount % 1000 == 0)
+                {
+                    SCLOG("Client -> Serial Message Count: " << inboundClientMessageCount);
+                }
             }
 
             if (audioStateChanged && isClientConnected)

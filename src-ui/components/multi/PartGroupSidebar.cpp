@@ -569,9 +569,6 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 
 void PartGroupSidebar::editorSelectionChanged()
 {
-    SCLOG("Editor Selection Changed " << SCD(editor->allSelections.size())
-                                      << SCD(editor->currentLeadSelection.has_value()));
-
     if (groupSidebar)
     {
         groupSidebar->updateSelection();

@@ -30,16 +30,22 @@
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
+#include "engine/zone.h"
 
 namespace scxt::ui::multi
 {
+struct OutputTab;
 struct OutputPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     OutputPane(SCXTEditor *e);
+    ~OutputPane();
 
     void resized() override;
+    void setActive(bool);
+    void setOutputData(const engine::Zone::ZoneOutputInfo &);
 
-    std::unique_ptr<juce::Label> label;
+    std::unique_ptr<OutputTab> output;
+    std::unique_ptr<juce::Component> proc;
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H

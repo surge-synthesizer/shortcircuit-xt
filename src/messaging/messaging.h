@@ -306,6 +306,7 @@ struct MessageController : MoveableOnly<MessageController>
     void reportErrorToClient(const std::string &title, const std::string &body);
 
   private:
+    uint64_t inboundClientMessageCount{0};
     void runSerialization();
     void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);
 
