@@ -833,6 +833,35 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     }
 }
 
+struct SampleDisplay;
+
+struct SampleWaveform : juce::Component, HasEditor
+{
+    SampleDisplay *display{nullptr};
+    SampleWaveform(SampleDisplay *d);
+    void paint(juce::Graphics &g) override;
+
+    juce::Path pathForSample();
+
+    juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ;
+    void rebuildHotZones();
+
+    // Anticipating future drag and so forth gestures
+    enum struct MouseState
+    {
+        NONE,
+        HZ_DRAG_SAMPSTART,
+        HZ_DRAG_SAMPEND,
+        HZ_DRAG_LOOPSTART,
+        HZ_DRAG_LOOPEND,
+    } mouseState{MouseState::NONE};
+
+    int64_t sampleForXPixel(float xpos);
+    void mouseDown(const juce::MouseEvent &e) override;
+    void mouseUp(const juce::MouseEvent &e) override;
+    void mouseDrag(const juce::MouseEvent &e) override;
+};
+
 struct SampleDisplay : juce::Component, HasEditor
 {
     static constexpr int sidePanelWidth{150};
@@ -854,6 +883,8 @@ struct SampleDisplay : juce::Component, HasEditor
         loopAttachment, reverseAttachment;
     std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
 
+    std::unique_ptr<SampleWaveform> waveform;
+
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
@@ -868,8 +899,6 @@ struct SampleDisplay : juce::Component, HasEditor
         loopDirectionButton = std::make_unique<juce::TextButton>("loopdir");
         loopDirectionButton->onClick = [this]() { showLoopDirectionMenu(); };
         addAndMakeVisible(*loopDirectionButton);
-
-        rebuild();
 
         auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
             auto at = std::make_unique<connectors::SamplePointDataAttachment>(
@@ -914,6 +943,11 @@ struct SampleDisplay : juce::Component, HasEditor
         reverseActive->setLabel("Reverse");
         reverseActive->setSource(reverseAttachment.get());
         addAndMakeVisible(*reverseActive);
+
+        waveform = std::make_unique<SampleWaveform>(this);
+        addAndMakeVisible(*waveform);
+
+        rebuild();
     }
 
     ~SampleDisplay() { reset(); }
@@ -927,120 +961,19 @@ struct SampleDisplay : juce::Component, HasEditor
     void onSamplePointChangedFromGUI()
     {
         sendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest(sampleView));
-
+        waveform->rebuildHotZones();
+        waveform->repaint();
         repaint();
     }
 
-    void paint(juce::Graphics &g)
+    juce::Rectangle<int> sampleDisplayRegion()
     {
-        if (!active)
-            return;
-
-        g.setColour(juce::Colours::pink.withAlpha(0.2f));
-        g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
-        g.drawText("Sample Region", getLocalBounds(), juce::Justification::centred);
-
-        auto r = getLocalBounds().withTrimmedRight(sidePanelWidth);
-        g.setColour(juce::Colours::white);
-        g.drawRect(r, 1);
-
-        auto &v = sampleView[0];
-        auto samp = editor->sampleManager.getSample(v.sampleID);
-        if (!samp)
-        {
-            g.setColour(juce::Colours::red);
-            g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
-            g.drawText("NULL SAMPLE", getLocalBounds(), juce::Justification::centred);
-            return;
-        }
-
-        auto l = samp->getSampleLength();
-
-        if (samp->bitDepth == sample::Sample::BD_I16)
-        {
-            auto fac = 1.0 * l / r.getWidth();
-            auto d = samp->GetSamplePtrI16(0);
-            double c = 0;
-            int ct = 0;
-            int16_t mx = std::numeric_limits<int16_t>::min();
-            int16_t mn = std::numeric_limits<int16_t>::max();
-
-            for (int s = 0; s < l; ++s)
-            {
-                if (c + fac < s)
-                {
-                    double nmx = 1.0 - mx * 1.0 / std::numeric_limits<int16_t>::max();
-                    double nmn = 1.0 - mn * 1.0 / std::numeric_limits<int16_t>::max();
-
-                    nmx = (nmx + 1) * 0.25;
-                    nmn = (nmn + 1) * 0.25;
-
-                    if (c >= v.startLoop && c <= v.endLoop)
-                    {
-                        g.setColour(juce::Colour(80, 80, 170));
-                        if (!v.loopActive)
-                            g.setColour(juce::Colour(40, 40, 90));
-                        g.drawVerticalLine(ct, 0, getHeight());
-                    }
-
-                    if (c < v.startSample || c > v.endSample)
-                    {
-                        g.setColour(juce::Colour(60, 60, 80));
-                        g.drawVerticalLine(ct, 0, getHeight());
-                        g.setColour(juce::Colour(100, 100, 110));
-                    }
-                    else
-                    {
-                        g.setColour(juce::Colours::white);
-                    }
-
-                    g.drawVerticalLine(ct, getHeight() * nmx, getHeight() * nmn);
-                    c += fac;
-                    ct++;
-                    mx = std::numeric_limits<int16_t>::min();
-                    mn = std::numeric_limits<int16_t>::max();
-                }
-                mx = std::max(d[s], mx);
-                mn = std::min(d[s], mn);
-            }
-        }
-        else if (samp->bitDepth == sample::Sample::BD_F32)
-        {
-            auto fac = 1.0 * l / r.getWidth();
-            auto d = samp->GetSamplePtrF32(0);
-            double c = 0;
-            int ct = 0;
-
-            float mx = -100.f, mn = 100.f;
-
-            for (int s = 0; s < l; ++s)
-            {
-                if (c + fac < s)
-                {
-                    double nmx = 1.0 - mx;
-                    double nmn = 1.0 - mn;
-
-                    nmx = (nmx + 1) * 0.25;
-                    nmn = (nmn + 1) * 0.25;
-
-                    g.drawVerticalLine(ct, getHeight() * nmx, getHeight() * nmn);
-                    c += fac;
-                    ct++;
-                    mx = -100.f;
-                    mn = 100.f;
-                }
-                mx = std::max(d[s], mx);
-                mn = std::min(d[s], mn);
-            }
-        }
-        else
-        {
-            jassertfalse;
-        }
+        return getLocalBounds().withTrimmedRight(sidePanelWidth);
     }
 
     void resized()
     {
+        waveform->setBounds(sampleDisplayRegion());
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
         p = p.withHeight(18);
@@ -1125,6 +1058,8 @@ struct SampleDisplay : juce::Component, HasEditor
         for (const auto &[k, p] : sampleAttachments)
             p->sampleCount = end;
         repaint();
+
+        waveform->rebuildHotZones();
     }
 
     void showPlayModeMenu()
@@ -1188,6 +1123,280 @@ struct SampleDisplay : juce::Component, HasEditor
     engine::Zone::AssociatedSampleArray &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
 };
+
+SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d)
+    : display(d), HasEditor(d->editor){};
+
+void SampleWaveform::rebuildHotZones()
+{
+    static constexpr int hotZoneSize{10};
+    auto &v = display->sampleView[0];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!samp)
+    {
+        return;
+    }
+    auto r = getLocalBounds();
+    auto l = samp->getSampleLength();
+    auto fac = 1.0 * r.getWidth() / l;
+    auto start = v.startSample * fac;
+    auto end = v.endSample * fac;
+    auto ls = v.startLoop * fac;
+    auto le = v.endLoop * fac;
+
+    startSampleHZ = juce::Rectangle<int>(start + r.getX(), r.getBottom() - hotZoneSize, hotZoneSize,
+                                         hotZoneSize);
+    endSampleHZ = juce::Rectangle<int>(end + r.getX() - hotZoneSize, r.getBottom() - hotZoneSize,
+                                       hotZoneSize, hotZoneSize);
+    startLoopHZ = juce::Rectangle<int>(ls + r.getX(), r.getY(), hotZoneSize, hotZoneSize);
+    endLoopHZ =
+        juce::Rectangle<int>(le + r.getX() - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
+}
+
+int64_t SampleWaveform::sampleForXPixel(float xpos)
+{
+    // TODO probably cache this
+    auto r = getLocalBounds();
+    auto &v = display->sampleView[0];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    auto l = samp->getSampleLength();
+    return (int64_t)std::clamp(1.0 * l * xpos / r.getWidth(), 0.0, l * 1.0);
+}
+
+juce::Path SampleWaveform::pathForSample()
+{
+    juce::Path res;
+
+    auto r = getLocalBounds();
+    auto &v = display->sampleView[0];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!samp)
+    {
+        SCLOG("Null Sample: Null Path");
+        return res;
+    }
+
+    auto l = samp->getSampleLength();
+    std::vector<float> topLine, bottomLine;
+
+    if (samp->bitDepth == sample::Sample::BD_I16)
+    {
+        auto fac = 1.0 * l / r.getWidth();
+        auto d = samp->GetSamplePtrI16(0);
+        double c = 0;
+        int ct = 0;
+        int16_t mx = std::numeric_limits<int16_t>::min();
+        int16_t mn = std::numeric_limits<int16_t>::max();
+
+        for (int s = 0; s < l; ++s)
+        {
+            if (c + fac < s)
+            {
+                double nmx = 1.0 - mx * 1.0 / std::numeric_limits<int16_t>::max();
+                double nmn = 1.0 - mn * 1.0 / std::numeric_limits<int16_t>::max();
+
+                nmx = (nmx + 1) * 0.25;
+                nmn = (nmn + 1) * 0.25;
+
+                topLine.push_back(nmx);
+                bottomLine.push_back(nmn);
+
+                c += fac;
+                ct++;
+                mx = std::numeric_limits<int16_t>::min();
+                mn = std::numeric_limits<int16_t>::max();
+            }
+            mx = std::max(d[s], mx);
+            mn = std::min(d[s], mn);
+        }
+    }
+    else if (samp->bitDepth == sample::Sample::BD_F32)
+    {
+        auto fac = 1.0 * l / r.getWidth();
+        auto d = samp->GetSamplePtrF32(0);
+        double c = 0;
+        int ct = 0;
+
+        float mx = -100.f, mn = 100.f;
+
+        for (int s = 0; s < l; ++s)
+        {
+            if (c + fac < s)
+            {
+                double nmx = 1.0 - mx;
+                double nmn = 1.0 - mn;
+
+                nmx = (nmx + 1) * 0.25;
+                nmn = (nmn + 1) * 0.25;
+
+                topLine.push_back(nmx);
+                bottomLine.push_back(nmn);
+                c += fac;
+                ct++;
+                mx = -100.f;
+                mn = 100.f;
+            }
+            mx = std::max(d[s], mx);
+            mn = std::min(d[s], mn);
+        }
+    }
+    else
+    {
+        jassertfalse;
+    }
+
+    std::reverse(bottomLine.begin(), bottomLine.end());
+    int index{0};
+    for (auto &l : topLine)
+    {
+        if (index == 0)
+        {
+            res.startNewSubPath(index, l * r.getHeight());
+        }
+        else
+        {
+            res.lineTo(index, l * r.getHeight());
+        }
+        index++;
+    }
+
+    index--;
+    for (auto &l : bottomLine)
+    {
+        res.lineTo(index, l * r.getHeight());
+        index--;
+    }
+    res.closeSubPath();
+
+    return res;
+}
+
+void SampleWaveform::mouseDown(const juce::MouseEvent &e)
+{
+    auto posi = e.position.roundToInt();
+    if (startSampleHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_SAMPSTART;
+    else if (endSampleHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_SAMPEND;
+    // TODO loopActive check here
+    else if (startLoopHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_LOOPSTART;
+    else if (endLoopHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_LOOPEND;
+    else
+        mouseState = MouseState::NONE;
+
+    // TODO cursor change and so on
+}
+
+void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
+{
+    if (mouseState == MouseState::NONE)
+        return;
+
+    switch (mouseState)
+    {
+    case MouseState::HZ_DRAG_SAMPSTART:
+        display->sampleView[0].startSample = sampleForXPixel(e.position.x);
+        break;
+    case MouseState::HZ_DRAG_SAMPEND:
+        display->sampleView[0].endSample = sampleForXPixel(e.position.x);
+        break;
+    case MouseState::HZ_DRAG_LOOPSTART:
+        display->sampleView[0].startLoop = sampleForXPixel(e.position.x);
+        break;
+    case MouseState::HZ_DRAG_LOOPEND:
+        display->sampleView[0].endLoop = sampleForXPixel(e.position.x);
+        break;
+    default:
+        break;
+    }
+    display->onSamplePointChangedFromGUI();
+}
+
+void SampleWaveform::mouseUp(const juce::MouseEvent &e)
+{
+    if (mouseState != MouseState::NONE)
+        display->onSamplePointChangedFromGUI();
+}
+
+void SampleWaveform::paint(juce::Graphics &g)
+{
+    if (!display->active)
+        return;
+
+    auto r = getLocalBounds();
+    auto &v = display->sampleView[0];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!samp)
+    {
+        return;
+    }
+
+    auto l = samp->getSampleLength();
+    auto fac = 1.0 * r.getWidth() / l;
+
+    auto wfp = pathForSample();
+    {
+        juce::Graphics::ScopedSaveState gs(g);
+
+        g.setColour(juce::Colour(0x30, 0x30, 0x40));
+        g.fillRect(r);
+
+        g.setColour(juce::Colour(0xFF, 0x90, 0x00).withAlpha(0.2f));
+        g.fillPath(wfp);
+        g.setColour(juce::Colours::white.withAlpha(0.4f));
+        g.strokePath(wfp, juce::PathStrokeType(1.f));
+    }
+
+    {
+        juce::Graphics::ScopedSaveState gs(g);
+        auto cr = r.withLeft(fac * v.startSample).withRight(fac * v.endSample);
+        g.reduceClipRegion(cr);
+
+        g.setColour(juce::Colour(0x15, 0x15, 0x15));
+        g.fillRect(r);
+
+        g.setColour(juce::Colour(0xFF, 0x90, 0x00));
+        g.fillPath(wfp);
+
+        g.setColour(juce::Colours::white);
+        g.strokePath(wfp, juce::PathStrokeType(1.f));
+    }
+
+    if (v.loopActive)
+    {
+        juce::Graphics::ScopedSaveState gs(g);
+        auto cr = r.withLeft(fac * v.startLoop).withRight(fac * v.endLoop);
+        g.reduceClipRegion(cr);
+
+        g.setColour(juce::Colour(0x15, 0x15, 0x35));
+        g.fillRect(r);
+
+        g.setColour(juce::Colour(0x90, 0x90, 0xFF));
+        g.fillPath(wfp);
+
+        g.setColour(juce::Colours::white);
+        g.strokePath(wfp, juce::PathStrokeType(1.f));
+    }
+
+    g.setColour(juce::Colours::white);
+    g.fillRect(startSampleHZ);
+    g.drawVerticalLine(startSampleHZ.getX(), 0, getHeight());
+    g.fillRect(endSampleHZ);
+    g.drawVerticalLine(endSampleHZ.getRight(), 0, getHeight());
+
+    if (v.loopActive)
+    {
+        g.setColour(juce::Colours::aliceblue);
+        g.fillRect(startLoopHZ);
+        g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
+        g.fillRect(endLoopHZ);
+        g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+    }
+    g.setColour(juce::Colours::white);
+    g.drawRect(r, 1);
+}
 
 struct MacroDisplay : juce::Component
 {
