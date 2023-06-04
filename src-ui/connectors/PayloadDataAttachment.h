@@ -28,31 +28,30 @@
 #ifndef SCXT_SRC_UI_CONNECTORS_PAYLOADDATAATTACHMENT_H
 #define SCXT_SRC_UI_CONNECTORS_PAYLOADDATAATTACHMENT_H
 
+#include <functional>
+#include <utility>
+#include <memory>
+#include <string>
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/data/Discrete.h"
 #include "datamodel/parameter.h"
-#include <functional>
 #include "sample/sample.h"
 
 namespace scxt::ui::connectors
 {
 // TODO Factor this better obviously
-template <typename Parent, typename Payload, typename ValueType = float>
+template <typename Payload, typename ValueType = float>
 struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
 {
-    typedef Parent parent_t;
     typedef Payload payload_t;
 
     ValueType &value;
     std::string label;
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged;
-    std::function<float(const Payload &)> extractFromPayload;
 
-    PayloadDataAttachment(Parent *p, const datamodel::pmd &cd,
-                          std::function<void(const PayloadDataAttachment &at)> oGVC,
-                          std::function<float(const Payload &)> efp, ValueType &v)
-        : description(cd), value(v), label(cd.name), extractFromPayload(efp),
-          onGuiValueChanged(std::move(oGVC))
+    PayloadDataAttachment(const datamodel::pmd &cd,
+                          std::function<void(const PayloadDataAttachment &at)> oGVC, ValueType &v)
+        : description(cd), value(v), label(cd.name), onGuiValueChanged(std::move(oGVC))
     {
     }
 
@@ -92,7 +91,6 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
         Continuous::setValueAsString(s);
     }
     void setValueFromModel(const float &f) override { value = (ValueType)f; }
-    void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
 
     float getMin() const override { return description.minVal; }
     float getMax() const override { return description.maxVal; }
@@ -146,19 +144,17 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     }
 };
 
-template <typename Parent, typename Payload, typename ValueType = int>
+template <typename Payload, typename ValueType = int>
 struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
 {
     ValueType &value;
     std::string label;
     std::function<void(const DiscretePayloadDataAttachment &at)> onGuiValueChanged;
-    std::function<int(const Payload &)> extractFromPayload;
 
-    DiscretePayloadDataAttachment(Parent *p, const datamodel::pmd &cd,
+    DiscretePayloadDataAttachment(const datamodel::pmd &cd,
                                   std::function<void(const DiscretePayloadDataAttachment &at)> oGVC,
-                                  std::function<int(const Payload &)> efp, ValueType &v)
-        : description(cd), value(v), label(cd.name), extractFromPayload(efp),
-          onGuiValueChanged(std::move(oGVC))
+                                  ValueType &v)
+        : description(cd), value(v), label(cd.name), onGuiValueChanged(std::move(oGVC))
     {
     }
 
@@ -176,7 +172,6 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
         onGuiValueChanged(*this);
     }
     void setValueFromModel(const int &f) override { value = (ValueType)f; }
-    void setValueFromPayload(const Payload &p) { setValueFromModel(extractFromPayload(p)); }
 
     int getMin() const override { return (int)description.minVal; }
     int getMax() const override { return (int)description.maxVal; }
@@ -190,15 +185,14 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     }
 };
 
-template <typename Parent, typename Payload>
-struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Parent, Payload, bool>
+template <typename Payload>
+struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, bool>
 {
     BooleanPayloadDataAttachment(
-        Parent *p, const std::string &l,
-        std::function<void(const DiscretePayloadDataAttachment<Parent, Payload, bool> &at)> oGVC,
-        std::function<bool(const Payload &)> efp, bool &v)
-        : DiscretePayloadDataAttachment<Parent, Payload, bool>(
-              p, datamodel::pmd().withType(datamodel::pmd::BOOL).withName(l), oGVC, efp, v)
+        const std::string &l,
+        std::function<void(const DiscretePayloadDataAttachment<Payload, bool> &at)> oGVC, bool &v)
+        : DiscretePayloadDataAttachment<Payload, bool>(
+              datamodel::pmd().withType(datamodel::pmd::BOOL).withName(l), oGVC, v)
     {
     }
 
@@ -246,5 +240,28 @@ struct SamplePointDataAttachment : sst::jucegui::data::ContinunousModulatable
     bool isModulationBipolar() const override { return false; }
 };
 
+template <typename attachment_t, typename widget_t> struct ConnectorFactory
+{
+    typedef std::function<void(const attachment_t &a)> onGuiChange_t;
+    onGuiChange_t onGuiChange{nullptr};
+    typename attachment_t::payload_t &payload;
+    ConnectorFactory(onGuiChange_t fn, typename attachment_t::payload_t &pl)
+        : onGuiChange(fn), payload(pl)
+    {
+    }
+
+    template <typename D, typename M>
+    std::pair<std::unique_ptr<attachment_t>, std::unique_ptr<widget_t>> attach(const std::string &l,
+                                                                               const D &d, M m)
+    {
+        // take a copy i guess to rename it
+        auto dn = d;
+        dn = dn.withName(l);
+        auto at = std::make_unique<attachment_t>(dn, onGuiChange, payload.*m);
+        auto w = std::make_unique<widget_t>();
+        w->setSource(at.get());
+        return {std::move(at), std::move(w)};
+    }
+};
 } // namespace scxt::ui::connectors
 #endif // SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H

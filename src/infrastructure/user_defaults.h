@@ -35,6 +35,7 @@ namespace scxt::infrastructure
 enum DefaultKeys
 {
     zoomLevel,
+    skinName,
     nKeys
 };
 inline std::string defaultKeyToString(DefaultKeys k)
@@ -43,6 +44,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
     {
     case zoomLevel:
         return "zoomLevel";
+    case skinName:
+        return "skinName";
     case nKeys:
         return "nKeys";
     default:

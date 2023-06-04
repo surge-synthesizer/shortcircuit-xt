@@ -203,6 +203,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void showMainMenu();
     void addTuningMenu(juce::PopupMenu &into, bool addTitle = true);
     void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
+    void addSkinMenu(juce::PopupMenu &into, bool addTitle = true);
 
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
@@ -225,6 +226,21 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 template <typename T> inline void HasEditor::sendToSerialization(const T &msg)
 {
     editor->sendToSerialization(msg);
+}
+
+template <typename T> inline void HasEditor::updateValueTooltip(const T &at)
+{
+    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
+}
+
+template <typename W, typename A>
+inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
+{
+    w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
+        editor->showTooltip(slRef);
+        updateValueTooltip(atRef);
+    };
+    w->onEndEdit = [this]() { editor->hideTooltip(); };
 }
 } // namespace scxt::ui
 

@@ -232,7 +232,7 @@ void LfoPane::rebuildLfo()
             if (w)
             {
                 w->pushCurrentLfoUpdate();
-                w->updateTooltip(a);
+                w->updateValueTooltip(a);
                 w->repaint();
             }
         };
@@ -247,22 +247,17 @@ void LfoPane::rebuildLfo()
             }
         };
     };
-    oneshotA = std::make_unique<boolAttachment_t>(
-        this, "OneShot", updateNoTT(), [](const auto &pl) { return pl.onlyonce; },
-        lfoData[selectedTab].onlyonce);
-    tempoSyncA = std::make_unique<boolAttachment_t>(
-        this, "TempoSync", updateNoTT(), [](const auto &pl) { return pl.temposync; },
-        lfoData[selectedTab].temposync);
-    cycleA = std::make_unique<boolAttachment_t>(
-        this, "OneShot", updateNoTT(), [](const auto &pl) { return pl.cyclemode; },
-        lfoData[selectedTab].cyclemode);
+    oneshotA =
+        std::make_unique<boolAttachment_t>("OneShot", updateNoTT(), lfoData[selectedTab].onlyonce);
+    tempoSyncA = std::make_unique<boolAttachment_t>("TempoSync", updateNoTT(),
+                                                    lfoData[selectedTab].temposync);
+    cycleA =
+        std::make_unique<boolAttachment_t>("OneShot", updateNoTT(), lfoData[selectedTab].cyclemode);
 
-    rateA = std::make_unique<attachment_t>(
-        this, datamodel::lfoModulationRate().withName("Rate"), update(),
-        [](const auto &pl) { return pl.rate; }, lfoData[selectedTab].rate);
-    deformA = std::make_unique<attachment_t>(
-        this, datamodel::lfoSmoothing().withName("Deform"), update(),
-        [](const auto &pl) { return pl.smooth; }, lfoData[selectedTab].smooth);
+    rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
+                                           update(), lfoData[selectedTab].rate);
+    deformA = std::make_unique<attachment_t>(datamodel::lfoSmoothing().withName("Deform"), update(),
+                                             lfoData[selectedTab].smooth);
 
     static constexpr int columnOneWidth{60};
     auto r = getContentArea();
@@ -280,34 +275,14 @@ void LfoPane::rebuildLfo()
     rateK->setSource(rateA.get());
     rateK->setBounds(b5.translated(-2 * 50, 0));
     rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-    rateK->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->editor->showTooltip(*(w->rateK));
-        w->updateTooltip(*(w->rateA));
-    };
-    rateK->onEndEdit = [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->editor->hideTooltip();
-    };
+    setupWidgetForValueTooltip(rateK, rateA);
     addAndMakeVisible(*rateK);
 
     deformK = std::make_unique<sst::jucegui::components::Knob>();
     deformK->setSource(deformA.get());
     deformK->setBounds(b5.translated(-50, 0));
     deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-    deformK->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->editor->showTooltip(*(w->deformK));
-        w->updateTooltip(*(w->deformA));
-    };
-    deformK->onEndEdit = [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->editor->hideTooltip();
-    };
+    setupWidgetForValueTooltip(deformK, deformA);
     addAndMakeVisible(*deformK);
 
     lfoDataRender = std::make_unique<LfoDataRender>(this);
@@ -435,12 +410,4 @@ void LfoPane::pickPresets()
     }
     m.showMenuAsync(editor->defaultPopupMenuOptions());
 }
-
-void LfoPane::updateTooltip(const attachment_t &at)
-{
-    auto vs = at.description.valueToString(at.value).value_or("Error");
-    // auto vv = std::to_string(at.getValue());
-    editor->setTooltipContents(at.label, vs); // {vs, vv});
-}
-
 } // namespace scxt::ui::multi

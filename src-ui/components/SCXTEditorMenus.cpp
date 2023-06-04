@@ -36,6 +36,8 @@
 #include "components/multi/MappingPane.h"
 #include "components/AboutScreen.h"
 #include "version.h"
+#include "connectors/SCXTStyleSheetCreator.h"
+#include "infrastructure/user_defaults.h"
 
 namespace scxt::ui
 {
@@ -58,6 +60,10 @@ void SCXTEditor::showMainMenu()
     juce::PopupMenu zoom;
     addZoomMenu(zoom);
     m.addSubMenu("Zoom", zoom);
+
+    juce::PopupMenu skin;
+    addSkinMenu(skin);
+    m.addSubMenu("Skins", skin);
 
     m.addSeparator();
     m.addItem(juce::String("Copy ") + scxt::build::FullVersionStr,
@@ -129,4 +135,31 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
     p.addSeparator();
     p.addSubMenu("Mapping Zoom Hack", r);
 }
+
+void SCXTEditor::addSkinMenu(juce::PopupMenu &p, bool addTitle)
+{
+    if (addTitle)
+    {
+        p.addSectionHeader("Skins");
+        p.addSeparator();
+    }
+    p.addItem("Dark", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->setStyle(scxt::ui::connectors::SCXTStyleSheetCreator::setup(
+                sst::jucegui::style::StyleSheet::DARK));
+            w->defaultsProvider.updateUserDefaultPath(infrastructure::skinName, "builtin.DARK");
+        }
+    });
+
+    p.addItem("Light", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->setStyle(scxt::ui::connectors::SCXTStyleSheetCreator::setup(
+                sst::jucegui::style::StyleSheet::LIGHT));
+            w->defaultsProvider.updateUserDefaultPath(infrastructure::skinName, "builtin.LIGHT");
+        }
+    });
+}
+
 } // namespace scxt::ui

@@ -44,7 +44,7 @@ MixerScreen::MixerScreen(SCXTEditor *e) : HasEditor(e)
     browser = std::make_unique<browser::BrowserPane>();
     addAndMakeVisible(*browser);
 
-    busPane = std::make_unique<mixer::BusPane>();
+    busPane = std::make_unique<mixer::BusPane>(e, this);
     addAndMakeVisible(*busPane);
 
     for (auto i = 0; i < partPanes.size(); ++i)
@@ -55,6 +55,9 @@ MixerScreen::MixerScreen(SCXTEditor *e) : HasEditor(e)
         addAndMakeVisible(*pp);
         partPanes[i] = std::move(pp);
     }
+
+    // Select the part 0 bus
+    selectBus(0);
 }
 
 MixerScreen::~MixerScreen() {}
@@ -68,14 +71,15 @@ void MixerScreen::visibilityChanged()
 void MixerScreen::resized()
 {
     int pad = 0;
-    int busHeight = 330;
+    int busHeight = 425;
     browser->setBounds(getWidth() - sideWidths - pad, pad, sideWidths, getHeight() - 3 * pad);
 
     auto rest = getLocalBounds().withTrimmedRight(sideWidths + pad);
 
     auto busArea = rest.withTrimmedTop(getHeight() - busHeight);
     busPane->setBounds(busArea);
-    auto fxArea = rest.withTrimmedBottom(busHeight).reduced(0);
+    auto fxArea =
+        rest.withTrimmedBottom(busHeight).reduced(40, 0).withTrimmedTop(18).withTrimmedBottom(0);
 
     auto fxq = fxArea.getWidth() * 1.f / partPanes.size();
     auto ifx = fxArea.withWidth(fxq);
@@ -95,5 +99,79 @@ void MixerScreen::onBusEffectFullData(
     busEffectsData[bus][slot].second = bes;
     if (partPanes[slot]->busAddress == bus)
         partPanes[slot]->rebuild();
+    busPane->channelStrips[bus]->effectsChanged();
 }
+
+void MixerScreen::selectBus(int index)
+{
+    for (const auto &p : partPanes)
+    {
+        p->setBusAddress(index);
+        p->rebuild();
+    }
+    for (const auto &b : busPane->channelStrips)
+        b->selected = false;
+    busPane->channelStrips[index]->selected = true;
+    repaint();
+}
+
+void MixerScreen::onBusSendData(int bus, const engine::Bus::BusSendStorage &s)
+{
+    assert(bus >= 0 && bus < busSendData.size());
+    busSendData[bus] = s;
+    busPane->channelStrips[bus]->repaint();
+}
+
+std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool forMenu)
+{
+    switch (t)
+    {
+    case engine::none:
+        return forMenu ? "None" : "FX";
+    case engine::flanger:
+        return forMenu ? "Flanger" : "FLANGER";
+    case engine::delay:
+        return forMenu ? "Delay" : "DELAY";
+    case engine::reverb1:
+        return forMenu ? "Reverb 1" : "REVERB 1";
+    case engine::bonsai:
+        return forMenu ? "Bonsai" : "BONSAI";
+    }
+
+    return "GCC gives strictly correct, but not useful in this case, warnings";
+}
+
+void MixerScreen::setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t)
+{
+    sendToSerialization(cmsg::SetBusEffectToType({bus, slot, t}));
+    busPane->channelStrips[bus]->effectsChanged();
+}
+
+void MixerScreen::showFXSelectionMenu(int bus, int slot)
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Effects");
+    p.addSeparator();
+    auto go = [w = juce::Component::SafePointer(this), bus, slot](auto q) {
+        return [w, bus, slot, q]() {
+            if (w)
+            {
+                w->setFXSlotToType(bus, slot, q);
+            }
+        };
+    };
+    auto add = [this, &go, &p](auto q) { p.addItem(effectDisplayName(q, true), go(q)); };
+    add(engine::AvailableBusEffects::none);
+    add(engine::AvailableBusEffects::reverb1);
+    add(engine::AvailableBusEffects::delay);
+    add(engine::AvailableBusEffects::flanger);
+    add(engine::AvailableBusEffects::bonsai);
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void MixerScreen::sendBusSendStorage(int bus)
+{
+    sendToSerialization(cmsg::SetBusSendStorage({bus, busSendData[bus]}));
+}
+
 } // namespace scxt::ui

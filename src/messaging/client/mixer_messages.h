@@ -80,5 +80,17 @@ inline void setBusEffectStorage(const setBusEffectStorage_t &payload,
 }
 CLIENT_TO_SERIAL(SetBusEffectStorage, c2s_set_mixer_effect_storage, setBusEffectStorage_t,
                  setBusEffectStorage(payload, cont));
+
+using setBusSendStorage_t = std::tuple<int, engine::Bus::BusSendStorage>;
+inline void setBusSendStorage(const setBusSendStorage_t &payload,
+                              messaging::MessageController &cont)
+{
+    cont.scheduleAudioThreadCallback([p = payload](auto &e) {
+        auto [bus, bss] = p;
+        e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busSendStorage = bss;
+    });
+}
+CLIENT_TO_SERIAL(SetBusSendStorage, c2s_set_mixer_send_storage, setBusSendStorage_t,
+                 setBusSendStorage(payload, cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_MIXER_MESSAGES_H

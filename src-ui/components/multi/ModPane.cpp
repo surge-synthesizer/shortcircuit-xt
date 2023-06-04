@@ -44,11 +44,9 @@ struct ModRow : juce::Component, HasEditor
 {
     int index{0};
     ModPane *parent{nullptr};
-    std::unique_ptr<
-        connectors::BooleanPayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>
+    std::unique_ptr<connectors::BooleanPayloadDataAttachment<modulation::VoiceModMatrix::Routing>>
         powerAttachment;
-    using attachment_t =
-        connectors::PayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>;
+    using attachment_t = connectors::PayloadDataAttachment<modulation::VoiceModMatrix::Routing>;
     std::unique_ptr<attachment_t> depthAttachment;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
@@ -62,13 +60,13 @@ struct ModRow : juce::Component, HasEditor
         auto &row = parent->routingTable[i];
 
         powerAttachment = std::make_unique<
-            connectors::BooleanPayloadDataAttachment<ModRow, modulation::VoiceModMatrix::Routing>>(
-            this, "Power",
+            connectors::BooleanPayloadDataAttachment<modulation::VoiceModMatrix::Routing>>(
+            "Power",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                     w->pushRowUpdate();
             },
-            [](const auto &pl) { return pl.active; }, row.active);
+            row.active);
         power = std::make_unique<jcmp::ToggleButton>();
         power->setLabel(std::to_string(index + 1));
         power->setSource(powerAttachment.get());
@@ -93,8 +91,9 @@ struct ModRow : juce::Component, HasEditor
         sourceVia->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*sourceVia);
 
+        // The generic value tooltip doesn't work for this and only this control
         depthAttachment = std::make_unique<attachment_t>(
-            this, datamodel::pmd().asPercentBipolar().withName("Depth"),
+            datamodel::pmd().asPercentBipolar().withName("Depth"),
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
@@ -102,7 +101,7 @@ struct ModRow : juce::Component, HasEditor
                     w->updateTooltip(a);
                 }
             },
-            [](const auto &pl) { return pl.depth; }, row.depth);
+            row.depth);
         depth = std::make_unique<jcmp::HSliderFilled>();
         depth->setSource(depthAttachment.get());
         depth->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);

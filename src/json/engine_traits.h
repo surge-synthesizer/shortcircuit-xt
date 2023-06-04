@@ -390,10 +390,15 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
         {
             SCLOG("Stream Aux Location as String please");
         }
-        v = {{"supportsSends", t.supportsSends},
-             {"auxLocation", (int)t.auxLocation},
-             {"sendLevels", t.sendLevels},
-             {"level", t.level}};
+        v = {
+            {"supportsSends", t.supportsSends},
+            {"auxLocation", (int)t.auxLocation},
+            {"sendLevels", t.sendLevels},
+            {"level", t.level},
+            {"mute", t.mute},
+            {"solo", t.solo},
+            {"pan", t.pan},
+        };
     }
 
     template <template <typename...> class Traits>
@@ -403,6 +408,9 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
         findEnumIf(v, "auxLocation", r.auxLocation);
         findIf(v, "sendLevels", r.sendLevels);
         findIf(v, "level", r.level);
+        findIf(v, "mute", r.mute);
+        findIf(v, "solo", r.solo);
+        findIf(v, "pan", r.pan);
     }
 };
 

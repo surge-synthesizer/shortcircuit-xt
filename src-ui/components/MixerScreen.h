@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_UI_COMPONENTS_MIXERSCREEN_H
 #define SCXT_SRC_UI_COMPONENTS_MIXERSCREEN_H
 
+#include "configuration.h"
 #include "HasEditor.h"
 #include "SCXTEditor.h"
 #include "browser/BrowserPane.h"
@@ -50,17 +51,10 @@ struct MixerScreen : juce::Component, HasEditor
 
     MixerScreen(SCXTEditor *e);
     ~MixerScreen();
-    void paint(juce::Graphics &g) override
-    {
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(60, juce::Font::plain));
-        g.drawText("Mixer", getLocalBounds().withTrimmedBottom(40), juce::Justification::centred);
-        g.setFont(juce::Font(20, juce::Font::plain));
-        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(40),
-                   juce::Justification::centred);
-    }
     void visibilityChanged() override;
     void resized() override;
+
+    void selectBus(int index);
 
     void onBusEffectFullData(
         int bus, int slot,
@@ -77,6 +71,19 @@ struct MixerScreen : juce::Component, HasEditor
     using busFX_t = std::array<busPartsFX_t, scxt::maxOutputs>;
 
     busFX_t busEffectsData;
+
+    using busSend_t = std::array<engine::Bus::BusSendStorage, scxt::maxBusses>;
+    busSend_t busSendData;
+
+    void onBusSendData(int bus, const engine::Bus::BusSendStorage &s);
+
+    // The effects have names like 'flanger' and 'delay' internally but we
+    // want alternate display names here.
+    std::string effectDisplayName(engine::AvailableBusEffects, bool forMenu);
+
+    void setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t);
+    void showFXSelectionMenu(int bus, int slot);
+    void sendBusSendStorage(int bus);
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUIT_SENDFXSCREEN_H

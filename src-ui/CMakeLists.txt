@@ -17,6 +17,8 @@ add_library(${PROJECT_NAME} STATIC
         components/SCXTEditorMenus.cpp
         components/SCXTEditorResponseHandlers.cpp
 
+        components/HasEditor.cpp
+
         components/HeaderRegion.cpp
         components/MixerScreen.cpp
         components/MultiScreen.cpp
@@ -26,7 +28,9 @@ add_library(${PROJECT_NAME} STATIC
 
         components/browser/BrowserPane.cpp
 
+        components/mixer/BusPane.cpp
         components/mixer/PartEffectsPane.cpp
+        components/mixer/ChannelStrip.cpp
 
         components/multi/AdsrPane.cpp
         components/multi/LFOPane.cpp

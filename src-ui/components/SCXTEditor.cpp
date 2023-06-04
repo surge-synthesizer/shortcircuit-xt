@@ -53,7 +53,17 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     : msgCont(e), sampleManager(s), defaultsProvider(d), sharedUiMemoryState(st)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
-    setStyle(connectors::SCXTStyleSheetCreator::setup());
+
+    // TODO: Obviously expand this
+    auto sn = defaultsProvider.getUserDefaultValue(infrastructure::skinName, "builtin.DARK");
+    if (sn == "builtin.LIGHT")
+    {
+        setStyle(connectors::SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::LIGHT));
+    }
+    else
+    {
+        setStyle(connectors::SCXTStyleSheetCreator::setup());
+    }
 
     // TODO what happens with two windows open when I go away?
     lnf = std::make_unique<SCXTJuceLookAndFeel>();
@@ -93,7 +103,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     logScreen = std::make_unique<LogScreen>(this);
     addChildComponent(*logScreen);
 
-    onStyleChanged();
+    setStyle(style());
 
     auto zfi = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::zoomLevel, 100);
     setZoomFactor(zfi * 0.01);

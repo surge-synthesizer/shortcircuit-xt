@@ -41,7 +41,8 @@ namespace scxt::ui::connectors
 {
 using sheet_t = sst::jucegui::style::StyleSheet;
 namespace comp = sst::jucegui::components;
-const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
+const sheet_t::ptr_t
+SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseType)
 {
     widgets::Tooltip::Styles::initialize();
 
@@ -58,7 +59,7 @@ const sheet_t::ptr_t SCXTStyleSheetCreator::setup()
     sheet_t::addClass(SCXTStyleSheetCreator::InformationLabel)
         .withBaseClass(comp::ControlStyles::styleClass);
 
-    const auto &base = sheet_t::getBuiltInStyleSheet(sheet_t::DARK);
+    const auto &base = sheet_t::getBuiltInStyleSheet(baseType);
     base->setColour(widgets::Tooltip::Styles::styleClass, widgets::Tooltip::Styles::bordercol,
                     base->getColour(sst::jucegui::components::NamedPanel::Styles::styleClass,
                                     sst::jucegui::components::NamedPanel::Styles::labelrulecol));

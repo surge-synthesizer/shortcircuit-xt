@@ -25,7 +25,6 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "connectors/Connectors.h"
 #include "PartEffectsPane.h"
 #include "components/SCXTEditor.h"
 #include "components/MixerScreen.h"
@@ -38,27 +37,7 @@ namespace scxt::ui::mixer
 {
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
-void PartEffectsPane::showHamburger()
-{
-    auto p = juce::PopupMenu();
-    p.addSectionHeader("Effects");
-    p.addSeparator();
-    auto go = [w = juce::Component::SafePointer(this)](auto q) {
-        return [w, q]() {
-            if (w)
-            {
-                w->sendToSerialization(cmsg::SetBusEffectToType({w->busAddress, w->fxSlot, q}));
-            }
-        };
-    };
-    auto add = [this, &go, &p](auto q) { p.addItem(effectDisplayName(q, true), go(q)); };
-    add(engine::AvailableBusEffects::none);
-    add(engine::AvailableBusEffects::reverb1);
-    add(engine::AvailableBusEffects::delay);
-    add(engine::AvailableBusEffects::flanger);
-    add(engine::AvailableBusEffects::bonsai);
-    p.showMenuAsync(editor->defaultPopupMenuOptions());
-}
+void PartEffectsPane::showHamburger() { mixer->showFXSelectionMenu(busAddress, fxSlot); }
 
 PartEffectsPane::~PartEffectsPane()
 {
@@ -96,7 +75,7 @@ void PartEffectsPane::rebuild()
     auto &params = b.first;
     auto &data = b.second;
     auto t = data.type;
-    name = effectDisplayName(t, false);
+    name = mixer->effectDisplayName(t, false);
 
     removeAllChildren();
     components.clear();
@@ -116,25 +95,6 @@ void PartEffectsPane::rebuild()
     repaint();
 }
 
-std::string PartEffectsPane::effectDisplayName(engine::AvailableBusEffects t, bool forMenu)
-{
-    switch (t)
-    {
-    case engine::none:
-        return forMenu ? "None" : "FX";
-    case engine::flanger:
-        return forMenu ? "Flanger" : "FLANGER";
-    case engine::delay:
-        return forMenu ? "Delay" : "DELAY";
-    case engine::reverb1:
-        return forMenu ? "Reverb 1" : "REVERB 1";
-    case engine::bonsai:
-        return forMenu ? "Bonsai" : "BONSAI";
-    }
-
-    return "GCC gives strictly correct, but not useful in this case, warnings";
-}
-
 template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
 {
     auto &data = mixer->busEffectsData[busAddress][fxSlot];
@@ -145,23 +105,10 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
     };
 
     auto at = std::make_unique<attachment_t>(
-        this, pmd, onGuiChange,
-        [w = juce::Component::SafePointer(this), pidx](const typename attachment_t::payload_t &pl) {
-            if (w)
-                return w->mixer->busEffectsData[w->busAddress][w->fxSlot].second.params[pidx];
-            return 0.f;
-        },
-        mixer->busEffectsData[busAddress][fxSlot].second.params[pidx]);
+        pmd, onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.params[pidx]);
     auto w = std::make_unique<T>();
     w->setSource(at.get());
-
-    w->onBeginEdit = [this, q = juce::Component::SafePointer(w.get()), atPtr = at.get()]() {
-        if (q)
-            editor->showTooltip(*q);
-        updateTooltip(*atPtr);
-    };
-    w->onEndEdit = [this]() { editor->hideTooltip(); };
-
+    setupWidgetForValueTooltip(w, at);
     addAndMakeVisible(*w);
 
     auto retVal = w.get();
@@ -229,7 +176,7 @@ void PartEffectsPane::rebuildDefaultLayout()
     int labht{15};
     static_assert(engine::BusEffectStorage::maxBusEffectParams <= 12,
                   "If this is false, this 3x4 grid will be bad");
-    auto bx = std::min((getHeight() / 4.f + labht), getWidth() / 3.f) * 0.9f;
+    auto bx = std::min(getHeight() / 4.f - labht, getWidth() / 3.f) * 0.9f;
     auto &b = mixer->busEffectsData[busAddress][fxSlot];
 
     auto into = getContentArea();
@@ -277,15 +224,10 @@ void PartEffectsPane::rebuildDefaultLayout()
 void PartEffectsPane::floatParameterChangedFromGui(
     const scxt::ui::mixer::PartEffectsPane::attachment_t &at, int idx)
 {
-    updateTooltip(at);
+    updateValueTooltip(at);
     auto &data = mixer->busEffectsData[busAddress][fxSlot];
 
     sendToSerialization(cmsg::SetBusEffectStorage({busAddress, fxSlot, data.second}));
-}
-
-void PartEffectsPane::updateTooltip(const attachment_t &at)
-{
-    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
 }
 
 } // namespace scxt::ui::mixer

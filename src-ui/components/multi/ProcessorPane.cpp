@@ -54,11 +54,6 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index)
 
 ProcessorPane::~ProcessorPane() { resetControls(); }
 
-void ProcessorPane::updateTooltip(const attachment_t &at)
-{
-    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
-}
-
 void ProcessorPane::resized()
 {
     sst::jucegui::components::NamedPanel::resized();
@@ -122,9 +117,8 @@ void ProcessorPane::rebuildControlsFromDescription()
     for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
     {
         auto at = std::make_unique<attachment_t>(
-            this, processorControlDescription.floatControlDescriptions[i],
+            processorControlDescription.floatControlDescriptions[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
-            [idx = i](const auto &pl) { return pl.floatParams[idx]; },
             processorView.floatParams[i]);
 
         floatAttachments[i] = std::move(at);
@@ -133,16 +127,15 @@ void ProcessorPane::rebuildControlsFromDescription()
     for (int i = 0; i < processorControlDescription.numIntParams; ++i)
     {
         auto at = std::make_unique<int_attachment_t>(
-            this, processorControlDescription.intControlDescriptions[i],
+            processorControlDescription.intControlDescriptions[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
-            [idx = i](const auto &pl) { return pl.intParams[idx]; }, processorView.intParams[i]);
+            processorView.intParams[i]);
         intAttachments[i] = std::move(at);
     }
 
     auto at = std::make_unique<attachment_t>(
-        this, datamodel::pmd().asPercent().withName("Mix").withDefault(1.0),
-        [this](const auto &at) { this->processorChangedFromGui(at); },
-        [](const auto &pl) { return pl.mix; }, processorView.mix);
+        datamodel::pmd().asPercent().withName("Mix").withDefault(1.0),
+        [this](const auto &at) { this->processorChangedFromGui(at); }, processorView.mix);
     mixAttachment = std::move(at);
 
     switch (processorControlDescription.type)
@@ -157,11 +150,11 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     setToggleDataSource(nullptr);
     bypassAttachment = std::make_unique<bool_attachment_t>(
-        this, "Bypass",
+        "Bypass",
         [this](const auto &at) {
             sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
         },
-        [](const auto &pl) { return pl.isActive; }, processorView.isActive);
+        processorView.isActive);
     setToggleDataSource(bypassAttachment.get());
 
     repaint();
@@ -172,12 +165,7 @@ std::unique_ptr<T> ProcessorPane::attachContinuousTo(const std::unique_ptr<attac
 {
     auto kn = std::make_unique<T>();
     kn->setSource(at.get());
-    kn->onBeginEdit = [this, &knRef = *kn, &atRef = *at]() {
-        editor->showTooltip(knRef);
-        updateTooltip(atRef);
-    };
-    kn->onEndEdit = [this]() { editor->hideTooltip(); };
-
+    setupWidgetForValueTooltip(kn, at);
     getContentAreaComponent()->addAndMakeVisible(*kn);
     return std::move(kn);
 }
@@ -305,7 +293,7 @@ void ProcessorPane::layoutControlsSuperSVF()
 
 void ProcessorPane::processorChangedFromGui(const attachment_t &at)
 {
-    updateTooltip(at);
+    updateValueTooltip(at);
     sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
 }
 

@@ -145,7 +145,11 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
         // Send levels in 0...1 scale to each bus
         std::array<float, maxSendsPerBus> sendLevels{};
+
         // VCA level in raw amplitude also. UI will dbIfy this I'm sure
+        bool mute{false};
+        bool solo{false};
+        float pan{0.f};
         float level{1.f};
     } busSendStorage;
 
