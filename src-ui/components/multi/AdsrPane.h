@@ -43,7 +43,7 @@ namespace scxt::ui::multi
 struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     // ToDo: shapes of course
-    typedef connectors::PayloadDataAttachment<AdsrPane, datamodel::AdsrStorage> attachment_t;
+    typedef connectors::PayloadDataAttachment<datamodel::AdsrStorage> attachment_t;
 
     enum Ctrl
     {
@@ -71,7 +71,6 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void adsrChangedFromModel(const datamodel::AdsrStorage &);
     void adsrDeactivated();
     void adsrChangedFromGui(const attachment_t &);
-    void updateTooltip(const attachment_t &);
 
     void showHamburgerMenu();
 };

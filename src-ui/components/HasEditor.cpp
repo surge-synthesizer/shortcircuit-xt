@@ -25,25 +25,10 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
-#define SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
-
-#include "sst/jucegui/style/StyleAndSettingsConsumer.h"
+#include "HasEditor.h"
+#include "SCXTEditor.h"
 
 namespace scxt::ui
 {
-struct SCXTEditor;
-
-struct HasEditor
-{
-    SCXTEditor *editor{nullptr};
-    HasEditor(SCXTEditor *e);
-    virtual ~HasEditor() = default;
-
-    template <typename T> void sendToSerialization(const T &msg);
-    template <typename T> void updateValueTooltip(const T &attachment);
-    template <typename W, typename A>
-    void setupWidgetForValueTooltip(const W &widget, const A &attachment);
-};
+HasEditor::HasEditor(SCXTEditor *e) : editor(e) {}
 } // namespace scxt::ui
-#endif // SHORTCIRCUIT_HASEDITOR_H

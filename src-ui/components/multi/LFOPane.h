@@ -47,13 +47,10 @@ struct LfoDataRender;
 
 struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    typedef connectors::PayloadDataAttachment<LfoPane, modulation::modulators::StepLFOStorage>
-        attachment_t;
-    typedef connectors::DiscretePayloadDataAttachment<LfoPane,
-                                                      modulation::modulators::StepLFOStorage>
+    typedef connectors::PayloadDataAttachment<modulation::modulators::StepLFOStorage> attachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<modulation::modulators::StepLFOStorage>
         intAttachment_t;
-    typedef connectors::BooleanPayloadDataAttachment<LfoPane,
-                                                     modulation::modulators::StepLFOStorage>
+    typedef connectors::BooleanPayloadDataAttachment<modulation::modulators::StepLFOStorage>
         boolAttachment_t;
 
     LfoPane(SCXTEditor *);
@@ -85,8 +82,6 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void pushCurrentLfoUpdate();
     void pickPresets();
-
-    void updateTooltip(const attachment_t &at);
 };
 } // namespace scxt::ui::multi
 

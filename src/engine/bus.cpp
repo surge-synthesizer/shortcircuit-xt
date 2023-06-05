@@ -44,6 +44,7 @@
 #include "sst/effects/Bonsai.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "sst/basic-blocks/dsp/PanLaws.h"
 
 #include "messaging/messaging.h"
 
@@ -206,6 +207,23 @@ void Bus::process()
         memcpy(auxoutput, output, sizeof(output));
 
     // If level becomes modulatable we want to lipol this
+    if (busSendStorage.pan != 0.f)
+    {
+        namespace pl = sst::basic_blocks::dsp::pan_laws;
+        // For now we don't interpolate over the block for pan
+        auto pv = (std::clamp(busSendStorage.pan, -1.f, 1.f) + 1) * 0.5;
+        pl::panmatrix_t pmat{1, 1, 0, 0};
+
+        pl::stereoEqualPower(pv, pmat);
+
+        for (int i = 0; i < blockSize; ++i)
+        {
+            auto il = output[0][i];
+            auto ir = output[1][i];
+            output[0][i] = pmat[0] * il + pmat[2] * ir;
+            output[1][i] = pmat[1] * ir + pmat[3] * il;
+        }
+    }
     if (busSendStorage.level != 1.f)
     {
         mech::scale_by<blockSize>(busSendStorage.level, output[0], output[1]);

@@ -32,7 +32,6 @@
 #include "messaging/client/client_messages.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/Label.h"
-#include "connectors/Connectors.h"
 
 namespace scxt::ui::multi
 {
@@ -56,12 +55,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
         else
             tgt[c]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
 
-        // This is somewhat unsatisfying
-        tgt[c]->onBeginEdit = [this, &slRef = *tgt[c], &atRef = *attachments[c]]() {
-            editor->showTooltip(slRef);
-            updateTooltip(atRef);
-        };
-        tgt[c]->onEndEdit = [this]() { editor->hideTooltip(); };
+        setupWidgetForValueTooltip(tgt[c], attachments[c]);
 
         addAndMakeVisible(*tgt[c]);
     };
@@ -73,9 +67,9 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
     };
 
     connectors::ConnectorFactory<attachment_t, comp::VSlider> sliderFactory(
-        [this](auto &a) { this->adsrChangedFromGui(a); }, this, adsrView);
+        [this](auto &a) { this->adsrChangedFromGui(a); }, adsrView);
     connectors::ConnectorFactory<attachment_t, comp::Knob> knobFactory(
-        [this](auto &a) { this->adsrChangedFromGui(a); }, this, adsrView);
+        [this](auto &a) { this->adsrChangedFromGui(a); }, adsrView);
 
     stowOnto(sliders, Ctrl::A, sliderFactory.attach("Attack", dma::paramAHD, &dma::a));
     makeLabel(Ctrl::A, "A");
@@ -106,26 +100,19 @@ AdsrPane::AdsrPane(SCXTEditor *e, int index)
 
 void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 {
+    adsrView = d;
     for (const auto &[c, sl] : sliders)
         sl->setEnabled(true);
 
     for (const auto &[c, sl] : knobs)
         sl->setEnabled(true);
 
-    for (const auto &[c, at] : attachments)
-        at->setValueFromPayload(d);
-
     repaint();
-}
-
-void AdsrPane::updateTooltip(const attachment_t &at)
-{
-    editor->setTooltipContents(at.label, at.description.valueToString(at.value).value_or("Error"));
 }
 
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
-    updateTooltip(at);
+    updateValueTooltip(at);
     sendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest({index, adsrView}));
 }
 

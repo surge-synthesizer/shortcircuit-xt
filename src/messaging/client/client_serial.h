@@ -72,6 +72,7 @@ enum ClientToSerializationMessagesIds
     c2s_initialize_mixer,
     c2s_set_mixer_effect,
     c2s_set_mixer_effect_storage,
+    c2s_set_mixer_send_storage,
 
     num_clientToSerializationMessages
 };

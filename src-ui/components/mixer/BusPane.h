@@ -29,34 +29,32 @@
 #define SCXT_SRC_UI_COMPONENTS_MIXER_BUSPANE_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+
 #include <sst/jucegui/components/NamedPanel.h>
+
+#include "configuration.h"
+
+#include "components/HasEditor.h"
+#include "components/MixerScreen.h"
+
+#include "ChannelStrip.h"
 
 namespace scxt::ui::mixer
 {
-struct BusPane : public sst::jucegui::components::NamedPanel
-{
-    struct CL : juce::Component
-    {
-        juce::Colour color;
-        std::string label;
-        void paint(juce::Graphics &g) override
-        {
-            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
 
-            g.setColour(color);
-            g.drawText(label, getLocalBounds(), juce::Justification::centred);
-        }
-    };
-    std::unique_ptr<CL> cl;
-    BusPane() : sst::jucegui::components::NamedPanel("BUSSES")
-    {
-        cl = std::make_unique<CL>();
-        cl->color = juce::Colours::cyan;
-        cl->label = "BUSSES";
-        addAndMakeVisible(*cl);
-        hasHamburger = true;
-    }
-    void resized() override { cl->setBounds(getContentArea()); }
+struct BusPane : public HasEditor, public sst::jucegui::components::NamedPanel
+{
+    static constexpr int busWidth{80};
+    std::unique_ptr<juce::Viewport> partBusViewport;
+    std::unique_ptr<juce::Component> partBusContainer;
+
+    std::array<std::unique_ptr<ChannelStrip>, scxt::maxBusses> channelStrips;
+
+    MixerScreen *mixer{nullptr};
+    BusPane(SCXTEditor *e, MixerScreen *m);
+    void resized() override;
+
+    void onStyleChanged() override;
 };
 } // namespace scxt::ui::mixer
 

@@ -56,6 +56,7 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
                 w->showHamburger();
         };
         hasHamburger = true;
+        setTogglable(true);
     }
     ~PartEffectsPane();
 
@@ -67,20 +68,13 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     }
     void resized() override { rebuild(); }
 
-    // The effects have names like 'flanger' and 'delay' internally but we
-    // want alternate display names here.
-    std::string effectDisplayName(engine::AvailableBusEffects, bool forMenu);
-
     void rebuild();
     void showHamburger();
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);
 
     std::unordered_set<std::unique_ptr<juce::Component>> components;
-    typedef connectors::PayloadDataAttachment<PartEffectsPane, engine::BusEffectStorage>
-        attachment_t;
-    // typedef connectors::PayloadDataAttachment<PartEffectsPane, engine::BusEffectStorage>
-    //     attachment_t;
+    typedef connectors::PayloadDataAttachment<engine::BusEffectStorage> attachment_t;
     std::unordered_set<std::unique_ptr<attachment_t>> floatAttachments;
 
   protected:
@@ -92,7 +86,6 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     // Generic
     void rebuildDefaultLayout();
     void floatParameterChangedFromGui(const attachment_t &at, int idx);
-    void updateTooltip(const attachment_t &at);
 
     // Specific
     // void rebuildDelayLayout();

@@ -46,13 +46,10 @@ namespace scxt::ui::multi
 struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::DragAndDropTarget
 {
     // ToDo: shapes of course
-    typedef connectors::PayloadDataAttachment<ProcessorPane, dsp::processor::ProcessorStorage>
-        attachment_t;
-    typedef connectors::DiscretePayloadDataAttachment<ProcessorPane,
-                                                      dsp::processor::ProcessorStorage>
+    typedef connectors::PayloadDataAttachment<dsp::processor::ProcessorStorage> attachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<dsp::processor::ProcessorStorage>
         int_attachment_t;
-    typedef connectors::BooleanPayloadDataAttachment<ProcessorPane,
-                                                     dsp::processor::ProcessorStorage>
+    typedef connectors::BooleanPayloadDataAttachment<dsp::processor::ProcessorStorage>
         bool_attachment_t;
 
     dsp::processor::ProcessorStorage processorView;
@@ -94,7 +91,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
 
-    void updateTooltip(const attachment_t &);
     void showHamburgerMenu();
 
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;

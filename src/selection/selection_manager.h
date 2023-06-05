@@ -154,7 +154,6 @@ struct SelectionManager
     ZoneAddress leadZone;
 
   protected:
-    MainSelection mainSelection{MULTI};
     std::map<size_t, std::set<size_t>> selectedGroupByPart;
 };
 } // namespace scxt::selection
