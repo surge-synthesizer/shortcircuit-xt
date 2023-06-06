@@ -51,6 +51,7 @@ struct Patch : MoveableOnly<Patch>
             for (auto &p : partBusses)
             {
                 p.address = (BusAddress)adr;
+                p.busSendStorage.supportsSends = true;
                 adr++;
             }
             adr = AUX_0;

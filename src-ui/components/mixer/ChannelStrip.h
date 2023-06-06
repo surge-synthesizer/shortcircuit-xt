@@ -87,6 +87,25 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
     void mouseDown(const juce::MouseEvent &) override;
 
     void effectsChanged();
+    float vuL{0.f}, vuR{0.f};
+
+    struct ChannelVU : juce::Component
+    {
+        float L{0.f}, R{0.f};
+        void paint(juce::Graphics &g) override;
+    };
+    std::unique_ptr<ChannelVU> vuMeter;
+    void setVULevel(float L, float R)
+    {
+        if (vuL != L || vuR != R)
+        {
+            vuMeter->L = vuL;
+            vuMeter->R = vuR;
+            vuMeter->repaint();
+        }
+        vuL = L;
+        vuR = R;
+    }
 };
 };     // namespace scxt::ui::mixer
 #endif // SHORTCIRCUITXT_CHANNELSTRIP_H

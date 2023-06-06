@@ -84,6 +84,9 @@ struct MixerScreen : juce::Component, HasEditor
     void setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t);
     void showFXSelectionMenu(int bus, int slot);
     void sendBusSendStorage(int bus);
+
+    void setVULevelForBusses(
+        const std::array<std::array<std::atomic<float>, 2>, engine::Patch::Busses::busCount> &x);
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUIT_SENDFXSCREEN_H

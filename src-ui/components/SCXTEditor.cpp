@@ -197,6 +197,11 @@ void SCXTEditor::idle()
 
     headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],
                              sharedUiMemoryState.busVULevels[0][1]);
+
+    if (mixerScreen->isVisible())
+    {
+        mixerScreen->setVULevelForBusses(sharedUiMemoryState.busVULevels);
+    }
 }
 
 void SCXTEditor::drainCallbackQueue()

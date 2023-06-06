@@ -204,7 +204,9 @@ void Bus::process()
 
     if (busSendStorage.supportsSends && busSendStorage.hasSends &&
         busSendStorage.auxLocation == BusSendStorage::POST_FX_PRE_VCA)
+    {
         memcpy(auxoutput, output, sizeof(output));
+    }
 
     // If level becomes modulatable we want to lipol this
     if (busSendStorage.pan != 0.f)
@@ -232,6 +234,14 @@ void Bus::process()
     if (busSendStorage.supportsSends && busSendStorage.hasSends &&
         busSendStorage.auxLocation == BusSendStorage::POST_VCA)
         memcpy(auxoutput, output, sizeof(output));
+
+    float a = vuFalloff;
+
+    for (int c = 0; c < 2; ++c)
+    {
+        vuLevel[c] = std::min(2.f, a * vuLevel[c]);
+        vuLevel[c] = std::max((float)vuLevel[c], mech::blockAbsMax<BLOCK_SIZE>(output[c]));
+    }
 }
 
 void Bus::sendBusEffectInfoToClient(const scxt::engine::Engine &e, int slot)
