@@ -174,4 +174,13 @@ void MixerScreen::sendBusSendStorage(int bus)
     sendToSerialization(cmsg::SetBusSendStorage({bus, busSendData[bus]}));
 }
 
+void MixerScreen::setVULevelForBusses(
+    const std::array<std::array<std::atomic<float>, 2>, engine::Patch::Busses::busCount> &x)
+{
+    for (const auto &[i, cs] : sst::cpputils::enumerate(busPane->channelStrips))
+    {
+        cs->setVULevel(x[i][0], x[i][1]);
+    }
+}
+
 } // namespace scxt::ui

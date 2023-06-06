@@ -226,20 +226,17 @@ bool Engine::processAudio()
 
     getPatch()->process(*this);
 
-    // VU Update. Very crude for now.
-    float a = vuFalloff;
-    sharedUIMemoryState.busVULevels[0][0] =
-        std::min(2.f, a * sharedUIMemoryState.busVULevels[0][0]);
-    sharedUIMemoryState.busVULevels[0][1] =
-        std::min(2.f, a * sharedUIMemoryState.busVULevels[0][1]);
-    sharedUIMemoryState.busVULevels[0][0] =
-        std::max((float)sharedUIMemoryState.busVULevels[0][0],
-                 mech::blockAbsMax<BLOCK_SIZE>(getPatch()->busses.mainBus.output[0]));
-    sharedUIMemoryState.busVULevels[0][1] =
-        std::max((float)sharedUIMemoryState.busVULevels[0][1],
-                 mech::blockAbsMax<BLOCK_SIZE>(getPatch()->busses.mainBus.output[1]));
-
-    auto ml = getPatch()->busses.mainBus.output[0][0] + getPatch()->busses.mainBus.output[1][0];
+    auto &bl = sharedUIMemoryState.busVULevels;
+    const auto &bs = getPatch()->busses;
+    for (int c = 0; c < 2; ++c)
+    {
+        int idx = 0;
+        bl[idx++][c] = bs.mainBus.vuLevel[c];
+        for (const auto &a : bs.partBusses)
+            bl[idx++][c] = a.vuLevel[c];
+        for (const auto &a : bs.auxBusses)
+            bl[idx++][c] = a.vuLevel[c];
+    }
 
     auto pav = activeVoiceCount();
 

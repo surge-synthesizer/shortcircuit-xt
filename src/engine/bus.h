@@ -105,6 +105,7 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
     float output alignas(16)[2][blockSize];
     float auxoutput alignas(16)[2][blockSize];
+    float vuLevel[2]{0.f, 0.f}, vuFalloff{0.f};
 
     inline void clear() { memset(output, 0, sizeof(output)); }
 
@@ -115,6 +116,11 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
         assert(idx >= 0 && idx < maxSendsPerBus);
         assert(busSendStorage.supportsSends);
         busSendStorage.sendLevels[idx] = slevel;
+        resetSendState();
+    }
+
+    void resetSendState()
+    {
         busSendStorage.hasSends = false;
         for (const auto &f : busSendStorage.sendLevels)
             busSendStorage.hasSends = busSendStorage.hasSends || (f != 0);

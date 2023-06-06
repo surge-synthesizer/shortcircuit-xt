@@ -377,6 +377,7 @@ template <> struct scxt_traits<engine::Bus>
     {
         findIf(v, "busSendStorage", r.busSendStorage);
         findIf(v, "busEffectStorage", r.busEffectStorage);
+        r.resetSendState();
     }
 };
 

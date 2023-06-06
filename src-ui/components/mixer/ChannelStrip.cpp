@@ -79,7 +79,7 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
         idx++;
     }
 
-    if (t != BusType::AUX)
+    if (t == BusType::PART)
     {
         int idx{0};
         auxLabel = std::make_unique<jcmp::Label>();
@@ -125,8 +125,9 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
     addAndMakeVisible(*panKnob);
     setupWidgetForValueTooltip(panKnob, panAttachment);
 
-    vcaAttachment = std::make_unique<attachment_t>(datamodel::pmd().asPercent().withName("Level"),
-                                                   onChange, mixer->busSendData[busIndex].level);
+    vcaAttachment = std::make_unique<attachment_t>(
+        datamodel::pmd().asPercent().withName("Level").withDefault(1.0), onChange,
+        mixer->busSendData[busIndex].level);
     vcaSlider = std::make_unique<jcmp::VSlider>();
     vcaSlider->setSource(vcaAttachment.get());
     setupWidgetForValueTooltip(vcaSlider, vcaAttachment);
@@ -143,6 +144,9 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
     outputMenu = std::make_unique<jcmp::MenuButton>();
     outputMenu->setLabel("OUTPUT");
     addAndMakeVisible(*outputMenu);
+
+    vuMeter = std::make_unique<ChannelVU>();
+    addAndMakeVisible(*vuMeter);
 
     effectsChanged();
 }
@@ -177,7 +181,7 @@ void ChannelStrip::resized()
         fx = fx.translated(0, fxheight);
     }
 
-    if (type == BusType::AUX)
+    if (type != BusType::PART)
     {
         fx = fx.translated(0, fxheight * (auxSlider.size() + 1));
     }
@@ -216,6 +220,11 @@ void ChannelStrip::resized()
 
     auto s = fx.withHeight(sliderVUHeight).withTrimmedRight(fx.getWidth() / 2).reduced(1);
     vcaSlider->setBounds(s);
+    auto vs = fx.withHeight(sliderVUHeight)
+                  .withTrimmedLeft(fx.getWidth() * 2.5 / 4)
+                  .withWidth(fx.getWidth() / 4)
+                  .reduced(1);
+    vuMeter->setBounds(vs);
 
     fx = fx.translated(0, sliderVUHeight);
     outputMenu->setBounds(fx);
@@ -233,5 +242,21 @@ void ChannelStrip::effectsChanged()
             fxMenu[i]->setLabel(mixer->effectDisplayName(bed[i].second.type, false));
     }
     repaint();
+}
+
+void ChannelStrip::ChannelVU::paint(juce::Graphics &g)
+{
+    g.fillAll(juce::Colours::black);
+    auto lb = getLocalBounds()
+                  .withTrimmedRight(getWidth() / 2)
+                  .withTrimmedLeft(1)
+                  .withTrimmedTop((1.8 - std::clamp(L, 0.f, 1.8f)) * getHeight() / 1.8);
+    g.setColour(juce::Colour(0xFF, 0x90, 0x00));
+    g.fillRect(lb);
+    auto rb = getLocalBounds()
+                  .withTrimmedLeft(getWidth() / 2)
+                  .withTrimmedRight(1)
+                  .withTrimmedTop((1.8 - std::clamp(R, 0.f, 1.8f) / 1.8) * getHeight() / 1.8);
+    g.fillRect(rb);
 }
 } // namespace scxt::ui::mixer

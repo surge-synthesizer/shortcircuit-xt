@@ -43,12 +43,23 @@ void Patch::process(Engine &e)
     }
 
     // Then process the part busses
+    for (auto &b : busses.auxBusses)
+        b.clear();
+
     for (auto &b : busses.partBusses)
     {
         b.process();
         if (b.busSendStorage.supportsSends && b.busSendStorage.hasSends)
         {
-            // TOD accumulate my sends
+            for (int i = 0; i < numAux; ++i)
+            {
+                if (b.busSendStorage.sendLevels[i] != 0.f)
+                {
+                    mech::scale_accumulate_from_to<blockSize>(
+                        b.auxoutput[0], b.auxoutput[1], b.busSendStorage.sendLevels[i],
+                        busses.auxBusses[i].output[0], busses.auxBusses[i].output[1]);
+                }
+            }
         }
     }
 
@@ -89,9 +100,16 @@ void Patch::setupBussesOnUnstream(Engine &e)
 {
     // Assume the bus storage is correct
     busses.mainBus.initializeAfterUnstream(e);
+    busses.mainBus.busSendStorage.supportsSends = false;
     for (auto &p : busses.partBusses)
+    {
         p.initializeAfterUnstream(e);
+        p.busSendStorage.supportsSends = true;
+    }
     for (auto &a : busses.auxBusses)
+    {
+        a.busSendStorage.supportsSends = false;
         a.initializeAfterUnstream(e);
+    }
 }
 } // namespace scxt::engine
