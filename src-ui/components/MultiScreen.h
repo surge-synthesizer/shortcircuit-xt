@@ -76,6 +76,14 @@ struct MultiScreen : juce::Component, HasEditor
     void layout();
     void onVoiceInfoChanged();
 
+    enum class SelectionMode
+    {
+        NONE,
+        ZONE,
+        GROUP
+    } selectionMode{SelectionMode::NONE};
+    void setSelectionMode(SelectionMode m);
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MultiScreen);
 };
 } // namespace scxt::ui

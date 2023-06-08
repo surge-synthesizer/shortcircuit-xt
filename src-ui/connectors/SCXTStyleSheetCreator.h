@@ -42,6 +42,8 @@ struct SCXTStyleSheetCreator
     static constexpr sheet_t::Class ModulationMatrixToggle{"modulation.editor.toggle"};
     static constexpr sheet_t::Class ModulationMatrixMenu{"modulation.editor.menu"};
 
+    static constexpr sheet_t::Class GroupMultiNamedPanel{"group.mult.namedpanel"};
+
     static constexpr sheet_t::Class InformationLabel{"label.information"};
     static const sheet_t::ptr_t setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseType =
                                           sst::jucegui::style::StyleSheet::BuiltInTypes::DARK);
