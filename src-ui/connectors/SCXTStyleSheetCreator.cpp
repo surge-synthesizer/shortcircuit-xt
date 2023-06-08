@@ -131,6 +131,11 @@ void SCXTStyleSheetCreator::makeDarkColors(const sheet_t::ptr_t &base)
 
     base->setColour(InformationLabel, comp::ControlStyles::controlLabelCol,
                     juce::Colour(0x88, 0x88, 0x88));
+
+    base->setColour(GroupMultiNamedPanel, comp::NamedPanel::Styles::regionBG,
+                    juce::Colour(0x15, 0x20, 0x15));
+    base->setColour(GroupMultiNamedPanel, comp::NamedPanel::Styles::regionBorder,
+                    juce::Colour(0x25, 0x50, 0x25));
 }
 
 void SCXTStyleSheetCreator::makeLightColors(const sheet_t::ptr_t &base)
@@ -222,6 +227,11 @@ void SCXTStyleSheetCreator::makeLightColors(const sheet_t::ptr_t &base)
 
     base->setColour(InformationLabel, comp::ControlStyles::controlLabelCol,
                     juce::Colour(0x88, 0x88, 0x88));
+
+    base->setColour(GroupMultiNamedPanel, comp::NamedPanel::Styles::regionBG,
+                    juce::Colour(220, 230, 220));
+    base->setColour(GroupMultiNamedPanel, comp::NamedPanel::Styles::regionBorder,
+                    juce::Colour(85, 150, 85));
 }
 
 const sheet_t::ptr_t
@@ -241,6 +251,8 @@ SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseT
         .withBaseClass(SCXTStyleSheetCreator::ModulationMatrixToggle);
     sheet_t::addClass(SCXTStyleSheetCreator::InformationLabel)
         .withBaseClass(comp::ControlStyles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::GroupMultiNamedPanel)
+        .withBaseClass(comp::NamedPanel::Styles::styleClass);
 
     const auto &base = sheet_t::getBuiltInStyleSheet(baseType);
 

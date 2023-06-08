@@ -35,6 +35,8 @@
 #include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
 
+#include "connectors/SCXTStyleSheetCreator.h"
+
 namespace scxt::ui
 {
 
@@ -95,6 +97,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     }
     lfo = std::make_unique<multi::LfoPane>(editor);
     addAndMakeVisible(*lfo);
+
+    setSelectionMode(SelectionMode::ZONE);
 }
 
 MultiScreen::~MultiScreen() = default;
@@ -134,4 +138,45 @@ void MultiScreen::layout()
 }
 
 void MultiScreen::onVoiceInfoChanged() { sample->repaint(); }
+
+void MultiScreen::setSelectionMode(scxt::ui::MultiScreen::SelectionMode m)
+{
+    if (selectionMode == m)
+        return;
+    selectionMode = m;
+    switch (m)
+    {
+    case SelectionMode::NONE:
+    case SelectionMode::ZONE:
+        eg[0]->removeCustomClass();
+        eg[0]->setName("AMP EG");
+        eg[1]->removeCustomClass();
+        eg[1]->setName("EG 2");
+        lfo->removeCustomClass();
+        mod->removeCustomClass();
+        output->removeCustomClass();
+
+        for (auto &p : processors)
+        {
+            p->removeCustomClass();
+        }
+        break;
+    case SelectionMode::GROUP:
+        eg[0]->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        eg[0]->setName("GRP EG1");
+        eg[1]->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        eg[1]->setName("GRP EG1");
+        lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        // TODO - change tab names to GLFO?
+        mod->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        output->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+
+        for (auto &p : processors)
+        {
+            p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        }
+        break;
+    }
+    repaint();
+}
 } // namespace scxt::ui

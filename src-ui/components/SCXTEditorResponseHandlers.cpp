@@ -152,15 +152,21 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
 {
     allSelections = a.second;
     auto optLead = a.first;
+    auto zs = MultiScreen::SelectionMode::ZONE;
     if (optLead.has_value())
     {
         currentLeadSelection = *optLead;
+        if (currentLeadSelection->zone == -1 && currentLeadSelection->group >= 0)
+        {
+            zs = MultiScreen::SelectionMode::GROUP;
+        }
     }
     else
     {
         currentLeadSelection = std::nullopt;
         assert(allSelections.empty());
     }
+    multiScreen->setSelectionMode(zs);
 
     groupsInSelection.clear();
     for (const auto &sel : allSelections)
