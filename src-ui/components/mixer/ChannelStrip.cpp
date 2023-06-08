@@ -226,7 +226,7 @@ void ChannelStrip::resized()
                   .reduced(1);
     vuMeter->setBounds(vs);
 
-    fx = fx.translated(0, sliderVUHeight);
+    fx = fx.translated(0, sliderVUHeight + fxheight / 2);
     outputMenu->setBounds(fx);
 }
 

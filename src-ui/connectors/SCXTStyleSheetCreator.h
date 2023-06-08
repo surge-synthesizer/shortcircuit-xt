@@ -47,6 +47,10 @@ struct SCXTStyleSheetCreator
                                           sst::jucegui::style::StyleSheet::BuiltInTypes::DARK);
 
     static juce::Font interMediumFor(int ht);
+
+  private:
+    static void makeDarkColors(const sheet_t::ptr_t &);
+    static void makeLightColors(const sheet_t::ptr_t &);
 };
 } // namespace scxt::ui::connectors
 #endif // SHORTCIRCUIT_SCXTSTYLESHEET_H
