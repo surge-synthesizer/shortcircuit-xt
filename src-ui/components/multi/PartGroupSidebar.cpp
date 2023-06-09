@@ -31,6 +31,8 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
 #include "messaging/messaging.h"
+#include "components/MultiScreen.h"
+#include "connectors/PayloadDataAttachment.h"
 
 namespace scxt::ui::multi
 {
@@ -107,6 +109,7 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                     SCLOG("TODO: Multi-ui driven sidebar selection");
                     return;
                 }
+                sidebar->editor->multiScreen->setSelectionMode(MultiScreen::SelectionMode::ZONE);
             }
         }
 
@@ -250,6 +253,12 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
                 }
 
                 auto se = selection::SelectionManager::SelectActionContents(getZoneAddress());
+                gsb->editor->multiScreen->setSelectionMode(MultiScreen::SelectionMode::ZONE);
+                if (gsb->groupParamActive)
+                {
+                    gsb->groupParamActive = false;
+                    gsb->repaint();
+                }
                 se.selecting = !isSelected;
                 se.distinct = !event.mods.isCommandDown();
                 se.selectingAsLead = se.selecting;
@@ -361,14 +370,30 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
         listBox->setColour(juce::ListBox::backgroundColourId, juce::Colour(0, 0, 0).withAlpha(0.f));
 
         addAndMakeVisible(*listBox);
+
+        groupParamAttachment = std::make_unique<connectors::DirectBooleanPayloadDataAttachment>(
+            [w = juce::Component::SafePointer(this)](bool v) {
+                if (w)
+                    w->setGroupParamActive(v);
+            },
+            groupParamActive);
+        groupParamButton = std::make_unique<jcmp::ToggleButton>();
+        groupParamButton->setLabel(std::string("EDIT GROUP PARAMETERS ") + u8"\U000021D2");
+        groupParamButton->setSource(groupParamAttachment.get());
+        addAndMakeVisible(*groupParamButton);
     }
+    ~GroupSidebar() { groupParamButton->setSource(nullptr); }
 
     void addGroup()
     {
         auto &mc = partGroupSidebar->editor->msgCont;
         partGroupSidebar->sendToSerialization(cmsg::CreateGroup(part));
     }
-    void resized() override { listBox->setBounds(getLocalBounds().withTrimmedBottom(200)); }
+    void resized() override
+    {
+        listBox->setBounds(getLocalBounds().withTrimmedBottom(200));
+        groupParamButton->setBounds(getLocalBounds().withTrimmedTop(getHeight() - 22));
+    }
 
     void updateSelection()
     {
@@ -388,6 +413,15 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
         listBoxModel->selectionFromServer = true;
         listBox->setSelectedRows(rows);
         listBoxModel->selectionFromServer = false;
+    }
+
+    std::unique_ptr<connectors::DirectBooleanPayloadDataAttachment> groupParamAttachment;
+    std::unique_ptr<jcmp::ToggleButton> groupParamButton;
+    bool groupParamActive{false};
+    void setGroupParamActive(bool b)
+    {
+        partGroupSidebar->editor->multiScreen->setSelectionMode(
+            b ? MultiScreen::SelectionMode::GROUP : MultiScreen::SelectionMode::ZONE);
     }
 };
 
