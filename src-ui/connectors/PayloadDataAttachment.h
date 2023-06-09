@@ -202,6 +202,30 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, boo
     std::string getValueAsStringFor(int i) const override { return i == 0 ? "Off" : "On"; }
 };
 
+struct DirectBooleanPayloadDataAttachment : sst::jucegui::data::Discrete
+{
+    bool &value;
+    std::function<void(const bool)> callback;
+    DirectBooleanPayloadDataAttachment(std::function<void(const bool val)> oGVC, bool &v)
+        : callback(oGVC), value(v)
+    {
+    }
+
+    std::string getLabel() const override { return "Bool"; }
+    int getValue() const override { return value ? 1 : 0; }
+    void setValueFromGUI(const int &f) override
+    {
+        value = f;
+        callback(f);
+    }
+    void setValueFromModel(const int &f) override { value = f; }
+
+    int getMin() const override { return (int)0; }
+    int getMax() const override { return (int)1; }
+
+    std::string getValueAsStringFor(int i) const override { return i == 0 ? "Off" : "On"; }
+};
+
 struct SamplePointDataAttachment : sst::jucegui::data::ContinunousModulatable
 {
     int64_t &value;
