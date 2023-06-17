@@ -114,7 +114,7 @@ enum ProcessorType
     proct_eq_2band_parametric_A,
     proct_eq_6band,
     proct_comb1,
-    proct_fx_bitfucker,
+    proct_fx_bitcrusher,
     proct_fx_distortion1,
     proct_fx_clipper,
     proct_fx_slewer,
