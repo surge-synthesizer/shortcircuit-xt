@@ -27,6 +27,9 @@
 
 #include "dsp/processor/processor.h"
 
+#include "sst/filters/BiquadFilter.h"
+#include "configuration.h"
+
 namespace scxt::dsp::processor
 {
 namespace distortion
@@ -47,9 +50,13 @@ struct alignas(16) BitCrusher : public Processor
                         float pitch) override;
     void init_params() override;
     int tail_length() override { return tailInfinite; }
+    float note_to_pitch_ignoring_tuning(float n);
+    float dbToLinear(float n);
+    double dsamplerate_inv;
 
   private:
     float time[2]{0.f, 0.f}, level[2]{0.f, 0.f};
+    typename sst::filters::Biquad::BiquadFilter<typename BitCrusher, BLOCK_SIZE> lp;
 };
 
 } // namespace distortion

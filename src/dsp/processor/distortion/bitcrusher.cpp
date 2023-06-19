@@ -28,24 +28,26 @@
 
 #include "datamodel/parameter.h"
 #include "tuning/equal.h"
-#include "configuration.h"
 #include "engine/memory_pool.h"
+#include "dsp/data_tables.h"
 
 #include <algorithm>
 
 namespace scxt::dsp::processor::distortion
 {
 BitCrusher::BitCrusher(engine::MemoryPool *mp, float *f, int32_t *i)
-    : Processor(proct_fx_bitcrusher, mp, f, i)
+    : Processor(proct_fx_bitcrusher, mp, f, i), lp(this)
 {
     parameter_count = 5;
     ctrlmode_desc[0] = datamodel::pmd().withName("samplerate");
     ctrlmode_desc[1] = datamodel::pmd().asPercent().withName("bitdepth");
     ctrlmode_desc[2] = datamodel::pmd().asPercent().withName("zeropoint");
 
-    // LP2B params - usage is pending LP2B migration
+    // LP2B params
     ctrlmode_desc[3] = datamodel::pitchInOctavesFromA440().withName("cutoff");
     ctrlmode_desc[4] = datamodel::pmd().asPercent().withName("resonance");
+
+    dsamplerate_inv = samplerate_inv;
 }
 
 BitCrusher::~BitCrusher() {}
@@ -95,5 +97,15 @@ void BitCrusher::process_stereo(float *datainL, float *datainR, float *dataoutL,
         dataoutL[k] = level[0];
         dataoutR[k] = level[1];
     }
+
+    lp.coeff_LP2B(lp.calc_omega(param[3]), lp.calc_v1_Q(param[4]));
+    lp.process_block(dataoutL, dataoutR);
+}
+
+float BitCrusher::note_to_pitch_ignoring_tuning(float n) {
+    return tuning::equalTuning.note_to_pitch(n);
+}
+float BitCrusher::dbToLinear(float n) {
+    return dbTable.dbToLinear(n);
 }
 } // namespace scxt::dsp::processor::distortion
