@@ -102,10 +102,9 @@ void BitCrusher::process_stereo(float *datainL, float *datainR, float *dataoutL,
     lp.process_block(dataoutL, dataoutR);
 }
 
-float BitCrusher::note_to_pitch_ignoring_tuning(float n) {
+float BitCrusher::note_to_pitch_ignoring_tuning(float n)
+{
     return tuning::equalTuning.note_to_pitch(n);
 }
-float BitCrusher::dbToLinear(float n) {
-    return dbTable.dbToLinear(n);
-}
+float BitCrusher::dbToLinear(float n) { return dbTable.dbToLinear(n); }
 } // namespace scxt::dsp::processor::distortion
