@@ -78,6 +78,8 @@
 #include <utility>
 #include "datamodel/parameter.h"
 #include "utils.h"
+#include "dsp/data_tables.h"
+#include "tuning/equal.h"
 
 namespace scxt::engine
 {
@@ -277,6 +279,13 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
         strncpy(target, v, processorLabelSize);
         target[processorLabelSize - 1] = '\0';
     }
+};
+
+class BiquadSupport
+{
+  public:
+    float note_to_pitch_ignoring_tuning(float n) { return tuning::equalTuning.note_to_pitch(n); }
+    float dbToLinear(float n) { return dbTable.dbToLinear(n); }
 };
 
 /**
