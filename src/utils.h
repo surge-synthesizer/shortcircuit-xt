@@ -180,10 +180,13 @@ struct SampleRateSupport
     {
         samplerate = sampleRate;
         samplerate_inv = sampleRateInv;
+        dsamplerate = sampleRate;
+        dsamplerate_inv = sampleRateInv;
         onSampleRateChanged();
     }
 
     virtual void onSampleRateChanged() {}
+    double dsamplerate, dsamplerate_inv;
 
   protected:
     double sampleRate{1}, sampleRateInv{1};

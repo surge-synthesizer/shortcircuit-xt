@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME} STATIC
         dsp/data_tables.cpp
         dsp/processor/processor.cpp
 
+        dsp/processor/distortion/bitcrusher.cpp
         dsp/processor/distortion/microgate.cpp
         dsp/processor/filter/supersvf.cpp
         dsp/processor/oscillator/oscpulsesync.cpp

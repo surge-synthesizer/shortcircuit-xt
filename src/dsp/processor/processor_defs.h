@@ -61,6 +61,7 @@
  *  and then include the h here and everything will work
  */
 
+#include "distortion/bitcrusher.h"
 #include "distortion/microgate.h"
 
 #include "filter/supersvf.h"

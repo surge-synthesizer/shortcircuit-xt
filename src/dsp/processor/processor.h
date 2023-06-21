@@ -78,6 +78,8 @@
 #include <utility>
 #include "datamodel/parameter.h"
 #include "utils.h"
+#include "dsp/data_tables.h"
+#include "tuning/equal.h"
 
 namespace scxt::engine
 {
@@ -114,7 +116,7 @@ enum ProcessorType
     proct_eq_2band_parametric_A,
     proct_eq_6band,
     proct_comb1,
-    proct_fx_bitfucker,
+    proct_fx_bitcrusher,
     proct_fx_distortion1,
     proct_fx_clipper,
     proct_fx_slewer,
@@ -277,6 +279,13 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
         strncpy(target, v, processorLabelSize);
         target[processorLabelSize - 1] = '\0';
     }
+};
+
+class BiquadSupport
+{
+  public:
+    float note_to_pitch_ignoring_tuning(float n) { return tuning::equalTuning.note_to_pitch(n); }
+    float dbToLinear(float n) { return dbTable.dbToLinear(n); }
 };
 
 /**
