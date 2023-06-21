@@ -53,7 +53,9 @@ struct alignas(16) BitCrusher : public Processor, BiquadSupport
 
   private:
     float time[2]{0.f, 0.f}, level[2]{0.f, 0.f};
-    sst::filters::Biquad::BiquadFilter<typename BitCrusher, BLOCK_SIZE> lp;
+    typename sst::filters::Biquad::BiquadFilter<
+        typename scxt::dsp::processor::distortion::BitCrusher, BLOCK_SIZE>
+        lp;
 };
 
 } // namespace distortion
