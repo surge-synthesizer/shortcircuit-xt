@@ -32,6 +32,7 @@
 #include "engine/engine.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
+#include "browser/browser.h"
 
 //==============================================================================
 /**
@@ -41,6 +42,7 @@ class SCXTPluginEditor : public juce::AudioProcessorEditor
   public:
     SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &,
                      scxt::infrastructure::DefaultsProvider &, const scxt::sample::SampleManager &,
+                     const scxt::browser::Browser &,
                      const scxt::engine::Engine::SharedUIMemoryState &);
     ~SCXTPluginEditor();
 

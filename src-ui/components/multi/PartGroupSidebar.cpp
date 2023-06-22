@@ -254,11 +254,8 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
 
                 auto se = selection::SelectionManager::SelectActionContents(getZoneAddress());
                 gsb->editor->multiScreen->setSelectionMode(MultiScreen::SelectionMode::ZONE);
-                if (gsb->groupParamActive)
-                {
-                    gsb->groupParamActive = false;
-                    gsb->repaint();
-                }
+                gsb->setGroupParamActive(false);
+
                 se.selecting = !isSelected;
                 se.distinct = !event.mods.isCommandDown();
                 se.selectingAsLead = se.selecting;
@@ -420,8 +417,10 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
     bool groupParamActive{false};
     void setGroupParamActive(bool b)
     {
+        groupParamActive = b;
         partGroupSidebar->editor->multiScreen->setSelectionMode(
             b ? MultiScreen::SelectionMode::GROUP : MultiScreen::SelectionMode::ZONE);
+        groupParamButton->repaint();
     }
 };
 

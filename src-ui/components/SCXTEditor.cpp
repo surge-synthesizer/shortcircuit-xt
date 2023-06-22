@@ -48,9 +48,9 @@ namespace scxt::ui
 {
 
 SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
-                       const sample::SampleManager &s,
+                       const sample::SampleManager &s, const scxt::browser::Browser &b,
                        const engine::Engine::SharedUIMemoryState &st)
-    : msgCont(e), sampleManager(s), defaultsProvider(d), sharedUiMemoryState(st)
+    : msgCont(e), sampleManager(s), defaultsProvider(d), browser(b), sharedUiMemoryState(st)
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
 

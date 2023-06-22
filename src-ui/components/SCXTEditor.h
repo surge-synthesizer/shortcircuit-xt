@@ -42,6 +42,7 @@
 #include "sst/jucegui/components/WindowPanel.h"
 #include "messaging/client/zone_messages.h"
 #include "infrastructure/rng_gen.h"
+#include "browser/browser.h"
 
 #include "HasEditor.h"
 
@@ -80,6 +81,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
      */
     infrastructure::DefaultsProvider &defaultsProvider;
 
+    /*
+     * And the browser for read only functions. (Modifications go back by
+     * the message controller)
+     */
+    const scxt::browser::Browser &browser;
+
     /* And finally we have shared state with the engine for display
      * things we don't want to stream. See the comment in engine.h
      * about this structure. Note this is a const & containing atomics,
@@ -111,7 +118,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<widgets::Tooltip> toolTip;
 
     SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
-               const sample::SampleManager &s, const engine::Engine::SharedUIMemoryState &b);
+               const sample::SampleManager &s, const scxt::browser::Browser &b,
+               const engine::Engine::SharedUIMemoryState &state);
     virtual ~SCXTEditor() noexcept;
 
     enum ActiveScreen
