@@ -32,19 +32,19 @@
 namespace scxt::browser
 {
 
-std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView()
+std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
 {
     auto gld = ::GetLogicalDrives();
     std::vector<fs::path> res;
 
     char dl = 'A';
-    for (int i = 0; i < 64; ++i)
+    for (int i = 0; i < 26; ++i)
     {
         if (gld & 1)
         {
             std::string dn = "_:\\";
             dn[0] = dl;
-            res.push_back(fs::path{dn})
+            res.push_back(fs::path{dn});
         }
         gld = gld >> 1;
         dl++;

@@ -41,7 +41,7 @@ namespace cmsg = scxt::messaging::client;
 
 MixerScreen::MixerScreen(SCXTEditor *e) : HasEditor(e)
 {
-    browser = std::make_unique<browser::BrowserPane>();
+    browser = std::make_unique<browser::BrowserPane>(editor);
     addAndMakeVisible(*browser);
 
     busPane = std::make_unique<mixer::BusPane>(e, this);

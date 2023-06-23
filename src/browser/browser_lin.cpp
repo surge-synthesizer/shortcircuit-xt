@@ -25,19 +25,26 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <stdlib.h>
+
 #include "browser.h"
-#include <unistd.h>
 
 namespace scxt::browser
 {
 
-std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView()
+std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
 {
     std::vector<fs::path> res;
 
-    res.push_back(fs::path{"/"});
+    // We welcome pull requests! I have no idea what linux users expect
+    res.emplace_back("/");
     if (getenv("HOME"))
-        res.push_back(fs::path{getenv("HOME")});
+        res.emplace_back(getenv("HOME"));
+
+    auto ush = fs::path{"/usr/share"};
+    if (fs::is_directory(ush))
+        res.emplace_back(ush);
+
     return res;
 }
 

@@ -25,19 +25,30 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <stdlib.h>
+#include <Foundation/Foundation.h>
+
 #include "browser.h"
-#include <unistd.h>
 
 namespace scxt::browser
 {
 
-std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView()
+std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
 {
     std::vector<fs::path> res;
 
-    res.push_back(fs::path{"/"});
+    res.emplace_back("/");
     if (getenv("HOME"))
-        res.push_back(fs::path{getenv("HOME")});
+        res.emplace_back(getenv("HOME"));
+
+    auto *fileManager = [NSFileManager defaultManager];
+    auto *resultURLs = [fileManager URLsForDirectory:NSMusicDirectory inDomains:NSUserDomainMask];
+    if (resultURLs)
+    {
+        auto *u = [resultURLs objectAtIndex:0];
+        res.emplace_back([u fileSystemRepresentation]);
+    }
+
     return res;
 }
 } // namespace scxt::browser

@@ -28,35 +28,24 @@
 #ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
 #define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
 
+#include <vector>
+#include "filesystem/import.h"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/NamedPanel.h>
+#include "components/HasEditor.h"
 
 namespace scxt::ui::browser
 {
-struct BrowserPane : public sst::jucegui::components::NamedPanel
+struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
 {
-    struct CL : juce::Component
-    {
-        juce::Colour color;
-        std::string label;
-        void paint(juce::Graphics &g) override
-        {
-            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
+    BrowserPane(SCXTEditor *e);
+    void resized() override;
 
-            g.setColour(color);
-            g.drawText(label, getLocalBounds(), juce::Justification::centred);
-        }
-    };
-    std::unique_ptr<CL> cl;
-    BrowserPane() : sst::jucegui::components::NamedPanel("Browser")
-    {
-        cl = std::make_unique<CL>();
-        cl->color = juce::Colours::cyan;
-        cl->label = "BROWSER";
-        addAndMakeVisible(*cl);
-        hasHamburger = true;
-    }
-    void resized() override { cl->setBounds(getContentArea()); }
+    void resetRoots();
+    std::vector<fs::path> roots;
+
+    std::unique_ptr<juce::Component> driveArea;
 };
 } // namespace scxt::ui::browser
 
