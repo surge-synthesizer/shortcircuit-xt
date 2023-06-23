@@ -116,6 +116,8 @@ struct ModRow : juce::Component, HasEditor
                 return;
             w->editor->hideTooltip();
         };
+        depth->onIdleHover = depth->onBeginEdit;
+        depth->onIdleHoverEnd = depth->onEndEdit;
 
         addAndMakeVisible(*depth);
 
