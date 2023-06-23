@@ -32,7 +32,7 @@
 namespace scxt::browser
 {
 
-std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
+std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForDeviceView() const
 {
     std::vector<std::pair<fs::path, std::string>> res;
 
