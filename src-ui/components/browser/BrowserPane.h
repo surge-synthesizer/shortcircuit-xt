@@ -43,7 +43,7 @@ struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
     void resized() override;
 
     void resetRoots();
-    std::vector<fs::path> roots;
+    std::vector<std::pair<fs::path, std::string>> roots;
 
     std::unique_ptr<juce::Component> driveArea;
 };

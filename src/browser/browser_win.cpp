@@ -33,10 +33,11 @@
 namespace scxt::browser
 {
 
-std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
+std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForDeviceView() const
 {
+    std::vector<std::pair<fs::path, std::string>> res;
+
     auto gld = ::GetLogicalDrives();
-    std::vector<fs::path> res;
 
     char dl = 'A';
     for (int i = 0; i < 26; ++i)
@@ -45,7 +46,7 @@ std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
         {
             std::string dn = "_:\\";
             dn[0] = dl;
-            res.push_back(fs::path{dn});
+            res.emplace_back(dn, "");
         }
         gld = gld >> 1;
         dl++;

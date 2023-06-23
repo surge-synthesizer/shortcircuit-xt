@@ -34,16 +34,16 @@ namespace scxt::browser
 
 std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
 {
-    std::vector<fs::path> res;
+    std::vector<std::pair<fs::path, std::string>> res;
 
     // We welcome pull requests! I have no idea what linux users expect
-    res.emplace_back("/");
+    res.emplace_back("/", "/");
     if (getenv("HOME"))
-        res.emplace_back(getenv("HOME"));
+        res.emplace_back(getenv("HOME"), "Home");
 
     auto ush = fs::path{"/usr/share"};
     if (fs::is_directory(ush))
-        res.emplace_back(ush);
+        res.emplace_back(ush, "");
 
     return res;
 }

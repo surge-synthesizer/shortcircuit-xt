@@ -41,9 +41,12 @@ struct DriveArea : juce::Component, HasEditor
         auto yp = 5, xp = 5;
         g.setFont(10);
         g.setColour(juce::Colours::pink);
-        for (const auto &pt : browserPane->roots)
+        for (const auto &[path, desc] : browserPane->roots)
         {
-            g.drawText(pt.u8string(), xp, yp, getWidth(), 20, juce::Justification::topLeft);
+            auto render = desc;
+            if (render.empty())
+                render = path.u8string();
+            g.drawText(render, xp, yp, getWidth(), 20, juce::Justification::topLeft);
             yp += 20;
         }
     }
@@ -63,10 +66,6 @@ void BrowserPane::resized() { driveArea->setBounds(getContentArea()); }
 void BrowserPane::resetRoots()
 {
     roots = editor->browser.getRootPathsForDeviceView();
-    for (auto &pt : roots)
-    {
-        SCLOG(pt.u8string());
-    }
     repaint();
 }
 } // namespace scxt::ui::browser

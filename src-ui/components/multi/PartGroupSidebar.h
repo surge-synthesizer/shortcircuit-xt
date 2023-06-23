@@ -50,10 +50,6 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void selectParts() {}
     void selectGroups() {}
 
-    // TODO this is all just temporary hackitude of course
-    std::unique_ptr<juce::ListBox> pgzList;
-    std::unique_ptr<juce::ListBoxModel> pgzListModel;
-
     std::unique_ptr<GroupSidebar> groupSidebar;
     std::unique_ptr<PartSidebar> partSidebar;
 

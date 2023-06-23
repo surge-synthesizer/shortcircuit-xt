@@ -33,20 +33,20 @@
 namespace scxt::browser
 {
 
-std::vector<fs::path> Browser::getOSDefaultRootPathsForDeviceView() const
+std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForDeviceView() const
 {
-    std::vector<fs::path> res;
+    std::vector<std::pair<fs::path, std::string>> res;
 
-    res.emplace_back("/");
+    res.emplace_back("/", "Root");
     if (getenv("HOME"))
-        res.emplace_back(getenv("HOME"));
+        res.emplace_back(getenv("HOME"), "Home");
 
     auto *fileManager = [NSFileManager defaultManager];
     auto *resultURLs = [fileManager URLsForDirectory:NSMusicDirectory inDomains:NSUserDomainMask];
     if (resultURLs)
     {
         auto *u = [resultURLs objectAtIndex:0];
-        res.emplace_back([u fileSystemRepresentation]);
+        res.emplace_back([u fileSystemRepresentation], "Music");
     }
 
     return res;

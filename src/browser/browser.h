@@ -29,6 +29,8 @@
 #define SCXT_SRC_BROWSER_BROWSER_H
 
 #include <vector>
+#include <string>
+#include <utility>
 #include "filesystem/import.h"
 
 namespace scxt::infrastructure
@@ -58,10 +60,10 @@ struct Browser
      * filesystem roots and allows you to add your own roots to the
      * browser (which will be persisted system wide).
      */
-    std::vector<fs::path> getRootPathsForDeviceView() const;
+    std::vector<std::pair<fs::path, std::string>> getRootPathsForDeviceView() const;
     void addRootPathForDeviceView(const fs::path &);
 
-    std::vector<fs::path> getOSDefaultRootPathsForDeviceView() const;
+    std::vector<std::pair<fs::path, std::string>> getOSDefaultRootPathsForDeviceView() const;
 
     const infrastructure::DefaultsProvider &defaultsProvider;
 };

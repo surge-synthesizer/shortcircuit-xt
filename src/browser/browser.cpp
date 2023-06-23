@@ -31,7 +31,7 @@ namespace scxt::browser
 {
 Browser::Browser(const infrastructure::DefaultsProvider &dp) : defaultsProvider(dp) {}
 
-std::vector<fs::path> Browser::getRootPathsForDeviceView() const
+std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView() const
 {
     // TODO - append local favorites
     return getOSDefaultRootPathsForDeviceView();
