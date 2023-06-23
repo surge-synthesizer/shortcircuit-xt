@@ -72,7 +72,7 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     parts = std::make_unique<multi::PartGroupSidebar>(editor);
     addAndMakeVisible(*parts);
 
-    auto br = std::make_unique<browser::BrowserPane>();
+    auto br = std::make_unique<browser::BrowserPane>(editor);
     browser = std::move(br);
     addAndMakeVisible(*browser);
     sample = std::make_unique<multi::MappingPane>(editor);

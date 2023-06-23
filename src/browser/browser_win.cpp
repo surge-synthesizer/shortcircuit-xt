@@ -25,28 +25,33 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
-#define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
+#include <windows.h>
+#include <fileapi.h>
 
-#include <vector>
-#include "filesystem/import.h"
+#include "browser.h"
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include <sst/jucegui/components/NamedPanel.h>
-#include "components/HasEditor.h"
-
-namespace scxt::ui::browser
+namespace scxt::browser
 {
-struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
+
+std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForDeviceView() const
 {
-    BrowserPane(SCXTEditor *e);
-    void resized() override;
+    std::vector<std::pair<fs::path, std::string>> res;
 
-    void resetRoots();
-    std::vector<std::pair<fs::path, std::string>> roots;
+    auto gld = ::GetLogicalDrives();
 
-    std::unique_ptr<juce::Component> driveArea;
-};
-} // namespace scxt::ui::browser
+    char dl = 'A';
+    for (int i = 0; i < 26; ++i)
+    {
+        if (gld & 1)
+        {
+            std::string dn = "_:\\";
+            dn[0] = dl;
+            res.emplace_back(dn, "");
+        }
+        gld = gld >> 1;
+        dl++;
+    }
 
-#endif // SHORTCIRCUITXT_BROWSERPANE_H
+    return res;
+}
+} // namespace scxt::browser

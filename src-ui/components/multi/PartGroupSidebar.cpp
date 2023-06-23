@@ -254,11 +254,8 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
 
                 auto se = selection::SelectionManager::SelectActionContents(getZoneAddress());
                 gsb->editor->multiScreen->setSelectionMode(MultiScreen::SelectionMode::ZONE);
-                if (gsb->groupParamActive)
-                {
-                    gsb->groupParamActive = false;
-                    gsb->repaint();
-                }
+                gsb->setGroupParamActive(false);
+
                 se.selecting = !isSelected;
                 se.distinct = !event.mods.isCommandDown();
                 se.selectingAsLead = se.selecting;
@@ -420,116 +417,10 @@ struct GroupSidebar : juce::Component, HasEditor, juce::DragAndDropContainer
     bool groupParamActive{false};
     void setGroupParamActive(bool b)
     {
+        groupParamActive = b;
         partGroupSidebar->editor->multiScreen->setSelectionMode(
             b ? MultiScreen::SelectionMode::GROUP : MultiScreen::SelectionMode::ZONE);
-    }
-};
-
-struct PGZListBox : public juce::ListBox
-{
-};
-
-struct PGZListBoxModel : juce::ListBoxModel
-{
-    PartGroupSidebar *partGroupSidebar{nullptr};
-    PGZListBoxModel(PartGroupSidebar *pgs) : partGroupSidebar(pgs) {}
-
-    int getNumRows() override { return partGroupSidebar->pgzStructure.size(); }
-
-    void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height,
-                          bool rowIsSelected) override
-    {
-        const auto &s = partGroupSidebar->pgzStructure;
-
-        assert(rowNumber >= 0 && rowNumber < s.size());
-        if (rowNumber < 0 || rowNumber >= s.size())
-            return;
-
-        const auto &[addr, name] = s[rowNumber];
-        const auto &[pt, gr, zn] = addr;
-        auto col = juce::Colours::black;
-        auto off = 20;
-        if (gr == -1)
-        {
-            off = 2;
-            col = juce::Colours::darkred;
-        }
-        else if (zn == -1)
-        {
-            off = 11;
-            col = juce::Colours::darkgreen;
-        }
-
-        if (rowIsSelected)
-        {
-            col = col.brighter();
-        }
-
-        g.setColour(col);
-        g.fillRect(0, 0, width, height);
-
-        g.setColour(col.contrasting());
-        g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
-        g.drawText(name, off, 0, width - off, height, juce::Justification::centredLeft);
-    }
-
-    void selectedRowsChanged(int rowNumber) override
-    {
-        const auto &m = partGroupSidebar->pgzList;
-        const auto &s = partGroupSidebar->pgzStructure;
-        std::unordered_set<selection::SelectionManager::ZoneAddress,
-                           selection::SelectionManager::ZoneAddress::Hash>
-            newSelections;
-        selection::SelectionManager::ZoneAddress lead;
-        bool setLead{false};
-        std::unordered_set<selection::SelectionManager::ZoneAddress,
-                           selection::SelectionManager::ZoneAddress::Hash>
-            removeSelections;
-        if (m)
-        {
-            const auto &r = m->getSelectedRows();
-            // Rather than iterating over the ranges, since we need to make
-            // the both-way list we iterate over the entire structure
-            for (const auto &[idx, dat] : sst::cpputils::enumerate(s))
-            {
-                bool selectedUI = r.contains(idx);
-                bool selectedModel = partGroupSidebar->editor->isSelected(dat.first);
-
-                if (selectedUI && !selectedModel)
-                {
-                    if (idx == rowNumber)
-                    {
-                        lead = dat.first;
-                        setLead = true;
-                    }
-                    else
-                        newSelections.insert(dat.first);
-                }
-                if (!selectedUI && selectedModel)
-                {
-                    removeSelections.insert(dat.first);
-                }
-            }
-        }
-
-        auto dist = m->getSelectedRows().size() == 1;
-        std::vector<selection::SelectionManager::SelectActionContents> res;
-        for (auto &rm : newSelections)
-        {
-            res.emplace_back(rm, true, dist, false);
-        }
-
-        for (auto &rm : removeSelections)
-        {
-            res.emplace_back(rm, false, false, false);
-        }
-
-        if (setLead)
-        {
-            res.emplace_back(lead, true, false, true);
-        }
-
-        partGroupSidebar->editor->doMultiSelectionAction(res);
+        groupParamButton->repaint();
     }
 };
 
@@ -559,27 +450,12 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     addAndMakeVisible(*groupSidebar);
     partSidebar = std::make_unique<PartSidebar>(this);
     addChildComponent(*partSidebar);
-
-    // TODO kill all this
-    pgzList = std::make_unique<PGZListBox>();
-    pgzListModel = std::make_unique<PGZListBoxModel>(this);
-    pgzList->setModel(pgzListModel.get());
-    pgzList->setMultipleSelectionEnabled(true);
-    // addAndMakeVisible(*pgzList);
-    addChildComponent(*pgzList);
 }
 
-PartGroupSidebar::~PartGroupSidebar()
-{
-    // Just be sure it destroys in the right order
-    if (pgzList)
-        pgzList->setModel(nullptr);
-}
+PartGroupSidebar::~PartGroupSidebar() {}
 
 void PartGroupSidebar::resized()
 {
-    if (pgzList)
-        pgzList->setBounds(getContentArea());
     if (partSidebar)
         partSidebar->setBounds(getContentArea());
     if (groupSidebar)

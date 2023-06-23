@@ -26,3 +26,46 @@
  */
 
 #include "BrowserPane.h"
+#include "components/SCXTEditor.h"
+#include "browser/browser.h"
+
+namespace scxt::ui::browser
+{
+struct DriveArea : juce::Component, HasEditor
+{
+    BrowserPane *browserPane{nullptr};
+    DriveArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e){};
+
+    void paint(juce::Graphics &g)
+    {
+        auto yp = 5, xp = 5;
+        g.setFont(10);
+        g.setColour(juce::Colours::pink);
+        for (const auto &[path, desc] : browserPane->roots)
+        {
+            auto render = desc;
+            if (render.empty())
+                render = path.u8string();
+            g.drawText(render, xp, yp, getWidth(), 20, juce::Justification::topLeft);
+            yp += 20;
+        }
+    }
+};
+
+BrowserPane::BrowserPane(SCXTEditor *e)
+    : HasEditor(e), sst::jucegui::components::NamedPanel("Browser")
+{
+    hasHamburger = true;
+    driveArea = std::make_unique<DriveArea>(this, editor);
+    addAndMakeVisible(*driveArea);
+    resetRoots();
+}
+
+void BrowserPane::resized() { driveArea->setBounds(getContentArea()); }
+
+void BrowserPane::resetRoots()
+{
+    roots = editor->browser.getRootPathsForDeviceView();
+    repaint();
+}
+} // namespace scxt::ui::browser

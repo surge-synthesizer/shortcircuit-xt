@@ -38,6 +38,7 @@
 #include "selection/selection_manager.h"
 #include "sfz_support/sfz_import.h"
 #include "infrastructure/user_defaults.h"
+#include "browser/browser.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/plugininfra/paths.h"
@@ -80,6 +81,8 @@ Engine::Engine()
         docpath, "ShortcircuitXT",
         [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
         [](auto em, auto t) { std::cerr << "PARSE ERROR FIXME " << em << t << std::endl; });
+
+    browser = std::make_unique<browser::Browser>(*defaults);
 
     for (auto &v : voices)
         v = nullptr;

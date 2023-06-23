@@ -297,7 +297,8 @@ bool SCXTProcessor::hasEditor() const
 juce::AudioProcessorEditor *SCXTProcessor::createEditor()
 {
     return new SCXTPluginEditor(*this, *(engine->getMessageController()), *(engine->defaults),
-                                *(engine->getSampleManager()), engine->sharedUIMemoryState);
+                                *(engine->getSampleManager()), *(engine->getBrowser()),
+                                engine->sharedUIMemoryState);
 }
 
 //==============================================================================

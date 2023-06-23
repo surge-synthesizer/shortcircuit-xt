@@ -1,6 +1,8 @@
 project(scxt-core LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
+        browser/browser.cpp
+
         datamodel/adsr_storage.cpp
 
         dsp/generator.cpp
@@ -54,6 +56,16 @@ add_library(${PROJECT_NAME} STATIC
 
         ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         )
+
+
+if (APPLE)
+    target_sources(${PROJECT_NAME} PRIVATE browser/browser_macos.mm)
+elseif (WIN32)
+    target_sources(${PROJECT_NAME} PRIVATE browser/browser_win.cpp)
+else ()
+    target_sources(${PROJECT_NAME} PRIVATE browser/browser_lin.cpp)
+endif ()
+
 target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt

@@ -34,10 +34,11 @@
 SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &mc,
                                    scxt::infrastructure::DefaultsProvider &d,
                                    const scxt::sample::SampleManager &s,
+                                   const scxt::browser::Browser &br,
                                    const scxt::engine::Engine::SharedUIMemoryState &st)
     : juce::AudioProcessorEditor(&p)
 {
-    ed = std::make_unique<scxt::ui::SCXTEditor>(mc, d, s, st);
+    ed = std::make_unique<scxt::ui::SCXTEditor>(mc, d, s, br, st);
     ed->onZoomChanged = [this](auto f) {
         setSize(scxt::ui::SCXTEditor::edWidth * f, scxt::ui::SCXTEditor::edHeight * f);
     };

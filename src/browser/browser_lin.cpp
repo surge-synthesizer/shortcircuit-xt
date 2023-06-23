@@ -25,28 +25,27 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
-#define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
+#include <stdlib.h>
 
-#include <vector>
-#include "filesystem/import.h"
+#include "browser.h"
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include <sst/jucegui/components/NamedPanel.h>
-#include "components/HasEditor.h"
-
-namespace scxt::ui::browser
+namespace scxt::browser
 {
-struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
+
+std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForDeviceView() const
 {
-    BrowserPane(SCXTEditor *e);
-    void resized() override;
+    std::vector<std::pair<fs::path, std::string>> res;
 
-    void resetRoots();
-    std::vector<std::pair<fs::path, std::string>> roots;
+    // We welcome pull requests! I have no idea what linux users expect
+    res.emplace_back("/", "/");
+    if (getenv("HOME"))
+        res.emplace_back(getenv("HOME"), "Home");
 
-    std::unique_ptr<juce::Component> driveArea;
-};
-} // namespace scxt::ui::browser
+    auto ush = fs::path{"/usr/share"};
+    if (fs::is_directory(ush))
+        res.emplace_back(ush, "");
 
-#endif // SHORTCIRCUITXT_BROWSERPANE_H
+    return res;
+}
+
+} // namespace scxt::browser

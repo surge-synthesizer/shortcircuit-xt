@@ -25,28 +25,15 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
-#define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
+#include "browser.h"
 
-#include <vector>
-#include "filesystem/import.h"
-
-#include <juce_gui_basics/juce_gui_basics.h>
-#include <sst/jucegui/components/NamedPanel.h>
-#include "components/HasEditor.h"
-
-namespace scxt::ui::browser
+namespace scxt::browser
 {
-struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
+Browser::Browser(const infrastructure::DefaultsProvider &dp) : defaultsProvider(dp) {}
+
+std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView() const
 {
-    BrowserPane(SCXTEditor *e);
-    void resized() override;
-
-    void resetRoots();
-    std::vector<std::pair<fs::path, std::string>> roots;
-
-    std::unique_ptr<juce::Component> driveArea;
-};
-} // namespace scxt::ui::browser
-
-#endif // SHORTCIRCUITXT_BROWSERPANE_H
+    // TODO - append local favorites
+    return getOSDefaultRootPathsForDeviceView();
+}
+} // namespace scxt::browser

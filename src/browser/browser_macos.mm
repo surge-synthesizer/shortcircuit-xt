@@ -25,28 +25,30 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
-#define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
+#include <stdlib.h>
+#include <Foundation/Foundation.h>
 
-#include <vector>
-#include "filesystem/import.h"
+#include "browser.h"
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include <sst/jucegui/components/NamedPanel.h>
-#include "components/HasEditor.h"
-
-namespace scxt::ui::browser
+namespace scxt::browser
 {
-struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
+
+std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForDeviceView() const
 {
-    BrowserPane(SCXTEditor *e);
-    void resized() override;
+    std::vector<std::pair<fs::path, std::string>> res;
 
-    void resetRoots();
-    std::vector<std::pair<fs::path, std::string>> roots;
+    res.emplace_back("/", "Root");
+    if (getenv("HOME"))
+        res.emplace_back(getenv("HOME"), "Home");
 
-    std::unique_ptr<juce::Component> driveArea;
-};
-} // namespace scxt::ui::browser
+    auto *fileManager = [NSFileManager defaultManager];
+    auto *resultURLs = [fileManager URLsForDirectory:NSMusicDirectory inDomains:NSUserDomainMask];
+    if (resultURLs)
+    {
+        auto *u = [resultURLs objectAtIndex:0];
+        res.emplace_back([u fileSystemRepresentation], "Music");
+    }
 
-#endif // SHORTCIRCUITXT_BROWSERPANE_H
+    return res;
+}
+} // namespace scxt::browser
