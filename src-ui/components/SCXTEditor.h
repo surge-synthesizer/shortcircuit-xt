@@ -249,6 +249,8 @@ inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
         updateValueTooltip(atRef);
     };
     w->onEndEdit = [this]() { editor->hideTooltip(); };
+    w->onIdleHover = w->onBeginEdit;
+    w->onIdleHoverEnd = w->onEndEdit;
 }
 } // namespace scxt::ui
 
