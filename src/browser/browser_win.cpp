@@ -25,6 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <windows.h>
 #include <fileapi.h>
 
 #include "browser.h"
