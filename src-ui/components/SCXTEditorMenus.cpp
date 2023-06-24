@@ -62,8 +62,8 @@ void SCXTEditor::showMainMenu()
     m.addSubMenu("Zoom", zoom);
 
     juce::PopupMenu skin;
-    addSkinMenu(skin);
-    m.addSubMenu("Skins", skin);
+    addUIThemesMenu(skin);
+    m.addSubMenu("UI Themes", skin);
 
     m.addSeparator();
     m.addItem(juce::String("Copy ") + scxt::build::FullVersionStr,
@@ -136,11 +136,11 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
     p.addSubMenu("Mapping Zoom Hack", r);
 }
 
-void SCXTEditor::addSkinMenu(juce::PopupMenu &p, bool addTitle)
+void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
 {
     if (addTitle)
     {
-        p.addSectionHeader("Skins");
+        p.addSectionHeader("UI Themes");
         p.addSeparator();
     }
     p.addItem("Dark", [w = juce::Component::SafePointer(this)]() {

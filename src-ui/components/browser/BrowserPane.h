@@ -35,17 +35,31 @@
 #include <sst/jucegui/components/NamedPanel.h>
 #include "components/HasEditor.h"
 
+#include "sst/jucegui/components/ToggleButtonRadioGroup.h"
+
 namespace scxt::ui::browser
 {
+struct DevicesPane;
+struct FavoritesPane;
+struct SearchPane;
 struct BrowserPane : public HasEditor, sst::jucegui::components::NamedPanel
 {
+    std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedFunction;
+    std::unique_ptr<sst::jucegui::data::Discrete> selectedFunctionData;
+
     BrowserPane(SCXTEditor *e);
+    ~BrowserPane();
     void resized() override;
 
     void resetRoots();
     std::vector<std::pair<fs::path, std::string>> roots;
 
-    std::unique_ptr<juce::Component> driveArea;
+    std::unique_ptr<DevicesPane> devicesPane;
+    std::unique_ptr<FavoritesPane> favoritesPane;
+    std::unique_ptr<SearchPane> searchPane;
+
+    void selectPane(int);
+    int selectedPane{0};
 };
 } // namespace scxt::ui::browser
 
