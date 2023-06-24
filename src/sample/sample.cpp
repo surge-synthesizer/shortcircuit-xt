@@ -42,6 +42,7 @@ bool Sample::load(const fs::path &path)
     if (!fs::exists(path))
         return false;
 
+    // If you add a type here add it in Browser::isLoadableFile also to stay in sync
     if (extensionMatches(path, ".wav"))
     {
         auto fmv = std::make_unique<infrastructure::FileMapView>(path);

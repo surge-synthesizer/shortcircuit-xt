@@ -26,6 +26,7 @@
  */
 
 #include "browser.h"
+#include "utils.h"
 
 namespace scxt::browser
 {
@@ -35,5 +36,12 @@ std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView
 {
     // TODO - append local favorites
     return getOSDefaultRootPathsForDeviceView();
+}
+
+bool Browser::isLoadableFile(const fs::path &p) const
+{
+    return extensionMatches(p, ".wav") || extensionMatches(p, ".flac") ||
+           extensionMatches(p, ".aif") || extensionMatches(p, ".aiff") ||
+           extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz)");
 }
 } // namespace scxt::browser

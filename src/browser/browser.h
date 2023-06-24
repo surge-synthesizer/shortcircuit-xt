@@ -62,6 +62,7 @@ struct Browser
      */
     std::vector<std::pair<fs::path, std::string>> getRootPathsForDeviceView() const;
     void addRootPathForDeviceView(const fs::path &);
+    bool isLoadableFile(const fs::path &) const;
 
     std::vector<std::pair<fs::path, std::string>> getOSDefaultRootPathsForDeviceView() const;
 
