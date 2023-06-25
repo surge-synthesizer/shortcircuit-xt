@@ -42,6 +42,6 @@ bool Browser::isLoadableFile(const fs::path &p) const
 {
     return extensionMatches(p, ".wav") || extensionMatches(p, ".flac") ||
            extensionMatches(p, ".aif") || extensionMatches(p, ".aiff") ||
-           extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz)");
+           extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz");
 }
 } // namespace scxt::browser
