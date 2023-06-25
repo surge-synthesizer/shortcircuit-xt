@@ -426,6 +426,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     assert(messageController->threadingChecker.isSerialThread());
 
     // TODO: Deal with compound types more comprehensively
+    // If you add a type here add it to Browser::isLoadableFile also
     if (extensionMatches(p, ".sf2"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
