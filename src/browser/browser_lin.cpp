@@ -39,11 +39,11 @@ std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForD
     // We welcome pull requests! I have no idea what linux users expect
     res.emplace_back("/", "/");
     if (getenv("HOME"))
-        res.emplace_back(getenv("HOME"), "Home");
+        res.emplace_back(getenv("HOME"), "$HOME");
 
     auto ush = fs::path{"/usr/share"};
     if (fs::is_directory(ush))
-        res.emplace_back(ush, "");
+        res.emplace_back(ush, "/usr/share");
 
     return res;
 }

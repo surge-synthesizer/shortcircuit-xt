@@ -46,7 +46,7 @@ std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForD
         {
             std::string dn = "_:\\";
             dn[0] = dl;
-            res.emplace_back(dn, "");
+            res.emplace_back(fs::path{dn}, dn);
         }
         gld = gld >> 1;
         dl++;
