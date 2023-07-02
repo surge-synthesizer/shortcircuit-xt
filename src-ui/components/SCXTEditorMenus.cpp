@@ -63,7 +63,7 @@ void SCXTEditor::showMainMenu()
 
     juce::PopupMenu skin;
     addUIThemesMenu(skin);
-    m.addSubMenu("UI Themes", skin);
+    m.addSubMenu("UI Behavior", skin);
 
     m.addSeparator();
     m.addItem(juce::String("Copy ") + scxt::build::FullVersionStr,
@@ -140,9 +140,10 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
 {
     if (addTitle)
     {
-        p.addSectionHeader("UI Themes");
+        p.addSectionHeader("UI Behavior");
         p.addSeparator();
     }
+    p.addSectionHeader("Themes");
     p.addItem("Dark", [w = juce::Component::SafePointer(this)]() {
         if (w)
         {
@@ -157,9 +158,22 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
         {
             w->setStyle(scxt::ui::connectors::SCXTStyleSheetCreator::setup(
                 sst::jucegui::style::StyleSheet::LIGHT));
-            w->defaultsProvider.updateUserDefaultPath(infrastructure::skinName, "builtin.LIGHT");
+            w->defaultsProvider.updateUserDefaultValue(infrastructure::skinName, "builtin.LIGHT");
         }
     });
+
+    p.addSeparator();
+    p.addSectionHeader("MIDI Octave");
+    for (int i = -1; i <= 1; ++i)
+    {
+        p.addItem(fmt::format("C{} is MIDI 60", 4 + i),
+                  [w = juce::Component::SafePointer(this), i]() {
+                      if (w)
+                      {
+                          w->defaultsProvider.updateUserDefaultValue(infrastructure::octave0, i);
+                      }
+                  });
+    }
 }
 
 } // namespace scxt::ui

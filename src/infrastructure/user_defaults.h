@@ -36,6 +36,7 @@ enum DefaultKeys
 {
     zoomLevel,
     skinName,
+    octave0,
     nKeys
 };
 inline std::string defaultKeyToString(DefaultKeys k)
@@ -46,6 +47,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "zoomLevel";
     case skinName:
         return "skinName";
+    case octave0:
+        return "octave0";
     case nKeys:
         return "nKeys";
     default:

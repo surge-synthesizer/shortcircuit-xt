@@ -54,6 +54,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 {
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
 
+    sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset =
+        defaultsProvider.getUserDefaultValue(infrastructure::octave0, 0);
+
     // TODO: Obviously expand this
     auto sn = defaultsProvider.getUserDefaultValue(infrastructure::skinName, "builtin.DARK");
     if (sn == "builtin.LIGHT")

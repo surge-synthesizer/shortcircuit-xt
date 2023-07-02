@@ -72,6 +72,12 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     std::function<std::string(float)> valueToString{nullptr};
     std::string getValueAsStringFor(float f) const override
     {
+        if (description.supportsStringConversion)
+        {
+            auto res = description.valueToString(f);
+            if (res.has_value())
+                return *res;
+        }
         if (valueToString)
             return valueToString(f);
         return Continuous::getValueAsStringFor(f);
@@ -79,6 +85,16 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     std::function<std::optional<float>(const std::string &)> stringToValue{nullptr};
     void setValueAsString(const std::string &s) override
     {
+        if (description.supportsStringConversion)
+        {
+            std::string em;
+            auto res = description.valueFromString(s, em);
+            if (res.has_value())
+            {
+                setValueFromGUI(*res);
+                return;
+            }
+        }
         if (stringToValue)
         {
             auto f = stringToValue(s);
@@ -102,40 +118,7 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     void setModulationValuePM1(const float &f) override {}
     bool isModulationBipolar() const override { return false; }
 
-    void setAsMidiNote()
-    {
-        valueToString = [](float f) -> std::string {
-            if (f < 0)
-                return "";
-            auto n = (int)std::round(f);
-            auto o = n / 12 - 1;
-            auto ni = n % 12;
-            static std::array<std::string, 12> nn{"C",  "C#", "D",  "D#", "E",  "F",
-                                                  "F#", "G",  "G#", "A",  "A#", "B"};
-
-            auto res = nn[ni] + std::to_string(o);
-
-            return res;
-        };
-
-        stringToValue = [](const std::string &s) -> float {
-            auto c0 = std::toupper(s[0]);
-            if (c0 >= 'A' && c0 <= 'G')
-            {
-                auto n0 = c0 - 'A';
-                auto sharp = s[1] == '#';
-                auto oct = std::atoi(s.c_str() + 1 + (sharp ? 1 : 0));
-
-                std::vector<int> noteToPosition{-3, -1, 0, 2, 4, 5, 7};
-                auto res = noteToPosition[n0] + sharp + (oct + 1) * 12;
-                return res;
-            }
-            else
-                return std::atoi(s.c_str());
-        };
-    }
-
-    void setAsInteger()
+    [[deprecated]] void setAsInteger()
     {
         valueToString = [](float f) -> std::string {
             auto n = (int)std::round(f);

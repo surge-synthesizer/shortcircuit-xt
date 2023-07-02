@@ -219,50 +219,46 @@ struct MappingDisplay : juce::Component, HasEditor
         attachEditor(Ctrl::RootKey, datamodel::pmd().asMIDINote().withName("RootKey"),
                      mappingView.rootKey);
         addLabel(Ctrl::RootKey, "Root Key");
-        attachments[Ctrl::RootKey]->setAsMidiNote();
 
         attachEditor(Ctrl::KeyStart,
                      datamodel::pmd().asMIDINote().withName("Key Start").withDefault(60 - 12),
                      mappingView.keyboardRange.keyStart);
-        attachments[Ctrl::KeyStart]->setAsMidiNote();
+
         attachEditor(Ctrl::KeyEnd,
                      datamodel::pmd().asMIDINote().withName("Key End").withDefault(60 + 12),
                      mappingView.keyboardRange.keyEnd);
-        attachments[Ctrl::KeyEnd]->setAsMidiNote();
         addLabel(Ctrl::KeyStart, "Key Range");
 
-        auto mDist = []() { return datamodel::pmd().asMIDINote(); };
+        auto mDist = []() { return datamodel::pmd().asMIDIPitch().withUnit(""); };
 
         attachEditor(Ctrl::FadeStart, mDist().withName("Fade Start").withDefault(0),
                      mappingView.keyboardRange.fadeStart);
-        attachments[Ctrl::FadeStart]->setAsInteger();
+        // attachments[Ctrl::FadeStart]->setAsInteger();
         attachEditor(Ctrl::FadeEnd, mDist().withName("Fade End").withDefault(0),
                      mappingView.keyboardRange.fadeEnd);
-        attachments[Ctrl::FadeEnd]->setAsInteger();
+        // attachments[Ctrl::FadeEnd]->setAsInteger();
         addLabel(Ctrl::FadeStart, "Crossfade");
 
-        attachEditor(Ctrl::VelStart,
-                     datamodel::pmd().asMIDINote().withName("Vel Start").withDefault(0),
+        attachEditor(Ctrl::VelStart, mDist().withName("Vel Start").withDefault(0),
                      mappingView.velocityRange.velStart);
-        attachments[Ctrl::VelStart]->setAsInteger();
-        attachEditor(Ctrl::VelEnd,
-                     datamodel::pmd().asMIDINote().withName("Vel End").withDefault(127),
+        // attachments[Ctrl::VelStart]->setAsInteger();
+        attachEditor(Ctrl::VelEnd, mDist().withName("Vel End").withDefault(127),
                      mappingView.velocityRange.velEnd);
-        attachments[Ctrl::VelEnd]->setAsInteger();
+        // attachments[Ctrl::VelEnd]->setAsInteger();
         addLabel(Ctrl::VelStart, "Vel Range");
 
         attachEditor(Ctrl::VelFadeStart, mDist().withName("Vel Fade Start").withDefault(0),
                      mappingView.velocityRange.fadeStart);
-        attachments[Ctrl::VelFadeStart]->setAsInteger();
+        // attachments[Ctrl::VelFadeStart]->setAsInteger();
         attachEditor(Ctrl::VelFadeEnd, mDist().withName("Vel Fade End").withDefault(0),
                      mappingView.velocityRange.fadeEnd);
-        attachments[Ctrl::VelFadeEnd]->setAsInteger();
+        // attachments[Ctrl::VelFadeEnd]->setAsInteger();
         addLabel(Ctrl::VelFadeStart, "Crossfade");
 
         attachEditor(Ctrl::PBDown, mDist().withName("PBDown").withDefault(2), mappingView.pbDown);
-        attachments[Ctrl::PBDown]->setAsInteger();
+        // attachments[Ctrl::PBDown]->setAsInteger();
         attachEditor(Ctrl::PBUp, mDist().withName("PBUp").withDefault(2), mappingView.pbUp);
-        attachments[Ctrl::PBUp]->setAsInteger();
+        // attachments[Ctrl::PBUp]->setAsInteger();
         addLabel(Ctrl::PBDown, "Pitch Bend");
 
         attachFloatEditor(Ctrl::Level,
