@@ -32,6 +32,7 @@
 #include <variant>
 #include <vector>
 #include <filesystem>
+#include "filesystem/import.h"
 
 namespace scxt::sfz_support
 {
@@ -66,7 +67,7 @@ struct SFZParser
     typedef std::vector<section_t> document_t;
 
     document_t parse(const std::string &contents);
-    document_t parse(const std::filesystem::path &file);
+    document_t parse(const fs::path &file);
 };
 } // namespace scxt::sfz_support
 

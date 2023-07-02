@@ -39,6 +39,7 @@
 #include <map>
 #include <thread>
 #include "unordered_map"
+#include "filesystem/import.h"
 
 namespace scxt
 {
@@ -263,7 +264,7 @@ inline std::unordered_map<std::string, E> makeEnumInverse(const E &from, const E
 
 void printStackTrace(int frameDepth = -1);
 
-inline bool extensionMatches(const std::filesystem::path &p, const std::string &s)
+inline bool extensionMatches(const fs::path &p, const std::string &s)
 {
     auto pes = p.extension().u8string();
     if (pes.size() != s.size())

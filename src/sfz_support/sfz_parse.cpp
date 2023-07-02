@@ -418,7 +418,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
 }
 #endif
 
-SFZParser::document_t SFZParser::parse(const std::filesystem::path &f)
+SFZParser::document_t SFZParser::parse(const fs::path &f)
 {
     std::ifstream ifs;
     ifs.open(f);

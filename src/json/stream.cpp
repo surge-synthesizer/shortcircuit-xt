@@ -29,7 +29,6 @@
 
 #include <tao/json/to_string.hpp>
 #include <tao/json/from_string.hpp>
-#include <tao/json/from_file.hpp>
 #include <tao/json/contrib/traits.hpp>
 
 #include "scxt_traits.h"
@@ -69,14 +68,6 @@ std::string streamPatch(const engine::Patch &p, bool pretty)
 std::string streamEngineState(const engine::Engine &e, bool pretty)
 {
     return streamValue(json::scxt_value(e), pretty);
-}
-
-void unstreamEngineState(engine::Engine &e, const fs::path &path)
-{
-    tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
-    tao::json::events::from_file(consumer, path);
-    auto jv = std::move(consumer.value);
-    jv.to(e);
 }
 
 void unstreamEngineState(engine::Engine &e, const std::string &xml)
