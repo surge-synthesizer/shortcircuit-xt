@@ -3,13 +3,15 @@ add_subdirectory(JUCE)
 add_subdirectory(clap-juce-extensions clap-extensions EXCLUDE_FROM_ALL)
 
 add_subdirectory(fmt)
+# Modify this basedon the outcome of https://github.com/taocpp/PEGTL/issues/347
+set(PEGTL_NO_STD_FILESYSTEM ON CACHE BOOL "Skip PEGTL FileSystem")
 add_subdirectory(taocpp_json)
 
 add_subdirectory(xiph)
 
 add_subdirectory(sst/sst-cpputils)
 
-set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform filesystem")
+# set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform filesystem")
 set(SST_PLUGININFRA_PROVIDE_TINYXML ON CACHE BOOL "Skip TinyXML")  # need this for UserDefaults
 add_subdirectory(sst/sst-basic-blocks)
 add_subdirectory(sst/sst-plugininfra)

@@ -179,7 +179,7 @@ struct DriveFSArea : juce::Component, HasEditor
         contents.clear();
         try
         {
-            for (auto const &dir_entry : std::filesystem::directory_iterator{currentPath})
+            for (auto const &dir_entry : fs::directory_iterator{currentPath})
             {
                 // Who to skip? Well
                 bool include = false;

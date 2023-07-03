@@ -28,11 +28,12 @@
 #ifndef SCXT_SRC_SFZ_SUPPORT_SFZ_IMPORT_H
 #define SCXT_SRC_SFZ_SUPPORT_SFZ_IMPORT_H
 
-#include <filesystem>
+#include "filesystem/import.h"
 #include <engine/engine.h>
+
 namespace scxt::sfz_support
 {
-bool importSFZ(const std::filesystem::path &, engine::Engine &);
+bool importSFZ(const fs::path &, engine::Engine &);
 }
 
 #endif // SHORTCIRCUITXT_SFZ_IMPORT_H

@@ -42,7 +42,7 @@ int parseMidiNote(const std::string &s)
     return std::atol(s.c_str());
 }
 
-bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
+bool importSFZ(const fs::path &f, engine::Engine &e)
 {
     assert(e.getMessageController()->threadingChecker.isSerialThread());
 
@@ -101,7 +101,7 @@ bool importSFZ(const std::filesystem::path &f, engine::Engine &e)
                     sampleFile = oc.value;
                 }
             }
-            // std::filesystem always works with / and on windows also works with back
+            // fs always works with / and on windows also works with back
             std::replace(sampleFile.begin(), sampleFile.end(), '\\', '/');
             if (!fs::exists(sampleDir / sampleFile) && !fs::exists(sampleFile))
             {

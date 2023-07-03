@@ -30,7 +30,15 @@
 
 #include "tao/json/to_string.hpp"
 #include "tao/json/from_string.hpp"
-#include "tao/json/msgpack.hpp"
+
+#include "tao/json/msgpack/consume_string.hpp"
+#include "tao/json/msgpack/from_binary.hpp"
+#include "tao/json/msgpack/from_input.hpp"
+#include "tao/json/msgpack/from_string.hpp"
+#include "tao/json/msgpack/parts_parser.hpp"
+#include "tao/json/msgpack/to_stream.hpp"
+#include "tao/json/msgpack/to_string.hpp"
+
 #include "messaging/client/detail/client_json_details.h"
 
 // This is a 'details only' file which you can safely ignore
