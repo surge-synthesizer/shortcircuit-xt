@@ -421,7 +421,8 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
     return res;
 }
 
-void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
+void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootKey,
+                                                KeyboardRange krange, VelocityRange vrange)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
@@ -469,8 +470,9 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p)
     // 2. Create a zone object on this thread but don't add it
     auto zptr = std::make_unique<Zone>(*sid);
     // TODO fixme
-    zptr->mapping.keyboardRange = {48, 72};
-    zptr->mapping.rootKey = 60;
+    zptr->mapping.keyboardRange = krange;
+    zptr->mapping.velocityRange = vrange;
+    zptr->mapping.rootKey = rootKey;
     zptr->attachToSample(*sampleManager);
 
     // Drop into selected group logic goes here

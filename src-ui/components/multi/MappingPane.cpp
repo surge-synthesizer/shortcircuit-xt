@@ -51,11 +51,13 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
     MappingDisplay *display{nullptr};
     MappingZonesAndKeyboard(MappingDisplay *d);
     void paint(juce::Graphics &g) override;
+    std::array<int16_t, 3> rootAndRangeForPosition(const juce::Point<int> &);
 
     int firstMidiNote{0}, lastMidiNote{128};
 
     static constexpr int keyboardHeight{25};
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
+    juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
     juce::Rectangle<float> rectangleForKey(int midiNote);
 
     void mouseDown(const juce::MouseEvent &e) override;
@@ -137,7 +139,7 @@ struct MappingZoneHeader : juce::Component
     }
 };
 
-struct MappingDisplay : juce::Component, HasEditor
+struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
 {
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
         zone_attachment_t;
@@ -420,6 +422,61 @@ struct MappingDisplay : juce::Component, HasEditor
         return res;
     }
 
+    std::optional<std::string>
+    sourceDetailsDragAndDropSample(const SourceDetails &dragSourceDetails)
+    {
+        auto w = dragSourceDetails.sourceComponent;
+        if (w)
+        {
+            auto p = w->getProperties().getVarPointer("DragAndDropSample");
+            if (p && p->isString())
+            {
+                return p->toString().toStdString();
+            }
+        }
+        return std::nullopt;
+    }
+
+    bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+    {
+        auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
+        return os.has_value();
+    }
+
+    void itemDropped(const SourceDetails &dragSourceDetails) override
+    {
+        auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
+        if (os.has_value())
+        {
+            namespace cmsg = scxt::messaging::client;
+            auto r = zonesAndKeyboard->rootAndRangeForPosition(dragSourceDetails.localPosition);
+            sendToSerialization(cmsg::AddSampleWithRange({*os, r[0], r[1], r[2], 0, 127}));
+        }
+        isUndertakingDrop = false;
+        repaint();
+    }
+
+    bool isUndertakingDrop{false};
+    juce::Point<int> currentDragPoint;
+    void itemDragEnter(const SourceDetails &dragSourceDetails) override
+    {
+        // TODO Compound types are special here
+        isUndertakingDrop = true;
+        currentDragPoint = dragSourceDetails.localPosition;
+        repaint();
+    }
+
+    void itemDragExit(const SourceDetails &dragSourceDetails) override
+    {
+        isUndertakingDrop = false;
+        repaint();
+    }
+
+    void itemDragMove(const SourceDetails &dragSourceDetails) override
+    {
+        currentDragPoint = dragSourceDetails.localPosition;
+        repaint();
+    }
     engine::Part::zoneMappingSummary_t summary{};
 };
 
@@ -628,18 +685,22 @@ juce::Rectangle<float>
 MappingZonesAndKeyboard::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 {
     const auto &[kb, vel, name] = sum;
+    return rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd);
+}
 
+juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForRange(int kL, int kH, int vL, int vH)
+{
     auto lb = getLocalBounds().toFloat();
     auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
     auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
     auto vh = displayRegion.getHeight() / 127.0;
 
-    float x0 = (kb.keyStart - firstMidiNote) * kw;
-    float x1 = (kb.keyEnd - firstMidiNote + 1) * kw;
+    float x0 = (kL - firstMidiNote) * kw;
+    float x1 = (kH - firstMidiNote + 1) * kw;
     if (x1 < x0)
         std::swap(x1, x0);
-    float y0 = (127 - vel.velStart) * vh;
-    float y1 = (127 - vel.velEnd) * vh;
+    float y0 = (127 - vL) * vh;
+    float y1 = (127 - vH) * vh;
     if (y1 < y0)
         std::swap(y1, y0);
 
@@ -807,6 +868,31 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         g.setColour(juce::Colour(140, 140, 140));
         g.drawRect(kr, 0.5);
     }
+
+    if (display->isUndertakingDrop)
+    {
+        auto rr = rootAndRangeForPosition(display->currentDragPoint);
+        auto rb = rectangleForRange(rr[1], rr[2], 0, 127);
+        g.setColour(juce::Colour(0xFF, 0x90, 0x00).withAlpha(0.4f));
+        g.fillRect(rb);
+    }
+}
+
+std::array<int16_t, 3> MappingZonesAndKeyboard::rootAndRangeForPosition(const juce::Point<int> &p)
+{
+    assert(lastMidiNote > firstMidiNote);
+    auto lb = getLocalBounds().toFloat();
+    auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
+    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+
+    auto rootKey =
+        std::clamp(p.getX() * 1.f / kw + firstMidiNote, (float)firstMidiNote, (float)lastMidiNote);
+
+    auto fromTop = std::clamp(p.getY(), 0, getHeight()) * 1.f / getHeight();
+    auto span = (1.0f - fromTop) * 80 + 1;
+    auto low = std::clamp(rootKey - span, 0.f, 127.f);
+    auto high = std::clamp(rootKey + span, 0.f, 127.f);
+    return {(int16_t)rootKey, (int16_t)low, (int16_t)high};
 }
 
 struct SampleDisplay;
