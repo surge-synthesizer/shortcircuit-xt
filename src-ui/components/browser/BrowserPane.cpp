@@ -259,14 +259,41 @@ struct DriveFSListBoxRow : public juce::Component
     DriveFSListBoxModel *model{nullptr};
 
     juce::ListBox *enclosingBox() { return browserPane->devicesPane->driveFSArea->lbox.get(); }
+    bool isDragging;
     void mouseDown(const juce::MouseEvent &event) override
     {
         enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, false);
     }
 
+    void mouseDrag(const juce::MouseEvent &e) override
+    {
+        if (!isFile())
+            return;
+
+        if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
+        {
+            if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+            {
+                const auto &data = browserPane->devicesPane->driveFSArea->contents;
+
+                getProperties().set("DragAndDropSample",
+                                    juce::String(data[rowNumber].path().u8string()));
+                container->startDragging("FileSystem Row", this);
+                isDragging = true;
+            }
+        }
+    }
+
     void mouseUp(const juce::MouseEvent &event) override
     {
-        enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, true);
+        if (isDragging)
+        {
+            isDragging = false;
+        }
+        else
+        {
+            enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, true);
+        }
     }
     void mouseDoubleClick(const juce::MouseEvent &event) override
     {
@@ -286,6 +313,18 @@ struct DriveFSListBoxRow : public juce::Component
                     browserPane->editor->msgCont);
             }
         }
+    }
+
+    bool isFile()
+    {
+        const auto &data = browserPane->devicesPane->driveFSArea->contents;
+
+        if (rowNumber >= 0 && rowNumber < data.size())
+        {
+            const auto &entry = data[rowNumber];
+            return !entry.is_directory();
+        }
+        return false;
     }
     void paint(juce::Graphics &g) override
     {

@@ -81,6 +81,21 @@ inline void addSample(const std::string &payload, engine::Engine &engine, Messag
 }
 CLIENT_TO_SERIAL(AddSample, c2s_add_sample, std::string, addSample(payload, engine, cont);)
 
+// sample, root, midi start end, vel start end
+using addSampleWithRange_t = std::tuple<std::string, int, int, int, int, int>;
+inline void addSampleWithRange(const addSampleWithRange_t &payload, engine::Engine &engine,
+                               MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    auto p = fs::path{std::get<0>(payload)};
+    auto rk = std::get<1>(payload);
+    auto kr = engine::KeyboardRange(std::get<2>(payload), std::get<3>(payload));
+    auto vr = engine::VelocityRange(std::get<4>(payload), std::get<5>(payload));
+    engine.loadSampleIntoSelectedPartAndGroup(p, rk, kr, vr);
+}
+CLIENT_TO_SERIAL(AddSampleWithRange, c2s_add_sample_with_range, addSampleWithRange_t,
+                 addSampleWithRange(payload, engine, cont);)
+
 inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
 {
     if (partNumber < 0 || partNumber > numParts)

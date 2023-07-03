@@ -271,7 +271,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     /*
      * Serialization thread originated mutation apis
      */
-    void loadSampleIntoSelectedPartAndGroup(const fs::path &);
+    void loadSampleIntoSelectedPartAndGroup(const fs::path &, int16_t rootKey = 60,
+                                            KeyboardRange krange = {48, 72},
+                                            VelocityRange vrange = {0, 127});
 
     void loadSf2MultiSampleIntoSelectedPart(const fs::path &);
 
