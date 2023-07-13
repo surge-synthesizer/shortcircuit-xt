@@ -55,5 +55,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         juce::juce_gui_basics
         )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE JUCE_STANDALONE_APPLICATION=0)
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        JUCE_STANDALONE_APPLICATION=0
+        JUCE_USE_CURL=0
+        )
+
 target_include_directories(${PROJECT_NAME} PUBLIC .)
