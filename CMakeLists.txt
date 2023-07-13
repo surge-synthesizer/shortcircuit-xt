@@ -40,6 +40,7 @@ option(SCXT_BUILD_STANDALONE "Build a standalone executable" ON)
 option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
 option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
+option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to exewcutables" OFF)
 
 option(SCXT_USE_FLAC "Include FLAC support" ON)
 
@@ -59,8 +60,8 @@ message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
 # Everything here is C++ 17 now
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SURGE_SKIP_PIE_CHANGE)
-    message(STATUS "Setting -no-pie on EXE flags; use SURGE_SKIP_PIE_CHANGE=TRUE to avoid")
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
+    message(STATUS "Setting -no-pie on EXE flags; use SCXT_SKIP_PIE_CHANGE=TRUE to avoid")
     set(CMAKE_EXE_LINKER_FLAGS "-no-pie")
 endif ()
 

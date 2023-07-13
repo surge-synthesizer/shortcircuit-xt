@@ -47,6 +47,7 @@ elseif (UNIX AND NOT APPLE)
             -Wno-multichar
             -fPIC
             -fvisibility=hidden -fvisibility-inlines-hidden
+            -march=nehalem
             )
     set(OS_COMPILE_DEFINITIONS
             LINUX=1)
@@ -54,19 +55,23 @@ elseif (UNIX AND NOT APPLE)
     set(OS_LINK_LIBRARIES
             )
 else ()
-    set(OS_COMPILE_OPTIONS
-            /wd4244   # convert float from double
-            /wd4305   # truncate from double to float
-            /wd4018   # signed unsigned compare
-            /wd4996   # don't warn on stricmp vs _stricmp and other posix names
-            /wd4267   # converting size_t <-> int
-            )
-    set(OS_COMPILE_DEFINITIONS
-            WIN=1
-            WINDOWS=1
-            _CRT_SECURE_NO_WARNINGS=1
-            )
 
+    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+
+        set(OS_COMPILE_OPTIONS
+                /wd4244   # convert float from double
+                /wd4305   # truncate from double to float
+                /wd4018   # signed unsigned compare
+                /wd4996   # don't warn on stricmp vs _stricmp and other posix names
+                /wd4267   # converting size_t <-> int
+                )
+    endif ()
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        set(OS_COMPILE_OPTIONS -Wno-multichar -march=nehalem)
+    endif ()
+
+    set(OS_COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS=1 WINDOWS=1 _USE_MATH_DEFINES=1)
     set(OS_LINK_LIBRARIES
             shell32
             user32
