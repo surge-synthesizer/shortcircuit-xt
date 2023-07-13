@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_MESSAGING_AUDIO_AUDIO_SERIAL_H
 #define SCXT_SRC_MESSAGING_AUDIO_AUDIO_SERIAL_H
 
+#include <cstdint>
 #include <string>
 #include <sstream>
 
