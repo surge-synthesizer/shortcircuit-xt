@@ -76,6 +76,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         taocpp::json
 
         FLAC++
+        sc-compiler-options
         )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
