@@ -75,7 +75,7 @@ else ()
         set(OS_COMPILE_OPTIONS
                 -Wno-multichar
                 -march=nehalem
-                
+
                 # Targeting Windows with GCC/Clang is experimental
                 # $<$<NOT:$<BOOL:${WIN32}>>:-Werror>
 
