@@ -26,11 +26,15 @@
  */
 
 #include "browser.h"
+#include "browser_db.h"
 #include "utils.h"
 
 namespace scxt::browser
 {
-Browser::Browser(const infrastructure::DefaultsProvider &dp) : defaultsProvider(dp) {}
+Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp)
+    : browserDb(db), defaultsProvider(dp)
+{
+}
 
 std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView() const
 {

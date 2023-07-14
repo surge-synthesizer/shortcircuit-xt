@@ -40,6 +40,8 @@ struct DefaultsProvider;
 
 namespace scxt::browser
 {
+struct BrowserDB;
+
 /*
  * The Browser is the DATA api to allow you to ask questions about the
  * samples installed on this users computer. There's an instance owned by
@@ -53,12 +55,14 @@ namespace scxt::browser
  */
 struct Browser
 {
-    Browser(const infrastructure::DefaultsProvider &);
+    Browser(BrowserDB &, const infrastructure::DefaultsProvider &);
 
     /*
      * Filesystem Views: Very simple. The Browser gives you a set of
      * filesystem roots and allows you to add your own roots to the
-     * browser (which will be persisted system wide).
+     * browser (which will be persisted system wide). This is safe to call
+     * from any thread other than the sql thread but is really intended
+     * to be called from the UI thread.
      */
     std::vector<std::pair<fs::path, std::string>> getRootPathsForDeviceView() const;
     void addRootPathForDeviceView(const fs::path &);
@@ -67,6 +71,7 @@ struct Browser
     std::vector<std::pair<fs::path, std::string>> getOSDefaultRootPathsForDeviceView() const;
 
     const infrastructure::DefaultsProvider &defaultsProvider;
+    BrowserDB &browserDb;
 };
 } // namespace scxt::browser
 #endif // SHORTCIRCUITXT_BROWSER_H
