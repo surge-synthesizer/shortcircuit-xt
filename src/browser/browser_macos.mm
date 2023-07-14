@@ -47,12 +47,6 @@ std::vector<std::pair<fs::path, std::string>> Browser::getOSDefaultRootPathsForD
     {
         auto *u = [resultURLs objectAtIndex:0];
         res.emplace_back([u fileSystemRepresentation], "Music");
-        auto mp = fs::path{[u fileSystemRepresentation]};
-        auto sctest = mp / "Samples" / "SCTests";
-        if (fs::is_directory(sctest))
-        {
-            res.emplace_back(sctest, "BaconPauls SCTests");
-        }
     }
 
     return res;

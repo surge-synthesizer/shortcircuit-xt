@@ -239,7 +239,7 @@ struct TxnGuard
 struct WriterWorker
 {
     static constexpr const char *schema_version =
-        "1002"; // I will rebuild if this is not my version
+        "1003"; // I will rebuild if this is not my version
 
     static constexpr const char *setup_sql = R"SQL(
 DROP TABLE IF EXISTS "DebugJunk";
@@ -252,16 +252,13 @@ CREATE TABLE DebugJunk (
     id integer primary key,
     time varchar(256),
     junk varchar(2048)
-)
-    )SQL";
-
-    // language=SQL
-    static constexpr const char *setup_user = R"SQL(
-CREATE TABLE IF NOT EXISTS Favorites (
+);
+-- We create these tables only if missing of course since it is user data
+CREATE TABLE IF NOT EXISTS DeviceLocations (
     id integer primary key,
     path varchar(2048)
 );
-)SQL";
+    )SQL";
     struct EnQAble
     {
         virtual ~EnQAble() = default;
@@ -273,6 +270,13 @@ CREATE TABLE IF NOT EXISTS Favorites (
         std::string msg;
         EnQDebugMsg(const std::string &msg) : msg(msg) {}
         void go(WriterWorker &w) override { w.addDebug(msg); }
+    };
+
+    struct EnQDeviceLocation : public EnQAble
+    {
+        fs::path path;
+        EnQDeviceLocation(const fs::path &msg) : path(msg) {}
+        void go(WriterWorker &w) override { w.addDeviceLocation(path); }
     };
 
     void openDb()
@@ -388,8 +392,6 @@ CREATE TABLE IF NOT EXISTS Favorites (
                 auto versql = std::string("INSERT INTO VERSION (\"schema_version\") VALUES (\"") +
                               schema_version + "\")";
                 SQL::Exec(dbh, versql);
-
-                SQL::Exec(dbh, setup_user);
             }
             catch (const SQL::Exception &e)
             {
@@ -570,6 +572,25 @@ CREATE TABLE IF NOT EXISTS Favorites (
         }
     }
 
+    void addDeviceLocation(const fs::path &m)
+    {
+        try
+        {
+            auto there = SQL::Statement(dbh, "INSERT INTO DeviceLocations  (\"path\") VALUES (?1)");
+
+            std::string res = m.u8string();
+            there.bind(1, res);
+
+            there.step();
+            there.finalize();
+        }
+        catch (const SQL::Exception &e)
+        {
+            // storage->reportError(e.what(), "PatchDB - Junk gave Junk");
+            SCLOG(e.what());
+        }
+    }
+
     // FIXME for now I am coding this with a locked vector but probably a
     // thread safe queue is the way to go
     std::thread qThread;
@@ -636,4 +657,53 @@ void BrowserDB::writeDebugMessage(const std::string &s)
 {
     writerWorker->enqueueWorkItem(new WriterWorker::EnQDebugMsg(s));
 }
+
+void BrowserDB::addDeviceLocation(const fs::path &p)
+{
+    writerWorker->enqueueWorkItem(new WriterWorker::EnQDeviceLocation(p));
+}
+
+std::vector<fs::path> BrowserDB::getDeviceLocations()
+{
+    auto conn = writerWorker->getReadOnlyConn();
+    std::vector<fs::path> res;
+
+    // language=SQL
+    std::string query = "SELECT path FROM DeviceLocations;";
+    try
+    {
+        auto q = SQL::Statement(conn, query);
+        while (q.step())
+        {
+            res.emplace_back(fs::path{q.col_str(0)});
+        }
+        q.finalize();
+    }
+    catch (SQL::Exception &e)
+    {
+        // storage->reportError(e.what(), "PatchDB - readFeatures");
+        SCLOG(e.what());
+    }
+    return res;
+}
+
+int BrowserDB::numberOfJobsOutstanding() const
+{
+    std::lock_guard<std::mutex> guard(writerWorker->qLock);
+    return writerWorker->pathQ.size();
+}
+
+int BrowserDB::waitForJobsOutstandingComplete(int maxWaitInMS) const
+{
+    int maxIts = maxWaitInMS / 10;
+    int njo = 0;
+    while ((njo = numberOfJobsOutstanding()) > 0 && maxIts > 0)
+    {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        maxIts--;
+    }
+    return numberOfJobsOutstanding();
+}
+
 } // namespace scxt::browser

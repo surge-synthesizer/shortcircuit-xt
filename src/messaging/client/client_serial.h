@@ -75,6 +75,8 @@ enum ClientToSerializationMessagesIds
     c2s_set_mixer_effect_storage,
     c2s_set_mixer_send_storage,
 
+    c2s_browser_add_device_location,
+
     num_clientToSerializationMessages
 };
 
@@ -100,6 +102,8 @@ enum SerializationToClientMessageIds
 
     s2c_bus_effect_full_data,
     s2c_bus_send_data,
+
+    s2c_refresh_browser,
 
     num_serializationToClientMessages
 };

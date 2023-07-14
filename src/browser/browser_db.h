@@ -30,6 +30,7 @@
 
 #include "filesystem/import.h"
 #include <memory>
+#include <vector>
 
 namespace scxt::browser
 {
@@ -40,7 +41,14 @@ struct BrowserDB
     ~BrowserDB();
 
     void writeDebugMessage(const std::string &);
+    void addDeviceLocation(const fs::path &);
 
+    std::vector<fs::path> getDeviceLocations();
+
+    int numberOfJobsOutstanding() const;
+    int waitForJobsOutstandingComplete(int maxWaitInMS) const;
+
+  private:
     std::unique_ptr<WriterWorker> writerWorker;
 };
 } // namespace scxt::browser

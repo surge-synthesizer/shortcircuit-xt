@@ -263,6 +263,14 @@ struct DriveFSListBoxRow : public juce::Component
     void mouseDown(const juce::MouseEvent &event) override
     {
         enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, false);
+
+        if (event.mods.isPopupMenu())
+        {
+            if (!isFile())
+            {
+                showDirectoryPopup();
+            }
+        }
     }
 
     void mouseDrag(const juce::MouseEvent &e) override
@@ -312,6 +320,26 @@ struct DriveFSListBoxRow : public juce::Component
                     cmsg::AddSample(data[rowNumber].path().u8string()),
                     browserPane->editor->msgCont);
             }
+        }
+    }
+
+    void showDirectoryPopup()
+    {
+        const auto &data = browserPane->devicesPane->driveFSArea->contents;
+        if (rowNumber >= 0 && rowNumber < data.size())
+        {
+            auto p = juce::PopupMenu();
+
+            p.addSectionHeader("Directory");
+            p.addSeparator();
+            p.addItem("Add to Locations", [w = juce::Component::SafePointer(browserPane),
+                                           d = data[rowNumber]]() {
+                if (!w)
+                    return;
+                namespace cmsg = scxt::messaging::client;
+                w->sendToSerialization(cmsg::AddBrowserDeviceLocation(d.path().u8string()));
+            });
+            p.showMenuAsync(browserPane->editor->defaultPopupMenuOptions());
         }
     }
 

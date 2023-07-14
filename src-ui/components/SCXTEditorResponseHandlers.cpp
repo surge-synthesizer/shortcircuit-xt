@@ -37,6 +37,7 @@
 #include "HeaderRegion.h"
 #include "multi/MappingPane.h"
 #include "AboutScreen.h"
+#include "browser/BrowserPane.h"
 
 namespace scxt::ui
 {
@@ -201,5 +202,11 @@ void SCXTEditor::onMixerBusSendData(const scxt::messaging::client::busSendData_t
         const auto &busd = std::get<1>(d);
         mixerScreen->onBusSendData(busi, busd);
     }
+}
+
+void SCXTEditor::onBrowserRefresh(const bool)
+{
+    multiScreen->browser->resetRoots();
+    mixerScreen->browser->resetRoots();
 }
 } // namespace scxt::ui
