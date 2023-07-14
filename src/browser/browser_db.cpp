@@ -34,6 +34,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <deque>
 
 #define TRACE_DB 1
 
