@@ -29,7 +29,6 @@
 
 #include "SCXTBinary.h"
 #include "utils.h"
-#include "version.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "SCXTEditor.h"
 

@@ -35,9 +35,10 @@
 #include "HeaderRegion.h"
 #include "components/multi/MappingPane.h"
 #include "components/AboutScreen.h"
-#include "version.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "infrastructure/user_defaults.h"
+
+#include <version.h>
 
 namespace scxt::ui
 {

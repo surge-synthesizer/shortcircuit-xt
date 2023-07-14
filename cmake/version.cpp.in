@@ -3,7 +3,7 @@
 ** Things which need to be per-build should be defined here, declared
 ** in the version.h header, and then used wherever you want
 */
-#include "version.h"
+#include <version.h>
 
 // clang-format off
 namespace scxt

@@ -26,12 +26,12 @@
  */
 
 #include "AboutScreen.h"
-
 #include "SCXTBinary.h"
 #include "utils.h"
-#include "version.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "SCXTEditor.h"
+
+#include <version.h>
 
 namespace scxt::ui
 {

@@ -40,6 +40,7 @@ option(SCXT_BUILD_STANDALONE "Build a standalone executable" ON)
 option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
 option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
+option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
 option(SCXT_USE_FLAC "Include FLAC support" ON)
 
@@ -59,8 +60,8 @@ message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
 # Everything here is C++ 17 now
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SURGE_SKIP_PIE_CHANGE)
-    message(STATUS "Setting -no-pie on EXE flags; use SURGE_SKIP_PIE_CHANGE=TRUE to avoid")
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
+    message(STATUS "Setting -no-pie on EXE flags; use SCXT_SKIP_PIE_CHANGE=TRUE to avoid")
     set(CMAKE_EXE_LINKER_FLAGS "-no-pie")
 endif ()
 
@@ -69,19 +70,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         message(STATUS "Sanitizer is ON")
     endif ()
 
-    # Any Clang or any GCC
+    # BP note: If you want to turn on llvm/gcc sanitize, remove this and the link options below
     add_compile_options(
-            -Wno-multichar
-            # Targeting Windows with GCC/Clang is experimental
-            # $<$<NOT:$<BOOL:${WIN32}>>:-Werror>
-
-            # PE/COFF doesn't support visibility
-            $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
-
-            # Inlines visibility is only relevant with C++
-            $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>
-
-            # BP note: If you want to turn on llvm/gcc sanitize undo this and the link options below
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
@@ -90,21 +80,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
-
-    if (NOT APPLE)
-        # Turn on SSE 4.2. Apple has this by default
-        add_compile_options(-march=nehalem)
-    endif ()
-    if (WIN32)
-        # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
-        # fix that but not today
-        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    endif ()
-endif ()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    # Turn on SSE 4.2
-    add_compile_options(/arch:SSE42)
 endif ()
 
 add_compile_definitions(SCXT_ROOT_BUILD_DIR="${CMAKE_SOURCE_DIR}")
