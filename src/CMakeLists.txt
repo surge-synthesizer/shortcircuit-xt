@@ -2,6 +2,7 @@ project(scxt-core LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
         browser/browser.cpp
+        browser/browser_db.cpp
 
         datamodel/adsr_storage.cpp
 
@@ -71,6 +72,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         libgig libakai
         mts-esp-client
         shortcircuit::simde
+        shortcircuit::sqlite3
         taocpp::json
 
         FLAC++

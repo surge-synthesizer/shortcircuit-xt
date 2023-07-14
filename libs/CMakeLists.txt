@@ -2,10 +2,12 @@
 add_subdirectory(JUCE)
 add_subdirectory(clap-juce-extensions clap-extensions EXCLUDE_FROM_ALL)
 
+
 add_subdirectory(fmt)
 # Modify this basedon the outcome of https://github.com/taocpp/PEGTL/issues/347
 set(PEGTL_NO_STD_FILESYSTEM ON CACHE BOOL "Skip PEGTL FileSystem")
 add_subdirectory(taocpp_json)
+add_subdirectory(sqlite3-3.42.0)
 
 add_subdirectory(xiph)
 

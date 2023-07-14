@@ -67,7 +67,9 @@ struct DefaultsProvider;
 namespace scxt::browser
 {
 struct Browser;
-}
+struct BrowserDB;
+} // namespace scxt::browser
+
 namespace scxt::engine
 {
 struct Engine : MoveableOnly<Engine>, SampleRateSupport
@@ -321,6 +323,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::unique_ptr<Patch> patch;
     std::unique_ptr<MemoryPool> memoryPool;
     std::unique_ptr<sample::SampleManager> sampleManager;
+    std::unique_ptr<browser::BrowserDB> browserDb;
     std::unique_ptr<browser::Browser> browser;
     std::array<voice::Voice *, maxVoices> voices;
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};

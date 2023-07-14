@@ -39,6 +39,7 @@
 #include "sfz_support/sfz_import.h"
 #include "infrastructure/user_defaults.h"
 #include "browser/browser.h"
+#include "browser/browser_db.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/plugininfra/paths.h"
@@ -80,9 +81,10 @@ Engine::Engine()
     defaults = std::make_unique<infrastructure::DefaultsProvider>(
         docpath, "ShortcircuitXT",
         [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
-        [](auto em, auto t) { std::cerr << "PARSE ERROR FIXME " << em << t << std::endl; });
+        [](auto em, auto t) { SCLOG("Defaults Parse Error :" << em << " " << t << std::endl); });
 
-    browser = std::make_unique<browser::Browser>(*defaults);
+    browserDb = std::make_unique<browser::BrowserDB>(docpath);
+    browser = std::make_unique<browser::Browser>(*browserDb, *defaults);
 
     for (auto &v : voices)
         v = nullptr;
@@ -97,6 +99,8 @@ Engine::Engine()
     voice::Voice::ahdsrenv_t::initializeLuts();
 
     messageController->start();
+
+    browserDb->writeDebugMessage(std::string("SCXT Startup ") + build::FullVersionStr);
 }
 
 Engine::~Engine()

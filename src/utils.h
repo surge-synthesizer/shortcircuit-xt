@@ -34,6 +34,7 @@
 #include <atomic>
 #include <functional>
 #include <filesystem>
+#include <thread>
 
 #include <iostream>
 #include <map>
@@ -236,10 +237,14 @@ struct ThreadingChecker
 
 void postToLog(const std::string &s);
 std::string getFullLog();
+std::string logTimestamp();
 #define SCLOG(...)                                                                                 \
     {                                                                                              \
         std::ostringstream oss_macr;                                                               \
-        oss_macr << __FILE__ << ":" << __LINE__ << " " << __VA_ARGS__ << "\n";                     \
+        /*oss_macr << __FILE__ << ":" << __LINE__ << " " << __VA_ARGS__ << "     (at "   */        \
+        /*         << logTimestamp() << " on " << std::this_thread::get_id() << ")\n";   */        \
+        oss_macr << __FILE__ << ":" << __LINE__ << " " << logTimestamp() << " " << __VA_ARGS__     \
+                 << "\n";                                                                          \
         postToLog(oss_macr.str());                                                                 \
     }
 
