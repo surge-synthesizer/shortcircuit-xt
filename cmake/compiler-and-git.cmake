@@ -1,33 +1,31 @@
 # Set up version information using the same approach as surge, namely
 # with an external cmake run, a git-info target, and a generated
 # ${bld}/geninclude/version.cpp
-execute_process(
+
+add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/geninclude/version.cpp
+        DEPENDS ${CMAKE_SOURCE_DIR}/cmake/version.h
+            ${CMAKE_SOURCE_DIR}/cmake/version.cpp.in
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND ${CMAKE_COMMAND}
-        -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        -D SHORTCSRC=${CMAKE_SOURCE_DIR}
-        -D SHORTCBLD=${CMAKE_BINARY_DIR}
-        -D AZURE_PIPELINE=${AZURE_PIPELINE}
-        -D WIN32=${WIN32}
-        -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
-)
-add_custom_target(git-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${CMAKE_COMMAND}
-        -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        -D SHORTCSRC=${CMAKE_SOURCE_DIR}
-        -D SHORTCBLD=${CMAKE_BINARY_DIR}
-        -D AZURE_PIPELINE=${AZURE_PIPELINE}
-        -D WIN32=${WIN32}
-        -D CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
-        -D CMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
-        -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
+            -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+            -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+            -D SHORTCSRC=${CMAKE_SOURCE_DIR}
+            -D SHORTCBLD=${CMAKE_BINARY_DIR}
+            -D AZURE_PIPELINE=${AZURE_PIPELINE}
+            -D WIN32=${WIN32}
+            -D CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
+            -D CMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
+            -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
         )
 
 # Platform Specific Compile Settings
-add_library(sc-compiler-options INTERFACE)
+add_library(sc-compiler-options)
+
+target_sources(sc-compiler-options PRIVATE ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
+
+target_include_directories(sc-compiler-options PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 if (APPLE)
     set(OS_COMPILE_OPTIONS
             -Wno-invalid-source-encoding
@@ -87,6 +85,6 @@ else ()
 endif ()
 target_compile_options(sc-compiler-options INTERFACE ${OS_COMPILE_OPTIONS})
 target_compile_definitions(sc-compiler-options INTERFACE ${OS_COMPILE_DEFINITIONS})
+target_include_directories(sc-compiler-options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 target_link_libraries(sc-compiler-options INTERFACE ${OS_LINK_LIBRARIES})
-add_dependencies(sc-compiler-options git-info)
 add_library(shortcircuit::compiler-options ALIAS sc-compiler-options)

@@ -53,8 +53,6 @@ add_library(${PROJECT_NAME} STATIC
         voice/voice.cpp
 
         utils.cpp
-
-        ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         )
 
 

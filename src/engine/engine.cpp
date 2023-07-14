@@ -46,7 +46,7 @@
 #include "gig.h"
 #include "SF.h"
 
-#include "version.h"
+#include <version.h>
 #include <filesystem>
 #include <mutex>
 namespace scxt::engine

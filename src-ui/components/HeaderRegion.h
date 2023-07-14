@@ -32,12 +32,12 @@
 #include <sst/jucegui/components/ToggleButton.h>
 #include <fmt/core.h>
 
+#include <version.h>
+
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
 #include "widgets/ShortCircuitMenuButton.h"
 #include "HasEditor.h"
-
-#include "version.h"
 
 namespace scxt::ui
 {
