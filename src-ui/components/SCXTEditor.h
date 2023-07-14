@@ -175,6 +175,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
     void onMixerBusSendData(const scxt::messaging::client::busSendData_t &);
 
+    void onBrowserRefresh(const bool);
+
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
     {

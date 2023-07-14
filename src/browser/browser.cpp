@@ -39,7 +39,12 @@ Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp)
 std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView() const
 {
     // TODO - append local favorites
-    return getOSDefaultRootPathsForDeviceView();
+    auto osdef = getOSDefaultRootPathsForDeviceView();
+    auto fav = browserDb.getDeviceLocations();
+    for (const auto &p : fav)
+        osdef.push_back({p, p.filename().u8string()});
+
+    return osdef;
 }
 
 bool Browser::isLoadableFile(const fs::path &p) const
@@ -47,5 +52,11 @@ bool Browser::isLoadableFile(const fs::path &p) const
     return extensionMatches(p, ".wav") || extensionMatches(p, ".flac") ||
            extensionMatches(p, ".aif") || extensionMatches(p, ".aiff") ||
            extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz");
+}
+
+void Browser::addRootPathForDeviceView(const fs::path &p)
+{
+    browserDb.addDeviceLocation(p);
+    browserDb.waitForJobsOutstandingComplete(100);
 }
 } // namespace scxt::browser
