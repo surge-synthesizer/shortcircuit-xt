@@ -33,6 +33,7 @@
 #include <memory>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 #define TRACE_DB 1
 
