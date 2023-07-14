@@ -30,6 +30,7 @@
 
 #include "filesystem/import.h"
 #include <memory>
+#include <vector>
 
 namespace scxt::browser
 {
