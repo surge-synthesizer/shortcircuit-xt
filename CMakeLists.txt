@@ -40,7 +40,7 @@ option(SCXT_BUILD_STANDALONE "Build a standalone executable" ON)
 option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
 option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" ON)
-option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to exewcutables" OFF)
+option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
 option(SCXT_USE_FLAC "Include FLAC support" ON)
 
