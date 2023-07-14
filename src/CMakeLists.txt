@@ -76,16 +76,3 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         FLAC++
         sc-compiler-options
         )
-
-target_compile_definitions(${PROJECT_NAME} PUBLIC $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
-
-if (WIN32)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES WINDOWS=1)
-else ()
-    target_compile_options(${PROJECT_NAME} PUBLIC -Werror)
-    if (APPLE)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC MAC=1)
-    else ()
-        target_compile_definitions(${PROJECT_NAME} PUBLIC LINUX=1)
-    endif ()
-endif ()

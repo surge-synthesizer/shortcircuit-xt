@@ -5,19 +5,19 @@
 add_custom_command(
         OUTPUT ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         DEPENDS ${CMAKE_SOURCE_DIR}/cmake/version.h
-            ${CMAKE_SOURCE_DIR}/cmake/version.cpp.in
+        ${CMAKE_SOURCE_DIR}/cmake/version.cpp.in
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND ${CMAKE_COMMAND}
-            -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-            -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-            -D SHORTCSRC=${CMAKE_SOURCE_DIR}
-            -D SHORTCBLD=${CMAKE_BINARY_DIR}
-            -D AZURE_PIPELINE=${AZURE_PIPELINE}
-            -D WIN32=${WIN32}
-            -D CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
-            -D CMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
-            -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
-        )
+        -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        -D SHORTCSRC=${CMAKE_SOURCE_DIR}
+        -D SHORTCBLD=${CMAKE_BINARY_DIR}
+        -D AZURE_PIPELINE=${AZURE_PIPELINE}
+        -D WIN32=${WIN32}
+        -D CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
+        -D CMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
+        -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
+)
 
 # Platform Specific Compile Settings
 add_library(sc-compiler-options)
@@ -26,14 +26,19 @@ target_sources(sc-compiler-options PRIVATE ${CMAKE_BINARY_DIR}/geninclude/versio
 
 target_include_directories(sc-compiler-options PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+# visibility needs to be consistent across the whole project
+add_compile_options(
+        # PE/COFF doesn't support visibility
+        $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
+
+        # Inlines visibility is only relevant with C++
+        $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>
+)
+
 if (APPLE)
     set(OS_COMPILE_OPTIONS
-            -Wno-invalid-source-encoding
-            -Wno-undefined-bool-conversion
-            -Wno-format-security
-            -Wno-writable-strings
-
-            -fvisibility=hidden -fvisibility-inlines-hidden
+            -Werror
+            -Wno-multichar
             )
     set(OS_COMPILE_DEFINITIONS MAC=1)
 
@@ -42,9 +47,9 @@ if (APPLE)
             )
 elseif (UNIX AND NOT APPLE)
     set(OS_COMPILE_OPTIONS
+            -Werror
             -Wno-multichar
-            -fPIC
-            -fvisibility=hidden -fvisibility-inlines-hidden
+            -fPIC  # probably not needed with CMAKE_POSITION_INDEPENDENT_CODE_ON but hey
             -march=nehalem
             )
     set(OS_COMPILE_DEFINITIONS
@@ -102,6 +107,7 @@ else ()
 endif ()
 target_compile_options(sc-compiler-options INTERFACE ${OS_COMPILE_OPTIONS})
 target_compile_definitions(sc-compiler-options INTERFACE ${OS_COMPILE_DEFINITIONS})
+target_compile_definitions(sc-compiler-options INTERFACE $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
 target_include_directories(sc-compiler-options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 target_link_libraries(sc-compiler-options INTERFACE ${OS_LINK_LIBRARIES})
 add_library(shortcircuit::compiler-options ALIAS sc-compiler-options)
