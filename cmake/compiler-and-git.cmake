@@ -55,8 +55,8 @@ elseif (UNIX AND NOT APPLE)
 else ()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-
         set(OS_COMPILE_OPTIONS
+                /arch:SSE42
                 /wd4244   # convert float from double
                 /wd4305   # truncate from double to float
                 /wd4018   # signed unsigned compare
@@ -65,8 +65,25 @@ else ()
                 )
     endif ()
 
+    if (WIN32)
+        # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
+        # fix that but not today
+        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    endif ()
+
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        set(OS_COMPILE_OPTIONS -Wno-multichar -march=nehalem)
+        set(OS_COMPILE_OPTIONS
+                -Wno-multichar
+                -march=nehalem
+                
+                # Targeting Windows with GCC/Clang is experimental
+                # $<$<NOT:$<BOOL:${WIN32}>>:-Werror>
+
+                # PE/COFF doesn't support visibility
+                $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
+
+                # Inlines visibility is only relevant with C++
+                $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>)
     endif ()
 
     set(OS_COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS=1 WINDOWS=1 _USE_MATH_DEFINES=1)

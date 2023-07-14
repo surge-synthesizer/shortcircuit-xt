@@ -70,19 +70,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         message(STATUS "Sanitizer is ON")
     endif ()
 
-    # Any Clang or any GCC
+    # BP note: If you want to turn on llvm/gcc sanitize, remove this and the link options below
     add_compile_options(
-            -Wno-multichar
-            # Targeting Windows with GCC/Clang is experimental
-            # $<$<NOT:$<BOOL:${WIN32}>>:-Werror>
-
-            # PE/COFF doesn't support visibility
-            $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
-
-            # Inlines visibility is only relevant with C++
-            $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>
-
-            # BP note: If you want to turn on llvm/gcc sanitize undo this and the link options below
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
@@ -91,21 +80,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
-
-    if (NOT APPLE)
-        # Turn on SSE 4.2. Apple has this by default
-        add_compile_options(-march=nehalem)
-    endif ()
-    if (WIN32)
-        # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
-        # fix that but not today
-        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    endif ()
-endif ()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    # Turn on SSE 4.2
-    add_compile_options(/arch:SSE42)
 endif ()
 
 add_compile_definitions(SCXT_ROOT_BUILD_DIR="${CMAKE_SOURCE_DIR}")
