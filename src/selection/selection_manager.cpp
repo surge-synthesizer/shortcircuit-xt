@@ -40,7 +40,7 @@ namespace scxt::selection
 {
 namespace cms = messaging::client;
 
-void SelectionManager::sendClientDataForSelectionState()
+void SelectionManager::sendClientDataForLeadSelectionState()
 {
     auto [p, g, z] = leadZone;
 
@@ -76,76 +76,16 @@ void SelectionManager::sendClientDataForSelectionState()
         serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
                                   engine.getPatch()->getPart(p)->getZoneMappingSummary(),
                                   *(engine.getMessageController()));
+
+        sendDisplayDataForSingleGroup(p, g);
     }
     if (z >= 0 && g >= 0 && p >= 0)
     {
-        // TODO: The 'full zone' becomes a single function obviously
-        const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-        serializationSendToClient(cms::s2c_respond_zone_mapping,
-                                  cms::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_respond_zone_samples,
-                                  cms::SampleSelectedZoneView::s2c_payload_t{true, zp->sampleData},
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                                  cms::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                                  cms::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
-                                  *(engine.getMessageController()));
-
-        for (int i = 0; i < engine::processorsPerZone; ++i)
-        {
-            serializationSendToClient(
-                cms::s2c_respond_single_processor_metadata_and_data,
-                cms::ProcessorMetadataAndData::s2c_payload_t{i, true, zp->processorDescription[i],
-                                                             zp->processorStorage[i]},
-                *(engine.getMessageController()));
-        }
-
-        for (int i = 0; i < engine::lfosPerZone; ++i)
-        {
-            serializationSendToClient(cms::s2c_update_zone_individual_lfo,
-                                      cms::indexedLfoUpdate_t{true, i, zp->lfoStorage[i]},
-                                      *(engine.getMessageController()));
-        }
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
-                                  modulation::getVoiceModMatrixMetadata(*zp),
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_output_info,
-                                  cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
-                                  *(engine.getMessageController()));
+        sendDisplayDataForSingleZone(p, g, z);
     }
     else
     {
-        serializationSendToClient(cms::s2c_respond_zone_mapping,
-                                  cms::MappingSelectedZoneView::s2c_payload_t{false, {}},
-                                  *(engine.getMessageController()));
-
-        serializationSendToClient(cms::s2c_respond_zone_samples,
-                                  cms::SampleSelectedZoneView::s2c_payload_t{false, {}},
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                                  cms::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                                  cms::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
-                                  *(engine.getMessageController()));
-        for (int i = 0; i < engine::processorsPerZone; ++i)
-        {
-            serializationSendToClient(
-                cms::s2c_respond_single_processor_metadata_and_data,
-                cms::ProcessorMetadataAndData::s2c_payload_t{i, false, {}, {}},
-                *(engine.getMessageController()));
-        }
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
-                                  modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_output_info,
-                                  cms::zoneOutputInfoUpdate_t{false, {}},
-                                  *(engine.getMessageController()));
+        sendDisplayDataForNoZoneSelected();
     }
 }
 
@@ -154,7 +94,7 @@ void SelectionManager::multiSelectAction(const std::vector<SelectActionContents>
     for (const auto &z : v)
         adjustInternalStateForAction(z);
     guaranteeSelectedLead();
-    sendClientDataForSelectionState();
+    sendClientDataForLeadSelectionState();
     sendSelectedZonesToClient();
     debugDumpSelectionState();
 }
@@ -164,7 +104,7 @@ void SelectionManager::selectAction(
 {
     adjustInternalStateForAction(z);
     guaranteeSelectedLead();
-    sendClientDataForSelectionState();
+    sendClientDataForLeadSelectionState();
     sendSelectedZonesToClient();
     debugDumpSelectionState();
 }
@@ -288,5 +228,80 @@ std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::En
     }
 
     return {pt, gp};
+}
+
+void SelectionManager::sendDisplayDataForSingleZone(int p, int g, int z)
+{
+    const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+    serializationSendToClient(cms::s2c_respond_zone_mapping,
+                              cms::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_respond_zone_samples,
+                              cms::SampleSelectedZoneView::s2c_payload_t{true, zp->sampleData},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                              cms::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                              cms::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
+                              *(engine.getMessageController()));
+
+    for (int i = 0; i < engine::processorsPerZone; ++i)
+    {
+        serializationSendToClient(
+            cms::s2c_respond_single_processor_metadata_and_data,
+            cms::ProcessorMetadataAndData::s2c_payload_t{i, true, zp->processorDescription[i],
+                                                         zp->processorStorage[i]},
+            *(engine.getMessageController()));
+    }
+
+    for (int i = 0; i < engine::lfosPerZone; ++i)
+    {
+        serializationSendToClient(cms::s2c_update_zone_individual_lfo,
+                                  cms::indexedLfoUpdate_t{true, i, zp->lfoStorage[i]},
+                                  *(engine.getMessageController()));
+    }
+    serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+                              modulation::getVoiceModMatrixMetadata(*zp),
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_zone_output_info,
+                              cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
+                              *(engine.getMessageController()));
+}
+
+void SelectionManager::sendDisplayDataForNoZoneSelected()
+{
+    serializationSendToClient(cms::s2c_respond_zone_mapping,
+                              cms::MappingSelectedZoneView::s2c_payload_t{false, {}},
+                              *(engine.getMessageController()));
+
+    serializationSendToClient(cms::s2c_respond_zone_samples,
+                              cms::SampleSelectedZoneView::s2c_payload_t{false, {}},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                              cms::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
+                              cms::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
+                              *(engine.getMessageController()));
+    for (int i = 0; i < engine::processorsPerZone; ++i)
+    {
+        serializationSendToClient(cms::s2c_respond_single_processor_metadata_and_data,
+                                  cms::ProcessorMetadataAndData::s2c_payload_t{i, false, {}, {}},
+                                  *(engine.getMessageController()));
+    }
+    serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+                              modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_zone_output_info,
+                              cms::zoneOutputInfoUpdate_t{false, {}},
+                              *(engine.getMessageController()));
+}
+
+void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
+{
+    SCLOG_UNIMPL(SCD(part) << SCD(group));
 }
 } // namespace scxt::selection

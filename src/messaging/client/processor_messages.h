@@ -40,7 +40,7 @@ typedef std::tuple<int, bool, dsp::processor::ProcessorControlDescription,
     processorDataResponsePayload_t;
 
 SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata_and_data,
-                 processorDataResponsePayload_t, onProcessorDataAndMetadata);
+                 processorDataResponsePayload_t, onZoneProcessorDataAndMetadata);
 
 // C2S set processor type (sends back data and metadata)
 typedef std::pair<int32_t, int32_t> setProcessorPayload_t;

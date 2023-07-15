@@ -41,18 +41,18 @@
 
 namespace scxt::ui
 {
-void SCXTEditor::onEnvelopeUpdated(
+void SCXTEditor::onZoneEnvelopeUpdated(
     const scxt::messaging::client::adsrViewResponsePayload_t &payload)
 {
     const auto &[which, active, env] = payload;
     if (active)
     {
         // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-        multiScreen->eg[which]->adsrChangedFromModel(env);
+        multiScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
     }
     else
     {
-        multiScreen->eg[which]->adsrDeactivated();
+        multiScreen->getZoneElements()->eg[which]->adsrDeactivated();
     }
 }
 
@@ -93,48 +93,50 @@ void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
         multiScreen->parts->setPartGroupZoneStructure(s);
 }
 
-void SCXTEditor::onProcessorDataAndMetadata(
+void SCXTEditor::onZoneProcessorDataAndMetadata(
     const scxt::messaging::client::processorDataResponsePayload_t &d)
 {
     const auto &[which, enabled, control, storage] = d;
 
     assert(which >= 0 && which < MultiScreen::numProcessorDisplays);
-    multiScreen->processors[which]->setEnabled(enabled);
-    multiScreen->processors[which]->setProcessorControlDescriptionAndStorage(control, storage);
+    multiScreen->getZoneElements()->processors[which]->setEnabled(enabled);
+    multiScreen->getZoneElements()->processors[which]->setProcessorControlDescriptionAndStorage(
+        control, storage);
 }
 
 void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &d)
 {
     const auto &[active, sinf, dinf, cinf] = d;
-    multiScreen->mod->setActive(active);
+    multiScreen->getZoneElements()->mod->setActive(active);
     if (active)
     {
-        multiScreen->mod->matrixMetadata = d;
-        multiScreen->mod->rebuildMatrix();
+        multiScreen->getZoneElements()->mod->matrixMetadata = d;
+        multiScreen->getZoneElements()->mod->rebuildMatrix();
     }
 }
 
 void SCXTEditor::onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &t)
 {
-    assert(multiScreen->mod->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
-    multiScreen->mod->routingTable = t;
-    multiScreen->mod->refreshMatrix();
+    assert(multiScreen->getZoneElements()
+               ->mod->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
+    multiScreen->getZoneElements()->mod->routingTable = t;
+    multiScreen->getZoneElements()->mod->refreshMatrix();
 }
 
 void SCXTEditor::onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &payload)
 {
     const auto &[active, i, r] = payload;
-    multiScreen->lfo->setActive(i, active);
-    multiScreen->lfo->setLfo(i, r);
+    multiScreen->getZoneElements()->lfo->setActive(i, active);
+    multiScreen->getZoneElements()->lfo->setLfo(i, r);
 }
 
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
-    multiScreen->output->setActive(active);
+    multiScreen->getZoneElements()->output->setActive(active);
     if (active)
     {
-        multiScreen->output->setOutputData(inf);
+        multiScreen->getZoneElements()->output->setOutputData(inf);
     }
 }
 

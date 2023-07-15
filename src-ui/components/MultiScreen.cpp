@@ -78,25 +78,48 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     sample = std::make_unique<multi::MappingPane>(editor);
     addAndMakeVisible(*sample);
 
-    for (int i = 0; i < 4; ++i)
-    {
-        auto ff = std::make_unique<multi::ProcessorPane>(editor, i);
-        ff->hasHamburger = true;
-        processors[i] = std::move(ff);
-        addAndMakeVisible(*(processors[i]));
-    }
-    mod = std::make_unique<multi::ModPane>(editor);
-    addAndMakeVisible(*mod);
-    output = std::make_unique<multi::OutputPane>(editor);
-    addAndMakeVisible(*output);
+    zoneGroupElements[0] = std::make_unique<ZoneOrGroupElements>(ZoneGroupIndex::ZONE);
+    zoneGroupElements[1] = std::make_unique<ZoneOrGroupElements>(ZoneGroupIndex::GROUP);
 
-    for (int i = 0; i < 2; ++i)
+    for (const auto &ctr : zoneGroupElements)
     {
-        eg[i] = std::make_unique<multi::AdsrPane>(editor, i);
-        addAndMakeVisible(*(eg[i]));
+        for (int i = 0; i < 4; ++i)
+        {
+            auto ff = std::make_unique<multi::ProcessorPane>(editor, i);
+            ff->hasHamburger = true;
+            ctr->processors[i] = std::move(ff);
+            addChildComponent(*(ctr->processors[i]));
+        }
+        ctr->mod = std::make_unique<multi::ModPane>(editor);
+        addChildComponent(*ctr->mod);
+        ctr->output = std::make_unique<multi::OutputPane>(editor);
+        addChildComponent(*ctr->output);
+
+        for (int i = 0; i < 2; ++i)
+        {
+            ctr->eg[i] = std::make_unique<multi::AdsrPane>(editor, i);
+            addChildComponent(*(ctr->eg[i]));
+        }
+        ctr->lfo = std::make_unique<multi::LfoPane>(editor);
+        addChildComponent(*ctr->lfo);
+
+        if (ctr->index == ZoneGroupIndex::GROUP)
+        {
+            ctr->output->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            ctr->mod->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            ctr->lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            ctr->lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
+            ctr->lfo->resetTabState();
+            int idx{1};
+            for (const auto &e : ctr->eg)
+            {
+                e->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+                e->setName("GRP EG" + std::to_string(idx++));
+            }
+            for (const auto &p : ctr->processors)
+                p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        }
     }
-    lfo = std::make_unique<multi::LfoPane>(editor);
-    addAndMakeVisible(*lfo);
 
     setSelectionMode(SelectionMode::ZONE);
 }
@@ -115,26 +138,30 @@ void MultiScreen::layout()
     auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
     sample->setBounds(mainRect.withHeight(wavHeight));
 
-    auto fxRect = mainRect.withTrimmedTop(wavHeight).withHeight(fxHeight);
-    auto fw = fxRect.getWidth() * 0.25;
-    auto tfr = fxRect.withWidth(fw);
-    for (int i = 0; i < 4; ++i)
+    for (const auto &ctr : zoneGroupElements)
     {
-        processors[i]->setBounds(tfr);
-        tfr.translate(fw, 0);
+        auto fxRect = mainRect.withTrimmedTop(wavHeight).withHeight(fxHeight);
+        auto fw = fxRect.getWidth() * 0.25;
+        auto tfr = fxRect.withWidth(fw);
+        for (int i = 0; i < 4; ++i)
+        {
+            ctr->processors[i]->setBounds(tfr);
+            tfr.translate(fw, 0);
+        }
+
+        auto modRect = mainRect.withTrimmedTop(wavHeight + fxHeight).withHeight(modHeight);
+        auto mw = modRect.getWidth() * 0.750;
+        ctr->mod->setBounds(modRect.withWidth(mw));
+        auto xw = modRect.getWidth() * 0.250;
+        ctr->output->setBounds(modRect.withWidth(xw).translated(mw, 0));
+
+        auto envRect =
+            mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
+        auto ew = envRect.getWidth() * 0.25;
+        ctr->eg[0]->setBounds(envRect.withWidth(ew));
+        ctr->eg[1]->setBounds(envRect.withWidth(ew).translated(ew, 0));
+        ctr->lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
     }
-
-    auto modRect = mainRect.withTrimmedTop(wavHeight + fxHeight).withHeight(modHeight);
-    auto mw = modRect.getWidth() * 0.750;
-    mod->setBounds(modRect.withWidth(mw));
-    auto xw = modRect.getWidth() * 0.250;
-    output->setBounds(modRect.withWidth(xw).translated(mw, 0));
-
-    auto envRect = mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
-    auto ew = envRect.getWidth() * 0.25;
-    eg[0]->setBounds(envRect.withWidth(ew));
-    eg[1]->setBounds(envRect.withWidth(ew).translated(ew, 0));
-    lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
 }
 
 void MultiScreen::onVoiceInfoChanged() { sample->repaint(); }
@@ -144,39 +171,43 @@ void MultiScreen::setSelectionMode(scxt::ui::MultiScreen::SelectionMode m)
     if (selectionMode == m)
         return;
     selectionMode = m;
-    switch (m)
+
+    switch (selectionMode)
     {
     case SelectionMode::NONE:
-    case SelectionMode::ZONE:
-        eg[0]->removeCustomClass();
-        eg[0]->setName("AMP EG");
-        eg[1]->removeCustomClass();
-        eg[1]->setName("EG 2");
-        lfo->removeCustomClass();
-        mod->removeCustomClass();
-        output->removeCustomClass();
-
-        for (auto &p : processors)
-        {
-            p->removeCustomClass();
-        }
+        zoneGroupElements[0]->setVisible(false);
+        zoneGroupElements[1]->setVisible(false);
         break;
-    case SelectionMode::GROUP:
-        eg[0]->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        eg[0]->setName("GRP EG1");
-        eg[1]->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        eg[1]->setName("GRP EG1");
-        lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        // TODO - change tab names to GLFO?
-        mod->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        output->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
 
-        for (auto &p : processors)
-        {
-            p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        }
+    case SelectionMode::ZONE:
+        zoneGroupElements[(int)ZoneGroupIndex::ZONE]->setVisible(true);
+        zoneGroupElements[(int)ZoneGroupIndex::GROUP]->setVisible(false);
+        break;
+
+    case SelectionMode::GROUP:
+        zoneGroupElements[(int)ZoneGroupIndex::ZONE]->setVisible(false);
+        zoneGroupElements[(int)ZoneGroupIndex::GROUP]->setVisible(true);
         break;
     }
+
     repaint();
+}
+
+MultiScreen::ZoneOrGroupElements::ZoneOrGroupElements(scxt::ui::MultiScreen::ZoneGroupIndex z)
+    : index(z)
+{
+}
+
+MultiScreen::ZoneOrGroupElements::~ZoneOrGroupElements() = default;
+
+void MultiScreen::ZoneOrGroupElements::setVisible(bool b)
+{
+    output->setVisible(b);
+    lfo->setVisible(b);
+    mod->setVisible(b);
+    for (auto &e : eg)
+        e->setVisible(b);
+    for (auto &p : processors)
+        p->setVisible(b);
 }
 } // namespace scxt::ui
