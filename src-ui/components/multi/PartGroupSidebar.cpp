@@ -469,7 +469,14 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
     for (const auto &a : pgzStructure)
     {
         if (a.first.part == 0)
-            SCLOG("  | " << a.second << " -> " << a.first);
+        {
+            std::string pad{"|--|--|"};
+            if (a.first.group == -1)
+                pad = "|";
+            else if (a.first.zone == -1)
+                pad = "|--|";
+            SCLOG("  " << pad << " " << a.second << " -> " << a.first);
+        }
     }
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();

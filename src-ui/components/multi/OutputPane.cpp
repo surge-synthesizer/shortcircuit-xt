@@ -81,7 +81,7 @@ void OutputPane::resized()
     proc->setBounds(getContentArea());
 }
 
-void OutputPane::setActive(bool b) { SCLOG_UNIMPL("setActive " << (b ? "ON" : "OFF")); }
+void OutputPane::setActive(bool b) { SCLOG_UNIMPL("Output Pane setActive " << (b ? "ON" : "OFF")); }
 
 void OutputPane::setOutputData(const engine::Zone::ZoneOutputInfo &d)
 {

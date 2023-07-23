@@ -36,7 +36,7 @@
 #include <condition_variable>
 #include <deque>
 
-#define TRACE_DB 1
+#define TRACE_DB 0
 
 namespace scxt::browser
 {
@@ -557,7 +557,9 @@ CREATE TABLE IF NOT EXISTS DeviceLocations (
 
             std::ostringstream oss;
             oss << std::put_time(&current_localtime, "%c");
-            SCLOG(oss.str());
+#if TRACE_DB
+            SCLOG("Writing Test Startup Sentinel : " << oss.str());
+#endif
             std::string res = oss.str();
             there.bind(1, res);
 
