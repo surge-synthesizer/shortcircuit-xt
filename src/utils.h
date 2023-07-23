@@ -241,9 +241,7 @@ std::string logTimestamp();
 #define SCLOG(...)                                                                                 \
     {                                                                                              \
         std::ostringstream oss_macr;                                                               \
-        /*oss_macr << __FILE__ << ":" << __LINE__ << " " << __VA_ARGS__ << "     (at "   */        \
-        /*         << logTimestamp() << " on " << std::this_thread::get_id() << ")\n";   */        \
-        oss_macr << __FILE__ << ":" << __LINE__ << " " << logTimestamp() << " " << __VA_ARGS__     \
+        oss_macr << __FILE__ << ":" << __LINE__ << " [" << logTimestamp() << "] " << __VA_ARGS__   \
                  << "\n";                                                                          \
         postToLog(oss_macr.str());                                                                 \
     }
