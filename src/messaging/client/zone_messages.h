@@ -37,7 +37,7 @@ namespace scxt::messaging::client
 {
 typedef std::tuple<int, bool, datamodel::AdsrStorage> adsrViewResponsePayload_t;
 SERIAL_TO_CLIENT(AdsrSelectedZoneView, s2c_respond_zone_adsr_view, adsrViewResponsePayload_t,
-                 onEnvelopeUpdated);
+                 onZoneEnvelopeUpdated);
 
 typedef std::tuple<int, datamodel::AdsrStorage> adsrSelectedZoneC2SPayload_t;
 inline void adsrSelectedZoneUpdate(const adsrSelectedZoneC2SPayload_t &payload,

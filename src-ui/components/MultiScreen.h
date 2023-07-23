@@ -61,14 +61,39 @@ struct MultiScreen : juce::Component, HasEditor
     static constexpr int envHeight = 160, modHeight = 160, fxHeight = 176;
     static constexpr int pad = 0;
 
-    std::unique_ptr<multi::OutputPane> output;
     std::unique_ptr<browser::BrowserPane> browser;
-    std::unique_ptr<multi::LfoPane> lfo;
     std::unique_ptr<multi::MappingPane> sample;
     std::unique_ptr<multi::PartGroupSidebar> parts;
-    std::unique_ptr<multi::AdsrPane> eg[2];
-    std::unique_ptr<multi::ModPane> mod;
-    std::unique_ptr<multi::ProcessorPane> processors[numProcessorDisplays];
+
+    enum class ZoneGroupIndex
+    {
+        ZONE = 0,
+        GROUP = 1
+    };
+    struct ZoneOrGroupElements
+    {
+        ZoneGroupIndex index;
+        ZoneOrGroupElements(ZoneGroupIndex z);
+        ~ZoneOrGroupElements();
+        std::unique_ptr<multi::OutputPane> output;
+        std::unique_ptr<multi::LfoPane> lfo;
+        std::unique_ptr<multi::AdsrPane> eg[2];
+        std::unique_ptr<multi::ModPane> mod;
+        std::unique_ptr<multi::ProcessorPane> processors[numProcessorDisplays];
+
+        void setVisible(bool b);
+    };
+
+    std::unique_ptr<ZoneOrGroupElements> zoneGroupElements[2];
+    const std::unique_ptr<ZoneOrGroupElements> &getZoneElements()
+    {
+        return zoneGroupElements[(int)ZoneGroupIndex::ZONE];
+    }
+    const std::unique_ptr<ZoneOrGroupElements> &getGroupElements()
+    {
+        return zoneGroupElements[(int)ZoneGroupIndex::GROUP];
+    }
+
     MultiScreen(SCXTEditor *e);
     ~MultiScreen();
     void resized() override { layout(); }

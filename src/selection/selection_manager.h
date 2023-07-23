@@ -146,7 +146,10 @@ struct SelectionManager
     std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
 
     void sendSelectedZonesToClient();
-    void sendClientDataForSelectionState();
+    void sendClientDataForLeadSelectionState();
+    void sendDisplayDataForSingleZone(int part, int group, int zone);
+    void sendDisplayDataForNoZoneSelected();
+    void sendDisplayDataForSingleGroup(int part, int group);
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;

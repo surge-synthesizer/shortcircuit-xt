@@ -158,12 +158,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
     void onEngineStatus(const engine::Engine::EngineStatusMessage &e);
-    void onEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
     void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
     void onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &);
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
+    void onZoneEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
     void
-    onProcessorDataAndMetadata(const scxt::messaging::client::processorDataResponsePayload_t &);
+    onZoneProcessorDataAndMetadata(const scxt::messaging::client::processorDataResponsePayload_t &);
     void onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &);
     void onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &);
     void onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
