@@ -97,7 +97,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 
         for (int i = 0; i < 2; ++i)
         {
-            ctr->eg[i] = std::make_unique<multi::AdsrPane>(editor, i);
+            ctr->eg[i] =
+                std::make_unique<multi::AdsrPane>(editor, i, ctr->index == ZoneGroupIndex::ZONE);
             addChildComponent(*(ctr->eg[i]));
         }
         ctr->lfo = std::make_unique<multi::LfoPane>(editor);

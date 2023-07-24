@@ -41,18 +41,33 @@
 
 namespace scxt::ui
 {
-void SCXTEditor::onZoneEnvelopeUpdated(
+void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
     const scxt::messaging::client::adsrViewResponsePayload_t &payload)
 {
-    const auto &[which, active, env] = payload;
-    if (active)
+    const auto &[forZone, which, active, env] = payload;
+    if (forZone)
     {
-        // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-        multiScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
+        if (active)
+        {
+            // TODO - do I want a multiScreen->onEnvelopeUpdated or just
+            multiScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
+        }
+        else
+        {
+            multiScreen->getZoneElements()->eg[which]->adsrDeactivated();
+        }
     }
     else
     {
-        multiScreen->getZoneElements()->eg[which]->adsrDeactivated();
+        if (active)
+        {
+            // TODO - do I want a multiScreen->onEnvelopeUpdated or just
+            multiScreen->getGroupElements()->eg[which]->adsrChangedFromModel(env);
+        }
+        else
+        {
+            multiScreen->getGroupElements()->eg[which]->adsrDeactivated();
+        }
     }
 }
 

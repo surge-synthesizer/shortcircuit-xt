@@ -36,6 +36,7 @@
 #include "utils.h"
 #include "zone.h"
 #include "selection/selection_manager.h"
+#include "datamodel/adsr_storage.h"
 #include "bus.h"
 
 namespace scxt::engine
@@ -113,6 +114,9 @@ struct Group : MoveableOnly<Group>
     bool isActive() { return activeZones != 0; }
     void addActiveZone();
     void removeActiveZone();
+
+    static constexpr int egPerGroup{2};
+    std::array<datamodel::AdsrStorage, egPerGroup> gegStorage;
 
     uint32_t activeZones{0};
 

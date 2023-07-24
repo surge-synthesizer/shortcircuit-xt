@@ -39,9 +39,9 @@ namespace cmsg = scxt::messaging::client;
 using dma = datamodel::AdsrStorage;
 namespace comp = sst::jucegui::components;
 
-AdsrPane::AdsrPane(SCXTEditor *e, int index)
+AdsrPane::AdsrPane(SCXTEditor *e, int index, bool fz)
     : HasEditor(e), sst::jucegui::components::NamedPanel(index == 0 ? "AMP EG" : "EG 2"),
-      index(index)
+      index(index), forZone(fz)
 {
     hasHamburger = true;
 
@@ -113,7 +113,7 @@ void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 void AdsrPane::adsrChangedFromGui(const attachment_t &at)
 {
     updateValueTooltip(at);
-    sendToSerialization(cmsg::AdsrSelectedZoneUpdateRequest({index, adsrView}));
+    sendToSerialization(cmsg::AdsrSelectedGroupOrZoneUpdateRequest({forZone, index, adsrView}));
 }
 
 void AdsrPane::adsrDeactivated()

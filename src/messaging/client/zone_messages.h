@@ -35,32 +35,6 @@
 
 namespace scxt::messaging::client
 {
-typedef std::tuple<int, bool, datamodel::AdsrStorage> adsrViewResponsePayload_t;
-SERIAL_TO_CLIENT(AdsrSelectedZoneView, s2c_respond_zone_adsr_view, adsrViewResponsePayload_t,
-                 onZoneEnvelopeUpdated);
-
-typedef std::tuple<int, datamodel::AdsrStorage> adsrSelectedZoneC2SPayload_t;
-inline void adsrSelectedZoneUpdate(const adsrSelectedZoneC2SPayload_t &payload,
-                                   const engine::Engine &engine, MessageController &cont)
-{
-    // TODO Selected Zone State
-    const auto &[e, adsr] = payload;
-    auto sz = engine.getSelectionManager()->currentlySelectedZones();
-    if (!sz.empty())
-    {
-        cont.scheduleAudioThreadCallback([zs = sz, ew = e, adsrv = adsr](auto &eng) {
-            for (const auto &[p, g, z] : zs)
-            {
-                if (ew == 0)
-                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->aegStorage = adsrv;
-                if (ew == 1)
-                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->eg2Storage = adsrv;
-            }
-        });
-    }
-}
-CLIENT_TO_SERIAL(AdsrSelectedZoneUpdateRequest, c2s_update_zone_adsr_view,
-                 adsrSelectedZoneC2SPayload_t, adsrSelectedZoneUpdate(payload, engine, cont));
 
 typedef std::tuple<bool, engine::Zone::ZoneMappingData> mappingSelectedZoneViewResposne_t;
 SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,

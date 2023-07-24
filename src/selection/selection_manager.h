@@ -137,6 +137,18 @@ struct SelectionManager
     int selectedPart{-1};
     typedef std::unordered_set<ZoneAddress, ZoneAddress::Hash> selectedZones_t;
     selectedZones_t currentlySelectedZones() { return allSelectedZones; }
+    // This will have -1 for every zone of course
+    selectedZones_t currentlySelectedGroups()
+    {
+        selectedZones_t res;
+        for (const auto &sz : allSelectedZones)
+        {
+            auto q = sz;
+            q.zone = -1;
+            res.insert(q);
+        }
+        return res;
+    }
     std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e)
     {
         if (leadZone.isIn(e))
@@ -150,6 +162,7 @@ struct SelectionManager
     void sendDisplayDataForSingleZone(int part, int group, int zone);
     void sendDisplayDataForNoZoneSelected();
     void sendDisplayDataForSingleGroup(int part, int group);
+    void sendDisplayDataForNoGroupSelected();
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;

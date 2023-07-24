@@ -64,7 +64,8 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 
     datamodel::AdsrStorage adsrView;
     int index{0};
-    AdsrPane(SCXTEditor *, int index);
+    bool forZone{true};
+    AdsrPane(SCXTEditor *, int index, bool forZone);
 
     void resized() override;
 

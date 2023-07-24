@@ -161,7 +161,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
     void onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &);
     void onStructureUpdated(const engine::Engine::pgzStructure_t &);
-    void onZoneEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &);
+    void
+    onGroupOrZoneEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &payload);
     void
     onZoneProcessorDataAndMetadata(const scxt::messaging::client::processorDataResponsePayload_t &);
     void onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &);
