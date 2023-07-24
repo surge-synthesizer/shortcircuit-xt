@@ -189,18 +189,20 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
                            bool distinct, bool asLead);
     void
     doMultiSelectionAction(const std::vector<selection::SelectionManager::SelectActionContents> &);
-    std::optional<selection::SelectionManager::ZoneAddress> currentLeadSelection;
-    selection::SelectionManager::selectedZones_t allSelections;
+    std::optional<selection::SelectionManager::ZoneAddress> currentLeadZoneSelection;
+    selection::SelectionManager::selectedZones_t allZoneSelections;
+    selection::SelectionManager::selectedZones_t allGroupSelections;
+
     // TODO: Do we allow part multi-select? I think we don't
-    std::set<int> groupsInSelection;
-    bool isGroupSelected(int gidx)
+    std::set<int> groupsWithSelectedZones;
+    bool isAnyZoneFromGroupSelected(int gidx)
     {
-        return groupsInSelection.find(gidx) != groupsInSelection.end();
+        return groupsWithSelectedZones.find(gidx) != groupsWithSelectedZones.end();
     }
 
     bool isSelected(const selection::SelectionManager::ZoneAddress &a)
     {
-        return allSelections.find(a) != allSelections.end();
+        return allZoneSelections.find(a) != allZoneSelections.end();
     }
 
     void showTooltip(const juce::Component &relativeTo);

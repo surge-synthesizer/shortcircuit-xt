@@ -50,7 +50,8 @@ template <> struct scxt_traits<scxt::selection::SelectionManager::SelectActionCo
     {
         v = {{"part", e.part},         {"group", e.group},
              {"zone", e.zone},         {"selecting", e.selecting},
-             {"distinct", e.distinct}, {"selectingAsLead", e.selectingAsLead}};
+             {"distinct", e.distinct}, {"selectingAsLead", e.selectingAsLead},
+             {"forZone", e.forZone}};
     }
 
     template <template <typename...> class Traits>
@@ -62,6 +63,7 @@ template <> struct scxt_traits<scxt::selection::SelectionManager::SelectActionCo
         findIf(v, "selecting", z.selecting);
         findIf(v, "distinct", z.distinct);
         findIf(v, "selectingAsLead", z.selectingAsLead);
+        findIf(v, "forZone", z.forZone);
     }
 };
 
@@ -89,8 +91,10 @@ template <> struct scxt_traits<selection::SelectionManager>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const sm_t &e)
     {
-        v = {
-            {"zones", e.allSelectedZones}, {"leadZone", e.leadZone}, {"tabs", e.otherTabSelection}};
+        v = {{"zones", e.allSelectedZones},
+             {"leadZone", e.leadZone},
+             {"groups", e.allSelectedGroups},
+             {"tabs", e.otherTabSelection}};
     }
 
     template <template <typename...> class Traits>
@@ -99,8 +103,12 @@ template <> struct scxt_traits<selection::SelectionManager>
         selection::SelectionManager::ZoneAddress za;
         findIf(v, "tabs", z.otherTabSelection);
         findIf(v, "zones", z.allSelectedZones);
+        findIf(v, "groups", z.allSelectedGroups);
         findIf(v, "leadZone", z.leadZone);
-        z.selectAction(z.leadZone);
+
+        selection::SelectionManager::SelectActionContents sac{z.leadZone};
+        sac.distinct = false;
+        z.selectAction(sac);
     }
 };
 } // namespace scxt::json

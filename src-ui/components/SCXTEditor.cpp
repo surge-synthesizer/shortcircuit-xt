@@ -242,7 +242,7 @@ void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddres
                                    bool selecting, bool distinct, bool asLead)
 {
     namespace cmsg = scxt::messaging::client;
-    currentLeadSelection = a;
+    currentLeadZoneSelection = a;
     sendToSerialization(cmsg::DoSelectAction(selection::SelectionManager::SelectActionContents{
         a.part, a.group, a.zone, selecting, distinct, asLead}));
     repaint();

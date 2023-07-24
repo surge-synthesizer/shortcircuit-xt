@@ -168,23 +168,24 @@ void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
 
 void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)
 {
-    allSelections = a.second;
-    auto optLead = a.first;
+    allZoneSelections = std::get<1>(a);
+    allGroupSelections = std::get<2>(a);
+    auto optLead = std::get<0>(a);
     if (optLead.has_value())
     {
-        currentLeadSelection = *optLead;
+        currentLeadZoneSelection = *optLead;
     }
     else
     {
-        currentLeadSelection = std::nullopt;
-        assert(allSelections.empty());
+        currentLeadZoneSelection = std::nullopt;
+        assert(allZoneSelections.empty());
     }
 
-    groupsInSelection.clear();
-    for (const auto &sel : allSelections)
+    groupsWithSelectedZones.clear();
+    for (const auto &sel : allZoneSelections)
     {
         if (sel.group >= 0)
-            groupsInSelection.insert(sel.group);
+            groupsWithSelectedZones.insert(sel.group);
     }
 
     multiScreen->parts->editorSelectionChanged();

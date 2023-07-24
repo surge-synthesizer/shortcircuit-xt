@@ -37,6 +37,7 @@ namespace scxt::ui::multi
 {
 struct GroupSidebar;
 struct PartSidebar;
+struct ZoneSidebar;
 
 struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
 {
@@ -50,6 +51,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void selectParts() {}
     void selectGroups() {}
 
+    std::unique_ptr<ZoneSidebar> zoneSidebar;
     std::unique_ptr<GroupSidebar> groupSidebar;
     std::unique_ptr<PartSidebar> partSidebar;
 
