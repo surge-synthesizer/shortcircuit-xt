@@ -79,6 +79,10 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 
         sendDisplayDataForSingleGroup(p, g);
     }
+    else
+    {
+        sendDisplayDataForNoGroupSelected();
+    }
     if (z >= 0 && g >= 0 && p >= 0)
     {
         sendDisplayDataForSingleZone(p, g, z);
@@ -239,12 +243,14 @@ void SelectionManager::sendDisplayDataForSingleZone(int p, int g, int z)
     serializationSendToClient(cms::s2c_respond_zone_samples,
                               cms::SampleSelectedZoneView::s2c_payload_t{true, zp->sampleData},
                               *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                              cms::AdsrSelectedZoneView::s2c_payload_t{0, true, zp->aegStorage},
-                              *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                              cms::AdsrSelectedZoneView::s2c_payload_t{1, true, zp->eg2Storage},
-                              *(engine.getMessageController()));
+    serializationSendToClient(
+        cms::s2c_update_group_or_zone_adsr_view,
+        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 0, true, zp->aegStorage},
+        *(engine.getMessageController()));
+    serializationSendToClient(
+        cms::s2c_update_group_or_zone_adsr_view,
+        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, true, zp->eg2Storage},
+        *(engine.getMessageController()));
 
     for (int i = 0; i < engine::processorsPerZone; ++i)
     {
@@ -280,11 +286,11 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
     serializationSendToClient(cms::s2c_respond_zone_samples,
                               cms::SampleSelectedZoneView::s2c_payload_t{false, {}},
                               *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                              cms::AdsrSelectedZoneView::s2c_payload_t{0, false, {}},
+    serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
+                              cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 0, false, {}},
                               *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_respond_zone_adsr_view,
-                              cms::AdsrSelectedZoneView::s2c_payload_t{1, false, {}},
+    serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
+                              cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, false, {}},
                               *(engine.getMessageController()));
     for (int i = 0; i < engine::processorsPerZone; ++i)
     {
@@ -302,6 +308,23 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
 
 void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
 {
-    SCLOG_UNIMPL(SCD(part) << SCD(group));
+    const auto &g = engine.getPatch()->getPart(part)->getGroup(group);
+    for (int i = 0; i < engine::Group::egPerGroup; ++i)
+    {
+        serializationSendToClient(
+            cms::s2c_update_group_or_zone_adsr_view,
+            cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, true, g->gegStorage[i]},
+            *(engine.getMessageController()));
+    }
+}
+
+void SelectionManager::sendDisplayDataForNoGroupSelected()
+{
+    for (int i = 0; i < engine::Group::egPerGroup; ++i)
+    {
+        serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
+                                  cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, false, {}},
+                                  *(engine.getMessageController()));
+    }
 }
 } // namespace scxt::selection

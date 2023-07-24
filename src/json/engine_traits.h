@@ -139,13 +139,14 @@ template <> struct scxt_traits<scxt::engine::Group>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Group &t)
     {
-        v = {{"zones", t.getZones()}, {"name", t.getName()}};
+        v = {{"zones", t.getZones()}, {"name", t.getName()}, {"gegStorage", t.gegStorage}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Group &group)
     {
         findIf(v, "name", group.name);
+        findIf(v, "gegStorage", group.gegStorage);
         group.clearZones();
 
         auto vzones = v.at("zones").get_array();
