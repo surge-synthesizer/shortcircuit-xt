@@ -114,11 +114,13 @@ struct SelectionManager
         bool distinct{true};  // Is this a single selection or a multi-selection gesture
         bool selectingAsLead{true};
 
+        bool forZone{true};
+
         friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
         {
             os << "select[p=" << z.part << ",g=" << z.group << ",z=" << z.zone
                << ",sel=" << z.selecting << ",dis=" << z.distinct << ",ld=" << z.selectingAsLead
-               << "]";
+               << ",forZone=" << z.forZone << "]";
             return os;
         }
 
@@ -138,17 +140,7 @@ struct SelectionManager
     typedef std::unordered_set<ZoneAddress, ZoneAddress::Hash> selectedZones_t;
     selectedZones_t currentlySelectedZones() { return allSelectedZones; }
     // This will have -1 for every zone of course
-    selectedZones_t currentlySelectedGroups()
-    {
-        selectedZones_t res;
-        for (const auto &sz : allSelectedZones)
-        {
-            auto q = sz;
-            q.zone = -1;
-            res.insert(q);
-        }
-        return res;
-    }
+    selectedZones_t currentlySelectedGroups() { return allSelectedGroups; }
     std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e)
     {
         if (leadZone.isIn(e))
@@ -166,7 +158,7 @@ struct SelectionManager
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;
-    selectedZones_t allSelectedZones;
+    selectedZones_t allSelectedZones, allSelectedGroups;
     ZoneAddress leadZone;
 
   protected:

@@ -133,9 +133,9 @@ void SCXTStyleSheetCreator::makeDarkColors(const sheet_t::ptr_t &base)
                     juce::Colour(0x88, 0x88, 0x88));
 
     base->setColour(GroupMultiNamedPanel, comp::NamedPanel::Styles::regionBG,
-                    juce::Colour(0x15, 0x20, 0x15));
+                    juce::Colour(0x15, 0x30, 0x15));
     base->setColour(GroupMultiNamedPanel, comp::NamedPanel::Styles::regionBorder,
-                    juce::Colour(0x25, 0x50, 0x25));
+                    juce::Colour(0x25, 0x80, 0x25));
 }
 
 void SCXTStyleSheetCreator::makeLightColors(const sheet_t::ptr_t &base)

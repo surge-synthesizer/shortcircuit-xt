@@ -71,18 +71,31 @@ void SelectionManager::sendClientDataForLeadSelectionState()
         }
     }
 
+    if (allSelectedZones.size() > 1)
+    {
+        SCLOG("Warning: Selected Zones larger than 1. Inconsistent message");
+    }
     if (p >= 0 && g >= 0)
     {
         serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
                                   engine.getPatch()->getPart(p)->getZoneMappingSummary(),
                                   *(engine.getMessageController()));
+    }
 
-        sendDisplayDataForSingleGroup(p, g);
+    if (allSelectedGroups.size() > 1)
+    {
+        SCLOG_UNIMPL("Multi-group selection to do");
+    }
+    else if (allSelectedGroups.size() == 1)
+    {
+        auto [gp, gg, gz] = *(allSelectedGroups.begin());
+        sendDisplayDataForSingleGroup(gp, gg);
     }
     else
     {
         sendDisplayDataForNoGroupSelected();
     }
+
     if (z >= 0 && g >= 0 && p >= 0)
     {
         sendDisplayDataForSingleZone(p, g, z);
@@ -120,27 +133,37 @@ void SelectionManager::adjustInternalStateForAction(
     SCLOG_WFUNC(z);
 #endif
     auto za = (ZoneAddress)z;
-    // OK so basically theres a few cases
-    if (!z.selecting)
+
+    if (z.forZone)
     {
-        SCLOG("All selected zones: removing " << za)
-        allSelectedZones.erase(za);
-    }
-    else
-    {
-        // So we are selecting
-        if (z.distinct)
+        // OK so basically theres a few cases
+        if (!z.selecting)
         {
-            allSelectedZones.clear();
-            allSelectedZones.insert(za);
-            leadZone = za;
+            SCLOG("All selected zones: removing " << za)
+            allSelectedZones.erase(za);
         }
         else
         {
-            allSelectedZones.insert(za);
-            if (z.selectingAsLead)
+            // So we are selecting
+            if (z.distinct)
+            {
+                allSelectedZones.clear();
+                allSelectedZones.insert(za);
                 leadZone = za;
+            }
+            else
+            {
+                allSelectedZones.insert(za);
+                if (z.selectingAsLead)
+                    leadZone = za;
+            }
         }
+    }
+    else
+    {
+        SCLOG("Group Naive Single Selection Selection " << za);
+        allSelectedGroups.clear();
+        allSelectedGroups.insert(za);
     }
 }
 
@@ -179,9 +202,21 @@ void SelectionManager::sendSelectedZonesToClient()
 #if DEBUG_SELECTION
     SCLOG("Sending selection data to client");
 #endif
-    serializationSendToClient(cms::s2c_send_selection_state,
-                              cms::selectedStateMessage_t{leadZone, allSelectedZones},
-                              *(engine.getMessageController()));
+
+    SCLOG("Selection Status:");
+    SCLOG("ZONES: Selected=" << allSelectedZones.size());
+    SCLOG("   LEAD ZONE : " << leadZone);
+    for (const auto &z : allSelectedZones)
+        SCLOG("      Z Selected : " << z);
+
+    SCLOG("GROUPS: Selected=" << allSelectedGroups.size());
+    for (const auto &z : allSelectedGroups)
+        SCLOG("      G Selected : " << z);
+
+    serializationSendToClient(
+        cms::s2c_send_selection_state,
+        cms::selectedStateMessage_t{leadZone, allSelectedZones, allSelectedGroups},
+        *(engine.getMessageController()));
 }
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)

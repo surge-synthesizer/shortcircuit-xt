@@ -54,8 +54,10 @@ CLIENT_TO_SERIAL(DoMultiSelectAction, c2s_do_multi_select_action,
                  std::vector<selection::SelectionManager::SelectActionContents>,
                  doMultiSelectAction(payload, engine));
 
-typedef std::pair<std::optional<selection::SelectionManager::ZoneAddress>,
-                  selection::SelectionManager::selectedZones_t>
+// Lead Zone, Zone Selection, Gropu Selection
+typedef std::tuple<std::optional<selection::SelectionManager::ZoneAddress>,
+                   selection::SelectionManager::selectedZones_t,
+                   selection::SelectionManager::selectedZones_t>
     selectedStateMessage_t;
 SERIAL_TO_CLIENT(SetSelectionState, s2c_send_selection_state, selectedStateMessage_t,
                  onSelectionState);

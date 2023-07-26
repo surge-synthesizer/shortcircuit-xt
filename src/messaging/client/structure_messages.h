@@ -64,8 +64,12 @@ inline void onRegister(engine::Engine &engine, MessageController &cont)
     PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
     if (engine.getSelectionManager()->currentLeadZone(engine).has_value())
     {
-        engine.getSelectionManager()->selectAction(
-            *(engine.getSelectionManager()->currentLeadZone(engine)));
+        // We want to re-send the action as if a lead was selected.
+        // TODO - make this API less gross
+        selection::SelectionManager::SelectActionContents sac{
+            *(engine.getSelectionManager()->currentLeadZone(engine))};
+        sac.distinct = false;
+        engine.getSelectionManager()->selectAction(sac);
     }
 }
 CLIENT_TO_SERIAL(OnRegister, c2s_on_register, bool, onRegister(engine, cont));

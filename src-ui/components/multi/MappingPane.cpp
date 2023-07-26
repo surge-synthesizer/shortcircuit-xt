@@ -389,8 +389,8 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
     {
         summary = d;
-        if (editor->currentLeadSelection.has_value())
-            setLeadSelection(*(editor->currentLeadSelection));
+        if (editor->currentLeadZoneSelection.has_value())
+            setLeadSelection(*(editor->currentLeadZoneSelection));
         if (zonesAndKeyboard)
             zonesAndKeyboard->repaint();
         repaint();
@@ -539,7 +539,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
     for (auto &z : display->summary)
     {
         auto r = rectangleForZone(z.second);
-        if (r.contains(e.position) && display->editor->isGroupSelected(z.first.group))
+        if (r.contains(e.position) && display->editor->isAnyZoneFromGroupSelected(z.first.group))
             potentialZones.push_back(z.first);
     }
     selection::SelectionManager::ZoneAddress nextZone;
@@ -555,8 +555,8 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
             // do is choose the 'next' one after our currently
             // selected as a heuristic
             auto cz = -1;
-            if (display->editor->currentLeadSelection.has_value())
-                cz = display->editor->currentLeadSelection->zone;
+            if (display->editor->currentLeadZoneSelection.has_value())
+                cz = display->editor->currentLeadZoneSelection->zone;
 
             auto selThis = -1;
             for (const auto &[idx, za] : sst::cpputils::enumerate(potentialZones))
@@ -785,13 +785,13 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     {
         for (const auto &z : display->summary)
         {
-            if (!display->editor->isGroupSelected(z.first.group))
+            if (!display->editor->isAnyZoneFromGroupSelected(z.first.group))
                 continue;
 
             if (display->editor->isSelected(z.first) != drawSelected)
                 continue;
 
-            if (z.first == display->editor->currentLeadSelection)
+            if (z.first == display->editor->currentLeadZoneSelection)
                 continue;
 
             auto r = rectangleForZone(z.second);
@@ -812,9 +812,9 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
-    if (display->editor->currentLeadSelection.has_value())
+    if (display->editor->currentLeadZoneSelection.has_value())
     {
-        const auto &sel = *(display->editor->currentLeadSelection);
+        const auto &sel = *(display->editor->currentLeadZoneSelection);
 
         for (const auto &z : display->summary)
         {
@@ -1531,8 +1531,8 @@ void MappingPane::setGroupZoneMappingSummary(const engine::Part::zoneMappingSumm
 
 void MappingPane::editorSelectionChanged()
 {
-    if (editor->currentLeadSelection.has_value())
-        mappingDisplay->setLeadSelection(*(editor->currentLeadSelection));
+    if (editor->currentLeadZoneSelection.has_value())
+        mappingDisplay->setLeadSelection(*(editor->currentLeadZoneSelection));
     repaint();
 }
 
@@ -1540,8 +1540,8 @@ void MappingPane::temporarySetKeyboardCenter(int i)
 {
     mappingDisplay->zonesAndKeyboard->firstMidiNote = (i == -1 ? 0 : i - 24);
     mappingDisplay->zonesAndKeyboard->lastMidiNote = (i == -1 ? 128 : i + 24);
-    if (editor->currentLeadSelection.has_value())
-        mappingDisplay->setLeadSelection(*(editor->currentLeadSelection));
+    if (editor->currentLeadZoneSelection.has_value())
+        mappingDisplay->setLeadSelection(*(editor->currentLeadZoneSelection));
     mappingDisplay->zonesAndKeyboard->repaint();
 }
 
