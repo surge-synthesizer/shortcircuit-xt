@@ -578,9 +578,9 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
                 // command click a selected zone deselects it
                 display->editor->doSelectionAction(nextZone, false, false, false);
             }
-            else if (e.mods.isCtrlDown())
+            else if (e.mods.isAltDown())
             {
-                // ctrl click promotes it to lead
+                // alt click promotes it to lead
                 display->editor->doSelectionAction(nextZone, true, false, true);
             }
             else
@@ -592,7 +592,8 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
         else
         {
             SCLOG("About to select " << SCD(nextZone));
-            display->editor->doSelectionAction(nextZone, true, !e.mods.isCommandDown(), true);
+            display->editor->doSelectionAction(
+                nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
         }
     }
 }

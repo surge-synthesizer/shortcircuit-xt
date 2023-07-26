@@ -48,10 +48,15 @@ template <> struct scxt_traits<scxt::selection::SelectionManager::SelectActionCo
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const za_t &e)
     {
-        v = {{"part", e.part},         {"group", e.group},
-             {"zone", e.zone},         {"selecting", e.selecting},
-             {"distinct", e.distinct}, {"selectingAsLead", e.selectingAsLead},
-             {"forZone", e.forZone}};
+        v = {{"part", e.part},
+             {"group", e.group},
+             {"zone", e.zone},
+             {"selecting", e.selecting},
+             {"distinct", e.distinct},
+             {"selectingAsLead", e.selectingAsLead},
+             {"forZone", e.forZone},
+             {"isContiguous", e.isContiguous},
+             {"contiguousFrom", e.contiguousFrom}};
     }
 
     template <template <typename...> class Traits>
@@ -64,6 +69,8 @@ template <> struct scxt_traits<scxt::selection::SelectionManager::SelectActionCo
         findIf(v, "distinct", z.distinct);
         findIf(v, "selectingAsLead", z.selectingAsLead);
         findIf(v, "forZone", z.forZone);
+        findIf(v, "isContiguous", z.isContiguous);
+        findIf(v, "contiguousFrom", z.contiguousFrom);
     }
 };
 

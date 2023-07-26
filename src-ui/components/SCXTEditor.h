@@ -187,6 +187,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // Originate client to serialization messages
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,
                            bool distinct, bool asLead);
+    void doSelectionAction(const selection::SelectionManager::SelectActionContents &);
     void
     doMultiSelectionAction(const std::vector<selection::SelectionManager::SelectActionContents> &);
     std::optional<selection::SelectionManager::ZoneAddress> currentLeadZoneSelection;

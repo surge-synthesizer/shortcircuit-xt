@@ -193,7 +193,12 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar>
     ZoneSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<ZoneSidebar>(p) {}
     ~ZoneSidebar() = default;
 
-    void updateSelection() { updateSelectionFrom(partGroupSidebar->editor->allZoneSelections); }
+    void updateSelection()
+    {
+        updateSelectionFrom(partGroupSidebar->editor->allZoneSelections);
+        if (partGroupSidebar->editor->currentLeadZoneSelection.has_value())
+            lastZoneClicked = *(partGroupSidebar->editor->currentLeadZoneSelection);
+    }
     void resized() override { listBox->setBounds(getLocalBounds()); }
 
     void processRowsChanged()
@@ -225,16 +230,65 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar>
         }
     }
 
+    selection::SelectionManager::ZoneAddress lastZoneClicked{0, 0, 0};
     void onRowClicked(const selection::SelectionManager::ZoneAddress &rowZone, bool isSelected,
                       const juce::ModifierKeys &mods)
     {
-        auto se = selection::SelectionManager::SelectActionContents(rowZone);
+        /*
+          Zone Mode Sidebar
+            - click zone is select distinct as lead everywhere
+            - click group is select entire groups zones
+            - shift click is contiguous select
+            - cmd/ctrl click is non-contiguous toggle select zone
+            - alt-click is move lead or add and make lead
+         */
+        if (mods.isShiftDown())
+        {
+            auto se = selection::SelectionManager::SelectActionContents(rowZone);
+            se.selecting = true;
+            se.distinct = false;
+            se.selectingAsLead = false;
+            se.forZone = true;
+            se.isContiguous = true;
+            se.contiguousFrom = lastZoneClicked;
+            editor->doSelectionAction(se);
+        }
+        else if (rowZone.zone >= 0)
+        {
+            auto se = selection::SelectionManager::SelectActionContents(rowZone);
 
-        se.selecting = !isSelected;
-        se.distinct = !mods.isCommandDown();
-        se.selectingAsLead = se.selecting;
-        se.forZone = true;
-        editor->doMultiSelectionAction({se});
+            if (mods.isAltDown())
+            {
+                se.selecting = true;
+                se.distinct = false;
+                se.selectingAsLead = true;
+                se.forZone = true;
+                editor->doSelectionAction(se);
+            }
+            else
+            {
+                se.selecting = mods.isCommandDown() ? !isSelected : true;
+                se.distinct = !mods.isCommandDown();
+                se.selectingAsLead = se.selecting;
+                se.forZone = true;
+                editor->doSelectionAction(se);
+            }
+        }
+        else if (rowZone.group >= 0)
+        {
+            auto se = selection::SelectionManager::SelectActionContents(rowZone);
+
+            se.selecting = true;
+            se.distinct = false;
+            se.selectingAsLead = false;
+            se.forZone = true;
+            editor->doSelectionAction(se);
+        }
+        else
+        {
+            SCLOG("Selected row zone inconsistent " << rowZone);
+        }
+        lastZoneClicked = rowZone;
     }
 };
 
