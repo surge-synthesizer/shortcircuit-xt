@@ -72,7 +72,21 @@ struct SelectionManager
             return part == other.part && group == other.group && zone == other.zone;
         }
 
+        bool operator<(const ZoneAddress &other) const
+        {
+            if (part != other.part)
+                return part < other.part;
+            if (group != other.group)
+                return group < other.group;
+            if (zone != other.zone)
+                return zone < other.zone;
+            return false;
+        }
+
+        // PGZ is in the engine
         bool isIn(const engine::Engine &e);
+        // PGZ is in the engine or G and-or Z are -1
+        bool isInWithPartials(const engine::Engine &e);
 
         friend std::ostream &operator<<(std::ostream &os, const ZoneAddress &z)
         {
@@ -115,6 +129,9 @@ struct SelectionManager
         bool selectingAsLead{true};
 
         bool forZone{true};
+
+        bool isContiguous{false};
+        ZoneAddress contiguousFrom{};
 
         friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
         {

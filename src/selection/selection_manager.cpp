@@ -73,7 +73,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 
     if (allSelectedZones.size() > 1)
     {
-        SCLOG("Warning: Selected Zones larger than 1. Inconsistent message");
+        SCLOG("Fixme: Selected Zones larger than 1. Potentially inconsistent message");
     }
     if (p >= 0 && g >= 0)
     {
@@ -119,6 +119,69 @@ void SelectionManager::multiSelectAction(const std::vector<SelectActionContents>
 void SelectionManager::selectAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
+    /* A wildcard zone single select means select all in group */
+    if (z.forZone && z.isContiguous)
+    {
+        auto zf = (ZoneAddress)z;
+        auto zt = z.contiguousFrom;
+        if (zt < zf)
+        {
+            SCLOG("Swapping ZF and ZT");
+            std::swap(zf, zt);
+        }
+        if (zf.part != zt.part)
+        {
+            SCLOG("ERROR: Can't do contiguous selection across parts");
+            return;
+        }
+        auto gs = zf.group;
+        auto ge = zt.group;
+        std::vector<SelectActionContents> res;
+
+        for (auto gi = gs; gi <= ge; ++gi)
+        {
+            const auto &grp = engine.getPatch()->getPart(zf.part)->getGroup(gi);
+            auto sz = (gi == gs ? zf.zone : 0);
+            auto ez = (gi == ge ? zt.zone : grp->getZones().size() - 1);
+            for (auto zi = sz; zi <= ez; ++zi)
+            {
+                SelectActionContents se;
+                se.part = zt.part;
+                se.group = gi;
+                se.zone = zi;
+                se.selecting = true;
+                se.distinct = false;
+                se.selectingAsLead = false;
+
+                res.push_back(se);
+            }
+
+            multiSelectAction(res);
+        }
+        return;
+    }
+    if (z.forZone && z.zone == -1)
+    {
+        auto za = (ZoneAddress)z;
+        if (!za.isInWithPartials(engine) || za.group == -1)
+        {
+            SCLOG("ERROR: Zone not consistent with engine");
+            return;
+        }
+
+        const auto &g = engine.getPatch()->getPart(za.part)->getGroup(za.group);
+
+        std::vector<SelectActionContents> res;
+        int idx{0};
+        for (const auto &zn : *g)
+        {
+            auto rc = z;
+            rc.zone = idx++;
+            res.push_back(rc);
+        }
+        multiSelectAction(res);
+        return;
+    }
     adjustInternalStateForAction(z);
     guaranteeSelectedLead();
     sendClientDataForLeadSelectionState();
@@ -201,9 +264,7 @@ void SelectionManager::sendSelectedZonesToClient()
 {
 #if DEBUG_SELECTION
     SCLOG("Sending selection data to client");
-#endif
 
-    SCLOG("Selection Status:");
     SCLOG("ZONES: Selected=" << allSelectedZones.size());
     SCLOG("   LEAD ZONE : " << leadZone);
     for (const auto &z : allSelectedZones)
@@ -212,6 +273,7 @@ void SelectionManager::sendSelectedZonesToClient()
     SCLOG("GROUPS: Selected=" << allSelectedGroups.size());
     for (const auto &z : allSelectedGroups)
         SCLOG("      G Selected : " << z);
+#endif
 
     serializationSendToClient(
         cms::s2c_send_selection_state,
@@ -226,6 +288,23 @@ bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)
     const auto &p = e.getPatch()->getPart(part);
     if (group < 0 || group >= p->getGroups().size())
         return false;
+    const auto &g = p->getGroup(group);
+    if (zone < 0 || zone >= g->getZones().size())
+        return false;
+    return true;
+}
+
+bool SelectionManager::ZoneAddress::isInWithPartials(const engine::Engine &e)
+{
+    if (part < 0 || part > numParts)
+        return false;
+    if (group == -1)
+        return true;
+    const auto &p = e.getPatch()->getPart(part);
+    if (group < 0 || group >= p->getGroups().size())
+        return false;
+    if (zone == -1)
+        return true;
     const auto &g = p->getGroup(group);
     if (zone < 0 || zone >= g->getZones().size())
         return false;

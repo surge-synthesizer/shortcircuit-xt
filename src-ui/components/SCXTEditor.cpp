@@ -248,6 +248,12 @@ void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddres
     repaint();
 }
 
+void SCXTEditor::doSelectionAction(const selection::SelectionManager::SelectActionContents &p)
+{
+    namespace cmsg = scxt::messaging::client;
+    sendToSerialization(cmsg::DoSelectAction(p));
+    repaint();
+}
 void SCXTEditor::doMultiSelectionAction(
     const std::vector<selection::SelectionManager::SelectActionContents> &p)
 {
