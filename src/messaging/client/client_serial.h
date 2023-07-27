@@ -96,6 +96,7 @@ enum SerializationToClientMessageIds
     s2c_update_zone_output_info,
 
     s2c_respond_single_processor_metadata_and_data,
+    s2c_notify_mismatched_processors_for_zone,
 
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,

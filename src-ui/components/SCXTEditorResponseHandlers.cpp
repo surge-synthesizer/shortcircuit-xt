@@ -119,6 +119,14 @@ void SCXTEditor::onZoneProcessorDataAndMetadata(
         control, storage);
 }
 
+void SCXTEditor::onZoneProcessorDataMismatch(
+    const scxt::messaging::client::processorMismatchPayload_t &pl)
+{
+    const auto &[idx, leadType, otherTypes] = pl;
+    SCLOG_UNIMPL("Processor Data Mismatch " << SCD(idx) << SCD(leadType) << SCD(otherTypes.size()));
+    multiScreen->getZoneElements()->processors[idx]->setAsMultiZone(leadType, otherTypes);
+}
+
 void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &d)
 {
     const auto &[active, sinf, dinf, cinf] = d;

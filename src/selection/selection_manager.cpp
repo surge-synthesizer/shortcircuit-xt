@@ -71,10 +71,6 @@ void SelectionManager::sendClientDataForLeadSelectionState()
         }
     }
 
-    if (allSelectedZones.size() > 1)
-    {
-        SCLOG("Fixme: Selected Zones larger than 1. Potentially inconsistent message");
-    }
     if (p >= 0 && g >= 0)
     {
         serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
@@ -98,7 +94,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 
     if (z >= 0 && g >= 0 && p >= 0)
     {
-        sendDisplayDataForSingleZone(p, g, z);
+        sendDisplayDataForZonesBasedOnLead(p, g, z);
     }
     else
     {
@@ -281,7 +277,7 @@ void SelectionManager::sendSelectedZonesToClient()
         *(engine.getMessageController()));
 }
 
-bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)
+bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const
 {
     if (part < 0 || part > numParts)
         return false;
@@ -294,7 +290,7 @@ bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e)
     return true;
 }
 
-bool SelectionManager::ZoneAddress::isInWithPartials(const engine::Engine &e)
+bool SelectionManager::ZoneAddress::isInWithPartials(const engine::Engine &e) const
 {
     if (part < 0 || part > numParts)
         return false;
@@ -348,8 +344,14 @@ std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::En
     return {pt, gp};
 }
 
-void SelectionManager::sendDisplayDataForSingleZone(int p, int g, int z)
+void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 {
+    /*
+     * The samples, mapping, ADSR, and LFO are simple functions of the lead zone.
+     * Since there's no structural differences (yet - LFO types may bifurcate this)
+     * send the value of the lead and let it edit for ADSR and LFO; and the mapping is
+     * just the mapping for the lead zone
+     */
     const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
     serializationSendToClient(cms::s2c_respond_zone_mapping,
                               cms::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
@@ -366,29 +368,62 @@ void SelectionManager::sendDisplayDataForSingleZone(int p, int g, int z)
         cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, true, zp->eg2Storage},
         *(engine.getMessageController()));
 
-    for (int i = 0; i < engine::processorsPerZone; ++i)
-    {
-        serializationSendToClient(
-            cms::s2c_respond_single_processor_metadata_and_data,
-            cms::ProcessorMetadataAndData::s2c_payload_t{i, true, zp->processorDescription[i],
-                                                         zp->processorStorage[i]},
-            *(engine.getMessageController()));
-    }
-
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
         serializationSendToClient(cms::s2c_update_zone_individual_lfo,
                                   cms::indexedLfoUpdate_t{true, i, zp->lfoStorage[i]},
                                   *(engine.getMessageController()));
     }
-    serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
-                              modulation::getVoiceModMatrixMetadata(*zp),
-                              *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
-                              *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_update_zone_output_info,
-                              cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
-                              *(engine.getMessageController()));
+
+    /*
+     * Processors, Output and ModMatrix have multi-select merge rules which are different
+     */
+    for (int i = 0; i < engine::processorsPerZone; ++i)
+    {
+        auto typ = processorTypesForSelectedZones(i);
+        if (typ.size() == 1)
+        {
+            serializationSendToClient(
+                cms::s2c_respond_single_processor_metadata_and_data,
+                cms::ProcessorMetadataAndData::s2c_payload_t{i, true, zp->processorDescription[i],
+                                                             zp->processorStorage[i]},
+                *(engine.getMessageController()));
+        }
+        else
+        {
+            // just inter-process not perma streamed so safe as int
+            std::set<int32_t> ptInt;
+            for (const auto &t : typ)
+                ptInt.insert((int32_t)t);
+            serializationSendToClient(cms::s2c_notify_mismatched_processors_for_zone,
+                                      cms::ProcessorsMismatched::s2c_payload_t{
+                                          i, (int32_t)zp->processorDescription[i].type, ptInt},
+                                      *(engine.getMessageController()));
+        }
+    }
+
+    if (allSelectedZones.size() == 1)
+    {
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+                                  modulation::getVoiceModMatrixMetadata(*zp),
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_output_info,
+                                  cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
+                                  *(engine.getMessageController()));
+    }
+    else
+    {
+        SCLOG("WARNING: Multi-Select Zone Consistency Calculation not complete");
+
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+                                  modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_output_info,
+                                  cms::zoneOutputInfoUpdate_t{false, {}},
+                                  *(engine.getMessageController()));
+    }
 }
 
 void SelectionManager::sendDisplayDataForNoZoneSelected()
@@ -440,5 +475,24 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
                                   cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, false, {}},
                                   *(engine.getMessageController()));
     }
+}
+
+std::set<dsp::processor::ProcessorType> SelectionManager::processorTypesForSelectedZones(int pidx)
+{
+    std::set<dsp::processor::ProcessorType> res;
+
+    const auto &pt = engine.getPatch();
+    for (const auto &z : allSelectedZones)
+    {
+        if (z.isIn(engine))
+        {
+            res.insert(pt->getPart(z.part)
+                           ->getGroup(z.group)
+                           ->getZone(z.zone)
+                           ->processorStorage[pidx]
+                           .type);
+        }
+    }
+    return res;
 }
 } // namespace scxt::selection
