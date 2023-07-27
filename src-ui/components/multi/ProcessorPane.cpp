@@ -105,6 +105,17 @@ void ProcessorPane::rebuildControlsFromDescription()
         return;
     }
 
+    if (multiZone)
+    {
+        // it's a bit hacky to do this inline but I"m sure it will change
+        multiLabel = std::make_unique<sst::jucegui::components::Label>();
+        multiLabel->setText("Multiple Types Selected");
+        auto b = getContentAreaComponent()->getLocalBounds();
+        multiLabel->setBounds(b);
+        getContentAreaComponent()->addAndMakeVisible(*multiLabel);
+        return;
+    }
+
     setName(processorControlDescription.typeDisplayName);
 
     if (processorControlDescription.type == dsp::processor::proct_none)
@@ -342,6 +353,17 @@ void ProcessorPane::mouseUp(const juce::MouseEvent &e)
 {
     isDragging = false;
     sst::jucegui::components::NamedPanel::mouseUp(e);
+}
+
+void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::set<int32_t> &otherTypes)
+{
+    multiZone = true;
+    setEnabled(true);
+    setName("Multiple");
+    resetControls();
+    setToggleDataSource(nullptr);
+    resized();
+    repaint();
 }
 
 } // namespace scxt::ui::multi

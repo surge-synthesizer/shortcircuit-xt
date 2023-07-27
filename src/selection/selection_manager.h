@@ -37,6 +37,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "utils.h"
+#include "dsp/processor/processor.h"
 
 namespace scxt::engine
 {
@@ -84,9 +85,9 @@ struct SelectionManager
         }
 
         // PGZ is in the engine
-        bool isIn(const engine::Engine &e);
+        bool isIn(const engine::Engine &e) const;
         // PGZ is in the engine or G and-or Z are -1
-        bool isInWithPartials(const engine::Engine &e);
+        bool isInWithPartials(const engine::Engine &e) const;
 
         friend std::ostream &operator<<(std::ostream &os, const ZoneAddress &z)
         {
@@ -124,14 +125,14 @@ struct SelectionManager
         int32_t part{-1};
         int32_t group{-1};
         int32_t zone{-1};
-        bool selecting{true}; // am i selecting (T) or deselecting (F) this zone
-        bool distinct{true};  // Is this a single selection or a multi-selection gesture
-        bool selectingAsLead{true};
+        bool selecting{true};       // am i selecting (T) or deselecting (F) this zone
+        bool distinct{true};        // Is this a single selection or a multi-selection gesture
+        bool selectingAsLead{true}; // Should I force this selection to be lead?
 
-        bool forZone{true};
+        bool forZone{true}; // does this target the zone selection set (T) or group (F)
 
-        bool isContiguous{false};
-        ZoneAddress contiguousFrom{};
+        bool isContiguous{false};     // Is this a gesture which implies a contiguous selection
+        ZoneAddress contiguousFrom{}; // and if so, starting from where?
 
         friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
         {
@@ -168,10 +169,12 @@ struct SelectionManager
 
     void sendSelectedZonesToClient();
     void sendClientDataForLeadSelectionState();
-    void sendDisplayDataForSingleZone(int part, int group, int zone);
+    void sendDisplayDataForZonesBasedOnLead(int part, int group, int zone);
     void sendDisplayDataForNoZoneSelected();
     void sendDisplayDataForSingleGroup(int part, int group);
     void sendDisplayDataForNoGroupSelected();
+
+    std::set<dsp::processor::ProcessorType> processorTypesForSelectedZones(int pidx);
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;

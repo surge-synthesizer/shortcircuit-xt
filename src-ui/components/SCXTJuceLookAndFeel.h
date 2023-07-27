@@ -41,6 +41,10 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
         interMedTF = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
                                                              scxt::ui::binary::InterMedium_ttfSize);
         setColour(juce::PopupMenu::ColourIds::backgroundColourId, juce::Colour(0x15, 0x15, 0x15));
+        setColour(juce::PopupMenu::ColourIds::highlightedBackgroundColourId,
+                  juce::Colour(0x35, 0x35, 0x45));
+        setColour(juce::PopupMenu::ColourIds::highlightedTextColourId,
+                  juce::Colour(0xFF, 0xFF, 0x80));
     }
 
     juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(13); }

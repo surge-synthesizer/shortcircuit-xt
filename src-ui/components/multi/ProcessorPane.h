@@ -62,15 +62,19 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     setProcessorControlDescriptionAndStorage(const dsp::processor::ProcessorControlDescription &pcd,
                                              const dsp::processor::ProcessorStorage &ps)
     {
+        multiZone = false;
         processorControlDescription = pcd;
         processorView = ps;
         rebuildControlsFromDescription();
     }
     void setProcessorStorage(const dsp::processor::ProcessorStorage &p)
     {
+        multiZone = false;
         processorView = p;
         repaint();
     }
+
+    void setAsMultiZone(int32_t primaryType, const std::set<int32_t> &otherTypes);
 
     void processorChangedFromGui(const attachment_t &at);
     void processorChangedFromGui(const int_attachment_t &at);
@@ -96,7 +100,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
 
-    std::unique_ptr<juce::Component> processorRegion;
+    bool multiZone{false};
 
     std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
                dsp::processor::maxProcessorFloatParams>
@@ -120,6 +124,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     std::unique_ptr<sst::jucegui::components::Knob> mixEditor;
     std::unique_ptr<sst::jucegui::components::Label> mixLabel;
     std::unique_ptr<attachment_t> mixAttachment;
+
+    std::unique_ptr<sst::jucegui::components::Label> multiLabel;
 };
 } // namespace scxt::ui::multi
 
