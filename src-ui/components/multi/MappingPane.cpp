@@ -591,7 +591,6 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
         }
         else
         {
-            SCLOG("About to select " << SCD(nextZone));
             display->editor->doSelectionAction(
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
         }

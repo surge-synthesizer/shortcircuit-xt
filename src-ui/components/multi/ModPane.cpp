@@ -347,25 +347,59 @@ struct ModRow : juce::Component, HasEditor
         auto p = juce::PopupMenu();
         p.addSectionHeader("Target");
         p.addSeparator();
-        const auto &srcs = std::get<2>(parent->matrixMetadata);
+        // copy the sources
+        auto srcs = std::get<2>(parent->matrixMetadata);
 
-        // this linear search kinda sucks bot
+        // sort the sources
+        auto sortByPath = [](const auto &a, const auto &b) {
+            auto na = a.second;
+            auto nb = b.second;
+            return na < nb;
+        };
+        std::sort(srcs.begin(), srcs.end(), sortByPath);
+        std::string lastPath{};
+        juce::PopupMenu subMenu;
         for (const auto &[si, sn] : srcs)
         {
             const auto &row = parent->routingTable[index];
             auto selected = row.dst == si;
-            p.addItem(sn.empty() ? "None" : sn, true, selected,
-                      [sidx = si, w = juce::Component::SafePointer(this)]() {
-                          if (!w)
-                              return;
-                          auto &row = w->parent->routingTable[w->index];
 
-                          row.dst = sidx;
+            auto mop = [sidx = si, w = juce::Component::SafePointer(this)]() {
+                if (!w)
+                    return;
+                auto &row = w->parent->routingTable[w->index];
 
-                          w->pushRowUpdate();
-                          w->refreshRow();
-                      });
+                row.dst = sidx;
+
+                w->pushRowUpdate();
+                w->refreshRow();
+            };
+
+            if (sn.empty())
+            {
+                p.addItem("None", true, selected, mop);
+            }
+            else
+            {
+                auto pt = sn.find('/');
+                auto path = sn.substr(0, pt);
+                auto name = sn.substr(pt + 1);
+                if (path != lastPath)
+                {
+                    if (subMenu.getNumItems())
+                    {
+                        p.addSubMenu(lastPath, subMenu);
+                    }
+                    lastPath = path;
+                    subMenu = juce::PopupMenu();
+                    subMenu.addSectionHeader(path);
+                    subMenu.addSeparator();
+                }
+                subMenu.addItem(name, true, selected, mop);
+            }
         }
+
+        p.addSubMenu(lastPath, subMenu);
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
