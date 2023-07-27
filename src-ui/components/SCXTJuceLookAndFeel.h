@@ -40,9 +40,20 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
     {
         interMedTF = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
                                                              scxt::ui::binary::InterMedium_ttfSize);
+        setColour(juce::PopupMenu::ColourIds::backgroundColourId, juce::Colour(0x15, 0x15, 0x15));
     }
 
-    juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(14); }
+    juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(13); }
+    void drawPopupMenuBackgroundWithOptions(juce::Graphics &g, int width, int height,
+                                            const juce::PopupMenu::Options &o) override
+    {
+        auto background = findColour(juce::PopupMenu::backgroundColourId);
+
+        g.fillAll(background);
+
+        g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.6f));
+        g.drawRect(0, 0, width, height);
+    }
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUITXT_SCXTJUCELOOKANDFEEL_H

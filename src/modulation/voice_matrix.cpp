@@ -401,7 +401,7 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
     }
     if (vmd >= vmd_LFO_Rate && vmd <= vmd_LFO_Rate)
     {
-        return "LFO " + std::to_string(idx + 1) + " Rate";
+        return "LFO " + std::to_string(idx + 1) + "/Rate";
     }
 
     if (vmd >= vmd_Processor_Mix && vmd <= vmd_Processor_FP9)
@@ -412,7 +412,7 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
             // this should in theory get filtered out of the user choices
             return std::nullopt;
         }
-        pfx += z.processorDescription[idx].typeDisplayName + " ";
+        pfx += z.processorDescription[idx].typeDisplayName + "/";
         if (vmd == vmd_Processor_Mix)
             return pfx + "mix";
         else
@@ -429,33 +429,33 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
 
     if (vmd >= vmd_eg_A && vmd <= vmd_eg_RShape)
     {
-        auto pfx = (idx == 0 ? std::string("AEG") : std::string("EG2"));
+        auto pfx = (idx == 0 ? std::string("AEG/") : std::string("EG2/"));
 
         switch (vmd)
         {
         case vmd_eg_A:
-            pfx += " Attack";
+            pfx += "Attack";
             break;
         case vmd_eg_H:
-            pfx += " Hold";
+            pfx += "Hold";
             break;
         case vmd_eg_D:
-            pfx += " Decay";
+            pfx += "Decay";
             break;
         case vmd_eg_S:
-            pfx += " Sustain";
+            pfx += "Sustain";
             break;
         case vmd_eg_R:
-            pfx += " Release";
+            pfx += "Release";
             break;
         case vmd_eg_AShape:
-            pfx += " Attack Shape";
+            pfx += "Attack Shape";
             break;
         case vmd_eg_DShape:
-            pfx += " Decay Shape";
+            pfx += "Decay Shape";
             break;
         case vmd_eg_RShape:
-            pfx += " Release Shape";
+            pfx += "Release Shape";
             break;
         default:
             assert(false);
@@ -466,17 +466,17 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
     switch (vmd)
     {
     case vmd_Sample_Playback_Ratio:
-        return "Playback Ratio";
+        return "Sample/Playback Ratio";
     case vmd_Sample_Pitch_Offset:
-        return "Pitch";
+        return "Sample/Pitch";
     case vmd_Zone_Sample_Pan:
-        return "Sample Pan";
+        return "Sample/Pan";
     case vmd_Zone_Output_Pan:
-        return "Output Pan";
+        return "Output/Pan";
     case vmd_Zone_Sample_Amplitude:
-        return "Sample Amplitude";
+        return "Sample/Amplitude";
     case vmd_Zone_Output_Amplitude:
-        return "Output Amplitude";
+        return "Output/Amplitude";
     default:
         break;
     }
