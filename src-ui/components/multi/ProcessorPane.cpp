@@ -107,13 +107,12 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     if (multiZone)
     {
-        SCLOG("Rebuild for MultiZone");
         // it's a bit hacky to do this inline but I"m sure it will change
         multiLabel = std::make_unique<sst::jucegui::components::Label>();
         multiLabel->setText("Multiple Types Selected");
         auto b = getContentAreaComponent()->getLocalBounds();
         multiLabel->setBounds(b);
-        getContentAreaComponent()->addAndMakeVisible(*multiLabel[0]);
+        getContentAreaComponent()->addAndMakeVisible(*multiLabel);
         return;
     }
 
