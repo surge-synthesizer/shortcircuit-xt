@@ -174,6 +174,9 @@ struct SelectionManager
     void sendDisplayDataForSingleGroup(int part, int group);
     void sendDisplayDataForNoGroupSelected();
 
+    // To ponder. Does this belong on this object or the engine?
+    void copyZoneProcessorLeadToAll(int which);
+
     std::set<dsp::processor::ProcessorType> processorTypesForSelectedZones(int pidx);
 
   public:

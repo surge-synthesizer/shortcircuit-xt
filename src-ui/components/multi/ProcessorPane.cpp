@@ -108,11 +108,21 @@ void ProcessorPane::rebuildControlsFromDescription()
     if (multiZone)
     {
         // it's a bit hacky to do this inline but I"m sure it will change
+        setEnabled(true);
+        getContentAreaComponent()->setEnabled(true);
         multiLabel = std::make_unique<sst::jucegui::components::Label>();
         multiLabel->setText("Multiple Types Selected");
         auto b = getContentAreaComponent()->getLocalBounds();
-        multiLabel->setBounds(b);
+        multiLabel->setBounds(b.withTrimmedBottom(20));
         getContentAreaComponent()->addAndMakeVisible(*multiLabel);
+
+        multiButton = std::make_unique<sst::jucegui::components::TextPushButton>();
+        multiButton->setIsInactiveValue(false);
+        multiButton->setLabel("Copy " + multiName + " to All");
+        multiButton->setBounds(b.withTop(b.getCentreY() + 5).withHeight(25).reduced(20, 0));
+        multiButton->setOnCallback(
+            [this]() { sendToSerialization(cmsg::CopyProcessorLeadToAll(index)); });
+        getContentAreaComponent()->addAndMakeVisible(*multiButton);
         return;
     }
 
@@ -355,9 +365,11 @@ void ProcessorPane::mouseUp(const juce::MouseEvent &e)
     sst::jucegui::components::NamedPanel::mouseUp(e);
 }
 
-void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::set<int32_t> &otherTypes)
+void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::string &nm,
+                                   const std::set<int32_t> &otherTypes)
 {
     multiZone = true;
+    multiName = nm;
     setEnabled(true);
     setName("Multiple");
     resetControls();

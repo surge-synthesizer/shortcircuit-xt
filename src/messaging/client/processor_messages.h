@@ -42,8 +42,8 @@ typedef std::tuple<int, bool, dsp::processor::ProcessorControlDescription,
 SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata_and_data,
                  processorDataResponsePayload_t, onZoneProcessorDataAndMetadata);
 
-// zone, lead type, all types
-typedef std::tuple<int, int, std::set<int32_t>> processorMismatchPayload_t;
+// zone, lead type, leadName, all types
+typedef std::tuple<int, int, std::string, std::set<int32_t>> processorMismatchPayload_t;
 SERIAL_TO_CLIENT(ProcessorsMismatched, s2c_notify_mismatched_processors_for_zone,
                  processorMismatchPayload_t, onZoneProcessorDataMismatch);
 
@@ -88,6 +88,9 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
 }
 CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorPayload_t,
                  setProcessorType(payload, engine, cont));
+
+CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, int,
+                 engine.getSelectionManager()->copyZoneProcessorLeadToAll(payload));
 
 // C2S set processor storage
 typedef std::pair<int32_t, dsp::processor::ProcessorStorage> setProcessorStoragePayload_t;

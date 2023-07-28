@@ -397,7 +397,8 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                 ptInt.insert((int32_t)t);
             serializationSendToClient(cms::s2c_notify_mismatched_processors_for_zone,
                                       cms::ProcessorsMismatched::s2c_payload_t{
-                                          i, (int32_t)zp->processorDescription[i].type, ptInt},
+                                          i, (int32_t)zp->processorDescription[i].type,
+                                          zp->processorDescription[i].typeDisplayName, ptInt},
                                       *(engine.getMessageController()));
         }
     }
@@ -494,5 +495,42 @@ std::set<dsp::processor::ProcessorType> SelectionManager::processorTypesForSelec
         }
     }
     return res;
+}
+
+void SelectionManager::copyZoneProcessorLeadToAll(int which)
+{
+    auto lz = currentLeadZone(engine);
+    if (!lz.has_value())
+        return;
+    if (allSelectedZones.size() < 2)
+        return;
+
+    auto &cont = engine.getMessageController();
+    cont->scheduleAudioThreadCallback(
+        [asz = allSelectedZones, from = *lz, which](auto &e) {
+            const auto &fz =
+                e.getPatch()->getPart(from.part)->getGroup(from.group)->getZone(from.zone);
+            auto ftype = fz->processorStorage[which].type;
+            for (const auto &sz : asz)
+            {
+                if (sz == from)
+                {
+                    // Nothintg to do
+                }
+                else
+                {
+                    const auto &tz =
+                        e.getPatch()->getPart(sz.part)->getGroup(sz.group)->getZone(sz.zone);
+
+                    tz->setProcessorType(which, ftype);
+                    tz->processorStorage[which] = fz->processorStorage[which];
+                }
+            }
+        },
+        [this](auto &e) {
+            auto lz = currentLeadZone(e);
+            if (lz.has_value())
+                sendDisplayDataForZonesBasedOnLead(lz->part, lz->group, lz->zone);
+        });
 }
 } // namespace scxt::selection
