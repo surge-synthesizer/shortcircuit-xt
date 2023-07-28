@@ -588,7 +588,12 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 
                 // TODO check this 256
                 zn->mapping.pitchOffset = 1.0 * sfsamp->PitchCorrection / 256;
-                zn->attachToSample(*sampleManager);
+                if (!zn->attachToSample(*sampleManager))
+                {
+                    SCLOG("ERROR: Can't attach to sample");
+                    return;
+                }
+                auto &znSD = zn->sampleData[0];
 
                 auto p = region->GetPan();
                 // pan in SF2 is -64 to 63 so hackety hack a bit
@@ -637,6 +642,14 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 zn->eg2Storage.d = s2a(reg->GetEG2Decay());
                 zn->eg2Storage.s = sus2l(reg->GetEG2Sustain());
                 zn->eg2Storage.r = s2a(reg->GetEG2Release());
+
+                if (reg->HasLoop)
+                {
+                    znSD.loopActive = true;
+                    znSD.startLoop = reg->LoopStart;
+                    znSD.endLoop = reg->LoopEnd;
+                }
+
 #if 0
                 std::cout << "STUFF I HAVEN'T DEALT WITH YET" << std::endl;
                 cout << "\t\t    Modulation Envelope Generator" << endl;
@@ -669,19 +682,10 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                 cout << ", Pitch: " << ((int)s->OriginalPitch);
                 cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
                 cout << "\t\tStart: " << s->Start << ", End: " << s->End;
-                cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
                 cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink
                      << ")" << endl;
 
-                if (s != NULL)
-                {
-                    if (reg->HasLoop)
-                    {
-                        cout << ", Loop Start: " << reg->LoopStart
-                             << ", Loop End: " << reg->LoopEnd;
-                    }
-                    cout << endl;
-                }
+                cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
                 cout << "\t\t    Key range=";
 
                 cout << "\t\t    Initial cutoff frequency=";
