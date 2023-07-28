@@ -100,15 +100,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     type = SF2_FILE;
     auto sfsample = f->GetInstrument(inst)->GetRegion(region)->GetSample();
 
-    // TODO : review
-    if (sfsample->GetFrameSize() == 2 && sfsample->GetChannelCount() == 1)
-        bitDepth = BD_I16;
-    else if (sfsample->GetFrameSize() == 4 && sfsample->GetChannelCount() == 2)
-        bitDepth = BD_I16;
-    else
-        throw SCXTError("Unable to load SF2 bit-depth " +
-                        std::to_string(sfsample->GetFrameSize() * 8));
-
+    auto frameSize = sfsample->GetFrameSize();
     channels = sfsample->GetChannelCount();
     sample_length = sfsample->GetTotalFrameCount();
     sample_rate = sfsample->SampleRate;
@@ -118,38 +110,46 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
     displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
 
-    if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 1 &&
-        sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
+    if (frameSize == 2 && channels == 1 && sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
     {
+        bitDepth = BD_I16;
         auto buf = sfsample->LoadSampleData();
         // >> 1 here because void* -> int16_t is byte to two bytes
         load_data_i16(0, buf.pStart, buf.Size >> 1, sfsample->GetFrameSize());
         sfsample->ReleaseSampleData();
         return true;
     }
-    if (bitDepth == BD_I16 && sfsample->GetChannelCount() == 2)
+    else if (frameSize == 4 && sfsample->GetChannelCount() == 2 &&
+             (sfsample->SampleType == sf2::Sample::LEFT_SAMPLE ||
+              sfsample->SampleType == sf2::Sample::RIGHT_SAMPLE))
     {
+        bitDepth = BD_I16;
         auto buf = sfsample->LoadSampleData();
         channels = 1;
-        bool loaded{false};
         if (sfsample->SampleType == sf2::Sample::LEFT_SAMPLE)
         {
             // >> 2 here because void* -> int16_t is byte to two bytes, plus two channels with a
             // stride
             load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 2, sfsample->GetFrameSize());
-            loaded = true;
         }
         else if (sfsample->SampleType == sf2::Sample::RIGHT_SAMPLE)
         {
             load_data_i16(0, (int16_t *)(buf.pStart) + 1, buf.Size >> 2, sfsample->GetFrameSize());
-            loaded = true;
         }
         sfsample->ReleaseSampleData();
-        return loaded;
+        return true;
+    }
+    else if (sfsample->GetFrameSize() == 3 && sfsample->GetChannelCount() == 1)
+    {
+        bitDepth = BD_I16;
+        channels = 1;
+        auto buf = sfsample->LoadSampleData();
+        load_data_i24(0, (void *)(buf.pStart), buf.Size, sfsample->GetFrameSize());
+        return true;
     }
 
     std::ostringstream oss;
-    oss << "Unable to load sample " << SCD(sfsample->GetFrameSize())
+    oss << "Unable to load sample from SF2. " << SCD(sfsample->GetFrameSize())
         << SCD(sfsample->GetChannelCount());
     throw SCXTError(oss.str());
     return false;
