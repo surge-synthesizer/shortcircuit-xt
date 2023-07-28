@@ -1,38 +1,61 @@
 # Shortcircuit XT
 
-# Welcome To The Next Branch
+[![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit-xt?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit-xt/_build/latest?definitionId=2&branchName=main)
 
-We are reubilding shortcircuit on this 'next' branch. The readme below
-is for the first attempt at this in 2022, after the zeroth attempt in 2021.
-2023 will be different. But that means everything below this section *except*
-the licensing and CLA section is wrong. The code is authoritative
+Welcome to Shortcircuit XT.
 
-To build
+Shortcircuit was a popular creative sampler in the mid 2000s from vembertech, the
+company that originally created surge. In 2021, Claes Johansen, the principle
+at vembertech (and now at Bitwig), open sourced a version of Shortcircuit2
+and gave the source to the Surge Synth Team.
+
+After several false starts getting this code running, we made a decision in
+early 2023 to preserve much of the design and DSP code from SC2, but to
+rebuild a sampler in the spirit of the first two versions of Shortcircuit using
+modern C++ and JUCE. This project, which you are looking at here, is called
+Shortcircuit XT (SCXT) and is underway.
+
+Right now, you can download our pre-alpha version of the
+instrument [here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)
+or you can build it using the instructions below.
+
+## What Works, and How Can I Help?
+
+Well first, thanks for asking! As we proceed through summer 2023, more and more
+stuff is starting to work, but we have a lot to do to get to a working beta.
+We have a rather complete wireframe of the final product, though, and have made
+quite a few core decisions about selection, mechanics, playback, and more, some of which
+are reflected in the code.
+
+If you are going to use the product now, though, many things will be incomplete or
+mysteriously not work. Really the best way to particpate is to join the [surge synth team
+discord](https://raw.githubusercontent.com/surge-synthesizer/surge-synthesizer.github.io/master/_includes/discord_invite_link)
+and come say hi in the #sc-development channel.
+
+There's lots of ways you can help. Of course, developers are always welcome. But testers,
+design partners, and just generally nice people who want to shoot-the-you-know-what about
+a sample-initiated instrument can join in the fun. Also, folks who loved and used SC1 and 2
+are welcome to come and see what we are thinking is different and the same, and help us
+determine if we are right!
+
+## I would love to build it myself. What do I do?
+
+To build, first configure your machine. Basically set up your machien the same way you would
+[to build Surge XT](https://github.com/surge-synthesizer/surge#setting-up-for-your-os) then
+fork this repo and:
 
 ```bash
-git clone -b next <this repo or your fork> scxt-next
-cd scxt-next
+git clone <this repo or your fork>
+cd shortcircuit-xt
 git submodule update --init --recursive
 cmake -Bignore/build -DCMAKE_BUILD_TYPE=Release
 cmake --build ignore/build --config Release --target scxt_plugin_All
 ```
 
-there are other targets too. Use your favorite tool or read the cmake file.
-
-Thanks
-
-# This is the prior readme
-
-[![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit-xt?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit-xt/_build/latest?definitionId=2&branchName=main)
-
-What? Shortcircuit is open source? Well yes, but there are big big caveats. Right now we are in the middle of rebuilding
-Shortcircuit from a (very generously) open sourced copy of the SC2 beta codebase. That codebase was old, ran only on
-windows, etc... so we are in the middle of a rebuild.
-
-In early 2022 with Surge XT 1.0 out the door, we turned back to SC. Right now we have a super-pre-alpha downloadable
-version with an incomplete ui and a not very well tested engine. But it can make sounds on mac win and lin all three. If
-you want to participate, really joining our discord is the best way, but we also welcome github issues with problems.
-Please include the version number (from the about screen) with your issue.
+Our production build use clang and macos, and gcc on linux. We
+we test with a wide variety of compilers, including msvc on windows and several gcc versions.
+If you are using a new compiler and have changes to the CMake or so on, please
+do send them to us.
 
 ## How we got here?
 
@@ -42,32 +65,8 @@ to Surge we have today.
 
 In late 2020, [@baconpaul](https://github.com/baconpaul) (one of the maintainers of Surge) sent a thank you note to
 Claes for open sourcing Surge and they got to chatting about Shortcircuit. That led to Claes sending Paul the source
-code, and that led to this repository and plan.
-
-# Where we are
-
-This repository contains a snapshot of the Shortcircuit 2 source code which Paul has been chipping away on a bit, but it
-requires a lot of work to get into a running state. Right now, it is only of interest to developers and there are no
-downloadable assets or available binaries that make music.
-
-The state of the code is much more primitive than the state of the Surge code when it was open sourced (which is one of
-the things that gave Claes and Paul pause about proceeding). For instance:
-
-1. It uses windows-only APIs in fundamental ways.
-2. It is older C++, not using modern C++-11 and C++-14-isms.
-3. It only compiles as a VST2 on windows, which of course doesn't work for a FOSS project.
-4. That VST2 on Windows doesn't work even if you do get it to compile.
-
-But that gives us a plan of attack:
-
-1. Try and get it to build and link all platforms by having a dumb Windows stub library, so we at least know which
-   Windows APIs matter. This repo meets that constraint.
-2. Build a 'headless' Shortcircuit, bound to Python at first, which lets us test and individually run the individual
-   components of the sampler, rename stuff, clean up bugs, refactor code, etc...
-3. Rewrite the front-end using JUCE and that sampler back-end.
-4. Call it Shortcircuit XT if we get it done.
-
-Ambitious!
+code, and that led to this repository and plan. We had a couple of false starts, but are
+confident in the path and architecture we have now!
 
 # An important note about licensing
 
@@ -94,28 +93,3 @@ You can read the entire document [here](doc/ShortcircuitXT-Individual-CLA.pdf).
 To agree to this document, please add your name to the `AUTHORS` list in a git transaction where you indicate in the git
 log message that you consent to the CLA. You only need to do this once, and you can do it in your first commit to the
 repo.
-
-# How to build what we have?
-
-You know the drill:
-
-```
-git submodule update --init --recursive
-cmake -Bbuild
-cmake --build build --config Release --target ShortcircuitXT_Standalone
-```
-
-This will build the rudimentary standalone app. Other targets exist, such as `sc3-test`
-which runs the existing test suite.
-
-If you don't have the prerequisites for build installed it might fail,
-(We will update this section soon. For now please have a look at the Surge XT docs for
-prerequisites and dependencies)
-
-# Issues building
-
-* Windows - Some JUCE targets have an issue if you are using nmake (specifically you might get an error that looks like
-  this: `'Synth\""' is not recognized as an internal or external command`). To solve this, use the Ninja generator by
-  passing `-G Ninja` to the first cmake command (you might need to download Ninja from
-  https://ninja-build.org/ if you don't already have it.)
-
