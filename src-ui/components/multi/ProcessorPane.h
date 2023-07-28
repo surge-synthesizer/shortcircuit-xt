@@ -35,6 +35,7 @@
 #include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "dsp/processor/processor.h"
 #include "components/HasEditor.h"
@@ -74,7 +75,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         repaint();
     }
 
-    void setAsMultiZone(int32_t primaryType, const std::set<int32_t> &otherTypes);
+    void setAsMultiZone(int32_t primaryType, const std::string &nm,
+                        const std::set<int32_t> &otherTypes);
 
     void processorChangedFromGui(const attachment_t &at);
     void processorChangedFromGui(const int_attachment_t &at);
@@ -126,6 +128,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     std::unique_ptr<attachment_t> mixAttachment;
 
     std::unique_ptr<sst::jucegui::components::Label> multiLabel;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> multiButton;
+    std::string multiName;
 };
 } // namespace scxt::ui::multi
 
