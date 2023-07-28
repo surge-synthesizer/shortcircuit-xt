@@ -42,23 +42,34 @@ SERIAL_TO_CLIENT(UpdateZoneVoiceMatrixMetadata, s2c_update_zone_voice_matrix_met
 SERIAL_TO_CLIENT(UpdateZoneVoiceMatrix, s2c_update_zone_voice_matrix,
                  modulation::VoiceModMatrix::routingTable_t, onZoneVoiceMatrix);
 
-typedef std::pair<int, modulation::VoiceModMatrix::Routing> indexedRowUpdate_t;
+// which row, what data, and force a full update
+typedef std::tuple<int, modulation::VoiceModMatrix::Routing, bool> indexedRowUpdate_t;
 inline void indexedRoutingRowUpdated(const indexedRowUpdate_t &payload,
                                      const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
-    const auto &[i, r] = payload;
+    const auto &[i, r, b] = payload;
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {
-        cont.scheduleAudioThreadCallback([index = i, row = r, zs = sz](auto &eng) {
-            for (const auto &z : zs)
-                eng.getPatch()
-                    ->getPart(z.part)
-                    ->getGroup(z.group)
-                    ->getZone(z.zone)
-                    ->routingTable[index] = row;
-        });
+        cont.scheduleAudioThreadCallback(
+            [index = i, row = r, zs = sz](auto &eng) {
+                for (const auto &z : zs)
+                    eng.getPatch()
+                        ->getPart(z.part)
+                        ->getGroup(z.group)
+                        ->getZone(z.zone)
+                        ->routingTable[index] = row;
+            },
+            [doUpdate = b](auto &eng) {
+                if (doUpdate)
+                {
+                    auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                    if (lz.has_value())
+                        eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
+                            lz->part, lz->group, lz->zone);
+                }
+            });
     }
 }
 CLIENT_TO_SERIAL(IndexedRoutingRowUpdated, c2s_update_zone_routing_row, indexedRowUpdate_t,

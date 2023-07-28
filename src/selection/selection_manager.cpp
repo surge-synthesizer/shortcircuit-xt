@@ -198,7 +198,6 @@ void SelectionManager::adjustInternalStateForAction(
         // OK so basically theres a few cases
         if (!z.selecting)
         {
-            SCLOG("All selected zones: removing " << za)
             allSelectedZones.erase(za);
         }
         else
@@ -405,6 +404,8 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     if (allSelectedZones.size() == 1)
     {
+        for (auto &row : zp->routingTable)
+            row.selConsistent = true;
         serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
                                   modulation::getVoiceModMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
@@ -416,11 +417,34 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     }
     else
     {
-        SCLOG("WARNING: Multi-Select Zone Consistency Calculation not complete");
+        // OK so is the routing table consistent over multiple zones
+        auto &rt = zp->routingTable;
+        for (auto &row : rt)
+            row.selConsistent = true;
+        for (const auto &sz : allSelectedZones)
+        {
+            const auto &szrt = engine.getPatch()
+                                   ->getPart(sz.part)
+                                   ->getGroup(sz.group)
+                                   ->getZone(sz.zone)
+                                   ->routingTable;
 
+            for (const auto &[ridx, row] : sst::cpputils::enumerate(rt))
+            {
+                auto &srow = szrt[ridx];
+                auto same =
+                    (srow.active == row.active && srow.src == row.src &&
+                     srow.srcVia == row.srcVia && srow.curve == row.curve && srow.dst == row.dst);
+                row.selConsistent = row.selConsistent && same;
+            }
+        }
         serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
-                                  modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
+                                  modulation::getVoiceModMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_voice_matrix, rt,
+                                  *(engine.getMessageController()));
+
+        SCLOG_ONCE("WARNING: Multi-Select Zone Consistency Output Calculation not complete");
         serializationSendToClient(cms::s2c_update_zone_output_info,
                                   cms::zoneOutputInfoUpdate_t{false, {}},
                                   *(engine.getMessageController()));

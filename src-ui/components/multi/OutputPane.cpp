@@ -83,10 +83,7 @@ void OutputPane::resized()
 
 void OutputPane::setActive(bool b)
 {
-    static bool warned{false};
-    if (!warned)
-        SCLOG_UNIMPL("Output Pane setActive " << (b ? "ON" : "OFF"));
-    warned = true;
+    SCLOG_ONCE("Output Pane setActive ignored " << (b ? "ON" : "OFF"));
 }
 
 void OutputPane::setOutputData(const engine::Zone::ZoneOutputInfo &d)

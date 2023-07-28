@@ -33,6 +33,7 @@
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
 #include "messaging/client/client_serial.h"
 
 namespace scxt::ui::multi
@@ -51,6 +52,7 @@ struct ModRow : juce::Component, HasEditor
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
     std::unique_ptr<juce::Component> x1, x2, a1, a2;
+    std::unique_ptr<jcmp::TextPushButton> consistentButton;
 
     std::unique_ptr<jcmp::HSlider> depth;
 
@@ -59,12 +61,24 @@ struct ModRow : juce::Component, HasEditor
     {
         auto &row = parent->routingTable[i];
 
+        consistentButton = std::make_unique<jcmp::TextPushButton>();
+        consistentButton->setLabel("Make Consistent");
+        consistentButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+            {
+                w->pushRowUpdate(true);
+            }
+        });
+        addChildComponent(*consistentButton);
+
         powerAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<modulation::VoiceModMatrix::Routing>>(
             "Power",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
+                {
                     w->pushRowUpdate();
+                }
             },
             row.active);
         power = std::make_unique<jcmp::ToggleButton>();
@@ -137,8 +151,6 @@ struct ModRow : juce::Component, HasEditor
         target->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*target);
 
-        refreshRow();
-
         auto mg = [this](auto g) {
             auto r = std::make_unique<jcmp::GlyphPainter>(g);
             r->setCustomClass(connectors::SCXTStyleSheetCreator::InformationLabel);
@@ -149,18 +161,22 @@ struct ModRow : juce::Component, HasEditor
         x2 = mg(jcmp::GlyphPainter::CROSS);
         a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
         a2 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
+
+        refreshRow();
     }
 
     ~ModRow()
     {
         // remove these explicitly before their attachments
-        power.reset(nullptr);
-        depth.reset(nullptr);
+        power->setSource(nullptr);
+        depth->setSource(nullptr);
     }
 
     void resized()
     {
         auto b = getLocalBounds().reduced(1, 1);
+
+        consistentButton->setBounds(b);
 
         auto map = [&b](const auto &wd, auto sz, int redH = 0) {
             wd->setBounds(b.withWidth(sz).reduced(0, redH));
@@ -184,6 +200,52 @@ struct ModRow : juce::Component, HasEditor
         const auto &srcs = std::get<1>(parent->matrixMetadata);
         const auto &dsts = std::get<2>(parent->matrixMetadata);
         const auto &crvs = std::get<3>(parent->matrixMetadata);
+
+        power->setVisible(row.selConsistent);
+        source->setVisible(row.selConsistent);
+        sourceVia->setVisible(row.selConsistent);
+        depth->setVisible(row.selConsistent);
+        curve->setVisible(row.selConsistent);
+        target->setVisible(row.selConsistent);
+        x1->setVisible(row.selConsistent);
+        x2->setVisible(row.selConsistent);
+        a1->setVisible(row.selConsistent);
+        a2->setVisible(row.selConsistent);
+        consistentButton->setVisible(!row.selConsistent);
+        if (!row.selConsistent)
+        {
+            std::string s, sv, c, d;
+            for (const auto &[si, sn] : srcs)
+            {
+                if (si == row.src)
+                    s = sn;
+                if (si == row.srcVia)
+                    sv = sn;
+            }
+            for (const auto &[ci, cn] : crvs)
+            {
+                if (ci == row.curve)
+                    c = cn;
+            }
+
+            for (const auto &[di, dn] : dsts)
+            {
+                if (di == row.dst)
+                    d = dn;
+            }
+
+            auto lbl = s.empty() ? "off" : s;
+            if (!sv.empty())
+                lbl += " x " + sv;
+            if (!c.empty())
+                lbl += " through " + c;
+            lbl += " to " + (d.empty() ? "off" : d);
+            if (!row.active)
+                lbl += " (inactive)";
+
+            consistentButton->setLabel("Set selected zones to : " + lbl);
+            return;
+        }
 
         // this linear search kinda sucks bot
         for (const auto &[si, sn] : srcs)
@@ -276,9 +338,10 @@ struct ModRow : juce::Component, HasEditor
                                    at.description.valueToString(at.value).value_or("Error"));
     }
 
-    void pushRowUpdate()
+    void pushRowUpdate(bool forceUpdate = false)
     {
-        sendToSerialization(cmsg::IndexedRoutingRowUpdated({index, parent->routingTable[index]}));
+        sendToSerialization(
+            cmsg::IndexedRoutingRowUpdated({index, parent->routingTable[index], forceUpdate}));
     }
 
     void showSourceMenu(bool isVia)
