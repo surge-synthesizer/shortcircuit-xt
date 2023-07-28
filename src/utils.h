@@ -246,6 +246,19 @@ std::string logTimestamp();
         postToLog(oss_macr.str());                                                                 \
     }
 
+#define SCLOG_ONCE(...)                                                                            \
+    {                                                                                              \
+        static bool x842132{false};                                                                \
+        if (!x842132)                                                                              \
+        {                                                                                          \
+            std::ostringstream oss_macr;                                                           \
+            oss_macr << __FILE__ << ":" << __LINE__ << " [" << logTimestamp() << "] "              \
+                     << __VA_ARGS__ << " (Message will only appear once)\n";                       \
+            postToLog(oss_macr.str());                                                             \
+        }                                                                                          \
+        x842132 = true;                                                                            \
+    }
+
 #define SCLOG_WFUNC(...) SCLOG(__func__ << " " << __VA_ARGS__)
 #define SCLOG_UNIMPL(...) SCLOG(" Unimpl [" << __func__ << "] " << __VA_ARGS__);
 #define SCD(x) #x << "=" << (x) << " "

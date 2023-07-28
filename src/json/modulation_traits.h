@@ -104,14 +104,17 @@ template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        v = {{"active", t.active}, {"src", t.src},     {"srcVia", t.srcVia},
-             {"dst", t.dst},       {"curve", t.curve}, {"depth", t.depth}};
+        v = {{"active", t.active}, {"selConsistent", t.selConsistent},
+             {"src", t.src},       {"srcVia", t.srcVia},
+             {"dst", t.dst},       {"curve", t.curve},
+             {"depth", t.depth}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
         findOrSet(v, "active", true, result.active);
+        findOrSet(v, "selConsistent", true, result.selConsistent);
         findIf(v, "src", result.src);
         findIf(v, "srcVia", result.srcVia);
         findIf(v, "dst", result.dst);

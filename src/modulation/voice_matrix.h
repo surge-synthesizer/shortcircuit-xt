@@ -179,6 +179,7 @@ struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
     struct Routing
     {
         bool active{true};
+        bool selConsistent{true};
         VoiceModMatrixSource src{vms_none};
         VoiceModMatrixSource srcVia{vms_none};
         VoiceModMatrixDestinationAddress dst{vmd_none};
