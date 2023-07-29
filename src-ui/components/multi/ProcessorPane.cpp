@@ -37,9 +37,9 @@ namespace scxt::ui::multi
 {
 namespace cmsg = scxt::messaging::client;
 
-ProcessorPane::ProcessorPane(SCXTEditor *e, int index)
+ProcessorPane::ProcessorPane(SCXTEditor *e, int index, bool fz)
     : HasEditor(e), sst::jucegui::components::NamedPanel("PROCESSOR " + std::to_string(index + 1)),
-      index(index)
+      index(index), forZone(fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
     hasHamburger = true;
@@ -65,6 +65,8 @@ void ProcessorPane::showHamburgerMenu()
     if (!isEnabled())
         return;
 
+    SCLOG("Creating processor hamburger menu " << SCD(forZone) << " " << SCD(index));
+
     juce::PopupMenu p;
     p.addSectionHeader("Processors");
     for (const auto &pd : editor->allProcessors)
@@ -72,7 +74,8 @@ void ProcessorPane::showHamburgerMenu()
         p.addItem(pd.displayName, [wt = juce::Component::SafePointer(this), type = pd.id]() {
             if (wt)
             {
-                wt->sendToSerialization(cmsg::SetSelectedProcessorType({wt->index, type}));
+                wt->sendToSerialization(
+                    cmsg::SetSelectedProcessorType({wt->forZone, wt->index, type}));
             }
         });
     }
@@ -342,7 +345,6 @@ void ProcessorPane::itemDropped(const juce::DragAndDropTarget::SourceDetails &dr
     if (!pp)
         return;
 
-    SCLOG("Swapping processors " << SCD(index) << SCD(pp->index));
     sendToSerialization(cmsg::SwapZoneProcessors({index, pp->index}));
 }
 

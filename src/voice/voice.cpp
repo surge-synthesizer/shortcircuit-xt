@@ -47,7 +47,7 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
 
 Voice::~Voice()
 {
-    for (auto i = 0; i < engine::processorsPerZone; ++i)
+    for (auto i = 0; i < engine::processorCount; ++i)
     {
         dsp::processor::unspawnProcessor(processors[i]);
     }
@@ -198,7 +198,7 @@ bool Voice::process()
         sampleAmp.multiply_2_blocks(output[0], output[1]);
     }
 
-    for (auto i = 0; i < engine::processorsPerZone; ++i)
+    for (auto i = 0; i < engine::processorCount; ++i)
     {
         if (processors[i])
         {
@@ -418,7 +418,7 @@ void Voice::initializeProcessors()
     sampleAmp.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Sample_Amplitude, 0));
     outputPan.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Output_Pan, 0));
     outputAmp.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Output_Amplitude, 0));
-    for (auto i = 0; i < engine::processorsPerZone; ++i)
+    for (auto i = 0; i < engine::processorCount; ++i)
     {
         processorIsActive[i] = zone->processorStorage[i].isActive;
         processorMix[i].set_target_instant(modMatrix.getValue(modulation::vmd_Processor_Mix, i));

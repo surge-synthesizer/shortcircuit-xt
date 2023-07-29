@@ -35,6 +35,11 @@
 
 #include <cassert>
 
+#include "messaging/messaging.h"
+#include "patch.h"
+#include "engine.h"
+#include "group_and_zone_impl.h"
+
 namespace scxt::engine
 {
 
@@ -82,4 +87,21 @@ void Group::removeActiveZone()
     }
 }
 
+engine::Engine *Group::getEngine()
+{
+    if (parentPart && parentPart->parentPatch)
+        return parentPart->parentPatch->parentEngine;
+    return nullptr;
+}
+
+void Group::setupOnUnstream(const engine::Engine &e)
+{
+    for (int p = 0; p < processorCount; ++p)
+    {
+        setupProcessorControlDescriptions(p, processorStorage[p].type);
+        onProcessorTypeChanged(p, processorStorage[p].type);
+    }
+}
+
+template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine

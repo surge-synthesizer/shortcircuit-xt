@@ -119,16 +119,16 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     /**
      * Processors: Storage, memory blocks, types, and more
      */
-    dsp::processor::Processor *processors[engine::processorsPerZone]{nullptr, nullptr};
-    dsp::processor::ProcessorType processorType[engine::processorsPerZone]{
-        dsp::processor::proct_none, dsp::processor::proct_none};
+    dsp::processor::Processor *processors[engine::processorCount]{nullptr, nullptr};
+    dsp::processor::ProcessorType processorType[engine::processorCount]{dsp::processor::proct_none,
+                                                                        dsp::processor::proct_none};
     uint8_t processorPlacementStorage alignas(
-        16)[engine::processorsPerZone][dsp::processor::processorMemoryBufferSize];
+        16)[engine::processorCount][dsp::processor::processorMemoryBufferSize];
     int32_t processorIntParams alignas(
-        16)[engine::processorsPerZone][dsp::processor::maxProcessorIntParams];
-    bool processorIsActive[engine::processorsPerZone]{false, false, false, false};
-    bool processorConsumesMono[engine::processorsPerZone]{false, false, false, false};
-    bool processorProducesStereo[engine::processorsPerZone]{false, false, false, false};
+        16)[engine::processorCount][dsp::processor::maxProcessorIntParams];
+    bool processorIsActive[engine::processorCount]{false, false, false, false};
+    bool processorConsumesMono[engine::processorCount]{false, false, false, false};
+    bool processorProducesStereo[engine::processorCount]{false, false, false, false};
 
     void initializeProcessors();
 
@@ -138,7 +138,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     void panOutputsBy(bool inputIsMono, const lipol &pv);
 
     // TODO - this should be more carefully structured for modulation onto the entire filter
-    lipol processorMix[engine::processorsPerZone];
+    lipol processorMix[engine::processorCount];
 
     /*
      * Voice State on Creation

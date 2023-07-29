@@ -40,7 +40,7 @@
 namespace scxt::ui
 {
 
-static_assert(engine::processorsPerZone == MultiScreen::numProcessorDisplays);
+static_assert(engine::processorCount == MultiScreen::numProcessorDisplays);
 
 struct DebugRect : public sst::jucegui::components::NamedPanel
 {
@@ -85,7 +85,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     {
         for (int i = 0; i < 4; ++i)
         {
-            auto ff = std::make_unique<multi::ProcessorPane>(editor, i);
+            auto ff = std::make_unique<multi::ProcessorPane>(editor, i,
+                                                             ctr->index == ZoneGroupIndex::ZONE);
             ff->hasHamburger = true;
             ctr->processors[i] = std::move(ff);
             addChildComponent(*(ctr->processors[i]));

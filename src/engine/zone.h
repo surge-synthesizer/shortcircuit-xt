@@ -39,6 +39,8 @@
 #include "modulation/voice_matrix.h"
 #include "modulation/modulators/steplfo.h"
 
+#include "group_and_zone.h"
+
 #include "datamodel/adsr_storage.h"
 #include <fmt/core.h>
 #include "dsp/generator.h"
@@ -54,10 +56,9 @@ namespace scxt::engine
 struct Group;
 struct Engine;
 
-constexpr int processorsPerZone{4};
 constexpr int lfosPerZone{3};
 
-struct Zone : MoveableOnly<Zone>
+struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>
 {
     static constexpr int maxSamplesPerZone{16};
     Zone() : id(ZoneID::next()) { initialize(); }
@@ -167,9 +168,6 @@ struct Zone : MoveableOnly<Zone>
         bool operator==(const ZoneMappingData &other) const { return asTuple() == other.asTuple(); }
     } mapping;
 
-    std::array<dsp::processor::ProcessorStorage, processorsPerZone> processorStorage;
-    std::array<dsp::processor::ProcessorControlDescription, processorsPerZone> processorDescription;
-
     Group *parentGroup{nullptr};
 
     bool isActive() { return activeVoices != 0; }
@@ -180,14 +178,12 @@ struct Zone : MoveableOnly<Zone>
     void addVoice(voice::Voice *);
     void removeVoice(voice::Voice *);
 
-    void setProcessorType(int whichProcessor, dsp::processor::ProcessorType type);
-    void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
-                                           dsp::processor::Processor *tmpProcessor = nullptr);
-
     modulation::VoiceModMatrix::routingTable_t routingTable;
     std::array<modulation::modulators::StepLFOStorage, lfosPerZone> lfoStorage;
 
     datamodel::AdsrStorage aegStorage, eg2Storage;
+
+    void onProcessorTypeChanged(int, dsp::processor::ProcessorType) {}
 
     void setupOnUnstream(const engine::Engine &e);
     engine::Engine *getEngine();

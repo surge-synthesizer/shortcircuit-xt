@@ -384,7 +384,7 @@ Engine::getProcessorStorage(const processorAddress_t &addr) const
     if (!zref || which < 0)
         return {};
 
-    if (which < processorsPerZone)
+    if (which < processorCount)
         return zref->processorStorage[which];
 
     return {};
@@ -650,60 +650,48 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     znSD.endLoop = reg->LoopEnd;
                 }
 
-#if 0
-                std::cout << "STUFF I HAVEN'T DEALT WITH YET" << std::endl;
-                cout << "\t\t    Modulation Envelope Generator" << endl;
-                cout << "\t\t\tPitch=" << GetValue(reg->modEnvToPitch) << "cents, Cutoff=";
-                cout << GetValue(reg->modEnvToFilterFc) << "cents" << endl << endl;
+                SCLOG("Unimplemented SF2 Features Follow:")
+                SCLOG("\tModulation Envelope Generator Pitch="
+                      << GetValue(reg->modEnvToPitch)
+                      << "cents, Cutoff=" << GetValue(reg->modEnvToFilterFc) << "cents");
 
-                cout << "\t\t    Modulation LFO: Delay=" << ::sf2::ToSeconds(reg->delayModLfo)
-                     << "s, Frequency=";
-                cout << ::sf2::ToHz(reg->freqModLfo)
-                     << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB";
-                cout << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc;
-                cout << ", LFO to Pitch=" << reg->modLfoToPitch << endl;
+                SCLOG("\tModulation LFO: Delay="
+                      << ::sf2::ToSeconds(reg->delayModLfo)
+                      << "s, Frequency=" << ::sf2::ToHz(reg->freqModLfo)
+                      << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB"
+                      << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc
+                      << ", LFO to Pitch=" << reg->modLfoToPitch);
 
-                cout << "\t\t    Vibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo)
-                     << "s, Frequency=";
-                cout << ::sf2::ToHz(reg->freqVibLfo) << "Hz, LFO to Pitch=" << reg->vibLfoToPitch
-                     << endl;
+                SCLOG("\tVibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo)
+                                                 << "s, Frequency=" << ::sf2::ToHz(reg->freqVibLfo)
+                                                 << "Hz, LFO to Pitch=" << reg->vibLfoToPitch);
 
-                cout << "\t\t\tModulators (" << reg->modulators.size() << ")" << endl;
+                SCLOG("\tModulators Ignored. Count =(" << reg->modulators.size() << ")");
 
                 for (int i = 0; i < reg->modulators.size(); i++)
                 {
-                    cout << "\t\t\tModulator " << i << endl;
                     // PrintModulatorItem(&reg->modulators[i]);
                 }
 
-                cout << "\t" << s->Name
-                     << " (Depth: " << ((s->GetFrameSize() / s->GetChannelCount()) * 8);
-                cout << ", SampleRate: " << s->SampleRate;
-                cout << ", Pitch: " << ((int)s->OriginalPitch);
-                cout << ", Pitch Correction: " << ((int)s->PitchCorrection) << endl;
-                cout << "\t\tStart: " << s->Start << ", End: " << s->End;
-                cout << "\t\tSample Type: " << s->SampleType << ", Sample Link: " << s->SampleLink
-                     << ")" << endl;
-
-                cout << ", Start Loop: " << s->StartLoop << ", End Loop: " << s->EndLoop << endl;
-                cout << "\t\t    Key range=";
-
-                cout << "\t\t    Initial cutoff frequency=";
                 if (reg->initialFilterFc == ::sf2::NONE)
-                    cout << "None" << endl;
+                {
+                    SCLOG("\tFilter Cutoff: None");
+                }
                 else
-                    cout << reg->initialFilterFc << "cents" << endl;
+                {
+                    SCLOG("\tFilter Cutoff " << reg->initialFilterFc << "cents");
+                }
 
-                cout << "\t\t    Initial resonance=";
                 if (reg->initialFilterQ == ::sf2::NONE)
-                    cout << "None" << endl;
+                {
+                    SCLOG("\tFilter Q: None");
+                }
                 else
-                    cout << (reg->initialFilterQ / 10.0) << "dB" << endl;
+                {
+                    SCLOG("\tFilter Q " << reg->initialFilterQ / 10.0 << "dB");
+                }
 
-                if (reg->exclusiveClass)
-                    cout << ", Exclusive group=" << reg->exclusiveClass;
-                cout << endl;
-#endif
+                SCLOG("\tExclusive Class : " << reg->exclusiveClass);
 
                 grp->addZone(zn);
             }
