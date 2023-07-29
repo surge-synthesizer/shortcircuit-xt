@@ -222,6 +222,7 @@ void SelectionManager::adjustInternalStateForAction(
         SCLOG("Group Naive Single Selection Selection " << za);
         allSelectedGroups.clear();
         allSelectedGroups.insert(za);
+        leadGroup = za;
     }
 }
 
@@ -239,6 +240,16 @@ void SelectionManager::guaranteeSelectedLead()
         else
         {
             leadZone = *(allSelectedZones.begin());
+        }
+    }
+
+    // Still at group single so far
+    assert(allSelectedGroups.size() < 2);
+    if (allSelectedGroups.find(leadGroup) == allSelectedGroups.end())
+    {
+        if (!allSelectedGroups.empty())
+        {
+            leadGroup = *(allSelectedGroups.begin());
         }
     }
 }
@@ -377,15 +388,15 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     /*
      * Processors, Output and ModMatrix have multi-select merge rules which are different
      */
-    for (int i = 0; i < engine::processorsPerZone; ++i)
+    for (int i = 0; i < engine::processorCount; ++i)
     {
         auto typ = processorTypesForSelectedZones(i);
         if (typ.size() == 1)
         {
             serializationSendToClient(
                 cms::s2c_respond_single_processor_metadata_and_data,
-                cms::ProcessorMetadataAndData::s2c_payload_t{i, true, zp->processorDescription[i],
-                                                             zp->processorStorage[i]},
+                cms::ProcessorMetadataAndData::s2c_payload_t{
+                    true, i, true, zp->processorDescription[i], zp->processorStorage[i]},
                 *(engine.getMessageController()));
         }
         else
@@ -466,11 +477,12 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
     serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
                               cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, false, {}},
                               *(engine.getMessageController()));
-    for (int i = 0; i < engine::processorsPerZone; ++i)
+    for (int i = 0; i < engine::processorCount; ++i)
     {
-        serializationSendToClient(cms::s2c_respond_single_processor_metadata_and_data,
-                                  cms::ProcessorMetadataAndData::s2c_payload_t{i, false, {}, {}},
-                                  *(engine.getMessageController()));
+        serializationSendToClient(
+            cms::s2c_respond_single_processor_metadata_and_data,
+            cms::ProcessorMetadataAndData::s2c_payload_t{true, i, false, {}, {}},
+            *(engine.getMessageController()));
     }
     serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
                               modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
@@ -488,6 +500,15 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
         serializationSendToClient(
             cms::s2c_update_group_or_zone_adsr_view,
             cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, true, g->gegStorage[i]},
+            *(engine.getMessageController()));
+    }
+
+    for (int i = 0; i < engine::processorCount; ++i)
+    {
+        serializationSendToClient(
+            cms::s2c_respond_single_processor_metadata_and_data,
+            cms::ProcessorMetadataAndData::s2c_payload_t{false, i, true, g->processorDescription[i],
+                                                         g->processorStorage[i]},
             *(engine.getMessageController()));
     }
 }

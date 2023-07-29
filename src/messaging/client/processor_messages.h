@@ -35,12 +35,13 @@
 namespace scxt::messaging::client
 {
 // C2S Request for Processor I S2C Metadata and Processor Storage
-typedef std::tuple<int, bool, dsp::processor::ProcessorControlDescription,
+// forZone, which, active, description, storage
+typedef std::tuple<bool, int, bool, dsp::processor::ProcessorControlDescription,
                    dsp::processor::ProcessorStorage>
     processorDataResponsePayload_t;
 
 SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata_and_data,
-                 processorDataResponsePayload_t, onZoneProcessorDataAndMetadata);
+                 processorDataResponsePayload_t, onGroupOrZoneProcessorDataAndMetadata);
 
 // zone, lead type, leadName, all types
 typedef std::tuple<int, int, std::string, std::set<int32_t>> processorMismatchPayload_t;
@@ -48,42 +49,78 @@ SERIAL_TO_CLIENT(ProcessorsMismatched, s2c_notify_mismatched_processors_for_zone
                  processorMismatchPayload_t, onZoneProcessorDataMismatch);
 
 // C2S set processor type (sends back data and metadata)
-typedef std::pair<int32_t, int32_t> setProcessorPayload_t;
+// tuple is forzone, whichprocessor, type
+typedef std::tuple<bool, int32_t, int32_t> setProcessorPayload_t;
 inline void setProcessorType(const setProcessorPayload_t &whichToType, const engine::Engine &engine,
                              messaging::MessageController &cont)
 {
-    const auto &[w, id] = whichToType;
-    auto sz = engine.getSelectionManager()->currentlySelectedZones();
-    auto lz = engine.getSelectionManager()->currentLeadZone(engine);
-
-    if (!sz.empty() && lz.has_value())
+    const auto &[forZone, w, id] = whichToType;
+    if (!forZone)
     {
-        cont.scheduleAudioThreadCallback(
-            [zs = sz, which = w, type = id](auto &e) {
-                for (const auto &a : zs)
-                {
-                    const auto &z =
-                        e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                    z->setProcessorType(which, (dsp::processor::ProcessorType)type);
-                }
-            },
-            [a = *lz, which = w](const auto &engine) {
-                const auto &z =
-                    engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                serializationSendToClient(
-                    messaging::client::s2c_respond_single_processor_metadata_and_data,
-                    messaging::client::ProcessorMetadataAndData::s2c_payload_t{
-                        which, true, z->processorDescription[which], z->processorStorage[which]},
-                    *(engine.getMessageController()));
-                serializationSendToClient(messaging::client::s2c_update_zone_voice_matrix_metadata,
-                                          modulation::getVoiceModMatrixMetadata(*z),
-                                          *(engine.getMessageController()));
-            });
+        SCLOG_UNIMPL("GROUP Set " << w << " to " << id);
+        auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+        auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
+        assert(sg.empty() || lg.has_value());
+        if (!sg.empty())
+        {
+            cont.scheduleAudioThreadCallback(
+                [gs = sg, which = w, type = id](auto &e) {
+                    for (const auto &a : gs)
+                    {
+                        const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
+                        g->setProcessorType(which, (dsp::processor::ProcessorType)type);
+                    }
+                },
+                [a = *lg, which = w](const auto &engine) {
+                    const auto &g = engine.getPatch()->getPart(a.part)->getGroup(a.group);
+                    serializationSendToClient(
+                        messaging::client::s2c_respond_single_processor_metadata_and_data,
+                        messaging::client::ProcessorMetadataAndData::s2c_payload_t{
+                            false, which, true, g->processorDescription[which],
+                            g->processorStorage[which]},
+                        *(engine.getMessageController()));
+                    /*
+                    serializationSendToClient(
+                        messaging::client::s2c_update_zone_voice_matrix_metadata,
+                        modulation::getVoiceModMatrixMetadata(*z),
+                        *(engine.getMessageController()));*/
+                });
+        }
+        return;
     }
     else
     {
-        // This means you have a lead zone and no selected zones
-        assert(sz.empty());
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        auto lz = engine.getSelectionManager()->currentLeadZone(engine);
+
+        assert(sz.empty() || lz.has_value());
+
+        if (!sz.empty() && lz.has_value())
+        {
+            cont.scheduleAudioThreadCallback(
+                [zs = sz, which = w, type = id](auto &e) {
+                    for (const auto &a : zs)
+                    {
+                        const auto &z =
+                            e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                        z->setProcessorType(which, (dsp::processor::ProcessorType)type);
+                    }
+                },
+                [a = *lz, which = w](const auto &engine) {
+                    const auto &z =
+                        engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                    serializationSendToClient(
+                        messaging::client::s2c_respond_single_processor_metadata_and_data,
+                        messaging::client::ProcessorMetadataAndData::s2c_payload_t{
+                            true, which, true, z->processorDescription[which],
+                            z->processorStorage[which]},
+                        *(engine.getMessageController()));
+                    serializationSendToClient(
+                        messaging::client::s2c_update_zone_voice_matrix_metadata,
+                        modulation::getVoiceModMatrixMetadata(*z),
+                        *(engine.getMessageController()));
+                });
+        }
     }
 }
 CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorPayload_t,
@@ -126,35 +163,24 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
     if (!sz.empty() && lz.has_value())
     {
         cont.scheduleAudioThreadCallback(
-            [a = *lz, t = to, f = from](auto &engine) {
-                const auto &z =
-                    engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                auto fs = z->processorStorage[f];
-                auto ts = z->processorStorage[t];
+            [q = sz, t = to, f = from](auto &engine) {
+                for (const auto &a : q)
+                {
+                    const auto &z =
+                        engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                    auto fs = z->processorStorage[f];
+                    auto ts = z->processorStorage[t];
 
-                z->setProcessorType(f, (dsp::processor::ProcessorType)ts.type);
-                z->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
+                    z->setProcessorType(f, (dsp::processor::ProcessorType)ts.type);
+                    z->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
 
-                z->processorStorage[f] = ts;
-                z->processorStorage[t] = fs;
+                    z->processorStorage[f] = ts;
+                    z->processorStorage[t] = fs;
+                }
             },
-            [a = *lz, t = to, f = from](const auto &engine) {
-                const auto &z =
-                    engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                serializationSendToClient(
-                    messaging::client::s2c_respond_single_processor_metadata_and_data,
-                    messaging::client::ProcessorMetadataAndData::s2c_payload_t{
-                        t, true, z->processorDescription[t], z->processorStorage[t]},
-                    *(engine.getMessageController()));
-
-                serializationSendToClient(
-                    messaging::client::s2c_respond_single_processor_metadata_and_data,
-                    messaging::client::ProcessorMetadataAndData::s2c_payload_t{
-                        f, true, z->processorDescription[f], z->processorStorage[f]},
-                    *(engine.getMessageController()));
-                serializationSendToClient(messaging::client::s2c_update_zone_voice_matrix_metadata,
-                                          modulation::getVoiceModMatrixMetadata(*z),
-                                          *(engine.getMessageController()));
+            [a = *lz](const auto &engine) {
+                engine.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(a.part, a.group,
+                                                                                 a.zone);
             });
     }
     else

@@ -108,15 +108,25 @@ void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
         multiScreen->parts->setPartGroupZoneStructure(s);
 }
 
-void SCXTEditor::onZoneProcessorDataAndMetadata(
+void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
     const scxt::messaging::client::processorDataResponsePayload_t &d)
 {
-    const auto &[which, enabled, control, storage] = d;
+    const auto &[forZone, which, enabled, control, storage] = d;
 
     assert(which >= 0 && which < MultiScreen::numProcessorDisplays);
-    multiScreen->getZoneElements()->processors[which]->setEnabled(enabled);
-    multiScreen->getZoneElements()->processors[which]->setProcessorControlDescriptionAndStorage(
-        control, storage);
+    if (forZone)
+    {
+        multiScreen->getZoneElements()->processors[which]->setEnabled(enabled);
+        multiScreen->getZoneElements()->processors[which]->setProcessorControlDescriptionAndStorage(
+            control, storage);
+    }
+    else
+    {
+        multiScreen->getGroupElements()->processors[which]->setEnabled(enabled);
+        multiScreen->getGroupElements()
+            ->processors[which]
+            ->setProcessorControlDescriptionAndStorage(control, storage);
+    }
 }
 
 void SCXTEditor::onZoneProcessorDataMismatch(

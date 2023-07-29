@@ -165,6 +165,12 @@ struct SelectionManager
             return leadZone;
         return {};
     }
+    std::optional<ZoneAddress> currentLeadGroup(const engine::Engine &e)
+    {
+        if (leadGroup.isInWithPartials(e))
+            return leadGroup;
+        return {};
+    }
     std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
 
     void sendSelectedZonesToClient();
@@ -182,7 +188,7 @@ struct SelectionManager
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;
     selectedZones_t allSelectedZones, allSelectedGroups;
-    ZoneAddress leadZone;
+    ZoneAddress leadZone, leadGroup;
 
   protected:
     std::map<size_t, std::set<size_t>> selectedGroupByPart;

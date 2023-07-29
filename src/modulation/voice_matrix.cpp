@@ -66,7 +66,7 @@ void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
     depthScales[destIndex(vmd_Sample_Pitch_Offset, 0)] = 60;
 
     // Processor Depth is by-processor
-    for (int idx = 0; idx < engine::processorsPerZone; ++idx)
+    for (int idx = 0; idx < engine::processorCount; ++idx)
     {
         for (int q = vmd_Processor_FP1; q <= vmd_Processor_FP9; ++q)
         {
@@ -80,7 +80,7 @@ void VoiceModMatrix::snapDepthScalesFromZone(engine::Zone *z)
 
 void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 {
-    for (int i = 0; i < engine::processorsPerZone; ++i)
+    for (int i = 0; i < engine::processorCount; ++i)
     {
         // TODO - skip off
         baseValues[destIndex(vmd_Processor_Mix, i)] = z->processorStorage[i].mix;
@@ -370,7 +370,7 @@ int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &t)
     case vmd_Processor_FP7:
     case vmd_Processor_FP8:
     case vmd_Processor_FP9:
-        return engine::processorsPerZone;
+        return engine::processorCount;
     case vmd_eg_A:
     case vmd_eg_H:
     case vmd_eg_D:
@@ -488,7 +488,7 @@ voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine
 {
     voiceModMatrixDestinationNames_t res;
     // TODO code this way better - index on the 'outside' sorts but is inefficient
-    int maxIndex = std::max({2, engine::processorsPerZone, engine::lfosPerZone});
+    int maxIndex = std::max({2, engine::processorCount, engine::lfosPerZone});
     for (int idx = 0; idx < maxIndex; ++idx)
     {
         for (int i = vmd_none; i < numVoiceMatrixDestinations; ++i)

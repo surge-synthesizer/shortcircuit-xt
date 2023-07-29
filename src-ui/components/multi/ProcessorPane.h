@@ -56,7 +56,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     dsp::processor::ProcessorStorage processorView;
     dsp::processor::ProcessorControlDescription processorControlDescription;
     int index{0};
-    ProcessorPane(SCXTEditor *, int index);
+    bool forZone{true};
+    ProcessorPane(SCXTEditor *, int index, bool);
     ~ProcessorPane();
 
     void

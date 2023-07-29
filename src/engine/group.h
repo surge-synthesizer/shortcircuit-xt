@@ -37,6 +37,7 @@
 #include "zone.h"
 #include "selection/selection_manager.h"
 #include "datamodel/adsr_storage.h"
+#include "group_and_zone.h"
 #include "bus.h"
 
 namespace scxt::engine
@@ -44,7 +45,7 @@ namespace scxt::engine
 struct Part;
 struct Engine;
 
-struct Group : MoveableOnly<Group>
+struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>
 {
     Group() : id(GroupID::next()), name(id.to_string()) {}
     GroupID id;
@@ -54,8 +55,12 @@ struct Group : MoveableOnly<Group>
 
     BusAddress routeTo{DEFAULT_BUS};
 
+    Engine *getEngine();
+
     float output alignas(16)[2][blockSize];
     void process(Engine &onto);
+
+    void setupOnUnstream(const engine::Engine &e);
 
     // ToDo editable name
     std::string getName() const { return name; }
@@ -117,6 +122,14 @@ struct Group : MoveableOnly<Group>
 
     static constexpr int egPerGroup{2};
     std::array<datamodel::AdsrStorage, egPerGroup> gegStorage;
+
+    void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
+    {
+        if (t != dsp::processor::ProcessorType::proct_none)
+        {
+            SCLOG("Group Processor Changed: " << w << " " << t);
+        }
+    }
 
     uint32_t activeZones{0};
 
