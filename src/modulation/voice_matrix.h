@@ -33,10 +33,13 @@
 #include "utils.h"
 #include "dsp/processor/processor.h"
 
+#include "base_matrix.h"
+
 namespace scxt::engine
 {
 struct Zone;
-}
+struct Group;
+} // namespace scxt::engine
 namespace scxt::voice
 {
 struct Voice;
@@ -44,8 +47,6 @@ struct Voice;
 
 namespace scxt::modulation
 {
-
-static constexpr int numVoiceRoutingSlots{32};
 
 /* These values are not streamed, but the blocks do matter since in the
  * display value conversion we assume that (say) all the EG are together.
@@ -102,16 +103,16 @@ struct VoiceModMatrixDestinationAddress
     // want in order, not index interleaved, so we can look at FP as a block etc...
     operator size_t() const { return (size_t)type + numVoiceMatrixDestinations * index; }
 
+    static constexpr inline size_t destIndex(VoiceModMatrixDestinationType t, size_t idx)
+    {
+        return (size_t)t + numVoiceMatrixDestinations * idx;
+    }
+
     bool operator==(const VoiceModMatrixDestinationAddress &other) const
     {
         return other.type == type && other.index == index;
     }
 };
-
-static inline size_t destIndex(VoiceModMatrixDestinationType type, size_t index)
-{
-    return (size_t)type + numVoiceMatrixDestinations * index;
-}
 
 std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationType &dest);
 std::optional<VoiceModMatrixDestinationType>
@@ -138,18 +139,6 @@ enum VoiceModMatrixSource
 std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest);
 std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s);
 
-enum VoiceModMatrixCurve
-{
-    vmc_none,
-    vmc_cube,
-
-    numVoiceMatrixCurves
-};
-
-std::string getVoiceModMatrixCurveStreamingName(const VoiceModMatrixCurve &);
-std::optional<VoiceModMatrixCurve> fromVoiceModMatrixCurveStreamingName(const std::string &);
-std::string getVoiceModMatrixCurveDisplayName(const VoiceModMatrixCurve &dest);
-
 std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest);
 // Destinations require a zone since we need to interrogate the processors
 std::optional<std::string>
@@ -161,75 +150,33 @@ typedef std::vector<std::pair<VoiceModMatrixDestinationAddress, std::string>>
 voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &);
 typedef std::vector<std::pair<VoiceModMatrixSource, std::string>> voiceModMatrixSourceNames_t;
 voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z);
-typedef std::vector<std::pair<VoiceModMatrixCurve, std::string>> voiceModMatrixCurveNames_t;
-voiceModMatrixCurveNames_t getVoiceModMatrixCurveNames(const engine::Zone &z);
 
 typedef std::tuple<bool, voiceModMatrixSourceNames_t, voiceModMatrixDestinationNames_t,
-                   voiceModMatrixCurveNames_t>
+                   modMatrixCurveNames_t>
     voiceModMatrixMetadata_t;
 inline voiceModMatrixMetadata_t getVoiceModMatrixMetadata(const engine::Zone &z)
 {
     return {true, getVoiceModMatrixSourceNames(z), getVoiceModulationDestinationNames(z),
-            getVoiceModMatrixCurveNames(z)};
+            getModMatrixCurveNames()};
 }
 
-struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>
+struct VoiceModMatrixTraits
+{
+    typedef VoiceModMatrixSource SourceEnum;
+    static constexpr SourceEnum SourceEnumNoneValue{vms_none};
+    typedef VoiceModMatrixDestinationAddress DestAddress;
+    typedef VoiceModMatrixDestinationType DestEnum;
+    static constexpr DestEnum DestEnumNoneValue{vmd_none};
+};
+
+struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>, ModMatrix<VoiceModMatrixTraits>
 {
     VoiceModMatrix() { clear(); }
-    struct Routing
-    {
-        bool active{true};
-        bool selConsistent{true};
-        VoiceModMatrixSource src{vms_none};
-        VoiceModMatrixSource srcVia{vms_none};
-        VoiceModMatrixDestinationAddress dst{vmd_none};
-        VoiceModMatrixCurve curve{vmc_none};
-        // TODO curves
-        float depth{0};
 
-        bool operator==(const Routing &other) const
-        {
-            return src == other.src && dst == other.dst && depth == other.depth;
-        }
-        bool operator!=(const Routing &other) const { return !(*this == other); }
-    };
-
-    typedef std::array<Routing, numVoiceRoutingSlots> routingTable_t;
-    routingTable_t routingTable;
-
-    float *getValuePtr(const VoiceModMatrixDestinationAddress &dest)
-    {
-        return &modulatedValues[dest];
-    }
-
-    float *getValuePtr(const VoiceModMatrixDestinationType &type, size_t index)
-    {
-        return &modulatedValues[destIndex(type, index)];
-    }
-
-    float getValue(const VoiceModMatrixDestinationAddress &dest) const
-    {
-        return modulatedValues[dest];
-    }
-
-    float getValue(const VoiceModMatrixDestinationType &type, size_t index) const
-    {
-        return modulatedValues[destIndex(type, index)];
-    }
-
-    void clear();
     void snapRoutingFromZone(engine::Zone *z);
     void snapDepthScalesFromZone(engine::Zone *z);
     void copyBaseValuesFromZone(engine::Zone *z);
     void attachSourcesFromVoice(voice::Voice *v);
-    void initializeModulationValues();
-    void process();
-
-  protected:
-    float *sourcePointers[VoiceModMatrixDestinationAddress::maxDestinations];
-    float depthScales[VoiceModMatrixDestinationAddress::maxDestinations];
-    float baseValues[VoiceModMatrixDestinationAddress::maxDestinations];
-    float modulatedValues[VoiceModMatrixDestinationAddress::maxDestinations];
 };
 } // namespace scxt::modulation
 

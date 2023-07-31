@@ -281,7 +281,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
         auto rtArray = toIndexedArrayIf<Traits>(t.routingTable, [](const auto &r) {
             // TODO we really don't need this we should just stream the table
             return (r.dst != scxt::modulation::vmd_none || r.src != scxt::modulation::vms_none ||
-                    r.depth != 0 || !r.active || r.curve != scxt::modulation::vmc_none);
+                    r.depth != 0 || !r.active || r.curve != scxt::modulation::modc_none);
         });
 
         v = {{"sampleData", t.sampleData}, {"mappingData", t.mapping},
