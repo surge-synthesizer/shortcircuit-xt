@@ -28,4 +28,72 @@
 #ifndef SCXT_SRC_MODULATION_GROUP_MATRIX_H
 #define SCXT_SRC_MODULATION_GROUP_MATRIX_H
 
+#include <string>
+#include <array>
+#include "utils.h"
+#include "base_matrix.h"
+
+namespace scxt::engine
+{
+struct Group;
+} // namespace scxt::engine
+
+namespace scxt::modulation
+{
+
+enum GroupModMatrixSource
+{
+    gms_none,
+
+    numGroupMatrixSources
+};
+
+enum GroupModMatrixDestinationType
+{
+    gmd_none,
+
+    numGroupMatrixDestinations
+};
+
+std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationType &dest);
+std::optional<GroupModMatrixDestinationType>
+fromGroupModMatrixDestStreamingName(const std::string &s);
+
+std::string getGroupModMatrixSourceStreamingName(const GroupModMatrixSource &dest);
+std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const std::string &s);
+
+struct GroupModMatrixDestinationAddress
+{
+    static constexpr int maxIndex{4}; // 4 processors per zone
+    static constexpr int maxDestinations{maxIndex * numGroupMatrixDestinations};
+    GroupModMatrixDestinationType type{gmd_none};
+    size_t index{0};
+
+    // want in order, not index interleaved, so we can look at FP as a block etc...
+    operator size_t() const { return (size_t)type + numGroupMatrixDestinations * index; }
+
+    static constexpr inline size_t destIndex(GroupModMatrixDestinationType t, size_t idx)
+    {
+        return (size_t)t + numGroupMatrixDestinations * idx;
+    }
+
+    bool operator==(const GroupModMatrixDestinationAddress &other) const
+    {
+        return other.type == type && other.index == index;
+    }
+};
+struct GroupModMatrixTraits
+{
+    static constexpr int numModMatrixSlots{6};
+    typedef GroupModMatrixSource SourceEnum;
+    static constexpr SourceEnum SourceEnumNoneValue{gms_none};
+    typedef GroupModMatrixDestinationAddress DestAddress;
+    typedef GroupModMatrixDestinationType DestEnum;
+    static constexpr DestEnum DestEnumNoneValue{gmd_none};
+};
+struct GroupModMatrix : public MoveableOnly<GroupModMatrix>, ModMatrix<GroupModMatrixTraits>
+{
+    GroupModMatrix() { clear(); }
+};
+} // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_GROUP_MATRIX_H

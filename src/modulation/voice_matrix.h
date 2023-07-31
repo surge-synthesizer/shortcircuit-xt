@@ -38,7 +38,6 @@
 namespace scxt::engine
 {
 struct Zone;
-struct Group;
 } // namespace scxt::engine
 namespace scxt::voice
 {
@@ -162,6 +161,7 @@ inline voiceModMatrixMetadata_t getVoiceModMatrixMetadata(const engine::Zone &z)
 
 struct VoiceModMatrixTraits
 {
+    static constexpr int numModMatrixSlots{12};
     typedef VoiceModMatrixSource SourceEnum;
     static constexpr SourceEnum SourceEnumNoneValue{vms_none};
     typedef VoiceModMatrixDestinationAddress DestAddress;

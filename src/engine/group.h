@@ -39,6 +39,7 @@
 #include "datamodel/adsr_storage.h"
 #include "group_and_zone.h"
 #include "bus.h"
+#include "modulation/group_matrix.h"
 
 namespace scxt::engine
 {
@@ -49,6 +50,9 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>
 {
     Group() : id(GroupID::next()), name(id.to_string()) {}
     GroupID id;
+
+    modulation::GroupModMatrix::routingTable_t routingTable;
+    modulation::GroupModMatrix modMatrix;
 
     std::string name{};
     Part *parentPart{nullptr};

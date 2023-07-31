@@ -50,8 +50,6 @@ std::string getModMatrixCurveDisplayName(const ModMatrixCurve &dest);
 typedef std::vector<std::pair<ModMatrixCurve, std::string>> modMatrixCurveNames_t;
 modMatrixCurveNames_t getModMatrixCurveNames();
 
-static constexpr int numModMatrixSlots{32};
-
 template <typename T> struct ModMatrix
 {
     static_assert(std::is_enum<typename T::SourceEnum>::value, "Trait class must define a source");
@@ -68,6 +66,8 @@ template <typename T> struct ModMatrix
     static_assert(std::is_integral<decltype(T::DestAddress::maxDestinations)>::value,
                   "Dest Address myst define maxDestinations");
 
+    static_assert(std::is_integral<decltype(T::numModMatrixSlots)>::value,
+                  "T must define slot count");
     struct Routing
     {
         bool active{true};
@@ -86,7 +86,7 @@ template <typename T> struct ModMatrix
         bool operator!=(const Routing &other) const { return !(*this == other); }
     };
 
-    typedef std::array<Routing, numModMatrixSlots> routingTable_t;
+    typedef std::array<Routing, T::numModMatrixSlots> routingTable_t;
     routingTable_t routingTable;
 
     float *getValuePtr(const typename T::DestAddress &dest) { return &modulatedValues[dest]; }
