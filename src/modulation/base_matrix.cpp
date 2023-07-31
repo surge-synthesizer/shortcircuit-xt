@@ -25,6 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <stdexcept>
 #include "base_matrix.h"
 
 namespace scxt::modulation
