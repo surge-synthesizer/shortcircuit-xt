@@ -27,11 +27,15 @@
 #ifndef SCXT_SRC_ENGINE_GROUP_H
 #define SCXT_SRC_ENGINE_GROUP_H
 
+#include <infrastructure/sse_include.h>
+
 #include <memory>
 #include <vector>
 #include <cassert>
 
 #include <sst/cpputils.h>
+#include <sst/basic-blocks/modulators/AHDSRShapedSC.h>
+#include <sst/basic-blocks/dsp/BlockInterpolators.h>
 
 #include "utils.h"
 #include "zone.h"
@@ -46,13 +50,12 @@ namespace scxt::engine
 struct Part;
 struct Engine;
 
-struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>
+constexpr int lfosPerGroup{3};
+
+struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSupport
 {
     Group() : id(GroupID::next()), name(id.to_string()) {}
     GroupID id;
-
-    modulation::GroupModMatrix::routingTable_t routingTable;
-    modulation::GroupModMatrix modMatrix;
 
     std::string name{};
     Part *parentPart{nullptr};
@@ -124,8 +127,38 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>
     void addActiveZone();
     void removeActiveZone();
 
+    /*
+     * One of the core differences between zone and group is, since group is monophonic,
+     * it contains both the data for the process evaluators and also the evaluators themselves
+     * whereas with zone the zone is the data, but it contains a set of voices related to that
+     * data. Just something to think about as you read the code here!
+     */
+    float level{1.f};
+    using lipol = sst::basic_blocks::dsp::lipol_sse<blockSize, false>;
+
+    lipol levelBlk;
+
     static constexpr int egPerGroup{2};
-    std::array<datamodel::AdsrStorage, egPerGroup> gegStorage;
+    std::array<datamodel::AdsrStorage, egPerGroup> gegStorage{};
+    typedef sst::basic_blocks::modulators::AHDSRShapedSC<
+        Group, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
+        ahdsrenv_t;
+    std::array<ahdsrenv_t, egPerGroup> gegEvaluators{this, this};
+    std::array<bool, egPerGroup> gegUsed{};
+
+    std::array<modulation::modulators::StepLFOStorage, lfosPerGroup> lfoStorage;
+    std::array<bool, lfosPerGroup> lfoUsed{};
+
+    modulation::GroupModMatrix::routingTable_t routingTable;
+    modulation::GroupModMatrix modMatrix;
+
+    // TODO obviously this sucks move to a table. Also its copied in voice
+    inline float envelope_rate_linear_nowrap(float f)
+    {
+        return blockSize * sampleRateInv * pow(2.f, -f);
+    }
+
+    bool anyModulatorUsed{false};
 
     void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
     {

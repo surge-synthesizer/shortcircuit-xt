@@ -31,15 +31,32 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
 #include "modulation/voice_matrix.h"
+#include "modulation/group_matrix.h"
 
 namespace scxt::ui::multi
 {
-struct ModRow;
 
-struct ModPane : sst::jucegui::components::NamedPanel, HasEditor
+struct ModPaneZoneTraits
+{
+    static constexpr bool forZone{true};
+    using metadata = scxt::modulation::voiceModMatrixMetadata_t;
+    using routing = scxt::modulation::VoiceModMatrix::routingTable_t;
+};
+
+struct ModPaneGroupTraits
+{
+    static constexpr bool forZone{false};
+    using metadata = scxt::modulation::groupModMatrixMetadata_t;
+    using routing = scxt::modulation::GroupModMatrix::routingTable_t;
+};
+
+template <typename GZTrait> struct ModRow;
+
+// We will explicity instantiate these on the trait in ModPane.cpp
+template <typename GZTrait> struct ModPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     static constexpr int numRowsOnScreen{6};
-    ModPane(SCXTEditor *e);
+    ModPane(SCXTEditor *e, bool forZone);
     ~ModPane();
 
     void resized() override;
@@ -48,11 +65,12 @@ struct ModPane : sst::jucegui::components::NamedPanel, HasEditor
     void refreshMatrix(); // new routing table, no new components
     void setActive(bool b);
 
-    std::array<std::unique_ptr<ModRow>, numRowsOnScreen> rows;
+    std::array<std::unique_ptr<ModRow<GZTrait>>, numRowsOnScreen> rows;
 
-    scxt::modulation::voiceModMatrixMetadata_t matrixMetadata;
-    scxt::modulation::VoiceModMatrix::routingTable_t routingTable;
+    typename GZTrait::metadata matrixMetadata;
+    typename GZTrait::routing routingTable;
 
+    bool forZone{GZTrait::forZone};
     int tabRange{0};
 };
 } // namespace scxt::ui::multi

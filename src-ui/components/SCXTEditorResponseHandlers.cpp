@@ -139,27 +139,56 @@ void SCXTEditor::onZoneProcessorDataMismatch(
 void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &d)
 {
     const auto &[active, sinf, dinf, cinf] = d;
-    multiScreen->getZoneElements()->mod->setActive(active);
+    multiScreen->getZoneElements()->zoneMod()->setActive(active);
     if (active)
     {
-        multiScreen->getZoneElements()->mod->matrixMetadata = d;
-        multiScreen->getZoneElements()->mod->rebuildMatrix();
+        multiScreen->getZoneElements()->zoneMod()->matrixMetadata = d;
+        multiScreen->getZoneElements()->zoneMod()->rebuildMatrix();
     }
 }
 
 void SCXTEditor::onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &t)
 {
     assert(multiScreen->getZoneElements()
-               ->mod->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
-    multiScreen->getZoneElements()->mod->routingTable = t;
-    multiScreen->getZoneElements()->mod->refreshMatrix();
+               ->zoneMod()
+               ->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
+    multiScreen->getZoneElements()->zoneMod()->routingTable = t;
+    multiScreen->getZoneElements()->zoneMod()->refreshMatrix();
 }
 
-void SCXTEditor::onZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &payload)
+void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &d)
 {
-    const auto &[active, i, r] = payload;
-    multiScreen->getZoneElements()->lfo->setActive(i, active);
-    multiScreen->getZoneElements()->lfo->setLfo(i, r);
+    const auto &[active, sinf, dinf, cinf] = d;
+    multiScreen->getGroupElements()->groupMod()->setActive(active);
+    if (active)
+    {
+        multiScreen->getGroupElements()->groupMod()->matrixMetadata = d;
+        multiScreen->getGroupElements()->groupMod()->rebuildMatrix();
+    }
+}
+
+void SCXTEditor::onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTable_t &t)
+{
+    assert(multiScreen->getGroupElements()
+               ->groupMod()
+               ->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
+    multiScreen->getGroupElements()->groupMod()->routingTable = t;
+    multiScreen->getGroupElements()->groupMod()->refreshMatrix();
+}
+
+void SCXTEditor::onGroupOrZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &payload)
+{
+    const auto &[forZone, active, i, r] = payload;
+    if (forZone)
+    {
+        multiScreen->getZoneElements()->lfo->setActive(i, active);
+        multiScreen->getZoneElements()->lfo->setLfo(i, r);
+    }
+    else
+    {
+        multiScreen->getGroupElements()->lfo->setActive(i, active);
+        multiScreen->getGroupElements()->lfo->setLfo(i, r);
+    }
 }
 
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)

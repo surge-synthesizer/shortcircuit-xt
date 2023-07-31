@@ -152,7 +152,8 @@ struct LfoDataRender : juce::Component
     }
 }; // namespace juce::Component
 
-LfoPane::LfoPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
+LfoPane::LfoPane(SCXTEditor *e, bool fz)
+    : sst::jucegui::components::NamedPanel(""), HasEditor(e), forZone(fz)
 {
     setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
     hasHamburger = true;
@@ -370,7 +371,8 @@ namespace cmsg = scxt::messaging::client;
 
 void LfoPane::pushCurrentLfoUpdate()
 {
-    sendToSerialization(cmsg::IndexedLfoUpdated({true, selectedTab, lfoData[selectedTab]}));
+    sendToSerialization(
+        cmsg::IndexedLfoUpdated({forZone, true, selectedTab, lfoData[selectedTab]}));
     repaint();
 }
 

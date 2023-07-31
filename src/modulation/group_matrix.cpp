@@ -26,6 +26,7 @@
  */
 
 #include "group_matrix.h"
+#include "engine/group.h"
 #include <stdexcept>
 
 namespace scxt::modulation
@@ -37,6 +38,9 @@ std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationTy
     {
     case gmd_none:
         return "gmd_none";
+
+    case gmd_grouplevel:
+        return "gmd_grouplevel";
 
     case numGroupMatrixDestinations:
         throw std::logic_error("Can't convert numGroupMatrixDestinations to string");
@@ -62,7 +66,17 @@ std::string getGroupModMatrixSourceStreamingName(const GroupModMatrixSource &des
     switch (dest)
     {
     case gms_none:
-        return "vms_none";
+        return "gms_none";
+    case gms_EG1:
+        return "gms_EG1";
+    case gms_EG2:
+        return "gms_EG2";
+    case gms_LFO1:
+        return "gms_LFO1";
+    case gms_LFO2:
+        return "gms_LFO2";
+    case gms_LFO3:
+        return "gms_LFO3";
 
     case numGroupMatrixSources:
         throw std::logic_error("Don't call with numGroupMatrixSources");
@@ -82,4 +96,115 @@ std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const 
     return gms_none;
 }
 
+void GroupModMatrix::copyBaseValuesFromGroup(engine::Group &g)
+{
+    baseValues[destIndex(gmd_grouplevel, 0)] = g.level;
+}
+
+void GroupModMatrix::updateModulatorUsed(engine::Group &g) const
+{
+    // TODO: Call this only when the mod matrix morphs. For now run them all
+    g.gegUsed[0] = true;
+    g.gegUsed[1] = true;
+    g.lfoUsed[0] = false;
+    g.lfoUsed[1] = false;
+    g.lfoUsed[2] = false;
+
+    g.anyModulatorUsed = true;
+}
+
+std::string getGroupModMatrixSourceDisplayName(const GroupModMatrixSource &dest)
+{
+    switch (dest)
+    {
+    case gms_none:
+        return "";
+
+    case gms_EG1:
+        return "Grp EG1";
+    case gms_EG2:
+        return "Grp EG2";
+
+    case gms_LFO1:
+        return "Grp LFO1";
+    case gms_LFO2:
+        return "Grp LFO2";
+    case gms_LFO3:
+        return "Grp LFO3";
+
+    case numGroupMatrixSources:
+        throw std::logic_error("Don't call with numGroupMatrixSources");
+    }
+
+    throw std::logic_error("Mysterious unhandled condition");
+}
+
+groupModMatrixSourceNames_t getGroupModMatrixSourceNames(const engine::Group &g)
+{
+    groupModMatrixSourceNames_t res;
+    for (int s = (int)gms_none; s < numGroupMatrixSources; ++s)
+    {
+        auto gms = (GroupModMatrixSource)s;
+        res.emplace_back(gms, getGroupModMatrixSourceDisplayName(gms));
+    }
+    return res;
+}
+
+int getGroupModMatrixDestIndexCount(const GroupModMatrixDestinationType &t)
+{
+    switch (t)
+    {
+    case gmd_grouplevel:
+        return 1;
+
+    default:
+        return 1;
+    }
+}
+
+std::optional<std::string>
+getGroupModMatrixDestDisplayName(const GroupModMatrixDestinationAddress &dest,
+                                 const engine::Group &g)
+{
+    // TODO: This is obviously .... wrong
+    /*
+     * These are a bit trickier since they are indexed so
+     */
+    const auto &[gmd, idx] = dest;
+
+    if (gmd == gmd_none)
+    {
+        return "";
+    }
+
+    if (gmd == gmd_grouplevel)
+    {
+        return "Output/Level";
+    }
+    assert(false);
+    return fmt::format("ERR {} {}", gmd, idx);
+}
+
+groupModMatrixDestinationNames_t getGroupModulationDestinationNames(const engine::Group &g)
+{
+    groupModMatrixDestinationNames_t res;
+    // TODO code this way better - index on the 'outside' sorts but is inefficient
+    int maxIndex = std::max({2, engine::processorCount, engine::lfosPerGroup});
+    for (int idx = 0; idx < maxIndex; ++idx)
+    {
+        for (int i = gmd_none; i < numGroupMatrixDestinations; ++i)
+        {
+            auto vd = (GroupModMatrixDestinationType)i;
+            auto ic = getGroupModMatrixDestIndexCount(vd);
+            if (idx < ic)
+            {
+                auto addr = GroupModMatrixDestinationAddress{vd, (size_t)idx};
+                auto dn = getGroupModMatrixDestDisplayName(addr, g);
+                if (dn.has_value())
+                    res.emplace_back(addr, *dn);
+            }
+        }
+    }
+    return res;
+}
 } // namespace scxt::modulation

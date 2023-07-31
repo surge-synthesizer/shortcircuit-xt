@@ -50,22 +50,61 @@ void Group::process(Engine &e)
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
 
+    // When we have alternate group routing we change these pointers
+    assert(routeTo == DEFAULT_BUS);
+    float *lOut = output[0];
+    float *rOut = output[1];
+
+    modMatrix.updateModulatorUsed(*this);
+    modMatrix.copyBaseValuesFromGroup(*this);
+    modMatrix.initializeModulationValues();
+
+    if (anyModulatorUsed)
+    {
+        bool gated{false};
+        for (const auto &z : zones)
+        {
+            gated = gated || (z->gatedVoiceCount > 0);
+        }
+
+        for (int i = 0; i < egPerGroup; ++i)
+        {
+            if (!gegUsed[i])
+                continue;
+            auto &eg = gegEvaluators[i];
+            auto &egs = gegStorage[i];
+            if (gated && eg.stage > ahdsrenv_t::s_hold)
+            {
+                eg.attackFrom(eg.outBlock0);
+            }
+            // fixme - put these all in the mod matrix
+            eg.processBlock(egs.a, egs.h, egs.d, egs.s, egs.r, egs.aShape, egs.dShape, egs.rShape,
+                            gated);
+        }
+
+        // for LFO
+        // -- if matrix consumes lfo
+        // ---- process}
+
+        modMatrix.process();
+    }
+
     for (const auto &z : zones)
     {
         if (z->isActive())
         {
             z->process(e);
-            if (routeTo == DEFAULT_BUS)
-            {
-                blk::accumulate_from_to<blockSize>(z->output[0], output[0]);
-                blk::accumulate_from_to<blockSize>(z->output[1], output[1]);
-            }
-            else
-            {
-                assert(false);
-            }
+            blk::accumulate_from_to<blockSize>(z->output[0], lOut);
+            blk::accumulate_from_to<blockSize>(z->output[1], rOut);
         }
     }
+
+    // for processor do the necessary
+
+    // multiply by vca level from matrix
+    auto mlev = modMatrix.getValue(modulation::gmd_grouplevel, 0);
+    levelBlk.set_target(mlev);
+    levelBlk.multiply_2_blocks(lOut, rOut);
 }
 
 void Group::addActiveZone()

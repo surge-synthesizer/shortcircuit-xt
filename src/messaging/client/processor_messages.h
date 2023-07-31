@@ -81,7 +81,7 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
                         *(engine.getMessageController()));
                     /*
                     serializationSendToClient(
-                        messaging::client::s2c_update_zone_voice_matrix_metadata,
+                        messaging::client::s2c_update_zone_matrix_metadata,
                         modulation::getVoiceModMatrixMetadata(*z),
                         *(engine.getMessageController()));*/
                 });
@@ -115,10 +115,9 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
                             true, which, true, z->processorDescription[which],
                             z->processorStorage[which]},
                         *(engine.getMessageController()));
-                    serializationSendToClient(
-                        messaging::client::s2c_update_zone_voice_matrix_metadata,
-                        modulation::getVoiceModMatrixMetadata(*z),
-                        *(engine.getMessageController()));
+                    serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
+                                              modulation::getVoiceModMatrixMetadata(*z),
+                                              *(engine.getMessageController()));
                 });
         }
     }

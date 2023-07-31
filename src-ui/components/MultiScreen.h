@@ -42,7 +42,10 @@ struct AdsrPane;
 struct OutputPane;
 struct PartGroupSidebar;
 struct MappingPane;
-struct ModPane;
+
+struct ModPaneZoneTraits;
+struct ModPaneGroupTraits;
+template <typename T> struct ModPane;
 struct ProcessorPane;
 struct LfoPane;
 } // namespace multi
@@ -78,7 +81,22 @@ struct MultiScreen : juce::Component, HasEditor
         std::unique_ptr<multi::OutputPane> output;
         std::unique_ptr<multi::LfoPane> lfo;
         std::unique_ptr<multi::AdsrPane> eg[2];
-        std::unique_ptr<multi::ModPane> mod;
+        std::variant<std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>>,
+                     std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>>>
+            modvariant;
+
+        juce::Component *modComponent();
+        const std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>> &zoneMod()
+        {
+            assert(index == ZoneGroupIndex::ZONE);
+            return std::get<0>(modvariant);
+        }
+
+        const std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>> &groupMod()
+        {
+            assert(index == ZoneGroupIndex::GROUP);
+            return std::get<1>(modvariant);
+        }
         std::unique_ptr<multi::ProcessorPane> processors[numProcessorDisplays];
 
         void setVisible(bool b);

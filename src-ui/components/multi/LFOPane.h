@@ -53,8 +53,10 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     typedef connectors::BooleanPayloadDataAttachment<modulation::modulators::StepLFOStorage>
         boolAttachment_t;
 
-    LfoPane(SCXTEditor *);
+    LfoPane(SCXTEditor *, bool forZone);
     ~LfoPane();
+
+    bool forZone{true};
 
     void tabChanged(int i);
 

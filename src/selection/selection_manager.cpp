@@ -258,10 +258,15 @@ void SelectionManager::debugDumpSelectionState()
 {
 #if DEBUG_SELECTION
     SCLOG("---------------------------");
-    SCLOG(SCD(leadZone));
-    SCLOG("All Selected Zones");
-    for (const auto &s : allSelectedZones)
-        SCLOG("    - " << s);
+    SCLOG("ZONES: Selected=" << allSelectedZones.size());
+    SCLOG("   LEAD ZONE : " << leadZone);
+    for (const auto &z : allSelectedZones)
+        SCLOG("      Z Selected : " << z);
+
+    SCLOG("GROUPS: Selected=" << allSelectedGroups.size());
+    SCLOG("   LEAD GROUP : " << leadGroup);
+    for (const auto &z : allSelectedGroups)
+        SCLOG("      G Selected : " << z);
     SCLOG("---------------------------");
 #endif
 }
@@ -270,15 +275,7 @@ void SelectionManager::sendSelectedZonesToClient()
 {
 #if DEBUG_SELECTION
     SCLOG("Sending selection data to client");
-
-    SCLOG("ZONES: Selected=" << allSelectedZones.size());
-    SCLOG("   LEAD ZONE : " << leadZone);
-    for (const auto &z : allSelectedZones)
-        SCLOG("      Z Selected : " << z);
-
-    SCLOG("GROUPS: Selected=" << allSelectedGroups.size());
-    for (const auto &z : allSelectedGroups)
-        SCLOG("      G Selected : " << z);
+    debugDumpSelectionState();
 #endif
 
     serializationSendToClient(
@@ -380,8 +377,8 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
-        serializationSendToClient(cms::s2c_update_zone_individual_lfo,
-                                  cms::indexedLfoUpdate_t{true, i, zp->lfoStorage[i]},
+        serializationSendToClient(cms::s2c_update_group_or_zone_individual_lfo,
+                                  cms::indexedLfoUpdate_t{true, true, i, zp->lfoStorage[i]},
                                   *(engine.getMessageController()));
     }
 
@@ -417,10 +414,10 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     {
         for (auto &row : zp->routingTable)
             row.selConsistent = true;
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
                                   modulation::getVoiceModMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix, zp->routingTable,
+        serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
                                   *(engine.getMessageController()));
         serializationSendToClient(cms::s2c_update_zone_output_info,
                                   cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
@@ -449,10 +446,12 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                 row.selConsistent = row.selConsistent && same;
             }
         }
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+
+        // TODO: Make this zone or group based
+        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
                                   modulation::getVoiceModMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_voice_matrix, rt,
+        serializationSendToClient(cms::s2c_update_zone_matrix, rt,
                                   *(engine.getMessageController()));
 
         SCLOG_ONCE("WARNING: Multi-Select Zone Consistency Output Calculation not complete");
@@ -484,7 +483,7 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
             cms::ProcessorMetadataAndData::s2c_payload_t{true, i, false, {}, {}},
             *(engine.getMessageController()));
     }
-    serializationSendToClient(cms::s2c_update_zone_voice_matrix_metadata,
+    serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
                               modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
                               *(engine.getMessageController()));
     serializationSendToClient(cms::s2c_update_zone_output_info,
@@ -503,6 +502,13 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
             *(engine.getMessageController()));
     }
 
+    for (int i = 0; i < engine::lfosPerZone; ++i)
+    {
+        serializationSendToClient(cms::s2c_update_group_or_zone_individual_lfo,
+                                  cms::indexedLfoUpdate_t{false, true, i, g->lfoStorage[i]},
+                                  *(engine.getMessageController()));
+    }
+
     for (int i = 0; i < engine::processorCount; ++i)
     {
         serializationSendToClient(
@@ -511,6 +517,12 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
                                                          g->processorStorage[i]},
             *(engine.getMessageController()));
     }
+
+    auto &rt = g->routingTable;
+    serializationSendToClient(cms::s2c_update_group_matrix_metadata,
+                              modulation::getGroupModMatrixMetadata(*g),
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_group_matrix, rt, *(engine.getMessageController()));
 }
 
 void SelectionManager::sendDisplayDataForNoGroupSelected()

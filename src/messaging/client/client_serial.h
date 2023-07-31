@@ -50,8 +50,9 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_mapping,
     c2s_update_zone_samples,
     c2s_update_zone_routing_row,
+    c2s_update_group_routing_row,
 
-    c2s_update_individual_lfo,
+    c2s_update_group_or_zone_individual_lfo,
 
     c2s_request_pgz_structure,
 
@@ -91,9 +92,11 @@ enum SerializationToClientMessageIds
     s2c_respond_zone_samples,
     s2c_send_pgz_structure,
     s2c_send_all_processor_descriptions,
-    s2c_update_zone_voice_matrix_metadata,
-    s2c_update_zone_voice_matrix,
-    s2c_update_zone_individual_lfo,
+    s2c_update_zone_matrix_metadata,
+    s2c_update_zone_matrix,
+    s2c_update_group_matrix_metadata,
+    s2c_update_group_matrix,
+    s2c_update_group_or_zone_individual_lfo,
     s2c_update_zone_output_info,
 
     s2c_respond_single_processor_metadata_and_data,
