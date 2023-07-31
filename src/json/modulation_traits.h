@@ -79,22 +79,22 @@ template <> struct scxt_traits<modulation::VoiceModMatrixSource>
     }
 };
 
-template <> struct scxt_traits<modulation::VoiceModMatrixCurve>
+template <> struct scxt_traits<modulation::ModMatrixCurve>
 {
     template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const modulation::VoiceModMatrixCurve &t)
+    static void assign(tao::json::basic_value<Traits> &v, const modulation::ModMatrixCurve &t)
     {
-        auto sn = scxt::modulation::getVoiceModMatrixCurveStreamingName(t);
+        auto sn = scxt::modulation::getModMatrixCurveStreamingName(t);
         v = {{"vmc_name", sn}};
     }
 
     template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, modulation::VoiceModMatrixCurve &t)
+    static void to(const tao::json::basic_value<Traits> &v, modulation::ModMatrixCurve &t)
     {
         std::string tsn;
         findIf(v, "vmc_name", tsn);
-        t = scxt::modulation::fromVoiceModMatrixCurveStreamingName(tsn).value_or(
-            scxt::modulation::vmc_none);
+        t = scxt::modulation::fromModMatrixCurveStreamingName(tsn).value_or(
+            scxt::modulation::modc_none);
     }
 };
 
@@ -118,7 +118,7 @@ template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
         findIf(v, "src", result.src);
         findIf(v, "srcVia", result.srcVia);
         findIf(v, "dst", result.dst);
-        findOrSet(v, "curve", modulation::vmc_none, result.curve);
+        findOrSet(v, "curve", modulation::modc_none, result.curve);
         findIf(v, "depth", result.depth);
     }
 };

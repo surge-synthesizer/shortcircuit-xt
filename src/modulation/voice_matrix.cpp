@@ -31,17 +31,9 @@
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"
-#include "engine/group.h"
-#include "engine/part.h"
 
 namespace scxt::modulation
 {
-void VoiceModMatrix::clear()
-{
-    memset(sourcePointers, 0, sizeof(sourcePointers));
-    memset(baseValues, 0, sizeof(baseValues));
-    memset(modulatedValues, 0, sizeof(modulatedValues));
-}
 
 void VoiceModMatrix::snapRoutingFromZone(engine::Zone *z) { routingTable = z->routingTable; }
 
@@ -135,31 +127,6 @@ void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
     sourcePointers[vms_AEG] = &(v->aeg.outBlock0);
     sourcePointers[vms_EG2] = &(v->eg2.outBlock0);
     sourcePointers[vms_ModWheel] = &(v->zone->parentGroup->parentPart->midiCCSmoothers[1].output);
-}
-
-void VoiceModMatrix::initializeModulationValues()
-{
-    memcpy(modulatedValues, baseValues, sizeof(modulatedValues));
-}
-
-void VoiceModMatrix::process()
-{
-    memcpy(modulatedValues, baseValues, sizeof(modulatedValues));
-    for (const auto &r : routingTable)
-    {
-        if (!r.active)
-            continue;
-        if (r.dst.type == vmd_none || r.src == vms_none)
-            continue;
-        if (!sourcePointers[r.src])
-            continue;
-        float viaval = 1.0;
-        if (r.srcVia != vms_none)
-            viaval = *(sourcePointers[r.srcVia]);
-
-        modulatedValues[r.dst] +=
-            (*(sourcePointers[r.src])) * viaval * r.depth * depthScales[r.dst];
-    }
 }
 
 std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationType &dest)
@@ -283,33 +250,6 @@ std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const 
     return vms_none;
 }
 
-std::string getVoiceModMatrixCurveStreamingName(const VoiceModMatrixCurve &dest)
-{
-    switch (dest)
-    {
-    case vmc_none:
-        return "vmc_none";
-    case vmc_cube:
-        return "vmc_cube";
-
-    case numVoiceMatrixCurves:
-        throw std::logic_error("Don't call with numVoiceMatrixCurves");
-    }
-
-    throw std::logic_error("Mysterious unhandled condition");
-}
-std::optional<VoiceModMatrixCurve> fromVoiceModMatrixCurveStreamingName(const std::string &s)
-{
-    for (int i = vmc_none; i < numVoiceMatrixCurves; ++i)
-    {
-        if (getVoiceModMatrixCurveStreamingName((VoiceModMatrixCurve)i) == s)
-        {
-            return ((VoiceModMatrixCurve)i);
-        }
-    }
-    return vmc_none;
-}
-
 std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
 {
     switch (dest)
@@ -333,22 +273,6 @@ std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
 
     case numVoiceMatrixSources:
         throw std::logic_error("Don't call with numVoiceMatrixSources");
-    }
-
-    throw std::logic_error("Mysterious unhandled condition");
-}
-
-std::string getVoiceModMatrixCurveDisplayName(const VoiceModMatrixCurve &dest)
-{
-    switch (dest)
-    {
-    case vmc_none:
-        return "";
-    case vmc_cube:
-        return "Cube";
-
-    case numVoiceMatrixCurves:
-        throw std::logic_error("Don't call with numVoiceMatrixCurves");
     }
 
     throw std::logic_error("Mysterious unhandled condition");
@@ -517,14 +441,4 @@ voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z)
     return res;
 }
 
-voiceModMatrixCurveNames_t getVoiceModMatrixCurveNames(const engine::Zone &)
-{
-    voiceModMatrixCurveNames_t res;
-    for (int s = (int)vmc_none; s < numVoiceMatrixCurves; ++s)
-    {
-        auto vms = (VoiceModMatrixCurve)s;
-        res.emplace_back(vms, getVoiceModMatrixCurveDisplayName(vms));
-    }
-    return res;
-}
 } // namespace scxt::modulation
