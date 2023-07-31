@@ -141,6 +141,7 @@ template <> struct scxt_traits<scxt::engine::Group>
     {
         v = {{"zones", t.getZones()},
              {"name", t.getName()},
+             {"routingTable", t.routingTable},
              {"gegStorage", t.gegStorage},
              {"processorStorage", t.processorStorage}};
     }
@@ -151,6 +152,7 @@ template <> struct scxt_traits<scxt::engine::Group>
         findIf(v, "name", group.name);
         findIf(v, "gegStorage", group.gegStorage);
         findIf(v, "processorStorage", group.processorStorage);
+        findIf(v, "routingTable", group.routingTable);
         group.clearZones();
 
         auto vzones = v.at("zones").get_array();

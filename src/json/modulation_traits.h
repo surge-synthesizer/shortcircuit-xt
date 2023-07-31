@@ -33,6 +33,7 @@
 #include <tao/json/contrib/traits.hpp>
 
 #include "modulation/voice_matrix.h"
+#include "modulation/group_matrix.h"
 #include "modulation/modulators/steplfo.h"
 
 namespace scxt::json
@@ -123,6 +124,71 @@ template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
     }
 };
 
+template <> struct scxt_traits<modulation::GroupModMatrixDestinationAddress>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const modulation::GroupModMatrixDestinationAddress &t)
+    {
+        auto dn = scxt::modulation::getGroupModMatrixDestStreamingName(t.type);
+        v = {{"type", dn}, {"index", t.index}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   modulation::GroupModMatrixDestinationAddress &t)
+    {
+        std::string tsn;
+        findIf(v, "type", tsn);
+        t.type = scxt::modulation::fromGroupModMatrixDestStreamingName(tsn).value_or(
+            scxt::modulation::gmd_none);
+        findIf(v, "index", t.index);
+    }
+};
+
+template <> struct scxt_traits<modulation::GroupModMatrixSource>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const modulation::GroupModMatrixSource &t)
+    {
+        auto sn = scxt::modulation::getGroupModMatrixSourceStreamingName(t);
+        v = {{"vms_name", sn}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, modulation::GroupModMatrixSource &t)
+    {
+        std::string tsn;
+        findIf(v, "vms_name", tsn);
+        t = scxt::modulation::fromGroupModMatrixSourceStreamingName(tsn).value_or(
+            scxt::modulation::gms_none);
+    }
+};
+
+template <> struct scxt_traits<scxt::modulation::GroupModMatrix::Routing>
+{
+    typedef scxt::modulation::GroupModMatrix::Routing rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"active", t.active}, {"selConsistent", t.selConsistent},
+             {"src", t.src},       {"srcVia", t.srcVia},
+             {"dst", t.dst},       {"curve", t.curve},
+             {"depth", t.depth}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        findOrSet(v, "active", true, result.active);
+        findOrSet(v, "selConsistent", true, result.selConsistent);
+        findIf(v, "src", result.src);
+        findIf(v, "srcVia", result.srcVia);
+        findIf(v, "dst", result.dst);
+        findOrSet(v, "curve", modulation::modc_none, result.curve);
+        findIf(v, "depth", result.depth);
+    }
+};
 template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
 {
     typedef scxt::modulation::modulators::StepLFOStorage rt_t;

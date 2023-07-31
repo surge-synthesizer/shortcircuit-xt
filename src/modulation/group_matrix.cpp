@@ -26,3 +26,60 @@
  */
 
 #include "group_matrix.h"
+#include <stdexcept>
+
+namespace scxt::modulation
+{
+
+std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationType &dest)
+{
+    switch (dest)
+    {
+    case gmd_none:
+        return "gmd_none";
+
+    case numGroupMatrixDestinations:
+        throw std::logic_error("Can't convert numGroupMatrixDestinations to string");
+    }
+
+    throw std::logic_error("Invalid enum");
+}
+std::optional<GroupModMatrixDestinationType>
+fromGroupModMatrixDestStreamingName(const std::string &s)
+{
+    for (int i = gmd_none; i < numGroupMatrixDestinations; ++i)
+    {
+        if (getGroupModMatrixDestStreamingName((GroupModMatrixDestinationType)i) == s)
+        {
+            return ((GroupModMatrixDestinationType)i);
+        }
+    }
+    return gmd_none;
+}
+
+std::string getGroupModMatrixSourceStreamingName(const GroupModMatrixSource &dest)
+{
+    switch (dest)
+    {
+    case gms_none:
+        return "vms_none";
+
+    case numGroupMatrixSources:
+        throw std::logic_error("Don't call with numGroupMatrixSources");
+    }
+
+    throw std::logic_error("Mysterious unhandled condition");
+}
+std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const std::string &s)
+{
+    for (int i = gms_none; i < numGroupMatrixSources; ++i)
+    {
+        if (getGroupModMatrixSourceStreamingName((GroupModMatrixSource)i) == s)
+        {
+            return ((GroupModMatrixSource)i);
+        }
+    }
+    return gms_none;
+}
+
+} // namespace scxt::modulation
