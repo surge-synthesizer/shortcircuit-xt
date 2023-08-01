@@ -36,16 +36,21 @@
 namespace scxt::messaging::client
 {
 
-SERIAL_TO_CLIENT(UpdateZoneVoiceMatrixMetadata, s2c_update_zone_voice_matrix_metadata,
+SERIAL_TO_CLIENT(UpdateZoneVoiceMatrixMetadata, s2c_update_zone_matrix_metadata,
                  modulation::voiceModMatrixMetadata_t, onZoneVoiceMatrixMetadata);
 
-SERIAL_TO_CLIENT(UpdateZoneVoiceMatrix, s2c_update_zone_voice_matrix,
+SERIAL_TO_CLIENT(UpdateZoneVoiceMatrix, s2c_update_zone_matrix,
                  modulation::VoiceModMatrix::routingTable_t, onZoneVoiceMatrix);
 
+SERIAL_TO_CLIENT(UpdateGroupMatrixMetadata, s2c_update_group_matrix_metadata,
+                 modulation::groupModMatrixMetadata_t, onGroupMatrixMetadata);
+SERIAL_TO_CLIENT(UpdateGroupMatrix, s2c_update_group_matrix,
+                 modulation::GroupModMatrix::routingTable_t, onGroupMatrix);
+
 // which row, what data, and force a full update
-typedef std::tuple<int, modulation::VoiceModMatrix::Routing, bool> indexedRowUpdate_t;
-inline void indexedRoutingRowUpdated(const indexedRowUpdate_t &payload,
-                                     const engine::Engine &engine, MessageController &cont)
+typedef std::tuple<int, modulation::VoiceModMatrix::Routing, bool> indexedZoneRowUpdate_t;
+inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
+                                         const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &[i, r, b] = payload;
@@ -72,27 +77,71 @@ inline void indexedRoutingRowUpdated(const indexedRowUpdate_t &payload,
             });
     }
 }
-CLIENT_TO_SERIAL(IndexedRoutingRowUpdated, c2s_update_zone_routing_row, indexedRowUpdate_t,
-                 indexedRoutingRowUpdated(payload, engine, cont));
+CLIENT_TO_SERIAL(IndexedZoneRoutingRowUpdated, c2s_update_zone_routing_row, indexedZoneRowUpdate_t,
+                 indexedZoneRoutingRowUpdated(payload, engine, cont));
 
-typedef std::tuple<bool, int, modulation::modulators::StepLFOStorage> indexedLfoUpdate_t;
+// which row, what data, and force a full update
+typedef std::tuple<int, modulation::GroupModMatrix::Routing, bool> indexedGroupRowUpdate_t;
+inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload,
+                                          const engine::Engine &engine, MessageController &cont)
+{
+    // TODO Selected Zone State
+    const auto &[i, r, b] = payload;
+    auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+    if (!sg.empty())
+    {
+        cont.scheduleAudioThreadCallback(
+            [index = i, row = r, gs = sg](auto &eng) {
+                for (const auto &z : gs)
+                    eng.getPatch()->getPart(z.part)->getGroup(z.group)->routingTable[index] = row;
+            },
+            [doUpdate = b](auto &eng) {
+                if (doUpdate)
+                {
+                    auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+                    if (lg.has_value())
+                        eng.getSelectionManager()->sendDisplayDataForSingleGroup(lg->part,
+                                                                                 lg->group);
+                }
+            });
+    }
+}
+CLIENT_TO_SERIAL(IndexedGroupRoutingRowUpdated, c2s_update_group_routing_row,
+                 indexedGroupRowUpdate_t, indexedGroupRoutingRowUpdated(payload, engine, cont));
+
+// forzone, active, which, data
+typedef std::tuple<bool, bool, int, modulation::modulators::StepLFOStorage> indexedLfoUpdate_t;
 inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::Engine &engine,
                               MessageController &cont)
 {
-    const auto &[active, i, r] = payload;
-    auto sz = engine.getSelectionManager()->currentlySelectedZones();
-    if (!sz.empty())
+    const auto &[forZone, active, i, r] = payload;
+    if (forZone)
     {
-        cont.scheduleAudioThreadCallback([row = r, index = i, zs = sz](auto &eng) {
-            for (const auto &[p, g, z] : zs)
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->lfoStorage[index] = row;
-        });
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        if (!sz.empty())
+        {
+            cont.scheduleAudioThreadCallback([row = r, index = i, zs = sz](auto &eng) {
+                for (const auto &[p, g, z] : zs)
+                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->lfoStorage[index] = row;
+            });
+        }
+    }
+    else
+    {
+        auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+        if (!sg.empty())
+        {
+            cont.scheduleAudioThreadCallback([row = r, index = i, gs = sg](auto &eng) {
+                for (const auto &[p, g, z] : gs)
+                    eng.getPatch()->getPart(p)->getGroup(g)->lfoStorage[index] = row;
+            });
+        }
     }
 }
-CLIENT_TO_SERIAL(IndexedLfoUpdated, c2s_update_individual_lfo, indexedLfoUpdate_t,
+CLIENT_TO_SERIAL(IndexedLfoUpdated, c2s_update_group_or_zone_individual_lfo, indexedLfoUpdate_t,
                  indexedLfoUpdated(payload, engine, cont));
-SERIAL_TO_CLIENT(UpdateZoneLfo, s2c_update_zone_individual_lfo, indexedLfoUpdate_t,
-                 onZoneLfoUpdated);
+SERIAL_TO_CLIENT(UpdateZoneLfo, s2c_update_group_or_zone_individual_lfo, indexedLfoUpdate_t,
+                 onGroupOrZoneLfoUpdated);
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H

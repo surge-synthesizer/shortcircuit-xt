@@ -131,6 +131,8 @@ void doExecOnClient(tao::json::basic_value<Traits> &o, Client *c)
     typedef typename SerializationToClientType<(SerializationToClientMessageIds)I>::T handler_t;
     if constexpr (std::is_same<handler_t, unimpl_t>::value)
     {
+        // If you hit this assert, it means you have not defined a handler type, probably
+        // skipping the SERIAL_TO_CLIENT
         assert(false);
         return;
     }

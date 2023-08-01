@@ -44,6 +44,11 @@ namespace scxt::modulation
 enum GroupModMatrixSource
 {
     gms_none,
+    gms_EG1,
+    gms_EG2,
+    gms_LFO1,
+    gms_LFO2,
+    gms_LFO3,
 
     numGroupMatrixSources
 };
@@ -51,6 +56,7 @@ enum GroupModMatrixSource
 enum GroupModMatrixDestinationType
 {
     gmd_none,
+    gmd_grouplevel,
 
     numGroupMatrixDestinations
 };
@@ -82,6 +88,22 @@ struct GroupModMatrixDestinationAddress
         return other.type == type && other.index == index;
     }
 };
+
+typedef std::vector<std::pair<GroupModMatrixDestinationAddress, std::string>>
+    groupModMatrixDestinationNames_t;
+groupModMatrixDestinationNames_t getGroupModulationDestinationNames(const engine::Group &);
+typedef std::vector<std::pair<GroupModMatrixSource, std::string>> groupModMatrixSourceNames_t;
+groupModMatrixSourceNames_t getGroupModMatrixSourceNames(const engine::Group &);
+
+typedef std::tuple<bool, groupModMatrixSourceNames_t, groupModMatrixDestinationNames_t,
+                   modMatrixCurveNames_t>
+    groupModMatrixMetadata_t;
+inline groupModMatrixMetadata_t getGroupModMatrixMetadata(const engine::Group &g)
+{
+    return {true, getGroupModMatrixSourceNames(g), getGroupModulationDestinationNames(g),
+            getModMatrixCurveNames()};
+}
+
 struct GroupModMatrixTraits
 {
     static constexpr int numModMatrixSlots{6};
@@ -94,6 +116,9 @@ struct GroupModMatrixTraits
 struct GroupModMatrix : public MoveableOnly<GroupModMatrix>, ModMatrix<GroupModMatrixTraits>
 {
     GroupModMatrix() { clear(); }
+
+    void copyBaseValuesFromGroup(engine::Group &);
+    void updateModulatorUsed(engine::Group &) const;
 };
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_GROUP_MATRIX_H

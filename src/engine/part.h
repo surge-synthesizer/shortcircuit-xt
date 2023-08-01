@@ -76,6 +76,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     {
         auto g = std::make_unique<Group>();
         g->parentPart = this;
+        g->setSampleRate(getSampleRate());
         groups.push_back(std::move(g));
         return groups.size();
     }
@@ -123,6 +124,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         pitchBendSmoother.setSampleRate(samplerate);
         for (auto &mcc : midiCCSmoothers)
             mcc.setSampleRate(samplerate);
+        for (auto &g : groups)
+            g->setSampleRate(samplerate);
     }
 
     // TODO: A group by ID which throws an SCXTError

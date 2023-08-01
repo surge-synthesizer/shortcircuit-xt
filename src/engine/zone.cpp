@@ -47,6 +47,7 @@ void Zone::process(Engine &e)
 
     std::array<voice::Voice *, maxVoices> toCleanUp;
     size_t cleanupIdx{0};
+    gatedVoiceCount = 0;
     for (auto &v : voiceWeakPointers)
     {
         if (v && v->isVoiceAssigned)
@@ -70,6 +71,11 @@ void Zone::process(Engine &e)
             if (!v->isVoicePlaying)
             {
                 toCleanUp[cleanupIdx++] = v;
+            }
+
+            if (v->isGated)
+            {
+                gatedVoiceCount++;
             }
         }
     }

@@ -41,10 +41,10 @@ namespace scxt::ui::multi
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
 
-struct ModRow : juce::Component, HasEditor
+template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 {
     int index{0};
-    ModPane *parent{nullptr};
+    ModPane<GZTrait> *parent{nullptr};
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<modulation::VoiceModMatrix::Routing>>
         powerAttachment;
     using attachment_t = connectors::PayloadDataAttachment<modulation::VoiceModMatrix::Routing>;
@@ -57,7 +57,7 @@ struct ModRow : juce::Component, HasEditor
     std::unique_ptr<jcmp::HSlider> depth;
 
     // std::unique_ptr<jcmp::HSlider> slider;
-    ModRow(SCXTEditor *e, int i, ModPane *p) : HasEditor(e), index(i), parent(p)
+    ModRow(SCXTEditor *e, int i, ModPane<GZTrait> *p) : HasEditor(e), index(i), parent(p)
     {
         auto &row = parent->routingTable[i];
 
@@ -340,8 +340,16 @@ struct ModRow : juce::Component, HasEditor
 
     void pushRowUpdate(bool forceUpdate = false)
     {
-        sendToSerialization(
-            cmsg::IndexedRoutingRowUpdated({index, parent->routingTable[index], forceUpdate}));
+        if constexpr (GZTrait::forZone)
+        {
+            sendToSerialization(cmsg::IndexedZoneRoutingRowUpdated(
+                {index, parent->routingTable[index], forceUpdate}));
+        }
+        else
+        {
+            sendToSerialization(cmsg::IndexedGroupRoutingRowUpdated(
+                {index, parent->routingTable[index], forceUpdate}));
+        }
     }
 
     void showSourceMenu(bool isVia)
@@ -468,30 +476,38 @@ struct ModRow : juce::Component, HasEditor
     }
 };
 
-ModPane::ModPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEditor(e)
+template <typename GZTrait>
+ModPane<GZTrait>::ModPane(SCXTEditor *e, bool fz) : jcmp::NamedPanel(""), HasEditor(e), forZone(fz)
 {
     setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
 
     hasHamburger = true;
-    isTabbed = true;
-    tabNames = {"MOD 1-6", "MOD 7-12"};
+    isTabbed = GZTrait::forZone;
 
-    resetTabState();
+    if (isTabbed)
+    {
+        tabNames = {"MOD 1-6", "MOD 7-12"};
 
-    onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
-        if (!wt)
-            return;
+        resetTabState();
 
-        wt->tabRange = i;
-        wt->rebuildMatrix();
-    };
+        onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
+            if (!wt)
+                return;
 
+            wt->tabRange = i;
+            wt->rebuildMatrix();
+        };
+    }
+    else
+    {
+        setName("GROUP MOD MATRIX");
+    }
     setActive(false);
 }
 
-ModPane::~ModPane() = default;
+template <typename GZTrait> ModPane<GZTrait>::~ModPane() = default;
 
-void ModPane::resized()
+template <typename GZTrait> void ModPane<GZTrait>::resized()
 {
     auto en = isEnabled();
     if (!en)
@@ -507,13 +523,13 @@ void ModPane::resized()
     }
 }
 
-void ModPane::setActive(bool b)
+template <typename GZTrait> void ModPane<GZTrait>::setActive(bool b)
 {
     setEnabled(b);
     rebuildMatrix();
 }
 
-void ModPane::rebuildMatrix()
+template <typename GZTrait> void ModPane<GZTrait>::rebuildMatrix()
 {
     auto en = isEnabled();
     removeAllChildren();
@@ -523,13 +539,13 @@ void ModPane::rebuildMatrix()
         return;
     for (int i = 0; i < numRowsOnScreen; ++i)
     {
-        rows[i] = std::make_unique<ModRow>(editor, i + tabRange * numRowsOnScreen, this);
+        rows[i] = std::make_unique<ModRow<GZTrait>>(editor, i + tabRange * numRowsOnScreen, this);
         addAndMakeVisible(*(rows[i]));
     }
     resized();
 }
 
-void ModPane::refreshMatrix()
+template <typename GZTrait> void ModPane<GZTrait>::refreshMatrix()
 {
     assert(isEnabled());
     for (auto &r : rows)
@@ -538,4 +554,7 @@ void ModPane::refreshMatrix()
             r->refreshRow();
     }
 }
+
+template struct ModPane<ModPaneZoneTraits>;
+template struct ModPane<ModPaneGroupTraits>;
 } // namespace scxt::ui::multi

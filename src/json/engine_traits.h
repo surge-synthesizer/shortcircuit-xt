@@ -139,11 +139,9 @@ template <> struct scxt_traits<scxt::engine::Group>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Group &t)
     {
-        v = {{"zones", t.getZones()},
-             {"name", t.getName()},
-             {"routingTable", t.routingTable},
-             {"gegStorage", t.gegStorage},
-             {"processorStorage", t.processorStorage}};
+        v = {{"zones", t.getZones()},          {"name", t.getName()},
+             {"routingTable", t.routingTable}, {"gegStorage", t.gegStorage},
+             {"lfoStorage", t.lfoStorage},     {"processorStorage", t.processorStorage}};
     }
 
     template <template <typename...> class Traits>
@@ -153,6 +151,7 @@ template <> struct scxt_traits<scxt::engine::Group>
         findIf(v, "gegStorage", group.gegStorage);
         findIf(v, "processorStorage", group.processorStorage);
         findIf(v, "routingTable", group.routingTable);
+        findIf(v, "lfoStorage", group.lfoStorage);
         group.clearZones();
 
         auto vzones = v.at("zones").get_array();
