@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
+#include <variant>
 #include "HasEditor.h"
 #include "browser/BrowserPane.h"
 #include "sst/jucegui/components/NamedPanel.h"
