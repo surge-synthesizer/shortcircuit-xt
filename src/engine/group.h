@@ -32,6 +32,7 @@
 #include <memory>
 #include <vector>
 #include <cassert>
+#include <cmath>
 
 #include <sst/cpputils.h>
 #include <sst/basic-blocks/modulators/AHDSRShapedSC.h>
