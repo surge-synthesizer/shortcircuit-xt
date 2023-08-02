@@ -144,10 +144,50 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
 CLIENT_TO_SERIAL(DeleteZone, c2s_delete_zone, selection::SelectionManager::ZoneAddress,
                  removeZone(payload, engine, cont));
 
+inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageController &cont)
+{
+    auto zs = engine.getSelectionManager()->allSelectedZones;
+
+    if (zs.empty())
+        return;
+    auto part = zs.begin()->part;
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [sz = zs](auto &e) {
+            std::vector<std::tuple<int, int, ZoneID>> ids;
+            for (auto s : sz)
+                ids.push_back(
+                    {s.part, s.group,
+                     e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id});
+            for (auto [p, g, zid] : ids)
+                auto z = e.getPatch()->getPart(p)->getGroup(g)->removeZone(zid);
+        },
+        [t = part](auto &engine) {
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(t),
+                                      *(engine.getMessageController()));
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(t)->getZoneMappingSummary(),
+                                      *(engine.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
+                 removeSelectedZones(payload, engine, cont));
+
 inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                         MessageController &cont)
 {
-    SCLOG_UNIMPL("Deleting group " << a);
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [s = a](auto &e) {
+            auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
+            auto g = e.getPatch()->getPart(s.part)->removeGroup(gid);
+        },
+        [t = a](auto &engine) {
+            serializationSendToClient(s2c_send_pgz_structure,
+                                      engine.getPartGroupZoneStructure(t.part),
+                                      *(engine.getMessageController()));
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
+                                      *(engine.getMessageController()));
+        });
 }
 CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
                  removeGroup(payload, engine, cont));

@@ -133,7 +133,24 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
     const groupContainer_t &getGroups() const { return groups; }
     void clearGroups() { groups.clear(); }
+    int getGroupIndex(const GroupID &zid) const
+    {
+        for (const auto &[idx, r] : sst::cpputils::enumerate(groups))
+            if (r->id == zid)
+                return idx;
+        return -1;
+    }
+    std::unique_ptr<Group> removeGroup(GroupID &zid)
+    {
+        auto idx = getGroupIndex(zid);
+        if (idx < 0 || idx >= groups.size())
+            return {};
 
+        auto res = std::move(groups[idx]);
+        groups.erase(groups.begin() + idx);
+        res->parentPart = nullptr;
+        return res;
+    }
     groupContainer_t::iterator begin() noexcept { return groups.begin(); }
     groupContainer_t::const_iterator cbegin() const noexcept { return groups.cbegin(); }
 
