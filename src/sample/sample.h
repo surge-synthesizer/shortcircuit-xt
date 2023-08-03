@@ -48,6 +48,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     Sample(const SampleID &sid) : id(sid), displayName(sid.to_string()) {}
     virtual ~Sample() = default;
 
+    void dumpInformationToLog();
+
     std::string displayName{};
     std::string getDisplayName() const { return displayName; }
     bool load(const fs::path &path);

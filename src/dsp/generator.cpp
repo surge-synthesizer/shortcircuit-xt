@@ -264,6 +264,27 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             _mm_store_ss(&OutputL[i], fL);
             if (stereo)
                 _mm_store_ss(&OutputR[i], fR);
+
+#define DEBUG_OUTPUT_MINMAX 0
+#if DEBUG_OUTPUT_MINMAX
+            {
+                // Please don't remove this in some cleanup. It is handly
+                static int printEvery{0};
+                static float mxOut = std::numeric_limits<float>::min();
+                static float mnOut = std::numeric_limits<float>::max();
+
+                mxOut = std::max(OutputL[i], mxOut);
+                mnOut = std::min(OutputL[i], mnOut);
+                if (printEvery == 1000)
+                {
+                    SCLOG("GENERATOR " << SCD(mxOut) << " " << SCD(mnOut));
+                    printEvery = 0;
+                    mxOut = std::numeric_limits<float>::min();
+                    mnOut = std::numeric_limits<float>::max();
+                }
+                printEvery++;
+            }
+#endif
         }
 
         // 3. Forward sample position

@@ -186,6 +186,12 @@ bool Voice::process()
         panOutputsBy(chainIsMono, samplePan);
         chainIsMono = false;
     }
+    else if (chainIsMono)
+    {
+        // panning drops us by a root 2, so no panning needs to also
+        constexpr float invsqrt2{1.f / 1.414213562373095};
+        mech::mul_block<blockSize>(output[0], invsqrt2);
+    }
 
     auto pva = modMatrix.getValue(modulation::vmd_Zone_Sample_Amplitude, 0);
     sampleAmp.set_target(pva);
@@ -296,7 +302,7 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     if (chainIsMono)
     {
         chainIsMono = false;
-        pl::monoEqualPower(pv, pmat);
+        pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
         for (int i = 0; i < blockSize; ++i)
         {
             output[1][i] = output[0][i] * pmat[3];
