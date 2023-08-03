@@ -139,4 +139,21 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
     samples[sp->id] = sp;
     return sp->id;
 }
+
+void SampleManager::purgeUnreferencedSamples()
+{
+    SCLOG_WFUNC("PrePurge Sample Count is " << samples.size());
+    for (auto b = samples.begin(); b != samples.end(); ++b)
+    {
+        auto ct = b->second.use_count();
+        if (ct <= 1)
+        {
+            SCLOG("Purging sample " << b->first.to_string() << " from "
+                                    << b->second->mFileName.u8string())
+            b = samples.erase(b);
+        }
+    }
+
+    SCLOG_WFUNC("PostPurge Sample Count is " << samples.size());
+}
 } // namespace scxt::sample

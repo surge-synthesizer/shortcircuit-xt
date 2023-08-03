@@ -55,7 +55,6 @@ void Group::process(Engine &e)
     float *lOut = output[0];
     float *rOut = output[1];
 
-    modMatrix.updateModulatorUsed(*this);
     modMatrix.copyBaseValuesFromGroup(*this);
     modMatrix.initializeModulationValues();
 
@@ -140,6 +139,8 @@ void Group::setupOnUnstream(const engine::Engine &e)
         setupProcessorControlDescriptions(p, processorStorage[p].type);
         onProcessorTypeChanged(p, processorStorage[p].type);
     }
+
+    modMatrix.updateModulatorUsed(*this);
 }
 
 template struct HasGroupZoneProcessors<Group>;

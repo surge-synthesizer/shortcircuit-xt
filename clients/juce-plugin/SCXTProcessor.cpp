@@ -304,6 +304,7 @@ juce::AudioProcessorEditor *SCXTProcessor::createEditor()
 //==============================================================================
 void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
+    engine->getSampleManager()->purgeUnreferencedSamples();
     auto xml = scxt::json::streamEngineState(*engine);
     destData.replaceAll(xml.c_str(), xml.size() + 1);
 }

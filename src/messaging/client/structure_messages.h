@@ -133,6 +133,7 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
             auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
         },
         [t = a](auto &engine) {
+            engine.getSampleManager()->purgeUnreferencedSamples();
             serializationSendToClient(s2c_send_pgz_structure,
                                       engine.getPartGroupZoneStructure(t.part),
                                       *(engine.getMessageController()));
@@ -162,6 +163,8 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
                 auto z = e.getPatch()->getPart(p)->getGroup(g)->removeZone(zid);
         },
         [t = part](auto &engine) {
+            engine.getSampleManager()->purgeUnreferencedSamples();
+
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(t),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
@@ -181,6 +184,8 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
             auto g = e.getPatch()->getPart(s.part)->removeGroup(gid);
         },
         [t = a](auto &engine) {
+            engine.getSampleManager()->purgeUnreferencedSamples();
+
             serializationSendToClient(s2c_send_pgz_structure,
                                       engine.getPartGroupZoneStructure(t.part),
                                       *(engine.getMessageController()));

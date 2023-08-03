@@ -341,6 +341,7 @@ void PartGroupSidebar::resized()
 void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p)
 {
     pgzStructure = p;
+#if LOG_PART_GROUP_SIDEBAR
     SCLOG("PartGroupZone in Sidebar: Showing Part0 Entries");
     for (const auto &a : pgzStructure)
     {
@@ -354,6 +355,7 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
             SCLOG("  " << pad << " " << a.second << " -> " << a.first);
         }
     }
+#endif
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();
     zoneSidebar->listBoxModel->rebuild();

@@ -81,6 +81,8 @@ struct SampleManager : MoveableOnly<SampleManager>
     }
     void restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &);
 
+    void purgeUnreferencedSamples();
+
     void reset()
     {
         samples.clear();

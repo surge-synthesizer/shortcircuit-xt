@@ -93,7 +93,11 @@ inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload
         cont.scheduleAudioThreadCallback(
             [index = i, row = r, gs = sg](auto &eng) {
                 for (const auto &z : gs)
-                    eng.getPatch()->getPart(z.part)->getGroup(z.group)->routingTable[index] = row;
+                {
+                    auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
+                    grp->routingTable[index] = row;
+                    grp->modMatrix.updateModulatorUsed(*grp);
+                }
             },
             [doUpdate = b](auto &eng) {
                 if (doUpdate)
