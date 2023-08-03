@@ -590,7 +590,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     zn->mapping.keyboardRange = {lk, hk};
 
                     auto lv = noneOr(region->minVel, presetRegion->minVel, 0);
-                    auto hv = noneOr(region->maxVel, presetRegion->maxVel, 0);
+                    auto hv = noneOr(region->maxVel, presetRegion->maxVel, 127);
                     zn->mapping.velocityRange = {lv, hv};
 
                     // TODO check this 256
