@@ -43,6 +43,19 @@
 namespace scxt::engine
 {
 
+Group::Group() : id(GroupID::next()), name(id.to_string()), routingTable(modMatrix.routingTable)
+{
+    modMatrix.assignSourcesFromGroup(*this);
+
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    {
+        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+
+        lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
+                       getEngine()->rngGen);
+    }
+}
+
 void Group::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
@@ -81,9 +94,12 @@ void Group::process(Engine &e)
                             gated);
         }
 
-        // for LFO
-        // -- if matrix consumes lfo
-        // ---- process}
+        for (int i = 0; i < lfosPerGroup; ++i)
+        {
+            if (!lfoUsed[i])
+                continue;
+            lfos[i].process(blockSize);
+        }
 
         modMatrix.process();
     }
@@ -140,7 +156,23 @@ void Group::setupOnUnstream(const engine::Engine &e)
         onProcessorTypeChanged(p, processorStorage[p].type);
     }
 
+    modMatrix.copyBaseValuesFromGroup(*this);
+    modMatrix.initializeModulationValues();
     modMatrix.updateModulatorUsed(*this);
+    for (auto &lfo : lfos)
+    {
+        lfo.UpdatePhaseIncrement();
+    }
+}
+void Group::onSampleRateChanged()
+{
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    {
+        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+
+        lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
+                       getEngine()->rngGen);
+    }
 }
 
 template struct HasGroupZoneProcessors<Group>;

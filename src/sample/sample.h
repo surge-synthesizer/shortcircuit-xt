@@ -119,7 +119,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         default:
             return 1;
         }
-        return 1;
+        return 1; // wuh?
     }
 
     uint8_t channels{0};

@@ -42,6 +42,9 @@ std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationTy
     case gmd_grouplevel:
         return "gmd_grouplevel";
 
+    case gmd_LFO_Rate:
+        return "gmd_lforate";
+
     case numGroupMatrixDestinations:
         throw std::logic_error("Can't convert numGroupMatrixDestinations to string");
     }
@@ -99,12 +102,16 @@ std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const 
 void GroupModMatrix::copyBaseValuesFromGroup(engine::Group &g)
 {
     baseValues[destIndex(gmd_grouplevel, 0)] = g.level;
+    for (int i = 0; i < engine::lfosPerGroup; ++i)
+    {
+        baseValues[destIndex(gmd_LFO_Rate, i)] = g.lfoStorage[i].rate;
+    }
 }
 
 void GroupModMatrix::updateModulatorUsed(engine::Group &g) const
 {
     // TODO: Call this only when the mod matrix morphs. For now run them all
-    for (const auto &r : routingTable)
+    for (const auto &r : g.routingTable)
     {
         g.gegUsed[0] = g.gegUsed[0] || r.src == gms_EG1 || r.srcVia == gms_EG1;
         g.gegUsed[1] = g.gegUsed[1] || r.src == gms_EG2 || r.srcVia == gms_EG2;
@@ -115,6 +122,16 @@ void GroupModMatrix::updateModulatorUsed(engine::Group &g) const
 
     g.anyModulatorUsed =
         g.gegUsed[0] || g.gegUsed[1] || g.lfoUsed[0] || g.lfoUsed[1] || g.lfoUsed[2];
+}
+
+void GroupModMatrix::assignSourcesFromGroup(engine::Group &g)
+{
+    sourcePointers[gms_LFO1] = &g.lfos[0].output;
+    sourcePointers[gms_LFO2] = &g.lfos[1].output;
+    sourcePointers[gms_LFO3] = &g.lfos[2].output;
+
+    sourcePointers[gms_EG1] = &g.gegEvaluators[0].outBlock0;
+    sourcePointers[gms_EG2] = &g.gegEvaluators[1].outBlock0;
 }
 
 std::string getGroupModMatrixSourceDisplayName(const GroupModMatrixSource &dest)
@@ -161,9 +178,16 @@ int getGroupModMatrixDestIndexCount(const GroupModMatrixDestinationType &t)
     case gmd_grouplevel:
         return 1;
 
-    default:
+    case gmd_LFO_Rate:
+        return engine::lfosPerGroup;
+
+    case gmd_none:
         return 1;
+    case numGroupMatrixDestinations:
+        throw std::logic_error("Don't call index cound with num");
     }
+    assert(false);
+    return 1;
 }
 
 std::optional<std::string>
@@ -184,6 +208,11 @@ getGroupModMatrixDestDisplayName(const GroupModMatrixDestinationAddress &dest,
     if (gmd == gmd_grouplevel)
     {
         return "Output/Level";
+    }
+
+    if (gmd == gmd_LFO_Rate)
+    {
+        return fmt::format("GLFO {}/Rate", idx + 1);
     }
     assert(false);
     return fmt::format("ERR {} {}", gmd, idx);

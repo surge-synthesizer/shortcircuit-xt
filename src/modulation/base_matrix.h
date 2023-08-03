@@ -89,6 +89,12 @@ template <typename T> struct ModMatrix
     typedef std::array<Routing, T::numModMatrixSlots> routingTable_t;
     routingTable_t routingTable;
 
+    ModMatrix()
+    {
+        for (auto &ds : depthScales)
+            ds = 1.f;
+    }
+
     float *getValuePtr(const typename T::DestAddress &dest) { return &modulatedValues[dest]; }
 
     float *getValuePtr(const typename T::DestEnum &type, size_t index)
