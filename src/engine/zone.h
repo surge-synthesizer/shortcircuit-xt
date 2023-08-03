@@ -124,6 +124,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>
     struct ZoneOutputInfo
     {
         float amplitude{1.f}, pan{0.f};
+        bool muted{false};
         BusAddress routeTo{DEFAULT_BUS};
     } outputInfo;
 

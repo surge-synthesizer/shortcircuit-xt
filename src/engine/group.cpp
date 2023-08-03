@@ -32,6 +32,7 @@
 #include "infrastructure/sse_include.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "sst/basic-blocks/dsp/PanLaws.h"
 
 #include <cassert>
 
@@ -64,7 +65,7 @@ void Group::process(Engine &e)
     memset(output, 0, sizeof(output));
 
     // When we have alternate group routing we change these pointers
-    assert(routeTo == DEFAULT_BUS);
+    assert(outputInfo.routeTo == DEFAULT_BUS);
     float *lOut = output[0];
     float *rOut = output[1];
 
@@ -116,10 +117,28 @@ void Group::process(Engine &e)
 
     // for processor do the necessary
 
+    // Pan
+    auto pvo = modMatrix.getValue(modulation::gmd_pan, 0);
+    if (pvo != 0.f)
+    {
+        namespace pl = sst::basic_blocks::dsp::pan_laws;
+        auto pv = (std::clamp(pvo, -1.f, 1.f) + 1) * 0.5;
+        pl::panmatrix_t pmat{1, 1, 0, 0};
+        pl::stereoEqualPower(pv, pmat);
+
+        for (int i = 0; i < blockSize; ++i)
+        {
+            auto il = output[0][i];
+            auto ir = output[1][i];
+            output[0][i] = pmat[0] * il + pmat[2] * ir;
+            output[1][i] = pmat[1] * ir + pmat[3] * il;
+        }
+    }
+
     // multiply by vca level from matrix
     auto mlev = modMatrix.getValue(modulation::gmd_grouplevel, 0);
-    levelBlk.set_target(mlev);
-    levelBlk.multiply_2_blocks(lOut, rOut);
+    outputAmp.set_target(mlev);
+    outputAmp.multiply_2_blocks(lOut, rOut);
 }
 
 void Group::addActiveZone()

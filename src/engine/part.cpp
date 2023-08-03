@@ -52,7 +52,7 @@ void Part::process(Engine &e)
         {
             g->process(e);
 
-            auto bi = g->routeTo;
+            auto bi = g->outputInfo.routeTo;
             if (bi == DEFAULT_BUS)
             {
                 bi = (BusAddress)(MAIN_0 + partNumber);
