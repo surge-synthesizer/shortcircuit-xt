@@ -348,4 +348,58 @@ bool Sample::SetMeta(unsigned int Channels, unsigned int SampleRate, unsigned in
 
     return true;
 }
+
+void Sample::dumpInformationToLog()
+{
+    SCLOG("Sample Dump for " << getDisplayName());
+    switch (type)
+    {
+    case WAV_FILE:
+        SCLOG("WAV File : " << getPath().u8string());
+        break;
+    case FLAC_FILE:
+        SCLOG("FLAC File : " << getPath().u8string());
+        break;
+    case AIFF_FILE:
+        SCLOG("AIFF File : " << getPath().u8string());
+        break;
+    case SF2_FILE:
+        SCLOG("SF2 File : " << getPath().u8string() << " Instrument=" << getCompoundInstrument()
+                            << " Region=" << getCompoundRegion());
+        break;
+    }
+
+    SCLOG("BitDepth=" << bitDepthByteSize(bitDepth) * 8 << " Channels=" << (int)channels);
+    SCLOG("SampleRate=" << sample_rate << " sample_length=" << sample_length);
+
+    switch (bitDepth)
+    {
+    case BD_I16:
+    {
+        for (int c = 0; c < channels; ++c)
+        {
+            auto *dat = GetSamplePtrI16(c);
+            auto mxv = std::numeric_limits<int16_t>::min();
+            auto mnv = std::numeric_limits<int16_t>::max();
+            for (int i = 0; i < sample_length; ++i)
+            {
+                mxv = std::max(mxv, dat[i]);
+                mnv = std::min(mnv, dat[i]);
+            }
+            SCLOG("Min/Max = " << mxv << " " << mnv);
+
+            const float I16InvScale = (1.f / (16384.f * 32768.f));
+            SCLOG("Min/Max Float Scaled = " << mxv / 32768.f << " " << mnv / 32768.f);
+            SCLOG("Min/Max Generator Scaled = " << mxv * I16InvScale << " " << mnv * I16InvScale);
+        }
+    }
+    break;
+    case BD_F32:
+    {
+        SCLOG("TODO: Implement Sapmle Scan for F32");
+    }
+    break;
+    }
+}
+
 } // namespace scxt::sample
