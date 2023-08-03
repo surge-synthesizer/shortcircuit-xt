@@ -57,6 +57,7 @@ enum GroupModMatrixDestinationType
 {
     gmd_none,
     gmd_grouplevel,
+    gmd_pan,
     gmd_LFO_Rate,
 
     numGroupMatrixDestinations

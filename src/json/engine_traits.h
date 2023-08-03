@@ -134,14 +134,43 @@ template <> struct scxt_traits<scxt::engine::Part>
     }
 };
 
+template <> struct scxt_traits<scxt::engine::Group::GroupOutputInfo>
+{
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v,
+                       const scxt::engine::Group::GroupOutputInfo &t)
+    {
+        v = {{"amplitude", t.amplitude},
+             {"pan", t.pan},
+             {"muted", t.muted},
+             {"routeTo", (int)t.routeTo}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v,
+                   scxt::engine::Group::GroupOutputInfo &zo)
+    {
+        int rt;
+        findIf(v, "amplitude", zo.amplitude);
+        findIf(v, "pan", zo.pan);
+        findIf(v, "muted", zo.muted);
+        findIf(v, "routeTo", rt);
+        zo.routeTo = (engine::BusAddress)(rt);
+    }
+};
+
 template <> struct scxt_traits<scxt::engine::Group>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Group &t)
     {
-        v = {{"zones", t.getZones()},          {"name", t.getName()},
-             {"routingTable", t.routingTable}, {"gegStorage", t.gegStorage},
-             {"lfoStorage", t.lfoStorage},     {"processorStorage", t.processorStorage}};
+        v = {{"zones", t.getZones()},
+             {"name", t.getName()},
+             {"outputInfo", t.outputInfo},
+             {"routingTable", t.routingTable},
+             {"gegStorage", t.gegStorage},
+             {"lfoStorage", t.lfoStorage},
+             {"processorStorage", t.processorStorage}};
     }
 
     template <template <typename...> class Traits>
@@ -149,6 +178,7 @@ template <> struct scxt_traits<scxt::engine::Group>
     {
         findIf(v, "name", group.name);
         findIf(v, "gegStorage", group.gegStorage);
+        findIf(v, "outputInfo", group.outputInfo);
         findIf(v, "processorStorage", group.processorStorage);
         findIf(v, "routingTable", group.routingTable);
         findIf(v, "lfoStorage", group.lfoStorage);
@@ -176,7 +206,10 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneOutputInfo>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::engine::Zone::ZoneOutputInfo &t)
     {
-        v = {{"amplitude", t.amplitude}, {"pan", t.pan}, {"routeTo", (int)t.routeTo}};
+        v = {{"amplitude", t.amplitude},
+             {"pan", t.pan},
+             {"muted", t.muted},
+             {"routeTo", (int)t.routeTo}};
     }
 
     template <template <typename...> class Traits>
@@ -185,6 +218,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneOutputInfo>
         int rt;
         findIf(v, "amplitude", zo.amplitude);
         findIf(v, "pan", zo.pan);
+        findIf(v, "muted", zo.muted);
         findIf(v, "routeTo", rt);
         zo.routeTo = (engine::BusAddress)(rt);
     }

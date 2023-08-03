@@ -61,7 +61,12 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     std::string name{};
     Part *parentPart{nullptr};
 
-    BusAddress routeTo{DEFAULT_BUS};
+    struct GroupOutputInfo
+    {
+        float amplitude{1.f}, pan{0.f};
+        bool muted{false};
+        BusAddress routeTo{DEFAULT_BUS};
+    } outputInfo;
 
     Engine *getEngine();
 
@@ -136,10 +141,9 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
      * whereas with zone the zone is the data, but it contains a set of voices related to that
      * data. Just something to think about as you read the code here!
      */
-    float level{1.f};
     using lipol = sst::basic_blocks::dsp::lipol_sse<blockSize, false>;
 
-    lipol levelBlk;
+    lipol outputAmp, outputPan;
 
     static constexpr int egPerGroup{2};
     std::array<datamodel::AdsrStorage, egPerGroup> gegStorage{};

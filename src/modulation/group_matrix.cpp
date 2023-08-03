@@ -42,6 +42,9 @@ std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationTy
     case gmd_grouplevel:
         return "gmd_grouplevel";
 
+    case gmd_pan:
+        return "gmd_pan";
+
     case gmd_LFO_Rate:
         return "gmd_lforate";
 
@@ -101,7 +104,8 @@ std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const 
 
 void GroupModMatrix::copyBaseValuesFromGroup(engine::Group &g)
 {
-    baseValues[destIndex(gmd_grouplevel, 0)] = g.level;
+    baseValues[destIndex(gmd_grouplevel, 0)] = g.outputInfo.amplitude;
+    baseValues[destIndex(gmd_pan, 0)] = g.outputInfo.pan;
     for (int i = 0; i < engine::lfosPerGroup; ++i)
     {
         baseValues[destIndex(gmd_LFO_Rate, i)] = g.lfoStorage[i].rate;
@@ -176,6 +180,7 @@ int getGroupModMatrixDestIndexCount(const GroupModMatrixDestinationType &t)
     switch (t)
     {
     case gmd_grouplevel:
+    case gmd_pan:
         return 1;
 
     case gmd_LFO_Rate:
@@ -208,6 +213,11 @@ getGroupModMatrixDestDisplayName(const GroupModMatrixDestinationAddress &dest,
     if (gmd == gmd_grouplevel)
     {
         return "Output/Level";
+    }
+
+    if (gmd == gmd_pan)
+    {
+        return "Output/Pan";
     }
 
     if (gmd == gmd_LFO_Rate)

@@ -537,12 +537,12 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         if (pt < 0 || pt >= numParts)
             pt = 0;
 
-        SCLOG("Adding SF2 to part " << SCD(pt));
         auto &part = getPatch()->getPart(pt);
         int firstGroup = -1;
         for (int pc = 0; pc < sf->GetPresetCount(); ++pc)
         {
             auto *preset = sf->GetPreset(pc);
+            auto pnm = std::string(preset->GetName());
 
             for (int i = 0; i < preset->GetRegionCount(); ++i)
             {
@@ -551,7 +551,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 
                 auto grpnum = part->addGroup() - 1;
                 auto &grp = part->getGroup(grpnum);
-                grp->name = instr->GetName();
+                grp->name = pnm + " - " + instr->GetName();
 
                 if (instr->pGlobalRegion)
                 {
@@ -590,7 +590,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     zn->mapping.keyboardRange = {lk, hk};
 
                     auto lv = noneOr(region->minVel, presetRegion->minVel, 0);
-                    auto hv = noneOr(region->maxVel, presetRegion->maxVel, 0);
+                    auto hv = noneOr(region->maxVel, presetRegion->maxVel, 127);
                     zn->mapping.velocityRange = {lv, hv};
 
                     // TODO check this 256
@@ -602,7 +602,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     }
                     auto &znSD = zn->sampleData[0];
 
-                    auto p = region->GetPan();
+                    auto p = region->GetPan(presetRegion);
                     // pan in SF2 is -64 to 63 so hackety hack a bit
                     if (p < 0)
                         zn->mapping.pan = p / 64.f;
@@ -613,11 +613,12 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     auto s = sfsamp;
                     auto reg = region;
 
-                    zn->mapping.pitchOffset += reg->coarseTune + reg->fineTune * 0.01;
+                    zn->mapping.pitchOffset +=
+                        reg->GetCoarseTune(presetRegion) + reg->GetFineTune(presetRegion) * 0.01;
 
-                    if (reg->GetEG1PreAttackDelay() > 0.001)
+                    if (reg->GetEG1PreAttackDelay(presetRegion) > 0.001)
                     {
-                        std::cout << "ERROR: PreAttach Delay which we don't support" << std::endl;
+                        SCLOG("ERROR: PreAttach Delay which we don't support");
                     }
                     auto s2a = [](double s) {
                         auto l2s = log2(s);
@@ -633,11 +634,11 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         return pow(10.0, db * 0.05);
                     };
 
-                    zn->aegStorage.a = s2a(reg->GetEG1Attack());
-                    zn->aegStorage.h = s2a(reg->GetEG1Hold());
-                    zn->aegStorage.d = s2a(reg->GetEG1Decay());
-                    zn->aegStorage.s = sus2l(reg->GetEG1Sustain());
-                    zn->aegStorage.r = s2a(reg->GetEG1Release());
+                    zn->aegStorage.a = s2a(reg->GetEG1Attack(presetRegion));
+                    zn->aegStorage.h = s2a(reg->GetEG1Hold(presetRegion));
+                    zn->aegStorage.d = s2a(reg->GetEG1Decay(presetRegion));
+                    zn->aegStorage.s = sus2l(reg->GetEG1Sustain(presetRegion));
+                    zn->aegStorage.r = s2a(reg->GetEG1Release(presetRegion));
 
                     auto GetValue = [](const auto &val) {
                         if (val == sf2::NONE)
@@ -645,11 +646,11 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         return ToString(val);
                     };
 
-                    zn->eg2Storage.a = s2a(reg->GetEG2Attack());
-                    zn->eg2Storage.h = s2a(reg->GetEG2Hold());
-                    zn->eg2Storage.d = s2a(reg->GetEG2Decay());
-                    zn->eg2Storage.s = sus2l(reg->GetEG2Sustain());
-                    zn->eg2Storage.r = s2a(reg->GetEG2Release());
+                    zn->eg2Storage.a = s2a(reg->GetEG2Attack(presetRegion));
+                    zn->eg2Storage.h = s2a(reg->GetEG2Hold(presetRegion));
+                    zn->eg2Storage.d = s2a(reg->GetEG2Decay(presetRegion));
+                    zn->eg2Storage.s = sus2l(reg->GetEG2Sustain(presetRegion));
+                    zn->eg2Storage.r = s2a(reg->GetEG2Release(presetRegion));
 
                     if (reg->HasLoop)
                     {
@@ -657,7 +658,14 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         znSD.startLoop = reg->LoopStart;
                         znSD.endLoop = reg->LoopEnd;
                     }
+                    else if (presetRegion->HasLoop)
+                    {
+                        znSD.loopActive = true;
+                        znSD.startLoop = presetRegion->LoopStart;
+                        znSD.endLoop = presetRegion->LoopEnd;
+                    }
 
+#if 0
                     SCLOG("Unimplemented SF2 Features Follow:")
                     SCLOG("\tModulation Envelope Generator Pitch="
                           << GetValue(reg->modEnvToPitch)
@@ -701,6 +709,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     }
 
                     SCLOG("\tExclusive Class : " << reg->exclusiveClass);
+#endif
 
                     grp->addZone(zn);
                 }
