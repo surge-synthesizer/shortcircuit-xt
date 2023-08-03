@@ -112,16 +112,14 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     {
         switch (bd)
         {
-            // case BD_I8:
-            return 1;
-        // case BD_I12:
         case BD_I16:
             return 2;
-        // case BD_I24:
-        //     return 3; // this maybe should be 4?
         case BD_F32:
             return 4;
+        default:
+            return 1;
         }
+        return 1;
     }
 
     uint8_t channels{0};
