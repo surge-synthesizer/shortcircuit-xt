@@ -108,7 +108,8 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
     auto s = sfsample;
 
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
-    displayName = fmt::format("{} ({}/{}/{})", s->Name, fnp.filename().u8string(), inst, region);
+    displayName = fmt::format("{} - {} ({} @ {}.{})", f->GetInstrument(inst)->GetName(), s->Name,
+                              fnp.filename().u8string(), inst, region);
 
     if (frameSize == 2 && channels == 1 && sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
     {

@@ -544,14 +544,15 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
             auto *preset = sf->GetPreset(pc);
             auto pnm = std::string(preset->GetName());
 
+            auto grpnum = part->addGroup() - 1;
+            auto &grp = part->getGroup(grpnum);
+
+            grp->name = pnm;
+
             for (int i = 0; i < preset->GetRegionCount(); ++i)
             {
                 auto *presetRegion = preset->GetRegion(i);
                 sf2::Instrument *instr = presetRegion->pInstrument;
-
-                auto grpnum = part->addGroup() - 1;
-                auto &grp = part->getGroup(grpnum);
-                grp->name = pnm + " - " + instr->GetName();
 
                 if (instr->pGlobalRegion)
                 {
