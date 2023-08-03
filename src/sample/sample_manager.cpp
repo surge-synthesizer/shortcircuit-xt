@@ -143,7 +143,8 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 void SampleManager::purgeUnreferencedSamples()
 {
     SCLOG_WFUNC("PrePurge Sample Count is " << samples.size());
-    for (auto b = samples.begin(); b != samples.end(); ++b)
+    auto b = samples.begin();
+    while (b != samples.end())
     {
         auto ct = b->second.use_count();
         if (ct <= 1)
@@ -151,6 +152,10 @@ void SampleManager::purgeUnreferencedSamples()
             SCLOG("Purging sample " << b->first.to_string() << " from "
                                     << b->second->mFileName.u8string())
             b = samples.erase(b);
+        }
+        else
+        {
+            b++;
         }
     }
 
