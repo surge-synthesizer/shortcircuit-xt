@@ -201,6 +201,15 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
                         w->gsb->sendToSerialization(cmsg::DeleteGroup(za));
                     });
                 }
+
+                p.addItem("Delete All Zones and Groups",
+                          [w = juce::Component::SafePointer(this)]() {
+                              if (!w)
+                                  return;
+                              auto za = w->getZoneAddress();
+
+                              w->gsb->sendToSerialization(cmsg::ClearPart(za.part));
+                          });
                 isPopup = true;
                 p.showMenuAsync(gsb->editor->defaultPopupMenuOptions());
             }

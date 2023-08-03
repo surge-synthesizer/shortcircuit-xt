@@ -197,6 +197,29 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
 CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
                  removeGroup(payload, engine, cont));
 
+inline void clearPart(const int p, engine::Engine &engine, MessageController &cont)
+{
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [pt = p](auto &e) {
+            auto &part = e.getPatch()->getPart(pt);
+            while (!part->getGroups().empty())
+            {
+                auto gid = part->getGroup(0)->id;
+                auto g = part->removeGroup(gid);
+            }
+        },
+        [pt = p](auto &engine) {
+            engine.getSampleManager()->purgeUnreferencedSamples();
+
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(pt),
+                                      *(engine.getMessageController()));
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(pt)->getZoneMappingSummary(),
+                                      *(engine.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(ClearPart, c2s_clear_part, int, clearPart(payload, engine, cont));
+
 using zoneAddressFromTo_t =
     std::pair<selection::SelectionManager::ZoneAddress, selection::SelectionManager::ZoneAddress>;
 inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &engine,
