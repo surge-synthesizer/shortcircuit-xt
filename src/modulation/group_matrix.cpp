@@ -104,13 +104,17 @@ void GroupModMatrix::copyBaseValuesFromGroup(engine::Group &g)
 void GroupModMatrix::updateModulatorUsed(engine::Group &g) const
 {
     // TODO: Call this only when the mod matrix morphs. For now run them all
-    g.gegUsed[0] = true;
-    g.gegUsed[1] = true;
-    g.lfoUsed[0] = false;
-    g.lfoUsed[1] = false;
-    g.lfoUsed[2] = false;
+    for (const auto &r : routingTable)
+    {
+        g.gegUsed[0] = g.gegUsed[0] || r.src == gms_EG1 || r.srcVia == gms_EG1;
+        g.gegUsed[1] = g.gegUsed[1] || r.src == gms_EG2 || r.srcVia == gms_EG2;
+        g.lfoUsed[0] = g.lfoUsed[0] || r.src == gms_LFO1 || r.srcVia == gms_LFO1;
+        g.lfoUsed[1] = g.lfoUsed[1] || r.src == gms_LFO2 || r.srcVia == gms_LFO2;
+        g.lfoUsed[2] = g.lfoUsed[2] || r.src == gms_LFO3 || r.srcVia == gms_LFO3;
+    }
 
-    g.anyModulatorUsed = true;
+    g.anyModulatorUsed =
+        g.gegUsed[0] || g.gegUsed[1] || g.lfoUsed[0] || g.lfoUsed[1] || g.lfoUsed[2];
 }
 
 std::string getGroupModMatrixSourceDisplayName(const GroupModMatrixSource &dest)
