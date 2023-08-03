@@ -540,160 +540,170 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         SCLOG("Adding SF2 to part " << SCD(pt));
         auto &part = getPatch()->getPart(pt);
         int firstGroup = -1;
-        for (int i = 0; i < sf->GetInstrumentCount(); ++i)
+        for (int pc = 0; pc < sf->GetPresetCount(); ++pc)
         {
-            sf2::Instrument *instr = sf->GetInstrument(i);
+            auto *preset = sf->GetPreset(pc);
 
-            auto grpnum = part->addGroup() - 1;
-            auto &grp = part->getGroup(grpnum);
-            grp->name = instr->GetName();
-
-            if (instr->pGlobalRegion)
+            for (int i = 0; i < preset->GetRegionCount(); ++i)
             {
-                // TODO: Global Region
-            }
-            for (int j = 0; j < instr->GetRegionCount(); ++j)
-            {
-                auto region = instr->GetRegion(j);
-                auto sfsamp = region->GetSample();
-                if (sfsamp == nullptr)
-                    continue;
+                auto *presetRegion = preset->GetRegion(i);
+                sf2::Instrument *instr = presetRegion->pInstrument;
 
-                auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), i, j);
-                if (!sid.has_value())
-                    continue;
+                auto grpnum = part->addGroup() - 1;
+                auto &grp = part->getGroup(grpnum);
+                grp->name = instr->GetName();
 
-                if (firstGroup < 0)
-                    firstGroup = grpnum;
-                auto zn = std::make_unique<engine::Zone>(*sid);
-                if (region->overridingRootKey >= 0)
-                    zn->mapping.rootKey = region->overridingRootKey;
-                zn->mapping.rootKey += sfsamp->OriginalPitch - 60;
-
-                auto lk = region->loKey;
-                auto hk = region->hiKey;
-                if (lk == sf2::NONE)
-                    lk = sfsamp->OriginalPitch;
-                if (hk == sf2::NONE)
-                    hk = sfsamp->OriginalPitch;
-                zn->mapping.keyboardRange = {lk, hk};
-
-                auto lv = region->minVel;
-                auto hv = region->maxVel;
-                if (lv == sf2::NONE)
-                    lv = 0;
-                if (hv == sf2::NONE)
-                    hv = 127;
-                zn->mapping.velocityRange = {lv, hv};
-
-                // TODO check this 256
-                zn->mapping.pitchOffset = 1.0 * sfsamp->PitchCorrection / 256;
-                if (!zn->attachToSample(*sampleManager))
+                if (instr->pGlobalRegion)
                 {
-                    SCLOG("ERROR: Can't attach to sample");
-                    return;
+                    // TODO: Global Region
                 }
-                auto &znSD = zn->sampleData[0];
-
-                auto p = region->GetPan();
-                // pan in SF2 is -64 to 63 so hackety hack a bit
-                if (p < 0)
-                    zn->mapping.pan = p / 64.f;
-                else
-                    zn->mapping.pan = p / 63.f;
-
-                using namespace std;
-                auto s = sfsamp;
-                auto reg = region;
-
-                zn->mapping.pitchOffset += reg->coarseTune + reg->fineTune * 0.01;
-
-                if (reg->GetEG1PreAttackDelay() > 0.001)
+                for (int j = 0; j < instr->GetRegionCount(); ++j)
                 {
-                    std::cout << "ERROR: PreAttach Delay which we don't support" << std::endl;
+                    auto region = instr->GetRegion(j);
+                    auto sfsamp = region->GetSample();
+                    if (sfsamp == nullptr)
+                        continue;
+
+                    auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), i, j);
+                    if (!sid.has_value())
+                        continue;
+
+                    if (firstGroup < 0)
+                        firstGroup = grpnum;
+                    auto zn = std::make_unique<engine::Zone>(*sid);
+                    if (region->overridingRootKey >= 0)
+                        zn->mapping.rootKey = region->overridingRootKey;
+                    zn->mapping.rootKey += sfsamp->OriginalPitch - 60;
+
+                    auto noneOr = [](auto a, auto b, auto c) {
+                        if (a != sf2::NONE)
+                            return a;
+                        if (b != sf2::NONE)
+                            return b;
+                        return c;
+                    };
+
+                    auto lk =
+                        noneOr(region->loKey, presetRegion->loKey, (int)sfsamp->OriginalPitch);
+                    auto hk =
+                        noneOr(region->hiKey, presetRegion->hiKey, (int)sfsamp->OriginalPitch);
+                    zn->mapping.keyboardRange = {lk, hk};
+
+                    auto lv = noneOr(region->minVel, presetRegion->minVel, 0);
+                    auto hv = noneOr(region->maxVel, presetRegion->maxVel, 0);
+                    zn->mapping.velocityRange = {lv, hv};
+
+                    // TODO check this 256
+                    zn->mapping.pitchOffset = 1.0 * sfsamp->PitchCorrection / 256;
+                    if (!zn->attachToSample(*sampleManager))
+                    {
+                        SCLOG("ERROR: Can't attach to sample");
+                        return;
+                    }
+                    auto &znSD = zn->sampleData[0];
+
+                    auto p = region->GetPan();
+                    // pan in SF2 is -64 to 63 so hackety hack a bit
+                    if (p < 0)
+                        zn->mapping.pan = p / 64.f;
+                    else
+                        zn->mapping.pan = p / 63.f;
+
+                    using namespace std;
+                    auto s = sfsamp;
+                    auto reg = region;
+
+                    zn->mapping.pitchOffset += reg->coarseTune + reg->fineTune * 0.01;
+
+                    if (reg->GetEG1PreAttackDelay() > 0.001)
+                    {
+                        std::cout << "ERROR: PreAttach Delay which we don't support" << std::endl;
+                    }
+                    auto s2a = [](double s) {
+                        auto l2s = log2(s);
+                        auto scs = l2s - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin;
+                        auto ncs =
+                            scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
+                                   sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
+                        return std::clamp(ncs, 0., 1.);
+                    };
+
+                    auto sus2l = [](double s) {
+                        auto db = -s / 10;
+                        return pow(10.0, db * 0.05);
+                    };
+
+                    zn->aegStorage.a = s2a(reg->GetEG1Attack());
+                    zn->aegStorage.h = s2a(reg->GetEG1Hold());
+                    zn->aegStorage.d = s2a(reg->GetEG1Decay());
+                    zn->aegStorage.s = sus2l(reg->GetEG1Sustain());
+                    zn->aegStorage.r = s2a(reg->GetEG1Release());
+
+                    auto GetValue = [](const auto &val) {
+                        if (val == sf2::NONE)
+                            return ToString("NONE");
+                        return ToString(val);
+                    };
+
+                    zn->eg2Storage.a = s2a(reg->GetEG2Attack());
+                    zn->eg2Storage.h = s2a(reg->GetEG2Hold());
+                    zn->eg2Storage.d = s2a(reg->GetEG2Decay());
+                    zn->eg2Storage.s = sus2l(reg->GetEG2Sustain());
+                    zn->eg2Storage.r = s2a(reg->GetEG2Release());
+
+                    if (reg->HasLoop)
+                    {
+                        znSD.loopActive = true;
+                        znSD.startLoop = reg->LoopStart;
+                        znSD.endLoop = reg->LoopEnd;
+                    }
+
+                    SCLOG("Unimplemented SF2 Features Follow:")
+                    SCLOG("\tModulation Envelope Generator Pitch="
+                          << GetValue(reg->modEnvToPitch)
+                          << "cents, Cutoff=" << GetValue(reg->modEnvToFilterFc) << "cents");
+
+                    SCLOG("\tModulation LFO: Delay="
+                          << ::sf2::ToSeconds(reg->delayModLfo)
+                          << "s, Frequency=" << ::sf2::ToHz(reg->freqModLfo)
+                          << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB"
+                          << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc
+                          << ", LFO to Pitch=" << reg->modLfoToPitch);
+
+                    SCLOG("\tVibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo)
+                                                     << "s, Frequency="
+                                                     << ::sf2::ToHz(reg->freqVibLfo)
+                                                     << "Hz, LFO to Pitch=" << reg->vibLfoToPitch);
+
+                    SCLOG("\tModulators Ignored. Count =(" << reg->modulators.size() << ")");
+
+                    for (int i = 0; i < reg->modulators.size(); i++)
+                    {
+                        // PrintModulatorItem(&reg->modulators[i]);
+                    }
+
+                    if (reg->initialFilterFc == ::sf2::NONE)
+                    {
+                        SCLOG("\tFilter Cutoff: None");
+                    }
+                    else
+                    {
+                        SCLOG("\tFilter Cutoff " << reg->initialFilterFc << "cents");
+                    }
+
+                    if (reg->initialFilterQ == ::sf2::NONE)
+                    {
+                        SCLOG("\tFilter Q: None");
+                    }
+                    else
+                    {
+                        SCLOG("\tFilter Q " << reg->initialFilterQ / 10.0 << "dB");
+                    }
+
+                    SCLOG("\tExclusive Class : " << reg->exclusiveClass);
+
+                    grp->addZone(zn);
                 }
-                auto s2a = [](double s) {
-                    auto l2s = log2(s);
-                    auto scs = l2s - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin;
-                    auto ncs = scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
-                                      sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
-                    return std::clamp(ncs, 0., 1.);
-                };
-
-                auto sus2l = [](double s) {
-                    auto db = -s / 10;
-                    return pow(10.0, db * 0.05);
-                };
-
-                zn->aegStorage.a = s2a(reg->GetEG1Attack());
-                zn->aegStorage.h = s2a(reg->GetEG1Hold());
-                zn->aegStorage.d = s2a(reg->GetEG1Decay());
-                zn->aegStorage.s = sus2l(reg->GetEG1Sustain());
-                zn->aegStorage.r = s2a(reg->GetEG1Release());
-
-                auto GetValue = [](const auto &val) {
-                    if (val == sf2::NONE)
-                        return ToString("NONE");
-                    return ToString(val);
-                };
-
-                zn->eg2Storage.a = s2a(reg->GetEG2Attack());
-                zn->eg2Storage.h = s2a(reg->GetEG2Hold());
-                zn->eg2Storage.d = s2a(reg->GetEG2Decay());
-                zn->eg2Storage.s = sus2l(reg->GetEG2Sustain());
-                zn->eg2Storage.r = s2a(reg->GetEG2Release());
-
-                if (reg->HasLoop)
-                {
-                    znSD.loopActive = true;
-                    znSD.startLoop = reg->LoopStart;
-                    znSD.endLoop = reg->LoopEnd;
-                }
-
-                SCLOG("Unimplemented SF2 Features Follow:")
-                SCLOG("\tModulation Envelope Generator Pitch="
-                      << GetValue(reg->modEnvToPitch)
-                      << "cents, Cutoff=" << GetValue(reg->modEnvToFilterFc) << "cents");
-
-                SCLOG("\tModulation LFO: Delay="
-                      << ::sf2::ToSeconds(reg->delayModLfo)
-                      << "s, Frequency=" << ::sf2::ToHz(reg->freqModLfo)
-                      << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB"
-                      << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc
-                      << ", LFO to Pitch=" << reg->modLfoToPitch);
-
-                SCLOG("\tVibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo)
-                                                 << "s, Frequency=" << ::sf2::ToHz(reg->freqVibLfo)
-                                                 << "Hz, LFO to Pitch=" << reg->vibLfoToPitch);
-
-                SCLOG("\tModulators Ignored. Count =(" << reg->modulators.size() << ")");
-
-                for (int i = 0; i < reg->modulators.size(); i++)
-                {
-                    // PrintModulatorItem(&reg->modulators[i]);
-                }
-
-                if (reg->initialFilterFc == ::sf2::NONE)
-                {
-                    SCLOG("\tFilter Cutoff: None");
-                }
-                else
-                {
-                    SCLOG("\tFilter Cutoff " << reg->initialFilterFc << "cents");
-                }
-
-                if (reg->initialFilterQ == ::sf2::NONE)
-                {
-                    SCLOG("\tFilter Q: None");
-                }
-                else
-                {
-                    SCLOG("\tFilter Q " << reg->initialFilterQ / 10.0 << "dB");
-                }
-
-                SCLOG("\tExclusive Class : " << reg->exclusiveClass);
-
-                grp->addZone(zn);
             }
         }
         selectionManager->selectAction(
