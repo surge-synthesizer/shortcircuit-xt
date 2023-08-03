@@ -32,6 +32,7 @@
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
+#include "voice/voice.h"
 
 namespace scxt::messaging::client
 {
@@ -126,7 +127,17 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
         {
             cont.scheduleAudioThreadCallback([row = r, index = i, zs = sz](auto &eng) {
                 for (const auto &[p, g, z] : zs)
-                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->lfoStorage[index] = row;
+                {
+                    auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+                    zn->lfoStorage[index] = row;
+                    for (auto *v : zn->voiceWeakPointers)
+                    {
+                        if (v)
+                        {
+                            v->lfos[index].UpdatePhaseIncrement();
+                        }
+                    }
+                }
             });
         }
     }
@@ -137,7 +148,11 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
         {
             cont.scheduleAudioThreadCallback([row = r, index = i, gs = sg](auto &eng) {
                 for (const auto &[p, g, z] : gs)
-                    eng.getPatch()->getPart(p)->getGroup(g)->lfoStorage[index] = row;
+                {
+                    auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
+                    grp->lfoStorage[index] = row;
+                    grp->lfos[index].UpdatePhaseIncrement();
+                }
             });
         }
     }

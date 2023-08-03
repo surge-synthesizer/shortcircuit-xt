@@ -57,6 +57,7 @@ enum GroupModMatrixDestinationType
 {
     gmd_none,
     gmd_grouplevel,
+    gmd_LFO_Rate,
 
     numGroupMatrixDestinations
 };
@@ -116,6 +117,8 @@ struct GroupModMatrixTraits
 struct GroupModMatrix : public MoveableOnly<GroupModMatrix>, ModMatrix<GroupModMatrixTraits>
 {
     GroupModMatrix() { clear(); }
+
+    void assignSourcesFromGroup(engine::Group &g);
 
     void copyBaseValuesFromGroup(engine::Group &);
     void updateModulatorUsed(engine::Group &) const;

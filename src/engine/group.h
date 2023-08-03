@@ -55,7 +55,7 @@ constexpr int lfosPerGroup{3};
 
 struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSupport
 {
-    Group() : id(GroupID::next()), name(id.to_string()) {}
+    Group();
     GroupID id;
 
     std::string name{};
@@ -128,6 +128,8 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     void addActiveZone();
     void removeActiveZone();
 
+    void onSampleRateChanged() override;
+
     /*
      * One of the core differences between zone and group is, since group is monophonic,
      * it contains both the data for the process evaluators and also the evaluators themselves
@@ -148,10 +150,12 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     std::array<bool, egPerGroup> gegUsed{};
 
     std::array<modulation::modulators::StepLFOStorage, lfosPerGroup> lfoStorage;
+    std::array<modulation::modulators::StepLFO, lfosPerGroup> lfos;
     std::array<bool, lfosPerGroup> lfoUsed{};
+    bool initializedLFOs{false};
 
-    modulation::GroupModMatrix::routingTable_t routingTable;
     modulation::GroupModMatrix modMatrix;
+    modulation::GroupModMatrix::routingTable_t &routingTable;
 
     // TODO obviously this sucks move to a table. Also its copied in voice
     inline float envelope_rate_linear_nowrap(float f)

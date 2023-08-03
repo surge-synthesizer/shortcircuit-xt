@@ -139,11 +139,12 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     void process(int samples);
     float output;
 
+    void UpdatePhaseIncrement();
+
   protected:
     long state;
     long state_tminus1;
     float phase, phaseInc;
-    void UpdatePhaseIncrement();
     float wf_history[4];
     float ratemult;
     int shuffle_id;
