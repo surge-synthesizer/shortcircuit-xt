@@ -39,5 +39,23 @@ using groupOutputInfoUpdate_t = std::pair<bool, engine::Group::GroupOutputInfo>;
 SERIAL_TO_CLIENT(GroupOutputInfoUpdated, s2c_update_group_output_info, groupOutputInfoUpdate_t,
                  onGroupOutputInfoUpdated);
 
+inline void updateGroupOutputInfo(const engine::Group::GroupOutputInfo &payload,
+                                  const engine::Engine &engine, MessageController &cont)
+{
+    // TODO Selected Group State
+    auto sz = engine.getSelectionManager()->currentlySelectedGroups();
+    if (!sz.empty())
+    {
+        cont.scheduleAudioThreadCallback([zs = sz, info = payload](auto &eng) {
+            for (const auto &[p, g, z] : zs)
+            {
+                eng.getPatch()->getPart(p)->getGroup(g)->outputInfo = info;
+            }
+        });
+    }
+}
+CLIENT_TO_SERIAL(UpdateGroupOutputInfo, c2s_update_group_output_info,
+                 engine::Group::GroupOutputInfo, updateGroupOutputInfo(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H

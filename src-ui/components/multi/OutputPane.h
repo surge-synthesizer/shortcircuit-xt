@@ -60,6 +60,7 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
 
     std::unique_ptr<OutputTab<OTTraits>> output;
     std::unique_ptr<juce::Component> proc;
+    bool active{false};
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
