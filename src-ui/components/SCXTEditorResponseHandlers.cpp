@@ -194,10 +194,20 @@ void SCXTEditor::onGroupOrZoneLfoUpdated(const scxt::messaging::client::indexedL
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
-    multiScreen->getZoneElements()->output->setActive(active);
+    multiScreen->getZoneElements()->zoneOut()->setActive(active);
     if (active)
     {
-        multiScreen->getZoneElements()->output->setOutputData(inf);
+        multiScreen->getZoneElements()->zoneOut()->setOutputData(inf);
+    }
+}
+
+void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p)
+{
+    auto [active, inf] = p;
+    multiScreen->getGroupElements()->groupOut()->setActive(active);
+    if (active)
+    {
+        multiScreen->getGroupElements()->groupOut()->setOutputData(inf);
     }
 }
 

@@ -114,4 +114,44 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
         dsp::processor::unspawnProcessor(tmpProcessor);
 }
 
+template <typename T>
+std::string HasGroupZoneProcessors<T>::toStringProcRoutingPath(
+    const scxt::engine::HasGroupZoneProcessors<T>::ProcRoutingPath &p)
+{
+    switch (p)
+    {
+    case procRoute_linear:
+        return "procRoute_linear";
+    case procRoute_bypass:
+        return "procRoute_bypass";
+    }
+    return "procRoute_linear";
+}
+
+template <typename T>
+typename HasGroupZoneProcessors<T>::ProcRoutingPath
+HasGroupZoneProcessors<T>::fromStringProcRoutingPath(const std::string &s)
+{
+    static auto inverse =
+        makeEnumInverse<ProcRoutingPath, HasGroupZoneProcessors<T>::toStringProcRoutingPath>(
+            procRoute_linear, procRoute_bypass);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return procRoute_linear;
+    return p->second;
+}
+
+template <typename T>
+std::string HasGroupZoneProcessors<T>::getProcRoutingPathDisplayName(
+    scxt::engine::HasGroupZoneProcessors<T>::ProcRoutingPath p)
+{
+    switch (p)
+    {
+    case procRoute_linear:
+        return "Linear";
+    case procRoute_bypass:
+        return "Bypass";
+    }
+    return "ERROR";
+}
 } // namespace scxt::engine

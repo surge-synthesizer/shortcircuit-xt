@@ -31,20 +31,34 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "components/HasEditor.h"
 #include "engine/zone.h"
+#include "engine/group.h"
 
 namespace scxt::ui::multi
 {
-struct OutputTab;
-struct OutputPane : sst::jucegui::components::NamedPanel, HasEditor
+
+struct OutPaneZoneTraits
+{
+    static constexpr bool forZone{true};
+    using info_t = engine::Zone::ZoneOutputInfo;
+};
+
+struct OutPaneGroupTraits
+{
+    static constexpr bool forZone{false};
+    using info_t = engine::Group::GroupOutputInfo;
+};
+template <typename OTTraits> struct OutputTab;
+
+template <typename OTTraits> struct OutputPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     OutputPane(SCXTEditor *e);
     ~OutputPane();
 
     void resized() override;
     void setActive(bool);
-    void setOutputData(const engine::Zone::ZoneOutputInfo &);
+    void setOutputData(const typename OTTraits::info_t &);
 
-    std::unique_ptr<OutputTab> output;
+    std::unique_ptr<OutputTab<OTTraits>> output;
     std::unique_ptr<juce::Component> proc;
 };
 } // namespace scxt::ui::multi

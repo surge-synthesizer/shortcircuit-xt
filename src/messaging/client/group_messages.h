@@ -34,5 +34,10 @@
 
 namespace scxt::messaging::client
 {
+
+using groupOutputInfoUpdate_t = std::pair<bool, engine::Group::GroupOutputInfo>;
+SERIAL_TO_CLIENT(GroupOutputInfoUpdated, s2c_update_group_output_info, groupOutputInfoUpdate_t,
+                 onGroupOutputInfoUpdated);
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H

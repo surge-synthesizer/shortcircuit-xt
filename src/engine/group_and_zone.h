@@ -46,6 +46,18 @@ struct Engine;
 
 template <typename T> struct HasGroupZoneProcessors
 {
+    /*
+     * This enum is here but we put it in the output info structure of
+     * group and zone separately
+     */
+    enum ProcRoutingPath
+    {
+        procRoute_linear,
+        procRoute_bypass
+    };
+    DECLARE_ENUM_STRING(ProcRoutingPath);
+    std::string getProcRoutingPathDisplayName(ProcRoutingPath p);
+
     T *asT() { return static_cast<T *>(this); }
     static constexpr int processorCount{4};
     void setProcessorType(int whichProcessor, dsp::processor::ProcessorType type);

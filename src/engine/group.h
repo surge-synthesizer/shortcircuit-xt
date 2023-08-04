@@ -65,6 +65,7 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     {
         float amplitude{1.f}, pan{0.f};
         bool muted{false};
+        ProcRoutingPath procRouting{procRoute_linear};
         BusAddress routeTo{DEFAULT_BUS};
     } outputInfo;
 
