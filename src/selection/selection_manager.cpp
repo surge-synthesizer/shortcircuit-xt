@@ -494,6 +494,10 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
 void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
 {
     const auto &g = engine.getPatch()->getPart(part)->getGroup(group);
+    serializationSendToClient(cms::s2c_update_group_output_info,
+                              cms::groupOutputInfoUpdate_t{true, g->outputInfo},
+                              *(engine.getMessageController()));
+
     for (int i = 0; i < engine::Group::egPerGroup; ++i)
     {
         serializationSendToClient(

@@ -95,15 +95,18 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
         {
             ctr->modvariant =
                 std::make_unique<multi::ModPane<multi::ModPaneZoneTraits>>(editor, forZone);
+            ctr->outputvariant =
+                std::make_unique<multi::OutputPane<multi::OutPaneZoneTraits>>(editor);
         }
         else
         {
             ctr->modvariant =
                 std::make_unique<multi::ModPane<multi::ModPaneGroupTraits>>(editor, forZone);
+            ctr->outputvariant =
+                std::make_unique<multi::OutputPane<multi::OutPaneGroupTraits>>(editor);
         }
         addChildComponent(*ctr->modComponent());
-        ctr->output = std::make_unique<multi::OutputPane>(editor);
-        addChildComponent(*ctr->output);
+        addChildComponent(*ctr->outputComponent());
 
         for (int i = 0; i < 2; ++i)
         {
@@ -115,7 +118,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 
         if (!forZone)
         {
-            ctr->output->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            ctr->groupOut()->setCustomClass(
+                connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
             ctr->groupMod()->setCustomClass(
                 connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
             ctr->lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
@@ -164,7 +168,7 @@ void MultiScreen::layout()
         auto mw = modRect.getWidth() * 0.750;
         ctr->modComponent()->setBounds(modRect.withWidth(mw));
         auto xw = modRect.getWidth() * 0.250;
-        ctr->output->setBounds(modRect.withWidth(xw).translated(mw, 0));
+        ctr->outputComponent()->setBounds(modRect.withWidth(xw).translated(mw, 0));
 
         auto envRect =
             mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
@@ -213,7 +217,7 @@ MultiScreen::ZoneOrGroupElements::~ZoneOrGroupElements() = default;
 
 void MultiScreen::ZoneOrGroupElements::setVisible(bool b)
 {
-    output->setVisible(b);
+    outputComponent()->setVisible(b);
     lfo->setVisible(b);
     modComponent()->setVisible(b);
     for (auto &e : eg)
@@ -229,6 +233,16 @@ juce::Component *MultiScreen::ZoneOrGroupElements::modComponent()
         return std::get<0>(modvariant).get();
     if (index == ZoneGroupIndex::GROUP)
         return std::get<1>(modvariant).get();
+    return nullptr;
+}
+
+juce::Component *MultiScreen::ZoneOrGroupElements::outputComponent()
+
+{
+    if (index == ZoneGroupIndex::ZONE)
+        return std::get<0>(outputvariant).get();
+    if (index == ZoneGroupIndex::GROUP)
+        return std::get<1>(outputvariant).get();
     return nullptr;
 }
 } // namespace scxt::ui

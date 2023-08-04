@@ -40,7 +40,11 @@ namespace scxt::ui
 namespace multi
 {
 struct AdsrPane;
-struct OutputPane;
+
+struct OutPaneZoneTraits;
+struct OutPaneGroupTraits;
+template <typename T> struct OutputPane;
+
 struct PartGroupSidebar;
 struct MappingPane;
 
@@ -79,7 +83,9 @@ struct MultiScreen : juce::Component, HasEditor
         ZoneGroupIndex index;
         ZoneOrGroupElements(ZoneGroupIndex z);
         ~ZoneOrGroupElements();
-        std::unique_ptr<multi::OutputPane> output;
+        std::variant<std::unique_ptr<multi::OutputPane<multi::OutPaneZoneTraits>>,
+                     std::unique_ptr<multi::OutputPane<multi::OutPaneGroupTraits>>>
+            outputvariant;
         std::unique_ptr<multi::LfoPane> lfo;
         std::unique_ptr<multi::AdsrPane> eg[2];
         std::variant<std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>>,
@@ -87,6 +93,7 @@ struct MultiScreen : juce::Component, HasEditor
             modvariant;
 
         juce::Component *modComponent();
+        juce::Component *outputComponent();
         const std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>> &zoneMod()
         {
             assert(index == ZoneGroupIndex::ZONE);
@@ -98,6 +105,19 @@ struct MultiScreen : juce::Component, HasEditor
             assert(index == ZoneGroupIndex::GROUP);
             return std::get<1>(modvariant);
         }
+
+        const std::unique_ptr<multi::OutputPane<multi::OutPaneZoneTraits>> &zoneOut()
+        {
+            assert(index == ZoneGroupIndex::ZONE);
+            return std::get<0>(outputvariant);
+        }
+
+        const std::unique_ptr<multi::OutputPane<multi::OutPaneGroupTraits>> &groupOut()
+        {
+            assert(index == ZoneGroupIndex::GROUP);
+            return std::get<1>(outputvariant);
+        }
+
         std::unique_ptr<multi::ProcessorPane> processors[numProcessorDisplays];
 
         void setVisible(bool b);

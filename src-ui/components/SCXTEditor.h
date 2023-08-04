@@ -174,6 +174,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onGroupOrZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
     void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p);
+    void onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p);
 
     void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &);
     void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);

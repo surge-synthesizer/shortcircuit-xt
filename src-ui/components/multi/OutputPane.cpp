@@ -26,33 +26,50 @@
  */
 
 #include "OutputPane.h"
+#include "components/SCXTEditor.h"
+#include "sst/jucegui/components/Label.h"
 
 namespace scxt::ui::multi
 {
 
-struct cc : juce::Component
+namespace jcmp = sst::jucegui::components;
+struct cc : juce::Component, HasEditor
 {
-    juce::Colour c;
-    cc(juce::Colour ci) : c(ci) {}
-    void paint(juce::Graphics &g) { g.fillAll(c); }
+    cc(SCXTEditor *e) : HasEditor(e) {}
+    void paint(juce::Graphics &g)
+    {
+        auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
+                                           jcmp::Label::Styles::controlLabelFont);
+        g.setFont(ft.withHeight(14));
+        g.setColour(juce::Colours::white);
+        g.drawText("Proc Routing", getLocalBounds().withTrimmedBottom(20),
+                   juce::Justification::centred);
+
+        g.setFont(ft.withHeight(12));
+        g.setColour(juce::Colours::white);
+        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(20),
+                   juce::Justification::centred);
+    }
 };
 
-struct OutputTab : juce::Component, HasEditor
+template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 {
     OutputTab(SCXTEditor *e) : HasEditor(e) {}
 
-    engine::Zone::ZoneOutputInfo info;
+    typename OTTraits::info_t info;
 };
 
-OutputPane::OutputPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel(""), HasEditor(e)
+template <typename OTTraits>
+OutputPane<OTTraits>::OutputPane(SCXTEditor *e)
+    : sst::jucegui::components::NamedPanel(""), HasEditor(e)
 {
     hasHamburger = false;
     isTabbed = true;
     tabNames = {"OUTPUT", "PROC ROUTING"};
 
-    output = std::make_unique<OutputTab>(editor);
+    output = std::make_unique<OutputTab<OTTraits>>(editor);
     addAndMakeVisible(*output);
-    proc = std::make_unique<cc>(juce::Colours::black.withAlpha(0.f));
+    proc = std::make_unique<cc>(editor);
     addChildComponent(*proc);
 
     resetTabState();
@@ -73,22 +90,27 @@ OutputPane::OutputPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("")
     };
 }
 
-OutputPane::~OutputPane() {}
+template <typename OTTraits> OutputPane<OTTraits>::~OutputPane() {}
 
-void OutputPane::resized()
+template <typename OTTraits> void OutputPane<OTTraits>::resized()
 {
     output->setBounds(getContentArea());
     proc->setBounds(getContentArea());
 }
 
-void OutputPane::setActive(bool b)
+template <typename OTTraits> void OutputPane<OTTraits>::setActive(bool b)
 {
     SCLOG_ONCE("Output Pane setActive ignored " << (b ? "ON" : "OFF"));
 }
 
-void OutputPane::setOutputData(const engine::Zone::ZoneOutputInfo &d)
+template <typename OTTraits>
+void OutputPane<OTTraits>::setOutputData(const typename OTTraits::info_t &d)
 {
+    SCLOG_ONCE("Output Pane Set Output Data");
     output->info = d;
     output->repaint();
 }
+
+template struct OutputPane<OutPaneGroupTraits>;
+template struct OutputPane<OutPaneZoneTraits>;
 } // namespace scxt::ui::multi

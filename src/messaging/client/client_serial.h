@@ -100,6 +100,7 @@ enum SerializationToClientMessageIds
     s2c_update_group_matrix,
     s2c_update_group_or_zone_individual_lfo,
     s2c_update_zone_output_info,
+    s2c_update_group_output_info,
 
     s2c_respond_single_processor_metadata_and_data,
     s2c_notify_mismatched_processors_for_zone,

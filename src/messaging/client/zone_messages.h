@@ -89,7 +89,6 @@ CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
 using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
 SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputInfoUpdate_t,
                  onZoneOutputInfoUpdated);
-
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H
