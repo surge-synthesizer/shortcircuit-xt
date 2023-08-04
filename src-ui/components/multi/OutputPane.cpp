@@ -79,7 +79,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
     {
         outputAttachment = std::make_unique<attachment_t>(
-            datamodel::pmd().asPercent().withName("Amplitude"), // FIXME - move to decibel
+            datamodel::pmd().asCubicDecibelAttenuation().withName("Amplitude"),
             [w = juce::Component::SafePointer(this)](const auto &at) {
                 if (w && w->parent)
                     w->outputChangedFromGUI(at);

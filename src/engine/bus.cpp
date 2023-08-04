@@ -228,7 +228,8 @@ void Bus::process()
     }
     if (busSendStorage.level != 1.f)
     {
-        mech::scale_by<blockSize>(busSendStorage.level, output[0], output[1]);
+        auto lv = busSendStorage.level * busSendStorage.level * busSendStorage.level;
+        mech::scale_by<blockSize>(lv, output[0], output[1]);
     }
 
     if (busSendStorage.supportsSends && busSendStorage.hasSends &&
