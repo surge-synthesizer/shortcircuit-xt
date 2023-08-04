@@ -126,7 +126,7 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
     setupWidgetForValueTooltip(panKnob, panAttachment);
 
     vcaAttachment = std::make_unique<attachment_t>(
-        datamodel::pmd().asPercent().withName("Level").withDefault(1.0), onChange,
+        datamodel::pmd().asCubicDecibelAttenuation().withName("Level").withDefault(1.0), onChange,
         mixer->busSendData[busIndex].level);
     vcaSlider = std::make_unique<jcmp::VSlider>();
     vcaSlider->setSource(vcaAttachment.get());

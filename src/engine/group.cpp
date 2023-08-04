@@ -137,7 +137,7 @@ void Group::process(Engine &e)
 
     // multiply by vca level from matrix
     auto mlev = modMatrix.getValue(modulation::gmd_grouplevel, 0);
-    outputAmp.set_target(mlev);
+    outputAmp.set_target(mlev * mlev * mlev);
     outputAmp.multiply_2_blocks(lOut, rOut);
 }
 

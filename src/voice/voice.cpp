@@ -261,7 +261,7 @@ bool Voice::process()
     }
 
     auto pao = modMatrix.getValue(modulation::vmd_Zone_Output_Amplitude, 0);
-    outputAmp.set_target(pao);
+    outputAmp.set_target(pao * pao * pao);
     if (chainIsMono)
     {
         outputAmp.multiply_block(output[0]);
