@@ -89,6 +89,25 @@ CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
 using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
 SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputInfoUpdate_t,
                  onZoneOutputInfoUpdated);
+
+inline void updateZoneOutputInfo(const engine::Zone::ZoneOutputInfo &payload,
+                                 const engine::Engine &engine, MessageController &cont)
+{
+    // TODO Selected Zone State
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+    if (!sz.empty())
+    {
+        cont.scheduleAudioThreadCallback([zs = sz, info = payload](auto &eng) {
+            for (const auto &[p, g, z] : zs)
+            {
+                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->outputInfo = info;
+            }
+        });
+    }
+}
+CLIENT_TO_SERIAL(UpdateZoneOutputInfo, c2s_update_zone_output_info, engine::Zone::ZoneOutputInfo,
+                 updateZoneOutputInfo(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H

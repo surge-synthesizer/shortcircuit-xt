@@ -28,11 +28,16 @@
 #include "OutputPane.h"
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/Knob.h"
+#include "connectors/PayloadDataAttachment.h"
+#include "datamodel/parameter.h"
 
 namespace scxt::ui::multi
 {
 
 namespace jcmp = sst::jucegui::components;
+namespace cmsg = scxt::messaging::client;
+
 struct cc : juce::Component, HasEditor
 {
     cc(SCXTEditor *e) : HasEditor(e) {}
@@ -54,20 +59,107 @@ struct cc : juce::Component, HasEditor
 
 template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 {
-    OutputTab(SCXTEditor *e) : HasEditor(e) {}
+    typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
 
+    std::unique_ptr<attachment_t> outputAttachment, panAttachment;
+    std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
+    std::unique_ptr<jcmp::Label> outputLabel, panLabel;
+    OutputPane<OTTraits> *parent{nullptr};
+
+    template <typename T>
+    std::unique_ptr<T> attachContinuousTo(const std::unique_ptr<attachment_t> &at)
+    {
+        auto kn = std::make_unique<T>();
+        kn->setSource(at.get());
+        setupWidgetForValueTooltip(kn, at);
+        addAndMakeVisible(*kn);
+        return std::move(kn);
+    }
+
+    OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
+    {
+        outputAttachment = std::make_unique<attachment_t>(
+            datamodel::pmd().asPercent().withName("Amplitude"), // FIXME - move to decibel
+            [w = juce::Component::SafePointer(this)](const auto &at) {
+                if (w && w->parent)
+                    w->outputChangedFromGUI(at);
+            },
+            info.amplitude);
+        panAttachment = std::make_unique<attachment_t>(
+            datamodel::pmd().asPercentBipolar().withName("Pan"),
+            [w = juce::Component::SafePointer(this)](const auto &at) {
+                if (w && w->parent)
+                    w->outputChangedFromGUI(at);
+            },
+            info.pan);
+
+        outputKnob = attachContinuousTo<jcmp::Knob>(outputAttachment);
+        panKnob = attachContinuousTo<jcmp::Knob>(panAttachment);
+        outputLabel = std::make_unique<jcmp::Label>();
+        outputLabel->setText("Amplitude");
+        addAndMakeVisible(*outputLabel);
+        panLabel = std::make_unique<jcmp::Label>();
+        panLabel->setText("Pan");
+        addAndMakeVisible(*panLabel);
+    }
+
+    void resized()
+    {
+        auto b = getLocalBounds();
+        b = b.reduced(5, 0);
+        auto w = b.getWidth();
+        b = b.withHeight(w / 2);
+
+        auto bl = b.withWidth(w / 2);
+
+        {
+            auto ll = bl.reduced(3);
+            auto lh = ll.getHeight();
+            auto th = 20;
+
+            auto kb = ll.reduced(th / 2, 0).withTrimmedBottom(th);
+            outputKnob->setBounds(kb);
+            auto pb = ll.withTrimmedTop(lh - th);
+            outputLabel->setBounds(pb);
+        }
+
+        bl = bl.translated(w / 2, 0);
+
+        {
+            auto ll = bl.reduced(3);
+            auto lh = ll.getHeight();
+            auto th = 20;
+
+            auto kb = ll.reduced(th / 2, 0).withTrimmedBottom(th);
+            panKnob->setBounds(kb);
+            auto pb = ll.withTrimmedTop(lh - th);
+            panLabel->setBounds(pb);
+        }
+    }
+    void outputChangedFromGUI(const attachment_t &at)
+    {
+        updateValueTooltip(at);
+
+        if constexpr (OTTraits::forZone)
+        {
+            sendToSerialization(cmsg::UpdateZoneOutputInfo(info));
+        }
+        else
+        {
+            sendToSerialization(cmsg::UpdateGroupOutputInfo(info));
+        }
+    }
     typename OTTraits::info_t info;
 };
 
 template <typename OTTraits>
-OutputPane<OTTraits>::OutputPane(SCXTEditor *e)
-    : sst::jucegui::components::NamedPanel(""), HasEditor(e)
+OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEditor(e)
 {
     hasHamburger = false;
     isTabbed = true;
     tabNames = {"OUTPUT", "PROC ROUTING"};
 
-    output = std::make_unique<OutputTab<OTTraits>>(editor);
+    output = std::make_unique<OutputTab<OTTraits>>(editor, this);
     addAndMakeVisible(*output);
     proc = std::make_unique<cc>(editor);
     addChildComponent(*proc);
@@ -79,15 +171,16 @@ OutputPane<OTTraits>::OutputPane(SCXTEditor *e)
             return;
         if (i == 0)
         {
-            wt->output->setVisible(true);
+            wt->output->setVisible(wt->active);
             wt->proc->setVisible(false);
         }
         else
         {
             wt->output->setVisible(false);
-            wt->proc->setVisible(true);
+            wt->proc->setVisible(wt->active);
         }
     };
+    onTabSelected(selectedTab);
 }
 
 template <typename OTTraits> OutputPane<OTTraits>::~OutputPane() {}
@@ -100,13 +193,13 @@ template <typename OTTraits> void OutputPane<OTTraits>::resized()
 
 template <typename OTTraits> void OutputPane<OTTraits>::setActive(bool b)
 {
-    SCLOG_ONCE("Output Pane setActive ignored " << (b ? "ON" : "OFF"));
+    active = b;
+    onTabSelected(selectedTab);
 }
 
 template <typename OTTraits>
 void OutputPane<OTTraits>::setOutputData(const typename OTTraits::info_t &d)
 {
-    SCLOG_ONCE("Output Pane Set Output Data");
     output->info = d;
     output->repaint();
 }

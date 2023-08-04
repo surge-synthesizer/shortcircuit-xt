@@ -50,7 +50,9 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_mapping,
     c2s_update_zone_samples,
     c2s_update_zone_routing_row,
+    c2s_update_zone_output_info,
     c2s_update_group_routing_row,
+    c2s_update_group_output_info,
 
     c2s_update_group_or_zone_individual_lfo,
 
