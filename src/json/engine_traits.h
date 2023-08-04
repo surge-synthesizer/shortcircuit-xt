@@ -143,7 +143,7 @@ template <> struct scxt_traits<scxt::engine::Group::GroupOutputInfo>
         v = {{"amplitude", t.amplitude},
              {"pan", t.pan},
              {"muted", t.muted},
-             {"procRouting", scxt::engine::Group::toStringProcRoutingPath(t.procRouting)},
+             {"procRouting", t.procRouting},
              {"routeTo", (int)t.routeTo}};
     }
 
@@ -155,10 +155,8 @@ template <> struct scxt_traits<scxt::engine::Group::GroupOutputInfo>
         findIf(v, "amplitude", zo.amplitude);
         findIf(v, "pan", zo.pan);
         findIf(v, "muted", zo.muted);
+        findIf(v, "procRouting", zo.procRouting);
         findIf(v, "routeTo", rt);
-        std::string tp;
-        findIf(v, "procRouting", tp);
-        zo.procRouting = scxt::engine::Group::fromStringProcRoutingPath(tp);
         zo.routeTo = (engine::BusAddress)(rt);
     }
 };
@@ -213,7 +211,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneOutputInfo>
         v = {{"amplitude", t.amplitude},
              {"pan", t.pan},
              {"muted", t.muted},
-             {"procRouting", scxt::engine::Zone::toStringProcRoutingPath(t.procRouting)},
+             {"procRouting", t.procRouting},
              {"routeTo", (int)t.routeTo}};
     }
 
@@ -224,11 +222,8 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneOutputInfo>
         findIf(v, "amplitude", zo.amplitude);
         findIf(v, "pan", zo.pan);
         findIf(v, "muted", zo.muted);
+        findIf(v, "procRouting", zo.procRouting);
         findIf(v, "routeTo", rt);
-        std::string tp;
-        findIf(v, "procRouting", tp);
-        zo.procRouting = scxt::engine::Zone::fromStringProcRoutingPath(tp);
-
         zo.routeTo = (engine::BusAddress)(rt);
     }
 };
@@ -275,6 +270,10 @@ STREAM_ENUM(engine::Zone::LoopMode, engine::Zone::toStringLoopMode,
             engine::Zone::fromStringLoopMode);
 STREAM_ENUM(engine::Zone::LoopDirection, engine::Zone::toStringLoopDirection,
             engine::Zone::fromStringLoopDirection);
+STREAM_ENUM(engine::Zone::ProcRoutingPath, engine::Zone::toStringProcRoutingPath,
+            engine::Zone::fromStringProcRoutingPath);
+STREAM_ENUM(engine::Group::ProcRoutingPath, engine::Group::toStringProcRoutingPath,
+            engine::Group::fromStringProcRoutingPath);
 
 template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
 {
