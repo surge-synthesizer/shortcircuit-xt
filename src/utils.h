@@ -42,6 +42,16 @@
 #include "unordered_map"
 #include "filesystem/import.h"
 
+/*
+ * While we roll 20 across the properties, put this check here to make
+ * sure we update various other parent and consuming builds appropriately.
+ */
+static_assert((0 <=> 0) == 0, "SCXT requires C++20; please update your build.");
+// if you hit this on msvc and pass the above, you probably need /Zc:__cplusplus
+static_assert(__cplusplus >= 202002L, "SCXT requires C++20; please update your build");
+static_assert(std::is_same<std::string, decltype(std::declval<fs::path>().u8string())>::value,
+              "Please enable u8 string equivalence");
+
 namespace scxt
 {
 /**

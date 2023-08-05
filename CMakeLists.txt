@@ -58,7 +58,7 @@ message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
 
 # Everything here is C++ 17 now
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
     message(STATUS "Setting -no-pie on EXE flags; use SCXT_SKIP_PIE_CHANGE=TRUE to avoid")
@@ -74,11 +74,47 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+
+            # Do *not* use the new, breaking char8_t UTF-8 bits in C++20.
+            $<$<COMPILE_LANGUAGE:CXX>:-fno-char8_t>
     )
 
     add_link_options(
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+    )
+endif ()
+
+if (MSVC)
+    add_compile_options(
+            -WX       # treat all warnings as errors
+
+            # MSVC-only warnings, Clang-cl silently ignores these
+            /wd4244   # float to double
+            /wd4305   # truncation of variable
+            /wd4267   # int and size_t
+            /wd4018   # signed unsigned mismatch
+            /wd4388   # signed unsigned mismatch in comparison
+            /wd4065   # standalone default in a switch with no case
+            /wd4702   # unreachable code. I generally do if( a ) return foo else return bar; return nullptr so don't warn on that
+
+            # Clang-cl-only warnings
+            $<$<CXX_COMPILER_ID:Clang>:-Wno-microsoft-exception-spec>
+            $<$<CXX_COMPILER_ID:Clang>:-Wno-pragma-pack>
+
+            /Zc:alignedNew
+            /bigobj
+
+            # /arch:AVX
+
+            # Build with Multiple Processes (Clang-cl builds use Ninja instead)
+            $<$<CXX_COMPILER_ID:MSVC>:/MP>
+            # Set source and executable charsets to UTF-8
+            $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+            # Do *not* use the new, breaking char8_t UTF-8 bits in C++20.
+            $<$<COMPILE_LANGUAGE:CXX>:/Zc:char8_t->
+            # amke msvc define __cplulsplus properly
+            $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>
     )
 endif ()
 
