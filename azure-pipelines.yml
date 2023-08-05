@@ -31,9 +31,10 @@ jobs:
           cmakeArgs: -A x64
           isWindowsMSVC: True
         lin:
-          imageName: 'ubuntu-20.04'
+          imageName: 'ubuntu-latest'
           isLinux: True
           isCodeQual: True
+          cmakeArgs: -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12
           cmakeArgs:
 
     pool:
@@ -118,8 +119,9 @@ jobs:
           cmakeArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
         lin:
-          imageName: 'ubuntu-20.04'
+          imageName: 'ubuntu-latest'
           isLinux: True
+          cmakeArgs: -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12
           cmakeArgs:
 
 
