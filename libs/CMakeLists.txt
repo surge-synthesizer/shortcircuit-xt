@@ -1,4 +1,9 @@
 
+# Add a SIMDE target
+add_library(simde INTERFACE)
+target_include_directories(simde INTERFACE simde)
+add_library(shortcircuit::simde ALIAS simde)
+
 add_subdirectory(JUCE)
 add_subdirectory(clap-juce-extensions clap-extensions EXCLUDE_FROM_ALL)
 
@@ -27,10 +32,6 @@ add_library(catch2 INTERFACE)
 target_include_directories(catch2 INTERFACE catch2/include)
 add_library(shortcircuit::catch2 ALIAS catch2)
 
-# Add a SIMDE target
-add_library(simde INTERFACE)
-target_include_directories(simde INTERFACE simde)
-add_library(shortcircuit::simde ALIAS simde)
 
 # OddSound doesn't have a cmake so...
 add_library(mts-esp-client STATIC MTS-ESP/Client/libMTSClient.cpp)

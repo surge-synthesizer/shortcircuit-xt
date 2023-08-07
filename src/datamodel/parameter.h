@@ -37,6 +37,7 @@
 namespace scxt::datamodel
 {
 using pmd = sst::basic_blocks::params::ParamMetaData;
+// FIXME remove these now they are upstreamed
 inline pmd decibelRange(float lower = -96, float upper = 12)
 {
     return pmd()

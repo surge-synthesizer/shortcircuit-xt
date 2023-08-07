@@ -25,52 +25,65 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_DSP_PROCESSOR_DISTORTION_MICROGATE_H
-#define SCXT_SRC_DSP_PROCESSOR_DISTORTION_MICROGATE_H
+#ifndef SCXT_SRC_DSP_PROCESSOR_DEFINITIONS_DISTORTION_DEFS_H
+#define SCXT_SRC_DSP_PROCESSOR_DEFINITIONS_DISTORTION_DEFS_H
 
-#include "dsp/processor/processor.h"
+#include "dsp/processor/processor_impl.h"
+#include "sst/voice-effects/distortion/Microgate.h"
+#include "sst/voice-effects/distortion/BitCrusher.h"
 
 namespace scxt::dsp::processor
 {
 namespace distortion
 {
-struct alignas(16) MicroGate : public Processor
+
+struct alignas(16) MicroGate
+    : SSTVoiceEffectShim<sst::voice_effects::distortion::MicroGate<SCXTVFXConfig>>
 {
-    static constexpr int microgateBufferSize{4096};
-    static constexpr int microgateBlockSize{microgateBufferSize * sizeof(float) * 2};
-
-    // Must be a power of 2
-    static_assert((microgateBufferSize >= 1) & !(microgateBufferSize & (microgateBufferSize - 1)));
-
     static constexpr bool isZoneProcessor{true};
     static constexpr bool isPartProcessor{true};
     static constexpr bool isFXProcessor{false};
     static constexpr const char *processorName{"MicroGate"};
     static constexpr const char *processorStreamingName{"micro-gate-fx"};
 
-    MicroGate(engine::MemoryPool *mp, float *f, int32_t *i);
-    ~MicroGate();
+    MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
+    {
+        setupProcessor(this, proct_fx_microgate, mp, f, i);
+    }
+    virtual ~MicroGate() = default;
 
-    void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
-                        float pitch) override;
-    void init() override;
-    void init_params() override;
     int tail_length() override { return tailInfinite; }
-
-  protected:
-    int holdtime{0};
-    bool gate_state{false}, gate_zc_sync[2]{false, false};
-    float onesampledelay[2]{-1, -1};
-    // float loopbuffer[2][microgateBufferSize];
-    float *loopbuffer[2]{nullptr, nullptr};
-    int bufpos[2]{0, 0}, buflength[2]{0, 0};
-    bool is_recording[2]{false, false};
 };
+
+struct alignas(16) BitCrusher
+    : public SSTVoiceEffectShim<sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig>>
+{
+    static constexpr bool isZoneProcessor{true};
+    static constexpr bool isPartProcessor{true};
+    static constexpr bool isFXProcessor{false};
+    static constexpr const char *processorName{"BitCrusher"};
+    static constexpr const char *processorStreamingName{"bit-crusher-fx"};
+
+    BitCrusher(engine::MemoryPool *mp, float *f, int32_t *i)
+    {
+        setupProcessor(this, proct_fx_bitcrusher, mp, f, i);
+    }
+    ~BitCrusher() = default;
+
+    int tail_length() override { return tailInfinite; }
+};
+
 } // namespace distortion
 template <> struct ProcessorImplementor<ProcessorType::proct_fx_microgate>
 {
     typedef distortion::MicroGate T;
     static_assert(sizeof(T) < processorMemoryBufferSize);
 };
+
+template <> struct ProcessorImplementor<ProcessorType::proct_fx_bitcrusher>
+{
+    typedef distortion::BitCrusher T;
+    static_assert(sizeof(T) < processorMemoryBufferSize);
+};
 } // namespace scxt::dsp::processor
-#endif // SHORTCIRCUITXT_MICROGATE_H
+#endif // SHORTCIRCUITXT_DISTORTION_DEFS_H

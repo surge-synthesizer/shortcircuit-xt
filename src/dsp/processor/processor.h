@@ -80,6 +80,7 @@
 #include "utils.h"
 #include "dsp/data_tables.h"
 #include "tuning/equal.h"
+#include "configuration.h"
 
 namespace scxt::engine
 {
@@ -210,11 +211,15 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     virtual ~Processor() = default;
 
   protected:
+    Processor() {}
     Processor(ProcessorType t, engine::MemoryPool *mp, float *p, int32_t *ip = 0)
         : myType(t), memoryPool(mp), param(p), iparam(ip)
     {
     }
-    ProcessorType myType;
+    ProcessorType myType{proct_none};
+
+    template <typename T>
+    void setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp, float *fp, int *ip);
 
   public:
     ProcessorType getType() { return myType; }
@@ -265,7 +270,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     float modulation_output; // processors can use this to output modulation data to the matrix
 
-  protected:
+    // move these back to protected and friend the adapter when done
+    // protected:
     engine::MemoryPool *memoryPool{nullptr};
     float *param{nullptr};
     int *iparam{nullptr};
