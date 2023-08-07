@@ -61,8 +61,9 @@
  *  and then include the h here and everything will work
  */
 
-#include "distortion/bitcrusher.h"
-#include "distortion/microgate.h"
+#include "definitions/distortion_defs.h"
+
+// port
 
 #include "filter/supersvf.h"
 
