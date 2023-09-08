@@ -64,8 +64,6 @@ void SCXTStyleSheetCreator::makeDarkColors(const sheet_t::ptr_t &base)
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorKnob, comp::Knob::Styles::handlecol,
                     juce::Colour(0xC4, 0xC4, 0xC4));
-    base->setColour(ModulationEditorKnob, comp::Knob::Styles::gradientcenter,
-                    juce::Colour(0x27, 0x68, 0xA6));
 
     base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::onbgcol,
                     juce::Colour(0x15, 0x15, 0x15));
@@ -160,9 +158,7 @@ void SCXTStyleSheetCreator::makeLightColors(const sheet_t::ptr_t &base)
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorKnob, comp::Knob::Styles::handlecol,
                     juce::Colour(0xC4, 0xC4, 0xC4));
-    base->setColour(ModulationEditorKnob, comp::Knob::Styles::gradientcenter,
-                    juce::Colour(0x27, 0x68, 0xA6));
-
+    
     base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::onbgcol,
                     juce::Colour(220, 220, 220));
     base->setColour(comp::MenuButton::Styles::styleClass, comp::MenuButton::Styles::hoveronbgcol,
