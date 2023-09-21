@@ -213,34 +213,16 @@ fromVoiceModMatrixDestStreamingName(const std::string &s)
 
 std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest)
 {
-    switch (dest)
+    if (dest < numVoiceMatrixSources)
     {
-    case vms_none:
-        return "vms_none";
-    case vms_LFO1:
-        return "vms_lfo1";
-    case vms_LFO2:
-        return "vms_lfo2";
-    case vms_LFO3:
-        return "vms_lfo3";
-
-    case vms_AEG:
-        return "vms_aeg";
-    case vms_EG2:
-        return "vms_eg2";
-
-    case vms_ModWheel:
-        return "vms_modwheel";
-
-    case numVoiceMatrixSources:
-        throw std::logic_error("Don't call with numVoiceMatrixSources");
+        return voiceModMatrixSources[(int)dest].streamingName;
     }
-
     throw std::logic_error("Mysterious unhandled condition");
 }
+
 std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s)
 {
-    for (int i = vmd_none; i < numVoiceMatrixSources; ++i)
+    for (int i = vmd_none + 1; i < numVoiceMatrixSources; i++)
     {
         if (getVoiceModMatrixSourceStreamingName((VoiceModMatrixSource)i) == s)
         {
@@ -248,34 +230,6 @@ std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const 
         }
     }
     return vms_none;
-}
-
-std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest)
-{
-    switch (dest)
-    {
-    case vms_none:
-        return "";
-    case vms_LFO1:
-        return "LFO1";
-    case vms_LFO2:
-        return "LFO2";
-    case vms_LFO3:
-        return "LFO3";
-
-    case vms_AEG:
-        return "AEG";
-    case vms_EG2:
-        return "EG2";
-
-    case vms_ModWheel:
-        return "Mod Wheel";
-
-    case numVoiceMatrixSources:
-        throw std::logic_error("Don't call with numVoiceMatrixSources");
-    }
-
-    throw std::logic_error("Mysterious unhandled condition");
 }
 
 int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &t)
@@ -309,26 +263,48 @@ int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &t)
         return 1;
     }
 }
-std::optional<std::string>
-getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
-                                 const engine::Zone &z)
+
+std::optional<std::string> getMenuDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                              const engine::Zone &z)
 {
-    // TODO: This is obviously .... wrong
-    /*
-     * These are a bit trickier since they are indexed so
-     */
     const auto &[vmd, idx] = dest;
-
-    if (vmd == vmd_none)
+    switch (vmd)
     {
-        return "";
-    }
-    if (vmd >= vmd_LFO_Rate && vmd <= vmd_LFO_Rate)
-    {
-        return "LFO " + std::to_string(idx + 1) + "/Rate";
-    }
+    case vmd_none:
+        return std::nullopt;
+    case vmd_LFO_Rate:
+        return "LFO " + std::to_string(idx + 1);
 
-    if (vmd >= vmd_Processor_Mix && vmd <= vmd_Processor_FP9)
+    case vmd_eg_A:
+    case vmd_eg_H:
+    case vmd_eg_D:
+    case vmd_eg_S:
+    case vmd_eg_R:
+    case vmd_eg_AShape:
+    case vmd_eg_DShape:
+    case vmd_eg_RShape:
+        return idx == 0 ? std::string("AEG") : std::string("EG2");
+
+    case vmd_Zone_Sample_Pan:
+    case vmd_Zone_Sample_Amplitude:
+    case vmd_Sample_Playback_Ratio:
+    case vmd_Sample_Pitch_Offset:
+        return "Sample";
+
+    case vmd_Zone_Output_Pan:
+    case vmd_Zone_Output_Amplitude:
+        return "Output";
+
+    case vmd_Processor_Mix:
+    case vmd_Processor_FP1:
+    case vmd_Processor_FP2:
+    case vmd_Processor_FP3:
+    case vmd_Processor_FP4:
+    case vmd_Processor_FP5:
+    case vmd_Processor_FP6:
+    case vmd_Processor_FP7:
+    case vmd_Processor_FP8:
+    case vmd_Processor_FP9:
     {
         auto pfx = std::string("P") + std::to_string(idx + 1) + ": ";
         if (z.processorStorage[idx].type == dsp::processor::proct_none)
@@ -336,76 +312,84 @@ getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
             // this should in theory get filtered out of the user choices
             return std::nullopt;
         }
-        pfx += z.processorDescription[idx].typeDisplayName + "/";
-        if (vmd == vmd_Processor_Mix)
-            return pfx + "mix";
-        else
-        {
-            auto ct = (int)(vmd - vmd_Processor_FP1);
-
-            if (z.processorDescription[idx].floatControlDescriptions[ct].type ==
-                datamodel::pmd::NONE)
-                return std::nullopt;
-
-            return pfx + z.processorDescription[idx].floatControlDescriptions[ct].name;
-        }
+        return z.processorDescription[idx].typeDisplayName;
     }
-
-    if (vmd >= vmd_eg_A && vmd <= vmd_eg_RShape)
-    {
-        auto pfx = (idx == 0 ? std::string("AEG/") : std::string("EG2/"));
-
-        switch (vmd)
-        {
-        case vmd_eg_A:
-            pfx += "Attack";
-            break;
-        case vmd_eg_H:
-            pfx += "Hold";
-            break;
-        case vmd_eg_D:
-            pfx += "Decay";
-            break;
-        case vmd_eg_S:
-            pfx += "Sustain";
-            break;
-        case vmd_eg_R:
-            pfx += "Release";
-            break;
-        case vmd_eg_AShape:
-            pfx += "Attack Shape";
-            break;
-        case vmd_eg_DShape:
-            pfx += "Decay Shape";
-            break;
-        case vmd_eg_RShape:
-            pfx += "Release Shape";
-            break;
-        default:
-            assert(false);
-        }
-        return pfx;
+    default:
+        throw std::logic_error("Unexpected destination");
     }
+}
 
+std::optional<std::string> getSubMenuDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                                 const engine::Zone &z)
+{
+    const auto &[vmd, idx] = dest;
     switch (vmd)
     {
-    case vmd_Sample_Playback_Ratio:
-        return "Sample/Playback Ratio";
-    case vmd_Sample_Pitch_Offset:
-        return "Sample/Pitch";
+    case vmd_none:
+        return std::nullopt;
+    case vmd_LFO_Rate:
+        return "Rate";
+    case vmd_eg_A:
+        return "Attack";
+    case vmd_eg_H:
+        return "Hold";
+    case vmd_eg_D:
+        return "Decay";
+    case vmd_eg_S:
+        return "Sustain";
+    case vmd_eg_R:
+        return "Release";
+    case vmd_eg_AShape:
+        return "Attack Shape";
+    case vmd_eg_DShape:
+        return "Decay Shape";
+    case vmd_eg_RShape:
+        return "Release Shape";
     case vmd_Zone_Sample_Pan:
-        return "Sample/Pan";
     case vmd_Zone_Output_Pan:
-        return "Output/Pan";
+        return "Pan";
     case vmd_Zone_Sample_Amplitude:
-        return "Sample/Amplitude";
     case vmd_Zone_Output_Amplitude:
-        return "Output/Amplitude";
-    default:
-        break;
+        return "Amplitude";
+    case vmd_Sample_Playback_Ratio:
+        return "Playback Ratio";
+    case vmd_Sample_Pitch_Offset:
+        return "Pitch Offset";
+    case vmd_Processor_Mix:
+        return "mix";
+    case vmd_Processor_FP1:
+    case vmd_Processor_FP2:
+    case vmd_Processor_FP3:
+    case vmd_Processor_FP4:
+    case vmd_Processor_FP5:
+    case vmd_Processor_FP6:
+    case vmd_Processor_FP7:
+    case vmd_Processor_FP8:
+    case vmd_Processor_FP9:
+    {
+        auto ct = (int)(vmd - vmd_Processor_FP1);
+
+        if (z.processorDescription[idx].floatControlDescriptions[ct].type == datamodel::pmd::NONE)
+            return std::nullopt;
+
+        return z.processorDescription[idx].floatControlDescriptions[ct].name;
     }
-    assert(false);
-    return fmt::format("ERR {} {}", vmd, idx);
+    default:
+        throw std::logic_error("Unexpected destination");
+    }
+}
+
+std::optional<std::string>
+getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                 const engine::Zone &z)
+{
+    auto menuName = getMenuDisplayName(dest, z);
+    auto subMenuName = getSubMenuDisplayName(dest, z);
+    if (menuName && subMenuName)
+    {
+        return *menuName + "/" + *subMenuName;
+    }
+    return std::nullopt;
 }
 
 voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &z)
@@ -433,10 +417,9 @@ voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine
 voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z)
 {
     voiceModMatrixSourceNames_t res;
-    for (int s = (int)vms_none; s < numVoiceMatrixSources; ++s)
+    for (int s = (int)vms_none; s < numVoiceMatrixSources; s++)
     {
-        auto vms = (VoiceModMatrixSource)s;
-        res.emplace_back(vms, getVoiceModMatrixSourceDisplayName(vms));
+        res.emplace_back((VoiceModMatrixSource)s, voiceModMatrixSources[s].displayName);
     }
     return res;
 }

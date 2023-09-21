@@ -30,9 +30,9 @@
 
 #include <string>
 #include <array>
+#include <vector>
 #include "utils.h"
 #include "dsp/processor/processor.h"
-
 #include "base_matrix.h"
 
 namespace scxt::engine
@@ -134,11 +134,30 @@ enum VoiceModMatrixSource
 
     numVoiceMatrixSources,
 };
+struct VoiceModMatrixSourceMetadata
+{
+    VoiceModMatrixSource id;
+    std::string streamingName;
+    std::string displayName;
+};
+
+const std::vector<VoiceModMatrixSourceMetadata> voiceModMatrixSources = {
+    {VoiceModMatrixSource::vms_none, "vms_none", ""},
+    {VoiceModMatrixSource::vms_LFO1, "vms_lfo1", "LFO1"},
+    {VoiceModMatrixSource::vms_LFO2, "vms_lfo2", "LFO2"},
+    {VoiceModMatrixSource::vms_LFO3, "vms_lfo3", "LFO3"},
+    {VoiceModMatrixSource::vms_AEG, "vms_aeg", "AEG"},
+    {VoiceModMatrixSource::vms_EG2, "vms_eg2", "EG2"},
+    {VoiceModMatrixSource::vms_ModWheel, "vms_modwheel", "ModWheel"}};
 
 std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest);
 std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s);
 
-std::string getVoiceModMatrixSourceDisplayName(const VoiceModMatrixSource &dest);
+std::optional<std::string> getMenuDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                              const engine::Zone &z);
+std::optional<std::string> getSubMenuDisplayName(const VoiceModMatrixDestinationAddress &dest,
+                                                 const engine::Zone &z);
+
 // Destinations require a zone since we need to interrogate the processors
 std::optional<std::string>
 getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
