@@ -23,11 +23,11 @@ jobs:
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
           isMac: True
         win-clang:
-          imageName: 'windows-2022'
+          imageName: 'windows-latest'
           cmakeArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
         win-msvc:
-          imageName: 'windows-2022'
+          imageName: 'windows-latest'
           cmakeArgs: -A x64
           isWindowsMSVC: True
         lin:
