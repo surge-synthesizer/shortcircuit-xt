@@ -130,6 +130,8 @@ std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool f
         return forMenu ? "None" : "FX";
     case engine::flanger:
         return forMenu ? "Flanger" : "FLANGER";
+    case engine::phaser:
+        return forMenu ? "Phaser" : "PHASER";
     case engine::delay:
         return forMenu ? "Delay" : "DELAY";
     case engine::reverb1:
@@ -165,6 +167,7 @@ void MixerScreen::showFXSelectionMenu(int bus, int slot)
     add(engine::AvailableBusEffects::reverb1);
     add(engine::AvailableBusEffects::delay);
     add(engine::AvailableBusEffects::flanger);
+    add(engine::AvailableBusEffects::phaser);
     add(engine::AvailableBusEffects::bonsai);
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

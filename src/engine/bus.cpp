@@ -40,6 +40,7 @@
 #include "sst/effects/EffectCore.h"
 #include "sst/effects/Reverb1.h"
 #include "sst/effects/Flanger.h"
+#include "sst/effects/Phaser.h"
 #include "sst/effects/Delay.h"
 #include "sst/effects/Bonsai.h"
 
@@ -159,6 +160,9 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     case flanger:
         return std::make_unique<dtl::Impl<sfx::flanger::Flanger<dtl::Config>>>(e, s,
                                                                                s->params.data());
+    case phaser:
+        return std::make_unique<dtl::Impl<sfx::phaser::Phaser<dtl::Config>>>(e, s,
+                                                                             s->params.data());
     case delay:
         return std::make_unique<dtl::Impl<sfx::delay::Delay<dtl::Config>>>(e, s, s->params.data());
     case bonsai:
