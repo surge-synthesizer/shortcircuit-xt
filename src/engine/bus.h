@@ -70,6 +70,7 @@ enum AvailableBusEffects
     none,
     reverb1,
     flanger,
+    phaser,
     delay,
     bonsai // if you make bonsai not last, make sure to update the fromString range
 };
@@ -90,6 +91,7 @@ struct BusEffect
     virtual void process(float *__restrict L, float *__restrict R) = 0;
     virtual datamodel::pmd paramAt(int i) const = 0;
     virtual int numParams() const = 0;
+    virtual void onSampleRateChanged() = 0;
 };
 
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s);
@@ -136,6 +138,8 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
     void sendBusEffectInfoToClient(const Engine &, int slot);
     void sendBusSendStorageToClient(const Engine &e);
 
+    void onSampleRateChanged() override;
+
     struct BusSendStorage
     {
         BusSendStorage() { std::fill(sendLevels.begin(), sendLevels.end(), 0.f); }
@@ -174,6 +178,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "reverb1";
     case flanger:
         return "flanger";
+    case phaser:
+        return "phaser";
     case delay:
         return "delay";
     case bonsai:

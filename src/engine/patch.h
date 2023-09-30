@@ -36,7 +36,7 @@
 namespace scxt::engine
 {
 struct Engine;
-struct Patch : MoveableOnly<Patch>
+struct Patch : MoveableOnly<Patch>, SampleRateSupport
 {
     Patch() : id(PatchID::next()) { reset(); }
 
@@ -165,6 +165,7 @@ struct Patch : MoveableOnly<Patch>
         return parts[idx];
     }
 
+    void onSampleRateChanged() override;
     typedef std::array<std::unique_ptr<Part>, numParts> partContainer_t;
 
     partContainer_t::iterator begin() noexcept { return parts.begin(); }
