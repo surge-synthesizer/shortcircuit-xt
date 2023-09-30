@@ -43,6 +43,7 @@
 #include "sst/effects/Phaser.h"
 #include "sst/effects/Delay.h"
 #include "sst/effects/Bonsai.h"
+#include "sst/effects/EffectCoreDetails.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/basic-blocks/dsp/PanLaws.h"
@@ -138,6 +139,8 @@ template <typename T> struct Impl : T
     datamodel::pmd paramAt(int i) const override { return T::paramAt(i); }
 
     int numParams() const override { return T::numParams; }
+
+    void onSampleRateChanged() override { T::onSampleRateChanged(); }
 };
 
 } // namespace dtl
@@ -277,6 +280,17 @@ void Bus::sendBusSendStorageToClient(const scxt::engine::Engine &e)
         messaging::client::s2c_bus_send_data,
         messaging::client::busSendData_t{(int)address, busSendStorage},
         *(e.getMessageController()));
+}
+
+void Bus::onSampleRateChanged()
+{
+    for (auto &fx : busEffects)
+    {
+        if (fx)
+        {
+            fx->onSampleRateChanged();
+        }
+    }
 }
 
 } // namespace scxt::engine

@@ -112,4 +112,19 @@ void Patch::setupBussesOnUnstream(Engine &e)
         a.initializeAfterUnstream(e);
     }
 }
+void Patch::onSampleRateChanged()
+{
+    for (const auto &part : parts)
+        part->setSampleRate(samplerate);
+
+    busses.mainBus.setSampleRate(getSampleRate());
+    for (auto &p : busses.partBusses)
+    {
+        p.setSampleRate(getSampleRate());
+    }
+    for (auto &a : busses.auxBusses)
+    {
+        a.setSampleRate(getSampleRate());
+    }
+}
 } // namespace scxt::engine
