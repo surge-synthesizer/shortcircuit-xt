@@ -24,7 +24,7 @@ jobs:
           isMac: True
         win-clang:
           imageName: 'windows-latest'
-          cmakeArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+          cmakeArgs: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
         win-msvc:
           imageName: 'windows-latest'
