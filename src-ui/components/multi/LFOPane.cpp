@@ -255,7 +255,8 @@ void LfoPane::rebuildLfo()
     cycleA =
         std::make_unique<boolAttachment_t>("OneShot", updateNoTT(), lfoData[selectedTab].cyclemode);
 
-    stepVsWaveData = std::make_unique<boolAttachment_t>("StepVsWave", updateNoTT(), lfoData[selectedTab].isStep);
+    stepVsWaveData =
+        std::make_unique<boolAttachment_t>("StepVsWave", updateNoTT(), lfoData[selectedTab].isStep);
 
     rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
                                            update(), lfoData[selectedTab].rate);
@@ -275,11 +276,11 @@ void LfoPane::rebuildLfo()
     stepVsWave = std::make_unique<sst::jucegui::components::ToggleButton>();
     stepVsWave->setSource(stepVsWaveData.get());
     stepVsWave->setLabel(stepVsWaveData->getValue() == 1 ? "Step" : "Wave");
-    stepVsWave->setBounds(col.translated(0,20));
-    stepVsWave->onEndEdit = [this] () {
+    stepVsWave->setBounds(col.translated(0, 20));
+    stepVsWave->onEndEdit = [this]() {
         bool isStep = stepVsWaveData->getValue() == 1;
         rebuildStepLfo();
-        stepVsWave->setLabel(isStep ? "Step" : "Wave"); 
+        stepVsWave->setLabel(isStep ? "Step" : "Wave");
         rateK->setVisible(isStep);
         deformK->setVisible(isStep);
         lfoDataRender->setVisible(isStep);
@@ -292,7 +293,8 @@ void LfoPane::rebuildLfo()
     rebuildStepLfo();
 }
 
-void LfoPane::rebuildStepLfo() {
+void LfoPane::rebuildStepLfo()
+{
     if (stepVsWaveData->getValue() == 1)
     { // TODO - a cleaner way to do this copy and paste
         auto r = getContentArea();
@@ -338,8 +340,10 @@ void LfoPane::rebuildStepLfo() {
                 w->rotate(1);
         });
 
-        auto jogbx =
-            r.withTrimmedLeft(columnOneWidth + 5).withTop(getHeight() - 55).withWidth(55).reduced(2);
+        auto jogbx = r.withTrimmedLeft(columnOneWidth + 5)
+                         .withTop(getHeight() - 55)
+                         .withWidth(55)
+                         .reduced(2);
 
         for (const auto &j : jog)
         {

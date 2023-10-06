@@ -71,7 +71,8 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     void rotate(int dir);
     void shiftBy(float amt);
 
-    std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, stepVsWave, tempoSyncB, cycleB;
+    std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, stepVsWave, tempoSyncB,
+        cycleB;
     std::unique_ptr<boolAttachment_t> oneshotA, stepVsWaveData, tempoSyncA, cycleA;
 
     std::unique_ptr<sst::jucegui::components::Knob> rateK, deformK, stepsK;
