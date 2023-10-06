@@ -60,6 +60,7 @@ struct StepLFOStorage
 
     bool cyclemode{true};
     bool onlyonce{false};
+    bool isStep{true};
     // add midi sync capabilities
 
     bool operator==(const StepLFOStorage &other) const

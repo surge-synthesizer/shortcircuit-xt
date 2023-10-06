@@ -140,7 +140,6 @@ struct VoiceModMatrixSourceMetadata
     std::string streamingName;
     std::string displayName;
 };
-
 const std::vector<VoiceModMatrixSourceMetadata> voiceModMatrixSources = {
     {VoiceModMatrixSource::vms_none, "vms_none", ""},
     {VoiceModMatrixSource::vms_LFO1, "vms_lfo1", "LFO1"},
