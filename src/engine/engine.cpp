@@ -737,8 +737,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 
 void Engine::onSampleRateChanged()
 {
-    for (const auto &part : *patch)
-        part->setSampleRate(samplerate);
+    patch->setSampleRate(sampleRate);
 
     messageController->forceStatusUpdate = true;
 }
