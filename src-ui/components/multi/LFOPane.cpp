@@ -255,6 +255,9 @@ void LfoPane::rebuildLfo()
     cycleA =
         std::make_unique<boolAttachment_t>("OneShot", updateNoTT(), lfoData[selectedTab].cyclemode);
 
+    stepVsWaveData =
+        std::make_unique<boolAttachment_t>("StepVsWave", updateNoTT(), lfoData[selectedTab].isStep);
+
     rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
                                            update(), lfoData[selectedTab].rate);
     deformA = std::make_unique<attachment_t>(datamodel::lfoSmoothing().withName("Deform"), update(),
@@ -270,66 +273,94 @@ void LfoPane::rebuildLfo()
     oneshotB->setBounds(col);
     addAndMakeVisible(*oneshotB);
 
-    // TODO - a cleaner way to do this copy and paste
-    auto b5 = r.withTop(r.getBottom() - 50).withLeft(r.getWidth() - 50);
-    rateK = std::make_unique<sst::jucegui::components::Knob>();
-    rateK->setSource(rateA.get());
-    rateK->setBounds(b5.translated(-2 * 50, 0));
-    rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-    setupWidgetForValueTooltip(rateK, rateA);
-    addAndMakeVisible(*rateK);
+    stepVsWave = std::make_unique<sst::jucegui::components::ToggleButton>();
+    stepVsWave->setSource(stepVsWaveData.get());
+    stepVsWave->setLabel(stepVsWaveData->getValue() == 1 ? "Step" : "Wave");
+    stepVsWave->setBounds(col.translated(0, 20));
+    stepVsWave->onEndEdit = [this]() {
+        bool isStep = stepVsWaveData->getValue() == 1;
+        rebuildStepLfo();
+        stepVsWave->setLabel(isStep ? "Step" : "Wave");
+        rateK->setVisible(isStep);
+        deformK->setVisible(isStep);
+        lfoDataRender->setVisible(isStep);
+        for (const auto &j : jog)
+        {
+            j->setVisible(isStep);
+        }
+    };
+    addAndMakeVisible(*stepVsWave);
+    rebuildStepLfo();
+}
 
-    deformK = std::make_unique<sst::jucegui::components::Knob>();
-    deformK->setSource(deformA.get());
-    deformK->setBounds(b5.translated(-50, 0));
-    deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-    setupWidgetForValueTooltip(deformK, deformA);
-    addAndMakeVisible(*deformK);
+void LfoPane::rebuildStepLfo()
+{
+    if (stepVsWaveData->getValue() == 1)
+    { // TODO - a cleaner way to do this copy and paste
+        auto r = getContentArea();
+        static constexpr int columnOneWidth{60};
+        auto b5 = r.withTop(r.getBottom() - 50).withLeft(r.getWidth() - 50);
+        rateK = std::make_unique<sst::jucegui::components::Knob>();
+        rateK->setSource(rateA.get());
+        rateK->setBounds(b5.translated(-2 * 50, 0));
+        rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        setupWidgetForValueTooltip(rateK, rateA);
+        addAndMakeVisible(*rateK);
 
-    lfoDataRender = std::make_unique<LfoDataRender>(this);
-    lfoDataRender->setBounds(r.withTrimmedLeft(columnOneWidth + 5).withTrimmedBottom(55));
-    addAndMakeVisible(*lfoDataRender);
+        deformK = std::make_unique<sst::jucegui::components::Knob>();
+        deformK->setSource(deformA.get());
+        deformK->setBounds(b5.translated(-50, 0));
+        deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        setupWidgetForValueTooltip(deformK, deformA);
+        addAndMakeVisible(*deformK);
 
-    jog[0] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_UP);
-    jog[0]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->shiftBy(0.05);
-    });
+        lfoDataRender = std::make_unique<LfoDataRender>(this);
+        lfoDataRender->setBounds(r.withTrimmedLeft(columnOneWidth + 5).withTrimmedBottom(55));
+        addAndMakeVisible(*lfoDataRender);
 
-    jog[1] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_DOWN);
-    jog[1]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->shiftBy(-0.05);
-    });
-    jog[2] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_LEFT);
-    jog[2]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->rotate(-1);
-    });
-    jog[3] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_RIGHT);
-    jog[3]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->rotate(1);
-    });
+        jog[0] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_UP);
+        jog[0]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->shiftBy(0.05);
+        });
 
-    auto jogbx =
-        r.withTrimmedLeft(columnOneWidth + 5).withTop(getHeight() - 55).withWidth(55).reduced(2);
+        jog[1] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_DOWN);
+        jog[1]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->shiftBy(-0.05);
+        });
+        jog[2] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_LEFT);
+        jog[2]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->rotate(-1);
+        });
+        jog[3] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_RIGHT);
+        jog[3]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->rotate(1);
+        });
 
-    for (const auto &j : jog)
-    {
-        addAndMakeVisible(*j);
-        j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+        auto jogbx = r.withTrimmedLeft(columnOneWidth + 5)
+                         .withTop(getHeight() - 55)
+                         .withWidth(55)
+                         .reduced(2);
+
+        for (const auto &j : jog)
+        {
+            addAndMakeVisible(*j);
+            j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+        }
+        auto bthrd = jogbx.getWidth() / 3;
+        std::array<juce::Rectangle<float>, 4> boxes;
+        auto rc = jogbx.toFloat().withWidth(bthrd);
+        jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
+        rc = rc.translated(bthrd, 0);
+        jog[0]->setBounds(rc.withHeight(bthrd).toNearestInt());
+        jog[1]->setBounds(rc.withHeight(bthrd).translated(0, 2 * bthrd).toNearestInt());
+
+        rc = rc.translated(bthrd, 0);
+        jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
     }
-    auto bthrd = jogbx.getWidth() / 3;
-    std::array<juce::Rectangle<float>, 4> boxes;
-    auto rc = jogbx.toFloat().withWidth(bthrd);
-    jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
-    rc = rc.translated(bthrd, 0);
-    jog[0]->setBounds(rc.withHeight(bthrd).toNearestInt());
-    jog[1]->setBounds(rc.withHeight(bthrd).translated(0, 2 * bthrd).toNearestInt());
-
-    rc = rc.translated(bthrd, 0);
-    jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
 }
 
 void LfoPane::rotate(int dir)
@@ -379,6 +410,7 @@ void LfoPane::pushCurrentLfoUpdate()
 void LfoPane::resetAllComponents()
 {
     oneshotB.reset();
+    stepVsWave.reset();
     tempoSyncB.reset();
     cycleB.reset();
     rateK.reset();

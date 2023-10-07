@@ -62,6 +62,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void resized() override;
     void rebuildLfo(); // entirely new components
+    void rebuildStepLfo();
     void resetAllComponents();
 
     void setActive(int index, bool active);
@@ -70,8 +71,9 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     void rotate(int dir);
     void shiftBy(float amt);
 
-    std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, tempoSyncB, cycleB;
-    std::unique_ptr<boolAttachment_t> oneshotA, tempoSyncA, cycleA;
+    std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, stepVsWave, tempoSyncB,
+        cycleB;
+    std::unique_ptr<boolAttachment_t> oneshotA, stepVsWaveData, tempoSyncA, cycleA;
 
     std::unique_ptr<sst::jucegui::components::Knob> rateK, deformK, stepsK;
     std::unique_ptr<attachment_t> rateA, deformA, stepsA;
