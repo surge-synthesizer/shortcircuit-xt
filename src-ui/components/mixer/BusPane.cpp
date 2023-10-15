@@ -88,7 +88,7 @@ void BusPane::onStyleChanged()
     if (partBusViewport)
     {
         partBusViewport->getHorizontalScrollBar().setColour(
-            juce::ScrollBar::ColourIds::thumbColourId, getColour(Styles::labelrulecol));
+            juce::ScrollBar::ColourIds::thumbColourId, getColour(Styles::outline));
     }
 }
 

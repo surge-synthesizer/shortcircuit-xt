@@ -41,7 +41,7 @@ namespace scxt::ui::connectors
 {
 // TODO Factor this better obviously
 template <typename Payload, typename ValueType = float>
-struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
+struct PayloadDataAttachment : sst::jucegui::data::Continuous
 {
     typedef Payload payload_t;
 
@@ -54,6 +54,10 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
         : description(cd), value(v), label(cd.name), onGuiValueChanged(std::move(oGVC))
     {
     }
+
+    PayloadDataAttachment(const PayloadDataAttachment &other) = delete;
+    PayloadDataAttachment &operator=(const PayloadDataAttachment &other) = delete;
+    PayloadDataAttachment &operator=(PayloadDataAttachment &&other) = delete;
 
     // TODO maybe. For now we have these descriptions as constexpr
     // in the code and apply them directly in many cases. We could
@@ -113,10 +117,6 @@ struct PayloadDataAttachment : sst::jucegui::data::ContinunousModulatable
     float getDefaultValue() const override { return description.defaultVal; }
 
     bool isBipolar() const override { return description.minVal * description.maxVal < 0; }
-
-    float getModulationValuePM1() const override { return 0; }
-    void setModulationValuePM1(const float &f) override {}
-    bool isModulationBipolar() const override { return false; }
 
     [[deprecated]] void setAsInteger()
     {
@@ -209,7 +209,7 @@ struct DirectBooleanPayloadDataAttachment : sst::jucegui::data::Discrete
     std::string getValueAsStringFor(int i) const override { return i == 0 ? "Off" : "On"; }
 };
 
-struct SamplePointDataAttachment : sst::jucegui::data::ContinunousModulatable
+struct SamplePointDataAttachment : sst::jucegui::data::Continuous
 {
     int64_t &value;
     std::string label;
@@ -241,10 +241,6 @@ struct SamplePointDataAttachment : sst::jucegui::data::ContinunousModulatable
     float getMax() const override { return sampleCount; }
     float getDefaultValue() const override { return 0; }
     void setValueFromModel(const float &f) override { value = (int64_t)f; }
-
-    float getModulationValuePM1() const override { return 0; }
-    void setModulationValuePM1(const float &f) override {}
-    bool isModulationBipolar() const override { return false; }
 };
 
 template <typename attachment_t, typename widget_t> struct ConnectorFactory

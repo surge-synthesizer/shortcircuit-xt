@@ -120,7 +120,6 @@ void ProcessorPane::rebuildControlsFromDescription()
         getContentAreaComponent()->addAndMakeVisible(*multiLabel);
 
         multiButton = std::make_unique<sst::jucegui::components::TextPushButton>();
-        multiButton->setIsInactiveValue(false);
         multiButton->setLabel("Copy " + multiName + " to All");
         multiButton->setBounds(b.withTop(b.getCentreY() + 5).withHeight(25).reduced(20, 0));
         multiButton->setOnCallback(
@@ -154,6 +153,9 @@ void ProcessorPane::rebuildControlsFromDescription()
             processorControlDescription.intControlDescriptions[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
             processorView.intParams[i]);
+        SCLOG(processorControlDescription.intControlDescriptions[i].name
+              << " min/max=" << processorControlDescription.intControlDescriptions[i].minVal
+              << " / " << processorControlDescription.intControlDescriptions[i].maxVal);
         intAttachments[i] = std::move(at);
     }
 

@@ -35,6 +35,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/VUMeter.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/Knob.h"
@@ -89,19 +90,12 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
     void effectsChanged();
     float vuL{0.f}, vuR{0.f};
 
-    struct ChannelVU : juce::Component
-    {
-        float L{0.f}, R{0.f};
-        void paint(juce::Graphics &g) override;
-    };
-    std::unique_ptr<ChannelVU> vuMeter;
+    std::unique_ptr<sst::jucegui::components::VUMeter> vuMeter;
     void setVULevel(float L, float R)
     {
         if (vuL != L || vuR != R)
         {
-            vuMeter->L = vuL;
-            vuMeter->R = vuR;
-            vuMeter->repaint();
+            vuMeter->setLevels(L, R);
         }
         vuL = L;
         vuR = R;

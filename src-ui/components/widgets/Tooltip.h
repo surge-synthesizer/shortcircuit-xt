@@ -37,23 +37,22 @@
 
 namespace scxt::ui::widgets
 {
+// This really should move to SSTJG
 struct Tooltip : juce::Component, sst::jucegui::style::StyleConsumer
 {
-    struct Styles : sst::jucegui::components::ControlStyles
+    struct Styles : sst::jucegui::components::base_styles::BaseLabel,
+                    sst::jucegui::components::base_styles::Outlined,
+                    sst::jucegui::components::base_styles::Base
     {
-        using sclass = sst::jucegui::style::StyleSheet::Class;
-        using sprop = sst::jucegui::style::StyleSheet::Property;
-        static constexpr sclass styleClass{"tooltip"};
-
-        static constexpr sprop bordercol{"tooltipborder.color"};
-        static constexpr sprop datafont{"tooltipdata.font",
-                                        sst::jucegui::style::StyleSheet::Property::FONT};
-
+        static constexpr sst::jucegui::style::StyleSheet::Class styleClass{"tooltip"};
+        static constexpr sst::jucegui::style::StyleSheet::Property datafont{
+            "datafont", sst::jucegui::style::StyleSheet::Property::FONT};
         static void initialize()
         {
             sst::jucegui::style::StyleSheet::addClass(styleClass)
-                .withBaseClass(sst::jucegui::components::ControlStyles::styleClass)
-                .withProperty(bordercol)
+                .withBaseClass(sst::jucegui::components::base_styles::BaseLabel::styleClass)
+                .withBaseClass(sst::jucegui::components::base_styles::Outlined::styleClass)
+                .withBaseClass(sst::jucegui::components::base_styles::Base::styleClass)
                 .withProperty(datafont);
         }
     };

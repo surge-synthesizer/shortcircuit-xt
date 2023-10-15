@@ -51,24 +51,27 @@ struct LfoDataRender : juce::Component
     void paint(juce::Graphics &g) override
     {
         auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                             jcmp::NamedPanel::Styles::regionBG);
+                                             jcmp::NamedPanel::Styles::background);
         auto bgq =
             parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                                       jcmp::HSliderFilled::Styles::guttercol);
+                                       jcmp::HSliderFilled::Styles::gutter);
         auto boxc =
             parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                                       jcmp::HSliderFilled::Styles::backgroundcol);
+                                       jcmp::HSliderFilled::Styles::background);
         auto valc =
             parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                                       jcmp::HSliderFilled::Styles::valcol);
+                                       jcmp::HSliderFilled::Styles::value);
+        auto valhovc =
+            parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
+                                       jcmp::HSliderFilled::Styles::value_hover);
 
         auto hanc =
             parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                                       jcmp::HSliderFilled::Styles::handlecol);
+                                       jcmp::HSliderFilled::Styles::handle);
 
         auto hanhovc =
             parent->style()->getColour(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                                       jcmp::HSliderFilled::Styles::handlehovcol);
+                                       jcmp::HSliderFilled::Styles::handle_hover);
         g.setColour(juce::Colours::white);
         g.drawRect(getLocalBounds(), 1);
         if (!parent)

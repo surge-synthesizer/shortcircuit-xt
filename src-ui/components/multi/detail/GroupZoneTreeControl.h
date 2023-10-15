@@ -99,8 +99,7 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
             bool isLeadZone = isZone() && gsb->isLeadZone(sg.first);
 
             auto st = gsb->partGroupSidebar->style();
-            g.setFont(st->getFont(jcmp::Label::Styles::styleClass,
-                                  jcmp::Label::Styles::controlLabelFont));
+            g.setFont(st->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
 
             // TODO: Style all of these
             auto borderColor = juce::Colour(0xFF, 0x90, 0x00).darker(0.4);

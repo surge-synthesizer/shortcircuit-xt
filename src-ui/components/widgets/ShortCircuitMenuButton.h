@@ -28,11 +28,11 @@
 #ifndef SCXT_SRC_UI_COMPONENTS_WIDGETS_SHORTCIRCUITMENUBUTTON_H
 #define SCXT_SRC_UI_COMPONENTS_WIDGETS_SHORTCIRCUITMENUBUTTON_H
 
-#include <sst/jucegui/components/MenuButton.h>
+#include <sst/jucegui/components/TextPushButton.h>
 
 namespace scxt::ui::widgets
 {
-struct ShortCircuitMenuButton : sst::jucegui::components::MenuButton
+struct ShortCircuitMenuButton : sst::jucegui::components::TextPushButton
 {
     std::unique_ptr<juce::Drawable> icon;
     std::unique_ptr<juce::Drawable> orangeIcon;

@@ -28,6 +28,7 @@
 #include "ShortCircuitMenuButton.h"
 #include "SCXTBinary.h"
 #include "utils.h"
+#include "sst/jucegui/components/ButtonPainter.h"
 
 namespace scxt::ui::widgets
 {
@@ -72,18 +73,8 @@ ShortCircuitMenuButton::ShortCircuitMenuButton()
 }
 void ShortCircuitMenuButton::paint(juce::Graphics &g)
 {
-    float rectCorner = 1.5;
 
-    auto b = getLocalBounds().reduced(1).toFloat();
-
-    auto bg = getColour(Styles::onbgcol);
-    if (isHovered)
-    {
-        bg = getColour(Styles::hoveronbgcol);
-    }
-
-    g.setColour(bg);
-    g.fillRoundedRectangle(b, rectCorner);
+    sst::jucegui::components::paintButtonBG(this, g);
 
     auto sx = 1.f * getWidth() / icon->getWidth();
     auto sy = 1.f * getHeight() / icon->getHeight();
@@ -106,8 +97,5 @@ void ShortCircuitMenuButton::paint(juce::Graphics &g)
     g.setFont(juce::Font(10, juce::Font::plain));
     g.drawFittedText("Debug", getLocalBounds().reduced(2, 2), juce::Justification::bottom, 1);
 #endif
-
-    g.setColour(getColour(Styles::bordercol));
-    g.drawRoundedRectangle(b, rectCorner, 1);
 }
 } // namespace scxt::ui::widgets
