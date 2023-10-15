@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/ToggleButton.h>
+#include <sst/jucegui/components/VUMeter.h>
 #include <fmt/core.h>
 
 #include <version.h>
@@ -48,7 +49,7 @@ struct HeaderRegion : juce::Component, HasEditor
     std::unique_ptr<widgets::ShortCircuitMenuButton> scMenu;
     std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedPage;
     std::unique_ptr<sst::jucegui::data::Discrete> selectedPageData;
-    std::unique_ptr<juce::Component> vuMeter;
+    std::unique_ptr<sst::jucegui::components::VUMeter> vuMeter;
 
     HeaderRegion(SCXTEditor *);
     ~HeaderRegion();

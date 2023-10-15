@@ -37,33 +37,6 @@ namespace scxt::ui
 
 namespace cmsg = scxt::messaging::client;
 
-// TODO: Move this ot a proper vu meter in jucegui
-struct VUMeter : juce::Component
-{
-    HeaderRegion *header{nullptr};
-    VUMeter(HeaderRegion *hr) : header(hr) {}
-    void paint(juce::Graphics &g) override
-    {
-        if (!header)
-            return;
-
-        g.setColour(juce::Colours::black);
-        g.fillAll();
-
-        g.setColour(juce::Colour(0xFF, 0x90, 0x00));
-        auto lBox = getLocalBounds()
-                        .withHeight(getHeight() * 0.5)
-                        .withWidth(getWidth() * header->vuLevel[0])
-                        .reduced(0, 1);
-        auto rBox = getLocalBounds()
-                        .withTrimmedTop(getHeight() * 0.5)
-                        .withWidth(getWidth() * header->vuLevel[1])
-                        .reduced(0, 1);
-        g.fillRect(lBox);
-        g.fillRect(rBox);
-    }
-};
-
 struct spData : sst::jucegui::data::Discrete
 {
     HeaderRegion *headerRegion{nullptr};
@@ -116,7 +89,8 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 
     addAndMakeVisible(*selectedPage);
 
-    vuMeter = std::make_unique<VUMeter>(this);
+    vuMeter = std::make_unique<sst::jucegui::components::VUMeter>();
+    vuMeter->direction = sst::jucegui::components::VUMeter::HORIZONTAL;
     addAndMakeVisible(*vuMeter);
 
     scMenu = std::make_unique<widgets::ShortCircuitMenuButton>();
@@ -148,6 +122,7 @@ void HeaderRegion::setVULevel(float L, float R)
         vuLevel[0] = sqrt(std::clamp(L, 0.f, ub)) / sqrt(ub);
         vuLevel[1] = sqrt(std::clamp(R, 0.f, ub)) / sqrt(ub);
 
+        vuMeter->setLevels(vuLevel[0], vuLevel[1]);
         vuMeter->repaint();
     }
 }

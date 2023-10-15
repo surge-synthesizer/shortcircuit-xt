@@ -306,7 +306,7 @@ ProcessorControlDescription Processor::getControlDescription()
 
         auto pd = datamodel::pmd()
                       .withType(datamodel::pmd::INT)
-                      .withRange(0, getIntParameterChoicesCount(i))
+                      .withRange(0, getIntParameterChoicesCount(i) - 1)
                       .withDefault(0)
                       .withName(getIntParameterLabel(i))
                       .withUnorderedMapFormatting(dVals);

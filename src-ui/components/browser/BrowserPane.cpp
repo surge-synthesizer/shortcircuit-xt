@@ -42,7 +42,7 @@ struct TempPane : HasEditor, juce::Component
     void paint(juce::Graphics &g) override
     {
         auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::controlLabelFont);
+                                           jcmp::Label::Styles::labelfont);
         g.setFont(ft.withHeight(20));
         g.setColour(juce::Colours::white);
         g.drawText(label, getLocalBounds().withTrimmedBottom(20), juce::Justification::centred);
@@ -65,7 +65,7 @@ struct DriveListBoxModel : juce::ListBoxModel
         if (rowNumber >= 0 && rowNumber < browserPane->roots.size())
         {
             g.setFont(browserPane->style()->getFont(jcmp::Label::Styles::styleClass,
-                                                    jcmp::Label::Styles::controlLabelFont));
+                                                    jcmp::Label::Styles::labelfont));
 
             // TODO: Style all of these
             auto textColor = juce::Colour(190, 190, 190);
@@ -109,7 +109,7 @@ struct DriveArea : juce::Component, HasEditor
     void paint(juce::Graphics &g) override
     {
         auto c = browserPane->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                 jcmp::NamedPanel::Styles::regionBorder);
+                                                 jcmp::NamedPanel::Styles::outline);
         g.setColour(c);
         g.drawRoundedRectangle(getLocalBounds().toFloat(), 2, 1);
     }
@@ -153,7 +153,7 @@ struct DriveFSArea : juce::Component, HasEditor
     void paint(juce::Graphics &g) override
     {
         auto c = browserPane->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                 jcmp::NamedPanel::Styles::regionBorder);
+                                                 jcmp::NamedPanel::Styles::brightoutline);
         g.setColour(c);
         g.drawRoundedRectangle(getLocalBounds().toFloat(), 2, 1);
     }
@@ -364,7 +364,7 @@ struct DriveFSListBoxRow : public juce::Component
             auto height = getHeight();
 
             g.setFont(browserPane->style()->getFont(jcmp::Label::Styles::styleClass,
-                                                    jcmp::Label::Styles::controlLabelFont));
+                                                    jcmp::Label::Styles::labelfont));
 
             // TODO: Style all of these
             auto textColor = juce::Colour(190, 190, 190);

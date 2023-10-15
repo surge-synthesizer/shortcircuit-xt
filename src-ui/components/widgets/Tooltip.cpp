@@ -41,16 +41,16 @@ static constexpr int margin{5}, rowPad{1}, rowTitlePad{0};
 
 void Tooltip::paint(juce::Graphics &g)
 {
-    auto bg = style()->getColour(Styles::styleClass, Styles::regionBG);
-    auto bord = style()->getColour(Styles::styleClass, Styles::bordercol);
-    auto txt = style()->getColour(Styles::styleClass, Styles::controlLabelCol);
+    auto bg = style()->getColour(Styles::styleClass, Styles::background);
+    auto bord = style()->getColour(Styles::styleClass, Styles::brightoutline);
+    auto txt = style()->getColour(Styles::styleClass, Styles::labelcolor);
 
     g.setColour(bg);
     g.fillRect(getLocalBounds());
     g.setColour(bord);
     g.drawRect(getLocalBounds(), 1);
 
-    auto f = style()->getFont(Styles::styleClass, Styles::controlLabelFont);
+    auto f = style()->getFont(Styles::styleClass, Styles::labelfont);
     auto rowHeight = f.getHeight() + rowPad;
 
     g.setColour(txt);
@@ -73,7 +73,7 @@ void Tooltip::paint(juce::Graphics &g)
 
 void Tooltip::resetSizeFromData()
 {
-    auto f = style()->getFont(Styles::styleClass, Styles::controlLabelFont);
+    auto f = style()->getFont(Styles::styleClass, Styles::labelfont);
     auto rowHeight = f.getHeight() + rowPad;
     auto maxw = std::max(f.getStringWidthFloat(tooltipTitle), 60.f);
 

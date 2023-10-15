@@ -44,7 +44,7 @@ struct cc : juce::Component, HasEditor
     void paint(juce::Graphics &g)
     {
         auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::controlLabelFont);
+                                           jcmp::Label::Styles::labelfont);
         g.setFont(ft.withHeight(14));
         g.setColour(juce::Colours::white);
         g.drawText("Proc Routing", getLocalBounds().withTrimmedBottom(20),

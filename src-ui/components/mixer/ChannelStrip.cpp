@@ -27,6 +27,7 @@
 
 #include "configuration.h"
 #include "ChannelStrip.h"
+#include <sst/jucegui/components/VUMeter.h>
 
 namespace scxt::ui::mixer
 {
@@ -44,7 +45,7 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
     setName(nm);
     selectable = true;
 
-    auto onChange = [w = juce::Component::SafePointer(this)](auto a) {
+    auto onChange = [w = juce::Component::SafePointer(this)](const auto &a) {
         if (w)
         {
             w->mixer->sendBusSendStorage(w->busIndex);
@@ -145,21 +146,13 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
     outputMenu->setLabel("OUTPUT");
     addAndMakeVisible(*outputMenu);
 
-    vuMeter = std::make_unique<ChannelVU>();
+    vuMeter = std::make_unique<jcmp::VUMeter>();
     addAndMakeVisible(*vuMeter);
 
     effectsChanged();
 }
 
-ChannelStrip::~ChannelStrip()
-{
-    // TODO - I need this because te source destroys before the widget and crashes but
-    // make that not require this and still not crash
-    for (auto &axs : auxSlider)
-        if (axs)
-            axs->setSource(nullptr);
-    panKnob->setSource(nullptr);
-}
+ChannelStrip::~ChannelStrip() {}
 
 void ChannelStrip::mouseDown(const juce::MouseEvent &) { mixer->selectBus(busIndex); }
 
@@ -244,19 +237,4 @@ void ChannelStrip::effectsChanged()
     repaint();
 }
 
-void ChannelStrip::ChannelVU::paint(juce::Graphics &g)
-{
-    g.fillAll(juce::Colours::black);
-    auto lb = getLocalBounds()
-                  .withTrimmedRight(getWidth() / 2)
-                  .withTrimmedLeft(1)
-                  .withTrimmedTop((1.8 - std::clamp(L, 0.f, 1.8f)) * getHeight() / 1.8);
-    g.setColour(juce::Colour(0xFF, 0x90, 0x00));
-    g.fillRect(lb);
-    auto rb = getLocalBounds()
-                  .withTrimmedLeft(getWidth() / 2)
-                  .withTrimmedRight(1)
-                  .withTrimmedTop((1.8 - std::clamp(R, 0.f, 1.8f) / 1.8) * getHeight() / 1.8);
-    g.fillRect(rb);
-}
 } // namespace scxt::ui::mixer

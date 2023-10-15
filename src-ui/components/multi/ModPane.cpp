@@ -165,12 +165,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         refreshRow();
     }
 
-    ~ModRow()
-    {
-        // remove these explicitly before their attachments
-        power->setSource(nullptr);
-        depth->setSource(nullptr);
-    }
+    ~ModRow() {}
 
     void resized()
     {
@@ -254,12 +249,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             {
                 if (sn.empty())
                 {
-                    source->setIsInactiveValue(true);
                     source->setLabel("Source");
                 }
                 else
                 {
-                    source->setIsInactiveValue(false);
                     source->setLabel(sn);
                 }
             }
@@ -267,12 +260,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             {
                 if (sn.empty())
                 {
-                    sourceVia->setIsInactiveValue(true);
                     sourceVia->setLabel("Via");
                 }
                 else
                 {
-                    sourceVia->setIsInactiveValue(false);
                     sourceVia->setLabel(sn);
                 }
             }
@@ -284,12 +275,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             {
                 if (dn.empty())
                 {
-                    target->setIsInactiveValue(true);
                     target->setLabel("Target");
                 }
                 else
                 {
-                    target->setIsInactiveValue(false);
                     target->setLabel(dn);
                 }
             }
@@ -301,12 +290,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             {
                 if (cn.empty())
                 {
-                    curve->setIsInactiveValue(true);
                     curve->setLabel("Curve");
                 }
                 else
                 {
-                    curve->setIsInactiveValue(false);
                     curve->setLabel(cn);
                 }
             }

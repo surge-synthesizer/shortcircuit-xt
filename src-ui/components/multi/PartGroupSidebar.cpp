@@ -47,7 +47,7 @@ struct PartSidebar : juce::Component, HasEditor
     void paint(juce::Graphics &g) override
     {
         auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::controlLabelFont);
+                                           jcmp::Label::Styles::labelfont);
         g.setFont(ft.withHeight(20));
         g.setColour(juce::Colours::white);
         g.drawText("Parts", getLocalBounds().withTrimmedBottom(20), juce::Justification::centred);
@@ -118,7 +118,7 @@ struct GroupControls : juce::Component, HasEditor
     void paint(juce::Graphics &g) override
     {
         auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::controlLabelFont);
+                                           jcmp::Label::Styles::labelfont);
         g.setFont(ft.withHeight(20));
         g.setColour(juce::Colours::white);
         g.drawText("Group Controls", getLocalBounds().withTrimmedBottom(20),
