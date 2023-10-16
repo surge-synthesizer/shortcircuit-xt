@@ -34,8 +34,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
-
-#include "components/widgets/Tooltip.h"
+#include "sst/jucegui/components/ToolTip.h"
 
 namespace scxt::ui::connectors
 {
@@ -112,8 +111,6 @@ void SCXTStyleSheetCreator::makeLightColors(const sheet_t::ptr_t &base)
 const sheet_t::ptr_t
 SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseType)
 {
-    widgets::Tooltip::Styles::initialize();
-
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorVSlider)
         .withBaseClass(comp::VSlider::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationEditorKnob)
@@ -147,7 +144,8 @@ SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseT
         scxt::ui::binary::AnonymousProRegular_ttf, scxt::ui::binary::AnonymousProRegular_ttfSize);
 
     auto fw = juce::Font(fixedWidth).withHeight(11);
-    base->setFont(widgets::Tooltip::Styles::styleClass, widgets::Tooltip::Styles::datafont, fw);
+    base->setFont(sst::jucegui::components::ToolTip::Styles::styleClass,
+                  sst::jucegui::components::ToolTip::Styles::datafont, fw);
 
     return base;
 }

@@ -42,7 +42,7 @@
 #include "AboutScreen.h"
 #include "LogScreen.h"
 #include "SCXTJuceLookAndFeel.h"
-#include "widgets/Tooltip.h"
+#include "sst/jucegui/components/ToolTip.h"
 
 namespace scxt::ui
 {
@@ -75,7 +75,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
 
-    toolTip = std::make_unique<widgets::Tooltip>();
+    toolTip = std::make_unique<sst::jucegui::components::ToolTip>();
     addChildComponent(*toolTip);
 
     namespace cmsg = scxt::messaging::client;
