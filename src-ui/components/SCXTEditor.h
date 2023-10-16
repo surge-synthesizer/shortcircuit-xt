@@ -38,6 +38,7 @@
 #include "messaging/messaging.h"
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/HSlider.h"
+#include "sst/jucegui/components/ToolTip.h"
 #include "datamodel/adsr_storage.h"
 #include "sst/jucegui/components/WindowPanel.h"
 #include "messaging/client/zone_messages.h"
@@ -56,11 +57,6 @@ struct AboutScreen;
 struct PlayScreen;
 struct LogScreen;
 struct SCXTJuceLookAndFeel;
-
-namespace widgets
-{
-struct Tooltip;
-}
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel,
                     juce::FileDragAndDropTarget,
@@ -115,7 +111,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<AboutScreen> aboutScreen;
     std::unique_ptr<LogScreen> logScreen;
 
-    std::unique_ptr<widgets::Tooltip> toolTip;
+    std::unique_ptr<sst::jucegui::components::ToolTip> toolTip;
 
     SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                const sample::SampleManager &s, const scxt::browser::Browser &b,

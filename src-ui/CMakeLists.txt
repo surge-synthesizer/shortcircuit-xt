@@ -41,8 +41,7 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/ProcessorPane.cpp
 
         components/widgets/ShortCircuitMenuButton.cpp
-        components/widgets/Tooltip.cpp
-
+        
         connectors/SCXTStyleSheetCreator.cpp
 
         )
