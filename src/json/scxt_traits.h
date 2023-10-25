@@ -82,7 +82,7 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
 
 #define ASSIGN(x, y)                                                                               \
     {                                                                                              \
-#y, x.y                                                                                    \
+        #y, x.y                                                                                    \
     }
 
 #define FIND(x, y) findIf(v, #y, x.y)

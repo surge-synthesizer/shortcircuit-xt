@@ -26,10 +26,10 @@
  */
 
 #include "AboutScreen.h"
-#include "SCXTBinary.h"
 #include "utils.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "SCXTEditor.h"
+#include "connectors/SCXTResources.h"
 
 #include <version.h>
 
@@ -37,11 +37,8 @@ namespace scxt::ui
 {
 AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
 {
-    icon = juce::Drawable::createFromImageData(binary::SCicon_svg, binary::SCicon_svgSize);
-
-    auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
-                                                            scxt::ui::binary::InterMedium_ttfSize);
-
+    icon = connectors::resources::loadImageDrawable("images/SCicon.svg");
+    auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     titleFont = juce::Font(interMed);
     titleFont.setHeight(70);
     subtitleFont = juce::Font(interMed);

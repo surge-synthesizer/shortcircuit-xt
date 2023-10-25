@@ -29,7 +29,7 @@
 #define SCXT_SRC_UI_COMPONENTS_SCXTJUCELOOKANDFEEL_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "SCXTBinary.h"
+#include "connectors/SCXTResources.h"
 
 namespace scxt::ui
 {
@@ -38,8 +38,7 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
     juce::Typeface::Ptr interMedTF;
     SCXTJuceLookAndFeel()
     {
-        interMedTF = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
-                                                             scxt::ui::binary::InterMedium_ttfSize);
+        interMedTF = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
         setColour(juce::PopupMenu::ColourIds::backgroundColourId, juce::Colour(0x15, 0x15, 0x15));
         setColour(juce::PopupMenu::ColourIds::highlightedBackgroundColourId,
                   juce::Colour(0x35, 0x35, 0x45));

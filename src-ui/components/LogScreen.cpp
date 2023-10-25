@@ -27,17 +27,17 @@
 
 #include "LogScreen.h"
 
-#include "SCXTBinary.h"
 #include "utils.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "SCXTEditor.h"
+#include "connectors/SCXTResources.h"
 
 namespace scxt::ui
 {
 LogScreen::LogScreen(SCXTEditor *e) : HasEditor(e)
 {
-    auto interMed = juce::Typeface::createSystemTypefaceFor(
-        scxt::ui::binary::AnonymousProRegular_ttf, scxt::ui::binary::AnonymousProRegular_ttfSize);
+    auto interMed =
+        connectors::resources::loadTypeface("fonts/Anonymous_Pro/AnonymousPro-Regular.ttf");
 
     displayFont = juce::Font(interMed);
     displayFont.setHeight(12);

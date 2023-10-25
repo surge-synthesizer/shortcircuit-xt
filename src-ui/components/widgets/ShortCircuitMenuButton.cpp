@@ -26,9 +26,9 @@
  */
 
 #include "ShortCircuitMenuButton.h"
-#include "SCXTBinary.h"
 #include "utils.h"
 #include "sst/jucegui/components/ButtonPainter.h"
+#include "connectors/SCXTResources.h"
 
 namespace scxt::ui::widgets
 {
@@ -67,7 +67,7 @@ void replaceWhiteWith(juce::Drawable *db, const juce::Colour &c)
 
 ShortCircuitMenuButton::ShortCircuitMenuButton()
 {
-    icon = juce::Drawable::createFromImageData(binary::SCicon_svg, binary::SCicon_svgSize);
+    icon = connectors::resources::loadImageDrawable("images/SCicon.svg");
     orangeIcon = icon->createCopy();
     replaceWhiteWith(orangeIcon.get(), juce::Colour(0xFF, 0x90, 0x00));
 }

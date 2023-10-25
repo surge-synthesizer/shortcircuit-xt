@@ -14,19 +14,21 @@ add_custom_target(shortcircuit-products ALL)
 add_custom_target(shortcircuit-installer)
 
 function(shortcircuit_package format)
-    get_target_property(output_dir scxt_plugin RUNTIME_OUTPUT_DIRECTORY)
+    if (TARGET scxt_plugin)
+        get_target_property(output_dir scxt_plugin RUNTIME_OUTPUT_DIRECTORY)
 
-    if (TARGET scxt_plugin_${format})
-        message(STATUS "Adding scxt_plugin_${format} to installer")
-        add_dependencies(shortcircuit-products scxt_plugin_${format})
-        add_custom_command(
-                TARGET shortcircuit-products
-                POST_BUILD
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                COMMAND echo "Installing ${output_dir}/${format} to ${SCXT_PRODUCT_DIR}"
-                COMMAND ${CMAKE_COMMAND} -E copy_directory ${output_dir}/${format}/ ${SCXT_PRODUCT_DIR}/
-        )
-    endif ()
+        if (TARGET scxt_plugin_${format})
+            message(STATUS "Adding scxt_plugin_${format} to installer")
+            add_dependencies(shortcircuit-products scxt_plugin_${format})
+            add_custom_command(
+                    TARGET shortcircuit-products
+                    POST_BUILD
+                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                    COMMAND echo "Installing ${output_dir}/${format} to ${SCXT_PRODUCT_DIR}"
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${output_dir}/${format}/ ${SCXT_PRODUCT_DIR}/
+            )
+        endif ()
+    endif()
 endfunction()
 
 shortcircuit_package(VST3)
