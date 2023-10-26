@@ -37,6 +37,8 @@
 
 #include "sst/clap_juce_shim/clap_juce_shim.h"
 
+#include <engine/engine.h>
+
 #include "clap-config.h"
 
 namespace scxt::clap_first::scxt_plugin
@@ -46,9 +48,23 @@ extern const clap_plugin_descriptor *getDescription();
 
 struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
 {
-    SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h) {}
+    SCXTPlugin(const clap_host *h);
 
-    std::unique_ptr<juce::Component> createEditor() override { return nullptr; }
+    std::unique_ptr<scxt::engine::Engine> engine;
+    size_t blockPos{0};
+
+  protected:
+    bool implementsState() const noexcept override { return true; }
+    bool stateSave(const clap_ostream *stream) noexcept override;
+    bool stateLoad(const clap_istream *stream) noexcept override;
+
+  public:
+    bool implementsGui() const noexcept override { return clapJuceShim != nullptr; }
+    std::unique_ptr<sst::clap_juce_shim::ClapJuceShim> clapJuceShim;
+    ADD_SHIM_IMPLEMENTATION(clapJuceShim)
+    ADD_SHIM_LINUX_TIMER(clapJuceShim)
+    std::unique_ptr<juce::Component> createEditor() override;
+
     bool registerOrUnregisterTimer(clap_id &id, int i, bool b) override { return false; }
 };
 
