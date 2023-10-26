@@ -25,6 +25,12 @@ const clap_plugin_descriptor *getDescription()
     return &desc;
 }
 
+const clap_plugin *makeSCXTPlugin(const clap_host *host)
+{
+    auto p = new scxt::clap_first::scxt_plugin::SCXTPlugin(host);
+    return p->clapPlugin();
+}
+
 SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 {
     engine = std::make_unique<scxt::engine::Engine>();

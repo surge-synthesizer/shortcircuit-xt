@@ -44,8 +44,6 @@
 namespace scxt::clap_first::scxt_plugin
 {
 
-extern const clap_plugin_descriptor *getDescription();
-
 struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
 {
     SCXTPlugin(const clap_host *h);

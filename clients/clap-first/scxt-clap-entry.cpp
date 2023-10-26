@@ -40,20 +40,13 @@
 #include "clapwrapper/vst3.h"
 #include "clapwrapper/auv2.h"
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wall" // other peoples errors are outside my scope
-#endif
-
-#include "utils.h"
-#include "scxt-plugin/scxt-plugin.h"
-
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
 namespace scxt::clap_first
 {
+namespace scxt_plugin
+{
+extern const clap_plugin_descriptor *getDescription();
+extern const clap_plugin *makeSCXTPlugin(const clap_host *h);
+} // namespace scxt_plugin
 
 uint32_t clap_get_plugin_count(const clap_plugin_factory *f) { return 1; }
 const clap_plugin_descriptor *clap_get_plugin_descriptor(const clap_plugin_factory *f, uint32_t w)
@@ -70,8 +63,7 @@ static const clap_plugin *clap_create_plugin(const clap_plugin_factory *f, const
 
     if (strcmp(plugin_id, scxt::clap_first::scxt_plugin::getDescription()->id) == 0)
     {
-        auto p = new scxt::clap_first::scxt_plugin::SCXTPlugin(host);
-        return p->clapPlugin();
+        return scxt_plugin::makeSCXTPlugin(host);
     }
     return nullptr;
 }
