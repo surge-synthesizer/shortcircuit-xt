@@ -24,7 +24,7 @@ target_library_make_clap(TARGET ${CLAP_TARGET}
         CLAP_NAME "Shortcircuit XT Clap First"
         CLAP_MACOS_BUNDLE_IDENTIFIER "org.surge-synth-team.scxt.clap_first.clap"
         CLAP_MACOS_BUNDLE_VERSION "0.0.1"
-        COPY_AFTER_BUILD TRUE
+        COPY_AFTER_BUILD ${SCXT_COPY_PLUGIN_AFTER_BUILD}
         )
 
 
@@ -35,7 +35,9 @@ target_add_vst3_wrapper(TARGET ${VST3_TARGET}
         OUTPUT_NAME "Shortcircuit XT Clap First"
         SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
         )
-target_vst3_copy_after_build(TARGET ${VST3_TARGET})
+if (${SCXT_COPY_PLUGIN_AFTER_BUILD})
+    target_vst3_copy_after_build(TARGET ${VST3_TARGET})
+endif()
 
 if (APPLE)
     set(AUV2_TARGET ${PROJECT_NAME}_auv2)
@@ -50,7 +52,9 @@ if (APPLE)
 
             CLAP_TARGET_FOR_CONFIG ${CLAP_TARGET}
     )
-    target_auv2_copy_after_build(TARGET ${AUV2_TARGET})
+    if (${SCXT_COPY_PLUGIN_AFTER_BUILD})
+        target_auv2_copy_after_build(TARGET ${AUV2_TARGET})
+    endif()
 endif()
 
 set(SA_TARGET ${PROJECT_NAME}_standalone)
