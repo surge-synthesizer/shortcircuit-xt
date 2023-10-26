@@ -60,3 +60,10 @@ target_add_standalone_wrapper(TARGET ${SA_TARGET}
         OUTPUT_NAME "Shortcircuit XT Clap First"
         STATICALLY_LINKED_CLAP_ENTRY True
         PLUGIN_ID "org.surge-synth-team.scxt.clap-first.scxt-plugin")
+
+set(ALL_TARGET ${PROJECT_NAME}_all)
+add_custom_target(${ALL_TARGET})
+add_dependencies(${ALL_TARGET} ${CLAP_TARGET} ${SA_TARGET} ${VST3_TARGET})
+if (APPLE)
+    add_dependencies(${ALL_TARGET} ${AUV2_TARGET})
+endif()
