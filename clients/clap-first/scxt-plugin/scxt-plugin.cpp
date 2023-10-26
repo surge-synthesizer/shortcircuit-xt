@@ -261,13 +261,16 @@ bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
             case 0x90:
             {
                 // note on
-                engine->noteOn(chan, mevt->data[1], -1, mevt->data[2] * 1.f / 127.f, 0.f);
+                if (mevt->data[2] == 0)
+                    engine->noteOff(chan, mevt->data[1], -1, mevt->data[2]);
+                else
+                    engine->noteOn(chan, mevt->data[1], -1, mevt->data[2], 0.f);
             }
             break;
             case 0x80:
             {
                 // note off
-                engine->noteOff(chan, mevt->data[1], -1, mevt->data[2] * 1.f / 127.f);
+                engine->noteOff(chan, mevt->data[1], -1, mevt->data[2]);
             }
             break;
             }
