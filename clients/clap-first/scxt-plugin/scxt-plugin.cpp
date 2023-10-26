@@ -33,6 +33,12 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
     clapJuceShim->setResizable(true);
 }
 
+SCXTPlugin::~SCXTPlugin()
+{
+    engine.reset(nullptr);
+    scxt::showLeakLog();
+}
+
 std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 {
     auto ed = std::make_unique<scxt::ui::SCXTEditor>(
@@ -100,6 +106,190 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
         return false;
     }
     engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    return true;
+}
+
+uint32_t SCXTPlugin::audioPortsCount(bool isInput) const noexcept
+{
+    if (isInput)
+        return 0;
+    else
+        return maxOutputs;
+}
+bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
+                                clap_audio_port_info *info) const noexcept
+{
+    if (isInput)
+        return false;
+
+    if (index == 0)
+    {
+        info->id = 0;
+        info->in_place_pair = CLAP_INVALID_ID;
+        strncpy(info->name, "Main Output", sizeof(info->name));
+        info->flags = CLAP_AUDIO_PORT_IS_MAIN;
+        info->channel_count = 2;
+        info->port_type = CLAP_PORT_STEREO;
+    }
+    else if (index < numParts + 1)
+    {
+        info->id = 1000 + index - 1;
+        info->in_place_pair = CLAP_INVALID_ID;
+        snprintf(info->name, sizeof(info->name) - 1, "Output %02d", index);
+        info->flags = 0;
+        info->channel_count = 2;
+        info->port_type = CLAP_PORT_STEREO;
+    }
+    else
+    {
+        info->id = 2000 + index - numParts - 1;
+        info->in_place_pair = CLAP_INVALID_ID;
+        snprintf(info->name, sizeof(info->name) - 1, "Aux %02d", index - numParts - 1);
+        info->flags = 0;
+        info->channel_count = 2;
+        info->port_type = CLAP_PORT_STEREO;
+    }
+
+    return true;
+}
+
+uint32_t SCXTPlugin::notePortsCount(bool isInput) const noexcept { return isInput ? 1 : 0; }
+bool SCXTPlugin::notePortsInfo(uint32_t index, bool isInput,
+                               clap_note_port_info *info) const noexcept
+{
+    if (isInput)
+    {
+        info->id = 1;
+        info->supported_dialects =
+            CLAP_NOTE_DIALECT_MIDI | CLAP_NOTE_DIALECT_MIDI_MPE | CLAP_NOTE_DIALECT_CLAP;
+        info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
+        strncpy(info->name, "Note Input", CLAP_NAME_SIZE - 1);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+    return true;
+}
+clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
+{
+    float **out = process->audio_outputs[0].data32;
+    auto chans = process->audio_outputs->channel_count;
+    if (chans != 2)
+    {
+        return CLAP_PROCESS_SLEEP;
+    }
+
+    auto &ptch = engine->getPatch();
+    auto &main = ptch->busses.mainBus.output;
+
+    auto ev = process->in_events;
+    auto sz = ev->size(ev);
+
+    const clap_event_header_t *nextEvent{nullptr};
+    uint32_t nextEventIndex{0};
+    if (sz != 0)
+    {
+        nextEvent = ev->get(ev, nextEventIndex);
+    }
+
+    for (auto s = 0U; s < process->frames_count; ++s)
+    {
+        if (blockPos == 0)
+        {
+            // Only realy need to run events when we do the block process
+            while (nextEvent && nextEvent->time <= s)
+            {
+                handleEvent(nextEvent);
+                nextEventIndex++;
+                if (nextEventIndex < sz)
+                    nextEvent = ev->get(ev, nextEventIndex);
+                else
+                    nextEvent = nullptr;
+            }
+
+            engine->processAudio();
+        }
+
+        out[0][s] = main[0][blockPos];
+        out[1][s] = main[1][blockPos];
+
+        blockPos = (blockPos + 1) & (scxt::blockSize - 1);
+    }
+
+    // CLean up past-last-process events since we only sweep when processing in main loop to avoid
+    // per sample if
+    while (nextEvent)
+    {
+        handleEvent(nextEvent);
+        nextEventIndex++;
+        if (nextEventIndex < sz)
+            nextEvent = ev->get(ev, nextEventIndex);
+        else
+            nextEvent = nullptr;
+    }
+
+    assert(!nextEvent);
+
+    return CLAP_PROCESS_CONTINUE;
+}
+
+bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
+{
+    /*
+     * This body is a hack until we do the voice manager
+     */
+    if (nextEvent->space_id == CLAP_CORE_EVENT_SPACE_ID)
+    {
+        switch (nextEvent->type)
+        {
+        case CLAP_EVENT_MIDI:
+        {
+            auto mevt = reinterpret_cast<const clap_event_midi *>(nextEvent);
+            auto msg = mevt->data[0] & 0xF0;
+            auto chan = mevt->data[0] & 0x0F;
+
+            switch (msg)
+            {
+            case 0x80:
+            {
+                // note on
+                engine->noteOn(chan, mevt->data[1], -1, mevt->data[2] * 1.f / 127.f, 0.f);
+            }
+            break;
+            case 0x90:
+            {
+                // note off
+                engine->noteOff(chan, mevt->data[1], -1, mevt->data[2] * 1.f / 127.f);
+            }
+            break;
+            }
+        }
+        break;
+
+        case CLAP_EVENT_NOTE_ON:
+        {
+            auto nevt = reinterpret_cast<const clap_event_note *>(nextEvent);
+            engine->noteOn(nevt->channel, nevt->key, nevt->note_id, nevt->velocity, 0.f);
+        }
+        break;
+
+        case CLAP_EVENT_NOTE_OFF:
+        {
+            auto nevt = reinterpret_cast<const clap_event_note *>(nextEvent);
+            engine->noteOff(nevt->channel, nevt->key, nevt->note_id, nevt->velocity);
+        }
+        break;
+        }
+    }
+    return true;
+}
+
+bool SCXTPlugin::activate(double sampleRate, uint32_t minFrameCount,
+                          uint32_t maxFrameCount) noexcept
+{
+    engine->prepareToPlay(sampleRate);
     return true;
 }
 

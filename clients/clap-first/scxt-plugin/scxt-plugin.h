@@ -49,11 +49,28 @@ extern const clap_plugin_descriptor *getDescription();
 struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
 {
     SCXTPlugin(const clap_host *h);
+    ~SCXTPlugin();
 
     std::unique_ptr<scxt::engine::Engine> engine;
     size_t blockPos{0};
 
   protected:
+    bool activate(double sampleRate, uint32_t minFrameCount,
+                  uint32_t maxFrameCount) noexcept override;
+
+    bool implementsAudioPorts() const noexcept override { return true; }
+    uint32_t audioPortsCount(bool isInput) const noexcept override;
+    bool audioPortsInfo(uint32_t index, bool isInput,
+                        clap_audio_port_info *info) const noexcept override;
+
+    bool implementsNotePorts() const noexcept override { return true; }
+    uint32_t notePortsCount(bool isInput) const noexcept override;
+    bool notePortsInfo(uint32_t index, bool isInput,
+                       clap_note_port_info *info) const noexcept override;
+
+    clap_process_status process(const clap_process *process) noexcept override;
+    bool handleEvent(const clap_event_header_t *);
+
     bool implementsState() const noexcept override { return true; }
     bool stateSave(const clap_ostream *stream) noexcept override;
     bool stateLoad(const clap_istream *stream) noexcept override;
