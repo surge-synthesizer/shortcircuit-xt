@@ -56,6 +56,7 @@ constexpr int lfosPerGroup{3};
 struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSupport
 {
     Group();
+    virtual ~Group() = default;
     GroupID id;
 
     std::string name{};
@@ -105,14 +106,14 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
 
     const std::unique_ptr<Zone> &getZone(int idx) const
     {
-        assert(idx >= 0 && idx < zones.size());
+        assert(idx >= 0 && idx < (int)zones.size());
         return zones[idx];
     }
 
     const std::unique_ptr<Zone> &getZone(const ZoneID &zid) const
     {
         auto idx = getZoneIndex(zid);
-        if (idx < 0 || idx >= zones.size())
+        if (idx < 0 || idx >= (int)zones.size())
             throw SCXTError("Unable to locate part " + zid.to_string() + " in patch " +
                             id.to_string());
         return zones[idx];
@@ -121,7 +122,7 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     std::unique_ptr<Zone> removeZone(ZoneID &zid)
     {
         auto idx = getZoneIndex(zid);
-        if (idx < 0 || idx >= zones.size())
+        if (idx < 0 || idx >= (int)zones.size())
             return {};
 
         auto res = std::move(zones[idx]);

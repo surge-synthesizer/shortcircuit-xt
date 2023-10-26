@@ -46,10 +46,11 @@ struct Engine;
 
 struct Part : MoveableOnly<Part>, SampleRateSupport
 {
-    Part(int16_t c) : id(PartID::next()), channel(c), partNumber(c)
+    Part(int16_t c) : id(PartID::next()), partNumber(c), channel(c)
     {
         pitchBendSmoother.setTarget(0);
     }
+    virtual ~Part() = default;
 
     PartID id;
     int16_t partNumber;
@@ -143,7 +144,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     std::unique_ptr<Group> removeGroup(GroupID &zid)
     {
         auto idx = getGroupIndex(zid);
-        if (idx < 0 || idx >= groups.size())
+        if (idx < 0 || idx >= (int)groups.size())
             return {};
 
         auto res = std::move(groups[idx]);
