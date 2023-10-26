@@ -39,9 +39,18 @@
 
 #include "clapwrapper/vst3.h"
 #include "clapwrapper/auv2.h"
-#include "utils.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall" // other peoples errors are outside my scope
+#endif
+
+#include "utils.h"
 #include "scxt-plugin/scxt-plugin.h"
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 namespace scxt::clap_first
 {
