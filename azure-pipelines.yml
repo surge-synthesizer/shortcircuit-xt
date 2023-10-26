@@ -15,12 +15,16 @@ jobs:
     strategy:
       matrix:
         mac-x86:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
           isMac: True
         mac-arm:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
+          isMac: True
+        mac-x86-clap-first:
+          imageName: 'macos-latest'
+          cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64" -DSCXT_JUCE_CLASSIC_STYLE=FALSE
           isMac: True
         win-clang:
           imageName: 'windows-latest'
@@ -30,11 +34,19 @@ jobs:
           imageName: 'windows-latest'
           cmakeArgs: -A x64
           isWindowsMSVC: True
+        win-msvc-clap-first:
+          imageName: 'windows-latest'
+          cmakeArgs: -A x64 -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+          isWindowsMSVC: True
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
           isCodeQual: True
           cmakeArgs:
+        lin-clap-first:
+          imageName: 'ubuntu-latest'
+          isLinux: True
+          cmakeArgs: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
 
     pool:
       vmImage: $(imageName)
@@ -110,7 +122,7 @@ jobs:
     strategy:
       matrix:
         mac:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           isMac: True
         win:
