@@ -45,7 +45,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     } type{WAV_FILE};
 
     Sample() : id(SampleID::next()) {}
-    Sample(const SampleID &sid) : id(sid), displayName(sid.to_string()) {}
+    Sample(const SampleID &sid) : displayName(sid.to_string()), id(sid) {}
     virtual ~Sample() = default;
 
     void dumpInformationToLog();
@@ -58,8 +58,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     const fs::path &getPath() const { return mFileName; }
 
     int instrument{-1}, region{-1};
-    const int getCompoundInstrument() const { return instrument; }
-    const int getCompoundRegion() const { return region; }
+    int getCompoundInstrument() const { return instrument; }
+    int getCompoundRegion() const { return region; }
 
     struct SampleFileAddress
     {

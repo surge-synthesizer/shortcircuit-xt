@@ -14,6 +14,7 @@
 
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0063 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 # https://github.com/taocpp/PEGTL/issues/347 would let us go to 13
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum macOS version")
@@ -31,6 +32,23 @@ math(EXPR PART1 "${DAY_OF_YEAR} + 1")
 
 project(ShortcircuitXT VERSION 0.${PART0}.${PART1}.0 LANGUAGES C CXX ASM)
 set(ShortcircuitXT_VERSION ${PROJECT_VERSION})
+
+option(SCXT_JUCE_CLASSIC_STYLE "Use juse classic vs clap-first style" ON)
+
+if (APPLE)
+    enable_language(OBJC)
+    enable_language(OBJCXX)
+    set(CMAKE_OBJC_VISIBILITY_PRESET hidden)
+    set(CMAKE_OBJCXX_VISIBILITY_PRESET hidden)
+endif ()
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Never want shared if not specified")
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 
 # Build Time Options
 option(SCXT_BUILD_VST3 "Build a VST3 plugin" ON)
@@ -58,8 +76,6 @@ message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
 
 # Everything here is C++ 17 now
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
     message(STATUS "Setting -no-pie on EXE flags; use SCXT_SKIP_PIE_CHANGE=TRUE to avoid")
     set(CMAKE_EXE_LINKER_FLAGS "-no-pie")
@@ -85,11 +101,13 @@ endif ()
 add_compile_definitions(SCXT_ROOT_BUILD_DIR="${CMAKE_SOURCE_DIR}")
 
 include(cmake/compiler-and-git.cmake)
+include(cmake/CmakeRC.cmake)
 
 add_subdirectory(libs)
 
 # Next for now
 add_subdirectory(src)
+add_subdirectory(resources)
 add_subdirectory(src-ui)
 add_subdirectory(tests)
 add_subdirectory(clients)

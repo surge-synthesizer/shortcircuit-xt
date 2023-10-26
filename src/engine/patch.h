@@ -159,7 +159,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
     const std::unique_ptr<Part> &getPart(const PartID &pid) const
     {
         auto idx = getPartIndex(pid);
-        if (idx < 0 || idx >= parts.size())
+        if (idx < 0 || idx >= (int)parts.size())
             throw SCXTError("Unable to locate part " + pid.to_string() + " in patch " +
                             id.to_string());
         return parts[idx];

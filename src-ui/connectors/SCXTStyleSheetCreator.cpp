@@ -25,7 +25,6 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "SCXTBinary.h"
 #include "SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/BaseStyles.h"
 #include "sst/jucegui/components/Knob.h"
@@ -35,6 +34,7 @@
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/ToolTip.h"
+#include "connectors/SCXTResources.h"
 
 namespace scxt::ui::connectors
 {
@@ -136,12 +136,11 @@ SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseT
         makeLightColors(base);
     }
 
-    auto interMed = juce::Typeface::createSystemTypefaceFor(scxt::ui::binary::InterMedium_ttf,
-                                                            scxt::ui::binary::InterMedium_ttfSize);
+    auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     base->replaceFontsWithTypeface(interMed);
 
-    auto fixedWidth = juce::Typeface::createSystemTypefaceFor(
-        scxt::ui::binary::AnonymousProRegular_ttf, scxt::ui::binary::AnonymousProRegular_ttfSize);
+    auto fixedWidth =
+        connectors::resources::loadTypeface("fonts/Anonymous_Pro/AnonymousPro-Regular.ttf");
 
     auto fw = juce::Font(fixedWidth).withHeight(11);
     base->setFont(sst::jucegui::components::ToolTip::Styles::styleClass,
@@ -152,8 +151,8 @@ SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseT
 
 juce::Font SCXTStyleSheetCreator::interMediumFor(int ht)
 {
-    static auto interMed = juce::Typeface::createSystemTypefaceFor(
-        scxt::ui::binary::InterMedium_ttf, scxt::ui::binary::InterMedium_ttfSize);
+    static auto interMed =
+        connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     return juce::Font(interMed).withHeight(ht);
 }
 

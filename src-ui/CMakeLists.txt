@@ -1,16 +1,5 @@
 project(scxt-ui LANGUAGES CXX)
 
-juce_add_binary_data(scxt-ui-binary
-        NAMESPACE scxt::ui::binary
-        HEADER_NAME SCXTBinary.h
-        SOURCES
-        ../resources/fonts/Inter/static/Inter-Regular.ttf
-        ../resources/fonts/Inter/static/Inter-Medium.ttf
-        ../resources/fonts/Inter/static/Inter-Bold.ttf
-        ../resources/fonts/Anonymous_Pro/AnonymousPro-Regular.ttf
-        ../resources/images/SCicon.svg
-        )
-
 add_library(${PROJECT_NAME} STATIC
 
         components/SCXTEditor.cpp
@@ -43,13 +32,14 @@ add_library(${PROJECT_NAME} STATIC
         components/widgets/ShortCircuitMenuButton.cpp
         
         connectors/SCXTStyleSheetCreator.cpp
+        connectors/SCXTResources.cpp
 
         )
 
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-core
-        scxt-ui-binary
+        scxt-resources
         sst-jucegui
         juce::juce_gui_basics
         )

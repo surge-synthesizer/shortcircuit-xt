@@ -14,7 +14,7 @@
 	path = libs/sst/sst-plugininfra
 	url = https://github.com/surge-synthesizer/sst-plugininfra
 [submodule "libs/clap-juce-extensions"]
-	path = libs/clap-juce-extensions
+	path = libs/clap/clap-juce-extensions
 	url = https://github.com/free-audio/clap-juce-extensions
 [submodule "libs/sst/sst-filters"]
 	path = libs/sst/sst-filters
@@ -40,3 +40,15 @@
 [submodule "libs/sst/sst-effects"]
 	path = libs/sst/sst-effects
 	url = https://github.com/surge-synthesizer/sst-effects
+[submodule "libs/sst/sst-clap-helpers"]
+	path = libs/sst/sst-clap-helpers
+	url = https://github.com/surge-synthesizer/sst-clap-helpers
+[submodule "libs/clap/clap"]
+	path = libs/clap/clap
+	url = https://github.com/free-audio/clap
+[submodule "libs/clap/clap-wrapper"]
+	path = libs/clap/clap-wrapper
+	url = https://github.com/free-audio/clap-wrapper
+[submodule "libs/clap/clap-helpers"]
+	path = libs/clap/clap-helpers
+	url = https://github.com/free-audio/clap-helpers

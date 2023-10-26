@@ -15,26 +15,46 @@ jobs:
     strategy:
       matrix:
         mac-x86:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
+          scxtTarget: scxt_plugin_Standalone
           isMac: True
         mac-arm:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
+          scxtTarget: scxt_plugin_Standalone
           isMac: True
+        mac-x86-clap-first:
+          imageName: 'macos-latest'
+          cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64" -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+          isMac: True
+          scxtTarget: scxt_clapfirst_all
         win-clang:
           imageName: 'windows-latest'
           cmakeArgs: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+          scxtTarget: scxt_plugin_Standalone
           isWindows: True
         win-msvc:
           imageName: 'windows-latest'
           cmakeArgs: -A x64
+          scxtTarget: scxt_plugin_Standalone
           isWindowsMSVC: True
+        win-msvc-clap-first:
+          imageName: 'windows-latest'
+          cmakeArgs: -A x64 -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+          isWindowsMSVC: True
+          scxtTarget: scxt_clapfirst_all
         lin:
-          imageName: 'ubuntu-20.04'
+          imageName: 'ubuntu-latest'
           isLinux: True
           isCodeQual: True
+          scxtTarget: scxt_plugin_Standalone
           cmakeArgs:
+        lin-clap-first:
+          imageName: 'ubuntu-latest'
+          isLinux: True
+          cmakeArgs: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+          scxtTarget: scxt_clapfirst_all
 
     pool:
       vmImage: $(imageName)
@@ -87,7 +107,7 @@ jobs:
 
       - bash: |
           echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
-          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
+          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
         displayName: Run CMake (Debug)
 
       - bash: |
@@ -96,7 +116,7 @@ jobs:
         condition: variables.isCodeQual
 
       - bash: |
-          cmake --build build --config Debug --target scxt_plugin_Standalone --parallel 4
+          cmake --build build --config Debug --target $(scxtTarget) --parallel 4
         displayName: Build SCXT and scxt-test
 
       - bash: |
@@ -110,7 +130,7 @@ jobs:
     strategy:
       matrix:
         mac:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           isMac: True
         win:
@@ -187,8 +207,7 @@ jobs:
 
 
       - bash: |
-          echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
-          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release $(cmakeArgs)
+          cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
         displayName: Run CMake (Release)
 
       - bash: |
