@@ -45,7 +45,7 @@ jobs:
           isWindowsMSVC: True
           scxtTarget: scxt_clapfirst_all
         lin:
-          imageName: 'ubuntu-20.04'
+          imageName: 'ubuntu-latest'
           isLinux: True
           isCodeQual: True
           scxtTarget: scxt_plugin_Standalone
