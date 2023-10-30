@@ -291,69 +291,6 @@ bool Engine::processAudio()
     return true;
 }
 
-void Engine::noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t velocity, float detune)
-{
-    auto useKey = midikeyRetuner.remapKeyTo(channel, key);
-    // SCLOG_WFUNC( SCDBGV(channel) << SCDBGV(key) << SCDBGV(useKey):
-
-    for (const auto &path : findZone(channel, useKey, noteId, velocity))
-    {
-        const auto &z = zoneByPath(path);
-        if (!z->samplePointers[0])
-        {
-            // SCLOG( "Skipping voice with missing sample data" );
-        }
-        else
-        {
-            auto v = initiateVoice(path);
-            if (v)
-            {
-                v->originalMidiKey = key;
-                v->attack();
-            }
-        }
-    }
-    midiNoteStateCounter++;
-}
-void Engine::noteOff(int16_t channel, int16_t key, int32_t noteId, int32_t velocity)
-{
-    releaseVoice(channel, key, noteId, velocity);
-    midiNoteStateCounter++;
-}
-
-void Engine::pitchBend(int16_t channel, int16_t value)
-{
-    // SCLOG( __func__ << " " << SCDBGV(channel) << SCDBGV(value) );
-    auto fv = value / 8192.f;
-    for (const auto &part : *patch)
-    {
-        if (part->channel == -1 || part->channel == channel)
-        {
-            part->pitchBendSmoother.setTarget(fv);
-        }
-    }
-}
-void Engine::midiCC(int16_t channel, int16_t controller, int16_t value)
-{
-    assert(controller >= 0 && controller < 128);
-    auto fv = value / 127.0;
-    for (const auto &part : *patch)
-    {
-        if (part->channel == -1 || part->channel == channel)
-        {
-            part->midiCCSmoothers[controller].setTarget(fv);
-        }
-    }
-}
-void Engine::channelAftertouch(int16_t channel, int16_t value)
-{
-    // SCLOG(  SCDBGV(channel) << SCDBGV(value) );
-}
-void Engine::polyAftertouch(int16_t channel, int16_t noteNumber, int16_t value)
-{
-    // SCLOG_WFUNC(SCDBGV(channel) << SCDBGV(noteNumber) << SCDBGV(value));
-}
-
 uint32_t Engine::activeVoiceCount()
 {
     uint32_t res{0};

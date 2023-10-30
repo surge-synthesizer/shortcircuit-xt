@@ -172,6 +172,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         zone->removeVoice(this);
         zone = nullptr;
         isVoiceAssigned = false;
+        engine->voiceManagerResponder.doVoiceEndCallback(this);
     }
 };
 } // namespace scxt::voice

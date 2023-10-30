@@ -52,3 +52,6 @@
 [submodule "libs/clap/clap-helpers"]
 	path = libs/clap/clap-helpers
 	url = https://github.com/free-audio/clap-helpers
+[submodule "libs/sst/sst-voicemanager"]
+	path = libs/sst/sst-voicemanager
+	url = https://github.com/surge-synthesizer/sst-voicemanager

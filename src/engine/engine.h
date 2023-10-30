@@ -27,6 +27,8 @@
 #ifndef SCXT_SRC_ENGINE_ENGINE_H
 #define SCXT_SRC_ENGINE_ENGINE_H
 
+#include "sst/voicemanager/voicemanager.h"
+
 #include "engine/bus.h"
 #include "utils.h"
 #include "part.h"
@@ -147,13 +149,61 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     tuning::MidikeyRetuner midikeyRetuner;
 
-    void noteOn(int16_t channel, int16_t key, int32_t noteId, int32_t velocity, float detune);
-    void noteOff(int16_t channel, int16_t key, int32_t noteId, int32_t velocity);
+    // new voice manager style
+    struct VMConfig
+    {
+        static constexpr int maxVoiceCount{maxVoices};
+        using voice_t = voice::Voice;
+    };
+    struct VoiceManagerResponder
+    {
+        Engine &engine;
+        VoiceManagerResponder(Engine &e) : engine(e) {}
 
-    void pitchBend(int16_t channel, int16_t value);
-    void midiCC(int16_t channel, int16_t controller, int16_t value);
-    void channelAftertouch(int16_t channel, int16_t value);
-    void polyAftertouch(int16_t channel, int16_t noteNumber, int16_t value);
+        std::function<void(voice::Voice *)> voiceEndCallback{nullptr};
+        void setVoiceEndCallback(std::function<void(voice::Voice *)> vec)
+        {
+            voiceEndCallback = vec;
+        }
+        void doVoiceEndCallback(voice::Voice *v)
+        {
+            if (voiceEndCallback)
+            {
+                voiceEndCallback(v);
+            }
+        }
+
+        int32_t voiceCountForInitializationAction(uint16_t port, uint16_t channel, uint16_t key,
+                                                  int32_t noteId, float velocity);
+
+        int32_t initializeMultipleVoices(
+            std::array<voice::Voice *, VMConfig::maxVoiceCount> &voiceInitWorkingBuffer,
+            uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity,
+            float retune);
+
+        void releaseVoice(voice::Voice *v, float velocity);
+        void retriggerVoiceWithNewNoteID(voice::Voice *v, int32_t noteid, float velocity)
+        {
+            SCLOG("Retrigger Voice Unimplemented")
+        }
+
+        void setVoiceMIDIPitchBend(voice::Voice *v, uint16_t pb14bit);
+
+        void setVoiceMIDIMPEChannelPitchBend(voice::Voice *v, uint16_t pb14bit) {}
+
+        void setVoicePolyphonicParameterModulation(voice::Voice *v, uint32_t parameter,
+                                                   double value)
+        {
+        }
+
+        void setNoteExpression(voice::Voice *v, int32_t expression, double value) {}
+        void setPolyphonicAftertouch(voice::Voice *v, int8_t pat) {}
+        void setChannelPressure(voice::Voice *v, int8_t pres) {}
+        void setMIDI1CC(voice::Voice *v, int8_t cc, int8_t val);
+
+    } voiceManagerResponder{*this};
+    using voiceManager_t = sst::voicemanager::VoiceManager<VMConfig, VoiceManagerResponder>;
+    voiceManager_t voiceManager{voiceManagerResponder};
 
     void onSampleRateChanged() override;
 
