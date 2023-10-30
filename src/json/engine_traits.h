@@ -243,7 +243,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
              {"exclusiveGroup", t.exclusiveGroup},
              {"velocitySens", t.velocitySens},
              {"amplitude", t.amplitude},
-             ASSIGN(t, pan),
+             {"pan", t.pan},
              {"pitchOffset", t.pitchOffset}};
     }
 
