@@ -31,6 +31,8 @@ juce_add_plugin(${PROJECT_NAME}
 
         FORMATS ${SCXT_FORMATS}
 
+        VST3_AUTO_MANIFEST FALSE
+
         COPY_PLUGIN_AFTER_BUILD ${SCXT_COPY_PLUGIN_AFTER_BUILD}
         )
 
