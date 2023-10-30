@@ -28,6 +28,7 @@
 #include "SCXTProcessor.h"
 #include "SCXTPluginEditor.h"
 #include "sst/plugininfra/cpufeatures.h"
+#include "sst/voicemanager/midi1_to_voicemanager.h"
 
 //==============================================================================
 SCXTProcessor::SCXTProcessor()
@@ -258,34 +259,9 @@ void SCXTProcessor::applyMidi(const juce::MidiMessageMetadata &msg)
 {
     // TODO: A clap version with note ids
     auto m = msg.getMessage();
-    if (m.isNoteOn())
-    {
-        engine->noteOn(m.getChannel() - 1, m.getNoteNumber(), -1, m.getVelocity(), 0.f);
-    }
-    else if (m.isNoteOff())
-    {
-        engine->noteOff(m.getChannel() - 1, m.getNoteNumber(), -1, m.getVelocity());
-    }
-    else if (m.isPitchWheel())
-    {
-        engine->pitchBend(m.getChannel() - 1, m.getPitchWheelValue() - 8192);
-    }
-    else if (m.isController())
-    {
-        engine->midiCC(m.getChannel() - 1, m.getControllerNumber(), m.getControllerValue());
-    }
-    else if (m.isChannelPressure())
-    {
-        engine->channelAftertouch(m.getChannel() - 1, m.getChannelPressureValue());
-    }
-    else if (m.isAftertouch())
-    {
-        engine->polyAftertouch(m.getChannel() - 1, m.getNoteNumber(), m.getAfterTouchValue());
-    }
-    else if (m.isAllNotesOff() || m.isAllSoundOff())
-    {
-        // sc3->AllNotesOff();
-    }
+    uint8_t data[3]{0, 0, 0};
+    memcpy(data, m.getRawData(), m.getRawDataSize());
+    sst::voicemanager::applyMidi1Message(engine->voiceManager, 0, data);
 }
 
 //==============================================================================

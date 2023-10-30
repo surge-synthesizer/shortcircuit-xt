@@ -80,11 +80,6 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
     findOrSet(v, key, R{}, r);
 }
 
-#define ASSIGN(x, y)                                                                               \
-    {                                                                                              \
-#y, x.y                                                                                    \
-    }
-
 #define FIND(x, y) findIf(v, #y, x.y)
 #define FINDOR(x, y, d) findOrSet(v, #y, d, x.y);
 

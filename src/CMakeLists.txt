@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME} STATIC
         dsp/processor/oscillator/phasemodulation.cpp
 
         engine/engine.cpp
+        engine/engine_voice_responder.cpp
         engine/zone.cpp
         engine/group.cpp
         engine/part.cpp
@@ -68,7 +69,15 @@ endif ()
 target_include_directories(${PROJECT_NAME} PUBLIC .)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         fmt
-        sst-cpputils sst-filters sst-basic-blocks sst-effects sst-plugininfra sst-plugininfra::tinyxml
+
+        sst-cpputils
+        sst-filters
+        sst-basic-blocks
+        sst-effects
+        sst-plugininfra
+        sst-plugininfra::tinyxml
+        sst-voicemanager
+
         libgig libakai
         mts-esp-client
         shortcircuit::simde

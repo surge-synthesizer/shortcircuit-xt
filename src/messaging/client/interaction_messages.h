@@ -57,13 +57,15 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
 
     if (onoff)
     {
-        cont.scheduleAudioThreadCallback(
-            [ch, note = n](auto &eng) { eng.noteOn(ch, note, -1, 90, 0.f); });
+        cont.scheduleAudioThreadCallback([ch, note = n](auto &eng) {
+            eng.voiceManager.processNoteOnEvent(0, ch, note, -1, 0.9, 0.f);
+        });
     }
     else
     {
-        cont.scheduleAudioThreadCallback(
-            [ch, note = n](auto &eng) { eng.noteOff(ch, note, -1, 90); });
+        cont.scheduleAudioThreadCallback([ch, note = n](auto &eng) {
+            eng.voiceManager.processNoteOffEvent(0, ch, note, -1, 0.f);
+        });
     }
 }
 CLIENT_TO_SERIAL(NoteFromGUI, c2s_noteonoff, noteOnOff_t, processMidiFromGUI(payload, engine, cont))
