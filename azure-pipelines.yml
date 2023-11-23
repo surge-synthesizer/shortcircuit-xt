@@ -15,19 +15,22 @@ jobs:
     strategy:
       matrix:
         mac-x86:
-          imageName: 'macos-latest'
+          imageName: 'macos-12'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
           scxtTarget: scxt_plugin_Standalone
+          xcodeVersion: 13.4.1
           isMac: True
         mac-arm:
-          imageName: 'macos-latest'
+          imageName: 'macos-12'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
           scxtTarget: scxt_plugin_Standalone
+          xcodeVersion: 13.4.1
           isMac: True
         mac-x86-clap-first:
-          imageName: 'macos-latest'
+          imageName: 'macos-12'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64" -DSCXT_JUCE_CLASSIC_STYLE=FALSE
           isMac: True
+          xcodeVersion: 13.4.1
           scxtTarget: scxt_clapfirst_all
         win-clang:
           imageName: 'windows-latest'
@@ -106,8 +109,9 @@ jobs:
         displayName: Get SubModules
 
       - bash: |
-          sudo xcode-select -s /Applications/Xcode_14.1.app
-        displayName: Select XCode 14
+          sudo xcode-select -s /Applications/Xcode_$(xcodeVersion).app
+        displayName: Select XCode
+        condition: variables.isMac
 
       - bash: |
           echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
@@ -134,8 +138,9 @@ jobs:
     strategy:
       matrix:
         mac:
-          imageName: 'macos-latest'
+          imageName: 'macos-12'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+          xcodeVersion: 13.4.1
           isMac: True
         win:
           imageName: 'windows-latest'
@@ -210,8 +215,9 @@ jobs:
         displayName: Get SubModules
 
       - bash: |
-          sudo xcode-select -s /Applications/Xcode_14.1.app
-        displayName: Select XCode 14
+          sudo xcode-select -s /Applications/Xcode_$(xcodeVersion).app
+        displayName: Select XCode
+        condition: variables.isMac
 
       - bash: |
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
