@@ -18,16 +18,19 @@ jobs:
           imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
           scxtTarget: scxt_plugin_Standalone
+          xcodeVersion: 14.2
           isMac: True
         mac-arm:
           imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
           scxtTarget: scxt_plugin_Standalone
+          xcodeVersion: 14.2
           isMac: True
         mac-x86-clap-first:
           imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64" -DSCXT_JUCE_CLASSIC_STYLE=FALSE
           isMac: True
+          xcodeVersion: 14.2
           scxtTarget: scxt_clapfirst_all
         win-clang:
           imageName: 'windows-latest'
@@ -106,6 +109,11 @@ jobs:
         displayName: Get SubModules
 
       - bash: |
+          sudo xcode-select -s /Applications/Xcode_$(xcodeVersion).app
+        displayName: Select XCode
+        condition: variables.isMac
+
+      - bash: |
           echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
         displayName: Run CMake (Debug)
@@ -132,6 +140,7 @@ jobs:
         mac:
           imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+          xcodeVersion: 14.2
           isMac: True
         win:
           imageName: 'windows-latest'
@@ -205,6 +214,10 @@ jobs:
           git submodule update --depth 1 --init --recursive
         displayName: Get SubModules
 
+      - bash: |
+          sudo xcode-select -s /Applications/Xcode_$(xcodeVersion).app
+        displayName: Select XCode
+        condition: variables.isMac
 
       - bash: |
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
