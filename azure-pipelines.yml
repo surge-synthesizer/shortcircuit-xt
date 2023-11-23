@@ -106,6 +106,10 @@ jobs:
         displayName: Get SubModules
 
       - bash: |
+          sudo xcode-select -s /Applications/Xcode_14.1.app
+        displayName: Select XCode 14
+
+      - bash: |
           echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
         displayName: Run CMake (Debug)
@@ -205,6 +209,9 @@ jobs:
           git submodule update --depth 1 --init --recursive
         displayName: Get SubModules
 
+      - bash: |
+          sudo xcode-select -s /Applications/Xcode_14.1.app
+        displayName: Select XCode 14
 
       - bash: |
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Release -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
