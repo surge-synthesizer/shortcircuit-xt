@@ -15,22 +15,22 @@ jobs:
     strategy:
       matrix:
         mac-x86:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64"
           scxtTarget: scxt_plugin_Standalone
-          xcodeVersion: 13.4.1
+          xcodeVersion: 14.2
           isMac: True
         mac-arm:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64"
           scxtTarget: scxt_plugin_Standalone
-          xcodeVersion: 13.4.1
+          xcodeVersion: 14.2
           isMac: True
         mac-x86-clap-first:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=x86_64" -DSCXT_JUCE_CLASSIC_STYLE=FALSE
           isMac: True
-          xcodeVersion: 13.4.1
+          xcodeVersion: 14.2
           scxtTarget: scxt_clapfirst_all
         win-clang:
           imageName: 'windows-latest'
@@ -138,9 +138,9 @@ jobs:
     strategy:
       matrix:
         mac:
-          imageName: 'macos-12'
+          imageName: 'macos-latest'
           cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
-          xcodeVersion: 13.4.1
+          xcodeVersion: 14.2
           isMac: True
         win:
           imageName: 'windows-latest'
