@@ -174,7 +174,7 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
     }
 
     int activeBusCount = 0;
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < scxt::maxOutputs; ++i)
     {
         auto iob = getBusBuffer(buffer, false, i);
         if (iob.getNumChannels() != 2)
@@ -225,14 +225,17 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
             auto outL = iob.getWritePointer(0, i);
             auto outR = iob.getWritePointer(1, i);
 
-            if (bus == 0)
+            if (outL && outR)
             {
-                *outL = engine->getPatch()->busses.mainBus.output[0][blockPos];
-                *outR = engine->getPatch()->busses.mainBus.output[1][blockPos];
-            }
-            else
-            {
-                assert(false);
+                if (bus == 0)
+                {
+                    *outL = engine->getPatch()->busses.mainBus.output[0][blockPos];
+                    *outR = engine->getPatch()->busses.mainBus.output[1][blockPos];
+                }
+                else
+                {
+                    assert(false);
+                }
             }
         }
 
@@ -259,9 +262,18 @@ void SCXTProcessor::applyMidi(const juce::MidiMessageMetadata &msg)
 {
     // TODO: A clap version with note ids
     auto m = msg.getMessage();
+
     uint8_t data[3]{0, 0, 0};
-    memcpy(data, m.getRawData(), m.getRawDataSize());
-    sst::voicemanager::applyMidi1Message(engine->voiceManager, 0, data);
+    if (m.getRawDataSize() <= 3)
+    {
+        memcpy(data, m.getRawData(), std::max(m.getRawDataSize(), 3));
+        sst::voicemanager::applyMidi1Message(engine->voiceManager, 0, data);
+    }
+    else
+    {
+        // What to do with these sysex and other messages? For now drop them
+        // since eventually we will clap first this sucker anyway
+    }
 }
 
 //==============================================================================
