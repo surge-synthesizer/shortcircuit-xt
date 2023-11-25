@@ -42,6 +42,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-resources
         sst-jucegui
         juce::juce_gui_basics
+
+        sst-plugininfra::strnatcmp
         )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE

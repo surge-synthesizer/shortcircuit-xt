@@ -30,6 +30,7 @@
 #include "browser/browser.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/NamedPanelDivider.h"
+#include "sst/plugininfra/strnatcmp.h"
 
 namespace scxt::ui::browser
 {
@@ -202,6 +203,9 @@ struct DriveFSArea : juce::Component, HasEditor
         {
             SCLOG(e.what());
         }
+        std::sort(contents.begin(), contents.end(), [](auto &a, auto &b) {
+            return strnatcasecmp(a.path().u8string().c_str(), b.path().u8string().c_str()) < 0;
+        });
         lbox->updateContent();
     }
 
