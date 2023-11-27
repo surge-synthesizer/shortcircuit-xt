@@ -39,6 +39,7 @@
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/HSlider.h"
 #include "sst/jucegui/components/ToolTip.h"
+#include "sst/jucegui/accessibility/FocusDebugger.h"
 #include "datamodel/adsr_storage.h"
 #include "sst/jucegui/components/WindowPanel.h"
 #include "messaging/client/zone_messages.h"
@@ -112,6 +113,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<LogScreen> logScreen;
 
     std::unique_ptr<sst::jucegui::components::ToolTip> toolTip;
+
+    std::unique_ptr<sst::jucegui::accessibility::FocusDebugger> focusDebugger;
 
     SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                const sample::SampleManager &s, const scxt::browser::Browser &b,

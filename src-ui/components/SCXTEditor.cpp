@@ -110,6 +110,12 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     auto zfi = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::zoomLevel, 100);
     setZoomFactor(zfi * 0.01);
+
+    setAccessible(true);
+    setFocusContainerType(juce::Component::FocusContainerType::keyboardFocusContainer);
+
+    focusDebugger = std::make_unique<sst::jucegui::accessibility::FocusDebugger>(*this);
+    focusDebugger->setDoFocusDebug(false);
 }
 
 SCXTEditor::~SCXTEditor() noexcept
