@@ -928,6 +928,19 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         g.drawRect(kr, 0.5);
     }
 
+    constexpr auto lastOctave = 11;
+    for (int octave = 0; octave < lastOctave; ++octave)
+    {
+        assert(octave <= 10);
+        auto r = rectangleForKey(octave * 12);
+        r.setLeft(r.getX() + 1);
+        r.setWidth(r.getWidth() * 12);
+        g.setColour(juce::Colours::black);
+        // defaultMidiNoteOctaveOffset = -1 => first octave is C-2
+        auto offset = -1 + sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset;
+        g.drawText(fmt::format("C{}", octave + offset), r, juce::Justification::bottomLeft);
+    }
+
     if (display->isUndertakingDrop)
     {
         auto rr = rootAndRangeForPosition(display->currentDragPoint);
