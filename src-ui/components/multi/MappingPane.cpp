@@ -51,7 +51,6 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
     MappingDisplay *display{nullptr};
     MappingZonesAndKeyboard(MappingDisplay *d);
     void paint(juce::Graphics &g) override;
-
     std::array<int16_t, 3> rootAndRangeForPosition(const juce::Point<int> &);
 
     int firstMidiNote{0}, lastMidiNote{128};
