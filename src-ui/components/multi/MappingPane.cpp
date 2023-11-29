@@ -97,7 +97,7 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
         auto r = rectangleForZone(az);
         lastSelectedZone.clear();
         lastSelectedZone.push_back(r);
-        
+
         auto side = r.withWidth(8).translated(0, -2).withTrimmedTop(10).withTrimmedBottom(10);
         keyboardHotZones.clear();
         keyboardHotZones.push_back(side);
@@ -126,10 +126,11 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
         DRAG_SELECTED_ZONE
     } mouseState{NONE};
 
-    std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones, lastSelectedZone;
+    std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones,
+        lastSelectedZone;
     int32_t heldNote{-1};
-    
-    juce::Point<float> lastMousePos{0.f,0.f};
+
+    juce::Point<float> lastMousePos{0.f, 0.f};
 };
 
 struct MappingZoneHeader : juce::Component
@@ -531,7 +532,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
             return;
         }
     }
-    
+
     for (const auto &ks : bothHotZones)
     {
         if (ks.contains(e.position))
@@ -540,7 +541,7 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
             return;
         }
     }
-    
+
     for (const auto &ks : lastSelectedZone)
     {
         if (ks.contains(e.position))
@@ -622,35 +623,41 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
 
         auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote + 1);
         auto vh = displayRegion.getHeight() / 127.0;
-                
+
         auto dx = e.position.x - lastMousePos.x;
         auto &kr = display->mappingView.keyboardRange;
         auto nx = (int)(dx / kw) + firstMidiNote;
-        
-        if(kr.keyStart + nx < 0) nx = - kr.keyStart;
-        else if(kr.keyEnd + nx > 127) nx = 127 - kr.keyEnd;
-        if(nx != 0){
+
+        if (kr.keyStart + nx < 0)
+            nx = -kr.keyStart;
+        else if (kr.keyEnd + nx > 127)
+            nx = 127 - kr.keyEnd;
+        if (nx != 0)
+        {
             lastMousePos.x = e.position.x;
             kr.keyStart += nx;
             kr.keyEnd += nx;
         }
-        
-        auto dy =  - (e.position.y - lastMousePos.y);
+
+        auto dy = -(e.position.y - lastMousePos.y);
         auto &vr = display->mappingView.velocityRange;
         auto vy = (int)(dy / vh);
-        
-        if(vr.velStart + vy < 0) vy = - vr.velStart;
-        else if(vr.velEnd + vy > 127) vy = 127 - vr.velEnd;
-        if(vy != 0){
+
+        if (vr.velStart + vy < 0)
+            vy = -vr.velStart;
+        else if (vr.velEnd + vy > 127)
+            vy = 127 - vr.velEnd;
+        if (vy != 0)
+        {
             lastMousePos.y = e.position.y;
             vr.velStart += vy;
             vr.velEnd += vy;
         }
-        
+
         display->mappingChangedFromGUI();
         repaint();
     }
-    
+
     if (mouseState == DRAG_VELOCITY || mouseState == DRAG_KEY || mouseState == DRAG_KEY_AND_VEL)
     {
         auto lb = getLocalBounds().toFloat();
