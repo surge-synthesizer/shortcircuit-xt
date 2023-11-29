@@ -936,12 +936,8 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         auto r = rectangleForKey(octave * 12);
         r.setLeft(r.getX() + 1);
         r.setWidth(r.getWidth() * 12);
-        std::array<std::string, 11> octaveNames = {
-            "C-2", "C-1", "C-0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8",
-        };
-        auto textForOctave = octaveNames[octave];
         g.setColour(juce::Colours::black);
-        g.drawText(textForOctave, r, juce::Justification::bottomLeft);
+        g.drawText(fmt::format("C{}", octave - 2), r, juce::Justification::bottomLeft);
     }
 
     if (display->isUndertakingDrop)
