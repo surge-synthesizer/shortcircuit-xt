@@ -937,7 +937,9 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         r.setLeft(r.getX() + 1);
         r.setWidth(r.getWidth() * 12);
         g.setColour(juce::Colours::black);
-        g.drawText(fmt::format("C{}", octave - 2), r, juce::Justification::bottomLeft);
+        // defaultMidiNoteOctaveOffset = -1 => first octave is C-2
+        auto offset = -1 + sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset;
+        g.drawText(fmt::format("C{}", octave + offset), r, juce::Justification::bottomLeft);
     }
 
     if (display->isUndertakingDrop)
