@@ -51,6 +51,7 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
     MappingDisplay *display{nullptr};
     MappingZonesAndKeyboard(MappingDisplay *d);
     void paint(juce::Graphics &g) override;
+        
     std::array<int16_t, 3> rootAndRangeForPosition(const juce::Point<int> &);
 
     int firstMidiNote{0}, lastMidiNote{128};
@@ -59,6 +60,7 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
     juce::Rectangle<float> rectangleForKey(int midiNote);
+    
 
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
@@ -777,7 +779,7 @@ juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForKey(int midiNote)
 
     return keyRegion;
 }
-
+    
 void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 {
     if (!display)
@@ -927,7 +929,32 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         g.setColour(juce::Colour(140, 140, 140));
         g.drawRect(kr, 0.5);
     }
-
+    
+    constexpr auto lastOctave = 11;
+    for (int octave = 0; octave < lastOctave; ++octave)
+    {
+        assert(octave <= 10);
+        auto r = rectangleForKey(octave * 12);
+        r.setLeft(r.getX() + 1);
+        r.setWidth(r.getWidth() * 12);
+        std::array<std::string, 11> octaveNames = {
+            "C-2",
+            "C-1",
+            "C-0",
+            "C1",
+            "C2",
+            "C3",
+            "C4",
+            "C5",
+            "C6",
+            "C7",
+            "C8",
+        };
+        auto textForOctave = octaveNames[octave];
+        g.setColour(juce::Colours::black);
+        g.drawText(textForOctave, r, juce::Justification::bottomLeft);
+    }
+    
     if (display->isUndertakingDrop)
     {
         auto rr = rootAndRangeForPosition(display->currentDragPoint);
