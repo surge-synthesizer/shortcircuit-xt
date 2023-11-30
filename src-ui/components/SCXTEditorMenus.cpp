@@ -108,7 +108,7 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
 {
     if (addTitle)
     {
-        p.addSectionHeader("Tuning");
+        p.addSectionHeader("Zoom");
         p.addSeparator();
     }
     for (auto v : {75, 100, 125, 150, 200})
@@ -120,21 +120,21 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
     }
 
     auto r = juce::PopupMenu();
-    r.addSectionHeader("Hacky Mapping Zoom");
-    r.addSeparator();
-    r.addItem("Full Midi", [w = juce::Component::SafePointer(this)] {
-        if (w)
-            w->multiScreen->sample->temporarySetKeyboardCenter(-1);
-    });
-    for (auto v : {24, 36, 48, 60, 72, 84})
-    {
-        r.addItem("2 Oct Around " + std::to_string(v), [v, w = juce::Component::SafePointer(this)] {
-            if (w)
-                w->multiScreen->sample->temporarySetKeyboardCenter(v);
-        });
-    }
+    auto invertScroll = defaultsProvider.getUserDefaultValue(infrastructure::invertScroll, 0) == 1;
+    r.addItem("Invert Mouse Scroll Direction", true, invertScroll,
+              [w = juce::Component::SafePointer(this), invertScroll]() {
+                  if (w)
+                  {
+                      auto newScrollBehavior = !invertScroll;
+                      w->defaultsProvider.updateUserDefaultValue(
+                          infrastructure::DefaultKeys::invertScroll, newScrollBehavior ? 1 : 0);
+
+                      w->multiScreen->sample->invertScroll(newScrollBehavior);
+                  }
+              });
+
     p.addSeparator();
-    p.addSubMenu("Mapping Zoom Hack", r);
+    p.addSubMenu("Mapping Zoom", r);
 }
 
 void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
@@ -172,6 +172,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                       if (w)
                       {
                           w->defaultsProvider.updateUserDefaultValue(infrastructure::octave0, i);
+                          sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset = i;
                       }
                   });
     }

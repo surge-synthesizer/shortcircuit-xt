@@ -62,6 +62,9 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     engine::Zone::AssociatedSampleArray sampleView;
 
     void temporarySetKeyboardCenter(int i);
+
+    void invertScroll(bool invert);
+    bool invertScroll() const;
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H

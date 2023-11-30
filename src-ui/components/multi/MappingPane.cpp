@@ -173,6 +173,7 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         Pan,
         Pitch
     };
+    std::unique_ptr<juce::Viewport> mappingViewport;
     std::unique_ptr<MappingZonesAndKeyboard> zonesAndKeyboard;
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 
@@ -187,7 +188,11 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
     {
         // TODO: Upgrade all these attachments with the new factory style
         zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>(this);
-        addAndMakeVisible(*zonesAndKeyboard);
+
+        mappingViewport = std::make_unique<juce::Viewport>();
+        mappingViewport->setViewedComponent(zonesAndKeyboard.get(), false);
+        addAndMakeVisible(*mappingViewport);
+
         zoneHeader = std::make_unique<MappingZoneHeader>();
         addAndMakeVisible(*zoneHeader);
 
@@ -298,7 +303,11 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
 
         // Mapping Display
         auto z = b.withTrimmedTop(headerSize);
-        zonesAndKeyboard->setBounds(z.withWidth(mapSize));
+        auto viewArea = z.withWidth(mapSize);
+        mappingViewport->setBounds(viewArea);
+        auto zoneArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val)
+                            .withHeight(viewArea.getHeight() * zoomY.val);
+        zonesAndKeyboard->setBounds(zoneArea);
 
         // Side Pane
         static constexpr int rowHeight{16}, rowMargin{4};
@@ -484,6 +493,51 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         currentDragPoint = dragSourceDetails.localPosition;
         repaint();
     }
+
+    int scrollDirection = 1;
+    void invertScroll(bool invert) { scrollDirection = invert ? -1 : 1; }
+
+    struct zoomFactor
+    {
+        float acc = 1.f;
+        int val = 1;
+    } zoomX, zoomY;
+
+    void zoom(float delta, zoomFactor &z)
+    {
+        constexpr auto acceleration = 10.f;
+        constexpr auto zoomMin = 1.f;
+        constexpr auto zoomMax = 4.f;
+
+        z.acc += delta * acceleration * scrollDirection;
+        auto m = 0.f;
+        std::modf(z.acc, &m);
+        auto zoom = m != 0.f;
+        z.val = std::clamp(z.val + m, zoomMin, zoomMax);
+        if (zoom)
+        {
+            z.acc = 0.f;
+            auto w = mappingViewport->getWidth() * zoomX.val;
+            auto h = mappingViewport->getHeight() * zoomY.val;
+            zonesAndKeyboard->setSize(w, h);
+        }
+    }
+
+    void mouseWheelMove(const juce::MouseEvent &e, const juce::MouseWheelDetails &w) override
+    {
+        if (e.mods.isAltDown())
+        {
+            if (e.mods.isShiftDown())
+            {
+                zoom(w.deltaY, zoomX);
+            }
+            else
+            {
+                zoom(w.deltaY, zoomY);
+            }
+        }
+    }
+
     engine::Part::zoneMappingSummary_t summary{};
 };
 
@@ -1608,13 +1662,6 @@ void MappingPane::editorSelectionChanged()
     repaint();
 }
 
-void MappingPane::temporarySetKeyboardCenter(int i)
-{
-    mappingDisplay->zonesAndKeyboard->firstMidiNote = (i == -1 ? 0 : i - 24);
-    mappingDisplay->zonesAndKeyboard->lastMidiNote = (i == -1 ? 128 : i + 24);
-    if (editor->currentLeadZoneSelection.has_value())
-        mappingDisplay->setLeadSelection(*(editor->currentLeadZoneSelection));
-    mappingDisplay->zonesAndKeyboard->repaint();
-}
+void MappingPane::invertScroll(bool invert) { mappingDisplay->invertScroll(invert); }
 
 } // namespace scxt::ui::multi
