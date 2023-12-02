@@ -37,7 +37,8 @@ enum DefaultKeys
     zoomLevel,
     skinName,
     octave0,
-    nKeys
+    nKeys,
+    invertScroll
 };
 inline std::string defaultKeyToString(DefaultKeys k)
 {
@@ -51,6 +52,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "octave0";
     case nKeys:
         return "nKeys";
+    case invertScroll:
+        return "invertScroll";
     default:
         std::terminate(); // for now
     }
