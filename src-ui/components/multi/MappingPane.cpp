@@ -176,8 +176,8 @@ struct Zoomable : public juce::Component
     {
         auto viewArea = getLocalBounds();
         viewport->setBounds(0, 0, getWidth(), getHeight());
-        auto zoneArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val)
-                            .withHeight(viewArea.getHeight() * zoomY.val);
+        auto zoneArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val - viewport->getScrollBarThickness())
+                            .withHeight(viewArea.getHeight() * zoomY.val - viewport->getScrollBarThickness());
         viewport->getViewedComponent()->setBounds(zoneArea);
     }
 
@@ -195,8 +195,8 @@ struct Zoomable : public juce::Component
         if (zoom)
         {
             z.acc = 0.f;
-            auto w = viewport->getWidth() * zoomX.val;
-            auto h = viewport->getHeight() * zoomY.val;
+            auto w = viewport->getWidth() * zoomX.val - viewport->getScrollBarThickness();
+            auto h = viewport->getHeight() * zoomY.val - viewport->getScrollBarThickness();
             viewport->getViewedComponent()->setSize(w, h);
         }
     }
