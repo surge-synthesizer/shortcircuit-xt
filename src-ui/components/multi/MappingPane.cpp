@@ -1074,6 +1074,20 @@ struct SampleWaveform : juce::Component, HasEditor
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
+    void mouseMove(const juce::MouseEvent &e) override
+    {
+        auto posi = e.position.roundToInt();
+        if (startSampleHZ.contains(posi)
+        || endSampleHZ.contains(posi)
+        || startLoopHZ.contains(posi)
+        || endLoopHZ.contains(posi))
+        {
+            setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+            return;
+        }
+        
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
 };
 
 struct SampleDisplay : juce::Component, HasEditor
