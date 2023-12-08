@@ -1064,6 +1064,10 @@ std::array<int16_t, 3> MappingZonesAndKeyboard::rootAndRangeForPosition(const ju
 }
 
 struct SampleDisplay;
+struct SampleCursor : juce::Component
+{
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
+};
 
 struct SampleWaveform : juce::Component, HasEditor
 {
@@ -1087,7 +1091,11 @@ struct SampleWaveform : juce::Component, HasEditor
         HZ_DRAG_LOOPEND,
     } mouseState{MouseState::NONE};
 
+    SampleCursor samplePlaybackPosition;
+    void updateSamplePlaybackPosition(int64_t samplePos);
+
     int64_t sampleForXPixel(float xpos);
+    int xPixelForSample(int64_t samplePos);
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
@@ -1385,8 +1393,10 @@ struct SampleDisplay : juce::Component, HasEditor
     engine::Zone::ZoneMappingData &mappingView;
 };
 
-SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d)
-    : display(d), HasEditor(d->editor){};
+SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d) : display(d), HasEditor(d->editor)
+{
+    addAndMakeVisible(samplePlaybackPosition);
+}
 
 void SampleWaveform::rebuildHotZones()
 {
@@ -1422,6 +1432,22 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
     auto samp = editor->sampleManager.getSample(v.sampleID);
     auto l = samp->getSampleLength();
     return (int64_t)std::clamp(1.0 * l * xpos / r.getWidth(), 0.0, l * 1.0);
+}
+
+int SampleWaveform::xPixelForSample(int64_t samplePos)
+{
+    auto r = getLocalBounds();
+    auto &v = display->sampleView[0];
+    auto sample = editor->sampleManager.getSample(v.sampleID);
+    if (sample && samplePos >= 0)
+    {
+        auto l = sample->getSampleLength();
+        return std::clamp(static_cast<int>(r.getWidth() * samplePos / l), 0, r.getWidth());
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 juce::Path SampleWaveform::pathForSample()
@@ -1672,7 +1698,17 @@ void SampleWaveform::paint(juce::Graphics &g)
     g.drawRect(r, 1);
 }
 
-void SampleWaveform::resized() { rebuildHotZones(); }
+void SampleWaveform::resized()
+{
+    rebuildHotZones();
+    samplePlaybackPosition.setSize(1, getHeight());
+}
+
+void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
+{
+    auto x = xPixelForSample(samplePos);
+    samplePlaybackPosition.setTopLeftPosition(x, 0);
+}
 
 struct MacroDisplay : juce::Component
 {
@@ -1755,6 +1791,11 @@ void MappingPane::invertScroll(bool invert)
 {
     mappingDisplay->mappingViewport->invertScroll(invert);
     sampleDisplay->waveformViewport->invertScroll(invert);
+}
+
+void MappingPane::updateSamplePlaybackPosition(int64_t samplePos)
+{
+    sampleDisplay->waveform->updateSamplePlaybackPosition(samplePos);
 }
 
 } // namespace scxt::ui::multi

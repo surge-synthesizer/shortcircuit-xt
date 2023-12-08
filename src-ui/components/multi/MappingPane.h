@@ -61,7 +61,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     engine::Zone::ZoneMappingData mappingView;
     engine::Zone::AssociatedSampleArray sampleView;
 
-    void temporarySetKeyboardCenter(int i);
+    void updateSamplePlaybackPosition(int64_t samplePos);
 
     void invertScroll(bool invert);
     bool invertScroll() const;
