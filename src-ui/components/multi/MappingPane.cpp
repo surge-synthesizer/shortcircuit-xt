@@ -161,6 +161,12 @@ struct Zoomable : public juce::Component
         float max = 4.f;
     } zoomX, zoomY;
 
+    enum class Axis
+    {
+        horizontalZoom,
+        verticalZoom
+    };
+
     Zoomable(juce::Component *attachedComponent,
              std::pair<float, float> minMaxX = std::make_pair(1.f, 4.f),
              std::pair<float, float> minMaxY = std::make_pair(1.f, 4.f))
@@ -176,28 +182,45 @@ struct Zoomable : public juce::Component
     {
         auto viewArea = getLocalBounds();
         viewport->setBounds(0, 0, getWidth(), getHeight());
-        auto zoneArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val - viewport->getScrollBarThickness())
-                            .withHeight(viewArea.getHeight() * zoomY.val - viewport->getScrollBarThickness());
+        auto zoneArea =
+            viewArea.withWidth(viewArea.getWidth() * zoomX.val - viewport->getScrollBarThickness())
+                .withHeight(viewArea.getHeight() * zoomY.val - viewport->getScrollBarThickness());
         viewport->getViewedComponent()->setBounds(zoneArea);
     }
 
-    void zoom(float delta, zoomFactor &z)
+    void zoom(Axis axis, float delta)
     {
         constexpr auto acceleration = 10.f;
         constexpr auto zoomMin = 1.f;
         constexpr auto zoomMax = 4.f;
 
+        auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
         z.acc += delta * acceleration * scrollDirection;
         auto m = 0.f;
         std::modf(z.acc, &m);
         auto zoom = m != 0.f;
-        z.val = std::clamp(z.val + m, z.min, z.max);
         if (zoom)
         {
+            auto prevVal = static_cast<float>(z.val);
+            z.val = std::clamp(z.val + m, z.min, z.max);
             z.acc = 0.f;
+
+            auto viewedComp = viewport->getViewedComponent();
+
+            auto x = viewedComp->getX();
+            auto y = viewedComp->getY();
+            if (axis == Axis::horizontalZoom)
+            {
+                x *= z.val / prevVal;
+            }
+            else
+            {
+                y *= z.val / prevVal;
+            }
+
             auto w = viewport->getWidth() * zoomX.val - viewport->getScrollBarThickness();
             auto h = viewport->getHeight() * zoomY.val - viewport->getScrollBarThickness();
-            viewport->getViewedComponent()->setSize(w, h);
+            viewedComp->setBounds(x, y, w, h);
         }
     }
 
@@ -205,14 +228,8 @@ struct Zoomable : public juce::Component
     {
         if (e.mods.isAltDown())
         {
-            if (e.mods.isShiftDown())
-            {
-                zoom(w.deltaY, zoomX);
-            }
-            else
-            {
-                zoom(w.deltaY, zoomY);
-            }
+            auto axis = e.mods.isShiftDown() ? Axis::horizontalZoom : Axis::verticalZoom;
+            zoom(axis, w.deltaY);
         }
     }
 };
@@ -1077,15 +1094,13 @@ struct SampleWaveform : juce::Component, HasEditor
     void mouseMove(const juce::MouseEvent &e) override
     {
         auto posi = e.position.roundToInt();
-        if (startSampleHZ.contains(posi)
-        || endSampleHZ.contains(posi)
-        || startLoopHZ.contains(posi)
-        || endLoopHZ.contains(posi))
+        if (startSampleHZ.contains(posi) || endSampleHZ.contains(posi) ||
+            startLoopHZ.contains(posi) || endLoopHZ.contains(posi))
         {
             setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
             return;
         }
-        
+
         setMouseCursor(juce::MouseCursor::NormalCursor);
     }
 };
@@ -1188,7 +1203,8 @@ struct SampleDisplay : juce::Component, HasEditor
 
         waveform = std::make_unique<SampleWaveform>(this);
 
-        waveformViewport = std::make_unique<Zoomable>(waveform.get(), std::make_pair(1.f, 10.f));
+        waveformViewport = std::make_unique<Zoomable>(waveform.get(), std::make_pair(1.f, 50.f),
+                                                      std::make_pair(1.f, 10.f));
         addAndMakeVisible(*waveformViewport);
 
         rebuild();
