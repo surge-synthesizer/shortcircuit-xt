@@ -967,6 +967,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
+    auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
     if (display->editor->currentLeadZoneSelection.has_value())
     {
         const auto &sel = *(display->editor->currentLeadZoneSelection);
@@ -978,7 +979,6 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
             g.setColour(selZoneColor.withAlpha(0.2f));
             g.fillRect(r);
 
@@ -1020,6 +1020,13 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
             g.fillRect(kr);
         }
+
+        if (i == display->mappingView.rootKey)
+        {
+            g.setColour(selZoneColor);
+            g.fillRect(kr);
+        }
+
         g.setColour(juce::Colour(140, 140, 140));
         g.drawRect(kr, 0.5);
     }
