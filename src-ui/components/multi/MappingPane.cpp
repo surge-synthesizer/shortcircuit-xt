@@ -1065,6 +1065,8 @@ struct SampleDisplay : juce::Component, HasEditor
         sampleAttachments;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         sampleEditors;
+    
+    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
 
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>
         loopAttachment, reverseAttachment;
@@ -1096,10 +1098,22 @@ struct SampleDisplay : juce::Component, HasEditor
             sampleEditors[c] = std::move(sl);
             sampleAttachments[c] = std::move(at);
         };
+      
+        auto addLabel = [this](Ctrl c, const std::string &label) {
+          auto l = std::make_unique<sst::jucegui::components::Label>();
+          l->setText(label);
+          addAndMakeVisible(*l);
+          labels[c] = std::move(l);
+        };
+
         attachSamplePoint(startP, "StartS", sampleView[0].startSample);
+        addLabel(startP, "Sample Start");
         attachSamplePoint(endP, "EndS", sampleView[0].endSample);
-        attachSamplePoint(startL, "StartS", sampleView[0].startLoop);
-        attachSamplePoint(endL, "EndS", sampleView[0].endLoop);
+        addLabel(endP, "Sample End");
+        attachSamplePoint(startL, "StartL", sampleView[0].startLoop);
+        addLabel(startL, "Loop Start");
+        attachSamplePoint(endL, "EndL", sampleView[0].endLoop);
+        addLabel(endL, "Loop End");
 
         loopAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
@@ -1167,9 +1181,11 @@ struct SampleDisplay : juce::Component, HasEditor
         playModeButton->setBounds(p);
         p = p.translated(0, 20);
 
+        auto w = p.getWidth()/2;
         for (const auto m : {startP, endP, startL, endL})
         {
-            sampleEditors[m]->setBounds(p);
+            sampleEditors[m]->setBounds(p.withLeft(p.getX()+w));
+            labels[m]->setBounds(p.withWidth(w));
             p = p.translated(0, 20);
         }
         loopActive->setBounds(p);
@@ -1192,6 +1208,8 @@ struct SampleDisplay : juce::Component, HasEditor
         loopDirectionButton->setVisible(b);
         for (const auto &[k, p] : sampleEditors)
             p->setVisible(b);
+        for (const auto &[k, l] : labels)
+            l->setVisible(b);
 
         if (active)
             rebuild();
