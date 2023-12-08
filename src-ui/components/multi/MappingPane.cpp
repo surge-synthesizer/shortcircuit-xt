@@ -1091,18 +1091,7 @@ struct SampleWaveform : juce::Component, HasEditor
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
-    void mouseMove(const juce::MouseEvent &e) override
-    {
-        auto posi = e.position.roundToInt();
-        if (startSampleHZ.contains(posi) || endSampleHZ.contains(posi) ||
-            startLoopHZ.contains(posi) || endLoopHZ.contains(posi))
-        {
-            setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
-            return;
-        }
-
-        setMouseCursor(juce::MouseCursor::NormalCursor);
-    }
+    void mouseMove(const juce::MouseEvent &e) override;
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1590,6 +1579,19 @@ void SampleWaveform::mouseUp(const juce::MouseEvent &e)
 {
     if (mouseState != MouseState::NONE)
         display->onSamplePointChangedFromGUI();
+}
+
+void SampleWaveform::mouseMove(const juce::MouseEvent &e)
+{
+    auto posi = e.position.roundToInt();
+    if (startSampleHZ.contains(posi) || endSampleHZ.contains(posi) || startLoopHZ.contains(posi) ||
+        endLoopHZ.contains(posi))
+    {
+        setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+        return;
+    }
+
+    setMouseCursor(juce::MouseCursor::NormalCursor);
 }
 
 void SampleWaveform::paint(juce::Graphics &g)
