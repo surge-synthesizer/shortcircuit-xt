@@ -733,6 +733,8 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
             lastMousePos.x = e.position.x;
             kr.keyStart += nx;
             kr.keyEnd += nx;
+
+            display->mappingView.rootKey = std::clamp(display->mappingView.rootKey + nx, 0, 127);
         }
 
         auto dy = -(e.position.y - lastMousePos.y);
