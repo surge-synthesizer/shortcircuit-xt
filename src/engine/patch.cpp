@@ -33,6 +33,14 @@ namespace scxt::engine
 void Patch::process(Engine &e)
 {
     namespace mech = sst::basic_blocks::mechanics;
+
+    // Clear the busses
+    busses.mainBus.clear();
+    for (auto &b : busses.partBusses)
+        b.clear();
+    for (auto &b : busses.auxBusses)
+        b.clear();
+
     // Run each of the parts, accumulating onto the engine busses
     for (const auto &part : parts)
     {
@@ -41,10 +49,6 @@ void Patch::process(Engine &e)
             part->process(e);
         }
     }
-
-    // Then process the part busses
-    for (auto &b : busses.auxBusses)
-        b.clear();
 
     for (auto &b : busses.partBusses)
     {
