@@ -110,7 +110,9 @@ void MixerScreen::selectBus(int index)
         p->rebuild();
     }
     for (const auto &b : busPane->channelStrips)
-        b->selected = false;
+    {
+        b->setSelected(false);
+    }
     busPane->channelStrips[index]->selected = true;
     repaint();
 }
