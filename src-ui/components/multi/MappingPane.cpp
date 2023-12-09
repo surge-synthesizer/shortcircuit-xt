@@ -984,6 +984,19 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
             g.setColour(selZoneColor.withAlpha(0.2f));
             g.fillRect(r);
 
+            const float dashes[]{1.0f, 2.0f};
+
+            g.setColour(selZoneColor.withAlpha(0.8f));
+            g.drawDashedLine({{r.getX() + 1, 0}, {r.getX() + 1, r.getY()}}, dashes,
+                             juce::numElementsInArray(dashes));
+            g.drawDashedLine({{r.getX() + 1, r.getBottom()}, {r.getX() + 1, (float)getHeight()}},
+                             dashes, juce::numElementsInArray(dashes));
+            g.drawDashedLine({{r.getRight() - 1, 0}, {r.getRight() - 1, r.getY()}}, dashes,
+                             juce::numElementsInArray(dashes));
+            g.drawDashedLine(
+                {{r.getRight() - 1, r.getBottom()}, {r.getRight() - 1, (float)getHeight()}}, dashes,
+                juce::numElementsInArray(dashes));
+
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
 
