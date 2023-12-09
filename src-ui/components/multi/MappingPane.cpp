@@ -849,7 +849,7 @@ juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForRange(int kL, int kH
 {
     auto lb = getLocalBounds().toFloat();
     auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
-    auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+    auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote);
     auto vh = displayRegion.getHeight() / 127.0;
 
     float x0 = (kL - firstMidiNote) * kw;
@@ -869,7 +869,7 @@ juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForKey(int midiNote)
     assert(lastMidiNote > firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
 
     keyRegion = keyRegion.withWidth(kw).translated(kw * (midiNote - firstMidiNote), 0);
 
@@ -1060,7 +1060,7 @@ std::array<int16_t, 3> MappingZonesAndKeyboard::rootAndRangeForPosition(const ju
     assert(lastMidiNote > firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
 
     auto rootKey =
         std::clamp(p.getX() * 1.f / kw + firstMidiNote, (float)firstMidiNote, (float)lastMidiNote);
