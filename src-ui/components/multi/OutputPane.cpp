@@ -29,6 +29,7 @@
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/MenuButton.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "datamodel/parameter.h"
 
@@ -64,6 +65,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     std::unique_ptr<attachment_t> outputAttachment, panAttachment;
     std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
     std::unique_ptr<jcmp::Label> outputLabel, panLabel;
+    std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
 
     template <typename T>
@@ -101,6 +103,15 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         panLabel = std::make_unique<jcmp::Label>();
         panLabel->setText("Pan");
         addAndMakeVisible(*panLabel);
+
+        outputRouting = std::make_unique<jcmp::MenuButton>();
+        outputRouting->setLabel(OTTraits::defaultRoutingLocationName);
+        updateRoutingLabel();
+        outputRouting->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->selectNewRouting();
+        });
+        addAndMakeVisible(*outputRouting);
     }
 
     void resized()
@@ -108,7 +119,9 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         auto b = getLocalBounds();
         b = b.reduced(5, 0);
         auto w = b.getWidth();
+        auto op = b;
         b = b.withHeight(w / 2);
+        op = op.withTop(op.getBottom() - 20).translated(0, -5);
 
         auto bl = b.withWidth(w / 2);
 
@@ -135,11 +148,16 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
             auto pb = ll.withTrimmedTop(lh - th);
             panLabel->setBounds(pb);
         }
+
+        outputRouting->setBounds(op);
     }
     void outputChangedFromGUI(const attachment_t &at)
     {
         updateValueTooltip(at);
-
+        pushInfo();
+    }
+    void pushInfo()
+    {
         if constexpr (OTTraits::forZone)
         {
             sendToSerialization(cmsg::UpdateZoneOutputInfo(info));
@@ -148,6 +166,57 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         {
             sendToSerialization(cmsg::UpdateGroupOutputInfo(info));
         }
+    }
+
+    std::string getRoutingLabel(scxt::engine::BusAddress rt)
+    {
+        if (rt == scxt::engine::BusAddress::ERROR_BUS)
+        {
+            return "Error";
+        }
+        else if (rt == scxt::engine::BusAddress::DEFAULT_BUS)
+        {
+            return OTTraits::defaultRoutingLocationName;
+        }
+        else if (rt == scxt::engine::BusAddress::MAIN_0)
+        {
+            return "Main";
+        }
+        else if (rt < scxt::engine::BusAddress::AUX_0)
+        {
+            return "Part " + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
+        }
+        else
+        {
+            return "Aux " + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
+        }
+    }
+
+    void updateRoutingLabel()
+    {
+        auto rt = info.routeTo;
+        outputRouting->setLabel(getRoutingLabel(rt));
+    }
+
+    void selectNewRouting()
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Zone Routing");
+        p.addSeparator();
+        for (int rt = scxt::engine::BusAddress::DEFAULT_BUS;
+             rt < scxt::engine::BusAddress::AUX_0 + numAux; ++rt)
+        {
+            p.addItem(getRoutingLabel((scxt::engine::BusAddress)rt),
+                      [w = juce::Component::SafePointer(this), rt]() {
+                          if (w)
+                          {
+                              w->info.routeTo = (scxt::engine::BusAddress)rt;
+                              w->pushInfo();
+                              w->updateRoutingLabel();
+                          }
+                      });
+        }
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     typename OTTraits::info_t info;
 };
@@ -201,6 +270,7 @@ template <typename OTTraits>
 void OutputPane<OTTraits>::setOutputData(const typename OTTraits::info_t &d)
 {
     output->info = d;
+    output->updateRoutingLabel();
     output->repaint();
 }
 

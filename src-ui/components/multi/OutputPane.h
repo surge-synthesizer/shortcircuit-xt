@@ -39,12 +39,14 @@ namespace scxt::ui::multi
 struct OutPaneZoneTraits
 {
     static constexpr bool forZone{true};
+    static constexpr const char *defaultRoutingLocationName{"Group Output"};
     using info_t = engine::Zone::ZoneOutputInfo;
 };
 
 struct OutPaneGroupTraits
 {
     static constexpr bool forZone{false};
+    static constexpr const char *defaultRoutingLocationName{"Part Output"};
     using info_t = engine::Group::GroupOutputInfo;
 };
 template <typename OTTraits> struct OutputTab;
