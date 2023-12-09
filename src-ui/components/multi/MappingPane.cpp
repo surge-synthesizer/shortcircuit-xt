@@ -1802,7 +1802,8 @@ void MappingPane::invertScroll(bool invert)
 
 void MappingPane::updateSamplePlaybackPosition(int64_t samplePos)
 {
-    sampleDisplay->waveform->updateSamplePlaybackPosition(samplePos);
+    if (sampleDisplay->isVisible())
+        sampleDisplay->waveform->updateSamplePlaybackPosition(samplePos);
 }
 
 } // namespace scxt::ui::multi
