@@ -430,19 +430,18 @@ template <> struct scxt_traits<engine::Bus>
     }
 };
 
+STREAM_ENUM(engine::Bus::BusSendStorage::AuxLocation,
+            engine::Bus::BusSendStorage::toStringAuxLocation,
+            engine::Bus::BusSendStorage::fromStringAuxLocation)
+
 template <> struct scxt_traits<engine::Bus::BusSendStorage>
 {
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const engine::Bus::BusSendStorage &t)
     {
-        // TODO
-        if (t.auxLocation != engine::Bus::BusSendStorage::POST_FX_PRE_VCA)
-        {
-            SCLOG("Stream Aux Location as String please");
-        }
         v = {
             {"supportsSends", t.supportsSends},
-            {"auxLocation", (int)t.auxLocation},
+            {"auxLocation", t.auxLocation},
             {"sendLevels", t.sendLevels},
             {"level", t.level},
             {"mute", t.mute},
@@ -455,7 +454,7 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
     static void to(const tao::json::basic_value<Traits> &v, engine::Bus::BusSendStorage &r)
     {
         findIf(v, "supportsSends", r.supportsSends);
-        findEnumIf(v, "auxLocation", r.auxLocation);
+        findIf(v, "auxLocation", r.auxLocation);
         findIf(v, "sendLevels", r.sendLevels);
         findIf(v, "level", r.level);
         findIf(v, "mute", r.mute);

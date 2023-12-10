@@ -107,7 +107,9 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
     Bus(BusAddress a) : address(a) { assert(address != DEFAULT_BUS && address != ERROR_BUS); }
 
     float output alignas(16)[2][blockSize];
-    float auxoutput alignas(16)[2][blockSize];
+    float auxoutputPreFX alignas(16)[2][blockSize];
+    float auxoutputPreVCA alignas(16)[2][blockSize];
+    float auxoutputPostVCA alignas(16)[2][blockSize];
     float vuLevel[2]{0.f, 0.f}, vuFalloff{0.f};
 
     inline void clear() { memset(output, 0, sizeof(output)); }
@@ -143,7 +145,11 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
     struct BusSendStorage
     {
-        BusSendStorage() { std::fill(sendLevels.begin(), sendLevels.end(), 0.f); }
+        BusSendStorage()
+        {
+            std::fill(sendLevels.begin(), sendLevels.end(), 0.f);
+            std::fill(auxLocation.begin(), auxLocation.end(), POST_VCA);
+        }
         bool hasSends{false};
         bool supportsSends{false};
 
@@ -152,7 +158,9 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
             PRE_FX,
             POST_FX_PRE_VCA,
             POST_VCA
-        } auxLocation{POST_FX_PRE_VCA};
+        };
+        std::array<AuxLocation, maxSendsPerBus> auxLocation;
+        DECLARE_ENUM_STRING(AuxLocation);
 
         // Send levels in 0...1 scale to each bus
         std::array<float, maxSendsPerBus> sendLevels{};

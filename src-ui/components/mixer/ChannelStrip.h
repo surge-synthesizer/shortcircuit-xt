@@ -89,6 +89,7 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
     std::unique_ptr<sst::jucegui::components::MenuButton> outputMenu;
 
     void mouseDown(const juce::MouseEvent &) override;
+    void showAuxRouting(int idx);
 
     void effectsChanged();
     float vuL{0.f}, vuR{0.f};
