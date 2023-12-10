@@ -197,9 +197,11 @@ void Bus::initializeAfterUnstream(Engine &e)
 }
 void Bus::process()
 {
-    if (busSendStorage.supportsSends && busSendStorage.hasSends &&
-        busSendStorage.auxLocation == BusSendStorage::PRE_FX)
-        memcpy(auxoutput, output, sizeof(output));
+    // ToDo - we can skip these if theres no pre or at routing
+    if (busSendStorage.supportsSends && busSendStorage.hasSends)
+    {
+        memcpy(auxoutputPreFX, output, sizeof(output));
+    }
 
     int idx{0};
     for (auto &fx : busEffects)
@@ -211,10 +213,9 @@ void Bus::process()
         idx++;
     }
 
-    if (busSendStorage.supportsSends && busSendStorage.hasSends &&
-        busSendStorage.auxLocation == BusSendStorage::POST_FX_PRE_VCA)
+    if (busSendStorage.supportsSends && busSendStorage.hasSends)
     {
-        memcpy(auxoutput, output, sizeof(output));
+        memcpy(auxoutputPreVCA, output, sizeof(output));
     }
 
     // If level becomes modulatable we want to lipol this
@@ -241,9 +242,10 @@ void Bus::process()
         mech::scale_by<blockSize>(lv, output[0], output[1]);
     }
 
-    if (busSendStorage.supportsSends && busSendStorage.hasSends &&
-        busSendStorage.auxLocation == BusSendStorage::POST_VCA)
-        memcpy(auxoutput, output, sizeof(output));
+    if (busSendStorage.supportsSends && busSendStorage.hasSends)
+    {
+        memcpy(auxoutputPostVCA, output, sizeof(output));
+    }
 
     float a = vuFalloff;
 
@@ -295,4 +297,29 @@ void Bus::onSampleRateChanged()
     }
 }
 
+std::string
+Bus::BusSendStorage::toStringAuxLocation(const scxt::engine::Bus::BusSendStorage::AuxLocation &p)
+{
+    switch (p)
+    {
+    case PRE_FX:
+        return "pre_fx";
+    case POST_FX_PRE_VCA:
+        return "post_fx_pre_vca";
+    case POST_VCA:
+        return "post_vca";
+    }
+    return "post_vca";
+}
+
+Bus::BusSendStorage::AuxLocation Bus::BusSendStorage::fromStringAuxLocation(const std::string &s)
+{
+    static auto inverse =
+        makeEnumInverse<Bus::BusSendStorage::AuxLocation, Bus::BusSendStorage::toStringAuxLocation>(
+            Bus::BusSendStorage::AuxLocation::PRE_FX, Bus::BusSendStorage::AuxLocation::POST_VCA);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return POST_VCA;
+    return p->second;
+}
 } // namespace scxt::engine

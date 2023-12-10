@@ -59,9 +59,27 @@ void Patch::process(Engine &e)
             {
                 if (b.busSendStorage.sendLevels[i] != 0.f)
                 {
-                    mech::scale_accumulate_from_to<blockSize>(
-                        b.auxoutput[0], b.auxoutput[1], b.busSendStorage.sendLevels[i],
-                        busses.auxBusses[i].output[0], busses.auxBusses[i].output[1]);
+                    switch (b.busSendStorage.auxLocation[i])
+                    {
+                    case Bus::BusSendStorage::PRE_FX:
+                        mech::scale_accumulate_from_to<blockSize>(
+                            b.auxoutputPreFX[0], b.auxoutputPreFX[1],
+                            b.busSendStorage.sendLevels[i], busses.auxBusses[i].output[0],
+                            busses.auxBusses[i].output[1]);
+                        break;
+                    case Bus::BusSendStorage::POST_FX_PRE_VCA:
+                        mech::scale_accumulate_from_to<blockSize>(
+                            b.auxoutputPreVCA[0], b.auxoutputPreVCA[1],
+                            b.busSendStorage.sendLevels[i], busses.auxBusses[i].output[0],
+                            busses.auxBusses[i].output[1]);
+                        break;
+                    case Bus::BusSendStorage::POST_VCA:
+                        mech::scale_accumulate_from_to<blockSize>(
+                            b.auxoutputPostVCA[0], b.auxoutputPostVCA[1],
+                            b.busSendStorage.sendLevels[i], busses.auxBusses[i].output[0],
+                            busses.auxBusses[i].output[1]);
+                        break;
+                    }
                 }
             }
         }

@@ -129,7 +129,12 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
         for (auto &axt : auxPrePost)
         {
             axt = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::ARROW_L_TO_R);
+            axt->setOnCallback([w = juce::Component::SafePointer(this), idx]() {
+                if (w)
+                    w->showAuxRouting(idx);
+            });
             addAndMakeVisible(*axt);
+            idx++;
         }
     }
 
@@ -250,6 +255,33 @@ void ChannelStrip::effectsChanged()
             fxMenu[i]->setLabel(mixer->effectDisplayName(bed[i].second.type, false));
     }
     repaint();
+}
+
+void ChannelStrip::showAuxRouting(int idx)
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Aux " + std::to_string(idx + 1) + " routing");
+    p.addSeparator();
+
+    // if you change the routing change this menu too
+    auto cr = mixer->busSendData[busIndex].auxLocation[idx];
+
+    static_assert(engine::Bus::BusSendStorage::AuxLocation::POST_VCA == 2);
+    std::array<std::string, 3> labels = {"Pre-FX", "Post-FX, Pre VCA", "Post VCA"};
+    for (int i = 0; i < 3; ++i)
+    {
+        p.addItem(labels[i], true, i == cr, [idx, w = juce::Component::SafePointer(this), i]() {
+            if (!w)
+                return;
+
+            w->mixer->busSendData[w->busIndex].auxLocation[idx] =
+                (engine::Bus::BusSendStorage::AuxLocation)i;
+
+            w->mixer->sendBusSendStorage(w->busIndex);
+        });
+    }
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 } // namespace scxt::ui::mixer
