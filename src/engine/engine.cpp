@@ -62,6 +62,7 @@ Engine::Engine()
     messageController = std::make_unique<messaging::MessageController>(*this);
     dsp::sincTable.init();
     dsp::dbTable.init();
+    dsp::twoToTheXTable.init();
     tuning::equalTuning.init();
 
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);

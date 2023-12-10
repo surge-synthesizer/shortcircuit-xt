@@ -86,7 +86,7 @@ struct Config
 
     static inline float envelopeRateLinear(GlobalStorage *s, float f)
     {
-        return s->getSampleRateInv() * pow(2.0, -f);
+        return blockSize * s->getSampleRateInv() * dsp::twoToTheXTable.twoToThe(-f);
     }
 
     static inline float temposyncRatio(GlobalStorage *s, EffectStorage *e, int idx) { return 1; }
