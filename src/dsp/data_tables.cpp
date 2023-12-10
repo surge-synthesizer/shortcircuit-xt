@@ -32,4 +32,5 @@ namespace scxt::dsp
 {
 SincTable sincTable;
 DbTable dbTable;
+TwoToTheXTable twoToTheXTable;
 } // namespace scxt::dsp

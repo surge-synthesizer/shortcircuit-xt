@@ -77,10 +77,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         ahdsrenv_t;
     ahdsrenv_t aeg, eg2;
 
-    // TODO obviously this sucks move to a table. Also its copied in group
     inline float envelope_rate_linear_nowrap(float f)
     {
-        return blockSize * sampleRateInv * pow(2.f, -f);
+        return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
     }
 
     template <typename ET, int EB, typename ER>

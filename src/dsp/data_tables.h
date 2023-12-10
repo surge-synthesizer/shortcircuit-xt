@@ -34,6 +34,7 @@
 
 #include "sst/basic-blocks/tables/SincTableProvider.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
+#include "sst/basic-blocks/tables/TwoToTheXProvider.h"
 #include "resampling.h"
 
 namespace scxt::dsp
@@ -46,6 +47,9 @@ static_assert(dsp::FIRipolI16_N == SincTable::FIRipolI16_N);
 
 using DbTable = sst::basic_blocks::tables::DbToLinearProvider;
 extern DbTable dbTable;
+
+using TwoToTheXTable = sst::basic_blocks::tables::TwoToTheXProvider;
+extern TwoToTheXTable twoToTheXTable;
 } // namespace scxt::dsp
 
 #endif // __SCXT_DSP_SINC_TABLES_H

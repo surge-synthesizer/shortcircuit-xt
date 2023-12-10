@@ -163,10 +163,9 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     modulation::GroupModMatrix modMatrix;
     modulation::GroupModMatrix::routingTable_t &routingTable;
 
-    // TODO obviously this sucks move to a table. Also its copied in voice
     inline float envelope_rate_linear_nowrap(float f)
     {
-        return blockSize * sampleRateInv * pow(2.f, -f);
+        return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
     }
 
     bool anyModulatorUsed{false};
