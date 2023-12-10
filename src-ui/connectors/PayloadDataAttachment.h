@@ -116,7 +116,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     float getMax() const override { return description.maxVal; }
     float getDefaultValue() const override { return description.defaultVal; }
 
-    bool isBipolar() const override { return description.minVal * description.maxVal < 0; }
+    bool isBipolar() const override { return description.isBipolar(); }
 
     [[deprecated]] void setAsInteger()
     {
