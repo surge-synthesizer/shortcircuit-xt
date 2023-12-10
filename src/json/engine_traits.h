@@ -469,7 +469,9 @@ template <> struct scxt_traits<engine::BusEffectStorage>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const engine::BusEffectStorage &t)
     {
-        v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)}, {"params", t.params}};
+        v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)},
+             {"isActive", t.isActive},
+             {"params", t.params}};
     }
 
     template <template <typename...> class Traits>
@@ -479,6 +481,7 @@ template <> struct scxt_traits<engine::BusEffectStorage>
         findIf(v, "type", tp);
         r.type = scxt::engine::fromStringAvailableBusEffects(tp);
         findIf(v, "params", r.params);
+        findOrSet(v, "isActive", true, r.isActive);
     }
 };
 

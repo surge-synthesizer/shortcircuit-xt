@@ -55,7 +55,7 @@ void Part::process(Engine &e)
             auto bi = g->outputInfo.routeTo;
             if (bi == DEFAULT_BUS)
             {
-                bi = (BusAddress)(MAIN_0 + partNumber);
+                bi = (BusAddress)(PART_0 + partNumber);
             }
             auto &obus = e.getPatch()->busses.busByAddress(bi);
 

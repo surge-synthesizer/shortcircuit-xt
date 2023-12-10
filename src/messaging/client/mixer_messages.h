@@ -74,7 +74,7 @@ inline void setBusEffectStorage(const setBusEffectStorage_t &payload,
                                 messaging::MessageController &cont)
 {
     cont.scheduleAudioThreadCallback([p = payload](auto &e) {
-        auto [bus, fxslot, bes] = p;
+        const auto &[bus, fxslot, bes] = p;
         e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busEffectStorage[fxslot] = bes;
     });
 }

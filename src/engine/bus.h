@@ -80,6 +80,7 @@ struct BusEffectStorage
     BusEffectStorage() { std::fill(params.begin(), params.end(), 0.f); }
     static constexpr int maxBusEffectParams{12};
     AvailableBusEffects type{AvailableBusEffects::none};
+    bool isActive{true};
     std::array<float, maxBusEffectParams> params{};
 };
 struct BusEffect

@@ -201,12 +201,14 @@ void Bus::process()
         busSendStorage.auxLocation == BusSendStorage::PRE_FX)
         memcpy(auxoutput, output, sizeof(output));
 
+    int idx{0};
     for (auto &fx : busEffects)
     {
-        if (fx)
+        if (fx && busEffectStorage[idx].isActive)
         {
             fx->process(output[0], output[1]);
         }
+        idx++;
     }
 
     if (busSendStorage.supportsSends && busSendStorage.hasSends &&
