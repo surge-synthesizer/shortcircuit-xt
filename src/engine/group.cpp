@@ -65,7 +65,6 @@ void Group::process(Engine &e)
     memset(output, 0, sizeof(output));
 
     // When we have alternate group routing we change these pointers
-    assert(outputInfo.routeTo == DEFAULT_BUS);
     float *lOut = output[0];
     float *rOut = output[1];
 
@@ -110,8 +109,16 @@ void Group::process(Engine &e)
         if (z->isActive())
         {
             z->process(e);
-            blk::accumulate_from_to<blockSize>(z->output[0], lOut);
-            blk::accumulate_from_to<blockSize>(z->output[1], rOut);
+            /*
+             * This is just an optimization to not accumulate. The zone will
+             * have already routed to the approprite other bus and output will
+             * be empty.
+             */
+            if (z->outputInfo.routeTo == DEFAULT_BUS)
+            {
+                blk::accumulate_from_to<blockSize>(z->output[0], lOut);
+                blk::accumulate_from_to<blockSize>(z->output[1], rOut);
+            }
         }
     }
 
