@@ -505,6 +505,8 @@ template <> struct scxt_traits<engine::Patch::Busses>
         findIf(v, "partToVSTRouting", r.partToVSTRouting);
         findIf(v, "auxBusses", r.auxBusses);
         findIf(v, "auxToVSTRouting", r.auxToVSTRouting);
+
+        r.reconfigureSolo();
     }
 };
 } // namespace scxt::json
