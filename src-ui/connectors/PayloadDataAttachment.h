@@ -117,14 +117,6 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     float getDefaultValue() const override { return description.defaultVal; }
 
     bool isBipolar() const override { return description.isBipolar(); }
-
-    [[deprecated]] void setAsInteger()
-    {
-        valueToString = [](float f) -> std::string {
-            auto n = (int)std::round(f);
-            return std::to_string(n);
-        };
-    }
 };
 
 template <typename Payload, typename ValueType = int>
