@@ -110,6 +110,29 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
                 p.sendBusSendStorageToClient(e);
             }
         }
+
+        void reconfigureSolo()
+        {
+            bool anySolo{false};
+            for (const auto &b : partBusses)
+            {
+                anySolo = anySolo || b.busSendStorage.solo;
+            }
+            for (const auto &b : auxBusses)
+            {
+                anySolo = anySolo || b.busSendStorage.solo;
+            }
+
+            mainBus.mutedDueToSoloAway = false;
+            for (auto &b : partBusses)
+            {
+                b.mutedDueToSoloAway = anySolo && !b.busSendStorage.solo;
+            }
+            for (auto &b : auxBusses)
+            {
+                b.mutedDueToSoloAway = anySolo && !b.busSendStorage.solo;
+            }
+        }
     } busses;
 
     void process(Engine &e);

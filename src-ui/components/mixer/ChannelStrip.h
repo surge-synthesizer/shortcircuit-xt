@@ -85,6 +85,7 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
     std::unique_ptr<attachment_t> panAttachment;
     std::unique_ptr<sst::jucegui::components::Knob> panKnob;
 
+    std::unique_ptr<boolattachment_t> soloAtt, muteAtt;
     std::unique_ptr<sst::jucegui::components::ToggleButton> soloButton, muteButton;
     std::unique_ptr<sst::jucegui::components::MenuButton> outputMenu;
 

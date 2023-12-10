@@ -154,13 +154,22 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
     setupWidgetForValueTooltip(vcaSlider, vcaAttachment);
     addAndMakeVisible(*vcaSlider);
 
-    muteButton = std::make_unique<jcmp::ToggleButton>();
-    muteButton->setLabel("M");
-    soloButton = std::make_unique<jcmp::ToggleButton>();
-    soloButton->setLabel("S");
+    if (t != BusType::MAIN)
+    {
+        muteAtt =
+            std::make_unique<boolattachment_t>("Mute", onChange, mixer->busSendData[busIndex].mute);
+        muteButton = std::make_unique<jcmp::ToggleButton>();
+        muteButton->setSource(muteAtt.get());
+        muteButton->setLabel("M");
+        soloAtt =
+            std::make_unique<boolattachment_t>("Solo", onChange, mixer->busSendData[busIndex].solo);
+        soloButton = std::make_unique<jcmp::ToggleButton>();
+        soloButton->setSource(soloAtt.get());
+        soloButton->setLabel("S");
 
-    addAndMakeVisible(*muteButton);
-    addAndMakeVisible(*soloButton);
+        addAndMakeVisible(*muteButton);
+        addAndMakeVisible(*soloButton);
+    }
 
     outputMenu = std::make_unique<jcmp::MenuButton>();
     outputMenu->setLabel("OUTPUT");
@@ -221,10 +230,13 @@ void ChannelStrip::resized()
         auto k = r.withTrimmedLeft(s / 2).withWidth(s * 2);
         panKnob->setBounds(k);
 
-        auto m = r.withTrimmedLeft(s / 2 + s * 2).withWidth(s).withHeight(fxheight).reduced(1);
-        muteButton->setBounds(m);
-        m = m.translated(0, fxheight);
-        soloButton->setBounds(m);
+        if (type != BusType::MAIN)
+        {
+            auto m = r.withTrimmedLeft(s / 2 + s * 2).withWidth(s).withHeight(fxheight).reduced(1);
+            muteButton->setBounds(m);
+            m = m.translated(0, fxheight);
+            soloButton->setBounds(m);
+        }
     }
     fx = fx.translated(0, fxheight * 2.5);
 

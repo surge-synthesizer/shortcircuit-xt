@@ -172,6 +172,8 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
         float level{1.f};
     } busSendStorage;
 
+    bool mutedDueToSoloAway{false};
+
     std::array<BusEffectStorage, maxEffectsPerBus> busEffectStorage;
 
     std::array<std::unique_ptr<BusEffect>, maxEffectsPerBus> busEffects;
