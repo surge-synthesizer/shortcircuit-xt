@@ -48,6 +48,8 @@ namespace scxt::ui::mixer
 struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
 {
     using attachment_t = scxt::ui::connectors::PayloadDataAttachment<engine::Bus::BusSendStorage>;
+    using boolattachment_t =
+        scxt::ui::connectors::BooleanPayloadDataAttachment<engine::Bus::BusSendStorage>;
 
     MixerScreen *mixer{nullptr};
     int16_t busIndex{-1};
@@ -69,6 +71,7 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
     std::array<std::unique_ptr<sst::jucegui::components::ToggleButton>,
                scxt::engine::Bus::maxEffectsPerBus>
         fxToggle;
+    std::array<std::unique_ptr<boolattachment_t>, scxt::engine::Bus::maxEffectsPerBus> fxToggleAtt;
 
     std::array<std::unique_ptr<sst::jucegui::components::HSlider>, scxt::numAux> auxSlider;
     std::array<std::unique_ptr<attachment_t>, scxt::numAux> auxAttachments;

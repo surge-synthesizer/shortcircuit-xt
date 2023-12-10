@@ -32,6 +32,7 @@
 namespace scxt::ui::mixer
 {
 namespace jcmp = sst::jucegui::components;
+namespace cmsg = scxt::messaging::client;
 
 ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     : HasEditor(e), jcmp::NamedPanel(""), mixer(m), busIndex(bi), type(t)
@@ -73,11 +74,25 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
         idx = 0;
         for (auto &fxt : fxToggle)
         {
+            auto tat = std::make_unique<boolattachment_t>(
+                "Bypass",
+                [w = juce::Component::SafePointer(this), idx](const auto &a) {
+                    if (w)
+                    {
+                        w->sendToSerialization(cmsg::SetBusEffectStorage(
+                            {w->busIndex, idx, w->mixer->busEffectsData[w->busIndex][idx].second}));
+                    }
+                },
+                mixer->busEffectsData[busIndex][idx].second.isActive);
             fxt = std::make_unique<jcmp::ToggleButton>();
             fxt->setDrawMode(jcmp::ToggleButton::DrawMode::FILLED);
+            fxt->setSource(tat.get());
             addAndMakeVisible(*fxt);
+
+            fxToggleAtt[idx] = std::move(tat);
+
+            idx++;
         }
-        idx++;
     }
 
     if (t == BusType::PART)

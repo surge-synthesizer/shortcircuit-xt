@@ -55,12 +55,12 @@ void Part::process(Engine &e)
             auto bi = g->outputInfo.routeTo;
             if (bi == DEFAULT_BUS)
             {
-                bi = (BusAddress)(MAIN_0 + partNumber);
+                bi = (BusAddress)(PART_0 + partNumber);
             }
-            blk::accumulate_from_to<blockSize>(g->output[0],
-                                               e.getPatch()->busses.partBusses[bi].output[0]);
-            blk::accumulate_from_to<blockSize>(g->output[1],
-                                               e.getPatch()->busses.partBusses[bi].output[1]);
+            auto &obus = e.getPatch()->busses.busByAddress(bi);
+
+            blk::accumulate_from_to<blockSize>(g->output[0], obus.output[0]);
+            blk::accumulate_from_to<blockSize>(g->output[1], obus.output[1]);
         }
     }
 }
