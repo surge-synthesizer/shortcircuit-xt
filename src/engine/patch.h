@@ -60,6 +60,8 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
                 p.address = (BusAddress)adr;
                 adr++;
             }
+            reconfigureSolo();
+            reconfigureOutputBusses();
         }
 
         inline void clear()
@@ -133,6 +135,14 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
                 b.mutedDueToSoloAway = anySolo && !b.busSendStorage.solo;
             }
         }
+
+        void reconfigureOutputBusses()
+        {
+            for (auto &u : usesOutput)
+                u = false;
+            usesOutput[0] = true;
+        }
+        std::array<bool, numPluginOutputs> usesOutput{};
     } busses;
 
     void process(Engine &e);
@@ -150,6 +160,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
         }
     }
 
+    bool usesOutputBus(int bus) { return busses.usesOutput[bus]; }
     void setupBussesOnUnstream(Engine &e);
     PatchID id;
     uint64_t streamingVersion{0}; // we use hex dates for these

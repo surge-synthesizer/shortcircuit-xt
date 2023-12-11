@@ -439,15 +439,14 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const engine::Bus::BusSendStorage &t)
     {
-        v = {
-            {"supportsSends", t.supportsSends},
-            {"auxLocation", t.auxLocation},
-            {"sendLevels", t.sendLevels},
-            {"level", t.level},
-            {"mute", t.mute},
-            {"solo", t.solo},
-            {"pan", t.pan},
-        };
+        v = {{"supportsSends", t.supportsSends},
+             {"auxLocation", t.auxLocation},
+             {"sendLevels", t.sendLevels},
+             {"level", t.level},
+             {"mute", t.mute},
+             {"solo", t.solo},
+             {"pan", t.pan},
+             {"pluginOutputBus", t.pluginOutputBus}};
     }
 
     template <template <typename...> class Traits>
@@ -460,6 +459,7 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
         findIf(v, "mute", r.mute);
         findIf(v, "solo", r.solo);
         findIf(v, "pan", r.pan);
+        findIf(v, "pluginOutputBus", r.pluginOutputBus);
     }
 };
 
@@ -507,6 +507,7 @@ template <> struct scxt_traits<engine::Patch::Busses>
         findIf(v, "auxToVSTRouting", r.auxToVSTRouting);
 
         r.reconfigureSolo();
+        r.reconfigureOutputBusses();
     }
 };
 } // namespace scxt::json
