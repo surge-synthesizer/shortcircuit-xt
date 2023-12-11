@@ -89,6 +89,9 @@ void Patch::process(Engine &e)
     for (auto &b : busses.auxBusses)
         b.process();
 
+    // TODO - we can be more parsimonious here if we don't use these
+    memset(busses.pluginNonMainOutputs, 0, sizeof(busses.pluginNonMainOutputs));
+
     // And finally push onto the main bus
     for (auto [bi, br] : sst::cpputils::enumerate(busses.partToVSTRouting))
     {
@@ -99,6 +102,13 @@ void Patch::process(Engine &e)
                                                 busses.mainBus.output[0]);
             mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[1],
                                                 busses.mainBus.output[1]);
+        }
+        else
+        {
+            mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[0],
+                                                busses.pluginNonMainOutputs[br - 1][0]);
+            mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[1],
+                                                busses.pluginNonMainOutputs[br - 1][1]);
         }
     }
 
@@ -111,6 +121,13 @@ void Patch::process(Engine &e)
                                                 busses.mainBus.output[0]);
             mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[1],
                                                 busses.mainBus.output[1]);
+        }
+        else
+        {
+            mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[0],
+                                                busses.pluginNonMainOutputs[br - 1][0]);
+            mech::accumulate_from_to<blockSize>(busses.auxBusses[bi].output[1],
+                                                busses.pluginNonMainOutputs[br - 1][1]);
         }
     }
 

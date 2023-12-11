@@ -121,7 +121,7 @@ void MixerScreen::onBusSendData(int bus, const engine::Bus::BusSendStorage &s)
 {
     assert(bus >= 0 && bus < busSendData.size());
     busSendData[bus] = s;
-    busPane->channelStrips[bus]->repaint();
+    busPane->channelStrips[bus]->onDataChanged();
 }
 
 std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool forMenu)

@@ -142,7 +142,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
 void SampleManager::purgeUnreferencedSamples()
 {
-    SCLOG_WFUNC("PrePurge Sample Count is " << samples.size());
+    auto preSize{samples.size()};
     auto b = samples.begin();
     while (b != samples.end())
     {
@@ -159,6 +159,9 @@ void SampleManager::purgeUnreferencedSamples()
         }
     }
 
-    SCLOG_WFUNC("PostPurge Sample Count is " << samples.size());
+    if (samples.size() != preSize)
+    {
+        SCLOG_WFUNC("PostPurge : Purged " << (preSize - samples.size()));
+    }
 }
 } // namespace scxt::sample
