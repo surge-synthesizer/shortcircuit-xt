@@ -172,6 +172,11 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
 
         outputMenu = std::make_unique<jcmp::MenuButton>();
         outputMenu->setLabel("MAIN");
+        labelPluginOutput();
+        outputMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showPluginOutput();
+        });
         addAndMakeVisible(*outputMenu);
     }
 
@@ -299,4 +304,43 @@ void ChannelStrip::showAuxRouting(int idx)
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
+void ChannelStrip::showPluginOutput()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Plugin routing");
+    p.addSeparator();
+
+    // if you change the routing change this menu too
+    auto cr = mixer->busSendData[busIndex].pluginOutputBus;
+
+    for (int i = 0; i < numPluginOutputs; ++i)
+    {
+        std::string label{"Main"};
+        if (i > 0)
+        {
+            label = "Output " + std::to_string(i);
+        }
+        p.addItem(label, true, i == cr, [w = juce::Component::SafePointer(this), i]() {
+            if (!w)
+                return;
+
+            w->mixer->busSendData[w->busIndex].pluginOutputBus = i;
+            w->mixer->sendBusSendStorage(w->busIndex);
+            w->labelPluginOutput();
+        });
+    }
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void ChannelStrip::labelPluginOutput()
+{
+    if (!outputMenu)
+        return;
+    auto cr = mixer->busSendData[busIndex].pluginOutputBus;
+    if (cr == 0)
+        outputMenu->setLabel("MAIN");
+    else
+        outputMenu->setLabel("OUTPUT " + std::to_string(cr));
+}
 } // namespace scxt::ui::mixer

@@ -211,8 +211,27 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
             engine->processAudio();
         }
 
+        // TODO: this can be way more efficient and block wise and stuff
         out[0][s] = main[0][blockPos];
         out[1][s] = main[1][blockPos];
+        for (int i = 0; i < scxt::numNonMainPluginOutputs; ++i)
+        {
+            float **pout = process->audio_outputs[i + 1].data32;
+
+            if (pout)
+            {
+                pout[0][s] = 0.f;
+                pout[1][s] = 0.f;
+            }
+            if (engine->getPatch()->usesOutputBus(i + 1))
+            {
+                if (pout)
+                {
+                    pout[0][s] = engine->getPatch()->busses.pluginNonMainOutputs[i][0][blockPos];
+                    pout[1][s] = engine->getPatch()->busses.pluginNonMainOutputs[i][0][blockPos];
+                }
+            }
+        }
 
         blockPos = (blockPos + 1) & (scxt::blockSize - 1);
     }

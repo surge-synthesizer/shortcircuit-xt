@@ -90,6 +90,7 @@ inline void setBusSendStorage(const setBusSendStorage_t &payload,
         e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busSendStorage = bss;
         e.getPatch()->busses.busByAddress((engine::BusAddress)bus).resetSendState();
         e.getPatch()->busses.reconfigureSolo();
+        e.getPatch()->busses.reconfigureOutputBusses();
     });
 }
 CLIENT_TO_SERIAL(SetBusSendStorage, c2s_set_mixer_send_storage, setBusSendStorage_t,

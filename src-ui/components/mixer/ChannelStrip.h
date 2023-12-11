@@ -91,6 +91,14 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
 
     void mouseDown(const juce::MouseEvent &) override;
     void showAuxRouting(int idx);
+    void labelPluginOutput();
+    void showPluginOutput();
+
+    void onDataChanged()
+    {
+        labelPluginOutput();
+        repaint();
+    }
 
     void effectsChanged();
     float vuL{0.f}, vuR{0.f};

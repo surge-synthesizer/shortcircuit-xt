@@ -79,11 +79,15 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
         Bus mainBus;
 
         std::array<Bus, numParts> partBusses;
-        // here '0' means main bus
-        std::array<int16_t, numParts> partToVSTRouting{};
 
         std::array<Bus, numAux> auxBusses;
+
+        // here '0' means main bus. These are created from scanning
+        // the bus in the reconfigure below
+        std::array<int16_t, numParts> partToVSTRouting{};
         std::array<int16_t, numAux> auxToVSTRouting{};
+
+        float pluginNonMainOutputs alignas(16)[numNonMainPluginOutputs][2][blockSize];
 
         Bus &busByAddress(engine::BusAddress b)
         {
@@ -141,6 +145,16 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
             for (auto &u : usesOutput)
                 u = false;
             usesOutput[0] = true;
+            for (const auto &[i, p] : sst::cpputils::enumerate(partBusses))
+            {
+                partToVSTRouting[i] = p.busSendStorage.pluginOutputBus;
+                usesOutput[p.busSendStorage.pluginOutputBus] = true;
+            }
+            for (const auto &[i, p] : sst::cpputils::enumerate(auxBusses))
+            {
+                auxToVSTRouting[i] = p.busSendStorage.pluginOutputBus;
+                usesOutput[p.busSendStorage.pluginOutputBus] = true;
+            }
         }
         std::array<bool, numPluginOutputs> usesOutput{};
     } busses;

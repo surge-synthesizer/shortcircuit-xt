@@ -490,11 +490,7 @@ template <> struct scxt_traits<engine::Patch::Busses>
     static void assign(tao::json::basic_value<Traits> &v, const engine::Patch::Busses &t)
     {
         // TODO fixme don't stream as int
-        v = {{"mainBus", t.mainBus},
-             {"partBusses", t.partBusses},
-             {"partToVSTRouting", t.partToVSTRouting},
-             {"auxBusses", t.auxBusses},
-             {"auxToVSTRouting", t.auxToVSTRouting}};
+        v = {{"mainBus", t.mainBus}, {"partBusses", t.partBusses}, {"auxBusses", t.auxBusses}};
     }
 
     template <template <typename...> class Traits>
@@ -502,9 +498,7 @@ template <> struct scxt_traits<engine::Patch::Busses>
     {
         findIf(v, "mainBus", r.mainBus);
         findIf(v, "partBusses", r.partBusses);
-        findIf(v, "partToVSTRouting", r.partToVSTRouting);
         findIf(v, "auxBusses", r.auxBusses);
-        findIf(v, "auxToVSTRouting", r.auxToVSTRouting);
 
         r.reconfigureSolo();
         r.reconfigureOutputBusses();
