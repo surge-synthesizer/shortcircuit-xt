@@ -65,8 +65,6 @@ void ProcessorPane::showHamburgerMenu()
     if (!isEnabled())
         return;
 
-    SCLOG("Creating processor hamburger menu " << SCD(forZone) << " " << SCD(index));
-
     juce::PopupMenu p;
     p.addSectionHeader("Processors");
     for (const auto &pd : editor->allProcessors)
@@ -153,9 +151,6 @@ void ProcessorPane::rebuildControlsFromDescription()
             processorControlDescription.intControlDescriptions[i],
             [this](const auto &at) { this->processorChangedFromGui(at); },
             processorView.intParams[i]);
-        SCLOG(processorControlDescription.intControlDescriptions[i].name
-              << " min/max=" << processorControlDescription.intControlDescriptions[i].minVal
-              << " / " << processorControlDescription.intControlDescriptions[i].maxVal);
         intAttachments[i] = std::move(at);
     }
 

@@ -127,6 +127,7 @@ enum ProcessorType
     proct_fx_microgate,
     proct_fx_ringmod,
     proct_fx_freqshift,
+    proct_fx_waveshaper,
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,
@@ -222,15 +223,15 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     void setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp, float *fp, int *ip);
 
   public:
-    ProcessorType getType() { return myType; }
-    std::string getName() { return getProcessorName(getType()); }
+    ProcessorType getType() const { return myType; }
+    std::string getName() const { return getProcessorName(getType()); }
 
-    ProcessorControlDescription getControlDescription();
-    int getFloatParameterCount() { return parameter_count; }
-    virtual size_t getIntParameterCount() { return 0; }
-    virtual const char *getIntParameterLabel(int ip_id) { return (""); }
-    virtual size_t getIntParameterChoicesCount(int ip_id) { return 0; }
-    virtual const char *getIntParameterChoicesLabel(int ip_id, int c_id) { return (""); }
+    ProcessorControlDescription getControlDescription() const;
+    int getFloatParameterCount() const { return parameter_count; }
+    virtual size_t getIntParameterCount() const { return 0; }
+    virtual std::string getIntParameterLabel(int ip_id) const { return (""); }
+    virtual size_t getIntParameterChoicesCount(int ip_id) const { return 0; }
+    virtual std::string getIntParameterChoicesLabel(int ip_id, int c_id) const { return (""); }
 
     // TODO: Review and rename everything below here once the procesors are all ported
 

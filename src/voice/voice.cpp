@@ -248,7 +248,6 @@ bool Voice::process()
                                    */
         }
     }
-
     /*
      * Implement output pan
      */

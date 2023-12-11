@@ -79,6 +79,7 @@ void Zone::process(Engine &e)
             }
         }
     }
+
     for (int i = 0; i < cleanupIdx; ++i)
     {
 
@@ -95,6 +96,7 @@ void Zone::addVoice(voice::Voice *v)
     {
         parentGroup->addActiveZone();
     }
+
     activeVoices++;
     for (auto &nv : voiceWeakPointers)
     {
@@ -104,6 +106,7 @@ void Zone::addVoice(voice::Voice *v)
             return;
         }
     }
+
     assert(false);
 }
 void Zone::removeVoice(voice::Voice *v)

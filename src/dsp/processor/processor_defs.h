@@ -62,6 +62,7 @@
  */
 
 #include "definitions/distortion_defs.h"
+#include "definitions/waveshaper_defs.h"
 
 // port
 

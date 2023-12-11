@@ -279,7 +279,7 @@ void unspawnProcessor(Processor *f)
     f->~Processor();
 }
 
-ProcessorControlDescription Processor::getControlDescription()
+ProcessorControlDescription Processor::getControlDescription() const
 {
     ProcessorControlDescription res;
     res.type = getType();
