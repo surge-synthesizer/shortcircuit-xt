@@ -313,7 +313,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     int32_t updateVoiceDisplayStateEvery{10000000};
     int32_t lastUpdateVoiceDisplayState{0};
     int64_t midiNoteStateCounter{0}, lastMidiNoteStateCounter{0};
-    bool sendSamplePosition{false};
+    bool sendSamplePosition{true};
 
     /*
      * Random Number support

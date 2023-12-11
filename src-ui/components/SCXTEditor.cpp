@@ -198,10 +198,33 @@ void SCXTEditor::idle()
     if (sharedUiMemoryState.voiceDisplayStateWriteCounter != lastVoiceDisplayWriteCounter)
     {
         lastVoiceDisplayWriteCounter = sharedUiMemoryState.voiceDisplayStateWriteCounter;
-        headerRegion->setVoiceCount(sharedUiMemoryState.voiceCount);
+        if (headerRegion->voiceCount != sharedUiMemoryState.voiceCount)
+        {
+            headerRegion->setVoiceCount(sharedUiMemoryState.voiceCount);
 
-        if (multiScreen->isVisible())
-            multiScreen->onVoiceInfoChanged();
+            if (multiScreen->isVisible())
+            {
+                multiScreen->onVoiceInfoChanged();
+            }
+        }
+    }
+
+    if (multiScreen->isVisible())
+    {
+        if (currentLeadZoneSelection.has_value())
+        {
+            auto samplePos = -1;
+            for (const auto &v : sharedUiMemoryState.voiceDisplayItems)
+            {
+                if (v.active && v.group == currentLeadZoneSelection->group &&
+                    v.part == currentLeadZoneSelection->part &&
+                    v.zone == currentLeadZoneSelection->zone)
+                {
+                    samplePos = v.samplePos;
+                }
+            }
+            multiScreen->updateSamplePlaybackPosition(samplePos);
+        }
     }
 
     headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],

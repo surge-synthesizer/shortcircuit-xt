@@ -146,6 +146,94 @@ struct MappingZoneHeader : juce::Component
     }
 };
 
+struct Zoomable : public juce::Component
+{
+
+    std::unique_ptr<juce::Viewport> viewport;
+    int scrollDirection = 1;
+    void invertScroll(bool invert) { scrollDirection = invert ? -1 : 1; }
+
+    struct zoomFactor
+    {
+        float acc = 1.f;
+        int val = 1;
+        float min = 1.f;
+        float max = 4.f;
+    } zoomX, zoomY;
+
+    enum class Axis
+    {
+        horizontalZoom,
+        verticalZoom
+    };
+
+    Zoomable(juce::Component *attachedComponent,
+             std::pair<float, float> minMaxX = std::make_pair(1.f, 4.f),
+             std::pair<float, float> minMaxY = std::make_pair(1.f, 4.f))
+        : zoomX({1.f, 1, minMaxX.first, minMaxX.second}),
+          zoomY({1.f, 1, minMaxY.first, minMaxY.second})
+    {
+        viewport = std::make_unique<juce::Viewport>();
+        viewport->setViewedComponent(attachedComponent, false);
+        addAndMakeVisible(*viewport);
+    }
+
+    void resized() override
+    {
+        auto viewArea = getLocalBounds();
+        viewport->setBounds(0, 0, getWidth(), getHeight());
+        auto zoneArea =
+            viewArea.withWidth(viewArea.getWidth() * zoomX.val - viewport->getScrollBarThickness())
+                .withHeight(viewArea.getHeight() * zoomY.val - viewport->getScrollBarThickness());
+        viewport->getViewedComponent()->setBounds(zoneArea);
+    }
+
+    void zoom(Axis axis, float delta)
+    {
+        constexpr auto acceleration = 10.f;
+        constexpr auto zoomMin = 1.f;
+        constexpr auto zoomMax = 4.f;
+
+        auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
+        z.acc += delta * acceleration * scrollDirection;
+        auto m = 0.f;
+        std::modf(z.acc, &m);
+        auto zoom = m != 0.f;
+        if (zoom)
+        {
+            auto prevVal = static_cast<float>(z.val);
+            z.val = std::clamp(z.val + m, z.min, z.max);
+            z.acc = 0.f;
+
+            auto viewedComp = viewport->getViewedComponent();
+
+            auto x = viewedComp->getX();
+            auto y = viewedComp->getY();
+            if (axis == Axis::horizontalZoom)
+            {
+                x *= z.val / prevVal;
+            }
+            else
+            {
+                y *= z.val / prevVal;
+            }
+
+            auto w = viewport->getWidth() * zoomX.val - viewport->getScrollBarThickness();
+            auto h = viewport->getHeight() * zoomY.val - viewport->getScrollBarThickness();
+            viewedComp->setBounds(x, y, w, h);
+        }
+    }
+
+    void mouseWheelMove(const juce::MouseEvent &e, const juce::MouseWheelDetails &w) override
+    {
+        if (e.mods.isAltDown())
+        {
+            auto axis = e.mods.isShiftDown() ? Axis::horizontalZoom : Axis::verticalZoom;
+            zoom(axis, w.deltaY);
+        }
+    }
+};
+
 struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
 {
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
@@ -173,7 +261,9 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         Pan,
         Pitch
     };
-    std::unique_ptr<juce::Viewport> mappingViewport;
+
+    std::unique_ptr<Zoomable> mappingViewport;
+
     std::unique_ptr<MappingZonesAndKeyboard> zonesAndKeyboard;
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 
@@ -189,8 +279,7 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         // TODO: Upgrade all these attachments with the new factory style
         zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>(this);
 
-        mappingViewport = std::make_unique<juce::Viewport>();
-        mappingViewport->setViewedComponent(zonesAndKeyboard.get(), false);
+        mappingViewport = std::make_unique<Zoomable>(zonesAndKeyboard.get());
         addAndMakeVisible(*mappingViewport);
 
         zoneHeader = std::make_unique<MappingZoneHeader>();
@@ -305,9 +394,6 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         auto z = b.withTrimmedTop(headerSize);
         auto viewArea = z.withWidth(mapSize);
         mappingViewport->setBounds(viewArea);
-        auto zoneArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val)
-                            .withHeight(viewArea.getHeight() * zoomY.val);
-        zonesAndKeyboard->setBounds(zoneArea);
 
         // Side Pane
         static constexpr int rowHeight{16}, rowMargin{4};
@@ -494,50 +580,6 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         repaint();
     }
 
-    int scrollDirection = 1;
-    void invertScroll(bool invert) { scrollDirection = invert ? -1 : 1; }
-
-    struct zoomFactor
-    {
-        float acc = 1.f;
-        int val = 1;
-    } zoomX, zoomY;
-
-    void zoom(float delta, zoomFactor &z)
-    {
-        constexpr auto acceleration = 10.f;
-        constexpr auto zoomMin = 1.f;
-        constexpr auto zoomMax = 4.f;
-
-        z.acc += delta * acceleration * scrollDirection;
-        auto m = 0.f;
-        std::modf(z.acc, &m);
-        auto zoom = m != 0.f;
-        z.val = std::clamp(z.val + m, zoomMin, zoomMax);
-        if (zoom)
-        {
-            z.acc = 0.f;
-            auto w = mappingViewport->getWidth() * zoomX.val;
-            auto h = mappingViewport->getHeight() * zoomY.val;
-            zonesAndKeyboard->setSize(w, h);
-        }
-    }
-
-    void mouseWheelMove(const juce::MouseEvent &e, const juce::MouseWheelDetails &w) override
-    {
-        if (e.mods.isAltDown())
-        {
-            if (e.mods.isShiftDown())
-            {
-                zoom(w.deltaY, zoomX);
-            }
-            else
-            {
-                zoom(w.deltaY, zoomY);
-            }
-        }
-    }
-
     engine::Part::zoneMappingSummary_t summary{};
 };
 
@@ -691,6 +733,8 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
             lastMousePos.x = e.position.x;
             kr.keyStart += nx;
             kr.keyEnd += nx;
+
+            display->mappingView.rootKey = std::clamp(display->mappingView.rootKey + nx, 0, 127);
         }
 
         auto dy = -(e.position.y - lastMousePos.y);
@@ -805,7 +849,7 @@ juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForRange(int kL, int kH
 {
     auto lb = getLocalBounds().toFloat();
     auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
-    auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+    auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote);
     auto vh = displayRegion.getHeight() / 127.0;
 
     float x0 = (kL - firstMidiNote) * kw;
@@ -825,7 +869,7 @@ juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForKey(int midiNote)
     assert(lastMidiNote > firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
 
     keyRegion = keyRegion.withWidth(kw).translated(kw * (midiNote - firstMidiNote), 0);
 
@@ -925,6 +969,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
+    auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
     if (display->editor->currentLeadZoneSelection.has_value())
     {
         const auto &sel = *(display->editor->currentLeadZoneSelection);
@@ -936,9 +981,21 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
             g.setColour(selZoneColor.withAlpha(0.2f));
             g.fillRect(r);
+
+            const float dashes[]{1.0f, 2.0f};
+
+            g.setColour(selZoneColor.withAlpha(0.8f));
+            g.drawDashedLine({{r.getX() + 1, 0}, {r.getX() + 1, r.getY()}}, dashes,
+                             juce::numElementsInArray(dashes));
+            g.drawDashedLine({{r.getX() + 1, r.getBottom()}, {r.getX() + 1, (float)getHeight()}},
+                             dashes, juce::numElementsInArray(dashes));
+            g.drawDashedLine({{r.getRight() - 1, 0}, {r.getRight() - 1, r.getY()}}, dashes,
+                             juce::numElementsInArray(dashes));
+            g.drawDashedLine(
+                {{r.getRight() - 1, r.getBottom()}, {r.getRight() - 1, (float)getHeight()}}, dashes,
+                juce::numElementsInArray(dashes));
 
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
@@ -978,6 +1035,13 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
 
             g.fillRect(kr);
         }
+
+        if (i == display->mappingView.rootKey)
+        {
+            g.setColour(selZoneColor);
+            g.fillRect(kr);
+        }
+
         g.setColour(juce::Colour(140, 140, 140));
         g.drawRect(kr, 0.5);
     }
@@ -1009,7 +1073,7 @@ std::array<int16_t, 3> MappingZonesAndKeyboard::rootAndRangeForPosition(const ju
     assert(lastMidiNote > firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote - 1);
+    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
 
     auto rootKey =
         std::clamp(p.getX() * 1.f / kw + firstMidiNote, (float)firstMidiNote, (float)lastMidiNote);
@@ -1022,12 +1086,17 @@ std::array<int16_t, 3> MappingZonesAndKeyboard::rootAndRangeForPosition(const ju
 }
 
 struct SampleDisplay;
+struct SampleCursor : juce::Component
+{
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
+};
 
 struct SampleWaveform : juce::Component, HasEditor
 {
     SampleDisplay *display{nullptr};
     SampleWaveform(SampleDisplay *d);
     void paint(juce::Graphics &g) override;
+    void resized() override;
 
     juce::Path pathForSample();
 
@@ -1044,10 +1113,15 @@ struct SampleWaveform : juce::Component, HasEditor
         HZ_DRAG_LOOPEND,
     } mouseState{MouseState::NONE};
 
+    SampleCursor samplePlaybackPosition;
+    void updateSamplePlaybackPosition(int64_t samplePos);
+
     int64_t sampleForXPixel(float xpos);
+    int xPixelForSample(int64_t samplePos);
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
+    void mouseMove(const juce::MouseEvent &e) override;
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1066,10 +1140,13 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         sampleEditors;
 
+    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
+
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>
         loopAttachment, reverseAttachment;
     std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
 
+    std::unique_ptr<Zoomable> waveformViewport;
     std::unique_ptr<SampleWaveform> waveform;
 
     SampleDisplay(MappingPane *p)
@@ -1096,10 +1173,22 @@ struct SampleDisplay : juce::Component, HasEditor
             sampleEditors[c] = std::move(sl);
             sampleAttachments[c] = std::move(at);
         };
+
+        auto addLabel = [this](Ctrl c, const std::string &label) {
+            auto l = std::make_unique<sst::jucegui::components::Label>();
+            l->setText(label);
+            addAndMakeVisible(*l);
+            labels[c] = std::move(l);
+        };
+
         attachSamplePoint(startP, "StartS", sampleView[0].startSample);
+        addLabel(startP, "Sample Start");
         attachSamplePoint(endP, "EndS", sampleView[0].endSample);
-        attachSamplePoint(startL, "StartS", sampleView[0].startLoop);
-        attachSamplePoint(endL, "EndS", sampleView[0].endLoop);
+        addLabel(endP, "Sample End");
+        attachSamplePoint(startL, "StartL", sampleView[0].startLoop);
+        addLabel(startL, "Loop Start");
+        attachSamplePoint(endL, "EndL", sampleView[0].endLoop);
+        addLabel(endL, "Loop End");
 
         loopAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
@@ -1132,7 +1221,10 @@ struct SampleDisplay : juce::Component, HasEditor
         addAndMakeVisible(*reverseActive);
 
         waveform = std::make_unique<SampleWaveform>(this);
-        addAndMakeVisible(*waveform);
+
+        waveformViewport = std::make_unique<Zoomable>(waveform.get(), std::make_pair(1.f, 50.f),
+                                                      std::make_pair(1.f, 10.f));
+        addAndMakeVisible(*waveformViewport);
 
         rebuild();
     }
@@ -1158,18 +1250,28 @@ struct SampleDisplay : juce::Component, HasEditor
         return getLocalBounds().withTrimmedRight(sidePanelWidth);
     }
 
+    struct zoomFactor
+    {
+        float acc = 1.f;
+        int val = 1;
+    } zoomX, zoomY;
+
     void resized()
     {
-        waveform->setBounds(sampleDisplayRegion());
+        auto viewArea = sampleDisplayRegion();
+        waveformViewport->setBounds(viewArea);
+
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
         p = p.withHeight(18);
         playModeButton->setBounds(p);
         p = p.translated(0, 20);
 
+        auto w = p.getWidth() / 2;
         for (const auto m : {startP, endP, startL, endL})
         {
-            sampleEditors[m]->setBounds(p);
+            sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
+            labels[m]->setBounds(p.withWidth(w));
             p = p.translated(0, 20);
         }
         loopActive->setBounds(p);
@@ -1192,6 +1294,8 @@ struct SampleDisplay : juce::Component, HasEditor
         loopDirectionButton->setVisible(b);
         for (const auto &[k, p] : sampleEditors)
             p->setVisible(b);
+        for (const auto &[k, l] : labels)
+            l->setVisible(b);
 
         if (active)
             rebuild();
@@ -1311,8 +1415,10 @@ struct SampleDisplay : juce::Component, HasEditor
     engine::Zone::ZoneMappingData &mappingView;
 };
 
-SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d)
-    : display(d), HasEditor(d->editor){};
+SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d) : display(d), HasEditor(d->editor)
+{
+    addAndMakeVisible(samplePlaybackPosition);
+}
 
 void SampleWaveform::rebuildHotZones()
 {
@@ -1348,6 +1454,22 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
     auto samp = editor->sampleManager.getSample(v.sampleID);
     auto l = samp->getSampleLength();
     return (int64_t)std::clamp(1.0 * l * xpos / r.getWidth(), 0.0, l * 1.0);
+}
+
+int SampleWaveform::xPixelForSample(int64_t samplePos)
+{
+    auto r = getLocalBounds();
+    auto &v = display->sampleView[0];
+    auto sample = editor->sampleManager.getSample(v.sampleID);
+    if (sample && samplePos >= 0)
+    {
+        auto l = sample->getSampleLength();
+        return std::clamp(static_cast<int>(r.getWidth() * samplePos / l), 0, r.getWidth());
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 juce::Path SampleWaveform::pathForSample()
@@ -1507,6 +1629,19 @@ void SampleWaveform::mouseUp(const juce::MouseEvent &e)
         display->onSamplePointChangedFromGUI();
 }
 
+void SampleWaveform::mouseMove(const juce::MouseEvent &e)
+{
+    auto posi = e.position.roundToInt();
+    if (startSampleHZ.contains(posi) || endSampleHZ.contains(posi) || startLoopHZ.contains(posi) ||
+        endLoopHZ.contains(posi))
+    {
+        setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+        return;
+    }
+
+    setMouseCursor(juce::MouseCursor::NormalCursor);
+}
+
 void SampleWaveform::paint(juce::Graphics &g)
 {
     if (!display->active)
@@ -1583,6 +1718,18 @@ void SampleWaveform::paint(juce::Graphics &g)
     }
     g.setColour(juce::Colours::white);
     g.drawRect(r, 1);
+}
+
+void SampleWaveform::resized()
+{
+    rebuildHotZones();
+    samplePlaybackPosition.setSize(1, getHeight());
+}
+
+void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
+{
+    auto x = xPixelForSample(samplePos);
+    samplePlaybackPosition.setTopLeftPosition(x, 0);
 }
 
 struct MacroDisplay : juce::Component
@@ -1662,6 +1809,16 @@ void MappingPane::editorSelectionChanged()
     repaint();
 }
 
-void MappingPane::invertScroll(bool invert) { mappingDisplay->invertScroll(invert); }
+void MappingPane::invertScroll(bool invert)
+{
+    mappingDisplay->mappingViewport->invertScroll(invert);
+    sampleDisplay->waveformViewport->invertScroll(invert);
+}
+
+void MappingPane::updateSamplePlaybackPosition(int64_t samplePos)
+{
+    if (sampleDisplay->isVisible())
+        sampleDisplay->waveform->updateSamplePlaybackPosition(samplePos);
+}
 
 } // namespace scxt::ui::multi
