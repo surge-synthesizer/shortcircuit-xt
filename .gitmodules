@@ -55,3 +55,6 @@
 [submodule "libs/sst/sst-voicemanager"]
 	path = libs/sst/sst-voicemanager
 	url = https://github.com/surge-synthesizer/sst-voicemanager
+[submodule "libs/sst/sst-waveshapers"]
+	path = libs/sst/sst-waveshapers
+	url = https://github.com/surge-synthesizer/sst-waveshapers

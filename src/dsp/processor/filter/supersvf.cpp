@@ -297,11 +297,11 @@ void SuperSVF::suspend()
 
 //-------------------------------------------------------------------------------------------------------
 
-size_t SuperSVF::getIntParameterCount() { return 2; }
+size_t SuperSVF::getIntParameterCount() const { return 2; }
 
 //-------------------------------------------------------------------------------------------------------
 
-const char *SuperSVF::getIntParameterLabel(int ip_id)
+std::string SuperSVF::getIntParameterLabel(int ip_id) const
 {
     if (ip_id == 0)
         return ("mode");
@@ -312,7 +312,7 @@ const char *SuperSVF::getIntParameterLabel(int ip_id)
 
 //-------------------------------------------------------------------------------------------------------
 
-size_t SuperSVF::getIntParameterChoicesCount(int ip_id)
+size_t SuperSVF::getIntParameterChoicesCount(int ip_id) const
 {
     if (ip_id == 0)
         return 3;
@@ -321,7 +321,7 @@ size_t SuperSVF::getIntParameterChoicesCount(int ip_id)
 
 //-------------------------------------------------------------------------------------------------------
 
-const char *SuperSVF::getIntParameterChoicesLabel(int ip_id, int c_id)
+std::string SuperSVF::getIntParameterChoicesLabel(int ip_id, int c_id) const
 {
     if (ip_id == 0)
     {

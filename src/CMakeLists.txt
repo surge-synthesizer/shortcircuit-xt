@@ -72,6 +72,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
         sst-cpputils
         sst-filters
+        sst-waveshapers
         sst-basic-blocks
         sst-effects
         sst-plugininfra

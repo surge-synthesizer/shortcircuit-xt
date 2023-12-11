@@ -66,10 +66,10 @@ struct alignas(16) SuperSVF : public Processor
     void init_params() override;
     void suspend() override;
     void calc_coeffs();
-    size_t getIntParameterCount() override;
-    const char *getIntParameterLabel(int ip_id) override;
-    size_t getIntParameterChoicesCount(int ip_id) override;
-    const char *getIntParameterChoicesLabel(int ip_id, int c_id) override;
+    size_t getIntParameterCount() const override;
+    std::string getIntParameterLabel(int ip_id) const override;
+    size_t getIntParameterChoicesCount(int ip_id) const override;
+    std::string getIntParameterChoicesLabel(int ip_id, int c_id) const override;
     int tail_length() override { return tailInfinite; }
 };
 

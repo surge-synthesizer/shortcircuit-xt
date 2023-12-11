@@ -52,12 +52,15 @@ struct SCXTVFXConfig
     }
 
     static void setFloatParam(BaseClass *b, size_t index, float val) { b->param[index] = val; }
-    static float getFloatParam(BaseClass *b, size_t index) { return b->param[index]; }
+    static float getFloatParam(const BaseClass *b, size_t index) { return b->param[index]; }
+
+    static void setIntParam(BaseClass *b, size_t index, int val) { b->iparam[index] = val; }
+    static int getIntParam(const BaseClass *b, size_t index) { return b->iparam[index]; }
 
     static float dbToLinear(BaseClass *b, float db) { return dsp::dbTable.dbToLinear(db); }
-    static float getSampleRate(BaseClass *b) { return b->getSampleRate(); }
-    static float getSampleRateInv(BaseClass *b) { return b->getSampleRateInv(); }
-    static float equalNoteToPitch(BaseClass *b, float f)
+    static float getSampleRate(const BaseClass *b) { return b->getSampleRate(); }
+    static float getSampleRateInv(const BaseClass *b) { return b->getSampleRateInv(); }
+    static float equalNoteToPitch(const BaseClass *b, float f)
     {
         return tuning::equalTuning.note_to_pitch(f);
     }
@@ -87,6 +90,18 @@ HAS_MEMFN(processMonoToStereo);
 
 template <typename T> struct SSTVoiceEffectShim : T
 {
+    SSTVoiceEffectShim()
+    {
+        static_assert(T::numIntParams <= maxProcessorIntParams);
+        if constexpr (T::numIntParams > 0)
+        {
+            for (int i = 0; i < T::numIntParams; ++i)
+            {
+                intParamMetadata[i] = this->intParamAt(i);
+            }
+        }
+    }
+
     void init() override
     {
         if constexpr (HasMemFn_initVoiceEffect<T>::value)
@@ -112,10 +127,26 @@ template <typename T> struct SSTVoiceEffectShim : T
         return HasMemFn_processMonoToStereo<T>::value;
     }
 
+    size_t getIntParameterCount() const override { return T::numIntParams; }
+    std::string getIntParameterLabel(int ip_id) const override
+    {
+        return intParamMetadata[ip_id].name;
+    }
+    size_t getIntParameterChoicesCount(int ip_id) const override
+    {
+        return intParamMetadata[ip_id].maxVal - intParamMetadata[ip_id].minVal + 1;
+    }
+    std::string getIntParameterChoicesLabel(int ip_id, int c_id) const override
+    {
+        auto vs = intParamMetadata[ip_id].valueToString(c_id);
+        if (vs.has_value())
+            return *vs;
+        return "Error";
+    }
+
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                         float pitch) override
     {
-        this->processStereo(datainL, datainR, dataoutL, dataoutR, pitch);
         if constexpr (HasMemFn_processStereo<T>::value)
         {
             this->processStereo(datainL, datainR, dataoutL, dataoutR, pitch);
@@ -139,9 +170,11 @@ template <typename T> struct SSTVoiceEffectShim : T
         }
         else if constexpr (HasMemFn_processMonoToStereo<T>::value)
         {
-            this->processMonoToMono(datain, dataoutL, dataoutR, pitch);
+            this->processMonoToStereo(datain, dataoutL, dataoutR, pitch);
         }
     }
+
+    sst::basic_blocks::params::ParamMetaData intParamMetadata[maxProcessorIntParams];
 };
 
 template <typename T>

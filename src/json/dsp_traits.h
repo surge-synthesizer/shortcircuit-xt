@@ -78,6 +78,8 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::dsp::processor::ProcessorDescription &t)
     {
+        // Streaming this type as an int is fine since the processor storage
+        // stringifies definitively. This is just for in-session communication
         v = {
             {"id", (int32_t)t.id},          {"streamingName", t.streamingName},
             {"displayName", t.displayName}, {"isZone", t.isZone},

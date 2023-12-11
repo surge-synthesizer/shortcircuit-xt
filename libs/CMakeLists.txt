@@ -38,6 +38,7 @@ set(SST_PLUGININFRA_PROVIDE_TINYXML ON CACHE BOOL "Skip TinyXML")  # need this f
 add_subdirectory(sst/sst-basic-blocks)
 add_subdirectory(sst/sst-plugininfra)
 add_subdirectory(sst/sst-filters)
+add_subdirectory(sst/sst-waveshapers)
 add_subdirectory(sst/sst-effects)
 add_subdirectory(sst/sst-jucegui)
 add_subdirectory(sst/sst-voicemanager)
