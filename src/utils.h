@@ -241,9 +241,9 @@ std::string logTimestamp();
 #define SCLOG(...)                                                                                 \
     {                                                                                              \
         std::ostringstream oss_macr;                                                               \
-        oss_macr << __FILE__ << ":" << __LINE__ << " [" << logTimestamp() << "] " << __VA_ARGS__   \
-                 << "\n";                                                                          \
-        postToLog(oss_macr.str());                                                                 \
+        oss_macr << __FILE__ << ":" << __LINE__ << " [" << scxt::logTimestamp() << "] "            \
+                 << __VA_ARGS__ << "\n";                                                           \
+        scxt::postToLog(oss_macr.str());                                                           \
     }
 
 #define SCLOG_ONCE(...)                                                                            \
@@ -252,9 +252,9 @@ std::string logTimestamp();
         if (!x842132)                                                                              \
         {                                                                                          \
             std::ostringstream oss_macr;                                                           \
-            oss_macr << __FILE__ << ":" << __LINE__ << " [" << logTimestamp() << "] "              \
+            oss_macr << __FILE__ << ":" << __LINE__ << " [" << scxt::logTimestamp() << "] "        \
                      << __VA_ARGS__ << " (Message will only appear once)\n";                       \
-            postToLog(oss_macr.str());                                                             \
+            scxt::postToLog(oss_macr.str());                                                       \
         }                                                                                          \
         x842132 = true;                                                                            \
     }

@@ -122,7 +122,7 @@ uint32_t SCXTPlugin::audioPortsCount(bool isInput) const noexcept
     if (isInput)
         return 0;
     else
-        return maxOutputs;
+        return numPluginOutputs;
 }
 bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
                                 clap_audio_port_info *info) const noexcept
@@ -139,20 +139,11 @@ bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;
     }
-    else if (index < numParts + 1)
+    else if (index < numPluginOutputs)
     {
         info->id = 1000 + index - 1;
         info->in_place_pair = CLAP_INVALID_ID;
         snprintf(info->name, sizeof(info->name) - 1, "Output %02d", index);
-        info->flags = 0;
-        info->channel_count = 2;
-        info->port_type = CLAP_PORT_STEREO;
-    }
-    else
-    {
-        info->id = 2000 + index - numParts - 1;
-        info->in_place_pair = CLAP_INVALID_ID;
-        snprintf(info->name, sizeof(info->name) - 1, "Aux %02d", index - numParts - 1);
         info->flags = 0;
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;

@@ -170,6 +170,8 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
         bool solo{false};
         float pan{0.f};
         float level{1.f};
+
+        uint16_t pluginOutputBus{0};
     } busSendStorage;
 
     bool mutedDueToSoloAway{false};

@@ -169,11 +169,11 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
 
         addAndMakeVisible(*muteButton);
         addAndMakeVisible(*soloButton);
-    }
 
-    outputMenu = std::make_unique<jcmp::MenuButton>();
-    outputMenu->setLabel("OUTPUT");
-    addAndMakeVisible(*outputMenu);
+        outputMenu = std::make_unique<jcmp::MenuButton>();
+        outputMenu->setLabel("MAIN");
+        addAndMakeVisible(*outputMenu);
+    }
 
     vuMeter = std::make_unique<jcmp::VUMeter>();
     addAndMakeVisible(*vuMeter);
@@ -251,8 +251,11 @@ void ChannelStrip::resized()
                   .reduced(1);
     vuMeter->setBounds(vs);
 
-    fx = fx.translated(0, sliderVUHeight + fxheight / 2);
-    outputMenu->setBounds(fx);
+    if (type != BusType::MAIN)
+    {
+        fx = fx.translated(0, sliderVUHeight + fxheight / 2);
+        outputMenu->setBounds(fx);
+    }
 }
 
 void ChannelStrip::effectsChanged()
