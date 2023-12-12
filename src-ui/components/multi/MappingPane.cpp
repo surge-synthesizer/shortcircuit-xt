@@ -191,8 +191,6 @@ struct Zoomable : public juce::Component
     void zoom(Axis axis, float delta)
     {
         constexpr auto acceleration = 10.f;
-        constexpr auto zoomMin = 1.f;
-        constexpr auto zoomMax = 4.f;
 
         auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
         z.acc += delta * acceleration * scrollDirection;
@@ -1249,12 +1247,6 @@ struct SampleDisplay : juce::Component, HasEditor
     {
         return getLocalBounds().withTrimmedRight(sidePanelWidth);
     }
-
-    struct zoomFactor
-    {
-        float acc = 1.f;
-        int val = 1;
-    } zoomX, zoomY;
 
     void resized()
     {
