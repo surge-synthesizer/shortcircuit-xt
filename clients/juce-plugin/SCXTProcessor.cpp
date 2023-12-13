@@ -228,9 +228,6 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
         }
         for (int bus = 1; bus < activeBusCount; bus++)
         {
-            if (!engine->getPatch()->usesOutputBus(bus))
-                continue;
-
             auto iob = getBusBuffer(buffer, false, bus);
 
             auto outL = iob.getWritePointer(0, i);
@@ -238,8 +235,16 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
 
             if (outL && outR)
             {
-                *outL = engine->getPatch()->busses.pluginNonMainOutputs[bus - 1][0][blockPos];
-                *outR = engine->getPatch()->busses.pluginNonMainOutputs[bus - 1][1][blockPos];
+                if (!engine->getPatch()->usesOutputBus(bus))
+                {
+                    *outL = 0.f;
+                    *outR = 0.f;
+                }
+                else
+                {
+                    *outL = engine->getPatch()->busses.pluginNonMainOutputs[bus - 1][0][blockPos];
+                    *outR = engine->getPatch()->busses.pluginNonMainOutputs[bus - 1][1][blockPos];
+                }
             }
         }
 
