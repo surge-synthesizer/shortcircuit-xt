@@ -90,6 +90,9 @@ HAS_MEMFN(processMonoToStereo);
 
 template <typename T> struct SSTVoiceEffectShim : T
 {
+    // You can have neither or one, but you can't have both
+    static_assert(!(HasMemFn_processMonoToMono<T>::value &&
+                    HasMemFn_processMonoToStereo<T>::value));
     SSTVoiceEffectShim()
     {
         static_assert(T::numIntParams <= maxProcessorIntParams);
@@ -147,19 +150,8 @@ template <typename T> struct SSTVoiceEffectShim : T
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                         float pitch) override
     {
-        if constexpr (HasMemFn_processStereo<T>::value)
-        {
-            this->processStereo(datainL, datainR, dataoutL, dataoutR, pitch);
-        }
-        else if constexpr (HasMemFn_processMonoToMono<T>::value)
-        {
-            this->processMonoToMono(datainL, dataoutL, pitch);
-            this->processMonoToMono(datainR, dataoutR, pitch);
-        }
-        else
-        {
-            assert(false);
-        }
+        static_assert(HasMemFn_processStereo<T>::value);
+        this->processStereo(datainL, datainR, dataoutL, dataoutR, pitch);
     }
 
     virtual void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override
@@ -171,6 +163,11 @@ template <typename T> struct SSTVoiceEffectShim : T
         else if constexpr (HasMemFn_processMonoToStereo<T>::value)
         {
             this->processMonoToStereo(datain, dataoutL, dataoutR, pitch);
+        }
+        else
+        {
+            // static assert plus routing constraint on canMono should mean this is never hit
+            assert(false);
         }
     }
 

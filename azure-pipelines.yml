@@ -10,6 +10,28 @@ variables:
   - group: mac-signing
 
 jobs:
+  - job: BuildCodeQuality
+    condition: eq(variables['Build.Reason'], 'PullRequest')
+    pool:
+      vmImage: 'ubuntu-20.04'
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+        # submodules: recursive # can't do submodules here b'cuz depth=1 fails with Github
+
+      - bash: |
+          mkdir ignore
+          pushd ignore
+          git clone https://github.com/jidicula/clang-format-action
+          popd
+          ./ignore/clang-format-action/check.sh 16 src llvm
+          ./ignore/clang-format-action/check.sh 16 src-ui llvm
+          ./ignore/clang-format-action/check.sh 16 tests llvm
+          ./ignore/clang-format-action/check.sh 16 clients llvm
+
+        displayName: Do Codequal
+
   - job: PRBuild
     condition: eq(variables['Build.Reason'], 'PullRequest')
     strategy:
@@ -50,7 +72,6 @@ jobs:
         lin:
           imageName: 'ubuntu-latest'
           isLinux: True
-          isCodeQual: True
           scxtTarget: scxt_plugin_Standalone
           cmakeArgs:
         lin-clap-first:
@@ -117,11 +138,6 @@ jobs:
           echo cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug $(cmakeArgs)
           cmake -Bbuild -DAZURE_PIPELINE=1 -DCMAKE_BUILD_TYPE=Debug -DSCXT_COPY_PLUGIN_AFTER_BUILD=FALSE $(cmakeArgs)
         displayName: Run CMake (Debug)
-
-      - bash: |
-          cmake --build build --config Debug --target scxt-code-checks --parallel 4
-        displayName: Code Checks
-        condition: variables.isCodeQual
 
       - bash: |
           cmake --build build --config Debug --target $(scxtTarget) --parallel 4
