@@ -84,6 +84,23 @@ void SCXTEditor::showMainMenu()
         juce::URL("https://github.com/surge-synthesizer/shortcircuit-xt").launchInDefaultBrowser();
     });
 
+    m.addSeparator();
+    auto dp = juce::PopupMenu();
+    dp.addSectionHeader("Developer");
+    dp.addSeparator();
+    dp.addItem("Pretty JSON", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json});
+    });
+    dp.addItem("Pretty JSON Selected Part", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json_part});
+    });
+    dp.addItem("Focus Debugger Toggle", []() {});
+    m.addSubMenu("Developer", dp);
+
     m.showMenuAsync(defaultPopupMenuOptions());
 }
 

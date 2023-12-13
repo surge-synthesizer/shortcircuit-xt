@@ -283,4 +283,12 @@ void SCXTEditor::onBrowserRefresh(const bool)
     multiScreen->browser->resetRoots();
     mixerScreen->browser->resetRoots();
 }
+
+void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &resp)
+{
+    for (const auto &[k, s] : resp)
+    {
+        SCLOG(k << " " << s);
+    }
+}
 } // namespace scxt::ui
