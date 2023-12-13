@@ -40,5 +40,6 @@
 #include "interaction_messages.h"
 #include "mixer_messages.h"
 #include "browser_messages.h"
+#include "debug_messages.h"
 
 #endif // SHORTCIRCUIT_CLIENT_MESSAGE_IMPLS_H

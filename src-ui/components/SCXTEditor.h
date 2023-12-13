@@ -183,6 +183,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onBrowserRefresh(const bool);
 
+    void onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &);
+
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
     {

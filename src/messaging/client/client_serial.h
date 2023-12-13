@@ -83,6 +83,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_browser_add_device_location,
 
+    c2s_request_debug_action,
+
     num_clientToSerializationMessages
 };
 
@@ -90,6 +92,7 @@ enum SerializationToClientMessageIds
 {
     s2c_report_error,
     s2c_send_initial_metadata,
+    s2c_send_debug_info,
     s2c_engine_status,
     s2c_update_group_or_zone_adsr_view,
     s2c_respond_zone_mapping,
