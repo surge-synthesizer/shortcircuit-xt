@@ -242,7 +242,7 @@ void Bus::process()
         mech::scale_by<blockSize>(lv, output[0], output[1]);
     }
 
-    if (busSendStorage.mute || mutedDueToSoloAway)
+    if ((busSendStorage.mute && !busSendStorage.solo) || mutedDueToSoloAway)
     {
         memset(output, 0, sizeof(output));
     }
