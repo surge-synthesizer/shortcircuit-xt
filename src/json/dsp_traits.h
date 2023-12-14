@@ -44,11 +44,18 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::dsp::processor::ProcessorStorage &t)
     {
-        v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
-             {"mix", t.mix},
-             {"floatParams", t.floatParams},
-             {"intParams", t.intParams},
-             {"isActive", t.isActive}};
+        if (t.type == dsp::processor::proct_none)
+        {
+            v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)}};
+        }
+        else
+        {
+            v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
+                 {"mix", t.mix},
+                 {"floatParams", t.floatParams},
+                 {"intParams", t.intParams},
+                 {"isActive", t.isActive}};
+        }
     }
 
     template <template <typename...> class Traits>
@@ -65,10 +72,18 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         else
             result.type = scxt::dsp::processor::proct_none;
 
-        findIf(v, "mix", result.mix);
-        findIf(v, "floatParams", result.floatParams);
-        findIf(v, "intParams", result.intParams);
-        findOrSet(v, "isActive", false, result.isActive);
+        if (result.type == dsp::processor::proct_none)
+        {
+            result = scxt::dsp::processor::ProcessorStorage();
+            result.type = dsp::processor::proct_none;
+        }
+        else
+        {
+            findIf(v, "mix", result.mix);
+            findIf(v, "floatParams", result.floatParams);
+            findIf(v, "intParams", result.intParams);
+            findOrSet(v, "isActive", false, result.isActive);
+        }
     }
 };
 
