@@ -282,37 +282,53 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
     static void assign(tao::json::basic_value<Traits> &v,
                        const scxt::engine::Zone::AssociatedSample &s)
     {
-        v = {{"active", s.active},
-             {"id", s.sampleID},
-             {"startSample", s.startSample},
-             {"endSample", s.endSample},
-             {"startLoop", s.startLoop},
-             {"endLoop", s.endLoop},
-             {"playMode", s.playMode},
-             {"loopActive", s.loopActive},
-             {"playReverse", s.playReverse},
-             {"loopMode", s.loopMode},
-             {"loopDirection", s.loopDirection},
-             {"loopCountWhenCounted", s.loopCountWhenCounted},
-             {"loopFade", s.loopFade}};
+        if (s.active)
+        {
+            v = {{"active", s.active},
+                 {"id", s.sampleID},
+                 {"startSample", s.startSample},
+                 {"endSample", s.endSample},
+                 {"startLoop", s.startLoop},
+                 {"endLoop", s.endLoop},
+                 {"playMode", s.playMode},
+                 {"loopActive", s.loopActive},
+                 {"playReverse", s.playReverse},
+                 {"loopMode", s.loopMode},
+                 {"loopDirection", s.loopDirection},
+                 {"loopCountWhenCounted", s.loopCountWhenCounted},
+                 {"loopFade", s.loopFade}};
+        }
+        else
+        {
+            v = {{"active", s.active}};
+        }
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::AssociatedSample &s)
     {
         findOrSet(v, "active", false, s.active);
-        findIf(v, "id", s.sampleID);
-        findOrSet(v, "startSample", -1, s.startSample);
-        findOrSet(v, "endSample", -1, s.endSample);
-        findOrSet(v, "startLoop", -1, s.startLoop);
-        findOrSet(v, "endLoop", -1, s.endLoop);
-        findOrSet(v, "playMode", engine::Zone::PlayMode::NORMAL, s.playMode);
-        findOrSet(v, "loopActive", false, s.loopActive);
-        findOrSet(v, "playReverse", false, s.playReverse);
-        findOrSet(v, "loopMode", engine::Zone::LoopMode::LOOP_DURING_VOICE, s.loopMode);
-        findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY, s.loopDirection);
-        findOrSet(v, "loopFade", 0, s.loopFade);
-        findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
+        if (s.active)
+        {
+            findIf(v, "id", s.sampleID);
+            findOrSet(v, "startSample", -1, s.startSample);
+            findOrSet(v, "endSample", -1, s.endSample);
+            findOrSet(v, "startLoop", -1, s.startLoop);
+            findOrSet(v, "endLoop", -1, s.endLoop);
+            findOrSet(v, "playMode", engine::Zone::PlayMode::NORMAL, s.playMode);
+            findOrSet(v, "loopActive", false, s.loopActive);
+            findOrSet(v, "playReverse", false, s.playReverse);
+            findOrSet(v, "loopMode", engine::Zone::LoopMode::LOOP_DURING_VOICE, s.loopMode);
+            findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY,
+                      s.loopDirection);
+            findOrSet(v, "loopFade", 0, s.loopFade);
+            findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
+        }
+        else
+        {
+            s = scxt::engine::Zone::AssociatedSample();
+            assert(!s.active);
+        }
     }
 };
 
@@ -468,9 +484,16 @@ template <> struct scxt_traits<engine::BusEffectStorage>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const engine::BusEffectStorage &t)
     {
-        v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)},
-             {"isActive", t.isActive},
-             {"params", t.params}};
+        if (t.type == scxt::engine::AvailableBusEffects::none)
+        {
+            v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)}};
+        }
+        else
+        {
+            v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)},
+                 {"isActive", t.isActive},
+                 {"params", t.params}};
+        }
     }
 
     template <template <typename...> class Traits>
@@ -479,8 +502,16 @@ template <> struct scxt_traits<engine::BusEffectStorage>
         std::string tp;
         findIf(v, "type", tp);
         r.type = scxt::engine::fromStringAvailableBusEffects(tp);
-        findIf(v, "params", r.params);
-        findOrSet(v, "isActive", true, r.isActive);
+        if (r.type == engine::AvailableBusEffects::none)
+        {
+            r = engine::BusEffectStorage();
+            r.type = engine::AvailableBusEffects::none;
+        }
+        else
+        {
+            findIf(v, "params", r.params);
+            findOrSet(v, "isActive", true, r.isActive);
+        }
     }
 };
 
