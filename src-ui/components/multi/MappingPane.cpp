@@ -188,11 +188,9 @@ struct Zoomable : public juce::Component
         viewport->getViewedComponent()->setBounds(zoneArea);
     }
 
-    void zoom(Axis axis, float delta)
+    void zoom(Axis axis, float delta, const juce::Point<float> &p)
     {
         constexpr auto acceleration = 10.f;
-        constexpr auto zoomMin = 1.f;
-        constexpr auto zoomMax = 4.f;
 
         auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
         z.acc += delta * acceleration * scrollDirection;
@@ -209,17 +207,28 @@ struct Zoomable : public juce::Component
 
             auto x = viewedComp->getX();
             auto y = viewedComp->getY();
-            if (axis == Axis::horizontalZoom)
-            {
-                x *= z.val / prevVal;
-            }
-            else
-            {
-                y *= z.val / prevVal;
-            }
 
             auto w = viewport->getWidth() * zoomX.val - viewport->getScrollBarThickness();
             auto h = viewport->getHeight() * zoomY.val - viewport->getScrollBarThickness();
+
+            auto applyZoom = [prevVal, z](auto &compPos, auto compSize, auto viewSize,
+                                          auto mousePos) {
+                auto hvs = viewSize / 2;
+                auto offset = hvs - mousePos;
+                compPos += offset;
+                offset = hvs - compPos;
+                compPos -= offset * (z.val / prevVal - 1);
+                compPos = std::clamp(compPos, -compSize + viewSize, 0);
+            };
+            if (axis == Axis::horizontalZoom)
+            {
+                applyZoom(x, w, viewport->getWidth(), p.x);
+            }
+            else
+            {
+                applyZoom(y, h, viewport->getHeight(), p.y);
+            }
+
             viewedComp->setBounds(x, y, w, h);
         }
     }
@@ -229,7 +238,7 @@ struct Zoomable : public juce::Component
         if (e.mods.isAltDown())
         {
             auto axis = e.mods.isShiftDown() ? Axis::horizontalZoom : Axis::verticalZoom;
-            zoom(axis, w.deltaY);
+            zoom(axis, w.deltaY, e.position);
         }
     }
 };
@@ -1249,12 +1258,6 @@ struct SampleDisplay : juce::Component, HasEditor
     {
         return getLocalBounds().withTrimmedRight(sidePanelWidth);
     }
-
-    struct zoomFactor
-    {
-        float acc = 1.f;
-        int val = 1;
-    } zoomX, zoomY;
 
     void resized()
     {
