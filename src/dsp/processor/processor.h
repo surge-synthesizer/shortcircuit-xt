@@ -128,6 +128,7 @@ enum ProcessorType
     proct_fx_ringmod,
     proct_fx_freqshift,
     proct_fx_waveshaper,
+    proct_fx_pitchring,
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,

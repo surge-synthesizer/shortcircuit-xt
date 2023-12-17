@@ -165,12 +165,18 @@ struct SampleRateSupport
 {
     void setSampleRate(double sr)
     {
+        if (sr == sampleRate)
+            return;
+
         sampleRate = sr;
         sampleRateInv = 1.0 / sr;
         sync();
     }
     void setSampleRate(double sr, double sri)
     {
+        if (sr == sampleRate)
+            return;
+
         sampleRate = sr;
         sampleRateInv = sri;
         sync();
