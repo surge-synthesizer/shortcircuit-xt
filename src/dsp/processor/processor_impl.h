@@ -171,6 +171,8 @@ template <typename T> struct SSTVoiceEffectShim : T
         }
     }
 
+    void onSampleRateChanged() override { init(); }
+
     sst::basic_blocks::params::ParamMetaData intParamMetadata[maxProcessorIntParams];
 };
 
