@@ -120,6 +120,7 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
     {
         NONE,
         HELD_NOTE,
+        HELD_ROOT_NOTE,
         DRAG_VELOCITY,
         DRAG_KEY,
         DRAG_KEY_AND_VEL,
@@ -611,7 +612,14 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
             {
                 sendToSerialization(cmsg::NoteFromGUI({i, true}));
                 heldNote = i;
-                mouseState = HELD_NOTE;
+                if (heldNote == display->mappingView.rootKey)
+                {
+                    mouseState = HELD_ROOT_NOTE;
+                }
+                else
+                {
+                    mouseState = HELD_NOTE;
+                }
                 repaint();
                 return;
             }
@@ -805,7 +813,7 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
         repaint();
     }
 
-    if (mouseState == HELD_NOTE)
+    if (mouseState == HELD_NOTE || mouseState == HELD_ROOT_NOTE)
     {
         if (e.position.y > keyboardHeight)
         {
@@ -824,6 +832,11 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
                         {
                             sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
                         }
+                        if (mouseState == HELD_ROOT_NOTE)
+                        {
+                            display->mappingView.rootKey = i;
+                            display->mappingChangedFromGUI();
+                        }
                         heldNote = i;
                         sendToSerialization(cmsg::NoteFromGUI({i, true}));
                         repaint();
@@ -836,7 +849,7 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
 
 void MappingZonesAndKeyboard::mouseUp(const juce::MouseEvent &e)
 {
-    if (mouseState == HELD_NOTE && heldNote >= 0)
+    if ((mouseState == HELD_NOTE || mouseState == HELD_ROOT_NOTE) && heldNote >= 0)
     {
         sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
         heldNote = -1;
