@@ -40,6 +40,15 @@ if (SCXT_BUILD_CLAP)
     clap_juce_extensions_plugin(TARGET ${PROJECT_NAME}
             CLAP_ID "org.surge-synth-team.shortcircuit-xt"
             CLAP_FEATURES instrument sampler)
+
+    add_dependencies(
+            ${PROJECT_NAME}_All
+            ${PROJECT_NAME}_CLAP)
+
+    list(
+            APPEND
+            active_plugin_targets
+            ${PROJECT_NAME}_CLAP)
 endif ()
 
 if (JUCE_ASIO_SUPPORT)
