@@ -102,14 +102,6 @@ static constexpr size_t processorLabelSize{32};
 enum ProcessorType
 {
     proct_none = 0,
-    proct_e_delay, // First part and fx
-    proct_e_reverb,
-    proct_e_chorus,
-    proct_e_phaser,
-    proct_e_rotary,
-    proct_e_fauxstereo,
-    proct_e_fsflange,
-    proct_e_fsdelay,
     proct_biquadSBQ, // First zone
     proct_SuperSVF,
 
@@ -139,22 +131,16 @@ enum ProcessorType
     proct_num_types,
 };
 
-/**
- * Can this processor be used in a zone, part, or FX position
- */
 bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
-bool isZoneProcessor(ProcessorType id);
-bool isPartProcessor(ProcessorType id);
-bool isFXProcessor(ProcessorType id);
 const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
+const char *getProcessorDisplayGroup(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
 
 struct ProcessorDescription
 {
     ProcessorType id;
-    std::string streamingName{"ERROR"}, displayName{"ERROR"};
-    bool isZone{false}, isPart{false}, isFX{false};
+    std::string streamingName{"ERROR"}, displayName{"ERROR"}, displayGroup{"ERROR"};
 };
 
 typedef std::vector<ProcessorDescription> processorList_t;

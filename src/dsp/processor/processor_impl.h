@@ -93,7 +93,7 @@ template <typename T> struct SSTVoiceEffectShim : T
     // You can have neither or one, but you can't have both
     static_assert(!(HasMemFn_processMonoToMono<T>::value &&
                     HasMemFn_processMonoToStereo<T>::value));
-    SSTVoiceEffectShim()
+    template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...)
     {
         static_assert(T::numIntParams <= maxProcessorIntParams);
         if constexpr (T::numIntParams > 0)
@@ -105,12 +105,15 @@ template <typename T> struct SSTVoiceEffectShim : T
         }
     }
 
+    virtual ~SSTVoiceEffectShim() = default;
+
     void init() override
     {
         if constexpr (HasMemFn_initVoiceEffect<T>::value)
         {
             this->initVoiceEffect();
         }
+        mInitCalledOnce = true; // this blocks sample rate changes pre-init from re-initing
     }
 
     void init_params() override
@@ -171,7 +174,14 @@ template <typename T> struct SSTVoiceEffectShim : T
         }
     }
 
-    void onSampleRateChanged() override { init(); }
+    void onSampleRateChanged() override
+    {
+        if (mInitCalledOnce)
+            init();
+    }
+    bool mInitCalledOnce{false};
+
+    int tail_length() override { return tailInfinite; }
 
     sst::basic_blocks::params::ParamMetaData intParamMetadata[maxProcessorIntParams];
 };

@@ -40,37 +40,29 @@ namespace distortion
 struct alignas(16) MicroGate
     : SSTVoiceEffectShim<sst::voice_effects::distortion::MicroGate<SCXTVFXConfig>>
 {
-    static constexpr bool isZoneProcessor{true};
-    static constexpr bool isPartProcessor{true};
-    static constexpr bool isFXProcessor{false};
     static constexpr const char *processorName{"MicroGate"};
     static constexpr const char *processorStreamingName{"micro-gate-fx"};
+    static constexpr const char *processorDisplayGroup{"Distortion"};
 
     MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
     {
         setupProcessor(this, proct_fx_microgate, mp, f, i);
     }
     virtual ~MicroGate() = default;
-
-    int tail_length() override { return tailInfinite; }
 };
 
 struct alignas(16) BitCrusher
     : public SSTVoiceEffectShim<sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig>>
 {
-    static constexpr bool isZoneProcessor{true};
-    static constexpr bool isPartProcessor{true};
-    static constexpr bool isFXProcessor{false};
     static constexpr const char *processorName{"BitCrusher"};
     static constexpr const char *processorStreamingName{"bit-crusher-fx"};
+    static constexpr const char *processorDisplayGroup{"Distortion"};
 
     BitCrusher(engine::MemoryPool *mp, float *f, int32_t *i)
     {
         setupProcessor(this, proct_fx_bitcrusher, mp, f, i);
     }
     ~BitCrusher() = default;
-
-    int tail_length() override { return tailInfinite; }
 };
 
 } // namespace distortion

@@ -47,11 +47,9 @@ struct alignas(16) SuperSVF : public Processor
     inline __m128 process_internal(__m128 x, int Mode);
 
   public:
-    static constexpr bool isZoneProcessor{true};
-    static constexpr bool isPartProcessor{true};
-    static constexpr bool isFXProcessor{false};
     static constexpr const char *processorName{"Super SVF"};
     static constexpr const char *processorStreamingName{"super-svf"};
+    static constexpr const char *processorDisplayGroup{"Filters"};
 
     SuperSVF(engine::MemoryPool *, float *, int *);
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,

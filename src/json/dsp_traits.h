@@ -96,9 +96,10 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
         // Streaming this type as an int is fine since the processor storage
         // stringifies definitively. This is just for in-session communication
         v = {
-            {"id", (int32_t)t.id},          {"streamingName", t.streamingName},
-            {"displayName", t.displayName}, {"isZone", t.isZone},
-            {"isPart", t.isZone},           {"isFX", t.isZone},
+            {"id", (int32_t)t.id},
+            {"streamingName", t.streamingName},
+            {"displayName", t.displayName},
+            {"displayGroup", t.displayGroup},
         };
     }
 
@@ -111,9 +112,7 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
         result.id = (dsp::processor::ProcessorType)tr;
         findIf(v, "streamingName", result.streamingName);
         findIf(v, "displayName", result.displayName);
-        findIf(v, "isZone", result.isZone);
-        findIf(v, "isPart", result.isPart);
-        findIf(v, "isFX", result.isFX);
+        findIf(v, "displayGroup", result.displayGroup);
     }
 };
 

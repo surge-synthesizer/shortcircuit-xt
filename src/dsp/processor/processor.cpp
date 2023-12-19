@@ -70,57 +70,6 @@ template <size_t... Is> auto isProcessorImplemented(size_t ft, std::index_sequen
     return fnc[ft]();
 }
 
-template <size_t I> bool implIsZoneProcessor()
-{
-    if constexpr (I == ProcessorType::proct_none)
-        return true;
-
-    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
-        return false;
-    else
-        return ProcessorImplementor<(ProcessorType)I>::T::isZoneProcessor;
-}
-
-template <size_t... Is> auto isZoneProcessor(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr boolOp_t fnc[] = {detail::implIsZoneProcessor<Is>...};
-    return fnc[ft]();
-}
-
-template <size_t I> bool implIsPartProcessor()
-{
-    if constexpr (I == ProcessorType::proct_none)
-        return true;
-
-    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
-        return false;
-    else
-        return ProcessorImplementor<(ProcessorType)I>::T::isPartProcessor;
-}
-
-template <size_t... Is> auto isPartProcessor(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr boolOp_t fnc[] = {detail::implIsPartProcessor<Is>...};
-    return fnc[ft]();
-}
-
-template <size_t I> bool implIsFXProcessor()
-{
-    if constexpr (I == ProcessorType::proct_none)
-        return true;
-
-    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
-        return false;
-    else
-        return ProcessorImplementor<(ProcessorType)I>::T::isFXProcessor;
-}
-
-template <size_t... Is> auto isFXProcessor(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr boolOp_t fnc[] = {detail::implIsFXProcessor<Is>...};
-    return fnc[ft]();
-}
-
 template <size_t I> const char *implGetProcessorName()
 {
     if constexpr (I == ProcessorType::proct_none)
@@ -155,6 +104,22 @@ template <size_t... Is> auto getProcessorStreamingName(size_t ft, std::index_seq
     return fnc[ft]();
 }
 
+template <size_t I> const char *implGetProcessorDisplayGroup()
+{
+    if constexpr (I == ProcessorType::proct_none)
+        return "none";
+
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return "error";
+    else
+        return ProcessorImplementor<(ProcessorType)I>::T::processorDisplayGroup;
+}
+
+template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr constCharOp_t fnc[] = {detail::implGetProcessorDisplayGroup<Is>...};
+    return fnc[ft]();
+}
 template <size_t I>
 Processor *returnSpawnOnto(uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip)
 {
@@ -188,24 +153,6 @@ bool isProcessorImplemented(ProcessorType id)
         id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
-bool isZoneProcessor(ProcessorType id)
-{
-    return detail::isZoneProcessor(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
-}
-
-bool isPartProcessor(ProcessorType id)
-{
-    return detail::isPartProcessor(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
-}
-
-bool isFXProcessor(ProcessorType id)
-{
-    return detail::isFXProcessor(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
-}
-
 const char *getProcessorName(ProcessorType id)
 {
     return detail::getProcessorName(
@@ -215,6 +162,12 @@ const char *getProcessorName(ProcessorType id)
 const char *getProcessorStreamingName(ProcessorType id)
 {
     return detail::getProcessorStreamingName(
+        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
+const char *getProcessorDisplayGroup(ProcessorType id)
+{
+    return detail::getProcessorDisplayGroup(
         id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
@@ -238,9 +191,21 @@ processorList_t getAllProcessorDescriptions()
         if (isProcessorImplemented(pt))
         {
             res.push_back({pt, getProcessorStreamingName(pt), getProcessorName(pt),
-                           isZoneProcessor(pt), isPartProcessor(pt), isFXProcessor(pt)});
+                           getProcessorDisplayGroup(pt)});
         }
     }
+    std::sort(res.begin(), res.end(), [](const auto &a, const auto &b) {
+        if (a.displayName == "Off")
+            return true;
+        if (b.displayName == "Off")
+            return false;
+
+        if (a.displayGroup == b.displayGroup)
+        {
+            return a.displayName < b.displayName;
+        }
+        return a.displayGroup < b.displayGroup;
+    });
     return res;
 }
 

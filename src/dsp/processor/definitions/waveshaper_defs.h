@@ -39,19 +39,15 @@ namespace waveshaper
 struct alignas(16) WaveShaper
     : SSTVoiceEffectShim<sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig>>
 {
-    static constexpr bool isZoneProcessor{true};
-    static constexpr bool isPartProcessor{true};
-    static constexpr bool isFXProcessor{false};
     static constexpr const char *processorName{"WaveShaper"};
     static constexpr const char *processorStreamingName{"waveshaper-fx"};
+    static constexpr const char *processorDisplayGroup{"Distortion"};
 
     WaveShaper(engine::MemoryPool *mp, float *f, int32_t *i)
     {
         setupProcessor(this, proct_fx_waveshaper, mp, f, i);
     }
     virtual ~WaveShaper() = default;
-
-    int tail_length() override { return tailInfinite; }
 };
 } // namespace waveshaper
 
