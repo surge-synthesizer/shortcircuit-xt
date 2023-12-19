@@ -67,16 +67,30 @@ void ProcessorPane::showHamburgerMenu()
 
     juce::PopupMenu p;
     p.addSectionHeader("Processors");
+    p.addSeparator();
+    juce::PopupMenu subMenu{};
+    std::string priorGroup = "none";
     for (const auto &pd : editor->allProcessors)
     {
-        p.addItem(pd.displayName, [wt = juce::Component::SafePointer(this), type = pd.id]() {
+        if (pd.displayGroup != priorGroup && priorGroup != "none")
+        {
+            p.addSubMenu(priorGroup, subMenu);
+            subMenu = juce::PopupMenu();
+        }
+
+        auto &target = pd.displayGroup == "none" ? p : subMenu;
+
+        target.addItem(pd.displayName, [wt = juce::Component::SafePointer(this), type = pd.id]() {
             if (wt)
             {
                 wt->sendToSerialization(
                     cmsg::SetSelectedProcessorType({wt->forZone, wt->index, type}));
             }
         });
+
+        priorGroup = pd.displayGroup;
     }
+    p.addSubMenu(priorGroup, subMenu);
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

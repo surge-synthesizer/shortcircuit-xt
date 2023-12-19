@@ -39,19 +39,15 @@ namespace pitch
 struct alignas(16) PitchRing
     : SSTVoiceEffectShim<sst::voice_effects::pitch::PitchRing<SCXTVFXConfig>>
 {
-    static constexpr bool isZoneProcessor{true};
-    static constexpr bool isPartProcessor{true};
-    static constexpr bool isFXProcessor{false};
     static constexpr const char *processorName{"PitchRing"};
     static constexpr const char *processorStreamingName{"pitchring-fx"};
+    static constexpr const char *processorDisplayGroup{"Pitch and Frequency"};
 
     PitchRing(engine::MemoryPool *mp, float *f, int32_t *i)
     {
         setupProcessor(this, proct_fx_pitchring, mp, f, i);
     }
     virtual ~PitchRing() = default;
-
-    int tail_length() override { return tailInfinite; }
 };
 } // namespace pitch
 

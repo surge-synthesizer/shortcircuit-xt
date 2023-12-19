@@ -429,7 +429,6 @@ void Voice::initializeProcessors()
         processorMix[i].set_target_instant(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
 
         processorType[i] = zone->processorStorage[i].type;
-        assert(dsp::processor::isZoneProcessor(processorType[i]));
 
         auto fp = modMatrix.getValuePtr(modulation::vmd_Processor_FP1, i);
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),

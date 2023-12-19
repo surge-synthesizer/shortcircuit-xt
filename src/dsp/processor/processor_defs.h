@@ -43,12 +43,10 @@
  * So to add a processor
  *
  * 1. Add it in a .c/.hpp as a subtype of Processor
- * 2. Implement these four constexpr values
- *       static constexpr bool isZoneProcessor{true};
- *       static constexpr bool isPartProcessor{false};
- *       static constexpr bool isFXProcessor{false};
+ * 2. Implement these constexpr values
  *       static constexpr const char *processorName{"OSC Pulse"};
  *       static constexpr const char *processorStreamingName{"osc-pulse"};
+ *       static constexpr const char *processorDisplayGroup{"Generators"};
  *
  *       The streaming name has to be stable across versions
  *
@@ -64,13 +62,14 @@
 #include "definitions/distortion_defs.h"
 #include "definitions/waveshaper_defs.h"
 #include "definitions/pitch_defs.h"
+#include "definitions/generator_defs.h"
 
 // port
 
 #include "filter/supersvf.h"
 
-#include "oscillator/oscpulsesync.h"
-#include "oscillator/oscsin.h"
-#include "oscillator/phasemodulation.h"
+// #include "oscillator/oscpulsesync.h"
+// #include "oscillator/oscsin.h"
+// #include "oscillator/phasemodulation.h"
 
 #endif // __SCXT_PROCESSOR_DEFS_H
