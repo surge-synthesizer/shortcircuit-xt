@@ -237,7 +237,7 @@ void SelectionManager::guaranteeSelectedLead()
             SCLOG_WFUNC("Be careful - we are promoting " << SCD(leadZone));
             allSelectedZones.insert(leadZone);
         }
-        else
+        else if (!allSelectedZones.empty())
         {
             leadZone = *(allSelectedZones.begin());
         }

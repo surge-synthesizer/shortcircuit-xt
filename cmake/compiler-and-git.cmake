@@ -2,8 +2,7 @@
 # with an external cmake run, a git-info target, and a generated
 # ${bld}/geninclude/version.cpp
 
-add_custom_command(
-        OUTPUT ${CMAKE_BINARY_DIR}/geninclude/version.cpp
+add_custom_target(version-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
         DEPENDS ${CMAKE_SOURCE_DIR}/cmake/version.h
         ${CMAKE_SOURCE_DIR}/cmake/version.cpp.in
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -110,4 +109,5 @@ target_compile_definitions(sc-compiler-options INTERFACE ${OS_COMPILE_DEFINITION
 target_compile_definitions(sc-compiler-options INTERFACE $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
 target_include_directories(sc-compiler-options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 target_link_libraries(sc-compiler-options INTERFACE ${OS_LINK_LIBRARIES})
+add_dependencies(sc-compiler-options version-info)
 add_library(shortcircuit::compiler-options ALIAS sc-compiler-options)

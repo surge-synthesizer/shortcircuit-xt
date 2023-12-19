@@ -80,7 +80,7 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, bool loopActive, b
 {
     auto loopValue = toLoopValue(loopActive, loopForward, loopWhileGated, Float, Stereo);
     assert(loopValue >= 0 && loopValue < (1 << 5));
-    return detail::generatorGet(loopValue, std::make_index_sequence<(1 << 5) - 1>());
+    return detail::generatorGet(loopValue, std::make_index_sequence<(1 << 5)>());
 }
 
 template <int loopValue>
