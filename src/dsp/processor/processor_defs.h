@@ -60,16 +60,13 @@
  */
 
 #include "definitions/distortion_defs.h"
-#include "definitions/waveshaper_defs.h"
-#include "definitions/pitch_defs.h"
+#include "definitions/eq_defs.h"
 #include "definitions/generator_defs.h"
+#include "definitions/pitch_defs.h"
+#include "definitions/waveshaper_defs.h"
 
 // port
 
 #include "filter/supersvf.h"
-
-// #include "oscillator/oscpulsesync.h"
-// #include "oscillator/oscsin.h"
-// #include "oscillator/phasemodulation.h"
 
 #endif // __SCXT_PROCESSOR_DEFS_H
