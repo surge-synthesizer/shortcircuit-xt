@@ -98,7 +98,10 @@ struct SelectionManager
         {
             size_t operator()(const ZoneAddress &z) const
             {
-                int64_t value = z.part + (z.group << 6) + (z.zone << (6 + 10));
+                auto pn = z.part;
+                auto gn = (z.group >= 0 ? z.group : (1 << 10) - 1);
+                auto zn = (z.zone >= 0 ? z.zone : (1 << 10) - 1);
+                int64_t value = pn + (gn << 6) + (zn << (6 + 10));
                 return std::hash<int64_t>()(value);
             }
         };
