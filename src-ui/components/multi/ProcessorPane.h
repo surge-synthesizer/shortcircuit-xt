@@ -80,6 +80,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
                         const std::set<int32_t> &otherTypes);
 
     void processorChangedFromGui(const attachment_t &at);
+    void processorElementChangedFromGui(const attachment_t &at, int whichItem);
     void processorChangedFromGui(const int_attachment_t &at);
 
     void rebuildControlsFromDescription();
