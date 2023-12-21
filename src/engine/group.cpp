@@ -47,14 +47,6 @@ namespace scxt::engine
 Group::Group() : id(GroupID::next()), name(id.to_string()), routingTable(modMatrix.routingTable)
 {
     modMatrix.assignSourcesFromGroup(*this);
-
-    for (auto i = 0U; i < engine::lfosPerZone; ++i)
-    {
-        lfos[i].setSampleRate(sampleRate, sampleRateInv);
-
-        lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
-                       getEngine()->rngGen);
-    }
 }
 
 void Group::process(Engine &e)
@@ -176,6 +168,14 @@ engine::Engine *Group::getEngine()
 
 void Group::setupOnUnstream(const engine::Engine &e)
 {
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    {
+        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+
+        lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
+                       getEngine()->rngGen);
+    }
+
     for (int p = 0; p < processorCount; ++p)
     {
         setupProcessorControlDescriptions(p, processorStorage[p].type);
