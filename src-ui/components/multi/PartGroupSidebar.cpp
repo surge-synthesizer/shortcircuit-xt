@@ -69,7 +69,9 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
 
     T *asT() { return static_cast<T *>(this); }
 
-    GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
+    GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
+
+    void postInit()
     {
         listBoxModel = std::make_unique<detail::GroupZoneListBoxModel<T>>(asT());
         listBoxModel->rebuild();
@@ -319,8 +321,10 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     selectGroups();
 
     zoneSidebar = std::make_unique<ZoneSidebar>(this);
+    zoneSidebar->postInit();
     addAndMakeVisible(*zoneSidebar);
     groupSidebar = std::make_unique<GroupSidebar>(this);
+    groupSidebar->postInit();
     addChildComponent(*groupSidebar);
     partSidebar = std::make_unique<PartSidebar>(this);
     addChildComponent(*partSidebar);
