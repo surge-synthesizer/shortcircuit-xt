@@ -153,7 +153,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     {
         auto at = std::make_unique<attachment_t>(
             processorControlDescription.floatControlDescriptions[i],
-            [this](const auto &at) { this->processorChangedFromGui(at); },
+            [this, i](const auto &at) { this->processorElementChangedFromGui(at, i); },
             processorView.floatParams[i]);
 
         floatAttachments[i] = std::move(at);
@@ -170,7 +170,8 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     auto at = std::make_unique<attachment_t>(
         datamodel::pmd().asPercent().withName("Mix").withDefault(1.0),
-        [this](const auto &at) { this->processorChangedFromGui(at); }, processorView.mix);
+        [this](const auto &at) { this->processorElementChangedFromGui(at, -1); },
+        processorView.mix);
     mixAttachment = std::move(at);
 
     switch (processorControlDescription.type)
@@ -330,6 +331,22 @@ void ProcessorPane::processorChangedFromGui(const attachment_t &at)
 {
     updateValueTooltip(at);
     sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
+}
+
+void ProcessorPane::processorElementChangedFromGui(const attachment_t &at, int whichIdx)
+{
+    updateValueTooltip(at);
+    // sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
+    if (whichIdx == -1)
+    {
+        sendToSerialization(cmsg::SetSelectedProcessorSingleValue(
+            {index, (int)cmsg::ProcessorValueIndex::mix, at.value}));
+    }
+    else
+    {
+        sendToSerialization(cmsg::SetSelectedProcessorSingleValue(
+            {index, (int)cmsg::ProcessorValueIndex::param0 + whichIdx, at.value}));
+    }
 }
 
 void ProcessorPane::processorChangedFromGui(const int_attachment_t &at)
