@@ -150,6 +150,47 @@ inline void setProcessorStorage(const setProcessorStoragePayload_t &payload,
 CLIENT_TO_SERIAL(SetSelectedProcessorStorage, c2s_update_single_processor_data,
                  setProcessorStoragePayload_t, setProcessorStorage(payload, engine, cont));
 
+enum struct ProcessorValueIndex : uint32_t
+{
+    param0,
+    mix = param0 + dsp::processor::maxProcessorFloatParams
+};
+typedef std::tuple<int32_t, uint32_t, float> setProcessorSingleValuePayload_t;
+inline void setProcessorSingleValue(const setProcessorSingleValuePayload_t &payload,
+                                    const engine::Engine &engine,
+                                    messaging::MessageController &cont)
+{
+    const auto &[w, idx, val] = payload;
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+
+    if (!sz.empty())
+    {
+        cont.scheduleAudioThreadCallback([zs = sz, which = w, validx = idx, newval = val](auto &e) {
+            for (const auto &a : zs)
+            {
+                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                if (validx == (uint32_t)ProcessorValueIndex::mix)
+                {
+                    z->mUILag.setNewDestination(&(z->processorStorage[which].mix), newval);
+                }
+                else
+                {
+                    auto fidx = (int)validx - (int)ProcessorValueIndex::param0;
+                    assert(fidx < dsp::processor::maxProcessorFloatParams);
+                    z->mUILag.setNewDestination(&(z->processorStorage[which].floatParams[fidx]),
+                                                newval);
+                }
+                if (!z->isActive())
+                {
+                    z->mUILag.instantlySnap();
+                }
+            }
+        });
+    }
+}
+CLIENT_TO_SERIAL(SetSelectedProcessorSingleValue, c2s_update_single_processor_single_value,
+                 setProcessorSingleValuePayload_t, setProcessorSingleValue(payload, engine, cont));
+
 // C2S set processor type (sends back data and metadata)
 typedef std::pair<int32_t, int32_t> processorPair_t;
 inline void swapZoneProcessors(const processorPair_t &whichToType, const engine::Engine &engine,

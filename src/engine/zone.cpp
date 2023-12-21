@@ -45,6 +45,8 @@ void Zone::process(Engine &e)
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
 
+    mUILag.process();
+
     std::array<voice::Voice *, maxVoices> toCleanUp;
     size_t cleanupIdx{0};
     gatedVoiceCount = 0;
@@ -275,6 +277,8 @@ Zone::LoopDirection Zone::fromStringLoopDirection(const std::string &s)
         return FORWARD_ONLY;
     return p->second;
 }
+
+void Zone::onSampleRateChanged() { mUILag.setRate(120, blockSize, sampleRate); }
 
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine

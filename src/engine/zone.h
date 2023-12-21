@@ -34,6 +34,7 @@
 
 #include "keyboard.h"
 
+#include "sst/basic-blocks/dsp/Lag.h"
 #include "sample/sample_manager.h"
 #include "dsp/processor/processor.h"
 #include "modulation/voice_matrix.h"
@@ -58,7 +59,7 @@ struct Engine;
 
 constexpr int lfosPerZone{3};
 
-struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>
+struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSupport
 {
     static constexpr int maxSamplesPerZone{16};
     Zone() : id(ZoneID::next()) { initialize(); }
@@ -191,6 +192,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>
 
     void setupOnUnstream(const engine::Engine &e);
     engine::Engine *getEngine();
+
+    sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
+    void onSampleRateChanged() override;
 
     bool operator==(const Zone &other) const
     {
