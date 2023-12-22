@@ -105,6 +105,8 @@ void ProcessorPane::resetControls()
     for (auto &i : intSwitches)
         i.reset(nullptr);
     mixEditor.reset(nullptr);
+    otherEditors.clear();
+
     setToggleDataSource(nullptr);
 }
 
@@ -179,6 +181,14 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_SuperSVF:
         layoutControlsSuperSVF();
         break;
+    case dsp::processor::proct_eq_1band_parametric_A:
+    case dsp::processor::proct_eq_2band_parametric_A:
+    case dsp::processor::proct_eq_3band_parametric_A:
+        // layoutControlsEQNBandParm();
+        // break;
+    case dsp::processor::proct_fx_waveshaper:
+        // layoutControlsWaveshaper();
+        // break;
     default:
         layoutControls();
         break;
@@ -194,16 +204,6 @@ void ProcessorPane::rebuildControlsFromDescription()
     setToggleDataSource(bypassAttachment.get());
 
     repaint();
-}
-
-template <typename T>
-std::unique_ptr<T> ProcessorPane::attachContinuousTo(const std::unique_ptr<attachment_t> &at)
-{
-    auto kn = std::make_unique<T>();
-    kn->setSource(at.get());
-    setupWidgetForValueTooltip(kn, at);
-    getContentAreaComponent()->addAndMakeVisible(*kn);
-    return std::move(kn);
 }
 
 void ProcessorPane::layoutControls()
@@ -273,10 +273,67 @@ void ProcessorPane::layoutControls()
     }
 }
 
+// May want to break this up
 void ProcessorPane::layoutControlsSuperSVF()
 {
     // OK so we know we have 2 controls (cutoff and resonance), a mix, and two ints
     assert(processorControlDescription.numFloatParams == 2);
+    assert(processorControlDescription.numIntParams == 2);
+
+    auto labelHeight = 18;
+    auto rc = getContentAreaComponent()->getLocalBounds();
+    auto rcw = rc.getWidth();
+    auto pct = 0.35;
+    auto kw = rcw * pct;
+
+    auto kb = rc.withHeight(kw).withWidth(kw).translated(rcw * (0.5 - pct) * 0.5, 0);
+    floatEditors[0] = attachContinuousTo(floatAttachments[0]);
+    floatEditors[0]->setBounds(kb);
+
+    floatLabels[0] = std::make_unique<sst::jucegui::components::Label>();
+    floatLabels[0]->setText("Cutoff");
+    floatLabels[0]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
+    getContentAreaComponent()->addAndMakeVisible(*floatLabels[0]);
+
+    kb = kb.translated(rcw * 0.5, 0);
+    floatEditors[1] = attachContinuousTo(floatAttachments[1]);
+    floatEditors[1]->setBounds(kb);
+    floatLabels[1] = std::make_unique<sst::jucegui::components::Label>();
+    floatLabels[1]->setText("Resonance");
+    floatLabels[1]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
+    getContentAreaComponent()->addAndMakeVisible(*floatLabels[1]);
+
+    auto okb = floatLabels[0]->getBounds().expanded((0.5 - pct) * 0.5 * rcw, 0);
+
+    okb = okb.translated(0, 25).withHeight(25);
+    for (int i = 0; i < 2; ++i)
+    {
+        intSwitches[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
+            sst::jucegui::components::MultiSwitch::HORIZONTAL);
+        intSwitches[i]->setSource(intAttachments[i].get());
+        intSwitches[i]->setBounds(okb);
+        getContentAreaComponent()->addAndMakeVisible(*intSwitches[i]);
+        okb = okb.translated(0, 28);
+    }
+
+    auto mixr = floatLabels[1]->getBounds().translated(0, 25).reduced(pct * 0.2 * rcw, 0);
+    mixr = mixr.withHeight(mixr.getWidth());
+    mixEditor = attachContinuousTo(mixAttachment);
+    mixEditor->setBounds(mixr);
+    getContentAreaComponent()->addAndMakeVisible(*mixEditor);
+
+    mixLabel = std::make_unique<sst::jucegui::components::Label>();
+    mixLabel->setText("Mix");
+    mixLabel->setBounds(mixr.translated(0, mixr.getHeight()).withHeight(18));
+    getContentAreaComponent()->addAndMakeVisible(*mixLabel);
+}
+
+void ProcessorPane::layoutControlsWaveshaper()
+{
+    // DriveBiasGain in the floats
+    // TypeOS in the ints
+    // and mix of course
+    assert(processorControlDescription.numFloatParams == 3);
     assert(processorControlDescription.numIntParams == 2);
 
     auto labelHeight = 18;

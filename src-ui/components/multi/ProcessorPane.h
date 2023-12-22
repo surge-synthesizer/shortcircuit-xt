@@ -87,9 +87,18 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     void layoutControls();
     void layoutControlsSuperSVF();
+    void layoutControlsWaveshaper();
+    void layoutControlsEQNBandParm();
 
     template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<T> attachContinuousTo(const std::unique_ptr<attachment_t> &);
+    std::unique_ptr<T> attachContinuousTo(const std::unique_ptr<attachment_t> &at)
+    {
+        auto kn = std::make_unique<T>();
+        kn->setSource(at.get());
+        setupWidgetForValueTooltip(kn, at);
+        getContentAreaComponent()->addAndMakeVisible(*kn);
+        return std::move(kn);
+    }
 
     void resetControls();
 
@@ -125,7 +134,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         intAttachments;
     std::unique_ptr<bool_attachment_t> bypassAttachment;
 
-    std::unique_ptr<sst::jucegui::components::Knob> mixEditor;
+    std::vector<std::unique_ptr<juce::Component>> otherEditors;
+
+    std::unique_ptr<sst::jucegui::components::ContinuousParamEditor> mixEditor;
     std::unique_ptr<sst::jucegui::components::Label> mixLabel;
     std::unique_ptr<attachment_t> mixAttachment;
 
