@@ -34,6 +34,7 @@
 
 #include "dsp/processor/processor.h"
 #include "scxt_traits.h"
+#include "extensions.h"
 
 namespace scxt::json
 {
@@ -80,8 +81,8 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
         else
         {
             findIf(v, "mix", result.mix);
-            findIf(v, "floatParams", result.floatParams);
-            findIf(v, "intParams", result.intParams);
+            fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
+            fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
             findOrSet(v, "isActive", false, result.isActive);
         }
     }

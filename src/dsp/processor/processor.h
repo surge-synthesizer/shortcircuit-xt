@@ -91,7 +91,7 @@ namespace scxt::dsp::processor
 {
 
 static constexpr size_t maxProcessorFloatParams{9};
-static constexpr size_t maxProcessorIntParams{2};
+static constexpr size_t maxProcessorIntParams{3};
 static constexpr size_t processorLabelSize{32};
 
 /**
@@ -106,7 +106,9 @@ enum ProcessorType
     proct_SuperSVF,
 
     proct_moogLP4sat,
+    proct_eq_1band_parametric_A,
     proct_eq_2band_parametric_A,
+    proct_eq_3band_parametric_A,
     proct_eq_6band,
     proct_comb1,
     proct_fx_bitcrusher,
