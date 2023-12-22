@@ -29,6 +29,7 @@
 #define SCXT_SRC_DSP_PROCESSOR_DEFINITIONS_GENERATOR_DEFS_H
 
 #include "dsp/processor/processor_impl.h"
+#include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/GenSin.h"
 #include "sst/voice-effects/generator/GenSaw.h"
 #include "sst/voice-effects/generator/GenPulseSync.h"
@@ -90,6 +91,19 @@ struct alignas(16) GenPhaseMod
         setupProcessor(this, proct_osc_phasemod, mp, f, i);
     }
 };
+
+struct alignas(16) GenCorrelatedNoise
+    : SSTVoiceEffectShim<sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig>>
+{
+    static constexpr const char *processorName{"Noise"};
+    static constexpr const char *processorStreamingName{"osc-correlated-noise"};
+    static constexpr const char *processorDisplayGroup{"Generators"};
+
+    GenCorrelatedNoise(engine::MemoryPool *mp, float *f, int32_t *i)
+    {
+        setupProcessor(this, proct_osc_correlatednoise, mp, f, i);
+    }
+};
 } // namespace generator
 
 template <> struct ProcessorImplementor<ProcessorType::proct_osc_sin>
@@ -113,6 +127,12 @@ template <> struct ProcessorImplementor<ProcessorType::proct_osc_pulse_sync>
 template <> struct ProcessorImplementor<ProcessorType::proct_osc_phasemod>
 {
     typedef generator::GenPhaseMod T;
+    static_assert(sizeof(T) < processorMemoryBufferSize);
+};
+
+template <> struct ProcessorImplementor<ProcessorType::proct_osc_correlatednoise>
+{
+    typedef generator::GenCorrelatedNoise T;
     static_assert(sizeof(T) < processorMemoryBufferSize);
 };
 

@@ -127,6 +127,7 @@ enum ProcessorType
 
     proct_fx_treemonster,
     proct_osc_pulse,
+    proct_osc_correlatednoise,
     proct_osc_pulse_sync,
     proct_osc_saw,
     proct_osc_sin, // last zone
