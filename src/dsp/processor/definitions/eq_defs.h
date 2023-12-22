@@ -29,15 +29,28 @@
 #define SCXT_SRC_DSP_PROCESSOR_DEFINITIONS_EQ_DEFS_H
 
 #include "dsp/processor/processor_impl.h"
-#include "sst/voice-effects/eq/Eq2BandParametric.h"
+#include "sst/voice-effects/eq/EqNBandParametric.h"
 
 namespace scxt::dsp::processor
 {
 namespace eq
 {
 
+struct alignas(16) EQ1Band
+    : SSTVoiceEffectShim<sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 1>>
+{
+    static constexpr const char *processorName{"1 Band Parametric"};
+    static constexpr const char *processorStreamingName{"eq-parm-1band"};
+    static constexpr const char *processorDisplayGroup{"EQ"};
+
+    EQ1Band(engine::MemoryPool *mp, float *f, int32_t *i)
+    {
+        setupProcessor(this, proct_eq_1band_parametric_A, mp, f, i);
+    }
+};
+
 struct alignas(16) EQ2Band
-    : SSTVoiceEffectShim<sst::voice_effects::eq::Eq2BandParametric<SCXTVFXConfig>>
+    : SSTVoiceEffectShim<sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 2>>
 {
     static constexpr const char *processorName{"2 Band Parametric"};
     static constexpr const char *processorStreamingName{"eq-parm-2band"};
@@ -48,11 +61,37 @@ struct alignas(16) EQ2Band
         setupProcessor(this, proct_eq_2band_parametric_A, mp, f, i);
     }
 };
+
+struct alignas(16) EQ3Band
+    : SSTVoiceEffectShim<sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 3>>
+{
+    static constexpr const char *processorName{"3 Band Parametric"};
+    static constexpr const char *processorStreamingName{"eq-parm-3band"};
+    static constexpr const char *processorDisplayGroup{"EQ"};
+
+    EQ3Band(engine::MemoryPool *mp, float *f, int32_t *i)
+    {
+        setupProcessor(this, proct_eq_3band_parametric_A, mp, f, i);
+    }
+};
+
 } // namespace eq
+
+template <> struct ProcessorImplementor<ProcessorType::proct_eq_1band_parametric_A>
+{
+    typedef eq::EQ1Band T;
+    static_assert(sizeof(T) < processorMemoryBufferSize);
+};
 
 template <> struct ProcessorImplementor<ProcessorType::proct_eq_2band_parametric_A>
 {
     typedef eq::EQ2Band T;
+    static_assert(sizeof(T) < processorMemoryBufferSize);
+};
+
+template <> struct ProcessorImplementor<ProcessorType::proct_eq_3band_parametric_A>
+{
+    typedef eq::EQ3Band T;
     static_assert(sizeof(T) < processorMemoryBufferSize);
 };
 
