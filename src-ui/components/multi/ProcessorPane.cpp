@@ -397,12 +397,12 @@ void ProcessorPane::processorElementChangedFromGui(const attachment_t &at, int w
     if (whichIdx == -1)
     {
         sendToSerialization(cmsg::SetSelectedProcessorSingleValue(
-            {index, (int)cmsg::ProcessorValueIndex::mix, at.value}));
+            {forZone, index, (int)cmsg::ProcessorValueIndex::mix, at.value}));
     }
     else
     {
         sendToSerialization(cmsg::SetSelectedProcessorSingleValue(
-            {index, (int)cmsg::ProcessorValueIndex::param0 + whichIdx, at.value}));
+            {forZone, index, (int)cmsg::ProcessorValueIndex::param0 + whichIdx, at.value}));
     }
 }
 

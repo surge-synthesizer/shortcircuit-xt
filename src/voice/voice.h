@@ -118,9 +118,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     /**
      * Processors: Storage, memory blocks, types, and more
      */
-    dsp::processor::Processor *processors[engine::processorCount]{nullptr, nullptr};
-    dsp::processor::ProcessorType processorType[engine::processorCount]{dsp::processor::proct_none,
-                                                                        dsp::processor::proct_none};
+    dsp::processor::Processor *processors[engine::processorCount]{};
+    dsp::processor::ProcessorType processorType[engine::processorCount]{};
     uint8_t processorPlacementStorage alignas(
         16)[engine::processorCount][dsp::processor::processorMemoryBufferSize];
     int32_t processorIntParams alignas(
