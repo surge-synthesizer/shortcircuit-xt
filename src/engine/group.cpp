@@ -53,6 +53,8 @@ void Group::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
 
+    mUILag.process();
+
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
 
@@ -115,6 +117,20 @@ void Group::process(Engine &e)
     }
 
     // for processor do the necessary
+    for (int i = 0; i < engine::processorCount; ++i)
+    {
+        auto *p = processors[i];
+        const auto &ps = processorStorage[i];
+        float tempbuf alignas(16)[2][BLOCK_SIZE];
+
+        if (p)
+        {
+            p->process_stereo(lOut, rOut, tempbuf[0], tempbuf[1], 0);
+            processorMix[i].set_target(ps.mix);
+            processorMix[i].fade_blocks(lOut, tempbuf[0], lOut);
+            processorMix[i].fade_blocks(rOut, tempbuf[1], rOut);
+        }
+    }
 
     // Pan
     auto pvo = modMatrix.getValue(modulation::gmd_pan, 0);
@@ -199,7 +215,38 @@ void Group::onSampleRateChanged()
         lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
                        getEngine()->rngGen);
     }
+
+    for (auto p : processors)
+    {
+        if (p)
+        {
+            p->setSampleRate(sampleRate, sampleRateInv);
+        }
+    }
 }
 
+void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
+{
+    if (t != dsp::processor::ProcessorType::proct_none)
+    {
+        SCLOG("Group Processor Changed: " << w << " " << t);
+        // FIXME - replace the float params with something modulatable
+        processors[w] = dsp::processor::spawnProcessorInPlace(
+            t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],
+            dsp::processor::processorMemoryBufferSize, processorStorage[w].floatParams.data(),
+            processorStorage[w].intParams.data());
+
+        processors[w]->setSampleRate(sampleRate);
+        processors[w]->init();
+    }
+    else
+    {
+        if (processors[w])
+        {
+            dsp::processor::unspawnProcessor(processors[w]);
+            processors[w] = nullptr;
+        }
+    }
+}
 template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine

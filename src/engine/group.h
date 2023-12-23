@@ -56,7 +56,16 @@ constexpr int lfosPerGroup{3};
 struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSupport
 {
     Group();
-    virtual ~Group() = default;
+    virtual ~Group()
+    {
+        for (auto *p : processors)
+        {
+            if (p)
+            {
+                dsp::processor::unspawnProcessor(p);
+            }
+        }
+    }
     GroupID id;
 
     std::string name{};
@@ -170,13 +179,16 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
 
     bool anyModulatorUsed{false};
 
-    void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
-    {
-        if (t != dsp::processor::ProcessorType::proct_none)
-        {
-            SCLOG("Group Processor Changed: " << w << " " << t);
-        }
-    }
+    std::array<dsp::processor::Processor *, engine::processorCount> processors{};
+    uint8_t processorPlacementStorage alignas(
+        16)[engine::processorCount][dsp::processor::processorMemoryBufferSize];
+    int32_t processorIntParams alignas(
+        16)[engine::processorCount][dsp::processor::maxProcessorIntParams];
+    lipol processorMix[engine::processorCount];
+
+    sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
+
+    void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t);
 
     uint32_t activeZones{0};
 
