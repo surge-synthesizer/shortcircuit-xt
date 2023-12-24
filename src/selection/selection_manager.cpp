@@ -226,6 +226,46 @@ void SelectionManager::adjustInternalStateForAction(
     }
 }
 
+void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &engine)
+{
+    bool morphed{false};
+    auto zit = allSelectedZones.begin();
+    while (zit != allSelectedZones.end())
+    {
+        if (!zit->isIn(engine))
+        {
+            morphed = true;
+            zit = allSelectedZones.erase(zit);
+        }
+        else
+        {
+            zit++;
+        }
+    }
+
+    auto git = allSelectedGroups.begin();
+    while (git != allSelectedGroups.end())
+    {
+        if (!git->isIn(engine))
+        {
+            morphed = true;
+            git = allSelectedGroups.erase(git);
+        }
+        else
+        {
+            git++;
+        }
+    }
+
+    if (morphed)
+    {
+        guaranteeSelectedLead();
+        sendClientDataForLeadSelectionState();
+        sendSelectedZonesToClient();
+        debugDumpSelectionState();
+    }
+}
+
 void SelectionManager::guaranteeSelectedLead()
 {
     // Now at the end of this the lead zone could not be selected
@@ -241,6 +281,10 @@ void SelectionManager::guaranteeSelectedLead()
         {
             leadZone = *(allSelectedZones.begin());
         }
+        else
+        {
+            leadZone = {};
+        }
     }
 
     // Still at group single so far
@@ -250,6 +294,10 @@ void SelectionManager::guaranteeSelectedLead()
         if (!allSelectedGroups.empty())
         {
             leadGroup = *(allSelectedGroups.begin());
+        }
+        else
+        {
+            leadGroup = {};
         }
     }
 }
@@ -536,6 +584,14 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
         serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
                                   cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, false, {}},
                                   *(engine.getMessageController()));
+    }
+
+    for (int i = 0; i < engine::processorCount; ++i)
+    {
+        serializationSendToClient(
+            cms::s2c_respond_single_processor_metadata_and_data,
+            cms::ProcessorMetadataAndData::s2c_payload_t{false, i, false, {}, {}},
+            *(engine.getMessageController()));
     }
 }
 

@@ -127,13 +127,20 @@ CLIENT_TO_SERIAL(CreateGroup, c2s_create_group, int, createGroupIn(payload, engi
 inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                        MessageController &cont)
 {
+    engine::Zone *zoneToFree{nullptr};
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a](auto &e) {
+        [s = a, &zoneToFree](auto &e) {
             auto zid = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id;
             auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
+            zoneToFree = z.release();
         },
-        [t = a](auto &engine) {
+        [t = a, &zoneToFree](auto &engine) {
+            if (zoneToFree)
+            {
+                delete zoneToFree;
+            }
             engine.getSampleManager()->purgeUnreferencedSamples();
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
             serializationSendToClient(s2c_send_pgz_structure,
                                       engine.getPartGroupZoneStructure(t.part),
                                       *(engine.getMessageController()));
@@ -152,18 +159,21 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
     if (zs.empty())
         return;
     auto part = zs.begin()->part;
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [sz = zs](auto &e) {
+            // I know this allocates and deallocates on audio thread
             std::vector<std::tuple<int, int, ZoneID>> ids;
             for (auto s : sz)
                 ids.push_back(
                     {s.part, s.group,
                      e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id});
             for (auto [p, g, zid] : ids)
-                auto z = e.getPatch()->getPart(p)->getGroup(g)->removeZone(zid);
+                e.getPatch()->getPart(p)->getGroup(g)->removeZone(zid);
         },
         [t = part](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(t),
                                       *(engine.getMessageController()));
@@ -178,13 +188,20 @@ CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
 inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                         MessageController &cont)
 {
+    engine::Group *groupToFree{nullptr};
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a](auto &e) {
+        [s = a, &groupToFree](auto &e) {
             auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
-            auto g = e.getPatch()->getPart(s.part)->removeGroup(gid);
+            groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
         },
-        [t = a](auto &engine) {
+        [t = a, &groupToFree](auto &engine) {
+            if (groupToFree)
+            {
+                delete groupToFree;
+            }
             engine.getSampleManager()->purgeUnreferencedSamples();
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 
             serializationSendToClient(s2c_send_pgz_structure,
                                       engine.getPartGroupZoneStructure(t.part),
@@ -210,6 +227,7 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
         },
         [pt = p](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(pt),
                                       *(engine.getMessageController()));
