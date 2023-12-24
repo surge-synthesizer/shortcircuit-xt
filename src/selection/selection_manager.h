@@ -150,6 +150,7 @@ struct SelectionManager
 
     void selectAction(const SelectActionContents &z);
     void multiSelectAction(const std::vector<SelectActionContents> &v);
+    void guaranteeConsistencyAfterDeletes(const engine::Engine &);
 
   protected:
     void adjustInternalStateForAction(const SelectActionContents &);
