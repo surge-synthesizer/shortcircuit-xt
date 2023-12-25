@@ -163,7 +163,7 @@ inline void setProcessorSingleValue(const setProcessorSingleValuePayload_t &payl
     const auto &[forzone, w, idx, val] = payload;
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
 
-    if (forzone && !!sz.empty())
+    if (forzone && !sz.empty())
     {
         cont.scheduleAudioThreadCallback([zs = sz, which = w, validx = idx, newval = val](auto &e) {
             for (const auto &a : zs)
