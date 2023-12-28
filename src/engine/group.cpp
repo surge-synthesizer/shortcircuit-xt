@@ -188,7 +188,8 @@ void Group::setupOnUnstream(const engine::Engine &e)
     {
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
+        lfos[i].assign(&modulatorStorage[i].stepLfoStorage,
+                       modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
                        getEngine()->rngGen);
     }
 
@@ -212,7 +213,8 @@ void Group::onSampleRateChanged()
     {
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&lfoStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
+        lfos[i].assign(&modulatorStorage[i].stepLfoStorage,
+                       modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i), nullptr,
                        getEngine()->rngGen);
     }
 

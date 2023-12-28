@@ -171,7 +171,7 @@ template <> struct scxt_traits<scxt::engine::Group>
              {"outputInfo", t.outputInfo},
              {"routingTable", t.routingTable},
              {"gegStorage", t.gegStorage},
-             {"lfoStorage", t.lfoStorage},
+             {"modulatorStorage", t.modulatorStorage},
              {"processorStorage", t.processorStorage}};
     }
 
@@ -183,7 +183,7 @@ template <> struct scxt_traits<scxt::engine::Group>
         findIf(v, "outputInfo", group.outputInfo);
         findIf(v, "processorStorage", group.processorStorage);
         findIf(v, "routingTable", group.routingTable);
-        findIf(v, "lfoStorage", group.lfoStorage);
+        findIf(v, "modulatorStorage", group.modulatorStorage);
         group.clearZones();
 
         auto vzones = v.at("zones").get_array();
@@ -345,7 +345,8 @@ template <> struct scxt_traits<scxt::engine::Zone>
 
         v = {{"sampleData", t.sampleData}, {"mappingData", t.mapping},
              {"outputInfo", t.outputInfo}, {"processorStorage", t.processorStorage},
-             {"routingTable", rtArray},    {"lfoStorage", t.lfoStorage},
+
+             {"routingTable", rtArray},    {"modulatorStorage", t.modulatorStorage},
              {"aegStorage", t.aegStorage}, {"eg2Storage", t.eg2Storage}};
     }
 
@@ -361,7 +362,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
                   scxt::modulation::VoiceModMatrix::Routing());
         fromIndexedArray<Traits>(v.at("routingTable"), zone.routingTable);
 
-        findIf(v, "lfoStorage", zone.lfoStorage);
+        findIf(v, "modulatorStorage", zone.modulatorStorage);
         findOrDefault(v, "aegStorage", zone.aegStorage);
         findOrDefault(v, "eg2Storage", zone.eg2Storage);
     }
