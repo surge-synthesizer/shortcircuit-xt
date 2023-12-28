@@ -425,9 +425,10 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
-        serializationSendToClient(cms::s2c_update_group_or_zone_individual_lfo,
-                                  cms::indexedLfoUpdate_t{true, true, i, zp->lfoStorage[i]},
-                                  *(engine.getMessageController()));
+        serializationSendToClient(
+            cms::s2c_update_group_or_zone_individual_lfo,
+            cms::indexedLfoUpdate_t{true, true, i, zp->modulatorStorage[i].stepLfoStorage},
+            *(engine.getMessageController()));
     }
 
     /*
@@ -556,9 +557,10 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
-        serializationSendToClient(cms::s2c_update_group_or_zone_individual_lfo,
-                                  cms::indexedLfoUpdate_t{false, true, i, g->lfoStorage[i]},
-                                  *(engine.getMessageController()));
+        serializationSendToClient(
+            cms::s2c_update_group_or_zone_individual_lfo,
+            cms::indexedLfoUpdate_t{false, true, i, g->modulatorStorage[i].stepLfoStorage},
+            *(engine.getMessageController()));
     }
 
     for (int i = 0; i < engine::processorCount; ++i)

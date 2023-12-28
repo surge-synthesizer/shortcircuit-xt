@@ -68,8 +68,8 @@ void Voice::voiceStarted()
     {
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&zone->lfoStorage[i], modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i),
-                       nullptr, engine->rngGen);
+        lfos[i].assign(&zone->modulatorStorage[i].stepLfoStorage,
+                       modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i), nullptr, engine->rngGen);
     }
 
     aeg.attackFrom(0.0); // TODO Envelope Legato Mode

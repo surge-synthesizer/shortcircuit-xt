@@ -129,7 +129,7 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
                 for (const auto &[p, g, z] : zs)
                 {
                     auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-                    zn->lfoStorage[index] = row;
+                    zn->modulatorStorage[index].stepLfoStorage = row;
                     for (auto *v : zn->voiceWeakPointers)
                     {
                         if (v)
@@ -150,7 +150,7 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
                 for (const auto &[p, g, z] : gs)
                 {
                     auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
-                    grp->lfoStorage[index] = row;
+                    grp->modulatorStorage[index].stepLfoStorage = row;
                     grp->lfos[index].UpdatePhaseIncrement();
                 }
             });

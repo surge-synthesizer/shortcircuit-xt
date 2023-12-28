@@ -38,7 +38,7 @@
 #include "sample/sample_manager.h"
 #include "dsp/processor/processor.h"
 #include "modulation/voice_matrix.h"
-#include "modulation/modulators/steplfo.h"
+#include "modulation/modulator_storage.h"
 
 #include "group_and_zone.h"
 
@@ -184,7 +184,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void removeVoice(voice::Voice *);
 
     modulation::VoiceModMatrix::routingTable_t routingTable;
-    std::array<modulation::modulators::StepLFOStorage, lfosPerZone> lfoStorage;
+    std::array<modulation::ModulatorStorage, lfosPerZone> modulatorStorage;
 
     datamodel::AdsrStorage aegStorage, eg2Storage;
 
@@ -204,7 +204,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         if (!res)
             return false;
         res = res && (processorStorage == other.processorStorage) &&
-              (routingTable == other.routingTable) && (lfoStorage == other.lfoStorage);
+              (routingTable ==
+               other.routingTable); //  && (modulatorStorage == other.modulatorStorage);
         return res;
     }
     bool operator!=(const Zone &other) const { return !(*this == other); }

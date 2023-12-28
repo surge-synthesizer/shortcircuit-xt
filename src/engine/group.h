@@ -164,7 +164,7 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     std::array<ahdsrenv_t, egPerGroup> gegEvaluators{this, this};
     std::array<bool, egPerGroup> gegUsed{};
 
-    std::array<modulation::modulators::StepLFOStorage, lfosPerGroup> lfoStorage;
+    std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
     std::array<modulation::modulators::StepLFO, lfosPerGroup> lfos;
     std::array<bool, lfosPerGroup> lfoUsed{};
     bool initializedLFOs{false};

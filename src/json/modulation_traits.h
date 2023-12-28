@@ -35,6 +35,8 @@
 #include "modulation/voice_matrix.h"
 #include "modulation/group_matrix.h"
 #include "modulation/modulators/steplfo.h"
+#include "modulation/modulators/curvelfo.h"
+#include "modulation/modulator_storage.h"
 
 namespace scxt::json
 {
@@ -221,6 +223,23 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         result.triggermode = (rt_t::TriggerModes)tm;
         findIf(v, "cyclemode", result.cyclemode);
         findIf(v, "onlyonce", result.onlyonce);
+    }
+};
+
+template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
+{
+    typedef scxt::modulation::ModulatorStorage rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"stepLfoStorage", t.stepLfoStorage}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+        findIf(v, "stepLfoStorage", result.stepLfoStorage);
     }
 };
 } // namespace scxt::json

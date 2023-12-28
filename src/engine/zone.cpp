@@ -141,9 +141,9 @@ void Zone::initialize()
     for (auto &v : voiceWeakPointers)
         v = nullptr;
 
-    for (auto &l : lfoStorage)
+    for (auto &l : modulatorStorage)
     {
-        modulation::modulators::clear_lfo(l);
+        modulation::modulators::clear_lfo(l.stepLfoStorage);
     }
 }
 
