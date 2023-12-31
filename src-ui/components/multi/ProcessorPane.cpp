@@ -32,6 +32,8 @@
 #include "messaging/client/client_messages.h"
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/JogUpDownButton.h"
+#include "sst/waveshapers/WaveshaperConfiguration.h"
 
 namespace scxt::ui::multi
 {
@@ -102,7 +104,7 @@ void ProcessorPane::resetControls()
     // we assume the controls clear before attachments so make sure of that
     for (auto &k : floatEditors)
         k.reset(nullptr);
-    for (auto &i : intSwitches)
+    for (auto &i : intEditors)
         i.reset(nullptr);
     mixEditor.reset(nullptr);
     otherEditors.clear();
@@ -185,10 +187,11 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_eq_2band_parametric_A:
     case dsp::processor::proct_eq_3band_parametric_A:
         // layoutControlsEQNBandParm();
-        // break;
+        layoutControls();
+        break;
     case dsp::processor::proct_fx_waveshaper:
-        // layoutControlsWaveshaper();
-        // break;
+        layoutControlsWaveshaper();
+        break;
     default:
         layoutControls();
         break;
@@ -249,7 +252,7 @@ void ProcessorPane::layoutControls()
         label->setBounds(lb);
         getContentAreaComponent()->addAndMakeVisible(*label);
 
-        intSwitches[i] = std::move(kn);
+        intEditors[i] = std::move(kn);
         intLabels[i] = std::move(label);
 
         kb = kb.translated(kw, 0);
@@ -308,11 +311,11 @@ void ProcessorPane::layoutControlsSuperSVF()
     okb = okb.translated(0, 25).withHeight(25);
     for (int i = 0; i < 2; ++i)
     {
-        intSwitches[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
+        intEditors[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
             sst::jucegui::components::MultiSwitch::HORIZONTAL);
-        intSwitches[i]->setSource(intAttachments[i].get());
-        intSwitches[i]->setBounds(okb);
-        getContentAreaComponent()->addAndMakeVisible(*intSwitches[i]);
+        intEditors[i]->setSource(intAttachments[i].get());
+        intEditors[i]->setBounds(okb);
+        getContentAreaComponent()->addAndMakeVisible(*intEditors[i]);
         okb = okb.translated(0, 28);
     }
 
@@ -339,7 +342,7 @@ void ProcessorPane::layoutControlsWaveshaper()
     auto labelHeight = 18;
     auto rc = getContentAreaComponent()->getLocalBounds();
     auto rcw = rc.getWidth();
-    auto pct = 0.35;
+    auto pct = 0.43;
     auto kw = rcw * pct;
 
     auto kb = rc.withHeight(kw).withWidth(kw).translated(rcw * (0.5 - pct) * 0.5, 0);
@@ -347,41 +350,106 @@ void ProcessorPane::layoutControlsWaveshaper()
     floatEditors[0]->setBounds(kb);
 
     floatLabels[0] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[0]->setText("Cutoff");
+    floatLabels[0]->setText("Drive");
     floatLabels[0]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
     getContentAreaComponent()->addAndMakeVisible(*floatLabels[0]);
 
-    kb = kb.translated(rcw * 0.5, 0);
+    kb =
+        kb.translated(rcw * 0.5, 0).withWidth(kb.getWidth() * 0.5).withHeight(kb.getHeight() * 0.5);
     floatEditors[1] = attachContinuousTo(floatAttachments[1]);
     floatEditors[1]->setBounds(kb);
     floatLabels[1] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[1]->setText("Resonance");
+    floatLabels[1]->setText("Bias");
     floatLabels[1]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
     getContentAreaComponent()->addAndMakeVisible(*floatLabels[1]);
+    auto mkb = kb;
 
-    auto okb = floatLabels[0]->getBounds().expanded((0.5 - pct) * 0.5 * rcw, 0);
+    kb = kb.translated(0, kb.getHeight() + 20);
+    floatEditors[2] = attachContinuousTo(floatAttachments[2]);
+    floatEditors[2]->setBounds(kb);
+    floatLabels[2] = std::make_unique<sst::jucegui::components::Label>();
+    floatLabels[2]->setText("Gain");
+    floatLabels[2]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
+    getContentAreaComponent()->addAndMakeVisible(*floatLabels[2]);
 
+    /*
     okb = okb.translated(0, 25).withHeight(25);
     for (int i = 0; i < 2; ++i)
     {
-        intSwitches[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
+        intEditors[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
             sst::jucegui::components::MultiSwitch::HORIZONTAL);
-        intSwitches[i]->setSource(intAttachments[i].get());
-        intSwitches[i]->setBounds(okb);
-        getContentAreaComponent()->addAndMakeVisible(*intSwitches[i]);
+        intEditors[i]->setSource(intAttachments[i].get());
+        intEditors[i]->setBounds(okb);
+        getContentAreaComponent()->addAndMakeVisible(*intEditors[i]);
         okb = okb.translated(0, 28);
     }
+     */
 
-    auto mixr = floatLabels[1]->getBounds().translated(0, 25).reduced(pct * 0.2 * rcw, 0);
-    mixr = mixr.withHeight(mixr.getWidth());
+    mkb = mkb.translated(mkb.getWidth(), 0);
     mixEditor = attachContinuousTo(mixAttachment);
-    mixEditor->setBounds(mixr);
+    mixEditor->setBounds(mkb);
     getContentAreaComponent()->addAndMakeVisible(*mixEditor);
 
     mixLabel = std::make_unique<sst::jucegui::components::Label>();
     mixLabel->setText("Mix");
-    mixLabel->setBounds(mixr.translated(0, mixr.getHeight()).withHeight(18));
+    mixLabel->setBounds(mkb.translated(0, mkb.getHeight()).withHeight(18));
     getContentAreaComponent()->addAndMakeVisible(*mixLabel);
+
+    auto osl = std::make_unique<sst::jucegui::components::ToggleButton>();
+    osl->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED);
+    osl->setSource(intAttachments[1].get());
+    osl->setLabel("o/s");
+    osl->setBounds(mkb.translated(0, mkb.getHeight() + 18).withTrimmedTop(5).withTrimmedBottom(5));
+    getContentAreaComponent()->addAndMakeVisible(*osl);
+    intEditors[1] = std::move(osl);
+
+    auto ja = getContentAreaComponent()->getLocalBounds();
+    ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);
+
+    auto wss = std::make_unique<sst::jucegui::components::JogUpDownButton>();
+    wss->setSource(intAttachments[0].get());
+    wss->setBounds(ja);
+    setupWidgetForValueTooltip(wss, intAttachments[0]);
+    wss->onPopupMenu = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+
+        auto wsn = sst::waveshapers::WaveshaperGroupName();
+        auto main = juce::PopupMenu();
+        main.addSectionHeader("Waveshaper Type");
+        main.addSeparator();
+        std::string currGrp;
+        juce::PopupMenu subMenu;
+
+        for (const auto &[id, gn] : wsn)
+        {
+            if (gn != currGrp)
+            {
+                if (!currGrp.empty())
+                {
+                    main.addSubMenu(currGrp, subMenu);
+                    subMenu = juce::PopupMenu();
+                }
+                currGrp = gn;
+            }
+            auto tgt = &subMenu;
+            if (gn.empty())
+            {
+                tgt = &main;
+            }
+            tgt->addItem(sst::waveshapers::wst_names[id], [idv = id, w]() {
+                if (!w)
+                    return;
+                w->intAttachments[0]->setValueFromGUI(idv);
+                w->repaint();
+            });
+        }
+        main.addSubMenu(currGrp, subMenu);
+
+        main.showMenuAsync(w->editor->defaultPopupMenuOptions());
+    };
+    getContentAreaComponent()->addAndMakeVisible(*wss);
+    intEditors[0] = std::move(wss);
 }
 
 void ProcessorPane::processorChangedFromGui(const attachment_t &at)
