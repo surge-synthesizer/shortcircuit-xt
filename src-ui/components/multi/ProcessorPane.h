@@ -124,9 +124,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     std::array<std::unique_ptr<attachment_t>, dsp::processor::maxProcessorFloatParams>
         floatAttachments;
 
-    std::array<std::unique_ptr<sst::jucegui::components::MultiSwitch>,
+    std::array<std::unique_ptr<sst::jucegui::components::DiscreteParamEditor>,
                dsp::processor::maxProcessorIntParams>
-        intSwitches;
+        intEditors;
     std::array<std::unique_ptr<sst::jucegui::components::Label>,
                dsp::processor::maxProcessorIntParams>
         intLabels;

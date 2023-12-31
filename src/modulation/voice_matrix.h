@@ -118,7 +118,6 @@ std::optional<VoiceModMatrixDestinationType>
 fromVoiceModMatrixDestStreamingName(const std::string &s);
 int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &);
 
-// These values are streamed so order matters. Basically "always add at the end" is the answer
 enum VoiceModMatrixSource
 {
     vms_none,
