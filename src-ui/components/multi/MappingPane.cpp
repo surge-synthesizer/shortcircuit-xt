@@ -43,22 +43,52 @@
 namespace scxt::ui::multi
 {
 
+const auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
+
 namespace cmsg = scxt::messaging::client;
 
 struct MappingDisplay;
-struct MappingZonesAndKeyboard : juce::Component, HasEditor
+struct Keyboard : juce::Component, HasEditor
 {
     MappingDisplay *display{nullptr};
-    MappingZonesAndKeyboard(MappingDisplay *d);
+
+    static constexpr int firstMidiNote{0}, lastMidiNote{128};
+    static constexpr int keyboardHeight{25};
+
+    int32_t heldNote{-1};
+
+    Keyboard(MappingDisplay *d);
+
     void paint(juce::Graphics &g) override;
+
+    void mouseDown(const juce::MouseEvent &e) override;
+    void mouseUp(const juce::MouseEvent &e) override;
+    void mouseDrag(const juce::MouseEvent &e) override;
+
+    juce::Rectangle<float> rectangleForKey(int midiNote) const
+    {
+        assert(lastMidiNote > firstMidiNote);
+        auto lb = getLocalBounds().toFloat();
+        auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
+        auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
+
+        keyRegion = keyRegion.withWidth(kw).translated(kw * (midiNote - firstMidiNote), 0);
+
+        return keyRegion;
+    }
+};
+
+struct MappingZones : juce::Component, HasEditor
+{
+    MappingDisplay *display{nullptr};
+    MappingZones(MappingDisplay *d);
+    void paint(juce::Graphics &g) override;
+    void resized() override;
+
     std::array<int16_t, 3> rootAndRangeForPosition(const juce::Point<int> &);
 
-    int firstMidiNote{0}, lastMidiNote{128};
-
-    static constexpr int keyboardHeight{25};
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
-    juce::Rectangle<float> rectangleForKey(int midiNote);
 
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
@@ -119,8 +149,6 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
     enum MouseState
     {
         NONE,
-        HELD_NOTE,
-        HELD_ROOT_NOTE,
         DRAG_VELOCITY,
         DRAG_KEY,
         DRAG_KEY_AND_VEL,
@@ -129,7 +157,6 @@ struct MappingZonesAndKeyboard : juce::Component, HasEditor
 
     std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones,
         lastSelectedZone;
-    int32_t heldNote{-1};
 
     juce::Point<float> lastMousePos{0.f, 0.f};
 };
@@ -177,16 +204,26 @@ struct Zoomable : public juce::Component
         viewport = std::make_unique<juce::Viewport>();
         viewport->setViewedComponent(attachedComponent, false);
         addAndMakeVisible(*viewport);
+
+        viewport->getVerticalScrollBar().setAutoHide(false);
+        viewport->getHorizontalScrollBar().setAutoHide(false);
     }
 
     void resized() override
     {
-        auto viewArea = getLocalBounds();
         viewport->setBounds(0, 0, getWidth(), getHeight());
-        auto zoneArea =
-            viewArea.withWidth(viewArea.getWidth() * zoomX.val - viewport->getScrollBarThickness())
-                .withHeight(viewArea.getHeight() * zoomY.val - viewport->getScrollBarThickness());
-        viewport->getViewedComponent()->setBounds(zoneArea);
+        auto viewArea = getLocalBounds();
+        viewArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val)
+                       .withHeight(viewArea.getHeight() * zoomY.val);
+        if (viewport->isVerticalScrollBarShown())
+        {
+            viewArea.setWidth(viewArea.getWidth() - viewport->getScrollBarThickness());
+        }
+        if (viewport->isHorizontalScrollBarShown())
+        {
+            viewArea.setHeight(viewArea.getHeight() - viewport->getScrollBarThickness());
+        }
+        viewport->getViewedComponent()->setBounds(viewArea);
     }
 
     void zoom(Axis axis, float delta, const juce::Point<float> &p)
@@ -194,43 +231,54 @@ struct Zoomable : public juce::Component
         constexpr auto acceleration = 10.f;
 
         auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
-        z.acc += delta * acceleration * scrollDirection;
-        auto m = 0.f;
-        std::modf(z.acc, &m);
-        auto zoom = m != 0.f;
-        if (zoom)
+        if (z.min != z.max)
         {
-            auto prevVal = static_cast<float>(z.val);
-            z.val = std::clamp(z.val + m, z.min, z.max);
-            z.acc = 0.f;
-
-            auto viewedComp = viewport->getViewedComponent();
-
-            auto x = viewedComp->getX();
-            auto y = viewedComp->getY();
-
-            auto w = viewport->getWidth() * zoomX.val - viewport->getScrollBarThickness();
-            auto h = viewport->getHeight() * zoomY.val - viewport->getScrollBarThickness();
-
-            auto applyZoom = [prevVal, z](auto &compPos, auto compSize, auto viewSize,
-                                          auto mousePos) {
-                auto hvs = viewSize / 2;
-                auto offset = hvs - mousePos;
-                compPos += offset;
-                offset = hvs - compPos;
-                compPos -= offset * (z.val / prevVal - 1);
-                compPos = std::clamp(compPos, -compSize + viewSize, 0);
-            };
-            if (axis == Axis::horizontalZoom)
+            z.acc += delta * acceleration * scrollDirection;
+            auto m = 0.f;
+            std::modf(z.acc, &m);
+            auto zoom = m != 0.f;
+            if (zoom)
             {
-                applyZoom(x, w, viewport->getWidth(), p.x);
-            }
-            else
-            {
-                applyZoom(y, h, viewport->getHeight(), p.y);
-            }
+                auto prevVal = static_cast<float>(z.val);
+                z.val = std::clamp(z.val + m, z.min, z.max);
+                z.acc = 0.f;
 
-            viewedComp->setBounds(x, y, w, h);
+                auto viewedComp = viewport->getViewedComponent();
+
+                auto x = viewedComp->getX();
+                auto y = viewedComp->getY();
+
+                auto w = viewport->getWidth() * zoomX.val;
+                if (viewport->isVerticalScrollBarShown())
+                {
+                    w -= viewport->getScrollBarThickness();
+                }
+                auto h = viewport->getHeight() * zoomY.val;
+                if (viewport->isHorizontalScrollBarShown())
+                {
+                    h -= viewport->getScrollBarThickness();
+                }
+
+                auto applyZoom = [prevVal, z](auto &compPos, auto compSize, auto viewSize,
+                                              auto mousePos) {
+                    auto hvs = viewSize / 2;
+                    auto offset = hvs - mousePos;
+                    compPos += offset;
+                    offset = hvs - compPos;
+                    compPos -= offset * (z.val / prevVal - 1);
+                    compPos = std::clamp(compPos, -compSize + viewSize, 0);
+                };
+                if (axis == Axis::horizontalZoom)
+                {
+                    applyZoom(x, w, viewport->getWidth(), p.x);
+                }
+                else
+                {
+                    applyZoom(y, h, viewport->getHeight(), p.y);
+                }
+
+                viewedComp->setBounds(x, y, w, h);
+            }
         }
     }
 
@@ -244,7 +292,7 @@ struct Zoomable : public juce::Component
     }
 };
 
-struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
+struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juce::ComponentListener
 {
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
         zone_attachment_t;
@@ -273,8 +321,16 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
     };
 
     std::unique_ptr<Zoomable> mappingViewport;
+    std::unique_ptr<MappingZones> mappingZones;
 
-    std::unique_ptr<MappingZonesAndKeyboard> zonesAndKeyboard;
+    std::unique_ptr<Zoomable> keyboardViewPort;
+    std::unique_ptr<Keyboard> keyboard;
+
+    bool isMovingKeyboard{false};
+    bool isResizingKeyboard{false};
+    bool isMovingZones{false};
+    bool isResizingZones{false};
+
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 
     std::unordered_map<Ctrl, std::unique_ptr<zone_attachment_t>> attachments;
@@ -287,13 +343,22 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
     MappingDisplay(MappingPane *p) : HasEditor(p->editor), mappingView(p->mappingView)
     {
         // TODO: Upgrade all these attachments with the new factory style
-        zonesAndKeyboard = std::make_unique<MappingZonesAndKeyboard>(this);
+        mappingZones = std::make_unique<MappingZones>(this);
+        mappingZones->addComponentListener(this);
 
-        mappingViewport = std::make_unique<Zoomable>(zonesAndKeyboard.get());
+        mappingViewport = std::make_unique<Zoomable>(mappingZones.get());
         addAndMakeVisible(*mappingViewport);
 
         zoneHeader = std::make_unique<MappingZoneHeader>();
         addAndMakeVisible(*zoneHeader);
+
+        keyboard = std::make_unique<Keyboard>(this);
+        keyboard->addComponentListener(this);
+
+        keyboardViewPort = std::make_unique<Zoomable>(keyboard.get(), std::make_pair(1.f, 4.f),
+                                                      std::make_pair(1.f, 1.f));
+        keyboardViewPort->viewport->setScrollBarsShown(false, false, false, true);
+        addAndMakeVisible(*keyboardViewPort);
 
         auto attachEditor = [this](Ctrl c, const auto &desc, auto &v) {
             auto at = std::make_unique<zone_attachment_t>(
@@ -404,6 +469,10 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         auto z = b.withTrimmedTop(headerSize);
         auto viewArea = z.withWidth(mapSize);
         mappingViewport->setBounds(viewArea);
+        auto kbdY = viewArea.getBottom() - mappingViewport->viewport->getScrollBarThickness() -
+                    Keyboard::keyboardHeight;
+        auto kbdW = viewArea.getWidth() - mappingViewport->viewport->getScrollBarThickness();
+        keyboardViewPort->setBounds({0, kbdY, kbdW, Keyboard::keyboardHeight});
 
         // Side Pane
         static constexpr int rowHeight{16}, rowMargin{4};
@@ -503,8 +572,8 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         summary = d;
         if (editor->currentLeadZoneSelection.has_value())
             setLeadSelection(*(editor->currentLeadZoneSelection));
-        if (zonesAndKeyboard)
-            zonesAndKeyboard->repaint();
+        if (mappingZones)
+            mappingZones->repaint();
         repaint();
     }
 
@@ -515,8 +584,8 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         {
             if (s.first == za)
             {
-                if (zonesAndKeyboard)
-                    zonesAndKeyboard->setLeadZoneBounds(s.second);
+                if (mappingZones)
+                    mappingZones->setLeadZoneBounds(s.second);
             }
         }
     }
@@ -561,7 +630,7 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         if (os.has_value())
         {
             namespace cmsg = scxt::messaging::client;
-            auto r = zonesAndKeyboard->rootAndRangeForPosition(dragSourceDetails.localPosition);
+            auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition);
             sendToSerialization(cmsg::AddSampleWithRange({*os, r[0], r[1], r[2], 0, 127}));
         }
         isUndertakingDrop = false;
@@ -590,41 +659,168 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget
         repaint();
     }
 
+    void componentMovedOrResized(juce::Component &component, bool wasMoved,
+                                 bool wasResized) override
+    {
+        if (&component == mappingZones.get())
+        {
+            if (wasMoved && !isMovingKeyboard)
+            {
+                isMovingZones = true;
+                keyboard->setTopLeftPosition(component.getX(), keyboard->getY());
+                isMovingZones = false;
+            }
+            if (wasResized && !isMovingKeyboard)
+            {
+                isResizingZones = true;
+                keyboardViewPort->zoomX = mappingViewport->zoomX;
+                keyboard->setBounds(component.getX(), keyboard->getY(), component.getWidth(),
+                                    keyboard->getHeight());
+                isResizingZones = false;
+            }
+        }
+        else if (&component == keyboard.get())
+        {
+            if (wasMoved && !isMovingZones)
+            {
+                isMovingKeyboard = true;
+                mappingZones->setTopLeftPosition(component.getX(), mappingZones->getY());
+                isMovingKeyboard = false;
+            }
+            if (wasResized && !isMovingZones)
+            {
+                isResizingKeyboard = true;
+                mappingViewport->zoomX = keyboardViewPort->zoomX;
+                mappingZones->setBounds(component.getX(), mappingZones->getY(),
+                                        component.getWidth(), mappingZones->getHeight());
+                isResizingKeyboard = false;
+            }
+        }
+    }
+
     engine::Part::zoneMappingSummary_t summary{};
 };
 
-MappingZonesAndKeyboard::MappingZonesAndKeyboard(scxt::ui::multi::MappingDisplay *d)
-    : HasEditor(d->editor), display(d)
+Keyboard::Keyboard(MappingDisplay *d) : HasEditor(d->editor), display(d) {}
+
+void Keyboard::paint(juce::Graphics &g)
 {
+    std::array<int, 128> midiState; // 0 == 0ff, 1 == gated, 2 == sounding
+    std::fill(midiState.begin(), midiState.end(), 0);
+    for (const auto &vd : display->editor->sharedUiMemoryState.voiceDisplayItems)
+    {
+        if (vd.active && vd.midiNote >= 0)
+        {
+            midiState[vd.midiNote] = vd.gated ? 1 : 2;
+        }
+    }
+    for (int i = firstMidiNote; i < lastMidiNote; ++i)
+    {
+        auto n = i % 12;
+        auto isBlackKey = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
+        auto kr = rectangleForKey(i);
+        g.setColour(isBlackKey ? juce::Colours::black : juce::Colours::white);
+        g.fillRect(kr);
+        if (midiState[i] != 0)
+        {
+            g.setColour(midiState[i] == 1 ? juce::Colours::orange
+                                          : (isBlackKey ? juce::Colour(0x80, 0x80, 0x90)
+                                                        : juce::Colour(0xC0, 0xC0, 0xD0)));
+            if (i == heldNote)
+                g.setColour(juce::Colours::red);
+
+            g.fillRect(kr);
+        }
+
+        if (i == display->mappingView.rootKey)
+        {
+            g.setColour(selZoneColor);
+            g.fillRect(kr);
+        }
+
+        g.setColour(juce::Colour(140, 140, 140));
+        g.drawRect(kr, 0.5);
+    }
+
+    constexpr auto lastOctave = 11;
+    for (int octave = 0; octave < lastOctave; ++octave)
+    {
+        assert(octave <= 10);
+        auto r = rectangleForKey(octave * 12);
+        r.setLeft(r.getX() + 1);
+        r.setWidth(r.getWidth() * 12);
+        g.setColour(juce::Colours::black);
+        // defaultMidiNoteOctaveOffset = -1 => first octave is C-2
+        auto offset = -1 + sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset;
+        g.drawText(fmt::format("C{}", octave + offset), r, juce::Justification::bottomLeft);
+    }
 }
 
-void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
+void Keyboard::mouseDown(const juce::MouseEvent &e)
+{
+    if (!display)
+        return;
+    for (int i = firstMidiNote; i < lastMidiNote; ++i)
+    {
+        auto r = rectangleForKey(i);
+        if (r.contains(e.position))
+        {
+            sendToSerialization(cmsg::NoteFromGUI({i, true}));
+            heldNote = i;
+            repaint();
+            return;
+        }
+    }
+}
+
+void Keyboard::mouseDrag(const juce::MouseEvent &e)
+{
+    for (int i = firstMidiNote; i < lastMidiNote; ++i)
+    {
+        auto r = rectangleForKey(i);
+        if (r.contains(e.position))
+        {
+            if (i == heldNote)
+            {
+                // that's OK!
+            }
+            else
+            {
+                if (heldNote > 0)
+                {
+                    sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
+                }
+                if (heldNote == display->mappingView.rootKey)
+                {
+                    display->mappingView.rootKey = i;
+                    display->mappingChangedFromGUI();
+                }
+                heldNote = i;
+                sendToSerialization(cmsg::NoteFromGUI({i, true}));
+                repaint();
+            }
+        }
+    }
+}
+
+void Keyboard::mouseUp(const juce::MouseEvent &e)
+{
+    if (heldNote >= 0)
+    {
+        sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
+        heldNote = -1;
+        repaint();
+        return;
+    }
+}
+
+MappingZones::MappingZones(scxt::ui::multi::MappingDisplay *d) : HasEditor(d->editor), display(d) {}
+
+void MappingZones::mouseDown(const juce::MouseEvent &e)
 {
     if (!display)
         return;
     mouseState = NONE;
-    if (e.position.y > keyboardHeight)
-    {
-        for (int i = firstMidiNote; i < lastMidiNote; ++i)
-        {
-            auto r = rectangleForKey(i);
-            if (r.contains(e.position))
-            {
-                sendToSerialization(cmsg::NoteFromGUI({i, true}));
-                heldNote = i;
-                if (heldNote == display->mappingView.rootKey)
-                {
-                    mouseState = HELD_ROOT_NOTE;
-                }
-                else
-                {
-                    mouseState = HELD_NOTE;
-                }
-                repaint();
-                return;
-            }
-        }
-    }
 
     // const auto &sel = display->editor->currentSingleSelection;
 
@@ -727,19 +923,19 @@ void MappingZonesAndKeyboard::mouseDown(const juce::MouseEvent &e)
     }
 }
 
-void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
+void MappingZones::mouseDrag(const juce::MouseEvent &e)
 {
     if (mouseState == DRAG_SELECTED_ZONE)
     {
         auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
+        auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
 
-        auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote + 1);
+        auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote + 1);
         auto vh = displayRegion.getHeight() / 127.0;
 
         auto dx = e.position.x - lastMousePos.x;
         auto &kr = display->mappingView.keyboardRange;
-        auto nx = (int)(dx / kw) + firstMidiNote;
+        auto nx = (int)(dx / kw) + Keyboard::firstMidiNote;
 
         if (kr.keyStart + nx < 0)
             nx = -kr.keyStart;
@@ -776,11 +972,11 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == DRAG_VELOCITY || mouseState == DRAG_KEY || mouseState == DRAG_KEY_AND_VEL)
     {
         auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
-        auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote + 1);
+        auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
+        auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote + 1);
         auto vh = displayRegion.getHeight() / 127.0;
 
-        auto nx = std::clamp((int)std::round(e.position.x / kw) + firstMidiNote, 0, 127);
+        auto nx = std::clamp((int)std::round(e.position.x / kw) + Keyboard::firstMidiNote, 0, 127);
         auto vy = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 127);
 
         auto &vr = display->mappingView.velocityRange;
@@ -812,70 +1008,28 @@ void MappingZonesAndKeyboard::mouseDrag(const juce::MouseEvent &e)
         display->mappingChangedFromGUI();
         repaint();
     }
-
-    if (mouseState == HELD_NOTE || mouseState == HELD_ROOT_NOTE)
-    {
-        if (e.position.y > keyboardHeight)
-        {
-            for (int i = firstMidiNote; i < lastMidiNote; ++i)
-            {
-                auto r = rectangleForKey(i);
-                if (r.contains(e.position))
-                {
-                    if (i == heldNote)
-                    {
-                        // that's OK!
-                    }
-                    else
-                    {
-                        if (heldNote > 0)
-                        {
-                            sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
-                        }
-                        if (mouseState == HELD_ROOT_NOTE)
-                        {
-                            display->mappingView.rootKey = i;
-                            display->mappingChangedFromGUI();
-                        }
-                        heldNote = i;
-                        sendToSerialization(cmsg::NoteFromGUI({i, true}));
-                        repaint();
-                    }
-                }
-            }
-        }
-    }
 }
 
-void MappingZonesAndKeyboard::mouseUp(const juce::MouseEvent &e)
+void MappingZones::mouseUp(const juce::MouseEvent &e)
 {
-    if ((mouseState == HELD_NOTE || mouseState == HELD_ROOT_NOTE) && heldNote >= 0)
-    {
-        sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
-        heldNote = -1;
-        mouseState = NONE;
-        repaint();
-        return;
-    }
-
     setMouseCursor(juce::MouseCursor::NormalCursor);
 }
-juce::Rectangle<float>
-MappingZonesAndKeyboard::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
+
+juce::Rectangle<float> MappingZones::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 {
     const auto &[kb, vel, name] = sum;
     return rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd);
 }
 
-juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForRange(int kL, int kH, int vL, int vH)
+juce::Rectangle<float> MappingZones::rectangleForRange(int kL, int kH, int vL, int vH)
 {
     auto lb = getLocalBounds().toFloat();
-    auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
-    auto kw = displayRegion.getWidth() / (lastMidiNote - firstMidiNote);
+    auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
+    auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote);
     auto vh = displayRegion.getHeight() / 127.0;
 
-    float x0 = (kL - firstMidiNote) * kw;
-    float x1 = (kH - firstMidiNote + 1) * kw;
+    float x0 = (kL - Keyboard::firstMidiNote) * kw;
+    float x1 = (kH - Keyboard::firstMidiNote + 1) * kw;
     if (x1 < x0)
         std::swap(x1, x0);
     float y0 = (127 - vL) * vh;
@@ -886,19 +1040,7 @@ juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForRange(int kL, int kH
     return {x0, y0, x1 - x0, y1 - y0};
 }
 
-juce::Rectangle<float> MappingZonesAndKeyboard::rectangleForKey(int midiNote)
-{
-    assert(lastMidiNote > firstMidiNote);
-    auto lb = getLocalBounds().toFloat();
-    auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
-
-    keyRegion = keyRegion.withWidth(kw).translated(kw * (midiNote - firstMidiNote), 0);
-
-    return keyRegion;
-}
-
-void MappingZonesAndKeyboard::paint(juce::Graphics &g)
+void MappingZones::paint(juce::Graphics &g)
 {
     if (!display)
         g.fillAll(juce::Colours::red);
@@ -906,7 +1048,7 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     // Draw the background
     {
         auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb.withTrimmedBottom(keyboardHeight);
+        auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
 
         auto dashCol = juce::Colour(80, 80, 80);
         g.setColour(dashCol);
@@ -991,7 +1133,6 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
-    auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
     if (display->editor->currentLeadZoneSelection.has_value())
     {
         const auto &sel = *(display->editor->currentLeadZoneSelection);
@@ -1031,56 +1172,6 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
         }
     }
 
-    std::array<int, 128> midiState; // 0 == 0ff, 1 == gated, 2 == sounding
-    std::fill(midiState.begin(), midiState.end(), 0);
-    for (const auto &vd : display->editor->sharedUiMemoryState.voiceDisplayItems)
-    {
-        if (vd.active && vd.midiNote >= 0)
-        {
-            midiState[vd.midiNote] = vd.gated ? 1 : 2;
-        }
-    }
-    for (int i = firstMidiNote; i < lastMidiNote; ++i)
-    {
-        auto n = i % 12;
-        auto isBlackKey = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
-        auto kr = rectangleForKey(i);
-        g.setColour(isBlackKey ? juce::Colours::black : juce::Colours::white);
-        g.fillRect(kr);
-        if (midiState[i] != 0)
-        {
-            g.setColour(midiState[i] == 1 ? juce::Colours::orange
-                                          : (isBlackKey ? juce::Colour(0x80, 0x80, 0x90)
-                                                        : juce::Colour(0xC0, 0xC0, 0xD0)));
-            if (i == heldNote)
-                g.setColour(juce::Colours::red);
-
-            g.fillRect(kr);
-        }
-
-        if (i == display->mappingView.rootKey)
-        {
-            g.setColour(selZoneColor);
-            g.fillRect(kr);
-        }
-
-        g.setColour(juce::Colour(140, 140, 140));
-        g.drawRect(kr, 0.5);
-    }
-
-    constexpr auto lastOctave = 11;
-    for (int octave = 0; octave < lastOctave; ++octave)
-    {
-        assert(octave <= 10);
-        auto r = rectangleForKey(octave * 12);
-        r.setLeft(r.getX() + 1);
-        r.setWidth(r.getWidth() * 12);
-        g.setColour(juce::Colours::black);
-        // defaultMidiNoteOctaveOffset = -1 => first octave is C-2
-        auto offset = -1 + sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset;
-        g.drawText(fmt::format("C{}", octave + offset), r, juce::Justification::bottomLeft);
-    }
-
     if (display->isUndertakingDrop)
     {
         auto rr = rootAndRangeForPosition(display->currentDragPoint);
@@ -1090,15 +1181,17 @@ void MappingZonesAndKeyboard::paint(juce::Graphics &g)
     }
 }
 
-std::array<int16_t, 3> MappingZonesAndKeyboard::rootAndRangeForPosition(const juce::Point<int> &p)
-{
-    assert(lastMidiNote > firstMidiNote);
-    auto lb = getLocalBounds().toFloat();
-    auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
+void MappingZones::resized() {}
 
-    auto rootKey =
-        std::clamp(p.getX() * 1.f / kw + firstMidiNote, (float)firstMidiNote, (float)lastMidiNote);
+std::array<int16_t, 3> MappingZones::rootAndRangeForPosition(const juce::Point<int> &p)
+{
+    assert(Keyboard::lastMidiNote > Keyboard::firstMidiNote);
+    auto lb = getLocalBounds().toFloat();
+    auto keyRegion = lb.withTop(lb.getBottom() - Keyboard::keyboardHeight + 1);
+    auto kw = keyRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote);
+
+    auto rootKey = std::clamp(p.getX() * 1.f / kw + Keyboard::firstMidiNote,
+                              (float)Keyboard::firstMidiNote, (float)Keyboard::lastMidiNote);
 
     auto fromTop = std::clamp(p.getY(), 0, getHeight()) * 1.f / getHeight();
     auto span = (1.0f - fromTop) * 80 + 1;
