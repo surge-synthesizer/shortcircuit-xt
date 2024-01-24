@@ -43,6 +43,7 @@
 #include "LogScreen.h"
 #include "SCXTJuceLookAndFeel.h"
 #include "sst/jucegui/components/ToolTip.h"
+#include <sst/jucegui/components/DiscreteParamMenuBuilder.h>
 
 namespace scxt::ui
 {
@@ -348,6 +349,17 @@ void SCXTEditor::setZoomFactor(float zf)
                                             zoomFactor * 100);
     if (onZoomChanged)
         onZoomChanged(zoomFactor);
+}
+
+void SCXTEditor::configureHasDiscreteMenuBuilder(
+    sst::jucegui::components::HasDiscreteParamMenuBuilder *wss)
+{
+    wss->guaranteeMenuBuilder();
+    wss->popupMenuBuilder->createMenuOptions = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            return w->defaultPopupMenuOptions();
+        return juce::PopupMenu::Options();
+    };
 }
 
 } // namespace scxt::ui

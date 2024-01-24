@@ -48,6 +48,10 @@
 
 #include "HasEditor.h"
 
+namespace sst::jucegui::components
+{
+struct HasDiscreteParamMenuBuilder;
+}
 namespace scxt::ui
 {
 
@@ -153,6 +157,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
         auto r = juce::PopupMenu::Options().withParentComponent(this);
         return r;
     }
+    void configureHasDiscreteMenuBuilder(sst::jucegui::components::HasDiscreteParamMenuBuilder *);
 
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
