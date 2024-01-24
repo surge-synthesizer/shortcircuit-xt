@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/waveshapers/WaveshaperConfiguration.h"
+#include <sst/jucegui/components/MenuButton.h>
 
 namespace scxt::ui::multi
 {
@@ -407,47 +408,17 @@ void ProcessorPane::layoutControlsWaveshaper()
     ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);
 
     auto wss = std::make_unique<sst::jucegui::components::JogUpDownButton>();
+    // auto wss = std::make_unique<sst::jucegui::components::MenuButtonDiscreteEditor>();
+    editor->configureHasDiscreteMenuBuilder(wss.get());
+
+    wss->popupMenuBuilder->mode =
+        sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
+    wss->popupMenuBuilder->groupList = sst::waveshapers::WaveshaperGroupName();
+
     wss->setSource(intAttachments[0].get());
     wss->setBounds(ja);
     setupWidgetForValueTooltip(wss, intAttachments[0]);
-    wss->onPopupMenu = [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
 
-        auto wsn = sst::waveshapers::WaveshaperGroupName();
-        auto main = juce::PopupMenu();
-        main.addSectionHeader("Waveshaper Type");
-        main.addSeparator();
-        std::string currGrp;
-        juce::PopupMenu subMenu;
-
-        for (const auto &[id, gn] : wsn)
-        {
-            if (gn != currGrp)
-            {
-                if (!currGrp.empty())
-                {
-                    main.addSubMenu(currGrp, subMenu);
-                    subMenu = juce::PopupMenu();
-                }
-                currGrp = gn;
-            }
-            auto tgt = &subMenu;
-            if (gn.empty())
-            {
-                tgt = &main;
-            }
-            tgt->addItem(sst::waveshapers::wst_names[id], [idv = id, w]() {
-                if (!w)
-                    return;
-                w->intAttachments[0]->setValueFromGUI(idv);
-                w->repaint();
-            });
-        }
-        main.addSubMenu(currGrp, subMenu);
-
-        main.showMenuAsync(w->editor->defaultPopupMenuOptions());
-    };
     getContentAreaComponent()->addAndMakeVisible(*wss);
     intEditors[0] = std::move(wss);
 }
