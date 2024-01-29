@@ -30,6 +30,7 @@
 #include "browser/browser.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/NamedPanelDivider.h"
+#include "sst/jucegui/components/TextPushButton.h"
 #include "sst/plugininfra/strnatcmp.h"
 
 namespace scxt::ui::browser
@@ -138,6 +139,8 @@ struct DriveFSArea : juce::Component, HasEditor
     BrowserPane *browserPane{nullptr};
     std::unique_ptr<DriveFSListBoxModel> model;
     std::unique_ptr<juce::ListBox> lbox;
+    std::unique_ptr<jcmp::TextPushButton> dotDot;
+
     DriveFSArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
         model = std::make_unique<DriveFSListBoxModel>(browserPane);
@@ -149,6 +152,15 @@ struct DriveFSArea : juce::Component, HasEditor
                         juce::Colour(0.f, 0.f, 0.f, 0.f));
 
         addAndMakeVisible(*lbox);
+
+        dotDot = std::make_unique<jcmp::TextPushButton>();
+        dotDot->setLabel("up one dir");
+        dotDot->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->upOneLevel();
+        });
+        dotDot->setEnabled(false);
+        addAndMakeVisible(*dotDot);
     }
 
     void paint(juce::Graphics &g) override
@@ -164,13 +176,23 @@ struct DriveFSArea : juce::Component, HasEditor
     {
         rootPath = p;
         currentPath = p;
+        dotDot->setEnabled(false);
         recalcContents();
     }
 
     void setCurrentPath(const fs::path &p)
     {
         currentPath = p;
+        dotDot->setEnabled(currentPath > rootPath);
         recalcContents();
+    }
+
+    void upOneLevel()
+    {
+        if (currentPath > rootPath)
+        {
+            setCurrentPath(currentPath.parent_path());
+        }
     }
 
     std::vector<fs::directory_entry> contents;
@@ -209,7 +231,12 @@ struct DriveFSArea : juce::Component, HasEditor
         lbox->updateContent();
     }
 
-    void resized() override { lbox->setBounds(getLocalBounds().reduced(1)); }
+    void resized() override
+    {
+        auto bd = getLocalBounds().reduced(1);
+        dotDot->setBounds(bd.withHeight(20));
+        lbox->setBounds(bd.withTrimmedTop(22));
+    }
 };
 
 struct DevicesPane : HasEditor, juce::Component
@@ -382,15 +409,18 @@ struct DriveFSListBoxRow : public juce::Component
             g.setColour(fillColor);
             g.fillRect(0, 0, width, height);
             // TODO: Replace with glyph painter fo course
+            auto r = juce::Rectangle<int>(1, (height - 10) / 2, 10, 10);
             if (entry.is_directory())
             {
-                g.setColour(juce::Colours::red);
-                g.drawText("D", 1, 1, 14, height - 1, juce::Justification::centred);
+                g.setColour(textColor.withAlpha(0.5f));
+                g.fillRect(r);
+                g.setColour(textColor.brighter(0.4f));
+                g.drawRect(r);
             }
             else
             {
-                g.setColour(juce::Colours::blue);
-                g.drawText("F", 1, 1, 14, height - 1, juce::Justification::centred);
+                g.setColour(textColor.withAlpha(0.5f));
+                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::TUNING);
             }
             g.setColour(textColor);
             g.drawText(entry.path().filename().u8string(), 14, 1, width - 16, height - 2,
