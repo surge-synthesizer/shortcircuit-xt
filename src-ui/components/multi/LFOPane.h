@@ -32,6 +32,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 
@@ -43,48 +44,57 @@
 
 namespace scxt::ui::multi
 {
-struct LfoDataRender;
+
+struct StepLFOPane;
+struct CurveLFOPane;
+struct MSEGLFOPane;
 
 struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    typedef connectors::PayloadDataAttachment<modulation::modulators::StepLFOStorage> attachment_t;
-    typedef connectors::DiscretePayloadDataAttachment<modulation::modulators::StepLFOStorage>
-        intAttachment_t;
-    typedef connectors::BooleanPayloadDataAttachment<modulation::modulators::StepLFOStorage>
-        boolAttachment_t;
+    typedef connectors::PayloadDataAttachment<modulation::ModulatorStorage> attachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<modulation::ModulatorStorage,
+                                                      modulation::ModulatorStorage::ModulatorShape>
+        shapeAttachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<modulation::ModulatorStorage,
+                                                      modulation::ModulatorStorage::TriggerMode>
+        triggerAttachment_t;
+
+    typedef connectors::DiscretePayloadDataAttachment<modulation::ModulatorStorage> intAttachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<modulation::ModulatorStorage, bool>
+        boolBaseAttachment_t;
 
     LfoPane(SCXTEditor *, bool forZone);
     ~LfoPane();
+
+    std::unique_ptr<StepLFOPane> stepLfoPane;
+    std::unique_ptr<CurveLFOPane> curveLfoPane;
+    std::unique_ptr<MSEGLFOPane> msegLfoPane;
 
     bool forZone{true};
 
     void tabChanged(int i);
 
+    void setSubPaneVisibility();
+
     void resized() override;
-    void rebuildLfo(); // entirely new components
+    void rebuildPanelComponents(); // entirely new components
     void rebuildStepLfo();
     void resetAllComponents();
 
     void setActive(int index, bool active);
-    void setLfo(int index, const modulation::modulators::StepLFOStorage &);
+    void setModulatorStorage(int index, const modulation::ModulatorStorage &mod);
 
-    void rotate(int dir);
-    void shiftBy(float amt);
+    void repositionContentAreaComponents();
 
-    std::unique_ptr<sst::jucegui::components::ToggleButton> oneshotB, stepVsWave, tempoSyncB,
-        cycleB;
-    std::unique_ptr<boolAttachment_t> oneshotA, stepVsWaveData, tempoSyncA, cycleA;
+    std::unique_ptr<shapeAttachment_t> modulatorShapeA;
+    std::unique_ptr<sst::jucegui::components::JogUpDownButton> modulatorShape;
 
-    std::unique_ptr<sst::jucegui::components::Knob> rateK, deformK, stepsK;
-    std::unique_ptr<attachment_t> rateA, deformA, stepsA;
+    std::unique_ptr<triggerAttachment_t> triggerModeA;
+    std::unique_ptr<sst::jucegui::components::MultiSwitch> triggerMode;
 
-    std::unique_ptr<LfoDataRender> lfoDataRender;
+    std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
 
-    std::array<std::unique_ptr<sst::jucegui::components::GlyphButton>, 4> jog;
-
-    std::array<modulation::modulators::StepLFOStorage, engine::lfosPerZone> lfoData;
-
-    void pushCurrentLfoUpdate();
+    void pushCurrentModulatorStorageUpdate();
     void pickPresets();
 };
 } // namespace scxt::ui::multi

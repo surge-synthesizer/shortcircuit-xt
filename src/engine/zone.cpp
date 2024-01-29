@@ -143,7 +143,7 @@ void Zone::initialize()
 
     for (auto &l : modulatorStorage)
     {
-        modulation::modulators::clear_lfo(l.stepLfoStorage);
+        modulation::modulators::clear_lfo(l);
     }
 }
 

@@ -30,9 +30,5 @@
 
 namespace scxt::modulation::modulators
 {
-struct CurveLFOStorage
-{
-    float foo{0.f};
-};
 } // namespace scxt::modulation::modulators
 #endif // SHORTCIRCUITXT_CURVELFO_H

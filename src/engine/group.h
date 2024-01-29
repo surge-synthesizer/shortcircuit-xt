@@ -44,6 +44,7 @@
 #include "datamodel/adsr_storage.h"
 #include "group_and_zone.h"
 #include "bus.h"
+#include "modulation/modulators/steplfo.h"
 #include "modulation/group_matrix.h"
 
 namespace scxt::engine

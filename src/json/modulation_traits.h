@@ -199,13 +199,8 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
     {
         v = {{"data", t.data},
              {"repeat", t.repeat},
-             {"rate", t.rate},
-             {"smooth", t.smooth},
-             {"shuffle", t.shuffle},
-             {"temposync", t.temposync},
-             {"triggermode", (int32_t)t.triggermode},
-             {"cyclemode", t.cyclemode},
-             {"onlyonce", t.onlyonce}};
+             {"rateIsEntireCycle", t.rateIsEntireCycle},
+             {"smooth", t.smooth}};
     }
 
     template <template <typename...> class Traits>
@@ -214,17 +209,18 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         const auto &object = v.get_object();
         findIf(v, "data", result.data);
         findIf(v, "repeat", result.repeat);
-        findIf(v, "rate", result.rate);
         findIf(v, "smooth", result.smooth);
-        findIf(v, "shuffle", result.shuffle);
-        findIf(v, "temposync", result.temposync);
-        int32_t tm;
-        findIf(v, "triggermode", tm);
-        result.triggermode = (rt_t::TriggerModes)tm;
-        findIf(v, "cyclemode", result.cyclemode);
-        findIf(v, "onlyonce", result.onlyonce);
+        findIf(v, "rateIsEntireCycle", result.rateIsEntireCycle);
     }
 };
+
+STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
+            modulation::ModulatorStorage::toStringModulatorShape,
+            modulation::ModulatorStorage::fromStringModulatorShape);
+
+STREAM_ENUM(modulation::ModulatorStorage::TriggerMode,
+            modulation::ModulatorStorage::toStringTriggerMode,
+            modulation::ModulatorStorage::fromStringTriggerMode);
 
 template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
 {
@@ -232,13 +228,21 @@ template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        v = {{"stepLfoStorage", t.stepLfoStorage}};
+        v = {{"modulatorShape", t.modulatorShape}, {"triggerMode", t.triggerMode}, {"rate", t.rate},
+             {"start_phase", t.start_phase},       {"temposync", t.temposync},
+
+             {"stepLfoStorage", t.stepLfoStorage}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
     {
         const auto &object = v.get_object();
+        findIf(v, "modulatorShape", result.modulatorShape);
+        findIf(v, "triggerMode", result.triggerMode);
+        findIf(v, "rate", result.rate);
+        findIf(v, "start_phase", result.start_phase);
+        findIf(v, "temposync", result.temposync);
         findIf(v, "stepLfoStorage", result.stepLfoStorage);
     }
 };

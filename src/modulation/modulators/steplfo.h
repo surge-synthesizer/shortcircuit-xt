@@ -33,45 +33,13 @@
 #include <array>
 #include <vector>
 #include <utility>
+#include <modulation/modulator_storage.h>
 #include "infrastructure/rng_gen.h"
+
+#include "modulation/modulator_storage.h"
 
 namespace scxt::modulation::modulators
 {
-static constexpr int stepLfoSteps{32};
-
-struct StepLFOStorage
-{
-    StepLFOStorage() { std::fill(data.begin(), data.end(), 0.f); }
-    std::array<float, stepLfoSteps> data;
-    int repeat{16};
-    float rate{0.f};
-    float smooth{0.f};
-    float shuffle{0.f};
-    bool temposync{false};
-
-    // These enum values are streamed. Do not change them.
-    enum TriggerModes
-    {
-        VOICE = 0,
-        FREERUN = 1,
-        RANDOM = 2,
-        RELEASE = 3
-    } triggermode{VOICE};
-
-    bool cyclemode{true};
-    bool onlyonce{false};
-    bool isStep{true};
-    // add midi sync capabilities
-
-    bool operator==(const StepLFOStorage &other) const
-    {
-        return data == other.data && repeat == other.repeat && rate == other.rate &&
-               smooth == other.smooth && shuffle == other.shuffle && temposync == other.temposync &&
-               triggermode == other.triggermode && cyclemode == other.cyclemode &&
-               onlyonce == other.onlyonce;
-    }
-    bool operator!=(const StepLFOStorage &other) const { return !(*this == other); }
-};
 
 enum LFOPresets
 {
@@ -125,7 +93,7 @@ inline std::string getLfoPresetName(LFOPresets p)
     throw std::logic_error("Called with non-switchable preset");
 }
 
-void clear_lfo(StepLFOStorage &settings);
+void clear_lfo(modulation::ModulatorStorage &settings);
 void load_lfo_preset(LFOPresets preset, StepLFOStorage &settings, infrastructure::RNGGen &);
 float lfo_ipol(float *step_history, float phase, float smooth, int odd);
 
@@ -134,7 +102,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
   public:
     StepLFO();
     ~StepLFO();
-    void assign(StepLFOStorage *settings, const float *rate, datamodel::TimeData *td,
+    void assign(modulation::ModulatorStorage *settings, const float *rate, datamodel::TimeData *td,
                 infrastructure::RNGGen &);
     void sync();
     void process(int samples);
@@ -149,9 +117,9 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     float wf_history[4];
     float ratemult;
     int shuffle_id;
-    const float *rate;
-    datamodel::TimeData *td;
-    StepLFOStorage *settings;
+    const float *rate{nullptr};
+    datamodel::TimeData *td{nullptr};
+    modulation::ModulatorStorage *settings{nullptr};
 };
 } // namespace scxt::modulation::modulators
 

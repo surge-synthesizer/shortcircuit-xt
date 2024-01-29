@@ -34,6 +34,8 @@
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/ToolTip.h"
+#include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/components/JogUpDownButton.h"
 #include "connectors/SCXTResources.h"
 
 namespace scxt::ui::connectors
@@ -63,6 +65,14 @@ void SCXTStyleSheetCreator::makeDarkColors(const sheet_t::ptr_t &base)
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorKnob, comp::VSlider::Styles::value_hover,
                     juce::Colour(0x37, 0x98, 0xFF));
+
+    base->setColour(ModulationMultiSwitch, comp::MultiSwitch::Styles::value,
+                    juce::Colour(0x27, 0x88, 0xD6));
+    base->setColour(ModulationMultiSwitch, comp::MultiSwitch::Styles::value_hover,
+                    juce::Colour(0x27, 0x88, 0xD6).brighter(0.4));
+
+    base->setColour(ModulationJogButon, comp::JogUpDownButton::Styles::jogbutton_hover,
+                    juce::Colour(0x27, 0x88, 0xD6));
 
     base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::value,
                     juce::Colour(0x27, 0x88, 0xD6));
@@ -119,6 +129,8 @@ SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseT
         .withBaseClass(comp::NamedPanel::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixToggle)
         .withBaseClass(comp::ToggleButton::Styles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::ModulationMultiSwitch)
+        .withBaseClass(comp::MultiSwitch::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixMenu)
         .withBaseClass(SCXTStyleSheetCreator::ModulationMatrixToggle);
     sheet_t::addClass(SCXTStyleSheetCreator::InformationLabel)

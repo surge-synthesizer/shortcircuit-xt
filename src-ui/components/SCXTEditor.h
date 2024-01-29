@@ -176,7 +176,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &);
     void onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTable_t &);
 
-    void onGroupOrZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &);
+    void onGroupOrZoneModulatorStorageUpdated(
+        const scxt::messaging::client::indexedModulatorStorageUpdate_t &);
     void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p);
     void onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p);
 
