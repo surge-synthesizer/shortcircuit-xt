@@ -1215,7 +1215,7 @@ struct SampleWaveform : juce::Component, HasEditor
 
     juce::Path pathForSample();
 
-    juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ;
+    juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ, fadeLoopHz;
     void rebuildHotZones();
 
     // Anticipating future drag and so forth gestures
@@ -1247,7 +1247,8 @@ struct SampleDisplay : juce::Component, HasEditor
         startP,
         endP,
         startL,
-        endL
+        endL,
+        fadeL
     };
 
     std::unordered_map<Ctrl, std::unique_ptr<connectors::SamplePointDataAttachment>>
@@ -1329,6 +1330,8 @@ struct SampleDisplay : juce::Component, HasEditor
         addLabel(startL, "Loop Start");
         attachSamplePoint(endL, "EndL", sampleView[0].endLoop);
         addLabel(endL, "Loop End");
+        attachSamplePoint(fadeL, "fadeL", sampleView[0].loopFade);
+        addLabel(fadeL, "Loop Fade");
 
         loopAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
@@ -1601,6 +1604,7 @@ void SampleWaveform::rebuildHotZones()
     auto r = getLocalBounds();
     auto l = samp->getSampleLength();
     auto fac = 1.0 * r.getWidth() / l;
+    auto fade = v.loopFade * fac;
     auto start = v.startSample * fac;
     auto end = v.endSample * fac;
     auto ls = v.startLoop * fac;
@@ -1613,6 +1617,8 @@ void SampleWaveform::rebuildHotZones()
     startLoopHZ = juce::Rectangle<int>(ls + r.getX(), r.getY(), hotZoneSize, hotZoneSize);
     endLoopHZ =
         juce::Rectangle<int>(le + r.getX() - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
+
+    fadeLoopHz = juce::Rectangle<int>(r.getX() + ls - fade, r.getY(), fade, r.getHeight());
 }
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
@@ -1884,6 +1890,13 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
         g.fillRect(endLoopHZ);
         g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+
+        if (v.loopFade > 0)
+        {
+            g.drawLine(fadeLoopHz.getX(), getHeight(), startLoopHZ.getX(), 0);
+            g.drawLine(startLoopHZ.getX(), 0, startLoopHZ.getX() + fadeLoopHz.getWidth(),
+                       getHeight());
+        }
     }
     g.setColour(juce::Colours::white);
     g.drawRect(r, 1);
