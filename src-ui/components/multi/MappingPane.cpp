@@ -1301,9 +1301,9 @@ struct SampleDisplay : juce::Component, HasEditor
         };
 
         attachSamplePoint(startP, "StartS", sampleView[0].startSample);
-        addLabel(startP, "Sample Start");
+        addLabel(startP, "Start");
         attachSamplePoint(endP, "EndS", sampleView[0].endSample);
-        addLabel(endP, "Sample End");
+        addLabel(endP, "End");
         attachSamplePoint(startL, "StartL", sampleView[0].startLoop);
         addLabel(startL, "Loop Start");
         attachSamplePoint(endL, "EndL", sampleView[0].endLoop);
@@ -1316,11 +1316,12 @@ struct SampleDisplay : juce::Component, HasEditor
                 if (w)
                 {
                     w->onSamplePointChangedFromGUI();
+                    w->rebuild();
                 }
             },
             sampleView[0].loopActive);
         loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
-        loopActive->setLabel("Loop Active");
+        loopActive->setLabel("On");
         loopActive->setSource(loopAttachment.get());
         addAndMakeVisible(*loopActive);
 
@@ -1335,7 +1336,7 @@ struct SampleDisplay : juce::Component, HasEditor
             },
             sampleView[0].playReverse);
         reverseActive = std::make_unique<sst::jucegui::components::ToggleButton>();
-        reverseActive->setLabel("Reverse");
+        reverseActive->setLabel("<-");
         reverseActive->setSource(reverseAttachment.get());
         addAndMakeVisible(*reverseActive);
 
@@ -1382,21 +1383,30 @@ struct SampleDisplay : juce::Component, HasEditor
 
         playModeButton->setBounds(
             p.withX(playModeLabel->getRight() + 1).withWidth(p.getWidth() - 60));
+        reverseActive->setBounds(p.withX(playModeButton->getRight() + 1).withWidth(18));
         p = p.translated(0, 20);
 
         auto w = p.getWidth() / 2;
-        for (const auto m : {startP, endP, startL, endL})
+        for (const auto m : {startP, endP})
         {
             sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
             labels[m]->setBounds(p.withWidth(w));
             p = p.translated(0, 20);
         }
-        loopActive->setBounds(p);
+
         p = p.translated(0, 20);
-        reverseActive->setBounds(p);
         p = p.translated(0, 20);
-        loopModeButton->setBounds(p);
+        loopActive->setBounds(p.withWidth(18));
+        loopModeButton->setBounds(p.withX(loopActive->getRight() + 1).withWidth(p.getWidth() - 50));
         p = p.translated(0, 20);
+
+        for (const auto m : {startL, endL, fadeL})
+        {
+            sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
+            labels[m]->setBounds(p.withWidth(w));
+            p = p.translated(0, 20);
+        }
+
         loopDirectionButton->setBounds(p);
     }
 
