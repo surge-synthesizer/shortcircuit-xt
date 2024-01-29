@@ -1257,6 +1257,27 @@ struct SampleDisplay : juce::Component, HasEditor
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
 
+    struct sample_attachment_t
+        : connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>
+    {
+        sample_attachment_t(const datamodel::pmd &cd,
+                            std::function<void(const PayloadDataAttachment &at)> oGVC, int &v)
+            : connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>(cd, oGVC,
+                                                                                          v)
+        {
+        }
+
+        std::string getValueAsStringFor(float f) const override
+        {
+            if (f < 0)
+                return "";
+            return fmt::format("{}", (int64_t)f);
+        }
+    };
+
+    std::unique_ptr<sample_attachment_t> loopCntAttachment;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> loopCnt;
+
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>
         loopAttachment, reverseAttachment;
     std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
@@ -1340,6 +1361,23 @@ struct SampleDisplay : juce::Component, HasEditor
         reverseActive->setSource(reverseAttachment.get());
         addAndMakeVisible(*reverseActive);
 
+        loopCntAttachment = std::make_unique<sample_attachment_t>(
+            datamodel::pmd()
+                .withType(datamodel::pmd::INT)
+                .withName("LoopCnt")
+                .withRange(0, (float)UCHAR_MAX)
+                .withDecimalPlaces(0),
+            [w = juce::Component::SafePointer(this)](const auto &a) {
+                if (w)
+                {
+                    w->onSamplePointChangedFromGUI();
+                }
+            },
+            sampleView[0].loopCountWhenCounted);
+        loopCnt = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
+        loopCnt->setSource(loopCntAttachment.get());
+        addAndMakeVisible(*loopCnt);
+
         waveform = std::make_unique<SampleWaveform>(this);
 
         waveformViewport = std::make_unique<Zoomable>(waveform.get(), std::make_pair(1.f, 50.f),
@@ -1398,6 +1436,7 @@ struct SampleDisplay : juce::Component, HasEditor
         p = p.translated(0, 20);
         loopActive->setBounds(p.withWidth(18));
         loopModeButton->setBounds(p.withX(loopActive->getRight() + 1).withWidth(p.getWidth() - 50));
+        loopCnt->setBounds(p.withX(loopModeButton->getRight() + 1).withWidth(28));
         p = p.translated(0, 20);
 
         for (const auto m : {startL, endL, fadeL})
@@ -1475,6 +1514,9 @@ struct SampleDisplay : juce::Component, HasEditor
 
         for (const auto &[k, p] : sampleAttachments)
             p->sampleCount = end;
+
+        loopCnt->setVisible(sampleView[0].loopMode == engine::Zone::LoopMode::LOOP_FOR_COUNT);
+
         repaint();
 
         waveform->rebuildHotZones();
