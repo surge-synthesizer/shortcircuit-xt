@@ -1518,6 +1518,13 @@ struct SampleDisplay : juce::Component, HasEditor
         for (const auto &[k, p] : sampleAttachments)
             p->sampleCount = end;
 
+        loopModeButton->setEnabled(sampleView[0].loopActive);
+        loopDirectionButton->setEnabled(sampleView[0].loopActive);
+        loopCnt->setEnabled(sampleView[0].loopActive);
+        sampleEditors[startL]->setVisible(sampleView[0].loopActive);
+        sampleEditors[endL]->setVisible(sampleView[0].loopActive);
+        sampleEditors[fadeL]->setVisible(sampleView[0].loopActive);
+
         loopCnt->setVisible(sampleView[0].loopMode == engine::Zone::LoopMode::LOOP_FOR_COUNT);
 
         repaint();
