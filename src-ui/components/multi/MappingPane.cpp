@@ -1267,6 +1267,10 @@ struct SampleDisplay : juce::Component, HasEditor
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
+        playModeLabel = std::make_unique<sst::jucegui::components::Label>();
+        playModeLabel->setText("Play");
+        addAndMakeVisible(*playModeLabel);
+
         playModeButton = std::make_unique<juce::TextButton>("mode");
         playModeButton->onClick = [this]() { showPlayModeMenu(); };
         addAndMakeVisible(*playModeButton);
@@ -1373,7 +1377,11 @@ struct SampleDisplay : juce::Component, HasEditor
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
         p = p.withHeight(18);
-        playModeButton->setBounds(p);
+
+        playModeLabel->setBounds(p.withWidth(40));
+
+        playModeButton->setBounds(
+            p.withX(playModeLabel->getRight() + 1).withWidth(p.getWidth() - 60));
         p = p.translated(0, 20);
 
         auto w = p.getWidth() / 2;
@@ -1518,7 +1526,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
-
+    std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
     engine::Zone::AssociatedSampleArray &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
