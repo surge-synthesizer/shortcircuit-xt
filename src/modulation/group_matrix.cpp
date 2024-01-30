@@ -108,7 +108,7 @@ void GroupModMatrix::copyBaseValuesFromGroup(engine::Group &g)
     baseValues[destIndex(gmd_pan, 0)] = g.outputInfo.pan;
     for (int i = 0; i < engine::lfosPerGroup; ++i)
     {
-        baseValues[destIndex(gmd_LFO_Rate, i)] = g.modulatorStorage[i].stepLfoStorage.rate;
+        baseValues[destIndex(gmd_LFO_Rate, i)] = g.modulatorStorage[i].rate;
     }
 }
 

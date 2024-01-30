@@ -35,12 +35,12 @@
 namespace scxt::modulation::modulators
 {
 
-void clear_lfo(StepLFOStorage &settings)
+void clear_lfo(modulation::ModulatorStorage &settings)
 {
-    settings.repeat = 16;
-    settings.smooth = 0.0f;
-    for (auto t = 0; t < stepLfoSteps; t++)
-        settings.data[t] = 0.f;
+    auto &ls = settings.stepLfoStorage;
+    ls.repeat = 16;
+    ls.smooth = 0;
+    std::fill(ls.data.begin(), ls.data.end(), 0.f);
 }
 void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, infrastructure::RNGGen &rngGen)
 {
@@ -52,13 +52,13 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, infrastructure::RN
     case lp_clear:
         settings.repeat = 16;
         settings.smooth = 0.0f;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = 0.f;
         break;
     case lp_sine:
         settings.repeat = 4;
         settings.smooth = 2.0f;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = 0.f;
         for (t = 0; t < 4; t++)
             settings.data[t] = (t & 2) ? -1.f : 1.f;
@@ -66,64 +66,64 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, infrastructure::RN
     case lp_tri:
         settings.repeat = 2;
         settings.smooth = 1.0f;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = 0.f;
         for (t = 0; t < 2; t++)
             settings.data[t] = (t & 1) ? -1.f : 1.f;
         break;
     case lp_square:
-        settings.repeat = stepLfoSteps;
+        settings.repeat = StepLFOStorage::stepLfoSteps;
         settings.smooth = 0.0f;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = (float)((t > 15) ? -1 : 1);
         break;
     case lp_ramp_up:
     case lp_ramp_down:
     {
-        settings.repeat = stepLfoSteps;
+        settings.repeat = StepLFOStorage::stepLfoSteps;
         settings.smooth = 1.0f;
         float polarity = 1;
         if (id == lp_ramp_down)
             polarity = -1;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = polarity * ((((t + 16) & 31) / 16.0f) - 1);
         break;
     }
     case lp_tremolo_tri:
-        settings.repeat = stepLfoSteps;
+        settings.repeat = StepLFOStorage::stepLfoSteps;
         settings.smooth = 1.0f;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = (float)(-1 + fabs(((t - 16) / 16.0f)));
         break;
     case lp_tremolo_sin:
-        settings.repeat = stepLfoSteps;
+        settings.repeat = StepLFOStorage::stepLfoSteps;
         settings.smooth = 1.0f;
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
             settings.data[t] = (float)-powf(sin(3.1415 * t / 16), 2);
         break;
     case lp_noise:
     case lp_noise_mean3:
     case lp_noise_mean5:
     {
-        settings.repeat = stepLfoSteps;
+        settings.repeat = StepLFOStorage::stepLfoSteps;
         if (id == lp_noise)
             settings.smooth = 0.0f;
         else
             settings.smooth = 2.0f;
 
-        float noisev[stepLfoSteps];
+        float noisev[StepLFOStorage::stepLfoSteps];
         int nmean = 1, j;
         if (id == lp_noise_mean3)
             nmean = 3;
         if (id == lp_noise_mean5)
             nmean = 5;
 
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
         {
             noisev[t] = (rngGen.rand01() * 2 - 1);
             noisev[t] /= (float)nmean;
         }
-        for (t = 0; t < stepLfoSteps; t++)
+        for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
         {
             settings.data[t] = 0;
             for (j = 0; j < nmean; j++)
@@ -184,8 +184,8 @@ float QuadraticBSpline(float y0, float y1, float y2, float mu)
 
 StepLFO::StepLFO() {}
 
-void StepLFO::assign(StepLFOStorage *settings, const float *rate, datamodel::TimeData *td,
-                     infrastructure::RNGGen &rngGen)
+void StepLFO::assign(modulation::ModulatorStorage *settings, const float *rate,
+                     datamodel::TimeData *td, infrastructure::RNGGen &rngGen)
 {
     this->settings = settings;
     this->td = td;
@@ -196,39 +196,44 @@ void StepLFO::assign(StepLFOStorage *settings, const float *rate, datamodel::Tim
     ratemult = 1.f;
     shuffle_id = 0;
 
-    if (settings->triggermode == 2)
+    auto &ls = settings->stepLfoStorage;
+
+    // if (settings->triggerMode == 2)
+    if (false)
     {
         // simulate free running lfo by randomizing start phase
         // TODO: Use songpos for freerun properly maybe?
         phase = rngGen.rand01();
-        state = rngGen.randU32() % settings->repeat;
+        state = rngGen.randU32() % ls.repeat;
     }
-    else if (settings->triggermode == 1)
+    else if (false) // if (settings->triggerMode == 1)
     {
         double ipart; //,tsrate = localcopy[rate].f;
         phase = (float)modf(0.5f * td->ppqPos * pow(2.0, (double)*rate), &ipart);
         int i = (int)ipart;
-        state = i % settings->repeat;
+        state = i % ls.repeat;
     }
 
     state = (state + 1) %
-            settings->repeat; // move state one step ahead to reflect the lag in the interpolation
+            ls.repeat; // move state one step ahead to reflect the lag in the interpolation
     for (int i = 0; i < 4; i++)
-        wf_history[i] = settings->data[((state + settings->repeat - i) % settings->repeat) & 0x1f];
+        wf_history[i] = ls.data[((state + ls.repeat - i) % ls.repeat) & 0x1f];
 
     UpdatePhaseIncrement();
 }
 
 void StepLFO::UpdatePhaseIncrement()
 {
+    auto &ls = settings->stepLfoStorage;
     phaseInc = BLOCK_SIZE * tuning::equalTuning.note_to_pitch(12 * (*rate)) * samplerate_inv *
-               (settings->cyclemode ? 1 : settings->repeat) *
+               (ls.rateIsEntireCycle ? 1 : ls.repeat) *
                (settings->temposync ? (td->tempo * (1.f / 120.f)) : 1);
 }
 
 void StepLFO::process(int)
 {
     phase += phaseInc;
+    auto &ls = settings->stepLfoStorage;
     while (phase > 1.0f)
     {
         // shuffle_id = (shuffle_id+1)&1;
@@ -237,21 +242,21 @@ void StepLFO::process(int)
 
         state++;
 
-        if (settings->onlyonce)
-            state = std::min((long)(settings->repeat - 1), state);
-        else if (state >= settings->repeat)
+        if (settings->triggerMode == ModulatorStorage::ONESHOT)
+            state = std::min((long)(ls.repeat - 1), state);
+        else if (state >= ls.repeat)
             state = 0;
         phase -= 1.0f;
 
         wf_history[3] = wf_history[2];
         wf_history[2] = wf_history[1];
         wf_history[1] = wf_history[0];
-        wf_history[0] = settings->data[state & 0x1f];
+        wf_history[0] = ls.data[state & 0x1f];
         if (!state)
             UpdatePhaseIncrement();
     }
 
-    output = std::clamp(lfo_ipol(wf_history, phase, settings->smooth, state & 1), -1.f, 1.f);
+    output = std::clamp(lfo_ipol(wf_history, phase, ls.smooth, state & 1), -1.f, 1.f);
 }
 
 float lfo_ipol(float *wf_history, float phase, float smooth, int odd)

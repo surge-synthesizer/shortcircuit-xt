@@ -115,9 +115,9 @@ CLIENT_TO_SERIAL(IndexedGroupRoutingRowUpdated, c2s_update_group_routing_row,
                  indexedGroupRowUpdate_t, indexedGroupRoutingRowUpdated(payload, engine, cont));
 
 // forzone, active, which, data
-typedef std::tuple<bool, bool, int, modulation::modulators::StepLFOStorage> indexedLfoUpdate_t;
-inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::Engine &engine,
-                              MessageController &cont)
+typedef std::tuple<bool, bool, int, modulation::ModulatorStorage> indexedModulatorStorageUpdate_t;
+inline void indexedModulatorStorageUpdated(const indexedModulatorStorageUpdate_t &payload,
+                                           const engine::Engine &engine, MessageController &cont)
 {
     const auto &[forZone, active, i, r] = payload;
     if (forZone)
@@ -129,9 +129,10 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
                 for (const auto &[p, g, z] : zs)
                 {
                     auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-                    zn->modulatorStorage[index].stepLfoStorage = row;
+                    zn->modulatorStorage[index] = row;
                     for (auto *v : zn->voiceWeakPointers)
                     {
+                        // FIXME - what is this hack?
                         if (v)
                         {
                             v->lfos[index].UpdatePhaseIncrement();
@@ -150,17 +151,19 @@ inline void indexedLfoUpdated(const indexedLfoUpdate_t &payload, const engine::E
                 for (const auto &[p, g, z] : gs)
                 {
                     auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
-                    grp->modulatorStorage[index].stepLfoStorage = row;
+                    grp->modulatorStorage[index] = row;
                     grp->lfos[index].UpdatePhaseIncrement();
                 }
             });
         }
     }
 }
-CLIENT_TO_SERIAL(IndexedLfoUpdated, c2s_update_group_or_zone_individual_lfo, indexedLfoUpdate_t,
-                 indexedLfoUpdated(payload, engine, cont));
-SERIAL_TO_CLIENT(UpdateZoneLfo, s2c_update_group_or_zone_individual_lfo, indexedLfoUpdate_t,
-                 onGroupOrZoneLfoUpdated);
+CLIENT_TO_SERIAL(IndexedModulatorStorageUpdated,
+                 c2s_update_group_or_zone_individual_modulator_storage,
+                 indexedModulatorStorageUpdate_t,
+                 indexedModulatorStorageUpdated(payload, engine, cont));
+SERIAL_TO_CLIENT(UpdateZoneLfo, s2c_update_group_or_zone_individual_modulator_storage,
+                 indexedModulatorStorageUpdate_t, onGroupOrZoneModulatorStorageUpdated);
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H

@@ -176,18 +176,19 @@ void SCXTEditor::onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTa
     multiScreen->getGroupElements()->groupMod()->refreshMatrix();
 }
 
-void SCXTEditor::onGroupOrZoneLfoUpdated(const scxt::messaging::client::indexedLfoUpdate_t &payload)
+void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
+    const scxt::messaging::client::indexedModulatorStorageUpdate_t &payload)
 {
     const auto &[forZone, active, i, r] = payload;
     if (forZone)
     {
         multiScreen->getZoneElements()->lfo->setActive(i, active);
-        multiScreen->getZoneElements()->lfo->setLfo(i, r);
+        multiScreen->getZoneElements()->lfo->setModulatorStorage(i, r);
     }
     else
     {
         multiScreen->getGroupElements()->lfo->setActive(i, active);
-        multiScreen->getGroupElements()->lfo->setLfo(i, r);
+        multiScreen->getGroupElements()->lfo->setModulatorStorage(i, r);
     }
 }
 

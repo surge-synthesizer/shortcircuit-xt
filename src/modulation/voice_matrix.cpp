@@ -83,7 +83,7 @@ void VoiceModMatrix::copyBaseValuesFromZone(engine::Zone *z)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
-        baseValues[destIndex(vmd_LFO_Rate, i)] = z->modulatorStorage[i].stepLfoStorage.rate;
+        baseValues[destIndex(vmd_LFO_Rate, i)] = z->modulatorStorage[i].rate;
     }
 
     // TODO : Shapes

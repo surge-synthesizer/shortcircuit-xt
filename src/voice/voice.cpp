@@ -68,7 +68,7 @@ void Voice::voiceStarted()
     {
         lfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&zone->modulatorStorage[i].stepLfoStorage,
+        lfos[i].assign(&zone->modulatorStorage[i],
                        modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i), nullptr, engine->rngGen);
     }
 

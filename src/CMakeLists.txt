@@ -43,6 +43,7 @@ add_library(${PROJECT_NAME} STATIC
         modulation/base_matrix.cpp
         modulation/group_matrix.cpp
         modulation/voice_matrix.cpp
+        modulation/modulator_storage.cpp
         modulation/modulators/steplfo.cpp
 
         selection/selection_manager.cpp

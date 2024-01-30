@@ -38,6 +38,8 @@ struct SCXTStyleSheetCreator
 
     static constexpr sheet_t::Class ModulationEditorVSlider{"modulation.editor.vslider"};
     static constexpr sheet_t::Class ModulationEditorKnob{"modulation.editor.knob"};
+    static constexpr sheet_t::Class ModulationMultiSwitch{"modulation.editor.multiswitch"};
+    static constexpr sheet_t::Class ModulationJogButon{"modulation.editor.jogbutton"};
     static constexpr sheet_t::Class ModulationTabs{"modulation.tabs"};
     static constexpr sheet_t::Class ModulationMatrixToggle{"modulation.editor.toggle"};
     static constexpr sheet_t::Class ModulationMatrixMenu{"modulation.editor.menu"};

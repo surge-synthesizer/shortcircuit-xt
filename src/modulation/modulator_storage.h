@@ -28,21 +28,69 @@
 #ifndef SCXT_SRC_MODULATION_MODULATOR_STORAGE_H
 #define SCXT_SRC_MODULATION_MODULATOR_STORAGE_H
 
-#include "modulators/curvelfo.h"
-#include "modulators/steplfo.h"
+#include <array>
+#include <cstdint>
+
+#include "utils.h"
 
 namespace scxt::modulation
 {
+
+namespace modulators
+{
+struct StepLFOStorage
+{
+    static constexpr int stepLfoSteps{32};
+
+    StepLFOStorage() { std::fill(data.begin(), data.end(), 0.f); }
+    std::array<float, stepLfoSteps> data;
+    int repeat{16};
+
+    float smooth{0.f};
+    bool rateIsEntireCycle{false};
+};
+
+struct CurveLFOStorage
+{
+    float deform{0.f};
+};
+} // namespace modulators
+
 struct ModulatorStorage
 {
-    enum struct ModulatorMode
+    enum ModulatorShape
     {
-        STEP_LFO,
-        CURVE_LFO
-    } modulatorMode;
+        STEP,
+
+        LFO_SINE,
+        LFO_RAMP,
+        LFO_TRI,
+        LFO_PULSE,
+        LFO_SMOOTH_NOISE,
+        LFO_SH_NOISE,
+
+        MSEG,
+    } modulatorShape{ModulatorShape::STEP};
+    DECLARE_ENUM_STRING(ModulatorShape);
+
+    // These enum values are streamed. Do not change them.
+    enum TriggerMode
+    {
+        KEYTRIGGER,
+        FREERUN,
+        RANDOM,
+        RELEASE,
+        ONESHOT
+    } triggerMode{TriggerMode::KEYTRIGGER};
+    DECLARE_ENUM_STRING(TriggerMode);
+
+    float rate{0.f};
+    float start_phase{0.f};
+    bool temposync{false};
 
     modulators::StepLFOStorage stepLfoStorage;
     modulators::CurveLFOStorage curveLfoStorage;
+    // modulators::MSEGStorage msegStorage;
 };
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H
