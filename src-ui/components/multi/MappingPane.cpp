@@ -1258,23 +1258,8 @@ struct SampleDisplay : juce::Component, HasEditor
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
 
-    struct sample_attachment_t
-        : connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>
-    {
-        sample_attachment_t(const datamodel::pmd &cd,
-                            std::function<void(const PayloadDataAttachment &at)> oGVC, int &v)
-            : connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>(cd, oGVC,
-                                                                                          v)
-        {
-        }
-
-        std::string getValueAsStringFor(float f) const override
-        {
-            if (f < 0)
-                return "";
-            return fmt::format("{}", (int64_t)f);
-        }
-    };
+    typedef connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>
+        sample_attachment_t;
 
     std::unique_ptr<sample_attachment_t> loopCntAttachment;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> loopCnt;
@@ -1369,7 +1354,8 @@ struct SampleDisplay : juce::Component, HasEditor
                 .withType(datamodel::pmd::INT)
                 .withName("LoopCnt")
                 .withRange(0, (float)UCHAR_MAX)
-                .withDecimalPlaces(0),
+                .withDecimalPlaces(0)
+                .withLinearScaleFormatting(""),
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
