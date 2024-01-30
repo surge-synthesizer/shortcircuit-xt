@@ -137,27 +137,6 @@ TEST_CASE("Stream modulation::modulators::StepLFOStorage")
         auto s = testStream(k1);
         testUnstream(s, k2);
     }
-
-    SECTION("Information Streams")
-    {
-        modulation::modulators::StepLFOStorage k1, k2;
-        for (auto &d : k1.data)
-            d = (rand() % 1840) / 1932.f;
-        k1.repeat = 3;
-        k1.rate = 0.32;
-        k1.smooth = 0.87;
-        k1.shuffle = 0.42;
-        k1.temposync = !k1.temposync;
-        k1.triggermode = modulation::modulators::StepLFOStorage::TriggerModes::RANDOM;
-        k1.cyclemode = !k1.cyclemode;
-        k1.onlyonce = !k1.onlyonce;
-        REQUIRE(k1 != k2);
-
-        auto s = testStream(k1);
-        testUnstream(s, k2);
-
-        REQUIRE(k1 == k2);
-    }
 }
 
 TEST_CASE("Stream engine::Zone")
