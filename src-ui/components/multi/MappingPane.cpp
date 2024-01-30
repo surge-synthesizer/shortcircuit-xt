@@ -1215,7 +1215,7 @@ struct SampleWaveform : juce::Component, HasEditor
 
     juce::Path pathForSample();
 
-    juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ;
+    juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ, fadeLoopHz;
     void rebuildHotZones();
 
     // Anticipating future drag and so forth gestures
@@ -1247,7 +1247,8 @@ struct SampleDisplay : juce::Component, HasEditor
         startP,
         endP,
         startL,
-        endL
+        endL,
+        fadeL
     };
 
     std::unordered_map<Ctrl, std::unique_ptr<connectors::SamplePointDataAttachment>>
@@ -1256,6 +1257,12 @@ struct SampleDisplay : juce::Component, HasEditor
         sampleEditors;
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
+
+    typedef connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>
+        sample_attachment_t;
+
+    std::unique_ptr<sample_attachment_t> loopCntAttachment;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> loopCnt;
 
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>
         loopAttachment, reverseAttachment;
@@ -1267,6 +1274,10 @@ struct SampleDisplay : juce::Component, HasEditor
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
+        playModeLabel = std::make_unique<sst::jucegui::components::Label>();
+        playModeLabel->setText("Play");
+        addAndMakeVisible(*playModeLabel);
+
         playModeButton = std::make_unique<juce::TextButton>("mode");
         playModeButton->onClick = [this]() { showPlayModeMenu(); };
         addAndMakeVisible(*playModeButton);
@@ -1297,13 +1308,15 @@ struct SampleDisplay : juce::Component, HasEditor
         };
 
         attachSamplePoint(startP, "StartS", sampleView[0].startSample);
-        addLabel(startP, "Sample Start");
+        addLabel(startP, "Start");
         attachSamplePoint(endP, "EndS", sampleView[0].endSample);
-        addLabel(endP, "Sample End");
+        addLabel(endP, "End");
         attachSamplePoint(startL, "StartL", sampleView[0].startLoop);
         addLabel(startL, "Loop Start");
         attachSamplePoint(endL, "EndL", sampleView[0].endLoop);
         addLabel(endL, "Loop End");
+        attachSamplePoint(fadeL, "fadeL", sampleView[0].loopFade);
+        addLabel(fadeL, "Loop Fade");
 
         loopAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
@@ -1312,11 +1325,12 @@ struct SampleDisplay : juce::Component, HasEditor
                 if (w)
                 {
                     w->onSamplePointChangedFromGUI();
+                    w->rebuild();
                 }
             },
             sampleView[0].loopActive);
         loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
-        loopActive->setLabel("Loop Active");
+        loopActive->setLabel("On");
         loopActive->setSource(loopAttachment.get());
         addAndMakeVisible(*loopActive);
 
@@ -1331,9 +1345,27 @@ struct SampleDisplay : juce::Component, HasEditor
             },
             sampleView[0].playReverse);
         reverseActive = std::make_unique<sst::jucegui::components::ToggleButton>();
-        reverseActive->setLabel("Reverse");
+        reverseActive->setLabel("<-");
         reverseActive->setSource(reverseAttachment.get());
         addAndMakeVisible(*reverseActive);
+
+        loopCntAttachment = std::make_unique<sample_attachment_t>(
+            datamodel::pmd()
+                .withType(datamodel::pmd::INT)
+                .withName("LoopCnt")
+                .withRange(0, (float)UCHAR_MAX)
+                .withDecimalPlaces(0)
+                .withLinearScaleFormatting(""),
+            [w = juce::Component::SafePointer(this)](const auto &a) {
+                if (w)
+                {
+                    w->onSamplePointChangedFromGUI();
+                }
+            },
+            sampleView[0].loopCountWhenCounted);
+        loopCnt = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
+        loopCnt->setSource(loopCntAttachment.get());
+        addAndMakeVisible(*loopCnt);
 
         waveform = std::make_unique<SampleWaveform>(this);
 
@@ -1373,22 +1405,36 @@ struct SampleDisplay : juce::Component, HasEditor
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
         p = p.withHeight(18);
-        playModeButton->setBounds(p);
+
+        playModeLabel->setBounds(p.withWidth(40));
+
+        playModeButton->setBounds(
+            p.withX(playModeLabel->getRight() + 1).withWidth(p.getWidth() - 60));
+        reverseActive->setBounds(p.withX(playModeButton->getRight() + 1).withWidth(18));
         p = p.translated(0, 20);
 
         auto w = p.getWidth() / 2;
-        for (const auto m : {startP, endP, startL, endL})
+        for (const auto m : {startP, endP})
         {
             sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
             labels[m]->setBounds(p.withWidth(w));
             p = p.translated(0, 20);
         }
-        loopActive->setBounds(p);
+
         p = p.translated(0, 20);
-        reverseActive->setBounds(p);
         p = p.translated(0, 20);
-        loopModeButton->setBounds(p);
+        loopActive->setBounds(p.withWidth(18));
+        loopModeButton->setBounds(p.withX(loopActive->getRight() + 1).withWidth(p.getWidth() - 50));
+        loopCnt->setBounds(p.withX(loopModeButton->getRight() + 1).withWidth(28));
         p = p.translated(0, 20);
+
+        for (const auto m : {startL, endL, fadeL})
+        {
+            sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
+            labels[m]->setBounds(p.withWidth(w));
+            p = p.translated(0, 20);
+        }
+
         loopDirectionButton->setBounds(p);
     }
 
@@ -1457,6 +1503,16 @@ struct SampleDisplay : juce::Component, HasEditor
 
         for (const auto &[k, p] : sampleAttachments)
             p->sampleCount = end;
+
+        loopModeButton->setEnabled(sampleView[0].loopActive);
+        loopDirectionButton->setEnabled(sampleView[0].loopActive);
+        loopCnt->setEnabled(sampleView[0].loopActive);
+        sampleEditors[startL]->setVisible(sampleView[0].loopActive);
+        sampleEditors[endL]->setVisible(sampleView[0].loopActive);
+        sampleEditors[fadeL]->setVisible(sampleView[0].loopActive);
+
+        loopCnt->setVisible(sampleView[0].loopMode == engine::Zone::LoopMode::LOOP_FOR_COUNT);
+
         repaint();
 
         waveform->rebuildHotZones();
@@ -1518,7 +1574,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
-
+    std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
     engine::Zone::AssociatedSampleArray &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
@@ -1541,6 +1597,7 @@ void SampleWaveform::rebuildHotZones()
     auto r = getLocalBounds();
     auto l = samp->getSampleLength();
     auto fac = 1.0 * r.getWidth() / l;
+    auto fade = v.loopFade * fac;
     auto start = v.startSample * fac;
     auto end = v.endSample * fac;
     auto ls = v.startLoop * fac;
@@ -1553,6 +1610,8 @@ void SampleWaveform::rebuildHotZones()
     startLoopHZ = juce::Rectangle<int>(ls + r.getX(), r.getY(), hotZoneSize, hotZoneSize);
     endLoopHZ =
         juce::Rectangle<int>(le + r.getX() - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
+
+    fadeLoopHz = juce::Rectangle<int>(r.getX() + ls - fade, r.getY(), fade, r.getHeight());
 }
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
@@ -1824,6 +1883,13 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
         g.fillRect(endLoopHZ);
         g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+
+        if (v.loopFade > 0)
+        {
+            g.drawLine(fadeLoopHz.getX(), getHeight(), startLoopHZ.getX(), 0);
+            g.drawLine(startLoopHZ.getX(), 0, startLoopHZ.getX() + fadeLoopHz.getWidth(),
+                       getHeight());
+        }
     }
     g.setColour(juce::Colours::white);
     g.drawRect(r, 1);
