@@ -196,6 +196,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     {
         auto rt = info.routeTo;
         outputRouting->setLabel(getRoutingLabel(rt));
+        outputRouting->repaint();
     }
 
     void selectNewRouting()
