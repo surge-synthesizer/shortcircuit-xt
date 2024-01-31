@@ -77,8 +77,6 @@ ModulatorStorage::toStringTriggerMode(const scxt::modulation::ModulatorStorage::
         return "rnd";
     case RELEASE:
         return "rel";
-    case ONESHOT:
-        return "one";
     }
     return "ERROR";
 }
@@ -87,7 +85,7 @@ ModulatorStorage::TriggerMode ModulatorStorage::fromStringTriggerMode(const std:
 {
     static auto inverse =
         makeEnumInverse<ModulatorStorage::TriggerMode, ModulatorStorage::toStringTriggerMode>(
-            TriggerMode::KEYTRIGGER, TriggerMode::ONESHOT);
+            TriggerMode::KEYTRIGGER, TriggerMode::RELEASE);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return KEYTRIGGER;

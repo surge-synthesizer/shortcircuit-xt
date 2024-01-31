@@ -48,6 +48,7 @@ struct StepLFOStorage
 
     float smooth{0.f};
     bool rateIsEntireCycle{false};
+    bool oneShot{false};
 };
 
 struct CurveLFOStorage
@@ -79,8 +80,7 @@ struct ModulatorStorage
         KEYTRIGGER,
         FREERUN,
         RANDOM,
-        RELEASE,
-        ONESHOT
+        RELEASE
     } triggerMode{TriggerMode::KEYTRIGGER};
     DECLARE_ENUM_STRING(TriggerMode);
 
