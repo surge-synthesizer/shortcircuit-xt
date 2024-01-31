@@ -403,9 +403,6 @@ struct CurveLFOPane : juce::Component
                                         update(), cs.deform);
         phaseA = std::make_unique<att>(datamodel::pmd().asPercent().withName("Phase"), update(),
                                        ms.start_phase);
-        amplitudeA = std::make_unique<att>(
-            datamodel::pmd().asPercentBipolar().withName("Amplitude").withDefault(1), update(),
-            cs.amplitude);
 
         auto mk = [this](auto &a, auto b) {
             auto L = std::make_unique<jcmp::Label>();
@@ -429,10 +426,6 @@ struct CurveLFOPane : juce::Component
         r = mk(phaseA, "Phase");
         phaseK = std::move(r.first);
         phaseL = std::move(r.second);
-
-        r = mk(amplitudeA, "Amp");
-        amplitudeK = std::move(r.first);
-        amplitudeL = std::move(r.second);
 
         unipolarA = std::make_unique<LfoPane::boolAttachment_t>("Unipolar", update(), cs.unipolar);
         unipolarB = std::make_unique<jcmp::ToggleButton>();
@@ -471,19 +464,14 @@ struct CurveLFOPane : juce::Component
 
     void resized() override
     {
-        auto knobReg = 58;
         auto mg = 3;
+        auto lbHt = 12;
+
         auto b = getLocalBounds();
 
-        auto top = b.withTrimmedBottom(knobReg);
+        auto knobw = b.getHeight() / 2 - lbHt - mg;
 
-        curveDraw->setBounds(0, 0, b.getRight() - mg, b.getHeight() - knobReg - mg);
-        unipolarB->setBounds(b.getRight() - 32 - mg, 2, 30, 18);
-
-        auto knobw = knobReg - 16;
-        auto bot = b.withTrimmedTop(b.getHeight() - knobReg);
-
-        auto bx = bot.withWidth(knobw).translated(0, 0);
+        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2);
         rateK->setBounds(bx.withHeight(knobw));
         rateL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
@@ -493,21 +481,24 @@ struct CurveLFOPane : juce::Component
         phaseK->setBounds(bx.withHeight(knobw));
         phaseL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
-        amplitudeK->setBounds(bx.withHeight(knobw));
-        amplitudeL->setBounds(bx.withTrimmedTop(knobw));
+
+        bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(0, b.getHeight() / 2);
 
         for (int i = 0; i < envSlots; ++i)
         {
-            bx = bx.translated(knobw + mg, 0);
             envS[i]->setBounds(bx.withHeight(knobw));
             envL[i]->setBounds(bx.withTrimmedTop(knobw));
+            bx = bx.translated(knobw + mg, 0);
         }
+
+        auto curveBox = b.withTrimmedLeft((knobw + mg) * 3).withTrimmedBottom(mg).reduced(mg, 0);
+        curveDraw->setBounds(curveBox);
+        unipolarB->setBounds(curveBox.getRight() - 32 - mg, 2, 32, 18);
     }
 
-    std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA, amplitudeA;
-
-    std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK, amplitudeK;
-    std::unique_ptr<jcmp::Label> rateL, deformL, phaseL, amplitudeL;
+    std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA;
+    std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK;
+    std::unique_ptr<jcmp::Label> rateL, deformL, phaseL;
 
     std::unique_ptr<LfoPane::boolAttachment_t> unipolarA;
     std::unique_ptr<jcmp::ToggleButton> unipolarB;
