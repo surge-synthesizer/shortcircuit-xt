@@ -48,12 +48,15 @@ struct StepLFOStorage
 
     float smooth{0.f};
     bool rateIsEntireCycle{false};
-    bool oneShot{false};
 };
 
 struct CurveLFOStorage
 {
     float deform{0.f};
+    float amplitude{1.f};
+
+    float delay{0.f}, attack{0.f}, hold{0.f}, decay{0.f}, sustain{0.f}, release{0.f};
+    bool unipolar{false};
 };
 } // namespace modulators
 
@@ -69,6 +72,7 @@ struct ModulatorStorage
         LFO_PULSE,
         LFO_SMOOTH_NOISE,
         LFO_SH_NOISE,
+        LFO_ENV,
 
         MSEG,
     } modulatorShape{ModulatorShape::STEP};
@@ -80,7 +84,8 @@ struct ModulatorStorage
         KEYTRIGGER,
         FREERUN,
         RANDOM,
-        RELEASE
+        RELEASE,
+        ONESHOT
     } triggerMode{TriggerMode::KEYTRIGGER};
     DECLARE_ENUM_STRING(TriggerMode);
 

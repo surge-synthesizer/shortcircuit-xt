@@ -200,7 +200,6 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         v = {{"data", t.data},
              {"repeat", t.repeat},
              {"rateIsEntireCycle", t.rateIsEntireCycle},
-             {"oneShot", t.oneShot},
              {"smooth", t.smooth}};
     }
 
@@ -211,8 +210,34 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         findIf(v, "data", result.data);
         findIf(v, "repeat", result.repeat);
         findIf(v, "smooth", result.smooth);
-        findIf(v, "oneShot", result.oneShot);
         findIf(v, "rateIsEntireCycle", result.rateIsEntireCycle);
+    }
+};
+
+template <> struct scxt_traits<scxt::modulation::modulators::CurveLFOStorage>
+{
+    typedef scxt::modulation::modulators::CurveLFOStorage rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"deform", t.deform},   {"amplitude", t.amplitude}, {"delay", t.delay},
+             {"attack", t.attack},   {"hold", t.hold},           {"decay", t.decay},
+             {"sustain", t.sustain}, {"release", t.release},     {"unipolar", t.unipolar}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+        findIf(v, "deform", result.deform);
+        findIf(v, "amplitude", result.amplitude);
+        findIf(v, "delay", result.delay);
+        findIf(v, "attack", result.attack);
+        findIf(v, "hold", result.hold);
+        findIf(v, "decay", result.decay);
+        findIf(v, "sustain", result.sustain);
+        findIf(v, "release", result.release);
+        findIf(v, "unipolar", result.unipolar);
     }
 };
 
@@ -230,9 +255,13 @@ template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        v = {{"modulatorShape", t.modulatorShape}, {"triggerMode", t.triggerMode}, {"rate", t.rate},
-             {"start_phase", t.start_phase},       {"temposync", t.temposync},
+        v = {{"modulatorShape", t.modulatorShape},
+             {"triggerMode", t.triggerMode},
+             {"rate", t.rate},
+             {"start_phase", t.start_phase},
+             {"temposync", t.temposync},
 
+             {"curveLfoStorage", t.curveLfoStorage},
              {"stepLfoStorage", t.stepLfoStorage}};
     }
 
@@ -245,6 +274,7 @@ template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
         findIf(v, "rate", result.rate);
         findIf(v, "start_phase", result.start_phase);
         findIf(v, "temposync", result.temposync);
+        findIf(v, "curveLfoStorage", result.curveLfoStorage);
         findIf(v, "stepLfoStorage", result.stepLfoStorage);
     }
 };

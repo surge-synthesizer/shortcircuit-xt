@@ -242,10 +242,14 @@ void StepLFO::process(int)
 
         state++;
 
-        if (settings->stepLfoStorage.oneShot)
+        if (settings->triggerMode == ModulatorStorage::ONESHOT)
+        {
             state = std::min((long)(ls.repeat - 1), state);
+        }
         else if (state >= ls.repeat)
+        {
             state = 0;
+        }
         phase -= 1.0f;
 
         wf_history[3] = wf_history[2];

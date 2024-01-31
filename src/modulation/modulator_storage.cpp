@@ -50,6 +50,8 @@ std::string ModulatorStorage::toStringModulatorShape(
         return "lnoise";
     case LFO_SH_NOISE:
         return "lshn";
+    case LFO_ENV:
+        return "lenv";
     }
     return "ERROR";
 }
@@ -77,6 +79,8 @@ ModulatorStorage::toStringTriggerMode(const scxt::modulation::ModulatorStorage::
         return "rnd";
     case RELEASE:
         return "rel";
+    case ONESHOT:
+        return "ones";
     }
     return "ERROR";
 }
@@ -85,7 +89,7 @@ ModulatorStorage::TriggerMode ModulatorStorage::fromStringTriggerMode(const std:
 {
     static auto inverse =
         makeEnumInverse<ModulatorStorage::TriggerMode, ModulatorStorage::toStringTriggerMode>(
-            TriggerMode::KEYTRIGGER, TriggerMode::RELEASE);
+            TriggerMode::KEYTRIGGER, TriggerMode::ONESHOT);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return KEYTRIGGER;
