@@ -53,7 +53,6 @@ struct StepLFOStorage
 struct CurveLFOStorage
 {
     float deform{0.f};
-    float amplitude{1.f};
 
     float delay{0.f}, attack{0.f}, hold{0.f}, decay{0.f}, sustain{0.f}, release{0.f};
     bool unipolar{false};
