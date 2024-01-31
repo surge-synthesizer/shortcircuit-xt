@@ -133,6 +133,8 @@ SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::BuiltInTypes baseT
         .withBaseClass(comp::ToggleButton::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationMultiSwitch)
         .withBaseClass(comp::MultiSwitch::Styles::styleClass);
+    sheet_t::addClass(SCXTStyleSheetCreator::ModulationJogButon)
+        .withBaseClass(comp::JogUpDownButton::Styles::styleClass);
     sheet_t::addClass(SCXTStyleSheetCreator::ModulationMatrixMenu)
         .withBaseClass(SCXTStyleSheetCreator::ModulationMatrixToggle);
     sheet_t::addClass(SCXTStyleSheetCreator::InformationLabel)
