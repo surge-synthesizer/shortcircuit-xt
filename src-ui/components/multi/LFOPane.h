@@ -79,8 +79,6 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void resized() override;
     void rebuildPanelComponents(); // entirely new components
-    void rebuildStepLfo();
-    void resetAllComponents();
 
     void setActive(int index, bool active);
     void setModulatorStorage(int index, const modulation::ModulatorStorage &mod);

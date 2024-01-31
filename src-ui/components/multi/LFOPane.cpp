@@ -207,13 +207,6 @@ struct StepLFOPane : juce::Component
         cycleB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         addAndMakeVisible(*cycleB);
 
-        oneshotA = std::make_unique<LfoPane::boolAttachment_t>("OneShot", update(), ls.oneShot);
-        oneshotB = std::make_unique<jcmp::ToggleButton>();
-        oneshotB->setSource(oneshotA.get());
-        oneshotB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
-        oneshotB->setLabel("ONE SHOT");
-        addAndMakeVisible(*oneshotB);
-
         rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
                                                update(), ms.rate);
         auto mk = [this](auto &a, auto b) {
@@ -314,8 +307,7 @@ struct StepLFOPane : juce::Component
     std::unique_ptr<jcmp::JogUpDownButton> stepsJ;
 
     std::unique_ptr<LfoPane::boolBaseAttachment_t> cycleA;
-    std::unique_ptr<LfoPane::boolAttachment_t> oneshotA;
-    std::unique_ptr<jcmp::ToggleButton> cycleB, oneshotB;
+    std::unique_ptr<jcmp::ToggleButton> cycleB;
 
     std::array<std::unique_ptr<sst::jucegui::components::GlyphButton>, 4> jog;
 
@@ -329,15 +321,12 @@ struct StepLFOPane : juce::Component
         auto knobw = knobReg - 16;
         auto bot = b.withTrimmedTop(b.getHeight() - knobReg);
 
-        auto menht = 17;
+        auto menht = 22;
         auto jx = bot.withWidth(knobw * 2 - mg).withHeight(menht);
         stepsJ->setBounds(jx);
 
         jx = jx.translated(0, menht + mg);
         cycleB->setBounds(jx);
-
-        jx = jx.translated(0, menht + mg);
-        oneshotB->setBounds(jx);
 
         auto bx = bot.withWidth(knobw).translated(knobw * 2 + mg, 0);
         rateK->setBounds(bx.withHeight(knobw));
@@ -367,14 +356,168 @@ struct StepLFOPane : juce::Component
 
 struct CurveLFOPane : juce::Component
 {
-    CurveLFOPane(modulation::ModulatorStorage &s) {}
+    LfoPane *parent{nullptr};
 
-    void paint(juce::Graphics &g) override
+    struct CurveDraw : public juce::Component
     {
-        g.setColour(juce::Colours::red);
-        g.setFont(juce::Font("Comic Sans MS", 30, juce::Font::plain));
-        g.drawText("Curves", getLocalBounds(), juce::Justification::centred);
+        LfoPane *parent{nullptr};
+        CurveDraw(LfoPane *p) : parent(p) {}
+        void paint(juce::Graphics &g) override
+        {
+            auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
+                                                 jcmp::NamedPanel::Styles::background);
+            auto boxc = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
+                                                   jcmp::NamedPanel::Styles::brightoutline);
+
+            g.fillAll(bg);
+            g.setColour(boxc);
+            g.drawRect(getLocalBounds(), 1);
+
+            g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
+            g.drawText("Curve Viz Soon", getLocalBounds(), juce::Justification::centred);
+        }
+    };
+
+    CurveLFOPane(LfoPane *p) : parent(p)
+    {
+        assert(parent);
+        auto update = [r = juce::Component::SafePointer(this)]() {
+            return [w = juce::Component::SafePointer(r)](const auto &a) {
+                if (w && w->parent)
+                {
+                    auto p = w->parent;
+                    p->pushCurrentModulatorStorageUpdate();
+                    p->updateValueTooltip(a);
+                    p->repaint();
+                }
+            };
+        };
+
+        using att = LfoPane::attachment_t;
+        auto &ms = parent->modulatorStorageData[parent->selectedTab];
+        auto &cs = ms.curveLfoStorage;
+
+        rateA = std::make_unique<att>(datamodel::lfoModulationRate().withName("Rate"), update(),
+                                      ms.rate);
+        deformA = std::make_unique<att>(datamodel::pmd().asPercentBipolar().withName("Deform"),
+                                        update(), cs.deform);
+        phaseA = std::make_unique<att>(datamodel::pmd().asPercent().withName("Phase"), update(),
+                                       ms.start_phase);
+        amplitudeA = std::make_unique<att>(
+            datamodel::pmd().asPercentBipolar().withName("Amplitude").withDefault(1), update(),
+            cs.amplitude);
+
+        auto mk = [this](auto &a, auto b) {
+            auto L = std::make_unique<jcmp::Label>();
+            L->setText(b);
+            addAndMakeVisible(*L);
+            auto K = std::make_unique<jcmp::Knob>();
+            K->setSource(a.get());
+            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+            parent->setupWidgetForValueTooltip(K, a);
+            addAndMakeVisible(*K);
+            return std::make_pair(std::move(K), std::move(L));
+        };
+        auto r = mk(rateA, "Rate");
+        rateK = std::move(r.first);
+        rateL = std::move(r.second);
+
+        r = mk(deformA, "Deform");
+        deformK = std::move(r.first);
+        deformL = std::move(r.second);
+
+        r = mk(phaseA, "Phase");
+        phaseK = std::move(r.first);
+        phaseL = std::move(r.second);
+
+        r = mk(amplitudeA, "Amp");
+        amplitudeK = std::move(r.first);
+        amplitudeL = std::move(r.second);
+
+        unipolarA = std::make_unique<LfoPane::boolAttachment_t>("Unipolar", update(), cs.unipolar);
+        unipolarB = std::make_unique<jcmp::ToggleButton>();
+        unipolarB->setSource(unipolarA.get());
+        unipolarB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
+        unipolarB->setLabel("UNI");
+        addAndMakeVisible(*unipolarB);
+
+        envA[0] = std::make_unique<att>(datamodel::pmd().asPercent().withName("Delay"), update(),
+                                        cs.delay);
+        envA[1] = std::make_unique<att>(datamodel::pmd().asPercent().withName("Attack"), update(),
+                                        cs.attack);
+        envA[2] = std::make_unique<att>(datamodel::pmd().asPercent().withName("Release"), update(),
+                                        cs.release);
+
+        auto mkE = [this](auto b, int idx) {
+            auto L = std::make_unique<jcmp::Label>();
+            L->setText(b);
+            addAndMakeVisible(*L);
+            auto K = std::make_unique<jcmp::Knob>();
+            K->setSource(envA[idx].get());
+            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+            parent->setupWidgetForValueTooltip(K, envA[idx]);
+            addAndMakeVisible(*K);
+            envL[idx] = std::move(L);
+            envS[idx] = std::move(K);
+        };
+        mkE("Delay", 0);
+        mkE("Attack", 1);
+        mkE("Release", 2);
+
+        curveDraw = std::make_unique<CurveDraw>(parent);
+        addAndMakeVisible(*curveDraw);
+        curveDraw->toBack();
     }
+
+    void resized() override
+    {
+        auto knobReg = 58;
+        auto mg = 3;
+        auto b = getLocalBounds();
+
+        auto top = b.withTrimmedBottom(knobReg);
+
+        curveDraw->setBounds(0, 0, b.getRight() - mg, b.getHeight() - knobReg - mg);
+        unipolarB->setBounds(b.getRight() - 32 - mg, 2, 30, 18);
+
+        auto knobw = knobReg - 16;
+        auto bot = b.withTrimmedTop(b.getHeight() - knobReg);
+
+        auto bx = bot.withWidth(knobw).translated(0, 0);
+        rateK->setBounds(bx.withHeight(knobw));
+        rateL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+        deformK->setBounds(bx.withHeight(knobw));
+        deformL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+        phaseK->setBounds(bx.withHeight(knobw));
+        phaseL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+        amplitudeK->setBounds(bx.withHeight(knobw));
+        amplitudeL->setBounds(bx.withTrimmedTop(knobw));
+
+        for (int i = 0; i < envSlots; ++i)
+        {
+            bx = bx.translated(knobw + mg, 0);
+            envS[i]->setBounds(bx.withHeight(knobw));
+            envL[i]->setBounds(bx.withTrimmedTop(knobw));
+        }
+    }
+
+    std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA, amplitudeA;
+
+    std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK, amplitudeK;
+    std::unique_ptr<jcmp::Label> rateL, deformL, phaseL, amplitudeL;
+
+    std::unique_ptr<LfoPane::boolAttachment_t> unipolarA;
+    std::unique_ptr<jcmp::ToggleButton> unipolarB;
+
+    static constexpr int envSlots{3}; // DAR
+    std::array<std::unique_ptr<LfoPane::attachment_t>, envSlots> envA;
+    std::array<std::unique_ptr<jcmp::Knob>, envSlots> envS;
+    std::array<std::unique_ptr<jcmp::Label>, envSlots> envL;
+
+    std::unique_ptr<CurveDraw> curveDraw;
 };
 
 struct MSEGLFOPane : juce::Component
@@ -413,11 +556,7 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
     setEnabled(false);
 }
 
-LfoPane::~LfoPane()
-{
-    getContentAreaComponent()->removeAllChildren();
-    resetAllComponents();
-}
+LfoPane::~LfoPane() { getContentAreaComponent()->removeAllChildren(); }
 
 void LfoPane::resized()
 {
@@ -428,7 +567,6 @@ void LfoPane::resized()
 void LfoPane::tabChanged(int i)
 {
     getContentAreaComponent()->removeAllChildren();
-    resetAllComponents();
     rebuildPanelComponents();
 }
 
@@ -438,7 +576,6 @@ void LfoPane::setActive(int i, bool b)
     if (!b)
     {
         getContentAreaComponent()->removeAllChildren();
-        resetAllComponents();
     }
 }
 
@@ -450,29 +587,11 @@ void LfoPane::setModulatorStorage(int index, const modulation::ModulatorStorage 
         return;
 
     getContentAreaComponent()->removeAllChildren();
-    resetAllComponents();
 
     if (isEnabled())
     {
         rebuildPanelComponents();
     }
-#if 0
-    lfoData[index] = lfo;
-
-    if (index != selectedTab)
-        return;
-
-    getContentAreaComponent()->removeAllChildren();
-    resetAllComponents();
-
-    if (!isEnabled())
-        return;
-
-    if (selectedTab == index)
-    {
-        rebuildLfo();
-    }
-#endif
 }
 
 void LfoPane::rebuildPanelComponents()
@@ -503,6 +622,7 @@ void LfoPane::rebuildPanelComponents()
                 {modulation::ModulatorStorage::LFO_TRI, "TRI"},
                 {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
                 {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
+                {modulation::ModulatorStorage::LFO_ENV, "ENV"},
                 {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
             }),
         updateNoTT(), ms.modulatorShape);
@@ -517,12 +637,13 @@ void LfoPane::rebuildPanelComponents()
             .asInt()
             .withName("Trigger")
             .withRange(modulation::ModulatorStorage::KEYTRIGGER,
-                       modulation::ModulatorStorage::RELEASE)
+                       modulation::ModulatorStorage::ONESHOT)
             .withUnorderedMapFormatting({
                 {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
-                {modulation::ModulatorStorage::FREERUN, "FREERUN"},
+                {modulation::ModulatorStorage::FREERUN, "SONGPOS"},
                 {modulation::ModulatorStorage::RANDOM, "RANDOM"},
                 {modulation::ModulatorStorage::RELEASE, "RELEASE"},
+                {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
             }),
         updateNoTT(), ms.triggerMode);
     triggerMode = std::make_unique<jcmp::MultiSwitch>();
@@ -536,41 +657,11 @@ void LfoPane::rebuildPanelComponents()
     msegLfoPane = std::make_unique<MSEGLFOPane>(ms);
     getContentAreaComponent()->addChildComponent(*msegLfoPane);
 
-    curveLfoPane = std::make_unique<CurveLFOPane>(ms);
+    curveLfoPane = std::make_unique<CurveLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*curveLfoPane);
 
     repositionContentAreaComponents();
     setSubPaneVisibility();
-#if 0
-    auto update = [r = juce::Component::SafePointer(this)]() {
-        return [w = juce::Component::SafePointer(r)](const auto &a) {
-            if (w)
-            {
-                w->pushCurrentLfoUpdate();
-                w->updateValueTooltip(a);
-                w->repaint();
-            }
-        };
-    };
-
-
-    rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
-                                           update(), lfoData[selectedTab].rate);
-    deformA = std::make_unique<attachment_t>(datamodel::lfoSmoothing().withName("Deform"), update(),
-                                             lfoData[selectedTab].smooth);
-
-    static constexpr int columnOneWidth{60};
-    auto r = getContentArea();
-    auto col = r.withWidth(columnOneWidth).withHeight(20);
-
-    oneshotB = std::make_unique<sst::jucegui::components::ToggleButton>();
-    oneshotB->setSource(oneshotA.get());
-    oneshotB->setLabel("OneShot");
-    oneshotB->setBounds(col);
-    addAndMakeVisible(*oneshotB);
-
-    rebuildStepLfo();
-#endif
 }
 
 void LfoPane::repositionContentAreaComponents()
@@ -583,7 +674,7 @@ void LfoPane::repositionContentAreaComponents()
     auto mg = 5;
 
     modulatorShape->setBounds(0, 0, wd, ht);
-    triggerMode->setBounds(0, ht + mg, wd, 4 * ht);
+    triggerMode->setBounds(0, ht + mg, wd, 5 * ht);
     auto paneArea = getContentArea().withX(0).withTrimmedLeft(wd + mg).withY(0);
     stepLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);
@@ -603,78 +694,6 @@ void LfoPane::setSubPaneVisibility()
                              (ms.modulatorShape != modulation::ModulatorStorage::MSEG));
 }
 
-void LfoPane::rebuildStepLfo()
-{
-#if 0
-    if (stepVsWaveData->getValue() == 1)
-    { // TODO - a cleaner way to do this copy and paste
-        auto r = getContentArea();
-        static constexpr int columnOneWidth{60};
-        auto b5 = r.withTop(r.getBottom() - 50).withLeft(r.getWidth() - 50);
-        rateK = std::make_unique<sst::jucegui::components::Knob>();
-        rateK->setSource(rateA.get());
-        rateK->setBounds(b5.translated(-2 * 50, 0));
-        rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-        setupWidgetForValueTooltip(rateK, rateA);
-        addAndMakeVisible(*rateK);
-
-        deformK = std::make_unique<sst::jucegui::components::Knob>();
-        deformK->setSource(deformA.get());
-        deformK->setBounds(b5.translated(-50, 0));
-        deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-        setupWidgetForValueTooltip(deformK, deformA);
-        addAndMakeVisible(*deformK);
-
-        lfoDataRender = std::make_unique<LfoDataRender>(this);
-        lfoDataRender->setBounds(r.withTrimmedLeft(columnOneWidth + 5).withTrimmedBottom(55));
-        addAndMakeVisible(*lfoDataRender);
-
-        jog[0] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_UP);
-        jog[0]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->shiftBy(0.05);
-        });
-
-        jog[1] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_DOWN);
-        jog[1]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->shiftBy(-0.05);
-        });
-        jog[2] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_LEFT);
-        jog[2]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->rotate(-1);
-        });
-        jog[3] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_RIGHT);
-        jog[3]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->rotate(1);
-        });
-
-        auto jogbx = r.withTrimmedLeft(columnOneWidth + 5)
-                         .withTop(getHeight() - 55)
-                         .withWidth(55)
-                         .reduced(2);
-
-        for (const auto &j : jog)
-        {
-            addAndMakeVisible(*j);
-            j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
-        }
-        auto bthrd = jogbx.getWidth() / 3;
-        std::array<juce::Rectangle<float>, 4> boxes;
-        auto rc = jogbx.toFloat().withWidth(bthrd);
-        jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
-        rc = rc.translated(bthrd, 0);
-        jog[0]->setBounds(rc.withHeight(bthrd).toNearestInt());
-        jog[1]->setBounds(rc.withHeight(bthrd).translated(0, 2 * bthrd).toNearestInt());
-
-        rc = rc.translated(bthrd, 0);
-        jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
-    }
-#endif
-}
-
 namespace cmsg = scxt::messaging::client;
 
 void LfoPane::pushCurrentModulatorStorageUpdate()
@@ -683,23 +702,6 @@ void LfoPane::pushCurrentModulatorStorageUpdate()
         {forZone, true, selectedTab, modulatorStorageData[selectedTab]}));
     setSubPaneVisibility();
     repaint();
-}
-
-void LfoPane::resetAllComponents()
-{
-#if 0
-    oneshotB.reset();
-    stepVsWave.reset();
-    tempoSyncB.reset();
-    cycleB.reset();
-    rateK.reset();
-    deformK.reset();
-    stepsK.reset();
-    lfoDataRender.reset();
-
-    for (auto &j : jog)
-        j.reset();
-#endif
 }
 
 void LfoPane::pickPresets()
