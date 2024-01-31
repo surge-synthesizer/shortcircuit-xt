@@ -207,6 +207,13 @@ struct StepLFOPane : juce::Component
         cycleB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         addAndMakeVisible(*cycleB);
 
+        oneshotA = std::make_unique<LfoPane::boolAttachment_t>("OneShot", update(), ls.oneShot);
+        oneshotB = std::make_unique<jcmp::ToggleButton>();
+        oneshotB->setSource(oneshotA.get());
+        oneshotB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
+        oneshotB->setLabel("ONE SHOT");
+        addAndMakeVisible(*oneshotB);
+
         rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
                                                update(), ms.rate);
         auto mk = [this](auto &a, auto b) {
@@ -307,7 +314,8 @@ struct StepLFOPane : juce::Component
     std::unique_ptr<jcmp::JogUpDownButton> stepsJ;
 
     std::unique_ptr<LfoPane::boolBaseAttachment_t> cycleA;
-    std::unique_ptr<jcmp::ToggleButton> cycleB;
+    std::unique_ptr<LfoPane::boolAttachment_t> oneshotA;
+    std::unique_ptr<jcmp::ToggleButton> cycleB, oneshotB;
 
     std::array<std::unique_ptr<sst::jucegui::components::GlyphButton>, 4> jog;
 
@@ -321,11 +329,15 @@ struct StepLFOPane : juce::Component
         auto knobw = knobReg - 16;
         auto bot = b.withTrimmedTop(b.getHeight() - knobReg);
 
-        auto jx = bot.withWidth(knobw * 2 - mg).withHeight(20);
+        auto menht = 17;
+        auto jx = bot.withWidth(knobw * 2 - mg).withHeight(menht);
         stepsJ->setBounds(jx);
 
-        jx = jx.translated(0, 20 + mg);
+        jx = jx.translated(0, menht + mg);
         cycleB->setBounds(jx);
+
+        jx = jx.translated(0, menht + mg);
+        oneshotB->setBounds(jx);
 
         auto bx = bot.withWidth(knobw).translated(knobw * 2 + mg, 0);
         rateK->setBounds(bx.withHeight(knobw));
@@ -505,13 +517,12 @@ void LfoPane::rebuildPanelComponents()
             .asInt()
             .withName("Trigger")
             .withRange(modulation::ModulatorStorage::KEYTRIGGER,
-                       modulation::ModulatorStorage::ONESHOT)
+                       modulation::ModulatorStorage::RELEASE)
             .withUnorderedMapFormatting({
                 {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
                 {modulation::ModulatorStorage::FREERUN, "FREERUN"},
                 {modulation::ModulatorStorage::RANDOM, "RANDOM"},
                 {modulation::ModulatorStorage::RELEASE, "RELEASE"},
-                {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
             }),
         updateNoTT(), ms.triggerMode);
     triggerMode = std::make_unique<jcmp::MultiSwitch>();
@@ -572,7 +583,7 @@ void LfoPane::repositionContentAreaComponents()
     auto mg = 5;
 
     modulatorShape->setBounds(0, 0, wd, ht);
-    triggerMode->setBounds(0, ht + mg, wd, 5 * ht);
+    triggerMode->setBounds(0, ht + mg, wd, 4 * ht);
     auto paneArea = getContentArea().withX(0).withTrimmedLeft(wd + mg).withY(0);
     stepLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);

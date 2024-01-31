@@ -200,6 +200,7 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         v = {{"data", t.data},
              {"repeat", t.repeat},
              {"rateIsEntireCycle", t.rateIsEntireCycle},
+             {"oneShot", t.oneShot},
              {"smooth", t.smooth}};
     }
 
@@ -210,6 +211,7 @@ template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
         findIf(v, "data", result.data);
         findIf(v, "repeat", result.repeat);
         findIf(v, "smooth", result.smooth);
+        findIf(v, "oneShot", result.oneShot);
         findIf(v, "rateIsEntireCycle", result.rateIsEntireCycle);
     }
 };

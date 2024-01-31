@@ -76,6 +76,8 @@ void SCXTStyleSheetCreator::makeDarkColors(const sheet_t::ptr_t &base)
 
     base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::value,
                     juce::Colour(0x27, 0x88, 0xD6));
+    base->setColour(ModulationMatrixToggle, comp::ToggleButton::Styles::value_hover,
+                    juce::Colour(0x27, 0x88, 0xD6).brighter(0.4));
 
     // TODO - do hvoer
     base->setColour(InformationLabel, comp::base_styles::BaseLabel::labelcolor,
