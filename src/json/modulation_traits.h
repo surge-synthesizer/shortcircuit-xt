@@ -275,6 +275,8 @@ template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
         findIf(v, "temposync", result.temposync);
         findIf(v, "curveLfoStorage", result.curveLfoStorage);
         findIf(v, "stepLfoStorage", result.stepLfoStorage);
+
+        result.configureCalculatedState();
     }
 };
 } // namespace scxt::json

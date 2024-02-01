@@ -47,6 +47,7 @@ namespace scxt::ui::multi
 
 struct StepLFOPane;
 struct CurveLFOPane;
+struct ENVLFOPane;
 struct MSEGLFOPane;
 
 struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
@@ -69,6 +70,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 
     std::unique_ptr<StepLFOPane> stepLfoPane;
     std::unique_ptr<CurveLFOPane> curveLfoPane;
+    std::unique_ptr<ENVLFOPane> envLfoPane;
     std::unique_ptr<MSEGLFOPane> msegLfoPane;
 
     bool forZone{true};

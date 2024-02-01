@@ -71,6 +71,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         60}; // the actual physical key pressed not the one I resolved to after tuning
 
     modulation::VoiceModMatrix modMatrix;
+
+    enum LFOEvaluator
+    {
+        STEP,
+        CURVE,
+        ENV,
+        MSEG
+    } lfoEvaluator[engine::lfosPerZone]{STEP, STEP, STEP};
     modulation::modulators::StepLFO stepLfos[engine::lfosPerZone];
     modulation::modulators::CurveLFO curveLfos[engine::lfosPerZone];
 

@@ -511,6 +511,19 @@ struct CurveLFOPane : juce::Component
     std::unique_ptr<CurveDraw> curveDraw;
 };
 
+struct ENVLFOPane : juce::Component
+{
+    LfoPane *parent{nullptr};
+    ENVLFOPane(LfoPane *p) : parent(p) {}
+
+    void paint(juce::Graphics &g) override
+    {
+        g.setColour(juce::Colours::orchid);
+        g.setFont(juce::Font("Comic Sans MS", 30, juce::Font::plain));
+        g.drawText("ENV", getLocalBounds(), juce::Justification::centred);
+    }
+};
+
 struct MSEGLFOPane : juce::Component
 {
     MSEGLFOPane(modulation::ModulatorStorage &s) {}
@@ -648,6 +661,9 @@ void LfoPane::rebuildPanelComponents()
     msegLfoPane = std::make_unique<MSEGLFOPane>(ms);
     getContentAreaComponent()->addChildComponent(*msegLfoPane);
 
+    envLfoPane = std::make_unique<ENVLFOPane>(this);
+    getContentAreaComponent()->addChildComponent(*envLfoPane);
+
     curveLfoPane = std::make_unique<CurveLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*curveLfoPane);
 
@@ -668,6 +684,7 @@ void LfoPane::repositionContentAreaComponents()
     triggerMode->setBounds(0, ht + mg, wd, 5 * ht);
     auto paneArea = getContentArea().withX(0).withTrimmedLeft(wd + mg).withY(0);
     stepLfoPane->setBounds(paneArea);
+    envLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);
     curveLfoPane->setBounds(paneArea);
 }
@@ -679,16 +696,17 @@ void LfoPane::setSubPaneVisibility()
 
     auto &ms = modulatorStorageData[selectedTab];
 
-    stepLfoPane->setVisible(ms.modulatorShape == modulation::ModulatorStorage::STEP);
-    msegLfoPane->setVisible(ms.modulatorShape == modulation::ModulatorStorage::MSEG);
-    curveLfoPane->setVisible((ms.modulatorShape != modulation::ModulatorStorage::STEP) &&
-                             (ms.modulatorShape != modulation::ModulatorStorage::MSEG));
+    stepLfoPane->setVisible(ms.isStep());
+    msegLfoPane->setVisible(ms.isMSEG());
+    curveLfoPane->setVisible(ms.isCurve());
+    envLfoPane->setVisible(ms.isEnv());
 }
 
 namespace cmsg = scxt::messaging::client;
 
 void LfoPane::pushCurrentModulatorStorageUpdate()
 {
+    modulatorStorageData[selectedTab].configureCalculatedState();
     sendToSerialization(cmsg::IndexedModulatorStorageUpdated(
         {forZone, true, selectedTab, modulatorStorageData[selectedTab]}));
     setSubPaneVisibility();
