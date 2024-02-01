@@ -133,7 +133,7 @@ inline void indexedModulatorStorageUpdated(const indexedModulatorStorageUpdate_t
                     for (auto *v : zn->voiceWeakPointers)
                     {
                         // FIXME - what is this hack?
-                        if (v)
+                        if (v && v->lfoEvaluator[index] == voice::Voice::STEP)
                         {
                             v->stepLfos[index].UpdatePhaseIncrement();
                         }

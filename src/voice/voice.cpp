@@ -58,6 +58,12 @@ void Voice::voiceStarted()
     initializeGenerator();
     initializeProcessors();
 
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    {
+        const auto &ms = zone->modulatorStorage[i];
+        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
+    }
+
     modMatrix.snapRoutingFromZone(zone);
     modMatrix.snapDepthScalesFromZone(zone);
     modMatrix.copyBaseValuesFromZone(zone);
@@ -67,7 +73,7 @@ void Voice::voiceStarted()
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
         const auto &ms = zone->modulatorStorage[i];
-        if (ms.isStep())
+        if (lfoEvaluator[i] == STEP)
         {
             stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
@@ -75,9 +81,10 @@ void Voice::voiceStarted()
                                modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i), nullptr,
                                engine->rngGen);
         }
-        else if (ms.isCurve())
+        else if (lfoEvaluator[i] == CURVE)
         {
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
+            curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
         }
         else
         {
@@ -110,14 +117,13 @@ bool Voice::process()
     // Run Modulators
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
-        const auto &ms = zone->modulatorStorage[i];
-        if (ms.isStep())
+        if (lfoEvaluator[i] == STEP)
         {
             stepLfos[i].process(blockSize);
         }
-        else if (ms.isCurve())
+        else if (lfoEvaluator[i] == CURVE)
         {
-            curveLfos[i].process(blockSize);
+            curveLfos[i].process(modMatrix.getValue(modulation::vmd_LFO_Rate, i), 0);
         }
         else
         {

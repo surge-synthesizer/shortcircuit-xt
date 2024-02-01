@@ -96,6 +96,10 @@ struct ModulatorStorage
     modulators::CurveLFOStorage curveLfoStorage;
     // modulators::MSEGStorage msegStorage;
 
+    // In addition to streamed members above we have some calculated
+    // state which we cache for efficiency
+    void configureCalculatedState() {}
+
     inline bool isStep() const { return modulatorShape == STEP; }
     inline bool isMSEG() const { return modulatorShape == MSEG; }
     inline bool isEnv() const { return modulatorShape == LFO_ENV; }

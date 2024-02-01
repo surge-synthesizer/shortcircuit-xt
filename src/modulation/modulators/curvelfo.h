@@ -28,7 +28,10 @@
 #ifndef SCXT_SRC_MODULATION_MODULATORS_CURVELFO_H
 #define SCXT_SRC_MODULATION_MODULATORS_CURVELFO_H
 
+#include "sst/basic-blocks/modulators/SimpleLFO.h"
+
 #include "utils.h"
+#include "modulation/modulator_storage.h"
 
 namespace scxt::modulation::modulators
 {
@@ -36,13 +39,51 @@ struct CurveLFO : SampleRateSupport
 {
     float output{0.f};
 
-    uint32_t smp{0};
-    void process(uint16_t blockSize)
+    using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveLFO, scxt::blockSize>;
+    slfo_t simpleLfo{this};
+    friend slfo_t;
+
+    slfo_t::Shape curveShape{slfo_t::SINE};
+
+    float envelope_rate_linear_nowrap(float f)
     {
-        output = std::sin(smp * 2.0 * M_PI * sampleRateInv);
-        smp += blockSize;
-        if (smp > sampleRate)
-            smp -= sampleRate;
+        return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
+    }
+
+    void attack(float initPhase, ModulatorStorage::ModulatorShape shape)
+    {
+        switch (shape)
+        {
+        case ModulatorStorage::LFO_RAMP:
+            curveShape = slfo_t::RAMP;
+            break;
+        case ModulatorStorage::LFO_TRI:
+            curveShape = slfo_t::TRI;
+            break;
+        case ModulatorStorage::LFO_PULSE:
+            curveShape = slfo_t::PULSE;
+            break;
+        case ModulatorStorage::LFO_SMOOTH_NOISE:
+            curveShape = slfo_t::SMOOTH_NOISE;
+            break;
+        case ModulatorStorage::LFO_SH_NOISE:
+            curveShape = slfo_t::SH_NOISE;
+            break;
+        case ModulatorStorage::LFO_SINE:
+        default:
+            curveShape = slfo_t ::SINE;
+            break;
+        }
+
+        simpleLfo.attack(curveShape);
+        simpleLfo.applyPhaseOffset(initPhase);
+    }
+
+    uint32_t smp{0};
+    void process(const float rate, const float deform)
+    {
+        simpleLfo.process_block(rate, deform, curveShape);
+        output = simpleLfo.lastTarget;
     }
 };
 } // namespace scxt::modulation::modulators
