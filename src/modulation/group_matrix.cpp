@@ -130,9 +130,9 @@ void GroupModMatrix::updateModulatorUsed(engine::Group &g) const
 
 void GroupModMatrix::assignSourcesFromGroup(engine::Group &g)
 {
-    sourcePointers[gms_LFO1] = &g.lfos[0].output;
-    sourcePointers[gms_LFO2] = &g.lfos[1].output;
-    sourcePointers[gms_LFO3] = &g.lfos[2].output;
+    sourcePointers[gms_LFO1] = &g.stepLfos[0].output;
+    sourcePointers[gms_LFO2] = &g.stepLfos[1].output;
+    sourcePointers[gms_LFO3] = &g.stepLfos[2].output;
 
     sourcePointers[gms_EG1] = &g.gegEvaluators[0].outBlock0;
     sourcePointers[gms_EG2] = &g.gegEvaluators[1].outBlock0;

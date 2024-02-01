@@ -106,7 +106,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
                 infrastructure::RNGGen &);
     void sync();
     void process(int samples);
-    float output;
+    float output{0.f};
 
     void UpdatePhaseIncrement();
 
