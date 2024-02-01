@@ -122,7 +122,19 @@ void VoiceModMatrix::attachSourcesFromVoice(voice::Voice *v)
     sourcePointers[vms_none] = nullptr;
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
-        sourcePointers[vms_LFO1 + i] = &(v->lfos[i].output);
+        const auto &ms = v->zone->modulatorStorage[i];
+        if (ms.isStep())
+        {
+            sourcePointers[vms_LFO1 + i] = &(v->stepLfos[i].output);
+        }
+        else if (ms.isCurve())
+        {
+            sourcePointers[vms_LFO1 + i] = &(v->curveLfos[i].output);
+        }
+        else // if (ms.isMSEG())
+        {
+            sourcePointers[vms_LFO1 + i] = &utilityZero;
+        }
     }
     sourcePointers[vms_AEG] = &(v->aeg.outBlock0);
     sourcePointers[vms_EG2] = &(v->eg2.outBlock0);

@@ -92,7 +92,7 @@ void Group::process(Engine &e)
         {
             if (!lfoUsed[i])
                 continue;
-            lfos[i].process(blockSize);
+            stepLfos[i].process(blockSize);
         }
 
         modMatrix.process();
@@ -186,10 +186,10 @@ void Group::setupOnUnstream(const engine::Engine &e)
 {
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
-        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+        stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&modulatorStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i),
-                       nullptr, getEngine()->rngGen);
+        stepLfos[i].assign(&modulatorStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i),
+                           nullptr, getEngine()->rngGen);
     }
 
     for (int p = 0; p < processorCount; ++p)
@@ -201,7 +201,7 @@ void Group::setupOnUnstream(const engine::Engine &e)
     modMatrix.copyBaseValuesFromGroup(*this);
     modMatrix.initializeModulationValues();
     modMatrix.updateModulatorUsed(*this);
-    for (auto &lfo : lfos)
+    for (auto &lfo : stepLfos)
     {
         lfo.UpdatePhaseIncrement();
     }
@@ -210,10 +210,10 @@ void Group::onSampleRateChanged()
 {
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
-        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+        stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&modulatorStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i),
-                       nullptr, getEngine()->rngGen);
+        stepLfos[i].assign(&modulatorStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i),
+                           nullptr, getEngine()->rngGen);
     }
 
     for (auto p : processors)

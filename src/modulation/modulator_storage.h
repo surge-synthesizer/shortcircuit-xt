@@ -95,6 +95,11 @@ struct ModulatorStorage
     modulators::StepLFOStorage stepLfoStorage;
     modulators::CurveLFOStorage curveLfoStorage;
     // modulators::MSEGStorage msegStorage;
+
+    inline bool isStep() const { return modulatorShape == STEP; }
+    inline bool isMSEG() const { return modulatorShape == MSEG; }
+    inline bool isEnv() const { return modulatorShape == LFO_ENV; }
+    inline bool isCurve() const { return !isStep() && !isEnv() && !isMSEG(); }
 };
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

@@ -28,7 +28,22 @@
 #ifndef SCXT_SRC_MODULATION_MODULATORS_CURVELFO_H
 #define SCXT_SRC_MODULATION_MODULATORS_CURVELFO_H
 
+#include "utils.h"
+
 namespace scxt::modulation::modulators
 {
+struct CurveLFO : SampleRateSupport
+{
+    float output{0.f};
+
+    uint32_t smp{0};
+    void process(uint16_t blockSize)
+    {
+        output = std::sin(smp * 2.0 * M_PI * sampleRateInv);
+        smp += blockSize;
+        if (smp > sampleRate)
+            smp -= sampleRate;
+    }
+};
 } // namespace scxt::modulation::modulators
 #endif // SHORTCIRCUITXT_CURVELFO_H

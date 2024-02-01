@@ -66,10 +66,23 @@ void Voice::voiceStarted()
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
-        lfos[i].setSampleRate(sampleRate, sampleRateInv);
+        const auto &ms = zone->modulatorStorage[i];
+        if (ms.isStep())
+        {
+            stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        lfos[i].assign(&zone->modulatorStorage[i],
-                       modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i), nullptr, engine->rngGen);
+            stepLfos[i].assign(&zone->modulatorStorage[i],
+                               modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i), nullptr,
+                               engine->rngGen);
+        }
+        else if (ms.isCurve())
+        {
+            curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
+        }
+        else
+        {
+            SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
+        }
     }
 
     aeg.attackFrom(0.0); // TODO Envelope Legato Mode
@@ -97,8 +110,18 @@ bool Voice::process()
     // Run Modulators
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
-        // TODO - only if we need it
-        lfos[i].process(blockSize);
+        const auto &ms = zone->modulatorStorage[i];
+        if (ms.isStep())
+        {
+            stepLfos[i].process(blockSize);
+        }
+        else if (ms.isCurve())
+        {
+            curveLfos[i].process(blockSize);
+        }
+        else
+        {
+        }
     }
 
     // TODO probably want to process LFO modulations at this point so the AEG and EG2

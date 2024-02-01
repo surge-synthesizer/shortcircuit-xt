@@ -151,6 +151,8 @@ template <typename T> struct ModMatrix
     float depthScales[T::DestAddress::maxDestinations];
     float baseValues[T::DestAddress::maxDestinations];
     float modulatedValues[T::DestAddress::maxDestinations];
+
+    float utilityZero{0.f};
 };
 
 } // namespace scxt::modulation

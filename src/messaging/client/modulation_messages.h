@@ -135,7 +135,7 @@ inline void indexedModulatorStorageUpdated(const indexedModulatorStorageUpdate_t
                         // FIXME - what is this hack?
                         if (v)
                         {
-                            v->lfos[index].UpdatePhaseIncrement();
+                            v->stepLfos[index].UpdatePhaseIncrement();
                         }
                     }
                 }
@@ -152,7 +152,7 @@ inline void indexedModulatorStorageUpdated(const indexedModulatorStorageUpdate_t
                 {
                     auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
                     grp->modulatorStorage[index] = row;
-                    grp->lfos[index].UpdatePhaseIncrement();
+                    grp->stepLfos[index].UpdatePhaseIncrement();
                 }
             });
         }

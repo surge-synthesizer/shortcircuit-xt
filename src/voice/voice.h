@@ -38,6 +38,7 @@
 
 #include "vembertech/vt_dsp/lipol.h"
 #include "modulation/modulators/steplfo.h"
+#include "modulation/modulators/curvelfo.h"
 
 #include "configuration.h"
 
@@ -70,7 +71,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         60}; // the actual physical key pressed not the one I resolved to after tuning
 
     modulation::VoiceModMatrix modMatrix;
-    modulation::modulators::StepLFO lfos[engine::lfosPerZone];
+    modulation::modulators::StepLFO stepLfos[engine::lfosPerZone];
+    modulation::modulators::CurveLFO curveLfos[engine::lfosPerZone];
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
