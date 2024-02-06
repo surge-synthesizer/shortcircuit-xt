@@ -45,9 +45,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 {
     int index{0};
     ModPane<GZTrait> *parent{nullptr};
-    std::unique_ptr<connectors::BooleanPayloadDataAttachment<modulation::VoiceModMatrix::Routing>>
+    std::unique_ptr<connectors::BooleanPayloadDataAttachment<typename GZTrait::routing::Routing>>
         powerAttachment;
-    using attachment_t = connectors::PayloadDataAttachment<modulation::VoiceModMatrix::Routing>;
+    using attachment_t = connectors::PayloadDataAttachment<typename GZTrait::routing::Routing>;
     std::unique_ptr<attachment_t> depthAttachment;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
@@ -59,7 +59,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane<GZTrait> *p) : HasEditor(e), index(i), parent(p)
     {
-        auto &row = parent->routingTable[i];
+        auto &row = parent->routingTable.routes[i];
 
         consistentButton = std::make_unique<jcmp::TextPushButton>();
         consistentButton->setLabel("Make Consistent");
@@ -72,7 +72,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         addChildComponent(*consistentButton);
 
         powerAttachment = std::make_unique<
-            connectors::BooleanPayloadDataAttachment<modulation::VoiceModMatrix::Routing>>(
+            connectors::BooleanPayloadDataAttachment<typename GZTrait::routing::Routing>>(
             "Power",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
@@ -191,24 +191,27 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     }
     void refreshRow()
     {
-        const auto &row = parent->routingTable[index];
+        const auto &row = parent->routingTable.routes[index];
         const auto &srcs = std::get<1>(parent->matrixMetadata);
         const auto &dsts = std::get<2>(parent->matrixMetadata);
         const auto &crvs = std::get<3>(parent->matrixMetadata);
 
-        power->setVisible(row.selConsistent);
-        source->setVisible(row.selConsistent);
-        sourceVia->setVisible(row.selConsistent);
-        depth->setVisible(row.selConsistent);
-        curve->setVisible(row.selConsistent);
-        target->setVisible(row.selConsistent);
-        x1->setVisible(row.selConsistent);
-        x2->setVisible(row.selConsistent);
-        a1->setVisible(row.selConsistent);
-        a2->setVisible(row.selConsistent);
-        consistentButton->setVisible(!row.selConsistent);
-        if (!row.selConsistent)
+        auto sc = row.extraPayload.selConsistent;
+
+        power->setVisible(sc);
+        source->setVisible(sc);
+        sourceVia->setVisible(sc);
+        depth->setVisible(sc);
+        curve->setVisible(sc);
+        target->setVisible(sc);
+        x1->setVisible(sc);
+        x2->setVisible(sc);
+        a1->setVisible(sc);
+        a2->setVisible(sc);
+        consistentButton->setVisible(!sc);
+        if (!sc)
         {
+#if BADBADZONE
             std::string s, sv, c, d;
             for (const auto &[si, sn] : srcs)
             {
@@ -238,52 +241,42 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (!row.active)
                 lbl += " (inactive)";
 
+#endif
+            SCLOG_ONCE("BADBAD Deal with multisel");
+            std::string lbl = "FIXME WITH IFDEF";
             consistentButton->setLabel("Set selected zones to : " + lbl);
             return;
         }
 
         // this linear search kinda sucks bot
+        source->setLabel("Source");
+        sourceVia->setLabel("Via");
+        target->setLabel("Target");
         for (const auto &[si, sn] : srcs)
         {
-            if (si == row.src)
+            if (si == row.source)
             {
-                if (sn.empty())
-                {
-                    source->setLabel("Source");
-                }
-                else
-                {
-                    source->setLabel(sn);
-                }
+                auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+
+                source->setLabel(nm);
             }
-            if (si == row.srcVia)
+            if (si == row.sourceVia)
             {
-                if (sn.empty())
-                {
-                    sourceVia->setLabel("Via");
-                }
-                else
-                {
-                    sourceVia->setLabel(sn);
-                }
+                auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+
+                sourceVia->setLabel(nm);
             }
         }
 
         for (const auto &[di, dn] : dsts)
         {
-            if (di == row.dst)
+            if (di == row.target)
             {
-                if (dn.empty())
-                {
-                    target->setLabel("Target");
-                }
-                else
-                {
-                    target->setLabel(dn);
-                }
+                target->setLabel(dn.first + " - " + dn.second);
             }
         }
 
+#if BADBAD_ZONE
         for (const auto &[ci, cn] : crvs)
         {
             if (ci == row.curve)
@@ -298,6 +291,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 }
             }
         }
+#endif
 
         repaint();
     }
@@ -330,12 +324,15 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         if constexpr (GZTrait::forZone)
         {
             sendToSerialization(cmsg::IndexedZoneRoutingRowUpdated(
-                {index, parent->routingTable[index], forceUpdate}));
+                {index, parent->routingTable.routes[index], forceUpdate}));
         }
         else
         {
+            SCLOG_ONCE("Skipping Outbound Group Row Update " << index);
+#if BADBAD_GROUP
             sendToSerialization(cmsg::IndexedGroupRoutingRowUpdated(
                 {index, parent->routingTable[index], forceUpdate}));
+#endif
         }
     }
 
@@ -347,23 +344,39 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         else
             p.addSectionHeader("Source");
         p.addSeparator();
+
+        p.addItem("Off", true, false, [isVia, w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &row = w->parent->routingTable.routes[w->index];
+
+            if (isVia)
+                row.sourceVia = std::nullopt;
+            else
+                row.source = std::nullopt;
+
+            w->pushRowUpdate();
+            w->refreshRow();
+        });
+
         const auto &srcs = std::get<1>(parent->matrixMetadata);
 
         // this linear search kinda sucks bot
         for (const auto &[si, sn] : srcs)
         {
-            const auto &row = parent->routingTable[index];
-            auto selected = isVia ? (row.srcVia == si) : (row.src == si);
+            const auto &row = parent->routingTable.routes[index];
+            auto selected = isVia ? (row.sourceVia == si) : (row.source == si);
 
-            p.addItem(sn.empty() ? "Off" : sn, true, selected,
+            auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+            p.addItem(nm, true, selected,
                       [sidx = si, isVia, w = juce::Component::SafePointer(this)]() {
                           if (!w)
                               return;
-                          auto &row = w->parent->routingTable[w->index];
+                          auto &row = w->parent->routingTable.routes[w->index];
                           if (isVia)
-                              row.srcVia = sidx;
+                              row.sourceVia = sidx;
                           else
-                              row.src = sidx;
+                              row.source = sidx;
                           w->pushRowUpdate();
                           w->refreshRow();
                       });
@@ -374,6 +387,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
     void showCurveMenu()
     {
+#if BADBADZONE
         auto p = juce::PopupMenu();
         p.addSectionHeader("Curve");
         p.addSeparator();
@@ -398,6 +412,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+#endif
     }
 
     void showTargetMenu()
@@ -405,33 +420,74 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         auto p = juce::PopupMenu();
         p.addSectionHeader("Target");
         p.addSeparator();
-        // copy the sources
-        auto srcs = std::get<2>(parent->matrixMetadata);
+        p.addItem("Off", true, false, [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &row = w->parent->routingTable.routes[w->index];
 
-        // sort the sources
-        auto sortByPath = [](const auto &a, const auto &b) {
-            auto na = a.second;
-            auto nb = b.second;
-            return na < nb;
-        };
-        std::sort(srcs.begin(), srcs.end(), sortByPath);
+            row.target = std::nullopt;
+            w->pushRowUpdate();
+            w->refreshRow();
+        });
+
+        const auto &tgts = std::get<2>(parent->matrixMetadata);
+
         std::string lastPath{};
+        bool checkPath{false};
         juce::PopupMenu subMenu;
+
+        for (const auto &[ti, tn] : tgts)
+        {
+            if (tn.second.empty())
+                continue;
+
+            const auto &row = parent->routingTable.routes[index];
+            auto selected = (row.target == ti);
+
+            auto mop = [tidx = ti, w = juce::Component::SafePointer(this)]() {
+                if (!w)
+                    return;
+                auto &row = w->parent->routingTable.routes[w->index];
+
+                row.target = tidx;
+                w->pushRowUpdate();
+                w->refreshRow();
+            };
+
+            if (tn.first.empty())
+            {
+                p.addItem(tn.first + " - " + tn.second, true, selected, mop);
+            }
+            else
+            {
+                if (tn.first != lastPath)
+                {
+                    if (subMenu.getNumItems())
+                    {
+                        p.addSubMenu(lastPath, subMenu, true, nullptr, checkPath);
+                    }
+                    lastPath = tn.first;
+                    checkPath = false;
+                    subMenu = juce::PopupMenu();
+                    subMenu.addSectionHeader(tn.first);
+                    subMenu.addSeparator();
+                }
+                subMenu.addItem(tn.first + " - " + tn.second, true, selected, mop);
+                checkPath = checkPath || selected;
+            }
+        }
+        if (subMenu.getNumItems())
+        {
+            p.addSubMenu(lastPath, subMenu, true, nullptr, checkPath);
+        }
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+#if BADBAD_ZONE
+
         for (const auto &[si, sn] : srcs)
         {
             const auto &row = parent->routingTable[index];
             auto selected = row.dst == si;
-
-            auto mop = [sidx = si, w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                auto &row = w->parent->routingTable[w->index];
-
-                row.dst = sidx;
-
-                w->pushRowUpdate();
-                w->refreshRow();
-            };
 
             if (sn.empty())
             {
@@ -460,6 +516,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         p.addSubMenu(lastPath, subMenu);
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+#endif
     }
 };
 
@@ -543,5 +600,6 @@ template <typename GZTrait> void ModPane<GZTrait>::refreshMatrix()
 }
 
 template struct ModPane<ModPaneZoneTraits>;
-template struct ModPane<ModPaneGroupTraits>;
+// BADBAD GROUP
+// template struct ModPane<ModPaneGroupTraits>;
 } // namespace scxt::ui::multi

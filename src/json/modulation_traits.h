@@ -41,47 +41,6 @@
 namespace scxt::json
 {
 
-template <> struct scxt_traits<modulation::VoiceModMatrixDestinationAddress>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const modulation::VoiceModMatrixDestinationAddress &t)
-    {
-        auto dn = scxt::modulation::getVoiceModMatrixDestStreamingName(t.type);
-        v = {{"type", dn}, {"index", t.index}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   modulation::VoiceModMatrixDestinationAddress &t)
-    {
-        std::string tsn;
-        findIf(v, "type", tsn);
-        t.type = scxt::modulation::fromVoiceModMatrixDestStreamingName(tsn).value_or(
-            scxt::modulation::vmd_none);
-        findIf(v, "index", t.index);
-    }
-};
-
-template <> struct scxt_traits<modulation::VoiceModMatrixSource>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const modulation::VoiceModMatrixSource &t)
-    {
-        auto sn = scxt::modulation::getVoiceModMatrixSourceStreamingName(t);
-        v = {{"vms_name", sn}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, modulation::VoiceModMatrixSource &t)
-    {
-        std::string tsn;
-        findIf(v, "vms_name", tsn);
-        t = scxt::modulation::fromVoiceModMatrixSourceStreamingName(tsn).value_or(
-            scxt::modulation::vms_none);
-    }
-};
-
 template <> struct scxt_traits<modulation::ModMatrixCurve>
 {
     template <template <typename...> class Traits>
@@ -98,31 +57,6 @@ template <> struct scxt_traits<modulation::ModMatrixCurve>
         findIf(v, "vmc_name", tsn);
         t = scxt::modulation::fromModMatrixCurveStreamingName(tsn).value_or(
             scxt::modulation::modc_none);
-    }
-};
-
-template <> struct scxt_traits<scxt::modulation::VoiceModMatrix::Routing>
-{
-    typedef scxt::modulation::VoiceModMatrix::Routing rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"active", t.active}, {"selConsistent", t.selConsistent},
-             {"src", t.src},       {"srcVia", t.srcVia},
-             {"dst", t.dst},       {"curve", t.curve},
-             {"depth", t.depth}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        findOrSet(v, "active", true, result.active);
-        findOrSet(v, "selConsistent", true, result.selConsistent);
-        findIf(v, "src", result.src);
-        findIf(v, "srcVia", result.srcVia);
-        findIf(v, "dst", result.dst);
-        findOrSet(v, "curve", modulation::modc_none, result.curve);
-        findIf(v, "depth", result.depth);
     }
 };
 
@@ -279,6 +213,113 @@ template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
         result.configureCalculatedState();
     }
 };
+
+template <> struct scxt_traits<scxt::voice::modulation::Matrix::TR::TargetIdentifier>
+{
+    typedef scxt::voice::modulation::Matrix::TR::TargetIdentifier rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+        findIf(v, "g", result.gid);
+        findIf(v, "t", result.tid);
+        findIf(v, "i", result.index);
+    }
+};
+
+template <> struct scxt_traits<scxt::voice::modulation::Matrix::TR::SourceIdentifier>
+{
+    typedef scxt::voice::modulation::Matrix::TR::SourceIdentifier rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+        findIf(v, "g", result.gid);
+        findIf(v, "t", result.tid);
+        findIf(v, "i", result.index);
+    }
+};
+
+template <> struct scxt_traits<scxt::voice::modulation::MatrixConfig::RoutingExtraPayload>
+{
+    typedef scxt::voice::modulation::MatrixConfig::RoutingExtraPayload rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"selC", t.selConsistent}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+        findIf(v, "selC", result.selConsistent);
+    }
+};
+
+template <> struct scxt_traits<scxt::voice::modulation::Matrix::RoutingTable::Routing>
+{
+    typedef scxt::voice::modulation::Matrix::RoutingTable::Routing rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"active", t.active},
+             {"source", t.source},
+             {"sourceVia", t.sourceVia},
+             {"target", t.target},
+             {"curve", t.curve},
+             {"depth", t.depth},
+             {"extraPayload", t.extraPayload}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+        findIf(v, "active", result.active);
+        findIf(v, "source", result.source);
+        findIf(v, "sourceVia", result.sourceVia);
+        findIf(v, "target", result.target);
+        findIf(v, "curve", result.curve);
+        findIf(v, "depth", result.depth);
+        findIf(v, "extraPayload", result.extraPayload);
+    }
+};
+
+template <> struct scxt_traits<scxt::voice::modulation::Matrix::RoutingTable>
+{
+    typedef scxt::voice::modulation::Matrix::RoutingTable rt_t;
+    template <template <typename...> class Traits>
+    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
+    {
+        v = {{"routes", t.routes}};
+    }
+
+    template <template <typename...> class Traits>
+    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
+    {
+        const auto &object = v.get_object();
+
+        std::fill(result.routes.begin(), result.routes.end(), rt_t::Routing());
+        if (v.find("routes"))
+        {
+            fromArrayWithSizeDifference(v.at("routes"), result.routes);
+        }
+    }
+};
+
 } // namespace scxt::json
 
 #endif // SHORTCIRCUIT_MODULATION_TRAITS_H

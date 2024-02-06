@@ -59,7 +59,7 @@ template <typename T> struct HasGroupZoneProcessors
     std::string getProcRoutingPathDisplayName(ProcRoutingPath p);
 
     T *asT() { return static_cast<T *>(this); }
-    static constexpr int processorCount{4};
+    static constexpr int processorCount{scxt::processorsPerZoneAndGroup};
     void setProcessorType(int whichProcessor, dsp::processor::ProcessorType type);
     void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
                                            dsp::processor::Processor *tmpProcessor = nullptr);

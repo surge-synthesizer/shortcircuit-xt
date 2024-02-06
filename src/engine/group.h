@@ -52,7 +52,7 @@ namespace scxt::engine
 struct Part;
 struct Engine;
 
-constexpr int lfosPerGroup{3};
+constexpr int lfosPerGroup{scxt::lfosPerGroup};
 
 struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSupport
 {
@@ -157,7 +157,7 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
 
     lipol outputAmp, outputPan;
 
-    static constexpr int egPerGroup{2};
+    static constexpr int egPerGroup{scxt::egPerGroup};
     std::array<datamodel::AdsrStorage, egPerGroup> gegStorage{};
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         Group, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>

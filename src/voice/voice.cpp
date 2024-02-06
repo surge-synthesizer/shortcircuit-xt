@@ -38,7 +38,7 @@ namespace scxt::voice
 {
 
 Voice::Voice(engine::Engine *e, engine::Zone *z)
-    : engine(e), zone(z), aeg(this), eg2(this), halfRate(6, true)
+    : engine(e), zone(z), aeg(this), eg2(this), halfRate(6, true), endpoints(nullptr) // see comment
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
@@ -55,6 +55,13 @@ Voice::~Voice()
 
 void Voice::voiceStarted()
 {
+    // This order matters
+    endpoints->sources.bind(modMatrix, *zone, *this);
+    modMatrix.prepare(zone->routingTable);
+    endpoints->bindTargetBaseValues(modMatrix, *zone);
+    modMatrix.process();
+
+    // These probably need to happen after the modulator is set up
     initializeGenerator();
     initializeProcessors();
 
@@ -64,12 +71,6 @@ void Voice::voiceStarted()
         lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
     }
 
-    modMatrix.snapRoutingFromZone(zone);
-    modMatrix.snapDepthScalesFromZone(zone);
-    modMatrix.copyBaseValuesFromZone(zone);
-    modMatrix.attachSourcesFromVoice(this);
-    modMatrix.initializeModulationValues();
-
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
         const auto &ms = zone->modulatorStorage[i];
@@ -77,8 +78,7 @@ void Voice::voiceStarted()
         {
             stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-            stepLfos[i].assign(&zone->modulatorStorage[i],
-                               modMatrix.getValuePtr(modulation::vmd_LFO_Rate, i), nullptr,
+            stepLfos[i].assign(&zone->modulatorStorage[i], endpoints->lfo[i].rateP, nullptr,
                                engine->rngGen);
         }
         else if (lfoEvaluator[i] == CURVE)
@@ -112,8 +112,6 @@ bool Voice::process()
     auto &sdata = zone->sampleData[0];
     assert(s);
 
-    modMatrix.copyBaseValuesFromZone(zone);
-
     // Run Modulators
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
@@ -123,7 +121,7 @@ bool Voice::process()
         }
         else if (lfoEvaluator[i] == CURVE)
         {
-            curveLfos[i].process(modMatrix.getValue(modulation::vmd_LFO_Rate, i), 0);
+            curveLfos[i].process(*endpoints->lfo[i].rateP, *endpoints->lfo[i].curveDeformP);
         }
         else
         {
@@ -137,20 +135,13 @@ bool Voice::process()
     bool envGate = (sdata.playMode == engine::Zone::NORMAL && isGated) ||
                    (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
                    (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
-    aeg.processBlock(
-        modMatrix.getValue(modulation::vmd_eg_A, 0), modMatrix.getValue(modulation::vmd_eg_H, 0),
-        modMatrix.getValue(modulation::vmd_eg_D, 0), modMatrix.getValue(modulation::vmd_eg_S, 0),
-        modMatrix.getValue(modulation::vmd_eg_R, 0),
-        modMatrix.getValue(modulation::vmd_eg_AShape, 0),
-        modMatrix.getValue(modulation::vmd_eg_DShape, 0),
-        modMatrix.getValue(modulation::vmd_eg_RShape, 0), envGate);
-    eg2.processBlock(
-        modMatrix.getValue(modulation::vmd_eg_A, 1), modMatrix.getValue(modulation::vmd_eg_H, 1),
-        modMatrix.getValue(modulation::vmd_eg_D, 1), modMatrix.getValue(modulation::vmd_eg_S, 1),
-        modMatrix.getValue(modulation::vmd_eg_R, 1),
-        modMatrix.getValue(modulation::vmd_eg_AShape, 1),
-        modMatrix.getValue(modulation::vmd_eg_DShape, 1),
-        modMatrix.getValue(modulation::vmd_eg_RShape, 1), envGate);
+
+    auto &aegp = endpoints->aeg;
+    aeg.processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
+                     *aegp.rsP, envGate);
+    auto &eg2p = endpoints->eg2;
+    eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
+                     *eg2p.rsP, envGate);
 
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
@@ -208,7 +199,7 @@ bool Voice::process()
     /*
      * Implement Sample Pan
      */
-    auto pvz = modMatrix.getValue(modulation::vmd_Zone_Sample_Pan, 0);
+    auto pvz = *endpoints->mappingTarget.panP;
     if (pvz != 0.f)
     {
         samplePan.set_target(pvz);
@@ -222,7 +213,7 @@ bool Voice::process()
         mech::mul_block<blockSize>(output[0], invsqrt2);
     }
 
-    auto pva = modMatrix.getValue(modulation::vmd_Zone_Sample_Amplitude, 0);
+    auto pva = *endpoints->mappingTarget.ampP;
     sampleAmp.set_target(pva);
     if (chainIsMono)
     {
@@ -237,7 +228,9 @@ bool Voice::process()
     {
         if (processors[i])
         {
-            processorMix[i].set_target(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
+            endpoints->processorTarget[i].snapValues();
+
+            processorMix[i].set_target(*endpoints->processorTarget[i].mixP);
 
             if (chainIsMono && processorConsumesMono[i] && !processorProducesStereo[i])
             {
@@ -277,10 +270,11 @@ bool Voice::process()
                                    */
         }
     }
+
     /*
      * Implement output pan
      */
-    auto pvo = modMatrix.getValue(modulation::vmd_Zone_Output_Pan, 0);
+    auto pvo = *endpoints->outputTarget.panP;
     if (pvo != 0.f)
     {
         outputPan.set_target(pvo);
@@ -288,7 +282,7 @@ bool Voice::process()
         chainIsMono = false;
     }
 
-    auto pao = modMatrix.getValue(modulation::vmd_Zone_Output_Amplitude, 0);
+    auto pao = *endpoints->outputTarget.ampP;
     outputAmp.set_target(pao * pao * pao);
     if (chainIsMono)
     {
@@ -404,8 +398,7 @@ void Voice::initializeGenerator()
 
 float Voice::calculateVoicePitch()
 {
-    auto fpitch = key + modMatrix.getValue(modulation::vmd_Sample_Pitch_Offset, 0);
-
+    auto fpitch = key + *endpoints->mappingTarget.pitchOffsetP;
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendSmoother.output;
     auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
     fpitch += pitchWheel * pitchMv;
@@ -417,7 +410,6 @@ float Voice::calculateVoicePitch()
 
 void Voice::calculateGeneratorRatio(float pitch)
 {
-    // TODO all of this obviously
 #if 0
     keytrack = (fkey + zone->pitch_bend_depth * ctrl[c_pitch_bend] - 60.0f) *
                (1 / 12.0f); // keytrack as modulation source
@@ -434,32 +426,40 @@ void Voice::calculateGeneratorRatio(float pitch)
                                  note_to_pitch(fpitch + kt - zone->pitchcorrection) *
                                  mm.get_destination_value(md_rate)));
     fpitch += fkey - 69.f; // relative to A3 (440hz)
-#else
+    // TODO gross for now - correct
+    float ndiff = pitch - zone->mapping.rootKey;
+    auto fac = tuning::equalTuning.note_to_pitch(ndiff);
+
+    // TODO round robin
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[0]->sample_rate * sampleRateInv *
+                         (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
+#endif
+
     // TODO gross for now - correct
     float ndiff = pitch - zone->mapping.rootKey;
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
     // TODO round robin
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[0]->sample_rate * sampleRateInv *
-                         (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
-#endif
+                         (1.0 + *endpoints->mappingTarget.playbackRatioP));
 }
 
 void Voice::initializeProcessors()
 {
     assert(zone);
     assert(zone->getEngine());
-    samplePan.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Sample_Pan, 0));
-    sampleAmp.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Sample_Amplitude, 0));
-    outputPan.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Output_Pan, 0));
-    outputAmp.set_target_instant(modMatrix.getValue(modulation::vmd_Zone_Output_Amplitude, 0));
+    samplePan.set_target_instant(*endpoints->mappingTarget.panP);
+    sampleAmp.set_target_instant(*endpoints->mappingTarget.ampP);
+
+    outputPan.set_target_instant(*endpoints->outputTarget.panP);
+    outputAmp.set_target_instant(*endpoints->outputTarget.ampP);
+
     for (auto i = 0; i < engine::processorCount; ++i)
     {
         processorIsActive[i] = zone->processorStorage[i].isActive;
-        processorMix[i].set_target_instant(modMatrix.getValue(modulation::vmd_Processor_Mix, i));
+        processorMix[i].set_target_instant(*endpoints->processorTarget[i].mixP);
 
         processorType[i] = zone->processorStorage[i].type;
 
-        auto fp = modMatrix.getValuePtr(modulation::vmd_Processor_FP1, i);
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
 
@@ -467,8 +467,8 @@ void Voice::initializeProcessors()
         {
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], zone->getEngine()->getMemoryPool().get(),
-                processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize, fp,
-                processorIntParams[i]);
+                processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
+                endpoints->processorTarget[i].fp, processorIntParams[i]);
         }
         else
         {

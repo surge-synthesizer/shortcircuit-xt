@@ -90,8 +90,8 @@ struct MemoryPool;
 namespace scxt::dsp::processor
 {
 
-static constexpr size_t maxProcessorFloatParams{9};
-static constexpr size_t maxProcessorIntParams{3};
+static constexpr size_t maxProcessorFloatParams{scxt::maxProcessorFloatParams};
+static constexpr size_t maxProcessorIntParams{scxt::maxProcessorIntParams};
 static constexpr size_t processorLabelSize{32};
 
 /**

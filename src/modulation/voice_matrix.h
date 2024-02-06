@@ -33,169 +33,351 @@
 #include <vector>
 #include "utils.h"
 #include "dsp/processor/processor.h"
-#include "base_matrix.h"
+
+#include "sst/cpputils/constructors.h"
+
+#include "sst/basic-blocks/mod-matrix/ModMatrix.h"
 
 namespace scxt::engine
 {
 struct Zone;
+struct Engine;
 } // namespace scxt::engine
 namespace scxt::voice
 {
 struct Voice;
 }
 
-namespace scxt::modulation
+namespace scxt::voice::modulation
 {
-
-/* These values are not streamed, but the blocks do matter since in the
- * display value conversion we assume that (say) all the EG are together.
- * So if you add stuff here think quickly about how you will make
- * getVoiceModMatrixDestDisplayName work and also adjust the switches
- * and the depth scales if appropriate.
- */
-enum VoiceModMatrixDestinationType
+struct MatrixConfig
 {
-    vmd_none,
-
-    vmd_LFO_Rate,
-
-    vmd_Processor_Mix,
-    vmd_Processor_FP1,
-    vmd_Processor_FP2,
-    vmd_Processor_FP3,
-    vmd_Processor_FP4,
-    vmd_Processor_FP5,
-    vmd_Processor_FP6,
-    vmd_Processor_FP7,
-    vmd_Processor_FP8,
-    vmd_Processor_FP9, // These should be contiguous and match maxProcessorFloatParams
-
-    vmd_eg_A,
-    vmd_eg_H,
-    vmd_eg_D,
-    vmd_eg_S,
-    vmd_eg_R,
-
-    vmd_eg_AShape,
-    vmd_eg_DShape,
-    vmd_eg_RShape,
-
-    vmd_Zone_Sample_Pan,
-    vmd_Zone_Output_Pan,
-
-    vmd_Zone_Sample_Amplitude,
-    vmd_Zone_Output_Amplitude,
-
-    vmd_Sample_Playback_Ratio,
-    vmd_Sample_Pitch_Offset,
-
-    numVoiceMatrixDestinations
-};
-
-struct VoiceModMatrixDestinationAddress
-{
-    static constexpr int maxIndex{4}; // 4 processors per zone
-    static constexpr int maxDestinations{maxIndex * numVoiceMatrixDestinations};
-    VoiceModMatrixDestinationType type{vmd_none};
-    size_t index{0};
-
-    // want in order, not index interleaved, so we can look at FP as a block etc...
-    operator size_t() const { return (size_t)type + numVoiceMatrixDestinations * index; }
-
-    static constexpr inline size_t destIndex(VoiceModMatrixDestinationType t, size_t idx)
+    struct SourceIdentifier
     {
-        return (size_t)t + numVoiceMatrixDestinations * idx;
+        uint32_t gid{0};
+        uint32_t tid{0};
+        uint32_t index{0};
+
+        bool operator==(const SourceIdentifier &other) const
+        {
+            return gid == other.gid && tid == other.tid && index == other.index;
+        }
+    };
+
+    using CurveIdentifier = int;
+
+    struct TargetIdentifier
+    {
+        uint32_t gid{0}; // this has to be unique and streaming stable
+        uint32_t tid{0};
+        uint32_t index{0};
+
+        bool operator==(const TargetIdentifier &other) const
+        {
+            return gid == other.gid && tid == other.tid && index == other.index;
+        }
+
+        void setMinMax(float n, float x)
+        {
+            this->min = n;
+            this->max = x;
+        }
+        float min{0.f}, max{1.f};
+    };
+
+    static float getTargetValueRange(const TargetIdentifier &t) { return t.max - t.min; }
+    static constexpr bool IsFixedMatrix{true};
+    static constexpr size_t FixedMatrixSize{16};
+
+    using TI = TargetIdentifier;
+    using SI = SourceIdentifier;
+
+    struct RoutingExtraPayload
+    {
+        bool selConsistent{false};
+    };
+
+    static std::string u2s(uint32_t u)
+    {
+        std::string res = "";
+        res += (char)((u & 0xFF000000) >> 24);
+        res += (char)((u & 0x00FF0000) >> 16);
+        res += (char)((u & 0x0000FF00) >> 8);
+        res += (char)((u & 0x000000FF) >> 0);
+        return res;
+    };
+
+    template <typename T>
+    static std::ostream &identifierToStream(std::ostream &os, const T &t, const char *nm)
+    {
+        os << nm << "[" << u2s(t.gid) << "/" << u2s(t.tid) << "/" << t.index
+           << " #=" << std::hash<T>{}(t) << "]";
+        return os;
+    }
+    template <typename T> static std::string identifierToString(const T &t, const char *nm)
+    {
+        std::ostringstream oss;
+        identifierToStream(oss, t, nm);
+        return oss.str();
     }
 
-    bool operator==(const VoiceModMatrixDestinationAddress &other) const
+    template <typename T> static std::size_t identifierToHash(const T &t)
     {
-        return other.type == type && other.index == index;
+        auto h1 = std::hash<uint32_t>{}((int)t.gid);
+        auto h2 = std::hash<uint32_t>{}((int)t.tid);
+        auto h3 = std::hash<uint32_t>{}((int)t.index);
+        return h1 ^ (h2 << 2) ^ (h3 << 5);
+    }
+};
+} // namespace scxt::voice::modulation
+
+template <> struct std::hash<scxt::voice::modulation::MatrixConfig::TargetIdentifier>
+{
+    std::size_t
+    operator()(const scxt::voice::modulation::MatrixConfig::TargetIdentifier &s) const noexcept
+    {
+        return scxt::voice::modulation::MatrixConfig::identifierToHash(s);
     }
 };
 
-std::string getVoiceModMatrixDestStreamingName(const VoiceModMatrixDestinationType &dest);
-std::optional<VoiceModMatrixDestinationType>
-fromVoiceModMatrixDestStreamingName(const std::string &s);
-int getVoiceModMatrixDestIndexCount(const VoiceModMatrixDestinationType &);
-
-enum VoiceModMatrixSource
+template <> struct std::hash<scxt::voice::modulation::MatrixConfig::SourceIdentifier>
 {
-    vms_none,
-
-    vms_LFO1,
-    vms_LFO2,
-    vms_LFO3,
-
-    vms_AEG,
-    vms_EG2,
-
-    vms_ModWheel,
-
-    numVoiceMatrixSources,
-};
-struct VoiceModMatrixSourceMetadata
-{
-    VoiceModMatrixSource id;
-    std::string streamingName;
-    std::string displayName;
+    std::size_t
+    operator()(const scxt::voice::modulation::MatrixConfig::SourceIdentifier &s) const noexcept
+    {
+        return scxt::voice::modulation::MatrixConfig::identifierToHash(s);
+    }
 };
 
-const std::vector<VoiceModMatrixSourceMetadata> voiceModMatrixSources = {
-    {VoiceModMatrixSource::vms_none, "vms_none", ""},
-    {VoiceModMatrixSource::vms_LFO1, "vms_lfo1", "LFO1"},
-    {VoiceModMatrixSource::vms_LFO2, "vms_lfo2", "LFO2"},
-    {VoiceModMatrixSource::vms_LFO3, "vms_lfo3", "LFO3"},
-    {VoiceModMatrixSource::vms_AEG, "vms_aeg", "AEG"},
-    {VoiceModMatrixSource::vms_EG2, "vms_eg2", "EG2"},
-    {VoiceModMatrixSource::vms_ModWheel, "vms_modwheel", "ModWheel"}};
-
-std::string getVoiceModMatrixSourceStreamingName(const VoiceModMatrixSource &dest);
-std::optional<VoiceModMatrixSource> fromVoiceModMatrixSourceStreamingName(const std::string &s);
-
-std::optional<std::string> getMenuDisplayName(const VoiceModMatrixDestinationAddress &dest,
-                                              const engine::Zone &z);
-std::optional<std::string> getSubMenuDisplayName(const VoiceModMatrixDestinationAddress &dest,
-                                                 const engine::Zone &z);
-
-// Destinations require a zone since we need to interrogate the processors
-std::optional<std::string>
-getVoiceModMatrixDestDisplayName(const VoiceModMatrixDestinationAddress &dest,
-                                 const engine::Zone &z);
-
-typedef std::vector<std::pair<VoiceModMatrixDestinationAddress, std::string>>
-    voiceModMatrixDestinationNames_t;
-voiceModMatrixDestinationNames_t getVoiceModulationDestinationNames(const engine::Zone &);
-typedef std::vector<std::pair<VoiceModMatrixSource, std::string>> voiceModMatrixSourceNames_t;
-voiceModMatrixSourceNames_t getVoiceModMatrixSourceNames(const engine::Zone &z);
-
-typedef std::tuple<bool, voiceModMatrixSourceNames_t, voiceModMatrixDestinationNames_t,
-                   modMatrixCurveNames_t>
-    voiceModMatrixMetadata_t;
-inline voiceModMatrixMetadata_t getVoiceModMatrixMetadata(const engine::Zone &z)
+inline std::ostream &operator<<(std::ostream &os,
+                                const scxt::voice::modulation::MatrixConfig::TargetIdentifier &tg)
 {
-    return {true, getVoiceModMatrixSourceNames(z), getVoiceModulationDestinationNames(z),
-            getModMatrixCurveNames()};
+    scxt::voice::modulation::MatrixConfig::identifierToStream(os, tg, "Target");
+    return os;
 }
 
-struct VoiceModMatrixTraits
+inline std::ostream &operator<<(std::ostream &os,
+                                const scxt::voice::modulation::MatrixConfig::SourceIdentifier &tg)
 {
-    static constexpr int numModMatrixSlots{12};
-    typedef VoiceModMatrixSource SourceEnum;
-    static constexpr SourceEnum SourceEnumNoneValue{vms_none};
-    typedef VoiceModMatrixDestinationAddress DestAddress;
-    typedef VoiceModMatrixDestinationType DestEnum;
-    static constexpr DestEnum DestEnumNoneValue{vmd_none};
+    scxt::voice::modulation::MatrixConfig::identifierToStream(os, tg, "Source");
+    return os;
+}
+
+namespace scxt::voice::modulation
+{
+using Matrix = sst::basic_blocks::mod_matrix::FixedMatrix<MatrixConfig>;
+
+struct MatrixEndpoints
+{
+    using TG = MatrixConfig::TargetIdentifier;
+    using SR = MatrixConfig::SourceIdentifier;
+
+    MatrixEndpoints(engine::Engine *e)
+        : aeg(e, 0), eg2(e, 1),
+          lfo{sst::cpputils::make_array_bind_last_index<LFOTarget, scxt::lfosPerZone>(e)},
+          processorTarget{
+              sst::cpputils::make_array_bind_last_index<ProcessorTarget,
+                                                        scxt::processorsPerZoneAndGroup>(e)},
+          mappingTarget(e), outputTarget(e), sources(e)
+    {
+    }
+
+    // We will need to refactor this when we do group. One step at a time
+    struct LFOTarget
+    {
+        uint32_t index{0};
+        LFOTarget(engine::Engine *e, uint32_t p);
+        TG rateT, curveDeformT, stepSmoothT;
+        const float *rateP{nullptr}, *curveDeformP{nullptr}, *stepSmoothP{nullptr};
+
+        void bind(Matrix &m, engine::Zone &z);
+    };
+
+    struct EGTarget
+    {
+        uint32_t index{0};
+        EGTarget(engine::Engine *e, uint32_t p)
+            : index(p), aT{'envg', 'atck', p}, hT{'envg', 'hld ', p}, dT{'envg', 'dcay', p},
+              sT{'envg', 'sust', p}, rT{'envg', 'rels', p}, asT{'envg', 'atSH', p},
+              dsT{'envg', 'dcSH', p}, rsT{'envg', 'rlSH', p}
+
+        {
+            std::string group = (index == 0 ? "AEG" : "EG2");
+            registerVoiceModTarget(e, aT, group, "Attack");
+            registerVoiceModTarget(e, hT, group, "Hold");
+            registerVoiceModTarget(e, dT, group, "Decay");
+            registerVoiceModTarget(e, sT, group, "Sustain");
+            registerVoiceModTarget(e, rT, group, "Release");
+            registerVoiceModTarget(e, asT, group, "Attack Shape");
+            registerVoiceModTarget(e, dsT, group, "Decay Shape");
+            registerVoiceModTarget(e, rsT, group, "Release Shape");
+        }
+
+        TG aT, hT, dT, sT, rT, asT, dsT, rsT;
+        const float *aP{nullptr}, *hP{nullptr}, *dP{nullptr}, *sP{nullptr}, *rP{nullptr};
+        const float *asP{nullptr}, *dsP{nullptr}, *rsP{nullptr};
+
+        void bind(Matrix &m, engine::Zone &z);
+    } aeg, eg2;
+
+    std::array<LFOTarget, scxt::lfosPerZone> lfo;
+
+    struct MappingTarget
+    {
+        MappingTarget(engine::Engine *e)
+            : pitchOffsetT{'zmap', 'ptof', 0}, panT{'zmap', 'pan ', 0}, ampT{'zmap', 'ampl', 0},
+              playbackRatioT{'zmap', 'pbrt', 0}
+        {
+            panT.setMinMax(-1, 1);
+
+            if (e)
+            {
+                registerVoiceModTarget(e, pitchOffsetT, "Mapping", "Pitch Offset");
+                registerVoiceModTarget(e, panT, "Mapping", "Pan");
+                registerVoiceModTarget(e, ampT, "Mapping", "Amplitude");
+                registerVoiceModTarget(e, playbackRatioT, "Mapping", "Playback Ratio");
+            }
+        }
+        TG pitchOffsetT, panT, ampT, playbackRatioT;
+
+        const float *pitchOffsetP{nullptr}, *panP{nullptr}, *ampP{nullptr},
+            *playbackRatioP{nullptr};
+
+        void bind(Matrix &m, engine::Zone &z);
+
+        float zeroBase{0.f}; // this is a base zero value for things which are not in the mod map
+    } mappingTarget;
+
+    struct OutputTarget
+    {
+        OutputTarget(engine::Engine *e) : panT{'zout', 'pan ', 0}, ampT{'zout', 'ampl', 0}
+        {
+            panT.setMinMax(-1.f, 1.f);
+            if (e)
+            {
+                registerVoiceModTarget(e, panT, "Output", "Pan");
+                registerVoiceModTarget(e, ampT, "Output", "Amplitude");
+            }
+        }
+        TG panT, ampT;
+
+        const float *panP{nullptr}, *ampP{nullptr};
+
+        void bind(Matrix &m, engine::Zone &z);
+    } outputTarget;
+
+    struct ProcessorTarget
+    {
+        uint32_t index;
+        // This is out of line since it creates a caluclation using zone
+        // innards and we can't have an include cycle
+        ProcessorTarget(engine::Engine *e, uint32_t(p));
+
+        TG mixT, fpT[scxt::maxProcessorFloatParams];
+        const float *mixP{nullptr};
+        const float *floatP[scxt::maxProcessorFloatParams]; // FIX CONSTANT
+        float fp[scxt::maxProcessorFloatParams]{};
+
+        void snapValues()
+        {
+            for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
+                fp[i] = *floatP[i];
+        }
+
+        void bind(Matrix &m, engine::Zone &z);
+    };
+    std::array<ProcessorTarget, scxt::processorsPerZoneAndGroup> processorTarget;
+
+    struct Sources
+    {
+        Sources(engine::Engine *e)
+            : lfoSources(e), midiSources(e), aegSource{'zneg', 'aeg ', 0},
+              eg2Source{'zneg', 'eg2 ', 0}
+        {
+            registerVoiceModSource(e, aegSource, "", "AEG");
+            registerVoiceModSource(e, eg2Source, "", "EG2");
+        }
+        struct LFOSources
+        {
+            LFOSources(engine::Engine *e)
+            {
+                for (uint32_t i = 0; i < lfosPerZone; ++i)
+                {
+                    sources[i] = SR{'znlf', 'outp', i};
+                    registerVoiceModSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
+                }
+            }
+            std::array<SR, scxt::lfosPerZone> sources;
+        } lfoSources;
+
+        struct MIDISources
+        {
+            MIDISources(engine::Engine *e)
+                : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'}
+            {
+                registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
+                registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
+            }
+            SR modWheelSource, velocitySource;
+        } midiSources;
+
+        SR aegSource, eg2Source;
+
+        void bind(Matrix &m, engine::Zone &z, voice::Voice &v);
+
+        float zeroSource{0.f};
+    } sources;
+
+    void bindTargetBaseValues(Matrix &m, engine::Zone &z);
+
+    static void registerVoiceModTarget(engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
+                                       const std::string &path, const std::string &name)
+    {
+        registerVoiceModTarget(
+            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
+            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+    }
+
+    static void registerVoiceModTarget(
+        engine::Engine *e, const MatrixConfig::TargetIdentifier &,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            pathFn,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            nameFn);
+
+    static void registerVoiceModSource(engine::Engine *e, const MatrixConfig::SourceIdentifier &t,
+                                       const std::string &path, const std::string &name)
+    {
+        registerVoiceModSource(
+            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
+            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+    }
+
+    static void registerVoiceModSource(
+        engine::Engine *e, const MatrixConfig::SourceIdentifier &,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::SourceIdentifier &)>
+            pathFn,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::SourceIdentifier &)>
+            nameFn);
 };
 
-struct VoiceModMatrix : public MoveableOnly<VoiceModMatrix>, ModMatrix<VoiceModMatrixTraits>
-{
-    VoiceModMatrix() { clear(); }
+/*
+ * Metadata functions return a path (or empty for top level) and name.
+ * These are bad implementations for now
+ */
+typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
-    void snapRoutingFromZone(engine::Zone *z);
-    void snapDepthScalesFromZone(engine::Zone *z);
-    void copyBaseValuesFromZone(engine::Zone *z);
-    void attachSourcesFromVoice(voice::Voice *v);
-};
-} // namespace scxt::modulation
+typedef std::pair<MatrixConfig::TargetIdentifier, identifierDisplayName_t> namedTarget_t;
+typedef std::vector<namedTarget_t> namedTargetVector_t;
+typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
+typedef std::vector<namedSource_t> namedSourceVector_t;
+typedef std::pair<MatrixConfig::CurveIdentifier, identifierDisplayName_t> namedCurve_t;
+typedef std::vector<namedCurve_t> namedCurveVector_t;
+
+typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t>
+    voiceMatrixMetadata_t;
+
+voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z);
+} // namespace scxt::voice::modulation
 
 #endif // __SCXT_VOICE_MATRIX_H

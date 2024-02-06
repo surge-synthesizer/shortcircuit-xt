@@ -52,6 +52,8 @@
 #include "tuning/midikey_retuner.h"
 #include "infrastructure/rng_gen.h"
 
+#include "modulation/voice_matrix.h"
+
 #define DEBUG_VOICE_LIFECYCLE 0
 
 namespace scxt::voice
@@ -369,6 +371,28 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     std::atomic<int32_t> stopEngineRequests{0};
 
+    /*
+     * Metadata for the various voice group and so on matrices is generated
+     * by a set of registered targets and sources with the engine
+     */
+    using vmodTgtStrFn_t = std::function<std::string(
+        const Zone &, const voice::modulation::MatrixConfig::TargetIdentifier &)>;
+
+    using vmodSrcStrFn_t = std::function<std::string(
+        const Zone &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
+
+    std::unordered_map<voice::modulation::MatrixConfig::TargetIdentifier,
+                       std::pair<vmodTgtStrFn_t, vmodTgtStrFn_t>>
+        voiceModTargets;
+    std::unordered_map<voice::modulation::MatrixConfig::SourceIdentifier,
+                       std::pair<vmodSrcStrFn_t, vmodSrcStrFn_t>>
+        voiceModSources;
+
+    void registerVoiceModTarget(const voice::modulation::MatrixConfig::TargetIdentifier &,
+                                vmodTgtStrFn_t pathFn, vmodTgtStrFn_t nameFn);
+    void registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &,
+                                vmodSrcStrFn_t pathFn, vmodSrcStrFn_t nameFn);
+
   private:
     std::unique_ptr<Patch> patch;
     std::unique_ptr<MemoryPool> memoryPool;
@@ -376,6 +400,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::unique_ptr<browser::BrowserDB> browserDb;
     std::unique_ptr<browser::Browser> browser;
     std::array<voice::Voice *, maxVoices> voices;
+    std::array<std::unique_ptr<voice::modulation::MatrixEndpoints>, maxVoices> allEndpoints;
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};
     std::unique_ptr<messaging::MessageController> messageController;
     std::unique_ptr<selection::SelectionManager> selectionManager;
