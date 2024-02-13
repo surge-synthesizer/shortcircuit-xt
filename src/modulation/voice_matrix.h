@@ -87,7 +87,7 @@ struct MatrixConfig
 
     static float getTargetValueRange(const TargetIdentifier &t) { return t.max - t.min; }
     static constexpr bool IsFixedMatrix{true};
-    static constexpr size_t FixedMatrixSize{16};
+    static constexpr size_t FixedMatrixSize{12};
 
     using TI = TargetIdentifier;
     using SI = SourceIdentifier;
@@ -127,6 +127,13 @@ struct MatrixConfig
         auto h2 = std::hash<uint32_t>{}((int)t.tid);
         auto h3 = std::hash<uint32_t>{}((int)t.index);
         return h1 ^ (h2 << 2) ^ (h3 << 5);
+    }
+
+    static bool isTargetModMatrixDepth(const TargetIdentifier &t) { return t.gid == 'self'; }
+    static size_t getTargetModMatrixElement(const TargetIdentifier &t)
+    {
+        assert(isTargetModMatrixDepth(t));
+        return (size_t)t.index;
     }
 };
 } // namespace scxt::voice::modulation
@@ -175,6 +182,7 @@ struct MatrixEndpoints
     MatrixEndpoints(engine::Engine *e)
         : aeg(e, 0), eg2(e, 1),
           lfo{sst::cpputils::make_array_bind_last_index<LFOTarget, scxt::lfosPerZone>(e)},
+          selfModulation(e),
           processorTarget{
               sst::cpputils::make_array_bind_last_index<ProcessorTarget,
                                                         scxt::processorsPerZoneAndGroup>(e)},
@@ -287,6 +295,19 @@ struct MatrixEndpoints
         void bind(Matrix &m, engine::Zone &z);
     };
     std::array<ProcessorTarget, scxt::processorsPerZoneAndGroup> processorTarget;
+
+    struct SelfModulationTarget
+    {
+        SelfModulationTarget(engine::Engine *e)
+        {
+            for (uint32_t i = 0; i < MatrixConfig::FixedMatrixSize; ++i)
+            {
+                selfT[i] = TG{'self', 'dpth', i};
+                registerVoiceModTarget(e, selfT[i], "Mod Depth", "Row " + std::to_string(i + 1));
+            }
+        }
+        std::array<TG, MatrixConfig::FixedMatrixSize> selfT;
+    } selfModulation;
 
     struct Sources
     {

@@ -149,21 +149,11 @@ void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceM
 
 void SCXTEditor::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &rt)
 {
-    SCLOG("Zone Matrix : " << rt.routes.size());
     assert(multiScreen->getZoneElements());
     assert(multiScreen->getZoneElements()->zoneMod());
     assert(multiScreen->getZoneElements()->zoneMod()->isEnabled());
     multiScreen->getZoneElements()->zoneMod()->routingTable = rt;
     multiScreen->getZoneElements()->zoneMod()->refreshMatrix();
-
-#if BADBAD
-    assert(multiScreen->getZoneElements()
-               ->zoneMod()
-               ->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
-    multiScreen->getZoneElements()->zoneMod()->routingTable = t;
-    multiScreen->getZoneElements()->zoneMod()->refreshMatrix();
-
-#endif
 }
 
 void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &d)

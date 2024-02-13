@@ -211,25 +211,24 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         consistentButton->setVisible(!sc);
         if (!sc)
         {
-#if BADBADZONE
             std::string s, sv, c, d;
             for (const auto &[si, sn] : srcs)
             {
-                if (si == row.src)
-                    s = sn;
-                if (si == row.srcVia)
-                    sv = sn;
+                if (si == row.source)
+                    s = sn.second;
+                if (si == row.sourceVia)
+                    sv = sn.second;
             }
             for (const auto &[ci, cn] : crvs)
             {
                 if (ci == row.curve)
-                    c = cn;
+                    c = cn.second;
             }
 
             for (const auto &[di, dn] : dsts)
             {
-                if (di == row.dst)
-                    d = dn;
+                if (di == row.target)
+                    d = dn.second;
             }
 
             auto lbl = s.empty() ? "off" : s;
@@ -241,9 +240,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (!row.active)
                 lbl += " (inactive)";
 
-#endif
-            SCLOG_ONCE("BADBAD Deal with multisel");
-            std::string lbl = "FIXME WITH IFDEF";
             consistentButton->setLabel("Set selected zones to : " + lbl);
             return;
         }
