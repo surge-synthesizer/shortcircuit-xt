@@ -476,12 +476,10 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     }
     else
     {
-        SCLOG_ONCE("WARNING: MultiSelect Zone Routing Table still 'badbad'")
         // OK so is the routing table consistent over multiple zones
-#if BADBAD
         auto &rt = zp->routingTable;
-        for (auto &row : rt)
-            row.selConsistent = true;
+        for (auto &row : rt.routes)
+            row.extraPayload.selConsistent = true;
         for (const auto &sz : allSelectedZones)
         {
             const auto &szrt = engine.getPatch()
@@ -490,28 +488,24 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                                    ->getZone(sz.zone)
                                    ->routingTable;
 
-            for (const auto &[ridx, row] : sst::cpputils::enumerate(rt))
+            for (const auto &[ridx, row] : sst::cpputils::enumerate(rt.routes))
             {
-                auto &srow = szrt[ridx];
-                auto same =
-                    (srow.active == row.active && srow.src == row.src &&
-                     srow.srcVia == row.srcVia && srow.curve == row.curve && srow.dst == row.dst);
-                row.selConsistent = row.selConsistent && same;
+                auto &srow = szrt.routes[ridx];
+                auto same = (srow.active == row.active && srow.source == row.source &&
+                             srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
+                             srow.target == row.target);
+                row.extraPayload.selConsistent = row.extraPayload.selConsistent && same;
             }
         }
-#endif
 
         // TODO: Make this zone or group based
         serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
                                   voice::modulation::getVoiceMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
 
-#if BADBAD
         serializationSendToClient(cms::s2c_update_zone_matrix, rt,
                                   *(engine.getMessageController()));
 
-#endif
-        SCLOG_ONCE("WARNING: Multi-Select Zone Consistency Output Calculation not complete");
         serializationSendToClient(cms::s2c_update_zone_output_info,
                                   cms::zoneOutputInfoUpdate_t{false, {}},
                                   *(engine.getMessageController()));

@@ -187,7 +187,6 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
 {
     auto e = z.getEngine();
 
-    SCLOG("Generating source and target lists in rough way");
     namedTargetVector_t tg;
     namedSourceVector_t sr;
 
