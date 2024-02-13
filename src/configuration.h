@@ -52,5 +52,20 @@ static constexpr uint16_t maxVoices{256};
 static constexpr uint16_t BLOCK_SIZE{blockSize};
 static constexpr uint16_t BLOCK_SIZE_QUAD{blockSizeQuad};
 
+static constexpr uint16_t maxBusEffectParams{12};
+static constexpr uint16_t maxEffectsPerBus{12};
+static constexpr uint16_t maxSendsPerBus{12};
+
+static constexpr size_t maxProcessorFloatParams{9};
+static constexpr size_t maxProcessorIntParams{3};
+
+static constexpr uint16_t lfosPerZone{3};
+static constexpr uint16_t maxSamplesPerZone{3};
+
+static constexpr uint16_t lfosPerGroup{3};
+static constexpr uint16_t egPerGroup{2};
+
+static constexpr uint16_t processorsPerZoneAndGroup{4};
+
 } // namespace scxt
 #endif // __SCXT__CONFIGURATION_H

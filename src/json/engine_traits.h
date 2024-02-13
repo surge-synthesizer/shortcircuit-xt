@@ -337,17 +337,18 @@ template <> struct scxt_traits<scxt::engine::Zone>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Zone &t)
     {
+        /*
         auto rtArray = toIndexedArrayIf<Traits>(t.routingTable, [](const auto &r) {
             // TODO we really don't need this we should just stream the table
             return (r.dst != scxt::modulation::vmd_none || r.src != scxt::modulation::vms_none ||
                     r.depth != 0 || !r.active || r.curve != scxt::modulation::modc_none);
         });
+         */
 
-        v = {{"sampleData", t.sampleData}, {"mappingData", t.mapping},
-             {"outputInfo", t.outputInfo}, {"processorStorage", t.processorStorage},
-
-             {"routingTable", rtArray},    {"modulatorStorage", t.modulatorStorage},
-             {"aegStorage", t.aegStorage}, {"eg2Storage", t.eg2Storage}};
+        v = {{"sampleData", t.sampleData},     {"mappingData", t.mapping},
+             {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
+             {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
+             {"aegStorage", t.aegStorage},     {"eg2Storage", t.eg2Storage}};
     }
 
     template <template <typename...> class Traits>
@@ -358,10 +359,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
         findIf(v, "outputInfo", zone.outputInfo);
         fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 
-        std::fill(zone.routingTable.begin(), zone.routingTable.end(),
-                  scxt::modulation::VoiceModMatrix::Routing());
-        fromIndexedArray<Traits>(v.at("routingTable"), zone.routingTable);
-
+        findIf(v, "routingTable", zone.routingTable);
         findIf(v, "modulatorStorage", zone.modulatorStorage);
         findOrDefault(v, "aegStorage", zone.aegStorage);
         findOrDefault(v, "eg2Storage", zone.eg2Storage);

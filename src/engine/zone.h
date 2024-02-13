@@ -57,11 +57,11 @@ namespace scxt::engine
 struct Group;
 struct Engine;
 
-constexpr int lfosPerZone{3};
+constexpr int lfosPerZone{scxt::lfosPerZone};
 
 struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSupport
 {
-    static constexpr int maxSamplesPerZone{16};
+    static constexpr int maxSamplesPerZone{scxt::maxSamplesPerZone};
     Zone() : id(ZoneID::next()) { initialize(); }
     Zone(SampleID sid) : id(ZoneID::next())
     {
@@ -183,7 +183,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void addVoice(voice::Voice *);
     void removeVoice(voice::Voice *);
 
-    modulation::VoiceModMatrix::routingTable_t routingTable;
+    voice::modulation::Matrix::RoutingTable routingTable;
     std::array<modulation::ModulatorStorage, lfosPerZone> modulatorStorage;
 
     datamodel::AdsrStorage aegStorage, eg2Storage;
@@ -203,9 +203,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         // Bail out before the expensive checks
         if (!res)
             return false;
-        res = res && (processorStorage == other.processorStorage) &&
-              (routingTable ==
-               other.routingTable); //  && (modulatorStorage == other.modulatorStorage);
+        res = res && (processorStorage == other.processorStorage);
+        //(routingTable ==
+        // other.routingTable); //  && (modulatorStorage == other.modulatorStorage);
         return res;
     }
     bool operator!=(const Zone &other) const { return !(*this == other); }

@@ -171,8 +171,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
         const scxt::messaging::client::processorDataResponsePayload_t &d);
     void onZoneProcessorDataMismatch(const scxt::messaging::client::processorMismatchPayload_t &);
 
-    void onZoneVoiceMatrixMetadata(const scxt::modulation::voiceModMatrixMetadata_t &);
-    void onZoneVoiceMatrix(const scxt::modulation::VoiceModMatrix::routingTable_t &);
+    void onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &);
+    void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &);
+
     void onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &);
     void onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTable_t &);
 

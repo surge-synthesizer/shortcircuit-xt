@@ -461,20 +461,24 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     if (allSelectedZones.size() == 1)
     {
-        for (auto &row : zp->routingTable)
-            row.selConsistent = true;
+        for (auto &row : zp->routingTable.routes)
+            row.extraPayload.selConsistent = true;
+
         serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                                  modulation::getVoiceModMatrixMetadata(*zp),
+                                  voice::modulation::getVoiceMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
         serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
                                   *(engine.getMessageController()));
+
         serializationSendToClient(cms::s2c_update_zone_output_info,
                                   cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
                                   *(engine.getMessageController()));
     }
     else
     {
+        SCLOG_ONCE("WARNING: MultiSelect Zone Routing Table still 'badbad'")
         // OK so is the routing table consistent over multiple zones
+#if BADBAD
         auto &rt = zp->routingTable;
         for (auto &row : rt)
             row.selConsistent = true;
@@ -495,14 +499,18 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                 row.selConsistent = row.selConsistent && same;
             }
         }
+#endif
 
         // TODO: Make this zone or group based
         serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                                  modulation::getVoiceModMatrixMetadata(*zp),
+                                  voice::modulation::getVoiceMatrixMetadata(*zp),
                                   *(engine.getMessageController()));
+
+#if BADBAD
         serializationSendToClient(cms::s2c_update_zone_matrix, rt,
                                   *(engine.getMessageController()));
 
+#endif
         SCLOG_ONCE("WARNING: Multi-Select Zone Consistency Output Calculation not complete");
         serializationSendToClient(cms::s2c_update_zone_output_info,
                                   cms::zoneOutputInfoUpdate_t{false, {}},
@@ -532,9 +540,11 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
             cms::ProcessorMetadataAndData::s2c_payload_t{true, i, false, {}, {}},
             *(engine.getMessageController()));
     }
+
     serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                              modulation::voiceModMatrixMetadata_t{false, {}, {}, {}},
+                              voice::modulation::voiceMatrixMetadata_t{false, {}, {}, {}},
                               *(engine.getMessageController()));
+
     serializationSendToClient(cms::s2c_update_zone_output_info,
                               cms::zoneOutputInfoUpdate_t{false, {}},
                               *(engine.getMessageController()));

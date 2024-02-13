@@ -78,7 +78,7 @@ enum AvailableBusEffects
 struct BusEffectStorage
 {
     BusEffectStorage() { std::fill(params.begin(), params.end(), 0.f); }
-    static constexpr int maxBusEffectParams{12};
+    static constexpr int maxBusEffectParams{scxt::maxBusEffectParams};
     AvailableBusEffects type{AvailableBusEffects::none};
     bool isActive{true};
     std::array<float, maxBusEffectParams> params{};
@@ -99,8 +99,8 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
 
 struct Bus : MoveableOnly<Bus>, SampleRateSupport
 {
-    static constexpr int maxEffectsPerBus{4};
-    static constexpr int maxSendsPerBus{4};
+    static constexpr int maxEffectsPerBus{scxt::maxEffectsPerBus};
+    static constexpr int maxSendsPerBus{scxt::maxSendsPerBus};
 
     BusAddress address;
     Bus() : address(ERROR_BUS) {}

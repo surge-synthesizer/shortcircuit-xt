@@ -39,15 +39,21 @@ namespace scxt::ui::multi
 struct ModPaneZoneTraits
 {
     static constexpr bool forZone{true};
-    using metadata = scxt::modulation::voiceModMatrixMetadata_t;
-    using routing = scxt::modulation::VoiceModMatrix::routingTable_t;
+    using metadata = scxt::voice::modulation::voiceMatrixMetadata_t;
+    using matrix = scxt::voice::modulation::Matrix;
+    using routing = scxt::voice::modulation::Matrix::RoutingTable;
+    // using metadata = scxt::modulation::voiceModMatrixMetadata_t;
+    // using routing = scxt::modulation::VoiceModMatrix::routingTable_t;
 };
 
 struct ModPaneGroupTraits
 {
     static constexpr bool forZone{false};
-    using metadata = scxt::modulation::groupModMatrixMetadata_t;
-    using routing = scxt::modulation::GroupModMatrix::routingTable_t;
+    using metadata = int;
+    using matrix = int;
+    using routing = int;
+    // using metadata = scxt::modulation::groupModMatrixMetadata_t;
+    // using routing = scxt::modulation::GroupModMatrix::routingTable_t;
 };
 
 template <typename GZTrait> struct ModRow;

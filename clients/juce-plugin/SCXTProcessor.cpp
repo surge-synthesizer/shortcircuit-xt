@@ -322,7 +322,7 @@ void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
     }
     catch (std::exception &e)
     {
-        std::cerr << "Unstream exception " << e.what() << std::endl;
+        SCLOG("Unable to unstream [" << e.what() << "]");
     }
     engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }

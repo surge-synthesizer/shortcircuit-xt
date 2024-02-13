@@ -47,6 +47,9 @@
 #include "sst/filters/HalfRateFilter.h"
 #include "sst/basic-blocks/dsp/BlockInterpolators.h"
 
+#include "modulation/modulators/steplfo.h"
+#include "modulation/modulators/curvelfo.h"
+
 namespace scxt::voice
 {
 struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
@@ -69,8 +72,10 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     int32_t noteId{-1};
     uint8_t originalMidiKey{
         60}; // the actual physical key pressed not the one I resolved to after tuning
+    float velocity{1.f};
 
-    modulation::VoiceModMatrix modMatrix;
+    modulation::Matrix modMatrix;
+    std::unique_ptr<modulation::MatrixEndpoints> endpoints;
 
     enum LFOEvaluator
     {
@@ -78,9 +83,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         CURVE,
         ENV,
         MSEG
-    } lfoEvaluator[engine::lfosPerZone]{STEP, STEP, STEP};
-    modulation::modulators::StepLFO stepLfos[engine::lfosPerZone];
-    modulation::modulators::CurveLFO curveLfos[engine::lfosPerZone];
+    } lfoEvaluator[engine::lfosPerZone]{STEP, STEP, STEP}; // FIXME
+    scxt::modulation::modulators::StepLFO stepLfos[engine::lfosPerZone];
+    scxt::modulation::modulators::CurveLFO curveLfos[engine::lfosPerZone];
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>

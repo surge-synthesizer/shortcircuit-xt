@@ -36,12 +36,11 @@
 
 namespace scxt::messaging::client
 {
-
 SERIAL_TO_CLIENT(UpdateZoneVoiceMatrixMetadata, s2c_update_zone_matrix_metadata,
-                 modulation::voiceModMatrixMetadata_t, onZoneVoiceMatrixMetadata);
+                 voice::modulation::voiceMatrixMetadata_t, onZoneVoiceMatrixMetadata);
 
 SERIAL_TO_CLIENT(UpdateZoneVoiceMatrix, s2c_update_zone_matrix,
-                 modulation::VoiceModMatrix::routingTable_t, onZoneVoiceMatrix);
+                 voice::modulation::Matrix::RoutingTable, onZoneVoiceMatrix);
 
 SERIAL_TO_CLIENT(UpdateGroupMatrixMetadata, s2c_update_group_matrix_metadata,
                  modulation::groupModMatrixMetadata_t, onGroupMatrixMetadata);
@@ -49,7 +48,8 @@ SERIAL_TO_CLIENT(UpdateGroupMatrix, s2c_update_group_matrix,
                  modulation::GroupModMatrix::routingTable_t, onGroupMatrix);
 
 // which row, what data, and force a full update
-typedef std::tuple<int, modulation::VoiceModMatrix::Routing, bool> indexedZoneRowUpdate_t;
+typedef std::tuple<int, voice::modulation::Matrix::RoutingTable::Routing, bool>
+    indexedZoneRowUpdate_t;
 inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
                                          const engine::Engine &engine, MessageController &cont)
 {
@@ -65,7 +65,7 @@ inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
                         ->getPart(z.part)
                         ->getGroup(z.group)
                         ->getZone(z.zone)
-                        ->routingTable[index] = row;
+                        ->routingTable.routes[index] = row;
             },
             [doUpdate = b](auto &eng) {
                 if (doUpdate)

@@ -100,8 +100,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
         }
         else
         {
-            ctr->modvariant =
-                std::make_unique<multi::ModPane<multi::ModPaneGroupTraits>>(editor, forZone);
+            // BADBAD
+            ctr->modvariant = std::make_unique<juce::Component>();
             ctr->outputvariant =
                 std::make_unique<multi::OutputPane<multi::OutPaneGroupTraits>>(editor);
         }
@@ -120,8 +120,10 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
         {
             ctr->groupOut()->setCustomClass(
                 connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+#if BADBAD_GROUP
             ctr->groupMod()->setCustomClass(
                 connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+#endif
             ctr->lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
             ctr->lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
             ctr->lfo->resetTabState();

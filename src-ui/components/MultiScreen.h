@@ -89,7 +89,8 @@ struct MultiScreen : juce::Component, HasEditor
         std::unique_ptr<multi::LfoPane> lfo;
         std::unique_ptr<multi::AdsrPane> eg[2];
         std::variant<std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>>,
-                     std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>>>
+                     std::unique_ptr<juce::Component>
+                     /*std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>>*/>
             modvariant;
 
         juce::Component *modComponent();
@@ -100,7 +101,10 @@ struct MultiScreen : juce::Component, HasEditor
             return std::get<0>(modvariant);
         }
 
-        const std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>> &groupMod()
+        // BADBAD
+        const std::unique_ptr<juce::Component> & /*
+         const std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>> &*/
+        groupMod()
         {
             assert(index == ZoneGroupIndex::GROUP);
             return std::get<1>(modvariant);

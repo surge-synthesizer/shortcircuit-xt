@@ -102,6 +102,14 @@ Engine::Engine()
     messageController->start();
 
     browserDb->writeDebugMessage(std::string("SCXT Startup ") + build::FullVersionStr);
+
+    // This forces metadata init of the mod matrix
+    voice::modulation::MatrixEndpoints usedForInit(this);
+
+    for (auto &ep : allEndpoints)
+    {
+        ep = std::make_unique<voice::modulation::MatrixEndpoints>(nullptr);
+    }
 }
 
 Engine::~Engine()
@@ -129,9 +137,15 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
     {
         if (!v || !v->isVoiceAssigned)
         {
+            std::unique_ptr<voice::modulation::MatrixEndpoints> mp;
             if (v)
             {
+                mp = std::move(voices[idx]->endpoints);
                 voices[idx]->~Voice();
+            }
+            else
+            {
+                mp = std::move(allEndpoints[idx]);
             }
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
             const auto &z = zoneByPath(path);
@@ -141,6 +155,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->key = path.key;
             voices[idx]->noteId = path.noteid;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
+            voices[idx]->endpoints = std::move(mp);
             return voices[idx];
         }
     }
@@ -678,5 +693,17 @@ void Engine::onSampleRateChanged()
     patch->setSampleRate(sampleRate);
 
     messageController->forceStatusUpdate = true;
+}
+
+void Engine::registerVoiceModTarget(const voice::modulation::MatrixConfig::TargetIdentifier &t,
+                                    vmodTgtStrFn_t pathFn, vmodTgtStrFn_t nameFn)
+{
+    voiceModTargets.emplace(t, std::make_pair(pathFn, nameFn));
+}
+
+void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &t,
+                                    vmodSrcStrFn_t pathFn, vmodSrcStrFn_t nameFn)
+{
+    voiceModSources.emplace(t, std::make_pair(pathFn, nameFn));
 }
 } // namespace scxt::engine

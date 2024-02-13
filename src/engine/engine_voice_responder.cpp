@@ -61,6 +61,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             auto v = engine.initiateVoice(path);
             if (v)
             {
+                v->velocity = velocity;
                 v->originalMidiKey = key;
                 v->attack();
             }
