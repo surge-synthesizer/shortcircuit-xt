@@ -30,6 +30,7 @@
 
 #include <cmath>
 #include <thread>
+#include <mutex>
 #include <vector>
 #include <cassert>
 #include <unordered_map>
