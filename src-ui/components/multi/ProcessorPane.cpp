@@ -358,7 +358,7 @@ void ProcessorPane::layoutControlsWaveshaper()
     kb =
         kb.translated(rcw * 0.5, 0).withWidth(kb.getWidth() * 0.5).withHeight(kb.getHeight() * 0.5);
     floatEditors[1] = attachContinuousTo(floatAttachments[1]);
-    floatEditors[1]->setBounds(kb);
+    floatEditors[1]->setBounds(kb.reduced(1));
     floatLabels[1] = std::make_unique<sst::jucegui::components::Label>();
     floatLabels[1]->setText("Bias");
     floatLabels[1]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
@@ -367,7 +367,7 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     kb = kb.translated(0, kb.getHeight() + 20);
     floatEditors[2] = attachContinuousTo(floatAttachments[2]);
-    floatEditors[2]->setBounds(kb);
+    floatEditors[2]->setBounds(kb.reduced(1));
     floatLabels[2] = std::make_unique<sst::jucegui::components::Label>();
     floatLabels[2]->setText("Gain");
     floatLabels[2]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
@@ -388,7 +388,7 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     mkb = mkb.translated(mkb.getWidth(), 0);
     mixEditor = attachContinuousTo(mixAttachment);
-    mixEditor->setBounds(mkb);
+    mixEditor->setBounds(mkb.reduced(1));
     getContentAreaComponent()->addAndMakeVisible(*mixEditor);
 
     mixLabel = std::make_unique<sst::jucegui::components::Label>();
@@ -400,7 +400,7 @@ void ProcessorPane::layoutControlsWaveshaper()
     osl->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED);
     osl->setSource(intAttachments[1].get());
     osl->setLabel("o/s");
-    osl->setBounds(mkb.translated(0, mkb.getHeight() + 18).withTrimmedTop(5).withTrimmedBottom(5));
+    osl->setBounds(mkb.translated(0, mkb.getHeight() + 18).reduced(3, 9));
     getContentAreaComponent()->addAndMakeVisible(*osl);
     intEditors[1] = std::move(osl);
 
