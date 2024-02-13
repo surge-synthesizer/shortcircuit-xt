@@ -248,6 +248,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         source->setLabel("Source");
         sourceVia->setLabel("Via");
         target->setLabel("Target");
+        curve->setLabel("-");
+
         for (const auto &[si, sn] : srcs)
         {
             if (si == row.source)
@@ -272,22 +274,13 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             }
         }
 
-#if BADBAD_ZONE
         for (const auto &[ci, cn] : crvs)
         {
             if (ci == row.curve)
             {
-                if (cn.empty())
-                {
-                    curve->setLabel("Curve");
-                }
-                else
-                {
-                    curve->setLabel(cn);
-                }
+                curve->setLabel(cn.second);
             }
         }
-#endif
 
         repaint();
     }
@@ -383,22 +376,33 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
     void showCurveMenu()
     {
-#if BADBADZONE
         auto p = juce::PopupMenu();
         p.addSectionHeader("Curve");
         p.addSeparator();
         const auto &srcs = std::get<3>(parent->matrixMetadata);
 
+        const auto &row = parent->routingTable.routes[index];
+
+        p.addItem("-", true, !row.curve.has_value(), [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &row = w->parent->routingTable.routes[w->index];
+
+            row.curve = std::nullopt;
+
+            w->pushRowUpdate();
+            w->refreshRow();
+        });
+
         // this linear search kinda sucks bot
         for (const auto &[si, sn] : srcs)
         {
-            const auto &row = parent->routingTable[index];
             auto selected = row.curve == si;
-            p.addItem(sn.empty() ? "Off" : sn, true, selected,
+            p.addItem(sn.second, true, selected,
                       [sidx = si, w = juce::Component::SafePointer(this)]() {
                           if (!w)
                               return;
-                          auto &row = w->parent->routingTable[w->index];
+                          auto &row = w->parent->routingTable.routes[w->index];
 
                           row.curve = sidx;
 
@@ -408,7 +412,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
-#endif
     }
 
     void showTargetMenu()
@@ -478,41 +481,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
-#if BADBAD_ZONE
-
-        for (const auto &[si, sn] : srcs)
-        {
-            const auto &row = parent->routingTable[index];
-            auto selected = row.dst == si;
-
-            if (sn.empty())
-            {
-                p.addItem("None", true, selected, mop);
-            }
-            else
-            {
-                auto pt = sn.find('/');
-                auto path = sn.substr(0, pt);
-                auto name = sn.substr(pt + 1);
-                if (path != lastPath)
-                {
-                    if (subMenu.getNumItems())
-                    {
-                        p.addSubMenu(lastPath, subMenu);
-                    }
-                    lastPath = path;
-                    subMenu = juce::PopupMenu();
-                    subMenu.addSectionHeader(path);
-                    subMenu.addSeparator();
-                }
-                subMenu.addItem(name, true, selected, mop);
-            }
-        }
-
-        p.addSubMenu(lastPath, subMenu);
-
-        p.showMenuAsync(editor->defaultPopupMenuOptions());
-#endif
     }
 };
 

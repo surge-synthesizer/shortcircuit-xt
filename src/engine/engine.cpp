@@ -104,6 +104,7 @@ Engine::Engine()
     browserDb->writeDebugMessage(std::string("SCXT Startup ") + build::FullVersionStr);
 
     // This forces metadata init of the mod matrix
+    modulation::ModulationCurves::initializeCurves();
     voice::modulation::MatrixEndpoints usedForInit(this);
 
     for (auto &ep : allEndpoints)

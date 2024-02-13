@@ -34,6 +34,7 @@
 #include "utils.h"
 #include "dsp/processor/processor.h"
 
+#include "mod_curves.h"
 #include "sst/cpputils/constructors.h"
 
 #include "sst/basic-blocks/mod-matrix/ModMatrix.h"
@@ -64,7 +65,11 @@ struct MatrixConfig
         }
     };
 
-    using CurveIdentifier = int;
+    using CurveIdentifier = scxt::modulation::ModulationCurves::CurveIdentifier;
+    static std::function<float(float)> getCurveOperator(CurveIdentifier id)
+    {
+        return scxt::modulation::ModulationCurves::getCurveOperator(id);
+    }
 
     struct TargetIdentifier
     {
