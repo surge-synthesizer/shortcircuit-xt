@@ -53,8 +53,8 @@ static constexpr uint16_t BLOCK_SIZE{blockSize};
 static constexpr uint16_t BLOCK_SIZE_QUAD{blockSizeQuad};
 
 static constexpr uint16_t maxBusEffectParams{12};
-static constexpr uint16_t maxEffectsPerBus{12};
-static constexpr uint16_t maxSendsPerBus{12};
+static constexpr uint16_t maxEffectsPerBus{4};
+static constexpr uint16_t maxSendsPerBus{4};
 
 static constexpr size_t maxProcessorFloatParams{9};
 static constexpr size_t maxProcessorIntParams{3};

@@ -125,21 +125,46 @@ inline void indexedModulatorStorageUpdated(const indexedModulatorStorageUpdate_t
         auto sz = engine.getSelectionManager()->currentlySelectedZones();
         if (!sz.empty())
         {
-            cont.scheduleAudioThreadCallback([row = r, index = i, zs = sz](auto &eng) {
-                for (const auto &[p, g, z] : zs)
-                {
-                    auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-                    zn->modulatorStorage[index] = row;
-                    for (auto *v : zn->voiceWeakPointers)
+            bool typeChanged = false;
+            for (const auto &[p, g, z] : sz)
+            {
+                auto &zn = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+                typeChanged =
+                    typeChanged || zn->modulatorStorage[i].modulatorShape != r.modulatorShape;
+            }
+
+            cont.scheduleAudioThreadCallback(
+                [row = r, index = i, zs = sz](auto &eng) {
+                    for (const auto &[p, g, z] : zs)
                     {
-                        // FIXME - what is this hack?
-                        if (v && v->lfoEvaluator[index] == voice::Voice::STEP)
+                        auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+                        zn->modulatorStorage[index] = row;
+                        for (auto *v : zn->voiceWeakPointers)
                         {
-                            v->stepLfos[index].UpdatePhaseIncrement();
+                            // FIXME - what is this hack?
+                            if (v && v->lfoEvaluator[index] == voice::Voice::STEP)
+                            {
+                                v->stepLfos[index].UpdatePhaseIncrement();
+                            }
                         }
                     }
-                }
-            });
+                },
+                [typeChanged](auto &eng) {
+                    if (typeChanged)
+                    {
+                        auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                        if (lz.has_value())
+                        {
+                            auto &z =
+                                eng.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(
+                                    lz->zone);
+                            serializationSendToClient(
+                                messaging::client::s2c_update_zone_matrix_metadata,
+                                voice::modulation::getVoiceMatrixMetadata(*z),
+                                *(eng.getMessageController()));
+                        }
+                    }
+                });
         }
     }
     else
