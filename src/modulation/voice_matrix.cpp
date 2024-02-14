@@ -189,6 +189,7 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
 
     namedTargetVector_t tg;
     namedSourceVector_t sr;
+    namedCurveVector_t cr;
 
     auto identCmp = [](const auto &a, const auto &b) {
         const auto &ida = a.second;
@@ -230,7 +231,14 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
     }
     std::sort(sr.begin(), sr.end(), identCmp);
 
-    return voiceMatrixMetadata_t{true, sr, tg, {}};
+    for (const auto &c : scxt::modulation::ModulationCurves::allCurves)
+    {
+        auto n = scxt::modulation::ModulationCurves::curveNames.find(c);
+        assert(n != scxt::modulation::ModulationCurves::curveNames.end());
+        cr.emplace_back(c, identifierDisplayName_t{"", n->second});
+    }
+
+    return voiceMatrixMetadata_t{true, sr, tg, cr};
 }
 
 MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t(p))

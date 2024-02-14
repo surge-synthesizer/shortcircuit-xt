@@ -55,6 +55,12 @@ Voice::~Voice()
 
 void Voice::voiceStarted()
 {
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    {
+        const auto &ms = zone->modulatorStorage[i];
+        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
+    }
+
     // This order matters
     endpoints->sources.bind(modMatrix, *zone, *this);
     modMatrix.prepare(zone->routingTable);
@@ -64,12 +70,6 @@ void Voice::voiceStarted()
     // These probably need to happen after the modulator is set up
     initializeGenerator();
     initializeProcessors();
-
-    for (auto i = 0U; i < engine::lfosPerZone; ++i)
-    {
-        const auto &ms = zone->modulatorStorage[i];
-        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
-    }
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {

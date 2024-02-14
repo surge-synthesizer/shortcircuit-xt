@@ -57,10 +57,6 @@ void SCXTStyleSheetCreator::makeDarkColors(const sheet_t::ptr_t &base)
     base->setColour(ModulationTabs, comp::NamedPanel::Styles::selectedtab,
                     juce::Colour(0x27, 0x88, 0xD6));
 
-    base->setColour(ModulationEditorKnob, comp::Knob::Styles::gutter,
-                    juce::Colour(0x39, 0x39, 0x39));
-    base->setColour(ModulationEditorKnob, comp::Knob::Styles::gutter_hover,
-                    juce::Colour(0x49, 0x49, 0x59));
     base->setColour(ModulationEditorKnob, comp::Knob::Styles::value,
                     juce::Colour(0x27, 0x88, 0xD6));
     base->setColour(ModulationEditorKnob, comp::VSlider::Styles::value_hover,
