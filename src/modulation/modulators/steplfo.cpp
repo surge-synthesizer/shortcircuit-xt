@@ -329,45 +329,5 @@ float lfo_ipol(float *wf_history, float phase, float smooth, int odd)
     return iout;
 }
 
-/*void StepLFO::process(int samples){
-        if(settings.syncmode)
-        {
-                if (settings.voice_trigger)	// tempo sync, note trigger
-                {
-                        phase += std::min(32,samples * syncratio[settings.syncmode] * td->tempo/60
-* samplerate_inv); while (phase > 1.0f)
-                        {
-                                state_tstd::minus1 = state;
-                                state++;
-                                if (state >= settings.repeat) state = 0;
-                                phase -= 1.0f;
-                        }
-                }
-                else	// tempo & position-sync
-                {
-                        double ipart;
-                        phase = (float) modf(td->ppqPos*syncratio[settings.syncmode],&ipart);
-                        state = (int)(ipart) % settings.repeat;
-                        state_tstd::minus1 = state - 1;
-                        if (state_tstd::minus1<0) state_tstd::minus1 += settings.repeat;
-                }
-        }
-        else	// free running
-        {
-                phase += std::min(32,samples * tuning::equalTuning.note_to_pitch(12*(*rate)) *
-samplerate_inv * 32); while (phase > 1.0f)
-                {
-                        state_tstd::minus1 = state;
-                        state++;
-                        if (state >= settings.repeat) state = 0;
-                        phase -= 1.0f;
-                }
-        }
-
-        float cf = std::min(phase/(settings.smooth+0.00001f),1.0f);
-        output = (1-cf)*settings.data[state_tstd::minus1] + cf*settings.data[state];
-        output = limit_range(output,-1.f,1.f);
-}*/
-
 StepLFO::~StepLFO() {}
 } // namespace scxt::modulation::modulators

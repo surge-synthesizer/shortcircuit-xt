@@ -76,8 +76,30 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     size_t addGroup()
     {
         auto g = std::make_unique<Group>();
+
         g->parentPart = this;
         g->setSampleRate(getSampleRate());
+
+        std::unordered_set<std::string> gn;
+        std::string gpfx = "New Group";
+        for (const auto &og : groups)
+        {
+            if (og->name.find(gpfx) != std::string::npos)
+                gn.insert(og->name);
+        }
+
+        std::string cn = gpfx;
+        auto ngid = 1;
+        auto found = gn.find(cn) != gn.end();
+        while (found)
+        {
+            ngid++;
+            cn = gpfx + " (" + std::to_string(ngid) + ")";
+            found = gn.find(cn) != gn.end();
+        }
+
+        g->name = cn;
+
         groups.push_back(std::move(g));
         return groups.size();
     }
