@@ -29,8 +29,10 @@
 #define SCXT_SRC_MODULATION_MOD_CURVES_H
 
 #include <cmath>
+#include <cstdint>
 #include <thread>
 #include <mutex>
+#include <functional>
 #include <vector>
 #include <cassert>
 #include <unordered_map>
