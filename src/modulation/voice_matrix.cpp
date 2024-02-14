@@ -36,6 +36,8 @@ namespace scxt::voice::modulation
 {
 void bindEl(Matrix &m, Matrix::TR::TargetIdentifier &tg, float &tgs, const float *&p)
 {
+    assert(tg.gid != 0); // hit this? You forgot to init your target ctor
+    assert(tg.tid != 0);
     m.bindTargetBaseValue(tg, tgs);
     p = m.getTargetValuePointer(tg);
 
@@ -73,6 +75,9 @@ void MatrixEndpoints::LFOTarget::bind(scxt::voice::modulation::Matrix &m, engine
 
     bindEl(m, rateT, ms.rate, rateP);
     bindEl(m, curveDeformT, ms.curveLfoStorage.deform, curveDeformP);
+    bindEl(m, curveDelayT, ms.curveLfoStorage.delay, curveDelayP);
+    bindEl(m, curveAttackT, ms.curveLfoStorage.attack, curveAttackP);
+    bindEl(m, curveReleaseT, ms.curveLfoStorage.release, curveReleaseP);
     bindEl(m, stepSmoothT, ms.stepLfoStorage.smooth, stepSmoothP);
 }
 
@@ -276,7 +281,8 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t(p)
 
 MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
     : index(p), rateT{'lfo ', 'rate', p}, curveDeformT{'lfo ', 'cdfn', p},
-      stepSmoothT{'lfo ', 'ssmt', p}
+      curveAttackT{'lfo ', 'catk', p}, curveDelayT{'lfo ', 'cdel', p},
+      curveReleaseT{'lfo ', 'crel', p}, stepSmoothT{'lfo ', 'ssmt', p}
 {
     if (e)
     {
@@ -315,6 +321,9 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
 
         registerVoiceModTarget(e, rateT, ptFn, allLabel("Rate"));
         registerVoiceModTarget(e, curveDeformT, ptFn, allLabel("Curve Deform"));
+        registerVoiceModTarget(e, curveDelayT, ptFn, allLabel("Curve Delay"));
+        registerVoiceModTarget(e, curveAttackT, ptFn, allLabel("Curve Attack"));
+        registerVoiceModTarget(e, curveReleaseT, ptFn, allLabel("Curve Release"));
         registerVoiceModTarget(e, stepSmoothT, ptFn, allLabel("Step Smooth"));
     }
 }

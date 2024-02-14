@@ -196,7 +196,6 @@ struct SampleRateSupport
     virtual void onSampleRateChanged() {}
     double dsamplerate, dsamplerate_inv;
 
-  protected:
     double sampleRate{1}, sampleRateInv{1};
 
     // TODO remove these aliase

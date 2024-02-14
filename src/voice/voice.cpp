@@ -121,7 +121,13 @@ bool Voice::process()
         }
         else if (lfoEvaluator[i] == CURVE)
         {
-            curveLfos[i].process(*endpoints->lfo[i].rateP, *endpoints->lfo[i].curveDeformP);
+            auto &lp = endpoints->lfo[i];
+
+            // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
+            curveLfos[i].process(*lp.rateP, *lp.curveDeformP, *lp.curveDelayP, *lp.curveAttackP,
+                                 *lp.curveReleaseP,
+                                 zone->modulatorStorage[i].curveLfoStorage.useenv,
+                                 zone->modulatorStorage[i].curveLfoStorage.unipolar, isGated);
         }
         else
         {

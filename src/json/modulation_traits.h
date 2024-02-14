@@ -154,9 +154,8 @@ template <> struct scxt_traits<scxt::modulation::modulators::CurveLFOStorage>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
     {
-        v = {{"deform", t.deform},   {"delay", t.delay},      {"attack", t.attack},
-             {"hold", t.hold},       {"decay", t.decay},      {"sustain", t.sustain},
-             {"release", t.release}, {"unipolar", t.unipolar}};
+        v = {{"deform", t.deform},   {"delay", t.delay},       {"attack", t.attack},
+             {"release", t.release}, {"unipolar", t.unipolar}, {"useenv", t.useenv}};
     }
 
     template <template <typename...> class Traits>
@@ -166,11 +165,9 @@ template <> struct scxt_traits<scxt::modulation::modulators::CurveLFOStorage>
         findIf(v, "deform", result.deform);
         findIf(v, "delay", result.delay);
         findIf(v, "attack", result.attack);
-        findIf(v, "hold", result.hold);
-        findIf(v, "decay", result.decay);
-        findIf(v, "sustain", result.sustain);
         findIf(v, "release", result.release);
         findIf(v, "unipolar", result.unipolar);
+        findIf(v, "useenv", result.useenv);
     }
 };
 
