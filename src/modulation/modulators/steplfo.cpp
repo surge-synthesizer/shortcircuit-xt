@@ -226,7 +226,7 @@ void StepLFO::UpdatePhaseIncrement()
 {
     auto &ls = settings->stepLfoStorage;
     phaseInc = BLOCK_SIZE * tuning::equalTuning.note_to_pitch(12 * (*rate)) * samplerate_inv *
-               (ls.rateIsEntireCycle ? 1 : ls.repeat) *
+               (ls.rateIsForSingleStep ? 1 : ls.repeat) *
                (settings->temposync ? (td->tempo * (1.f / 120.f)) : 1);
 }
 

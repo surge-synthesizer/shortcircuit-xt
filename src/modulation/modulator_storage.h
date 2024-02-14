@@ -47,7 +47,7 @@ struct StepLFOStorage
     int repeat{16};
 
     float smooth{0.f};
-    bool rateIsEntireCycle{false};
+    bool rateIsForSingleStep{false};
 };
 
 struct CurveLFOStorage
@@ -73,7 +73,7 @@ struct ModulatorStorage
         LFO_SH_NOISE,
         LFO_ENV,
 
-        MSEG,
+        MSEG, // for a variety of reasons, if this isn't last some menus and stuff will be wonky.
     } modulatorShape{ModulatorShape::STEP};
     DECLARE_ENUM_STRING(ModulatorShape);
 

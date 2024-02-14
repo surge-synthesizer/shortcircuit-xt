@@ -150,6 +150,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void idle();
     void drainCallbackQueue();
     uint64_t inboundMessageCount{0};
+    uint64_t inboundMessageBytes{0};
 
     // Popup Menu Options
     juce::PopupMenu::Options defaultPopupMenuOptions()
