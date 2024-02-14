@@ -38,6 +38,7 @@ if (APPLE)
     set(OS_COMPILE_OPTIONS
             -Werror
             -Wno-multichar
+            -Wno-shorten-64-to-32
             )
     set(OS_COMPILE_DEFINITIONS MAC=1)
 
