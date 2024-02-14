@@ -47,7 +47,7 @@ struct StepLFOStorage
     int repeat{16};
 
     float smooth{0.f};
-    bool rateIsEntireCycle{false};
+    bool rateIsForSingleStep{false};
 };
 
 struct CurveLFOStorage

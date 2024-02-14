@@ -37,6 +37,9 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
 
+// Included so we can have UI-thread exceution for curve rendering
+#include "modulation/modulators/steplfo.h"
+
 namespace scxt::ui::multi
 {
 
@@ -47,7 +50,7 @@ struct StepLFOPane : juce::Component
     struct StepRender : juce::Component
     {
         LfoPane *parent{nullptr};
-        StepRender(LfoPane *p) : parent{p} {}
+        StepRender(LfoPane *p) : parent{p} { recalcCurve(); }
 
         void paint(juce::Graphics &g) override
         {
@@ -115,6 +118,27 @@ struct StepLFOPane : juce::Component
 
                 bx = bx.translated(w, 0);
             }
+
+            g.setColour(hanc.brighter(0.3));
+            auto yscal = -getHeight() * 0.5;
+            auto p = juce::Path();
+            bool first{true};
+            for (auto &[xf, yf] : cycleCurve)
+            {
+                auto yn = yf * yscal - yscal;
+                auto xn = xf * getWidth();
+                if (first)
+                {
+                    p.startNewSubPath(xn, yn);
+                }
+                else
+                {
+                    p.lineTo(xn, yn);
+                }
+                first = false;
+            }
+            g.strokePath(p, juce::PathStrokeType(2.0));
+
             g.setColour(boxc);
             g.drawRect(getLocalBounds());
         }
@@ -141,6 +165,7 @@ struct StepLFOPane : juce::Component
 
             auto d = (1 - f.y / getHeight()) * 2 - 1;
             parent->modulatorStorageData[parent->selectedTab].stepLfoStorage.data[idx] = d;
+            recalcCurve();
             parent->pushCurrentModulatorStorageUpdate();
         }
         void mouseDown(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
@@ -151,7 +176,42 @@ struct StepLFOPane : juce::Component
             if (idx < 0)
                 return;
             parent->modulatorStorageData[parent->selectedTab].stepLfoStorage.data[idx] = 0.f;
+            recalcCurve();
             parent->pushCurrentModulatorStorageUpdate();
+        }
+
+        std::vector<std::pair<float, float>> cycleCurve;
+        void recalcCurve()
+        {
+            cycleCurve.clear();
+
+            // explicitly make a copy here so we can screw with it
+            auto ms = parent->modulatorStorageData[parent->selectedTab];
+            ms.stepLfoStorage.rateIsForSingleStep = true; // rate specifies one step
+
+            auto so = std::make_unique<scxt::modulation::modulators::StepLFO>();
+            // always render display at 48k so we can reason about output density
+            float renderSR{48000};
+            so->setSampleRate(renderSR);
+            float rate{3.f}; // 8 steps a second
+            float stepSamples{renderSR / std::powf(2.0f, rate) /
+                              blockSize}; // how manu samples in a step
+            int captureEvery{(int)(stepSamples / (ms.stepLfoStorage.repeat * 10))};
+            scxt::datamodel::TimeData td{};
+            scxt::infrastructure::RNGGen gen;
+            so->assign(&ms, &rate, &td, gen);
+
+            so->UpdatePhaseIncrement();
+            for (int i = 0; i < stepSamples * ms.stepLfoStorage.repeat; ++i)
+            {
+                if (i % captureEvery == 0)
+                {
+                    cycleCurve.emplace_back((float)i / (stepSamples * ms.stepLfoStorage.repeat),
+                                            so->output);
+                }
+                so->process(blockSize);
+            }
+            auto bk = cycleCurve.back();
         }
     }; // namespace juce::Component
 
@@ -170,6 +230,7 @@ struct StepLFOPane : juce::Component
                     auto p = w->parent;
                     p->pushCurrentModulatorStorageUpdate();
                     p->updateValueTooltip(a);
+                    w->stepRender->recalcCurve();
                     p->repaint();
                 }
             };
@@ -200,7 +261,7 @@ struct StepLFOPane : juce::Component
                                                                 .withName("Cycle")
                                                                 .withCustomMinDisplay("RATE: CYCLE")
                                                                 .withCustomMaxDisplay("RATE: STEP"),
-                                                            update(), ls.rateIsEntireCycle);
+                                                            update(), ls.rateIsForSingleStep);
         cycleB = std::make_unique<jcmp::ToggleButton>();
         cycleB->setSource(cycleA.get());
         cycleB->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED_BY_DATA);
