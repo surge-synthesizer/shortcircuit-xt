@@ -507,7 +507,7 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                                   *(engine.getMessageController()));
 
         serializationSendToClient(cms::s2c_update_zone_output_info,
-                                  cms::zoneOutputInfoUpdate_t{false, {}},
+                                  cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
                                   *(engine.getMessageController()));
     }
 }
