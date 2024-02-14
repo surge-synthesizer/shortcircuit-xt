@@ -79,12 +79,22 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
         return sad;
     }
 
-    struct rowComponent : juce::Component, juce::DragAndDropTarget
+    struct rowComponent : juce::Component, juce::DragAndDropTarget, juce::TextEditor::Listener
     {
         int rowNumber{-1};
         bool isSelected{false};
         GroupZoneListBoxModel<SidebarParent> *lbm{nullptr};
         SidebarParent *gsb{nullptr};
+
+        std::unique_ptr<juce::TextEditor> renameEditor;
+        rowComponent()
+        {
+            renameEditor = std::make_unique<juce::TextEditor>();
+            addChildComponent(*renameEditor);
+            renameEditor->addListener(this);
+        }
+
+        int zonePad = 20;
 
         void paint(juce::Graphics &g) override
         {
@@ -114,7 +124,6 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
                 fillColor = juce::Colour(0x15, 0x15, 0x50);
                 textColor = juce::Colour(170, 170, 220);
             }
-            int zonePad = 20;
             if (sg.first.zone < 0)
             {
                 g.setColour(fillColor);
@@ -190,9 +199,19 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
                 }
                 else if (isGroup())
                 {
-                    p.addSectionHeader("Group");
+                    const auto &tgl = lbm->thisGroup;
+                    if (rowNumber < 0 || rowNumber >= tgl.size())
+                        return;
+
+                    const auto &sg = tgl[rowNumber];
+
+                    p.addSectionHeader(sg.second);
                     p.addSeparator();
-                    p.addItem("Rename", []() {});
+                    p.addItem("Rename", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        w->doGroupRename();
+                    });
                     p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
                             return;
@@ -261,6 +280,40 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
                 gsb->sendToSerialization(cmsg::MoveZoneFromTo({src, tgt}));
             }
         }
+        void resized() override
+        {
+            renameEditor->setBounds(getLocalBounds().withTrimmedLeft(zonePad));
+        }
+
+        void doGroupRename()
+        {
+            const auto &tgl = lbm->thisGroup;
+
+            const auto &sg = tgl[rowNumber];
+            assert(sg.first.zone < 0);
+            auto st = gsb->partGroupSidebar->style();
+            renameEditor->setFont(
+                st->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
+            renameEditor->applyFontToAllText(
+                st->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
+            renameEditor->setText(sg.second);
+            renameEditor->setSelectAllWhenFocused(true);
+            renameEditor->setVisible(true);
+            renameEditor->grabKeyboardFocus();
+        }
+
+        void textEditorReturnKeyPressed(juce::TextEditor &) override
+        {
+            auto za = getZoneAddress();
+            gsb->sendToSerialization(
+                cmsg::RenameGroup({za, renameEditor->getText().toStdString()}));
+            renameEditor->setVisible(false);
+        }
+        void textEditorEscapeKeyPressed(juce::TextEditor &) override
+        {
+            renameEditor->setVisible(false);
+        }
+        void textEditorFocusLost(juce::TextEditor &) override { renameEditor->setVisible(false); }
     };
     struct rowAddComponent : juce::Component
     {
