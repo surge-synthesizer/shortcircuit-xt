@@ -26,6 +26,9 @@
  */
 
 #include "LFOPane.h"
+
+#include <cmath>
+
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "datamodel/parameter.h"
 #include "juce_gui_basics/juce_gui_basics.h"
