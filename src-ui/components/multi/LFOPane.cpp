@@ -678,7 +678,9 @@ void LfoPane::rebuildPanelComponents()
         datamodel::pmd()
             .asInt()
             .withName("Modulator Shape")
-            .withRange(modulation::ModulatorStorage::STEP, modulation::ModulatorStorage::MSEG)
+            .withRange(modulation::ModulatorStorage::STEP,
+                       modulation::ModulatorStorage::MSEG -
+                           1) /* This -1 turns off MSEG in the menu */
             .withUnorderedMapFormatting({
                 {modulation::ModulatorStorage::STEP, "STEP"},
                 {modulation::ModulatorStorage::MSEG, "MSEG"},

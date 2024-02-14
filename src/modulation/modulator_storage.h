@@ -73,7 +73,7 @@ struct ModulatorStorage
         LFO_SH_NOISE,
         LFO_ENV,
 
-        MSEG,
+        MSEG, // for a variety of reasons, if this isn't last some menus and stuff will be wonky.
     } modulatorShape{ModulatorShape::STEP};
     DECLARE_ENUM_STRING(ModulatorShape);
 
