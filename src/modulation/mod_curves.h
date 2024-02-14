@@ -66,6 +66,8 @@ struct ModulationCurves
         add('x3  ', "x^3", [](auto x) { return x * x * x; });
         add('absx', "|x|", [](auto x) { return std::fabs(x); });
         add('unip', "(x+1)/2)", [](auto x) { return (x + 1.f) / 2.f; });
+        add('d.1 ', "x / 10", [](auto x) { return x * 0.1; });
+        add('d.01', "x / 100", [](auto x) { return x * 0.01; });
     }
 
     static std::function<float(float)> getCurveOperator(CurveIdentifier id)
