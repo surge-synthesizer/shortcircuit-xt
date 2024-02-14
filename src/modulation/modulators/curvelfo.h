@@ -29,6 +29,7 @@
 #define SCXT_SRC_MODULATION_MODULATORS_CURVELFO_H
 
 #include "sst/basic-blocks/modulators/SimpleLFO.h"
+#include "sst/basic-blocks/modulators/DAREnvelope.h"
 
 #include "utils.h"
 #include "modulation/modulator_storage.h"
@@ -40,7 +41,10 @@ struct CurveLFO : SampleRateSupport
     float output{0.f};
 
     using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveLFO, scxt::blockSize>;
+    using senv_t = sst::basic_blocks::modulators::DAREnvelope<
+        CurveLFO, scxt::blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>;
     slfo_t simpleLfo{this};
+    senv_t simpleEnv{this};
     friend slfo_t;
 
     slfo_t::Shape curveShape{slfo_t::SINE};
@@ -77,13 +81,24 @@ struct CurveLFO : SampleRateSupport
 
         simpleLfo.attack(curveShape);
         simpleLfo.applyPhaseOffset(initPhase);
+        simpleEnv.attack(0.4);
     }
 
     uint32_t smp{0};
-    void process(const float rate, const float deform)
+    void process(const float rate, const float deform, const float delay, const float attack,
+                 const float release, bool useEnv, bool unipolar, bool isGated)
     {
         simpleLfo.process_block(rate, deform, curveShape);
-        output = simpleLfo.lastTarget;
+        auto lfov = simpleLfo.lastTarget;
+        if (unipolar)
+            lfov = (lfov + 1) * 0.5;
+        auto ev = 1.f;
+        if (useEnv)
+        {
+            simpleEnv.process01AD(delay, attack, release, isGated);
+            ev = simpleEnv.outBlock0;
+        }
+        output = lfov * ev;
     }
 };
 } // namespace scxt::modulation::modulators

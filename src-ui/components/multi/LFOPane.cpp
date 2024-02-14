@@ -498,12 +498,19 @@ struct CurveLFOPane : juce::Component
         unipolarB->setLabel("UNI");
         addAndMakeVisible(*unipolarB);
 
-        envA[0] = std::make_unique<att>(datamodel::pmd().asPercent().withName("Delay"), update(),
+        useenvA = std::make_unique<LfoPane::boolAttachment_t>("Use Envelope", update(), cs.useenv);
+        useenvB = std::make_unique<jcmp::ToggleButton>();
+        useenvB->setSource(useenvA.get());
+        useenvB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
+        useenvB->setLabel("ENV");
+        addAndMakeVisible(*useenvB);
+
+        envA[0] = std::make_unique<att>(datamodel::envelopeThirtyTwo().withName("Delay"), update(),
                                         cs.delay);
-        envA[1] = std::make_unique<att>(datamodel::pmd().asPercent().withName("Attack"), update(),
+        envA[1] = std::make_unique<att>(datamodel::envelopeThirtyTwo().withName("Attack"), update(),
                                         cs.attack);
-        envA[2] = std::make_unique<att>(datamodel::pmd().asPercent().withName("Release"), update(),
-                                        cs.release);
+        envA[2] = std::make_unique<att>(datamodel::envelopeThirtyTwo().withName("Release"),
+                                        update(), cs.release);
 
         auto mkE = [this](auto b, int idx) {
             auto L = std::make_unique<jcmp::Label>();
@@ -558,14 +565,15 @@ struct CurveLFOPane : juce::Component
         auto curveBox = b.withTrimmedLeft((knobw + mg) * 3).withTrimmedBottom(mg).reduced(mg, 0);
         curveDraw->setBounds(curveBox);
         unipolarB->setBounds(curveBox.getRight() - 32 - mg, 2, 32, 18);
+        useenvB->setBounds(curveBox.getRight() - 70 - mg, 2, 32, 18);
     }
 
     std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA;
     std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK;
     std::unique_ptr<jcmp::Label> rateL, deformL, phaseL;
 
-    std::unique_ptr<LfoPane::boolAttachment_t> unipolarA;
-    std::unique_ptr<jcmp::ToggleButton> unipolarB;
+    std::unique_ptr<LfoPane::boolAttachment_t> unipolarA, useenvA;
+    std::unique_ptr<jcmp::ToggleButton> unipolarB, useenvB;
 
     static constexpr int envSlots{3}; // DAR
     std::array<std::unique_ptr<LfoPane::attachment_t>, envSlots> envA;

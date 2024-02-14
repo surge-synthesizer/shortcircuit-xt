@@ -200,8 +200,13 @@ struct MatrixEndpoints
     {
         uint32_t index{0};
         LFOTarget(engine::Engine *e, uint32_t p);
-        TG rateT, curveDeformT, stepSmoothT;
-        const float *rateP{nullptr}, *curveDeformP{nullptr}, *stepSmoothP{nullptr};
+        TG rateT;
+        TG curveDeformT, curveDelayT, curveAttackT, curveReleaseT;
+        TG stepSmoothT;
+        const float *rateP{nullptr};
+        const float *curveDeformP{nullptr}, *curveDelayP{nullptr}, *curveAttackP{nullptr},
+            *curveReleaseP{nullptr};
+        const float *stepSmoothP{nullptr};
 
         void bind(Matrix &m, engine::Zone &z);
     };
