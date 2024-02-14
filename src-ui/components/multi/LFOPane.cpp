@@ -197,7 +197,7 @@ struct StepLFOPane : juce::Component
             float renderSR{48000};
             so->setSampleRate(renderSR);
             float rate{3.f}; // 8 steps a second
-            float stepSamples{renderSR / std::powf(2.0f, rate) /
+            float stepSamples{renderSR / std::pow(2.0f, rate) /
                               blockSize}; // how manu samples in a step
             int captureEvery{(int)(stepSamples / (ms.stepLfoStorage.repeat * 10))};
             scxt::datamodel::TimeData td{};
