@@ -41,6 +41,16 @@ struct HasEditor
     virtual ~HasEditor() = default;
 
     template <typename T> void sendToSerialization(const T &msg);
+    template <typename T, typename P, typename V>
+    void sendSingleToSerialization(const P &payload, const V &value)
+    {
+        auto pdiff = (uint8_t *)&value - (uint8_t *)&payload;
+        static_assert(std::is_standard_layout_v<P>);
+        assert(pdiff >= 0);
+        assert(pdiff <= sizeof(payload) - sizeof(value));
+        this->sendToSerialization(T({pdiff, value}));
+    }
+
     template <typename T> void updateValueTooltip(const T &attachment);
     template <typename W, typename A>
     void setupWidgetForValueTooltip(const W &widget, const A &attachment);

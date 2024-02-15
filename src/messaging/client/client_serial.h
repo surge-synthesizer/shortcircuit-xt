@@ -46,13 +46,19 @@ enum ClientToSerializationMessagesIds
     c2s_do_multi_select_action,
 
     c2s_update_group_or_zone_adsr_view,
+    c2s_update_zone_adsr_value,
+    c2s_update_group_adsr_value,
 
     c2s_update_zone_mapping,
     c2s_update_zone_samples,
     c2s_update_zone_routing_row,
-    c2s_update_zone_output_info,
+
+    c2s_update_zone_output_float_value,
+    c2s_update_zone_output_int16_t_value,
+
     c2s_update_group_routing_row,
-    c2s_update_group_output_info,
+    c2s_update_group_output_float_value,
+    c2s_update_group_output_int16_t_value,
 
     c2s_update_group_or_zone_individual_modulator_storage,
 

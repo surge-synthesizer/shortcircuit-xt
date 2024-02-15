@@ -50,7 +50,7 @@ template <typename T> struct HasGroupZoneProcessors
      * This enum is here but we put it in the output info structure of
      * group and zone separately
      */
-    enum ProcRoutingPath
+    enum ProcRoutingPath : int16_t
     {
         procRoute_linear,
         procRoute_bypass

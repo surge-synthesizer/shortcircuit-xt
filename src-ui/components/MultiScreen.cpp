@@ -110,8 +110,20 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
 
         for (int i = 0; i < 2; ++i)
         {
-            ctr->eg[i] = std::make_unique<multi::AdsrPane>(editor, i, forZone);
-            addChildComponent(*(ctr->eg[i]));
+            if (forZone)
+            {
+                auto egt =
+                    std::make_unique<multi::AdsrPane<multi::AdsrZoneTraits>>(editor, i, forZone);
+                addAndMakeVisible(*egt);
+                ctr->eg[i] = std::move(egt);
+            }
+            else
+            {
+                auto egt =
+                    std::make_unique<multi::AdsrPane<multi::AdsrGroupTraits>>(editor, i, forZone);
+                addAndMakeVisible(*egt);
+                ctr->eg[i] = std::move(egt);
+            }
         }
         ctr->lfo = std::make_unique<multi::LfoPane>(editor, forZone);
         addChildComponent(*ctr->lfo);
@@ -130,8 +142,9 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
             int idx{1};
             for (const auto &e : ctr->eg)
             {
-                e->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-                e->setName("GRP EG" + std::to_string(idx++));
+                std::get<1>(e)->setCustomClass(
+                    connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+                std::get<1>(e)->setName("GRP EG" + std::to_string(idx++));
             }
             for (const auto &p : ctr->processors)
                 p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
@@ -175,8 +188,8 @@ void MultiScreen::layout()
         auto envRect =
             mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
         auto ew = envRect.getWidth() * 0.25;
-        ctr->eg[0]->setBounds(envRect.withWidth(ew));
-        ctr->eg[1]->setBounds(envRect.withWidth(ew).translated(ew, 0));
+        ctr->adsrComponent(0)->setBounds(envRect.withWidth(ew));
+        ctr->adsrComponent(1)->setBounds(envRect.withWidth(ew).translated(ew, 0));
         ctr->lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
     }
 }
@@ -227,8 +240,8 @@ void MultiScreen::ZoneOrGroupElements::setVisible(bool b)
     outputComponent()->setVisible(b);
     lfo->setVisible(b);
     modComponent()->setVisible(b);
-    for (auto &e : eg)
-        e->setVisible(b);
+    for (auto &e : {0, 1})
+        adsrComponent(e)->setVisible(b);
     for (auto &p : processors)
         p->setVisible(b);
 }
@@ -250,6 +263,16 @@ juce::Component *MultiScreen::ZoneOrGroupElements::outputComponent()
         return std::get<0>(outputvariant).get();
     if (index == ZoneGroupIndex::GROUP)
         return std::get<1>(outputvariant).get();
+    return nullptr;
+}
+
+juce::Component *MultiScreen::ZoneOrGroupElements::adsrComponent(int idx)
+
+{
+    if (index == ZoneGroupIndex::ZONE)
+        return std::get<0>(eg[idx]).get();
+    if (index == ZoneGroupIndex::GROUP)
+        return std::get<1>(eg[idx]).get();
     return nullptr;
 }
 } // namespace scxt::ui

@@ -29,6 +29,7 @@
 #define SCXT_SRC_MESSAGING_CLIENT_ZONE_MESSAGES_H
 
 #include "messaging/client/detail/client_json_details.h"
+#include "messaging/client/detail/message_helpers.h"
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
@@ -90,23 +91,13 @@ using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
 SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputInfoUpdate_t,
                  onZoneOutputInfoUpdated);
 
-inline void updateZoneOutputInfo(const engine::Zone::ZoneOutputInfo &payload,
-                                 const engine::Engine &engine, MessageController &cont)
-{
-    // TODO Selected Zone State
-    auto sz = engine.getSelectionManager()->currentlySelectedZones();
-    if (!sz.empty())
-    {
-        cont.scheduleAudioThreadCallback([zs = sz, info = payload](auto &eng) {
-            for (const auto &[p, g, z] : zs)
-            {
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->outputInfo = info;
-            }
-        });
-    }
-}
-CLIENT_TO_SERIAL(UpdateZoneOutputInfo, c2s_update_zone_output_info, engine::Zone::ZoneOutputInfo,
-                 updateZoneOutputInfo(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateZoneOutputFloatValue, c2s_update_zone_output_float_value,
+                 detail::diffMsg_t<float>,
+                 detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload, engine, cont));
+
+CLIENT_TO_SERIAL(UpdateZoneOutputInt16TValue, c2s_update_zone_output_int16_t_value,
+                 detail::diffMsg_t<int16_t>,
+                 detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload, engine, cont));
 
 } // namespace scxt::messaging::client
 

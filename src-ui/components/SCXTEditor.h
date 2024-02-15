@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
+#include <type_traits>
 
 #include "SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"

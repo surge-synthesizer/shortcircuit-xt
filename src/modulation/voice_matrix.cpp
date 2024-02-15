@@ -94,18 +94,8 @@ void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine:
         bindEl(m, rsT, eg.rShape, rsP);
     };
 
-    if (index == 0)
-    {
-        doBind(z.aegStorage);
-    }
-    else if (index == 1)
-    {
-        doBind(z.eg2Storage);
-    }
-    else
-    {
-        assert(false);
-    }
+    assert(index >= 0 && index < z.egStorage.size());
+    doBind(z.egStorage[index]);
 }
 
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)

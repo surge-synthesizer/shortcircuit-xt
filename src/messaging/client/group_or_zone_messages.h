@@ -50,10 +50,7 @@ inline void adsrSelectedGroupOrZoneUpdate(const adsrSelectedGroupOrZoneC2SPayloa
             cont.scheduleAudioThreadCallback([zs = sz, ew = e, adsrv = adsr](auto &eng) {
                 for (const auto &[p, g, z] : zs)
                 {
-                    if (ew == 0)
-                        eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->aegStorage = adsrv;
-                    if (ew == 1)
-                        eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->eg2Storage = adsrv;
+                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->egStorage[ew] = adsrv;
                 }
             });
         }
@@ -75,6 +72,16 @@ inline void adsrSelectedGroupOrZoneUpdate(const adsrSelectedGroupOrZoneC2SPayloa
 CLIENT_TO_SERIAL(AdsrSelectedGroupOrZoneUpdateRequest, c2s_update_group_or_zone_adsr_view,
                  adsrSelectedGroupOrZoneC2SPayload_t,
                  adsrSelectedGroupOrZoneUpdate(payload, engine, cont));
+
+CLIENT_TO_SERIAL(UpdateZoneEGFloatValue, c2s_update_zone_adsr_value,
+                 detail::indexedDiffMsg_t<float>,
+                 detail::updateZoneIndexedMemberValue(&engine::Zone::egStorage, payload, engine,
+                                                      cont));
+
+CLIENT_TO_SERIAL(UpdateGroupEGFloatValue, c2s_update_group_adsr_value,
+                 detail::indexedDiffMsg_t<float>,
+                 detail::updateGroupIndexedMemberValue(&engine::Group::gegStorage, payload, engine,
+                                                       cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_GROUP_OR_ZONE_MESSAGES_H

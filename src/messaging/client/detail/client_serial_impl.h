@@ -78,8 +78,11 @@ template <typename T> struct client_message_traits<MessageWrapper<T>>
 template <typename T> struct ResponseWrapper
 {
     const T &msg;
-    SerializationToClientMessageIds id;
-    ResponseWrapper(const T &m, SerializationToClientMessageIds i) : msg(m), id(i) {}
+    scxt::messaging::client::SerializationToClientMessageIds id;
+    ResponseWrapper(const T &m, scxt::messaging::client::SerializationToClientMessageIds i)
+        : msg(m), id(i)
+    {
+    }
 };
 template <typename T> struct client_message_traits<ResponseWrapper<T>>
 {

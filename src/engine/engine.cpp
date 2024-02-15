@@ -589,11 +589,11 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         return pow(10.0, db * 0.05);
                     };
 
-                    zn->aegStorage.a = s2a(reg->GetEG1Attack(presetRegion));
-                    zn->aegStorage.h = s2a(reg->GetEG1Hold(presetRegion));
-                    zn->aegStorage.d = s2a(reg->GetEG1Decay(presetRegion));
-                    zn->aegStorage.s = sus2l(reg->GetEG1Sustain(presetRegion));
-                    zn->aegStorage.r = s2a(reg->GetEG1Release(presetRegion));
+                    zn->egStorage[0].a = s2a(reg->GetEG1Attack(presetRegion));
+                    zn->egStorage[0].h = s2a(reg->GetEG1Hold(presetRegion));
+                    zn->egStorage[0].d = s2a(reg->GetEG1Decay(presetRegion));
+                    zn->egStorage[0].s = sus2l(reg->GetEG1Sustain(presetRegion));
+                    zn->egStorage[0].r = s2a(reg->GetEG1Release(presetRegion));
 
                     auto GetValue = [](const auto &val) {
                         if (val == sf2::NONE)
@@ -601,11 +601,11 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         return ToString(val);
                     };
 
-                    zn->eg2Storage.a = s2a(reg->GetEG2Attack(presetRegion));
-                    zn->eg2Storage.h = s2a(reg->GetEG2Hold(presetRegion));
-                    zn->eg2Storage.d = s2a(reg->GetEG2Decay(presetRegion));
-                    zn->eg2Storage.s = sus2l(reg->GetEG2Sustain(presetRegion));
-                    zn->eg2Storage.r = s2a(reg->GetEG2Release(presetRegion));
+                    zn->egStorage[1].a = s2a(reg->GetEG2Attack(presetRegion));
+                    zn->egStorage[1].h = s2a(reg->GetEG2Hold(presetRegion));
+                    zn->egStorage[1].d = s2a(reg->GetEG2Decay(presetRegion));
+                    zn->egStorage[1].s = sus2l(reg->GetEG2Sustain(presetRegion));
+                    zn->egStorage[1].r = s2a(reg->GetEG2Release(presetRegion));
 
                     if (reg->HasLoop)
                     {
