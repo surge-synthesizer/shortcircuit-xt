@@ -201,29 +201,6 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
             return *r;
         return "";
     }
-
-    // bit bummed I have to ocpy this here. Lets think a bit
-    template <typename M>
-    void asSingleValueUpdate(const Payload &p, bool forZone, size_t &index, HasEditor *e)
-    {
-        static_assert(std::is_standard_layout_v<Payload>);
-
-        ptrdiff_t pdiff = (uint8_t *)&value - (uint8_t *)&p;
-        assert(pdiff >= 0);
-        assert(pdiff <= sizeof(p) - sizeof(value));
-
-        auto jc = dynamic_cast<juce::Component *>(e);
-        assert(jc);
-
-        onGuiValueChanged = [w = juce::Component::SafePointer(jc), e, forZone, &index,
-                             pdiff](const DiscretePayloadDataAttachment &a) {
-            if (w)
-            {
-                e->sendToSerialization(M({forZone, index, pdiff, a.value}));
-                e->updateValueTooltip(a);
-            }
-        };
-    }
 };
 
 template <typename Payload>
