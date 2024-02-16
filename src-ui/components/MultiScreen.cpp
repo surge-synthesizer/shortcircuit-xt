@@ -78,78 +78,8 @@ MultiScreen::MultiScreen(SCXTEditor *e) : HasEditor(e)
     sample = std::make_unique<multi::MappingPane>(editor);
     addAndMakeVisible(*sample);
 
-    zoneGroupElements[0] = std::make_unique<ZoneOrGroupElements>(ZoneGroupIndex::ZONE);
-    zoneGroupElements[1] = std::make_unique<ZoneOrGroupElements>(ZoneGroupIndex::GROUP);
-
-    for (const auto &ctr : zoneGroupElements)
-    {
-        auto forZone = (ctr->index == ZoneGroupIndex::ZONE);
-        for (int i = 0; i < 4; ++i)
-        {
-            auto ff = std::make_unique<multi::ProcessorPane>(editor, i, forZone);
-            ff->hasHamburger = true;
-            ctr->processors[i] = std::move(ff);
-            addChildComponent(*(ctr->processors[i]));
-        }
-        if (forZone)
-        {
-            ctr->modvariant =
-                std::make_unique<multi::ModPane<multi::ModPaneZoneTraits>>(editor, forZone);
-            ctr->outputvariant =
-                std::make_unique<multi::OutputPane<multi::OutPaneZoneTraits>>(editor);
-        }
-        else
-        {
-            // BADBAD
-            ctr->modvariant = std::make_unique<juce::Component>();
-            ctr->outputvariant =
-                std::make_unique<multi::OutputPane<multi::OutPaneGroupTraits>>(editor);
-        }
-        addChildComponent(*ctr->modComponent());
-        addChildComponent(*ctr->outputComponent());
-
-        for (int i = 0; i < 2; ++i)
-        {
-            if (forZone)
-            {
-                auto egt =
-                    std::make_unique<multi::AdsrPane<multi::AdsrZoneTraits>>(editor, i, forZone);
-                addAndMakeVisible(*egt);
-                ctr->eg[i] = std::move(egt);
-            }
-            else
-            {
-                auto egt =
-                    std::make_unique<multi::AdsrPane<multi::AdsrGroupTraits>>(editor, i, forZone);
-                addAndMakeVisible(*egt);
-                ctr->eg[i] = std::move(egt);
-            }
-        }
-        ctr->lfo = std::make_unique<multi::LfoPane>(editor, forZone);
-        addChildComponent(*ctr->lfo);
-
-        if (!forZone)
-        {
-            ctr->groupOut()->setCustomClass(
-                connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-#if BADBAD_GROUP
-            ctr->groupMod()->setCustomClass(
-                connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-#endif
-            ctr->lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-            ctr->lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
-            ctr->lfo->resetTabState();
-            int idx{1};
-            for (const auto &e : ctr->eg)
-            {
-                std::get<1>(e)->setCustomClass(
-                    connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-                std::get<1>(e)->setName("GRP EG" + std::to_string(idx++));
-            }
-            for (const auto &p : ctr->processors)
-                p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        }
-    }
+    zoneElements = std::make_unique<ZoneOrGroupElements<ZoneTraits>>(this);
+    groupElements = std::make_unique<ZoneOrGroupElements<GroupTraits>>(this);
 
     setSelectionMode(SelectionMode::ZONE);
 }
@@ -168,30 +98,8 @@ void MultiScreen::layout()
     auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
     sample->setBounds(mainRect.withHeight(wavHeight));
 
-    for (const auto &ctr : zoneGroupElements)
-    {
-        auto fxRect = mainRect.withTrimmedTop(wavHeight).withHeight(fxHeight);
-        auto fw = fxRect.getWidth() * 0.25;
-        auto tfr = fxRect.withWidth(fw);
-        for (int i = 0; i < 4; ++i)
-        {
-            ctr->processors[i]->setBounds(tfr);
-            tfr.translate(fw, 0);
-        }
-
-        auto modRect = mainRect.withTrimmedTop(wavHeight + fxHeight).withHeight(modHeight);
-        auto mw = modRect.getWidth() * 0.750;
-        ctr->modComponent()->setBounds(modRect.withWidth(mw));
-        auto xw = modRect.getWidth() * 0.250;
-        ctr->outputComponent()->setBounds(modRect.withWidth(xw).translated(mw, 0));
-
-        auto envRect =
-            mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
-        auto ew = envRect.getWidth() * 0.25;
-        ctr->adsrComponent(0)->setBounds(envRect.withWidth(ew));
-        ctr->adsrComponent(1)->setBounds(envRect.withWidth(ew).translated(ew, 0));
-        ctr->lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
-    }
+    zoneElements->layoutInto(mainRect);
+    groupElements->layoutInto(mainRect);
 }
 
 void MultiScreen::onVoiceInfoChanged() { sample->repaint(); }
@@ -210,69 +118,113 @@ void MultiScreen::setSelectionMode(scxt::ui::MultiScreen::SelectionMode m)
     switch (selectionMode)
     {
     case SelectionMode::NONE:
-        zoneGroupElements[0]->setVisible(false);
-        zoneGroupElements[1]->setVisible(false);
+        zoneElements->setVisible(false);
+        groupElements->setVisible(false);
         break;
 
     case SelectionMode::ZONE:
-        zoneGroupElements[(int)ZoneGroupIndex::ZONE]->setVisible(true);
-        zoneGroupElements[(int)ZoneGroupIndex::GROUP]->setVisible(false);
+        zoneElements->setVisible(true);
+        groupElements->setVisible(false);
         break;
 
     case SelectionMode::GROUP:
-        zoneGroupElements[(int)ZoneGroupIndex::ZONE]->setVisible(false);
-        zoneGroupElements[(int)ZoneGroupIndex::GROUP]->setVisible(true);
+        zoneElements->setVisible(false);
+        groupElements->setVisible(true);
         break;
     }
 
     repaint();
 }
 
-MultiScreen::ZoneOrGroupElements::ZoneOrGroupElements(scxt::ui::MultiScreen::ZoneGroupIndex z)
-    : index(z)
+template <typename ZGTrait>
+MultiScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(MultiScreen *parent)
 {
+    for (int i = 0; i < scxt::processorsPerZoneAndGroup; ++i)
+    {
+        auto ff = std::make_unique<multi::ProcessorPane>(parent->editor, i, forZone);
+        ff->hasHamburger = true;
+        processors[i] = std::move(ff);
+        parent->addChildComponent(*(processors[i]));
+    }
+    modPane =
+        std::make_unique<multi::ModPane<typename ZGTrait::ModPaneTraits>>(parent->editor, forZone);
+    outPane = std::make_unique<multi::OutputPane<typename ZGTrait::OutPaneTraits>>(parent->editor);
+    parent->addChildComponent(*modPane);
+    parent->addChildComponent(*outPane);
+
+    for (int i = 0; i < scxt::egPerGroup; ++i)
+    {
+        auto egt = std::make_unique<multi::AdsrPane<typename ZGTrait::AdsrTraits>>(parent->editor,
+                                                                                   i, forZone);
+        eg[i] = std::move(egt);
+        parent->addChildComponent(*eg[i]);
+    }
+    lfo = std::make_unique<multi::LfoPane>(parent->editor, forZone);
+    parent->addChildComponent(*lfo);
+
+#if BADBADGROUP_REWORK
+    if (!forZone)
+    {
+        ctr->groupOut()->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+#if BADBAD_GROUP
+        ctr->groupMod()->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+#endif
+        ctr->lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        ctr->lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
+        ctr->lfo->resetTabState();
+        int idx{1};
+        for (const auto &e : ctr->eg)
+        {
+            std::get<1>(e)->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            std::get<1>(e)->setName("GRP EG" + std::to_string(idx++));
+        }
+        for (const auto &p : ctr->processors)
+            p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+    }
+#endif
 }
 
-MultiScreen::ZoneOrGroupElements::~ZoneOrGroupElements() = default;
+template <typename ZGTrait>
+MultiScreen::ZoneOrGroupElements<ZGTrait>::~ZoneOrGroupElements() = default;
 
-void MultiScreen::ZoneOrGroupElements::setVisible(bool b)
+template <typename ZGTrait> void MultiScreen::ZoneOrGroupElements<ZGTrait>::setVisible(bool b)
 {
-    outputComponent()->setVisible(b);
+    outPane->setVisible(b);
     lfo->setVisible(b);
-    modComponent()->setVisible(b);
-    for (auto &e : {0, 1})
-        adsrComponent(e)->setVisible(b);
+    modPane->setVisible(b);
+    for (auto &e : eg)
+        e->setVisible(b);
     for (auto &p : processors)
         p->setVisible(b);
 }
 
-juce::Component *MultiScreen::ZoneOrGroupElements::modComponent()
-
+template <typename ZGTrait>
+void MultiScreen::ZoneOrGroupElements<ZGTrait>::layoutInto(const juce::Rectangle<int> &mainRect)
 {
-    if (index == ZoneGroupIndex::ZONE)
-        return std::get<0>(modvariant).get();
-    if (index == ZoneGroupIndex::GROUP)
-        return std::get<1>(modvariant).get();
-    return nullptr;
+    auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
+
+    auto fxRect = mainRect.withTrimmedTop(wavHeight).withHeight(fxHeight);
+    auto fw = fxRect.getWidth() * 0.25;
+    auto tfr = fxRect.withWidth(fw);
+    for (int i = 0; i < 4; ++i)
+    {
+        processors[i]->setBounds(tfr);
+        tfr.translate(fw, 0);
+    }
+
+    auto modRect = mainRect.withTrimmedTop(wavHeight + fxHeight).withHeight(modHeight);
+    auto mw = modRect.getWidth() * 0.750;
+    modPane->setBounds(modRect.withWidth(mw));
+    auto xw = modRect.getWidth() * 0.250;
+    outPane->setBounds(modRect.withWidth(xw).translated(mw, 0));
+
+    auto envRect = mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
+    auto ew = envRect.getWidth() * 0.25;
+    eg[0]->setBounds(envRect.withWidth(ew));
+    eg[1]->setBounds(envRect.withWidth(ew).translated(ew, 0));
+    lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
 }
 
-juce::Component *MultiScreen::ZoneOrGroupElements::outputComponent()
-
-{
-    if (index == ZoneGroupIndex::ZONE)
-        return std::get<0>(outputvariant).get();
-    if (index == ZoneGroupIndex::GROUP)
-        return std::get<1>(outputvariant).get();
-    return nullptr;
-}
-
-juce::Component *MultiScreen::ZoneOrGroupElements::adsrComponent(int idx)
-
-{
-    if (index == ZoneGroupIndex::ZONE)
-        return std::get<0>(eg[idx]).get();
-    if (index == ZoneGroupIndex::GROUP)
-        return std::get<1>(eg[idx]).get();
-    return nullptr;
-}
+template struct MultiScreen::ZoneOrGroupElements<typename MultiScreen::ZoneTraits>;
+template struct MultiScreen::ZoneOrGroupElements<typename MultiScreen::GroupTraits>;
 } // namespace scxt::ui

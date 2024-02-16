@@ -51,7 +51,10 @@ struct ModPaneGroupTraits
     static constexpr bool forZone{false};
     using metadata = int;
     using matrix = int;
-    using routing = int;
+    struct routing
+    {
+        using Routing = int;
+    };
     // using metadata = scxt::modulation::groupModMatrixMetadata_t;
     // using routing = scxt::modulation::GroupModMatrix::routingTable_t;
 };
