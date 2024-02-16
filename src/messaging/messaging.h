@@ -305,6 +305,11 @@ struct MessageController : MoveableOnly<MessageController>
      */
     void reportErrorToClient(const std::string &title, const std::string &body);
 
+    /*
+     * Some stats on messages back
+     */
+    uint64_t c2sMessageCount{0}, c2sMessageBytes{0};
+
   private:
     uint64_t inboundClientMessageCount{0};
     void runSerialization();

@@ -259,6 +259,7 @@ void SCXTEditor::drainCallbackQueue()
         {
             assert(msgCont.threadingChecker.isClientThread());
             cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
+#if BUILD_IS_DEBUG
             inboundMessageCount++;
             inboundMessageBytes += qmsg.size();
             if (inboundMessageCount % 100 == 0)
@@ -267,6 +268,7 @@ void SCXTEditor::drainCallbackQueue()
                       << inboundMessageCount << " size: " << inboundMessageBytes
                       << " avgmsg: " << inboundMessageBytes / inboundMessageCount);
             }
+#endif
         }
     }
 }
