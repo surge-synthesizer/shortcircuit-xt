@@ -33,6 +33,7 @@
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
 #include "voice/voice.h"
+#include "detail/message_helpers.h"
 
 namespace scxt::messaging::client
 {
@@ -187,6 +188,7 @@ CLIENT_TO_SERIAL(IndexedModulatorStorageUpdated,
                  c2s_update_group_or_zone_individual_modulator_storage,
                  indexedModulatorStorageUpdate_t,
                  indexedModulatorStorageUpdated(payload, engine, cont));
+
 SERIAL_TO_CLIENT(UpdateZoneLfo, s2c_update_group_or_zone_individual_modulator_storage,
                  indexedModulatorStorageUpdate_t, onGroupOrZoneModulatorStorageUpdated);
 

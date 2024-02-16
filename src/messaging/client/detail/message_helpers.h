@@ -186,5 +186,25 @@ updateGroupIndexedMemberValue(M m, const indexedDiffMsg_t<VT> &payload,
             responseCB);
     }
 }
+
+template <typename VT> using indexedZoneOrGroupDiffMsg_t = std::tuple<bool, size_t, ptrdiff_t, VT>;
+
+template <typename VT, typename MZ, typename MG>
+inline void updateZoneOrGroupIndexedMemberValue(
+    MZ mz, MG mg, const indexedZoneOrGroupDiffMsg_t<VT> &payload, const engine::Engine &engine,
+    MessageController &cont, std::function<void(const engine::Engine &)> responseCB = nullptr)
+{
+    auto isZone = std::get<0>(payload);
+    auto underT =
+        indexedDiffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload), std::get<3>(payload)};
+    if (isZone)
+    {
+        updateZoneIndexedMemberValue(mz, underT, engine, cont, responseCB);
+    }
+    else
+    {
+        updateGroupIndexedMemberValue(mg, underT, engine, cont, responseCB);
+    }
+}
 } // namespace scxt::messaging::client::detail
 #endif // SHORTCIRCUITXT_MESSAGE_HELPERS_H

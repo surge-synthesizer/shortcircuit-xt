@@ -39,32 +39,31 @@ namespace cmsg = scxt::messaging::client;
 using dma = datamodel::AdsrStorage;
 namespace comp = sst::jucegui::components;
 
-template <typename GZTrait>
-AdsrPane<GZTrait>::AdsrPane(SCXTEditor *e, int idx, bool fz)
+AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
     : HasEditor(e), sst::jucegui::components::NamedPanel(idx == 0 ? "AMP EG" : "EG 2"), index(idx),
       forZone(fz)
 {
     hasHamburger = true;
 
-    using fac = connectors::SingleValueIndexedFactory<attachment_t, typename GZTrait::floatMsg_t>;
+    using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneGroupEGFloatValue>;
 
-    fac::attachAndAdd(dma::paramAHD.withName("Attack"), adsrView, index, adsrView.a, this,
-                      attachments.A, sliders.A);
-    fac::attachAndAdd(dma::paramAHD.withName("Hold"), adsrView, index, adsrView.h, this,
-                      attachments.H, sliders.H);
-    fac::attachAndAdd(dma::paramAHD.withName("Decay"), adsrView, index, adsrView.d, this,
-                      attachments.D, sliders.D);
-    fac::attachAndAdd(dma::paramS.withName("Sustain"), adsrView, index, adsrView.s, this,
-                      attachments.S, sliders.S);
-    fac::attachAndAdd(dma::paramR.withName("Release"), adsrView, index, adsrView.r, this,
-                      attachments.R, sliders.R);
+    fac::attachAndAdd(dma::paramAHD.withName("Attack"), adsrView, adsrView.a, this, attachments.A,
+                      sliders.A, forZone, index);
+    fac::attachAndAdd(dma::paramAHD.withName("Hold"), adsrView, adsrView.h, this, attachments.H,
+                      sliders.H, forZone, index);
+    fac::attachAndAdd(dma::paramAHD.withName("Decay"), adsrView, adsrView.d, this, attachments.D,
+                      sliders.D, forZone, index);
+    fac::attachAndAdd(dma::paramS.withName("Sustain"), adsrView, adsrView.s, this, attachments.S,
+                      sliders.S, forZone, index);
+    fac::attachAndAdd(dma::paramR.withName("Release"), adsrView, adsrView.r, this, attachments.R,
+                      sliders.R, forZone, index);
 
-    fac::attachAndAdd(dma::paramShape.withName("A Shape"), adsrView, index, adsrView.aShape, this,
-                      attachments.Ash, knobs.Ash);
-    fac::attachAndAdd(dma::paramShape.withName("D Shape"), adsrView, index, adsrView.dShape, this,
-                      attachments.Dsh, knobs.Dsh);
-    fac::attachAndAdd(dma::paramShape.withName("R Shape"), adsrView, index, adsrView.rShape, this,
-                      attachments.Rsh, knobs.Rsh);
+    fac::attachAndAdd(dma::paramShape.withName("A Shape"), adsrView, adsrView.aShape, this,
+                      attachments.Ash, knobs.Ash, forZone, index);
+    fac::attachAndAdd(dma::paramShape.withName("D Shape"), adsrView, adsrView.dShape, this,
+                      attachments.Dsh, knobs.Dsh, forZone, index);
+    fac::attachAndAdd(dma::paramShape.withName("R Shape"), adsrView, adsrView.rShape, this,
+                      attachments.Rsh, knobs.Rsh, forZone, index);
 
     auto makeLabel = [this](auto &lb, const std::string &l) {
         lb = std::make_unique<sst::jucegui::components::Label>();
@@ -85,8 +84,7 @@ AdsrPane<GZTrait>::AdsrPane(SCXTEditor *e, int idx, bool fz)
             k->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
 }
 
-template <typename GZTrait>
-void AdsrPane<GZTrait>::adsrChangedFromModel(const datamodel::AdsrStorage &d)
+void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
 {
     adsrView = d;
     for (const auto &sl : sliders.members)
@@ -100,7 +98,7 @@ void AdsrPane<GZTrait>::adsrChangedFromModel(const datamodel::AdsrStorage &d)
     repaint();
 }
 
-template <typename GZTrait> void AdsrPane<GZTrait>::adsrDeactivated()
+void AdsrPane::adsrDeactivated()
 {
     for (const auto &sl : sliders.members)
         if (sl)
@@ -113,7 +111,7 @@ template <typename GZTrait> void AdsrPane<GZTrait>::adsrDeactivated()
     repaint();
 }
 
-template <typename GZTrait> void AdsrPane<GZTrait>::resized()
+void AdsrPane::resized()
 {
     auto r = getContentArea();
     auto lh = 16.f;
@@ -144,7 +142,7 @@ template <typename GZTrait> void AdsrPane<GZTrait>::resized()
     x += w;
 }
 
-template <typename GZTrait> void AdsrPane<GZTrait>::showHamburgerMenu()
+void AdsrPane::showHamburgerMenu()
 {
     juce::PopupMenu p;
     p.addSectionHeader("Menu");
@@ -154,6 +152,4 @@ template <typename GZTrait> void AdsrPane<GZTrait>::showHamburgerMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
-template struct AdsrPane<AdsrGroupTraits>;
-template struct AdsrPane<AdsrZoneTraits>;
 } // namespace scxt::ui::multi

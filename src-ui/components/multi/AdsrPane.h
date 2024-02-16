@@ -43,16 +43,7 @@
 
 namespace scxt::ui::multi
 {
-struct AdsrZoneTraits
-{
-    using floatMsg_t = scxt::messaging::client::UpdateZoneEGFloatValue;
-};
-struct AdsrGroupTraits
-{
-    using floatMsg_t = scxt::messaging::client::UpdateGroupEGFloatValue;
-};
-
-template <typename GZTrait> struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
+struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     typedef connectors::PayloadDataAttachment<datamodel::AdsrStorage> attachment_t;
 
