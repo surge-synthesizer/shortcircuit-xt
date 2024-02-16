@@ -162,26 +162,22 @@ MultiScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(MultiScreen *pare
     lfo = std::make_unique<multi::LfoPane>(parent->editor, forZone);
     parent->addChildComponent(*lfo);
 
-#if BADBADGROUP_REWORK
     if (!forZone)
     {
-        ctr->groupOut()->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-#if BADBAD_GROUP
-        ctr->groupMod()->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-#endif
-        ctr->lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        ctr->lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
-        ctr->lfo->resetTabState();
+        outPane->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        modPane->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
+        lfo->resetTabState();
         int idx{1};
-        for (const auto &e : ctr->eg)
+        for (const auto &e : eg)
         {
-            std::get<1>(e)->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-            std::get<1>(e)->setName("GRP EG" + std::to_string(idx++));
+            e->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            e->setName("GRP EG" + std::to_string(idx++));
         }
-        for (const auto &p : ctr->processors)
+        for (const auto &p : processors)
             p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
     }
-#endif
 }
 
 template <typename ZGTrait>
