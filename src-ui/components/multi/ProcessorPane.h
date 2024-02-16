@@ -79,10 +79,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void setAsMultiZone(int32_t primaryType, const std::string &nm,
                         const std::set<int32_t> &otherTypes);
 
-    void processorChangedFromGui(const attachment_t &at);
-    void processorElementChangedFromGui(const attachment_t &at, int whichItem);
-    void processorChangedFromGui(const int_attachment_t &at);
-
     void rebuildControlsFromDescription();
 
     void layoutControls();

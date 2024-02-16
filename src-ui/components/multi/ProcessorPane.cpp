@@ -157,9 +157,9 @@ void ProcessorPane::rebuildControlsFromDescription()
     for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
     {
         auto at = std::make_unique<attachment_t>(
-            processorControlDescription.floatControlDescriptions[i],
-            [this, i](const auto &at) { this->processorElementChangedFromGui(at, i); },
-            processorView.floatParams[i]);
+            processorControlDescription.floatControlDescriptions[i], processorView.floatParams[i]);
+        connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue, attachment_t>(
+            *at, processorView, this, forZone, index);
 
         floatAttachments[i] = std::move(at);
     }
@@ -167,16 +167,16 @@ void ProcessorPane::rebuildControlsFromDescription()
     for (int i = 0; i < processorControlDescription.numIntParams; ++i)
     {
         auto at = std::make_unique<int_attachment_t>(
-            processorControlDescription.intControlDescriptions[i],
-            [this](const auto &at) { this->processorChangedFromGui(at); },
-            processorView.intParams[i]);
+            processorControlDescription.intControlDescriptions[i], processorView.intParams[i]);
+        connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorInt32TValue, int_attachment_t>(
+            *at, processorView, this, forZone, index);
         intAttachments[i] = std::move(at);
     }
 
     auto at = std::make_unique<attachment_t>(
-        datamodel::pmd().asPercent().withName("Mix").withDefault(1.0),
-        [this](const auto &at) { this->processorElementChangedFromGui(at, -1); },
-        processorView.mix);
+        datamodel::pmd().asPercent().withName("Mix").withDefault(1.0), processorView.mix);
+    connectors::configureUpdater<cmsg::UpdateZoneOrGroupModStorageFloatValue, attachment_t>(
+        *at, processorView, this, forZone, index);
     mixAttachment = std::move(at);
 
     switch (processorControlDescription.type)
@@ -199,12 +199,10 @@ void ProcessorPane::rebuildControlsFromDescription()
     }
 
     setToggleDataSource(nullptr);
-    bypassAttachment = std::make_unique<bool_attachment_t>(
-        "Bypass",
-        [this](const auto &at) {
-            sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
-        },
-        processorView.isActive);
+    bypassAttachment = std::make_unique<bool_attachment_t>("Bypass", processorView.isActive);
+    connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
+                                 bool_attachment_t::onGui_t>(*bypassAttachment, processorView, this,
+                                                             forZone, index);
     setToggleDataSource(bypassAttachment.get());
 
     repaint();
@@ -421,33 +419,6 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     getContentAreaComponent()->addAndMakeVisible(*wss);
     intEditors[0] = std::move(wss);
-}
-
-void ProcessorPane::processorChangedFromGui(const attachment_t &at)
-{
-    updateValueTooltip(at);
-    sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
-}
-
-void ProcessorPane::processorElementChangedFromGui(const attachment_t &at, int whichIdx)
-{
-    updateValueTooltip(at);
-    // sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
-    if (whichIdx == -1)
-    {
-        sendToSerialization(cmsg::SetSelectedProcessorSingleValue(
-            {forZone, index, (int)cmsg::ProcessorValueIndex::mix, at.value}));
-    }
-    else
-    {
-        sendToSerialization(cmsg::SetSelectedProcessorSingleValue(
-            {forZone, index, (int)cmsg::ProcessorValueIndex::param0 + whichIdx, at.value}));
-    }
-}
-
-void ProcessorPane::processorChangedFromGui(const int_attachment_t &at)
-{
-    sendToSerialization(cmsg::SetSelectedProcessorStorage({index, processorView}));
 }
 
 bool ProcessorPane::isInterestedInDragSource(

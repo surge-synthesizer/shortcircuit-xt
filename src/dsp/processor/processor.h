@@ -168,7 +168,7 @@ struct ProcessorStorage
     ProcessorType type{proct_none};
     float mix{0};
     std::array<float, maxProcessorFloatParams> floatParams;
-    std::array<int, maxProcessorIntParams> intParams;
+    std::array<int32_t, maxProcessorIntParams> intParams;
     bool isActive{true};
 
     bool operator==(const ProcessorStorage &other) const

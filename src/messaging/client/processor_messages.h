@@ -128,92 +128,23 @@ CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorP
 CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, int,
                  engine.getSelectionManager()->copyZoneProcessorLeadToAll(payload));
 
-// C2S set processor storage
-typedef std::pair<int32_t, dsp::processor::ProcessorStorage> setProcessorStoragePayload_t;
-inline void setProcessorStorage(const setProcessorStoragePayload_t &payload,
-                                const engine::Engine &engine, messaging::MessageController &cont)
-{
-    const auto &[w, st] = payload;
-    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+CLIENT_TO_SERIAL(UpdateZoneOrGroupProcessorFloatValue, c2s_update_single_processor_float_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<float>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
+                                                             &engine::Group::processorStorage,
+                                                             payload, engine, cont));
 
-    if (!sz.empty())
-    {
-        cont.scheduleAudioThreadCallback([zs = sz, which = w, storage = st](auto &e) {
-            for (const auto &a : zs)
-            {
-                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                z->processorStorage[which] = storage;
-            }
-        });
-    }
-}
-CLIENT_TO_SERIAL(SetSelectedProcessorStorage, c2s_update_single_processor_data,
-                 setProcessorStoragePayload_t, setProcessorStorage(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateZoneOrGroupProcessorInt32TValue, c2s_update_single_processor_int32_t_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<int32_t>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
+                                                             &engine::Group::processorStorage,
+                                                             payload, engine, cont));
 
-enum struct ProcessorValueIndex : uint32_t
-{
-    param0,
-    mix = param0 + dsp::processor::maxProcessorFloatParams
-};
-// for-zone, which processor, which index, value
-typedef std::tuple<bool, int32_t, uint32_t, float> setProcessorSingleValuePayload_t;
-inline void setProcessorSingleValue(const setProcessorSingleValuePayload_t &payload,
-                                    const engine::Engine &engine,
-                                    messaging::MessageController &cont)
-{
-    const auto &[forzone, w, idx, val] = payload;
-    auto sz = engine.getSelectionManager()->currentlySelectedZones();
-
-    if (forzone && !sz.empty())
-    {
-        cont.scheduleAudioThreadCallback([zs = sz, which = w, validx = idx, newval = val](auto &e) {
-            for (const auto &a : zs)
-            {
-                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                if (validx == (uint32_t)ProcessorValueIndex::mix)
-                {
-                    z->mUILag.setNewDestination(&(z->processorStorage[which].mix), newval);
-                }
-                else
-                {
-                    auto fidx = (int)validx - (int)ProcessorValueIndex::param0;
-                    assert(fidx < dsp::processor::maxProcessorFloatParams);
-                    z->mUILag.setNewDestination(&(z->processorStorage[which].floatParams[fidx]),
-                                                newval);
-                }
-                if (!z->isActive())
-                {
-                    z->mUILag.instantlySnap();
-                }
-            }
-        });
-        return;
-    }
-
-    auto sg = engine.getSelectionManager()->currentlySelectedGroups();
-    if (!forzone && !sg.empty())
-    {
-        cont.scheduleAudioThreadCallback([gs = sg, which = w, validx = idx, newval = val](auto &e) {
-            for (const auto &a : gs)
-            {
-                const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
-                if (validx == (uint32_t)ProcessorValueIndex::mix)
-                {
-                    g->mUILag.setNewDestination(&(g->processorStorage[which].mix), newval);
-                }
-                else
-                {
-                    auto fidx = (int)validx - (int)ProcessorValueIndex::param0;
-                    assert(fidx < dsp::processor::maxProcessorFloatParams);
-                    g->mUILag.setNewDestination(&(g->processorStorage[which].floatParams[fidx]),
-                                                newval);
-                }
-            }
-        });
-    }
-}
-CLIENT_TO_SERIAL(SetSelectedProcessorSingleValue, c2s_update_single_processor_single_value,
-                 setProcessorSingleValuePayload_t, setProcessorSingleValue(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateZoneOrGroupProcessorBoolValue, c2s_update_single_processor_bool_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<bool>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
+                                                             &engine::Group::processorStorage,
+                                                             payload, engine, cont));
 
 // C2S set processor type (sends back data and metadata)
 typedef std::pair<int32_t, int32_t> processorPair_t;
