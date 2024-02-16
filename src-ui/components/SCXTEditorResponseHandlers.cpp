@@ -50,11 +50,11 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
         if (active)
         {
             // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            multiScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
+            std::get<0>(multiScreen->getZoneElements()->eg[which])->adsrChangedFromModel(env);
         }
         else
         {
-            multiScreen->getZoneElements()->eg[which]->adsrDeactivated();
+            std::get<0>(multiScreen->getZoneElements()->eg[which])->adsrDeactivated();
         }
     }
     else
@@ -62,11 +62,11 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
         if (active)
         {
             // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            multiScreen->getGroupElements()->eg[which]->adsrChangedFromModel(env);
+            std::get<1>(multiScreen->getGroupElements()->eg[which])->adsrChangedFromModel(env);
         }
         else
         {
-            multiScreen->getGroupElements()->eg[which]->adsrDeactivated();
+            std::get<1>(multiScreen->getGroupElements()->eg[which])->adsrDeactivated();
         }
     }
 }

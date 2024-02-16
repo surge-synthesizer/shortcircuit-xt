@@ -129,6 +129,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         ProcRoutingPath procRouting{procRoute_linear};
         BusAddress routeTo{DEFAULT_BUS};
     } outputInfo;
+    static_assert(std::is_standard_layout<ZoneOutputInfo>::value);
 
     float output alignas(16)[2][blockSize];
     void process(Engine &onto);
@@ -186,7 +187,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     voice::modulation::Matrix::RoutingTable routingTable;
     std::array<modulation::ModulatorStorage, lfosPerZone> modulatorStorage;
 
-    datamodel::AdsrStorage aegStorage, eg2Storage;
+    // 0 is the AEG, 1 is EG2
+    std::array<datamodel::AdsrStorage, 2> egStorage;
 
     void onProcessorTypeChanged(int, dsp::processor::ProcessorType) {}
 

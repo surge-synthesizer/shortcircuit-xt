@@ -416,11 +416,11 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                               *(engine.getMessageController()));
     serializationSendToClient(
         cms::s2c_update_group_or_zone_adsr_view,
-        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 0, true, zp->aegStorage},
+        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 0, true, zp->egStorage[0]},
         *(engine.getMessageController()));
     serializationSendToClient(
         cms::s2c_update_group_or_zone_adsr_view,
-        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, true, zp->eg2Storage},
+        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, true, zp->egStorage[1]},
         *(engine.getMessageController()));
 
     for (int i = 0; i < engine::lfosPerZone; ++i)

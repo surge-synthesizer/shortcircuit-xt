@@ -32,38 +32,44 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "datamodel/adsr_storage.h"
 #include "components/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 
+#include "messaging/messaging.h"
+
 namespace scxt::ui::multi
 {
-struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
+struct AdsrZoneTraits
 {
-    // ToDo: shapes of course
+    using floatMsg_t = scxt::messaging::client::UpdateZoneEGFloatValue;
+};
+struct AdsrGroupTraits
+{
+    using floatMsg_t = scxt::messaging::client::UpdateGroupEGFloatValue;
+};
+
+template <typename GZTrait> struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
+{
     typedef connectors::PayloadDataAttachment<datamodel::AdsrStorage> attachment_t;
 
-    enum Ctrl
+    template <typename T> struct UIStore
     {
-        A,
-        H,
-        D,
-        S,
-        R,
-        Ash,
-        Dsh,
-        Rsh
+        std::array<std::unique_ptr<T>, 8> members;
+        std::unique_ptr<T> &A{members[0]}, &H{members[1]}, &D{members[2]}, &S{members[3]},
+            &R{members[4]}, &Ash{members[5]}, &Dsh{members[6]}, &Rsh{members[7]};
     };
 
-    std::unordered_map<Ctrl, std::unique_ptr<attachment_t>> attachments;
-    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::VSlider>> sliders;
-    std::unordered_map<Ctrl, std::unique_ptr<juce::Component>> labels;
-    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Knob>> knobs;
+    UIStore<attachment_t> attachments;
+    UIStore<sst::jucegui::components::VSlider> sliders;
+    UIStore<sst::jucegui::components::Label> labels;
+    UIStore<sst::jucegui::components::Knob> knobs;
 
     datamodel::AdsrStorage adsrView;
-    int index{0};
+    size_t index{0};
     bool forZone{true};
     AdsrPane(SCXTEditor *, int index, bool forZone);
 
@@ -71,7 +77,6 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void adsrChangedFromModel(const datamodel::AdsrStorage &);
     void adsrDeactivated();
-    void adsrChangedFromGui(const attachment_t &);
 
     void showHamburgerMenu();
 };

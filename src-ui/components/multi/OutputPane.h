@@ -32,6 +32,7 @@
 #include "components/HasEditor.h"
 #include "engine/zone.h"
 #include "engine/group.h"
+#include "messaging/messaging.h"
 
 namespace scxt::ui::multi
 {
@@ -41,6 +42,9 @@ struct OutPaneZoneTraits
     static constexpr bool forZone{true};
     static constexpr const char *defaultRoutingLocationName{"Group Output"};
     using info_t = engine::Zone::ZoneOutputInfo;
+
+    using floatMsg_t = scxt::messaging::client::UpdateZoneOutputFloatValue;
+    using int16Msg_t = scxt::messaging::client::UpdateZoneOutputInt16TValue;
 };
 
 struct OutPaneGroupTraits
@@ -48,6 +52,9 @@ struct OutPaneGroupTraits
     static constexpr bool forZone{false};
     static constexpr const char *defaultRoutingLocationName{"Part Output"};
     using info_t = engine::Group::GroupOutputInfo;
+
+    using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
+    using int16Msg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
 };
 template <typename OTTraits> struct OutputTab;
 

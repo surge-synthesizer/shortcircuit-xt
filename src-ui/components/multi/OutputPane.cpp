@@ -68,35 +68,15 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
 
-    template <typename T>
-    std::unique_ptr<T> attachContinuousTo(const std::unique_ptr<attachment_t> &at)
-    {
-        auto kn = std::make_unique<T>();
-        kn->setSource(at.get());
-        setupWidgetForValueTooltip(kn, at);
-        addAndMakeVisible(*kn);
-        return std::move(kn);
-    }
-
     OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
     {
-        outputAttachment = std::make_unique<attachment_t>(
-            datamodel::pmd().asCubicDecibelAttenuation().withName("Amplitude"),
-            [w = juce::Component::SafePointer(this)](const auto &at) {
-                if (w && w->parent)
-                    w->outputChangedFromGUI(at);
-            },
-            info.amplitude);
-        panAttachment = std::make_unique<attachment_t>(
-            datamodel::pmd().asPercentBipolar().withName("Pan"),
-            [w = juce::Component::SafePointer(this)](const auto &at) {
-                if (w && w->parent)
-                    w->outputChangedFromGUI(at);
-            },
-            info.pan);
+        using fac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
 
-        outputKnob = attachContinuousTo<jcmp::Knob>(outputAttachment);
-        panKnob = attachContinuousTo<jcmp::Knob>(panAttachment);
+        fac::attachAndAdd(datamodel::pmd().asCubicDecibelAttenuation().withName("Amplitude"), info,
+                          info.amplitude, this, outputAttachment, outputKnob);
+        fac::attachAndAdd(datamodel::pmd().asPercentBipolar().withName("Pan"), info, info.pan, this,
+                          panAttachment, panKnob);
+
         outputLabel = std::make_unique<jcmp::Label>();
         outputLabel->setText("Amplitude");
         addAndMakeVisible(*outputLabel);
@@ -151,22 +131,6 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 
         outputRouting->setBounds(op);
     }
-    void outputChangedFromGUI(const attachment_t &at)
-    {
-        updateValueTooltip(at);
-        pushInfo();
-    }
-    void pushInfo()
-    {
-        if constexpr (OTTraits::forZone)
-        {
-            sendToSerialization(cmsg::UpdateZoneOutputInfo(info));
-        }
-        else
-        {
-            sendToSerialization(cmsg::UpdateGroupOutputInfo(info));
-        }
-    }
 
     std::string getRoutingLabel(scxt::engine::BusAddress rt)
     {
@@ -212,7 +176,8 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
                           if (w)
                           {
                               w->info.routeTo = (scxt::engine::BusAddress)rt;
-                              w->pushInfo();
+                              w->template sendSingleToSerialization<typename OTTraits::int16Msg_t>(
+                                  w->info, w->info.routeTo);
                               w->updateRoutingLabel();
                           }
                       });

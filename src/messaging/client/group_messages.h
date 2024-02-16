@@ -31,6 +31,7 @@
 #include "client_macros.h"
 #include "engine/group.h"
 #include "selection/selection_manager.h"
+#include "messaging/client/detail/message_helpers.h"
 
 namespace scxt::messaging::client
 {
@@ -39,23 +40,13 @@ using groupOutputInfoUpdate_t = std::pair<bool, engine::Group::GroupOutputInfo>;
 SERIAL_TO_CLIENT(GroupOutputInfoUpdated, s2c_update_group_output_info, groupOutputInfoUpdate_t,
                  onGroupOutputInfoUpdated);
 
-inline void updateGroupOutputInfo(const engine::Group::GroupOutputInfo &payload,
-                                  const engine::Engine &engine, MessageController &cont)
-{
-    // TODO Selected Group State
-    auto sz = engine.getSelectionManager()->currentlySelectedGroups();
-    if (!sz.empty())
-    {
-        cont.scheduleAudioThreadCallback([zs = sz, info = payload](auto &eng) {
-            for (const auto &[p, g, z] : zs)
-            {
-                eng.getPatch()->getPart(p)->getGroup(g)->outputInfo = info;
-            }
-        });
-    }
-}
-CLIENT_TO_SERIAL(UpdateGroupOutputInfo, c2s_update_group_output_info,
-                 engine::Group::GroupOutputInfo, updateGroupOutputInfo(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateGroupOutputFloatValue, c2s_update_group_output_float_value,
+                 detail::diffMsg_t<float>,
+                 detail::updateGroupMemberValue(&engine::Group::outputInfo, payload, engine, cont));
+
+CLIENT_TO_SERIAL(UpdateGroupOutputInt16TValue, c2s_update_group_output_int16_t_value,
+                 detail::diffMsg_t<int16_t>,
+                 detail::updateGroupMemberValue(&engine::Group::outputInfo, payload, engine, cont));
 
 using renameGroup_t = std::tuple<selection::SelectionManager::ZoneAddress, std::string>;
 inline void renameGroup(const renameGroup_t &payload, const engine::Engine &engine,

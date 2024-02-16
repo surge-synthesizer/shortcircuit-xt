@@ -39,7 +39,10 @@ namespace scxt::ui
 {
 namespace multi
 {
-struct AdsrPane;
+
+struct AdsrZoneTraits;
+struct AdsrGroupTraits;
+template <typename T> struct AdsrPane;
 
 struct OutPaneZoneTraits;
 struct OutPaneGroupTraits;
@@ -87,7 +90,10 @@ struct MultiScreen : juce::Component, HasEditor
                      std::unique_ptr<multi::OutputPane<multi::OutPaneGroupTraits>>>
             outputvariant;
         std::unique_ptr<multi::LfoPane> lfo;
-        std::unique_ptr<multi::AdsrPane> eg[2];
+        std::variant<std::unique_ptr<multi::AdsrPane<multi::AdsrZoneTraits>>,
+                     std::unique_ptr<multi::AdsrPane<multi::AdsrGroupTraits>>>
+
+            eg[2];
         std::variant<std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>>,
                      std::unique_ptr<juce::Component>
                      /*std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>>*/>
@@ -95,6 +101,7 @@ struct MultiScreen : juce::Component, HasEditor
 
         juce::Component *modComponent();
         juce::Component *outputComponent();
+        juce::Component *adsrComponent(int);
         const std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>> &zoneMod()
         {
             assert(index == ZoneGroupIndex::ZONE);

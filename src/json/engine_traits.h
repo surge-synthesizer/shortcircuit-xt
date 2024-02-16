@@ -348,7 +348,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
         v = {{"sampleData", t.sampleData},     {"mappingData", t.mapping},
              {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
              {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
-             {"aegStorage", t.aegStorage},     {"eg2Storage", t.eg2Storage}};
+             {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]}};
     }
 
     template <template <typename...> class Traits>
@@ -361,8 +361,8 @@ template <> struct scxt_traits<scxt::engine::Zone>
 
         findIf(v, "routingTable", zone.routingTable);
         findIf(v, "modulatorStorage", zone.modulatorStorage);
-        findOrDefault(v, "aegStorage", zone.aegStorage);
-        findOrDefault(v, "eg2Storage", zone.eg2Storage);
+        findOrDefault(v, "aegStorage", zone.egStorage[0]);
+        findOrDefault(v, "eg2Storage", zone.egStorage[1]);
     }
 };
 
