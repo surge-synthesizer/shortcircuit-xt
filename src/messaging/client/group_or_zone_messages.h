@@ -35,53 +35,32 @@ typedef std::tuple<bool, int, bool, datamodel::AdsrStorage> adsrViewResponsePayl
 SERIAL_TO_CLIENT(AdsrGroupOrZoneUpdate, s2c_update_group_or_zone_adsr_view,
                  adsrViewResponsePayload_t, onGroupOrZoneEnvelopeUpdated);
 
-// strcture here is (forZone, whichEG, data)
-typedef std::tuple<bool, int, datamodel::AdsrStorage> adsrSelectedGroupOrZoneC2SPayload_t;
-inline void adsrSelectedGroupOrZoneUpdate(const adsrSelectedGroupOrZoneC2SPayload_t &payload,
-                                          const engine::Engine &engine, MessageController &cont)
-{
-    // TODO Selected Zone State
-    const auto &[forZone, e, adsr] = payload;
-    if (forZone)
-    {
-        auto sz = engine.getSelectionManager()->currentlySelectedZones();
-        if (!sz.empty())
-        {
-            cont.scheduleAudioThreadCallback([zs = sz, ew = e, adsrv = adsr](auto &eng) {
-                for (const auto &[p, g, z] : zs)
-                {
-                    eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->egStorage[ew] = adsrv;
-                }
-            });
-        }
-    }
-    else
-    {
-        auto sg = engine.getSelectionManager()->currentlySelectedGroups();
-        if (!sg.empty())
-        {
-            cont.scheduleAudioThreadCallback([gs = sg, ew = e, adsrv = adsr](auto &eng) {
-                for (const auto &[p, g, z] : gs)
-                {
-                    eng.getPatch()->getPart(p)->getGroup(g)->gegStorage[ew] = adsrv;
-                }
-            });
-        }
-    }
-}
-CLIENT_TO_SERIAL(AdsrSelectedGroupOrZoneUpdateRequest, c2s_update_group_or_zone_adsr_view,
-                 adsrSelectedGroupOrZoneC2SPayload_t,
-                 adsrSelectedGroupOrZoneUpdate(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateZoneGroupEGFloatValue, c2s_update_zone_or_group_adsr_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<float>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
+                                                             &engine::Group::gegStorage, payload,
+                                                             engine, cont));
 
-CLIENT_TO_SERIAL(UpdateZoneEGFloatValue, c2s_update_zone_adsr_value,
-                 detail::indexedDiffMsg_t<float>,
-                 detail::updateZoneIndexedMemberValue(&engine::Zone::egStorage, payload, engine,
-                                                      cont));
+CLIENT_TO_SERIAL(UpdateZoneOrGroupModStorageFloatValue,
+                 c2s_update_zone_or_group_modstorage_float_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<float>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                             &engine::Group::modulatorStorage,
+                                                             payload, engine, cont));
 
-CLIENT_TO_SERIAL(UpdateGroupEGFloatValue, c2s_update_group_adsr_value,
-                 detail::indexedDiffMsg_t<float>,
-                 detail::updateGroupIndexedMemberValue(&engine::Group::gegStorage, payload, engine,
-                                                       cont));
+CLIENT_TO_SERIAL(UpdateZoneOrGroupModStorageBoolValue,
+                 c2s_update_zone_or_group_modstorage_bool_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<bool>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                             &engine::Group::modulatorStorage,
+                                                             payload, engine, cont));
+
+CLIENT_TO_SERIAL(UpdateZoneOrGroupModStorageInt16TValue,
+                 c2s_update_zone_or_group_modstorage_int16_t_value,
+                 detail::indexedZoneOrGroupDiffMsg_t<int16_t>,
+                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                             &engine::Group::modulatorStorage,
+                                                             payload, engine, cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_GROUP_OR_ZONE_MESSAGES_H

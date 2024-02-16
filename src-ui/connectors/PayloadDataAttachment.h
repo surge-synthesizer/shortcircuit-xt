@@ -41,7 +41,34 @@
 
 namespace scxt::ui::connectors
 {
-// TODO Factor this better obviously
+template <typename M, typename A, typename ABase, typename... Args>
+std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload_t &p, HasEditor *e,
+                                               Args... args)
+{
+    static_assert(std::is_standard_layout_v<typename A::payload_t>);
+
+    ptrdiff_t pdiff = (uint8_t *)&att.value - (uint8_t *)&p;
+    assert(pdiff >= 0);
+    assert(pdiff <= sizeof(p) - sizeof(att.value));
+
+    auto jc = dynamic_cast<juce::Component *>(e);
+    assert(jc);
+
+    return [w = juce::Component::SafePointer(jc), e, pdiff, args...](const ABase &a) {
+        if (w)
+        {
+            e->sendToSerialization(M({args..., pdiff, a.value}));
+            e->updateValueTooltip(a);
+        }
+    };
+}
+
+template <typename M, typename A, typename ABase, typename... Args>
+void configureUpdater(A &att, const typename A::payload_t &p, HasEditor *e, Args... args)
+{
+    att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
+}
+
 template <typename Payload, typename ValueType = float>
 struct PayloadDataAttachment : sst::jucegui::data::Continuous
 {
@@ -61,48 +88,6 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     PayloadDataAttachment(const datamodel::pmd &cd, ValueType &v)
         : description(cd), value(v), label(cd.name), onGuiValueChanged(nullptr)
     {
-    }
-
-    template <typename M> void asFloatUpdate(const Payload &p, HasEditor *e)
-    {
-        static_assert(std::is_standard_layout_v<Payload>);
-
-        ptrdiff_t pdiff = (uint8_t *)&value - (uint8_t *)&p;
-        assert(pdiff >= 0);
-        assert(pdiff <= sizeof(p) - sizeof(value));
-
-        auto jc = dynamic_cast<juce::Component *>(e);
-        assert(jc);
-
-        onGuiValueChanged = [w = juce::Component::SafePointer(jc), e,
-                             pdiff](const PayloadDataAttachment &a) {
-            if (w)
-            {
-                e->sendToSerialization(M({pdiff, a.value}));
-                e->updateValueTooltip(a);
-            }
-        };
-    }
-
-    template <typename M> void asFloatUpdate(const Payload &p, size_t &index, HasEditor *e)
-    {
-        static_assert(std::is_standard_layout_v<Payload>);
-
-        ptrdiff_t pdiff = (uint8_t *)&value - (uint8_t *)&p;
-        assert(pdiff >= 0);
-        assert(pdiff <= sizeof(p) - sizeof(value));
-
-        auto jc = dynamic_cast<juce::Component *>(e);
-        assert(jc);
-
-        onGuiValueChanged = [w = juce::Component::SafePointer(jc), e, &index,
-                             pdiff](const PayloadDataAttachment &a) {
-            if (w)
-            {
-                e->sendToSerialization(M({index, pdiff, a.value}));
-                e->updateValueTooltip(a);
-            }
-        };
     }
 
     PayloadDataAttachment(const PayloadDataAttachment &other) = delete;
@@ -186,6 +171,11 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     {
     }
 
+    DiscretePayloadDataAttachment(const datamodel::pmd &cd, ValueType &v)
+        : description(cd), value(v), label(cd.name), onGuiValueChanged(nullptr)
+    {
+    }
+
     // TODO maybe. For now we have these descriptions as constexpr
     // in the code and apply them directly in many cases. We could
     // stream each and every one but don't. Maybe fix that one day.
@@ -211,11 +201,37 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
             return *r;
         return "";
     }
+
+    // bit bummed I have to ocpy this here. Lets think a bit
+    template <typename M>
+    void asSingleValueUpdate(const Payload &p, bool forZone, size_t &index, HasEditor *e)
+    {
+        static_assert(std::is_standard_layout_v<Payload>);
+
+        ptrdiff_t pdiff = (uint8_t *)&value - (uint8_t *)&p;
+        assert(pdiff >= 0);
+        assert(pdiff <= sizeof(p) - sizeof(value));
+
+        auto jc = dynamic_cast<juce::Component *>(e);
+        assert(jc);
+
+        onGuiValueChanged = [w = juce::Component::SafePointer(jc), e, forZone, &index,
+                             pdiff](const DiscretePayloadDataAttachment &a) {
+            if (w)
+            {
+                e->sendToSerialization(M({forZone, index, pdiff, a.value}));
+                e->updateValueTooltip(a);
+            }
+        };
+    }
 };
 
 template <typename Payload>
 struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, bool>
 {
+    using payload_t = Payload;
+    using value_t = bool;
+
     BooleanPayloadDataAttachment(
         const std::string &l,
         std::function<void(const DiscretePayloadDataAttachment<Payload, bool> &at)> oGVC, bool &v)
@@ -224,6 +240,10 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, boo
     {
     }
 
+    BooleanPayloadDataAttachment(const datamodel::pmd &p, bool &v)
+        : DiscretePayloadDataAttachment<Payload, bool>(p, v)
+    {
+    }
     int getMin() const override { return (int)0; }
     int getMax() const override { return (int)1; }
 
@@ -288,15 +308,15 @@ struct SamplePointDataAttachment : sst::jucegui::data::Continuous
     void setValueFromModel(const float &f) override { value = (int64_t)f; }
 };
 
-template <typename A, typename Msg> struct SingleValueFactory
+template <typename A, typename Msg, typename ABase = A> struct SingleValueFactory
 {
-    template <typename W>
+    template <typename W, typename... Args>
     static std::pair<std::unique_ptr<A>, std::unique_ptr<W>>
     attachR(const datamodel::pmd &md, const typename A::payload_t &p, typename A::value_t &val,
-            HasEditor *e)
+            HasEditor *e, Args... args)
     {
         auto att = std::make_unique<A>(md, val);
-        att->template asFloatUpdate<Msg>(p, e);
+        configureUpdater<Msg, A, ABase>(*att, p, e, std::forward<Args>(args)...);
         auto wid = std::make_unique<W>();
         wid->setSource(att.get());
         e->setupWidgetForValueTooltip(wid.get(), att.get());
@@ -304,22 +324,22 @@ template <typename A, typename Msg> struct SingleValueFactory
         return {std::move(att), std::move(wid)};
     }
 
-    template <typename W>
+    template <typename W, typename... Args>
     static void attach(const datamodel::pmd &md, const typename A::payload_t &p,
                        typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
-                       std::unique_ptr<W> &wRes)
+                       std::unique_ptr<W> &wRes, Args... args)
     {
-        auto [a, w] = attachR<W>(md, p, val, e);
+        auto [a, w] = attachR<W>(md, p, val, e, std::forward<Args>(args)...);
         aRes = std::move(a);
         wRes = std::move(w);
     }
 
-    template <typename W>
+    template <typename W, typename... Args>
     static void attachAndAdd(const datamodel::pmd &md, const typename A::payload_t &p,
                              typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
-                             std::unique_ptr<W> &wRes)
+                             std::unique_ptr<W> &wRes, Args... args)
     {
-        auto [a, w] = attachR<W>(md, p, val, e);
+        auto [a, w] = attachR<W>(md, p, val, e, std::forward<Args>(args)...);
         aRes = std::move(a);
         wRes = std::move(w);
         auto jc = dynamic_cast<juce::Component *>(e);
@@ -331,47 +351,9 @@ template <typename A, typename Msg> struct SingleValueFactory
     }
 };
 
-template <typename A, typename Msg> struct SingleValueIndexedFactory
-{
-    template <typename W>
-    static std::pair<std::unique_ptr<A>, std::unique_ptr<W>>
-    attachR(const datamodel::pmd &md, const typename A::payload_t &p, size_t &index,
-            typename A::value_t &val, HasEditor *e)
-    {
-        auto att = std::make_unique<A>(md, val);
-        att->template asFloatUpdate<Msg>(p, index, e);
-        auto wid = std::make_unique<W>();
-        wid->setSource(att.get());
-        e->setupWidgetForValueTooltip(wid.get(), att.get());
+template <typename A, typename Msg>
+using BooleanSingleValueFactory =
+    SingleValueFactory<A, Msg, DiscretePayloadDataAttachment<typename A::payload_t, bool>>;
 
-        return {std::move(att), std::move(wid)};
-    }
-
-    template <typename W>
-    static void attach(const datamodel::pmd &md, const typename A::payload_t &p, size_t &index,
-                       typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
-                       std::unique_ptr<W> &wRes)
-    {
-        auto [a, w] = attachR<W>(md, p, index, val, e);
-        aRes = std::move(a);
-        wRes = std::move(w);
-    }
-
-    template <typename W>
-    static void attachAndAdd(const datamodel::pmd &md, const typename A::payload_t &p,
-                             size_t &index, typename A::value_t &val, HasEditor *e,
-                             std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes)
-    {
-        auto [a, w] = attachR<W>(md, p, index, val, e);
-        aRes = std::move(a);
-        wRes = std::move(w);
-        auto jc = dynamic_cast<juce::Component *>(e);
-        assert(jc);
-        if (jc)
-        {
-            jc->addAndMakeVisible(*wRes);
-        }
-    }
-};
 } // namespace scxt::ui::connectors
 #endif // SHORTCIRCUIT_PAYLOADDATAATTACHMENT_H

@@ -47,6 +47,7 @@ namespace scxt::ui::multi
 {
 
 namespace jcmp = sst::jucegui::components;
+namespace cmsg = scxt::messaging::client;
 
 struct StepLFOPane : juce::Component
 {
@@ -418,7 +419,7 @@ struct StepLFOPane : juce::Component
     }
 };
 
-struct CurveLFOPane : juce::Component
+struct CurveLFOPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
 
@@ -442,91 +443,66 @@ struct CurveLFOPane : juce::Component
         }
     };
 
-    CurveLFOPane(LfoPane *p) : parent(p)
+    CurveLFOPane(LfoPane *p) : parent(p), HasEditor(p->editor)
     {
         assert(parent);
-        auto update = [r = juce::Component::SafePointer(this)]() {
-            return [w = juce::Component::SafePointer(r)](const auto &a) {
-                if (w && w->parent)
-                {
-                    auto p = w->parent;
-                    p->pushCurrentModulatorStorageUpdate();
-                    p->updateValueTooltip(a);
-                    p->repaint();
-                }
-            };
-        };
+        using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
+                                                   cmsg::UpdateZoneOrGroupModStorageFloatValue>;
+        using bfac =
+            connectors::BooleanSingleValueFactory<LfoPane::boolAttachment_t,
+                                                  cmsg::UpdateZoneOrGroupModStorageBoolValue>;
 
-        using att = LfoPane::attachment_t;
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
-        auto &cs = ms.curveLfoStorage;
 
-        rateA = std::make_unique<att>(datamodel::lfoModulationRate().withName("Rate"), update(),
-                                      ms.rate);
-        deformA = std::make_unique<att>(datamodel::pmd().asPercentBipolar().withName("Deform"),
-                                        update(), cs.deform);
-        phaseA = std::make_unique<att>(datamodel::pmd().asPercent().withName("Phase"), update(),
-                                       ms.start_phase);
-
-        auto mk = [this](auto &a, auto b) {
-            auto L = std::make_unique<jcmp::Label>();
-            L->setText(b);
-            addAndMakeVisible(*L);
-            auto K = std::make_unique<jcmp::Knob>();
-            K->setSource(a.get());
-            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-            parent->setupWidgetForValueTooltip(K, a);
-            addAndMakeVisible(*K);
-            return std::make_pair(std::move(K), std::move(L));
+        auto makeLabel = [this](auto &lb, const std::string &l) {
+            lb = std::make_unique<sst::jucegui::components::Label>();
+            lb->setText(l);
+            addAndMakeVisible(*lb);
         };
-        auto r = mk(rateA, "Rate");
-        rateK = std::move(r.first);
-        rateL = std::move(r.second);
 
-        r = mk(deformA, "Deform");
-        deformK = std::move(r.first);
-        deformL = std::move(r.second);
+        fac::attachAndAdd(datamodel::lfoModulationRate().withName("Rate"), ms, ms.rate, this, rateA,
+                          rateK, parent->forZone, parent->selectedTab);
+        rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        makeLabel(rateL, "Rate");
 
-        r = mk(phaseA, "Phase");
-        phaseK = std::move(r.first);
-        phaseL = std::move(r.second);
+        fac::attachAndAdd(datamodel::pmd().asPercentBipolar().withName("Deform"), ms,
+                          ms.curveLfoStorage.deform, this, deformA, deformK, parent->forZone,
+                          parent->selectedTab);
+        deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        makeLabel(deformL, "Deform");
 
-        unipolarA = std::make_unique<LfoPane::boolAttachment_t>("Unipolar", update(), cs.unipolar);
-        unipolarB = std::make_unique<jcmp::ToggleButton>();
-        unipolarB->setSource(unipolarA.get());
-        unipolarB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
+        fac::attachAndAdd(datamodel::pmd().asPercent().withName("Phase"), ms, ms.start_phase, this,
+                          phaseA, phaseK, parent->forZone, parent->selectedTab);
+        phaseK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        makeLabel(phaseL, "Phase");
+
+        fac::attachAndAdd(datamodel::envelopeThirtyTwo().withName("Delay"), ms,
+                          ms.curveLfoStorage.delay, this, envA[0], envS[0], parent->forZone,
+                          parent->selectedTab);
+        envS[0]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        makeLabel(envL[0], "Delay");
+
+        fac::attachAndAdd(datamodel::envelopeThirtyTwo().withName("Attack"), ms,
+                          ms.curveLfoStorage.attack, this, envA[1], envS[1], parent->forZone,
+                          parent->selectedTab);
+        envS[1]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        makeLabel(envL[1], "Attack");
+
+        fac::attachAndAdd(datamodel::envelopeThirtyTwo().withName("Release"), ms,
+                          ms.curveLfoStorage.release, this, envA[2], envS[2], parent->forZone,
+                          parent->selectedTab);
+        envS[2]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        makeLabel(envL[2], "Release");
+
+        bfac::attachAndAdd(datamodel::pmd().asBool().withName("Unipolar"), ms,
+                           ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB, parent->forZone,
+                           parent->selectedTab);
         unipolarB->setLabel("UNI");
-        addAndMakeVisible(*unipolarB);
 
-        useenvA = std::make_unique<LfoPane::boolAttachment_t>("Use Envelope", update(), cs.useenv);
-        useenvB = std::make_unique<jcmp::ToggleButton>();
-        useenvB->setSource(useenvA.get());
-        useenvB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
+        bfac::attachAndAdd(datamodel::pmd().asBool().withName("Use Envelope"), ms,
+                           ms.curveLfoStorage.useenv, this, useenvA, useenvB, parent->forZone,
+                           parent->selectedTab);
         useenvB->setLabel("ENV");
-        addAndMakeVisible(*useenvB);
-
-        envA[0] = std::make_unique<att>(datamodel::envelopeThirtyTwo().withName("Delay"), update(),
-                                        cs.delay);
-        envA[1] = std::make_unique<att>(datamodel::envelopeThirtyTwo().withName("Attack"), update(),
-                                        cs.attack);
-        envA[2] = std::make_unique<att>(datamodel::envelopeThirtyTwo().withName("Release"),
-                                        update(), cs.release);
-
-        auto mkE = [this](auto b, int idx) {
-            auto L = std::make_unique<jcmp::Label>();
-            L->setText(b);
-            addAndMakeVisible(*L);
-            auto K = std::make_unique<jcmp::Knob>();
-            K->setSource(envA[idx].get());
-            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-            parent->setupWidgetForValueTooltip(K, envA[idx]);
-            addAndMakeVisible(*K);
-            envL[idx] = std::move(L);
-            envS[idx] = std::move(K);
-        };
-        mkE("Delay", 0);
-        mkE("Attack", 1);
-        mkE("Release", 2);
 
         curveDraw = std::make_unique<CurveDraw>(parent);
         addAndMakeVisible(*curveDraw);
@@ -564,6 +540,7 @@ struct CurveLFOPane : juce::Component
 
         auto curveBox = b.withTrimmedLeft((knobw + mg) * 3).withTrimmedBottom(mg).reduced(mg, 0);
         curveDraw->setBounds(curveBox);
+
         unipolarB->setBounds(curveBox.getRight() - 32 - mg, 2, 32, 18);
         useenvB->setBounds(curveBox.getRight() - 70 - mg, 2, 32, 18);
     }
@@ -775,8 +752,6 @@ void LfoPane::setSubPaneVisibility()
     curveLfoPane->setVisible(ms.isCurve());
     envLfoPane->setVisible(ms.isEnv());
 }
-
-namespace cmsg = scxt::messaging::client;
 
 void LfoPane::pushCurrentModulatorStorageUpdate()
 {

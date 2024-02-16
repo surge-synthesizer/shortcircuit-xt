@@ -154,8 +154,7 @@ MultiScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(MultiScreen *pare
 
     for (int i = 0; i < scxt::egPerGroup; ++i)
     {
-        auto egt = std::make_unique<multi::AdsrPane<typename ZGTrait::AdsrTraits>>(parent->editor,
-                                                                                   i, forZone);
+        auto egt = std::make_unique<multi::AdsrPane>(parent->editor, i, forZone);
         eg[i] = std::move(egt);
         parent->addChildComponent(*eg[i]);
     }
