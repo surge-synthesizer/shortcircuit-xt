@@ -76,72 +76,48 @@ struct MultiScreen : juce::Component, HasEditor
     std::unique_ptr<multi::MappingPane> sample;
     std::unique_ptr<multi::PartGroupSidebar> parts;
 
-    enum class ZoneGroupIndex
+    struct ZoneTraits
     {
-        ZONE = 0,
-        GROUP = 1
+        using OutPaneTraits = multi::OutPaneZoneTraits;
+        using AdsrTraits = multi::AdsrZoneTraits;
+        using ModPaneTraits = multi::ModPaneZoneTraits;
+        static constexpr bool forZone{true};
     };
-    struct ZoneOrGroupElements
+    struct GroupTraits
     {
-        ZoneGroupIndex index;
-        ZoneOrGroupElements(ZoneGroupIndex z);
+        using OutPaneTraits = multi::OutPaneGroupTraits;
+        using AdsrTraits = multi::AdsrGroupTraits;
+        using ModPaneTraits = multi::ModPaneGroupTraits;
+        static constexpr bool forZone{false};
+    };
+
+    template <typename ZGTrait> struct ZoneOrGroupElements
+    {
+        static constexpr bool forZone{ZGTrait::forZone};
+        static constexpr bool forGroup{!ZGTrait::forZone};
+        ZoneOrGroupElements(MultiScreen *parent);
         ~ZoneOrGroupElements();
-        std::variant<std::unique_ptr<multi::OutputPane<multi::OutPaneZoneTraits>>,
-                     std::unique_ptr<multi::OutputPane<multi::OutPaneGroupTraits>>>
-            outputvariant;
+        std::unique_ptr<multi::OutputPane<typename ZGTrait::OutPaneTraits>> outPane;
         std::unique_ptr<multi::LfoPane> lfo;
-        std::variant<std::unique_ptr<multi::AdsrPane<multi::AdsrZoneTraits>>,
-                     std::unique_ptr<multi::AdsrPane<multi::AdsrGroupTraits>>>
+        std::array<std::unique_ptr<multi::AdsrPane<typename ZGTrait::AdsrTraits>>, 2> eg;
 
-            eg[2];
-        std::variant<std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>>,
-                     std::unique_ptr<juce::Component>
-                     /*std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>>*/>
-            modvariant;
-
-        juce::Component *modComponent();
-        juce::Component *outputComponent();
-        juce::Component *adsrComponent(int);
-        const std::unique_ptr<multi::ModPane<multi::ModPaneZoneTraits>> &zoneMod()
-        {
-            assert(index == ZoneGroupIndex::ZONE);
-            return std::get<0>(modvariant);
-        }
-
-        // BADBAD
-        const std::unique_ptr<juce::Component> & /*
-         const std::unique_ptr<multi::ModPane<multi::ModPaneGroupTraits>> &*/
-        groupMod()
-        {
-            assert(index == ZoneGroupIndex::GROUP);
-            return std::get<1>(modvariant);
-        }
-
-        const std::unique_ptr<multi::OutputPane<multi::OutPaneZoneTraits>> &zoneOut()
-        {
-            assert(index == ZoneGroupIndex::ZONE);
-            return std::get<0>(outputvariant);
-        }
-
-        const std::unique_ptr<multi::OutputPane<multi::OutPaneGroupTraits>> &groupOut()
-        {
-            assert(index == ZoneGroupIndex::GROUP);
-            return std::get<1>(outputvariant);
-        }
+        std::unique_ptr<multi::ModPane<typename ZGTrait::ModPaneTraits>> modPane;
 
         std::unique_ptr<multi::ProcessorPane> processors[numProcessorDisplays];
 
         void setVisible(bool b);
+        void layoutInto(const juce::Rectangle<int> &mainRect);
     };
 
-    std::unique_ptr<ZoneOrGroupElements> zoneGroupElements[2];
-    const std::unique_ptr<ZoneOrGroupElements> &getZoneElements()
+    std::unique_ptr<ZoneOrGroupElements<ZoneTraits>> zoneElements;
+    const std::unique_ptr<ZoneOrGroupElements<ZoneTraits>> &getZoneElements()
     {
-        return zoneGroupElements[(int)ZoneGroupIndex::ZONE];
+        return zoneElements;
     }
-    const std::unique_ptr<ZoneOrGroupElements> &getGroupElements()
+    std::unique_ptr<ZoneOrGroupElements<GroupTraits>> groupElements;
+    const std::unique_ptr<ZoneOrGroupElements<GroupTraits>> &getGroupElements()
     {
-        return zoneGroupElements[(int)ZoneGroupIndex::GROUP];
+        return groupElements;
     }
 
     MultiScreen(SCXTEditor *e);

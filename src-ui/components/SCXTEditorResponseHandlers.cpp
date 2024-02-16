@@ -50,11 +50,11 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
         if (active)
         {
             // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            std::get<0>(multiScreen->getZoneElements()->eg[which])->adsrChangedFromModel(env);
+            multiScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
         }
         else
         {
-            std::get<0>(multiScreen->getZoneElements()->eg[which])->adsrDeactivated();
+            multiScreen->getZoneElements()->eg[which]->adsrDeactivated();
         }
     }
     else
@@ -62,11 +62,11 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
         if (active)
         {
             // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            std::get<1>(multiScreen->getGroupElements()->eg[which])->adsrChangedFromModel(env);
+            multiScreen->getGroupElements()->eg[which]->adsrChangedFromModel(env);
         }
         else
         {
-            std::get<1>(multiScreen->getGroupElements()->eg[which])->adsrDeactivated();
+            multiScreen->getGroupElements()->eg[which]->adsrDeactivated();
         }
     }
 }
@@ -139,21 +139,21 @@ void SCXTEditor::onZoneProcessorDataMismatch(
 void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &d)
 {
     const auto &[active, sinf, tinf, cinf] = d;
-    multiScreen->getZoneElements()->zoneMod()->setActive(active);
+    multiScreen->getZoneElements()->modPane->setActive(active);
     if (active)
     {
-        multiScreen->getZoneElements()->zoneMod()->matrixMetadata = d;
-        multiScreen->getZoneElements()->zoneMod()->rebuildMatrix();
+        multiScreen->getZoneElements()->modPane->matrixMetadata = d;
+        multiScreen->getZoneElements()->modPane->rebuildMatrix();
     }
 }
 
 void SCXTEditor::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &rt)
 {
     assert(multiScreen->getZoneElements());
-    assert(multiScreen->getZoneElements()->zoneMod());
-    assert(multiScreen->getZoneElements()->zoneMod()->isEnabled());
-    multiScreen->getZoneElements()->zoneMod()->routingTable = rt;
-    multiScreen->getZoneElements()->zoneMod()->refreshMatrix();
+    assert(multiScreen->getZoneElements()->modPane);
+    assert(multiScreen->getZoneElements()->modPane->isEnabled());
+    multiScreen->getZoneElements()->modPane->routingTable = rt;
+    multiScreen->getZoneElements()->modPane->refreshMatrix();
 }
 
 void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &d)
@@ -199,20 +199,20 @@ void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
-    multiScreen->getZoneElements()->zoneOut()->setActive(active);
+    multiScreen->getZoneElements()->outPane->setActive(active);
     if (active)
     {
-        multiScreen->getZoneElements()->zoneOut()->setOutputData(inf);
+        multiScreen->getZoneElements()->outPane->setOutputData(inf);
     }
 }
 
 void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
-    multiScreen->getGroupElements()->groupOut()->setActive(active);
+    multiScreen->getGroupElements()->outPane->setActive(active);
     if (active)
     {
-        multiScreen->getGroupElements()->groupOut()->setOutputData(inf);
+        multiScreen->getGroupElements()->outPane->setOutputData(inf);
     }
 }
 
