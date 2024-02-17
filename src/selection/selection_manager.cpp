@@ -137,8 +137,8 @@ void SelectionManager::selectAction(
         for (auto gi = gs; gi <= ge; ++gi)
         {
             const auto &grp = engine.getPatch()->getPart(zf.part)->getGroup(gi);
-            auto sz = (gi == gs ? zf.zone : 0);
-            auto ez = (gi == ge ? zt.zone : grp->getZones().size() - 1);
+            auto sz = ((gi == gs && zf.zone >= 0) ? zf.zone : 0);
+            auto ez = ((gi == ge && zt.zone >= 0) ? zt.zone : grp->getZones().size() - 1);
             for (auto zi = sz; zi <= ez; ++zi)
             {
                 SelectActionContents se;
