@@ -66,8 +66,9 @@ enum ClientToSerializationMessagesIds
 
     c2s_request_pgz_structure,
 
-    c2s_update_single_processor_data,
-    c2s_update_single_processor_single_value,
+    c2s_update_single_processor_float_value,
+    c2s_update_single_processor_bool_value,
+    c2s_update_single_processor_int32_t_value,
     c2s_set_processor_type,
     c2s_copy_processor_lead_to_all,
     c2s_swap_zone_processors,

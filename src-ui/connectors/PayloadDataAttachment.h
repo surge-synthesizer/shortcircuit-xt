@@ -63,7 +63,7 @@ std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload
     };
 }
 
-template <typename M, typename A, typename ABase, typename... Args>
+template <typename M, typename A, typename ABase = A, typename... Args>
 void configureUpdater(A &att, const typename A::payload_t &p, HasEditor *e, Args... args)
 {
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
@@ -157,9 +157,13 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     bool isBipolar() const override { return description.isBipolar(); }
 };
 
-template <typename Payload, typename ValueType = int>
+template <typename Payload, typename ValueType = int32_t>
 struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
 {
+    typedef Payload payload_t;
+    typedef ValueType value_t;
+    typedef DiscretePayloadDataAttachment<Payload, ValueType> onGui_t;
+
     ValueType &value;
     std::string label;
     std::function<void(const DiscretePayloadDataAttachment &at)> onGuiValueChanged;
@@ -217,6 +221,10 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, boo
     {
     }
 
+    BooleanPayloadDataAttachment(const std::string &p, bool &v)
+        : DiscretePayloadDataAttachment<Payload, bool>(datamodel::pmd().asBool().withName(p), v)
+    {
+    }
     BooleanPayloadDataAttachment(const datamodel::pmd &p, bool &v)
         : DiscretePayloadDataAttachment<Payload, bool>(p, v)
     {
