@@ -47,6 +47,12 @@ std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload
 {
     static_assert(std::is_standard_layout_v<typename A::payload_t>);
 
+    if constexpr (M::hasBoundPayload)
+    {
+        static_assert(std::is_same_v<typename M::bound_t, typename A::payload_t>,
+                      "This means you used a message for a member of a wrong payload type");
+    }
+
     ptrdiff_t pdiff = (uint8_t *)&att.value - (uint8_t *)&p;
     assert(pdiff >= 0);
     assert(pdiff <= sizeof(p) - sizeof(att.value));

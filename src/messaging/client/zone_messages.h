@@ -91,13 +91,15 @@ using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
 SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputInfoUpdate_t,
                  onZoneOutputInfoUpdated);
 
-CLIENT_TO_SERIAL(UpdateZoneOutputFloatValue, c2s_update_zone_output_float_value,
-                 detail::diffMsg_t<float>,
-                 detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputFloatValue, c2s_update_zone_output_float_value,
+                             detail::diffMsg_t<float>, engine::Zone::ZoneOutputInfo,
+                             detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
+                                                           engine, cont));
 
-CLIENT_TO_SERIAL(UpdateZoneOutputInt16TValue, c2s_update_zone_output_int16_t_value,
-                 detail::diffMsg_t<int16_t>,
-                 detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputInt16TValue, c2s_update_zone_output_int16_t_value,
+                             detail::diffMsg_t<int16_t>, engine::Zone::ZoneOutputInfo,
+                             detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
+                                                           engine, cont));
 
 } // namespace scxt::messaging::client
 
