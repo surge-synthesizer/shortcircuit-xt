@@ -213,6 +213,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     void setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp, float *fp, int *ip);
 
   public:
+    size_t preReserveSize{0};
+
     ProcessorType getType() const { return myType; }
     std::string getName() const { return getProcessorName(getType()); }
 

@@ -121,7 +121,11 @@ class RIFFMemFile
     {
         if ((4 + loc) > size)
             return 0;
-        uint32_t val = *(uint32_t *)(data + loc);
+        // uint32_t must be aligned so this old cast doesn't work quite properly
+        // uint32_t val = *(uint32_t *)(data + loc);
+        uint32_t val;
+        memcpy((void *)&val, (void *)(data + loc), sizeof(uint32_t));
+        // assert(val == *(uint32_t *)(data + loc));
         loc += 4;
         return val;
     }

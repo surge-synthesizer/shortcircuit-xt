@@ -76,6 +76,7 @@ SCXTProcessor::~SCXTProcessor()
     {
         // explicitly memory check on exit in the standalone
         engine.reset(nullptr);
+
         scxt::showLeakLog();
     }
 }
@@ -303,6 +304,7 @@ void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
     engine->getSampleManager()->purgeUnreferencedSamples();
     auto xml = scxt::json::streamEngineState(*engine);
+    SCLOG("Streaming State Information: " << xml.size() << " bytes");
     destData.replaceAll(xml.c_str(), xml.size() + 1);
 }
 

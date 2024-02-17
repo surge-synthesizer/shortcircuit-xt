@@ -367,7 +367,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     pgzStructure_t getPartGroupZoneStructure(int partFilter) const;
 
-    const std::unique_ptr<MemoryPool> &getMemoryPool() { return memoryPool; }
+    const std::unique_ptr<MemoryPool> &getMemoryPool()
+    {
+        assert(memoryPool);
+        return memoryPool;
+    }
 
     std::atomic<int32_t> stopEngineRequests{0};
 
