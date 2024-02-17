@@ -36,6 +36,27 @@
     struct className                                                                               \
     {                                                                                              \
         static constexpr ClientToSerializationMessagesIds c2s_id{id};                              \
+        static constexpr bool hasBoundPayload{false};                                              \
+        typedef payloadType c2s_payload_t;                                                         \
+        c2s_payload_t payload{};                                                                   \
+        explicit className(const c2s_payload_t &v) : payload(v) {}                                 \
+        static void executeOnSerialization(const c2s_payload_t &payload, engine::Engine &engine,   \
+                                           MessageController &cont)                                \
+        {                                                                                          \
+            executeBody;                                                                           \
+        }                                                                                          \
+    };                                                                                             \
+    template <> struct ClientToSerializationType<className::c2s_id>                                \
+    {                                                                                              \
+        typedef className T;                                                                       \
+    };
+
+#define CLIENT_TO_SERIAL_CONSTRAINED(className, id, payloadType, boundPayload, executeBody)        \
+    struct className                                                                               \
+    {                                                                                              \
+        static constexpr ClientToSerializationMessagesIds c2s_id{id};                              \
+        static constexpr bool hasBoundPayload{true};                                               \
+        typedef boundPayload bound_t;                                                              \
         typedef payloadType c2s_payload_t;                                                         \
         c2s_payload_t payload{};                                                                   \
         explicit className(const c2s_payload_t &v) : payload(v) {}                                 \
@@ -56,6 +77,8 @@
     {                                                                                              \
         static constexpr ClientToSerializationMessagesIds c2s_id{c2id};                            \
         static constexpr SerializationToClientMessageIds s2c_id{s2id};                             \
+        static constexpr bool hasBoundPayload{false};                                              \
+                                                                                                   \
         typedef c2payloadType c2s_payload_t;                                                       \
         typedef s2payloadType s2c_payload_t;                                                       \
         c2s_payload_t payload{};                                                                   \

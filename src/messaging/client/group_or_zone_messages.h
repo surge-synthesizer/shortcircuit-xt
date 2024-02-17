@@ -35,32 +35,32 @@ typedef std::tuple<bool, int, bool, datamodel::AdsrStorage> adsrViewResponsePayl
 SERIAL_TO_CLIENT(AdsrGroupOrZoneUpdate, s2c_update_group_or_zone_adsr_view,
                  adsrViewResponsePayload_t, onGroupOrZoneEnvelopeUpdated);
 
-CLIENT_TO_SERIAL(UpdateZoneGroupEGFloatValue, c2s_update_zone_or_group_adsr_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<float>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
-                                                             &engine::Group::gegStorage, payload,
-                                                             engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneGroupEGFloatValue, c2s_update_zone_or_group_adsr_value,
+                             detail::indexedZoneOrGroupDiffMsg_t<float>, datamodel::AdsrStorage,
+                             detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
+                                                                         &engine::Group::gegStorage,
+                                                                         payload, engine, cont));
 
-CLIENT_TO_SERIAL(UpdateZoneOrGroupModStorageFloatValue,
-                 c2s_update_zone_or_group_modstorage_float_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<float>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
-                                                             &engine::Group::modulatorStorage,
-                                                             payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupModStorageFloatValue, c2s_update_zone_or_group_modstorage_float_value,
+    detail::indexedZoneOrGroupDiffMsg_t<float>, modulation::ModulatorStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                &engine::Group::modulatorStorage, payload, engine,
+                                                cont));
 
-CLIENT_TO_SERIAL(UpdateZoneOrGroupModStorageBoolValue,
-                 c2s_update_zone_or_group_modstorage_bool_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<bool>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
-                                                             &engine::Group::modulatorStorage,
-                                                             payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupModStorageBoolValue, c2s_update_zone_or_group_modstorage_bool_value,
+    detail::indexedZoneOrGroupDiffMsg_t<bool>, modulation::ModulatorStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                &engine::Group::modulatorStorage, payload, engine,
+                                                cont));
 
-CLIENT_TO_SERIAL(UpdateZoneOrGroupModStorageInt16TValue,
-                 c2s_update_zone_or_group_modstorage_int16_t_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<int16_t>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
-                                                             &engine::Group::modulatorStorage,
-                                                             payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupModStorageInt16TValue, c2s_update_zone_or_group_modstorage_int16_t_value,
+    detail::indexedZoneOrGroupDiffMsg_t<int16_t>, modulation::ModulatorStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                &engine::Group::modulatorStorage, payload, engine,
+                                                cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_GROUP_OR_ZONE_MESSAGES_H

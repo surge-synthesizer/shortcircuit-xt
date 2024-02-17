@@ -314,6 +314,8 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
             renameEditor->setVisible(false);
         }
         void textEditorFocusLost(juce::TextEditor &) override { renameEditor->setVisible(false); }
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(rowComponent);
     };
     struct rowAddComponent : juce::Component
     {
@@ -332,6 +334,8 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
             auto b = getLocalBounds().withSizeKeepingCentre(getHeight(), getHeight()).reduced(1);
             gBut->setBounds(b);
         }
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(rowAddComponent);
     };
 
     juce::Component *refreshComponentForRow(int rowNumber, bool isRowSelected,

@@ -128,23 +128,26 @@ CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorP
 CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, int,
                  engine.getSelectionManager()->copyZoneProcessorLeadToAll(payload));
 
-CLIENT_TO_SERIAL(UpdateZoneOrGroupProcessorFloatValue, c2s_update_single_processor_float_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<float>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
-                                                             &engine::Group::processorStorage,
-                                                             payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupProcessorFloatValue, c2s_update_single_processor_float_value,
+    detail::indexedZoneOrGroupDiffMsg_t<float>, dsp::processor::ProcessorStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
+                                                &engine::Group::processorStorage, payload, engine,
+                                                cont));
 
-CLIENT_TO_SERIAL(UpdateZoneOrGroupProcessorInt32TValue, c2s_update_single_processor_int32_t_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<int32_t>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
-                                                             &engine::Group::processorStorage,
-                                                             payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupProcessorInt32TValue, c2s_update_single_processor_int32_t_value,
+    detail::indexedZoneOrGroupDiffMsg_t<int32_t>, dsp::processor::ProcessorStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
+                                                &engine::Group::processorStorage, payload, engine,
+                                                cont));
 
-CLIENT_TO_SERIAL(UpdateZoneOrGroupProcessorBoolValue, c2s_update_single_processor_bool_value,
-                 detail::indexedZoneOrGroupDiffMsg_t<bool>,
-                 detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
-                                                             &engine::Group::processorStorage,
-                                                             payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupProcessorBoolValue, c2s_update_single_processor_bool_value,
+    detail::indexedZoneOrGroupDiffMsg_t<bool>, dsp::processor::ProcessorStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
+                                                &engine::Group::processorStorage, payload, engine,
+                                                cont));
 
 // C2S set processor type (sends back data and metadata)
 typedef std::pair<int32_t, int32_t> processorPair_t;
