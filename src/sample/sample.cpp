@@ -37,6 +37,15 @@ namespace scxt::sample
 // Fine in a cpp
 using namespace sst::basic_blocks::mechanics;
 
+Sample::~Sample()
+{
+    SCLOG("Deleting sample '" << displayName << "'");
+    if (sampleData[0])
+        free(sampleData[0]);
+    if (sampleData[1])
+        free(sampleData[1]);
+}
+
 bool Sample::load(const fs::path &path)
 {
     if (!fs::exists(path))

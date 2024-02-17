@@ -119,11 +119,17 @@ void HeaderRegion::setVULevel(float L, float R)
     if (vuMeter)
     {
         float ub = 1.4f;
-        vuLevel[0] = sqrt(std::clamp(L, 0.f, ub)) / sqrt(ub);
-        vuLevel[1] = sqrt(std::clamp(R, 0.f, ub)) / sqrt(ub);
+        auto nvuL = sqrt(std::clamp(L, 0.f, ub)) / sqrt(ub);
+        auto nvuR = sqrt(std::clamp(R, 0.f, ub)) / sqrt(ub);
 
-        vuMeter->setLevels(vuLevel[0], vuLevel[1]);
-        vuMeter->repaint();
+        if (std::fabs(nvuL - vuLevel[0]) + std::fabs(nvuR - vuLevel[1]) > 1e-6)
+        {
+            vuLevel[0] = nvuL;
+            vuLevel[1] = nvuR;
+
+            vuMeter->setLevels(vuLevel[0], vuLevel[1]);
+            vuMeter->repaint();
+        }
     }
 }
 

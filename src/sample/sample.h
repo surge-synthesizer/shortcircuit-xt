@@ -46,7 +46,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     Sample() : id(SampleID::next()) {}
     Sample(const SampleID &sid) : displayName(sid.to_string()), id(sid) {}
-    virtual ~Sample() = default;
+    virtual ~Sample();
 
     void dumpInformationToLog();
 

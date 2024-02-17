@@ -39,15 +39,27 @@ struct SCXTVFXConfig
     using BaseClass = Processor;
     static constexpr int blockSize{scxt::blockSize};
 
-    static void preReservePool(BaseClass *b, size_t s) { b->memoryPool->preReservePool(s); }
+    static void preReservePool(BaseClass *b, size_t s)
+    {
+        if (b->memoryPool)
+        {
+            b->memoryPool->preReservePool(s);
+        }
+        else
+        {
+            b->preReserveSize = s;
+        }
+    }
 
     static uint8_t *checkoutBlock(BaseClass *b, size_t s)
     {
+        assert(b->memoryPool);
         return b->memoryPool->checkoutBlock(s);
     }
 
     static void returnBlock(BaseClass *b, uint8_t *d, size_t s)
     {
+        assert(b->memoryPool);
         b->memoryPool->returnBlock(d, s);
     }
 
@@ -197,6 +209,12 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
     parameter_count = T::numFloatParams;
     for (int i = 0; i < parameter_count; ++i)
         this->ctrlmode_desc[i] = that->paramAt(i);
+
+    if (preReserveSize > 0)
+    {
+        assert(memoryPool);
+        memoryPool->preReservePool(preReserveSize);
+    }
 }
 
 } // namespace scxt::dsp::processor

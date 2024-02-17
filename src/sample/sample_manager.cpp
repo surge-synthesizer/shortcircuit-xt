@@ -59,6 +59,8 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
     }
 }
 
+SampleManager::~SampleManager() { SCLOG("Destroying Sample Manager"); }
+
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {
     return loadSampleByPathToID(p, SampleID::next());

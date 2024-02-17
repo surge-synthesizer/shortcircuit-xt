@@ -124,6 +124,7 @@ Engine::~Engine()
         }
     }
     messageController->stop();
+    sampleManager->purgeUnreferencedSamples();
 }
 
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)

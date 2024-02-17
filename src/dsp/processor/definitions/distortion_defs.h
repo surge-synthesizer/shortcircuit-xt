@@ -46,6 +46,7 @@ struct alignas(16) MicroGate
 
     MicroGate(engine::MemoryPool *mp, float *f, int32_t *i)
     {
+        assert(mp);
         setupProcessor(this, proct_fx_microgate, mp, f, i);
     }
     virtual ~MicroGate() = default;

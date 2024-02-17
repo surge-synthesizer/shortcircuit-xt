@@ -46,6 +46,7 @@ struct SampleManager : MoveableOnly<SampleManager>
 {
     const ThreadingChecker &threadingChecker;
     SampleManager(const ThreadingChecker &t) : threadingChecker(t) {}
+    ~SampleManager();
 
     std::optional<SampleID> loadSampleByFileAddress(const Sample::SampleFileAddress &);
     std::optional<SampleID> loadSampleByFileAddressToID(const Sample::SampleFileAddress &,

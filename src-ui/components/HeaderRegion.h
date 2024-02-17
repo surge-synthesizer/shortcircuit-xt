@@ -62,6 +62,14 @@ struct HeaderRegion : juce::Component, HasEditor
         g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
 #endif
 
+#if MAC
+        g.setFont(juce::Font("Comic Sans MS", 18, juce::Font::plain));
+
+        auto vc = fmt::format("Dbg Approx Mem: {:.2f} Mb", memUsageInMegabytes);
+        g.setColour(juce::Colours::white);
+        g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
+#endif
+
         return;
 #if BUILD_IS_DEBUG
         g.fillAll(juce::Colours::red);
@@ -86,6 +94,18 @@ struct HeaderRegion : juce::Component, HasEditor
             voiceCount = vc;
             repaint();
         }
+    }
+
+    float memUsageInMegabytes{0.f};
+    void setMemUsage(float m)
+    {
+#if MAC
+        if (m != memUsageInMegabytes)
+        {
+            memUsageInMegabytes = m;
+            repaint();
+        }
+#endif
     }
 
     float vuLevel[2];
