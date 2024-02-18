@@ -55,12 +55,23 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                                                 &engine::Group::modulatorStorage, payload, engine,
                                                 cont));
 
+// int updates can change shape. For now lets just always assume they do
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageInt16TValue, c2s_update_zone_or_group_modstorage_int16_t_value,
     detail::indexedZoneOrGroupDiffMsg_t<int16_t>, modulation::ModulatorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
-                                                &engine::Group::modulatorStorage, payload, engine,
-                                                cont));
+    detail::updateZoneOrGroupIndexedMemberValue(
+        &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
+        [](auto &eng) {
+            // ToDo: Have to do the group side of this later
+            auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+            if (lz.has_value())
+            {
+                auto &z = eng.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
+                serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
+                                          voice::modulation::getVoiceMatrixMetadata(*z),
+                                          *(eng.getMessageController()));
+            }
+        }))
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_GROUP_OR_ZONE_MESSAGES_H

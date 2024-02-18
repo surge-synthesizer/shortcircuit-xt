@@ -49,7 +49,7 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-struct StepLFOPane : juce::Component
+struct StepLFOPane : juce::Component, HasEditor
 {
     struct StepRender : juce::Component
     {
@@ -161,6 +161,7 @@ struct StepLFOPane : juce::Component
             auto idx = std::clamp((int)std::floor(f.x / w), 0, sp);
             return idx;
         }
+
         void handleMouseAt(const juce::Point<float> &f)
         {
             auto idx = indexForPosition(f);
@@ -168,9 +169,9 @@ struct StepLFOPane : juce::Component
                 return;
 
             auto d = (1 - f.y / getHeight()) * 2 - 1;
-            parent->modulatorStorageData[parent->selectedTab].stepLfoStorage.data[idx] = d;
+            parent->stepLfoPane->setStep(idx, d);
             recalcCurve();
-            parent->pushCurrentModulatorStorageUpdate();
+            repaint();
         }
         void mouseDown(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
         void mouseDrag(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
@@ -179,9 +180,9 @@ struct StepLFOPane : juce::Component
             auto idx = indexForPosition(event.position);
             if (idx < 0)
                 return;
-            parent->modulatorStorageData[parent->selectedTab].stepLfoStorage.data[idx] = 0.f;
+            parent->stepLfoPane->setStep(idx, 0);
             recalcCurve();
-            parent->pushCurrentModulatorStorageUpdate();
+            repaint();
         }
 
         std::vector<std::pair<float, float>> cycleCurve;
@@ -222,7 +223,7 @@ struct StepLFOPane : juce::Component
     std::unique_ptr<StepRender> stepRender;
 
     LfoPane *parent{nullptr};
-    StepLFOPane(LfoPane *p) : parent(p)
+    StepLFOPane(LfoPane *p) : parent(p), HasEditor(p->editor)
     {
         stepRender = std::make_unique<StepRender>(parent);
         addAndMakeVisible(*stepRender);
@@ -232,7 +233,8 @@ struct StepLFOPane : juce::Component
                 if (w && w->parent)
                 {
                     auto p = w->parent;
-                    p->pushCurrentModulatorStorageUpdate();
+                    // p->pushCurrentModulatorStorageUpdate();
+                    // p->pushCurrentModulatorStorageUpdate();
                     p->updateValueTooltip(a);
                     w->stepRender->recalcCurve();
                     p->repaint();
@@ -240,78 +242,64 @@ struct StepLFOPane : juce::Component
             };
         };
 
+        using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
+                                                   cmsg::UpdateZoneOrGroupModStorageFloatValue>;
+        using bfac =
+            connectors::BooleanSingleValueFactory<LfoPane::boolBaseAttachment_t,
+                                                  cmsg::UpdateZoneOrGroupModStorageBoolValue>;
+        using ifac = connectors::SingleValueFactory<LfoPane::int16Attachment_t,
+                                                    cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
+
         typedef LfoPane::attachment_t attachment_t;
 
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
         auto &ls = ms.stepLfoStorage;
 
-        stepsA = std::make_unique<LfoPane::intAttachment_t>(
-            datamodel::pmd()
-                .asInt()
-                .withLinearScaleFormatting("")
-                .withRange(1, modulation::modulators::StepLFOStorage::stepLfoSteps)
-                .withDefault(16)
-                .withName("Step Count"),
-            update(), ls.repeat);
-        stepsJ = std::make_unique<jcmp::JogUpDownButton>();
+        ifac::attachAndAdd(datamodel::pmd()
+                               .asInt()
+                               .withLinearScaleFormatting("")
+                               .withRange(1, modulation::modulators::StepLFOStorage::stepLfoSteps)
+                               .withDefault(16)
+                               .withName("Step Count"),
+                           ms, ms.stepLfoStorage.repeat, this, stepsA, stepsJ, parent->forZone,
+                           parent->selectedTab);
         stepsJ->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
-
-        stepsJ->setSource(stepsA.get());
-        addAndMakeVisible(*stepsJ);
-
-        cycleA =
-            std::make_unique<LfoPane::boolBaseAttachment_t>(datamodel::pmd()
-                                                                .asBool()
-                                                                .withName("Cycle")
-                                                                .withCustomMinDisplay("RATE: CYCLE")
-                                                                .withCustomMaxDisplay("RATE: STEP"),
-                                                            update(), ls.rateIsForSingleStep);
-        cycleB = std::make_unique<jcmp::ToggleButton>();
-        cycleB->setSource(cycleA.get());
-        cycleB->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED_BY_DATA);
-        cycleB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
-        addAndMakeVisible(*cycleB);
-
-        rateA = std::make_unique<attachment_t>(datamodel::lfoModulationRate().withName("Rate"),
-                                               update(), ms.rate);
-        auto mk = [this](auto &a, auto b) {
-            auto L = std::make_unique<jcmp::Label>();
-            L->setText(b);
-            addAndMakeVisible(*L);
-            auto K = std::make_unique<jcmp::Knob>();
-            K->setSource(a.get());
-            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-            parent->setupWidgetForValueTooltip(K, a);
-            addAndMakeVisible(*K);
-            return std::make_pair(std::move(K), std::move(L));
-        };
-        auto r = mk(rateA, "Rate");
-        rateK = std::move(r.first);
-        rateL = std::move(r.second);
-
-        deformA = std::make_unique<attachment_t>(datamodel::lfoSmoothing().withName("Deform"),
-                                                 update(), ls.smooth);
-        auto d = mk(deformA, "Deform");
-        deformK = std::move(d.first);
-        deformL = std::move(d.second);
-
-        phaseA = std::make_unique<attachment_t>(datamodel::pmd().asPercent().withName("Phase"),
-                                                update(), ms.start_phase);
-        auto ph = mk(phaseA, "Phase");
-        phaseK = std::move(ph.first);
-        phaseL = std::move(ph.second);
-
-        jog[0] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_UP);
-        jog[0]->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        connectors::addGuiStep(*stepsA, [w = juce::Component::SafePointer(this)](const auto &a) {
             if (w)
-                w->shiftBy(0.05);
+                w->stepRender->recalcCurve();
         });
 
-        jog[1] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_DOWN);
-        jog[1]->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->shiftBy(-0.05);
-        });
+        bfac::attachAndAdd(datamodel::pmd()
+                               .asBool()
+                               .withName("Cycle")
+                               .withCustomMinDisplay("RATE: CYCLE")
+                               .withCustomMaxDisplay("RATE: STEP"),
+                           ms, ms.stepLfoStorage.rateIsForSingleStep, this, cycleA, cycleB,
+                           parent->forZone, parent->selectedTab);
+        cycleB->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED_BY_DATA);
+
+        fac::attachAndAdd(datamodel::lfoModulationRate().withName("Rate"), ms, ms.rate, this, rateA,
+                          rateK, parent->forZone, parent->selectedTab);
+        rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        rateL = std::make_unique<jcmp::Label>();
+        rateL->setText("Rate");
+        addAndMakeVisible(*rateL);
+
+        fac::attachAndAdd(datamodel::lfoSmoothing().withName("Deform"), ms,
+                          ms.stepLfoStorage.smooth, this, deformA, deformK, parent->forZone,
+                          parent->selectedTab);
+        deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        deformL = std::make_unique<jcmp::Label>();
+        deformL->setText("Deform");
+        addAndMakeVisible(*deformL);
+
+        fac::attachAndAdd(datamodel::pmd().asPercent().withName("Phase"), ms, ms.start_phase, this,
+                          phaseA, phaseK, parent->forZone, parent->selectedTab);
+        phaseK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        phaseL = std::make_unique<jcmp::Label>();
+        phaseL->setText("Phase");
+        addAndMakeVisible(*phaseL);
+
         jog[2] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_LEFT);
         jog[2]->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
@@ -325,22 +313,22 @@ struct StepLFOPane : juce::Component
 
         for (const auto &j : jog)
         {
-            addAndMakeVisible(*j);
-            j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+            if (j)
+            {
+                addAndMakeVisible(*j);
+                j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+            }
         }
     }
 
-    void shiftBy(float amt)
+    void setStep(int idx, float v)
     {
-        auto &ls = parent->modulatorStorageData[parent->selectedTab].stepLfoStorage;
-
-        for (int i = 0; i < ls.repeat; ++i)
-        {
-            ls.data[i] = std::clamp(ls.data[i] + amt, -1.f, 1.f);
-        }
-
-        parent->pushCurrentModulatorStorageUpdate();
+        auto &ms = parent->modulatorStorageData[parent->selectedTab];
+        ms.stepLfoStorage.data[idx] = v;
+        connectors::updateSingleValue<cmsg::UpdateZoneOrGroupModStorageFloatValue>(
+            ms, ms.stepLfoStorage.data[idx], parent, parent->forZone, parent->selectedTab);
     }
+
     void rotate(int dir)
     {
         auto &ls = parent->modulatorStorageData[parent->selectedTab].stepLfoStorage;
@@ -350,7 +338,7 @@ struct StepLFOPane : juce::Component
             auto p0 = ls.data[0];
             for (int i = 0; i < ls.repeat; ++i)
             {
-                ls.data[i] = (i == ls.repeat - 1 ? p0 : ls.data[i + 1]);
+                setStep(i, i == ls.repeat - 1 ? p0 : ls.data[i + 1]);
             }
         }
         else
@@ -358,17 +346,17 @@ struct StepLFOPane : juce::Component
             auto p0 = ls.data[ls.repeat - 1];
             for (int i = ls.repeat - 1; i >= 0; --i)
             {
-                ls.data[i] = (i == 0 ? p0 : ls.data[i - 1]);
+                setStep(i, i == 0 ? p0 : ls.data[i - 1]);
             }
         }
-        parent->pushCurrentModulatorStorageUpdate();
+        stepRender->recalcCurve();
     }
 
     std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA;
     std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK;
     std::unique_ptr<jcmp::Label> rateL, deformL, phaseL;
 
-    std::unique_ptr<LfoPane::intAttachment_t> stepsA;
+    std::unique_ptr<LfoPane::int16Attachment_t> stepsA;
     std::unique_ptr<jcmp::JogUpDownButton> stepsJ;
 
     std::unique_ptr<LfoPane::boolBaseAttachment_t> cycleA;
@@ -410,9 +398,8 @@ struct StepLFOPane : juce::Component
         auto bthrd = bx.getWidth() / 3;
         auto rc = bx.toFloat().withWidth(bthrd);
         jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
+
         rc = rc.translated(bthrd, 0);
-        jog[0]->setBounds(rc.withHeight(bthrd).toNearestInt());
-        jog[1]->setBounds(rc.withHeight(bthrd).translated(0, 2 * bthrd).toNearestInt());
 
         rc = rc.translated(bthrd, 0);
         jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
@@ -653,57 +640,55 @@ void LfoPane::rebuildPanelComponents()
         return;
 
     auto &ms = modulatorStorageData[selectedTab];
-    auto updateNoTT = [r = juce::Component::SafePointer(this)]() {
-        return [w = juce::Component::SafePointer(r)](const auto &a) {
-            if (w)
-            {
-                w->pushCurrentModulatorStorageUpdate();
-                w->repaint();
-            }
-        };
-    };
-    modulatorShapeA = std::make_unique<shapeAttachment_t>(
-        datamodel::pmd()
-            .asInt()
-            .withName("Modulator Shape")
-            .withRange(modulation::ModulatorStorage::STEP,
-                       modulation::ModulatorStorage::MSEG -
-                           1) /* This -1 turns off MSEG in the menu */
-            .withUnorderedMapFormatting({
-                {modulation::ModulatorStorage::STEP, "STEP"},
-                {modulation::ModulatorStorage::MSEG, "MSEG"},
-                {modulation::ModulatorStorage::LFO_SINE, "SINE"},
-                {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
-                {modulation::ModulatorStorage::LFO_TRI, "TRI"},
-                {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
-                {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
-                {modulation::ModulatorStorage::LFO_ENV, "ENV"},
-                {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
-            }),
-        updateNoTT(), ms.modulatorShape);
-    modulatorShape = std::make_unique<jcmp::JogUpDownButton>();
-    modulatorShape->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
-    modulatorShape->setSource(modulatorShapeA.get());
 
+    using sfac = connectors::SingleValueFactory<shapeAttachment_t,
+                                                cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
+    using tfac = connectors::SingleValueFactory<triggerAttachment_t,
+                                                cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
+
+    auto shapeMD = datamodel::pmd()
+                       .asInt()
+                       .withName("Modulator Shape")
+                       .withRange(modulation::ModulatorStorage::STEP,
+                                  modulation::ModulatorStorage::MSEG -
+                                      1) /* This -1 turns off MSEG in the menu */
+                       .withUnorderedMapFormatting({
+                           {modulation::ModulatorStorage::STEP, "STEP"},
+                           {modulation::ModulatorStorage::MSEG, "MSEG"},
+                           {modulation::ModulatorStorage::LFO_SINE, "SINE"},
+                           {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
+                           {modulation::ModulatorStorage::LFO_TRI, "TRI"},
+                           {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
+                           {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
+                           {modulation::ModulatorStorage::LFO_ENV, "ENV"},
+                           {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
+                       });
+    sfac::attach(shapeMD, ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
+                 selectedTab);
+    connectors::addGuiStep(*modulatorShapeA,
+                           [w = juce::Component::SafePointer(this)](const auto &x) {
+                               if (w)
+                                   w->setSubPaneVisibility();
+                           });
+
+    modulatorShape->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
     getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
-    triggerModeA = std::make_unique<triggerAttachment_t>(
-        datamodel::pmd()
-            .asInt()
-            .withName("Trigger")
-            .withRange(modulation::ModulatorStorage::KEYTRIGGER,
-                       modulation::ModulatorStorage::ONESHOT)
-            .withUnorderedMapFormatting({
-                {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
-                {modulation::ModulatorStorage::FREERUN, "SONGPOS"},
-                {modulation::ModulatorStorage::RANDOM, "RANDOM"},
-                {modulation::ModulatorStorage::RELEASE, "RELEASE"},
-                {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
-            }),
-        updateNoTT(), ms.triggerMode);
-    triggerMode = std::make_unique<jcmp::MultiSwitch>();
+    auto trigMD = datamodel::pmd()
+                      .asInt()
+                      .withName("Trigger")
+                      .withRange(modulation::ModulatorStorage::KEYTRIGGER,
+                                 modulation::ModulatorStorage::ONESHOT)
+                      .withUnorderedMapFormatting({
+                          {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
+                          {modulation::ModulatorStorage::FREERUN, "SONGPOS"},
+                          {modulation::ModulatorStorage::RANDOM, "RANDOM"},
+                          {modulation::ModulatorStorage::RELEASE, "RELEASE"},
+                          {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
+                      });
+
+    tfac::attach(trigMD, ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
     triggerMode->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMultiSwitch);
-    triggerMode->setSource(triggerModeA.get());
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
 
     stepLfoPane = std::make_unique<StepLFOPane>(this);
@@ -751,15 +736,6 @@ void LfoPane::setSubPaneVisibility()
     msegLfoPane->setVisible(ms.isMSEG());
     curveLfoPane->setVisible(ms.isCurve());
     envLfoPane->setVisible(ms.isEnv());
-}
-
-void LfoPane::pushCurrentModulatorStorageUpdate()
-{
-    modulatorStorageData[selectedTab].configureCalculatedState();
-    sendToSerialization(cmsg::IndexedModulatorStorageUpdated(
-        {forZone, true, selectedTab, modulatorStorageData[selectedTab]}));
-    setSubPaneVisibility();
-    repaint();
 }
 
 void LfoPane::pickPresets()
