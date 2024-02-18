@@ -484,11 +484,13 @@ struct CurveLFOPane : juce::Component, HasEditor
         bfac::attachAndAdd(datamodel::pmd().asBool().withName("Unipolar"), ms,
                            ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB, parent->forZone,
                            parent->selectedTab);
+        unipolarB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         unipolarB->setLabel("UNI");
 
         bfac::attachAndAdd(datamodel::pmd().asBool().withName("Use Envelope"), ms,
                            ms.curveLfoStorage.useenv, this, useenvA, useenvB, parent->forZone,
                            parent->selectedTab);
+        useenvB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         useenvB->setLabel("ENV");
 
         curveDraw = std::make_unique<CurveDraw>(parent);
@@ -547,17 +549,80 @@ struct CurveLFOPane : juce::Component, HasEditor
     std::unique_ptr<CurveDraw> curveDraw;
 };
 
-struct ENVLFOPane : juce::Component
+struct ENVLFOPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
-    ENVLFOPane(LfoPane *p) : parent(p) {}
-
-    void paint(juce::Graphics &g) override
+    ENVLFOPane(LfoPane *p) : parent(p), HasEditor(p->editor)
     {
-        g.setColour(juce::Colours::orchid);
-        g.setFont(juce::Font("Comic Sans MS", 30, juce::Font::plain));
-        g.drawText("ENV", getLocalBounds(), juce::Justification::centred);
+        assert(parent);
+        using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
+                                                   cmsg::UpdateZoneOrGroupModStorageFloatValue>;
+
+        auto &ms = parent->modulatorStorageData[parent->selectedTab];
+
+        auto makeLabel = [this](auto &lb, const std::string &l) {
+            lb = std::make_unique<sst::jucegui::components::Label>();
+            lb->setText(l);
+            addAndMakeVisible(*lb);
+        };
+        auto e32 = datamodel::envelopeThirtyTwo();
+        auto epc = datamodel::pmd().asPercent();
+        auto makeO = [&, this](auto &lb, auto md, auto &mem, auto &A, auto &K, auto &L) {
+            fac::attachAndAdd(md.withName(lb), ms, mem, this, A, K, parent->forZone,
+                              parent->selectedTab);
+            makeLabel(L, lb);
+            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+        };
+
+        makeO("Delay", e32, ms.envLfoStorage.delay, delayA, delayK, delayL);
+        makeO("Attack", e32, ms.envLfoStorage.attack, attackA, attackK, attackL);
+        makeO("Hold", e32, ms.envLfoStorage.hold, holdA, holdK, holdL);
+        makeO("Decay", e32, ms.envLfoStorage.decay, decayA, decayK, decayL);
+        makeO("Sustain", epc, ms.envLfoStorage.sustain, sustainA, sustainK, sustainL);
+        makeO("Release", epc, ms.envLfoStorage.release, releaseA, releaseK, releaseL);
     }
+
+    void resized() override
+    {
+        auto mg = 3;
+        auto lbHt = 12;
+
+        auto b = getLocalBounds();
+
+        auto knobw = b.getHeight() / 2 - lbHt - mg;
+
+        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2);
+        delayK->setBounds(bx.withHeight(knobw));
+        delayL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+
+        attackK->setBounds(bx.withHeight(knobw));
+        attackL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+
+        holdK->setBounds(bx.withHeight(knobw));
+        holdL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+
+        bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(0, b.getHeight() / 2);
+
+        decayK->setBounds(bx.withHeight(knobw));
+        decayL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+
+        sustainK->setBounds(bx.withHeight(knobw));
+        sustainL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+
+        releaseK->setBounds(bx.withHeight(knobw));
+        releaseL->setBounds(bx.withTrimmedTop(knobw));
+        bx = bx.translated(knobw + mg, 0);
+        bx = bx.translated(knobw + mg, 0);
+    }
+
+    std::unique_ptr<LfoPane::attachment_t> delayA, attackA, holdA, decayA, sustainA, releaseA;
+    std::unique_ptr<jcmp::Knob> delayK, attackK, holdK, decayK, sustainK, releaseK;
+    std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL;
 };
 
 struct MSEGLFOPane : juce::Component

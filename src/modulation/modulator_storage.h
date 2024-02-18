@@ -58,6 +58,12 @@ struct CurveLFOStorage
     bool unipolar{false};
     bool useenv{false};
 };
+
+struct EnvLFOStorage
+{
+    float deform{0.f};
+    float delay{0.f}, attack{0.f}, hold{0.f}, decay{0.f}, sustain{1.f}, release{0.f};
+};
 } // namespace modulators
 
 struct ModulatorStorage
@@ -95,6 +101,7 @@ struct ModulatorStorage
 
     modulators::StepLFOStorage stepLfoStorage;
     modulators::CurveLFOStorage curveLfoStorage;
+    modulators::EnvLFOStorage envLfoStorage;
     // modulators::MSEGStorage msegStorage;
 
     // In addition to streamed members above we have some calculated
