@@ -41,9 +41,28 @@
 
 namespace scxt::ui::connectors
 {
+
+template <typename M, typename P, typename V, typename... Args>
+inline void updateSingleValue(const P &p, V &value, HasEditor *e, Args... args)
+{
+    static_assert(std::is_standard_layout_v<P>);
+
+    if constexpr (M::hasBoundPayload)
+    {
+        static_assert(std::is_same_v<typename M::bound_t, P>,
+                      "This means you used a message for a member of a wrong payload type");
+    }
+
+    ptrdiff_t pdiff = (uint8_t *)&value - (uint8_t *)&p;
+    assert(pdiff >= 0);
+    assert(pdiff <= sizeof(p) - sizeof(value));
+
+    e->sendToSerialization(M({args..., pdiff, value}));
+}
+
 template <typename M, typename A, typename ABase, typename... Args>
-std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload_t &p, HasEditor *e,
-                                               Args... args)
+inline std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload_t &p,
+                                                      HasEditor *e, Args... args)
 {
     static_assert(std::is_standard_layout_v<typename A::payload_t>);
 
@@ -60,19 +79,33 @@ std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload
     auto jc = dynamic_cast<juce::Component *>(e);
     assert(jc);
 
-    return [w = juce::Component::SafePointer(jc), e, pdiff, args...](const ABase &a) {
+    auto showTT = std::is_same_v<
+        typename std::remove_cv<typename std::remove_reference<decltype(att.value)>::type>::type,
+        float>;
+
+    return [w = juce::Component::SafePointer(jc), e, showTT, pdiff, args...](const ABase &a) {
         if (w)
         {
             e->sendToSerialization(M({args..., pdiff, a.value}));
-            e->updateValueTooltip(a);
+            if (showTT)
+                e->updateValueTooltip(a);
         }
     };
 }
 
 template <typename M, typename A, typename ABase = A, typename... Args>
-void configureUpdater(A &att, const typename A::payload_t &p, HasEditor *e, Args... args)
+inline void configureUpdater(A &att, const typename A::payload_t &p, HasEditor *e, Args... args)
 {
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
+}
+
+template <typename A, typename F> inline void addGuiStep(A &att, F andThen)
+{
+    auto orig = att.onGuiValueChanged;
+    att.onGuiValueChanged = [orig, andThen](const auto &a) {
+        orig(a);
+        andThen(a);
+    };
 }
 
 template <typename Payload, typename ValueType = float>

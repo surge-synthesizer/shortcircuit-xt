@@ -44,7 +44,7 @@ struct StepLFOStorage
 
     StepLFOStorage() { std::fill(data.begin(), data.end(), 0.f); }
     std::array<float, stepLfoSteps> data;
-    int repeat{16};
+    int16_t repeat{16};
 
     float smooth{0.f};
     bool rateIsForSingleStep{false};
@@ -62,7 +62,7 @@ struct CurveLFOStorage
 
 struct ModulatorStorage
 {
-    enum ModulatorShape
+    enum ModulatorShape : int16_t
     {
         STEP,
 
@@ -79,7 +79,7 @@ struct ModulatorStorage
     DECLARE_ENUM_STRING(ModulatorShape);
 
     // These enum values are streamed. Do not change them.
-    enum TriggerMode
+    enum TriggerMode : int16_t
     {
         KEYTRIGGER,
         FREERUN,
