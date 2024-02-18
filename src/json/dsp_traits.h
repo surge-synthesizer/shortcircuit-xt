@@ -39,90 +39,68 @@
 namespace scxt::json
 {
 
-template <> struct scxt_traits<scxt::dsp::processor::ProcessorStorage>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::dsp::processor::ProcessorStorage &t)
-    {
-        if (t.type == dsp::processor::proct_none)
-        {
-            v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)}};
-        }
-        else
-        {
-            v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
-                 {"mix", t.mix},
-                 {"floatParams", t.floatParams},
-                 {"intParams", t.intParams},
-                 {"isActive", t.isActive}};
-        }
-    }
+SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
+                 auto &t = from;
+                 if (t.type == dsp::processor::proct_none)
+                 {
+                     v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)}};
+                 }
+                 else
+                 {
+                     v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
+                          {"mix", t.mix},
+                          {"floatParams", t.floatParams},
+                          {"intParams", t.intParams},
+                          {"isActive", t.isActive}};
+                 }
+             }),
+             SC_TO({
+                 auto &result = to;
+                 const auto &object = v.get_object();
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::dsp::processor::ProcessorStorage &result)
-    {
-        const auto &object = v.get_object();
+                 auto optType = scxt::dsp::processor::fromProcessorStreamingName(
+                     v.at("type").template as<std::string>());
 
-        auto optType = scxt::dsp::processor::fromProcessorStreamingName(
-            v.at("type").template as<std::string>());
+                 if (optType.has_value())
+                     result.type = *optType;
+                 else
+                     result.type = scxt::dsp::processor::proct_none;
 
-        if (optType.has_value())
-            result.type = *optType;
-        else
-            result.type = scxt::dsp::processor::proct_none;
+                 if (result.type == dsp::processor::proct_none)
+                 {
+                     result = scxt::dsp::processor::ProcessorStorage();
+                     result.type = dsp::processor::proct_none;
+                 }
+                 else
+                 {
+                     findIf(v, "mix", result.mix);
+                     fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
+                     fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
+                     findOrSet(v, "isActive", false, result.isActive);
+                 }
+             }))
 
-        if (result.type == dsp::processor::proct_none)
-        {
-            result = scxt::dsp::processor::ProcessorStorage();
-            result.type = dsp::processor::proct_none;
-        }
-        else
-        {
-            findIf(v, "mix", result.mix);
-            fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
-            fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
-            findOrSet(v, "isActive", false, result.isActive);
-        }
-    }
-};
+SC_STREAMDEF(scxt::dsp::processor::ProcessorDescription,
+             SC_FROM({ // Streaming this type as an int is fine since the processor storage
+                 // stringifies definitively. This is just for in-session communication
+                 v = {
+                     {"id", (int32_t)t.id},
+                     {"streamingName", t.streamingName},
+                     {"displayName", t.displayName},
+                     {"displayGroup", t.displayGroup},
+                 };
+             }),
+             SC_TO({
+                 int32_t tr;
+                 findIf(v, "id", tr);
+                 result.id = (dsp::processor::ProcessorType)tr;
+                 findIf(v, "streamingName", result.streamingName);
+                 findIf(v, "displayName", result.displayName);
+                 findIf(v, "displayGroup", result.displayGroup);
+             }))
 
-template <> struct scxt_traits<scxt::dsp::processor::ProcessorDescription>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::dsp::processor::ProcessorDescription &t)
-    {
-        // Streaming this type as an int is fine since the processor storage
-        // stringifies definitively. This is just for in-session communication
-        v = {
-            {"id", (int32_t)t.id},
-            {"streamingName", t.streamingName},
-            {"displayName", t.displayName},
-            {"displayGroup", t.displayGroup},
-        };
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::dsp::processor::ProcessorDescription &result)
-    {
-        int32_t tr;
-        findIf(v, "id", tr);
-        result.id = (dsp::processor::ProcessorType)tr;
-        findIf(v, "streamingName", result.streamingName);
-        findIf(v, "displayName", result.displayName);
-        findIf(v, "displayGroup", result.displayGroup);
-    }
-};
-
-template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::dsp::processor::ProcessorControlDescription &t)
-    {
+SC_STREAMDEF(
+    scxt::dsp::processor::ProcessorControlDescription, SC_FROM({
         v = {{"type",
               (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
              {"typeDisplayName", t.typeDisplayName},
@@ -130,21 +108,16 @@ template <> struct scxt_traits<scxt::dsp::processor::ProcessorControlDescription
              {"floatControlDescriptions", t.floatControlDescriptions},
              {"numIntParams", t.numIntParams},
              {"intControlDescriptions", t.intControlDescriptions}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::dsp::processor::ProcessorControlDescription &t)
-    {
+    }),
+    SC_TO({
         int tInt{dsp::processor::proct_none};
         findOrSet(v, "type", (int32_t)dsp::processor::proct_none, tInt);
-        t.type = (dsp::processor::ProcessorType)tInt;
-        findIf(v, "typeDisplayName", t.typeDisplayName);
-        findIf(v, "numFloatParams", t.numFloatParams);
-        findIf(v, "floatControlDescriptions", t.floatControlDescriptions);
-        findIf(v, "numIntParams", t.numIntParams);
-        findIf(v, "intControlDescriptions", t.intControlDescriptions);
-    }
-};
+        to.type = (dsp::processor::ProcessorType)tInt;
+        findIf(v, "typeDisplayName", to.typeDisplayName);
+        findIf(v, "numFloatParams", to.numFloatParams);
+        findIf(v, "floatControlDescriptions", to.floatControlDescriptions);
+        findIf(v, "numIntParams", to.numIntParams);
+        findIf(v, "intControlDescriptions", to.intControlDescriptions);
+    }))
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DSP_TRAITS_H

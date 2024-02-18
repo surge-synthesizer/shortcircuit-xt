@@ -80,9 +80,6 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
     findOrSet(v, key, R{}, r);
 }
 
-#define FIND(x, y) findIf(v, #y, x.y)
-#define FINDOR(x, y, d) findOrSet(v, #y, d, x.y);
-
 #define STREAM_ENUM(E, toS, fromS)                                                                 \
     template <> struct scxt_traits<E>                                                              \
     {                                                                                              \
@@ -97,6 +94,26 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
             std::string s;                                                                         \
             findIf(v, #E, s);                                                                      \
             r = fromS(s);                                                                          \
+        }                                                                                          \
+    };
+
+#define SC_FROM(...) __VA_ARGS__
+#define SC_TO(...) __VA_ARGS__
+#define SC_STREAMDEF(type, assignBlock, toBlock)                                                   \
+    template <> struct scxt_traits<type>                                                           \
+    {                                                                                              \
+        using rt_t = type;                                                                         \
+        template <template <typename...> class Traits>                                             \
+        static void assign(tao::json::basic_value<Traits> &v, const rt_t &from)                    \
+        {                                                                                          \
+            auto &t = from;                                                                        \
+            assignBlock                                                                            \
+        }                                                                                          \
+        template <template <typename...> class Traits>                                             \
+        static void to(const tao::json::basic_value<Traits> &v, rt_t &to)                          \
+        {                                                                                          \
+            auto &result = to;                                                                     \
+            toBlock                                                                                \
         }                                                                                          \
     };
 
