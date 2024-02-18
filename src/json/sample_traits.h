@@ -39,6 +39,7 @@
 
 namespace scxt::json
 {
+// TODO - REPLACE THIS with an Enum Stream fn
 template <> struct scxt_traits<scxt::sample::Sample::SourceType>
 {
     static constexpr const char *key = "sourceType";

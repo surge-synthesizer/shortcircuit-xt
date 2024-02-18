@@ -41,85 +41,69 @@
 namespace scxt::json
 {
 
-template <> struct scxt_traits<datamodel::AdsrStorage>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const datamodel::AdsrStorage &t)
-    {
-        v = {{"a", t.a},           {"h", t.h},           {"d", t.d},
-             {"s", t.s},           {"r", t.r},           {"isDigital", t.isDigital},
-             {"aShape", t.aShape}, {"dShape", t.dShape}, {"rShape", t.rShape}};
-    }
+SC_STREAMDEF(datamodel::AdsrStorage, SC_FROM({
+                 v = {{"a", t.a},           {"h", t.h},           {"d", t.d},
+                      {"s", t.s},           {"r", t.r},           {"isDigital", t.isDigital},
+                      {"aShape", t.aShape}, {"dShape", t.dShape}, {"rShape", t.rShape}};
+             }),
+             SC_TO({
+                 findIf(v, "a", result.a);
+                 findIf(v, "h", result.h);
+                 findIf(v, "d", result.d);
+                 findIf(v, "s", result.s);
+                 findIf(v, "r", result.r);
+                 findIf(v, "isDigital", result.isDigital);
+                 findIf(v, "aShape", result.aShape);
+                 findIf(v, "dShape", result.dShape);
+                 findIf(v, "rShape", result.rShape);
+             }))
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, datamodel::AdsrStorage &result)
-    {
-        findIf(v, "a", result.a);
-        findIf(v, "h", result.h);
-        findIf(v, "d", result.d);
-        findIf(v, "s", result.s);
-        findIf(v, "r", result.r);
-        findIf(v, "isDigital", result.isDigital);
-        findIf(v, "aShape", result.aShape);
-        findIf(v, "dShape", result.dShape);
-        findIf(v, "rShape", result.rShape);
-    }
-};
+SC_STREAMDEF(datamodel::pmd, SC_FROM({
+                 std::vector<std::pair<int, std::string>> dvStream;
+                 for (const auto &[k, mv] : t.discreteValues)
+                     dvStream.emplace_back(k, mv);
 
-template <> struct scxt_traits<datamodel::pmd>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const datamodel::pmd &t)
-    {
-        std::vector<std::pair<int, std::string>> dvStream;
-        for (const auto &[k, mv] : t.discreteValues)
-            dvStream.emplace_back(k, mv);
+                 v = {{"type", (int)t.type},
+                      {"name", t.name},
+                      {"minVal", t.minVal},
+                      {"maxVal", t.maxVal},
+                      {"defaultVal", t.defaultVal},
+                      {"canTemposync", t.canTemposync},
+                      {"supportsStringConversion", t.supportsStringConversion},
+                      {"displayScale", (int)t.displayScale},
+                      {"unit", t.unit},
+                      {"customMinDisplay", t.customMinDisplay},
+                      {"customMaxDisplay", t.customMaxDisplay},
+                      {"discreteValues", dvStream},
+                      {"decimalPlaces", t.decimalPlaces},
+                      {"svA", t.svA},
+                      {"svB", t.svB},
+                      {"svC", t.svC},
+                      {"svD", t.svD}};
+             }),
+             SC_TO({
+                 findEnumIf(v, "type", to.type);
+                 findIf(v, "name", to.name);
+                 findIf(v, "minVal", to.minVal);
+                 findIf(v, "maxVal", to.maxVal);
+                 findIf(v, "defaultVal", to.defaultVal);
+                 findIf(v, "canTemposync", to.canTemposync);
+                 findIf(v, "supportsStringConversion", to.supportsStringConversion);
+                 findEnumIf(v, "displayScale", to.displayScale);
+                 findIf(v, "unit", to.unit);
+                 findIf(v, "customMinDisplay", to.customMinDisplay);
+                 findIf(v, "customMaxDisplay", to.customMaxDisplay);
 
-        v = {{"type", (int)t.type},
-             {"name", t.name},
-             {"minVal", t.minVal},
-             {"maxVal", t.maxVal},
-             {"defaultVal", t.defaultVal},
-             {"canTemposync", t.canTemposync},
-             {"supportsStringConversion", t.supportsStringConversion},
-             {"displayScale", (int)t.displayScale},
-             {"unit", t.unit},
-             {"customMinDisplay", t.customMinDisplay},
-             {"customMaxDisplay", t.customMaxDisplay},
-             {"discreteValues", dvStream},
-             {"decimalPlaces", t.decimalPlaces},
-             {"svA", t.svA},
-             {"svB", t.svB},
-             {"svC", t.svC},
-             {"svD", t.svD}};
-    }
+                 std::vector<std::pair<int, std::string>> dvStream;
+                 findIf(v, "discreteValues", dvStream);
+                 for (const auto &[k, mv] : dvStream)
+                     to.discreteValues[k] = mv;
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, datamodel::pmd &t)
-    {
-        findEnumIf(v, "type", t.type);
-        findIf(v, "name", t.name);
-        findIf(v, "minVal", t.minVal);
-        findIf(v, "maxVal", t.maxVal);
-        findIf(v, "defaultVal", t.defaultVal);
-        findIf(v, "canTemposync", t.canTemposync);
-        findIf(v, "supportsStringConversion", t.supportsStringConversion);
-        findEnumIf(v, "displayScale", t.displayScale);
-        findIf(v, "unit", t.unit);
-        findIf(v, "customMinDisplay", t.customMinDisplay);
-        findIf(v, "customMaxDisplay", t.customMaxDisplay);
-
-        std::vector<std::pair<int, std::string>> dvStream;
-        findIf(v, "discreteValues", dvStream);
-        for (const auto &[k, mv] : dvStream)
-            t.discreteValues[k] = mv;
-
-        findIf(v, "decimalPlaces", t.decimalPlaces);
-        findIf(v, "svA", t.svA);
-        findIf(v, "svB", t.svB);
-        findIf(v, "svC", t.svC);
-        findIf(v, "svD", t.svD);
-    }
-};
+                 findIf(v, "decimalPlaces", to.decimalPlaces);
+                 findIf(v, "svA", to.svA);
+                 findIf(v, "svB", to.svB);
+                 findIf(v, "svC", to.svC);
+                 findIf(v, "svD", to.svD);
+             }));
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DATAMODEL_TRAITS_H

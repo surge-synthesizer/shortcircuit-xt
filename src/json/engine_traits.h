@@ -54,85 +54,66 @@
 
 namespace scxt::json
 {
-template <> struct scxt_traits<scxt::engine::Engine>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Engine &e)
-    {
-        v = {{"streamingVersion", scxt::json::currentStreamingVersion},
-             {"patch", e.getPatch()},
-             {"selectionManager", e.getSelectionManager()},
-             {"sampleManager", e.getSampleManager()}};
-    }
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Engine &engine)
-    {
-        // TODO: engine gets a SV? Guess maybe
-        // Order matters here. Samples need to be there before the patch and patch before selection
+SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
+                 v = {{"streamingVersion", scxt::json::currentStreamingVersion},
+                      {"patch", from.getPatch()},
+                      {"selectionManager", from.getSelectionManager()},
+                      {"sampleManager", from.getSampleManager()}};
+             }),
+             SC_TO({
+                 // TODO: engine gets a SV? Guess maybe
+                 // Order matters here. Samples need to be there before the patch and patch
+                 // before selection
 
-        engine.getSampleManager()->resetMissingList();
-        findIf(v, "sampleManager", *(engine.getSampleManager()));
-        findIf(v, "patch", *(engine.getPatch()));
-        findIf(v, "selectionManager", *(engine.getSelectionManager()));
+                 to.getSampleManager()->resetMissingList();
+                 findIf(v, "sampleManager", *(to.getSampleManager()));
+                 findIf(v, "patch", *(to.getPatch()));
+                 findIf(v, "selectionManager", *(to.getSelectionManager()));
 
-        // Now we need to restore the bus effects
-        engine.getPatch()->setupBussesOnUnstream(engine);
-    }
-};
+                 // Now we need to restore the bus effects
+                 to.getPatch()->setupBussesOnUnstream(to);
+             }))
 
-template <> struct scxt_traits<scxt::engine::Patch>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Patch &t)
-    {
-        v = {{"streamingVersion", scxt::json::currentStreamingVersion},
-             {"parts", t.getParts()},
-             {"busses", t.busses}};
-    }
+SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
+                 v = {{"streamingVersion", scxt::json::currentStreamingVersion},
+                      {"parts", from.getParts()},
+                      {"busses", from.busses}};
+             }),
+             SC_TO({
+                 auto &patch = to;
+                 patch.reset();
+                 findIf(v, "streamingVersion", patch.streamingVersion);
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Patch &patch)
-    {
-        patch.reset();
-        findIf(v, "streamingVersion", patch.streamingVersion);
+                 // TODO: I could expose the array but I want to go to a limited stream in the
+                 // future
+                 auto vzones = v.at("parts").get_array();
+                 size_t idx{0};
+                 for (const auto vz : vzones)
+                 {
+                     vz.to(*(patch.getPart(idx)));
+                     idx++;
+                 }
 
-        // TODO: I could expose the array but I want to go to a limited stream in the future
-        auto vzones = v.at("parts").get_array();
-        size_t idx{0};
-        for (const auto vz : vzones)
-        {
-            vz.to(*(patch.getPart(idx)));
-            idx++;
-        }
+                 findIf(v, "busses", patch.busses);
+             }))
 
-        findIf(v, "busses", patch.busses);
-    }
-};
+SC_STREAMDEF(scxt::engine::Part, SC_FROM({
+                 // TODO: Do a non-empty part stream with the If variant
+                 v = {{"channel", from.channel}, {"groups", from.getGroups()}};
+             }),
+             SC_TO({
+                 auto &part = to;
+                 part.clearGroups();
 
-template <> struct scxt_traits<scxt::engine::Part>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Part &t)
-    {
-        // TODO: Do a non-empty part stream with the If variant
-        v = {{"channel", t.channel}, {"groups", t.getGroups()}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Part &part)
-    {
-        part.clearGroups();
-
-        findIf(v, "channel", part.channel);
-        auto vzones = v.at("groups").get_array();
-        for (const auto vz : vzones)
-        {
-            auto idx = part.addGroup() - 1;
-            vz.to(*(part.getGroup(idx)));
-        }
-    }
-};
+                 findIf(v, "channel", part.channel);
+                 auto vzones = v.at("groups").get_array();
+                 for (const auto vz : vzones)
+                 {
+                     auto idx = part.addGroup() - 1;
+                     vz.to(*(part.getGroup(idx)));
+                 }
+             }))
 
 template <> struct scxt_traits<scxt::engine::Group::GroupOutputInfo>
 {
