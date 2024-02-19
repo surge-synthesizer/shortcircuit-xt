@@ -95,7 +95,7 @@ struct CurveLFO : SampleRateSupport
         auto ev = 1.f;
         if (useEnv)
         {
-            simpleEnv.process01AD(delay, attack, release, isGated);
+            simpleEnv.processBlock01AD(delay, attack, release, isGated);
             ev = simpleEnv.outBlock0;
         }
         output = lfov * ev;

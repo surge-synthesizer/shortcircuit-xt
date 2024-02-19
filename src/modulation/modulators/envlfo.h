@@ -50,9 +50,8 @@ struct EnvLFO : SampleRateSupport
     void process(float delay, float attack, float hold, float decay, float sustain, float release,
                  bool isGated)
     {
-        envelope.process01AD(delay, attack, hold, decay, sustain, release, isGated);
+        envelope.processBlock01AD(delay, attack, hold, decay, sustain, release, isGated);
         output = envelope.outBlock0;
-        // SCLOG("Env Output " << output << " " << sustain << " " << envelope.outBlock0);
     }
 };
 };     // namespace scxt::modulation::modulators
