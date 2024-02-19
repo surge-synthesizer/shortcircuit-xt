@@ -317,22 +317,26 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
             return conditionLabel(labl, [](auto &ms) { return ms.isEnv(); });
         };
 
+        auto notEnvLabel = [conditionLabel](auto labl) {
+            return conditionLabel(labl, [](auto &ms) { return !ms.isEnv(); });
+        };
+
         auto allLabel = [conditionLabel](auto labl) {
             return conditionLabel(labl, [](auto &ms) { return true; });
         };
 
-        registerVoiceModTarget(e, rateT, ptFn, allLabel("Rate"));
-        registerVoiceModTarget(e, curve.deformT, ptFn, allLabel("Curve Deform"));
-        registerVoiceModTarget(e, curve.delayT, ptFn, allLabel("Curve Delay"));
-        registerVoiceModTarget(e, curve.attackT, ptFn, allLabel("Curve Attack"));
-        registerVoiceModTarget(e, curve.releaseT, ptFn, allLabel("Curve Release"));
-        registerVoiceModTarget(e, step.smoothT, ptFn, allLabel("Step Smooth"));
-        registerVoiceModTarget(e, env.delayT, ptFn, allLabel("Env Delay"));
-        registerVoiceModTarget(e, env.attackT, ptFn, allLabel("Env Attack"));
-        registerVoiceModTarget(e, env.holdT, ptFn, allLabel("Env Hold"));
-        registerVoiceModTarget(e, env.decayT, ptFn, allLabel("Env Decay"));
-        registerVoiceModTarget(e, env.sustainT, ptFn, allLabel("Env Sustain"));
-        registerVoiceModTarget(e, env.releaseT, ptFn, allLabel("Env Release"));
+        registerVoiceModTarget(e, rateT, ptFn, notEnvLabel("Rate"));
+        registerVoiceModTarget(e, curve.deformT, ptFn, curveLabel("Curve Deform"));
+        registerVoiceModTarget(e, curve.delayT, ptFn, curveLabel("Curve Delay"));
+        registerVoiceModTarget(e, curve.attackT, ptFn, curveLabel("Curve Attack"));
+        registerVoiceModTarget(e, curve.releaseT, ptFn, curveLabel("Curve Release"));
+        registerVoiceModTarget(e, step.smoothT, ptFn, stepLabel("Step Smooth"));
+        registerVoiceModTarget(e, env.delayT, ptFn, envLabel("Env Delay"));
+        registerVoiceModTarget(e, env.attackT, ptFn, envLabel("Env Attack"));
+        registerVoiceModTarget(e, env.holdT, ptFn, envLabel("Env Hold"));
+        registerVoiceModTarget(e, env.decayT, ptFn, envLabel("Env Decay"));
+        registerVoiceModTarget(e, env.sustainT, ptFn, envLabel("Env Sustain"));
+        registerVoiceModTarget(e, env.releaseT, ptFn, envLabel("Env Release"));
     }
 }
 
