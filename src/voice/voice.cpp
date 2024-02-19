@@ -86,6 +86,11 @@ void Voice::voiceStarted()
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
             curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
         }
+        else if (lfoEvaluator[i] == ENV)
+        {
+            envLfos[i].setSampleRate(sampleRate, sampleRateInv);
+            envLfos[i].attack(*endpoints->lfo[i].env.delayP);
+        }
         else
         {
             SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
@@ -124,10 +129,17 @@ bool Voice::process()
             auto &lp = endpoints->lfo[i];
 
             // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
-            curveLfos[i].process(*lp.rateP, *lp.curveDeformP, *lp.curveDelayP, *lp.curveAttackP,
-                                 *lp.curveReleaseP,
+            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.delayP, *lp.curve.attackP,
+                                 *lp.curve.releaseP,
                                  zone->modulatorStorage[i].curveLfoStorage.useenv,
                                  zone->modulatorStorage[i].curveLfoStorage.unipolar, isGated);
+        }
+        else if (lfoEvaluator[i] == ENV)
+        {
+            auto &lp = endpoints->lfo[i].env;
+
+            envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
+                               *lp.releaseP, isGated);
         }
         else
         {

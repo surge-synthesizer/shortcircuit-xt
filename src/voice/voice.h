@@ -39,6 +39,7 @@
 #include "vembertech/vt_dsp/lipol.h"
 #include "modulation/modulators/steplfo.h"
 #include "modulation/modulators/curvelfo.h"
+#include "modulation/modulators/envlfo.h"
 
 #include "configuration.h"
 
@@ -86,6 +87,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
     } lfoEvaluator[engine::lfosPerZone]{STEP, STEP, STEP}; // FIXME
     scxt::modulation::modulators::StepLFO stepLfos[engine::lfosPerZone];
     scxt::modulation::modulators::CurveLFO curveLfos[engine::lfosPerZone];
+    scxt::modulation::modulators::EnvLFO envLfos[engine::lfosPerZone];
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>

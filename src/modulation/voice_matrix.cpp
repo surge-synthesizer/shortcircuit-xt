@@ -74,11 +74,20 @@ void MatrixEndpoints::LFOTarget::bind(scxt::voice::modulation::Matrix &m, engine
     auto &ms = z.modulatorStorage[index];
 
     bindEl(m, rateT, ms.rate, rateP);
-    bindEl(m, curveDeformT, ms.curveLfoStorage.deform, curveDeformP);
-    bindEl(m, curveDelayT, ms.curveLfoStorage.delay, curveDelayP);
-    bindEl(m, curveAttackT, ms.curveLfoStorage.attack, curveAttackP);
-    bindEl(m, curveReleaseT, ms.curveLfoStorage.release, curveReleaseP);
-    bindEl(m, stepSmoothT, ms.stepLfoStorage.smooth, stepSmoothP);
+
+    bindEl(m, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
+    bindEl(m, curve.delayT, ms.curveLfoStorage.delay, curve.delayP);
+    bindEl(m, curve.attackT, ms.curveLfoStorage.attack, curve.attackP);
+    bindEl(m, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP);
+
+    bindEl(m, step.smoothT, ms.stepLfoStorage.smooth, step.smoothP);
+
+    bindEl(m, env.delayT, ms.envLfoStorage.delay, env.delayP);
+    bindEl(m, env.attackT, ms.envLfoStorage.attack, env.attackP);
+    bindEl(m, env.holdT, ms.envLfoStorage.hold, env.holdP);
+    bindEl(m, env.decayT, ms.envLfoStorage.decay, env.decayP);
+    bindEl(m, env.sustainT, ms.envLfoStorage.sustain, env.sustainP);
+    bindEl(m, env.releaseT, ms.envLfoStorage.release, env.releaseP);
 }
 
 void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -101,6 +110,9 @@ void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine:
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &mt = z.mapping;
+    // FIXME - this is such a wierd place to specify this
+    pitchOffsetT.setMinMax(-127, 127);
+    panT.setMinMax(-1, 1);
 
     bindEl(m, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
     bindEl(m, ampT, mt.amplitude, ampP);
@@ -142,8 +154,10 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
         case Voice::STEP:
             m.bindSourceValue(lfoSources.sources[i], v.stepLfos[i].output);
             break;
-        case Voice::MSEG:
         case Voice::ENV:
+            m.bindSourceValue(lfoSources.sources[i], v.envLfos[i].output);
+            break;
+        case Voice::MSEG:
             m.bindSourceValue(lfoSources.sources[i], zeroSource);
             break;
         }
@@ -270,9 +284,7 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t(p)
 }
 
 MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
-    : index(p), rateT{'lfo ', 'rate', p}, curveDeformT{'lfo ', 'cdfn', p},
-      curveAttackT{'lfo ', 'catk', p}, curveDelayT{'lfo ', 'cdel', p},
-      curveReleaseT{'lfo ', 'crel', p}, stepSmoothT{'lfo ', 'ssmt', p}
+    : index(p), rateT{'lfo ', 'rate', p}, curve(p), step(p), env(p)
 {
     if (e)
     {
@@ -310,11 +322,17 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
         };
 
         registerVoiceModTarget(e, rateT, ptFn, allLabel("Rate"));
-        registerVoiceModTarget(e, curveDeformT, ptFn, allLabel("Curve Deform"));
-        registerVoiceModTarget(e, curveDelayT, ptFn, allLabel("Curve Delay"));
-        registerVoiceModTarget(e, curveAttackT, ptFn, allLabel("Curve Attack"));
-        registerVoiceModTarget(e, curveReleaseT, ptFn, allLabel("Curve Release"));
-        registerVoiceModTarget(e, stepSmoothT, ptFn, allLabel("Step Smooth"));
+        registerVoiceModTarget(e, curve.deformT, ptFn, allLabel("Curve Deform"));
+        registerVoiceModTarget(e, curve.delayT, ptFn, allLabel("Curve Delay"));
+        registerVoiceModTarget(e, curve.attackT, ptFn, allLabel("Curve Attack"));
+        registerVoiceModTarget(e, curve.releaseT, ptFn, allLabel("Curve Release"));
+        registerVoiceModTarget(e, step.smoothT, ptFn, allLabel("Step Smooth"));
+        registerVoiceModTarget(e, env.delayT, ptFn, allLabel("Env Delay"));
+        registerVoiceModTarget(e, env.attackT, ptFn, allLabel("Env Attack"));
+        registerVoiceModTarget(e, env.holdT, ptFn, allLabel("Env Hold"));
+        registerVoiceModTarget(e, env.decayT, ptFn, allLabel("Env Decay"));
+        registerVoiceModTarget(e, env.sustainT, ptFn, allLabel("Env Sustain"));
+        registerVoiceModTarget(e, env.releaseT, ptFn, allLabel("Env Release"));
     }
 }
 

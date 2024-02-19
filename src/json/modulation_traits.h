@@ -41,24 +41,16 @@
 namespace scxt::json
 {
 
-template <> struct scxt_traits<modulation::ModMatrixCurve>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const modulation::ModMatrixCurve &t)
-    {
-        auto sn = scxt::modulation::getModMatrixCurveStreamingName(t);
-        v = {{"vmc_name", sn}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, modulation::ModMatrixCurve &t)
-    {
-        std::string tsn;
-        findIf(v, "vmc_name", tsn);
-        t = scxt::modulation::fromModMatrixCurveStreamingName(tsn).value_or(
-            scxt::modulation::modc_none);
-    }
-};
+SC_STREAMDEF(modulation::ModMatrixCurve, SC_FROM({
+                 auto sn = scxt::modulation::getModMatrixCurveStreamingName(t);
+                 v = {{"vmc_name", sn}};
+             }),
+             SC_TO({
+                 std::string tsn;
+                 findIf(v, "vmc_name", tsn);
+                 result = scxt::modulation::fromModMatrixCurveStreamingName(tsn).value_or(
+                     scxt::modulation::modc_none);
+             }))
 
 template <> struct scxt_traits<modulation::GroupModMatrixDestinationAddress>
 {
@@ -125,51 +117,50 @@ template <> struct scxt_traits<scxt::modulation::GroupModMatrix::Routing>
         findIf(v, "depth", result.depth);
     }
 };
-template <> struct scxt_traits<scxt::modulation::modulators::StepLFOStorage>
-{
-    typedef scxt::modulation::modulators::StepLFOStorage rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"data", t.data},
-             {"repeat", t.repeat},
-             {"rateIsForSingleStep", t.rateIsForSingleStep},
-             {"smooth", t.smooth}};
-    }
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "data", result.data);
-        findIf(v, "repeat", result.repeat);
-        findIf(v, "smooth", result.smooth);
-        findIf(v, "rateIsForSingleStep", result.rateIsForSingleStep);
-    }
-};
+SC_STREAMDEF(scxt::modulation::modulators::StepLFOStorage, SC_FROM({
+                 v = {{"data", t.data},
+                      {"repeat", t.repeat},
+                      {"rateIsForSingleStep", t.rateIsForSingleStep},
+                      {"smooth", t.smooth}};
+             }),
+             SC_TO({
+                 const auto &object = v.get_object();
+                 findIf(v, "data", result.data);
+                 findIf(v, "repeat", result.repeat);
+                 findIf(v, "smooth", result.smooth);
+                 findIf(v, "rateIsForSingleStep", result.rateIsForSingleStep);
+             }))
 
-template <> struct scxt_traits<scxt::modulation::modulators::CurveLFOStorage>
-{
-    typedef scxt::modulation::modulators::CurveLFOStorage rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"deform", t.deform},   {"delay", t.delay},       {"attack", t.attack},
-             {"release", t.release}, {"unipolar", t.unipolar}, {"useenv", t.useenv}};
-    }
+SC_STREAMDEF(scxt::modulation::modulators::CurveLFOStorage, SC_FROM({
+                 v = {{"deform", t.deform},   {"delay", t.delay},       {"attack", t.attack},
+                      {"release", t.release}, {"unipolar", t.unipolar}, {"useenv", t.useenv}};
+             }),
+             SC_TO({
+                 const auto &object = v.get_object();
+                 findIf(v, "deform", result.deform);
+                 findIf(v, "delay", result.delay);
+                 findIf(v, "attack", result.attack);
+                 findIf(v, "release", result.release);
+                 findIf(v, "unipolar", result.unipolar);
+                 findIf(v, "useenv", result.useenv);
+             }))
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "deform", result.deform);
-        findIf(v, "delay", result.delay);
-        findIf(v, "attack", result.attack);
-        findIf(v, "release", result.release);
-        findIf(v, "unipolar", result.unipolar);
-        findIf(v, "useenv", result.useenv);
-    }
-};
+SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
+                 v = {{"deform", t.deform},  {"delay", t.delay}, {"attack", t.attack},
+                      {"hold", t.hold},      {"decay", t.decay}, {"sustain", t.sustain},
+                      {"release", t.release}};
+             }),
+             SC_TO({
+                 const auto &object = v.get_object();
+                 findIf(v, "deform", result.deform);
+                 findIf(v, "delay", result.delay);
+                 findIf(v, "attack", result.attack);
+                 findIf(v, "hold", result.hold);
+                 findIf(v, "decay", result.decay);
+                 findIf(v, "sustain", result.sustain);
+                 findIf(v, "release", result.release);
+             }))
 
 STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
             modulation::ModulatorStorage::toStringModulatorShape,
@@ -179,37 +170,30 @@ STREAM_ENUM(modulation::ModulatorStorage::TriggerMode,
             modulation::ModulatorStorage::toStringTriggerMode,
             modulation::ModulatorStorage::fromStringTriggerMode);
 
-template <> struct scxt_traits<scxt::modulation::ModulatorStorage>
-{
-    typedef scxt::modulation::ModulatorStorage rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"modulatorShape", t.modulatorShape},
-             {"triggerMode", t.triggerMode},
-             {"rate", t.rate},
-             {"start_phase", t.start_phase},
-             {"temposync", t.temposync},
+SC_STREAMDEF(scxt::modulation::ModulatorStorage, SC_FROM({
+                 v = {{"modulatorShape", t.modulatorShape},
+                      {"triggerMode", t.triggerMode},
+                      {"rate", t.rate},
+                      {"start_phase", t.start_phase},
+                      {"temposync", t.temposync},
 
-             {"curveLfoStorage", t.curveLfoStorage},
-             {"stepLfoStorage", t.stepLfoStorage}};
-    }
+                      {"curveLfoStorage", t.curveLfoStorage},
+                      {"stepLfoStorage", t.stepLfoStorage},
+                      {"envLfoStorage", t.envLfoStorage}};
+             }),
+             SC_TO({
+                 const auto &object = v.get_object();
+                 findIf(v, "modulatorShape", result.modulatorShape);
+                 findIf(v, "triggerMode", result.triggerMode);
+                 findIf(v, "rate", result.rate);
+                 findIf(v, "start_phase", result.start_phase);
+                 findIf(v, "temposync", result.temposync);
+                 findIf(v, "curveLfoStorage", result.curveLfoStorage);
+                 findIf(v, "stepLfoStorage", result.stepLfoStorage);
+                 findIf(v, "envLfoStorage", result.envLfoStorage);
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "modulatorShape", result.modulatorShape);
-        findIf(v, "triggerMode", result.triggerMode);
-        findIf(v, "rate", result.rate);
-        findIf(v, "start_phase", result.start_phase);
-        findIf(v, "temposync", result.temposync);
-        findIf(v, "curveLfoStorage", result.curveLfoStorage);
-        findIf(v, "stepLfoStorage", result.stepLfoStorage);
-
-        result.configureCalculatedState();
-    }
-};
+                 result.configureCalculatedState();
+             }))
 
 template <> struct scxt_traits<scxt::voice::modulation::Matrix::TR::TargetIdentifier>
 {

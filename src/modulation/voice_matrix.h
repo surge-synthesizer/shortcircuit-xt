@@ -201,12 +201,36 @@ struct MatrixEndpoints
         uint32_t index{0};
         LFOTarget(engine::Engine *e, uint32_t p);
         TG rateT;
-        TG curveDeformT, curveDelayT, curveAttackT, curveReleaseT;
-        TG stepSmoothT;
         const float *rateP{nullptr};
-        const float *curveDeformP{nullptr}, *curveDelayP{nullptr}, *curveAttackP{nullptr},
-            *curveReleaseP{nullptr};
-        const float *stepSmoothP{nullptr};
+        struct Curve
+        {
+            Curve(uint32_t p)
+                : deformT{'lfo ', 'cdfn', p}, attackT{'lfo ', 'catk', p}, delayT{'lfo ', 'cdel', p},
+                  releaseT{'lfo ', 'crel', p}
+            {
+            }
+            TG deformT, delayT, attackT, releaseT;
+            const float *deformP{nullptr}, *delayP{nullptr}, *attackP{nullptr}, *releaseP{nullptr};
+        } curve;
+        struct Step
+        {
+            Step(uint32_t p) : smoothT{'lfo ', 'ssmt', p} {}
+            TG smoothT;
+            const float *smoothP{nullptr};
+        } step;
+
+        struct Env
+        {
+            Env(uint32_t p)
+                : delayT{'lfo ', 'edly', p}, attackT{'lfo ', 'eatk', p}, holdT{'lfo ', 'ehld', p},
+                  decayT{'lfo ', 'edcy', p}, sustainT{'lfo ', 'esus', p},
+                  releaseT{'lfo ', 'erel', p}
+            {
+            }
+            TG delayT, attackT, holdT, decayT, sustainT, releaseT;
+            const float *delayP{nullptr}, *attackP{nullptr}, *holdP{nullptr}, *decayP{nullptr},
+                *sustainP{nullptr}, *releaseP{nullptr};
+        } env;
 
         void bind(Matrix &m, engine::Zone &z);
     };
