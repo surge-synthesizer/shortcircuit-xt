@@ -36,27 +36,8 @@
 #include "scxt_traits.h"
 #include "extensions.h"
 
-#include "datamodel/adsr_storage.h"
-
 namespace scxt::json
 {
-
-SC_STREAMDEF(datamodel::AdsrStorage, SC_FROM({
-                 v = {{"a", t.a},           {"h", t.h},           {"d", t.d},
-                      {"s", t.s},           {"r", t.r},           {"isDigital", t.isDigital},
-                      {"aShape", t.aShape}, {"dShape", t.dShape}, {"rShape", t.rShape}};
-             }),
-             SC_TO({
-                 findIf(v, "a", result.a);
-                 findIf(v, "h", result.h);
-                 findIf(v, "d", result.d);
-                 findIf(v, "s", result.s);
-                 findIf(v, "r", result.r);
-                 findIf(v, "isDigital", result.isDigital);
-                 findIf(v, "aShape", result.aShape);
-                 findIf(v, "dShape", result.dShape);
-                 findIf(v, "rShape", result.rShape);
-             }))
 
 SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  std::vector<std::pair<int, std::string>> dvStream;

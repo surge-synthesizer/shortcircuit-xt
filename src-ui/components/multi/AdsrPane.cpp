@@ -36,9 +36,16 @@
 namespace scxt::ui::multi
 {
 namespace cmsg = scxt::messaging::client;
-using dma = datamodel::AdsrStorage;
 namespace comp = sst::jucegui::components;
 
+// FIXME - metadata is not done until this is gone
+namespace dma
+{
+datamodel::pmd paramAHD = datamodel::envelopeThirtyTwo().withDefault(0.f),
+               paramR = datamodel::envelopeThirtyTwo().withDefault(0.5f),
+               paramS = datamodel::pmd().asPercent().withDefault(1.f),
+               paramShape = datamodel::pmd().asPercentBipolar().withDefault(0.f);
+}
 AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
     : HasEditor(e), sst::jucegui::components::NamedPanel(idx == 0 ? "AMP EG" : "EG 2"), index(idx),
       forZone(fz)
@@ -84,7 +91,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
             k->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
 }
 
-void AdsrPane::adsrChangedFromModel(const datamodel::AdsrStorage &d)
+void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d)
 {
     adsrView = d;
     for (const auto &sl : sliders.members)

@@ -4,8 +4,6 @@ add_library(${PROJECT_NAME} STATIC
         browser/browser.cpp
         browser/browser_db.cpp
 
-        datamodel/adsr_storage.cpp
-
         dsp/generator.cpp
         dsp/data_tables.cpp
         dsp/processor/processor.cpp

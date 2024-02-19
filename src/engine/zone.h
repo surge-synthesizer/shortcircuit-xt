@@ -42,7 +42,6 @@
 
 #include "group_and_zone.h"
 
-#include "datamodel/adsr_storage.h"
 #include <fmt/core.h>
 #include "dsp/generator.h"
 #include "bus.h"
@@ -164,12 +163,6 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         float pan{0.0};         // -1..1
         float pitchOffset{0.0}; // semitones/keys
 
-        auto asTuple() const
-        {
-            return std::tie(rootKey, keyboardRange, velocityRange, pbDown, pbUp, amplitude, pan,
-                            pitchOffset, exclusiveGroup, velocitySens);
-        }
-        bool operator==(const ZoneMappingData &other) const { return asTuple() == other.asTuple(); }
     } mapping;
 
     Group *parentGroup{nullptr};
@@ -188,7 +181,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     std::array<modulation::ModulatorStorage, lfosPerZone> modulatorStorage;
 
     // 0 is the AEG, 1 is EG2
-    std::array<datamodel::AdsrStorage, 2> egStorage;
+    std::array<modulation::modulators::AdsrStorage, 2> egStorage;
 
     void onProcessorTypeChanged(int, dsp::processor::ProcessorType) {}
 
@@ -197,20 +190,6 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
     sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
     void onSampleRateChanged() override;
-
-    bool operator==(const Zone &other) const
-    {
-        auto res = sampleData == other.sampleData;
-        res = res && mapping == other.mapping;
-        // Bail out before the expensive checks
-        if (!res)
-            return false;
-        res = res && (processorStorage == other.processorStorage);
-        //(routingTable ==
-        // other.routingTable); //  && (modulatorStorage == other.modulatorStorage);
-        return res;
-    }
-    bool operator!=(const Zone &other) const { return !(*this == other); }
 };
 } // namespace scxt::engine
 

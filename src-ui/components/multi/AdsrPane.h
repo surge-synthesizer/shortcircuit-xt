@@ -35,7 +35,6 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/data/Continuous.h"
-#include "datamodel/adsr_storage.h"
 #include "components/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 
@@ -45,7 +44,7 @@ namespace scxt::ui::multi
 {
 struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    typedef connectors::PayloadDataAttachment<datamodel::AdsrStorage> attachment_t;
+    typedef connectors::PayloadDataAttachment<modulation::modulators::AdsrStorage> attachment_t;
 
     template <typename T> struct UIStore
     {
@@ -59,14 +58,14 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     UIStore<sst::jucegui::components::Label> labels;
     UIStore<sst::jucegui::components::Knob> knobs;
 
-    datamodel::AdsrStorage adsrView;
+    modulation::modulators::AdsrStorage adsrView;
     size_t index{0};
     bool forZone{true};
     AdsrPane(SCXTEditor *, int index, bool forZone);
 
     void resized() override;
 
-    void adsrChangedFromModel(const datamodel::AdsrStorage &);
+    void adsrChangedFromModel(const modulation::modulators::AdsrStorage &);
     void adsrDeactivated();
 
     void showHamburgerMenu();

@@ -31,12 +31,13 @@
 namespace scxt::messaging::client
 {
 // structure here is (forZone, whichEG, active, data)
-typedef std::tuple<bool, int, bool, datamodel::AdsrStorage> adsrViewResponsePayload_t;
+typedef std::tuple<bool, int, bool, modulation::modulators::AdsrStorage> adsrViewResponsePayload_t;
 SERIAL_TO_CLIENT(AdsrGroupOrZoneUpdate, s2c_update_group_or_zone_adsr_view,
                  adsrViewResponsePayload_t, onGroupOrZoneEnvelopeUpdated);
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneGroupEGFloatValue, c2s_update_zone_or_group_adsr_value,
-                             detail::indexedZoneOrGroupDiffMsg_t<float>, datamodel::AdsrStorage,
+                             detail::indexedZoneOrGroupDiffMsg_t<float>,
+                             modulation::modulators::AdsrStorage,
                              detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
                                                                          &engine::Group::gegStorage,
                                                                          payload, engine, cont));

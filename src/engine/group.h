@@ -41,7 +41,6 @@
 #include "utils.h"
 #include "zone.h"
 #include "selection/selection_manager.h"
-#include "datamodel/adsr_storage.h"
 #include "group_and_zone.h"
 #include "bus.h"
 #include "modulation/modulators/steplfo.h"
@@ -158,7 +157,7 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     lipol outputAmp, outputPan;
 
     static constexpr int egPerGroup{scxt::egPerGroup};
-    std::array<datamodel::AdsrStorage, egPerGroup> gegStorage{};
+    std::array<modulation::modulators::AdsrStorage, egPerGroup> gegStorage{};
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         Group, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
         ahdsrenv_t;
