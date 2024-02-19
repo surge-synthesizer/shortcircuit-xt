@@ -579,7 +579,7 @@ struct ENVLFOPane : juce::Component, HasEditor
         makeO("Hold", e32, ms.envLfoStorage.hold, holdA, holdK, holdL);
         makeO("Decay", e32, ms.envLfoStorage.decay, decayA, decayK, decayL);
         makeO("Sustain", epc, ms.envLfoStorage.sustain, sustainA, sustainK, sustainL);
-        makeO("Release", epc, ms.envLfoStorage.release, releaseA, releaseK, releaseL);
+        makeO("Release", e32, ms.envLfoStorage.release, releaseA, releaseK, releaseL);
     }
 
     void resized() override

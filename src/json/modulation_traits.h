@@ -162,6 +162,23 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  findIf(v, "release", result.release);
              }))
 
+SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
+                 v = {{"a", t.a},           {"h", t.h},           {"d", t.d},
+                      {"s", t.s},           {"r", t.r},           {"isDigital", t.isDigital},
+                      {"aShape", t.aShape}, {"dShape", t.dShape}, {"rShape", t.rShape}};
+             }),
+             SC_TO({
+                 findIf(v, "a", result.a);
+                 findIf(v, "h", result.h);
+                 findIf(v, "d", result.d);
+                 findIf(v, "s", result.s);
+                 findIf(v, "r", result.r);
+                 findIf(v, "isDigital", result.isDigital);
+                 findIf(v, "aShape", result.aShape);
+                 findIf(v, "dShape", result.dShape);
+                 findIf(v, "rShape", result.rShape);
+             }))
+
 STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
             modulation::ModulatorStorage::toStringModulatorShape,
             modulation::ModulatorStorage::fromStringModulatorShape);

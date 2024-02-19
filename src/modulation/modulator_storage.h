@@ -38,6 +38,19 @@ namespace scxt::modulation
 
 namespace modulators
 {
+
+struct AdsrStorage
+{
+    /*
+     * Each of the ADR are 0..1 and scaled to time by the envelope. S is a 0..1 pct
+     */
+    float a{0.0}, h{0.0}, d{0.0}, s{1.0}, r{0.5};
+    bool isDigital{true};
+
+    // TODO: What are these going to be when they grow up?
+    float aShape{0}, dShape{0}, rShape{0};
+};
+
 struct StepLFOStorage
 {
     static constexpr int stepLfoSteps{32};
