@@ -518,15 +518,6 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
         sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
     }
 
-    void mappingChangedFromGUI(const zone_attachment_t &at)
-    {
-        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
-    }
-    void mappingChangedFromGUI(const zone_float_attachment_t &at)
-    {
-        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
-    }
-
     void setActive(bool b) { setVisible(b); }
 
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
