@@ -93,7 +93,8 @@ typedef std::tuple<bool, engine::Zone::AssociatedSampleArray> sampleSelectedZone
 SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
                  onSamplesUpdated);
 
-inline void samplesSelectedZoneUpdate(const engine::Zone::AssociatedSampleArray &payload,
+using associatedSampleVariationPayload_t = std::tuple<size_t, engine::Zone::AssociatedSample>;
+inline void samplesSelectedZoneUpdate(const associatedSampleVariationPayload_t &payload,
                                       const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
@@ -103,12 +104,13 @@ inline void samplesSelectedZoneUpdate(const engine::Zone::AssociatedSampleArray 
     {
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->sampleData = sampv;
+            auto &[idx, smp] = sampv;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->sampleData[idx] = smp;
         });
     }
 }
 CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
-                 engine::Zone::AssociatedSampleArray,
+                 associatedSampleVariationPayload_t,
                  samplesSelectedZoneUpdate(payload, engine, cont));
 
 using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
