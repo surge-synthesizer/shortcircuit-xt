@@ -81,16 +81,8 @@ struct MatrixConfig
         {
             return gid == other.gid && tid == other.tid && index == other.index;
         }
-
-        void setMinMax(float n, float x)
-        {
-            this->min = n;
-            this->max = x;
-        }
-        float min{0.f}, max{1.f};
     };
 
-    static float getTargetValueRange(const TargetIdentifier &t) { return t.max - t.min; }
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
 
@@ -270,8 +262,6 @@ struct MatrixEndpoints
             : pitchOffsetT{'zmap', 'ptof', 0}, panT{'zmap', 'pan ', 0}, ampT{'zmap', 'ampl', 0},
               playbackRatioT{'zmap', 'pbrt', 0}
         {
-            panT.setMinMax(-1, 1);
-
             if (e)
             {
                 registerVoiceModTarget(e, pitchOffsetT, "Mapping", "Pitch Offset");
@@ -294,7 +284,6 @@ struct MatrixEndpoints
     {
         OutputTarget(engine::Engine *e) : panT{'zout', 'pan ', 0}, ampT{'zout', 'ampl', 0}
         {
-            panT.setMinMax(-1.f, 1.f);
             if (e)
             {
                 registerVoiceModTarget(e, panT, "Output", "Pan");
