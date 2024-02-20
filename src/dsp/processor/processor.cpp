@@ -26,7 +26,7 @@
  */
 
 #include "processor.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "processor_defs.h"
 
 #include <functional>
@@ -257,7 +257,7 @@ ProcessorControlDescription Processor::getControlDescription() const
     }
     for (int i = res.numFloatParams; i < maxProcessorFloatParams; ++i)
     {
-        res.floatControlDescriptions[i] = datamodel::unusedParam();
+        res.floatControlDescriptions[i] = datamodel::pmd().withType(datamodel::pmd::NONE);
     }
 
     res.numIntParams = getIntParameterCount();

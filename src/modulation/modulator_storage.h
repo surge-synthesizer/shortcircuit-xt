@@ -32,6 +32,7 @@
 #include <cstdint>
 
 #include "utils.h"
+#include "datamodel/metadata.h"
 
 namespace scxt::modulation
 {
@@ -127,4 +128,98 @@ struct ModulatorStorage
     inline bool isCurve() const { return !isStep() && !isEnv() && !isMSEG(); }
 };
 } // namespace scxt::modulation
+
+inline scxt::datamodel::pmd envelopeThirtyTwo()
+{
+    return scxt::datamodel::pmd()
+        .withType(scxt::datamodel::pmd::FLOAT)
+        .withRange(0.f, 1.f)
+        .withDefault(0.2f)
+        .withATwoToTheBPlusCFormatting(
+            1.f,
+            sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
+                sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin,
+            sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin, "s");
+}
+
+SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
+    SC_FIELD(a, envelopeThirtyTwo().withName("Attack"));
+    SC_FIELD(h, envelopeThirtyTwo().withDefault(0.f).withName("Hold"));
+    SC_FIELD(d, envelopeThirtyTwo().withName("Decay"));
+    SC_FIELD(s, pmd().asPercent().withDefault(1.f).withName("Sustain"));
+    SC_FIELD(r, envelopeThirtyTwo().withDefault(0.5).withName("Release"));
+    SC_FIELD(aShape, pmd().asPercentBipolar().withName("Attack Shape"));
+    SC_FIELD(dShape, pmd().asPercentBipolar().withName("Decay Shape"));
+    SC_FIELD(rShape, pmd().asPercentBipolar().withName("Release Shape"));
+})
+
+// We describe modulator storage as a compound since we address
+// it that way. Maybe revisit this in the future and split it out
+SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
+    SC_FIELD(modulatorShape, pmd()
+                                 .asInt()
+                                 .withName("Modulator Shape")
+                                 .withRange(modulation::ModulatorStorage::STEP,
+                                            modulation::ModulatorStorage::MSEG -
+                                                1) /* This -1 turns off MSEG in the menu */
+                                 .withUnorderedMapFormatting({
+                                     {modulation::ModulatorStorage::STEP, "STEP"},
+                                     {modulation::ModulatorStorage::MSEG, "MSEG"},
+                                     {modulation::ModulatorStorage::LFO_SINE, "SINE"},
+                                     {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
+                                     {modulation::ModulatorStorage::LFO_TRI, "TRI"},
+                                     {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
+                                     {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
+                                     {modulation::ModulatorStorage::LFO_ENV, "ENV"},
+                                     {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
+                                 }));
+    SC_FIELD(triggerMode, pmd()
+                              .asInt()
+                              .withName("Trigger")
+                              .withRange(modulation::ModulatorStorage::KEYTRIGGER,
+                                         modulation::ModulatorStorage::ONESHOT)
+                              .withUnorderedMapFormatting({
+                                  {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
+                                  {modulation::ModulatorStorage::FREERUN, "SONGPOS"},
+                                  {modulation::ModulatorStorage::RANDOM, "RANDOM"},
+                                  {modulation::ModulatorStorage::RELEASE, "RELEASE"},
+                                  {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
+                              }));
+    SC_FIELD(rate, pmd().asLfoRate().withName("Rate"));
+    SC_FIELD(start_phase, pmd().asPercent().withName("Phase"));
+
+    SC_FIELD(stepLfoStorage.smooth, pmd()
+                                        .withType(pmd::FLOAT)
+                                        .withRange(0, 2)
+                                        .withDefault(0)
+                                        .withLinearScaleFormatting("")
+                                        .withName("Deform"));
+    SC_FIELD(stepLfoStorage.repeat,
+             pmd()
+                 .asInt()
+                 .withLinearScaleFormatting("")
+                 .withRange(1, modulation::modulators::StepLFOStorage::stepLfoSteps)
+                 .withDefault(16)
+                 .withName("Step Count"));
+    SC_FIELD(stepLfoStorage.rateIsForSingleStep, pmd()
+                                                     .asBool()
+                                                     .withName("Cycle")
+                                                     .withCustomMinDisplay("RATE: CYCLE")
+                                                     .withCustomMaxDisplay("RATE: STEP"));
+
+    SC_FIELD(curveLfoStorage.deform, pmd().asPercentBipolar().withName("Deform"));
+    SC_FIELD(curveLfoStorage.delay, envelopeThirtyTwo().withDefault(0).withName("Delay"));
+    SC_FIELD(curveLfoStorage.attack, envelopeThirtyTwo().withDefault(0).withName("Attack"));
+    SC_FIELD(curveLfoStorage.release, envelopeThirtyTwo().withDefault(1).withName("Release"));
+    SC_FIELD(curveLfoStorage.unipolar, pmd().asBool().withName("Unipolar"));
+    SC_FIELD(curveLfoStorage.useenv, pmd().asBool().withName("Use Envelope"));
+
+    SC_FIELD(envLfoStorage.delay, envelopeThirtyTwo().withDefault(0).withName("Delay"));
+    SC_FIELD(envLfoStorage.attack, envelopeThirtyTwo().withDefault(0).withName("Attack"));
+    SC_FIELD(envLfoStorage.hold, envelopeThirtyTwo().withDefault(0).withName("Hold"));
+    SC_FIELD(envLfoStorage.decay, envelopeThirtyTwo().withDefault(0).withName("Decay"));
+    SC_FIELD(envLfoStorage.sustain, pmd().asPercent().withDefault(1.f).withName("Sustain"));
+    SC_FIELD(envLfoStorage.release, envelopeThirtyTwo().withDefault(1).withName("Release"));
+})
+
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

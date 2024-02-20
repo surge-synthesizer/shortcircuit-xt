@@ -27,7 +27,7 @@
 
 #include <optional>
 
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"

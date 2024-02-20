@@ -27,7 +27,7 @@
 
 #include "MappingPane.h"
 #include "components/SCXTEditor.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/Label.h"
@@ -449,7 +449,7 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
                           mappingView.pan);
         addGlyph(Ctrl::Pan, sst::jucegui::components::GlyphPainter::PAN);
 
-        attachFloatEditor(Ctrl::Pitch, datamodel::pitchTransposition().withName("Pitch"),
+        attachFloatEditor(Ctrl::Pitch, datamodel::pmd().asSemitoneRange().withName("Pitch"),
                           mappingView.pitchOffset);
         addGlyph(Ctrl::Pitch, sst::jucegui::components::GlyphPainter::TUNING);
     }

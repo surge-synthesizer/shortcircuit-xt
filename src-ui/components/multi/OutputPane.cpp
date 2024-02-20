@@ -31,7 +31,7 @@
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "connectors/PayloadDataAttachment.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 
 namespace scxt::ui::multi
 {
@@ -72,10 +72,8 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     {
         using fac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
 
-        fac::attachAndAdd(datamodel::pmd().asCubicDecibelAttenuation().withName("Amplitude"), info,
-                          info.amplitude, this, outputAttachment, outputKnob);
-        fac::attachAndAdd(datamodel::pmd().asPercentBipolar().withName("Pan"), info, info.pan, this,
-                          panAttachment, panKnob);
+        fac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
+        fac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
 
         outputLabel = std::make_unique<jcmp::Label>();
         outputLabel->setText("Amplitude");

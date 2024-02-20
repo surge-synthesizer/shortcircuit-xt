@@ -193,4 +193,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 };
 } // namespace scxt::engine
 
+SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
+            SC_FIELD(amplitude, pmd().asCubicDecibelAttenuation().withName("Amplitude"));
+            SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));)
+
 #endif

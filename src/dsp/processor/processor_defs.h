@@ -29,7 +29,7 @@
 #define SCXT_SRC_DSP_PROCESSOR_PROCESSOR_DEFS_H
 
 #include "processor.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "infrastructure/sse_include.h"
 
 #include <sst/filters/HalfRateFilter.h>

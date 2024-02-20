@@ -35,7 +35,7 @@
 #include <type_traits>
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/data/Discrete.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "sample/sample.h"
 #include "components/HasEditor.h"
 
@@ -349,6 +349,17 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
     }
 
     template <typename W, typename... Args>
+    static void attach(const typename A::payload_t &p, typename A::value_t &val, HasEditor *e,
+                       std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes, Args... args)
+    {
+        auto md = scxt::datamodel::describeValue(p, val);
+
+        auto [a, w] = attachR<W>(md, p, val, e, std::forward<Args>(args)...);
+        aRes = std::move(a);
+        wRes = std::move(w);
+    }
+
+    template <typename W, typename... Args>
     static void attach(const datamodel::pmd &md, const typename A::payload_t &p,
                        typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
                        std::unique_ptr<W> &wRes, Args... args)
@@ -372,6 +383,14 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         {
             jc->addAndMakeVisible(*wRes);
         }
+    }
+
+    template <typename W, typename... Args>
+    static void attachAndAdd(const typename A::payload_t &p, typename A::value_t &val, HasEditor *e,
+                             std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes, Args... args)
+    {
+        auto md = scxt::datamodel::describeValue(p, val);
+        attachAndAdd(md, p, val, e, aRes, wRes, std::forward<Args>(args)...);
     }
 };
 
