@@ -34,17 +34,40 @@
 
 namespace scxt::voice::modulation
 {
-void bindEl(Matrix &m, Matrix::TR::TargetIdentifier &tg, float &tgs, const float *&p)
+template <typename P>
+void bindEl(Matrix &m, const P &payload, Matrix::TR::TargetIdentifier &tg, float &tgs,
+            const float *&p, float minVal = std::numeric_limits<float>::min(),
+            float maxVal = std::numeric_limits<float>::min())
 {
     assert(tg.gid != 0); // hit this? You forgot to init your target ctor
     assert(tg.tid != 0);
     m.bindTargetBaseValue(tg, tgs);
     p = m.getTargetValuePointer(tg);
 
+#if BUILD_IS_DEBUG
+    /* Make sure every element has a description or a value provided.
+     * This could be in an assert but you know, figure I'll just do it this
+     * way
+     * */
+    if (maxVal == minVal)
+    {
+        auto metaData = datamodel::describeValue(payload, tgs);
+    }
+#endif
+
     auto idxIt = m.routingTable.targetToOutputIndex.find(tg);
     if (idxIt != m.routingTable.targetToOutputIndex.end())
     {
-        auto rg = tg.max - tg.min;
+        float rg = 0.f;
+        if (maxVal == minVal)
+        {
+            auto metaData = datamodel::describeValue(payload, tgs);
+            rg = metaData.maxVal - metaData.minVal;
+        }
+        else
+        {
+            rg = maxVal - minVal;
+        }
         auto pt = m.getTargetValuePointer(tg);
         for (auto &r : m.routingValuePointers)
         {
@@ -73,34 +96,34 @@ void MatrixEndpoints::LFOTarget::bind(scxt::voice::modulation::Matrix &m, engine
 {
     auto &ms = z.modulatorStorage[index];
 
-    bindEl(m, rateT, ms.rate, rateP);
+    bindEl(m, ms, rateT, ms.rate, rateP);
 
-    bindEl(m, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
-    bindEl(m, curve.delayT, ms.curveLfoStorage.delay, curve.delayP);
-    bindEl(m, curve.attackT, ms.curveLfoStorage.attack, curve.attackP);
-    bindEl(m, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP);
+    bindEl(m, ms, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
+    bindEl(m, ms, curve.delayT, ms.curveLfoStorage.delay, curve.delayP);
+    bindEl(m, ms, curve.attackT, ms.curveLfoStorage.attack, curve.attackP);
+    bindEl(m, ms, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP);
 
-    bindEl(m, step.smoothT, ms.stepLfoStorage.smooth, step.smoothP);
+    bindEl(m, ms, step.smoothT, ms.stepLfoStorage.smooth, step.smoothP);
 
-    bindEl(m, env.delayT, ms.envLfoStorage.delay, env.delayP);
-    bindEl(m, env.attackT, ms.envLfoStorage.attack, env.attackP);
-    bindEl(m, env.holdT, ms.envLfoStorage.hold, env.holdP);
-    bindEl(m, env.decayT, ms.envLfoStorage.decay, env.decayP);
-    bindEl(m, env.sustainT, ms.envLfoStorage.sustain, env.sustainP);
-    bindEl(m, env.releaseT, ms.envLfoStorage.release, env.releaseP);
+    bindEl(m, ms, env.delayT, ms.envLfoStorage.delay, env.delayP);
+    bindEl(m, ms, env.attackT, ms.envLfoStorage.attack, env.attackP);
+    bindEl(m, ms, env.holdT, ms.envLfoStorage.hold, env.holdP);
+    bindEl(m, ms, env.decayT, ms.envLfoStorage.decay, env.decayP);
+    bindEl(m, ms, env.sustainT, ms.envLfoStorage.sustain, env.sustainP);
+    bindEl(m, ms, env.releaseT, ms.envLfoStorage.release, env.releaseP);
 }
 
 void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto doBind = [this, &m](auto &eg) {
-        bindEl(m, aT, eg.a, aP);
-        bindEl(m, hT, eg.h, hP);
-        bindEl(m, dT, eg.d, dP);
-        bindEl(m, sT, eg.s, sP);
-        bindEl(m, rT, eg.r, rP);
-        bindEl(m, asT, eg.aShape, asP);
-        bindEl(m, dsT, eg.dShape, dsP);
-        bindEl(m, rsT, eg.rShape, rsP);
+        bindEl(m, eg, aT, eg.a, aP);
+        bindEl(m, eg, hT, eg.h, hP);
+        bindEl(m, eg, dT, eg.d, dP);
+        bindEl(m, eg, sT, eg.s, sP);
+        bindEl(m, eg, rT, eg.r, rP);
+        bindEl(m, eg, asT, eg.aShape, asP);
+        bindEl(m, eg, dsT, eg.dShape, dsP);
+        bindEl(m, eg, rsT, eg.rShape, rsP);
     };
 
     assert(index >= 0 && index < z.egStorage.size());
@@ -110,34 +133,30 @@ void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine:
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &mt = z.mapping;
-    // FIXME - this is such a wierd place to specify this
-    pitchOffsetT.setMinMax(-127, 127);
-    panT.setMinMax(-1, 1);
 
-    bindEl(m, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
-    bindEl(m, ampT, mt.amplitude, ampP);
-    bindEl(m, panT, mt.pan, panP);
-    bindEl(m, playbackRatioT, zeroBase, playbackRatioP);
+    bindEl(m, mt, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
+    bindEl(m, mt, ampT, mt.amplitude, ampP);
+    bindEl(m, mt, panT, mt.pan, panP);
+    bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP, 0, 2);
 }
 
 void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &ot = z.outputInfo;
-    bindEl(m, panT, ot.pan, panP);
-    bindEl(m, ampT, ot.amplitude, ampP);
+    bindEl(m, ot, panT, ot.pan, panP);
+    bindEl(m, ot, ampT, ot.amplitude, ampP);
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &p = z.processorStorage[index];
     auto &d = z.processorDescription[index];
-    bindEl(m, mixT, p.mix, mixP);
+    bindEl(m, p, mixT, p.mix, mixP, 0, 1);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
         auto &fcd = d.floatControlDescriptions[i];
-        fpT[i].setMinMax(fcd.minVal, fcd.maxVal);
-        bindEl(m, fpT[i], p.floatParams[i], floatP[i]);
+        bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], fcd.minVal, fcd.maxVal);
     }
 }
 
