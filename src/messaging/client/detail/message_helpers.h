@@ -36,6 +36,44 @@ namespace scxt::messaging::client::detail
 template <typename VT> using diffMsg_t = std::tuple<ptrdiff_t, VT>;
 
 template <typename VT, typename M>
+inline void
+updateZoneLeadMemberValue(M m, const diffMsg_t<VT> &payload, const engine::Engine &engine,
+                          MessageController &cont,
+                          std::function<void(const engine::Engine &)> responseCB = nullptr)
+{
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        cont.scheduleAudioThreadCallback(
+            [zs = sz, payload, m](auto &eng) {
+                auto [d, v] = payload;
+                auto [p, g, z] = *zs; // did had value check before we started
+                auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+                auto &dat = *zn.*m;
+                static_assert(std::is_standard_layout_v<std::remove_reference_t<decltype(dat)>>);
+                assert(d <= sizeof(dat) - sizeof(v));
+                assert(d >= 0);
+                if constexpr (std::is_same_v<VT, float>)
+                {
+                    if (!zn->isActive())
+                    {
+                        *(VT *)(((uint8_t *)&dat) + d) = v;
+                    }
+                    else
+                    {
+                        zn->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
+                    }
+                }
+                else
+                {
+                    *(VT *)(((uint8_t *)&dat) + d) = v;
+                }
+            },
+            responseCB);
+    }
+}
+
+template <typename VT, typename M>
 inline void updateZoneMemberValue(M m, const diffMsg_t<VT> &payload, const engine::Engine &engine,
                                   MessageController &cont,
                                   std::function<void(const engine::Engine &)> responseCB = nullptr)

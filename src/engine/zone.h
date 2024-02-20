@@ -197,4 +197,21 @@ SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
             SC_FIELD(amplitude, pmd().asCubicDecibelAttenuation().withName("Amplitude"));
             SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));)
 
+SC_DESCRIBE(
+    scxt::engine::Zone::ZoneMappingData, SC_FIELD(rootKey, pmd().asMIDINote().withName("Root Key"));
+    SC_FIELD(keyboardRange.keyStart, pmd().asMIDINote().withName("Key Start"));
+    SC_FIELD(keyboardRange.keyEnd, pmd().asMIDINote().withName("Key End"));
+    SC_FIELD(keyboardRange.fadeStart, pmd().asMIDIPitch().withUnit("").withName("Fade Start"));
+    SC_FIELD(keyboardRange.fadeEnd, pmd().asMIDIPitch().withUnit("").withName("Fade End"));
+    SC_FIELD(velocityRange.velStart, pmd().asMIDIPitch().withUnit("").withName("Velocity Start"));
+    SC_FIELD(velocityRange.velEnd, pmd().asMIDIPitch().withUnit("").withName("Velocity End"));
+    SC_FIELD(velocityRange.fadeStart,
+             pmd().asMIDIPitch().withUnit("").withName("Velocity Fade Start"));
+    SC_FIELD(velocityRange.fadeEnd, pmd().asMIDIPitch().withUnit("").withName("Velocity Fade End"));
+    SC_FIELD(pbDown, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Down"));
+    SC_FIELD(pbUp, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Up"));
+    SC_FIELD(amplitude, pmd().asPercent().withName("Amplitude").withDefault(1.0));
+    SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan").withDefault(0.0));
+    SC_FIELD(pitchOffset, pmd().asSemitoneRange().withName("Pitch").withDefault(0.0)););
+
 #endif

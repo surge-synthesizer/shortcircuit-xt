@@ -163,19 +163,30 @@ struct SelectionManager
     selectedZones_t currentlySelectedZones() { return allSelectedZones; }
     // This will have -1 for every zone of course
     selectedZones_t currentlySelectedGroups() { return allSelectedGroups; }
-    std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e)
+    std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e) const
     {
         if (leadZone.isIn(e))
             return leadZone;
         return {};
     }
-    std::optional<ZoneAddress> currentLeadGroup(const engine::Engine &e)
+    std::optional<ZoneAddress> currentLeadGroup(const engine::Engine &e) const
     {
         if (leadGroup.isInWithPartials(e))
             return leadGroup;
         return {};
     }
     std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
+
+    int currentlySelectedPart(const engine::Engine &e) const
+    {
+        auto lz = currentLeadZone(e);
+        if (lz.has_value())
+            return lz->part;
+        auto lg = currentLeadGroup(e);
+        if (lg.has_value())
+            return lg->part;
+        return 0;
+    }
 
     void sendSelectedZonesToClient();
     void sendClientDataForLeadSelectionState();
