@@ -30,7 +30,7 @@
 #include <cmath>
 
 #include "connectors/SCXTStyleSheetCreator.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
@@ -228,20 +228,6 @@ struct StepLFOPane : juce::Component, HasEditor
         stepRender = std::make_unique<StepRender>(parent);
         addAndMakeVisible(*stepRender);
 
-        auto update = [r = juce::Component::SafePointer(this)]() {
-            return [w = juce::Component::SafePointer(r)](const auto &a) {
-                if (w && w->parent)
-                {
-                    auto p = w->parent;
-                    // p->pushCurrentModulatorStorageUpdate();
-                    // p->pushCurrentModulatorStorageUpdate();
-                    p->updateValueTooltip(a);
-                    w->stepRender->recalcCurve();
-                    p->repaint();
-                }
-            };
-        };
-
         using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
                                                    cmsg::UpdateZoneOrGroupModStorageFloatValue>;
         using bfac =
@@ -255,13 +241,7 @@ struct StepLFOPane : juce::Component, HasEditor
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
         auto &ls = ms.stepLfoStorage;
 
-        ifac::attachAndAdd(datamodel::pmd()
-                               .asInt()
-                               .withLinearScaleFormatting("")
-                               .withRange(1, modulation::modulators::StepLFOStorage::stepLfoSteps)
-                               .withDefault(16)
-                               .withName("Step Count"),
-                           ms, ms.stepLfoStorage.repeat, this, stepsA, stepsJ, parent->forZone,
+        ifac::attachAndAdd(ms, ms.stepLfoStorage.repeat, this, stepsA, stepsJ, parent->forZone,
                            parent->selectedTab);
         stepsJ->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
         connectors::addGuiStep(*stepsA, [w = juce::Component::SafePointer(this)](const auto &a) {
@@ -269,32 +249,29 @@ struct StepLFOPane : juce::Component, HasEditor
                 w->stepRender->recalcCurve();
         });
 
-        bfac::attachAndAdd(datamodel::pmd()
-                               .asBool()
-                               .withName("Cycle")
-                               .withCustomMinDisplay("RATE: CYCLE")
-                               .withCustomMaxDisplay("RATE: STEP"),
-                           ms, ms.stepLfoStorage.rateIsForSingleStep, this, cycleA, cycleB,
+        bfac::attachAndAdd(ms, ms.stepLfoStorage.rateIsForSingleStep, this, cycleA, cycleB,
                            parent->forZone, parent->selectedTab);
         cycleB->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED_BY_DATA);
 
-        fac::attachAndAdd(datamodel::lfoModulationRate().withName("Rate"), ms, ms.rate, this, rateA,
-                          rateK, parent->forZone, parent->selectedTab);
+        fac::attachAndAdd(ms, ms.rate, this, rateA, rateK, parent->forZone, parent->selectedTab);
         rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         rateL = std::make_unique<jcmp::Label>();
         rateL->setText("Rate");
         addAndMakeVisible(*rateL);
 
-        fac::attachAndAdd(datamodel::lfoSmoothing().withName("Deform"), ms,
-                          ms.stepLfoStorage.smooth, this, deformA, deformK, parent->forZone,
+        fac::attachAndAdd(ms, ms.stepLfoStorage.smooth, this, deformA, deformK, parent->forZone,
                           parent->selectedTab);
         deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         deformL = std::make_unique<jcmp::Label>();
         deformL->setText("Deform");
         addAndMakeVisible(*deformL);
+        connectors::addGuiStep(*deformA, [w = juce::Component::SafePointer(this)](const auto &a) {
+            if (w)
+                w->stepRender->recalcCurve();
+        });
 
-        fac::attachAndAdd(datamodel::pmd().asPercent().withName("Phase"), ms, ms.start_phase, this,
-                          phaseA, phaseK, parent->forZone, parent->selectedTab);
+        fac::attachAndAdd(ms, ms.start_phase, this, phaseA, phaseK, parent->forZone,
+                          parent->selectedTab);
         phaseK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         phaseL = std::make_unique<jcmp::Label>();
         phaseL->setText("Phase");
@@ -447,48 +424,41 @@ struct CurveLFOPane : juce::Component, HasEditor
             addAndMakeVisible(*lb);
         };
 
-        fac::attachAndAdd(datamodel::lfoModulationRate().withName("Rate"), ms, ms.rate, this, rateA,
-                          rateK, parent->forZone, parent->selectedTab);
+        fac::attachAndAdd(ms, ms.rate, this, rateA, rateK, parent->forZone, parent->selectedTab);
         rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(rateL, "Rate");
 
-        fac::attachAndAdd(datamodel::pmd().asPercentBipolar().withName("Deform"), ms,
-                          ms.curveLfoStorage.deform, this, deformA, deformK, parent->forZone,
+        fac::attachAndAdd(ms, ms.curveLfoStorage.deform, this, deformA, deformK, parent->forZone,
                           parent->selectedTab);
         deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(deformL, "Deform");
 
-        fac::attachAndAdd(datamodel::pmd().asPercent().withName("Phase"), ms, ms.start_phase, this,
-                          phaseA, phaseK, parent->forZone, parent->selectedTab);
+        fac::attachAndAdd(ms, ms.start_phase, this, phaseA, phaseK, parent->forZone,
+                          parent->selectedTab);
         phaseK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(phaseL, "Phase");
 
-        fac::attachAndAdd(datamodel::envelopeThirtyTwo().withName("Delay"), ms,
-                          ms.curveLfoStorage.delay, this, envA[0], envS[0], parent->forZone,
+        fac::attachAndAdd(ms, ms.curveLfoStorage.delay, this, envA[0], envS[0], parent->forZone,
                           parent->selectedTab);
         envS[0]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(envL[0], "Delay");
 
-        fac::attachAndAdd(datamodel::envelopeThirtyTwo().withName("Attack"), ms,
-                          ms.curveLfoStorage.attack, this, envA[1], envS[1], parent->forZone,
+        fac::attachAndAdd(ms, ms.curveLfoStorage.attack, this, envA[1], envS[1], parent->forZone,
                           parent->selectedTab);
         envS[1]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(envL[1], "Attack");
 
-        fac::attachAndAdd(datamodel::envelopeThirtyTwo().withName("Release"), ms,
-                          ms.curveLfoStorage.release, this, envA[2], envS[2], parent->forZone,
+        fac::attachAndAdd(ms, ms.curveLfoStorage.release, this, envA[2], envS[2], parent->forZone,
                           parent->selectedTab);
         envS[2]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(envL[2], "Release");
 
-        bfac::attachAndAdd(datamodel::pmd().asBool().withName("Unipolar"), ms,
-                           ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB, parent->forZone,
-                           parent->selectedTab);
+        bfac::attachAndAdd(ms, ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB,
+                           parent->forZone, parent->selectedTab);
         unipolarB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         unipolarB->setLabel("UNI");
 
-        bfac::attachAndAdd(datamodel::pmd().asBool().withName("Use Envelope"), ms,
-                           ms.curveLfoStorage.useenv, this, useenvA, useenvB, parent->forZone,
+        bfac::attachAndAdd(ms, ms.curveLfoStorage.useenv, this, useenvA, useenvB, parent->forZone,
                            parent->selectedTab);
         useenvB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         useenvB->setLabel("ENV");
@@ -565,21 +535,20 @@ struct ENVLFOPane : juce::Component, HasEditor
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
-        auto e32 = datamodel::envelopeThirtyTwo();
-        auto epc = datamodel::pmd().asPercent();
-        auto makeO = [&, this](auto &lb, auto md, auto &mem, auto &A, auto &K, auto &L) {
-            fac::attachAndAdd(md.withName(lb), ms, mem, this, A, K, parent->forZone,
-                              parent->selectedTab);
-            makeLabel(L, lb);
+        
+        auto makeO = [&, this](auto &mem, auto &A, auto &K, auto &L) {
+            fac::attachAndAdd(ms, mem, this, A, K, parent->forZone, parent->selectedTab);
+
+            makeLabel(L, A->getLabel());
             K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         };
 
-        makeO("Delay", e32, ms.envLfoStorage.delay, delayA, delayK, delayL);
-        makeO("Attack", e32, ms.envLfoStorage.attack, attackA, attackK, attackL);
-        makeO("Hold", e32, ms.envLfoStorage.hold, holdA, holdK, holdL);
-        makeO("Decay", e32, ms.envLfoStorage.decay, decayA, decayK, decayL);
-        makeO("Sustain", epc, ms.envLfoStorage.sustain, sustainA, sustainK, sustainL);
-        makeO("Release", e32, ms.envLfoStorage.release, releaseA, releaseK, releaseL);
+        makeO(ms.envLfoStorage.delay, delayA, delayK, delayL);
+        makeO(ms.envLfoStorage.attack, attackA, attackK, attackL);
+        makeO(ms.envLfoStorage.hold, holdA, holdK, holdL);
+        makeO(ms.envLfoStorage.decay, decayA, decayK, decayL);
+        makeO(ms.envLfoStorage.sustain, sustainA, sustainK, sustainL);
+        makeO(ms.envLfoStorage.release, releaseA, releaseK, releaseL);
     }
 
     void resized() override
@@ -711,24 +680,7 @@ void LfoPane::rebuildPanelComponents()
     using tfac = connectors::SingleValueFactory<triggerAttachment_t,
                                                 cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
 
-    auto shapeMD = datamodel::pmd()
-                       .asInt()
-                       .withName("Modulator Shape")
-                       .withRange(modulation::ModulatorStorage::STEP,
-                                  modulation::ModulatorStorage::MSEG -
-                                      1) /* This -1 turns off MSEG in the menu */
-                       .withUnorderedMapFormatting({
-                           {modulation::ModulatorStorage::STEP, "STEP"},
-                           {modulation::ModulatorStorage::MSEG, "MSEG"},
-                           {modulation::ModulatorStorage::LFO_SINE, "SINE"},
-                           {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
-                           {modulation::ModulatorStorage::LFO_TRI, "TRI"},
-                           {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
-                           {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
-                           {modulation::ModulatorStorage::LFO_ENV, "ENV"},
-                           {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
-                       });
-    sfac::attach(shapeMD, ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
+    sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
                  selectedTab);
     connectors::addGuiStep(*modulatorShapeA,
                            [w = juce::Component::SafePointer(this)](const auto &x) {
@@ -739,20 +691,7 @@ void LfoPane::rebuildPanelComponents()
     modulatorShape->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
     getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
-    auto trigMD = datamodel::pmd()
-                      .asInt()
-                      .withName("Trigger")
-                      .withRange(modulation::ModulatorStorage::KEYTRIGGER,
-                                 modulation::ModulatorStorage::ONESHOT)
-                      .withUnorderedMapFormatting({
-                          {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
-                          {modulation::ModulatorStorage::FREERUN, "SONGPOS"},
-                          {modulation::ModulatorStorage::RANDOM, "RANDOM"},
-                          {modulation::ModulatorStorage::RELEASE, "RELEASE"},
-                          {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
-                      });
-
-    tfac::attach(trigMD, ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
+    tfac::attach(ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
     triggerMode->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMultiSwitch);
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
 

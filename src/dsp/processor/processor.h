@@ -76,7 +76,7 @@
 #include <optional>
 #include <vector>
 #include <utility>
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 #include "utils.h"
 #include "dsp/data_tables.h"
 #include "tuning/equal.h"

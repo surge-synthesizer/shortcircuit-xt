@@ -50,7 +50,7 @@
 
 #include "configuration.h"
 #include "utils.h"
-#include "datamodel/parameter.h"
+#include "datamodel/metadata.h"
 
 namespace scxt::engine
 {

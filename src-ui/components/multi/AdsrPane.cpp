@@ -38,14 +38,6 @@ namespace scxt::ui::multi
 namespace cmsg = scxt::messaging::client;
 namespace comp = sst::jucegui::components;
 
-// FIXME - metadata is not done until this is gone
-namespace dma
-{
-datamodel::pmd paramAHD = datamodel::envelopeThirtyTwo().withDefault(0.f),
-               paramR = datamodel::envelopeThirtyTwo().withDefault(0.5f),
-               paramS = datamodel::pmd().asPercent().withDefault(1.f),
-               paramShape = datamodel::pmd().asPercentBipolar().withDefault(0.f);
-}
 AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
     : HasEditor(e), sst::jucegui::components::NamedPanel(idx == 0 ? "AMP EG" : "EG 2"), index(idx),
       forZone(fz)
@@ -54,23 +46,19 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
 
     using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneGroupEGFloatValue>;
 
-    fac::attachAndAdd(dma::paramAHD.withName("Attack"), adsrView, adsrView.a, this, attachments.A,
-                      sliders.A, forZone, index);
-    fac::attachAndAdd(dma::paramAHD.withName("Hold"), adsrView, adsrView.h, this, attachments.H,
-                      sliders.H, forZone, index);
-    fac::attachAndAdd(dma::paramAHD.withName("Decay"), adsrView, adsrView.d, this, attachments.D,
-                      sliders.D, forZone, index);
-    fac::attachAndAdd(dma::paramS.withName("Sustain"), adsrView, adsrView.s, this, attachments.S,
-                      sliders.S, forZone, index);
-    fac::attachAndAdd(dma::paramR.withName("Release"), adsrView, adsrView.r, this, attachments.R,
-                      sliders.R, forZone, index);
+    // c++ partial application is a bummer
+    auto attc = [&](auto &t, auto &a, auto &w) {
+        fac::attachAndAdd(adsrView, t, this, a, w, forZone, index);
+    };
+    attc(adsrView.a, attachments.A, sliders.A);
+    attc(adsrView.h, attachments.H, sliders.H);
+    attc(adsrView.d, attachments.D, sliders.D);
+    attc(adsrView.s, attachments.S, sliders.S);
+    attc(adsrView.r, attachments.R, sliders.R);
 
-    fac::attachAndAdd(dma::paramShape.withName("A Shape"), adsrView, adsrView.aShape, this,
-                      attachments.Ash, knobs.Ash, forZone, index);
-    fac::attachAndAdd(dma::paramShape.withName("D Shape"), adsrView, adsrView.dShape, this,
-                      attachments.Dsh, knobs.Dsh, forZone, index);
-    fac::attachAndAdd(dma::paramShape.withName("R Shape"), adsrView, adsrView.rShape, this,
-                      attachments.Rsh, knobs.Rsh, forZone, index);
+    attc(adsrView.aShape, attachments.Ash, knobs.Ash);
+    attc(adsrView.dShape, attachments.Dsh, knobs.Dsh);
+    attc(adsrView.rShape, attachments.Rsh, knobs.Rsh);
 
     auto makeLabel = [this](auto &lb, const std::string &l) {
         lb = std::make_unique<sst::jucegui::components::Label>();
