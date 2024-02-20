@@ -88,7 +88,10 @@ inline std::function<void(const ABase &)> makeUpdater(A &att, const typename A::
         {
             e->sendToSerialization(M({args..., pdiff, a.value}));
             if (showTT)
+            {
                 e->updateValueTooltip(a);
+            }
+            w->repaint();
         }
     };
 }
@@ -343,8 +346,14 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         configureUpdater<Msg, A, ABase>(*att, p, e, std::forward<Args>(args)...);
         auto wid = std::make_unique<W>();
         wid->setSource(att.get());
-        e->setupWidgetForValueTooltip(wid.get(), att.get());
 
+        auto showTT = std::is_same_v<
+            typename std::remove_cv<typename std::remove_reference<decltype(val)>::type>::type,
+            float>;
+        if (showTT)
+        {
+            e->setupWidgetForValueTooltip(wid.get(), att.get());
+        }
         return {std::move(att), std::move(wid)};
     }
 

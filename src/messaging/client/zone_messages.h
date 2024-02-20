@@ -41,6 +41,12 @@ typedef std::tuple<bool, engine::Zone::ZoneMappingData> mappingSelectedZoneViewR
 SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,
                  mappingSelectedZoneViewResposne_t, onMappingUpdated);
 
+/*
+ * For now we are keeping this 'bulk' message around since the drag-a-field
+ * ui actually uses it (rather than figure out which edge is changed) but we
+ * also have per-field updates for the UI elements below and associated
+ * bound metadata
+ */
 inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &payload,
                                       const engine::Engine &engine, MessageController &cont)
 {
@@ -64,6 +70,24 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
 }
 CLIENT_TO_SERIAL(MappingSelectedZoneUpdateRequest, c2s_update_zone_mapping,
                  engine::Zone::ZoneMappingData, mappingSelectedZoneUpdate(payload, engine, cont));
+
+// Updating mapping rather than try and calculate the image client side just
+// resend the resulting mapped zones with selection state back to the UI
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneMappingFloatValue, c2s_update_zone_mapping_float,
+                             detail::diffMsg_t<float>, engine::Zone::ZoneMappingData,
+                             detail::updateZoneLeadMemberValue(&engine::Zone::mapping, payload,
+                                                               engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneMappingInt16TValue, c2s_update_zone_mapping_int16_t, detail::diffMsg_t<int16_t>,
+    engine::Zone::ZoneMappingData,
+    detail::updateZoneLeadMemberValue(
+        &engine::Zone::mapping, payload, engine, cont, [](const auto &eng) {
+            auto pt = eng.getSelectionManager()->currentlySelectedPart(eng);
+            serializationSendToClient(
+                messaging::client::s2c_send_selected_group_zone_mapping_summary,
+                eng.getPatch()->getPart(pt)->getZoneMappingSummary(),
+                *(eng.getMessageController()));
+        }));
 
 typedef std::tuple<bool, engine::Zone::AssociatedSampleArray> sampleSelectedZoneViewResposne_t;
 SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,

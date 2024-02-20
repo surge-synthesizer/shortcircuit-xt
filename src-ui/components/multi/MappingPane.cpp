@@ -294,11 +294,24 @@ struct Zoomable : public juce::Component
 
 struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juce::ComponentListener
 {
-    typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
-        zone_attachment_t;
 
+    typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
+        int16Attachment_t;
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, float>
-        zone_float_attachment_t;
+        floatAttachment_t;
+
+    std::unique_ptr<Zoomable> mappingViewport;
+    std::unique_ptr<MappingZones> mappingZones;
+
+    std::unique_ptr<Zoomable> keyboardViewPort;
+    std::unique_ptr<Keyboard> keyboard;
+
+    bool isMovingKeyboard{false};
+    bool isResizingKeyboard{false};
+    bool isMovingZones{false};
+    bool isResizingZones{false};
+
+    std::unique_ptr<MappingZoneHeader> zoneHeader;
 
     enum Ctrl
     {
@@ -320,25 +333,17 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
         Pitch
     };
 
-    std::unique_ptr<Zoomable> mappingViewport;
-    std::unique_ptr<MappingZones> mappingZones;
+    template <typename T> struct MapEls
+    {
+        T RootKey, KeyStart, KeyEnd, FadeStart, FadeEnd, VelStart, VelEnd, VelFadeStart, VelFadeEnd,
+            PBDown, PBUp, VelocitySens, Level, Pan, Pitch;
+    };
 
-    std::unique_ptr<Zoomable> keyboardViewPort;
-    std::unique_ptr<Keyboard> keyboard;
-
-    bool isMovingKeyboard{false};
-    bool isResizingKeyboard{false};
-    bool isMovingZones{false};
-    bool isResizingZones{false};
-
-    std::unique_ptr<MappingZoneHeader> zoneHeader;
-
-    std::unordered_map<Ctrl, std::unique_ptr<zone_attachment_t>> attachments;
-    std::unordered_map<Ctrl, std::unique_ptr<zone_float_attachment_t>> floatattachments;
-    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
-        textEds;
-    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
-    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
+    MapEls<std::unique_ptr<int16Attachment_t>> intAttachments;
+    MapEls<std::unique_ptr<floatAttachment_t>> floatAttachments;
+    MapEls<std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>> textEds;
+    MapEls<std::unique_ptr<sst::jucegui::components::Label>> labels;
+    MapEls<std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
 
     MappingDisplay(MappingPane *p) : HasEditor(p->editor), mappingView(p->mappingView)
     {
@@ -360,98 +365,63 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
         keyboardViewPort->viewport->setScrollBarsShown(false, false, false, true);
         addAndMakeVisible(*keyboardViewPort);
 
-        auto attachEditor = [this](Ctrl c, const auto &desc, auto &v) {
-            auto at = std::make_unique<zone_attachment_t>(
-                desc, [this](const auto &at) { this->mappingChangedFromGUI(at); }, v);
-            auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
-            sl->setSource(at.get());
-            addAndMakeVisible(*sl);
-            textEds[c] = std::move(sl);
-            attachments[c] = std::move(at);
-        };
+        // Start here tomorrow
+        using ffac =
+            connectors::SingleValueFactory<floatAttachment_t, cmsg::UpdateZoneMappingFloatValue>;
+        using ifac =
+            connectors::SingleValueFactory<int16Attachment_t, cmsg::UpdateZoneMappingInt16TValue>;
 
-        auto attachFloatEditor = [this](Ctrl c, const auto &desc, auto &v) {
-            auto at = std::make_unique<zone_float_attachment_t>(
-                desc, [this](const auto &at) { this->mappingChangedFromGUI(at); }, v);
-            auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
-            sl->setSource(at.get());
-            addAndMakeVisible(*sl);
-            textEds[c] = std::move(sl);
-            floatattachments[c] = std::move(at);
-        };
-
-        auto addLabel = [this](Ctrl c, const std::string &label) {
-            auto l = std::make_unique<sst::jucegui::components::Label>();
-            l->setText(label);
+        auto makeLabel = [this](auto &l, const std::string &t) {
+            l = std::make_unique<sst::jucegui::components::Label>();
+            l->setText(t);
             addAndMakeVisible(*l);
-            labels[c] = std::move(l);
         };
 
-        auto addGlyph = [this](Ctrl c, sst::jucegui::components::GlyphPainter::GlyphType g) {
-            // TODO StyleSheet
-            auto l = std::make_unique<sst::jucegui::components::GlyphPainter>(g);
-            addAndMakeVisible(*l);
-            glyphs[c] = std::move(l);
+        auto makeGlyph = [this](auto &c, sst::jucegui::components::GlyphPainter::GlyphType g) {
+            c = std::make_unique<sst::jucegui::components::GlyphPainter>(g);
+            addAndMakeVisible(*c);
         };
 
-        attachEditor(Ctrl::RootKey, datamodel::pmd().asMIDINote().withName("RootKey"),
-                     mappingView.rootKey);
-        addLabel(Ctrl::RootKey, "Root Key");
+        // Just a little shorthand to save the two args repeating
+        auto iAdd = [this](auto &v, auto &a, auto &w) {
+            ifac::attachAndAdd(mappingView, v, this, a, w);
+        };
+        auto fAdd = [this](auto &v, auto &a, auto &w) {
+            ffac::attachAndAdd(mappingView, v, this, a, w);
+        };
 
-        attachEditor(Ctrl::KeyStart,
-                     datamodel::pmd().asMIDINote().withName("Key Start").withDefault(60 - 12),
-                     mappingView.keyboardRange.keyStart);
+        iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
+        makeLabel(labels.RootKey, "Root Key");
 
-        attachEditor(Ctrl::KeyEnd,
-                     datamodel::pmd().asMIDINote().withName("Key End").withDefault(60 + 12),
-                     mappingView.keyboardRange.keyEnd);
-        addLabel(Ctrl::KeyStart, "Key Range");
+        iAdd(mappingView.keyboardRange.keyStart, intAttachments.KeyStart, textEds.KeyStart);
+        iAdd(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd);
+        makeLabel(labels.KeyStart, "Key Range");
 
-        auto mDist = []() { return datamodel::pmd().asMIDIPitch().withUnit(""); };
+        iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, textEds.FadeStart);
+        iAdd(mappingView.keyboardRange.fadeEnd, intAttachments.FadeEnd, textEds.FadeEnd);
+        makeLabel(labels.FadeStart, "Crossfade");
 
-        attachEditor(Ctrl::FadeStart, mDist().withName("Fade Start").withDefault(0),
-                     mappingView.keyboardRange.fadeStart);
-        // attachments[Ctrl::FadeStart]->setAsInteger();
-        attachEditor(Ctrl::FadeEnd, mDist().withName("Fade End").withDefault(0),
-                     mappingView.keyboardRange.fadeEnd);
-        // attachments[Ctrl::FadeEnd]->setAsInteger();
-        addLabel(Ctrl::FadeStart, "Crossfade");
+        iAdd(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart);
+        iAdd(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd);
+        makeLabel(labels.VelStart, "Vel Range");
 
-        attachEditor(Ctrl::VelStart, mDist().withName("Vel Start").withDefault(0),
-                     mappingView.velocityRange.velStart);
-        // attachments[Ctrl::VelStart]->setAsInteger();
-        attachEditor(Ctrl::VelEnd, mDist().withName("Vel End").withDefault(127),
-                     mappingView.velocityRange.velEnd);
-        // attachments[Ctrl::VelEnd]->setAsInteger();
-        addLabel(Ctrl::VelStart, "Vel Range");
+        iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart,
+             textEds.VelFadeStart);
+        iAdd(mappingView.velocityRange.fadeEnd, intAttachments.VelFadeEnd, textEds.VelFadeEnd);
+        makeLabel(labels.VelFadeStart, "CrossFade");
 
-        attachEditor(Ctrl::VelFadeStart, mDist().withName("Vel Fade Start").withDefault(0),
-                     mappingView.velocityRange.fadeStart);
-        // attachments[Ctrl::VelFadeStart]->setAsInteger();
-        attachEditor(Ctrl::VelFadeEnd, mDist().withName("Vel Fade End").withDefault(0),
-                     mappingView.velocityRange.fadeEnd);
-        // attachments[Ctrl::VelFadeEnd]->setAsInteger();
-        addLabel(Ctrl::VelFadeStart, "Crossfade");
+        iAdd(mappingView.pbDown, intAttachments.PBDown, textEds.PBDown);
+        iAdd(mappingView.pbUp, intAttachments.PBUp, textEds.PBUp);
+        makeLabel(labels.PBDown, "Pitch Bend");
 
-        attachEditor(Ctrl::PBDown, mDist().withName("PBDown").withDefault(2), mappingView.pbDown);
-        // attachments[Ctrl::PBDown]->setAsInteger();
-        attachEditor(Ctrl::PBUp, mDist().withName("PBUp").withDefault(2), mappingView.pbUp);
-        // attachments[Ctrl::PBUp]->setAsInteger();
-        addLabel(Ctrl::PBDown, "Pitch Bend");
+        fAdd(mappingView.amplitude, floatAttachments.Level, textEds.Level);
+        makeGlyph(glyphs.Level, sst::jucegui::components::GlyphPainter::VOLUME);
 
-        attachFloatEditor(Ctrl::Level,
-                          datamodel::pmd().asPercent().withName("Amplitude").withDefault(1.0),
-                          mappingView.amplitude);
-        addGlyph(Ctrl::Level, sst::jucegui::components::GlyphPainter::VOLUME);
+        fAdd(mappingView.pan, floatAttachments.Pan, textEds.Pan);
+        makeGlyph(glyphs.Pan, sst::jucegui::components::GlyphPainter::PAN);
 
-        attachFloatEditor(Ctrl::Pan,
-                          datamodel::pmd().asPercentBipolar().withName("Pan").withDefault(0),
-                          mappingView.pan);
-        addGlyph(Ctrl::Pan, sst::jucegui::components::GlyphPainter::PAN);
-
-        attachFloatEditor(Ctrl::Pitch, datamodel::pmd().asSemitoneRange().withName("Pitch"),
-                          mappingView.pitchOffset);
-        addGlyph(Ctrl::Pitch, sst::jucegui::components::GlyphPainter::TUNING);
+        fAdd(mappingView.pitchOffset, floatAttachments.Pitch, textEds.Pitch);
+        makeGlyph(glyphs.Pitch, sst::jucegui::components::GlyphPainter::TUNING);
     }
 
     engine::Zone::ZoneMappingData &mappingView;
@@ -495,33 +465,33 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
             return c.withLeft(c.getRight() - typeinPad - typeinWidth).withWidth(typeinWidth);
         };
 
-        labels[Ctrl::RootKey]->setBounds(co3(cr));
-        textEds[Ctrl::RootKey]->setBounds(c3(cr));
+        labels.RootKey->setBounds(co3(cr));
+        textEds.RootKey->setBounds(c3(cr));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        textEds[KeyStart]->setBounds(c2(cr));
-        textEds[KeyEnd]->setBounds(c3(cr));
-        labels[KeyStart]->setBounds(co2(cr));
+        textEds.KeyStart->setBounds(c2(cr));
+        textEds.KeyEnd->setBounds(c3(cr));
+        labels.KeyStart->setBounds(co2(cr));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        textEds[FadeStart]->setBounds(c2(cr));
-        textEds[FadeEnd]->setBounds(c3(cr));
-        labels[FadeStart]->setBounds(co2(cr));
+        textEds.FadeStart->setBounds(c2(cr));
+        textEds.FadeEnd->setBounds(c3(cr));
+        labels.FadeStart->setBounds(co2(cr));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        textEds[VelStart]->setBounds(c2(cr));
-        textEds[VelEnd]->setBounds(c3(cr));
-        labels[VelStart]->setBounds(co2(cr));
+        textEds.VelStart->setBounds(c2(cr));
+        textEds.VelEnd->setBounds(c3(cr));
+        labels.VelStart->setBounds(co2(cr));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        textEds[VelFadeStart]->setBounds(c2(cr));
-        textEds[VelFadeEnd]->setBounds(c3(cr));
-        labels[VelFadeStart]->setBounds(co2(cr));
+        textEds.VelFadeStart->setBounds(c2(cr));
+        textEds.VelFadeEnd->setBounds(c3(cr));
+        labels.VelFadeStart->setBounds(co2(cr));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        textEds[PBDown]->setBounds(c2(cr));
-        textEds[PBUp]->setBounds(c3(cr));
-        labels[PBDown]->setBounds(co2(cr));
+        textEds.PBDown->setBounds(c2(cr));
+        textEds.PBUp->setBounds(c3(cr));
+        labels.PBDown->setBounds(co2(cr));
 
         auto cQ = [&](int i) {
             auto w = cr.getWidth() / 4.0;
@@ -531,16 +501,16 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
         //  (volume)
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        glyphs[Level]->setBounds(cQ(2));
-        textEds[Level]->setBounds(cQ(3));
+        glyphs.Level->setBounds(cQ(2));
+        textEds.Level->setBounds(cQ(3));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        glyphs[Pan]->setBounds(cQ(2));
-        textEds[Pan]->setBounds(cQ(3));
+        glyphs.Pan->setBounds(cQ(2));
+        textEds.Pan->setBounds(cQ(3));
 
         cr = cr.translated(0, rowHeight + rowMargin);
-        glyphs[Pitch]->setBounds(cQ(2));
-        textEds[Pitch]->setBounds(cQ(3));
+        glyphs.Pitch->setBounds(cQ(2));
+        textEds.Pitch->setBounds(cQ(3));
     }
 
     void mappingChangedFromGUI()
@@ -548,24 +518,7 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
         sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
     }
 
-    void mappingChangedFromGUI(const zone_attachment_t &at)
-    {
-        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
-    }
-    void mappingChangedFromGUI(const zone_float_attachment_t &at)
-    {
-        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
-    }
-
-    void setActive(bool b)
-    {
-        for (const auto &[k, l] : labels)
-            l->setVisible(b);
-        for (const auto &[k, t] : textEds)
-            t->setVisible(b);
-        for (const auto &[k, g] : glyphs)
-            g->setVisible(b);
-    }
+    void setActive(bool b) { setVisible(b); }
 
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
     {

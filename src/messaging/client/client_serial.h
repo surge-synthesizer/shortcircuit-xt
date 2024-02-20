@@ -52,6 +52,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_or_group_modstorage_int16_t_value,
 
     c2s_update_zone_mapping,
+    c2s_update_zone_mapping_float,
+    c2s_update_zone_mapping_int16_t,
     c2s_update_zone_samples,
     c2s_update_zone_routing_row,
 
