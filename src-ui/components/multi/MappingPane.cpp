@@ -1255,10 +1255,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
         auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
             auto at = std::make_unique<connectors::SamplePointDataAttachment>(
-                v, [w = juce::Component::SafePointer(this)](const auto &) {
-                    if (w)
-                        w->onSamplePointChangedFromGUI();
-                });
+                v, [this](const auto &) { onSamplePointChangedFromGUI(); });
             auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
             sl->setSource(at.get());
             addAndMakeVisible(*sl);
