@@ -628,33 +628,35 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
     ep.bindTargetBaseValues(mat, *zp);
     for (auto &r : zp->routingTable.routes)
     {
+        r.extraPayload = scxt::voice::modulation::MatrixConfig::RoutingExtraPayload();
+
         if (r.target.has_value())
         {
             if (scxt::voice::modulation::MatrixConfig::isTargetModMatrixDepth(*r.target))
             {
                 auto rti =
                     scxt::voice::modulation::MatrixConfig::getTargetModMatrixElement(*r.target);
-                r.extraPayload.targetBaseValue = zp->routingTable.routes[rti].depth;
-                r.extraPayload.targetMetadata =
+                r.extraPayload->targetBaseValue = zp->routingTable.routes[rti].depth;
+                r.extraPayload->targetMetadata =
                     datamodel::pmd().asPercent().withName("Row " + std::to_string(rti + 1));
             }
             else
             {
-                r.extraPayload.targetMetadata = mat.activeTargetsToPMD.at(*r.target);
-                r.extraPayload.targetBaseValue = mat.activeTargetsToBaseValue.at(*r.target);
+                r.extraPayload->targetMetadata = mat.activeTargetsToPMD.at(*r.target);
+                r.extraPayload->targetBaseValue = mat.activeTargetsToBaseValue.at(*r.target);
             }
         }
         else
         {
-            r.extraPayload.targetBaseValue = 0;
-            r.extraPayload.targetMetadata = datamodel::pmd().asPercent().withName("Target");
+            r.extraPayload->targetBaseValue = 0;
+            r.extraPayload->targetMetadata = datamodel::pmd().asPercent().withName("Target");
         }
     }
 
     if (allSelectedZones.size() == 1)
     {
         for (auto &row : zp->routingTable.routes)
-            row.extraPayload.selConsistent = true;
+            row.extraPayload->selConsistent = true;
 
         serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
                                   voice::modulation::getVoiceMatrixMetadata(*zp),
@@ -667,7 +669,7 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
         // OK so is the routing table consistent over multiple zones
         auto &rt = zp->routingTable;
         for (auto &row : rt.routes)
-            row.extraPayload.selConsistent = true;
+            row.extraPayload->selConsistent = true;
         for (const auto &sz : allSelectedZones)
         {
             const auto &szrt = engine.getPatch()
@@ -682,7 +684,7 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
                 auto same = (srow.active == row.active && srow.source == row.source &&
                              srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
                              srow.target == row.target);
-                row.extraPayload.selConsistent = row.extraPayload.selConsistent && same;
+                row.extraPayload->selConsistent = row.extraPayload->selConsistent && same;
             }
         }
 
@@ -693,6 +695,11 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
 
         serializationSendToClient(cms::s2c_update_zone_matrix, rt,
                                   *(engine.getMessageController()));
+    }
+
+    for (auto &r : zp->routingTable.routes)
+    {
+        r.extraPayload = std::nullopt;
     }
 }
 } // namespace scxt::selection

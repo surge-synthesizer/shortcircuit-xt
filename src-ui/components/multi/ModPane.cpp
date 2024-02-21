@@ -201,7 +201,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             const auto &dsts = std::get<2>(parent->matrixMetadata);
             const auto &crvs = std::get<3>(parent->matrixMetadata);
 
-            auto sc = row.extraPayload.selConsistent;
+            auto sc = !row.extraPayload.has_value() || row.extraPayload->selConsistent;
 
             power->setVisible(sc);
             source->setVisible(sc);
@@ -314,7 +314,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
         if constexpr (GZTrait::forZone)
         {
-            auto &ep = parent->routingTable.routes[index].extraPayload;
+            auto &epo = parent->routingTable.routes[index].extraPayload;
+            if (!epo.has_value())
+                return;
+            auto ep = *epo;
             datamodel::pmd &md = ep.targetMetadata;
 
             auto v = md.modulationNaturalToString(ep.targetBaseValue,
