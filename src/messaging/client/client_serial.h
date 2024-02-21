@@ -45,6 +45,9 @@ enum ClientToSerializationMessagesIds
     c2s_do_select_action,
     c2s_do_multi_select_action,
 
+    c2s_begin_edit, // not implemented yet
+    c2s_end_edit,   // implemented as a hammer
+
     c2s_update_zone_or_group_adsr_value,
 
     c2s_update_zone_or_group_modstorage_float_value,

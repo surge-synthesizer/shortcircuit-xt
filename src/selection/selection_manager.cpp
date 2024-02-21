@@ -459,57 +459,15 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
         }
     }
 
-    if (allSelectedZones.size() == 1)
-    {
-        for (auto &row : zp->routingTable.routes)
-            row.extraPayload.selConsistent = true;
+    configureAndSendZoneModMatrixMetadata(p, g, z);
 
-        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                                  voice::modulation::getVoiceMatrixMetadata(*zp),
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
-                                  *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_zone_output_info,
+                              cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
+                              *(engine.getMessageController()));
 
-        serializationSendToClient(cms::s2c_update_zone_output_info,
-                                  cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
-                                  *(engine.getMessageController()));
-    }
-    else
-    {
-        // OK so is the routing table consistent over multiple zones
-        auto &rt = zp->routingTable;
-        for (auto &row : rt.routes)
-            row.extraPayload.selConsistent = true;
-        for (const auto &sz : allSelectedZones)
-        {
-            const auto &szrt = engine.getPatch()
-                                   ->getPart(sz.part)
-                                   ->getGroup(sz.group)
-                                   ->getZone(sz.zone)
-                                   ->routingTable;
-
-            for (const auto &[ridx, row] : sst::cpputils::enumerate(rt.routes))
-            {
-                auto &srow = szrt.routes[ridx];
-                auto same = (srow.active == row.active && srow.source == row.source &&
-                             srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
-                             srow.target == row.target);
-                row.extraPayload.selConsistent = row.extraPayload.selConsistent && same;
-            }
-        }
-
-        // TODO: Make this zone or group based
-        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                                  voice::modulation::getVoiceMatrixMetadata(*zp),
-                                  *(engine.getMessageController()));
-
-        serializationSendToClient(cms::s2c_update_zone_matrix, rt,
-                                  *(engine.getMessageController()));
-
-        serializationSendToClient(cms::s2c_update_zone_output_info,
-                                  cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
-                                  *(engine.getMessageController()));
-    }
+    serializationSendToClient(cms::s2c_update_zone_output_info,
+                              cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
+                              *(engine.getMessageController()));
 }
 
 void SelectionManager::sendDisplayDataForNoZoneSelected()
@@ -655,5 +613,86 @@ void SelectionManager::copyZoneProcessorLeadToAll(int which)
             if (lz.has_value())
                 sendDisplayDataForZonesBasedOnLead(lz->part, lz->group, lz->zone);
         });
+}
+
+void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z)
+{
+    const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+
+    // I really need to document this but basicaly this fixes the PMDs on the targets on the
+    // routing table. Or maybe even make it a function on zone (that's probably better).
+    scxt::voice::modulation::Matrix mat;
+    mat.forUIMode = true;
+    mat.prepare(zp->routingTable);
+    scxt::voice::modulation::MatrixEndpoints ep{nullptr};
+    ep.bindTargetBaseValues(mat, *zp);
+    for (auto &r : zp->routingTable.routes)
+    {
+        if (r.target.has_value())
+        {
+            if (scxt::voice::modulation::MatrixConfig::isTargetModMatrixDepth(*r.target))
+            {
+                auto rti =
+                    scxt::voice::modulation::MatrixConfig::getTargetModMatrixElement(*r.target);
+                r.extraPayload.targetBaseValue = zp->routingTable.routes[rti].depth;
+                r.extraPayload.targetMetadata =
+                    datamodel::pmd().asPercent().withName("Row " + std::to_string(rti + 1));
+            }
+            else
+            {
+                r.extraPayload.targetMetadata = mat.activeTargetsToPMD.at(*r.target);
+                r.extraPayload.targetBaseValue = mat.activeTargetsToBaseValue.at(*r.target);
+            }
+        }
+        else
+        {
+            r.extraPayload.targetBaseValue = 0;
+            r.extraPayload.targetMetadata = datamodel::pmd().asPercent().withName("Target");
+        }
+    }
+
+    if (allSelectedZones.size() == 1)
+    {
+        for (auto &row : zp->routingTable.routes)
+            row.extraPayload.selConsistent = true;
+
+        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
+                                  voice::modulation::getVoiceMatrixMetadata(*zp),
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
+                                  *(engine.getMessageController()));
+    }
+    else
+    {
+        // OK so is the routing table consistent over multiple zones
+        auto &rt = zp->routingTable;
+        for (auto &row : rt.routes)
+            row.extraPayload.selConsistent = true;
+        for (const auto &sz : allSelectedZones)
+        {
+            const auto &szrt = engine.getPatch()
+                                   ->getPart(sz.part)
+                                   ->getGroup(sz.group)
+                                   ->getZone(sz.zone)
+                                   ->routingTable;
+
+            for (const auto &[ridx, row] : sst::cpputils::enumerate(rt.routes))
+            {
+                auto &srow = szrt.routes[ridx];
+                auto same = (srow.active == row.active && srow.source == row.source &&
+                             srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
+                             srow.target == row.target);
+                row.extraPayload.selConsistent = row.extraPayload.selConsistent && same;
+            }
+        }
+
+        // TODO: Make this zone or group based
+        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
+                                  voice::modulation::getVoiceMatrixMetadata(*zp),
+                                  *(engine.getMessageController()));
+
+        serializationSendToClient(cms::s2c_update_zone_matrix, rt,
+                                  *(engine.getMessageController()));
+    }
 }
 } // namespace scxt::selection

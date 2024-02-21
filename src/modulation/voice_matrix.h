@@ -92,6 +92,8 @@ struct MatrixConfig
     struct RoutingExtraPayload
     {
         bool selConsistent{false};
+        datamodel::pmd targetMetadata;
+        float targetBaseValue; // only valid on UI thread
     };
 
     static std::string u2s(uint32_t u)
@@ -169,7 +171,12 @@ inline std::ostream &operator<<(std::ostream &os,
 
 namespace scxt::voice::modulation
 {
-using Matrix = sst::basic_blocks::mod_matrix::FixedMatrix<MatrixConfig>;
+struct Matrix : sst::basic_blocks::mod_matrix::FixedMatrix<MatrixConfig>
+{
+    bool forUIMode{false};
+    std::unordered_map<MatrixConfig::TargetIdentifier, datamodel::pmd> activeTargetsToPMD;
+    std::unordered_map<MatrixConfig::TargetIdentifier, float> activeTargetsToBaseValue;
+};
 
 struct MatrixEndpoints
 {

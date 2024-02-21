@@ -310,8 +310,31 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
         sl += vl;
 
-        editor->setTooltipContents(sl + " " + u8"\U00002192" + " " + tl,
-                                   at.description.valueToString(at.value).value_or("Error"));
+        auto lineOne = sl + " " + u8"\U00002192" + " " + tl;
+
+        if constexpr (GZTrait::forZone)
+        {
+            auto &ep = parent->routingTable.routes[index].extraPayload;
+            datamodel::pmd &md = ep.targetMetadata;
+
+            auto v = md.modulationNaturalToString(ep.targetBaseValue,
+                                                  at.value * (md.maxVal - md.minVal), false);
+
+            std::string modLineOne{}, modLineTwo{};
+
+            if (v.has_value())
+            {
+                modLineOne = v->singleLineModulationSummary;
+                modLineTwo = fmt::format("depth={:.2f}%, {}={}", at.value * 100, u8"\U00000394",
+                                         v->changeUp);
+            }
+            editor->setTooltipContents(lineOne, {modLineOne, modLineTwo});
+        }
+        else
+        {
+            editor->setTooltipContents(lineOne,
+                                       at.description.valueToString(at.value).value_or("Error"));
+        }
     }
 
     void pushRowUpdate(bool forceUpdate = false)
@@ -431,7 +454,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             auto &row = w->parent->routingTable.routes[w->index];
 
             row.target = std::nullopt;
-            w->pushRowUpdate();
+            w->pushRowUpdate(true);
             w->refreshRow();
         });
 
@@ -455,7 +478,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 auto &row = w->parent->routingTable.routes[w->index];
 
                 row.target = tidx;
-                w->pushRowUpdate();
+                w->pushRowUpdate(true);
                 w->refreshRow();
             };
 

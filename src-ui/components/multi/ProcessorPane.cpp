@@ -174,7 +174,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     }
 
     auto at = std::make_unique<attachment_t>(
-        datamodel::pmd().asPercent().withName("Mix").withDefault(1.0), processorView.mix);
+        datamodel::describeValue(processorView, processorView.mix), processorView.mix);
     connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue, attachment_t>(
         *at, processorView, this, forZone, index);
     mixAttachment = std::move(at);

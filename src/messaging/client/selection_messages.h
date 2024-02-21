@@ -62,5 +62,27 @@ typedef std::tuple<std::optional<selection::SelectionManager::ZoneAddress>,
 SERIAL_TO_CLIENT(SetSelectionState, s2c_send_selection_state, selectedStateMessage_t,
                  onSelectionState);
 
+// Begin and End Edit messages. These are a mess. See #775
+using editGestureFor_t = bool;
+inline void doBeginEndEdit(bool isBegin, const editGestureFor_t &payload,
+                           const engine::Engine &engine, messaging::MessageController &cont)
+{
+    if (!isBegin)
+    {
+        // this is way too much to send on each end edit. It's just
+        // serial to ui so we hve time but.... see the #775 discussion
+        auto lz = engine.getSelectionManager()->currentLeadZone(engine);
+        if (lz.has_value())
+        {
+            engine.getSelectionManager()->configureAndSendZoneModMatrixMetadata(lz->part, lz->group,
+                                                                                lz->zone);
+        }
+    }
+}
+CLIENT_TO_SERIAL(BeginEdit, c2s_begin_edit, editGestureFor_t,
+                 doBeginEndEdit(true, payload, engine, cont));
+CLIENT_TO_SERIAL(EndEdit, c2s_end_edit, editGestureFor_t,
+                 doBeginEndEdit(false, payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_SELECTION_MESSAGES_H
