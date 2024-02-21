@@ -36,11 +36,27 @@ namespace scxt::voice::modulation
 {
 template <typename P>
 void bindEl(Matrix &m, const P &payload, Matrix::TR::TargetIdentifier &tg, float &tgs,
-            const float *&p, float minVal = std::numeric_limits<float>::min(),
-            float maxVal = std::numeric_limits<float>::min())
+            const float *&p, std::optional<datamodel::pmd> providedMetadata = std::nullopt)
 {
     assert(tg.gid != 0); // hit this? You forgot to init your target ctor
     assert(tg.tid != 0);
+
+    if (m.forUIMode)
+    {
+        datamodel::pmd tmd;
+        if (!providedMetadata.has_value())
+        {
+            tmd = datamodel::describeValue(payload, tgs);
+        }
+        else
+        {
+            tmd = *providedMetadata;
+        }
+        m.activeTargetsToPMD[tg] = tmd;
+        m.activeTargetsToBaseValue[tg] = tgs;
+        return;
+    }
+
     m.bindTargetBaseValue(tg, tgs);
     p = m.getTargetValuePointer(tg);
 
@@ -49,7 +65,7 @@ void bindEl(Matrix &m, const P &payload, Matrix::TR::TargetIdentifier &tg, float
      * This could be in an assert but you know, figure I'll just do it this
      * way
      * */
-    if (maxVal == minVal)
+    if (!providedMetadata.has_value())
     {
         auto metaData = datamodel::describeValue(payload, tgs);
     }
@@ -58,22 +74,21 @@ void bindEl(Matrix &m, const P &payload, Matrix::TR::TargetIdentifier &tg, float
     auto idxIt = m.routingTable.targetToOutputIndex.find(tg);
     if (idxIt != m.routingTable.targetToOutputIndex.end())
     {
-        float rg = 0.f;
-        if (maxVal == minVal)
+        datamodel::pmd tmd;
+        if (!providedMetadata.has_value())
         {
-            auto metaData = datamodel::describeValue(payload, tgs);
-            rg = metaData.maxVal - metaData.minVal;
+            tmd = datamodel::describeValue(payload, tgs);
         }
         else
         {
-            rg = maxVal - minVal;
+            tmd = *providedMetadata;
         }
         auto pt = m.getTargetValuePointer(tg);
         for (auto &r : m.routingValuePointers)
         {
             if (r.target == pt)
             {
-                r.depthScale = rg;
+                r.depthScale = tmd.maxVal - tmd.minVal;
             }
         }
     }
@@ -137,7 +152,9 @@ void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, en
     bindEl(m, mt, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
     bindEl(m, mt, ampT, mt.amplitude, ampP);
     bindEl(m, mt, panT, mt.pan, panP);
-    bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP, 0, 2);
+    // This is a true oddity. We can modulate but not specify it
+    bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP,
+           datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x"));
 }
 
 void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -151,12 +168,11 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
 {
     auto &p = z.processorStorage[index];
     auto &d = z.processorDescription[index];
-    bindEl(m, p, mixT, p.mix, mixP, 0, 1);
+    bindEl(m, p, mixT, p.mix, mixP);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
-        auto &fcd = d.floatControlDescriptions[i];
-        bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], fcd.minVal, fcd.maxVal);
+        bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
     }
 }
 

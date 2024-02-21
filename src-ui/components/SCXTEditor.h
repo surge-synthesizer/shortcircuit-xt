@@ -251,6 +251,15 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     {
         scxt::messaging::client::clientSendToSerialization(msg, msgCont);
     }
+
+    template <typename A> void beginEditNotifyEngine(const A &a)
+    {
+        sendToSerialization(scxt::messaging::client::BeginEdit{true});
+    }
+    template <typename A> void endEditNotifyEngine(const A &a)
+    {
+        sendToSerialization(scxt::messaging::client::EndEdit{true});
+    }
 };
 
 template <typename T> inline void HasEditor::sendToSerialization(const T &msg)
@@ -269,10 +278,17 @@ inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
     w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
         editor->showTooltip(slRef);
         updateValueTooltip(atRef);
+        editor->beginEditNotifyEngine(atRef);
     };
-    w->onEndEdit = [this]() { editor->hideTooltip(); };
-    w->onIdleHover = w->onBeginEdit;
-    w->onIdleHoverEnd = w->onEndEdit;
+    w->onEndEdit = [this, &atRef = *a]() {
+        editor->hideTooltip();
+        editor->endEditNotifyEngine(atRef);
+    };
+    w->onIdleHover = [this, &slRef = *w, &atRef = *a]() {
+        editor->showTooltip(slRef);
+        updateValueTooltip(atRef);
+    };
+    w->onIdleHoverEnd = [this, &atRef = *a]() { editor->hideTooltip(); };
 }
 } // namespace scxt::ui
 

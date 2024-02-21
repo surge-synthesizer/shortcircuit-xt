@@ -307,4 +307,7 @@ template <ProcessorType ft> struct ProcessorImplementor
 };
 
 } // namespace scxt::dsp::processor
+
+SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage,
+            SC_FIELD(mix, datamodel::pmd().asPercent().withName("Mix")));
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H

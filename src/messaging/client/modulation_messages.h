@@ -73,8 +73,10 @@ inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
                 {
                     auto lz = eng.getSelectionManager()->currentLeadZone(eng);
                     if (lz.has_value())
+                    {
                         eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
                             lz->part, lz->group, lz->zone);
+                    }
                 }
             });
     }

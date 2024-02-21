@@ -250,22 +250,16 @@ template <> struct scxt_traits<scxt::voice::modulation::Matrix::TR::SourceIdenti
     }
 };
 
-template <> struct scxt_traits<scxt::voice::modulation::MatrixConfig::RoutingExtraPayload>
-{
-    typedef scxt::voice::modulation::MatrixConfig::RoutingExtraPayload rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"selC", t.selConsistent}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "selC", result.selConsistent);
-    }
-};
+SC_STREAMDEF(scxt::voice::modulation::MatrixConfig::RoutingExtraPayload, SC_FROM({
+                 v = {{"selC", t.selConsistent},
+                      {"targetMetadata", t.targetMetadata},
+                      {"targetBaseValue", t.targetBaseValue}};
+             }),
+             SC_TO({
+                 findIf(v, "selC", result.selConsistent);
+                 findIf(v, "targetMetadata", result.targetMetadata);
+                 findIf(v, "targetBaseValue", result.targetBaseValue);
+             }));
 
 template <> struct scxt_traits<scxt::voice::modulation::Matrix::RoutingTable::Routing>
 {
