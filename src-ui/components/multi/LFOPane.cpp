@@ -535,7 +535,7 @@ struct ENVLFOPane : juce::Component, HasEditor
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
-        
+
         auto makeO = [&, this](auto &mem, auto &A, auto &K, auto &L) {
             fac::attachAndAdd(ms, mem, this, A, K, parent->forZone, parent->selectedTab);
 

@@ -106,7 +106,10 @@ Engine::Engine()
     // This forces metadata init of the mod matrix
     modulation::ModulationCurves::initializeCurves();
     voice::modulation::MatrixEndpoints usedForInit(this);
+    modulation::GroupMatrixEndpoints usedForGroupInit(this);
 
+    // Zone->voice endpoints are pre-allocated. Group endpoints are part of the group since they
+    // are monophonic
     for (auto &ep : allEndpoints)
     {
         ep = std::make_unique<voice::modulation::MatrixEndpoints>(nullptr);
@@ -125,13 +128,23 @@ Engine::~Engine()
     }
     messageController->stop();
     sampleManager->purgeUnreferencedSamples();
+
+    /*
+     * We want to now clear all the parts to make sure we return
+     * any memory to the memory pool before it shuts down (since that
+     * would debug assert). We could also do this by making the MP
+     * a shared ptr but.... lets not for now.
+     */
+    for (auto &part : *getPatch())
+    {
+        part->clearGroups();
+    }
 }
 
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
 {
 #if DEBUG_VOICE_LIFECYCLE
     SCLOG("Initializing Voice at " << SCDBGV((int)path.key));
-    ;
 #endif
 
     assert(zoneByPath(path));

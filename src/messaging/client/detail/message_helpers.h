@@ -134,8 +134,14 @@ inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, const engi
                     assert(d >= 0);
                     if constexpr (std::is_same_v<VT, float>)
                     {
-                        // TODO: Group UI Lag
-                        *(VT *)(((uint8_t *)&dat) + d) = v;
+                        if (!grp->isActive())
+                        {
+                            *(VT *)(((uint8_t *)&dat) + d) = v;
+                        }
+                        else
+                        {
+                            grp->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
+                        }
                     }
                     else
                     {

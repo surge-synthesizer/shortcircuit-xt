@@ -175,8 +175,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &);
     void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &);
 
+#if BADBAD
     void onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &);
     void onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTable_t &);
+#endif
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &);

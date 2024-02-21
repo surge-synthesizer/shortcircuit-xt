@@ -32,222 +32,95 @@
 namespace scxt::modulation
 {
 
-std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationType &dest)
+namespace shmo = scxt::modulation::shared;
+
+GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
+    : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'gprc'>(p)
 {
-    switch (dest)
+    if (e)
     {
-    case gmd_none:
-        return "gmd_none";
+        auto ptFn = [](const engine::Group &z,
+                       const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return std::string("P") + std::to_string(t.index + 1) + " " + d.typeDisplayName;
+        };
 
-    case gmd_grouplevel:
-        return "gmd_grouplevel";
+        auto mixFn = [](const engine::Group &z,
+                        const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return "mix";
+        };
 
-    case gmd_pan:
-        return "gmd_pan";
-
-    case gmd_LFO_Rate:
-        return "gmd_lforate";
-
-    case numGroupMatrixDestinations:
-        throw std::logic_error("Can't convert numGroupMatrixDestinations to string");
-    }
-
-    throw std::logic_error("Invalid enum");
-}
-std::optional<GroupModMatrixDestinationType>
-fromGroupModMatrixDestStreamingName(const std::string &s)
-{
-    for (int i = gmd_none; i < numGroupMatrixDestinations; ++i)
-    {
-        if (getGroupModMatrixDestStreamingName((GroupModMatrixDestinationType)i) == s)
+        registerGroupModTarget(e, mixT, ptFn, mixFn);
+        for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
-            return ((GroupModMatrixDestinationType)i);
+            auto elFn = [icopy = i](const engine::Group &z,
+                                    const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+                auto &d = z.processorDescription[t.index];
+                if (d.type == dsp::processor::proct_none)
+                    return "";
+                return d.floatControlDescriptions[icopy].name;
+            };
+            registerGroupModTarget(e, fpT[i], ptFn, elFn);
         }
     }
-    return gmd_none;
 }
 
-std::string getGroupModMatrixSourceStreamingName(const GroupModMatrixSource &dest)
+void GroupMatrixEndpoints::bindTargetBaseValues(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
-    switch (dest)
-    {
-    case gms_none:
-        return "gms_none";
-    case gms_EG1:
-        return "gms_EG1";
-    case gms_EG2:
-        return "gms_EG2";
-    case gms_LFO1:
-        return "gms_LFO1";
-    case gms_LFO2:
-        return "gms_LFO2";
-    case gms_LFO3:
-        return "gms_LFO3";
-
-    case numGroupMatrixSources:
-        throw std::logic_error("Don't call with numGroupMatrixSources");
-    }
-
-    throw std::logic_error("Mysterious unhandled condition");
+    outputTarget.bind(m, g);
+    for (auto &p : processorTarget)
+        p.bind(m, g);
+    for (auto &l : lfo)
+        l.bind(m, g);
+    for (auto &e : eg)
+        e.bind(m, g);
 }
-std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const std::string &s)
+
+void GroupMatrixEndpoints::EGTarget::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
-    for (int i = gms_none; i < numGroupMatrixSources; ++i)
-    {
-        if (getGroupModMatrixSourceStreamingName((GroupModMatrixSource)i) == s)
-        {
-            return ((GroupModMatrixSource)i);
-        }
-    }
-    return gms_none;
+    baseBind(m, g.gegStorage[index]);
 }
 
-void GroupModMatrix::copyBaseValuesFromGroup(engine::Group &g)
+void GroupMatrixEndpoints::ProcessorTarget::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
-    baseValues[destIndex(gmd_grouplevel, 0)] = g.outputInfo.amplitude;
-    baseValues[destIndex(gmd_pan, 0)] = g.outputInfo.pan;
-    for (int i = 0; i < engine::lfosPerGroup; ++i)
+    auto &p = g.processorStorage[index];
+    auto &d = g.processorDescription[index];
+    shmo::bindEl(m, p, mixT, p.mix, mixP);
+
+    for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
-        baseValues[destIndex(gmd_LFO_Rate, i)] = g.modulatorStorage[i].rate;
+        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
     }
 }
-
-void GroupModMatrix::updateModulatorUsed(engine::Group &g) const
+void GroupMatrixEndpoints::LFOTarget::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
-    // TODO: Call this only when the mod matrix morphs. For now run them all
-    for (const auto &r : g.routingTable)
-    {
-        g.gegUsed[0] = g.gegUsed[0] || r.src == gms_EG1 || r.srcVia == gms_EG1;
-        g.gegUsed[1] = g.gegUsed[1] || r.src == gms_EG2 || r.srcVia == gms_EG2;
-        g.lfoUsed[0] = g.lfoUsed[0] || r.src == gms_LFO1 || r.srcVia == gms_LFO1;
-        g.lfoUsed[1] = g.lfoUsed[1] || r.src == gms_LFO2 || r.srcVia == gms_LFO2;
-        g.lfoUsed[2] = g.lfoUsed[2] || r.src == gms_LFO3 || r.srcVia == gms_LFO3;
-    }
-
-    g.anyModulatorUsed =
-        g.gegUsed[0] || g.gegUsed[1] || g.lfoUsed[0] || g.lfoUsed[1] || g.lfoUsed[2];
+    baseBind(m, g);
 }
 
-void GroupModMatrix::assignSourcesFromGroup(engine::Group &g)
+void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
-    sourcePointers[gms_LFO1] = &g.stepLfos[0].output;
-    sourcePointers[gms_LFO2] = &g.stepLfos[1].output;
-    sourcePointers[gms_LFO3] = &g.stepLfos[2].output;
-
-    sourcePointers[gms_EG1] = &g.gegEvaluators[0].outBlock0;
-    sourcePointers[gms_EG2] = &g.gegEvaluators[1].outBlock0;
+    shmo::bindEl(m, g.outputInfo, ampT, g.outputInfo.amplitude, ampP);
+    shmo::bindEl(m, g.outputInfo, panT, g.outputInfo.pan, panP);
 }
 
-std::string getGroupModMatrixSourceDisplayName(const GroupModMatrixSource &dest)
+void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &matrix,
+                                         engine::Group &group)
 {
-    switch (dest)
-    {
-    case gms_none:
-        return "";
-
-    case gms_EG1:
-        return "Grp EG1";
-    case gms_EG2:
-        return "Grp EG2";
-
-    case gms_LFO1:
-        return "Grp LFO1";
-    case gms_LFO2:
-        return "Grp LFO2";
-    case gms_LFO3:
-        return "Grp LFO3";
-
-    case numGroupMatrixSources:
-        throw std::logic_error("Don't call with numGroupMatrixSources");
-    }
-
-    throw std::logic_error("Mysterious unhandled condition");
+    SCLOG_UNIMPL("Bind Sources");
 }
 
-groupModMatrixSourceNames_t getGroupModMatrixSourceNames(const engine::Group &g)
+void GroupMatrixEndpoints::registerGroupModTarget(
+    engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &,
+    std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        pathFn,
+    std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        nameFn)
 {
-    groupModMatrixSourceNames_t res;
-    for (int s = (int)gms_none; s < numGroupMatrixSources; ++s)
-    {
-        auto gms = (GroupModMatrixSource)s;
-        res.emplace_back(gms, getGroupModMatrixSourceDisplayName(gms));
-    }
-    return res;
 }
 
-int getGroupModMatrixDestIndexCount(const GroupModMatrixDestinationType &t)
-{
-    switch (t)
-    {
-    case gmd_grouplevel:
-    case gmd_pan:
-        return 1;
-
-    case gmd_LFO_Rate:
-        return engine::lfosPerGroup;
-
-    case gmd_none:
-        return 1;
-    case numGroupMatrixDestinations:
-        throw std::logic_error("Don't call index cound with num");
-    }
-    assert(false);
-    return 1;
-}
-
-std::optional<std::string>
-getGroupModMatrixDestDisplayName(const GroupModMatrixDestinationAddress &dest,
-                                 const engine::Group &g)
-{
-    // TODO: This is obviously .... wrong
-    /*
-     * These are a bit trickier since they are indexed so
-     */
-    const auto &[gmd, idx] = dest;
-
-    if (gmd == gmd_none)
-    {
-        return "";
-    }
-
-    if (gmd == gmd_grouplevel)
-    {
-        return "Output/Level";
-    }
-
-    if (gmd == gmd_pan)
-    {
-        return "Output/Pan";
-    }
-
-    if (gmd == gmd_LFO_Rate)
-    {
-        return fmt::format("GLFO {}/Rate", idx + 1);
-    }
-    assert(false);
-    return fmt::format("ERR {} {}", gmd, idx);
-}
-
-groupModMatrixDestinationNames_t getGroupModulationDestinationNames(const engine::Group &g)
-{
-    groupModMatrixDestinationNames_t res;
-    // TODO code this way better - index on the 'outside' sorts but is inefficient
-    int maxIndex = std::max({2, engine::processorCount, engine::lfosPerGroup});
-    for (int idx = 0; idx < maxIndex; ++idx)
-    {
-        for (int i = gmd_none; i < numGroupMatrixDestinations; ++i)
-        {
-            auto vd = (GroupModMatrixDestinationType)i;
-            auto ic = getGroupModMatrixDestIndexCount(vd);
-            if (idx < ic)
-            {
-                auto addr = GroupModMatrixDestinationAddress{vd, (size_t)idx};
-                auto dn = getGroupModMatrixDestDisplayName(addr, g);
-                if (dn.has_value())
-                    res.emplace_back(addr, *dn);
-            }
-        }
-    }
-    return res;
-}
 } // namespace scxt::modulation

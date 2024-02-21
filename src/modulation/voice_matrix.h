@@ -31,13 +31,15 @@
 #include <string>
 #include <array>
 #include <vector>
+
+#include "sst/cpputils/constructors.h"
+#include "sst/basic-blocks/mod-matrix/ModMatrix.h"
+
 #include "utils.h"
 #include "dsp/processor/processor.h"
 
 #include "mod_curves.h"
-#include "sst/cpputils/constructors.h"
-
-#include "sst/basic-blocks/mod-matrix/ModMatrix.h"
+#include "matrix_shared.h"
 
 namespace scxt::engine
 {
@@ -53,17 +55,8 @@ namespace scxt::voice::modulation
 {
 struct MatrixConfig
 {
-    struct SourceIdentifier
-    {
-        uint32_t gid{0};
-        uint32_t tid{0};
-        uint32_t index{0};
-
-        bool operator==(const SourceIdentifier &other) const
-        {
-            return gid == other.gid && tid == other.tid && index == other.index;
-        }
-    };
+    using SourceIdentifier = scxt::modulation::shared::SourceIdentifier;
+    using TargetIdentifier = scxt::modulation::shared::TargetIdentifier;
 
     using CurveIdentifier = scxt::modulation::ModulationCurves::CurveIdentifier;
     static std::function<float(float)> getCurveOperator(CurveIdentifier id)
@@ -71,62 +64,13 @@ struct MatrixConfig
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
-    struct TargetIdentifier
-    {
-        uint32_t gid{0}; // this has to be unique and streaming stable
-        uint32_t tid{0};
-        uint32_t index{0};
-
-        bool operator==(const TargetIdentifier &other) const
-        {
-            return gid == other.gid && tid == other.tid && index == other.index;
-        }
-    };
-
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
 
     using TI = TargetIdentifier;
     using SI = SourceIdentifier;
 
-    struct RoutingExtraPayload
-    {
-        bool selConsistent{false};
-        datamodel::pmd targetMetadata;
-        float targetBaseValue; // only valid on UI thread
-    };
-
-    static std::string u2s(uint32_t u)
-    {
-        std::string res = "";
-        res += (char)((u & 0xFF000000) >> 24);
-        res += (char)((u & 0x00FF0000) >> 16);
-        res += (char)((u & 0x0000FF00) >> 8);
-        res += (char)((u & 0x000000FF) >> 0);
-        return res;
-    };
-
-    template <typename T>
-    static std::ostream &identifierToStream(std::ostream &os, const T &t, const char *nm)
-    {
-        os << nm << "[" << u2s(t.gid) << "/" << u2s(t.tid) << "/" << t.index
-           << " #=" << std::hash<T>{}(t) << "]";
-        return os;
-    }
-    template <typename T> static std::string identifierToString(const T &t, const char *nm)
-    {
-        std::ostringstream oss;
-        identifierToStream(oss, t, nm);
-        return oss.str();
-    }
-
-    template <typename T> static std::size_t identifierToHash(const T &t)
-    {
-        auto h1 = std::hash<uint32_t>{}((int)t.gid);
-        auto h2 = std::hash<uint32_t>{}((int)t.tid);
-        auto h3 = std::hash<uint32_t>{}((int)t.index);
-        return h1 ^ (h2 << 2) ^ (h3 << 5);
-    }
+    using RoutingExtraPayload = scxt::modulation::shared::RoutingExtraPayload;
 
     static bool isTargetModMatrixDepth(const TargetIdentifier &t) { return t.gid == 'self'; }
     static size_t getTargetModMatrixElement(const TargetIdentifier &t)
@@ -136,38 +80,6 @@ struct MatrixConfig
     }
 };
 } // namespace scxt::voice::modulation
-
-template <> struct std::hash<scxt::voice::modulation::MatrixConfig::TargetIdentifier>
-{
-    std::size_t
-    operator()(const scxt::voice::modulation::MatrixConfig::TargetIdentifier &s) const noexcept
-    {
-        return scxt::voice::modulation::MatrixConfig::identifierToHash(s);
-    }
-};
-
-template <> struct std::hash<scxt::voice::modulation::MatrixConfig::SourceIdentifier>
-{
-    std::size_t
-    operator()(const scxt::voice::modulation::MatrixConfig::SourceIdentifier &s) const noexcept
-    {
-        return scxt::voice::modulation::MatrixConfig::identifierToHash(s);
-    }
-};
-
-inline std::ostream &operator<<(std::ostream &os,
-                                const scxt::voice::modulation::MatrixConfig::TargetIdentifier &tg)
-{
-    scxt::voice::modulation::MatrixConfig::identifierToStream(os, tg, "Target");
-    return os;
-}
-
-inline std::ostream &operator<<(std::ostream &os,
-                                const scxt::voice::modulation::MatrixConfig::SourceIdentifier &tg)
-{
-    scxt::voice::modulation::MatrixConfig::identifierToStream(os, tg, "Source");
-    return os;
-}
 
 namespace scxt::voice::modulation
 {
@@ -195,53 +107,19 @@ struct MatrixEndpoints
     }
 
     // We will need to refactor this when we do group. One step at a time
-    struct LFOTarget
+    struct LFOTarget : scxt::modulation::shared::LFOTargetEndpointData<TG, 'lfo '>
     {
-        uint32_t index{0};
         LFOTarget(engine::Engine *e, uint32_t p);
-        TG rateT;
-        const float *rateP{nullptr};
-        struct Curve
-        {
-            Curve(uint32_t p)
-                : deformT{'lfo ', 'cdfn', p}, attackT{'lfo ', 'catk', p}, delayT{'lfo ', 'cdel', p},
-                  releaseT{'lfo ', 'crel', p}
-            {
-            }
-            TG deformT, delayT, attackT, releaseT;
-            const float *deformP{nullptr}, *delayP{nullptr}, *attackP{nullptr}, *releaseP{nullptr};
-        } curve;
-        struct Step
-        {
-            Step(uint32_t p) : smoothT{'lfo ', 'ssmt', p} {}
-            TG smoothT;
-            const float *smoothP{nullptr};
-        } step;
-
-        struct Env
-        {
-            Env(uint32_t p)
-                : delayT{'lfo ', 'edly', p}, attackT{'lfo ', 'eatk', p}, holdT{'lfo ', 'ehld', p},
-                  decayT{'lfo ', 'edcy', p}, sustainT{'lfo ', 'esus', p},
-                  releaseT{'lfo ', 'erel', p}
-            {
-            }
-            TG delayT, attackT, holdT, decayT, sustainT, releaseT;
-            const float *delayP{nullptr}, *attackP{nullptr}, *holdP{nullptr}, *decayP{nullptr},
-                *sustainP{nullptr}, *releaseP{nullptr};
-        } env;
 
         void bind(Matrix &m, engine::Zone &z);
     };
+    std::array<LFOTarget, scxt::lfosPerZone> lfo;
 
-    struct EGTarget
+    struct EGTarget : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>
     {
         uint32_t index{0};
         EGTarget(engine::Engine *e, uint32_t p)
-            : index(p), aT{'envg', 'atck', p}, hT{'envg', 'hld ', p}, dT{'envg', 'dcay', p},
-              sT{'envg', 'sust', p}, rT{'envg', 'rels', p}, asT{'envg', 'atSH', p},
-              dsT{'envg', 'dcSH', p}, rsT{'envg', 'rlSH', p}
-
+            : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>(p)
         {
             std::string group = (index == 0 ? "AEG" : "EG2");
             registerVoiceModTarget(e, aT, group, "Attack");
@@ -254,14 +132,8 @@ struct MatrixEndpoints
             registerVoiceModTarget(e, rsT, group, "Release Shape");
         }
 
-        TG aT, hT, dT, sT, rT, asT, dsT, rsT;
-        const float *aP{nullptr}, *hP{nullptr}, *dP{nullptr}, *sP{nullptr}, *rP{nullptr};
-        const float *asP{nullptr}, *dsP{nullptr}, *rsP{nullptr};
-
         void bind(Matrix &m, engine::Zone &z);
     } aeg, eg2;
-
-    std::array<LFOTarget, scxt::lfosPerZone> lfo;
 
     struct MappingTarget
     {
@@ -304,23 +176,11 @@ struct MatrixEndpoints
         void bind(Matrix &m, engine::Zone &z);
     } outputTarget;
 
-    struct ProcessorTarget
+    struct ProcessorTarget : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'proc'>
     {
-        uint32_t index;
         // This is out of line since it creates a caluclation using zone
         // innards and we can't have an include cycle
-        ProcessorTarget(engine::Engine *e, uint32_t(p));
-
-        TG mixT, fpT[scxt::maxProcessorFloatParams];
-        const float *mixP{nullptr};
-        const float *floatP[scxt::maxProcessorFloatParams]; // FIX CONSTANT
-        float fp[scxt::maxProcessorFloatParams]{};
-
-        void snapValues()
-        {
-            for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
-                fp[i] = *floatP[i];
-        }
+        ProcessorTarget(engine::Engine *e, uint32_t p);
 
         void bind(Matrix &m, engine::Zone &z);
     };

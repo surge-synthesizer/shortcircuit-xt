@@ -156,6 +156,7 @@ void SCXTEditor::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::Routin
     multiScreen->getZoneElements()->modPane->refreshMatrix();
 }
 
+#if BADBAD
 void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &d)
 {
 #if BADBAD
@@ -179,6 +180,7 @@ void SCXTEditor::onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTa
     multiScreen->getGroupElements()->groupMod()->refreshMatrix();
 #endif
 }
+#endif
 
 void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
     const scxt::messaging::client::indexedModulatorStorageUpdate_t &payload)
