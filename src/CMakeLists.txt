@@ -47,8 +47,6 @@ add_library(${PROJECT_NAME} STATIC
 
         selection/selection_manager.cpp
 
-        vembertech/vt_dsp/lipol.cpp
-
         voice/voice.cpp
 
         utils.cpp
