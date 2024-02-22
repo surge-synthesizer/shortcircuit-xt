@@ -26,13 +26,16 @@
  */
 
 #include "BusPane.h"
+
+#include "sst/jucegui/components/Viewport.h"
+
 namespace scxt::ui::mixer
 {
 
 BusPane::BusPane(SCXTEditor *e, MixerScreen *m)
     : HasEditor(e), mixer(m), sst::jucegui::components::NamedPanel("BUSSES")
 {
-    partBusViewport = std::make_unique<juce::Viewport>();
+    partBusViewport = std::make_unique<sst::jucegui::components::Viewport>();
     partBusContainer = std::make_unique<juce::Component>();
 
     for (int i = 0; i < maxBusses; ++i)
@@ -82,14 +85,6 @@ void BusPane::resized()
         mb = mb.translated(busWidth, 0);
     }
     channelStrips[0]->setBounds(mb);
-}
-void BusPane::onStyleChanged()
-{
-    if (partBusViewport)
-    {
-        partBusViewport->getHorizontalScrollBar().setColour(
-            juce::ScrollBar::ColourIds::thumbColourId, getColour(Styles::outline));
-    }
 }
 
 } // namespace scxt::ui::mixer

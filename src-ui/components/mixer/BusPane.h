@@ -53,8 +53,6 @@ struct BusPane : public HasEditor, public sst::jucegui::components::NamedPanel
     MixerScreen *mixer{nullptr};
     BusPane(SCXTEditor *e, MixerScreen *m);
     void resized() override;
-
-    void onStyleChanged() override;
 };
 } // namespace scxt::ui::mixer
 
