@@ -39,6 +39,7 @@
 
 #include "connectors/SCXTStyleSheetCreator.h"
 #include "engine/part.h"
+#include "sst/jucegui/components/Viewport.h"
 
 namespace scxt::ui::multi
 {
@@ -201,7 +202,7 @@ struct Zoomable : public juce::Component
         : zoomX({1.f, 1, minMaxX.first, minMaxX.second}),
           zoomY({1.f, 1, minMaxY.first, minMaxY.second})
     {
-        viewport = std::make_unique<juce::Viewport>();
+        viewport = std::make_unique<sst::jucegui::components::Viewport>();
         viewport->setViewedComponent(attachedComponent, false);
         addAndMakeVisible(*viewport);
 
