@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/Viewport.h"
 #include "messaging/client/client_serial.h"
 
 namespace scxt::ui::multi
@@ -521,27 +522,23 @@ ModPane<GZTrait>::ModPane(SCXTEditor *e, bool fz) : jcmp::NamedPanel(""), HasEdi
 {
     setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
 
+    viewPort = std::make_unique<sst::jucegui::components::Viewport>();
+    viewPortComponents = std::make_unique<juce::Component>();
+    viewPort->setViewedComponent(viewPortComponents.get(), false);
+
+    // getContentAreaComponent()->addAndMakeVisible(*viewPort);
+    addAndMakeVisible(*viewPort);
+
     hasHamburger = true;
-    isTabbed = GZTrait::forZone;
-
-    if (isTabbed)
+    if (GZTrait::forZone)
     {
-        tabNames = {"MOD 1-6", "MOD 7-12"};
-
-        resetTabState();
-
-        onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
-            if (!wt)
-                return;
-
-            wt->tabRange = i;
-            wt->rebuildMatrix();
-        };
+        setName("MOD MATRIX");
     }
     else
     {
         setName("GROUP MOD MATRIX");
     }
+
     setActive(false);
 }
 
@@ -552,37 +549,70 @@ template <typename GZTrait> void ModPane<GZTrait>::resized()
     auto en = isEnabled();
     if (!en)
         return;
-    auto r = getContentArea().toFloat();
-    auto rh = r.getHeight() * 1.f / numRowsOnScreen;
-    r = r.withHeight(rh);
-    for (int i = 0; i < numRowsOnScreen; ++i)
+    auto vp = viewPort->getVerticalScrollBar().getCurrentRangeStart();
+
+    auto r = getContentArea();
+
+    auto rowHeight = r.getHeight() / 6;
+    auto newBounds = juce::Rectangle<int>(
+        0, 0, r.getWidth() - viewPort->getScrollBarThickness() - 2, rowHeight * GZTrait::rowCount);
+    if (viewPortComponents->getBounds() != newBounds)
+        viewPortComponents->setBounds(newBounds);
+    if (viewPort->getBounds() != r)
+        viewPort->setBounds(r);
+
+    auto r0 = juce::Rectangle<int>(0, 0, viewPortComponents->getWidth(), rowHeight - 1);
+    for (auto &row : rows)
     {
-        if (rows[i])
-            rows[i]->setBounds(r.toNearestIntEdges().withTrimmedBottom(1));
-        r = r.translated(0, rh);
+        if (row && row->getBounds() != r0)
+        {
+            row->setBounds(r0);
+        }
+        r0 = r0.translated(0, rowHeight);
     }
+
+    viewPort->getVerticalScrollBar().setCurrentRangeStart(vp);
 }
 
 template <typename GZTrait> void ModPane<GZTrait>::setActive(bool b)
 {
+    auto enChange = b != isEnabled();
     setEnabled(b);
-    rebuildMatrix();
+    rebuildMatrix(enChange);
+    if (enChange)
+        resized();
 }
 
-template <typename GZTrait> void ModPane<GZTrait>::rebuildMatrix()
+template <typename GZTrait> void ModPane<GZTrait>::rebuildMatrix(bool enableChanged)
 {
     auto en = isEnabled();
-    removeAllChildren();
+
+    int idx{0};
+    bool needsResize{false};
     for (auto &a : rows)
-        a.reset(nullptr);
-    if (!en)
-        return;
-    for (int i = 0; i < numRowsOnScreen; ++i)
     {
-        rows[i] = std::make_unique<ModRow<GZTrait>>(editor, i + tabRange * numRowsOnScreen, this);
-        addAndMakeVisible(*(rows[i]));
+        auto ioc = !a ? -1 : viewPortComponents->getIndexOfChildComponent(a.get());
+        if (enableChanged && ioc >= 0)
+        {
+            viewPortComponents->removeChildComponent(ioc);
+        }
+        if (en)
+        {
+            if (!a || enableChanged)
+            {
+                needsResize = true;
+                a = std::make_unique<ModRow<GZTrait>>(editor, idx, this);
+                viewPortComponents->addAndMakeVisible(*a);
+            }
+            else
+            {
+                a->refreshRow();
+            }
+        }
+        idx++;
     }
-    resized();
+    if (enableChanged || needsResize)
+        resized();
 }
 
 template <typename GZTrait> void ModPane<GZTrait>::refreshMatrix()

@@ -42,6 +42,7 @@ struct ModPaneZoneTraits
     using metadata = scxt::voice::modulation::voiceMatrixMetadata_t;
     using matrix = scxt::voice::modulation::Matrix;
     using routing = scxt::voice::modulation::Matrix::RoutingTable;
+    static constexpr uint32_t rowCount{scxt::voice::modulation::MatrixConfig::FixedMatrixSize};
     // using metadata = scxt::modulation::voiceModMatrixMetadata_t;
     // using routing = scxt::modulation::VoiceModMatrix::routingTable_t;
 };
@@ -55,6 +56,7 @@ struct ModPaneGroupTraits
     {
         using Routing = int;
     };
+    static constexpr uint32_t rowCount{12};
     // using metadata = scxt::modulation::groupModMatrixMetadata_t;
     // using routing = scxt::modulation::GroupModMatrix::routingTable_t;
 };
@@ -64,23 +66,25 @@ template <typename GZTrait> struct ModRow;
 // We will explicity instantiate these on the trait in ModPane.cpp
 template <typename GZTrait> struct ModPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    static constexpr int numRowsOnScreen{6};
     ModPane(SCXTEditor *e, bool forZone);
     ~ModPane();
 
     void resized() override;
 
-    void rebuildMatrix(); // entirely new components
-    void refreshMatrix(); // new routing table, no new components
+    void rebuildMatrix(bool enableChanged = false); // entirely new components
+    void refreshMatrix();                           // new routing table, no new components
     void setActive(bool b);
 
-    std::array<std::unique_ptr<ModRow<GZTrait>>, numRowsOnScreen> rows;
+    std::array<std::unique_ptr<ModRow<GZTrait>>, GZTrait::rowCount> rows;
 
     typename GZTrait::metadata matrixMetadata;
     typename GZTrait::routing routingTable;
 
     bool forZone{GZTrait::forZone};
     int tabRange{0};
+
+    std::unique_ptr<juce::Viewport> viewPort;
+    std::unique_ptr<juce::Component> viewPortComponents;
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
