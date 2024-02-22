@@ -33,7 +33,6 @@
 #include "infrastructure/sse_include.h"
 
 #include <sst/filters/HalfRateFilter.h>
-#include "vembertech/vt_dsp/lipol.h"
 #include "sst/basic-blocks/dsp/BlockInterpolators.h"
 #include "configuration.h"
 

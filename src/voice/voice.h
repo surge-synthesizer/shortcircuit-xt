@@ -36,7 +36,6 @@
 
 #include "modulation/voice_matrix.h"
 
-#include "vembertech/vt_dsp/lipol.h"
 #include "modulation/modulators/steplfo.h"
 #include "modulation/modulators/curvelfo.h"
 #include "modulation/modulators/envlfo.h"
