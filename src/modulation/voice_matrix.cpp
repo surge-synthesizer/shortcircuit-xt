@@ -34,65 +34,8 @@
 
 namespace scxt::voice::modulation
 {
-template <typename P>
-void bindEl(Matrix &m, const P &payload, Matrix::TR::TargetIdentifier &tg, float &tgs,
-            const float *&p, std::optional<datamodel::pmd> providedMetadata = std::nullopt)
-{
-    assert(tg.gid != 0); // hit this? You forgot to init your target ctor
-    assert(tg.tid != 0);
 
-    if (m.forUIMode)
-    {
-        datamodel::pmd tmd;
-        if (!providedMetadata.has_value())
-        {
-            tmd = datamodel::describeValue(payload, tgs);
-        }
-        else
-        {
-            tmd = *providedMetadata;
-        }
-        m.activeTargetsToPMD[tg] = tmd;
-        m.activeTargetsToBaseValue[tg] = tgs;
-        return;
-    }
-
-    m.bindTargetBaseValue(tg, tgs);
-    p = m.getTargetValuePointer(tg);
-
-#if BUILD_IS_DEBUG
-    /* Make sure every element has a description or a value provided.
-     * This could be in an assert but you know, figure I'll just do it this
-     * way
-     * */
-    if (!providedMetadata.has_value())
-    {
-        auto metaData = datamodel::describeValue(payload, tgs);
-    }
-#endif
-
-    auto idxIt = m.routingTable.targetToOutputIndex.find(tg);
-    if (idxIt != m.routingTable.targetToOutputIndex.end())
-    {
-        datamodel::pmd tmd;
-        if (!providedMetadata.has_value())
-        {
-            tmd = datamodel::describeValue(payload, tgs);
-        }
-        else
-        {
-            tmd = *providedMetadata;
-        }
-        auto pt = m.getTargetValuePointer(tg);
-        for (auto &r : m.routingValuePointers)
-        {
-            if (r.target == pt)
-            {
-                r.depthScale = tmd.maxVal - tmd.minVal;
-            }
-        }
-    }
-};
+namespace shmo = scxt::modulation::shared;
 
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
@@ -109,70 +52,42 @@ void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, e
 }
 void MatrixEndpoints::LFOTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
-    auto &ms = z.modulatorStorage[index];
-
-    bindEl(m, ms, rateT, ms.rate, rateP);
-
-    bindEl(m, ms, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
-    bindEl(m, ms, curve.delayT, ms.curveLfoStorage.delay, curve.delayP);
-    bindEl(m, ms, curve.attackT, ms.curveLfoStorage.attack, curve.attackP);
-    bindEl(m, ms, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP);
-
-    bindEl(m, ms, step.smoothT, ms.stepLfoStorage.smooth, step.smoothP);
-
-    bindEl(m, ms, env.delayT, ms.envLfoStorage.delay, env.delayP);
-    bindEl(m, ms, env.attackT, ms.envLfoStorage.attack, env.attackP);
-    bindEl(m, ms, env.holdT, ms.envLfoStorage.hold, env.holdP);
-    bindEl(m, ms, env.decayT, ms.envLfoStorage.decay, env.decayP);
-    bindEl(m, ms, env.sustainT, ms.envLfoStorage.sustain, env.sustainP);
-    bindEl(m, ms, env.releaseT, ms.envLfoStorage.release, env.releaseP);
+    baseBind(m, z);
 }
 
 void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
-    auto doBind = [this, &m](auto &eg) {
-        bindEl(m, eg, aT, eg.a, aP);
-        bindEl(m, eg, hT, eg.h, hP);
-        bindEl(m, eg, dT, eg.d, dP);
-        bindEl(m, eg, sT, eg.s, sP);
-        bindEl(m, eg, rT, eg.r, rP);
-        bindEl(m, eg, asT, eg.aShape, asP);
-        bindEl(m, eg, dsT, eg.dShape, dsP);
-        bindEl(m, eg, rsT, eg.rShape, rsP);
-    };
-
-    assert(index >= 0 && index < z.egStorage.size());
-    doBind(z.egStorage[index]);
+    baseBind(m, z.egStorage[index]);
 }
 
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &mt = z.mapping;
 
-    bindEl(m, mt, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
-    bindEl(m, mt, ampT, mt.amplitude, ampP);
-    bindEl(m, mt, panT, mt.pan, panP);
+    shmo::bindEl(m, mt, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
+    shmo::bindEl(m, mt, ampT, mt.amplitude, ampP);
+    shmo::bindEl(m, mt, panT, mt.pan, panP);
     // This is a true oddity. We can modulate but not specify it
-    bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP,
-           datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x"));
+    shmo::bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP,
+                 datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x"));
 }
 
 void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &ot = z.outputInfo;
-    bindEl(m, ot, panT, ot.pan, panP);
-    bindEl(m, ot, ampT, ot.amplitude, ampP);
+    shmo::bindEl(m, ot, panT, ot.pan, panP);
+    shmo::bindEl(m, ot, ampT, ot.amplitude, ampP);
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &p = z.processorStorage[index];
     auto &d = z.processorDescription[index];
-    bindEl(m, p, mixT, p.mix, mixP);
+    shmo::bindEl(m, p, mixT, p.mix, mixP);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
-        bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
+        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
     }
 }
 
@@ -285,8 +200,8 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
     return voiceMatrixMetadata_t{true, sr, tg, cr};
 }
 
-MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t(p))
-    : index{p}, mixT{'proc', 'mix ', p}
+MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
+    : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'proc'>(p)
 {
     auto ptFn = [](const engine::Zone &z, const MatrixConfig::TargetIdentifier &t) -> std::string {
         auto &d = z.processorDescription[t.index];
@@ -312,14 +227,12 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t(p)
                 return "";
             return d.floatControlDescriptions[icopy].name;
         };
-        // the '0'+ structure is used in getdisplayname too
-        fpT[i] = TG{'proc', 'fp  ' + (uint32_t)(i + '0' - ' '), p};
         registerVoiceModTarget(e, fpT[i], ptFn, elFn);
     }
 }
 
 MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
-    : index(p), rateT{'lfo ', 'rate', p}, curve(p), step(p), env(p)
+    : scxt::modulation::shared::LFOTargetEndpointData<TG, 'lfo '>(p)
 {
     if (e)
     {
@@ -360,8 +273,11 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
             return conditionLabel(labl, [](auto &ms) { return true; });
         };
 
-        registerVoiceModTarget(e, rateT, ptFn, notEnvLabel("Rate"));
-        registerVoiceModTarget(e, curve.deformT, ptFn, curveLabel("Curve Deform"));
+        auto ms = scxt::modulation::ModulatorStorage();
+        auto nm = [&ms](auto &v) { return datamodel::describeValue(ms, v).name; };
+
+        registerVoiceModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
+        registerVoiceModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
         registerVoiceModTarget(e, curve.delayT, ptFn, curveLabel("Curve Delay"));
         registerVoiceModTarget(e, curve.attackT, ptFn, curveLabel("Curve Attack"));
         registerVoiceModTarget(e, curve.releaseT, ptFn, curveLabel("Curve Release"));

@@ -62,6 +62,7 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
         {
             if (p)
             {
+                SCLOG("Group Destructor: Unspawning Processors");
                 dsp::processor::unspawnProcessor(p);
             }
         }
@@ -169,8 +170,10 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     std::array<bool, lfosPerGroup> lfoUsed{};
     bool initializedLFOs{false};
 
-    modulation::GroupModMatrix modMatrix;
-    modulation::GroupModMatrix::routingTable_t &routingTable;
+    modulation::GroupMatrix modMatrix;
+    modulation::GroupMatrixEndpoints endpoints;
+    modulation::GroupMatrix::RoutingTable routingTable;
+    void rePrepareAndBindGroupMatrix();
 
     inline float envelope_rate_linear_nowrap(float f)
     {

@@ -44,9 +44,17 @@
 namespace scxt::engine
 {
 
-Group::Group() : id(GroupID::next()), name(id.to_string()), routingTable(modMatrix.routingTable)
+Group::Group() : id(GroupID::next()), name(id.to_string()), endpoints{nullptr}
 {
-    modMatrix.assignSourcesFromGroup(*this);
+    rePrepareAndBindGroupMatrix();
+}
+
+void Group::rePrepareAndBindGroupMatrix()
+{
+    endpoints.sources.bind(modMatrix, *this);
+    modMatrix.prepare(routingTable);
+    endpoints.bindTargetBaseValues(modMatrix, *this);
+    modMatrix.process();
 }
 
 void Group::process(Engine &e)
@@ -61,9 +69,6 @@ void Group::process(Engine &e)
     // When we have alternate group routing we change these pointers
     float *lOut = output[0];
     float *rOut = output[1];
-
-    modMatrix.copyBaseValuesFromGroup(*this);
-    modMatrix.initializeModulationValues();
 
     if (anyModulatorUsed)
     {
@@ -123,8 +128,10 @@ void Group::process(Engine &e)
         const auto &ps = processorStorage[i];
         float tempbuf alignas(16)[2][BLOCK_SIZE];
 
-        if (p)
+        if (p && ps.isActive)
         {
+            endpoints.processorTarget[i].snapValues();
+
             p->process_stereo(lOut, rOut, tempbuf[0], tempbuf[1], 0);
             processorMix[i].set_target(ps.mix);
             processorMix[i].fade_blocks(lOut, tempbuf[0], lOut);
@@ -133,7 +140,8 @@ void Group::process(Engine &e)
     }
 
     // Pan
-    auto pvo = modMatrix.getValue(modulation::gmd_pan, 0);
+    auto pvo = std::clamp(*endpoints.outputTarget.panP, -1.f, 1.f);
+
     if (pvo != 0.f)
     {
         namespace pl = sst::basic_blocks::dsp::pan_laws;
@@ -151,7 +159,7 @@ void Group::process(Engine &e)
     }
 
     // multiply by vca level from matrix
-    auto mlev = modMatrix.getValue(modulation::gmd_grouplevel, 0);
+    auto mlev = std::clamp(*endpoints.outputTarget.ampP, 0.f, 1.f);
     outputAmp.set_target(mlev * mlev * mlev);
     outputAmp.multiply_2_blocks(lOut, rOut);
 }
@@ -188,8 +196,8 @@ void Group::setupOnUnstream(const engine::Engine &e)
     {
         stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        stepLfos[i].assign(&modulatorStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i),
-                           nullptr, getEngine()->rngGen);
+        stepLfos[i].assign(&modulatorStorage[i], endpoints.lfo[i].rateP, nullptr,
+                           getEngine()->rngGen);
     }
 
     for (int p = 0; p < processorCount; ++p)
@@ -198,9 +206,6 @@ void Group::setupOnUnstream(const engine::Engine &e)
         onProcessorTypeChanged(p, processorStorage[p].type);
     }
 
-    modMatrix.copyBaseValuesFromGroup(*this);
-    modMatrix.initializeModulationValues();
-    modMatrix.updateModulatorUsed(*this);
     for (auto &lfo : stepLfos)
     {
         lfo.UpdatePhaseIncrement();
@@ -212,8 +217,8 @@ void Group::onSampleRateChanged()
     {
         stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-        stepLfos[i].assign(&modulatorStorage[i], modMatrix.getValuePtr(modulation::gmd_LFO_Rate, i),
-                           nullptr, getEngine()->rngGen);
+        stepLfos[i].assign(&modulatorStorage[i], endpoints.lfo[i].rateP, nullptr,
+                           getEngine()->rngGen);
     }
 
     for (auto p : processors)
@@ -233,7 +238,7 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
         // FIXME - replace the float params with something modulatable
         processors[w] = dsp::processor::spawnProcessorInPlace(
             t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],
-            dsp::processor::processorMemoryBufferSize, processorStorage[w].floatParams.data(),
+            dsp::processor::processorMemoryBufferSize, endpoints.processorTarget[w].fp,
             processorStorage[w].intParams.data());
 
         processors[w]->setSampleRate(sampleRate);

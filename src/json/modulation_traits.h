@@ -41,6 +41,7 @@
 namespace scxt::json
 {
 
+#if OLDOLD
 SC_STREAMDEF(modulation::ModMatrixCurve, SC_FROM({
                  auto sn = scxt::modulation::getModMatrixCurveStreamingName(t);
                  v = {{"vmc_name", sn}};
@@ -117,6 +118,8 @@ template <> struct scxt_traits<scxt::modulation::GroupModMatrix::Routing>
         findIf(v, "depth", result.depth);
     }
 };
+
+#endif
 
 SC_STREAMDEF(scxt::modulation::modulators::StepLFOStorage, SC_FROM({
                  v = {{"data", t.data},

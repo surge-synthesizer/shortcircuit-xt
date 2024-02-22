@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_DATAMODEL_PARAMETER_H
-#define SCXT_SRC_DATAMODEL_PARAMETER_H
+#ifndef SCXT_SRC_DATAMODEL_METADATA_H
+#define SCXT_SRC_DATAMODEL_METADATA_H
 
 #include <string>
 #include <optional>

@@ -30,99 +30,174 @@
 
 #include <string>
 #include <array>
+
+#include "configuration.h"
 #include "utils.h"
-#include "base_matrix.h"
+
+#include "sst/cpputils/constructors.h"
+#include "sst/basic-blocks/mod-matrix/ModMatrix.h"
+
+#include "datamodel/metadata.h"
+
+#include "matrix_shared.h"
+#include "mod_curves.h"
 
 namespace scxt::engine
 {
 struct Group;
+struct Engine;
 } // namespace scxt::engine
 
 namespace scxt::modulation
 {
-
-enum GroupModMatrixSource
+struct GroupMatrixConfig
 {
-    gms_none,
-    gms_EG1,
-    gms_EG2,
-    gms_LFO1,
-    gms_LFO2,
-    gms_LFO3,
+    using SourceIdentifier = scxt::modulation::shared::SourceIdentifier;
+    using TargetIdentifier = scxt::modulation::shared::TargetIdentifier;
+    using RoutingExtraPayload = scxt::modulation::shared::RoutingExtraPayload;
 
-    numGroupMatrixSources
-};
-
-enum GroupModMatrixDestinationType
-{
-    gmd_none,
-    gmd_grouplevel,
-    gmd_pan,
-    gmd_LFO_Rate,
-
-    numGroupMatrixDestinations
-};
-
-std::string getGroupModMatrixDestStreamingName(const GroupModMatrixDestinationType &dest);
-std::optional<GroupModMatrixDestinationType>
-fromGroupModMatrixDestStreamingName(const std::string &s);
-
-std::string getGroupModMatrixSourceStreamingName(const GroupModMatrixSource &dest);
-std::optional<GroupModMatrixSource> fromGroupModMatrixSourceStreamingName(const std::string &s);
-
-struct GroupModMatrixDestinationAddress
-{
-    static constexpr int maxIndex{4}; // 4 processors per zone
-    static constexpr int maxDestinations{maxIndex * numGroupMatrixDestinations};
-    GroupModMatrixDestinationType type{gmd_none};
-    size_t index{0};
-
-    // want in order, not index interleaved, so we can look at FP as a block etc...
-    operator size_t() const { return (size_t)type + numGroupMatrixDestinations * index; }
-
-    static constexpr inline size_t destIndex(GroupModMatrixDestinationType t, size_t idx)
+    using CurveIdentifier = scxt::modulation::ModulationCurves::CurveIdentifier;
+    static std::function<float(float)> getCurveOperator(CurveIdentifier id)
     {
-        return (size_t)t + numGroupMatrixDestinations * idx;
+        return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
-    bool operator==(const GroupModMatrixDestinationAddress &other) const
+    static constexpr bool IsFixedMatrix{true};
+    static constexpr size_t FixedMatrixSize{12};
+
+    using TI = TargetIdentifier;
+    using SI = SourceIdentifier;
+
+    static bool isTargetModMatrixDepth(const TargetIdentifier &t) { return t.gid == 'gelf'; }
+    static size_t getTargetModMatrixElement(const TargetIdentifier &t)
     {
-        return other.type == type && other.index == index;
+        assert(isTargetModMatrixDepth(t));
+        return (size_t)t.index;
     }
 };
 
-typedef std::vector<std::pair<GroupModMatrixDestinationAddress, std::string>>
-    groupModMatrixDestinationNames_t;
-groupModMatrixDestinationNames_t getGroupModulationDestinationNames(const engine::Group &);
-typedef std::vector<std::pair<GroupModMatrixSource, std::string>> groupModMatrixSourceNames_t;
-groupModMatrixSourceNames_t getGroupModMatrixSourceNames(const engine::Group &);
-
-typedef std::tuple<bool, groupModMatrixSourceNames_t, groupModMatrixDestinationNames_t,
-                   modMatrixCurveNames_t>
-    groupModMatrixMetadata_t;
-inline groupModMatrixMetadata_t getGroupModMatrixMetadata(const engine::Group &g)
+struct GroupMatrix : sst::basic_blocks::mod_matrix::FixedMatrix<GroupMatrixConfig>
 {
-    return {true, getGroupModMatrixSourceNames(g), getGroupModulationDestinationNames(g),
-            getModMatrixCurveNames()};
-}
-
-struct GroupModMatrixTraits
-{
-    static constexpr int numModMatrixSlots{6};
-    typedef GroupModMatrixSource SourceEnum;
-    static constexpr SourceEnum SourceEnumNoneValue{gms_none};
-    typedef GroupModMatrixDestinationAddress DestAddress;
-    typedef GroupModMatrixDestinationType DestEnum;
-    static constexpr DestEnum DestEnumNoneValue{gmd_none};
+    bool forUIMode{false};
+    std::unordered_map<GroupMatrixConfig::TargetIdentifier, datamodel::pmd> activeTargetsToPMD;
+    std::unordered_map<GroupMatrixConfig::TargetIdentifier, float> activeTargetsToBaseValue;
 };
-struct GroupModMatrix : public MoveableOnly<GroupModMatrix>, ModMatrix<GroupModMatrixTraits>
+
+struct GroupMatrixEndpoints
 {
-    GroupModMatrix() { clear(); }
+    using TG = GroupMatrixConfig::TargetIdentifier;
+    using SR = GroupMatrixConfig::SourceIdentifier;
 
-    void assignSourcesFromGroup(engine::Group &g);
+    GroupMatrixEndpoints(scxt::engine::Engine *e)
+        : lfo{sst::cpputils::make_array_bind_last_index<LFOTarget, scxt::lfosPerGroup>(e)},
+          processorTarget{
+              sst::cpputils::make_array_bind_last_index<ProcessorTarget,
+                                                        scxt::processorsPerZoneAndGroup>(e)},
+          outputTarget(e),
+          eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egPerGroup>(e)},
+          selfModulation(e)
+    {
+        if (e)
+            SCLOG_UNIMPL("Engine Attach Group Matrix Standalone Endpoints (if they exist)")
+    }
 
-    void copyBaseValuesFromGroup(engine::Group &);
-    void updateModulatorUsed(engine::Group &) const;
+    struct EGTarget : shared::EGTargetEndpointData<TG, 'genv'>
+    {
+        EGTarget(engine::Engine *e, uint32_t p) : shared::EGTargetEndpointData<TG, 'genv'>(p)
+        {
+            if (e)
+            {
+                std::string envnm = (p == 0 ? "EG1" : "EG2");
+                registerGroupModTarget(e, aT, envnm, "Attack");
+                registerGroupModTarget(e, hT, envnm, "Hold");
+                registerGroupModTarget(e, dT, envnm, "Decay");
+                registerGroupModTarget(e, sT, envnm, "Sustain");
+                registerGroupModTarget(e, rT, envnm, "Release");
+                registerGroupModTarget(e, asT, envnm, "Attack Shape");
+                registerGroupModTarget(e, dsT, envnm, "Decay Shape");
+                registerGroupModTarget(e, rsT, envnm, "Release Shape");
+            }
+        }
+        void bind(GroupMatrix &m, engine::Group &g);
+    };
+    std::array<EGTarget, scxt::egPerGroup> eg;
+
+    struct LFOTarget : shared::LFOTargetEndpointData<TG, 'glfo'>
+    {
+        LFOTarget(engine::Engine *e, uint32_t p) : shared::LFOTargetEndpointData<TG, 'glfo'>(p)
+        {
+            if (e)
+                SCLOG_UNIMPL("Engine Attach LFO");
+        }
+        void bind(GroupMatrix &m, engine::Group &g);
+    };
+    std::array<LFOTarget, scxt::lfosPerGroup> lfo;
+
+    struct ProcessorTarget : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'gprc'>
+    {
+        // This is out of line since it creates a caluclation using zone
+        // innards and we can't have an include cycle
+        ProcessorTarget(engine::Engine *e, uint32_t p);
+
+        void bind(GroupMatrix &m, engine::Group &z);
+    };
+    std::array<ProcessorTarget, scxt::processorsPerZoneAndGroup> processorTarget;
+
+    struct OutputTarget
+    {
+        OutputTarget(engine::Engine *e) : panT{'gout', 'pan ', 0}, ampT{'gout', 'ampl', 0}
+        {
+            if (e)
+            {
+                registerGroupModTarget(e, panT, "Output", "Pan");
+                registerGroupModTarget(e, ampT, "Output", "Amplitude");
+            }
+        }
+        TG panT, ampT;
+
+        const float *panP{nullptr}, *ampP{nullptr};
+
+        void bind(GroupMatrix &m, engine::Group &z);
+    } outputTarget;
+
+    struct SelfModulationTarget
+    {
+        SelfModulationTarget(engine::Engine *e)
+        {
+            for (uint32_t i = 0; i < GroupMatrixConfig::FixedMatrixSize; ++i)
+            {
+                selfT[i] = TG{'gelf', 'dpth', i};
+                registerGroupModTarget(e, selfT[i], "Mod Depth", "Row " + std::to_string(i + 1));
+            }
+        }
+        std::array<TG, GroupMatrixConfig::FixedMatrixSize> selfT;
+    } selfModulation;
+
+    void bindTargetBaseValues(GroupMatrix &m, engine::Group &g);
+
+    static void registerGroupModTarget(engine::Engine *e,
+                                       const GroupMatrixConfig::TargetIdentifier &t,
+                                       const std::string &path, const std::string &name)
+    {
+        registerGroupModTarget(
+            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
+            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+    }
+
+    static void
+    registerGroupModTarget(engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &,
+                           std::function<std::string(const engine::Group &,
+                                                     const GroupMatrixConfig::TargetIdentifier &)>
+                               pathFn,
+                           std::function<std::string(const engine::Group &,
+                                                     const GroupMatrixConfig::TargetIdentifier &)>
+                               nameFn);
+
+    struct Sources
+    {
+        void bind(GroupMatrix &matrix, engine::Group &group);
+    } sources;
 };
+
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_GROUP_MATRIX_H
