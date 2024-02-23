@@ -381,21 +381,36 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     using vmodTgtStrFn_t = std::function<std::string(
         const Zone &, const voice::modulation::MatrixConfig::TargetIdentifier &)>;
+    using gmodTgtStrFn_t = std::function<std::string(
+        const Group &, const modulation::GroupMatrixConfig::TargetIdentifier &)>;
 
     using vmodSrcStrFn_t = std::function<std::string(
         const Zone &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
+    using gmodSrcStrFn_t = std::function<std::string(
+        const Group &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
 
     std::unordered_map<voice::modulation::MatrixConfig::TargetIdentifier,
                        std::pair<vmodTgtStrFn_t, vmodTgtStrFn_t>>
         voiceModTargets;
+    std::unordered_map<modulation::GroupMatrixConfig::TargetIdentifier,
+                       std::pair<gmodTgtStrFn_t, gmodTgtStrFn_t>>
+        groupModTargets;
+
     std::unordered_map<voice::modulation::MatrixConfig::SourceIdentifier,
                        std::pair<vmodSrcStrFn_t, vmodSrcStrFn_t>>
         voiceModSources;
+    std::unordered_map<modulation::GroupMatrixConfig::SourceIdentifier,
+                       std::pair<gmodSrcStrFn_t, gmodSrcStrFn_t>>
+        groupModSources;
 
     void registerVoiceModTarget(const voice::modulation::MatrixConfig::TargetIdentifier &,
                                 vmodTgtStrFn_t pathFn, vmodTgtStrFn_t nameFn);
     void registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &,
                                 vmodSrcStrFn_t pathFn, vmodSrcStrFn_t nameFn);
+    void registerGroupModTarget(const modulation::GroupMatrixConfig::TargetIdentifier &,
+                                gmodTgtStrFn_t pathFn, gmodTgtStrFn_t nameFn);
+    void registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &,
+                                gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn);
 
   private:
     std::unique_ptr<Patch> patch;

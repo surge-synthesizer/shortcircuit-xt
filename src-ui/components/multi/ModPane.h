@@ -50,15 +50,10 @@ struct ModPaneZoneTraits
 struct ModPaneGroupTraits
 {
     static constexpr bool forZone{false};
-    using metadata = int;
-    using matrix = int;
-    struct routing
-    {
-        using Routing = int;
-    };
+    using metadata = scxt::modulation::groupMatrixMetadata_t;
+    using matrix = scxt::modulation::GroupMatrix;
+    using routing = scxt::modulation::GroupMatrix::RoutingTable;
     static constexpr uint32_t rowCount{12};
-    // using metadata = scxt::modulation::groupModMatrixMetadata_t;
-    // using routing = scxt::modulation::GroupModMatrix::routingTable_t;
 };
 
 template <typename GZTrait> struct ModRow;

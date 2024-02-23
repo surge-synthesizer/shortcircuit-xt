@@ -721,4 +721,17 @@ void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::Sourc
 {
     voiceModSources.emplace(t, std::make_pair(pathFn, nameFn));
 }
+
+void Engine::registerGroupModTarget(const modulation::GroupMatrixConfig::TargetIdentifier &t,
+                                    gmodTgtStrFn_t pathFn, gmodTgtStrFn_t nameFn)
+{
+    groupModTargets.emplace(t, std::make_pair(pathFn, nameFn));
+}
+
+void Engine::registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &t,
+                                    gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn)
+{
+    groupModSources.emplace(t, std::make_pair(pathFn, nameFn));
+}
+
 } // namespace scxt::engine

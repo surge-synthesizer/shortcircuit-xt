@@ -41,86 +41,6 @@
 namespace scxt::json
 {
 
-#if OLDOLD
-SC_STREAMDEF(modulation::ModMatrixCurve, SC_FROM({
-                 auto sn = scxt::modulation::getModMatrixCurveStreamingName(t);
-                 v = {{"vmc_name", sn}};
-             }),
-             SC_TO({
-                 std::string tsn;
-                 findIf(v, "vmc_name", tsn);
-                 result = scxt::modulation::fromModMatrixCurveStreamingName(tsn).value_or(
-                     scxt::modulation::modc_none);
-             }))
-
-template <> struct scxt_traits<modulation::GroupModMatrixDestinationAddress>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const modulation::GroupModMatrixDestinationAddress &t)
-    {
-        auto dn = scxt::modulation::getGroupModMatrixDestStreamingName(t.type);
-        v = {{"type", dn}, {"index", t.index}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   modulation::GroupModMatrixDestinationAddress &t)
-    {
-        std::string tsn;
-        findIf(v, "type", tsn);
-        t.type = scxt::modulation::fromGroupModMatrixDestStreamingName(tsn).value_or(
-            scxt::modulation::gmd_none);
-        findIf(v, "index", t.index);
-    }
-};
-
-template <> struct scxt_traits<modulation::GroupModMatrixSource>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const modulation::GroupModMatrixSource &t)
-    {
-        auto sn = scxt::modulation::getGroupModMatrixSourceStreamingName(t);
-        v = {{"vms_name", sn}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, modulation::GroupModMatrixSource &t)
-    {
-        std::string tsn;
-        findIf(v, "vms_name", tsn);
-        t = scxt::modulation::fromGroupModMatrixSourceStreamingName(tsn).value_or(
-            scxt::modulation::gms_none);
-    }
-};
-
-template <> struct scxt_traits<scxt::modulation::GroupModMatrix::Routing>
-{
-    typedef scxt::modulation::GroupModMatrix::Routing rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"active", t.active}, {"selConsistent", t.selConsistent},
-             {"src", t.src},       {"srcVia", t.srcVia},
-             {"dst", t.dst},       {"curve", t.curve},
-             {"depth", t.depth}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        findOrSet(v, "active", true, result.active);
-        findOrSet(v, "selConsistent", true, result.selConsistent);
-        findIf(v, "src", result.src);
-        findIf(v, "srcVia", result.srcVia);
-        findIf(v, "dst", result.dst);
-        findOrSet(v, "curve", modulation::modc_none, result.curve);
-        findIf(v, "depth", result.depth);
-    }
-};
-
-#endif
-
 SC_STREAMDEF(scxt::modulation::modulators::StepLFOStorage, SC_FROM({
                  v = {{"data", t.data},
                       {"repeat", t.repeat},
@@ -215,45 +135,25 @@ SC_STREAMDEF(scxt::modulation::ModulatorStorage, SC_FROM({
                  result.configureCalculatedState();
              }))
 
-template <> struct scxt_traits<scxt::voice::modulation::Matrix::TR::TargetIdentifier>
-{
-    typedef scxt::voice::modulation::Matrix::TR::TargetIdentifier rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
-    }
+SC_STREAMDEF(scxt::modulation::shared::TargetIdentifier, SC_FROM({
+                 v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
+             }),
+             SC_TO({
+                 findIf(v, "g", result.gid);
+                 findIf(v, "t", result.tid);
+                 findIf(v, "i", result.index);
+             }));
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "g", result.gid);
-        findIf(v, "t", result.tid);
-        findIf(v, "i", result.index);
-    }
-};
+SC_STREAMDEF(scxt::modulation::shared::SourceIdentifier, SC_FROM({
+                 v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
+             }),
+             SC_TO({
+                 findIf(v, "g", result.gid);
+                 findIf(v, "t", result.tid);
+                 findIf(v, "i", result.index);
+             }));
 
-template <> struct scxt_traits<scxt::voice::modulation::Matrix::TR::SourceIdentifier>
-{
-    typedef scxt::voice::modulation::Matrix::TR::SourceIdentifier rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "g", result.gid);
-        findIf(v, "t", result.tid);
-        findIf(v, "i", result.index);
-    }
-};
-
-SC_STREAMDEF(scxt::voice::modulation::MatrixConfig::RoutingExtraPayload, SC_FROM({
+SC_STREAMDEF(scxt::modulation::shared::RoutingExtraPayload, SC_FROM({
                  v = {{"selC", t.selConsistent},
                       {"targetMetadata", t.targetMetadata},
                       {"targetBaseValue", t.targetBaseValue}};
@@ -264,56 +164,71 @@ SC_STREAMDEF(scxt::voice::modulation::MatrixConfig::RoutingExtraPayload, SC_FROM
                  findIf(v, "targetBaseValue", result.targetBaseValue);
              }));
 
-template <> struct scxt_traits<scxt::voice::modulation::Matrix::RoutingTable::Routing>
-{
-    typedef scxt::voice::modulation::Matrix::RoutingTable::Routing rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"active", t.active},
-             {"source", t.source},
-             {"sourceVia", t.sourceVia},
-             {"target", t.target},
-             {"curve", t.curve},
-             {"depth", t.depth},
-             {"extraPayload", t.extraPayload}};
-    }
+// Its a mild bummer we have to dup this for group and zone but they differ by trait so have
+// distinct types Ahh well. Fixable with an annoying refactor but leave it for now
+SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
+                 v = {{"active", t.active},
+                      {"source", t.source},
+                      {"sourceVia", t.sourceVia},
+                      {"target", t.target},
+                      {"curve", t.curve},
+                      {"depth", t.depth},
+                      {"extraPayload", t.extraPayload}};
+             }),
+             SC_TO({
+                 findIf(v, "active", result.active);
+                 findIf(v, "source", result.source);
+                 findIf(v, "sourceVia", result.sourceVia);
+                 findIf(v, "target", result.target);
+                 findIf(v, "curve", result.curve);
+                 findIf(v, "depth", result.depth);
+                 findIf(v, "extraPayload", result.extraPayload);
+             }));
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
-        findIf(v, "active", result.active);
-        findIf(v, "source", result.source);
-        findIf(v, "sourceVia", result.sourceVia);
-        findIf(v, "target", result.target);
-        findIf(v, "curve", result.curve);
-        findIf(v, "depth", result.depth);
-        findIf(v, "extraPayload", result.extraPayload);
-    }
-};
+SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable, SC_FROM({
+                 v = {{"routes", t.routes}};
+             }),
+             SC_TO({
+                 const auto &object = v.get_object();
 
-template <> struct scxt_traits<scxt::voice::modulation::Matrix::RoutingTable>
-{
-    typedef scxt::voice::modulation::Matrix::RoutingTable rt_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const rt_t &t)
-    {
-        v = {{"routes", t.routes}};
-    }
+                 std::fill(result.routes.begin(), result.routes.end(), rt_t::Routing());
+                 if (v.find("routes"))
+                 {
+                     fromArrayWithSizeDifference(v.at("routes"), result.routes);
+                 }
+             }));
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, rt_t &result)
-    {
-        const auto &object = v.get_object();
+SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable::Routing, SC_FROM({
+                 v = {{"active", t.active},
+                      {"source", t.source},
+                      {"sourceVia", t.sourceVia},
+                      {"target", t.target},
+                      {"curve", t.curve},
+                      {"depth", t.depth},
+                      {"extraPayload", t.extraPayload}};
+             }),
+             SC_TO({
+                 findIf(v, "active", result.active);
+                 findIf(v, "source", result.source);
+                 findIf(v, "sourceVia", result.sourceVia);
+                 findIf(v, "target", result.target);
+                 findIf(v, "curve", result.curve);
+                 findIf(v, "depth", result.depth);
+                 findIf(v, "extraPayload", result.extraPayload);
+             }));
 
-        std::fill(result.routes.begin(), result.routes.end(), rt_t::Routing());
-        if (v.find("routes"))
-        {
-            fromArrayWithSizeDifference(v.at("routes"), result.routes);
-        }
-    }
-};
+SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable, SC_FROM({
+                 v = {{"routes", t.routes}};
+             }),
+             SC_TO({
+                 const auto &object = v.get_object();
+
+                 std::fill(result.routes.begin(), result.routes.end(), rt_t::Routing());
+                 if (v.find("routes"))
+                 {
+                     fromArrayWithSizeDifference(v.at("routes"), result.routes);
+                 }
+             }));
 
 } // namespace scxt::json
 

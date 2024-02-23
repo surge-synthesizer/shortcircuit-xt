@@ -192,13 +192,26 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [s = a, &groupToFree](auto &e) {
-            auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
-            groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
+            if (e.getPatch()->getPart(s.part)->getGroups().size() <= 1)
+            {
+                groupToFree = nullptr;
+            }
+            else
+            {
+                auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
+                groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
+            }
         },
         [t = a, &groupToFree](auto &engine) {
             if (groupToFree)
             {
                 delete groupToFree;
+            }
+            else
+            {
+                engine.getMessageController()->reportErrorToClient(
+                    "Unable to Remove Group", "All parts must have one group; you tried to "
+                                              "remove the last group in the part");
             }
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);

@@ -156,31 +156,25 @@ void SCXTEditor::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::Routin
     multiScreen->getZoneElements()->modPane->refreshMatrix();
 }
 
-#if BADBAD
-void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupModMatrixMetadata_t &d)
+void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &d)
 {
-#if BADBAD
     const auto &[active, sinf, dinf, cinf] = d;
-    multiScreen->getGroupElements()->groupMod()->setActive(active);
+
+    multiScreen->getGroupElements()->modPane->setActive(active);
     if (active)
     {
-        multiScreen->getGroupElements()->groupMod()->matrixMetadata = d;
-        multiScreen->getGroupElements()->groupMod()->rebuildMatrix();
+        multiScreen->getGroupElements()->modPane->matrixMetadata = d;
+        multiScreen->getGroupElements()->modPane->rebuildMatrix();
     }
-#endif
 }
 
-void SCXTEditor::onGroupMatrix(const scxt::modulation::GroupModMatrix::routingTable_t &t)
+void SCXTEditor::onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &t)
 {
-#if BADBAD
     assert(multiScreen->getGroupElements()
-               ->groupMod()
-               ->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
-    multiScreen->getGroupElements()->groupMod()->routingTable = t;
-    multiScreen->getGroupElements()->groupMod()->refreshMatrix();
-#endif
+               ->modPane->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
+    multiScreen->getGroupElements()->modPane->routingTable = t;
+    multiScreen->getGroupElements()->modPane->refreshMatrix();
 }
-#endif
 
 void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
     const scxt::messaging::client::indexedModulatorStorageUpdate_t &payload)

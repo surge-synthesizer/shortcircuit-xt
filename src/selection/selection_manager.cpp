@@ -534,13 +534,11 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
             *(engine.getMessageController()));
     }
 
-#if BADBAD
     auto &rt = g->routingTable;
     serializationSendToClient(cms::s2c_update_group_matrix_metadata,
-                              modulation::getGroupModMatrixMetadata(*g),
+                              modulation::getGroupMatrixMetadata(*g),
                               *(engine.getMessageController()));
     serializationSendToClient(cms::s2c_update_group_matrix, rt, *(engine.getMessageController()));
-#endif
 }
 
 void SelectionManager::sendDisplayDataForNoGroupSelected()
