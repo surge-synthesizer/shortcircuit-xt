@@ -25,9 +25,11 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <stdexcept>
+
 #include "group_matrix.h"
 #include "engine/group.h"
-#include <stdexcept>
+#include "engine/engine.h"
 
 namespace scxt::modulation
 {
@@ -108,19 +110,97 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
     shmo::bindEl(m, g.outputInfo, panT, g.outputInfo.pan, panP);
 }
 
-void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &matrix,
-                                         engine::Group &group)
+void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engine::Group &group)
 {
-    SCLOG_UNIMPL("Bind Sources");
+    for (auto &e : egSource)
+        m.bindSourceValue(e, zeroSource);
+
+    for (auto &l : lfoSources.sources)
+        m.bindSourceValue(l, zeroSource);
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(
-    engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &,
+    engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &t,
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         pathFn,
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         nameFn)
 {
+    if (!e)
+        return;
+
+    e->registerGroupModTarget(t, pathFn, nameFn);
 }
 
+void GroupMatrixEndpoints::registerGroupModSource(
+    engine::Engine *e, const GroupMatrixConfig::SourceIdentifier &t,
+    std::function<std::string(const engine::Group &, const GroupMatrixConfig::SourceIdentifier &)>
+        pathFn,
+    std::function<std::string(const engine::Group &, const GroupMatrixConfig::SourceIdentifier &)>
+        nameFn)
+{
+    if (!e)
+        return;
+
+    e->registerGroupModSource(t, pathFn, nameFn);
+}
+
+groupMatrixMetadata_t getGroupMatrixMetadata(engine::Group &g)
+{
+    // somewhat dissatisfied with amount of copying here also
+    auto e = g.getEngine();
+
+    namedTargetVector_t tg;
+    namedSourceVector_t sr;
+    namedCurveVector_t cr;
+
+    auto identCmp = [](const auto &a, const auto &b) {
+        const auto &ida = a.second;
+        const auto &idb = b.second;
+        if (ida.first == idb.first)
+        {
+            if (ida.second == idb.second)
+            {
+                return std::hash<decltype(a.first)>{}(a.first) <
+                       std::hash<decltype(b.first)>{}(b.first);
+            }
+            else
+            {
+                return ida.second < idb.second;
+            }
+        }
+        return ida.first < idb.first;
+    };
+
+    auto tgtCmp = [identCmp](const auto &a, const auto &b) {
+        const auto &ta = a.first;
+        const auto &tb = b.first;
+        if (ta.gid == 'gprc' && tb.gid == ta.gid && tb.index == ta.index)
+        {
+            return ta.tid < tb.tid;
+        }
+        return identCmp(a, b);
+    };
+
+    for (const auto &[t, fns] : e->groupModTargets)
+    {
+        tg.emplace_back(t, identifierDisplayName_t{fns.first(g, t), fns.second(g, t)});
+    }
+    std::sort(tg.begin(), tg.end(), tgtCmp);
+
+    for (const auto &[s, fns] : e->groupModSources)
+    {
+        sr.emplace_back(s, identifierDisplayName_t{fns.first(g, s), fns.second(g, s)});
+    }
+    std::sort(sr.begin(), sr.end(), identCmp);
+
+    for (const auto &c : scxt::modulation::ModulationCurves::allCurves)
+    {
+        auto n = scxt::modulation::ModulationCurves::curveNames.find(c);
+        assert(n != scxt::modulation::ModulationCurves::curveNames.end());
+        cr.emplace_back(c, identifierDisplayName_t{"", n->second});
+    }
+
+    return groupMatrixMetadata_t{true, sr, tg, cr};
+}
 } // namespace scxt::modulation

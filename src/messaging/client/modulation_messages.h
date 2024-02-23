@@ -43,12 +43,10 @@ SERIAL_TO_CLIENT(UpdateZoneVoiceMatrixMetadata, s2c_update_zone_matrix_metadata,
 SERIAL_TO_CLIENT(UpdateZoneVoiceMatrix, s2c_update_zone_matrix,
                  voice::modulation::Matrix::RoutingTable, onZoneVoiceMatrix);
 
-#if OLDOLD
 SERIAL_TO_CLIENT(UpdateGroupMatrixMetadata, s2c_update_group_matrix_metadata,
-                 modulation::groupModMatrixMetadata_t, onGroupMatrixMetadata);
-SERIAL_TO_CLIENT(UpdateGroupMatrix, s2c_update_group_matrix,
-                 modulation::GroupModMatrix::routingTable_t, onGroupMatrix);
-#endif
+                 scxt::modulation::groupMatrixMetadata_t, onGroupMatrixMetadata);
+SERIAL_TO_CLIENT(UpdateGroupMatrix, s2c_update_group_matrix, modulation::GroupMatrix::RoutingTable,
+                 onGroupMatrix);
 
 // which row, what data, and force a full update
 typedef std::tuple<int, voice::modulation::Matrix::RoutingTable::Routing, bool>
@@ -86,9 +84,9 @@ inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
 CLIENT_TO_SERIAL(IndexedZoneRoutingRowUpdated, c2s_update_zone_routing_row, indexedZoneRowUpdate_t,
                  indexedZoneRoutingRowUpdated(payload, engine, cont));
 
-#if OLDOLD
 // which row, what data, and force a full update
-typedef std::tuple<int, modulation::GroupModMatrix::Routing, bool> indexedGroupRowUpdate_t;
+typedef std::tuple<int, modulation::GroupMatrix::RoutingTable::Routing, bool>
+    indexedGroupRowUpdate_t;
 inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload,
                                           const engine::Engine &engine, MessageController &cont)
 {
@@ -102,8 +100,9 @@ inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload
                 for (const auto &z : gs)
                 {
                     auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
-                    grp->routingTable[index] = row;
-                    grp->modMatrix.updateModulatorUsed(*grp);
+                    grp->routingTable.routes[index] = row;
+                    SCLOG("FIXME - re-start the group matrix if anything other than depth changed")
+                    // grp->modMatrix.updateModulatorUsed(*grp);
                 }
             },
             [doUpdate = b](auto &eng) {
@@ -119,7 +118,6 @@ inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload
 }
 CLIENT_TO_SERIAL(IndexedGroupRoutingRowUpdated, c2s_update_group_routing_row,
                  indexedGroupRowUpdate_t, indexedGroupRoutingRowUpdated(payload, engine, cont));
-#endif
 
 // forzone, active, which, data
 typedef std::tuple<bool, bool, int, modulation::ModulatorStorage> indexedModulatorStorageUpdate_t;

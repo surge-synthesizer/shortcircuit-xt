@@ -95,7 +95,7 @@ struct GroupMatrixEndpoints
                                                         scxt::processorsPerZoneAndGroup>(e)},
           outputTarget(e),
           eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egPerGroup>(e)},
-          selfModulation(e)
+          selfModulation(e), sources(e)
     {
         if (e)
             SCLOG_UNIMPL("Engine Attach Group Matrix Standalone Endpoints (if they exist)")
@@ -193,11 +193,66 @@ struct GroupMatrixEndpoints
                                                      const GroupMatrixConfig::TargetIdentifier &)>
                                nameFn);
 
+    static void registerGroupModSource(engine::Engine *e,
+                                       const GroupMatrixConfig::SourceIdentifier &t,
+                                       const std::string &path, const std::string &name)
+    {
+        registerGroupModSource(
+            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
+            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+    }
+
+    static void
+    registerGroupModSource(engine::Engine *e, const GroupMatrixConfig::SourceIdentifier &,
+                           std::function<std::string(const engine::Group &,
+                                                     const GroupMatrixConfig::SourceIdentifier &)>
+                               pathFn,
+                           std::function<std::string(const engine::Group &,
+                                                     const GroupMatrixConfig::SourceIdentifier &)>
+                               nameFn);
+
     struct Sources
     {
+        Sources(engine::Engine *e)
+            : lfoSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}
+
+        {
+            registerGroupModSource(e, egSource[0], "", "EG1");
+            registerGroupModSource(e, egSource[1], "", "EG2");
+        }
+        struct LFOSources
+        {
+            LFOSources(engine::Engine *e)
+            {
+                for (uint32_t i = 0; i < lfosPerZone; ++i)
+                {
+                    sources[i] = SR{'znlf', 'outp', i};
+                    registerGroupModSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
+                }
+            }
+            std::array<SR, scxt::lfosPerZone> sources;
+        } lfoSources;
+
+        SR egSource[2];
+
+        float zeroSource{0.f};
+
         void bind(GroupMatrix &matrix, engine::Group &group);
     } sources;
 };
 
+typedef std::pair<std::string, std::string> identifierDisplayName_t;
+
+typedef std::pair<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t> namedTarget_t;
+typedef std::vector<namedTarget_t> namedTargetVector_t;
+typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
+typedef std::vector<namedSource_t> namedSourceVector_t;
+typedef std::pair<GroupMatrixConfig::CurveIdentifier, identifierDisplayName_t> namedCurve_t;
+typedef std::vector<namedCurve_t> namedCurveVector_t;
+
+typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t>
+    groupMatrixMetadata_t;
+
+groupMatrixMetadata_t getGroupMatrixMetadata(engine::Group &z);
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_GROUP_MATRIX_H

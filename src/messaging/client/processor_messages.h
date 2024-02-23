@@ -78,12 +78,9 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
                             false, which, true, g->processorDescription[which],
                             g->processorStorage[which]},
                         *(engine.getMessageController()));
-                    SCLOG_ONCE("Selected Gropu Metadata Missing");
-                    /*
-                    serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
-                                              voice::modulation::getVoiceMatrixMetadata(*z),
+                    serializationSendToClient(messaging::client::s2c_update_group_matrix_metadata,
+                                              modulation::getGroupMatrixMetadata(*g),
                                               *(engine.getMessageController()));
-                                              * */
                 });
         }
         return;

@@ -60,113 +60,111 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane<GZTrait> *p) : HasEditor(e), index(i), parent(p)
     {
-        if constexpr (GZTrait::forZone)
-        {
-            auto &row = parent->routingTable.routes[i];
 
-            consistentButton = std::make_unique<jcmp::TextPushButton>();
-            consistentButton->setLabel("Make Consistent");
-            consistentButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        auto &row = parent->routingTable.routes[i];
+
+        consistentButton = std::make_unique<jcmp::TextPushButton>();
+        consistentButton->setLabel("Make Consistent");
+        consistentButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+            {
+                w->pushRowUpdate(true);
+            }
+        });
+        addChildComponent(*consistentButton);
+
+        powerAttachment = std::make_unique<
+            connectors::BooleanPayloadDataAttachment<typename GZTrait::routing::Routing>>(
+            "Power",
+            [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
-                    w->pushRowUpdate(true);
+                    w->pushRowUpdate();
                 }
-            });
-            addChildComponent(*consistentButton);
+            },
+            row.active);
+        power = std::make_unique<jcmp::ToggleButton>();
+        power->setLabel(std::to_string(index + 1));
+        power->setSource(powerAttachment.get());
+        power->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
+        addAndMakeVisible(*power);
 
-            powerAttachment = std::make_unique<
-                connectors::BooleanPayloadDataAttachment<typename GZTrait::routing::Routing>>(
-                "Power",
-                [w = juce::Component::SafePointer(this)](const auto &a) {
-                    if (w)
-                    {
-                        w->pushRowUpdate();
-                    }
-                },
-                row.active);
-            power = std::make_unique<jcmp::ToggleButton>();
-            power->setLabel(std::to_string(index + 1));
-            power->setSource(powerAttachment.get());
-            power->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
-            addAndMakeVisible(*power);
+        source = std::make_unique<jcmp::MenuButton>();
+        source->setLabel("Source");
+        source->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showSourceMenu(false);
+        });
+        source->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+        addAndMakeVisible(*source);
 
-            source = std::make_unique<jcmp::MenuButton>();
-            source->setLabel("Source");
-            source->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        sourceVia = std::make_unique<jcmp::MenuButton>();
+        sourceVia->setLabel("Via");
+        sourceVia->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showSourceMenu(true);
+        });
+        sourceVia->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+        addAndMakeVisible(*sourceVia);
+
+        // The generic value tooltip doesn't work for this and only this control
+        depthAttachment = std::make_unique<attachment_t>(
+            datamodel::pmd().asPercentBipolar().withName("Depth"),
+            [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
-                    w->showSourceMenu(false);
-            });
-            source->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
-            addAndMakeVisible(*source);
+                {
+                    w->pushRowUpdate();
+                    w->updateTooltip(a);
+                }
+            },
+            row.depth);
+        depth = std::make_unique<jcmp::HSliderFilled>();
+        depth->setSource(depthAttachment.get());
+        depth->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
+        depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->editor->showTooltip(*(w->depth));
+            w->updateTooltip(*(w->depthAttachment));
+        };
+        depth->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->editor->hideTooltip();
+        };
+        depth->onIdleHover = depth->onBeginEdit;
+        depth->onIdleHoverEnd = depth->onEndEdit;
 
-            sourceVia = std::make_unique<jcmp::MenuButton>();
-            sourceVia->setLabel("Via");
-            sourceVia->setOnCallback([w = juce::Component::SafePointer(this)]() {
-                if (w)
-                    w->showSourceMenu(true);
-            });
-            sourceVia->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
-            addAndMakeVisible(*sourceVia);
+        addAndMakeVisible(*depth);
 
-            // The generic value tooltip doesn't work for this and only this control
-            depthAttachment = std::make_unique<attachment_t>(
-                datamodel::pmd().asPercentBipolar().withName("Depth"),
-                [w = juce::Component::SafePointer(this)](const auto &a) {
-                    if (w)
-                    {
-                        w->pushRowUpdate();
-                        w->updateTooltip(a);
-                    }
-                },
-                row.depth);
-            depth = std::make_unique<jcmp::HSliderFilled>();
-            depth->setSource(depthAttachment.get());
-            depth->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
-            depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                w->editor->showTooltip(*(w->depth));
-                w->updateTooltip(*(w->depthAttachment));
-            };
-            depth->onEndEdit = [w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                w->editor->hideTooltip();
-            };
-            depth->onIdleHover = depth->onBeginEdit;
-            depth->onIdleHoverEnd = depth->onEndEdit;
+        curve = std::make_unique<jcmp::MenuButton>();
+        curve->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showCurveMenu();
+        });
+        curve->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+        addAndMakeVisible(*curve);
 
-            addAndMakeVisible(*depth);
+        target = std::make_unique<jcmp::MenuButton>();
+        target->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showTargetMenu();
+        });
+        target->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
+        addAndMakeVisible(*target);
 
-            curve = std::make_unique<jcmp::MenuButton>();
-            curve->setOnCallback([w = juce::Component::SafePointer(this)]() {
-                if (w)
-                    w->showCurveMenu();
-            });
-            curve->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
-            addAndMakeVisible(*curve);
+        auto mg = [this](auto g) {
+            auto r = std::make_unique<jcmp::GlyphPainter>(g);
+            r->setCustomClass(connectors::SCXTStyleSheetCreator::InformationLabel);
+            addAndMakeVisible(*r);
+            return r;
+        };
+        x1 = mg(jcmp::GlyphPainter::CROSS);
+        x2 = mg(jcmp::GlyphPainter::CROSS);
+        a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
+        a2 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
 
-            target = std::make_unique<jcmp::MenuButton>();
-            target->setOnCallback([w = juce::Component::SafePointer(this)]() {
-                if (w)
-                    w->showTargetMenu();
-            });
-            target->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
-            addAndMakeVisible(*target);
-
-            auto mg = [this](auto g) {
-                auto r = std::make_unique<jcmp::GlyphPainter>(g);
-                r->setCustomClass(connectors::SCXTStyleSheetCreator::InformationLabel);
-                addAndMakeVisible(*r);
-                return r;
-            };
-            x1 = mg(jcmp::GlyphPainter::CROSS);
-            x2 = mg(jcmp::GlyphPainter::CROSS);
-            a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
-            a2 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
-
-            refreshRow();
-        }
+        refreshRow();
     }
 
     ~ModRow() {}
@@ -195,101 +193,98 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     }
     void refreshRow()
     {
-        if constexpr (GZTrait::forZone)
+        const auto &row = parent->routingTable.routes[index];
+        const auto &srcs = std::get<1>(parent->matrixMetadata);
+        const auto &dsts = std::get<2>(parent->matrixMetadata);
+        const auto &crvs = std::get<3>(parent->matrixMetadata);
+
+        auto sc = !row.extraPayload.has_value() || row.extraPayload->selConsistent;
+
+        power->setVisible(sc);
+        source->setVisible(sc);
+        sourceVia->setVisible(sc);
+        depth->setVisible(sc);
+        curve->setVisible(sc);
+        target->setVisible(sc);
+        x1->setVisible(sc);
+        x2->setVisible(sc);
+        a1->setVisible(sc);
+        a2->setVisible(sc);
+        consistentButton->setVisible(!sc);
+        if (!sc)
         {
-            const auto &row = parent->routingTable.routes[index];
-            const auto &srcs = std::get<1>(parent->matrixMetadata);
-            const auto &dsts = std::get<2>(parent->matrixMetadata);
-            const auto &crvs = std::get<3>(parent->matrixMetadata);
-
-            auto sc = !row.extraPayload.has_value() || row.extraPayload->selConsistent;
-
-            power->setVisible(sc);
-            source->setVisible(sc);
-            sourceVia->setVisible(sc);
-            depth->setVisible(sc);
-            curve->setVisible(sc);
-            target->setVisible(sc);
-            x1->setVisible(sc);
-            x2->setVisible(sc);
-            a1->setVisible(sc);
-            a2->setVisible(sc);
-            consistentButton->setVisible(!sc);
-            if (!sc)
-            {
-                std::string s, sv, c, d;
-                for (const auto &[si, sn] : srcs)
-                {
-                    if (si == row.source)
-                        s = sn.second;
-                    if (si == row.sourceVia)
-                        sv = sn.second;
-                }
-                for (const auto &[ci, cn] : crvs)
-                {
-                    if (ci == row.curve)
-                        c = cn.second;
-                }
-
-                for (const auto &[di, dn] : dsts)
-                {
-                    if (di == row.target)
-                        d = dn.second;
-                }
-
-                auto lbl = s.empty() ? "off" : s;
-                if (!sv.empty())
-                    lbl += " x " + sv;
-                if (!c.empty())
-                    lbl += " through " + c;
-                lbl += " to " + (d.empty() ? "off" : d);
-                if (!row.active)
-                    lbl += " (inactive)";
-
-                consistentButton->setLabel("Set selected zones to : " + lbl);
-                return;
-            }
-
-            // this linear search kinda sucks bot
-            source->setLabel("Source");
-            sourceVia->setLabel("Via");
-            target->setLabel("Target");
-            curve->setLabel("-");
-
+            std::string s, sv, c, d;
             for (const auto &[si, sn] : srcs)
             {
                 if (si == row.source)
-                {
-                    auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
-
-                    source->setLabel(nm);
-                }
+                    s = sn.second;
                 if (si == row.sourceVia)
-                {
-                    auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
-
-                    sourceVia->setLabel(nm);
-                }
+                    sv = sn.second;
+            }
+            for (const auto &[ci, cn] : crvs)
+            {
+                if (ci == row.curve)
+                    c = cn.second;
             }
 
             for (const auto &[di, dn] : dsts)
             {
                 if (di == row.target)
-                {
-                    target->setLabel(dn.first + " - " + dn.second);
-                }
+                    d = dn.second;
             }
 
-            for (const auto &[ci, cn] : crvs)
-            {
-                if (ci == row.curve)
-                {
-                    curve->setLabel(cn.second);
-                }
-            }
+            auto lbl = s.empty() ? "off" : s;
+            if (!sv.empty())
+                lbl += " x " + sv;
+            if (!c.empty())
+                lbl += " through " + c;
+            lbl += " to " + (d.empty() ? "off" : d);
+            if (!row.active)
+                lbl += " (inactive)";
 
-            repaint();
+            consistentButton->setLabel("Set selected zones to : " + lbl);
+            return;
         }
+
+        // this linear search kinda sucks bot
+        source->setLabel("Source");
+        sourceVia->setLabel("Via");
+        target->setLabel("Target");
+        curve->setLabel("-");
+
+        for (const auto &[si, sn] : srcs)
+        {
+            if (si == row.source)
+            {
+                auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+
+                source->setLabel(nm);
+            }
+            if (si == row.sourceVia)
+            {
+                auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+
+                sourceVia->setLabel(nm);
+            }
+        }
+
+        for (const auto &[di, dn] : dsts)
+        {
+            if (di == row.target)
+            {
+                target->setLabel(dn.first + " - " + dn.second);
+            }
+        }
+
+        for (const auto &[ci, cn] : crvs)
+        {
+            if (ci == row.curve)
+            {
+                curve->setLabel(cn.second);
+            }
+        }
+
+        repaint();
     }
 
     void updateTooltip(const attachment_t &at)
@@ -350,11 +345,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
         else
         {
-            SCLOG_ONCE("Skipping Outbound Group Row Update " << index);
-#if BADBAD_GROUP
             sendToSerialization(cmsg::IndexedGroupRoutingRowUpdated(
-                {index, parent->routingTable[index], forceUpdate}));
-#endif
+                {index, parent->routingTable.routes[index], forceUpdate}));
         }
     }
 
@@ -627,6 +619,4 @@ template <typename GZTrait> void ModPane<GZTrait>::refreshMatrix()
 
 template struct ModPane<ModPaneZoneTraits>;
 template struct ModPane<ModPaneGroupTraits>;
-// BADBAD GROUP
-// template struct ModPane<ModPaneGroupTraits>;
 } // namespace scxt::ui::multi
