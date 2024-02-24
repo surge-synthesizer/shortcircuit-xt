@@ -82,18 +82,12 @@ void Group::process(Engine &e)
     {
         if (lfoEvaluator[i] == STEP)
         {
-            if (i == 0)
-            {
-                stepLfos[i].process(blockSize);
-                /* SCLOG("Group " << i << " " << stepLfos[i].output << " "
-                                << stepLfos[i].settings->stepLfoStorage.data[0]); */
-            }
+            stepLfos[i].process(blockSize);
         }
         else if (lfoEvaluator[i] == CURVE)
         {
             auto &lp = endpoints.lfo[i];
 
-            // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.delayP, *lp.curve.attackP,
                                  *lp.curve.releaseP, modulatorStorage[i].curveLfoStorage.useenv,
                                  modulatorStorage[i].curveLfoStorage.unipolar, gated);
@@ -284,7 +278,6 @@ void Group::resetLFOs(int whichLFO)
     auto sl = (whichLFO >= 0 ? whichLFO : 0);
     auto el = (whichLFO >= 0 ? (whichLFO + 1) : engine::lfosPerZone);
 
-    SCLOG("Reset LFOS " << whichLFO << " " << sl << " " << el);
     for (auto i = sl; i < el; ++i)
     {
         const auto &ms = modulatorStorage[i];
@@ -300,7 +293,6 @@ void Group::resetLFOs(int whichLFO)
         }
         else if (lfoEvaluator[i] == CURVE)
         {
-            SCLOG("Attack with " << ms.modulatorShape);
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
             curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
         }

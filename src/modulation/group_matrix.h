@@ -97,8 +97,7 @@ struct GroupMatrixEndpoints
           eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egPerGroup>(e)},
           selfModulation(e), sources(e)
     {
-        if (e)
-            SCLOG_UNIMPL("Engine Attach Group Matrix Standalone Endpoints (if they exist)")
+        // If there are group endpoints, we can merge them here
     }
 
     struct EGTarget : shared::EGTargetEndpointData<TG, 'genv'>

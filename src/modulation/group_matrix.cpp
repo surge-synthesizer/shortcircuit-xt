@@ -119,13 +119,14 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
         {
         case engine::Group::CURVE:
         {
-            SCLOG("Binding " << lfoSources.sources[i] << " to curve");
             m.bindSourceValue(lfoSources.sources[i], g.curveLfos[i].output);
         }
         break;
         case engine::Group::STEP:
+        {
             m.bindSourceValue(lfoSources.sources[i], g.stepLfos[i].output);
-            break;
+        }
+        break;
         case engine::Group::ENV:
             m.bindSourceValue(lfoSources.sources[i], g.envLfos[i].output);
             break;
@@ -134,9 +135,6 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
             break;
         }
     }
-
-    for (auto &l : lfoSources.sources)
-        m.bindSourceValue(l, zeroSource);
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(

@@ -86,7 +86,6 @@ CLIENT_TO_SERIAL_CONSTRAINED(
         nullptr, // no need to do a voice update
         [payload](auto &engine, const auto &gs) {
             auto idx = std::get<1>(payload);
-            SCLOG("onGroupEngine mod int for " << idx << " with groups " << gs.size());
             assert(e.getMessageController()->threadingChecker.isAudioThread());
             for (auto [p, g, z] : gs)
             {
