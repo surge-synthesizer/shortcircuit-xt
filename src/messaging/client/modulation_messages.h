@@ -56,6 +56,7 @@ inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
 {
     // TODO Selected Zone State
     const auto &[i, r, b] = payload;
+
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {

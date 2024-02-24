@@ -308,32 +308,29 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
         auto lineOne = sl + " " + u8"\U00002192" + " " + tl;
 
-        if constexpr (GZTrait::forZone)
+        auto &epo = parent->routingTable.routes[index].extraPayload;
+        if (!epo.has_value())
         {
-            auto &epo = parent->routingTable.routes[index].extraPayload;
-            if (!epo.has_value())
-                return;
-            auto ep = *epo;
-            datamodel::pmd &md = ep.targetMetadata;
+            editor->setTooltipContents(
+                lineOne, {at.description.valueToString(at.value).value_or("Error"), "No Metadata"});
 
-            auto v = md.modulationNaturalToString(ep.targetBaseValue,
-                                                  at.value * (md.maxVal - md.minVal), false);
-
-            std::string modLineOne{}, modLineTwo{};
-
-            if (v.has_value())
-            {
-                modLineOne = v->singleLineModulationSummary;
-                modLineTwo = fmt::format("depth={:.2f}%, {}={}", at.value * 100, u8"\U00000394",
-                                         v->changeUp);
-            }
-            editor->setTooltipContents(lineOne, {modLineOne, modLineTwo});
+            return;
         }
-        else
+        auto ep = *epo;
+        datamodel::pmd &md = ep.targetMetadata;
+
+        auto v = md.modulationNaturalToString(ep.targetBaseValue,
+                                              at.value * (md.maxVal - md.minVal), false);
+
+        std::string modLineOne{}, modLineTwo{};
+
+        if (v.has_value())
         {
-            editor->setTooltipContents(lineOne,
-                                       at.description.valueToString(at.value).value_or("Error"));
+            modLineOne = v->singleLineModulationSummary;
+            modLineTwo =
+                fmt::format("depth={:.2f}%, {}={}", at.value * 100, u8"\U00000394", v->changeUp);
         }
+        editor->setTooltipContents(lineOne, {modLineOne, modLineTwo});
     }
 
     void pushRowUpdate(bool forceUpdate = false)

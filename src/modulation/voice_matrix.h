@@ -117,7 +117,6 @@ struct MatrixEndpoints
 
     struct EGTarget : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>
     {
-        uint32_t index{0};
         EGTarget(engine::Engine *e, uint32_t p)
             : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>(p)
         {

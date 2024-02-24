@@ -38,7 +38,8 @@ namespace scxt::voice
 {
 
 Voice::Voice(engine::Engine *e, engine::Zone *z)
-    : engine(e), zone(z), aeg(this), eg2(this), halfRate(6, true), endpoints(nullptr) // see comment
+    : scxt::modulation::shared::HasModulators<Voice>(this), engine(e), zone(z), halfRate(6, true),
+      endpoints(nullptr) // see comment
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
