@@ -86,7 +86,7 @@ CLIENT_TO_SERIAL_CONSTRAINED(
         nullptr, // no need to do a voice update
         [payload](auto &engine, const auto &gs) {
             auto idx = std::get<1>(payload);
-            assert(e.getMessageController()->threadingChecker.isAudioThread());
+            assert(engine.getMessageController()->threadingChecker.isAudioThread());
             for (auto [p, g, z] : gs)
             {
                 auto &grp = engine.getPatch()->getPart(p)->getGroup(g);
