@@ -226,7 +226,7 @@ struct GroupMatrixEndpoints
             {
                 for (uint32_t i = 0; i < lfosPerZone; ++i)
                 {
-                    sources[i] = SR{'znlf', 'outp', i};
+                    sources[i] = SR{'grlf', 'outp', i};
                     registerGroupModSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
                 }
             }

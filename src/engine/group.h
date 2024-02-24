@@ -88,7 +88,7 @@ struct Group : MoveableOnly<Group>,
 
     float output alignas(16)[2][blockSize];
     void attack();
-    void resetLFOs();
+    void resetLFOs(int whichLFO = -1);
     void process(Engine &onto);
 
     void setupOnUnstream(const engine::Engine &e);

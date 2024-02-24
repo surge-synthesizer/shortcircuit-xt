@@ -156,16 +156,17 @@ inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, const engi
 template <typename VT> using indexedDiffMsg_t = std::tuple<size_t, ptrdiff_t, VT>;
 
 template <typename VT, typename M>
-inline void
-updateZoneIndexedMemberValue(M m, const indexedDiffMsg_t<VT> &payload, const engine::Engine &engine,
-                             MessageController &cont,
-                             std::function<void(const engine::Engine &)> responseCB = nullptr)
+inline void updateZoneIndexedMemberValue(
+    M m, const indexedDiffMsg_t<VT> &payload, const engine::Engine &engine, MessageController &cont,
+    std::function<void(const engine::Engine &)> responseCB = nullptr,
+    std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
+        onEngineExtra = nullptr)
 {
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {
         cont.scheduleAudioThreadCallback(
-            [zs = sz, payload, m](auto &eng) {
+            [zs = sz, payload, m, onEngineExtra](auto &eng) {
                 auto [idx, d, v] = payload;
                 for (const auto &[p, g, z] : zs)
                 {
@@ -191,22 +192,25 @@ updateZoneIndexedMemberValue(M m, const indexedDiffMsg_t<VT> &payload, const eng
                         *(VT *)(((uint8_t *)&dat) + d) = v;
                     }
                 }
+                if (onEngineExtra)
+                    onEngineExtra(eng, zs);
             },
             responseCB);
     }
 }
 
 template <typename VT, typename M>
-inline void
-updateGroupIndexedMemberValue(M m, const indexedDiffMsg_t<VT> &payload,
-                              const engine::Engine &engine, MessageController &cont,
-                              std::function<void(const engine::Engine &)> responseCB = nullptr)
+inline void updateGroupIndexedMemberValue(
+    M m, const indexedDiffMsg_t<VT> &payload, const engine::Engine &engine, MessageController &cont,
+    std::function<void(const engine::Engine &)> responseCB = nullptr,
+    std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
+        onEngineExtra = nullptr)
 {
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {
         cont.scheduleAudioThreadCallback(
-            [gs = sg, payload, m](auto &eng) {
+            [gs = sg, payload, m, onEngineExtra](auto &eng) {
                 auto [idx, d, v] = payload;
                 for (const auto &[p, g, z] : gs)
                 {
@@ -226,6 +230,8 @@ updateGroupIndexedMemberValue(M m, const indexedDiffMsg_t<VT> &payload,
                         *(VT *)(((uint8_t *)&dat) + d) = v;
                     }
                 }
+                if (onEngineExtra)
+                    onEngineExtra(eng, gs);
             },
             responseCB);
     }
@@ -236,18 +242,22 @@ template <typename VT> using indexedZoneOrGroupDiffMsg_t = std::tuple<bool, size
 template <typename VT, typename MZ, typename MG>
 inline void updateZoneOrGroupIndexedMemberValue(
     MZ mz, MG mg, const indexedZoneOrGroupDiffMsg_t<VT> &payload, const engine::Engine &engine,
-    MessageController &cont, std::function<void(const engine::Engine &)> responseCB = nullptr)
+    MessageController &cont, std::function<void(const engine::Engine &)> responseCB = nullptr,
+    std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
+        onZoneEngineExtra = nullptr,
+    std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
+        onGroupEngineExtra = nullptr)
 {
     auto isZone = std::get<0>(payload);
     auto underT =
         indexedDiffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload), std::get<3>(payload)};
     if (isZone)
     {
-        updateZoneIndexedMemberValue(mz, underT, engine, cont, responseCB);
+        updateZoneIndexedMemberValue(mz, underT, engine, cont, responseCB, onZoneEngineExtra);
     }
     else
     {
-        updateGroupIndexedMemberValue(mg, underT, engine, cont, responseCB);
+        updateGroupIndexedMemberValue(mg, underT, engine, cont, responseCB, onGroupEngineExtra);
     }
 }
 } // namespace scxt::messaging::client::detail

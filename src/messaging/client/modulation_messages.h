@@ -101,9 +101,13 @@ inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload
                 for (const auto &z : gs)
                 {
                     auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
+                    auto structureDiff = (row.depth == grp->routingTable.routes[index].depth &&
+                                          row.active == grp->routingTable.routes[index].active);
                     grp->routingTable.routes[index] = row;
-                    SCLOG("FIXME - re-start the group matrix if anything other than depth changed")
-                    // grp->modMatrix.updateModulatorUsed(*grp);
+                    if (structureDiff)
+                    {
+                        grp->rePrepareAndBindGroupMatrix();
+                    }
                 }
             },
             [doUpdate = b](auto &eng) {

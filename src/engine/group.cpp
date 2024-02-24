@@ -82,8 +82,12 @@ void Group::process(Engine &e)
     {
         if (lfoEvaluator[i] == STEP)
         {
-            stepLfos[i].process(blockSize);
-            // SCLOG("Group " << i << " " << stepLfos[i].output);
+            if (i == 0)
+            {
+                stepLfos[i].process(blockSize);
+                /* SCLOG("Group " << i << " " << stepLfos[i].output << " "
+                                << stepLfos[i].settings->stepLfoStorage.data[0]); */
+            }
         }
         else if (lfoEvaluator[i] == CURVE)
         {
@@ -272,20 +276,21 @@ void Group::attack()
 {
     SCLOG("Group Attack for '" << name << "'");
     resetLFOs();
+    rePrepareAndBindGroupMatrix();
 }
 
-void Group::resetLFOs()
+void Group::resetLFOs(int whichLFO)
 {
-    for (auto i = 0U; i < engine::lfosPerZone; ++i)
-    {
-        const auto &ms = modulatorStorage[i];
-        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
-    }
+    auto sl = (whichLFO >= 0 ? whichLFO : 0);
+    auto el = (whichLFO >= 0 ? (whichLFO + 1) : engine::lfosPerZone);
 
-    // This is way overkill - need a select-per-based-on-type change probably
-    for (int i = 0; i < lfosPerGroup; ++i)
+    SCLOG("Reset LFOS " << whichLFO << " " << sl << " " << el);
+    for (auto i = sl; i < el; ++i)
     {
         const auto &ms = modulatorStorage[i];
+
+        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
+
         if (lfoEvaluator[i] == STEP)
         {
             stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
@@ -295,6 +300,7 @@ void Group::resetLFOs()
         }
         else if (lfoEvaluator[i] == CURVE)
         {
+            SCLOG("Attack with " << ms.modulatorShape);
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
             curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
         }

@@ -255,7 +255,7 @@ void StepLFO::process(int)
         wf_history[3] = wf_history[2];
         wf_history[2] = wf_history[1];
         wf_history[1] = wf_history[0];
-        wf_history[0] = ls.data[state & 0x1f];
+        wf_history[0] = ls.data[state & (StepLFOStorage::stepLfoSteps - 1)];
         if (!state)
             UpdatePhaseIncrement();
     }
