@@ -45,6 +45,7 @@
 #include "bus.h"
 #include "modulation/modulators/steplfo.h"
 #include "modulation/group_matrix.h"
+#include "modulation/has_modulators.h"
 
 namespace scxt::engine
 {
@@ -53,7 +54,10 @@ struct Engine;
 
 constexpr int lfosPerGroup{scxt::lfosPerGroup};
 
-struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSupport
+struct Group : MoveableOnly<Group>,
+               HasGroupZoneProcessors<Group>,
+               modulation::shared::HasModulators<Group>,
+               SampleRateSupport
 {
     Group();
     virtual ~Group()
@@ -83,6 +87,8 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     Engine *getEngine();
 
     float output alignas(16)[2][blockSize];
+    void attack();
+    void resetLFOs();
     void process(Engine &onto);
 
     void setupOnUnstream(const engine::Engine &e);
@@ -179,8 +185,6 @@ struct Group : MoveableOnly<Group>, HasGroupZoneProcessors<Group>, SampleRateSup
     {
         return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
     }
-
-    bool anyModulatorUsed{false};
 
     std::array<dsp::processor::Processor *, engine::processorCount> processors{};
     uint8_t processorPlacementStorage alignas(

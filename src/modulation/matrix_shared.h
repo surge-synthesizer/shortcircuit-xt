@@ -212,8 +212,8 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
     }
 #endif
 
-    auto idxIt = m.routingTable.targetToOutputIndex.find(tg);
-    if (idxIt != m.routingTable.targetToOutputIndex.end())
+    auto idxIt = m.targetToOutputIndex.find(tg);
+    if (idxIt != m.targetToOutputIndex.end())
     {
         datamodel::pmd tmd;
         if (!providedMetadata.has_value())

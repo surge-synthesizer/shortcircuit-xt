@@ -265,7 +265,7 @@ std::string logTimestamp();
     }
 
 #define SCLOG_WFUNC(...) SCLOG(__func__ << " " << __VA_ARGS__)
-#define SCLOG_UNIMPL(...) SCLOG(" Unimpl [" << __func__ << "] " << __VA_ARGS__);
+#define SCLOG_UNIMPL(...) SCLOG("\033[1;33mUnimpl [" << __func__ << "]\033[0m " << __VA_ARGS__);
 #define SCD(x) #x << "=" << (x) << " "
 
 #define DECLARE_ENUM_STRING(E)                                                                     \

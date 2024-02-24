@@ -35,24 +35,18 @@
 #include "dsp/processor/processor.h"
 
 #include "modulation/voice_matrix.h"
-
-#include "modulation/modulators/steplfo.h"
-#include "modulation/modulators/curvelfo.h"
-#include "modulation/modulators/envlfo.h"
+#include "modulation/has_modulators.h"
 
 #include "configuration.h"
 
-#include "sst/basic-blocks/modulators/ADSREnvelope.h"
-#include "sst/basic-blocks/modulators/AHDSRShapedSC.h"
 #include "sst/filters/HalfRateFilter.h"
 #include "sst/basic-blocks/dsp/BlockInterpolators.h"
 
-#include "modulation/modulators/steplfo.h"
-#include "modulation/modulators/curvelfo.h"
-
 namespace scxt::voice
 {
-struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
+struct alignas(16) Voice : MoveableOnly<Voice>,
+                           SampleRateSupport,
+                           scxt::modulation::shared::HasModulators<Voice>
 {
     float output alignas(16)[2][blockSize << 1];
     // I do *not* own these. The engine guarantees it outlives the voice
@@ -74,24 +68,10 @@ struct alignas(16) Voice : MoveableOnly<Voice>, SampleRateSupport
         60}; // the actual physical key pressed not the one I resolved to after tuning
     float velocity{1.f};
 
-    modulation::Matrix modMatrix;
+    scxt::voice::modulation::Matrix modMatrix;
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;
 
-    enum LFOEvaluator
-    {
-        STEP,
-        CURVE,
-        ENV,
-        MSEG
-    } lfoEvaluator[engine::lfosPerZone]{STEP, STEP, STEP}; // FIXME
-    scxt::modulation::modulators::StepLFO stepLfos[engine::lfosPerZone];
-    scxt::modulation::modulators::CurveLFO curveLfos[engine::lfosPerZone];
-    scxt::modulation::modulators::EnvLFO envLfos[engine::lfosPerZone];
-
-    typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        Voice, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
-        ahdsrenv_t;
-    ahdsrenv_t aeg, eg2;
+    ahdsrenv_t &aeg{eg[0]}, &eg2{eg[1]};
 
     inline float envelope_rate_linear_nowrap(float f)
     {

@@ -44,7 +44,9 @@
 namespace scxt::engine
 {
 
-Group::Group() : id(GroupID::next()), name(id.to_string()), endpoints{nullptr}
+Group::Group()
+    : id(GroupID::next()), name(id.to_string()), endpoints{nullptr},
+      modulation::shared::HasModulators<Group>(this)
 {
     rePrepareAndBindGroupMatrix();
 }
@@ -70,38 +72,49 @@ void Group::process(Engine &e)
     float *lOut = output[0];
     float *rOut = output[1];
 
-    if (anyModulatorUsed)
+    bool gated{false};
+    for (const auto &z : zones)
     {
-        bool gated{false};
-        for (const auto &z : zones)
-        {
-            gated = gated || (z->gatedVoiceCount > 0);
-        }
-
-        for (int i = 0; i < egPerGroup; ++i)
-        {
-            if (!gegUsed[i])
-                continue;
-            auto &eg = gegEvaluators[i];
-            auto &egs = gegStorage[i];
-            if (gated && eg.stage > ahdsrenv_t::s_hold)
-            {
-                eg.attackFrom(eg.outBlock0);
-            }
-            // fixme - put these all in the mod matrix
-            eg.processBlock(egs.a, egs.h, egs.d, egs.s, egs.r, egs.aShape, egs.dShape, egs.rShape,
-                            gated);
-        }
-
-        for (int i = 0; i < lfosPerGroup; ++i)
-        {
-            if (!lfoUsed[i])
-                continue;
-            stepLfos[i].process(blockSize);
-        }
-
-        modMatrix.process();
+        gated = gated || (z->gatedVoiceCount > 0);
     }
+
+    for (auto i = 0; i < engine::lfosPerZone; ++i)
+    {
+        if (lfoEvaluator[i] == STEP)
+        {
+            stepLfos[i].process(blockSize);
+            // SCLOG("Group " << i << " " << stepLfos[i].output);
+        }
+        else if (lfoEvaluator[i] == CURVE)
+        {
+            auto &lp = endpoints.lfo[i];
+
+            // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
+            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.delayP, *lp.curve.attackP,
+                                 *lp.curve.releaseP, modulatorStorage[i].curveLfoStorage.useenv,
+                                 modulatorStorage[i].curveLfoStorage.unipolar, gated);
+        }
+        else if (lfoEvaluator[i] == ENV)
+        {
+            auto &lp = endpoints.lfo[i].env;
+
+            envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
+                               *lp.releaseP, gated);
+        }
+        else
+        {
+        }
+    }
+
+    bool envGate = gated;
+    auto &aegp = endpoints.eg[0];
+    eg[0].processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
+                       *aegp.rsP, envGate);
+    auto &eg2p = endpoints.eg[1];
+    eg[1].processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
+                       *eg2p.rsP, envGate);
+
+    modMatrix.process();
 
     for (const auto &z : zones)
     {
@@ -169,6 +182,7 @@ void Group::addActiveZone()
     if (activeZones == 0)
     {
         parentPart->addActiveGroup();
+        attack();
     }
     activeZones++;
 }
@@ -253,5 +267,48 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
         }
     }
 }
+
+void Group::attack()
+{
+    SCLOG("Group Attack for '" << name << "'");
+    resetLFOs();
+}
+
+void Group::resetLFOs()
+{
+    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    {
+        const auto &ms = modulatorStorage[i];
+        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
+    }
+
+    // This is way overkill - need a select-per-based-on-type change probably
+    for (int i = 0; i < lfosPerGroup; ++i)
+    {
+        const auto &ms = modulatorStorage[i];
+        if (lfoEvaluator[i] == STEP)
+        {
+            stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
+
+            stepLfos[i].assign(&modulatorStorage[i], endpoints.lfo[i].rateP, nullptr,
+                               getEngine()->rngGen);
+        }
+        else if (lfoEvaluator[i] == CURVE)
+        {
+            curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
+            curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
+        }
+        else if (lfoEvaluator[i] == ENV)
+        {
+            envLfos[i].setSampleRate(sampleRate, sampleRateInv);
+            envLfos[i].attack(*endpoints.lfo[i].env.delayP);
+        }
+        else
+        {
+            SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
+        }
+    }
+}
+
 template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine
