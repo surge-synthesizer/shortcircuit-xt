@@ -62,15 +62,36 @@ CLIENT_TO_SERIAL_CONSTRAINED(
     detail::indexedZoneOrGroupDiffMsg_t<int16_t>, modulation::ModulatorStorage,
     detail::updateZoneOrGroupIndexedMemberValue(
         &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
-        [](auto &eng) {
-            // ToDo: Have to do the group side of this later
-            auto lz = eng.getSelectionManager()->currentLeadZone(eng);
-            if (lz.has_value())
+        [payload](auto &eng) {
+            auto forZone = std::get<0>(payload);
+            if (forZone)
             {
-                auto &z = eng.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
-                serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
-                                          voice::modulation::getVoiceMatrixMetadata(*z),
-                                          *(eng.getMessageController()));
+                // ToDo: Have to do the group side of this later
+                auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                if (lz.has_value())
+                {
+                    auto &z =
+                        eng.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
+                    serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
+                                              voice::modulation::getVoiceMatrixMetadata(*z),
+                                              *(eng.getMessageController()));
+                }
+            }
+            else
+            {
+                // ToDo: Have to do the group side of this later
+                auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+            }
+        },
+        nullptr, // no need to do a voice update
+        [payload](auto &engine, const auto &gs) {
+            auto idx = std::get<1>(payload);
+            assert(engine.getMessageController()->threadingChecker.isAudioThread());
+            for (auto [p, g, z] : gs)
+            {
+                auto &grp = engine.getPatch()->getPart(p)->getGroup(g);
+                grp->resetLFOs(idx);
+                grp->rePrepareAndBindGroupMatrix();
             }
         }))
 

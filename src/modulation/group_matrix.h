@@ -97,8 +97,7 @@ struct GroupMatrixEndpoints
           eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egPerGroup>(e)},
           selfModulation(e), sources(e)
     {
-        if (e)
-            SCLOG_UNIMPL("Engine Attach Group Matrix Standalone Endpoints (if they exist)")
+        // If there are group endpoints, we can merge them here
     }
 
     struct EGTarget : shared::EGTargetEndpointData<TG, 'genv'>
@@ -226,7 +225,7 @@ struct GroupMatrixEndpoints
             {
                 for (uint32_t i = 0; i < lfosPerZone; ++i)
                 {
-                    sources[i] = SR{'znlf', 'outp', i};
+                    sources[i] = SR{'grlf', 'outp', i};
                     registerGroupModSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
                 }
             }

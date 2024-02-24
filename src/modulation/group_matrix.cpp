@@ -110,13 +110,31 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
     shmo::bindEl(m, g.outputInfo, panT, g.outputInfo.pan, panP);
 }
 
-void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engine::Group &group)
+void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
-    for (auto &e : egSource)
-        m.bindSourceValue(e, zeroSource);
-
-    for (auto &l : lfoSources.sources)
-        m.bindSourceValue(l, zeroSource);
+    int idx{0};
+    for (int i = 0; i < lfosPerGroup; ++i)
+    {
+        switch (g.lfoEvaluator[i])
+        {
+        case engine::Group::CURVE:
+        {
+            m.bindSourceValue(lfoSources.sources[i], g.curveLfos[i].output);
+        }
+        break;
+        case engine::Group::STEP:
+        {
+            m.bindSourceValue(lfoSources.sources[i], g.stepLfos[i].output);
+        }
+        break;
+        case engine::Group::ENV:
+            m.bindSourceValue(lfoSources.sources[i], g.envLfos[i].output);
+            break;
+        case engine::Group::MSEG:
+            m.bindSourceValue(lfoSources.sources[i], zeroSource);
+            break;
+        }
+    }
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(

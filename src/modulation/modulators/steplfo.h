@@ -112,7 +112,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
 
     float phase{0};
 
-  protected:
+    // protected:
     long state;
     long state_tminus1;
     float phaseInc;
