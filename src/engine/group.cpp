@@ -268,7 +268,6 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 
 void Group::attack()
 {
-    SCLOG("Group Attack for '" << name << "'");
     resetLFOs();
     rePrepareAndBindGroupMatrix();
 }

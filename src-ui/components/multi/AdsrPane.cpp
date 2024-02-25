@@ -27,10 +27,6 @@
 
 #include "AdsrPane.h"
 #include "components/SCXTEditor.h"
-
-#include "messaging/client/client_serial.h"
-#include "messaging/client/client_messages.h"
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/Label.h"
 
 namespace scxt::ui::multi
@@ -71,12 +67,14 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
     makeLabel(labels.S, "S");
     makeLabel(labels.R, "R");
 
-    for (const auto &k : knobs.members)
-        if (k)
-            k->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
-    for (const auto &k : sliders.members)
-        if (k)
-            k->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
+    if (forZone)
+    {
+        editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+    }
 }
 
 void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d)
@@ -112,7 +110,7 @@ void AdsrPane::resized()
     auto lh = 16.f;
     auto kh = 20.f;
     auto h = r.getHeight() - lh - kh;
-    auto x = r.getX();
+    auto x = r.getX() * 1.f;
     auto y = r.getY() + kh;
     auto w = 34.f;
     x = x + (r.getWidth() - w * 5) * 0.5;
@@ -134,7 +132,6 @@ void AdsrPane::resized()
     sliders.R->setBounds(x, y, w, h);
     labels.R->setBounds(x, y + h, w, lh);
     knobs.Rsh->setBounds(x + (w - kh) * 0.5, y - lh, kh, kh);
-    x += w;
 }
 
 void AdsrPane::showHamburgerMenu()

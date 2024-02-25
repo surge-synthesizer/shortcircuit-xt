@@ -35,7 +35,6 @@
 #include "HeaderRegion.h"
 #include "components/multi/MappingPane.h"
 #include "components/AboutScreen.h"
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "infrastructure/user_defaults.h"
 
 #include <version.h>
@@ -99,6 +98,26 @@ void SCXTEditor::showMainMenu()
         w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json_part});
     });
     dp.addItem("Focus Debugger Toggle", []() {});
+
+    auto recAct = [](bool on, juce::Component *toThis, auto f) {
+        if (!toThis)
+            return;
+        auto np = dynamic_cast<sst::jucegui::components::NamedPanel *>(toThis);
+        if (np)
+        {
+            np->activatePositionDebugging(on);
+        }
+        for (auto c : toThis->getChildren())
+        {
+            f(on, c, f);
+        }
+    };
+
+    dp.addItem("Position Debug On", [this, recAct]() { recAct(true, this, recAct); });
+    dp.addItem("Position Debug Off", [this, recAct]() { recAct(false, this, recAct); });
+    dp.addItem("Dump Stylesheet to Stdout",
+               [this]() { this->style()->dumpStyleSheetTo(std::cout); });
+
     m.addSubMenu("Developer", dp);
 
     m.showMenuAsync(defaultPopupMenuOptions());
@@ -162,21 +181,39 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
         p.addSeparator();
     }
     p.addSectionHeader("Themes");
-    p.addItem("Dark", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-        {
-            w->setStyle(scxt::ui::connectors::SCXTStyleSheetCreator::setup(
-                sst::jucegui::style::StyleSheet::DARK));
-            w->defaultsProvider.updateUserDefaultPath(infrastructure::skinName, "builtin.DARK");
-        }
-    });
+    std::vector<std::pair<theme::ColorMap::BuiltInColorMaps, std::string>> maps = {
+        {theme::ColorMap::WIREFRAME, "Wireframe Colors"},
+        {theme::ColorMap::TEST, "Test Colors"},
+    };
+    auto cid = themeApplier.colorMap()->myId;
+    for (const auto &[mo, d] : maps)
+    {
+        p.addItem(d, true, cid == mo, [m = mo, w = juce::Component::SafePointer(this)]() {
+            if (w)
+            {
+                auto cm = theme::ColorMap::createColorMap(m);
+                auto showK = w->defaultsProvider.getUserDefaultValue(
+                    infrastructure::DefaultKeys::showKnobs, false);
+                cm->hasKnobs = showK;
+                w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
+                                                           m);
+                w->themeApplier.recolorStylesheetWith(std::move(cm), w->style());
+                w->setStyle(w->style());
+            }
+        });
+    }
 
-    p.addItem("Light", [w = juce::Component::SafePointer(this)]() {
+    p.addSeparator();
+    auto knobsOn = themeApplier.colorMap()->hasKnobs;
+    p.addItem("Use Knob Bodies", true, knobsOn, [w = juce::Component::SafePointer(this)]() {
         if (w)
         {
-            w->setStyle(scxt::ui::connectors::SCXTStyleSheetCreator::setup(
-                sst::jucegui::style::StyleSheet::LIGHT));
-            w->defaultsProvider.updateUserDefaultValue(infrastructure::skinName, "builtin.LIGHT");
+            w->themeApplier.colorMap()->hasKnobs = !w->themeApplier.colorMap()->hasKnobs;
+            w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::showKnobs,
+                                                       w->themeApplier.colorMap()->hasKnobs);
+
+            w->themeApplier.recolorStylesheet(w->style());
+            w->setStyle(w->style());
         }
     });
 

@@ -35,7 +35,7 @@
 #include "multi/ProcessorPane.h"
 #include "multi/PartGroupSidebar.h"
 
-#include "connectors/SCXTStyleSheetCreator.h"
+#include "SCXTEditor.h"
 
 namespace scxt::ui
 {
@@ -161,21 +161,31 @@ MultiScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(MultiScreen *pare
     lfo = std::make_unique<multi::LfoPane>(parent->editor, forZone);
     parent->addChildComponent(*lfo);
 
-    if (!forZone)
+    auto &theme = parent->editor->themeApplier;
+    if (forZone)
     {
-        outPane->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        modPane->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-        lfo->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+        theme.applyZoneMultiScreenTheme(outPane.get());
+        for (const auto &p : processors)
+            theme.applyZoneMultiScreenTheme(p.get());
+        theme.applyZoneMultiScreenModulationTheme(modPane.get());
+        theme.applyZoneMultiScreenModulationTheme(eg[0].get());
+        theme.applyZoneMultiScreenModulationTheme(eg[1].get());
+        theme.applyZoneMultiScreenModulationTheme(lfo.get());
+    }
+    else
+    {
         lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
         lfo->resetTabState();
-        int idx{1};
-        for (const auto &e : eg)
-        {
-            e->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
-            e->setName("GRP EG" + std::to_string(idx++));
-        }
+        eg[0]->setName("GRP EG1");
+        eg[1]->setName("GRP EG2");
+
+        theme.applyGroupMultiScreenTheme(outPane.get());
         for (const auto &p : processors)
-            p->setCustomClass(connectors::SCXTStyleSheetCreator::GroupMultiNamedPanel);
+            theme.applyGroupMultiScreenTheme(p.get());
+        theme.applyGroupMultiScreenModulationTheme(modPane.get());
+        theme.applyGroupMultiScreenModulationTheme(eg[0].get());
+        theme.applyGroupMultiScreenModulationTheme(eg[1].get());
+        theme.applyGroupMultiScreenModulationTheme(lfo.get());
     }
 }
 

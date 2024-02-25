@@ -31,9 +31,11 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/ProcessorPaneEQNBandParametric.cpp
 
         components/widgets/ShortCircuitMenuButton.cpp
-        
-        connectors/SCXTStyleSheetCreator.cpp
+
         connectors/SCXTResources.cpp
+
+        theme/ColorMap.cpp
+        theme/ThemeApplier.cpp
 
         )
 

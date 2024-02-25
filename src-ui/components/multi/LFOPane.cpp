@@ -29,14 +29,12 @@
 
 #include <cmath>
 
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "datamodel/metadata.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "messaging/messaging.h"
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/GlyphPainter.h"
-#include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
 
@@ -58,31 +56,18 @@ struct StepLFOPane : juce::Component, HasEditor
 
         void paint(juce::Graphics &g) override
         {
-            auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                 jcmp::NamedPanel::Styles::background);
-            auto bgq = parent->style()->getColour(
-                connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                jcmp::HSliderFilled::Styles::gutter);
-            auto boxc = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                   jcmp::NamedPanel::Styles::brightoutline);
-            auto valc = parent->style()->getColour(
-                connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                jcmp::HSliderFilled::Styles::value);
-            auto valhovc = parent->style()->getColour(
-                connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                jcmp::HSliderFilled::Styles::value_hover);
-
-            auto hanc = parent->style()->getColour(
-                connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                jcmp::HSliderFilled::Styles::handle);
-
-            auto hanhovc = parent->style()->getColour(
-                connectors::SCXTStyleSheetCreator::ModulationEditorVSlider,
-                jcmp::HSliderFilled::Styles::handle_hover);
-            g.setColour(juce::Colours::white);
-            g.drawRect(getLocalBounds(), 1);
             if (!parent)
                 return;
+
+            auto &cmap = *parent->editor->themeApplier.colorMap();
+            auto bg = cmap.get(theme::ColorMap::bg_2);
+            auto bgq = cmap.get(theme::ColorMap::bg_2).brighter(0.1);
+            auto boxc = cmap.get(theme::ColorMap::generic_content_low);
+            auto valc = cmap.get(theme::ColorMap::accent_2a);
+            auto valhovc = valc.brighter(0.1);
+
+            auto hanc = cmap.get(theme::ColorMap::generic_content_high);
+            auto hanhovc = hanc.brighter(0.1);
 
             int sp = modulation::modulators::StepLFOStorage::stepLfoSteps;
             auto &ls = parent->modulatorStorageData[parent->selectedTab].stepLfoStorage;
@@ -243,7 +228,6 @@ struct StepLFOPane : juce::Component, HasEditor
 
         ifac::attachAndAdd(ms, ms.stepLfoStorage.repeat, this, stepsA, stepsJ, parent->forZone,
                            parent->selectedTab);
-        stepsJ->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
         connectors::addGuiStep(*stepsA, [w = juce::Component::SafePointer(this)](const auto &a) {
             if (w)
                 w->stepRender->recalcCurve();
@@ -254,14 +238,12 @@ struct StepLFOPane : juce::Component, HasEditor
         cycleB->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED_BY_DATA);
 
         fac::attachAndAdd(ms, ms.rate, this, rateA, rateK, parent->forZone, parent->selectedTab);
-        rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         rateL = std::make_unique<jcmp::Label>();
         rateL->setText("Rate");
         addAndMakeVisible(*rateL);
 
         fac::attachAndAdd(ms, ms.stepLfoStorage.smooth, this, deformA, deformK, parent->forZone,
                           parent->selectedTab);
-        deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         deformL = std::make_unique<jcmp::Label>();
         deformL->setText("Deform");
         addAndMakeVisible(*deformL);
@@ -272,7 +254,6 @@ struct StepLFOPane : juce::Component, HasEditor
 
         fac::attachAndAdd(ms, ms.start_phase, this, phaseA, phaseK, parent->forZone,
                           parent->selectedTab);
-        phaseK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         phaseL = std::make_unique<jcmp::Label>();
         phaseL->setText("Phase");
         addAndMakeVisible(*phaseL);
@@ -293,7 +274,6 @@ struct StepLFOPane : juce::Component, HasEditor
             if (j)
             {
                 addAndMakeVisible(*j);
-                j->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
             }
         }
     }
@@ -425,42 +405,34 @@ struct CurveLFOPane : juce::Component, HasEditor
         };
 
         fac::attachAndAdd(ms, ms.rate, this, rateA, rateK, parent->forZone, parent->selectedTab);
-        rateK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(rateL, "Rate");
 
         fac::attachAndAdd(ms, ms.curveLfoStorage.deform, this, deformA, deformK, parent->forZone,
                           parent->selectedTab);
-        deformK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(deformL, "Deform");
 
         fac::attachAndAdd(ms, ms.start_phase, this, phaseA, phaseK, parent->forZone,
                           parent->selectedTab);
-        phaseK->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(phaseL, "Phase");
 
         fac::attachAndAdd(ms, ms.curveLfoStorage.delay, this, envA[0], envS[0], parent->forZone,
                           parent->selectedTab);
-        envS[0]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(envL[0], "Delay");
 
         fac::attachAndAdd(ms, ms.curveLfoStorage.attack, this, envA[1], envS[1], parent->forZone,
                           parent->selectedTab);
-        envS[1]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(envL[1], "Attack");
 
         fac::attachAndAdd(ms, ms.curveLfoStorage.release, this, envA[2], envS[2], parent->forZone,
                           parent->selectedTab);
-        envS[2]->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         makeLabel(envL[2], "Release");
 
         bfac::attachAndAdd(ms, ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB,
                            parent->forZone, parent->selectedTab);
-        unipolarB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         unipolarB->setLabel("UNI");
 
         bfac::attachAndAdd(ms, ms.curveLfoStorage.useenv, this, useenvA, useenvB, parent->forZone,
                            parent->selectedTab);
-        useenvB->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         useenvB->setLabel("ENV");
 
         curveDraw = std::make_unique<CurveDraw>(parent);
@@ -540,7 +512,6 @@ struct ENVLFOPane : juce::Component, HasEditor
             fac::attachAndAdd(ms, mem, this, A, K, parent->forZone, parent->selectedTab);
 
             makeLabel(L, A->getLabel());
-            K->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorKnob);
         };
 
         makeO(ms.envLfoStorage.delay, delayA, delayK, delayL);
@@ -612,7 +583,7 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
     : sst::jucegui::components::NamedPanel(""), HasEditor(e), forZone(fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
-    setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
+    // setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
     hasHamburger = true;
     isTabbed = true;
     tabNames = {"LFO 1", "LFO 2", "LFO 3"};
@@ -688,11 +659,9 @@ void LfoPane::rebuildPanelComponents()
                                    w->setSubPaneVisibility();
                            });
 
-    modulatorShape->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationJogButon);
     getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
     tfac::attach(ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
-    triggerMode->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMultiSwitch);
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
 
     stepLfoPane = std::make_unique<StepLFOPane>(this);
@@ -709,6 +678,15 @@ void LfoPane::rebuildPanelComponents()
 
     repositionContentAreaComponents();
     setSubPaneVisibility();
+
+    if (forZone)
+    {
+        editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+    }
 }
 
 void LfoPane::repositionContentAreaComponents()

@@ -37,7 +37,6 @@
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
 
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "engine/part.h"
 #include "sst/jucegui/components/Viewport.h"
 
@@ -1079,7 +1078,7 @@ void MappingZones::paint(juce::Graphics &g)
             g.setColour(nonSelZoneColor);
             g.drawRect(r, 2.f);
             g.setColour(nonSelZoneColor.brighter());
-            g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
+            g.setFont(editor->themeApplier.interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
@@ -1118,7 +1117,7 @@ void MappingZones::paint(juce::Graphics &g)
             g.drawRect(r, 2.f);
 
             g.setColour(juce::Colours::white);
-            g.setFont(connectors::SCXTStyleSheetCreator::interMediumFor(12));
+            g.setFont(editor->themeApplier.interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
