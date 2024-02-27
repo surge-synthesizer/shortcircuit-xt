@@ -1933,7 +1933,9 @@ void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
 void MappingPane::setActive(bool b)
 {
     mappingDisplay->setActive(b);
+    mappingDisplay->setVisible(selectedTab == 0);
     sampleDisplay->setActive(b);
+    sampleDisplay->setVisible(selectedTab == 1);
 }
 
 void MappingPane::setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
