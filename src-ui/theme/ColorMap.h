@@ -37,7 +37,8 @@ struct ColorMap
     enum BuiltInColorMaps : uint32_t
     {
         WIREFRAME = 'wire',
-        TEST = 'test'
+        TEST = 'test',
+        HICONTRAST_DARK = 'hidk'
     } myId{WIREFRAME};
     static std::unique_ptr<ColorMap> createColorMap(BuiltInColorMaps cm);
 
@@ -51,6 +52,12 @@ struct ColorMap
         bg_1,
         bg_2,
         bg_3,
+
+        gutter_2, // defaults to bg_3
+        gutter_3, // defaults to bg_2
+
+        panel_outline_2, // defaults to 0x00000000
+        panel_outline_3, // defaults to 0x00000000
 
         knob_fill,
 
@@ -74,6 +81,11 @@ struct ColorMap
         if (c == knob_fill && !hasKnobs)
             return juce::Colour(0x00000000);
         return res;
+    }
+    virtual juce::Colour getHover(Colors c, float alpha = 1.f) const
+    {
+        auto cres = get(c, alpha);
+        return cres.brighter(0.1);
     }
     virtual juce::Colour getImpl(Colors c, float alpha = 1.f) const = 0;
 };

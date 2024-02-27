@@ -39,6 +39,7 @@
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/VUMeter.h"
+#include "sst/jucegui/components/ScrollBar.h"
 
 #include "connectors/SCXTResources.h"
 
@@ -217,41 +218,44 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     jcmp::base_styles::ValueBearing::value, cols.get(ColorMap::accent_1a));
     base->setColour(jcmp::base_styles::ValueBearing::styleClass,
                     jcmp::base_styles::ValueBearing::value_hover,
-                    cols.get(ColorMap::accent_1a).brighter(0.1));
+                    cols.getHover(ColorMap::accent_1a));
 
     base->setColour(jcmp::base_styles::PushButton::styleClass, jcmp::base_styles::PushButton::fill,
                     cols.get(ColorMap::generic_content_low));
     base->setColour(jcmp::base_styles::PushButton::styleClass,
                     jcmp::base_styles::PushButton::fill_hover,
-                    cols.get(ColorMap::generic_content_low).brighter(0.1));
+                    cols.getHover(ColorMap::generic_content_low));
     base->setColour(jcmp::base_styles::PushButton::styleClass,
                     jcmp::base_styles::PushButton::fill_pressed,
-                    cols.get(ColorMap::generic_content_low).brighter(0.1));
+                    cols.getHover(ColorMap::generic_content_low));
 
     base->setColour(jcmp::base_styles::ValueBearing::styleClass,
                     jcmp::base_styles::ValueBearing::value, cols.get(ColorMap::accent_1a));
     base->setColour(jcmp::base_styles::ValueBearing::styleClass,
                     jcmp::base_styles::ValueBearing::value_hover,
-                    cols.get(ColorMap::accent_1a).brighter(0.1));
+                    cols.getHover(ColorMap::accent_1a));
     base->setColour(jcmp::base_styles::ValueBearing::styleClass,
                     jcmp::base_styles::ValueBearing::valuelabel,
                     cols.get(ColorMap::generic_content_medium));
     base->setColour(jcmp::base_styles::ValueBearing::styleClass,
                     jcmp::base_styles::ValueBearing::valuelabel_hover,
-                    cols.get(ColorMap::generic_content_medium).brighter(0.1));
+                    cols.getHover(ColorMap::generic_content_medium));
 
     base->setColour(jcmp::base_styles::ValueGutter::styleClass,
-                    jcmp::base_styles::ValueGutter::gutter, cols.get(ColorMap::bg_3));
+                    jcmp::base_styles::ValueGutter::gutter, cols.get(ColorMap::gutter_2));
     base->setColour(jcmp::base_styles::ValueGutter::styleClass,
                     jcmp::base_styles::ValueGutter::gutter_hover,
-                    cols.get(ColorMap::bg_3).brighter(0.1));
+                    cols.getHover(ColorMap::gutter_2));
 
     base->setColour(jcmp::Knob::Styles::styleClass, jcmp::Knob::Styles::knobbase,
                     cols.get(ColorMap::knob_fill));
     base->setColour(jcmp::Knob::Styles::styleClass, jcmp::Knob::Styles::handle,
                     cols.get(ColorMap::generic_content_medium));
     base->setColour(jcmp::Knob::Styles::styleClass, jcmp::Knob::Styles::handle_hover,
-                    cols.get(ColorMap::generic_content_medium).brighter(0.1));
+                    cols.getHover(ColorMap::generic_content_medium));
+
+    base->setColour(jcmp::ScrollBar::Styles::styleClass, jcmp::ScrollBar::Styles::outline,
+                    cols.get(ColorMap::generic_content_low));
 
     base->setColour(jcmp::base_styles::GraphicalHandle::styleClass,
                     jcmp::base_styles::GraphicalHandle::handle,
@@ -264,7 +268,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::generic_content_high).brighter(0.1));
 
     base->setColour(jcmp::VUMeter::Styles::styleClass, jcmp::VUMeter::Styles::vu_gutter,
-                    cols.get(ColorMap::bg_2));
+                    cols.get(ColorMap::gutter_2));
     base->setColour(jcmp::VUMeter::Styles::styleClass, jcmp::VUMeter::Styles::vu_gradstart,
                     cols.get(ColorMap::accent_1b));
     base->setColour(jcmp::VUMeter::Styles::styleClass, jcmp::VUMeter::Styles::vu_gradend,
@@ -289,11 +293,19 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::background,
                     cols.get(ColorMap::bg_2));
+    base->setColour(jcmp::NamedPanel::Styles::styleClass,
+                    jcmp::NamedPanel::Styles::backgroundSelected, cols.get(ColorMap::bg_3));
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::labelrule,
                     cols.get(ColorMap::generic_content_low));
+    auto npol = cols.get(ColorMap::panel_outline_2);
+    if (npol.getAlpha() == 0)
+        npol = cols.get(ColorMap::bg_2).brighter(0.05);
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::brightoutline,
-                    cols.get(ColorMap::bg_2).brighter(0.05));
+                    npol);
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::selectedtab,
+                    cols.get(ColorMap::accent_1a));
+
+    base->setColour(jcmp::MenuButton::Styles::styleClass, jcmp::MenuButton::Styles::menuarrow_hover,
                     cols.get(ColorMap::accent_1a));
 
     auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
@@ -366,8 +378,10 @@ namespace group
 void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 {
     base->setColour(NamedPanel, jcmp::NamedPanel::Styles::background, cols.get(ColorMap::bg_3));
-    base->setColour(NamedPanel, jcmp::NamedPanel::Styles::brightoutline,
-                    cols.get(ColorMap::bg_3).brighter(0.05));
+    auto npol = cols.get(ColorMap::panel_outline_3);
+    if (npol.getAlpha() == 0)
+        npol = cols.get(ColorMap::bg_3).brighter(0.05);
+    base->setColour(NamedPanel, jcmp::NamedPanel::Styles::brightoutline, npol);
 
     base->setColour(ModulationNamedPanel, jcmp::NamedPanel::Styles::background,
                     cols.get(ColorMap::bg_3));
@@ -376,12 +390,12 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(ModulationNamedPanel, jcmp::NamedPanel::Styles::selectedtab,
                     cols.get(ColorMap::accent_2a));
 
-    base->setColour(Knob, jcmp::Knob::Styles::gutter, cols.get(ColorMap::bg_2));
-    base->setColour(Knob, jcmp::Knob::Styles::gutter_hover, cols.get(ColorMap::bg_2).brighter(0.2));
+    base->setColour(Knob, jcmp::Knob::Styles::gutter, cols.get(ColorMap::gutter_3));
+    base->setColour(Knob, jcmp::Knob::Styles::gutter_hover, cols.getHover(ColorMap::gutter_3));
 
-    base->setColour(VSlider, jcmp::VSlider::Styles::gutter, cols.get(ColorMap::bg_2));
+    base->setColour(VSlider, jcmp::VSlider::Styles::gutter, cols.get(ColorMap::gutter_3));
     base->setColour(VSlider, jcmp::VSlider::Styles::gutter_hover,
-                    cols.get(ColorMap::bg_2).brighter(0.2));
+                    cols.getHover(ColorMap::gutter_3));
 
     base->setColour(ModulationVSlider, jcmp::VSlider::Styles::value, cols.get(ColorMap::accent_2a));
     base->setColour(ModulationVSlider, jcmp::VSlider::Styles::value_hover,
