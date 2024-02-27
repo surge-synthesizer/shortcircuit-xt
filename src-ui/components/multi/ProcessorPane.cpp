@@ -204,16 +204,9 @@ void ProcessorPane::rebuildControlsFromDescription()
                                                              forZone, index);
     setToggleDataSource(bypassAttachment.get());
 
-    repaint();
+    reapplyStyle();
 
-    if (forZone)
-    {
-        editor->themeApplier.applyZoneMultiScreenTheme(this);
-    }
-    else
-    {
-        editor->themeApplier.applyGroupMultiScreenTheme(this);
-    }
+    repaint();
 }
 
 void ProcessorPane::layoutControls()
@@ -429,6 +422,17 @@ void ProcessorPane::layoutControlsWaveshaper()
     intEditors[0] = std::move(wss);
 }
 
+void ProcessorPane::reapplyStyle()
+{
+    if (forZone)
+    {
+        editor->themeApplier.applyZoneMultiScreenTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyGroupMultiScreenTheme(this);
+    }
+}
 bool ProcessorPane::isInterestedInDragSource(
     const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {

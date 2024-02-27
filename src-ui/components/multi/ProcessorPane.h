@@ -109,6 +109,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
 
+    void reapplyStyle();
+
     bool multiZone{false};
 
     std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
