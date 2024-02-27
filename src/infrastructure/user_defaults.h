@@ -35,10 +35,12 @@ namespace scxt::infrastructure
 enum DefaultKeys
 {
     zoomLevel,
-    skinName,
     octave0,
-    nKeys,
-    invertScroll
+    invertScroll,
+    showKnobs,
+    colormapId,
+
+    nKeys // must be last K?
 };
 inline std::string defaultKeyToString(DefaultKeys k)
 {
@@ -46,14 +48,16 @@ inline std::string defaultKeyToString(DefaultKeys k)
     {
     case zoomLevel:
         return "zoomLevel";
-    case skinName:
-        return "skinName";
+    case colormapId:
+        return "colormapId";
     case octave0:
         return "octave0";
     case nKeys:
         return "nKeys";
     case invertScroll:
         return "invertScroll";
+    case showKnobs:
+        return "showKnobs";
     default:
         std::terminate(); // for now
     }

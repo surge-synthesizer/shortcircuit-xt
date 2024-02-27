@@ -30,7 +30,6 @@
 
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/waveshapers/WaveshaperConfiguration.h"
@@ -206,6 +205,15 @@ void ProcessorPane::rebuildControlsFromDescription()
     setToggleDataSource(bypassAttachment.get());
 
     repaint();
+
+    if (forZone)
+    {
+        editor->themeApplier.applyZoneMultiScreenTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyGroupMultiScreenTheme(this);
+    }
 }
 
 void ProcessorPane::layoutControls()

@@ -43,7 +43,7 @@ struct AboutScreen : juce::Component, HasEditor
     };
     std::vector<AboutInfo> info;
 
-    AboutScreen(SCXTEditor *e);
+    explicit AboutScreen(SCXTEditor *e);
     void paint(juce::Graphics &g) override;
 
     std::unique_ptr<juce::Drawable> icon;
@@ -65,4 +65,4 @@ struct AboutScreen : juce::Component, HasEditor
 };
 } // namespace scxt::ui
 
-#endif // SHORTCIRCUIT_ABOUTESCREEN_H
+#endif // SCXT_SRC_UI_COMPONENTS_ABOUTSCREEN_H

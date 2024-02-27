@@ -27,7 +27,6 @@
 
 #include "ModPane.h"
 #include "components/SCXTEditor.h"
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/HSliderFilled.h"
@@ -86,7 +85,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         power = std::make_unique<jcmp::ToggleButton>();
         power->setLabel(std::to_string(index + 1));
         power->setSource(powerAttachment.get());
-        power->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixToggle);
         addAndMakeVisible(*power);
 
         source = std::make_unique<jcmp::MenuButton>();
@@ -95,7 +93,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (w)
                 w->showSourceMenu(false);
         });
-        source->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*source);
 
         sourceVia = std::make_unique<jcmp::MenuButton>();
@@ -104,7 +101,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (w)
                 w->showSourceMenu(true);
         });
-        sourceVia->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*sourceVia);
 
         // The generic value tooltip doesn't work for this and only this control
@@ -120,7 +116,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             row.depth);
         depth = std::make_unique<jcmp::HSliderFilled>();
         depth->setSource(depthAttachment.get());
-        depth->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationEditorVSlider);
         depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
@@ -142,7 +137,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (w)
                 w->showCurveMenu();
         });
-        curve->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*curve);
 
         target = std::make_unique<jcmp::MenuButton>();
@@ -150,12 +144,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (w)
                 w->showTargetMenu();
         });
-        target->setCustomClass(connectors::SCXTStyleSheetCreator::ModulationMatrixMenu);
         addAndMakeVisible(*target);
 
         auto mg = [this](auto g) {
             auto r = std::make_unique<jcmp::GlyphPainter>(g);
-            r->setCustomClass(connectors::SCXTStyleSheetCreator::InformationLabel);
             addAndMakeVisible(*r);
             return r;
         };
@@ -509,8 +501,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 template <typename GZTrait>
 ModPane<GZTrait>::ModPane(SCXTEditor *e, bool fz) : jcmp::NamedPanel(""), HasEditor(e), forZone(fz)
 {
-    setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
-
     viewPort = std::make_unique<sst::jucegui::components::Viewport>();
     viewPortComponents = std::make_unique<juce::Component>();
     viewPort->setViewedComponent(viewPortComponents.get(), false);
@@ -602,6 +592,15 @@ template <typename GZTrait> void ModPane<GZTrait>::rebuildMatrix(bool enableChan
     }
     if (enableChanged || needsResize)
         resized();
+
+    if (GZTrait::forZone)
+    {
+        editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+    }
 }
 
 template <typename GZTrait> void ModPane<GZTrait>::refreshMatrix()

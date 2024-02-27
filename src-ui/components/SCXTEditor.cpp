@@ -28,9 +28,6 @@
 #include "SCXTEditor.h"
 
 #include "PlayScreen.h"
-#include "engine/engine.h"
-#include "messaging/client/selection_messages.h"
-#include "selection/selection_manager.h"
 #include "sst/jucegui/style/StyleSheet.h"
 
 #include "infrastructure/user_defaults.h"
@@ -38,7 +35,6 @@
 #include "HeaderRegion.h"
 #include "MultiScreen.h"
 #include "MixerScreen.h"
-#include "connectors/SCXTStyleSheetCreator.h"
 #include "AboutScreen.h"
 #include "LogScreen.h"
 #include "SCXTJuceLookAndFeel.h"
@@ -62,16 +58,18 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset =
         defaultsProvider.getUserDefaultValue(infrastructure::octave0, 0);
 
-    // TODO: Obviously expand this
-    auto sn = defaultsProvider.getUserDefaultValue(infrastructure::skinName, "builtin.DARK");
-    if (sn == "builtin.LIGHT")
-    {
-        setStyle(connectors::SCXTStyleSheetCreator::setup(sst::jucegui::style::StyleSheet::LIGHT));
-    }
-    else
-    {
-        setStyle(connectors::SCXTStyleSheetCreator::setup());
-    }
+    setStyle(sst::jucegui::style::StyleSheet::getBuiltInStyleSheet(
+        sst::jucegui::style::StyleSheet::EMPTY));
+
+    auto cmid = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::colormapId,
+                                                     theme::ColorMap::WIREFRAME);
+    auto cm = theme::ColorMap::createColorMap((theme::ColorMap::BuiltInColorMaps)cmid);
+
+    auto showK =
+        defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::showKnobs, false);
+    cm->hasKnobs = showK;
+
+    themeApplier.recolorStylesheetWith(std::move(cm), style());
 
     // TODO what happens with two windows open when I go away?
     lnf = std::make_unique<SCXTJuceLookAndFeel>();
@@ -178,7 +176,7 @@ void SCXTEditor::showLogOverlay()
 
 void SCXTEditor::resized()
 {
-    static constexpr uint32_t headerHeight{40};
+    static constexpr int32_t headerHeight{40};
     headerRegion->setBounds(0, 0, getWidth(), headerHeight);
 
     if (multiScreen->isVisible())
@@ -266,12 +264,12 @@ void SCXTEditor::drainCallbackQueue()
     while (itemsToDrain)
     {
         itemsToDrain = false;
-        std::string qmsg;
+        std::string queueMsg;
         {
             std::lock_guard<std::mutex> g(callbackMutex);
             if (!callbackQueue.empty())
             {
-                qmsg = callbackQueue.front();
+                queueMsg = callbackQueue.front();
                 itemsToDrain = true;
                 callbackQueue.pop();
             }
@@ -279,15 +277,15 @@ void SCXTEditor::drainCallbackQueue()
         if (itemsToDrain)
         {
             assert(msgCont.threadingChecker.isClientThread());
-            cmsg::clientThreadExecuteSerializationMessage(qmsg, this);
+            cmsg::clientThreadExecuteSerializationMessage(queueMsg, this);
 #if BUILD_IS_DEBUG
             inboundMessageCount++;
-            inboundMessageBytes += qmsg.size();
+            inboundMessageBytes += queueMsg.size();
             if (inboundMessageCount % 100 == 0)
             {
                 SCLOG("Serial -> Client Message Count: "
                       << inboundMessageCount << " size: " << inboundMessageBytes
-                      << " avgmsg: " << inboundMessageBytes / inboundMessageCount);
+                      << " avg msg: " << inboundMessageBytes / inboundMessageCount);
             }
 #endif
         }
@@ -321,22 +319,17 @@ void SCXTEditor::doMultiSelectionAction(
 bool SCXTEditor::isInterestedInFileDrag(const juce::StringArray &files)
 {
     // TODO be more parsimonious
-    for (const auto &f : files)
-    {
+    return std::all_of(files.begin(), files.end(), [this](const auto &f) {
         try
         {
-            auto pt = fs::path{(const char *)(files[0].toUTF8())};
-            if (!browser.isLoadableFile(pt))
-            {
-                return false;
-            }
+            auto pt = fs::path{(const char *)(f.toUTF8())};
+            return browser.isLoadableFile(pt);
         }
         catch (fs::filesystem_error &e)
         {
-            return false;
         }
-    }
-    return true;
+        return false;
+    });
 }
 
 void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)

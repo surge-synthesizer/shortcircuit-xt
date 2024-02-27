@@ -29,7 +29,6 @@
 #include "utils.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "SCXTEditor.h"
-#include "connectors/SCXTResources.h"
 
 #include <version.h>
 
@@ -78,8 +77,8 @@ void AboutScreen::paint(juce::Graphics &g)
 {
     g.fillAll(juce::Colours::black);
     float iconScale = 4.0;
-    float iconHeight = 80; // iconHeightr eturns wrong thing?
-    float iconWidth = 78;  // iconHeightr eturns wrong thing?
+    float iconHeight = 80; // iconHeight returns wrong thing?
+    float iconWidth = 78;  // iconHeight returns wrong thing?
     float iconTransX = 20;
     float iconTransY = 148;
     {
@@ -112,7 +111,7 @@ void AboutScreen::paint(juce::Graphics &g)
     g.setFont(aboutFont);
     auto r = getLocalBounds().withHeight(20).translated(0, 320);
     r = r.withY(getHeight() - (info.size()) * infoh - 5);
-    for (auto q : info)
+    for (const auto &q : info)
     {
         g.setColour(juce::Colour(0xFFFF9000));
         auto ra = r.withWidth(100).withTrimmedLeft(5);
@@ -128,7 +127,7 @@ void AboutScreen::copyInfo()
 {
     std::ostringstream oss;
     oss << "Shortcircuit XT\n";
-    for (auto i : info)
+    for (const auto &i : info)
     {
         oss << i.title << ":\t" << i.value << "\n";
     }

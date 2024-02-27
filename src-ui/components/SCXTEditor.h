@@ -48,6 +48,8 @@
 
 #include "HasEditor.h"
 
+#include "theme/ThemeApplier.h"
+
 namespace sst::jucegui::components
 {
 struct HasDiscreteParamMenuBuilder;
@@ -70,9 +72,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // The message controller is needed to communicate
     messaging::MessageController &msgCont;
 
-    /* In theory we could have a copy of all the samples in the UI but
+    /* In theory, we could have a copy of all the samples in the UI but
      * their lifetime is well known and their json load is big so for now
-     * lets make the simplifyign assumption that we get a const reference to
+     * lets make the simplifying assumption that we get a const reference to
      * the sample manager for our engine.
      */
     const sample::SampleManager &sampleManager;
@@ -94,6 +96,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
      * and is not writable
      */
     const engine::Engine::SharedUIMemoryState &sharedUiMemoryState;
+
+    /*
+     * This is an object responsible for theme and color management
+     */
+    theme::ThemeApplier themeApplier;
 
     infrastructure::RNGGen rngGen;
 
@@ -211,9 +218,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     // TODO: Do we allow part multi-select? I think we don't
     std::set<int> groupsWithSelectedZones;
-    bool isAnyZoneFromGroupSelected(int gidx)
+    bool isAnyZoneFromGroupSelected(int groupIdx)
     {
-        return groupsWithSelectedZones.find(gidx) != groupsWithSelectedZones.end();
+        return groupsWithSelectedZones.find(groupIdx) != groupsWithSelectedZones.end();
     }
 
     bool isSelected(const selection::SelectionManager::ZoneAddress &a)
@@ -292,4 +299,4 @@ inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
 }
 } // namespace scxt::ui
 
-#endif // SHORTCIRCUIT_SCXTEDITOR_H
+#endif // SCXT_SRC_UI_COMPONENTS_SCXTEDITOR_H
