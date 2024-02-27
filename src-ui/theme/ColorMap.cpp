@@ -69,6 +69,17 @@ struct WireframeColors : ColorMap
         case warning_1b:
             res = juce::Colour(0xFF8A0000);
             break;
+
+        case gutter_2:
+            res = getImpl(bg_3, alpha);
+            break;
+        case gutter_3:
+            res = getImpl(bg_2, alpha);
+            break;
+        case panel_outline_2:
+        case panel_outline_3:
+            res = juce::Colour(0x00000000);
+            break;
         }
         return res.withAlpha(std::clamp(res.getAlpha() * alpha, 0.f, 1.f));
     }
@@ -137,8 +148,92 @@ struct TestColors : ColorMap
         case warning_1b:
             res = juce::Colour(0xFF8A0000);
             break;
+
+        case gutter_2:
+            res = getImpl(bg_3, alpha);
+            break;
+        case gutter_3:
+            res = getImpl(bg_2, alpha);
+            break;
+        case panel_outline_2:
+        case panel_outline_3:
+            res = juce::Colour(0x00000000);
+            break;
         }
         return res.withAlpha(alpha);
+    }
+};
+
+struct HiContrastDark : ColorMap
+{
+    WireframeColors under;
+    juce::Colour getImpl(ColorMap::Colors c, float alpha) const override
+    {
+        auto res = juce::Colours::red;
+
+        switch (c)
+        {
+        case accent_1a:
+            res = juce::Colour(0xFFFFA904);
+            break;
+
+        case accent_2a:
+            res = juce::Colour(0xFF0788F6);
+            break;
+
+        case bg_1:
+            res = juce::Colour(0xFF000000);
+            break;
+        case bg_2:
+            res = juce::Colour(0xFF22222A);
+            break;
+        case bg_3:
+            res = juce::Colour(0xFF222A22);
+            break;
+
+        case knob_fill:
+            res = juce::Colour(82, 82, 82);
+            break;
+
+        case generic_content_highest:
+            res = juce::Colour(0xFFFFFFFF);
+            break;
+        case generic_content_high:
+            res = juce::Colour(0xFFDFDFDF);
+            break;
+        case generic_content_medium:
+            res = juce::Colour(0xFFCFCFC);
+            break;
+        case generic_content_low:
+            res = juce::Colour(0xFF999999);
+            break;
+        case generic_content_lowest:
+            res = juce::Colour(0xFF000000);
+            break;
+
+        case gutter_2:
+            res = juce::Colour(0xFF888899);
+            break;
+        case gutter_3:
+            res = juce::Colour(0xFF889988);
+            break;
+        case panel_outline_2:
+            res = juce::Colour(0xFFAAAABB);
+            break;
+        case panel_outline_3:
+            res = juce::Colour(0xFFAABBAA);
+            break;
+        default:
+            res = under.get(c, alpha);
+            break;
+        }
+        return res.withAlpha(std::clamp(res.getAlpha() * alpha, 0.f, 1.f));
+    }
+
+    virtual juce::Colour getHover(Colors c, float alpha = 1.f) const override
+    {
+        auto cres = get(c, alpha);
+        return cres.brighter(0.25);
     }
 };
 
@@ -152,6 +247,9 @@ std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::Bu
         break;
     case WIREFRAME:
         res = std::make_unique<WireframeColors>();
+        break;
+    case HICONTRAST_DARK:
+        res = std::make_unique<HiContrastDark>();
         break;
     }
 
