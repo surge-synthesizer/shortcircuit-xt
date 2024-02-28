@@ -130,7 +130,9 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
     engine::Zone *zoneToFree{nullptr};
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [s = a, &zoneToFree](auto &e) {
-            auto zid = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id;
+            auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+            e.terminateVoicesForZone(*zoneO);
+            auto zid = zoneO->id;
             auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
             zoneToFree = z.release();
         },
@@ -165,9 +167,14 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
             // I know this allocates and deallocates on audio thread
             std::vector<std::tuple<int, int, ZoneID>> ids;
             for (auto s : sz)
+            {
+                auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+                e.terminateVoicesForZone(*zoneO);
+
                 ids.push_back(
                     {s.part, s.group,
                      e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id});
+            }
             for (auto [p, g, zid] : ids)
                 e.getPatch()->getPart(p)->getGroup(g)->removeZone(zid);
         },
@@ -198,6 +205,9 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
             }
             else
             {
+                auto &groupO = e.getPatch()->getPart(s.part)->getGroup(s.group);
+                e.terminateVoicesForGroup(*groupO);
+
                 auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
                 groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
             }
@@ -234,7 +244,9 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
             auto &part = e.getPatch()->getPart(pt);
             while (!part->getGroups().empty())
             {
-                auto gid = part->getGroup(0)->id;
+                auto &groupO = part->getGroup(0);
+                e.terminateVoicesForGroup(*groupO);
+                auto gid = groupO->id;
                 auto g = part->removeGroup(gid);
             }
         },
@@ -263,7 +275,10 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [s = src, t = tgt](auto &e) {
-            auto zid = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone)->id;
+            auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+            e.terminateVoicesForZone(*zoneO);
+
+            auto zid = zoneO->id;
             auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
             if (z)
                 e.getPatch()->getPart(t.part)->getGroup(t.group)->addZone(z);

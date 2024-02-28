@@ -84,7 +84,6 @@ void Zone::process(Engine &e)
 
     for (int i = 0; i < cleanupIdx; ++i)
     {
-
 #if DEBUG_VOICE_LIFECYCLE
         SCLOG("Cleanup Voice at " << SCDBGV((int)toCleanUp[i]->key));
 #endif
@@ -279,6 +278,27 @@ Zone::LoopDirection Zone::fromStringLoopDirection(const std::string &s)
 }
 
 void Zone::onSampleRateChanged() { mUILag.setRate(120, blockSize, sampleRate); }
+
+void Zone::terminateAllVoices()
+{
+    std::array<voice::Voice *, maxVoices> toCleanUp{};
+    size_t cleanupIdx{0};
+    for (auto &v : voiceWeakPointers)
+    {
+        if (v && v->isVoiceAssigned)
+        {
+            toCleanUp[cleanupIdx++] = v;
+        }
+    }
+    if (cleanupIdx)
+    {
+        SCLOG("Early-terminating " << cleanupIdx << " voices");
+    }
+    for (int i = 0; i < cleanupIdx; ++i)
+    {
+        toCleanUp[i]->cleanupVoice();
+    }
+}
 
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine
