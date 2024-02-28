@@ -303,9 +303,26 @@ juce::AudioProcessorEditor *SCXTProcessor::createEditor()
 void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
     engine->getSampleManager()->purgeUnreferencedSamples();
-    auto xml = scxt::json::streamEngineState(*engine);
-    SCLOG("Streaming State Information: " << xml.size() << " bytes");
-    destData.replaceAll(xml.c_str(), xml.size() + 1);
+    try
+    {
+        auto xml = scxt::json::streamEngineState(*engine);
+        SCLOG("Streaming State Information: " << xml.size() << " bytes");
+        destData.replaceAll(xml.c_str(), xml.size() + 1);
+    }
+    catch (const std::runtime_error &err)
+    {
+        SCLOG("Unable to stream [" << err.what() << "]");
+        if (getActiveEditor())
+        {
+            // Really? JUCE has no way to indicate failure here?
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon, "Streaming error",
+                juce::String(
+                    "ShortCircuit XT was unable to stream your patch. JSON conversion reported :") +
+                    juce::String(err.what()),
+                "OK", getActiveEditor());
+        }
+    }
 }
 
 void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
@@ -322,9 +339,19 @@ void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
         std::lock_guard<std::mutex> g(engine->modifyStructureMutex);
         scxt::json::unstreamEngineState(*engine, xml);
     }
-    catch (std::exception &e)
+    catch (std::exception &err)
     {
-        SCLOG("Unable to unstream [" << e.what() << "]");
+        SCLOG("Unable to unstream [" << err.what() << "]");
+        if (getActiveEditor())
+        {
+            // Really? JUCE has no way to indicate failure here?
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon, "Streaming error",
+                juce::String("ShortCircuit XT was unable to unstream your patch. JSON conversion "
+                             "reported :") +
+                    juce::String(err.what()),
+                "OK", getActiveEditor());
+        }
     }
     engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }
