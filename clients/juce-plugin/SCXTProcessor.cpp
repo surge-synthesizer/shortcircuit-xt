@@ -312,16 +312,6 @@ void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
     catch (const std::runtime_error &err)
     {
         SCLOG("Unable to stream [" << err.what() << "]");
-        if (getActiveEditor())
-        {
-            // Really? JUCE has no way to indicate failure here?
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::MessageBoxIconType::WarningIcon, "Streaming error",
-                juce::String(
-                    "ShortCircuit XT was unable to stream your patch. JSON conversion reported :") +
-                    juce::String(err.what()),
-                "OK", getActiveEditor());
-        }
     }
 }
 
@@ -342,16 +332,6 @@ void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
     catch (std::exception &err)
     {
         SCLOG("Unable to unstream [" << err.what() << "]");
-        if (getActiveEditor())
-        {
-            // Really? JUCE has no way to indicate failure here?
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::MessageBoxIconType::WarningIcon, "Streaming error",
-                juce::String("ShortCircuit XT was unable to unstream your patch. JSON conversion "
-                             "reported :") +
-                    juce::String(err.what()),
-                "OK", getActiveEditor());
-        }
     }
     engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
 }
