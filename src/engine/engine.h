@@ -412,6 +412,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &,
                                 gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn);
 
+    /*
+     * Accelerated voice termination
+     */
+    void terminateVoicesForZone(Zone &z);
+    void terminateVoicesForGroup(Group &g);
+
   private:
     std::unique_ptr<Patch> patch;
     std::unique_ptr<MemoryPool> memoryPool;

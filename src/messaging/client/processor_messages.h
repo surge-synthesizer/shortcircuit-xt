@@ -187,5 +187,45 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
 CLIENT_TO_SERIAL(SwapZoneProcessors, c2s_swap_zone_processors, processorPair_t,
                  swapZoneProcessors(payload, engine, cont));
 
+inline void swapGroupProcessors(const processorPair_t &whichToType, const engine::Engine &engine,
+                                messaging::MessageController &cont)
+{
+    const auto &[to, from] = whichToType;
+    auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+    auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
+
+    if (!sg.empty() && lg.has_value())
+    {
+        cont.scheduleAudioThreadCallback(
+            [q = sg, t = to, f = from](auto &engine) {
+                for (const auto &a : q)
+                {
+                    const auto &g = engine.getPatch()->getPart(a.part)->getGroup(a.group);
+                    auto fs = g->processorStorage[f];
+                    auto ts = g->processorStorage[t];
+
+                    g->setProcessorType(f, (dsp::processor::ProcessorType)ts.type);
+                    g->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
+
+                    g->processorStorage[f] = ts;
+                    g->processorStorage[t] = fs;
+
+                    g->rePrepareAndBindGroupMatrix();
+                }
+            },
+            [a = *lg](const auto &engine) {
+                engine.getSelectionManager()->sendDisplayDataForSingleGroup(a.part, a.group);
+            });
+    }
+    else
+    {
+        // This means you have a lead zone and no selected zones
+        assert(sg.empty());
+    }
+}
+
+CLIENT_TO_SERIAL(SwapGroupProcessors, c2s_swap_group_processors, processorPair_t,
+                 swapGroupProcessors(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_PROCESSOR_MESSAGES_H

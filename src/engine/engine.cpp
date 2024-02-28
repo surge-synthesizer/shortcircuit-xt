@@ -734,4 +734,13 @@ void Engine::registerGroupModSource(const modulation::GroupMatrixConfig::SourceI
     groupModSources.emplace(t, std::make_pair(pathFn, nameFn));
 }
 
+void Engine::terminateVoicesForZone(scxt::engine::Zone &z) { z.terminateAllVoices(); }
+
+void Engine::terminateVoicesForGroup(scxt::engine::Group &g)
+{
+    for (auto &z : g)
+    {
+        terminateVoicesForZone(*z);
+    }
+}
 } // namespace scxt::engine

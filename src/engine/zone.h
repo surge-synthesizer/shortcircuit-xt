@@ -171,6 +171,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     uint32_t activeVoices{0};
     std::array<voice::Voice *, maxVoices> voiceWeakPointers;
     int gatedVoiceCount{0};
+    void terminateAllVoices();
 
     void initialize();
     // Just a weak ref - don't take ownership. engine manages lifetime

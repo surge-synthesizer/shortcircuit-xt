@@ -246,7 +246,10 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 {
     if (t != dsp::processor::ProcessorType::proct_none)
     {
-        SCLOG("Group Processor Changed: " << w << " " << t);
+        if (processors[w])
+        {
+            dsp::processor::unspawnProcessor(processors[w]);
+        }
         // FIXME - replace the float params with something modulatable
         processors[w] = dsp::processor::spawnProcessorInPlace(
             t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],

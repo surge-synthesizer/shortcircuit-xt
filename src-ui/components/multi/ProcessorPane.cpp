@@ -452,7 +452,14 @@ void ProcessorPane::itemDropped(const juce::DragAndDropTarget::SourceDetails &dr
     if (!pp)
         return;
 
-    sendToSerialization(cmsg::SwapZoneProcessors({index, pp->index}));
+    if (forZone)
+    {
+        sendToSerialization(cmsg::SwapZoneProcessors({index, pp->index}));
+    }
+    else
+    {
+        sendToSerialization(cmsg::SwapGroupProcessors({index, pp->index}));
+    }
 }
 
 void ProcessorPane::mouseDrag(const juce::MouseEvent &e)
