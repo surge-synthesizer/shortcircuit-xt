@@ -65,17 +65,25 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
 {
     engine->getSampleManager()->purgeUnreferencedSamples();
-    auto xml = scxt::json::streamEngineState(*engine);
-
-    auto c = xml.c_str();
-    auto s = xml.length(); // write the null terminator
-    while (s > 0)
+    try
     {
-        auto r = ostream->write(ostream, c, s);
-        if (r < 0)
-            return false;
-        s -= r;
-        c += r;
+        auto xml = scxt::json::streamEngineState(*engine);
+
+        auto c = xml.c_str();
+        auto s = xml.length(); // write the null terminator
+        while (s > 0)
+        {
+            auto r = ostream->write(ostream, c, s);
+            if (r < 0)
+                return false;
+            s -= r;
+            c += r;
+        }
+    }
+    catch (const std::runtime_error &err)
+    {
+        SCLOG("Streaming exception [" << err.what() << "]");
+        return false;
     }
     return true;
 }
