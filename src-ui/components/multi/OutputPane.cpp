@@ -30,8 +30,10 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/LabeledItem.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "datamodel/metadata.h"
+#include "theme/Layout.h"
 
 namespace scxt::ui::multi
 {
@@ -63,24 +65,17 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
 
     std::unique_ptr<attachment_t> outputAttachment, panAttachment;
-    std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
-    std::unique_ptr<jcmp::Label> outputLabel, panLabel;
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
+    std::unique_ptr<jcmp::Labeled<jcmp::Knob>> outputKnob, panKnob;
 
     OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
     {
         using fac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
 
-        fac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
-        fac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
-
-        outputLabel = std::make_unique<jcmp::Label>();
-        outputLabel->setText("Amplitude");
-        addAndMakeVisible(*outputLabel);
-        panLabel = std::make_unique<jcmp::Label>();
-        panLabel->setText("Pan");
-        addAndMakeVisible(*panLabel);
+        fac::attachLabelAndAdd(info, info.amplitude, this, outputAttachment, outputKnob,
+                               "Amplitude");
+        fac::attachLabelAndAdd(info, info.pan, this, panAttachment, panKnob, "Pan");
 
         outputRouting = std::make_unique<jcmp::MenuButton>();
         outputRouting->setLabel(OTTraits::defaultRoutingLocationName);
@@ -94,39 +89,15 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 
     void resized()
     {
+
+        theme::layout::Layout layout;
+
+        auto cc = theme::layout::columnCenters(getLocalBounds(), 2);
+        layout.knobCX<theme::layout::constants::largeKnob>(*outputKnob, cc[0], 10);
+        layout.knobCX<theme::layout::constants::largeKnob>(*panKnob, cc[1], 10);
+
         auto b = getLocalBounds();
-        b = b.reduced(5, 0);
-        auto w = b.getWidth();
-        auto op = b;
-        b = b.withHeight(w / 2);
-        op = op.withTop(op.getBottom() - 20).translated(0, -5);
-
-        auto bl = b.withWidth(w / 2);
-
-        {
-            auto ll = bl.reduced(3);
-            auto lh = ll.getHeight();
-            auto th = 20;
-
-            auto kb = ll.reduced(th / 2, 0).withTrimmedBottom(th);
-            outputKnob->setBounds(kb);
-            auto pb = ll.withTrimmedTop(lh - th);
-            outputLabel->setBounds(pb);
-        }
-
-        bl = bl.translated(w / 2, 0);
-
-        {
-            auto ll = bl.reduced(3);
-            auto lh = ll.getHeight();
-            auto th = 20;
-
-            auto kb = ll.reduced(th / 2, 0).withTrimmedBottom(th);
-            panKnob->setBounds(kb);
-            auto pb = ll.withTrimmedTop(lh - th);
-            panLabel->setBounds(pb);
-        }
-
+        auto op = b.withTop(b.getBottom() - 20).translated(0, -5).reduced(10, 0);
         outputRouting->setBounds(op);
     }
 

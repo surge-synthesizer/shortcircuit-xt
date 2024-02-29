@@ -36,6 +36,7 @@
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/LabeledItem.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "dsp/processor/processor.h"
 #include "components/HasEditor.h"
@@ -87,13 +88,57 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsEQNBandParm();
 
     template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<T> attachContinuousTo(const std::unique_ptr<attachment_t> &at)
+    std::unique_ptr<
+        sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>
+    createWidgetAttachedTo(const std::unique_ptr<attachment_t> &at, const std::string &label)
     {
+        auto res = std::make_unique<
+            sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>();
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
         setupWidgetForValueTooltip(kn, at);
         getContentAreaComponent()->addAndMakeVisible(*kn);
+        auto lb = std::make_unique<sst::jucegui::components::Label>();
+        lb->setText(label);
+        getContentAreaComponent()->addAndMakeVisible(*lb);
+        res->item = std::move(kn);
+        res->label = std::move(lb);
+
+        return std::move(res);
+    }
+
+    template <typename T = sst::jucegui::components::Knob>
+    std::unique_ptr<T> createWidgetAttachedTo(const std::unique_ptr<int_attachment_t> &at)
+    {
+        auto kn = std::make_unique<T>();
+        kn->setSource(at.get());
+        getContentAreaComponent()->addAndMakeVisible(*kn);
+
         return std::move(kn);
+    }
+
+    template <typename T = sst::jucegui::components::Knob>
+    std::unique_ptr<
+        sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>>
+    createWidgetAttachedTo(const std::unique_ptr<int_attachment_t> &at, const std::string &label)
+    {
+        auto res = std::make_unique<
+            sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
+        res->item = createWidgetAttachedTo<T>(at);
+        auto lb = std::make_unique<sst::jucegui::components::Label>();
+        lb->setText(label);
+        getContentAreaComponent()->addAndMakeVisible(*lb);
+        res->label = std::move(lb);
+
+        return std::move(res);
+    }
+
+    std::unique_ptr<sst::jucegui::components::Label> createLabel(const std::string &txt)
+    {
+        auto res = std::make_unique<sst::jucegui::components::Label>();
+        res->setText(txt);
+        getContentAreaComponent()->addAndMakeVisible(*res);
+        return std::move(res);
     }
 
     void resetControls();
@@ -113,29 +158,26 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     bool multiZone{false};
 
-    std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
-               dsp::processor::maxProcessorFloatParams>
+    using floatEditor_t =
+        sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>;
+    std::array<std::unique_ptr<floatEditor_t>, dsp::processor::maxProcessorFloatParams>
         floatEditors;
-    std::array<std::unique_ptr<sst::jucegui::components::Label>,
-               dsp::processor::maxProcessorFloatParams>
-        floatLabels;
     std::array<std::unique_ptr<attachment_t>, dsp::processor::maxProcessorFloatParams>
         floatAttachments;
 
-    std::array<std::unique_ptr<sst::jucegui::components::DiscreteParamEditor>,
-               dsp::processor::maxProcessorIntParams>
-        intEditors;
-    std::array<std::unique_ptr<sst::jucegui::components::Label>,
-               dsp::processor::maxProcessorIntParams>
-        intLabels;
+    using intEditor_t =
+        sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>;
+    std::array<std::unique_ptr<intEditor_t>, dsp::processor::maxProcessorIntParams> intEditors;
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
+
     std::unique_ptr<bool_attachment_t> bypassAttachment;
 
     std::vector<std::unique_ptr<juce::Component>> otherEditors;
 
-    std::unique_ptr<sst::jucegui::components::ContinuousParamEditor> mixEditor;
-    std::unique_ptr<sst::jucegui::components::Label> mixLabel;
+    std::unique_ptr<
+        sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>
+        mixEditor;
     std::unique_ptr<attachment_t> mixAttachment;
 
     std::unique_ptr<sst::jucegui::components::Label> multiLabel;

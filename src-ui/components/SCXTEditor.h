@@ -295,7 +295,7 @@ inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
         editor->showTooltip(slRef);
         updateValueTooltip(atRef);
     };
-    w->onIdleHoverEnd = [this, &atRef = *a]() { editor->hideTooltip(); };
+    w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
 }
 } // namespace scxt::ui
 

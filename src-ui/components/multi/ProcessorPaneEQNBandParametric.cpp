@@ -150,7 +150,7 @@ void ProcessorPane::layoutControlsEQNBandParm()
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
     otherEditors.push_back(std::move(eqdisp));
 
-    mixEditor = attachContinuousTo<sst::jucegui::components::VSlider>(mixAttachment);
-    mixEditor->setBounds(mx);
+    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
+    mixEditor->item->setBounds(mx);
 }
 } // namespace scxt::ui::multi
