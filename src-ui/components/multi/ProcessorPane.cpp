@@ -35,13 +35,16 @@
 #include "sst/waveshapers/WaveshaperConfiguration.h"
 #include <sst/jucegui/components/MenuButton.h>
 
+#include "theme/Layout.h"
+
 namespace scxt::ui::multi
 {
 namespace cmsg = scxt::messaging::client;
+namespace jcmp = sst::jucegui::components;
 
 ProcessorPane::ProcessorPane(SCXTEditor *e, int index, bool fz)
-    : HasEditor(e), sst::jucegui::components::NamedPanel("PROCESSOR " + std::to_string(index + 1)),
-      index(index), forZone(fz)
+    : HasEditor(e), jcmp::NamedPanel("PROCESSOR " + std::to_string(index + 1)), index(index),
+      forZone(fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
     hasHamburger = true;
@@ -58,7 +61,7 @@ ProcessorPane::~ProcessorPane() { resetControls(); }
 
 void ProcessorPane::resized()
 {
-    sst::jucegui::components::NamedPanel::resized();
+    jcmp::NamedPanel::resized();
     rebuildControlsFromDescription();
 }
 
@@ -221,15 +224,14 @@ void ProcessorPane::layoutControls()
 
     for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
     {
-        floatEditors[i] = attachContinuousTo<sst::jucegui::components::Knob>(floatAttachments[i]);
-        floatEditors[i]->setBounds(kb);
+        floatEditors[i] = createWidgetAttachedTo(
+            floatAttachments[i], processorControlDescription.floatControlDescriptions[i].name);
+        floatEditors[i]->item->setBounds(kb);
+        floatEditors[i]->label->setBounds(lb);
 
         auto label = std::make_unique<sst::jucegui::components::Label>();
         label->setText(processorControlDescription.floatControlDescriptions[i].name);
         getContentAreaComponent()->addAndMakeVisible(*label);
-
-        floatLabels[i] = std::move(label);
-        floatLabels[i]->setBounds(lb);
 
         kb = kb.translated(kw, 0);
         lb = lb.translated(kw, 0);
@@ -252,8 +254,10 @@ void ProcessorPane::layoutControls()
         label->setBounds(lb);
         getContentAreaComponent()->addAndMakeVisible(*label);
 
-        intEditors[i] = std::move(kn);
-        intLabels[i] = std::move(label);
+        intEditors[i] = std::make_unique<
+            sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
+        intEditors[i]->item = std::move(kn);
+        intEditors[i]->label = std::move(label);
 
         kb = kb.translated(kw, 0);
         lb = lb.translated(kw, 0);
@@ -265,14 +269,9 @@ void ProcessorPane::layoutControls()
     }
 
     {
-        auto label = std::make_unique<sst::jucegui::components::Label>();
-        label->setText("mix");
-        label->setBounds(lb);
-        getContentAreaComponent()->addAndMakeVisible(*label);
-        mixLabel = std::move(label);
-
-        mixEditor = attachContinuousTo<sst::jucegui::components::Knob>(mixAttachment);
-        mixEditor->setBounds(kb);
+        mixEditor = createWidgetAttachedTo<sst::jucegui::components::Knob>(mixAttachment, "mix");
+        mixEditor->item->setBounds(kb);
+        mixEditor->label->setBounds(lb);
     }
 }
 
@@ -283,143 +282,74 @@ void ProcessorPane::layoutControlsSuperSVF()
     assert(processorControlDescription.numFloatParams == 2);
     assert(processorControlDescription.numIntParams == 2);
 
-    auto labelHeight = 18;
-    auto rc = getContentAreaComponent()->getLocalBounds();
-    auto rcw = rc.getWidth();
-    auto pct = 0.35;
-    auto kw = rcw * pct;
+    // FIXME
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
 
-    auto kb = rc.withHeight(kw).withWidth(kw).translated(rcw * (0.5 - pct) * 0.5, 0);
-    floatEditors[0] = attachContinuousTo(floatAttachments[0]);
-    floatEditors[0]->setBounds(kb);
+    lo::Layout layout;
+    auto cp = lo::centerOfColumnMofN(*getContentAreaComponent(), 0, 2);
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Cutoff");
+    layout.knobCX<locon::largeKnob>(*floatEditors[0], cp, 5);
 
-    floatLabels[0] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[0]->setText("Cutoff");
-    floatLabels[0]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*floatLabels[0]);
+    cp = lo::centerOfColumnMofN(*getContentAreaComponent(), 1, 2);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Resonance");
+    layout.knobCX<locon::largeKnob>(*floatEditors[1], cp, 5);
 
-    kb = kb.translated(rcw * 0.5, 0);
-    floatEditors[1] = attachContinuousTo(floatAttachments[1]);
-    floatEditors[1]->setBounds(kb);
-    floatLabels[1] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[1]->setText("Resonance");
-    floatLabels[1]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*floatLabels[1]);
+    auto col1 = lo::columnMofN(getContentAreaComponent()->getLocalBounds(), 0, 2);
 
-    auto okb = floatLabels[0]->getBounds().expanded((0.5 - pct) * 0.5 * rcw, 0);
+    col1 = col1.withTrimmedTop(floatEditors[0]->label->getBottom() + 15).withHeight(23);
 
-    okb = okb.translated(0, 25).withHeight(25);
     for (int i = 0; i < 2; ++i)
     {
-        intEditors[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
-            sst::jucegui::components::MultiSwitch::HORIZONTAL);
-        intEditors[i]->setSource(intAttachments[i].get());
-        intEditors[i]->setBounds(okb);
-        getContentAreaComponent()->addAndMakeVisible(*intEditors[i]);
-        okb = okb.translated(0, 28);
+        auto ms = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[i]);
+        ms->direction = jcmp::MultiSwitch::Direction::HORIZONTAL;
+        ms->setBounds(col1);
+        col1 = col1.translated(0, 25);
+        intEditors[i] = std::make_unique<intEditor_t>(std::move(ms));
     }
 
-    auto mixr = floatLabels[1]->getBounds().translated(0, 25).reduced(pct * 0.2 * rcw, 0);
-    mixr = mixr.withHeight(mixr.getWidth());
-    mixEditor = attachContinuousTo(mixAttachment);
-    mixEditor->setBounds(mixr);
-    getContentAreaComponent()->addAndMakeVisible(*mixEditor);
-
-    mixLabel = std::make_unique<sst::jucegui::components::Label>();
-    mixLabel->setText("Mix");
-    mixLabel->setBounds(mixr.translated(0, mixr.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*mixLabel);
+    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
+    layout.knobCX<locon::mediumKnob>(*mixEditor, cp, intEditors[0]->item->getY());
 }
 
 void ProcessorPane::layoutControlsWaveshaper()
 {
-    // DriveBiasGain in the floats
-    // TypeOS in the ints
-    // and mix of course
+    // Drive/Bias/Gain in the floats
+    // Type/OS in the ints
     assert(processorControlDescription.numFloatParams == 3);
     assert(processorControlDescription.numIntParams == 2);
 
-    auto labelHeight = 18;
-    auto rc = getContentAreaComponent()->getLocalBounds();
-    auto rcw = rc.getWidth();
-    auto pct = 0.43;
-    auto kw = rcw * pct;
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+    lo::Layout layout;
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Drive");
+    layout.knob<locon::extraLargeKnob>(*floatEditors[0], 5, 10);
 
-    auto kb = rc.withHeight(kw).withWidth(kw).translated(rcw * (0.5 - pct) * 0.5, 0);
-    floatEditors[0] = attachContinuousTo(floatAttachments[0]);
-    floatEditors[0]->setBounds(kb);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bias");
+    auto biasPos = layout.knob<locon::mediumKnob>(*floatEditors[1], 95, 0);
 
-    floatLabels[0] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[0]->setText("Drive");
-    floatLabels[0]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*floatLabels[0]);
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Gain");
+    layout.addLabeled(*floatEditors[2], biasPos.beneathLabel());
 
-    kb =
-        kb.translated(rcw * 0.5, 0).withWidth(kb.getWidth() * 0.5).withHeight(kb.getHeight() * 0.5);
-    floatEditors[1] = attachContinuousTo(floatAttachments[1]);
-    floatEditors[1]->setBounds(kb.reduced(1));
-    floatLabels[1] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[1]->setText("Bias");
-    floatLabels[1]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*floatLabels[1]);
-    auto mkb = kb;
+    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
+    layout.addLabeled(*mixEditor, biasPos.toRightOf());
 
-    kb = kb.translated(0, kb.getHeight() + 20);
-    floatEditors[2] = attachContinuousTo(floatAttachments[2]);
-    floatEditors[2]->setBounds(kb.reduced(1));
-    floatLabels[2] = std::make_unique<sst::jucegui::components::Label>();
-    floatLabels[2]->setText("Gain");
-    floatLabels[2]->setBounds(kb.translated(0, kb.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*floatLabels[2]);
-
-    /*
-    okb = okb.translated(0, 25).withHeight(25);
-    for (int i = 0; i < 2; ++i)
-    {
-        intEditors[i] = std::make_unique<sst::jucegui::components::MultiSwitch>(
-            sst::jucegui::components::MultiSwitch::HORIZONTAL);
-        intEditors[i]->setSource(intAttachments[i].get());
-        intEditors[i]->setBounds(okb);
-        getContentAreaComponent()->addAndMakeVisible(*intEditors[i]);
-        okb = okb.translated(0, 28);
-    }
-     */
-
-    mkb = mkb.translated(mkb.getWidth(), 0);
-    mixEditor = attachContinuousTo(mixAttachment);
-    mixEditor->setBounds(mkb.reduced(1));
-    getContentAreaComponent()->addAndMakeVisible(*mixEditor);
-
-    mixLabel = std::make_unique<sst::jucegui::components::Label>();
-    mixLabel->setText("Mix");
-    mixLabel->setBounds(mkb.translated(0, mkb.getHeight()).withHeight(18));
-    getContentAreaComponent()->addAndMakeVisible(*mixLabel);
-
-    auto osl = std::make_unique<sst::jucegui::components::ToggleButton>();
-    osl->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED);
-    osl->setSource(intAttachments[1].get());
+    auto osl = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
+    osl->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
     osl->setLabel("o/s");
-    osl->setBounds(mkb.translated(0, mkb.getHeight() + 18).reduced(3, 9));
-    getContentAreaComponent()->addAndMakeVisible(*osl);
-    intEditors[1] = std::move(osl);
+    layout.add(*osl, biasPos.beneathLabel().toRightOf().reduced(2, 8));
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(osl));
 
     auto ja = getContentAreaComponent()->getLocalBounds();
     ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);
 
-    auto wss = std::make_unique<sst::jucegui::components::JogUpDownButton>();
-    // auto wss = std::make_unique<sst::jucegui::components::MenuButtonDiscreteEditor>();
+    auto wss = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
     editor->configureHasDiscreteMenuBuilder(wss.get());
-
     wss->popupMenuBuilder->mode =
         sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
     wss->popupMenuBuilder->groupList = sst::waveshapers::WaveshaperGroupName();
-
-    wss->setSource(intAttachments[0].get());
     wss->setBounds(ja);
-    setupWidgetForValueTooltip(wss, intAttachments[0]);
-
-    getContentAreaComponent()->addAndMakeVisible(*wss);
-    intEditors[0] = std::move(wss);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
 }
 
 void ProcessorPane::reapplyStyle()

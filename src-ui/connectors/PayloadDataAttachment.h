@@ -401,6 +401,37 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         auto md = scxt::datamodel::describeValue(p, val);
         attachAndAdd(md, p, val, e, aRes, wRes, std::forward<Args>(args)...);
     }
+
+    template <typename W, typename... Args>
+    static void attachLabelAndAdd(const datamodel::pmd &md, const typename A::payload_t &p,
+                                  typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
+                                  std::unique_ptr<W> &wRes, const std::string &lab, Args... args)
+    {
+        assert(!wRes);
+        wRes = std::make_unique<W>();
+
+        attachAndAdd(md, p, val, e, aRes, wRes->item, std::forward<Args>(args)...);
+
+        using labUPType = decltype(W::label);
+        using labType = typename labUPType::element_type;
+        wRes->label = std::make_unique<labType>();
+        wRes->label->setText(lab);
+        auto jc = dynamic_cast<juce::Component *>(e);
+        assert(jc);
+        if (jc)
+        {
+            jc->addAndMakeVisible(*(wRes->label));
+        }
+    }
+
+    template <typename W, typename... Args>
+    static void attachLabelAndAdd(const typename A::payload_t &p, typename A::value_t &val,
+                                  HasEditor *e, std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes,
+                                  const std::string &lab, Args... args)
+    {
+        auto md = scxt::datamodel::describeValue(p, val);
+        attachLabelAndAdd(md, p, val, e, aRes, wRes, lab, std::forward<Args>(args)...);
+    }
 };
 
 template <typename A, typename Msg>

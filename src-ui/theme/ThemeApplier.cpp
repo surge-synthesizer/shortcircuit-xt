@@ -165,6 +165,7 @@ void populateSharedGroupZoneMultiModulation(jstl::CustomTypeMap &map)
 void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
 {
     jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::NamedPanel>(detail::multi::zone::ModulationNamedPanel);
     map.addCustomClass<jcmp::MultiSwitch>(detail::multi::zone::ModulationMultiSwitch);
     map.addCustomClass<jcmp::VSlider>(detail::multi::zone::ModulationVSlider);
     map.addCustomClass<jcmp::Knob>(detail::multi::zone::ModulationKnob);
