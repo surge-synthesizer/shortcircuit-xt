@@ -286,30 +286,26 @@ void ProcessorPane::layoutControlsSuperSVF()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    lo::Layout layout;
-    auto cp = lo::centerOfColumnMofN(*getContentAreaComponent(), 0, 2);
+    auto cols = lo::columns(getContentAreaComponent()->getLocalBounds(), 2);
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Cutoff");
-    layout.knobCX<locon::largeKnob>(*floatEditors[0], cp, 5);
+    lo::knobCX<locon::largeKnob>(*floatEditors[0], cols[0].getCentreX(), 5);
 
-    cp = lo::centerOfColumnMofN(*getContentAreaComponent(), 1, 2);
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Resonance");
-    layout.knobCX<locon::largeKnob>(*floatEditors[1], cp, 5);
+    lo::knobCX<locon::largeKnob>(*floatEditors[1], cols[1].getCentreX(), 5);
 
-    auto col1 = lo::columnMofN(getContentAreaComponent()->getLocalBounds(), 0, 2);
-
-    col1 = col1.withTrimmedTop(floatEditors[0]->label->getBottom() + 15).withHeight(23);
+    auto col0 = cols[0].withTrimmedTop(floatEditors[0]->label->getBottom() + 15).withHeight(23);
 
     for (int i = 0; i < 2; ++i)
     {
         auto ms = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[i]);
         ms->direction = jcmp::MultiSwitch::Direction::HORIZONTAL;
-        ms->setBounds(col1);
-        col1 = col1.translated(0, 25);
+        ms->setBounds(col0);
+        col0 = col0.translated(0, 25);
         intEditors[i] = std::make_unique<intEditor_t>(std::move(ms));
     }
 
     mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
-    layout.knobCX<locon::mediumKnob>(*mixEditor, cp, intEditors[0]->item->getY());
+    lo::knobCX<locon::mediumKnob>(*mixEditor, cols[1].getCentreX(), intEditors[0]->item->getY());
 }
 
 void ProcessorPane::layoutControlsWaveshaper()
@@ -321,23 +317,22 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
-    lo::Layout layout;
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Drive");
-    layout.knob<locon::extraLargeKnob>(*floatEditors[0], 5, 10);
+    lo::knob<locon::extraLargeKnob>(*floatEditors[0], 5, 10);
 
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bias");
-    auto biasPos = layout.knob<locon::mediumKnob>(*floatEditors[1], 95, 0);
+    auto biasPos = lo::knob<locon::mediumKnob>(*floatEditors[1], 95, 0);
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Gain");
-    layout.addLabeled(*floatEditors[2], biasPos.beneathLabel());
+    lo::labeledAt(*floatEditors[2], lo::belowLabel(biasPos));
 
     mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
-    layout.addLabeled(*mixEditor, biasPos.toRightOf());
+    lo::labeledAt(*mixEditor, lo::toRightOf(biasPos));
 
     auto osl = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
     osl->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
     osl->setLabel("o/s");
-    layout.add(*osl, biasPos.beneathLabel().toRightOf().reduced(2, 8));
+    osl->setBounds(lo::toRightOf(lo::belowLabel(biasPos)).reduced(2, 8));
     intEditors[1] = std::make_unique<intEditor_t>(std::move(osl));
 
     auto ja = getContentAreaComponent()->getLocalBounds();

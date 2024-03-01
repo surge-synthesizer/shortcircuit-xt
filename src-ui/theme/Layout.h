@@ -45,108 +45,85 @@ static constexpr int largeKnob{60};
 static constexpr int mediumKnob{40};
 } // namespace constants
 
-template <typename F> inline F centerOfColumnMofN(const juce::Rectangle<F> &r, int m, int N)
+using coord_t = int;
+using posn_t = juce::Rectangle<coord_t>;
+
+inline posn_t belowWithHeight(const posn_t &p, int withHeight)
 {
-    assert(N > 0);
-    float w = r.getWidth() * 1.f / N;
-    return (F)(w * (m + 0.5));
+    return {p.getX(), p.getY() + p.getHeight(), p.getWidth(), withHeight};
 }
 
-template <typename F> inline std::vector<F> columnCenters(const juce::Rectangle<F> &r, int N)
+inline posn_t belowLabel(const posn_t &p)
+{
+    return {p.getX(),
+            p.getY() + p.getHeight() + constants::labelHeight + 2 * constants::labelMargin,
+            p.getWidth(), p.getHeight()};
+}
+
+inline posn_t toRightOf(const posn_t &p)
+{
+    return {p.getX() + p.getWidth() + constants::labelMargin, p.getY(), p.getWidth(),
+            p.getHeight()};
+}
+
+inline posn_t labelBelow(const posn_t &p)
+{
+    return belowWithHeight(p, constants::labelHeight).translated(0, constants::labelMargin);
+}
+
+inline std::vector<posn_t> columns(const posn_t &p, size_t N)
 {
     assert(N > 0);
-    float w = r.getWidth() * 1.f / N;
-    std::vector<F> res;
+
+    float w = p.getWidth() * 1.f / N;
+    std::vector<posn_t> res;
     for (int i = 0; i < N; ++i)
-        res.push_back((F)(w * (i + 0.5)));
+    {
+        res.emplace_back(i * w, p.getY(), w, p.getHeight());
+    }
     return res;
 }
 
-inline float centerOfColumnMofN(juce::Component *r, int m, int N)
+inline std::vector<juce::Point<coord_t>> columnCenters(const posn_t &r, int N)
 {
-    return centerOfColumnMofN(r->getLocalBounds().toFloat(), m, N);
+    assert(N > 0);
+    auto cols = columns(r, N);
+    auto res = std::vector<juce::Point<coord_t>>();
+    std::transform(cols.begin(), cols.end(), std::back_inserter(res),
+                   [](const auto &a) { return a.getCentre(); });
+    return res;
 }
 
-inline float centerOfColumnMofN(const juce::Component &r, int m, int N)
+inline std::vector<coord_t> columnCenterX(const posn_t &r, int N)
 {
-    return centerOfColumnMofN(r.getLocalBounds().toFloat(), m, N);
+    assert(N > 0);
+    auto cols = columns(r, N);
+    auto res = std::vector<coord_t>();
+    std::transform(cols.begin(), cols.end(), std::back_inserter(res),
+                   [](const auto &a) { return a.getCentreX(); });
+    return res;
 }
 
-template <typename F>
-inline juce::Rectangle<F> columnMofN(const juce::Rectangle<F> &r, int m, int N)
+template <typename T>
+inline posn_t labeledAt(const sst::jucegui::components::Labeled<T> &lt, const posn_t &p)
 {
-    auto w = r.getWidth() * 1.f / N;
-    return r.withTrimmedLeft((F)(w * m)).withWidth((F)w);
+    lt.item->setBounds(p);
+    lt.label->setBounds(labelBelow(p));
+    return p;
 }
 
-struct Layout
+template <int size, typename T>
+inline posn_t knob(sst::jucegui::components::Labeled<T> &lt, float x, float y)
 {
-    struct Position : juce::Rectangle<float>
-    {
-        Position(float x, float y, float w, float h) : juce::Rectangle<float>(x, y, w, h) {}
-        Position(const juce::Rectangle<float> &other) : juce::Rectangle<float>(other) {}
+    auto kc = posn_t(x, y, size, size);
+    return labeledAt(lt, kc);
+}
 
-        Position belowWith(float withHeight) const
-        {
-            return {getX(), getY() + getHeight(), getWidth(), withHeight};
-        }
-
-        Position beneathLabel() const
-        {
-            return {getX(),
-                    getY() + getHeight() + constants::labelHeight + 2 * constants::labelMargin,
-                    getWidth(), getHeight()};
-        }
-
-        Position toRightOf() const
-        {
-            return {getX() + getWidth() + constants::labelMargin, getY(), getWidth(), getHeight()};
-        }
-
-        Position dX(float tx) const { return translated(tx, 0); }
-        Position dY(float ty) const { return translated(0, ty); }
-
-        Position labelBelow() const
-        {
-            return belowWith(constants::labelHeight).dY(constants::labelMargin);
-        }
-    };
-
-    Position add(juce::Component &c, float x, float y, float w, float h)
-    {
-        auto res = Position(x, y, w, h);
-        c.setBounds(res.toNearestIntEdges());
-        return res;
-    }
-
-    Position add(juce::Component &c, const Position &p)
-    {
-        c.setBounds(p.toNearestIntEdges());
-        return p;
-    }
-
-    template <typename T>
-    Position addLabeled(const sst::jucegui::components::Labeled<T> &lt, const Position &p)
-    {
-        add(*lt.item, p);
-        add(*lt.label, p.labelBelow());
-        return p;
-    }
-
-    template <int size, typename T>
-    Position knob(sst::jucegui::components::Labeled<T> &lt, float x, float y)
-    {
-        auto kc = Position(x, y, size, size);
-        return addLabeled(lt, kc);
-    }
-
-    template <int size, typename T>
-    Position knobCX(sst::jucegui::components::Labeled<T> &lt, float x, float y)
-    {
-        auto kc = Position(x - size / 2, y, size, size);
-        return addLabeled(lt, kc);
-    }
-};
+template <int size, typename T>
+inline posn_t knobCX(sst::jucegui::components::Labeled<T> &lt, float x, float y)
+{
+    return knob<size, T>(lt, x - size / 2, y);
+}
 
 } // namespace scxt::ui::theme::layout
 #endif // SHORTCIRCUITXT_LAYOUT_H
