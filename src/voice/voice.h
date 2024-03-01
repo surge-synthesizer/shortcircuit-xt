@@ -161,13 +161,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         voiceStarted();
     }
     void release() { isGated = false; }
-    void cleanupVoice()
-    {
-        zone->removeVoice(this);
-        zone = nullptr;
-        isVoiceAssigned = false;
-        engine->voiceManagerResponder.doVoiceEndCallback(this);
-    }
+    void cleanupVoice();
 };
 } // namespace scxt::voice
 

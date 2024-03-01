@@ -32,6 +32,7 @@
 #include <cctype>
 #include <unordered_map>
 #include <unordered_set>
+#include <queue>
 
 #include "utils.h"
 
@@ -53,8 +54,10 @@ struct MemoryPool : MoveableOnly<MemoryPool>
     {
         return ((x >> N) + 1) * (1 << N);
     }
-    void growBlock(size_t blockSize);
-    std::unordered_map<size_t, std::unordered_set<data_t *>> cache;
+    void growBlock(size_t blockSize, size_t byEntries);
+    using pool_t = std::queue<data_t *>;
+    using cache_t = std::unordered_map<size_t, pool_t>;
+    cache_t cache;
 
     int64_t debugCheckouts{0}, debugReturns{0};
 };
