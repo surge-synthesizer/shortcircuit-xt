@@ -38,18 +38,19 @@ namespace scxt::engine
 
 MemoryPool::~MemoryPool()
 {
+    assert(debugCheckouts == debugReturns);
+
     for (auto &[sz, s] : cache)
     {
-        for (auto &p : s)
+        while (!s.empty())
         {
-            delete p;
+            delete[] s.front();
+            s.pop();
         }
     }
-
-    assert(debugCheckouts == debugReturns);
 }
 
-#define ALLOCATE_IMPLEMENTATION 1
+#define ALLOCATE_IMPLEMENTATION 0
 #if ALLOCATE_IMPLEMENTATION
 void MemoryPool::preReservePool(size_t blockSize) {}
 MemoryPool::data_t *MemoryPool::checkoutBlock(size_t blockSize)
@@ -63,6 +64,72 @@ void MemoryPool::returnBlock(data_t *block, size_t blockSize)
 {
     debugReturns++;
     delete[] block;
+}
+#else
+
+static constexpr size_t initialPoolSize{16};
+MemoryPool::data_t *MemoryPool::checkoutBlock(size_t requestBlockSize)
+{
+    // Technically don't need this in the naive impl but lets avoid some bugs
+    auto blockSize = nearestBlock(requestBlockSize);
+    auto cacheP = cache.find(blockSize);
+    assert(cacheP != cache.end()); // If you hit this you didn't pre-reserve
+    if (cacheP == cache.end())
+    {
+        return nullptr;
+    }
+    if (cacheP->second.empty())
+    {
+        growBlock(requestBlockSize, initialPoolSize);
+        return checkoutBlock(requestBlockSize);
+    }
+
+    debugCheckouts++;
+    auto res = cacheP->second.front();
+    cacheP->second.pop();
+
+    // Please leave these in. Handy to debug
+    // SCLOG(blockSize << " : Post checkout size is " << cacheP->second.size());
+    return res;
+}
+void MemoryPool::returnBlock(data_t *block, size_t requestBlockSize)
+{
+    debugReturns++;
+    auto blockSize = nearestBlock(requestBlockSize);
+    auto cacheP = cache.find(blockSize);
+    assert(cacheP != cache.end()); // If you hit this you didn't pre-reserve
+
+    cacheP->second.push(block);
+
+    // SCLOG(blockSize << ": Post return size is " << cacheP->second.size());
+}
+
+void MemoryPool::growBlock(size_t requestBlockSize, size_t byEntries)
+{
+    auto blockSize = nearestBlock(requestBlockSize);
+    // SCLOG(blockSize << ": Growing pool " << blockSize);
+    auto cacheP = cache.find(blockSize);
+    assert(cacheP != cache.end()); // If you hit this you didn't pre-reserve
+
+    for (auto i = 0U; i < initialPoolSize; ++i)
+    {
+        cacheP->second.push(new data_t[blockSize]);
+    }
+    // SCLOG(blockSize << ": Post grow size is " << cacheP->second.size());
+}
+
+void MemoryPool::preReservePool(size_t requestBlockSize)
+{
+    auto blockSize = nearestBlock(requestBlockSize);
+    auto cacheP = cache.find(blockSize);
+    if (cacheP == cache.end())
+    {
+        auto cacheSet = pool_t();
+
+        cache.insert({blockSize, cacheSet});
+        growBlock(requestBlockSize, initialPoolSize);
+    }
+    // SCLOG(blockSize << ": Pre-Reserve cache found " << cache.at(blockSize).size() << " entries")
 }
 #endif
 

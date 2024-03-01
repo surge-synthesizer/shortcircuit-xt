@@ -48,9 +48,33 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
 
 Voice::~Voice()
 {
+#if BUILD_IS_DEBUG
+    if (isVoiceAssigned)
+    {
+        SCLOG("WARNING: Destroying assigned voice");
+    }
+#endif
     for (auto i = 0; i < engine::processorCount; ++i)
     {
         dsp::processor::unspawnProcessor(processors[i]);
+        processors[i] = nullptr;
+    }
+}
+
+void Voice::cleanupVoice()
+{
+    zone->removeVoice(this);
+    zone = nullptr;
+    isVoiceAssigned = false;
+    engine->voiceManagerResponder.doVoiceEndCallback(this);
+
+    // We cleanup processors here since they may have, say,
+    // memory pool resources checked out that others could
+    // use which they don't need to hold onto
+    for (auto i = 0; i < engine::processorCount; ++i)
+    {
+        dsp::processor::unspawnProcessor(processors[i]);
+        processors[i] = nullptr;
     }
 }
 
