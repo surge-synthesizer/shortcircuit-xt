@@ -89,12 +89,10 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 
     void resized()
     {
-
-        theme::layout::Layout layout;
-
-        auto cc = theme::layout::columnCenters(getLocalBounds(), 2);
-        layout.knobCX<theme::layout::constants::largeKnob>(*outputKnob, cc[0], 10);
-        layout.knobCX<theme::layout::constants::largeKnob>(*panKnob, cc[1], 10);
+        namespace lo = theme::layout;
+        auto cc = lo::columnCenterX(getLocalBounds(), 2);
+        lo::knobCX<theme::layout::constants::largeKnob>(*outputKnob, cc[0], 10);
+        lo::knobCX<theme::layout::constants::largeKnob>(*panKnob, cc[1], 10);
 
         auto b = getLocalBounds();
         auto op = b.withTop(b.getBottom() - 20).translated(0, -5).reduced(10, 0);
