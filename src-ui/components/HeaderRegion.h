@@ -54,35 +54,7 @@ struct HeaderRegion : juce::Component, HasEditor
     HeaderRegion(SCXTEditor *);
     ~HeaderRegion();
 
-    void paint(juce::Graphics &g) override
-    {
-#if DEBUG_VOICE_COUNT
-        auto vc = fmt::format("Voices: {}", voiceCount);
-        g.setColour(juce::Colours::white);
-        g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
-#endif
-
-#if MAC
-        g.setFont(juce::Font("Comic Sans MS", 18, juce::Font::plain));
-
-        auto vc = fmt::format("Dbg Approx Mem: {:.2f} Mb", memUsageInMegabytes);
-        g.setColour(juce::Colours::white);
-        g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
-#endif
-
-        return;
-#if BUILD_IS_DEBUG
-        g.fillAll(juce::Colours::red);
-        g.setColour(juce::Colours::pink.contrasting());
-        g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
-        g.drawText("DEBUG DEBUG DEBUG", getLocalBounds(), juce::Justification::centred);
-#else
-        g.fillAll(juce::Colours::pink);
-        g.setColour(juce::Colours::pink.contrasting());
-        g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
-        g.drawText("header", getLocalBounds(), juce::Justification::centred);
-#endif
-    }
+    void paint(juce::Graphics &g) override;
 
     void resized() override;
 

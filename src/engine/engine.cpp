@@ -743,4 +743,13 @@ void Engine::terminateVoicesForGroup(scxt::engine::Group &g)
         terminateVoicesForZone(*z);
     }
 }
+
+void Engine::onTransportUpdated()
+{
+    sharedUIMemoryState.transportDisplay.tempo = transport.tempo;
+    sharedUIMemoryState.transportDisplay.tsden = transport.signature.denominator;
+    sharedUIMemoryState.transportDisplay.tsnum = transport.signature.numerator;
+    sharedUIMemoryState.transportDisplay.hostpos = transport.hostTimeInBeats;
+    sharedUIMemoryState.transportDisplay.timepos = transport.timeInBeats;
+}
 } // namespace scxt::engine

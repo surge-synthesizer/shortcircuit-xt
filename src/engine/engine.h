@@ -53,6 +53,7 @@
 #include "infrastructure/rng_gen.h"
 
 #include "modulation/voice_matrix.h"
+#include "transport.h"
 
 #define DEBUG_VOICE_LIFECYCLE 0
 
@@ -105,6 +106,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * Returns true if processing should continue
      */
     bool processAudio();
+
+    Transport transport;
+    void onTransportUpdated();
 
     /**
      * Midi-style events. Each event is assumed to be at the top of the
@@ -304,6 +308,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         };
         std::atomic<int32_t> voiceCount;
         std::array<VoiceDisplayStateItem, maxVoices> voiceDisplayItems;
+
+        struct TransportDisplayState
+        {
+            std::atomic<double> tempo;
+            std::atomic<int> tsnum, tsden;
+            std::atomic<double> hostpos, timepos;
+        } transportDisplay;
     } sharedUIMemoryState;
 
     /**
