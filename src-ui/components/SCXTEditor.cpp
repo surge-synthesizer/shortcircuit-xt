@@ -253,6 +253,8 @@ void SCXTEditor::idle()
             headerRegion->setMemUsage(lastProcessMemoryInMegabytes);
         }
     }
+
+    headerRegion->repaint();
 #endif
 }
 

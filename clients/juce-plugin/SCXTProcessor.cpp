@@ -142,30 +142,42 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
 {
     auto ftzGuard = sst::plugininfra::cpufeatures::FPUStateGuard();
 
-    // TODO: TempoSync
-    /*
     auto playhead = getPlayHead();
     if (playhead)
     {
         auto posinfo = playhead->getPosition();
-        sc3->time_data.tempo = posinfo->getBpm().orFallback(120);
+        engine->transport.tempo = posinfo->getBpm().orFallback(120);
 
         // isRecording should always imply isPlaying but better safe than sorry
         if (posinfo->getIsPlaying())
-            sc3->time_data.ppqPos = posinfo->getPpqPosition().orFallback(sc3->time_data.ppqPos);
+        {
+            engine->transport.hostTimeInBeats =
+                posinfo->getPpqPosition().orFallback(engine->transport.timeInBeats);
+            engine->transport.timeInBeats = engine->transport.hostTimeInBeats;
+            engine->transport.lastBarStartInBeats =
+                posinfo->getPpqPositionOfLastBarStart().orFallback(
+                    engine->transport.lastBarStartInBeats);
+        }
+
+        engine->transport.status = scxt::engine::Transport::Status::STOPPED;
+        if (posinfo->getIsPlaying())
+            engine->transport.status &= scxt::engine::Transport::Status::PLAYING;
+        if (posinfo->getIsRecording())
+            engine->transport.status &= scxt::engine::Transport::Status::RECORDING;
+        if (posinfo->getIsLooping())
+            engine->transport.status &= scxt::engine::Transport::Status::LOOPING;
 
         auto ts = posinfo->getTimeSignature().orFallback(juce::AudioPlayHead::TimeSignature());
-        sc3->time_data.timeSigNumerator = ts.numerator;
-        sc3->time_data.timeSigDenominator = ts.denominator;
-        sc3->resetStateFromTimeData();
+        engine->transport.signature.numerator = ts.numerator;
+        engine->transport.signature.denominator = ts.denominator;
+        engine->onTransportUpdated();
     }
     else
     {
-        sc3->time_data.tempo = 120;
-        sc3->time_data.timeSigNumerator = 4;
-        sc3->time_data.timeSigDenominator = 4;
+        engine->transport.tempo = 120;
+        engine->transport.signature.numerator = 4;
+        engine->transport.signature.denominator = 4;
     }
-    */
 
     auto midiIt = midiMessages.findNextSamplePosition(0);
     int nextMidi = -1;
@@ -254,9 +266,8 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
         if (blockPos >= scxt::BLOCK_SIZE)
         {
             blockPos = 0;
-            // TODO TIME DATA
-            // sc3->time_data.ppqPos += (double)BLOCK_SIZE * sc3->time_data.tempo / (60. *
-            // samplerate);
+            engine->transport.timeInBeats += (double)scxt::blockSize * engine->transport.tempo *
+                                             engine->getSampleRateInv() / 60.f;
         }
     }
 
