@@ -439,10 +439,18 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
     auto &part = getPatch()->getPart(partID);
     auto &group = part->getGroup(groupID);
     auto &zone = group->getZone(zoneID);
-    zone->sampleData[sampleID].sampleID = *sid;
-    zone->sampleData[sampleID].active = true;
-    zone->attachToSample(*sampleManager, sampleID);
-    selectionManager->selectAction({partID, groupID, zoneID, true, true, true});
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
+            auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+            zone->terminateAllVoices();
+            zone->sampleData[sID].sampleID = sample;
+            zone->sampleData[sID].active = true;
+            zone->attachToSample(*e.getSampleManager(), sID);
+        },
+        [p = partID, g = groupID, z = zoneID](auto &e) {
+            e.getSelectionManager()->selectAction({p, g, z, true, true, true});
+        });
 }
 
 void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootKey,
