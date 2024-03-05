@@ -403,7 +403,7 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
 
     // TODO: Deal with compound types more comprehensively
     // If you add a type here add it to Browser::isLoadableFile also
-    if (extensionMatches(p, ".sf2") or extensionMatches(p, ".sfz"))
+    if (extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz"))
     {
         assert(false);
         return;
