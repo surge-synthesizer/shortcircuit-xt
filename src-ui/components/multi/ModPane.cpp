@@ -438,7 +438,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         auto p = juce::PopupMenu();
         p.addSectionHeader("Curve");
         p.addSeparator();
-        const auto &srcs = std::get<3>(parent->matrixMetadata);
 
         const auto &row = parent->routingTable.routes[index];
 
@@ -453,21 +452,70 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             w->refreshRow();
         });
 
-        // this linear search kinda sucks bot
+        const auto &srcs = std::get<3>(parent->matrixMetadata);
+
+        // First add all the sources without a name
+        auto mkCallback = [w = juce::Component::SafePointer(this)](auto sidx) {
+            return [w, sidx]() {
+                if (!w)
+                    return;
+                auto &row = w->parent->routingTable.routes[w->index];
+
+                row.curve = sidx;
+                w->pushRowUpdate();
+                w->refreshRow();
+            };
+        };
+        bool hasCat{false};
         for (const auto &[si, sn] : srcs)
         {
+            if (!sn.first.empty())
+            {
+                hasCat = true;
+                continue;
+            }
+
+            const auto &row = parent->routingTable.routes[index];
             auto selected = row.curve == si;
-            p.addItem(sn.second, true, selected,
-                      [sidx = si, w = juce::Component::SafePointer(this)]() {
-                          if (!w)
-                              return;
-                          auto &row = w->parent->routingTable.routes[w->index];
 
-                          row.curve = sidx;
+            auto nm = sn.second;
+            p.addItem(nm, true, selected, mkCallback(si));
+        }
 
-                          w->pushRowUpdate();
-                          w->refreshRow();
-                      });
+        if (hasCat)
+            p.addSeparator();
+
+        auto sub = juce::PopupMenu();
+        auto subTicked{false};
+        std::string lastCat{};
+        for (const auto &[si, sn] : srcs)
+        {
+            if (sn.first.empty())
+                continue;
+
+            if (lastCat != sn.first)
+            {
+                if (sub.getNumItems() > 0)
+                {
+                    p.addSubMenu(lastCat, sub, true, nullptr, subTicked);
+                }
+                sub = juce::PopupMenu();
+                lastCat = sn.first;
+                subTicked = false;
+            }
+
+            const auto &row = parent->routingTable.routes[index];
+            auto selected = row.curve == si;
+            if (selected)
+                subTicked = true;
+
+            auto nm = sn.second;
+            sub.addItem(nm, true, selected, mkCallback(si));
+        }
+
+        if (sub.getNumItems() > 0)
+        {
+            p.addSubMenu(lastCat, sub, true, nullptr, subTicked);
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());

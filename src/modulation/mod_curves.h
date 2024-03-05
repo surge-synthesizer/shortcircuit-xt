@@ -45,7 +45,7 @@ struct ModulationCurves
     using CurveIdentifier = uint32_t;
 
     static std::vector<CurveIdentifier> allCurves;
-    static std::unordered_map<CurveIdentifier, std::string> curveNames;
+    static std::unordered_map<CurveIdentifier, std::pair<std::string, std::string>> curveNames;
     static std::unordered_map<CurveIdentifier, std::function<float(float)>> curveImpls;
 
     static inline void initializeCurves()
@@ -56,18 +56,36 @@ struct ModulationCurves
         if (!allCurves.empty())
             return;
 
-        auto add = [](uint32_t tag, const std::string &nm, std::function<float(float)> fn) {
+        auto add = [](uint32_t tag, const std::string &cat, const std::string &nm,
+                      std::function<float(float)> fn) {
             auto ci = CurveIdentifier{tag};
             assert(curveNames.find(ci) == curveNames.end());
             allCurves.push_back(ci);
-            curveNames.insert_or_assign(ci, nm);
+            curveNames.insert_or_assign(ci, std::make_pair(cat, nm));
             curveImpls.insert_or_assign(ci, fn);
         };
-        add('x3  ', "x^3", [](auto x) { return x * x * x; });
-        add('absx', "|x|", [](auto x) { return std::fabs(x); });
-        add('unip', "(x+1)/2)", [](auto x) { return (x + 1.f) / 2.f; });
-        add('d.1 ', "x / 10", [](auto x) { return x * 0.1; });
-        add('d.01', "x / 100", [](auto x) { return x * 0.01; });
+        // change anything you want *except* the first argument
+        // which is the streaming id. the menu is created with empty
+        // cat first then the others in order
+        add('x2  ', "", "x^2", [](auto x) { return x * x; });
+        add('x3  ', "", "x^3", [](auto x) { return x * x * x; });
+        add('unip', "", "(x+1)/2", [](auto x) { return (x + 1.f) / 2.f; });
+        add('absx', "Rectifiers", "|x|", [](auto x) { return std::fabs(x); });
+        add('hwpo', "Rectifiers", "max(x,0)", [](auto x) { return std::max(x, 0.f); });
+        add('hwne', "Rectifiers", "min(x,0)", [](auto x) { return std::min(x, 0.f); });
+        add('uwpo', "Rectifiers", "max(x,1/2)", [](auto x) { return std::max(x, 0.5f); });
+        add('uwne', "Rectifiers", "min(x,1/2)", [](auto x) { return std::min(x, 0.5f); });
+
+        add('cmp0', "Comparators", "x > 0", [](auto x) { return x > 0.f ? 1.f : 0.f; });
+        add('cmn0', "Comparators", "x < 0", [](auto x) { return x < 0.f ? 1.f : 0.f; });
+        add('cmph', "Comparators", "x > 1/2", [](auto x) { return x > 0.5f ? 1.f : 0.f; });
+        add('cmnh', "Comparators", "x < 1/2", [](auto x) { return x < 0.5f ? 1.f : 0.f; });
+
+        add('sinx', "Waveformas", std::string("sin(2") + u8"\U000003C0" + "x)", // thats pi
+            [](auto x) { return std::sin(2.0 * M_PI * x); });
+
+        add('d.1 ', "Scale", "x / 10", [](auto x) { return x * 0.1; });
+        add('d.01', "Scale", "x / 100", [](auto x) { return x * 0.01; });
     }
 
     static std::function<float(float)> getCurveOperator(CurveIdentifier id)
