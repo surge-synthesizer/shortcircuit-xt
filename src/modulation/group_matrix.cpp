@@ -135,6 +135,11 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
             break;
         }
     }
+
+    for (int i = 0; i < scxt::numTransportPhasors; ++i)
+    {
+        m.bindSourceValue(transportSources.phasors[i], g.getEngine()->transportPhasors[i]);
+    }
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(

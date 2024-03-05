@@ -213,8 +213,7 @@ struct GroupMatrixEndpoints
     struct Sources
     {
         Sources(engine::Engine *e)
-            : lfoSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}
-
+            : lfoSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e)
         {
             registerGroupModSource(e, egSource[0], "", "EG1");
             registerGroupModSource(e, egSource[1], "", "EG2");
@@ -233,6 +232,26 @@ struct GroupMatrixEndpoints
         } lfoSources;
 
         SR egSource[2];
+
+        struct TransportSources
+        {
+            TransportSources(engine::Engine *e)
+            {
+                auto ctr = (scxt::numTransportPhasors - 1) / 2;
+                for (uint32_t i = 0; i < scxt::numTransportPhasors; ++i)
+                {
+                    std::string name = "Beat";
+                    if (i < ctr)
+                        name = std::string("Beat / ") + std::to_string(1 << (ctr - i));
+                    if (i > ctr)
+                        name = std::string("Beat x ") + std::to_string(1 << (i - ctr));
+
+                    phasors[i] = SR{'gtsp', 'phsr', i};
+                    registerGroupModSource(e, phasors[i], "Transport", name);
+                }
+            }
+            SR phasors[scxt::numTransportPhasors];
+        } transportSources;
 
         float zeroSource{0.f};
 

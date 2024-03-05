@@ -109,6 +109,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     Transport transport;
     void onTransportUpdated();
+    float transportPhasors[numTransportPhasors]{};
+    void updateTransportPhasors();
 
     /**
      * Midi-style events. Each event is assumed to be at the top of the

@@ -118,6 +118,11 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(midiSources.modWheelSource,
                       z.parentGroup->parentPart->midiCCSmoothers[1].output);
     m.bindSourceValue(midiSources.velocitySource, v.velocity);
+
+    for (int i = 0; i < scxt::numTransportPhasors; ++i)
+    {
+        m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);
+    }
 }
 
 void MatrixEndpoints::registerVoiceModTarget(
