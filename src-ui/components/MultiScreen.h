@@ -121,7 +121,7 @@ struct MultiScreen : juce::Component, HasEditor
 
     void layout();
     void onVoiceInfoChanged();
-    void updateSamplePlaybackPosition(int64_t samplePos);
+    void updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
 
     enum class SelectionMode
     {

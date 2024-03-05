@@ -216,17 +216,16 @@ void SCXTEditor::idle()
     {
         if (currentLeadZoneSelection.has_value())
         {
-            auto samplePos = -1;
             for (const auto &v : sharedUiMemoryState.voiceDisplayItems)
             {
+
                 if (v.active && v.group == currentLeadZoneSelection->group &&
                     v.part == currentLeadZoneSelection->part &&
                     v.zone == currentLeadZoneSelection->zone)
                 {
-                    samplePos = v.samplePos;
+                    multiScreen->updateSamplePlaybackPosition(v.sample, v.samplePos);
                 }
             }
-            multiScreen->updateSamplePlaybackPosition(samplePos);
         }
     }
 

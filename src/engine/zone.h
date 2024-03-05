@@ -120,6 +120,14 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
     AssociatedSampleArray sampleData;
     std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
+    int8_t sampleIndex{-1};
+
+    auto getNumSampleLoaded() const
+    {
+        return std::distance(sampleData.begin(),
+                             std::find_if(sampleData.begin(), sampleData.end(),
+                                          [](const auto &s) { return s.active == false; }));
+    }
 
     struct ZoneOutputInfo
     {

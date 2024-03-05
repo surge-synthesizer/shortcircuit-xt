@@ -297,7 +297,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         struct VoiceDisplayStateItem
         {
             std::atomic<bool> active{false};
-            std::atomic<size_t> part, group, zone;
+            std::atomic<size_t> part, group, zone, sample;
 
             std::atomic<int64_t> samplePos{}, midiNote{-1}, midiChannel{-1};
             std::atomic<bool> gated{false};
@@ -328,6 +328,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void loadSampleIntoSelectedPartAndGroup(const fs::path &, int16_t rootKey = 60,
                                             KeyboardRange krange = {48, 72},
                                             VelocityRange vrange = {0, 127});
+
+    /*
+     * Serialization thread originated mutation apis
+     */
+    void loadSampleIntoZone(const fs::path &, int16_t part, int16_t group, int16_t zone,
+                            int sampleID, int16_t rootKey = 60, KeyboardRange krange = {48, 72},
+                            VelocityRange vrange = {0, 127});
 
     void loadSf2MultiSampleIntoSelectedPart(const fs::path &);
 

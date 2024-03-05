@@ -149,7 +149,11 @@ void Zone::initialize()
 void Zone::setupOnUnstream(const engine::Engine &e)
 {
     sampleLoadOverridesMapping = false;
-    attachToSample(*(e.getSampleManager()));
+    auto nbSampleLoaded{getNumSampleLoaded()};
+    for (auto i = 0; i < nbSampleLoaded; ++i)
+    {
+        attachToSample(*(e.getSampleManager()), i);
+    }
     for (int p = 0; p < processorCount; ++p)
     {
         setupProcessorControlDescriptions(p, processorStorage[p].type);
