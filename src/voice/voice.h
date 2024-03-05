@@ -81,6 +81,10 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     template <typename ET, int EB, typename ER>
     friend struct sst::basic_blocks::modulators::ADSREnvelope;
 
+    float transportPhasors[scxt::numTransportPhasors];
+    double startBeat{0.f};
+    void updateTransportPhasors();
+
     Voice(engine::Engine *e, engine::Zone *z);
 
     ~Voice();

@@ -246,9 +246,13 @@ struct MatrixEndpoints
 
                     phasors[i] = SR{'ztsp', 'phsr', i};
                     registerVoiceModSource(e, phasors[i], "Transport", name);
+
+                    voicePhasors[i] = SR{'ztsp', 'vphr', i};
+                    registerVoiceModSource(e, voicePhasors[i], "Transport", "Voice " + name);
                 }
             }
             SR phasors[scxt::numTransportPhasors];
+            SR voicePhasors[scxt::numTransportPhasors];
         } transportSources;
 
         SR aegSource, eg2Source;
