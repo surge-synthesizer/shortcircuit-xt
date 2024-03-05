@@ -436,10 +436,6 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
         return;
     }
 
-    auto &part = getPatch()->getPart(partID);
-    auto &group = part->getGroup(groupID);
-    auto &zone = group->getZone(zoneID);
-
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
