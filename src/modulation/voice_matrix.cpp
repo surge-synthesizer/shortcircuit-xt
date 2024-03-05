@@ -122,6 +122,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {
         m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);
+        m.bindSourceValue(transportSources.voicePhasors[i], v.transportPhasors[i]);
     }
 }
 

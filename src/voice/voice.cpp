@@ -86,6 +86,9 @@ void Voice::voiceStarted()
         lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
     }
 
+    startBeat = engine->transport.timeInBeats;
+    updateTransportPhasors();
+
     // This order matters
     endpoints->sources.bind(modMatrix, *zone, *this);
     modMatrix.prepare(zone->routingTable);
@@ -185,6 +188,8 @@ bool Voice::process()
     auto &eg2p = endpoints->eg2;
     eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
                      *eg2p.rsP, envGate);
+
+    updateTransportPhasors();
 
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
@@ -525,6 +530,18 @@ void Voice::initializeProcessors()
             processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
             processorProducesStereo[i] = processors[i]->monoInputCreatesStereoOutput();
         }
+    }
+}
+
+void Voice::updateTransportPhasors()
+{
+    auto bt = engine->transport.timeInBeats - startBeat;
+    float mul = 1 << ((numTransportPhasors - 1) / 2);
+    for (int i = 0; i < numTransportPhasors; ++i)
+    {
+        float rawBeat;
+        transportPhasors[i] = std::modf((float)(bt)*mul, &rawBeat);
+        mul = mul / 2;
     }
 }
 } // namespace scxt::voice
