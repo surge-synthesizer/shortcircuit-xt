@@ -199,7 +199,7 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
     {
         auto n = scxt::modulation::ModulationCurves::curveNames.find(c);
         assert(n != scxt::modulation::ModulationCurves::curveNames.end());
-        cr.emplace_back(c, identifierDisplayName_t{"", n->second});
+        cr.emplace_back(c, identifierDisplayName_t{n->second.first, n->second.second});
     }
 
     return voiceMatrixMetadata_t{true, sr, tg, cr};

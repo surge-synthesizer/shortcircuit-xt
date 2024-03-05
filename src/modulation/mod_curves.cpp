@@ -30,7 +30,8 @@
 namespace scxt::modulation
 {
 std::vector<ModulationCurves::CurveIdentifier> ModulationCurves::allCurves;
-std::unordered_map<ModulationCurves::CurveIdentifier, std::string> ModulationCurves::curveNames;
+std::unordered_map<ModulationCurves::CurveIdentifier, std::pair<std::string, std::string>>
+    ModulationCurves::curveNames;
 std::unordered_map<ModulationCurves::CurveIdentifier, std::function<float(float)>>
     ModulationCurves::curveImpls;
 } // namespace scxt::modulation
