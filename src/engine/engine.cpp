@@ -262,6 +262,8 @@ bool Engine::processAudio()
         return true;
     }
 
+    updateTransportPhasors();
+
     getPatch()->process(*this);
 
     auto &bl = sharedUIMemoryState.busVULevels;
@@ -751,5 +753,18 @@ void Engine::onTransportUpdated()
     sharedUIMemoryState.transportDisplay.tsnum = transport.signature.numerator;
     sharedUIMemoryState.transportDisplay.hostpos = transport.hostTimeInBeats;
     sharedUIMemoryState.transportDisplay.timepos = transport.timeInBeats;
+
+    updateTransportPhasors();
+}
+
+void Engine::updateTransportPhasors()
+{
+    float mul = 1 << ((numTransportPhasors - 1) / 2);
+    for (int i = 0; i < numTransportPhasors; ++i)
+    {
+        float rawBeat;
+        transportPhasors[i] = std::modf((float)(transport.timeInBeats) * mul, &rawBeat);
+        mul = mul / 2;
+    }
 }
 } // namespace scxt::engine

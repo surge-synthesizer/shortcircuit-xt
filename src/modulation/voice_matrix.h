@@ -202,7 +202,7 @@ struct MatrixEndpoints
     {
         Sources(engine::Engine *e)
             : lfoSources(e), midiSources(e), aegSource{'zneg', 'aeg ', 0},
-              eg2Source{'zneg', 'eg2 ', 0}
+              eg2Source{'zneg', 'eg2 ', 0}, transportSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
@@ -230,6 +230,26 @@ struct MatrixEndpoints
             }
             SR modWheelSource, velocitySource;
         } midiSources;
+
+        struct TransportSources
+        {
+            TransportSources(engine::Engine *e)
+            {
+                auto ctr = (scxt::numTransportPhasors - 1) / 2;
+                for (uint32_t i = 0; i < scxt::numTransportPhasors; ++i)
+                {
+                    std::string name = "Beat";
+                    if (i < ctr)
+                        name = std::string("Beat / ") + std::to_string(1 << (ctr - i));
+                    if (i > ctr)
+                        name = std::string("Beat x ") + std::to_string(1 << (i - ctr));
+
+                    phasors[i] = SR{'ztsp', 'phsr', i};
+                    registerVoiceModSource(e, phasors[i], "Transport", name);
+                }
+            }
+            SR phasors[scxt::numTransportPhasors];
+        } transportSources;
 
         SR aegSource, eg2Source;
 

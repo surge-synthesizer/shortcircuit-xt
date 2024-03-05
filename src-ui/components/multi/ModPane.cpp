@@ -248,13 +248,13 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         {
             if (si == row.source)
             {
-                auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+                auto nm = /* sn.first + (sn.first.empty() ? "" : " - ") + */ sn.second;
 
                 source->setLabel(nm);
             }
             if (si == row.sourceVia)
             {
-                auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
+                auto nm = /* sn.first + (sn.first.empty() ? "" : " - ") + */ sn.second;
 
                 sourceVia->setLabel(nm);
             }
@@ -364,25 +364,70 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
         const auto &srcs = std::get<1>(parent->matrixMetadata);
 
-        // this linear search kinda sucks bot
+        // First add all the sources without a name
+        auto mkCallback = [isVia, w = juce::Component::SafePointer(this)](auto sidx) {
+            return [isVia, w, sidx]() {
+                if (!w)
+                    return;
+                auto &row = w->parent->routingTable.routes[w->index];
+                if (isVia)
+                    row.sourceVia = sidx;
+                else
+                    row.source = sidx;
+                w->pushRowUpdate();
+                w->refreshRow();
+            };
+        };
+        bool hasCat{false};
         for (const auto &[si, sn] : srcs)
         {
+            if (!sn.first.empty())
+            {
+                hasCat = true;
+                continue;
+            }
+
             const auto &row = parent->routingTable.routes[index];
             auto selected = isVia ? (row.sourceVia == si) : (row.source == si);
 
-            auto nm = sn.first + (sn.first.empty() ? "" : " - ") + sn.second;
-            p.addItem(nm, true, selected,
-                      [sidx = si, isVia, w = juce::Component::SafePointer(this)]() {
-                          if (!w)
-                              return;
-                          auto &row = w->parent->routingTable.routes[w->index];
-                          if (isVia)
-                              row.sourceVia = sidx;
-                          else
-                              row.source = sidx;
-                          w->pushRowUpdate();
-                          w->refreshRow();
-                      });
+            auto nm = sn.second;
+            p.addItem(nm, true, selected, mkCallback(si));
+        }
+
+        if (hasCat)
+            p.addSeparator();
+
+        auto sub = juce::PopupMenu();
+        auto subTicked{false};
+        std::string lastCat{};
+        for (const auto &[si, sn] : srcs)
+        {
+            if (sn.first.empty())
+                continue;
+
+            if (lastCat != sn.first)
+            {
+                if (sub.getNumItems() > 0)
+                {
+                    p.addSubMenu(lastCat, sub, true, nullptr, subTicked);
+                }
+                sub = juce::PopupMenu();
+                lastCat = sn.first;
+                subTicked = false;
+            }
+
+            const auto &row = parent->routingTable.routes[index];
+            auto selected = isVia ? (row.sourceVia == si) : (row.source == si);
+            if (selected)
+                subTicked = true;
+
+            auto nm = sn.second;
+            sub.addItem(nm, true, selected, mkCallback(si));
+        }
+
+        if (sub.getNumItems() > 0)
+        {
+            p.addSubMenu(lastCat, sub, true, nullptr, subTicked);
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
