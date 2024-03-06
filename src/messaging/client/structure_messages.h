@@ -100,6 +100,23 @@ inline void addSampleWithRange(const addSampleWithRange_t &payload, engine::Engi
 CLIENT_TO_SERIAL(AddSampleWithRange, c2s_add_sample_with_range, addSampleWithRange_t,
                  addSampleWithRange(payload, engine, cont);)
 
+// sample, part, group, wone, sampleid
+using addSampleInZone_t = std::tuple<std::string, int, int, int, int>;
+inline void addSampleInZone(const addSampleInZone_t &payload, engine::Engine &engine,
+                            MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    auto path = fs::path{std::get<0>(payload)};
+    auto part{std::get<1>(payload)};
+    auto group{std::get<2>(payload)};
+    auto zone{std::get<3>(payload)};
+    auto sampleID{std::get<4>(payload)};
+
+    engine.loadSampleIntoZone(path, part, group, zone, sampleID);
+}
+CLIENT_TO_SERIAL(AddSampleInZone, c2s_add_sample_in_zone, addSampleInZone_t,
+                 addSampleInZone(payload, engine, cont);)
+
 inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
 {
     if (partNumber < 0 || partNumber > numParts)

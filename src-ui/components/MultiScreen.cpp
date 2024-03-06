@@ -104,9 +104,9 @@ void MultiScreen::layout()
 
 void MultiScreen::onVoiceInfoChanged() { sample->repaint(); }
 
-void MultiScreen::updateSamplePlaybackPosition(int64_t samplePos)
+void MultiScreen::updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
 {
-    sample->updateSamplePlaybackPosition(samplePos);
+    sample->updateSamplePlaybackPosition(sampleIndex, samplePos);
 }
 
 void MultiScreen::setSelectionMode(scxt::ui::MultiScreen::SelectionMode m)

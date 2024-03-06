@@ -149,7 +149,11 @@ void Zone::initialize()
 void Zone::setupOnUnstream(const engine::Engine &e)
 {
     sampleLoadOverridesMapping = false;
-    attachToSample(*(e.getSampleManager()));
+    auto nbSampleLoaded{getNumSampleLoaded()};
+    for (auto i = 0; i < nbSampleLoaded; ++i)
+    {
+        attachToSample(*(e.getSampleManager()), i);
+    }
     for (int p = 0; p < processorCount; ++p)
     {
         setupProcessorControlDescriptions(p, processorStorage[p].type);
@@ -185,23 +189,22 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index)
                 mapping.velocityRange = {m.vel_low, m.vel_high};
             }
         }
-
-        if (samplePointers[index])
+    }
+    if (samplePointers[index])
+    {
+        const auto &m = samplePointers[index]->meta;
+        s.startSample = 0;
+        s.endSample = samplePointers[index]->getSampleLength();
+        if (m.loop_present)
         {
-            const auto &m = samplePointers[index]->meta;
-            s.startSample = 0;
-            s.endSample = samplePointers[index]->getSampleLength();
-            if (m.loop_present)
-            {
-                s.startLoop = m.loop_start;
-                s.endLoop = m.loop_end;
-                s.loopActive = true;
-            }
-            else
-            {
-                s.startLoop = 0;
-                s.endLoop = s.endSample;
-            }
+            s.startLoop = m.loop_start;
+            s.endLoop = m.loop_end;
+            s.loopActive = true;
+        }
+        else
+        {
+            s.startLoop = 0;
+            s.endLoop = s.endSample;
         }
     }
     return samplePointers[index] != nullptr;

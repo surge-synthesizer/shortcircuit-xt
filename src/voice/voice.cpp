@@ -38,8 +38,8 @@ namespace scxt::voice
 {
 
 Voice::Voice(engine::Engine *e, engine::Zone *z)
-    : scxt::modulation::shared::HasModulators<Voice>(this), engine(e), zone(z), halfRate(6, true),
-      endpoints(nullptr) // see comment
+    : scxt::modulation::shared::HasModulators<Voice>(this), engine(e), zone(z),
+      sampleIndex(zone->sampleIndex), halfRate(6, true), endpoints(nullptr) // see comment
 {
     assert(zone);
     memset(output, 0, 2 * blockSize * sizeof(float));
@@ -141,8 +141,8 @@ bool Voice::process()
         return true;
     }
     // TODO round robin state
-    auto &s = zone->samplePointers[0];
-    auto &sdata = zone->sampleData[0];
+    auto &s = zone->samplePointers[sampleIndex];
+    auto &sdata = zone->sampleData[sampleIndex];
     assert(s);
 
     // Run Modulators
@@ -396,8 +396,8 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
 void Voice::initializeGenerator()
 {
     // TODO round robin
-    auto &s = zone->samplePointers[0];
-    auto &sampleData = zone->sampleData[0];
+    auto &s = zone->samplePointers[sampleIndex];
+    auto &sampleData = zone->sampleData[sampleIndex];
     assert(s);
 
     GDIO.outputL = output[0];
@@ -479,7 +479,7 @@ void Voice::calculateGeneratorRatio(float pitch)
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
 
     // TODO round robin
-    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[0]->sample_rate * sampleRateInv *
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate * sampleRateInv *
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
 
@@ -487,8 +487,8 @@ void Voice::calculateGeneratorRatio(float pitch)
     float ndiff = pitch - zone->mapping.rootKey;
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
     // TODO round robin
-    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[0]->sample_rate * sampleRateInv *
-                         (1.0 + *endpoints->mappingTarget.playbackRatioP));
+    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate *
+                         sampleRateInv * (1.0 + *endpoints->mappingTarget.playbackRatioP));
 }
 
 void Voice::initializeProcessors()

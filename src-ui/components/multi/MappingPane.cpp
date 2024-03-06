@@ -1159,7 +1159,7 @@ struct SampleCursor : juce::Component
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
 };
 
-struct SampleWaveform : juce::Component, HasEditor
+struct SampleWaveform : juce::Component, HasEditor, juce::FileDragAndDropTarget
 {
     SampleDisplay *display{nullptr};
     SampleWaveform(SampleDisplay *d);
@@ -1190,6 +1190,9 @@ struct SampleWaveform : juce::Component, HasEditor
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseMove(const juce::MouseEvent &e) override;
+
+    virtual bool isInterestedInFileDrag(const juce::StringArray &files) override;
+    virtual void filesDropped(const juce::StringArray &files, int, int) override;
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1221,34 +1224,85 @@ struct SampleDisplay : juce::Component, HasEditor
         loopAttachment, reverseAttachment;
     std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
 
-    std::unique_ptr<Zoomable> waveformViewport;
-    std::unique_ptr<SampleWaveform> waveform;
+    struct ZommableWaveform
+    {
+        std::unique_ptr<Zoomable> waveformViewport;
+        std::unique_ptr<SampleWaveform> waveform;
+    };
+    std::array<ZommableWaveform, maxSamplesPerZone> waveforms;
+    struct MyTabbedComponent : juce::TabbedComponent
+    {
+        MyTabbedComponent(SampleDisplay *d)
+            : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), display(d)
+        {
+        }
+        virtual void currentTabChanged(int newCurrentTabIndex,
+                                       const juce::String &newCurrentTabName) override
+        {
+            display->rebuildForSelectedVariation(newCurrentTabIndex);
+            display->repaint();
+        }
 
+        SampleDisplay *display;
+    };
+
+    std::unique_ptr<MyTabbedComponent> waveformsTabbedGroup;
     size_t selectedVariation{0};
 
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
-        rebuildForSelectedVariation(0);
+        waveformsTabbedGroup = std::make_unique<MyTabbedComponent>(this);
+        addAndMakeVisible(*waveformsTabbedGroup);
+        for (auto i = 0; i < maxSamplesPerZone; ++i)
+        {
+            waveforms[i].waveform = std::make_unique<SampleWaveform>(this);
+            waveforms[i].waveformViewport = std::make_unique<Zoomable>(
+                waveforms[i].waveform.get(), std::make_pair(1.f, 50.f), std::make_pair(1.f, 10.f));
+            waveformsTabbedGroup->addTab(std::to_string(i + 1), juce::Colours::darkgrey,
+                                         waveforms[i].waveformViewport.get(), false, i);
+        }
+
+        rebuildForSelectedVariation(selectedVariation);
     }
 
     void rebuildForSelectedVariation(size_t sel)
     {
-        removeAllChildren();
-
         selectedVariation = sel;
+
+        if (playModeLabel)
+        {
+            removeChildComponent(playModeLabel.get());
+            playModeLabel.reset();
+        }
+
         playModeLabel = std::make_unique<sst::jucegui::components::Label>();
         playModeLabel->setText("Play");
         addAndMakeVisible(*playModeLabel);
 
+        if (playModeButton)
+        {
+            removeChildComponent(playModeButton.get());
+            playModeButton.reset();
+        }
         playModeButton = std::make_unique<juce::TextButton>("mode");
         playModeButton->onClick = [this]() { showPlayModeMenu(); };
         addAndMakeVisible(*playModeButton);
 
+        if (loopModeButton)
+        {
+            removeChildComponent(loopModeButton.get());
+            loopModeButton.reset();
+        }
         loopModeButton = std::make_unique<juce::TextButton>("loopmode");
         loopModeButton->onClick = [this]() { showLoopModeMenu(); };
         addAndMakeVisible(*loopModeButton);
 
+        if (loopDirectionButton)
+        {
+            removeChildComponent(loopDirectionButton.get());
+            loopDirectionButton.reset();
+        }
         loopDirectionButton = std::make_unique<juce::TextButton>("loopdir");
         loopDirectionButton->onClick = [this]() { showLoopDirectionMenu(); };
         addAndMakeVisible(*loopDirectionButton);
@@ -1258,6 +1312,12 @@ struct SampleDisplay : juce::Component, HasEditor
                 v, [this](const auto &) { onSamplePointChangedFromGUI(); });
             auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
             sl->setSource(at.get());
+            if (sampleEditors[c])
+            {
+                removeChildComponent(sampleEditors[c].get());
+                sampleEditors[c].reset();
+                sampleAttachments[c].reset();
+            }
             addAndMakeVisible(*sl);
             sampleEditors[c] = std::move(sl);
             sampleAttachments[c] = std::move(at);
@@ -1266,6 +1326,11 @@ struct SampleDisplay : juce::Component, HasEditor
         auto addLabel = [this](Ctrl c, const std::string &label) {
             auto l = std::make_unique<sst::jucegui::components::Label>();
             l->setText(label);
+            if (sampleEditors[c])
+            {
+                removeChildComponent(labels[c].get());
+                labels[c].reset();
+            }
             addAndMakeVisible(*l);
             labels[c] = std::move(l);
         };
@@ -1280,6 +1345,13 @@ struct SampleDisplay : juce::Component, HasEditor
         addLabel(endL, "Loop End");
         attachSamplePoint(fadeL, "fadeL", sampleView[selectedVariation].loopFade);
         addLabel(fadeL, "Loop Fade");
+
+        if (loopActive)
+        {
+            removeChildComponent(loopActive.get());
+            loopActive.reset();
+            loopAttachment.reset();
+        }
 
         loopAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
@@ -1297,6 +1369,13 @@ struct SampleDisplay : juce::Component, HasEditor
         loopActive->setSource(loopAttachment.get());
         addAndMakeVisible(*loopActive);
 
+        if (reverseActive)
+        {
+            removeChildComponent(reverseActive.get());
+            reverseActive.reset();
+            reverseAttachment.reset();
+        }
+
         reverseAttachment = std::make_unique<
             connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
             "Reverse",
@@ -1307,10 +1386,18 @@ struct SampleDisplay : juce::Component, HasEditor
                 }
             },
             sampleView[selectedVariation].playReverse);
+
         reverseActive = std::make_unique<sst::jucegui::components::ToggleButton>();
         reverseActive->setLabel("<-");
         reverseActive->setSource(reverseAttachment.get());
         addAndMakeVisible(*reverseActive);
+
+        if (loopCnt)
+        {
+            removeChildComponent(loopCnt.get());
+            loopCnt.reset();
+            loopCntAttachment.reset();
+        }
 
         loopCntAttachment = std::make_unique<sample_attachment_t>(
             datamodel::pmd()
@@ -1330,11 +1417,9 @@ struct SampleDisplay : juce::Component, HasEditor
         loopCnt->setSource(loopCntAttachment.get());
         addAndMakeVisible(*loopCnt);
 
-        waveform = std::make_unique<SampleWaveform>(this);
+        // needed when called from currentTabChanged to place the children
+        resized();
 
-        waveformViewport = std::make_unique<Zoomable>(waveform.get(), std::make_pair(1.f, 50.f),
-                                                      std::make_pair(1.f, 10.f));
-        addAndMakeVisible(*waveformViewport);
         rebuild();
     }
 
@@ -1350,8 +1435,8 @@ struct SampleDisplay : juce::Component, HasEditor
     {
         sendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest{
             {selectedVariation, sampleView[selectedVariation]}});
-        waveform->rebuildHotZones();
-        waveform->repaint();
+        waveforms[selectedVariation].waveform->rebuildHotZones();
+        waveforms[selectedVariation].waveform->repaint();
         repaint();
     }
 
@@ -1363,8 +1448,7 @@ struct SampleDisplay : juce::Component, HasEditor
     void resized()
     {
         auto viewArea = sampleDisplayRegion();
-        waveformViewport->setBounds(viewArea);
-
+        waveformsTabbedGroup->setBounds(viewArea);
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
         p = p.withHeight(18);
@@ -1457,16 +1541,6 @@ struct SampleDisplay : juce::Component, HasEditor
             break;
         }
 
-        auto samp = editor->sampleManager.getSample(sampleView[selectedVariation].sampleID);
-        size_t end = 0;
-        if (samp)
-        {
-            end = samp->getSampleLength();
-        }
-
-        for (const auto &[k, p] : sampleAttachments)
-            p->sampleCount = end;
-
         loopModeButton->setEnabled(sampleView[selectedVariation].loopActive);
         loopDirectionButton->setEnabled(sampleView[selectedVariation].loopActive);
         loopCnt->setEnabled(sampleView[selectedVariation].loopActive);
@@ -1477,9 +1551,9 @@ struct SampleDisplay : juce::Component, HasEditor
         loopCnt->setVisible(sampleView[selectedVariation].loopMode ==
                             engine::Zone::LoopMode::LOOP_FOR_COUNT);
 
-        repaint();
+        waveforms[selectedVariation].waveform->rebuildHotZones();
 
-        waveform->rebuildHotZones();
+        repaint();
     }
 
     void showPlayModeMenu()
@@ -1871,6 +1945,21 @@ void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
     samplePlaybackPosition.setTopLeftPosition(x, 0);
 }
 
+bool SampleWaveform::isInterestedInFileDrag(const juce::StringArray &files)
+{
+    return files.size() == 1 && editor->isInterestedInFileDrag(files);
+}
+
+void SampleWaveform::filesDropped(const juce::StringArray &files, int, int)
+{
+    const auto &fl{files[0]};
+    namespace cmsg = scxt::messaging::client;
+    auto za{editor->currentLeadZoneSelection};
+    auto sampleID{display->selectedVariation};
+    sendToSerialization(cmsg::AddSampleInZone(
+        {std::string{(const char *)(fl.toUTF8())}, za->part, za->group, za->zone, sampleID}));
+}
+
 struct MacroDisplay : juce::Component
 {
     void paint(juce::Graphics &g)
@@ -1926,8 +2015,7 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
 {
     sampleView = m;
-    sampleDisplay->rebuild();
-    sampleDisplay->repaint();
+    sampleDisplay->rebuildForSelectedVariation(sampleDisplay->selectedVariation);
 }
 
 void MappingPane::setActive(bool b)
@@ -1953,13 +2041,17 @@ void MappingPane::editorSelectionChanged()
 void MappingPane::invertScroll(bool invert)
 {
     mappingDisplay->mappingViewport->invertScroll(invert);
-    sampleDisplay->waveformViewport->invertScroll(invert);
+    for (auto &w : sampleDisplay->waveforms)
+    {
+        w.waveformViewport->invertScroll(invert);
+    }
 }
 
-void MappingPane::updateSamplePlaybackPosition(int64_t samplePos)
+void MappingPane::updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
 {
-    if (sampleDisplay->isVisible())
-        sampleDisplay->waveform->updateSamplePlaybackPosition(samplePos);
+    if (sampleDisplay->isVisible() && sampleIndex == sampleDisplay->selectedVariation)
+        sampleDisplay->waveforms[sampleDisplay->selectedVariation]
+            .waveform->updateSamplePlaybackPosition(samplePos);
 }
 
 } // namespace scxt::ui::multi

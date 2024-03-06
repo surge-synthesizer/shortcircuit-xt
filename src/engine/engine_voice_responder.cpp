@@ -51,8 +51,9 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     for (const auto &path : nts)
     {
         const auto &z = engine.zoneByPath(path);
-
-        if (!z->samplePointers[0])
+        auto nbSampleLoadedInZone = z->getNumSampleLoaded();
+        z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+        if (!z->samplePointers[z->sampleIndex])
         {
             // SCLOG( "Skipping voice with missing sample data" );
         }

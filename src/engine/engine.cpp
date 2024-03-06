@@ -305,6 +305,7 @@ bool Engine::processAudio()
                 itm.part = v->zonePath.part;
                 itm.group = v->zonePath.group;
                 itm.zone = v->zonePath.zone;
+                itm.sample = v->sampleIndex;
                 itm.samplePos = v->GD.samplePos;
                 itm.midiNote = v->originalMidiKey;
                 itm.midiChannel = v->channel;
@@ -393,6 +394,61 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
         SCLOG( "   " << pg.first );;
         */
     return res;
+}
+
+void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t groupID, int16_t zoneID,
+                                int sampleID, int16_t rootKey, KeyboardRange krange,
+                                VelocityRange vrange)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+    assert(sampleID < maxSamplesPerZone);
+
+    // TODO: Deal with compound types more comprehensively
+    // If you add a type here add it to Browser::isLoadableFile also
+    if (extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz"))
+    {
+        assert(false);
+        return;
+    }
+
+    auto sz = getSelectionManager()->currentLeadZone(*this);
+
+    if (!sz.has_value())
+    {
+        messageController->reportErrorToClient("Unable to load Sample",
+                                               "There is no currentLeadZone");
+        return;
+    }
+
+    assert((*sz).part == partID);
+    assert((*sz).group == groupID);
+    assert((*sz).zone == zoneID);
+
+    // OK so what we want to do now is
+    // 1. Load this sample on this thread
+    auto sid = sampleManager->loadSampleByPath(p);
+
+    if (!sid.has_value())
+    {
+        messageController->reportErrorToClient(
+            "Unable to load Sample",
+            "Sample load failed:\n\n" + p.u8string() + "\n\n" +
+                "It is either an unsupported format or invalid file. "
+                "More information may be available in the log file (menu/log)");
+        return;
+    }
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
+            auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+            zone->terminateAllVoices();
+            zone->sampleData[sID].sampleID = sample;
+            zone->sampleData[sID].active = true;
+            zone->attachToSample(*e.getSampleManager(), sID);
+        },
+        [p = partID, g = groupID, z = zoneID](auto &e) {
+            e.getSelectionManager()->selectAction({p, g, z, true, true, true});
+        });
 }
 
 void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootKey,
