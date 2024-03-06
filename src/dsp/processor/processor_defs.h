@@ -58,11 +58,63 @@
  *  and then include the h here and everything will work
  */
 
-#include "definitions/distortion_defs.h"
-#include "definitions/eq_defs.h"
-#include "definitions/generator_defs.h"
-#include "definitions/pitch_defs.h"
-#include "definitions/waveshaper_defs.h"
+#include "definition_helpers.h"
+#include "dsp/processor/processor_impl.h"
+
+#include "sst/voice-effects/distortion/Microgate.h"
+#include "sst/voice-effects/distortion/BitCrusher.h"
+#include "sst/voice-effects/waveshaper/WaveShaper.h"
+
+#include "sst/voice-effects/eq/EqNBandParametric.h"
+
+#include "sst/voice-effects/generator/GenCorrelatedNoise.h"
+#include "sst/voice-effects/generator/GenSin.h"
+#include "sst/voice-effects/generator/GenSaw.h"
+#include "sst/voice-effects/generator/GenPulseSync.h"
+#include "sst/voice-effects/generator/GenPhaseMod.h"
+
+#include "sst/voice-effects/pitch/PitchRing.h"
+
+namespace scxt::dsp::processor
+{
+// Just don't change the id or streaming name, basically
+DEFINE_PROC(MicroGate, sst::voice_effects::distortion::MicroGate<SCXTVFXConfig>, proct_fx_microgate,
+            "MicroGate", "Distortion", "micro-gate-fx");
+DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig>,
+            proct_fx_bitcrusher, "BitCrusher", "Distortion", "bit-crusher-fx");
+DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig>,
+            proct_fx_waveshaper, "WaveShaper", "Distortion", "waveshaper-fx");
+
+// Macros and commas don't get along
+namespace procimpl::detail
+{
+using eq1impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 1>;
+using eq2impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 2>;
+using eq3impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 3>;
+} // namespace procimpl::detail
+
+DEFINE_PROC(EQ1Band, procimpl::detail::eq1impl, proct_eq_1band_parametric_A, "1 Band Parametric",
+            "EQ", "eq-parm-1band");
+DEFINE_PROC(EQ2Band, procimpl::detail::eq2impl, proct_eq_2band_parametric_A, "2 Band Parametric",
+            "EQ", "eq-parm-2band");
+DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, proct_eq_3band_parametric_A, "3 Band Parametric",
+            "EQ", "eq-parm-3band");
+
+DEFINE_PROC(GenSin, sst::voice_effects::generator::GenSin<SCXTVFXConfig>, proct_osc_sin, "Sin",
+            "Generators", "osc-sin");
+DEFINE_PROC(GenSaw, sst::voice_effects::generator::GenSaw<SCXTVFXConfig>, proct_osc_saw, "Saw",
+            "Generators", "osc-saw");
+DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig>,
+            proct_osc_pulse_sync, "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);
+DEFINE_PROC(GenPhaseMod, sst::voice_effects::generator::GenPhaseMod<SCXTVFXConfig>,
+            proct_osc_phasemod, "Phase Mod", "Generators", "osc-phase-mod");
+DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig>,
+            proct_osc_correlatednoise, "Correlated Noise", "Generators", "osc-correlated-noise");
+
+DEFINE_PROC(PitchRing, sst::voice_effects::pitch::PitchRing<SCXTVFXConfig>, proct_fx_pitchring,
+            "PitchRing", "Pitch and Frequency", "pitchring-fx");
+
+} // namespace scxt::dsp::processor
 
 // port
 
