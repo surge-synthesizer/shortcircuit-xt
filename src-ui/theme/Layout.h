@@ -43,6 +43,7 @@ static constexpr int labelMargin{2};
 static constexpr int extraLargeKnob{80};
 static constexpr int largeKnob{60};
 static constexpr int mediumKnob{40};
+static constexpr int mediumSmallKnob{32};
 } // namespace constants
 
 using coord_t = int;

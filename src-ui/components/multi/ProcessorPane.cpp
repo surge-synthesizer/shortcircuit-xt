@@ -191,6 +191,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_eq_3band_parametric_A:
         // layoutControlsEQNBandParm();
         layoutControls();
+
         break;
     case dsp::processor::proct_fx_waveshaper:
         layoutControlsWaveshaper();
