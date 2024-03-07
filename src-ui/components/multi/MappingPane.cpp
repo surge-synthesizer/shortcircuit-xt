@@ -1224,12 +1224,12 @@ struct SampleDisplay : juce::Component, HasEditor
         loopAttachment, reverseAttachment;
     std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
 
-    struct ZommableWaveform
+    struct ZoomableWaveform
     {
         std::unique_ptr<Zoomable> waveformViewport;
         std::unique_ptr<SampleWaveform> waveform;
     };
-    std::array<ZommableWaveform, maxSamplesPerZone> waveforms;
+    std::array<ZoomableWaveform, maxSamplesPerZone> waveforms;
     struct MyTabbedComponent : juce::TabbedComponent
     {
         MyTabbedComponent(SampleDisplay *d)
