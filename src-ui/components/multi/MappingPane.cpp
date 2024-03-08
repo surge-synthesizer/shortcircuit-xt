@@ -56,6 +56,8 @@ struct Keyboard : juce::Component, HasEditor
     static constexpr int keyboardHeight{25};
 
     int32_t heldNote{-1};
+    
+    bool moveRootKey{false};
 
     Keyboard(MappingDisplay *d);
 
@@ -758,6 +760,10 @@ void Keyboard::mouseDown(const juce::MouseEvent &e)
         {
             sendToSerialization(cmsg::NoteFromGUI({i, true}));
             heldNote = i;
+            if (heldNote == display->mappingView.rootKey)
+            {
+                moveRootKey = true;
+            }
             repaint();
             return;
         }
@@ -781,7 +787,7 @@ void Keyboard::mouseDrag(const juce::MouseEvent &e)
                 {
                     sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
                 }
-                if (heldNote == display->mappingView.rootKey)
+                if (moveRootKey == true)
                 {
                     display->mappingView.rootKey = i;
                     display->mappingChangedFromGUI();
@@ -800,6 +806,7 @@ void Keyboard::mouseUp(const juce::MouseEvent &e)
     {
         sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
         heldNote = -1;
+        moveRootKey = false;
         repaint();
         return;
     }
