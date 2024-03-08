@@ -32,8 +32,6 @@
 #include <memory>
 #include <type_traits>
 
-#include "melatonin_inspector/melatonin_inspector.h"
-
 #include "SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"
 #include "engine/patch.h"
@@ -52,6 +50,10 @@
 
 #include "theme/ThemeApplier.h"
 
+namespace melatonin
+{
+class Inspector;
+}
 namespace sst::jucegui::components
 {
 struct HasDiscreteParamMenuBuilder;

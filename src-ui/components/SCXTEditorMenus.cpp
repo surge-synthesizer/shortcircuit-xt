@@ -25,6 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include "melatonin_inspector/melatonin_inspector.h"
+
 #include "SCXTEditor.h"
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
