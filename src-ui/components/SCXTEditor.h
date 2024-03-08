@@ -32,6 +32,8 @@
 #include <memory>
 #include <type_traits>
 
+#include "melatonin_inspector/melatonin_inspector.h"
+
 #include "SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"
 #include "engine/patch.h"
@@ -267,6 +269,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     {
         sendToSerialization(scxt::messaging::client::EndEdit{true});
     }
+
+    std::unique_ptr<melatonin::Inspector> melatoninInspector;
 };
 
 template <typename T> inline void HasEditor::sendToSerialization(const T &msg)

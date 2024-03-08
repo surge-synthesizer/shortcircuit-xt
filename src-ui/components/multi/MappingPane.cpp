@@ -33,12 +33,13 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/TabbedComponent.h"
+#include "sst/jucegui/components/Viewport.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
 
 #include "engine/part.h"
-#include "sst/jucegui/components/Viewport.h"
 
 namespace scxt::ui::multi
 {
@@ -1294,17 +1295,24 @@ struct SampleDisplay : juce::Component, HasEditor
         std::unique_ptr<SampleWaveform> waveform;
     };
     std::array<ZoomableWaveform, maxSamplesPerZone> waveforms;
-    struct MyTabbedComponent : juce::TabbedComponent
+
+    struct MyTabbedComponent : sst::jucegui::components::TabbedComponent
     {
         MyTabbedComponent(SampleDisplay *d)
-            : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), display(d)
+            : sst::jucegui::components::TabbedComponent(juce::TabbedButtonBar::TabsAtTop),
+              display(d)
         {
         }
-        virtual void currentTabChanged(int newCurrentTabIndex,
-                                       const juce::String &newCurrentTabName) override
+        void currentTabChanged(int newCurrentTabIndex,
+                               const juce::String &newCurrentTabName) override
         {
             display->rebuildForSelectedVariation(newCurrentTabIndex);
             display->repaint();
+
+            // The way tabs work has sytlesheet implications which we
+            // deal with in the parent class
+            sst::jucegui::components::TabbedComponent::currentTabChanged(newCurrentTabIndex,
+                                                                         newCurrentTabName);
         }
 
         SampleDisplay *display;
