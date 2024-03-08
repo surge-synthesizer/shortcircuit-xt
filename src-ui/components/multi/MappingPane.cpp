@@ -292,7 +292,11 @@ struct Zoomable : public juce::Component
     }
 };
 
-struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juce::ComponentListener
+struct MappingDisplay : juce::Component,
+                        HasEditor,
+                        juce::FileDragAndDropTarget,
+                        juce::DragAndDropTarget,
+                        juce::ComponentListener
 {
 
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
@@ -609,6 +613,40 @@ struct MappingDisplay : juce::Component, HasEditor, juce::DragAndDropTarget, juc
     void itemDragMove(const SourceDetails &dragSourceDetails) override
     {
         currentDragPoint = dragSourceDetails.localPosition;
+        repaint();
+    }
+
+    bool isInterestedInFileDrag(const juce::StringArray &files) override
+    {
+        return editor->isInterestedInFileDrag(files);
+    }
+    void fileDragEnter(const juce::StringArray &files, int x, int y) override
+    {
+        isUndertakingDrop = true;
+        currentDragPoint = {x, y};
+        repaint();
+    }
+    void fileDragMove(const juce::StringArray &files, int x, int y) override
+    {
+        isUndertakingDrop = true;
+        currentDragPoint = {x, y};
+        repaint();
+    }
+    void fileDragExit(const juce::StringArray &files) override
+    {
+        isUndertakingDrop = false;
+        repaint();
+    }
+    void filesDropped(const juce::StringArray &files, int x, int y) override
+    {
+        namespace cmsg = scxt::messaging::client;
+        auto r = mappingZones->rootAndRangeForPosition({x, y});
+        for (auto f : files)
+        {
+            sendToSerialization(
+                cmsg::AddSampleWithRange({f.toStdString(), r[0], r[1], r[2], 0, 127}));
+        }
+        isUndertakingDrop = false;
         repaint();
     }
 
@@ -1159,7 +1197,10 @@ struct SampleCursor : juce::Component
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
 };
 
-struct SampleWaveform : juce::Component, HasEditor, juce::FileDragAndDropTarget
+struct SampleWaveform : juce::Component,
+                        HasEditor,
+                        juce::FileDragAndDropTarget,
+                        juce::DragAndDropTarget
 {
     SampleDisplay *display{nullptr};
     SampleWaveform(SampleDisplay *d);
@@ -1191,8 +1232,31 @@ struct SampleWaveform : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseMove(const juce::MouseEvent &e) override;
 
-    virtual bool isInterestedInFileDrag(const juce::StringArray &files) override;
-    virtual void filesDropped(const juce::StringArray &files, int, int) override;
+    bool isInterestedInFileDrag(const juce::StringArray &files) override;
+    void filesDropped(const juce::StringArray &files, int, int) override;
+
+    std::optional<std::string>
+    sourceDetailsDragAndDropSample(const SourceDetails &dragSourceDetails)
+    {
+        auto w = dragSourceDetails.sourceComponent;
+        if (w)
+        {
+            auto p = w->getProperties().getVarPointer("DragAndDropSample");
+            if (p && p->isString())
+            {
+                return p->toString().toStdString();
+            }
+        }
+        return std::nullopt;
+    }
+
+    bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+    {
+        auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
+        return os.has_value();
+    }
+
+    void itemDropped(const SourceDetails &dragSourceDetails) override;
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1958,6 +2022,19 @@ void SampleWaveform::filesDropped(const juce::StringArray &files, int, int)
     auto sampleID{display->selectedVariation};
     sendToSerialization(cmsg::AddSampleInZone(
         {std::string{(const char *)(fl.toUTF8())}, za->part, za->group, za->zone, sampleID}));
+}
+
+void SampleWaveform::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
+
+{
+    auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
+    if (os.has_value())
+    {
+        namespace cmsg = scxt::messaging::client;
+        auto za{editor->currentLeadZoneSelection};
+        auto sampleID{display->selectedVariation};
+        sendToSerialization(cmsg::AddSampleInZone({*os, za->part, za->group, za->zone, sampleID}));
+    }
 }
 
 struct MacroDisplay : juce::Component
