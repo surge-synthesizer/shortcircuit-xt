@@ -47,11 +47,13 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         juce::juce_gui_basics
 
         sst-plugininfra::strnatcmp
+        melatonin_inspector
         )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         JUCE_STANDALONE_APPLICATION=0
         JUCE_USE_CURL=0
+        JUCE_WEB_BROWSER=0
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC .)

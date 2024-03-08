@@ -50,6 +50,10 @@
 
 #include "theme/ThemeApplier.h"
 
+namespace melatonin
+{
+class Inspector;
+}
 namespace sst::jucegui::components
 {
 struct HasDiscreteParamMenuBuilder;
@@ -267,6 +271,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     {
         sendToSerialization(scxt::messaging::client::EndEdit{true});
     }
+
+    std::unique_ptr<melatonin::Inspector> melatoninInspector;
 };
 
 template <typename T> inline void HasEditor::sendToSerialization(const T &msg)

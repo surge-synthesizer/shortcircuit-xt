@@ -56,3 +56,5 @@ target_include_directories(mts-esp-client PUBLIC MTS-ESP/Client)
 if (UNIX AND NOT APPLE)
     target_link_libraries(mts-esp-client PUBLIC dl)
 endif ()
+
+add_subdirectory (melatonin_inspector)

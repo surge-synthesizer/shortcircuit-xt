@@ -97,9 +97,14 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
         setupWidgetForValueTooltip(kn, at);
+        kn->setTitle(at->getLabel());
+        kn->setDescription(at->getLabel());
         getContentAreaComponent()->addAndMakeVisible(*kn);
         auto lb = std::make_unique<sst::jucegui::components::Label>();
         lb->setText(label);
+        lb->setTitle(label);
+        lb->setDescription(label);
+        lb->setAccessible(false);
         getContentAreaComponent()->addAndMakeVisible(*lb);
         res->item = std::move(kn);
         res->label = std::move(lb);
@@ -112,6 +117,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     {
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
+        kn->setTitle(at->getLabel());
+        kn->setDescription(at->getLabel());
+      
         getContentAreaComponent()->addAndMakeVisible(*kn);
 
         return std::move(kn);

@@ -25,6 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include "melatonin_inspector/melatonin_inspector.h"
+
 #include "SCXTEditor.h"
 #include "MultiScreen.h"
 #include "multi/AdsrPane.h"
@@ -97,26 +99,31 @@ void SCXTEditor::showMainMenu()
             return;
         w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json_part});
     });
-    dp.addItem("Focus Debugger Toggle", []() {});
+    // dp.addItem("Focus Debugger Toggle", []() {});
+    dp.addSeparator();
 
-    auto recAct = [](bool on, juce::Component *toThis, auto f) {
-        if (!toThis)
-            return;
-        auto np = dynamic_cast<sst::jucegui::components::NamedPanel *>(toThis);
-        if (np)
-        {
-            np->activatePositionDebugging(on);
-        }
-        for (auto c : toThis->getChildren())
-        {
-            f(on, c, f);
-        }
-    };
+    if (melatoninInspector)
+    {
+        dp.addItem("Close Melatonin Inspector", [w = juce::Component::SafePointer(this)]() {
+            if (w && w->melatoninInspector)
+            {
+                w->melatoninInspector->setVisible(false);
+                w->melatoninInspector.reset();
+            }
+        });
+    }
+    else
+    {
+        dp.addItem("Launch Melatonin Inspector", [w = juce::Component::SafePointer(this)] {
+            if (!w)
+                return;
 
-    dp.addItem("Position Debug On", [this, recAct]() { recAct(true, this, recAct); });
-    dp.addItem("Position Debug Off", [this, recAct]() { recAct(false, this, recAct); });
-    dp.addItem("Dump Stylesheet to Stdout",
-               [this]() { this->style()->dumpStyleSheetTo(std::cout); });
+            w->melatoninInspector = std::make_unique<melatonin::Inspector>(*w);
+            w->melatoninInspector->onClose = [w]() { w->melatoninInspector.reset(); };
+
+            w->melatoninInspector->setVisible(true);
+        });
+    }
 
     m.addSubMenu("Developer", dp);
 
