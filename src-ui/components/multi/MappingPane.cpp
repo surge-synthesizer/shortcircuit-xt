@@ -1,4 +1,4 @@
-/*
+ /*
  * Shortcircuit XT - a Surge Synth Team product
  *
  * A fully featured creative sampler, available as a standalone
@@ -972,37 +972,67 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
     {
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
-        auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote + 1);
+        auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote); //this had a +1, which doesn't seem to be needed?
         auto vh = displayRegion.getHeight() / 127.0;
-
-        auto nx = std::clamp((int)std::round(e.position.x / kw) + Keyboard::firstMidiNote, 0, 127);
-        auto vy = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 127);
+        
+        auto newX = e.position.x / kw;
+        auto newXRounded = std::clamp((int)std::round(e.position.x / kw), 0, 128);
+        // These previously had + Keyboard::firstMidiNote, and I don't know why? They don't seem to need it.
+        
+        auto newY = 127 - e.position.y / vh;
+        auto newYRounded = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 128);
+        
+        //clamps to 128 on purpose, for reasons that'll get clear below
 
         auto &vr = display->mappingView.velocityRange;
         auto &kr = display->mappingView.keyboardRange;
 
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_KEY)
         {
-            auto drs = abs(kr.keyStart - nx);
-            auto dre = abs(kr.keyEnd - nx);
-            if (drs < dre)
-                kr.keyStart = nx;
-            else
-                kr.keyEnd = nx;
-            if (kr.keyStart > kr.keyEnd)
-                std::swap(kr.keyStart, kr.keyEnd);
-        }
+            auto keyEndRightEdge = kr.keyEnd + 1; //that's where right edge is drawn, so that's what we compare to
+            
+            auto drs = abs(kr.keyStart - newX); //distance from mouse to left edge
+            auto dre = abs(keyEndRightEdge - newX); //ditto to right edge
 
+            if (drs < dre)
+            {
+                if (newX < (kr.keyStart - 0.5)) //change at halfway points, else we can't get to 1 key span
+                    kr.keyStart = newXRounded;
+                else if (newX > (kr.keyStart + 0.5))
+                    kr.keyStart = newXRounded;
+            }
+            else
+            {
+                if (newX > (keyEndRightEdge + 0.5))
+                    kr.keyEnd = newXRounded - 1; // this is -1 to make up for the +1 in keyEndRightEdge, without it the right edge behavior is super weird. Hence the clamp to 128, else we can't drag to the top note.
+                else if (newX < (keyEndRightEdge - 0.5))
+                    kr.keyEnd = newXRounded - 1;
+            }
+            // there was an std::swap here that's no longer needed.
+    
+        }
+        //Same changes to up/down as to right/left.
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_VELOCITY)
         {
-            auto vrs = abs(vr.velStart - vy);
-            auto vre = abs(vr.velEnd - vy);
+            auto velTopEdge = vr.velEnd + 1;
+            
+            auto vrs = abs(vr.velStart - newY);
+            auto vre = abs(velTopEdge - newY);
+            
             if (vrs < vre)
-                vr.velStart = vy;
+            {
+                if (newY < (vr.velStart - 0.5))
+                    vr.velStart = newYRounded;
+                else if (newY > (vr.velStart + 0.5))
+                    vr.velStart = newYRounded;
+            }
             else
-                vr.velEnd = vy;
-            if (vr.velStart > vr.velEnd)
-                std::swap(vr.velStart, vr.velEnd);
+            {
+                if (newY > (velTopEdge + 0.5))
+                    vr.velEnd = newYRounded - 1;
+                else if (newY < (velTopEdge - 0.5))
+                    vr.velEnd = newYRounded - 1;
+            }
         }
         display->mappingChangedFromGUI();
         repaint();
@@ -1017,7 +1047,7 @@ void MappingZones::mouseUp(const juce::MouseEvent &e)
 juce::Rectangle<float> MappingZones::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 {
     const auto &[kb, vel, name] = sum;
-    return rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd);
+    return rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd + 1);
 }
 
 juce::Rectangle<float> MappingZones::rectangleForRange(int kL, int kH, int vL, int vH)
