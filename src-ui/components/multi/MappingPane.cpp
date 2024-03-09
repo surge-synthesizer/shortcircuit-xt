@@ -1,4 +1,4 @@
-/*
+ /*
  * Shortcircuit XT - a Surge Synth Team product
  *
  * A fully featured creative sampler, available as a standalone
@@ -975,7 +975,14 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
         auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote + 1);
         auto vh = displayRegion.getHeight() / 127.0;
 
-        auto nx = std::clamp((int)std::round(e.position.x / kw) + Keyboard::firstMidiNote, 0, 127);
+        float nx = e.position.x / kw + Keyboard::firstMidiNote - 1;
+        if (nx <= 0.0)
+            nx = 0.0;
+        else if (nx >= 127.0)
+            nx = 127.0;
+        
+        auto nxr = std::clamp((int)std::round(e.position.x / kw) + Keyboard::firstMidiNote, 0, 127);
+        
         auto vy = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 127);
 
         auto &vr = display->mappingView.velocityRange;
@@ -983,14 +990,28 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
 
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_KEY)
         {
-            auto drs = abs(kr.keyStart - nx);
-            auto dre = abs(kr.keyEnd - nx);
+            auto drs = abs(kr.keyStart - nxr);
+            auto dre = abs(kr.keyEnd - nxr);
+            
             if (drs < dre)
-                kr.keyStart = nx;
-            else
-                kr.keyEnd = nx;
-            if (kr.keyStart > kr.keyEnd)
-                std::swap(kr.keyStart, kr.keyEnd);
+            {
+                if (nx < kr.keyStart - 0.5)
+                    kr.keyStart = nx - 1;
+                else if (nx > kr.keyStart + 0.5 && kr.keyStart != kr.keyEnd)
+                    kr.keyStart = nx;
+            }
+            else if (drs >= dre)
+            {
+                if (nx > kr.keyEnd + 0.5)
+                    kr.keyEnd = nx + 1;
+                else if (nx < kr.keyEnd - 0.5 && kr.keyStart != kr.keyEnd)
+                    kr.keyEnd = nx;
+            }
+
+                
+            
+            //if (kr.keyStart > kr.keyEnd)
+            //    std::swap(kr.keyStart, kr.keyEnd);
         }
 
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_VELOCITY)
