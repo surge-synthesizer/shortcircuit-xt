@@ -1343,8 +1343,12 @@ struct SampleDisplay : juce::Component, HasEditor
         void currentTabChanged(int newCurrentTabIndex,
                                const juce::String &newCurrentTabName) override
         {
-            display->rebuildForSelectedVariation(newCurrentTabIndex);
-            display->repaint();
+            // called with -1 when clearing tabs
+            if(newCurrentTabIndex >= 0)
+            {
+                display->rebuildForSelectedVariation(newCurrentTabIndex, false);
+                display->repaint();
+            }
 
             // The way tabs work has sytlesheet implications which we
             // deal with in the parent class
@@ -1368,14 +1372,12 @@ struct SampleDisplay : juce::Component, HasEditor
             waveforms[i].waveform = std::make_unique<SampleWaveform>(this);
             waveforms[i].waveformViewport = std::make_unique<Zoomable>(
                 waveforms[i].waveform.get(), std::make_pair(1.f, 50.f), std::make_pair(1.f, 10.f));
-            waveformsTabbedGroup->addTab(std::to_string(i + 1), juce::Colours::darkgrey,
-                                         waveforms[i].waveformViewport.get(), false, i);
         }
-
-        rebuildForSelectedVariation(selectedVariation);
+        
+        rebuildForSelectedVariation(selectedVariation, true);
     }
 
-    void rebuildForSelectedVariation(size_t sel)
+    void rebuildForSelectedVariation(size_t sel, bool rebuildTabs = true)
     {
         selectedVariation = sel;
 
@@ -1526,7 +1528,26 @@ struct SampleDisplay : juce::Component, HasEditor
         loopCnt->setSource(loopCntAttachment.get());
         addAndMakeVisible(*loopCnt);
 
-        // needed when called from currentTabChanged to place the children
+        if(rebuildTabs)
+        {
+            auto selectedTab{selectedVariation};
+            waveformsTabbedGroup->clearTabs();
+            for (auto i = 0; i < maxSamplesPerZone; ++i)
+            {
+                if(sampleView[i].active)
+                {
+                    waveformsTabbedGroup->addTab(std::to_string(i + 1), juce::Colours::darkgrey,
+                                                 waveforms[i].waveformViewport.get(), false, i);
+                }
+            }
+            if(waveformsTabbedGroup->getNumTabs() < maxSamplesPerZone)
+            {
+                waveformsTabbedGroup->addTab("+", juce::Colours::darkgrey,
+                                             waveforms[maxSamplesPerZone-1].waveformViewport.get(), false, maxSamplesPerZone-1);
+            }
+            waveformsTabbedGroup->setCurrentTabIndex(selectedTab, true);
+        }
+        // needed to place all the children
         resized();
 
         rebuild();
@@ -2137,7 +2158,7 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
 {
     sampleView = m;
-    sampleDisplay->rebuildForSelectedVariation(sampleDisplay->selectedVariation);
+    sampleDisplay->rebuildForSelectedVariation(sampleDisplay->selectedVariation, true);
 }
 
 void MappingPane::setActive(bool b)
