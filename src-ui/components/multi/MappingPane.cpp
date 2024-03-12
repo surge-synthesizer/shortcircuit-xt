@@ -1,4 +1,4 @@
- /*
+/*
  * Shortcircuit XT - a Surge Synth Team product
  *
  * A fully featured creative sampler, available as a standalone
@@ -57,7 +57,7 @@ struct Keyboard : juce::Component, HasEditor
     static constexpr int keyboardHeight{25};
 
     int32_t heldNote{-1};
-    
+
     bool moveRootKey{false};
 
     Keyboard(MappingDisplay *d);
@@ -972,31 +972,36 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
     {
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
-        auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote); //this had a +1, which doesn't seem to be needed?
+        auto kw = displayRegion.getWidth() /
+                  (Keyboard::lastMidiNote -
+                   Keyboard::firstMidiNote); // this had a +1, which doesn't seem to be needed?
         auto vh = displayRegion.getHeight() / 127.0;
-        
+
         auto newX = e.position.x / kw;
         auto newXRounded = std::clamp((int)std::round(e.position.x / kw), 0, 128);
-        // These previously had + Keyboard::firstMidiNote, and I don't know why? They don't seem to need it.
-        
+        // These previously had + Keyboard::firstMidiNote, and I don't know why? They don't seem to
+        // need it.
+
         auto newY = 127 - e.position.y / vh;
         auto newYRounded = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 128);
-        
-        //clamps to 128 on purpose, for reasons that'll get clear below
+
+        // clamps to 128 on purpose, for reasons that'll get clear below
 
         auto &vr = display->mappingView.velocityRange;
         auto &kr = display->mappingView.keyboardRange;
 
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_KEY)
         {
-            auto keyEndRightEdge = kr.keyEnd + 1; //that's where right edge is drawn, so that's what we compare to
-            
-            auto drs = abs(kr.keyStart - newX); //distance from mouse to left edge
-            auto dre = abs(keyEndRightEdge - newX); //ditto to right edge
+            auto keyEndRightEdge =
+                kr.keyEnd + 1; // that's where right edge is drawn, so that's what we compare to
+
+            auto drs = abs(kr.keyStart - newX);     // distance from mouse to left edge
+            auto dre = abs(keyEndRightEdge - newX); // ditto to right edge
 
             if (drs < dre)
             {
-                if (newX < (kr.keyStart - 0.5)) //change at halfway points, else we can't get to 1 key span
+                if (newX < (kr.keyStart -
+                            0.5)) // change at halfway points, else we can't get to 1 key span
                     kr.keyStart = newXRounded;
                 else if (newX > (kr.keyStart + 0.5))
                     kr.keyStart = newXRounded;
@@ -1004,21 +1009,23 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             else
             {
                 if (newX > (keyEndRightEdge + 0.5))
-                    kr.keyEnd = newXRounded - 1; // this is -1 to make up for the +1 in keyEndRightEdge, without it the right edge behavior is super weird. Hence the clamp to 128, else we can't drag to the top note.
+                    kr.keyEnd =
+                        newXRounded - 1; // this is -1 to make up for the +1 in keyEndRightEdge,
+                                         // without it the right edge behavior is super weird. Hence
+                                         // the clamp to 128, else we can't drag to the top note.
                 else if (newX < (keyEndRightEdge - 0.5))
                     kr.keyEnd = newXRounded - 1;
             }
             // there was an std::swap here that's no longer needed.
-    
         }
-        //Same changes to up/down as to right/left.
+        // Same changes to up/down as to right/left.
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_VELOCITY)
         {
             auto velTopEdge = vr.velEnd + 1;
-            
+
             auto vrs = abs(vr.velStart - newY);
             auto vre = abs(velTopEdge - newY);
-            
+
             if (vrs < vre)
             {
                 if (newY < (vr.velStart - 0.5))
@@ -1344,7 +1351,7 @@ struct SampleDisplay : juce::Component, HasEditor
                                const juce::String &newCurrentTabName) override
         {
             // called with -1 when clearing tabs
-            if(newCurrentTabIndex >= 0)
+            if (newCurrentTabIndex >= 0)
             {
                 display->rebuildForSelectedVariation(newCurrentTabIndex, false);
                 display->repaint();
@@ -1373,7 +1380,7 @@ struct SampleDisplay : juce::Component, HasEditor
             waveforms[i].waveformViewport = std::make_unique<Zoomable>(
                 waveforms[i].waveform.get(), std::make_pair(1.f, 50.f), std::make_pair(1.f, 10.f));
         }
-        
+
         rebuildForSelectedVariation(selectedVariation, true);
     }
 
@@ -1528,22 +1535,24 @@ struct SampleDisplay : juce::Component, HasEditor
         loopCnt->setSource(loopCntAttachment.get());
         addAndMakeVisible(*loopCnt);
 
-        if(rebuildTabs)
+        if (rebuildTabs)
         {
             auto selectedTab{selectedVariation};
             waveformsTabbedGroup->clearTabs();
             for (auto i = 0; i < maxSamplesPerZone; ++i)
             {
-                if(sampleView[i].active)
+                if (sampleView[i].active)
                 {
                     waveformsTabbedGroup->addTab(std::to_string(i + 1), juce::Colours::darkgrey,
                                                  waveforms[i].waveformViewport.get(), false, i);
                 }
             }
-            if(waveformsTabbedGroup->getNumTabs() < maxSamplesPerZone)
+            if (waveformsTabbedGroup->getNumTabs() < maxSamplesPerZone)
             {
-                waveformsTabbedGroup->addTab("+", juce::Colours::darkgrey,
-                                             waveforms[maxSamplesPerZone-1].waveformViewport.get(), false, maxSamplesPerZone-1);
+                waveformsTabbedGroup->addTab(
+                    "+", juce::Colours::darkgrey,
+                    waveforms[maxSamplesPerZone - 1].waveformViewport.get(), false,
+                    maxSamplesPerZone - 1);
             }
             waveformsTabbedGroup->setCurrentTabIndex(selectedTab, true);
         }
