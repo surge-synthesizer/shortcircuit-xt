@@ -1242,10 +1242,7 @@ struct SampleCursor : juce::Component
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
 };
 
-struct SampleWaveform : juce::Component,
-                        HasEditor,
-                        juce::FileDragAndDropTarget,
-                        juce::DragAndDropTarget
+struct SampleWaveform : juce::Component, HasEditor
 {
     SampleDisplay *display{nullptr};
     SampleWaveform(SampleDisplay *d);
@@ -1276,32 +1273,6 @@ struct SampleWaveform : juce::Component,
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseMove(const juce::MouseEvent &e) override;
-
-    bool isInterestedInFileDrag(const juce::StringArray &files) override;
-    void filesDropped(const juce::StringArray &files, int, int) override;
-
-    std::optional<std::string>
-    sourceDetailsDragAndDropSample(const SourceDetails &dragSourceDetails)
-    {
-        auto w = dragSourceDetails.sourceComponent;
-        if (w)
-        {
-            auto p = w->getProperties().getVarPointer("DragAndDropSample");
-            if (p && p->isString())
-            {
-                return p->toString().toStdString();
-            }
-        }
-        return std::nullopt;
-    }
-
-    bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
-    {
-        auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
-        return os.has_value();
-    }
-
-    void itemDropped(const SourceDetails &dragSourceDetails) override;
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1340,11 +1311,14 @@ struct SampleDisplay : juce::Component, HasEditor
     };
     std::array<ZoomableWaveform, maxSamplesPerZone> waveforms;
 
-    struct MyTabbedComponent : sst::jucegui::components::TabbedComponent
+    struct MyTabbedComponent : sst::jucegui::components::TabbedComponent,
+                               HasEditor,
+                               juce::FileDragAndDropTarget,
+                               juce::DragAndDropTarget
     {
         MyTabbedComponent(SampleDisplay *d)
             : sst::jucegui::components::TabbedComponent(juce::TabbedButtonBar::TabsAtTop),
-              display(d)
+              HasEditor(d->editor), display(d)
         {
         }
         void currentTabChanged(int newCurrentTabIndex,
@@ -1363,6 +1337,109 @@ struct SampleDisplay : juce::Component, HasEditor
                                                                          newCurrentTabName);
         }
 
+        std::optional<std::string>
+        sourceDetailsDragAndDropSample(const SourceDetails &dragSourceDetails)
+        {
+            auto w = dragSourceDetails.sourceComponent;
+            if (w)
+            {
+                auto p = w->getProperties().getVarPointer("DragAndDropSample");
+                if (p && p->isString())
+                {
+                    return p->toString().toStdString();
+                }
+            }
+            return std::nullopt;
+        }
+
+        bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+        {
+            auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
+            return os.has_value();
+        }
+
+        bool isInterestedInFileDrag(const juce::StringArray &files) override
+        {
+            return editor->isInterestedInFileDrag(files) && getNumTabs() <= maxSamplesPerZone;
+        }
+
+        void filesDropped(const juce::StringArray &files, int x, int y) override
+        {
+            auto processFilesDropped = [this](const juce::StringArray &files, auto tabIndex) {
+                for (const auto &fl : files)
+                {
+                    if (tabIndex == maxSamplesPerZone)
+                    {
+                        break;
+                    }
+                    namespace cmsg = scxt::messaging::client;
+                    auto za{editor->currentLeadZoneSelection};
+                    auto sampleID{tabIndex};
+                    sendToSerialization(
+                        cmsg::AddSampleInZone({std::string{(const char *)(fl.toUTF8())}, za->part,
+                                               za->group, za->zone, sampleID}));
+                    tabIndex++;
+                }
+            };
+
+            auto tabIndex{getTabIndexFromPosition(x, y)};
+
+            if (tabIndex != -1)
+            {
+                processFilesDropped(files, tabIndex);
+            }
+        }
+
+        void itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails) override
+
+        {
+            auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
+            if (os.has_value())
+            {
+                namespace cmsg = scxt::messaging::client;
+                auto za{editor->currentLeadZoneSelection};
+                auto sampleID{getTabIndexFromPosition(dragSourceDetails.localPosition.x,
+                                                      dragSourceDetails.localPosition.y)};
+                sendToSerialization(
+                    cmsg::AddSampleInZone({*os, za->part, za->group, za->zone, sampleID}));
+            }
+        }
+
+        int getTabIndexFromPosition(int x, int y)
+        {
+            auto tabIndex{-1};
+            auto isOnWaveform{
+                getCurrentContentComponent()->getBounds().contains(juce::Point<int>{x, y})};
+            if (isOnWaveform)
+            {
+                tabIndex = display->selectedVariation;
+            }
+            else
+            {
+                auto &tabBar{getTabbedButtonBar()};
+                for (auto index = 0; index < tabBar.getNumTabs(); ++index)
+                {
+                    auto isOnTabBar{
+                        tabBar.getTabButton(index)->getBounds().contains(juce::Point<int>{x, y})};
+                    if (isOnTabBar)
+                    {
+                        tabIndex = index;
+                        break;
+                    }
+                }
+            }
+            
+            // We are neither on waveform neither on tab bar
+            // we add at the end, but we check there is a free slot
+            if (tabIndex == -1 &&
+                std::any_of(display->sampleView.begin(), display->sampleView.end(),
+                            [](const auto &s) { return s.active == false; }))
+            {
+                tabIndex = getNumTabs() - 1;
+            }
+            
+            return tabIndex;
+        }
         SampleDisplay *display;
     };
 
@@ -2082,34 +2159,6 @@ void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
 {
     auto x = xPixelForSample(samplePos);
     samplePlaybackPosition.setTopLeftPosition(x, 0);
-}
-
-bool SampleWaveform::isInterestedInFileDrag(const juce::StringArray &files)
-{
-    return files.size() == 1 && editor->isInterestedInFileDrag(files);
-}
-
-void SampleWaveform::filesDropped(const juce::StringArray &files, int, int)
-{
-    const auto &fl{files[0]};
-    namespace cmsg = scxt::messaging::client;
-    auto za{editor->currentLeadZoneSelection};
-    auto sampleID{display->selectedVariation};
-    sendToSerialization(cmsg::AddSampleInZone(
-        {std::string{(const char *)(fl.toUTF8())}, za->part, za->group, za->zone, sampleID}));
-}
-
-void SampleWaveform::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
-
-{
-    auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
-    if (os.has_value())
-    {
-        namespace cmsg = scxt::messaging::client;
-        auto za{editor->currentLeadZoneSelection};
-        auto sampleID{display->selectedVariation};
-        sendToSerialization(cmsg::AddSampleInZone({*os, za->part, za->group, za->zone, sampleID}));
-    }
 }
 
 struct MacroDisplay : juce::Component

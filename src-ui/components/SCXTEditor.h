@@ -69,9 +69,7 @@ struct PlayScreen;
 struct LogScreen;
 struct SCXTJuceLookAndFeel;
 
-struct SCXTEditor : sst::jucegui::components::WindowPanel,
-                    juce::FileDragAndDropTarget,
-                    juce::DragAndDropContainer
+struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropContainer
 {
     // The message controller is needed to communicate
     messaging::MessageController &msgCont;
@@ -153,9 +151,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void resized() override;
     void parentHierarchyChanged() override;
 
-    // File Drag and Drop Interface
-    bool isInterestedInFileDrag(const juce::StringArray &files) override;
-    void filesDropped(const juce::StringArray &, int, int) override;
+    // no more used as FileDragAndDropTarget but still used by children
+    bool isInterestedInFileDrag(const juce::StringArray &files);
 
     // Deal with message queues.
     void idle();
