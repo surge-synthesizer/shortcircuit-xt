@@ -334,15 +334,6 @@ bool SCXTEditor::isInterestedInFileDrag(const juce::StringArray &files)
     });
 }
 
-void SCXTEditor::filesDropped(const juce::StringArray &files, int, int)
-{
-    for (const auto &fl : files)
-    {
-        namespace cmsg = scxt::messaging::client;
-        sendToSerialization(cmsg::AddSample(std::string{(const char *)(fl.toUTF8())}));
-    }
-}
-
 void SCXTEditor::showTooltip(const juce::Component &relativeTo)
 {
     auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
