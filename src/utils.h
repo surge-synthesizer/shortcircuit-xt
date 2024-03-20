@@ -41,6 +41,7 @@
 #include <thread>
 #include "unordered_map"
 #include "filesystem/import.h"
+#include <cassert>
 
 namespace scxt
 {
@@ -193,6 +194,7 @@ struct SampleRateSupport
         onSampleRateChanged();
     }
 
+    inline void assertSampleRateSet() { assert(sampleRate > 2); }
     virtual void onSampleRateChanged() {}
     double dsamplerate, dsamplerate_inv;
 

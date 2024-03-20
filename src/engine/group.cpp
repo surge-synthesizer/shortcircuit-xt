@@ -61,6 +61,8 @@ void Group::rePrepareAndBindGroupMatrix()
 
 void Group::process(Engine &e)
 {
+    assertSampleRateSet();
+
     namespace blk = sst::basic_blocks::mechanics;
 
     mUILag.process();
@@ -225,21 +227,13 @@ void Group::setupOnUnstream(const engine::Engine &e)
 }
 void Group::onSampleRateChanged()
 {
-    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    if (getEngine())
     {
-        stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
-
-        stepLfos[i].assign(&modulatorStorage[i], endpoints.lfo[i].rateP, nullptr,
-                           getEngine()->rngGen);
+        setupOnUnstream(*getEngine());
     }
 
-    for (auto p : processors)
-    {
-        if (p)
-        {
-            p->setSampleRate(sampleRate, sampleRateInv);
-        }
-    }
+    for (auto &z : zones)
+        z->setSampleRate(getSampleRate(), getSampleRateInv());
 }
 
 void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)

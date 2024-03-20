@@ -165,12 +165,14 @@ template <typename T> struct SSTVoiceEffectShim : T
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
                         float pitch) override
     {
+        this->assertSampleRateSet();
         static_assert(HasMemFn_processStereo<T>::value);
         this->processStereo(datainL, datainR, dataoutL, dataoutR, pitch);
     }
 
     virtual void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override
     {
+        this->assertSampleRateSet();
         if constexpr (HasMemFn_processMonoToMono<T>::value)
         {
             this->processMonoToMono(datain, dataoutL, pitch);
