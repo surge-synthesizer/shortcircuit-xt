@@ -133,46 +133,111 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 else
                 {
                     SCLOG("Cannot load Sample : " << sampleFile);
-                    ;
                     return false;
                 }
             }
 
-            auto zn = std::make_unique<engine::Zone>(sid);
-
+            // OK so do we have a sequence position > 1
+            int roundRobinPosition{-1};
             for (auto &oc : list)
             {
-                if (oc.name == "pitch_keycenter")
+                if (oc.name == "seq_position")
                 {
-                    zn->mapping.rootKey = parseMidiNote(oc.value);
-                }
-                else if (oc.name == "lokey")
-                {
-                    zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
-                }
-                else if (oc.name == "hikey")
-                {
-                    zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
-                }
-                else if (oc.name == "lovel")
-                {
-                    zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
-                }
-                else if (oc.name == "hivel")
-                {
-                    zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
-                }
-                else if (oc.name == "sample")
-                {
-                    // dealt with above
-                }
-                else
-                {
-                    SCLOG("    Skipped OpCode <region>: " << oc.name << " -> " << oc.value);
+                    auto pos = std::atoi(oc.value.c_str());
+                    if (pos > 1)
+                    {
+                        roundRobinPosition = pos;
+                    };
                 }
             }
-            zn->attachToSample(*e.getSampleManager());
-            group->addZone(zn);
+
+            if (roundRobinPosition > 0)
+            {
+                int16_t rk{0}, ks{0}, ke{0}, vs{0}, ve{0};
+                for (auto &oc : list)
+                {
+                    if (oc.name == "pitch_keycenter")
+                    {
+                        rk = parseMidiNote(oc.value);
+                    }
+                    else if (oc.name == "lokey")
+                    {
+                        ks = parseMidiNote(oc.value);
+                    }
+                    else if (oc.name == "hikey")
+                    {
+                        ke = parseMidiNote(oc.value);
+                    }
+                    else if (oc.name == "lovel")
+                    {
+                        vs = std::atol(oc.value.c_str());
+                    }
+                    else if (oc.name == "hivel")
+                    {
+                        ve = std::atol(oc.value.c_str());
+                    }
+                }
+
+                bool attached{false};
+
+                for (const auto &z : *group)
+                {
+                    if (z->mapping.rootKey == rk && z->mapping.keyboardRange.keyStart == ks &&
+                        z->mapping.keyboardRange.keyEnd == ke &&
+                        z->mapping.velocityRange.velStart == vs &&
+                        z->mapping.velocityRange.velEnd == ve)
+                    {
+                        int idx = roundRobinPosition - 1;
+                        z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx);
+                        attached = true;
+                        break;
+                    }
+                }
+                if (!attached)
+                {
+                    e.getMessageController()->reportErrorToClient(
+                        "Mis-mapped SFZ Round Robin",
+                        std::string("Unable to locate zone for sample ") + sampleFile);
+                }
+            }
+            else
+            {
+                auto zn = std::make_unique<engine::Zone>(sid);
+
+                for (auto &oc : list)
+                {
+                    if (oc.name == "pitch_keycenter")
+                    {
+                        zn->mapping.rootKey = parseMidiNote(oc.value);
+                    }
+                    else if (oc.name == "lokey")
+                    {
+                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
+                    }
+                    else if (oc.name == "hikey")
+                    {
+                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
+                    }
+                    else if (oc.name == "lovel")
+                    {
+                        zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
+                    }
+                    else if (oc.name == "hivel")
+                    {
+                        zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
+                    }
+                    else if (oc.name == "sample" || oc.name == "seq_position")
+                    {
+                        // dealt with above
+                    }
+                    else
+                    {
+                        SCLOG("    Skipped OpCode <region>: " << oc.name << " -> " << oc.value);
+                    }
+                }
+                zn->attachToSample(*e.getSampleManager());
+                group->addZone(zn);
+            }
             if (firstGroupWithZonesAdded == -1)
             {
                 firstGroupWithZonesAdded = groupId;
