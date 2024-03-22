@@ -155,6 +155,14 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     // If this is TRUE then sample root notes, ranges, etc... will override the mapping
     bool sampleLoadOverridesMapping{true};
     bool attachToSample(const sample::SampleManager &manager, int index = 0);
+    bool attachToSampleAtVariation(const sample::SampleManager &manager, const SampleID &sid,
+                                   int16_t variation)
+    {
+        sampleData[variation].sampleID = sid;
+        sampleData[variation].active = true;
+
+        return attachToSample(manager, variation);
+    }
 
     struct ZoneMappingData
     {
