@@ -73,6 +73,9 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
 
                  // Now we need to restore the bus effects
                  to.getPatch()->setupBussesOnUnstream(to);
+
+                 // and finally set the sample rate
+                 to.getPatch()->setSampleRate(to.getSampleRate());
              }))
 
 SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
@@ -82,7 +85,7 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
              }),
              SC_TO({
                  auto &patch = to;
-                 patch.reset();
+                 patch.resetToBlankPatch();
                  findIf(v, "streamingVersion", patch.streamingVersion);
 
                  // TODO: I could expose the array but I want to go to a limited stream in the

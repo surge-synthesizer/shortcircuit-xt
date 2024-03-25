@@ -70,7 +70,6 @@ static constexpr sheet_t::Class ModulationHSliderFilled{"multi.modulation.hslide
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
 {
-    SCLOG("Initializing Group and Zone Multi Styles");
     sheet_t::addClass(ModulationJogButon).withBaseClass(jcmp::JogUpDownButton::Styles::styleClass);
     sheet_t::addClass(ModulationToggle).withBaseClass(jcmp::ToggleButton::Styles::styleClass);
     sheet_t::addClass(ModulationMenu).withBaseClass(jcmp::MenuButton::Styles::styleClass);
@@ -88,7 +87,6 @@ static constexpr sheet_t::Class ModulationKnob{"multi.zone.modulation.knob"};
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
 {
-    SCLOG("Initializing Zone Multi Styles");
     sheet_t::addClass(ModulationMultiSwitch).withBaseClass(jcmp::MultiSwitch::Styles::styleClass);
     sheet_t::addClass(ModulationNamedPanel).withBaseClass(jcmp::NamedPanel::Styles::styleClass);
     sheet_t::addClass(ModulationVSlider).withBaseClass(jcmp::VSlider::Styles::styleClass);
@@ -111,7 +109,6 @@ static constexpr sheet_t::Class ModulationVSlider{"multi.group.modulation.vslide
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
 {
-    SCLOG("Initializing Zone Multi Styles");
     sheet_t::addClass(NamedPanel).withBaseClass(jcmp::NamedPanel::Styles::styleClass);
     sheet_t::addClass(ModulationNamedPanel).withBaseClass(jcmp::NamedPanel::Styles::styleClass);
     sheet_t::addClass(MultiSwitch).withBaseClass(jcmp::MultiSwitch::Styles::styleClass);

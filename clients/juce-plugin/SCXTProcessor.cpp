@@ -29,6 +29,7 @@
 #include "SCXTPluginEditor.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "sst/voicemanager/midi1_to_voicemanager.h"
+#include "messaging/client/client_messages.h"
 
 //==============================================================================
 SCXTProcessor::SCXTProcessor()
@@ -333,18 +334,8 @@ void SCXTProcessor::setStateInformation(const void *data, int sizeInBytes)
 
     auto xml = std::string(cd);
 
-    // TODO obviously fix this by pushing this xml to the serialization thread
-    try
-    {
-        engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
-        std::lock_guard<std::mutex> g(engine->modifyStructureMutex);
-        scxt::json::unstreamEngineState(*engine, xml);
-    }
-    catch (std::exception &err)
-    {
-        SCLOG("Unable to unstream [" << err.what() << "]");
-    }
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    scxt::messaging::client::clientSendToSerialization(
+        scxt::messaging::client::UnstreamIntoEngine{xml}, *engine->getMessageController());
 }
 
 //==============================================================================

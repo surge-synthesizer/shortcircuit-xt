@@ -38,7 +38,7 @@ namespace scxt::engine
 struct Engine;
 struct Patch : MoveableOnly<Patch>, SampleRateSupport
 {
-    Patch() : id(PatchID::next()) { reset(); }
+    Patch() : id(PatchID::next()) { resetToBlankPatch(); }
 
     // TODO - does this really belong in the patch? I think it probably does
     struct Busses
@@ -161,7 +161,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
 
     void process(Engine &e);
 
-    void reset()
+    void resetToBlankPatch()
     {
         // If it is the year 2112 and you just had a regtest fail because
         // this is earlier than the streaming version you just changed, then
@@ -172,6 +172,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
             parts[i] = std::make_unique<Part>(i);
             parts[i]->parentPatch = this;
         }
+        setSampleRate(1);
     }
 
     bool usesOutputBus(int bus) { return busses.usesOutput[bus]; }

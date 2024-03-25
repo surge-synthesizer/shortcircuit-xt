@@ -92,9 +92,6 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
 
     auto *tmpProcessor = tmpProcessorFromAfar;
 
-    assert(asT()->getEngine() &&
-           asT()->getEngine()->getMessageController()->threadingChecker.isAudioThread());
-
     uint8_t memory[dsp::processor::processorMemoryBufferSize];
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];

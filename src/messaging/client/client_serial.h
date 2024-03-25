@@ -41,6 +41,8 @@ enum ClientToSerializationMessagesIds
 {
     c2s_on_register,
 
+    c2s_unstream_state,
+
     c2s_single_select_address,
     c2s_do_select_action,
     c2s_do_multi_select_action,
