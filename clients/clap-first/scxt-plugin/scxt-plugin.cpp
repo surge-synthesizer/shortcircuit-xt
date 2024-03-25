@@ -110,18 +110,9 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
     buffer[totalRd] = 0;
 
     auto xml = std::string(buffer.data());
-    try
-    {
-        engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
-        std::lock_guard<std::mutex> g(engine->modifyStructureMutex);
-        scxt::json::unstreamEngineState(*engine, xml);
-    }
-    catch (std::exception &e)
-    {
-        std::cerr << "Unstream exception " << e.what() << std::endl;
-        return false;
-    }
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+
+    scxt::messaging::client::clientSendToSerialization(
+        scxt::messaging::client::UnstreamIntoEngine{xml}, *engine->getMessageController());
     return true;
 }
 

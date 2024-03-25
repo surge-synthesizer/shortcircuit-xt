@@ -39,6 +39,40 @@ namespace scxt::messaging::client
 {
 SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
                  onEngineStatus);
+
+using streamState_t = std::string;
+inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
+                       MessageController &cont)
+{
+    if (cont.isAudioRunning)
+    {
+        cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
+            try
+            {
+                scxt::json::unstreamEngineState(nonconste, payload);
+                auto &cont = *e.getMessageController();
+                cont.restartAudioThreadFromSerial();
+            }
+            catch (std::exception &err)
+            {
+                SCLOG("Unable to unstream [" << err.what() << "]");
+            }
+        });
+    }
+    else
+    {
+        try
+        {
+            scxt::json::unstreamEngineState(engine, payload);
+        }
+        catch (std::exception &err)
+        {
+            SCLOG("Unable to unstream [" << err.what() << "]");
+        }
+    }
+}
+CLIENT_TO_SERIAL(UnstreamIntoEngine, c2s_unstream_state, streamState_t,
+                 onUnstream(payload, engine, cont));
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H
