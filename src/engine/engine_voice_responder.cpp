@@ -95,7 +95,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             else // ok so what if more than one remain?
             {
-                int dieRoll = std::rand() % remainingOptions;  // roll a random number in range
+                int const dieRoll = std::rand() % remainingOptions;  // roll a random number in range
                 for (int n = 0; n < nbSampleLoadedInZone; ++n) // loop the range of variants
                 {
                     if (z->variantRngBits[n] == false) // on encountering an unused one:
