@@ -66,7 +66,6 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             // TODO: if variant mode is true random do:
             // z->sampleIndex = (z->sampleIndex + std::rand()) % 2;
         }
-        // Here be mf problems:
         else
         {
             // TODO: if variant mode is round-robin do:
