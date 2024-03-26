@@ -30,6 +30,7 @@
 
 namespace scxt::sample
 {
+
 void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &r)
 {
     for (const auto &[id, addr] : r)
@@ -56,7 +57,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
             break;
             case Sample::MULTISAMPLE_FILE:
             {
-                SCLOG("Unimplemented multisample load");
+                loadSampleFromMultiSample(addr.path, addr.region, id);
             }
             break;
             }
@@ -144,6 +145,47 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
         return {};
 
     samples[sp->id] = sp;
+    return sp->id;
+}
+
+std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &p, int idx,
+                                                                void *data, size_t dataSize)
+{
+    auto sid = SampleID::next();
+    auto sp = std::make_shared<Sample>(sid);
+
+    sp->parse_riff_wave(data, dataSize);
+    sp->type = Sample::MULTISAMPLE_FILE;
+    sp->region = idx;
+    sp->mFileName = p;
+    samples[sp->id] = sp;
+    return sp->id;
+}
+
+std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path &p, int idx,
+                                                                 const SampleID &id)
+{
+    if (zipArchives.find(p.u8string()) == zipArchives.end())
+    {
+        zipArchives[p.u8string()] = std::make_unique<ZipArchiveHolder>(p);
+    }
+    const auto &za = zipArchives[p.u8string()];
+    if (!za->isOpen)
+        return std::nullopt;
+
+    auto sp = std::make_shared<Sample>(id);
+
+    size_t ssize;
+    auto data = mz_zip_reader_extract_to_heap(&za->zip_archive, idx, &ssize, 0);
+
+    sp->parse_riff_wave(data, ssize);
+    sp->type = Sample::MULTISAMPLE_FILE;
+    sp->region = idx;
+    sp->mFileName = p;
+    samples[sp->id] = sp;
+
+    free(data);
+
     return sp->id;
 }
 

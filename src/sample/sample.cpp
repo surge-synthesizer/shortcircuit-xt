@@ -39,7 +39,6 @@ using namespace sst::basic_blocks::mechanics;
 
 Sample::~Sample()
 {
-    SCLOG("Deleting sample '" << displayName << "' at " << id.to_string());
     if (sampleData[0])
         free(sampleData[0]);
     if (sampleData[1])
