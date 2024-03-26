@@ -377,6 +377,9 @@ void Sample::dumpInformationToLog()
         SCLOG("SF2 File : " << getPath().u8string() << " Instrument=" << getCompoundInstrument()
                             << " Region=" << getCompoundRegion());
         break;
+    case MULTISAMPLE_FILE:
+        SCLOG("Multisample File : " << getPath().u8string() << " at " << getCompoundRegion());
+        break;
     }
 
     SCLOG("BitDepth=" << bitDepthByteSize(bitDepth) * 8 << " Channels=" << (int)channels);

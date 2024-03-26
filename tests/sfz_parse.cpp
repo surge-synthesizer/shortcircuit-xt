@@ -26,7 +26,7 @@
  */
 
 #include "catch2/catch2.hpp"
-#include "sfz_support/sfz_parse.h"
+#include "sample/sfz_support/sfz_parse.h"
 
 TEST_CASE("SFZ Tokens", "[sfz]")
 {

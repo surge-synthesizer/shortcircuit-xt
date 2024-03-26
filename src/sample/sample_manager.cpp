@@ -54,6 +54,11 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
                 loadSampleFromSF2ToID(addr.path, nullptr, addr.instrument, addr.region, id);
             }
             break;
+            case Sample::MULTISAMPLE_FILE:
+            {
+                SCLOG("Unimplemented multisample load");
+            }
+            break;
             }
         }
     }

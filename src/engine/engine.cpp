@@ -36,7 +36,8 @@
 #include "messaging/messaging.h"
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
-#include "sfz_support/sfz_import.h"
+#include "sample/sfz_support/sfz_import.h"
+#include "sample/multisample_support/multisample_import.h"
 #include "infrastructure/user_defaults.h"
 #include "browser/browser.h"
 #include "browser/browser_db.h"
@@ -405,7 +406,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
 
     // TODO: Deal with compound types more comprehensively
     // If you add a type here add it to Browser::isLoadableFile also
-    if (extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz"))
+    if (extensionMatches(p, ".multisample") || extensionMatches(p, ".sf2") ||
+        extensionMatches(p, ".sfz"))
     {
         assert(false);
         return;
@@ -474,6 +476,18 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         // TODO ok this refresh and restart is a bit unsatisfactory
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = sfz_support::importSFZ(p, *this);
+            if (!res)
+                messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+            messageController->restartAudioThreadFromSerial();
+            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                      getPartGroupZoneStructure(-1), *messageController);
+        });
+        return;
+    }
+    else if (extensionMatches(p, ".multisample"))
+    {
+        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+            auto res = multisample_support::importMultisample(p, *this);
             if (!res)
                 messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
             messageController->restartAudioThreadFromSerial();

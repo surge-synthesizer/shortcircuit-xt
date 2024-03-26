@@ -35,6 +35,8 @@
 #include <functional>
 #include <vector>
 #include <cassert>
+#include <string>
+#include <utility>
 #include <unordered_map>
 
 namespace scxt::modulation
