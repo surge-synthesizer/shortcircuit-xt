@@ -80,7 +80,7 @@ template <> struct scxt_traits<scxt::sample::Sample::SourceType>
             r = sample::Sample::FLAC_FILE;
         if (k == "aiff_file")
             r = sample::Sample::AIFF_FILE;
-        if (k == "multisapmle_file")
+        if (k == "multisample_file")
             r = sample::Sample::MULTISAMPLE_FILE;
 
         return;

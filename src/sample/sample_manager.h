@@ -39,9 +39,37 @@
 #include <vector>
 #include <utility>
 #include "SF.h"
+#include <miniz.h>
 
 namespace scxt::sample
 {
+struct ZipArchiveHolder : scxt::MoveableOnly<ZipArchiveHolder>
+{
+    mz_zip_archive zip_archive;
+    bool isOpen{false};
+    ZipArchiveHolder(const fs::path &p)
+    {
+        memset(&zip_archive, 0, sizeof(zip_archive));
+        isOpen = mz_zip_reader_init_file(&zip_archive, p.u8string().c_str(), 0);
+    }
+    ~ZipArchiveHolder()
+    {
+        if (isOpen)
+        {
+            mz_zip_reader_end(&zip_archive);
+        }
+    }
+
+    void close()
+    {
+        if (isOpen)
+        {
+            mz_zip_reader_end(&zip_archive);
+            isOpen = false;
+        }
+    }
+};
+
 struct SampleManager : MoveableOnly<SampleManager>
 {
     const ThreadingChecker &threadingChecker;
@@ -61,6 +89,11 @@ struct SampleManager : MoveableOnly<SampleManager>
     std::optional<SampleID> loadSampleFromSF2ToID(const fs::path &,
                                                   sf2::File *f, // if this is null I will re-open it
                                                   int instrument, int region, const SampleID &id);
+
+    std::optional<SampleID> setupSampleFromMultifile(const fs::path &, int idx, void *data,
+                                                     size_t dataSize);
+    std::optional<SampleID> loadSampleFromMultiSample(const fs::path &, int idx,
+                                                      const SampleID &id);
 
     std::shared_ptr<Sample> getSample(const SampleID &id) const
     {
@@ -101,6 +134,8 @@ struct SampleManager : MoveableOnly<SampleManager>
     std::unordered_map<std::string,
                        std::pair<std::unique_ptr<RIFF::File>, std::unique_ptr<sf2::File>>>
         sf2FilesByPath;
+
+    std::unordered_map<std::string, std::unique_ptr<ZipArchiveHolder>> zipArchives;
 };
 } // namespace scxt::sample
 #endif // SHORTCIRCUIT_SAMPLE_MANAGER_H

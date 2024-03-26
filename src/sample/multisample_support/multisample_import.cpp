@@ -92,6 +92,67 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         }
         else if (eln == "sample")
         {
+            /*
+             * <sample file="60 Clavinet E5 05.wav" gain="-0.96" group="4" parameter-1="0.0000"
+parameter-2="0.0000" parameter-3="0.0000" reverse="false" sample-start="0.000"
+sample-stop="317919.000" zone-logic="always-play"> <key high="96" low="88" root="88" track="1.0000"
+tune="0.00"/> <velocity low="125"/> <select/> <loop fade="0.0000" mode="off" start="0.000"
+stop="317919.000"/>
+</sample>
+             */
+            if (!fc->Attribute("file"))
+            {
+                SCLOG("Sample is not a file");
+                return false;
+            }
+
+            size_t ssize{0};
+            auto data = mz_zip_reader_extract_to_heap(
+                &zip_archive, fileToIndex[fc->Attribute("file")], &ssize, 0);
+
+            auto lsid = engine.getSampleManager()->setupSampleFromMultifile(
+                p, fileToIndex[fc->Attribute("file")], data, ssize);
+            free(data);
+
+            if (!lsid.has_value())
+            {
+                SCLOG("Wierd - no lsid value");
+                return false;
+            }
+
+            auto kr{90}, ks{0}, ke{127}, vs{0}, ve{127};
+            auto key = fc->FirstChildElement("key");
+            auto vel = fc->FirstChildElement("velocity");
+            if (key)
+            {
+                key->QueryIntAttribute("root", &kr);
+                key->QueryIntAttribute("low", &ks);
+                key->QueryIntAttribute("high", &ke);
+            }
+            if (vel)
+            {
+                vel->QueryIntAttribute("low", &vs);
+                vel->QueryIntAttribute("high", &ve);
+            }
+
+            auto group{0};
+            fc->QueryIntAttribute("group", &group);
+
+            if (group < 0 || group > addedGroupIndices.size())
+            {
+                SCLOG("Bad group : " << group);
+                return false;
+            }
+
+            auto &g = part->getGroup(addedGroupIndices[group]);
+            auto z = std::make_unique<engine::Zone>(*lsid);
+            z->mapping.rootKey = kr;
+            z->mapping.keyboardRange.keyStart = ks;
+            z->mapping.keyboardRange.keyEnd = ke;
+            z->mapping.velocityRange.velStart = vs;
+            z->mapping.velocityRange.velEnd = ve;
+            z->attachToSample(*engine.getSampleManager());
+            g->addZone(z);
         }
         else
         {
