@@ -55,7 +55,6 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         auto remainingOptions = nbSampleLoadedInZone - z->usedVariants;
         int countToN = -1; // for finding the nth true bool in the variantRng state array
 
-        
         if (nbSampleLoadedInZone == 1) // if there's only one variant
         {
             z->sampleIndex = 0; // you guessed it: just pick that one
@@ -77,11 +76,12 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             // for non-repeating random use the following:
             if (remainingOptions == 1) // if only one variant remains
             {
-                for (int n = 0; n < nbSampleLoadedInZone; ++n) // its index == that of last false flag here
+                for (int n = 0; n < nbSampleLoadedInZone;
+                     ++n) // its index == that of last false flag here
                 {
                     if (z->variantRngBits[n] == false) // so find it
                     {
-                        z->sampleIndex = n; // pick it to be played
+                        z->sampleIndex = n;          // pick it to be played
                         for (int f = 0; f < 16; ++f) // and reset the used flags
                         {
                             if (f == n)
@@ -96,17 +96,17 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             else // ok so what if more than one remain?
             {
-                int dieRoll = std::rand() % remainingOptions; // roll a random number in range
+                int dieRoll = std::rand() % remainingOptions;  // roll a random number in range
                 for (int n = 0; n < nbSampleLoadedInZone; ++n) // loop the range of variants
                 {
                     if (z->variantRngBits[n] == false) // on encountering an unused one:
                     {
-                        countToN = countToN +1; // increment this counter
+                        countToN = countToN + 1; // increment this counter
                         if (countToN == dieRoll) // the random number of times
                         {
-                            z->sampleIndex = n; // that's our candidate, pick it!
-                            z->variantRngBits[n] = true; // set its flag to used
-                            z->usedVariants = z->usedVariants +1; // and increment its counter
+                            z->sampleIndex = n;                    // that's our candidate, pick it!
+                            z->variantRngBits[n] = true;           // set its flag to used
+                            z->usedVariants = z->usedVariants + 1; // and increment its counter
                             break;
                         }
                     }
