@@ -42,6 +42,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         SF2_FILE,
         FLAC_FILE,
         AIFF_FILE,
+        MULTISAMPLE_FILE,
     } type{WAV_FILE};
 
     Sample() : id(SampleID::next()) {}

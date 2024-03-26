@@ -60,6 +60,9 @@ template <> struct scxt_traits<scxt::sample::Sample::SourceType>
         case sample::Sample::AIFF_FILE:
             v = {{key, "aiff_file"}};
             break;
+        case sample::Sample::MULTISAMPLE_FILE:
+            v = {{key, "multisample_file"}};
+            break;
         }
     }
 
@@ -77,6 +80,8 @@ template <> struct scxt_traits<scxt::sample::Sample::SourceType>
             r = sample::Sample::FLAC_FILE;
         if (k == "aiff_file")
             r = sample::Sample::AIFF_FILE;
+        if (k == "multisapmle_file")
+            r = sample::Sample::MULTISAMPLE_FILE;
 
         return;
     }

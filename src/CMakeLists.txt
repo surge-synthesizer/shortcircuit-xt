@@ -27,8 +27,9 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_aiff.cpp
         sample/loaders/load_flac.cpp
 
-        sfz_support/sfz_parse.cpp
-        sfz_support/sfz_import.cpp
+        sample/multisample_support/multisample_import.cpp
+        sample/sfz_support/sfz_parse.cpp
+        sample/sfz_support/sfz_import.cpp
 
         tuning/equal.cpp
         tuning/midikey_retuner.cpp
@@ -71,6 +72,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         sst-effects
         sst-plugininfra
         sst-plugininfra::tinyxml
+        sst-plugininfra::miniz
         sst-voicemanager
 
         libgig libakai
