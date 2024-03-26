@@ -52,7 +52,67 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     {
         const auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
-        z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+        auto remainingOptions = nbSampleLoadedInZone - z->usedVariants;
+        int countToN = -1; // for finding the nth true bool in the variantRng state array
+
+        
+        if (nbSampleLoadedInZone == 1) // if there's only one variant
+        {
+            z->sampleIndex = 0; // you guessed it: just pick that one
+        }
+        else if (nbSampleLoadedInZone == 2) // if there's two, round-robin == non-repeat random
+        {
+            z->sampleIndex = (z->sampleIndex + 1) % 2;
+            // but true random != those two, so...
+            // TODO: if variant mode is true random do:
+            // z->sampleIndex = (z->sampleIndex + std::rand()) % 2;
+        }
+        // Here be mf problems:
+        else
+        {
+            // TODO: if variant mode is round-robin do:
+            // z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+            // if it's true random do:
+            // z->sampleIndex = (z->sampleIndex + std::rand()) % nbSampleLoadedInZone;
+            // for non-repeating random use the following:
+            if (remainingOptions == 1) // if only one variant remains
+            {
+                for (int n = 0; n < nbSampleLoadedInZone; ++n) // its index == that of last false flag here
+                {
+                    if (z->variantRngBits[n] == false) // so find it
+                    {
+                        z->sampleIndex = n; // pick it to be played
+                        for (int f = 0; f < 16; ++f) // and reset the used flags
+                        {
+                            if (f == n)
+                                z->variantRngBits[f] = true; // by setting this last one to used
+                            else
+                                z->variantRngBits[f] = false; // and all the others to unused
+                        }
+                        break;
+                    }
+                }
+                z->usedVariants = 1; // consequently this should = 1
+            }
+            else // ok so what if more than one remain?
+            {
+                int dieRoll = std::rand() % remainingOptions; // roll a random number in range
+                for (int n = 0; n < nbSampleLoadedInZone; ++n) // loop the range of variants
+                {
+                    if (z->variantRngBits[n] == false) // on encountering an unused one:
+                    {
+                        countToN = countToN +1; // increment this counter
+                        if (countToN == dieRoll) // the random number of times
+                        {
+                            z->sampleIndex = n; // that's our candidate, pick it!
+                            z->variantRngBits[n] = true; // set its flag to used
+                            z->usedVariants = z->usedVariants +1; // and increment its counter
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         if (!z->samplePointers[z->sampleIndex])
         {
             // SCLOG( "Skipping voice with missing sample data" );
