@@ -52,8 +52,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     {
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
-        
-        
+
         int nextAvail{0};
         if (nbSampleLoadedInZone == 1)
         {
@@ -65,30 +64,31 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         }
         else
         {
-                if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+            if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+            {
+                for (auto i = 0; i < nbSampleLoadedInZone; ++i)
                 {
-                   for (auto i=0; i<nbSampleLoadedInZone -1; ++i)
-                   {
-                       z->rrs[i] = i;
-                   }
-                   z->numAvail = nbSampleLoadedInZone;
-                   z->setupFor = nbSampleLoadedInZone;
+                    z->rrs[i] = i;
+                }
+                z->numAvail = nbSampleLoadedInZone;
+                z->setupFor = nbSampleLoadedInZone;
 
-                   auto nextAvail = engine.rngGen.randU32() % z->numAvail;
-                   if (z->rrs[nextAvail] == z->lastPlayed)
-                   {
-                      nextAvail = nextAvail + engine.rngGen.randU32() % z->numAvail;
-                   }
-                }
-                else
+                auto nextAvail = engine.rngGen.randU32() % z->numAvail;
+                if (z->rrs[nextAvail] == z->lastPlayed)
                 {
-                   nextAvail = z->numAvail == 1 ? 0 : engine.rngGen.randU32() % z->numAvail;
+                    nextAvail =
+                        (nextAvail + (engine.rngGen.randU32() % (z->numAvail - 1))) % z->numAvail;
                 }
-                auto voice = z->rrs[nextAvail]; // we've used it so its a gap
-                z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
-                z->numAvail--; // and move the endpoint back by one
-                z->lastPlayed = voice;
-                z->sampleIndex = voice;
+            }
+            else
+            {
+                nextAvail = z->numAvail == 1 ? 0 : (engine.rngGen.randU32() % z->numAvail);
+            }
+            auto voice = z->rrs[nextAvail];              // we've used it so its a gap
+            z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
+            z->numAvail--;                               // and move the endpoint back by one
+            z->lastPlayed = voice;
+            z->sampleIndex = voice;
         }
         /*
         auto remainingOptions = nbSampleLoadedInZone - z->usedVariants;
@@ -134,8 +134,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             else // ok so what if more than one remain?
             {
-                int const dieRoll = engine.rngGen.randU32() % remainingOptions;  // roll a random number in range
-                for (int n = 0; n < nbSampleLoadedInZone; ++n) // loop the range of variants
+                int const dieRoll = engine.rngGen.randU32() % remainingOptions;  // roll a random
+        number in range for (int n = 0; n < nbSampleLoadedInZone; ++n) // loop the range of variants
                 {
                     if (z->variantRngBits[n] == false) // on encountering an unused one:
                     {
