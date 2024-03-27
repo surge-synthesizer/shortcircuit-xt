@@ -2,7 +2,7 @@
 
 [![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit-xt?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit-xt/_build/latest?definitionId=2&branchName=main)
 
-Welcome to Shortcircuit XT.
+Welcome to Shortcircuit XT!
 
 Shortcircuit was a popular creative sampler in the mid 2000s from vembertech, the
 company that originally created surge. In 2021, Claes Johansen, the principle
