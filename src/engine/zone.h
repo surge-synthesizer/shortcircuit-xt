@@ -130,10 +130,16 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     AssociatedSampleArray sampleData;
     std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
     int8_t sampleIndex{-1};
+    
+    int numAvail{0};
+    int setupFor{0};
+    int lastPlayed{-1};
+    std::array<int, maxSamplesPerZone> rrs{};
+    /*
     bool variantRngBits[maxSamplesPerZone] = {false}; // false = not played yet
     int usedVariants =
         0; // incrementing this is easier than summing all the true flags or whatever...
-
+    */
     auto getNumSampleLoaded() const
     {
         return std::distance(sampleData.begin(),

@@ -50,8 +50,47 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     int idx{0};
     for (const auto &path : nts)
     {
-        const auto &z = engine.zoneByPath(path);
+        auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
+        
+        
+        int nextAvail{0};
+        if (nbSampleLoadedInZone == 1)
+        {
+            z->sampleIndex = 0;
+        }
+        if (nbSampleLoadedInZone == 2)
+        {
+            z->sampleIndex = (z->sampleIndex + 1) % 2;
+        }
+        else
+        {
+                if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+                {
+                   for (auto i=0; i<nbSampleLoadedInZone -1; ++i)
+                   {
+                       z->rrs[i] = i;
+                   }
+                   z->numAvail = nbSampleLoadedInZone;
+                   z->setupFor = nbSampleLoadedInZone;
+
+                   auto nextAvail = engine.rngGen.randU32() % z->numAvail;
+                   if (z->rrs[nextAvail] == z->lastPlayed)
+                   {
+                      nextAvail = nextAvail + engine.rngGen.randU32() % z->numAvail;
+                   }
+                }
+                else
+                {
+                   nextAvail = z->numAvail == 1 ? 0 : engine.rngGen.randU32() % z->numAvail;
+                }
+                auto voice = z->rrs[nextAvail]; // we've used it so its a gap
+                z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
+                z->numAvail--; // and move the endpoint back by one
+                z->lastPlayed = voice;
+                z->sampleIndex = voice;
+        }
+        /*
         auto remainingOptions = nbSampleLoadedInZone - z->usedVariants;
         int countToN = -1; // for finding the nth true bool in the variantRng state array
 
@@ -71,7 +110,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             // TODO: if variant mode is round-robin do:
             // z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
             // if it's true random do:
-            // z->sampleIndex = (z->sampleIndex + std::rand()) % nbSampleLoadedInZone;
+            // z->sampleIndex = (z->sampleIndex + engine.rngGen.randU32()) % nbSampleLoadedInZone;
             // for non-repeating random use the following:
             if (remainingOptions == 1) // if only one variant remains
             {
@@ -95,7 +134,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             else // ok so what if more than one remain?
             {
-                int const dieRoll = std::rand() % remainingOptions;  // roll a random number in range
+                int const dieRoll = engine.rngGen.randU32() % remainingOptions;  // roll a random number in range
                 for (int n = 0; n < nbSampleLoadedInZone; ++n) // loop the range of variants
                 {
                     if (z->variantRngBits[n] == false) // on encountering an unused one:
@@ -112,6 +151,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 }
             }
         }
+        */
         if (!z->samplePointers[z->sampleIndex])
         {
             // SCLOG( "Skipping voice with missing sample data" );
