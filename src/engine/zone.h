@@ -71,7 +71,15 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     Zone(Zone &&) = default;
 
     ZoneID id;
-
+    /*
+    enum VariantMode
+    {
+        RR,         // Cycle through variants in order
+        RANDOM1,    // Pick next variant at random
+        // RANDOM2, // TODO random without repeating the same variant twice
+    };
+    DECLARE_ENUM_STRING(VariantMode);
+    */
     enum PlayMode
     {
         NORMAL,     // AEG gates; play on note on
@@ -101,6 +109,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         SampleID sampleID;
         int64_t startSample{-1}, endSample{-1}, startLoop{-1}, endLoop{-1};
 
+        // VariantMode variantMode{RR};
         PlayMode playMode{NORMAL};
         bool loopActive{false};
         bool playReverse{false};
@@ -121,6 +130,11 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     AssociatedSampleArray sampleData;
     std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
     int8_t sampleIndex{-1};
+    
+    int numAvail{0};
+    int setupFor{0};
+    int lastPlayed{-1};
+    std::array<int, maxSamplesPerZone> rrs{};
 
     auto getNumSampleLoaded() const
     {

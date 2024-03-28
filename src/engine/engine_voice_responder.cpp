@@ -50,9 +50,47 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     int idx{0};
     for (const auto &path : nts)
     {
-        const auto &z = engine.zoneByPath(path);
+        auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
-        z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+
+        int nextAvail{0};
+        if (nbSampleLoadedInZone == 1)
+        {
+            z->sampleIndex = 0;
+        }
+        if (nbSampleLoadedInZone == 2)
+        {
+            z->sampleIndex = (z->sampleIndex + 1) % 2;
+        }
+        else
+        {
+            if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+            {
+                for (auto i = 0; i < nbSampleLoadedInZone; ++i)
+                {
+                    z->rrs[i] = i;
+                }
+                z->numAvail = nbSampleLoadedInZone;
+                z->setupFor = nbSampleLoadedInZone;
+
+                nextAvail = engine.rngGen.randU32() % z->numAvail;
+                if (z->rrs[nextAvail] == z->lastPlayed)
+                {
+                    nextAvail =
+                        (nextAvail + (engine.rngGen.randU32() % (z->numAvail - 1))) % z->numAvail;
+                }
+            }
+            else
+            {
+                nextAvail = z->numAvail == 1 ? 0 : (engine.rngGen.randU32() % z->numAvail);
+            }
+            auto voice = z->rrs[nextAvail];              // we've used it so its a gap
+            z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
+            z->numAvail--;                               // and move the endpoint back by one
+            z->lastPlayed = voice;
+            z->sampleIndex = voice;
+        }
+
         if (!z->samplePointers[z->sampleIndex])
         {
             // SCLOG( "Skipping voice with missing sample data" );
