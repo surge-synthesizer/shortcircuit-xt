@@ -135,11 +135,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     int setupFor{0};
     int lastPlayed{-1};
     std::array<int, maxSamplesPerZone> rrs{};
-    /*
-    bool variantRngBits[maxSamplesPerZone] = {false}; // false = not played yet
-    int usedVariants =
-        0; // incrementing this is easier than summing all the true flags or whatever...
-    */
+
     auto getNumSampleLoaded() const
     {
         return std::distance(sampleData.begin(),
