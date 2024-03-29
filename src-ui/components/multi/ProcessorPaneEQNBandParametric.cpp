@@ -105,7 +105,11 @@ struct EqDisplay : juce::Component
         }
 
         static void setIntParam(BaseClass *, int, int) {}
-        static int getIntParam(const BaseClass *, int) { return 0.f; }
+        static int getIntParam(const BaseClass *bc, int idx)
+        {
+            // SCLOG("Query Int Param " << idx << " " << bc->mStorage->intParams[idx]);
+            return bc->mStorage->intParams[idx];
+        }
 
         static float dbToLinear(const BaseClass *that, float f)
         {
@@ -219,12 +223,14 @@ struct EqDisplay : juce::Component
         if (nBands < 0)
             rebuildCurves();
 
+        auto &colorMap = mProcessorPane.editor->themeApplier.colorMap();
+
         auto c2p = [this](auto &c) {
             auto p = juce::Path();
             bool first{true};
             for (auto &pt : c)
             {
-                auto sp = getHeight() / 2 - log2(pt.y) * 8;
+                auto sp = getHeight() / 2 - log2(pt.y) * 9;
                 if (first)
                 {
                     p.startNewSubPath(pt.x, sp);
@@ -238,18 +244,21 @@ struct EqDisplay : juce::Component
             return p;
         };
 
+        g.setColour(colorMap->get(theme::ColorMap::bg_1));
+        g.fillRect(getLocalBounds());
+
+        g.setColour(colorMap->get(theme::ColorMap::panel_outline_2));
+        g.drawRect(getLocalBounds());
+
         for (int i = 0; i < nBands; ++i)
         {
             auto p = c2p(curves[i + 1]);
-            g.setColour(juce::Colours::yellow);
+            g.setColour(colorMap->get(theme::ColorMap::accent_1b).withAlpha(0.7f));
             g.strokePath(p, juce::PathStrokeType(1));
         }
         auto p = c2p(curves[0]);
-        g.setColour(juce::Colours::orchid);
-        g.strokePath(p, juce::PathStrokeType(2));
-
-        g.setColour(juce::Colours::red);
-        g.drawRect(getLocalBounds(), 1);
+        g.setColour(colorMap->get(theme::ColorMap::accent_1a));
+        g.strokePath(p, juce::PathStrokeType(3));
     }
     void resized() override { rebuildCurves(); }
 };
@@ -261,23 +270,45 @@ void ProcessorPane::layoutControlsEQNBandParm()
     auto eq = bd.withTrimmedRight(slWidth);
     auto mx = bd.withLeft(bd.getWidth() - slWidth);
 
-    eqdisp->setBounds(eq.withTrimmedTop(70));
+    eqdisp->setBounds(eq.withTrimmedTop(60));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
     auto cols = lo::columns(eq, 4);
 
-    auto ms = std::make_unique<jcmp::MultiSwitch>();
-    ms->setSource(eqdisp->bandSelect.get());
-    getContentAreaComponent()->addAndMakeVisible(*ms);
-    ms->setBounds(cols[0].withHeight(50).withWidth(cols[0].getWidth() / 2));
-    otherEditors.push_back(std::move(ms));
-
-    std::vector<std::string> lab = {"Gain", "Freq", "BW"};
-    for (int i = 0; i < 3; ++i)
+    if (eqdisp->nBands > 1)
     {
-        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
+        auto ms = std::make_unique<jcmp::MultiSwitch>();
+        ms->setSource(eqdisp->bandSelect.get());
+
+        eqdisp->bandSelect->onSelChanged = [nb = eqdisp->nBands,
+                                            w = juce::Component::SafePointer(this)](int b) {
+            if (!w)
+                return;
+            for (int i = 0; i < nb * 3; ++i)
+            {
+                if (w->floatEditors[i])
+                {
+                    w->floatEditors[i]->setVisible(i >= b * 3 && i < b * 3 + 3);
+                }
+            }
+
+            for (int i = 0; i < nb; ++i)
+            {
+                if (w->intEditors[i])
+                    w->intEditors[i]->item->setVisible(i == b);
+            }
+        };
+        getContentAreaComponent()->addAndMakeVisible(*ms);
+        ms->setBounds(cols[0].withHeight(50).withWidth(cols[0].getWidth() / 2));
+        otherEditors.push_back(std::move(ms));
+    }
+    std::vector<std::string> lab = {"Gain", "Freq", "BW"};
+    for (int i = 0; i < 3 * eqdisp->nBands; ++i)
+    {
+        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i],
+                                                 lab[i % 3] + " " + std::to_string(i / 3 + 1));
         auto orig = floatAttachments[i]->onGuiValueChanged;
         floatAttachments[i]->onGuiValueChanged =
             [orig, w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
@@ -287,7 +318,40 @@ void ProcessorPane::layoutControlsEQNBandParm()
                     w->rebuildCurves();
                 }
             };
-        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[i + 1].getCentreX(), 5);
+        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[(i % 3) + 1].getCentreX(), 5);
+        if (i < 3)
+            floatEditors[i]->setVisible(true);
+        else
+            floatEditors[i]->setVisible(false);
+
+        if (i % 3 == 0)
+        {
+            intEditors[i / 3] =
+                createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[i / 3], "");
+            intEditors[i / 3]->label->setVisible(false);
+            if (eqdisp->nBands > 1)
+            {
+                intEditors[i / 3]->item->setBounds(cols[0]
+                                                       .withHeight(50)
+                                                       .withWidth(cols[0].getWidth() / 2)
+                                                       .translated(cols[0].getWidth() / 2, 0));
+            }
+            else
+            {
+                intEditors[i / 3]->item->setBounds(cols[0].withHeight(50).reduced(10, 0));
+            }
+            intEditors[i / 3]->item->setVisible(i == 0);
+
+            auto iorig = intAttachments[i / 3]->onGuiValueChanged;
+            intAttachments[i / 3]->onGuiValueChanged =
+                [iorig, w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+                    iorig(a);
+                    if (w)
+                    {
+                        w->rebuildCurves();
+                    }
+                };
+        }
     }
 
     mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
