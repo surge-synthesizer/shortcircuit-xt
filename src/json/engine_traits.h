@@ -258,6 +258,8 @@ STREAM_ENUM(engine::Zone::ProcRoutingPath, engine::Zone::toStringProcRoutingPath
             engine::Zone::fromStringProcRoutingPath);
 STREAM_ENUM(engine::Group::ProcRoutingPath, engine::Group::toStringProcRoutingPath,
             engine::Group::fromStringProcRoutingPath);
+STREAM_ENUM(engine::Zone::VariantPlaybackMode, engine::Zone::toStringVariantPlaybackMode,
+            engine::Zone::fromStringVariantPlaybackMode);
 
 template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
 {
@@ -315,6 +317,14 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
         }
     }
 };
+
+SC_STREAMDEF(scxt::engine::Zone::AssociatedSampleSet, SC_FROM({
+                 v = {{"samples", t.samples}, {"variantPlaybackMode", t.variantPlaybackMode}};
+             }),
+             SC_TO({
+                 findIf(v, "samples", result.samples);
+                 findIf(v, "variantPlaybackMode", result.variantPlaybackMode);
+             }));
 
 template <> struct scxt_traits<scxt::engine::Zone>
 {

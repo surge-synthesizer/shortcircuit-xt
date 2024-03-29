@@ -444,8 +444,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
         [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
             zone->terminateAllVoices();
-            zone->sampleData[sID].sampleID = sample;
-            zone->sampleData[sID].active = true;
+            zone->sampleData.samples[sID].sampleID = sample;
+            zone->sampleData.samples[sID].active = true;
             zone->attachToSample(*e.getSampleManager(), sID);
         },
         [p = partID, g = groupID, z = zoneID](auto &e) {
@@ -641,7 +641,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         SCLOG("ERROR: Can't attach to sample");
                         return;
                     }
-                    auto &znSD = zn->sampleData[0];
+                    auto &znSD = zn->sampleData.samples[0];
 
                     auto p = region->GetPan(presetRegion);
                     // pan in SF2 is -64 to 63 so hackety hack a bit

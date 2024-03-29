@@ -49,7 +49,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     void resized() override;
 
     void setMappingData(const engine::Zone::ZoneMappingData &);
-    void setSampleData(const engine::Zone::AssociatedSampleArray &);
+    void setSampleData(const engine::Zone::AssociatedSampleSet &);
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &);
     void editorSelectionChanged();
     void setActive(bool b);
@@ -59,7 +59,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<MacroDisplay> macroDisplay;
 
     engine::Zone::ZoneMappingData mappingView;
-    engine::Zone::AssociatedSampleArray sampleView;
+    engine::Zone::AssociatedSampleSet sampleView;
 
     void updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
 

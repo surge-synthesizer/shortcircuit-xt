@@ -64,22 +64,22 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     Zone() : id(ZoneID::next()) { initialize(); }
     Zone(SampleID sid) : id(ZoneID::next())
     {
-        sampleData[0].sampleID = sid;
-        sampleData[0].active = true;
+        sampleData.samples[0].sampleID = sid;
+        sampleData.samples[0].active = true;
         initialize();
     }
     Zone(Zone &&) = default;
 
     ZoneID id;
-    /*
-    enum VariantMode
+    enum VariantPlaybackMode : uint16_t
     {
-        RR,         // Cycle through variants in order
-        RANDOM1,    // Pick next variant at random
-        // RANDOM2, // TODO random without repeating the same variant twice
+        FORWARD_RR,   // Cycle through variants in order
+        TRUE_RANDOM,  // Pick next variant at random
+        RANDOM_CYCLE, //  random without repeating the same variant twice
+        UNISON
     };
-    DECLARE_ENUM_STRING(VariantMode);
-    */
+    DECLARE_ENUM_STRING(VariantPlaybackMode);
+
     enum PlayMode
     {
         NORMAL,     // AEG gates; play on note on
@@ -126,11 +126,16 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
                    startLoop == other.startLoop && endLoop == other.endLoop;
         }
     };
-    typedef std::array<AssociatedSample, maxSamplesPerZone> AssociatedSampleArray;
-    AssociatedSampleArray sampleData;
+
+    struct AssociatedSampleSet
+    {
+        std::array<AssociatedSample, maxSamplesPerZone> samples;
+        VariantPlaybackMode variantPlaybackMode{FORWARD_RR};
+    } sampleData;
+
     std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
     int8_t sampleIndex{-1};
-    
+
     int numAvail{0};
     int setupFor{0};
     int lastPlayed{-1};
@@ -138,8 +143,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
     auto getNumSampleLoaded() const
     {
-        return std::distance(sampleData.begin(),
-                             std::find_if(sampleData.begin(), sampleData.end(),
+        return std::distance(sampleData.samples.begin(),
+                             std::find_if(sampleData.samples.begin(), sampleData.samples.end(),
                                           [](const auto &s) { return s.active == false; }));
     }
 
@@ -172,8 +177,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     bool attachToSampleAtVariation(const sample::SampleManager &manager, const SampleID &sid,
                                    int16_t variation)
     {
-        sampleData[variation].sampleID = sid;
-        sampleData[variation].active = true;
+        sampleData.samples[variation].sampleID = sid;
+        sampleData.samples[variation].active = true;
 
         return attachToSample(manager, variation);
     }

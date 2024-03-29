@@ -89,7 +89,7 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                 *(eng.getMessageController()));
         }));
 
-typedef std::tuple<bool, engine::Zone::AssociatedSampleArray> sampleSelectedZoneViewResposne_t;
+typedef std::tuple<bool, engine::Zone::AssociatedSampleSet> sampleSelectedZoneViewResposne_t;
 SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
                  onSamplesUpdated);
 
@@ -105,13 +105,19 @@ inline void samplesSelectedZoneUpdate(const associatedSampleVariationPayload_t &
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
             auto &[idx, smp] = sampv;
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->sampleData[idx] = smp;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->sampleData.samples[idx] = smp;
         });
     }
 }
 CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
                  associatedSampleVariationPayload_t,
                  samplesSelectedZoneUpdate(payload, engine, cont));
+
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneAssociatedSampleSetInt16TValue,
+                             c2s_update_zone_sampleset_int16_t, detail::diffMsg_t<int16_t>,
+                             engine::Zone::AssociatedSampleSet,
+                             detail::updateZoneMemberValue(&engine::Zone::sampleData, payload,
+                                                           engine, cont));
 
 using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
 SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputInfoUpdate_t,

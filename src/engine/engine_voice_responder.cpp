@@ -53,59 +53,90 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
 
-        int nextAvail{0};
-        if (nbSampleLoadedInZone == 1)
+        if (z->sampleData.variantPlaybackMode == Zone::UNISON)
         {
-            z->sampleIndex = 0;
-        }
-        if (nbSampleLoadedInZone == 2)
-        {
-            z->sampleIndex = (z->sampleIndex + 1) % 2;
+            for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
+            {
+                z->sampleIndex = uv;
+                auto v = engine.initiateVoice(path);
+                if (v)
+                {
+                    v->velocity = velocity;
+                    v->originalMidiKey = key;
+                    v->attack();
+                }
+                voiceInitWorkingBuffer[idx] = v;
+                idx++;
+            }
         }
         else
         {
-            if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+            int nextAvail{0};
+            if (nbSampleLoadedInZone == 1)
             {
-                for (auto i = 0; i < nbSampleLoadedInZone; ++i)
-                {
-                    z->rrs[i] = i;
-                }
-                z->numAvail = nbSampleLoadedInZone;
-                z->setupFor = nbSampleLoadedInZone;
-
-                nextAvail = engine.rngGen.randU32() % z->numAvail;
-                if (z->rrs[nextAvail] == z->lastPlayed)
-                {
-                    nextAvail =
-                        (nextAvail + (engine.rngGen.randU32() % (z->numAvail - 1))) % z->numAvail;
-                }
+                z->sampleIndex = 0;
+            }
+            if (nbSampleLoadedInZone == 2)
+            {
+                z->sampleIndex = (z->sampleIndex + 1) % 2;
             }
             else
             {
-                nextAvail = z->numAvail == 1 ? 0 : (engine.rngGen.randU32() % z->numAvail);
-            }
-            auto voice = z->rrs[nextAvail];              // we've used it so its a gap
-            z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
-            z->numAvail--;                               // and move the endpoint back by one
-            z->lastPlayed = voice;
-            z->sampleIndex = voice;
-        }
+                if (z->sampleData.variantPlaybackMode == Zone::FORWARD_RR)
+                {
+                    z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+                }
+                else if (z->sampleData.variantPlaybackMode == Zone::TRUE_RANDOM)
+                {
+                    z->sampleIndex = engine.rngGen.randU32() % nbSampleLoadedInZone;
+                }
+                else if (z->sampleData.variantPlaybackMode == Zone::RANDOM_CYCLE)
+                {
+                    if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+                    {
+                        for (auto i = 0; i < nbSampleLoadedInZone; ++i)
+                        {
+                            z->rrs[i] = i;
+                        }
+                        z->numAvail = nbSampleLoadedInZone;
+                        z->setupFor = nbSampleLoadedInZone;
 
-        if (!z->samplePointers[z->sampleIndex])
-        {
-            // SCLOG( "Skipping voice with missing sample data" );
-        }
-        else
-        {
-            auto v = engine.initiateVoice(path);
-            if (v)
-            {
-                v->velocity = velocity;
-                v->originalMidiKey = key;
-                v->attack();
+                        nextAvail = engine.rngGen.randU32() % z->numAvail;
+                        if (z->rrs[nextAvail] == z->lastPlayed)
+                        {
+                            nextAvail =
+                                (nextAvail + (engine.rngGen.randU32() % (z->numAvail - 1))) %
+                                z->numAvail;
+                        }
+                    }
+                    else
+                    {
+                        nextAvail = z->numAvail == 1 ? 0 : (engine.rngGen.randU32() % z->numAvail);
+                    }
+                    auto voice = z->rrs[nextAvail];              // we've used it so its a gap
+                    z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
+                    z->numAvail--; // and move the endpoint back by one
+                    z->lastPlayed = voice;
+                    z->sampleIndex = voice;
+                }
             }
-            voiceInitWorkingBuffer[idx] = v;
-            idx++;
+
+            if (!z->samplePointers[z->sampleIndex])
+            {
+                // SCLOG( "Skipping voice with missing sample data" );
+            }
+            else
+            {
+                auto v = engine.initiateVoice(path);
+                if (v)
+                {
+                    v->velocity = velocity;
+                    v->originalMidiKey = key;
+                    v->attack();
+                }
+                voiceInitWorkingBuffer[idx] = v;
+                idx++;
+            }
         }
     }
     engine.midiNoteStateCounter++;

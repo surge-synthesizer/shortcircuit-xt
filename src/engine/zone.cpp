@@ -162,7 +162,7 @@ void Zone::setupOnUnstream(const engine::Engine &e)
 
 bool Zone::attachToSample(const sample::SampleManager &manager, int index)
 {
-    auto &s = sampleData[index];
+    auto &s = sampleData.samples[index];
     if (s.sampleID.isValid())
     {
         samplePointers[index] = manager.getSample(s.sampleID);
@@ -189,25 +189,52 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index)
                 mapping.velocityRange = {m.vel_low, m.vel_high};
             }
         }
-    }
-    if (samplePointers[index])
-    {
-        const auto &m = samplePointers[index]->meta;
-        s.startSample = 0;
-        s.endSample = samplePointers[index]->getSampleLength();
-        if (m.loop_present)
+        if (samplePointers[index])
         {
-            s.startLoop = m.loop_start;
-            s.endLoop = m.loop_end;
-            s.loopActive = true;
-        }
-        else
-        {
-            s.startLoop = 0;
-            s.endLoop = s.endSample;
+            const auto &m = samplePointers[index]->meta;
+            s.startSample = 0;
+            s.endSample = samplePointers[index]->getSampleLength();
+            if (m.loop_present)
+            {
+                s.startLoop = m.loop_start;
+                s.endLoop = m.loop_end;
+                s.loopActive = true;
+            }
+            else
+            {
+                s.startLoop = 0;
+                s.endLoop = s.endSample;
+            }
         }
     }
     return samplePointers[index] != nullptr;
+}
+
+std::string Zone::toStringVariantPlaybackMode(const Zone::VariantPlaybackMode &p)
+{
+    switch (p)
+    {
+    case FORWARD_RR:
+        return "frr";
+    case TRUE_RANDOM:
+        return "truerand";
+    case RANDOM_CYCLE:
+        return "randcyc";
+    case UNISON:
+        return "unison";
+    }
+    return "frr";
+}
+
+Zone::VariantPlaybackMode Zone::fromStringVariantPlaybackMode(const std::string &s)
+{
+    static auto inverse =
+        makeEnumInverse<Zone::VariantPlaybackMode, Zone::toStringVariantPlaybackMode>(
+            Zone::VariantPlaybackMode::FORWARD_RR, Zone::VariantPlaybackMode::UNISON);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return FORWARD_RR;
+    return p->second;
 }
 
 std::string Zone::toStringPlayMode(const PlayMode &p)

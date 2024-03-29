@@ -1294,13 +1294,13 @@ struct SampleDisplay : juce::Component, HasEditor
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
 
-    typedef connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleArray, int>
+    typedef connectors::PayloadDataAttachment<engine::Zone::AssociatedSampleSet, int>
         sample_attachment_t;
 
     std::unique_ptr<sample_attachment_t> loopCntAttachment;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> loopCnt;
 
-    std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>
+    std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleSet>>
         loopAttachment, reverseAttachment;
     std::unique_ptr<sst::jucegui::components::ToggleButton> loopActive, reverseActive;
 
@@ -1428,16 +1428,16 @@ struct SampleDisplay : juce::Component, HasEditor
                     }
                 }
             }
-            
+
             // We are neither on waveform neither on tab bar
             // we add at the end, but we check there is a free slot
             if (tabIndex == -1 &&
-                std::any_of(display->sampleView.begin(), display->sampleView.end(),
+                std::any_of(display->sampleView.samples.begin(), display->sampleView.samples.end(),
                             [](const auto &s) { return s.active == false; }))
             {
                 tabIndex = getNumTabs() - 1;
             }
-            
+
             return tabIndex;
         }
         SampleDisplay *display;
@@ -1493,6 +1493,15 @@ struct SampleDisplay : juce::Component, HasEditor
         loopModeButton->onClick = [this]() { showLoopModeMenu(); };
         addAndMakeVisible(*loopModeButton);
 
+        if (variantPlaymodeButton)
+        {
+            removeChildComponent(variantPlaymodeButton.get());
+            variantPlaymodeButton.reset();
+        }
+        variantPlaymodeButton = std::make_unique<juce::TextButton>("Variant");
+        variantPlaymodeButton->onClick = [this]() { showVariantPlaymodeMenu(); };
+        addAndMakeVisible(*variantPlaymodeButton);
+
         if (loopDirectionButton)
         {
             removeChildComponent(loopDirectionButton.get());
@@ -1530,15 +1539,15 @@ struct SampleDisplay : juce::Component, HasEditor
             labels[c] = std::move(l);
         };
 
-        attachSamplePoint(startP, "StartS", sampleView[selectedVariation].startSample);
+        attachSamplePoint(startP, "StartS", sampleView.samples[selectedVariation].startSample);
         addLabel(startP, "Start");
-        attachSamplePoint(endP, "EndS", sampleView[selectedVariation].endSample);
+        attachSamplePoint(endP, "EndS", sampleView.samples[selectedVariation].endSample);
         addLabel(endP, "End");
-        attachSamplePoint(startL, "StartL", sampleView[selectedVariation].startLoop);
+        attachSamplePoint(startL, "StartL", sampleView.samples[selectedVariation].startLoop);
         addLabel(startL, "Loop Start");
-        attachSamplePoint(endL, "EndL", sampleView[selectedVariation].endLoop);
+        attachSamplePoint(endL, "EndL", sampleView.samples[selectedVariation].endLoop);
         addLabel(endL, "Loop End");
-        attachSamplePoint(fadeL, "fadeL", sampleView[selectedVariation].loopFade);
+        attachSamplePoint(fadeL, "fadeL", sampleView.samples[selectedVariation].loopFade);
         addLabel(fadeL, "Loop Fade");
 
         if (loopActive)
@@ -1549,7 +1558,7 @@ struct SampleDisplay : juce::Component, HasEditor
         }
 
         loopAttachment = std::make_unique<
-            connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
+            connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleSet>>(
             "Loop",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
@@ -1558,7 +1567,7 @@ struct SampleDisplay : juce::Component, HasEditor
                     w->rebuild();
                 }
             },
-            sampleView[selectedVariation].loopActive);
+            sampleView.samples[selectedVariation].loopActive);
         loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
         loopActive->setLabel("On");
         loopActive->setSource(loopAttachment.get());
@@ -1572,7 +1581,7 @@ struct SampleDisplay : juce::Component, HasEditor
         }
 
         reverseAttachment = std::make_unique<
-            connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleArray>>(
+            connectors::BooleanPayloadDataAttachment<engine::Zone::AssociatedSampleSet>>(
             "Reverse",
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
@@ -1580,7 +1589,7 @@ struct SampleDisplay : juce::Component, HasEditor
                     w->onSamplePointChangedFromGUI();
                 }
             },
-            sampleView[selectedVariation].playReverse);
+            sampleView.samples[selectedVariation].playReverse);
 
         reverseActive = std::make_unique<sst::jucegui::components::ToggleButton>();
         reverseActive->setLabel("<-");
@@ -1607,7 +1616,7 @@ struct SampleDisplay : juce::Component, HasEditor
                     w->onSamplePointChangedFromGUI();
                 }
             },
-            sampleView[selectedVariation].loopCountWhenCounted);
+            sampleView.samples[selectedVariation].loopCountWhenCounted);
         loopCnt = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
         loopCnt->setSource(loopCntAttachment.get());
         addAndMakeVisible(*loopCnt);
@@ -1618,7 +1627,7 @@ struct SampleDisplay : juce::Component, HasEditor
             waveformsTabbedGroup->clearTabs();
             for (auto i = 0; i < maxSamplesPerZone; ++i)
             {
-                if (sampleView[i].active)
+                if (sampleView.samples[i].active)
                 {
                     waveformsTabbedGroup->addTab(std::to_string(i + 1), juce::Colours::darkgrey,
                                                  waveforms[i].waveformViewport.get(), false, i);
@@ -1650,7 +1659,7 @@ struct SampleDisplay : juce::Component, HasEditor
     void onSamplePointChangedFromGUI()
     {
         sendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest{
-            {selectedVariation, sampleView[selectedVariation]}});
+            {selectedVariation, sampleView.samples[selectedVariation]}});
         waveforms[selectedVariation].waveform->rebuildHotZones();
         waveforms[selectedVariation].waveform->repaint();
         repaint();
@@ -1699,6 +1708,8 @@ struct SampleDisplay : juce::Component, HasEditor
         }
 
         loopDirectionButton->setBounds(p);
+        p = p.translated(0, 20);
+        variantPlaymodeButton->setBounds(p);
     }
 
     bool active{false};
@@ -1722,7 +1733,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
     void rebuild()
     {
-        switch (sampleView[selectedVariation].playMode)
+        switch (sampleView.samples[selectedVariation].playMode)
         {
         case engine::Zone::NORMAL:
             playModeButton->setButtonText("Normal");
@@ -1735,7 +1746,7 @@ struct SampleDisplay : juce::Component, HasEditor
             break;
         }
 
-        switch (sampleView[selectedVariation].loopMode)
+        switch (sampleView.samples[selectedVariation].loopMode)
         {
         case engine::Zone::LOOP_DURING_VOICE:
             loopModeButton->setButtonText("Loop");
@@ -1747,7 +1758,7 @@ struct SampleDisplay : juce::Component, HasEditor
             loopModeButton->setButtonText("For Count (t/k)");
             break;
         }
-        switch (sampleView[selectedVariation].loopDirection)
+        switch (sampleView.samples[selectedVariation].loopDirection)
         {
         case engine::Zone::FORWARD_ONLY:
             loopDirectionButton->setButtonText("Loop Forward");
@@ -1757,14 +1768,14 @@ struct SampleDisplay : juce::Component, HasEditor
             break;
         }
 
-        loopModeButton->setEnabled(sampleView[selectedVariation].loopActive);
-        loopDirectionButton->setEnabled(sampleView[selectedVariation].loopActive);
-        loopCnt->setEnabled(sampleView[selectedVariation].loopActive);
-        sampleEditors[startL]->setVisible(sampleView[selectedVariation].loopActive);
-        sampleEditors[endL]->setVisible(sampleView[selectedVariation].loopActive);
-        sampleEditors[fadeL]->setVisible(sampleView[selectedVariation].loopActive);
+        loopModeButton->setEnabled(sampleView.samples[selectedVariation].loopActive);
+        loopDirectionButton->setEnabled(sampleView.samples[selectedVariation].loopActive);
+        loopCnt->setEnabled(sampleView.samples[selectedVariation].loopActive);
+        sampleEditors[startL]->setVisible(sampleView.samples[selectedVariation].loopActive);
+        sampleEditors[endL]->setVisible(sampleView.samples[selectedVariation].loopActive);
+        sampleEditors[fadeL]->setVisible(sampleView.samples[selectedVariation].loopActive);
 
-        loopCnt->setVisible(sampleView[selectedVariation].loopMode ==
+        loopCnt->setVisible(sampleView.samples[selectedVariation].loopMode ==
                             engine::Zone::LoopMode::LOOP_FOR_COUNT);
 
         waveforms[selectedVariation].waveform->rebuildHotZones();
@@ -1779,8 +1790,8 @@ struct SampleDisplay : juce::Component, HasEditor
         p.addSeparator();
 
         auto add = [&p, this](auto e, auto n) {
-            p.addItem(n, true, sampleView[selectedVariation].playMode == e, [this, e]() {
-                sampleView[selectedVariation].playMode = e;
+            p.addItem(n, true, sampleView.samples[selectedVariation].playMode == e, [this, e]() {
+                sampleView.samples[selectedVariation].playMode = e;
                 onSamplePointChangedFromGUI();
                 rebuild();
             });
@@ -1798,8 +1809,8 @@ struct SampleDisplay : juce::Component, HasEditor
         p.addSeparator();
 
         auto add = [&p, this](auto e, auto n) {
-            p.addItem(n, true, sampleView[selectedVariation].loopMode == e, [this, e]() {
-                sampleView[selectedVariation].loopMode = e;
+            p.addItem(n, true, sampleView.samples[selectedVariation].loopMode == e, [this, e]() {
+                sampleView.samples[selectedVariation].loopMode = e;
                 onSamplePointChangedFromGUI();
                 rebuild();
             });
@@ -1810,6 +1821,28 @@ struct SampleDisplay : juce::Component, HasEditor
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
+
+    void showVariantPlaymodeMenu()
+    {
+        juce::PopupMenu p;
+        p.addSectionHeader("Variant Play Mode");
+        p.addSeparator();
+
+        auto add = [&p, this](auto e, auto n) {
+            p.addItem(n, true, sampleView.variantPlaybackMode == e, [this, e]() {
+                sampleView.variantPlaybackMode = e;
+                connectors::updateSingleValue<cmsg::UpdateZoneAssociatedSampleSetInt16TValue>(
+                    sampleView, sampleView.variantPlaybackMode, this);
+            });
+        };
+        add(engine::Zone::VariantPlaybackMode::FORWARD_RR, "Round Robin");
+        add(engine::Zone::VariantPlaybackMode::TRUE_RANDOM, "Random");
+        add(engine::Zone::VariantPlaybackMode::RANDOM_CYCLE, "Random per Cycle");
+        add(engine::Zone::VariantPlaybackMode::UNISON, "Unison");
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
     void showLoopDirectionMenu()
     {
         juce::PopupMenu p;
@@ -1817,11 +1850,12 @@ struct SampleDisplay : juce::Component, HasEditor
         p.addSeparator();
 
         auto add = [&p, this](auto e, auto n) {
-            p.addItem(n, true, sampleView[selectedVariation].loopDirection == e, [this, e]() {
-                sampleView[selectedVariation].loopDirection = e;
-                onSamplePointChangedFromGUI();
-                rebuild();
-            });
+            p.addItem(n, true, sampleView.samples[selectedVariation].loopDirection == e,
+                      [this, e]() {
+                          sampleView.samples[selectedVariation].loopDirection = e;
+                          onSamplePointChangedFromGUI();
+                          rebuild();
+                      });
         };
         add(engine::Zone::LoopDirection::FORWARD_ONLY, "Loop Forward");
         add(engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS, "Loop Alternate");
@@ -1829,8 +1863,9 @@ struct SampleDisplay : juce::Component, HasEditor
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
-    std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
-    engine::Zone::AssociatedSampleArray &sampleView;
+    std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton,
+        variantPlaymodeButton;
+    engine::Zone::AssociatedSampleSet &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
 };
 
@@ -1842,7 +1877,7 @@ SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d) : display(d), 
 void SampleWaveform::rebuildHotZones()
 {
     static constexpr int hotZoneSize{10};
-    auto &v = display->sampleView[display->selectedVariation];
+    auto &v = display->sampleView.samples[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
     {
@@ -1872,7 +1907,7 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
 {
     // TODO probably cache this
     auto r = getLocalBounds();
-    auto &v = display->sampleView[display->selectedVariation];
+    auto &v = display->sampleView.samples[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     auto l = samp->getSampleLength();
     return (int64_t)std::clamp(1.0 * l * xpos / r.getWidth(), 0.0, l * 1.0);
@@ -1881,7 +1916,7 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
 int SampleWaveform::xPixelForSample(int64_t samplePos)
 {
     auto r = getLocalBounds();
-    auto &v = display->sampleView[display->selectedVariation];
+    auto &v = display->sampleView.samples[display->selectedVariation];
     auto sample = editor->sampleManager.getSample(v.sampleID);
     if (sample && samplePos >= 0)
     {
@@ -1899,7 +1934,7 @@ juce::Path SampleWaveform::pathForSample()
     juce::Path res;
 
     auto r = getLocalBounds();
-    auto &v = display->sampleView[display->selectedVariation];
+    auto &v = display->sampleView.samples[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
     {
@@ -2028,16 +2063,20 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
     switch (mouseState)
     {
     case MouseState::HZ_DRAG_SAMPSTART:
-        display->sampleView[display->selectedVariation].startSample = sampleForXPixel(e.position.x);
+        display->sampleView.samples[display->selectedVariation].startSample =
+            sampleForXPixel(e.position.x);
         break;
     case MouseState::HZ_DRAG_SAMPEND:
-        display->sampleView[display->selectedVariation].endSample = sampleForXPixel(e.position.x);
+        display->sampleView.samples[display->selectedVariation].endSample =
+            sampleForXPixel(e.position.x);
         break;
     case MouseState::HZ_DRAG_LOOPSTART:
-        display->sampleView[display->selectedVariation].startLoop = sampleForXPixel(e.position.x);
+        display->sampleView.samples[display->selectedVariation].startLoop =
+            sampleForXPixel(e.position.x);
         break;
     case MouseState::HZ_DRAG_LOOPEND:
-        display->sampleView[display->selectedVariation].endLoop = sampleForXPixel(e.position.x);
+        display->sampleView.samples[display->selectedVariation].endLoop =
+            sampleForXPixel(e.position.x);
         break;
     default:
         break;
@@ -2070,7 +2109,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         return;
 
     auto r = getLocalBounds();
-    auto &v = display->sampleView[display->selectedVariation];
+    auto &v = display->sampleView.samples[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
     {
@@ -2213,7 +2252,7 @@ void MappingPane::setMappingData(const engine::Zone::ZoneMappingData &m)
     mappingDisplay->repaint();
 }
 
-void MappingPane::setSampleData(const engine::Zone::AssociatedSampleArray &m)
+void MappingPane::setSampleData(const engine::Zone::AssociatedSampleSet &m)
 {
     sampleView = m;
     sampleDisplay->rebuildForSelectedVariation(sampleDisplay->selectedVariation, true);
