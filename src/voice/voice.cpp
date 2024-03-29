@@ -142,7 +142,7 @@ bool Voice::process()
     }
     // TODO round robin state
     auto &s = zone->samplePointers[sampleIndex];
-    auto &sdata = zone->sampleData[sampleIndex];
+    auto &sdata = zone->sampleData.samples[sampleIndex];
     assert(s);
 
     // Run Modulators
@@ -397,7 +397,7 @@ void Voice::initializeGenerator()
 {
     // TODO round robin
     auto &s = zone->samplePointers[sampleIndex];
-    auto &sampleData = zone->sampleData[sampleIndex];
+    auto &sampleData = zone->sampleData.samples[sampleIndex];
     assert(s);
 
     GDIO.outputL = output[0];

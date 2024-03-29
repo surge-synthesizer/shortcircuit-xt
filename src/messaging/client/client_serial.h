@@ -60,6 +60,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_mapping_float,
     c2s_update_zone_mapping_int16_t,
     c2s_update_zone_samples,
+    c2s_update_zone_sampleset_int16_t,
     c2s_update_zone_routing_row,
 
     c2s_update_zone_output_float_value,

@@ -48,7 +48,6 @@ SC_STREAMDEF(scxt::modulation::modulators::StepLFOStorage, SC_FROM({
                       {"smooth", t.smooth}};
              }),
              SC_TO({
-                 const auto &object = v.get_object();
                  findIf(v, "data", result.data);
                  findIf(v, "repeat", result.repeat);
                  findIf(v, "smooth", result.smooth);
