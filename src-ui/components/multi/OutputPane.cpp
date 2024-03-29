@@ -29,6 +29,7 @@
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/LabeledItem.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -64,10 +65,11 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 {
     typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
 
-    std::unique_ptr<attachment_t> outputAttachment, panAttachment;
+    std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
     std::unique_ptr<jcmp::Labeled<jcmp::Knob>> outputKnob, panKnob;
+    std::unique_ptr<jcmp::Labeled<jcmp::HSliderFilled>> velocitySensitivitySlider;
 
     OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
     {
@@ -76,6 +78,12 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         fac::attachLabelAndAdd(info, info.amplitude, this, outputAttachment, outputKnob,
                                "Amplitude");
         fac::attachLabelAndAdd(info, info.pan, this, panAttachment, panKnob, "Pan");
+
+        if constexpr (!OTTraits::forZone)
+        {
+            fac::attachLabelAndAdd(info, info.velocitySensitivity, this,
+                                   velocitySensitivityAttachment, velocitySensitivitySlider, "Vel");
+        }
 
         outputRouting = std::make_unique<jcmp::MenuButton>();
         outputRouting->setLabel(OTTraits::defaultRoutingLocationName);
@@ -93,6 +101,14 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         auto cc = lo::columnCenterX(getLocalBounds(), 2);
         lo::knobCX<theme::layout::constants::largeKnob>(*outputKnob, cc[0], 10);
         lo::knobCX<theme::layout::constants::largeKnob>(*panKnob, cc[1], 10);
+
+        if (!OTTraits::forZone && velocitySensitivitySlider)
+        {
+            auto b = getLocalBounds();
+            auto op = b.withTop(b.getBottom() - 20).translated(0, -27).reduced(30, 4);
+            velocitySensitivitySlider->item->setBounds(op.withTrimmedLeft(30));
+            velocitySensitivitySlider->label->setBounds(op.withWidth(30));
+        }
 
         auto b = getLocalBounds();
         auto op = b.withTop(b.getBottom() - 20).translated(0, -5).reduced(10, 0);

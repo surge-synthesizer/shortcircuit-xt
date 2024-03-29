@@ -331,6 +331,12 @@ bool Voice::process()
     }
 
     auto pao = *endpoints->outputTarget.ampP;
+
+    auto velFac = zone->parentGroup->outputInfo.velocitySensitivity;
+    auto velMul = std ::clamp((1 - velFac) + velFac * velocity, 0.f, 1.f);
+
+    pao *= velMul;
+
     outputAmp.set_target(pao * pao * pao);
     if (chainIsMono)
     {

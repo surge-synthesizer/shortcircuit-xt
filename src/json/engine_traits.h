@@ -118,32 +118,24 @@ SC_STREAMDEF(scxt::engine::Part, SC_FROM({
                  }
              }))
 
-template <> struct scxt_traits<scxt::engine::Group::GroupOutputInfo>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::engine::Group::GroupOutputInfo &t)
-    {
-        v = {{"amplitude", t.amplitude},
-             {"pan", t.pan},
-             {"muted", t.muted},
-             {"procRouting", t.procRouting},
-             {"routeTo", (int)t.routeTo}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::engine::Group::GroupOutputInfo &zo)
-    {
-        int rt;
-        findIf(v, "amplitude", zo.amplitude);
-        findIf(v, "pan", zo.pan);
-        findIf(v, "muted", zo.muted);
-        findIf(v, "procRouting", zo.procRouting);
-        findIf(v, "routeTo", rt);
-        zo.routeTo = (engine::BusAddress)(rt);
-    }
-};
+SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
+                 v = {{"amplitude", t.amplitude},
+                      {"pan", t.pan},
+                      {"velocitySensitivity", t.velocitySensitivity},
+                      {"muted", t.muted},
+                      {"procRouting", t.procRouting},
+                      {"routeTo", (int)t.routeTo}};
+             }),
+             SC_TO({
+                 int rt;
+                 findIf(v, "amplitude", result.amplitude);
+                 findIf(v, "pan", result.pan);
+                 findIf(v, "muted", result.muted);
+                 findIf(v, "procRouting", result.procRouting);
+                 findIf(v, "velocitySensitivity", result.velocitySensitivity);
+                 findIf(v, "routeTo", rt);
+                 result.routeTo = (engine::BusAddress)(rt);
+             }));
 
 template <> struct scxt_traits<scxt::engine::Group>
 {
