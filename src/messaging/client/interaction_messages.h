@@ -42,11 +42,12 @@ SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, int32_t,
                  engine.midikeyRetuner.setTuningMode((tuning::MidikeyRetuner::TuningMode)payload));
 
-typedef std::tuple<int32_t, bool> noteOnOff_t;
+// note, 0...1 velocity, onoff
+typedef std::tuple<int32_t, float, bool> noteOnOff_t;
 inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engine,
                                MessageController &cont)
 {
-    auto [n, onoff] = g;
+    auto [n, v, onoff] = g;
 
     auto sel = engine.getSelectionManager()->selectedPart;
     if (sel < 0)
@@ -54,17 +55,19 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
 
     auto p = sel;
     auto ch = engine.getPatch()->getPart(p)->channel;
+    if (ch < 0)
+        ch = 0;
 
     if (onoff)
     {
-        cont.scheduleAudioThreadCallback([ch, note = n](auto &eng) {
-            eng.voiceManager.processNoteOnEvent(0, ch, note, -1, 0.9, 0.f);
+        cont.scheduleAudioThreadCallback([ch, vel = v, note = n](auto &eng) {
+            eng.voiceManager.processNoteOnEvent(0, ch, note, -1, vel, 0.f);
         });
     }
     else
     {
-        cont.scheduleAudioThreadCallback([ch, note = n](auto &eng) {
-            eng.voiceManager.processNoteOffEvent(0, ch, note, -1, 0.f);
+        cont.scheduleAudioThreadCallback([ch, vel = v, note = n](auto &eng) {
+            eng.voiceManager.processNoteOffEvent(0, ch, note, -1, vel);
         });
     }
 }
