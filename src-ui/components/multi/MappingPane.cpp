@@ -759,7 +759,10 @@ void Keyboard::mouseDown(const juce::MouseEvent &e)
         auto r = rectangleForKey(i);
         if (r.contains(e.position))
         {
-            sendToSerialization(cmsg::NoteFromGUI({i, true}));
+            auto vy = 1.0 - 1.0 * (e.position.y - r.getY()) / (r.getHeight());
+            vy = std::clamp(vy, 0., 1.);
+
+            sendToSerialization(cmsg::NoteFromGUI({i, vy, true}));
             heldNote = i;
             if (heldNote == display->mappingView.rootKey)
             {
@@ -786,7 +789,7 @@ void Keyboard::mouseDrag(const juce::MouseEvent &e)
             {
                 if (heldNote > 0)
                 {
-                    sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
+                    sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
                 }
                 if (moveRootKey == true)
                 {
@@ -794,7 +797,10 @@ void Keyboard::mouseDrag(const juce::MouseEvent &e)
                     display->mappingChangedFromGUI();
                 }
                 heldNote = i;
-                sendToSerialization(cmsg::NoteFromGUI({i, true}));
+                auto vy = 1.0 - 1.0 * (e.position.y - r.getY()) / (r.getHeight());
+                vy = std::clamp(vy, 0., 1.);
+
+                sendToSerialization(cmsg::NoteFromGUI({i, vy, true}));
                 repaint();
             }
         }
@@ -805,7 +811,7 @@ void Keyboard::mouseUp(const juce::MouseEvent &e)
 {
     if (heldNote >= 0)
     {
-        sendToSerialization(cmsg::NoteFromGUI({heldNote, false}));
+        sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
         heldNote = -1;
         moveRootKey = false;
         repaint();
