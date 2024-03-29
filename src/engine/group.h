@@ -78,7 +78,7 @@ struct Group : MoveableOnly<Group>,
 
     struct GroupOutputInfo
     {
-        float amplitude{1.f}, pan{0.f};
+        float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f};
         bool muted{false};
         ProcRoutingPath procRouting{procRoute_linear};
         BusAddress routeTo{DEFAULT_BUS};
@@ -216,5 +216,8 @@ struct Group : MoveableOnly<Group>,
 
 SC_DESCRIBE(scxt::engine::Group::GroupOutputInfo,
             SC_FIELD(amplitude, pmd().asCubicDecibelAttenuation().withName("Amplitude"));
-            SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));)
+            SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));
+            SC_FIELD(velocitySensitivity,
+                     pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));)
+
 #endif
