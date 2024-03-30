@@ -170,13 +170,6 @@ struct ProcessorStorage
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int32_t, maxProcessorIntParams> intParams;
     bool isActive{true};
-
-    bool operator==(const ProcessorStorage &other) const
-    {
-        return (type == other.type && mix == other.mix && floatParams == other.floatParams &&
-                intParams == other.intParams && isActive == other.isActive);
-    }
-    bool operator!=(const ProcessorStorage &other) const { return !(*this == other); }
 };
 
 struct ProcessorControlDescription

@@ -64,13 +64,6 @@ struct KeyboardRange
             return true;
         return false;
     }
-
-    bool operator==(const KeyboardRange &other) const
-    {
-        return (keyStart == other.keyStart && keyEnd == other.keyEnd &&
-                fadeStart == other.fadeStart && fadeEnd == other.fadeEnd);
-    }
-    bool operator!=(const KeyboardRange &other) const { return !(*this == other); }
 };
 
 struct VelocityRange
@@ -100,13 +93,6 @@ struct VelocityRange
             return true;
         return false;
     }
-
-    bool operator==(const VelocityRange &other) const
-    {
-        return (velStart == other.velStart && velEnd == other.velEnd &&
-                fadeStart == other.fadeStart && fadeEnd == other.fadeEnd);
-    }
-    bool operator!=(const VelocityRange &other) const { return !(*this == other); }
 };
 } // namespace scxt::engine
 #endif // __SCXT_ENGINE_KEYBOARD_H

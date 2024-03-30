@@ -68,6 +68,7 @@ struct SelectionManager
         int32_t group{-1};
         int32_t zone{-1};
 
+        // required so we can participate in map
         bool operator==(const ZoneAddress &other) const
         {
             return part == other.part && group == other.group && zone == other.zone;
