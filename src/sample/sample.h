@@ -77,7 +77,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }
     size_t getSampleLength() const { return sample_length; }
-    std::string getBitDepthText() const {return bitDepthName(bitDepth);}
+    std::string getBitDepthText() const { return bitDepthName(bitDepth); }
 
     bool parseFlac(const fs::path &p);
 
