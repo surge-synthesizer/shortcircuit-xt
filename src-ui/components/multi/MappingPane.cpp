@@ -1452,7 +1452,6 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unique_ptr<MyTabbedComponent> waveformsTabbedGroup;
     size_t selectedVariation{0};
 
-    std::string filePattern{"*.wav;*.mp3;*.aif"};
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     SampleDisplay(MappingPane *p)
@@ -1863,7 +1862,7 @@ struct SampleDisplay : juce::Component, HasEditor
         for (const auto &entry : fs::directory_iterator(parent_path))
         {
             const auto filenameStr = entry.path().filename().string();
-            if (entry.is_regular_file())
+            if (entry.is_regular_file() && browser::Browser::isLoadableFile(entry.path()))
             {
                 v.push_back(entry.path().string());
             }
@@ -1897,6 +1896,13 @@ struct SampleDisplay : juce::Component, HasEditor
 
     void showFileBrowser()
     {
+        std::string filePattern;
+        for (auto s : browser::Browser::LoadableFile::singleSample)
+        {
+            filePattern += "*" + s + ",";
+        }
+        filePattern.erase(filePattern.size() - 1);
+
         fileChooser.reset(new juce::FileChooser("Select an audio file...", {}, filePattern));
 
         fileChooser->launchAsync(
