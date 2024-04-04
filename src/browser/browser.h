@@ -71,8 +71,8 @@ struct Browser
 
     struct LoadableFile
     {
-        static const std::vector<const std::string> singleSample;
-        static const std::vector<const std::string> multiSample;
+        static const std::vector<std::string> singleSample;
+        static const std::vector<std::string> multiSample;
     };
 
     std::vector<std::pair<fs::path, std::string>> getOSDefaultRootPathsForDeviceView() const;
