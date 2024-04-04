@@ -1452,6 +1452,7 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unique_ptr<MyTabbedComponent> waveformsTabbedGroup;
     size_t selectedVariation{0};
 
+    std::string filePattern{"*.wav;*.mp3;*.aif"};
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     SampleDisplay(MappingPane *p)
@@ -1481,6 +1482,14 @@ struct SampleDisplay : juce::Component, HasEditor
         fileButton = std::make_unique<juce::TextButton>("file");
         fileButton->onClick = [this]() { showFileBrowser(); };
         addAndMakeVisible(*fileButton);
+        
+        nextFileButton = std::make_unique<juce::TextButton>(">");
+        nextFileButton->onClick = [this]() { selectNextFile(true); };
+        addAndMakeVisible(*nextFileButton);
+        
+        prevFileButton = std::make_unique<juce::TextButton>("<");
+        prevFileButton->onClick = [this]() { selectNextFile(false); };
+        addAndMakeVisible(*prevFileButton);
         
         fileInfoButton = std::make_unique<juce::TextButton>("i");
         fileInfoButton->setClickingTogglesState(true);
@@ -1738,6 +1747,8 @@ struct SampleDisplay : juce::Component, HasEditor
         fileInfoButton->setBounds({variantPlaymodeButton->getRight() +5, 0, p.getHeight(), p.getHeight()});
         fileLabel->setBounds({fileInfoButton->getRight(), 0, 30, p.getHeight()});
         fileButton->setBounds({fileLabel->getRight(), 0, 100, p.getHeight()});
+        prevFileButton->setBounds({fileButton->getRight(), 0, p.getHeight(), p.getHeight()});
+        nextFileButton->setBounds({prevFileButton->getRight(), 0, p.getHeight(), p.getHeight()});
 
         fileInfos->setBounds({getWidth()/4, 20, getWidth()/2, 20});
     }
@@ -1842,9 +1853,50 @@ struct SampleDisplay : juce::Component, HasEditor
         repaint();
     }
 
+    void selectNextFile(bool selectForward)
+    {
+        auto samp{editor->sampleManager.getSample(sampleView.samples[selectedVariation].sampleID)};
+        auto parent_path{samp->getPath().parent_path()};
+        
+        std::vector<std::string> v; //todo maybe reserve space for the vector
+        for (const auto& entry : fs::directory_iterator(parent_path)) {
+            const auto filenameStr = entry.path().filename().string();
+            if (entry.is_regular_file()) {
+                v.push_back(entry.path().string());
+            }
+        }
+        
+        //todo sort alphabetically
+        std::sort(v.begin(), v.end());
+
+        auto it{std::find(v.begin(), v.end(), samp->getPath().string())};
+        auto index{std::distance(v.begin(), it)};
+        if(selectForward)
+        {
+            index++;
+            index %= v.size();
+        }
+        else
+        {
+            index--;
+            if(index < 0)
+            {
+                index += v.size();
+            }
+        }
+
+        auto f{v[index]};
+        namespace cmsg = scxt::messaging::client;
+        auto za{editor->currentLeadZoneSelection};
+        auto sampleID{selectedVariation};
+        sendToSerialization(
+                            cmsg::AddSampleInZone({f, za->part,
+                                za->group, za->zone, sampleID}));
+    }
+    
     void showFileBrowser()
     {
-        fileChooser.reset (new juce::FileChooser ("Select an audio file...", {}, "*.wav;*.mp3;*.aif"));
+        fileChooser.reset (new juce::FileChooser ("Select an audio file...", {}, filePattern));
         
         fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                   [this] (const juce::FileChooser& fc) mutable
@@ -1954,8 +2006,7 @@ struct SampleDisplay : juce::Component, HasEditor
     }
     std::unique_ptr<sst::jucegui::components::Label> playModeLabel, variantPlayModeLabel, fileLabel;
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton,
-    variantPlaymodeButton, fileInfoButton,
-    fileButton;
+    variantPlaymodeButton, fileInfoButton, fileButton, nextFileButton, prevFileButton;
     
     struct FileInfos : juce::Component{
         FileInfos()
