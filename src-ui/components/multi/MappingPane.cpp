@@ -1452,6 +1452,8 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unique_ptr<MyTabbedComponent> waveformsTabbedGroup;
     size_t selectedVariation{0};
 
+    std::unique_ptr<juce::FileChooser> fileChooser;
+
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
@@ -1842,8 +1844,27 @@ struct SampleDisplay : juce::Component, HasEditor
 
     void showFileBrowser()
     {
+        fileChooser.reset (new juce::FileChooser ("Select an audio file...", {}, "*.wav;*.mp3;*.aif"));
         
+        fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                                  [this] (const juce::FileChooser& fc) mutable
+                                  {
+                                      if (fc.getURLResults().size() > 0)
+                                      {
+                                          const auto u = fc.getResult().getFullPathName();
+
+                                          namespace cmsg = scxt::messaging::client;
+                                          auto za{editor->currentLeadZoneSelection};
+                                          auto sampleID{selectedVariation};
+                                          sendToSerialization(
+                                              cmsg::AddSampleInZone({std::string{(const char *)(u.toUTF8())}, za->part,
+                                                                     za->group, za->zone, sampleID}));
+                                      }
+
+                                      fileChooser = nullptr;
+                                  }, nullptr);
     }
+
 
     void showFileInfos()
     {
