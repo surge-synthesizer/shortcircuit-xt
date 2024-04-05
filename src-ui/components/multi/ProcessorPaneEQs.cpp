@@ -28,13 +28,18 @@
 #include "ProcessorPane.h"
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/JogUpDownButton.h"
+#include "theme/Layout.h"
 
 // We include the DSP code here so we can do a UI-side render of the EQ cuve
 #include "sst/voice-effects/eq/EqNBandParametric.h"
+#include "sst/voice-effects/eq/MorphEQ.h"
+#include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/EqualTuningProvider.h"
 
 #include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/components/VSlider.h"
 
 #include "theme/Layout.h"
 
@@ -43,9 +48,14 @@ namespace scxt::ui::multi
 
 namespace jcmp = sst::jucegui::components;
 
-struct EqDisplay : juce::Component
+namespace lo = theme::layout;
+namespace locon = lo::constants;
+
+// sigh - need this since we are virtual in component land
+struct EqDisplayBase : juce::Component
 {
-    const ProcessorPane &mProcessorPane;
+    virtual void rebuildCurves() = 0;
+    int nBands{0};
 
     // bit of a hack - I hold a multiswitch data source we add to my parent
     struct BandSelect : sst::jucegui::data::Discrete
@@ -73,15 +83,6 @@ struct EqDisplay : juce::Component
     };
     std::unique_ptr<BandSelect> bandSelect;
 
-    EqDisplay(const ProcessorPane &p) : mProcessorPane(p)
-    {
-        mOneBand.setStorage(&mProcessorPane.processorView);
-        mTwoBand.setStorage(&mProcessorPane.processorView);
-        mThreeBand.setStorage(&mProcessorPane.processorView);
-        rebuildCurves();
-        bandSelect = std::make_unique<BandSelect>(nBands);
-    }
-
     struct EqAdapter
     {
         struct BaseClass
@@ -95,7 +96,7 @@ struct EqDisplay : juce::Component
             sst::basic_blocks::tables::EqualTuningProvider mEqualTuning;
 
             const dsp::processor::ProcessorStorage *mStorage{nullptr};
-            void setStorage(const dsp::processor::ProcessorStorage *p) { mStorage = p; }
+            void setStorage(dsp::processor::ProcessorStorage *p) { mStorage = p; }
         };
         static constexpr int blockSize{scxt::blockSize};
         static void setFloatParam(BaseClass *, int, float) {}
@@ -126,101 +127,74 @@ struct EqDisplay : juce::Component
         static uint8_t *checkoutBlock(BaseClass *, size_t) { return nullptr; }
         static void returnBlock(BaseClass *, uint8_t *, size_t) {}
     };
-    sst::voice_effects::eq::EqNBandParametric<EqAdapter, 1> mOneBand;
-    sst::voice_effects::eq::EqNBandParametric<EqAdapter, 2> mTwoBand;
-    sst::voice_effects::eq::EqNBandParametric<EqAdapter, 3> mThreeBand;
+};
+
+template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
+{
+    const ProcessorPane &mProcessorPane;
+    Proc mProcessor;
+
+    std::function<void(Proc &, int)> mPrepareBand{nullptr};
+
+    EqDisplaySupport(ProcessorPane &p) : mProcessorPane(p)
+    {
+        this->nBands = nSub;
+        mProcessor.setStorage(&p.processorView);
+        rebuildCurves();
+    }
 
     struct pt
     {
         float freq{0}, x{0}, y{0};
     };
     using ptvec_t = std::vector<pt>;
-    std::array<ptvec_t, 4> curves; // 0 is total response 1..nis per band
-    int nBands{-1};
-    void rebuildCurves()
+    std::array<ptvec_t, nSub + 1> curves; // 0 is total response 1..nis per band
+    bool curvesBuilt{false};
+    void rebuildCurves() override
     {
         auto np = getWidth();
 
         float d[scxt::blockSize];
         for (int i = 0; i < scxt::blockSize; ++i)
             d[i] = 0.f;
-        switch (mProcessorPane.processorView.type)
-        {
-        case dsp::processor::proct_eq_1band_parametric_A:
-        {
-            nBands = 1;
-            mOneBand.calc_coeffs();
-            for (int i = 0; i < 50; ++i)
-                mOneBand.processMonoToMono(d, d, 60);
-            break;
-        }
-        case dsp::processor::proct_eq_2band_parametric_A:
-        {
-            nBands = 2;
-            mTwoBand.calc_coeffs();
-            for (int i = 0; i < 50; ++i)
-                mTwoBand.processMonoToMono(d, d, 60);
-            break;
-        }
-        case dsp::processor::proct_eq_3band_parametric_A:
-        {
-            nBands = 3;
-            mThreeBand.calc_coeffs();
-            for (int i = 0; i < 50; ++i)
-                mThreeBand.processMonoToMono(d, d, 60);
-        }
-        break;
-        default:
-            return;
-        }
+
+        mProcessor.calc_coeffs();
+        for (int i = 0; i < 50; ++i)
+            mProcessor.processMonoToMono(d, d, 60);
 
         for (auto &c : curves)
             c.clear();
 
         auto nr = -1000000;
-        for (int i = 0; i < np; ++i)
+        for (int band = 0; band < nSub + 1; ++band)
         {
-            float norm = 1.0 * i / (np - 1);
-            auto freq = pow(2.f, 3 + norm * 11.5);
-            auto freqarg = freq * EqAdapter::getSampleRateInv(nullptr);
-            auto res = 0.f;
+            if (band > 0 && mPrepareBand)
+                mPrepareBand(mProcessor, band - 1);
+            for (int i = 0; i < np; ++i)
+            {
+                float norm = 1.0 * i / (np - 1);
+                auto freq = pow(2.f, 3 + norm * 11.5);
+                auto freqarg = freq * EqAdapter::getSampleRateInv(nullptr);
+                auto res = 0.f;
 
-            switch (mProcessorPane.processorView.type)
-            {
-            case dsp::processor::proct_eq_1band_parametric_A:
-            {
-                res = mOneBand.getFrequencyGraph(freqarg);
-                curves[0].push_back(pt{(float)freq, i * 1.f, res});
-                curves[1].push_back(pt{(float)freq, i * 1.f, res});
-            }
-            break;
-            case dsp::processor::proct_eq_2band_parametric_A:
-            {
-                res = mTwoBand.getFrequencyGraph(freqarg);
-                curves[0].push_back(pt{(float)freq, i * 1.f, res});
-                for (int j = 0; j < nBands; ++j)
-                    curves[j + 1].push_back(
-                        pt{(float)freq, i * 1.f, mTwoBand.getBandFrequencyGraph(j, freqarg)});
-            }
-            break;
-            case dsp::processor::proct_eq_3band_parametric_A:
-            {
-                res = mThreeBand.getFrequencyGraph(freqarg);
-                curves[0].push_back(pt{(float)freq, i * 1.f, res});
-                for (int j = 0; j < nBands; ++j)
-                    curves[j + 1].push_back(
-                        pt{(float)freq, i * 1.f, mThreeBand.getBandFrequencyGraph(j, freqarg)});
-            }
-            break;
-            default:
-                return;
+                if (band == 0)
+                {
+                    res = mProcessor.getFrequencyGraph(freqarg);
+                    curves[0].push_back(pt{(float)freq, i * 1.f, res});
+                }
+                else
+                {
+                    curves[band].push_back(pt{(float)freq, i * 1.f,
+                                              mProcessor.getBandFrequencyGraph(band - 1, freqarg)});
+                }
             }
         }
+        curvesBuilt = true;
         repaint();
     }
     void paint(juce::Graphics &g) override
     {
-        if (nBands < 0)
+        if (!curvesBuilt)
             rebuildCurves();
 
         auto &colorMap = mProcessorPane.editor->themeApplier.colorMap();
@@ -250,7 +224,10 @@ struct EqDisplay : juce::Component
         g.setColour(colorMap->get(theme::ColorMap::panel_outline_2));
         g.drawRect(getLocalBounds());
 
-        for (int i = 0; i < nBands; ++i)
+        g.setColour(colorMap->get(theme::ColorMap::accent_2b));
+        g.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);
+
+        for (int i = 0; i < nSub; ++i)
         {
             auto p = c2p(curves[i + 1]);
             g.setColour(colorMap->get(theme::ColorMap::accent_1b).withAlpha(0.7f));
@@ -260,11 +237,39 @@ struct EqDisplay : juce::Component
         g.setColour(colorMap->get(theme::ColorMap::accent_1a));
         g.strokePath(p, juce::PathStrokeType(3));
     }
-    void resized() override { rebuildCurves(); }
 };
+
+template <typename Proc, int nSub> struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
+{
+    EqNBandDisplay(ProcessorPane &p) : EqDisplaySupport<Proc, nSub>(p)
+    {
+        this->bandSelect = std::make_unique<EqDisplayBase::BandSelect>(nSub);
+    }
+
+    void resized() override { this->rebuildCurves(); }
+};
+
 void ProcessorPane::layoutControlsEQNBandParm()
 {
-    auto eqdisp = std::make_unique<EqDisplay>(*this);
+    std::unique_ptr<EqDisplayBase> eqdisp;
+
+    switch (processorView.type)
+    {
+    case dsp::processor::proct_eq_1band_parametric_A:
+        eqdisp = std::make_unique<EqNBandDisplay<
+            sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 1>, 1>>(*this);
+        break;
+    case dsp::processor::proct_eq_2band_parametric_A:
+        eqdisp = std::make_unique<EqNBandDisplay<
+            sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 2>, 2>>(*this);
+        break;
+    case dsp::processor::proct_eq_3band_parametric_A:
+        eqdisp = std::make_unique<EqNBandDisplay<
+            sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>, 3>>(*this);
+        break;
+    default:
+        return;
+    }
     auto bd = getContentAreaComponent()->getLocalBounds();
     auto slWidth = 20;
     auto eq = bd.withTrimmedRight(slWidth);
@@ -273,8 +278,6 @@ void ProcessorPane::layoutControlsEQNBandParm()
     eqdisp->setBounds(eq.withTrimmedTop(60));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
 
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
     auto cols = lo::columns(eq, 4);
 
     if (eqdisp->nBands > 1)
@@ -359,4 +362,99 @@ void ProcessorPane::layoutControlsEQNBandParm()
 
     otherEditors.push_back(std::move(eqdisp));
 }
+
+void ProcessorPane::layoutControlsEQMorph()
+{
+    auto eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2>>(*this);
+    auto bd = getContentAreaComponent()->getLocalBounds();
+    auto slWidth = 20;
+    auto eq = bd.withTrimmedRight(slWidth);
+    auto mx = bd.withLeft(bd.getWidth() - slWidth);
+
+    eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
+
+    auto presets = eq.withHeight(16);
+
+    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+        if (w)
+        {
+            w->rebuildCurves();
+        }
+    };
+
+    intEditors[0] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0], "S0");
+    getContentAreaComponent()->addAndMakeVisible(*intEditors[0]->item);
+    intEditors[0]->item->setBounds(presets.withWidth(presets.getWidth() / 2).reduced(0, 2));
+    intAttachments[0]->andThenOnGui(thenRecalc);
+
+    intEditors[1] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1], "S0");
+    getContentAreaComponent()->addAndMakeVisible(*intEditors[1]->item);
+
+    intEditors[1]->item->setBounds(presets.withWidth(presets.getWidth() / 2)
+                                       .translated(presets.getWidth() / 2, 0)
+                                       .reduced(0, 2));
+    intAttachments[1]->andThenOnGui(thenRecalc);
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
+
+    std::vector<std::string> lab{"Morph", "Freq", "Gain", "BW"};
+    auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 4);
+
+    for (int i = 0; i < 4; ++i)
+    {
+        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
+        floatAttachments[i]->andThenOnGui(thenRecalc);
+
+        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[i].getCentreX(), cols[i].getY());
+    }
+
+    eqdisp->setBounds(eq.withTrimmedTop(65));
+    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
+
+    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
+    mixEditor->item->setBounds(mx);
+
+    otherEditors.push_back(std::move(eqdisp));
+}
+
+void ProcessorPane::layoutControlsEQGraphic()
+{
+    auto eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
+    auto bd = getContentAreaComponent()->getLocalBounds();
+    auto slWidth = 20;
+    auto sliderHeight = 80;
+    auto eq = bd.withTrimmedRight(slWidth);
+    auto mx = bd.withLeft(bd.getWidth() - slWidth);
+
+    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+        if (w)
+        {
+            w->rebuildCurves();
+        }
+    };
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
+
+    auto cols = lo::columns(eq.withHeight(sliderHeight), 6);
+
+    for (int i = 0; i < 6; ++i)
+    {
+        floatEditors[i] = createWidgetAttachedTo<jcmp::VSlider>(floatAttachments[i],
+                                                                floatAttachments[i]->getLabel());
+        floatAttachments[i]->andThenOnGui(thenRecalc);
+
+        floatEditors[i]->item->setBounds(cols[i].reduced(3, 0));
+    }
+
+    eqdisp->setBounds(eq.withTrimmedTop(sliderHeight + 2));
+    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
+
+    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
+    mixEditor->item->setBounds(mx);
+
+    otherEditors.push_back(std::move(eqdisp));
+}
+
 } // namespace scxt::ui::multi

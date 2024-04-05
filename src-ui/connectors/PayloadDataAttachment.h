@@ -119,7 +119,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
 
     ValueType &value;
     std::string label;
-    std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged;
+    std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged{nullptr};
 
     PayloadDataAttachment(const datamodel::pmd &cd,
                           std::function<void(const PayloadDataAttachment &at)> oGVC, ValueType &v)
@@ -197,6 +197,17 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     float getDefaultValue() const override { return description.defaultVal; }
 
     bool isBipolar() const override { return description.isBipolar(); }
+
+    void andThenOnGui(std::function<void(const PayloadDataAttachment &)> f)
+    {
+        auto orig = onGuiValueChanged;
+        onGuiValueChanged = [f, orig](auto &at) {
+            if (orig)
+                orig(at);
+            if (f)
+                f(at);
+        };
+    }
 };
 
 template <typename Payload, typename ValueType = int32_t>
@@ -246,6 +257,17 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
         if (r.has_value())
             return *r;
         return "";
+    }
+
+    void andThenOnGui(std::function<void(const DiscretePayloadDataAttachment &)> f)
+    {
+        auto orig = onGuiValueChanged;
+        onGuiValueChanged = [f, orig](auto &at) {
+            if (orig)
+                orig(at);
+            if (f)
+                f(at);
+        };
     }
 };
 

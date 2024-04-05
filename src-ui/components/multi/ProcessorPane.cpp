@@ -186,16 +186,25 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_SuperSVF:
         layoutControlsSuperSVF();
         break;
+
     case dsp::processor::proct_eq_1band_parametric_A:
     case dsp::processor::proct_eq_2band_parametric_A:
     case dsp::processor::proct_eq_3band_parametric_A:
         layoutControlsEQNBandParm();
-        // layoutControls();
-
         break;
+
     case dsp::processor::proct_fx_waveshaper:
         layoutControlsWaveshaper();
         break;
+
+    case dsp::processor::proct_eq_morph:
+        layoutControlsEQMorph();
+        break;
+
+    case dsp::processor::proct_eq_6band:
+        layoutControlsEQGraphic();
+        break;
+
     default:
         layoutControls();
         break;

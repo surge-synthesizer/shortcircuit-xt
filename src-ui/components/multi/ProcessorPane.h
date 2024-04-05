@@ -86,6 +86,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsSuperSVF();
     void layoutControlsWaveshaper();
     void layoutControlsEQNBandParm();
+    void layoutControlsEQMorph();
+    void layoutControlsEQGraphic();
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
@@ -119,7 +121,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         kn->setSource(at.get());
         kn->setTitle(at->getLabel());
         kn->setDescription(at->getLabel());
-      
+
         getContentAreaComponent()->addAndMakeVisible(*kn);
 
         return std::move(kn);

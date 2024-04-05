@@ -80,7 +80,7 @@ inline std::vector<posn_t> columns(const posn_t &p, size_t N)
     std::vector<posn_t> res;
     for (int i = 0; i < N; ++i)
     {
-        res.emplace_back(i * w, p.getY(), w, p.getHeight());
+        res.emplace_back(p.getX() + i * w, p.getY(), w, p.getHeight());
     }
     return res;
 }
