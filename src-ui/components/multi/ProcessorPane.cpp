@@ -201,6 +201,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsEQMorph();
         break;
 
+    case dsp::processor::proct_eq_6band:
+        layoutControlsEQGraphic();
+        break;
+
     default:
         layoutControls();
         break;

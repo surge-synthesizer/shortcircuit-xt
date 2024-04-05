@@ -34,10 +34,12 @@
 // We include the DSP code here so we can do a UI-side render of the EQ cuve
 #include "sst/voice-effects/eq/EqNBandParametric.h"
 #include "sst/voice-effects/eq/MorphEQ.h"
+#include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/EqualTuningProvider.h"
 
 #include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/components/VSlider.h"
 
 #include "theme/Layout.h"
 
@@ -221,6 +223,9 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
 
         g.setColour(colorMap->get(theme::ColorMap::panel_outline_2));
         g.drawRect(getLocalBounds());
+
+        g.setColour(colorMap->get(theme::ColorMap::accent_2b));
+        g.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);
 
         for (int i = 0; i < nSub; ++i)
         {
@@ -413,4 +418,44 @@ void ProcessorPane::layoutControlsEQMorph()
 
     otherEditors.push_back(std::move(eqdisp));
 }
+
+void ProcessorPane::layoutControlsEQGraphic()
+{
+    auto eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
+    auto bd = getContentAreaComponent()->getLocalBounds();
+    auto slWidth = 20;
+    auto sliderHeight = 80;
+    auto eq = bd.withTrimmedRight(slWidth);
+    auto mx = bd.withLeft(bd.getWidth() - slWidth);
+
+    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+        if (w)
+        {
+            w->rebuildCurves();
+        }
+    };
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
+
+    auto cols = lo::columns(eq.withHeight(sliderHeight), 6);
+
+    for (int i = 0; i < 6; ++i)
+    {
+        floatEditors[i] = createWidgetAttachedTo<jcmp::VSlider>(floatAttachments[i],
+                                                                floatAttachments[i]->getLabel());
+        floatAttachments[i]->andThenOnGui(thenRecalc);
+
+        floatEditors[i]->item->setBounds(cols[i].reduced(3, 0));
+    }
+
+    eqdisp->setBounds(eq.withTrimmedTop(sliderHeight + 2));
+    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
+
+    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
+    mixEditor->item->setBounds(mx);
+
+    otherEditors.push_back(std::move(eqdisp));
+}
+
 } // namespace scxt::ui::multi

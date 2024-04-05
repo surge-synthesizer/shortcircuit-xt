@@ -87,6 +87,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsWaveshaper();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
+    void layoutControlsEQGraphic();
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
