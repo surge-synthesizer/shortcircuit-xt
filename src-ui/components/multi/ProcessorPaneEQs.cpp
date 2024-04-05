@@ -239,11 +239,11 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
     }
 };
 
-template <typename Proc, int nBands> struct EqNBandDisplay : EqDisplaySupport<Proc, nBands>
+template <typename Proc, int nSub> struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
 {
-    EqNBandDisplay(ProcessorPane &p) : EqDisplaySupport<Proc, nBands>(p)
+    EqNBandDisplay(ProcessorPane &p) : EqDisplaySupport<Proc, nSub>(p)
     {
-        this->bandSelect = std::make_unique<EqDisplayBase::BandSelect>(nBands);
+        this->bandSelect = std::make_unique<EqDisplayBase::BandSelect>(nSub);
     }
 
     void resized() override { this->rebuildCurves(); }
@@ -372,8 +372,7 @@ void ProcessorPane::layoutControlsEQMorph()
     auto eq = bd.withTrimmedRight(slWidth);
     auto mx = bd.withLeft(bd.getWidth() - slWidth);
 
-    eqdisp->mPrepareBand = [](sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter> &proc,
-                              int band) { proc.calc_coeffs(true); };
+    eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
 
     auto presets = eq.withHeight(16);
 
