@@ -367,7 +367,8 @@ void ProcessorPane::layoutControlsEQMorph()
     auto eq = bd.withTrimmedRight(slWidth);
     auto mx = bd.withLeft(bd.getWidth() - slWidth);
 
-    eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
+    eqdisp->mPrepareBand = [](sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter> &proc,
+                              int band) { proc.calc_coeffs(true); };
 
     auto presets = eq.withHeight(16);
 
