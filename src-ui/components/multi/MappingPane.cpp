@@ -1452,6 +1452,8 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unique_ptr<MyTabbedComponent> waveformsTabbedGroup;
     size_t selectedVariation{0};
 
+    std::unique_ptr<juce::FileChooser> fileChooser;
+
     SampleDisplay(MappingPane *p)
         : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
     {
@@ -1463,6 +1465,38 @@ struct SampleDisplay : juce::Component, HasEditor
             waveforms[i].waveformViewport = std::make_unique<Zoomable>(
                 waveforms[i].waveform.get(), std::make_pair(1.f, 50.f), std::make_pair(1.f, 10.f));
         }
+
+        variantPlayModeLabel = std::make_unique<sst::jucegui::components::Label>();
+        variantPlayModeLabel->setText("Variant");
+        addAndMakeVisible(*variantPlayModeLabel);
+
+        variantPlaymodeButton = std::make_unique<juce::TextButton>("Variant");
+        variantPlaymodeButton->onClick = [this]() { showVariantPlaymodeMenu(); };
+        addAndMakeVisible(*variantPlaymodeButton);
+
+        fileLabel = std::make_unique<sst::jucegui::components::Label>();
+        fileLabel->setText("File");
+        addAndMakeVisible(*fileLabel);
+
+        fileButton = std::make_unique<juce::TextButton>("file");
+        fileButton->onClick = [this]() { showFileBrowser(); };
+        addAndMakeVisible(*fileButton);
+
+        nextFileButton = std::make_unique<juce::TextButton>(">");
+        nextFileButton->onClick = [this]() { selectNextFile(true); };
+        addAndMakeVisible(*nextFileButton);
+
+        prevFileButton = std::make_unique<juce::TextButton>("<");
+        prevFileButton->onClick = [this]() { selectNextFile(false); };
+        addAndMakeVisible(*prevFileButton);
+
+        fileInfoButton = std::make_unique<juce::TextButton>("i");
+        fileInfoButton->setClickingTogglesState(true);
+        fileInfoButton->onClick = [this]() { showFileInfos(); };
+        addAndMakeVisible(*fileInfoButton);
+
+        fileInfos = std::make_unique<FileInfos>();
+        addChildComponent(*fileInfos);
 
         rebuildForSelectedVariation(selectedVariation, true);
     }
@@ -1498,15 +1532,6 @@ struct SampleDisplay : juce::Component, HasEditor
         loopModeButton = std::make_unique<juce::TextButton>("loopmode");
         loopModeButton->onClick = [this]() { showLoopModeMenu(); };
         addAndMakeVisible(*loopModeButton);
-
-        if (variantPlaymodeButton)
-        {
-            removeChildComponent(variantPlaymodeButton.get());
-            variantPlaymodeButton.reset();
-        }
-        variantPlaymodeButton = std::make_unique<juce::TextButton>("Variant");
-        variantPlaymodeButton->onClick = [this]() { showVariantPlaymodeMenu(); };
-        addAndMakeVisible(*variantPlaymodeButton);
 
         if (loopDirectionButton)
         {
@@ -1682,7 +1707,7 @@ struct SampleDisplay : juce::Component, HasEditor
         waveformsTabbedGroup->setBounds(viewArea);
         auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
 
-        p = p.withHeight(18);
+        p = p.withHeight(18).translated(0, 20);
 
         playModeLabel->setBounds(p.withWidth(40));
 
@@ -1714,8 +1739,18 @@ struct SampleDisplay : juce::Component, HasEditor
         }
 
         loopDirectionButton->setBounds(p);
-        p = p.translated(0, 20);
-        variantPlaymodeButton->setBounds(p);
+
+        variantPlayModeLabel->setBounds({getWidth() / 2, 0, 40, p.getHeight()});
+        variantPlaymodeButton->setBounds({variantPlayModeLabel->getRight(), 0, 60, p.getHeight()});
+
+        fileInfoButton->setBounds(
+            {variantPlaymodeButton->getRight() + 5, 0, p.getHeight(), p.getHeight()});
+        fileLabel->setBounds({fileInfoButton->getRight(), 0, 30, p.getHeight()});
+        fileButton->setBounds({fileLabel->getRight(), 0, 100, p.getHeight()});
+        prevFileButton->setBounds({fileButton->getRight(), 0, p.getHeight(), p.getHeight()});
+        nextFileButton->setBounds({prevFileButton->getRight(), 0, p.getHeight(), p.getHeight()});
+
+        fileInfos->setBounds({getWidth() / 4, 20, getWidth() / 2, 20});
     }
 
     bool active{false};
@@ -1764,6 +1799,7 @@ struct SampleDisplay : juce::Component, HasEditor
             loopModeButton->setButtonText("For Count (t/k)");
             break;
         }
+
         switch (sampleView.samples[selectedVariation].loopDirection)
         {
         case engine::Zone::FORWARD_ONLY:
@@ -1772,6 +1808,34 @@ struct SampleDisplay : juce::Component, HasEditor
         case engine::Zone::ALTERNATE_DIRECTIONS:
             loopDirectionButton->setButtonText("Loop Alternate");
             break;
+        }
+
+        switch (sampleView.variantPlaybackMode)
+        {
+        case engine::Zone::FORWARD_RR:
+            variantPlaymodeButton->setButtonText("Round robin");
+            break;
+        case engine::Zone::TRUE_RANDOM:
+            variantPlaymodeButton->setButtonText("Random");
+            break;
+        case engine::Zone::RANDOM_CYCLE:
+            variantPlaymodeButton->setButtonText("Random per Cycle");
+            break;
+        case engine::Zone::UNISON:
+            variantPlaymodeButton->setButtonText("Unison");
+            break;
+        }
+
+        auto samp = editor->sampleManager.getSample(sampleView.samples[selectedVariation].sampleID);
+        if (samp)
+        {
+            fileButton->setButtonText(samp->displayName);
+            fileInfos->srVal->setText(std::to_string(samp->sample_rate));
+            fileInfos->bdVal->setText(samp->getBitDepthText());
+            auto duration = ((float)samp->sample_length) / samp->sample_rate;
+            auto duration_s{fmt::format("{:.3f} s", duration)};
+            fileInfos->lengthVal->setText(duration_s);
+            fileInfos->sizeVal->setText(std::to_string(samp->getDataSize()));
         }
 
         loopModeButton->setEnabled(sampleView.samples[selectedVariation].loopActive);
@@ -1787,6 +1851,84 @@ struct SampleDisplay : juce::Component, HasEditor
         waveforms[selectedVariation].waveform->rebuildHotZones();
 
         repaint();
+    }
+
+    void selectNextFile(bool selectForward)
+    {
+        auto samp{editor->sampleManager.getSample(sampleView.samples[selectedVariation].sampleID)};
+        auto parent_path{samp->getPath().parent_path()};
+
+        std::vector<std::string> v; // todo maybe reserve space for the vector
+        for (const auto &entry : fs::directory_iterator(parent_path))
+        {
+            const auto filenameStr = entry.path().filename().string();
+            if (entry.is_regular_file() && browser::Browser::isLoadableFile(entry.path()))
+            {
+                v.push_back(entry.path().string());
+            }
+        }
+
+        // todo sort alphabetically
+        std::sort(v.begin(), v.end());
+
+        auto it{std::find(v.begin(), v.end(), samp->getPath().string())};
+        auto index{std::distance(v.begin(), it)};
+        if (selectForward)
+        {
+            index++;
+            index %= v.size();
+        }
+        else
+        {
+            index--;
+            if (index < 0)
+            {
+                index += v.size();
+            }
+        }
+
+        auto f{v[index]};
+        namespace cmsg = scxt::messaging::client;
+        auto za{editor->currentLeadZoneSelection};
+        auto sampleID{selectedVariation};
+        sendToSerialization(cmsg::AddSampleInZone({f, za->part, za->group, za->zone, sampleID}));
+    }
+
+    void showFileBrowser()
+    {
+        std::string filePattern;
+        for (auto s : browser::Browser::LoadableFile::singleSample)
+        {
+            filePattern += "*" + s + ",";
+        }
+        filePattern.erase(filePattern.size() - 1);
+
+        fileChooser.reset(new juce::FileChooser("Select an audio file...", {}, filePattern));
+
+        fileChooser->launchAsync(
+            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+            [this](const juce::FileChooser &fc) mutable {
+                if (fc.getURLResults().size() > 0)
+                {
+                    const auto u = fc.getResult().getFullPathName();
+
+                    namespace cmsg = scxt::messaging::client;
+                    auto za{editor->currentLeadZoneSelection};
+                    auto sampleID{selectedVariation};
+                    sendToSerialization(
+                        cmsg::AddSampleInZone({std::string{(const char *)(u.toUTF8())}, za->part,
+                                               za->group, za->zone, sampleID}));
+                }
+
+                fileChooser = nullptr;
+            },
+            nullptr);
+    }
+
+    void showFileInfos()
+    {
+        auto show{fileInfoButton->getToggleState()};
+        fileInfos->setVisible(show);
     }
 
     void showPlayModeMenu()
@@ -1839,6 +1981,7 @@ struct SampleDisplay : juce::Component, HasEditor
                 sampleView.variantPlaybackMode = e;
                 connectors::updateSingleValue<cmsg::UpdateZoneAssociatedSampleSetInt16TValue>(
                     sampleView, sampleView.variantPlaybackMode, this);
+                rebuild();
             });
         };
         add(engine::Zone::VariantPlaybackMode::FORWARD_RR, "Round Robin");
@@ -1868,9 +2011,61 @@ struct SampleDisplay : juce::Component, HasEditor
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
-    std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
+    std::unique_ptr<sst::jucegui::components::Label> playModeLabel, variantPlayModeLabel, fileLabel;
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton,
-        variantPlaymodeButton;
+        variantPlaymodeButton, fileInfoButton, fileButton, nextFileButton, prevFileButton;
+
+    struct FileInfos : juce::Component
+    {
+        FileInfos()
+        {
+            auto createComp = [this](auto &comp, std::string text) {
+                comp = std::make_unique<sst::jucegui::components::Label>();
+                comp->setText(text);
+                addAndMakeVisible(*comp);
+            };
+
+            createComp(srLabel, "Sample Rate: ");
+            createComp(bdLabel, "Bit Depth: ");
+            createComp(sizeLabel, "Size: ");
+            createComp(lengthLabel, "Length: ");
+
+            createComp(srVal, "Sample Rate Val");
+            createComp(bdVal, "Bit Depth Val");
+            createComp(sizeVal, "Size Val");
+            createComp(lengthVal, "Length Val");
+        }
+
+        void resized()
+        {
+            auto p{getLocalBounds().withWidth(40)};
+            srLabel->setBounds(p.withWidth(60));
+            p.translate(srLabel->getWidth(), 0);
+            srVal->setBounds(p);
+            p.translate(srVal->getWidth(), 0);
+
+            bdLabel->setBounds(p.withWidth(60));
+            p.translate(bdLabel->getWidth(), 0);
+            bdVal->setBounds(p.withWidth(60));
+            p.translate(bdVal->getWidth(), 0);
+
+            sizeLabel->setBounds(p);
+            p.translate(sizeLabel->getWidth(), 0);
+            sizeVal->setBounds(p);
+            p.translate(sizeVal->getWidth(), 0);
+
+            lengthLabel->setBounds(p);
+            p.translate(lengthLabel->getWidth(), 0);
+            lengthVal->setBounds(p);
+            p.translate(lengthVal->getWidth(), 0);
+        }
+
+        std::unique_ptr<sst::jucegui::components::Label> srLabel, bdLabel, sizeLabel, lengthLabel;
+        std::unique_ptr<sst::jucegui::components::Label> srVal, bdVal, sizeVal, lengthVal;
+    };
+
+    std::unique_ptr<FileInfos> fileInfos;
+
     engine::Zone::AssociatedSampleSet &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
 };

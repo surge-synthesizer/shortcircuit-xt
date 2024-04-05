@@ -47,12 +47,18 @@ std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView
     return osdef;
 }
 
-bool Browser::isLoadableFile(const fs::path &p) const
+const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".flac", ".aif",
+                                                                         ".aiff"};
+
+const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz",
+                                                                        ".multisample"};
+
+bool Browser::isLoadableFile(const fs::path &p)
 {
-    return extensionMatches(p, ".wav") || extensionMatches(p, ".flac") ||
-           extensionMatches(p, ".aif") || extensionMatches(p, ".aiff") ||
-           extensionMatches(p, ".sf2") || extensionMatches(p, ".sfz") ||
-           extensionMatches(p, ".multisample");
+    return std::any_of(LoadableFile::singleSample.begin(), LoadableFile::singleSample.end(),
+                       [p](auto e) { return extensionMatches(p, e); }) ||
+           std::any_of(LoadableFile::multiSample.begin(), LoadableFile::multiSample.end(),
+                       [p](auto e) { return extensionMatches(p, e); });
 }
 
 void Browser::addRootPathForDeviceView(const fs::path &p)

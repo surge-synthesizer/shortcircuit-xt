@@ -77,6 +77,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }
     size_t getSampleLength() const { return sample_length; }
+    std::string getBitDepthText() const { return bitDepthName(bitDepth); }
 
     bool parseFlac(const fs::path &p);
 
@@ -108,6 +109,19 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         // BD_I24,
         BD_F32
     } bitDepth{BD_F32};
+
+    static std::string bitDepthName(BitDepth bd)
+    {
+        switch (bd)
+        {
+        case BD_I16:
+            return "INT 16";
+        case BD_F32:
+            return "FLOAT 32";
+        default:
+            return "UNKWN";
+        }
+    }
 
     static constexpr int bitDepthByteSize(BitDepth bd)
     {
