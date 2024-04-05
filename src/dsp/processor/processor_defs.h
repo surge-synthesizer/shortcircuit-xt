@@ -66,6 +66,7 @@
 #include "sst/voice-effects/waveshaper/WaveShaper.h"
 
 #include "sst/voice-effects/eq/EqNBandParametric.h"
+#include "sst/voice-effects/eq/MorphEQ.h"
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/GenSin.h"
@@ -99,6 +100,8 @@ DEFINE_PROC(EQ2Band, procimpl::detail::eq2impl, proct_eq_2band_parametric_A, "2 
             "EQ", "eq-parm-2band");
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, proct_eq_3band_parametric_A, "3 Band Parametric",
             "EQ", "eq-parm-3band");
+DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig>, proct_eq_morph, "Morph", "EQ",
+            "eq-morph");
 
 DEFINE_PROC(GenSin, sst::voice_effects::generator::GenSin<SCXTVFXConfig>, proct_osc_sin, "Sin",
             "Generators", "osc-sin");
