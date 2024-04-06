@@ -8,8 +8,6 @@ add_library(${PROJECT_NAME} STATIC
         dsp/data_tables.cpp
         dsp/processor/processor.cpp
 
-        dsp/processor/filter/supersvf.cpp
-
         engine/engine.cpp
         engine/engine_voice_responder.cpp
         engine/zone.cpp

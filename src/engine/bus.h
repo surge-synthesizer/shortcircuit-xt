@@ -51,6 +51,7 @@
 #include "configuration.h"
 #include "utils.h"
 #include "datamodel/metadata.h"
+#include "sst/filters/HalfRateFilter.h"
 
 namespace scxt::engine
 {
@@ -103,16 +104,28 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
     static constexpr int maxSendsPerBus{scxt::maxSendsPerBus};
 
     BusAddress address;
-    Bus() : address(ERROR_BUS) {}
-    Bus(BusAddress a) : address(a) { assert(address != DEFAULT_BUS && address != ERROR_BUS); }
+    Bus() : address(ERROR_BUS), downsampleFilter(6, true) {}
+    Bus(BusAddress a) : address(a), downsampleFilter(6, true)
+    {
+        assert(address != DEFAULT_BUS && address != ERROR_BUS);
+    }
 
     float output alignas(16)[2][blockSize];
+    float outputOS alignas(16)[2][blockSize << 1];
+    bool hasOSSignal{false}, previousHadOSSignal{false};
     float auxoutputPreFX alignas(16)[2][blockSize];
     float auxoutputPreVCA alignas(16)[2][blockSize];
     float auxoutputPostVCA alignas(16)[2][blockSize];
     float vuLevel[2]{0.f, 0.f}, vuFalloff{0.f};
 
-    inline void clear() { memset(output, 0, sizeof(output)); }
+    sst::filters::HalfRate::HalfRateFilter downsampleFilter;
+
+    inline void clear()
+    {
+        memset(output, 0, sizeof(output));
+        memset(outputOS, 0, sizeof(outputOS));
+        hasOSSignal = false;
+    }
 
     void process();
 

@@ -41,6 +41,19 @@ namespace scxt::engine
 {
 void Zone::process(Engine &e)
 {
+    if (parentGroup->outputInfo.oversample)
+    {
+        processWithOS<true>(e);
+    }
+    else
+    {
+        processWithOS<false>(e);
+    }
+}
+
+template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
+{
+    constexpr size_t osBlock{blockSize << (OS ? 1 : 0)};
     namespace blk = sst::basic_blocks::mechanics;
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
@@ -58,16 +71,21 @@ void Zone::process(Engine &e)
             {
                 if (outputInfo.routeTo == DEFAULT_BUS)
                 {
-                    blk::accumulate_from_to<blockSize>(v->output[0], output[0]);
-                    blk::accumulate_from_to<blockSize>(v->output[1], output[1]);
+                    blk::accumulate_from_to<osBlock>(v->output[0], output[0]);
+                    blk::accumulate_from_to<osBlock>(v->output[1], output[1]);
                 }
                 else if (outputInfo.routeTo >= 0)
                 {
                     auto &bs = getEngine()->getPatch()->busses;
-                    blk::accumulate_from_to<blockSize>(
-                        v->output[0], bs.busByAddress(outputInfo.routeTo).output[0]);
-                    blk::accumulate_from_to<blockSize>(
-                        v->output[1], bs.busByAddress(outputInfo.routeTo).output[1]);
+                    auto &tb = bs.busByAddress(outputInfo.routeTo);
+                    blk::accumulate_from_to<osBlock>(v->output[0],
+                                                     OS ? tb.outputOS[0] : tb.output[0]);
+                    blk::accumulate_from_to<osBlock>(v->output[1],
+                                                     OS ? tb.outputOS[1] : tb.output[1]);
+                    if constexpr (OS)
+                    {
+                        tb.hasOSSignal = true;
+                    }
                 }
             }
             if (!v->isVoicePlaying)
@@ -88,6 +106,13 @@ void Zone::process(Engine &e)
         SCLOG("Cleanup Voice at " << SCDBGV((int)toCleanUp[i]->key));
 #endif
         toCleanUp[i]->cleanupVoice();
+    }
+
+    for (int i = 0; i < osBlock; i += 4)
+    {
+        // SCLOG(i << " " << output[0][i] << " " << output[0][i + 1] << " " << output[0][i + 2] << "
+        // "
+        //         << output[0][i + 3])
     }
 }
 

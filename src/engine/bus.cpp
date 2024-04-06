@@ -197,6 +197,17 @@ void Bus::initializeAfterUnstream(Engine &e)
 }
 void Bus::process()
 {
+    if (hasOSSignal)
+    {
+        if (!previousHadOSSignal)
+        {
+            downsampleFilter.reset();
+        }
+        downsampleFilter.process_block_D2(outputOS[0], outputOS[1], blockSize << 1);
+        mech::accumulate_from_to<blockSize>(outputOS[0], output[0]);
+        mech::accumulate_from_to<blockSize>(outputOS[1], output[1]);
+    }
+    previousHadOSSignal = hasOSSignal;
     // ToDo - we can skip these if theres no pre or at routing
     if (busSendStorage.supportsSends && busSendStorage.hasSends)
     {

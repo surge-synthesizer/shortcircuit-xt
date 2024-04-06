@@ -43,7 +43,7 @@ static_assert(lfosPerGroup == lfosPerZone,
               "If this is false you need to template out the count below");
 template <typename T> struct HasModulators
 {
-    HasModulators(T *that) : eg{that, that} {}
+    HasModulators(T *that) : eg{that, that}, egOS{that, that} {}
 
     static constexpr uint16_t lfosPerObject{lfosPerZone};
 
@@ -61,7 +61,13 @@ template <typename T> struct HasModulators
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         T, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
         ahdsrenv_t;
+
+    typedef sst::basic_blocks::modulators::AHDSRShapedSC<
+        T, blockSize << 1, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
+        ahdsrenvOS_t;
+
     ahdsrenv_t eg[2];
+    ahdsrenvOS_t egOS[2];
 };
 } // namespace scxt::modulation::shared
 #endif // SHORTCIRCUITXT_HAS_MODULATORS_H

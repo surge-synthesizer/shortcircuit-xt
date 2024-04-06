@@ -119,11 +119,9 @@ SC_STREAMDEF(scxt::engine::Part, SC_FROM({
              }))
 
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
-                 v = {{"amplitude", t.amplitude},
-                      {"pan", t.pan},
-                      {"velocitySensitivity", t.velocitySensitivity},
-                      {"muted", t.muted},
-                      {"procRouting", t.procRouting},
+                 v = {{"amplitude", t.amplitude},   {"pan", t.pan},
+                      {"oversample", t.oversample}, {"velocitySensitivity", t.velocitySensitivity},
+                      {"muted", t.muted},           {"procRouting", t.procRouting},
                       {"routeTo", (int)t.routeTo}};
              }),
              SC_TO({
@@ -133,6 +131,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "muted", result.muted);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
+                 findIf(v, "oversample", result.oversample);
                  findIf(v, "routeTo", rt);
                  result.routeTo = (engine::BusAddress)(rt);
              }));

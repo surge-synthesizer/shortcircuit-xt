@@ -37,7 +37,7 @@ namespace scxt::dsp::processor
 namespace filter
 {
 
-struct alignas(16) SuperSVF : public Processor
+template <bool OS> struct alignas(16) SuperSVF : public Processor
 {
   private:
     __m128 Freq, dFreq, Q, dQ, MD, dMD, ClipDamp, dClipDamp, Gain, dGain, Reg[3], LastOutput;
@@ -72,10 +72,16 @@ struct alignas(16) SuperSVF : public Processor
 };
 
 } // namespace filter
+} // namespace scxt::dsp::processor
 
+#include "supersvf.cpp"
+
+namespace scxt::dsp::processor
+{
 template <> struct ProcessorImplementor<ProcessorType::proct_SuperSVF>
 {
-    typedef filter::SuperSVF T;
+    typedef filter::SuperSVF<false> T;
+    typedef filter::SuperSVF<true> TOS;
 };
 } // namespace scxt::dsp::processor
 #endif // SHORTCIRCUITXT_SUPERSVC_H

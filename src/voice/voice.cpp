@@ -51,7 +51,7 @@ Voice::~Voice()
 #if BUILD_IS_DEBUG
     if (isVoiceAssigned)
     {
-        SCLOG("WARNING: Destroying assigned voice");
+        SCLOG("WARNING: Destroying assigned voice. (OK in shutdown)");
     }
 #endif
     for (auto i = 0; i < engine::processorCount; ++i)
@@ -80,6 +80,8 @@ void Voice::cleanupVoice()
 
 void Voice::voiceStarted()
 {
+    forceOversample = zone->parentGroup->outputInfo.oversample;
+
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
         const auto &ms = zone->modulatorStorage[i];
@@ -127,11 +129,23 @@ void Voice::voiceStarted()
 
     aeg.attackFrom(0.0); // TODO Envelope Legato Mode
     eg2.attackFrom(0.0);
+    if (forceOversample)
+    {
+        aegOS.attackFrom(0.0);
+    }
 
     zone->addVoice(this);
 }
 
 bool Voice::process()
+{
+    if (forceOversample)
+        return processWithOS<true>();
+    else
+        return processWithOS<false>();
+}
+
+template <bool OS> bool Voice::processWithOS()
 {
     namespace mech = sst::basic_blocks::mechanics;
 
@@ -145,7 +159,7 @@ bool Voice::process()
     auto &sdata = zone->sampleData.samples[sampleIndex];
     assert(s);
 
-    // Run Modulators
+    // Run Modulators - these run at base rate never oversampled
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
         if (lfoEvaluator[i] == STEP)
@@ -183,16 +197,24 @@ bool Voice::process()
                    (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
 
     auto &aegp = endpoints->aeg;
+    if constexpr (OS)
+    {
+        // we need the aegOS for the curve in oversample space
+        aegOS.processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
+                           *aegp.rsP, envGate);
+    }
+
+    // But We need to run the undersample AEG no matter what since it is a modulatino source
     aeg.processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
                      *aegp.rsP, envGate);
+    // TODO: And output is non zero once we are past attack
+    isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
+
     auto &eg2p = endpoints->eg2;
     eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
                      *eg2p.rsP, envGate);
 
     updateTransportPhasors();
-
-    // TODO: And output is non zero once we are past attack
-    isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
@@ -214,7 +236,7 @@ bool Voice::process()
     {
         Generator(&GD, &GDIO);
 
-        if (useOversampling)
+        if (useOversampling && !OS)
         {
             halfRate.process_block_D2(output[0], output[1], blockSize << 1);
         }
@@ -228,7 +250,7 @@ bool Voice::process()
         isGeneratorRunning = false;
     }
 
-    float tempbuf alignas(16)[2][BLOCK_SIZE], postfader_buf alignas(16)[2][BLOCK_SIZE];
+    float tempbuf alignas(16)[2][BLOCK_SIZE << 1], postfader_buf alignas(16)[2][BLOCK_SIZE << 1];
 
     /*
      * Alright so time to document the logic. Remember all processors are required to do
@@ -258,40 +280,67 @@ bool Voice::process()
     {
         // panning drops us by a root 2, so no panning needs to also
         constexpr float invsqrt2{1.f / 1.414213562373095};
-        mech::mul_block<blockSize>(output[0], invsqrt2);
+        mech::mul_block<blockSize << (OS ? 1 : 0)>(output[0], invsqrt2);
     }
 
     auto pva = *endpoints->mappingTarget.ampP;
-    sampleAmp.set_target(pva);
-    if (chainIsMono)
+
+    if constexpr (OS)
     {
-        sampleAmp.multiply_block(output[0]);
+        sampleAmpOS.set_target(pva);
+        if (chainIsMono)
+        {
+            sampleAmpOS.multiply_block(output[0]);
+        }
+        else
+        {
+            sampleAmpOS.multiply_2_blocks(output[0], output[1]);
+        }
     }
     else
     {
-        sampleAmp.multiply_2_blocks(output[0], output[1]);
+        sampleAmp.set_target(pva);
+        if (chainIsMono)
+        {
+            sampleAmp.multiply_block(output[0]);
+        }
+        else
+        {
+            sampleAmp.multiply_2_blocks(output[0], output[1]);
+        }
     }
 
     for (auto i = 0; i < engine::processorCount; ++i)
     {
+        // TODO: FixMe for oversample
         if (processors[i])
         {
+            auto mix = [this, i]() {
+                if constexpr (OS)
+                {
+                    return &processorMixOS[i];
+                }
+                else
+                {
+                    return &processorMix[i];
+                }
+            };
             endpoints->processorTarget[i].snapValues();
 
-            processorMix[i].set_target(*endpoints->processorTarget[i].mixP);
+            mix()->set_target(*endpoints->processorTarget[i].mixP);
 
             if (chainIsMono && processorConsumesMono[i] && !processorProducesStereo[i])
             {
                 // mono to mono
                 processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
+                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
             }
             else if (chainIsMono && processorConsumesMono[i] && processorProducesStereo[i])
             {
                 // mono to stereo. process then toggle
                 processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
-                processorMix[i].fade_blocks(output[0], tempbuf[1], output[1]);
+                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
+                mix()->fade_blocks(output[0], tempbuf[1], output[1]);
                 // this out[0] is NOT a typo. Input is mono
 
                 chainIsMono = false;
@@ -302,15 +351,15 @@ bool Voice::process()
                 mech::copy_from_to<blockSize>(output[0], output[1]);
                 chainIsMono = false;
                 processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
-                processorMix[i].fade_blocks(output[1], tempbuf[1], output[1]);
+                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
+                mix()->fade_blocks(output[1], tempbuf[1], output[1]);
             }
             else
             {
                 // stereo to stereo. process
                 processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-                processorMix[i].fade_blocks(output[0], tempbuf[0], output[0]);
-                processorMix[i].fade_blocks(output[1], tempbuf[1], output[1]);
+                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
+                mix()->fade_blocks(output[1], tempbuf[1], output[1]);
             }
             // TODO: What was the filter_modout? Seems SC2 never finished it
             /*
@@ -337,25 +386,56 @@ bool Voice::process()
 
     pao *= velMul;
 
-    outputAmp.set_target(pao * pao * pao);
-    if (chainIsMono)
+    if constexpr (OS)
     {
-        outputAmp.multiply_block(output[0]);
+        outputAmpOS.set_target(pao * pao * pao);
+        if (chainIsMono)
+        {
+            outputAmpOS.multiply_block(output[0]);
+        }
+        else
+        {
+            outputAmpOS.multiply_2_blocks(output[0], output[1]);
+        }
     }
     else
     {
-        outputAmp.multiply_2_blocks(output[0], output[1]);
+        outputAmp.set_target(pao * pao * pao);
+        if (chainIsMono)
+        {
+            outputAmp.multiply_block(output[0]);
+        }
+        else
+        {
+            outputAmp.multiply_2_blocks(output[0], output[1]);
+        }
     }
 
-    // At the end of the voice we have to produce stereo
-    if (chainIsMono)
+    if constexpr (OS)
     {
-        mech::scale_by<blockSize>(aeg.outputCache, output[0]);
-        mech::copy_from_to<blockSize>(output[0], output[1]);
+        // At the end of the voice we have to produce stereo
+        if (chainIsMono)
+        {
+            mech::scale_by<blockSize << 1>(aegOS.outputCache, output[0]);
+            mech::copy_from_to<blockSize << 1>(output[0], output[1]);
+        }
+        else
+        {
+            mech::scale_by<blockSize << 1>(aegOS.outputCache, output[0], output[1]);
+        }
     }
     else
     {
-        mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
+        // At the end of the voice we have to produce stereo
+        if (chainIsMono)
+        {
+            mech::scale_by<blockSize>(aeg.outputCache, output[0]);
+            mech::copy_from_to<blockSize>(output[0], output[1]);
+        }
+        else
+        {
+            mech::scale_by<blockSize>(aeg.outputCache, output[0], output[1]);
+        }
     }
 
     /*
@@ -379,7 +459,7 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     {
         chainIsMono = false;
         pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
-        for (int i = 0; i < blockSize; ++i)
+        for (int i = 0; i < blockSize << forceOversample; ++i)
         {
             output[1][i] = output[0][i] * pmat[3];
             output[0][i] = output[0][i] * pmat[0];
@@ -389,7 +469,7 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     {
         pl::stereoEqualPower(pv, pmat);
 
-        for (int i = 0; i < blockSize; ++i)
+        for (int i = 0; i < blockSize << forceOversample; ++i)
         {
             auto il = output[0][i];
             auto ir = output[1][i];
@@ -438,7 +518,7 @@ void Voice::initializeGenerator()
 
     // TODO: This constant came from SC. Wonder why it is this value. There was a comment comparing
     // with 167777216 so any speedup at all.
-    useOversampling = std::abs(GD.ratio) > 18000000;
+    useOversampling = std::abs(GD.ratio) > 18000000 || forceOversample;
     GD.blockSize = blockSize * (useOversampling ? 2 : 1);
 
     Generator = nullptr;
@@ -511,6 +591,7 @@ void Voice::initializeProcessors()
     {
         processorIsActive[i] = zone->processorStorage[i].isActive;
         processorMix[i].set_target_instant(*endpoints->processorTarget[i].mixP);
+        processorMixOS[i].set_target_instant(*endpoints->processorTarget[i].mixP);
 
         processorType[i] = zone->processorStorage[i].type;
 
@@ -522,7 +603,7 @@ void Voice::initializeProcessors()
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], zone->getEngine()->getMemoryPool().get(),
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
-                endpoints->processorTarget[i].fp, processorIntParams[i]);
+                endpoints->processorTarget[i].fp, processorIntParams[i], forceOversample);
         }
         else
         {
@@ -530,7 +611,7 @@ void Voice::initializeProcessors()
         }
         if (processors[i])
         {
-            processors[i]->setSampleRate(sampleRate);
+            processors[i]->setSampleRate(sampleRate * (forceOversample ? 2 : 1));
             processors[i]->init();
 
             processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();

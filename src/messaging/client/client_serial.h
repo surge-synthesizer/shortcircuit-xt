@@ -69,6 +69,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_group_routing_row,
     c2s_update_group_output_float_value,
     c2s_update_group_output_int16_t_value,
+    c2s_update_group_output_bool_value,
 
     c2s_update_group_or_zone_individual_modulator_storage,
 

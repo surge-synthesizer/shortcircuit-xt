@@ -157,8 +157,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     } outputInfo;
     static_assert(std::is_standard_layout<ZoneOutputInfo>::value);
 
-    float output alignas(16)[2][blockSize];
+    float output alignas(16)[2][blockSize << 1];
     void process(Engine &onto);
+    template <bool OS> void processWithOS(Engine &onto);
 
     // TODO: editable name
     std::string getName() const
