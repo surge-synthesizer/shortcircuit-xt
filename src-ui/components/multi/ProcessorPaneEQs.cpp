@@ -398,10 +398,10 @@ void ProcessorPane::layoutControlsEQMorph()
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
 
-    std::vector<std::string> lab{"Morph", "Freq", "Gain", "BW"};
-    auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 4);
+    std::vector<std::string> lab{"Morph", "Freq1", "Freq2", "Gain", "BW"};
+    auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 5);
 
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 5; ++i)
     {
         floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
         floatAttachments[i]->andThenOnGui(thenRecalc);
