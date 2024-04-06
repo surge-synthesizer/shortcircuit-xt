@@ -323,7 +323,7 @@ void ProcessorPane::layoutControlsWaveshaper()
     // Drive/Bias/Gain in the floats
     // Type/OS in the ints
     assert(processorControlDescription.numFloatParams == 3);
-    assert(processorControlDescription.numIntParams == 2);
+    assert(processorControlDescription.numIntParams == 1);
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
@@ -338,12 +338,6 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
     lo::labeledAt(*mixEditor, lo::toRightOf(biasPos));
-
-    auto osl = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    osl->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
-    osl->setLabel("o/s");
-    osl->setBounds(lo::toRightOf(lo::belowLabel(biasPos)).reduced(2, 8));
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(osl));
 
     auto ja = getContentAreaComponent()->getLocalBounds();
     ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);

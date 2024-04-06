@@ -34,10 +34,11 @@
 
 namespace scxt::dsp::processor
 {
-struct SCXTVFXConfig
+// oversample factor; 1, 2, 4 etc...
+template <int OSFactor> struct SCXTVFXConfig
 {
     using BaseClass = Processor;
-    static constexpr int blockSize{scxt::blockSize};
+    static constexpr int blockSize{scxt::blockSize * OSFactor};
 
     static void preReservePool(BaseClass *b, size_t s)
     {
@@ -70,6 +71,10 @@ struct SCXTVFXConfig
     static int getIntParam(const BaseClass *b, size_t index) { return b->iparam[index]; }
 
     static float dbToLinear(BaseClass *b, float db) { return dsp::dbTable.dbToLinear(db); }
+
+    // In voice.cpp and group.cpp we set the sample rate on the processor
+    // to a sample rate scaled by the oversample factor so here we can just
+    // return it.
     static float getSampleRate(const BaseClass *b) { return b->getSampleRate(); }
     static float getSampleRateInv(const BaseClass *b) { return b->getSampleRateInv(); }
     static float equalNoteToPitch(const BaseClass *b, float f)

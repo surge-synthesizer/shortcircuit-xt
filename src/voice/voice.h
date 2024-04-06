@@ -48,12 +48,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
                            SampleRateSupport,
                            scxt::modulation::shared::HasModulators<Voice>
 {
-    float output alignas(16)[2][blockSize << 1];
+    float output alignas(16)[2][blockSize << 2];
     // I do *not* own these. The engine guarantees it outlives the voice
     engine::Zone *zone{nullptr};
     engine::Engine *engine{nullptr};
     engine::Engine::pathToZone_t zonePath{};
     size_t sampleIndex{0};
+
+    bool forceOversample{true};
 
     dsp::GeneratorState GD;
     dsp::GeneratorIO GDIO;
@@ -73,10 +75,17 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;
 
     ahdsrenv_t &aeg{eg[0]}, &eg2{eg[1]};
+    ahdsrenvOS_t &aegOS{egOS[0]};
 
     inline float envelope_rate_linear_nowrap(float f)
     {
+        // Super sneaky: this works for Oversample also since blockSize += and samplerate *2
         return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
+    }
+
+    inline const sst::basic_blocks::tables::TwoToTheXProvider &twoToTheXProvider()
+    {
+        return dsp::twoToTheXTable;
     }
 
     template <typename ET, int EB, typename ER>
@@ -95,6 +104,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
      * @return false if you cant
      */
     bool process();
+    template <bool OS> bool processWithOS();
 
     /**
      * Voice Setup
@@ -132,12 +142,16 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     void initializeProcessors();
 
     using lipol = sst::basic_blocks::dsp::lipol_sse<blockSize, false>;
+    using lipolOS = sst::basic_blocks::dsp::lipol_sse<blockSize << 1, false>;
 
     lipol samplePan, sampleAmp, outputPan, outputAmp;
+    lipolOS samplePanOS, sampleAmpOS, outputPanOS, outputAmpOS;
+
     void panOutputsBy(bool inputIsMono, const lipol &pv);
 
     // TODO - this should be more carefully structured for modulation onto the entire filter
     lipol processorMix[engine::processorCount];
+    lipolOS processorMixOS[engine::processorCount];
 
     /*
      * Voice State on Creation

@@ -6,7 +6,7 @@
 #define SHORTCIRCUITXT_DEFINITION_HELPERS_H
 
 // the varags at end are underlyer ctor args to the base type
-#define DEFINE_PROC(procClass, procImpl, procID, procDisplayName, procDisplayGroup,                \
+#define DEFINE_PROC(procClass, procImpl, osProcImpl, procID, procDisplayName, procDisplayGroup,    \
                     procStreamingName, ...)                                                        \
     namespace procimpl                                                                             \
     {                                                                                              \
@@ -23,11 +23,26 @@
         }                                                                                          \
         virtual ~procClass() = default;                                                            \
     };                                                                                             \
+    struct alignas(16) OS##procClass : SSTVoiceEffectShim<osProcImpl>                              \
+    {                                                                                              \
+        static constexpr const char *processorName{procDisplayName};                               \
+        static constexpr const char *processorStreamingName{procStreamingName};                    \
+        static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
+        OS##procClass(engine::MemoryPool *mp, float *f, int32_t *i)                                \
+            : SSTVoiceEffectShim<osProcImpl>(__VA_ARGS__)                                          \
+        {                                                                                          \
+            assert(mp);                                                                            \
+            setupProcessor(this, procID, mp, f, i);                                                \
+        }                                                                                          \
+        virtual ~OS##procClass() = default;                                                        \
+    };                                                                                             \
     }                                                                                              \
     template <> struct ProcessorImplementor<ProcessorType::procID>                                 \
     {                                                                                              \
         typedef procimpl::procClass T;                                                             \
+        typedef procimpl::OS##procClass TOS;                                                       \
         static_assert(sizeof(T) < processorMemoryBufferSize);                                      \
+        static_assert(sizeof(TOS) < processorMemoryBufferSize);                                    \
     };
 
 #endif // SHORTCIRCUITXT_DEFINITION_HELPERS_H

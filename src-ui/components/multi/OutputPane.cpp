@@ -64,12 +64,16 @@ struct cc : juce::Component, HasEditor
 template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 {
     typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<typename OTTraits::info_t> bool_attachment_t;
 
     std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
     std::unique_ptr<jcmp::Labeled<jcmp::Knob>> outputKnob, panKnob;
     std::unique_ptr<jcmp::Labeled<jcmp::HSliderFilled>> velocitySensitivitySlider;
+
+    std::unique_ptr<bool_attachment_t> oversampleAttachment;
+    std::unique_ptr<jcmp::ToggleButton> oversampleButton;
 
     OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
     {
@@ -83,6 +87,10 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         {
             fac::attachLabelAndAdd(info, info.velocitySensitivity, this,
                                    velocitySensitivityAttachment, velocitySensitivitySlider, "Vel");
+            using bfac = connectors::BooleanSingleValueFactory<
+                bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
+            bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
+            oversampleButton->setLabel("o/s");
         }
 
         outputRouting = std::make_unique<jcmp::MenuButton>();
@@ -98,7 +106,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     void resized()
     {
         namespace lo = theme::layout;
-        auto cc = lo::columnCenterX(getLocalBounds(), 2);
+        auto cc = lo::columnCenterX(getLocalBounds().reduced(10, 0), 2);
         lo::knobCX<theme::layout::constants::largeKnob>(*outputKnob, cc[0], 10);
         lo::knobCX<theme::layout::constants::largeKnob>(*panKnob, cc[1], 10);
 
@@ -108,6 +116,13 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
             auto op = b.withTop(b.getBottom() - 20).translated(0, -27).reduced(30, 4);
             velocitySensitivitySlider->item->setBounds(op.withTrimmedLeft(30));
             velocitySensitivitySlider->label->setBounds(op.withWidth(30));
+        }
+
+        if (!OTTraits::forZone && oversampleButton)
+        {
+            auto b = getLocalBounds();
+            oversampleButton->setBounds(
+                b.withTrimmedLeft(b.getWidth() - 30).withTrimmedBottom(b.getHeight() - 18));
         }
 
         auto b = getLocalBounds();

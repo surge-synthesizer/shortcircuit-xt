@@ -145,6 +145,33 @@ auto spawnOnto(size_t ft, uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip
     constexpr FuncType arFuncs[] = {detail::returnSpawnOnto<Is>...};
     return arFuncs[ft](m, mp, fp, ip);
 }
+
+template <size_t I>
+Processor *returnSpawnOntoOS(uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip)
+{
+    if constexpr (I == ProcessorType::proct_none)
+        return nullptr;
+
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::TOS,
+                               unimpl_t>::value)
+    {
+        return nullptr;
+    }
+    else
+    {
+        auto mem = new (m) typename ProcessorImplementor<(ProcessorType)I>::TOS(mp, fp, ip);
+        return mem;
+    }
+}
+
+template <size_t... Is>
+auto spawnOntoOS(size_t ft, uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip,
+                 std::index_sequence<Is...>)
+{
+    using FuncType = Processor *(*)(uint8_t *, engine::MemoryPool *, float *, int *);
+    constexpr FuncType arFuncs[] = {detail::returnSpawnOntoOS<Is>...};
+    return arFuncs[ft](m, mp, fp, ip);
+}
 } // namespace detail
 
 bool isProcessorImplemented(ProcessorType id)
@@ -214,23 +241,21 @@ processorList_t getAllProcessorDescriptions()
  * be a 16byte aligned block of at least size processorMemoryBufferSize.
  */
 Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
-                                 size_t memorySize, float *fp, int *ip)
+                                 size_t memorySize, float *fp, int *ip, bool oversample)
 {
     assert(memorySize >= processorMemoryBufferSize);
-    return detail::spawnOnto(id, memory, mp, fp, ip,
-                             std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
-}
-
-/**
- * Spawn a Processor, potentially allocating memory. Call this if canInPlaceNew
- * returns false.
- *
- * TODO: Make it so we can remove this
- */
-Processor *spawnProcessorAllocating(int id, float *fp, int *ip, bool stereo)
-{
-    assert(false);
-    return 0;
+    if (oversample)
+    {
+        return detail::spawnOntoOS(
+            id, memory, mp, fp, ip,
+            std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    }
+    else
+    {
+        return detail::spawnOnto(
+            id, memory, mp, fp, ip,
+            std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    }
 }
 
 /**

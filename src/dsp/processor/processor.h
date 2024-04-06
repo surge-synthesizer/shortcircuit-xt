@@ -293,7 +293,7 @@ class BiquadSupport
  * be a 16byte aligned block of at least size processorMemoryBufferSize.
  */
 Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
-                                 size_t memorySize, float *fp, int *ip);
+                                 size_t memorySize, float *fp, int *ip, bool oversample);
 
 /**
  * Whetner a processor is spawned in place or onto fresh memory, release it here.
@@ -305,6 +305,7 @@ typedef uint8_t unimpl_t;
 template <ProcessorType ft> struct ProcessorImplementor
 {
     typedef unimpl_t T;
+    typedef unimpl_t TOS;
 };
 
 } // namespace scxt::dsp::processor

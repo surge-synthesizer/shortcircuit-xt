@@ -25,6 +25,16 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+/*
+ * Heads up: in the interum until I kill this it is a cpp which
+ * is included since I switched the SVF to be tepmlated on oversample
+ * This hack will die once we get the surge and simper filters in place
+ * and kill this class once and for all.
+ */
+
+#ifndef TEMPORARY_CPP_SVF_GUARD
+#define TEMPORARY_CPP_SVF_GUARD
+
 #include "supersvf.h"
 #include "configuration.h"
 #include "tuning/equal.h"
@@ -36,6 +46,9 @@ namespace scxt::dsp::processor::filter
 static constexpr float INV_2BLOCK_SIZE{1.f / float(BLOCK_SIZE << 1)};
 const auto INV_2BLOCK_SIZE_128{_mm_set1_ps(INV_2BLOCK_SIZE)};
 
+static constexpr float INV_2BLOCK_SIZE_OS{1.f / float(BLOCK_SIZE << 2)};
+const auto INV_2BLOCK_SIZE_128_OS{_mm_set1_ps(INV_2BLOCK_SIZE_OS)};
+
 enum
 {
     ssvf_LP = 0,
@@ -45,7 +58,8 @@ enum
 
 //-------------------------------------------------------------------------------------------------------
 
-SuperSVF::SuperSVF(engine::MemoryPool *mp, float *fp, int *ip)
+template <bool OS>
+SuperSVF<OS>::SuperSVF(engine::MemoryPool *mp, float *fp, int *ip)
     : Processor(ProcessorType::proct_SuperSVF, mp, fp, ip), mPolyphase(2, true)
 {
     parameter_count = 2;
@@ -63,7 +77,7 @@ SuperSVF::SuperSVF(engine::MemoryPool *mp, float *fp, int *ip)
 
 //-------------------------------------------------------------------------------------------------------
 
-void SuperSVF::init_params()
+template <bool OS> void SuperSVF<OS>::init_params()
 {
     assert(param);
     if (!param)
@@ -84,7 +98,7 @@ inline __m128 SplatVector(float x)
     return _mm_shuffle_ps(v, v, 0);
 }
 
-void SuperSVF::calc_coeffs()
+template <bool OS> void SuperSVF<OS>::calc_coeffs()
 {
     if ((lastparam[0] != param[0]) || (lastparam[1] != param[1]) || (lastiparam[1] != iparam[1]))
     {
@@ -107,19 +121,19 @@ void SuperSVF::calc_coeffs()
         // Set interpolators
         __m128 nFreq = SplatVector(F1);
         dFreq = _mm_sub_ps(nFreq, Freq);
-        dFreq = _mm_mul_ps(dFreq, INV_2BLOCK_SIZE_128);
+        dFreq = _mm_mul_ps(dFreq, OS ? INV_2BLOCK_SIZE_128_OS : INV_2BLOCK_SIZE_128);
 
         __m128 nQ = SplatVector(Q1);
         dQ = _mm_sub_ps(nQ, Q);
-        dQ = _mm_mul_ps(dQ, INV_2BLOCK_SIZE_128);
+        dQ = _mm_mul_ps(dQ, OS ? INV_2BLOCK_SIZE_128_OS : INV_2BLOCK_SIZE_128);
 
         __m128 nClipDamp = SplatVector(NewClipDamp);
         dClipDamp = _mm_sub_ps(nClipDamp, ClipDamp);
-        dClipDamp = _mm_mul_ps(dClipDamp, INV_2BLOCK_SIZE_128);
+        dClipDamp = _mm_mul_ps(dClipDamp, OS ? INV_2BLOCK_SIZE_128_OS : INV_2BLOCK_SIZE_128);
 
         __m128 nGain = SplatVector(NewGain);
         dGain = _mm_sub_ps(nGain, Gain);
-        dGain = _mm_mul_ps(dGain, INV_2BLOCK_SIZE_128);
+        dGain = _mm_mul_ps(dGain, OS ? INV_2BLOCK_SIZE_128_OS : INV_2BLOCK_SIZE_128);
 
         // Update paramtriggers
         lastparam[0] = param[0];
@@ -137,9 +151,10 @@ void SuperSVF::calc_coeffs()
 
 //-------------------------------------------------------------------------------------------------------
 
+template <bool OS>
 template <bool Stereo, bool FourPole>
-void SuperSVF::ProcessT(float *DataInL, float *DataInR, float *DataOutL, float *DataOutR,
-                        float Pitch)
+void SuperSVF<OS>::ProcessT(float *DataInL, float *DataInR, float *DataOutL, float *DataOutR,
+                            float Pitch)
 {
     calc_coeffs();
 
@@ -148,11 +163,11 @@ void SuperSVF::ProcessT(float *DataInL, float *DataInR, float *DataOutL, float *
     assert(iparam[1] >= 0);
     assert(iparam[1] < 2);
 
-    const int bs2 = BLOCK_SIZE << 1;
+    const int bs2 = BLOCK_SIZE << (OS ? 2 : 1);
     float PolyphaseInL alignas(16)[bs2];
     float PolyphaseInR alignas(16)[bs2];
 
-    for (int k = 0; k < BLOCK_SIZE; k++)
+    for (int k = 0; k < BLOCK_SIZE << (OS ? 1 : 0); k++)
     {
         __m128 Input;
         if (Stereo)
@@ -223,7 +238,7 @@ void SuperSVF::ProcessT(float *DataInL, float *DataInR, float *DataOutL, float *
 
 //-------------------------------------------------------------------------------------------------------
 
-inline __m128 SuperSVF::process_internal(__m128 x, int Mode)
+template <bool OS> inline __m128 SuperSVF<OS>::process_internal(__m128 x, int Mode)
 {
     Freq = _mm_add_ps(Freq, dFreq);
     Q = _mm_add_ps(Q, dQ);
@@ -257,8 +272,9 @@ inline __m128 SuperSVF::process_internal(__m128 x, int Mode)
 
 //-------------------------------------------------------------------------------------------------------
 
-void SuperSVF::process_stereo(float *DataInL, float *DataInR, float *DataOutL, float *DataOutR,
-                              float Pitch)
+template <bool OS>
+void SuperSVF<OS>::process_stereo(float *DataInL, float *DataInR, float *DataOutL, float *DataOutR,
+                                  float Pitch)
 {
     if (iparam[1] > 0)
     {
@@ -270,7 +286,8 @@ void SuperSVF::process_stereo(float *DataInL, float *DataInR, float *DataOutL, f
     }
 }
 
-void SuperSVF::process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch)
+template <bool OS>
+void SuperSVF<OS>::process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch)
 {
     if (iparam[1] > 0)
     {
@@ -284,7 +301,7 @@ void SuperSVF::process_mono(float *datain, float *dataoutL, float *dataoutR, flo
 
 //-------------------------------------------------------------------------------------------------------
 
-void SuperSVF::suspend()
+template <bool OS> void SuperSVF<OS>::suspend()
 {
     Reg[0] = _mm_setzero_ps();
     Reg[1] = _mm_setzero_ps();
@@ -302,11 +319,11 @@ void SuperSVF::suspend()
 
 //-------------------------------------------------------------------------------------------------------
 
-size_t SuperSVF::getIntParameterCount() const { return 2; }
+template <bool OS> size_t SuperSVF<OS>::getIntParameterCount() const { return 2; }
 
 //-------------------------------------------------------------------------------------------------------
 
-std::string SuperSVF::getIntParameterLabel(int ip_id) const
+template <bool OS> std::string SuperSVF<OS>::getIntParameterLabel(int ip_id) const
 {
     if (ip_id == 0)
         return ("mode");
@@ -317,7 +334,7 @@ std::string SuperSVF::getIntParameterLabel(int ip_id) const
 
 //-------------------------------------------------------------------------------------------------------
 
-size_t SuperSVF::getIntParameterChoicesCount(int ip_id) const
+template <bool OS> size_t SuperSVF<OS>::getIntParameterChoicesCount(int ip_id) const
 {
     if (ip_id == 0)
         return 3;
@@ -326,7 +343,7 @@ size_t SuperSVF::getIntParameterChoicesCount(int ip_id) const
 
 //-------------------------------------------------------------------------------------------------------
 
-std::string SuperSVF::getIntParameterChoicesLabel(int ip_id, int c_id) const
+template <bool OS> std::string SuperSVF<OS>::getIntParameterChoicesLabel(int ip_id, int c_id) const
 {
     if (ip_id == 0)
     {
@@ -354,3 +371,5 @@ std::string SuperSVF::getIntParameterChoicesLabel(int ip_id, int c_id) const
 }
 
 } // namespace scxt::dsp::processor::filter
+
+#endif

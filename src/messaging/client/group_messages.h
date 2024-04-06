@@ -50,6 +50,11 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputInt16TValue, c2s_update_group_outp
                              detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
                                                             engine, cont));
 
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputBoolValue, c2s_update_group_output_bool_value,
+                             detail::diffMsg_t<bool>, engine::Group::GroupOutputInfo,
+                             detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
+                                                            engine, cont));
+
 using renameGroup_t = std::tuple<selection::SelectionManager::ZoneAddress, std::string>;
 inline void renameGroup(const renameGroup_t &payload, const engine::Engine &engine,
                         MessageController &cont)

@@ -46,7 +46,7 @@ namespace scxt::engine
 
 Group::Group()
     : id(GroupID::next()), name(id.to_string()), endpoints{nullptr},
-      modulation::shared::HasModulators<Group>(this)
+      modulation::shared::HasModulators<Group>(this), osDownFilter(6, true)
 {
     rePrepareAndBindGroupMatrix();
 }
@@ -61,7 +61,29 @@ void Group::rePrepareAndBindGroupMatrix()
 
 void Group::process(Engine &e)
 {
+    if (outputInfo.oversample)
+        processWithOS<true>(e);
+    else
+        processWithOS<false>(e);
+}
+
+template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
+{
     assertSampleRateSet();
+
+    /*
+     * Groups have long lived runs so the processors need to reset etc...
+     * when oversample toggles
+     */
+    if (lastOversample != outputInfo.oversample)
+    {
+        lastOversample = outputInfo.oversample;
+        attack();
+        for (int i = 0; i < engine::processorCount; ++i)
+        {
+            onProcessorTypeChanged(i, processorStorage[i].type);
+        }
+    }
 
     namespace blk = sst::basic_blocks::mechanics;
 
@@ -128,8 +150,16 @@ void Group::process(Engine &e)
              */
             if (z->outputInfo.routeTo == DEFAULT_BUS)
             {
-                blk::accumulate_from_to<blockSize>(z->output[0], lOut);
-                blk::accumulate_from_to<blockSize>(z->output[1], rOut);
+                if constexpr (OS)
+                {
+                    blk::accumulate_from_to<blockSize << 1>(z->output[0], lOut);
+                    blk::accumulate_from_to<blockSize << 1>(z->output[1], rOut);
+                }
+                else
+                {
+                    blk::accumulate_from_to<blockSize>(z->output[0], lOut);
+                    blk::accumulate_from_to<blockSize>(z->output[1], rOut);
+                }
             }
         }
     }
@@ -139,16 +169,25 @@ void Group::process(Engine &e)
     {
         auto *p = processors[i];
         const auto &ps = processorStorage[i];
-        float tempbuf alignas(16)[2][BLOCK_SIZE];
+        float tempbuf alignas(16)[2][BLOCK_SIZE << 1];
 
         if (p && ps.isActive)
         {
             endpoints.processorTarget[i].snapValues();
 
             p->process_stereo(lOut, rOut, tempbuf[0], tempbuf[1], 0);
-            processorMix[i].set_target(ps.mix);
-            processorMix[i].fade_blocks(lOut, tempbuf[0], lOut);
-            processorMix[i].fade_blocks(rOut, tempbuf[1], rOut);
+            if constexpr (OS)
+            {
+                processorMixOS[i].set_target(ps.mix);
+                processorMixOS[i].fade_blocks(lOut, tempbuf[0], lOut);
+                processorMixOS[i].fade_blocks(rOut, tempbuf[1], rOut);
+            }
+            else
+            {
+                processorMix[i].set_target(ps.mix);
+                processorMix[i].fade_blocks(lOut, tempbuf[0], lOut);
+                processorMix[i].fade_blocks(rOut, tempbuf[1], rOut);
+            }
         }
     }
 
@@ -162,7 +201,7 @@ void Group::process(Engine &e)
         pl::panmatrix_t pmat{1, 1, 0, 0};
         pl::stereoEqualPower(pv, pmat);
 
-        for (int i = 0; i < blockSize; ++i)
+        for (int i = 0; i < (OS ? blockSize << 1 : blockSize); ++i)
         {
             auto il = output[0][i];
             auto ir = output[1][i];
@@ -173,8 +212,22 @@ void Group::process(Engine &e)
 
     // multiply by vca level from matrix
     auto mlev = std::clamp(*endpoints.outputTarget.ampP, 0.f, 1.f);
-    outputAmp.set_target(mlev * mlev * mlev);
-    outputAmp.multiply_2_blocks(lOut, rOut);
+    if constexpr (OS)
+    {
+        outputAmpOS.set_target(mlev * mlev * mlev);
+        outputAmpOS.multiply_2_blocks(lOut, rOut);
+    }
+    else
+    {
+        outputAmp.set_target(mlev * mlev * mlev);
+        outputAmp.multiply_2_blocks(lOut, rOut);
+    }
+
+    // Finally downsampleif oversmapled
+    if (OS)
+    {
+        osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
+    }
 }
 
 void Group::addActiveZone()
@@ -248,10 +301,13 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
         processors[w] = dsp::processor::spawnProcessorInPlace(
             t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],
             dsp::processor::processorMemoryBufferSize, endpoints.processorTarget[w].fp,
-            processorStorage[w].intParams.data());
+            processorStorage[w].intParams.data(), outputInfo.oversample);
 
-        processors[w]->setSampleRate(sampleRate);
-        processors[w]->init();
+        if (processors[w])
+        {
+            processors[w]->setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+            processors[w]->init();
+        }
     }
     else
     {
@@ -265,6 +321,14 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 
 void Group::attack()
 {
+    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+    {
+        const auto &ps = processorStorage[i];
+        processorMix[i].set_target_instant(ps.mix);
+        processorMixOS[i].set_target_instant(ps.mix);
+    }
+
+    osDownFilter.reset();
     resetLFOs();
     rePrepareAndBindGroupMatrix();
 }

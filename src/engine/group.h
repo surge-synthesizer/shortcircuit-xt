@@ -37,6 +37,7 @@
 #include <sst/cpputils.h>
 #include <sst/basic-blocks/modulators/AHDSRShapedSC.h>
 #include <sst/basic-blocks/dsp/BlockInterpolators.h>
+#include <sst/filters/HalfRateFilter.h>
 
 #include "utils.h"
 #include "zone.h"
@@ -80,16 +81,19 @@ struct Group : MoveableOnly<Group>,
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f};
         bool muted{false};
+        bool oversample{true};
         ProcRoutingPath procRouting{procRoute_linear};
         BusAddress routeTo{DEFAULT_BUS};
     } outputInfo;
 
     Engine *getEngine();
 
-    float output alignas(16)[2][blockSize];
+    float output alignas(16)[2][blockSize << 1];
     void attack();
     void resetLFOs(int whichLFO = -1);
     void process(Engine &onto);
+    template <bool OS> void processWithOS(Engine &onto);
+    bool lastOversample{true};
 
     void setupOnUnstream(const engine::Engine &e);
 
@@ -153,6 +157,8 @@ struct Group : MoveableOnly<Group>,
 
     void onSampleRateChanged() override;
 
+    sst::filters::HalfRate::HalfRateFilter osDownFilter;
+
     /*
      * One of the core differences between zone and group is, since group is monophonic,
      * it contains both the data for the process evaluators and also the evaluators themselves
@@ -160,8 +166,10 @@ struct Group : MoveableOnly<Group>,
      * data. Just something to think about as you read the code here!
      */
     using lipol = sst::basic_blocks::dsp::lipol_sse<blockSize, false>;
+    using lipolOS = sst::basic_blocks::dsp::lipol_sse<blockSize << 1, false>;
 
-    lipol outputAmp, outputPan;
+    lipol outputAmp;
+    lipolOS outputAmpOS;
 
     static constexpr int egPerGroup{scxt::egPerGroup};
     std::array<modulation::modulators::AdsrStorage, egPerGroup> gegStorage{};
@@ -192,6 +200,7 @@ struct Group : MoveableOnly<Group>,
     int32_t processorIntParams alignas(
         16)[engine::processorCount][dsp::processor::maxProcessorIntParams];
     lipol processorMix[engine::processorCount];
+    lipolOS processorMixOS[engine::processorCount];
 
     sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
 
@@ -217,6 +226,7 @@ struct Group : MoveableOnly<Group>,
 SC_DESCRIBE(scxt::engine::Group::GroupOutputInfo,
             SC_FIELD(amplitude, pmd().asCubicDecibelAttenuation().withName("Amplitude"));
             SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));
+            SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
             SC_FIELD(velocitySensitivity,
                      pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));)
 

@@ -50,9 +50,11 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
+    // this processor is just used for params and the like so we can always assume
+    // the non-oversampled case
     tmpProcessor = dsp::processor::spawnProcessorInPlace(
         type, asT()->getEngine()->getMemoryPool().get(), memory,
-        dsp::processor::processorMemoryBufferSize, pfp, ifp);
+        dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
 
     if (type != dsp::processor::proct_none)
     {
@@ -96,11 +98,12 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
+    // this is just used for params and stuff so assume no oversample
     if (!tmpProcessor)
     {
         tmpProcessor = dsp::processor::spawnProcessorInPlace(
             type, asT()->getEngine()->getMemoryPool().get(), memory,
-            dsp::processor::processorMemoryBufferSize, pfp, ifp);
+            dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
     }
 
     assert(tmpProcessor);

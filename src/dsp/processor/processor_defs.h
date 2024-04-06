@@ -80,46 +80,62 @@
 namespace scxt::dsp::processor
 {
 // Just don't change the id or streaming name, basically
-DEFINE_PROC(MicroGate, sst::voice_effects::distortion::MicroGate<SCXTVFXConfig>, proct_fx_microgate,
+DEFINE_PROC(MicroGate, sst::voice_effects::distortion::MicroGate<SCXTVFXConfig<1>>,
+            sst::voice_effects::distortion::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate,
             "MicroGate", "Distortion", "micro-gate-fx");
-DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig>,
-            proct_fx_bitcrusher, "BitCrusher", "Distortion", "bit-crusher-fx");
-DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig>,
-            proct_fx_waveshaper, "WaveShaper", "Distortion", "waveshaper-fx");
+DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<1>>,
+            sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<2>>, proct_fx_bitcrusher,
+            "BitCrusher", "Distortion", "bit-crusher-fx");
+DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<1>>,
+            sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<2>>, proct_fx_waveshaper,
+            "WaveShaper", "Distortion", "waveshaper-fx");
 
 // Macros and commas don't get along
 namespace procimpl::detail
 {
-using eq1impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 1>;
-using eq2impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 2>;
-using eq3impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig, 3>;
+using eq1impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 1>;
+using eq2impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 2>;
+using eq3impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 3>;
+
+using eq1impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 1>;
+using eq2impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 2>;
+using eq3impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 3>;
+
 } // namespace procimpl::detail
 
-DEFINE_PROC(EQ1Band, procimpl::detail::eq1impl, proct_eq_1band_parametric_A, "1 Band Parametric",
-            "EQ", "eq-parm-1band");
-DEFINE_PROC(EQ2Band, procimpl::detail::eq2impl, proct_eq_2band_parametric_A, "2 Band Parametric",
-            "EQ", "eq-parm-2band");
-DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, proct_eq_3band_parametric_A, "3 Band Parametric",
-            "EQ", "eq-parm-3band");
-DEFINE_PROC(EQGraphic6Band, sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig>, proct_eq_6band,
+DEFINE_PROC(EQ1Band, procimpl::detail::eq1impl, procimpl::detail::eq1impl_os,
+            proct_eq_1band_parametric_A, "1 Band Parametric", "EQ", "eq-parm-1band");
+DEFINE_PROC(EQ2Band, procimpl::detail::eq2impl, procimpl::detail::eq2impl_os,
+            proct_eq_2band_parametric_A, "2 Band Parametric", "EQ", "eq-parm-2band");
+DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
+            proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
+DEFINE_PROC(EQGraphic6Band, sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<1>>,
+            sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<2>>, proct_eq_6band,
             "6 Band Graphic", "EQ", "eq-grp-6");
 
-DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig>, proct_eq_morph, "Morph", "EQ",
+DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
+            sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "EQ",
             "eq-morph");
 
-DEFINE_PROC(GenSin, sst::voice_effects::generator::GenSin<SCXTVFXConfig>, proct_osc_sin, "Sin",
+DEFINE_PROC(GenSin, sst::voice_effects::generator::GenSin<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::GenSin<SCXTVFXConfig<2>>, proct_osc_sin, "Sin",
             "Generators", "osc-sin");
-DEFINE_PROC(GenSaw, sst::voice_effects::generator::GenSaw<SCXTVFXConfig>, proct_osc_saw, "Saw",
+DEFINE_PROC(GenSaw, sst::voice_effects::generator::GenSaw<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::GenSaw<SCXTVFXConfig<2>>, proct_osc_saw, "Saw",
             "Generators", "osc-saw");
-DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig>,
-            proct_osc_pulse_sync, "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);
-DEFINE_PROC(GenPhaseMod, sst::voice_effects::generator::GenPhaseMod<SCXTVFXConfig>,
-            proct_osc_phasemod, "Phase Mod", "Generators", "osc-phase-mod");
-DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig>,
+DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<2>>, proct_osc_pulse_sync,
+            "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);
+DEFINE_PROC(GenPhaseMod, sst::voice_effects::generator::GenPhaseMod<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::GenPhaseMod<SCXTVFXConfig<2>>, proct_osc_phasemod,
+            "Phase Mod", "Generators", "osc-phase-mod");
+DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<2>>,
             proct_osc_correlatednoise, "Correlated Noise", "Generators", "osc-correlated-noise");
 
-DEFINE_PROC(PitchRing, sst::voice_effects::pitch::PitchRing<SCXTVFXConfig>, proct_fx_pitchring,
-            "PitchRing", "Pitch and Frequency", "pitchring-fx");
+DEFINE_PROC(PitchRing, sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<1>>,
+            sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<2>>, proct_fx_pitchring, "PitchRing",
+            "Pitch and Frequency", "pitchring-fx");
 
 } // namespace scxt::dsp::processor
 
