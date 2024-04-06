@@ -70,6 +70,12 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
     T *asT() { return static_cast<T *>(this); }
 
     GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
+    ~GroupZoneSidebarBase()
+    {
+        // Make sure the listbox destroys before its model
+        listBox.reset();
+        listBoxModel.reset();
+    }
 
     void postInit()
     {
