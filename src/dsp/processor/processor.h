@@ -124,6 +124,7 @@ enum ProcessorType
     proct_fx_freqshift,
     proct_fx_waveshaper,
     proct_fx_pitchring,
+    proct_fx_fauxstereo,
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,
@@ -214,7 +215,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     void setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp, float *fp, int *ip);
 
   public:
-    size_t preReserveSize{0};
+    size_t preReserveSize[16]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     ProcessorType getType() const { return myType; }
     std::string getName() const { return getProcessorName(getType()); }
