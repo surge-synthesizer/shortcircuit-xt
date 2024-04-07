@@ -173,11 +173,10 @@ void Zone::initialize()
 
 void Zone::setupOnUnstream(const engine::Engine &e)
 {
-    sampleLoadOverridesMapping = false;
     auto nbSampleLoaded{getNumSampleLoaded()};
     for (auto i = 0; i < nbSampleLoaded; ++i)
     {
-        attachToSample(*(e.getSampleManager()), i);
+        attachToSample(*(e.getSampleManager()), i, Zone::NONE);
     }
     for (int p = 0; p < processorCount; ++p)
     {
@@ -185,7 +184,8 @@ void Zone::setupOnUnstream(const engine::Engine &e)
     }
 }
 
-bool Zone::attachToSample(const sample::SampleManager &manager, int index)
+bool Zone::attachToSample(const sample::SampleManager &manager, int index,
+                          SampleInformationRead sir)
 {
     auto &s = sampleData.samples[index];
     if (s.sampleID.isValid())
@@ -197,7 +197,7 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index)
         samplePointers[index].reset();
     }
 
-    if (sampleLoadOverridesMapping)
+    if (sir & MAPPING)
     {
         if (samplePointers[index] && index == 0)
         {
@@ -214,21 +214,27 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index)
                 mapping.velocityRange = {m.vel_low, m.vel_high};
             }
         }
+    }
+    if (sir & (LOOP | ENDPOINTS))
+    {
         if (samplePointers[index])
         {
             const auto &m = samplePointers[index]->meta;
             s.startSample = 0;
             s.endSample = samplePointers[index]->getSampleLength();
-            if (m.loop_present)
+            if (sir & LOOP)
             {
-                s.startLoop = m.loop_start;
-                s.endLoop = m.loop_end;
-                s.loopActive = true;
-            }
-            else
-            {
-                s.startLoop = 0;
-                s.endLoop = s.endSample;
+                if (m.loop_present)
+                {
+                    s.startLoop = m.loop_start;
+                    s.endLoop = m.loop_end;
+                    s.loopActive = true;
+                }
+                else
+                {
+                    s.startLoop = 0;
+                    s.endLoop = s.endSample;
+                }
             }
         }
     }

@@ -172,9 +172,18 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     // TODO: Multi-output
     size_t getNumOutputs() const { return 1; }
 
-    // If this is TRUE then sample root notes, ranges, etc... will override the mapping
-    bool sampleLoadOverridesMapping{true};
-    bool attachToSample(const sample::SampleManager &manager, int index = 0);
+    enum SampleInformationRead
+    {
+        NONE = 0,
+        MAPPING = 1 << 0,
+        LOOP = 1 << 1,
+        ENDPOINTS = 1 << 2,
+
+        ALL = MAPPING | LOOP | ENDPOINTS
+    };
+
+    bool attachToSample(const sample::SampleManager &manager, int index = 0,
+                        SampleInformationRead sir = ALL);
     bool attachToSampleAtVariation(const sample::SampleManager &manager, const SampleID &sid,
                                    int16_t variation)
     {

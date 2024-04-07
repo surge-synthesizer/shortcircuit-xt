@@ -446,7 +446,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
             zone->terminateAllVoices();
             zone->sampleData.samples[sID].sampleID = sample;
             zone->sampleData.samples[sID].active = true;
-            zone->attachToSample(*e.getSampleManager(), sID);
+            zone->attachToSample(*e.getSampleManager(), sID,
+                                 (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
         },
         [p = partID, g = groupID, z = zoneID](auto &e) {
             e.getSelectionManager()->selectAction({p, g, z, true, true, true});
