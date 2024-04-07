@@ -77,6 +77,8 @@
 
 #include "sst/voice-effects/pitch/PitchRing.h"
 
+#include "sst/voice-effects/delay/FauxStereo.h"
+
 namespace scxt::dsp::processor
 {
 // Just don't change the id or streaming name, basically
@@ -137,6 +139,9 @@ DEFINE_PROC(PitchRing, sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<1>>,
             sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<2>>, proct_fx_pitchring, "PitchRing",
             "Pitch and Frequency", "pitchring-fx");
 
+DEFINE_PROC(FauxStereo, sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<2>>, proct_fx_fauxstereo,
+            "Faux Stereo", "Delay Based", "fxstereo-fx", dsp::surgeSincTable);
 } // namespace scxt::dsp::processor
 
 // port

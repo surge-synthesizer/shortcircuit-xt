@@ -41,6 +41,10 @@ namespace scxt::dsp
 {
 using SincTable = sst::basic_blocks::tables::ShortcircuitSincTableProvider;
 extern SincTable sincTable;
+
+using SurgeSincTable = sst::basic_blocks::tables::SurgeSincTableProvider;
+extern SurgeSincTable surgeSincTable;
+
 static_assert(dsp::FIRipol_M == SincTable::FIRipol_M);
 static_assert(dsp::FIRipol_N == SincTable::FIRipol_N);
 static_assert(dsp::FIRipolI16_N == SincTable::FIRipolI16_N);

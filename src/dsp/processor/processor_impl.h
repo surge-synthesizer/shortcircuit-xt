@@ -48,7 +48,14 @@ template <int OSFactor> struct SCXTVFXConfig
         }
         else
         {
-            b->preReserveSize = s;
+            for (int i = 0; i < 16; ++i)
+            {
+                if (b->preReserveSize[i] == 0)
+                {
+                    b->preReserveSize[i] = s;
+                    break;
+                }
+            }
         }
     }
 
@@ -217,10 +224,13 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
     for (int i = 0; i < parameter_count; ++i)
         this->ctrlmode_desc[i] = that->paramAt(i);
 
-    if (preReserveSize > 0)
+    for (int i = 0; i < 16; ++i)
     {
-        assert(memoryPool);
-        memoryPool->preReservePool(preReserveSize);
+        if (preReserveSize[i] > 0)
+        {
+            assert(memoryPool);
+            memoryPool->preReservePool(preReserveSize[i]);
+        }
     }
 }
 

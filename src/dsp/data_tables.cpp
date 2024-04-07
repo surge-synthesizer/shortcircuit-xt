@@ -31,6 +31,7 @@
 namespace scxt::dsp
 {
 SincTable sincTable;
+SurgeSincTable surgeSincTable;
 DbTable dbTable;
 TwoToTheXTable twoToTheXTable;
 } // namespace scxt::dsp
