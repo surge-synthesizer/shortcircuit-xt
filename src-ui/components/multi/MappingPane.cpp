@@ -1856,16 +1856,33 @@ struct SampleDisplay : juce::Component, HasEditor
     void selectNextFile(bool selectForward)
     {
         auto samp{editor->sampleManager.getSample(sampleView.samples[selectedVariation].sampleID)};
-        auto parent_path{samp->getPath().parent_path()};
-
+        if (!samp)
+            return;
+        
         std::vector<std::string> v; // todo maybe reserve space for the vector
-        for (const auto &entry : fs::directory_iterator(parent_path))
+
+        try
         {
-            const auto filenameStr = entry.path().filename().string();
-            if (entry.is_regular_file() && browser::Browser::isLoadableFile(entry.path()))
+            auto samp_path = samp->getPath();
+            if (samp_path.empty())
+                return;
+
+            auto parent_path{samp_path.parent_path()};
+            if (parent_path.empty())
+                return;
+
+            for (const auto &entry : fs::directory_iterator(parent_path))
             {
-                v.push_back(entry.path().string());
+                if (entry.is_regular_file() && browser::Browser::isLoadableFile(entry.path()))
+                {
+                    v.push_back(entry.path().u8string());
+                }
             }
+        }
+        catch (const fs::filesystem_error &err)
+        {
+            SCLOG("Filesystem error: " << err.what());
+            return;
         }
 
         // todo sort alphabetically
