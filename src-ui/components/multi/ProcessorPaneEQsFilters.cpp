@@ -37,6 +37,7 @@
 #include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/EqualTuningProvider.h"
+#include "sst/voice-effects/filter/CytomicSVF.h"
 
 #include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/VSlider.h"
@@ -184,14 +185,21 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
                 }
                 else
                 {
-                    curves[band].push_back(pt{(float)freq, i * 1.f,
-                                              mProcessor.getBandFrequencyGraph(band - 1, freqarg)});
+                    if constexpr (nSub > 0)
+                    {
+                        curves[band].push_back(
+                            pt{(float)freq, i * 1.f,
+                               mProcessor.getBandFrequencyGraph(band - 1, freqarg)});
+                    }
                 }
             }
         }
         curvesBuilt = true;
         repaint();
     }
+
+    float centerPoint{0.5f};
+
     void paint(juce::Graphics &g) override
     {
         if (!curvesBuilt)
@@ -204,7 +212,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             bool first{true};
             for (auto &pt : c)
             {
-                auto sp = getHeight() / 2 - log2(pt.y) * 9;
+                auto sp = getHeight() * centerPoint - log2(pt.y) * 9;
                 if (first)
                 {
                     p.startNewSubPath(pt.x, sp);
@@ -225,7 +233,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         g.drawRect(getLocalBounds());
 
         g.setColour(colorMap->get(theme::ColorMap::accent_2b));
-        g.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);
+        g.drawLine(0, getHeight() * centerPoint, getWidth(), getHeight() * centerPoint);
 
         for (int i = 0; i < nSub; ++i)
         {
@@ -453,6 +461,74 @@ void ProcessorPane::layoutControlsEQGraphic()
 
     mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
     mixEditor->item->setBounds(mx);
+
+    otherEditors.push_back(std::move(eqdisp));
+}
+
+void ProcessorPane::layoutControlsCytomicSVF()
+{
+    // OK so we know we have 2 controls (cutoff and resonance), a mix, and two ints
+    assert(processorControlDescription.numFloatParams == 3);
+    assert(processorControlDescription.numIntParams == 1);
+
+    auto eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::filter::CytomicSVF<EqDisplayBase::EqAdapter>, 0>>(*this);
+    addAndMakeVisible(*eqdisp);
+
+    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+        if (w)
+        {
+            w->rebuildCurves();
+        }
+    };
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    auto bd = getContentArea();
+    auto coKnob = bd.withHeight(55).withWidth(55);
+    auto rest = bd.withTrimmedLeft(60).withHeight(55);
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Cutoff");
+    lo::knobCX<locon::largeKnob>(*floatEditors[0], coKnob.getCentreX(), 0);
+
+    auto cols = lo::columns(rest, 3);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Res");
+    lo::knobCX<locon::mediumKnob>(*floatEditors[1], cols[0].getCentreX(), 0);
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Shelf");
+    lo::knobCX<locon::mediumKnob>(*floatEditors[2], cols[1].getCentreX(), 0);
+    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
+    lo::knobCX<locon::mediumKnob>(*mixEditor, cols[2].getCentreX(), 0);
+
+    for (int i = 0; i < 3; ++i)
+        floatAttachments[i]->andThenOnGui(thenRecalc);
+
+    auto wss = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
+    wss->setBounds(rest.withTrimmedTop(rest.getHeight() - 18).reduced(4, 0).translated(0, -3));
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
+
+    auto updateEnabled = [w = juce::Component::SafePointer(this), thenRecalc](auto &at) {
+        if (!w)
+            return;
+        auto md = (sst::filters::CytomicSVF::Mode)at.getValue();
+        if (md == sst::filters::CytomicSVF::HIGH_SHELF ||
+            md == sst::filters::CytomicSVF::LOW_SHELF || md == sst::filters::CytomicSVF::BELL)
+        {
+            w->floatEditors[2]->item->setEnabled(true);
+            w->floatEditors[2]->label->setEnabled(true);
+        }
+        else
+        {
+            w->floatEditors[2]->item->setEnabled(false);
+            w->floatEditors[2]->label->setEnabled(false);
+        }
+        w->floatEditors[2]->item->repaint();
+        thenRecalc(at);
+    };
+    updateEnabled(*intAttachments[0]);
+    intAttachments[0]->andThenOnGui(updateEnabled);
+
+    eqdisp->setBounds(bd.withTrimmedTop(intEditors[0]->item->getBottom() + 3));
 
     otherEditors.push_back(std::move(eqdisp));
 }

@@ -84,6 +84,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     void layoutControls();
     void layoutControlsSuperSVF();
+    void layoutControlsCytomicSVF();
     void layoutControlsWaveshaper();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();

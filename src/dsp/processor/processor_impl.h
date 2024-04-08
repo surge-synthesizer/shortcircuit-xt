@@ -110,6 +110,7 @@ HAS_MEMFN(initVoiceEffectParams);
 HAS_MEMFN(processStereo);
 HAS_MEMFN(processMonoToMono);
 HAS_MEMFN(processMonoToStereo);
+HAS_MEMFN(tailLength);
 #undef HAS_MEMFN
 
 template <typename T> struct SSTVoiceEffectShim : T
@@ -207,7 +208,14 @@ template <typename T> struct SSTVoiceEffectShim : T
     }
     bool mInitCalledOnce{false};
 
-    int tail_length() override { return tailInfinite; }
+    int tail_length() override
+    {
+        if constexpr (HasMemFn_tailLength<T>::value)
+        {
+            return this->tailLength();
+        }
+        return 0;
+    }
 
     sst::basic_blocks::params::ParamMetaData intParamMetadata[maxProcessorIntParams];
 };

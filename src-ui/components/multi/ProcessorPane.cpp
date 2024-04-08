@@ -187,6 +187,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsSuperSVF();
         break;
 
+    case dsp::processor::proct_CytomicSVF:
+        layoutControlsCytomicSVF();
+        break;
+
     case dsp::processor::proct_eq_1band_parametric_A:
     case dsp::processor::proct_eq_2band_parametric_A:
     case dsp::processor::proct_eq_3band_parametric_A:
