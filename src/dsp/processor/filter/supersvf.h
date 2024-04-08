@@ -69,6 +69,10 @@ template <bool OS> struct alignas(16) SuperSVF : public Processor
     size_t getIntParameterChoicesCount(int ip_id) const override;
     std::string getIntParameterChoicesLabel(int ip_id, int c_id) const override;
     int tail_length() override { return 0; }
+
+  private:
+    float lastparam[maxProcessorFloatParams];
+    int lastiparam[maxProcessorIntParams];
 };
 
 } // namespace filter
