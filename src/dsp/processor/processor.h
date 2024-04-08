@@ -104,6 +104,7 @@ enum ProcessorType
     proct_none = 0,
     proct_biquadSBQ, // First zone
     proct_SuperSVF,
+    proct_CytomicSVF,
 
     proct_moogLP4sat,
     proct_eq_1band_parametric_A,
@@ -156,8 +157,6 @@ processorList_t getAllProcessorDescriptions();
  * This should be a multiple of 16 if you enlarge it.
  */
 static constexpr size_t processorMemoryBufferSize{1028 * 16};
-
-static constexpr int tailInfinite = 0x1000000;
 
 struct ProcessorStorage
 {
@@ -261,7 +260,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     // processors are required to be able to process stereo blocks if stereo is true in the
     // constructor
     virtual void suspend() {}
-    virtual int tail_length() { return 1000; }
+    virtual int tail_length() { return 0; }
 
     float modulation_output; // processors can use this to output modulation data to the matrix
 
@@ -274,12 +273,6 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     int lastiparam[maxProcessorIntParams];
     int parameter_count{0};
     sst::basic_blocks::params::ParamMetaData ctrlmode_desc[maxProcessorFloatParams];
-
-    void setStr(char target[processorLabelSize], const char *v)
-    {
-        strncpy(target, v, processorLabelSize);
-        target[processorLabelSize - 1] = '\0';
-    }
 };
 
 class BiquadSupport

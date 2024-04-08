@@ -1858,7 +1858,7 @@ struct SampleDisplay : juce::Component, HasEditor
         auto samp{editor->sampleManager.getSample(sampleView.samples[selectedVariation].sampleID)};
         if (!samp)
             return;
-        
+
         std::vector<std::string> v; // todo maybe reserve space for the vector
 
         try
