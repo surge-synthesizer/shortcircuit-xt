@@ -265,21 +265,15 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     float modulation_output; // processors can use this to output modulation data to the matrix
 
     // move these back to protected and friend the adapter when done
+    // Much of it can also be removed once we are all in voice-effects
+    // land
+    //
     // protected:
     engine::MemoryPool *memoryPool{nullptr};
     float *param{nullptr};
     int *iparam{nullptr};
-    float lastparam[maxProcessorFloatParams];
-    int lastiparam[maxProcessorIntParams];
     int parameter_count{0};
     sst::basic_blocks::params::ParamMetaData ctrlmode_desc[maxProcessorFloatParams];
-};
-
-class BiquadSupport
-{
-  public:
-    float note_to_pitch_ignoring_tuning(float n) { return tuning::equalTuning.note_to_pitch(n); }
-    float dbToLinear(float n) { return dbTable.dbToLinear(n); }
 };
 
 /**
