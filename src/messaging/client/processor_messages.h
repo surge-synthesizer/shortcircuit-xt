@@ -135,16 +135,48 @@ CLIENT_TO_SERIAL_CONSTRAINED(
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorInt32TValue, c2s_update_single_processor_int32_t_value,
     detail::indexedZoneOrGroupDiffMsg_t<int32_t>, dsp::processor::ProcessorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
-                                                &engine::Group::processorStorage, payload, engine,
-                                                cont));
+    detail::updateZoneOrGroupIndexedMemberValue(
+        &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont,
+        nullptr,
+        [payload](auto &e, auto &sz) {
+            auto wp = std::get<1>(payload);
+            for (const auto &a : sz)
+            {
+                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                z->checkOrAdjustIntConsistency(wp);
+            }
+        },
+        [payload](auto &e, auto &sg) {
+            auto wp = std::get<1>(payload);
+            for (const auto &a : sg)
+            {
+                const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
+                g->checkOrAdjustIntConsistency(wp);
+            }
+        }));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorBoolValue, c2s_update_single_processor_bool_value,
     detail::indexedZoneOrGroupDiffMsg_t<bool>, dsp::processor::ProcessorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
-                                                &engine::Group::processorStorage, payload, engine,
-                                                cont));
+    detail::updateZoneOrGroupIndexedMemberValue(
+        &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont,
+        nullptr,
+        [payload](auto &e, auto &sz) {
+            auto wp = std::get<1>(payload);
+            for (const auto &a : sz)
+            {
+                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                z->checkOrAdjustBoolConsistency(wp);
+            }
+        },
+        [payload](auto &e, auto &sg) {
+            auto wp = std::get<1>(payload);
+            for (const auto &a : sg)
+            {
+                const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
+                g->checkOrAdjustBoolConsistency(wp);
+            }
+        }));
 
 // C2S set processor type (sends back data and metadata)
 typedef std::pair<int32_t, int32_t> processorPair_t;

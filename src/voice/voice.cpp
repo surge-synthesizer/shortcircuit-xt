@@ -326,6 +326,7 @@ template <bool OS> bool Voice::processWithOS()
                 }
             };
             endpoints->processorTarget[i].snapValues();
+            // TODO: Snap int values here (and same in group)
 
             mix()->set_target(*endpoints->processorTarget[i].mixP);
 
@@ -605,7 +606,8 @@ void Voice::initializeProcessors()
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], zone->getEngine()->getMemoryPool().get(),
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
-                endpoints->processorTarget[i].fp, processorIntParams[i], forceOversample);
+                zone->processorStorage[i], endpoints->processorTarget[i].fp, processorIntParams[i],
+                forceOversample, false);
         }
         else
         {
@@ -615,6 +617,7 @@ void Voice::initializeProcessors()
         {
             processors[i]->setSampleRate(sampleRate * (forceOversample ? 2 : 1));
             processors[i]->init();
+            processors[i]->setKeytrack(zone->processorStorage[i].isKeytracked);
 
             processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
             processorProducesStereo[i] = processors[i]->monoInputCreatesStereoOutput();

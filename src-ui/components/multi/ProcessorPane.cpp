@@ -103,6 +103,7 @@ void ProcessorPane::showHamburgerMenu()
 void ProcessorPane::resetControls()
 {
     getContentAreaComponent()->removeAllChildren();
+    clearAdditionalHamburgerComponents();
 
     // we assume the controls clear before attachments so make sure of that
     for (auto &k : floatEditors)
@@ -180,6 +181,21 @@ void ProcessorPane::rebuildControlsFromDescription()
     connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue, attachment_t>(
         *at, processorView, this, forZone, index);
     mixAttachment = std::move(at);
+
+    if (processorControlDescription.supportsKeytrack)
+    {
+        keytrackAttackment =
+            std::make_unique<bool_attachment_t>("Keytrack", processorView.isKeytracked);
+        connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
+                                     bool_attachment_t::onGui_t>(*keytrackAttackment, processorView,
+                                                                 this, forZone, index);
+
+        auto kta = std::make_unique<jcmp::ToggleButton>();
+        kta->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
+        kta->setGlyph(sst::jucegui::components::GlyphPainter::KEYBOARD);
+        kta->setSource(keytrackAttackment.get());
+        addAdditionalHamburgerComponent(std::move(kta));
+    }
 
     switch (processorControlDescription.type)
     {

@@ -182,7 +182,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
 
-    std::unique_ptr<bool_attachment_t> bypassAttachment;
+    std::unique_ptr<bool_attachment_t> bypassAttachment, keytrackAttackment;
 
     std::vector<std::unique_ptr<juce::Component>> otherEditors;
 
@@ -193,6 +193,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     std::unique_ptr<sst::jucegui::components::Label> multiLabel;
     std::unique_ptr<sst::jucegui::components::TextPushButton> multiButton;
+
     std::string multiName;
 };
 } // namespace scxt::ui::multi
