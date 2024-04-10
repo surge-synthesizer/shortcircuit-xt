@@ -49,6 +49,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                  {
                      v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
                           {"mix", t.mix},
+                          {"isKeytracked", t.isKeytracked},
                           {"floatParams", t.floatParams},
                           {"intParams", t.intParams},
                           {"isActive", t.isActive}};
@@ -77,6 +78,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                      fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
                      fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
                      findOrSet(v, "isActive", false, result.isActive);
+                     findOrSet(v, "isKeytracked", false, result.isKeytracked);
                  }
              }))
 
@@ -101,13 +103,16 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorDescription,
 
 SC_STREAMDEF(
     scxt::dsp::processor::ProcessorControlDescription, SC_FROM({
-        v = {{"type",
-              (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
-             {"typeDisplayName", t.typeDisplayName},
-             {"numFloatParams", t.numFloatParams},
-             {"floatControlDescriptions", t.floatControlDescriptions},
-             {"numIntParams", t.numIntParams},
-             {"intControlDescriptions", t.intControlDescriptions}};
+        v = {
+            {"type",
+             (int32_t)t.type}, // these are process-lifetime only so the type is safe to stream
+            {"typeDisplayName", t.typeDisplayName},
+            {"numFloatParams", t.numFloatParams},
+            {"floatControlDescriptions", t.floatControlDescriptions},
+            {"numIntParams", t.numIntParams},
+            {"intControlDescriptions", t.intControlDescriptions},
+            {"supportsKeytrack", t.supportsKeytrack},
+        };
     }),
     SC_TO({
         int tInt{dsp::processor::proct_none};
@@ -118,6 +123,7 @@ SC_STREAMDEF(
         findIf(v, "floatControlDescriptions", to.floatControlDescriptions);
         findIf(v, "numIntParams", to.numIntParams);
         findIf(v, "intControlDescriptions", to.intControlDescriptions);
+        findIf(v, "supportsKeytrack", to.supportsKeytrack);
     }))
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DSP_TRAITS_H

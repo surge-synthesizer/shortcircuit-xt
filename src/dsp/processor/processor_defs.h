@@ -151,8 +151,4 @@ DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>
 
 } // namespace scxt::dsp::processor
 
-// port
-
-#include "filter/supersvf.h"
-
 #endif // __SCXT_PROCESSOR_DEFS_H

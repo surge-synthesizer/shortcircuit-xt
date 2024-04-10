@@ -121,7 +121,8 @@ template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequ
     return fnc[ft]();
 }
 template <size_t I>
-Processor *returnSpawnOnto(uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip)
+Processor *returnSpawnOnto(uint8_t *m, engine::MemoryPool *mp, const ProcessorStorage &ps, float *f,
+                           int *i, bool needsMetadata)
 {
     if constexpr (I == ProcessorType::proct_none)
         return nullptr;
@@ -132,22 +133,25 @@ Processor *returnSpawnOnto(uint8_t *m, engine::MemoryPool *mp, float *fp, int *i
     }
     else
     {
-        auto mem = new (m) typename ProcessorImplementor<(ProcessorType)I>::T(mp, fp, ip);
+        auto mem =
+            new (m) typename ProcessorImplementor<(ProcessorType)I>::T(mp, ps, f, i, needsMetadata);
         return mem;
     }
 }
 
 template <size_t... Is>
-auto spawnOnto(size_t ft, uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip,
-               std::index_sequence<Is...>)
+auto spawnOnto(size_t ft, uint8_t *m, engine::MemoryPool *mp, const ProcessorStorage &ps, float *f,
+               int *i, bool needsMetadata, std::index_sequence<Is...>)
 {
-    using FuncType = Processor *(*)(uint8_t *, engine::MemoryPool *, float *, int *);
+    using FuncType = Processor *(*)(uint8_t *, engine::MemoryPool *, const ProcessorStorage &,
+                                    float *, int *, bool);
     constexpr FuncType arFuncs[] = {detail::returnSpawnOnto<Is>...};
-    return arFuncs[ft](m, mp, fp, ip);
+    return arFuncs[ft](m, mp, ps, f, i, needsMetadata);
 }
 
 template <size_t I>
-Processor *returnSpawnOntoOS(uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip)
+Processor *returnSpawnOntoOS(uint8_t *m, engine::MemoryPool *mp, const ProcessorStorage &ps,
+                             float *f, int *i, bool needsMetadata)
 {
     if constexpr (I == ProcessorType::proct_none)
         return nullptr;
@@ -159,18 +163,20 @@ Processor *returnSpawnOntoOS(uint8_t *m, engine::MemoryPool *mp, float *fp, int 
     }
     else
     {
-        auto mem = new (m) typename ProcessorImplementor<(ProcessorType)I>::TOS(mp, fp, ip);
+        auto mem = new (m)
+            typename ProcessorImplementor<(ProcessorType)I>::TOS(mp, ps, f, i, needsMetadata);
         return mem;
     }
 }
 
 template <size_t... Is>
-auto spawnOntoOS(size_t ft, uint8_t *m, engine::MemoryPool *mp, float *fp, int *ip,
-                 std::index_sequence<Is...>)
+auto spawnOntoOS(size_t ft, uint8_t *m, engine::MemoryPool *mp, const ProcessorStorage &ps,
+                 float *f, int *i, bool needsMetadata, std::index_sequence<Is...>)
 {
-    using FuncType = Processor *(*)(uint8_t *, engine::MemoryPool *, float *, int *);
+    using FuncType = Processor *(*)(uint8_t *, engine::MemoryPool *, const ProcessorStorage &,
+                                    float *, int *, bool);
     constexpr FuncType arFuncs[] = {detail::returnSpawnOntoOS<Is>...};
-    return arFuncs[ft](m, mp, fp, ip);
+    return arFuncs[ft](m, mp, ps, f, i, needsMetadata);
 }
 } // namespace detail
 
@@ -241,19 +247,20 @@ processorList_t getAllProcessorDescriptions()
  * be a 16byte aligned block of at least size processorMemoryBufferSize.
  */
 Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
-                                 size_t memorySize, float *fp, int *ip, bool oversample)
+                                 size_t memorySize, const ProcessorStorage &ps, float *f, int *i,
+                                 bool oversample, bool needsMetadata)
 {
     assert(memorySize >= processorMemoryBufferSize);
     if (oversample)
     {
         return detail::spawnOntoOS(
-            id, memory, mp, fp, ip,
+            id, memory, mp, ps, f, i, needsMetadata,
             std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
     }
     else
     {
         return detail::spawnOnto(
-            id, memory, mp, fp, ip,
+            id, memory, mp, ps, f, i, needsMetadata,
             std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
     }
 }
@@ -275,38 +282,14 @@ ProcessorControlDescription Processor::getControlDescription() const
     res.type = getType();
     res.typeDisplayName = getName();
     res.numFloatParams = getFloatParameterCount();
-
-    for (int i = 0; i < res.numFloatParams; ++i)
-    {
-        res.floatControlDescriptions[i] = ctrlmode_desc[i];
-    }
-    for (int i = res.numFloatParams; i < maxProcessorFloatParams; ++i)
-    {
-        res.floatControlDescriptions[i] = datamodel::pmd().withType(datamodel::pmd::NONE);
-    }
-
     res.numIntParams = getIntParameterCount();
-    for (int i = 0; i < res.numIntParams; ++i)
-    {
-        std::unordered_map<int, std::string> dVals;
-        for (int j = 0; j < getIntParameterChoicesCount(i); ++j)
-        {
-            dVals[j] = getIntParameterChoicesLabel(i, j);
-        }
 
-        auto pd = datamodel::pmd()
-                      .withType(datamodel::pmd::INT)
-                      .withRange(0, getIntParameterChoicesCount(i) - 1)
-                      .withDefault(0)
-                      .withName(getIntParameterLabel(i))
-                      .withUnorderedMapFormatting(dVals);
+    res.floatControlDescriptions = floatParameterMetaData;
+    res.intControlDescriptions = intParameterMetaData;
 
-        res.intControlDescriptions[i] = pd;
-    }
-    for (int i = res.numIntParams; i < maxProcessorIntParams; ++i)
-    {
-        res.intControlDescriptions[i] = {};
-    }
+    res.supportsKeytrack = false;
+    res.requiresConsistencyCheck = false;
+
     return res;
 }
 

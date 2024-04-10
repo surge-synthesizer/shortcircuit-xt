@@ -194,6 +194,7 @@ struct SampleRateSupport
         onSampleRateChanged();
     }
 
+    inline bool isSampleRateSet() { return sampleRate > 2; }
     inline void assertSampleRateSet() { assert(sampleRate > 2); }
     virtual void onSampleRateChanged() {}
     double dsamplerate, dsamplerate_inv;
@@ -238,6 +239,22 @@ struct ThreadingChecker
                 audioThreadId == std::this_thread::get_id());
 #else
         return true;
+#endif
+    }
+
+    std::string threadName()
+    {
+#if BUILD_IS_DEBUG
+        auto tid = std::this_thread::get_id();
+        if (tid == audioThreadId)
+            return "audio";
+        if (tid == serialThreadId)
+            return "serial";
+        if (tid == clientThreadId)
+            return "client";
+        return "unknown";
+#else
+        return {};
 #endif
     }
 };

@@ -15,11 +15,12 @@
         static constexpr const char *processorName{procDisplayName};                               \
         static constexpr const char *processorStreamingName{procStreamingName};                    \
         static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
-        procClass(engine::MemoryPool *mp, float *f, int32_t *i)                                    \
+        procClass(engine::MemoryPool *mp, const ProcessorStorage &ps, float *f, int *i,            \
+                  bool needsMD)                                                                    \
             : SSTVoiceEffectShim<procImpl>(__VA_ARGS__)                                            \
         {                                                                                          \
             assert(mp);                                                                            \
-            setupProcessor(this, procID, mp, f, i);                                                \
+            setupProcessor(this, procID, mp, ps, f, i, needsMD);                                   \
         }                                                                                          \
         virtual ~procClass() = default;                                                            \
     };                                                                                             \
@@ -28,11 +29,12 @@
         static constexpr const char *processorName{procDisplayName};                               \
         static constexpr const char *processorStreamingName{procStreamingName};                    \
         static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
-        OS##procClass(engine::MemoryPool *mp, float *f, int32_t *i)                                \
+        OS##procClass(engine::MemoryPool *mp, const ProcessorStorage &ps, float *f, int *i,        \
+                      bool needsMD)                                                                \
             : SSTVoiceEffectShim<osProcImpl>(__VA_ARGS__)                                          \
         {                                                                                          \
             assert(mp);                                                                            \
-            setupProcessor(this, procID, mp, f, i);                                                \
+            setupProcessor(this, procID, mp, ps, f, i, needsMD);                                   \
         }                                                                                          \
         virtual ~OS##procClass() = default;                                                        \
     };                                                                                             \

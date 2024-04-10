@@ -111,6 +111,8 @@ HAS_MEMFN(processStereo);
 HAS_MEMFN(processMonoToMono);
 HAS_MEMFN(processMonoToStereo);
 HAS_MEMFN(tailLength);
+HAS_MEMFN(enableKeytrack);
+HAS_MEMFN(getKeytrack);
 #undef HAS_MEMFN
 
 template <typename T> struct SSTVoiceEffectShim : T
@@ -118,17 +120,7 @@ template <typename T> struct SSTVoiceEffectShim : T
     // You can have neither or one, but you can't have both
     static_assert(!(HasMemFn_processMonoToMono<T>::value &&
                     HasMemFn_processMonoToStereo<T>::value));
-    template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...)
-    {
-        static_assert(T::numIntParams <= maxProcessorIntParams);
-        if constexpr (T::numIntParams > 0)
-        {
-            for (int i = 0; i < T::numIntParams; ++i)
-            {
-                intParamMetadata[i] = this->intParamAt(i);
-            }
-        }
-    }
+    template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...) {}
 
     virtual ~SSTVoiceEffectShim() = default;
 
@@ -156,23 +148,6 @@ template <typename T> struct SSTVoiceEffectShim : T
     virtual bool monoInputCreatesStereoOutput() override
     {
         return HasMemFn_processMonoToStereo<T>::value;
-    }
-
-    size_t getIntParameterCount() const override { return T::numIntParams; }
-    std::string getIntParameterLabel(int ip_id) const override
-    {
-        return intParamMetadata[ip_id].name;
-    }
-    size_t getIntParameterChoicesCount(int ip_id) const override
-    {
-        return intParamMetadata[ip_id].maxVal - intParamMetadata[ip_id].minVal + 1;
-    }
-    std::string getIntParameterChoicesLabel(int ip_id, int c_id) const override
-    {
-        auto vs = intParamMetadata[ip_id].valueToString(c_id);
-        if (vs.has_value())
-            return *vs;
-        return "Error";
     }
 
     void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
@@ -217,20 +192,68 @@ template <typename T> struct SSTVoiceEffectShim : T
         return 0;
     }
 
-    sst::basic_blocks::params::ParamMetaData intParamMetadata[maxProcessorIntParams];
+    ProcessorControlDescription getControlDescription() const override
+    {
+        auto res = T::getControlDescription();
+
+        if constexpr (HasMemFn_enableKeytrack<T>::value)
+        {
+            static_assert(HasMemFn_getKeytrack<T>::value);
+            res.supportsKeytrack = true;
+        }
+        return res;
+    }
+
+    bool isKeytracked() const override
+    {
+        if constexpr (HasMemFn_getKeytrack<T>::value)
+        {
+            return T::getKeytrack();
+        }
+        return false;
+    }
+    bool setKeytrack(bool b) override
+    {
+        if constexpr (HasMemFn_enableKeytrack<T>::value)
+        {
+            return T::enableKeytrack(b);
+        }
+        return false;
+    }
 };
 
 template <typename T>
-void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp, float *fp, int *ip)
+void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
+                               const ProcessorStorage &p, float *fp, int *ip, bool needsMetadata)
 {
     myType = t;
     memoryPool = mp;
     param = fp;
     iparam = ip;
 
-    parameter_count = T::numFloatParams;
-    for (int i = 0; i < parameter_count; ++i)
-        this->ctrlmode_desc[i] = that->paramAt(i);
+    setKeytrack(p.isKeytracked);
+
+    floatParameterCount = T::numFloatParams;
+
+    if (needsMetadata)
+    {
+        for (int i = 0; i < floatParameterCount; ++i)
+            this->floatParameterMetaData[i] = that->paramAt(i);
+        for (int i = floatParameterCount; i < maxProcessorFloatParams; ++i)
+            this->floatParameterMetaData[i] = {};
+    }
+
+    intParameterCount = T::numIntParams;
+    if (needsMetadata)
+    {
+        if constexpr (T::numIntParams > 0)
+        {
+            for (int i = 0; i < intParameterCount; ++i)
+                this->intParameterMetaData[i] = that->intParamAt(i);
+        }
+        for (int i = intParameterCount; i < maxProcessorIntParams; ++i)
+            this->intParameterMetaData[i] = {};
+    }
 
     for (int i = 0; i < 16; ++i)
     {

@@ -43,7 +43,7 @@
  * - While it doesn't apply to microgate, int params API is renamed so get_ip_entry becomes
  * getIntParamEnntry etc... (compare the SVF).
  *
- * I defined process as{} and init as {parameter_count=0} so I had a stub
+ * I defined process as{} and init as {floatParameterCount=0} so I had a stub
  *
  * Next make the stub available to the engine by registering it. This used to be editing a big
  * global switch but is now localized through the Magic Of Templates (tm). So immediately under the
@@ -171,6 +171,8 @@ struct ProcessorStorage
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int32_t, maxProcessorIntParams> intParams;
     bool isActive{true};
+    bool isKeytracked{false};
+    int previousIsKeytracked{-1}; // make this an int and -1 means don't know previous
 
     bool operator==(const ProcessorStorage &other) const
     {
@@ -188,6 +190,9 @@ struct ProcessorControlDescription
     ProcessorType type{proct_none};
     std::string typeDisplayName{"Off"};
 
+    bool requiresConsistencyCheck{false};
+    bool supportsKeytrack{false};
+
     int numFloatParams{0}; // between 0 and max
     std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorFloatParams>
         floatControlDescriptions;
@@ -204,14 +209,11 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
   protected:
     Processor() {}
-    Processor(ProcessorType t, engine::MemoryPool *mp, float *p, int32_t *ip = 0)
-        : myType(t), memoryPool(mp), param(p), iparam(ip)
-    {
-    }
     ProcessorType myType{proct_none};
 
     template <typename T>
-    void setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp, float *fp, int *ip);
+    void setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
+                        const ProcessorStorage &ps, float *fp, int *ip, bool needsMetadata);
 
   public:
     size_t preReserveSize[16]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -219,12 +221,9 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     ProcessorType getType() const { return myType; }
     std::string getName() const { return getProcessorName(getType()); }
 
-    ProcessorControlDescription getControlDescription() const;
-    int getFloatParameterCount() const { return parameter_count; }
-    virtual size_t getIntParameterCount() const { return 0; }
-    virtual std::string getIntParameterLabel(int ip_id) const { return (""); }
-    virtual size_t getIntParameterChoicesCount(int ip_id) const { return 0; }
-    virtual std::string getIntParameterChoicesLabel(int ip_id, int c_id) const { return (""); }
+    virtual ProcessorControlDescription getControlDescription() const;
+    int getFloatParameterCount() const { return floatParameterCount; }
+    virtual size_t getIntParameterCount() const { return intParameterCount; }
 
     // TODO: Review and rename everything below here once the procesors are all ported
 
@@ -233,6 +232,9 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual void init_params() {}
     virtual void init() {}
+
+    virtual bool isKeytracked() const { return false; }
+    virtual bool setKeytrack(bool b) { return false; }
 
     /*
      * The default behavior of a processor is stereo -> stereo and all
@@ -272,8 +274,13 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     engine::MemoryPool *memoryPool{nullptr};
     float *param{nullptr};
     int *iparam{nullptr};
-    int parameter_count{0};
-    sst::basic_blocks::params::ParamMetaData ctrlmode_desc[maxProcessorFloatParams];
+    int floatParameterCount{0};
+    std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorFloatParams>
+        floatParameterMetaData;
+
+    int intParameterCount{0};
+    std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorIntParams>
+        intParameterMetaData;
 };
 
 /**
@@ -281,7 +288,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
  * be a 16byte aligned block of at least size processorMemoryBufferSize.
  */
 Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
-                                 size_t memorySize, float *fp, int *ip, bool oversample);
+                                 size_t memorySize, const ProcessorStorage &ps, float *f, int *i,
+                                 bool oversample, bool needsMetaData);
 
 /**
  * Whetner a processor is spawned in place or onto fresh memory, release it here.

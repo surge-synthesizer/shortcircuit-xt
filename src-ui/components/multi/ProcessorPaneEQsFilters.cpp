@@ -529,7 +529,6 @@ void ProcessorPane::layoutControlsCytomicSVF()
     intAttachments[0]->andThenOnGui(updateEnabled);
 
     eqdisp->setBounds(bd.withTrimmedTop(intEditors[0]->item->getBottom() + 3));
-
     otherEditors.push_back(std::move(eqdisp));
 }
 

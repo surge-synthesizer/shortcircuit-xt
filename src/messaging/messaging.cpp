@@ -53,6 +53,11 @@ void MessageController::parseAudioMessageOnSerializationThread(
         serializationSendToClient(client::s2c_send_pgz_structure,
                                   engine.getPartGroupZoneStructure(-1), *this);
         break;
+    case audio::a2s_processor_refresh:
+        SCLOG("Processor Refresh Requestioned. TODO: Minimize this message "
+              << (as.payload.i[0] ? "Zone" : "Group") << " slot " << as.payload.i[1]);
+        engine.getSelectionManager()->sendClientDataForLeadSelectionState();
+        break;
     case audio::a2s_none:
         break;
     }

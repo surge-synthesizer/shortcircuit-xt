@@ -46,35 +46,16 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
     ps.mix = 1.0;
 
     uint8_t memory[dsp::processor::processorMemoryBufferSize];
-    dsp::processor::Processor *tmpProcessor{nullptr};
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
     // this processor is just used for params and the like so we can always assume
     // the non-oversampled case
-    tmpProcessor = dsp::processor::spawnProcessorInPlace(
-        type, asT()->getEngine()->getMemoryPool().get(), memory,
-        dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
-
-    if (type != dsp::processor::proct_none)
+    auto *tmpProcessor = spawnTempProcessor(whichProcessor, type, memory, pfp, ifp, true);
+    setupProcessorControlDescriptions(whichProcessor, type, tmpProcessor);
+    if (tmpProcessor)
     {
-        assert(tmpProcessor);
-        assert(asT()->getEngine());
-        tmpProcessor->setSampleRate(asT()->getEngine()->getSampleRate());
-        tmpProcessor->init();
-        tmpProcessor->init_params();
-
-        memcpy(&(ps.floatParams[0]), pfp, sizeof(ps.floatParams));
-        memcpy(&(ps.intParams[0]), ifp, sizeof(ps.intParams));
-        setupProcessorControlDescriptions(whichProcessor, type, tmpProcessor);
-
-        // TODO: The control descriptions get populated now also
         dsp::processor::unspawnProcessor(tmpProcessor);
-    }
-    else
-    {
-        assert(!tmpProcessor);
-        setupProcessorControlDescriptions(whichProcessor, type, tmpProcessor);
     }
 
     asT()->onProcessorTypeChanged(whichProcessor, type);
@@ -101,17 +82,105 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
     // this is just used for params and stuff so assume no oversample
     if (!tmpProcessor)
     {
-        tmpProcessor = dsp::processor::spawnProcessorInPlace(
-            type, asT()->getEngine()->getMemoryPool().get(), memory,
-            dsp::processor::processorMemoryBufferSize, pfp, ifp, false);
+        tmpProcessor = spawnTempProcessor(whichProcessor, type, memory, pfp, ifp, false);
     }
 
     assert(tmpProcessor);
 
+    auto &ps = asT()->processorStorage[whichProcessor];
+    tmpProcessor->setKeytrack(ps.isKeytracked);
+
     processorDescription[whichProcessor] = tmpProcessor->getControlDescription();
+
+    if (forGroup)
+    {
+        processorDescription[whichProcessor].supportsKeytrack = false;
+    }
 
     if (!tmpProcessorFromAfar)
         dsp::processor::unspawnProcessor(tmpProcessor);
+}
+
+template <typename T>
+dsp::processor::Processor *
+HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
+                                              dsp::processor::ProcessorType type, uint8_t *mem,
+                                              float *pfp, int *ifp, bool initFromDefaults)
+{
+    dsp::processor::Processor *tmpProcessor{nullptr};
+
+    auto &ps = processorStorage[whichProcessor];
+    tmpProcessor = dsp::processor::spawnProcessorInPlace(
+        type, asT()->getEngine()->getMemoryPool().get(), mem,
+        dsp::processor::processorMemoryBufferSize, ps, pfp, ifp, false, true);
+
+    if (type != dsp::processor::proct_none)
+    {
+        assert(tmpProcessor);
+        assert(asT()->getEngine());
+        if (asT()->isSampleRateSet())
+        {
+            tmpProcessor->setSampleRate(asT()->getEngine()->getSampleRate());
+            tmpProcessor->init();
+            if (initFromDefaults)
+            {
+                SCLOG("Processor init from defaults");
+                tmpProcessor->init_params(); // thos blows out with default}
+
+                memcpy(&(ps.floatParams[0]), pfp, sizeof(ps.floatParams));
+                memcpy(&(ps.intParams[0]), ifp, sizeof(ps.intParams));
+            }
+        }
+    }
+
+    return tmpProcessor;
+}
+
+template <typename T>
+bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
+{
+    auto &pd = asT()->processorDescription[whichProcessor];
+
+    if (pd.requiresConsistencyCheck)
+    {
+        auto &ps = asT()->processorStorage[whichProcessor];
+        asT()->setupProcessorControlDescriptions(whichProcessor, ps.type);
+
+        // TODO: This could be more parsimonious
+        messaging::audio::AudioToSerialization updateProc;
+        updateProc.id = messaging::audio::a2s_processor_refresh;
+        updateProc.payloadType = messaging::audio::AudioToSerialization::INT;
+        updateProc.payload.i[0] = forZone;
+        updateProc.payload.i[1] = whichProcessor;
+        asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
+    }
+
+    return false;
+}
+
+template <typename T>
+bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
+{
+    auto &pd = asT()->processorDescription[whichProcessor];
+
+    if (pd.supportsKeytrack)
+    {
+        auto &ps = asT()->processorStorage[whichProcessor];
+        if (ps.previousIsKeytracked < 0 || ps.isKeytracked != ps.previousIsKeytracked)
+        {
+            ps.previousIsKeytracked = ps.isKeytracked ? 1 : 0;
+            asT()->setupProcessorControlDescriptions(whichProcessor, ps.type);
+
+            messaging::audio::AudioToSerialization updateProc;
+            updateProc.id = messaging::audio::a2s_processor_refresh;
+            updateProc.payloadType = messaging::audio::AudioToSerialization::INT;
+            updateProc.payload.i[0] = forZone;
+            updateProc.payload.i[1] = whichProcessor;
+            asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
+        }
+        // SCLOG("And check is required");
+    }
+    return false;
 }
 
 template <typename T>

@@ -43,9 +43,14 @@
 namespace scxt::engine
 {
 struct Engine;
+struct Group;
+struct Zone;
 
 template <typename T> struct HasGroupZoneProcessors
 {
+    static constexpr bool forGroup{std::is_same_v<Group, T>};
+    static constexpr bool forZone{std::is_same_v<Zone, T>};
+
     /*
      * This enum is here but we put it in the output info structure of
      * group and zone separately
@@ -61,8 +66,16 @@ template <typename T> struct HasGroupZoneProcessors
     T *asT() { return static_cast<T *>(this); }
     static constexpr int processorCount{scxt::processorsPerZoneAndGroup};
     void setProcessorType(int whichProcessor, dsp::processor::ProcessorType type);
-    void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType type,
+    void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType,
                                            dsp::processor::Processor *tmpProcessor = nullptr);
+
+    dsp::processor::Processor *spawnTempProcessor(int whichProcessor,
+                                                  dsp::processor::ProcessorType type, uint8_t *mem,
+                                                  float *pfp, int *ifp, bool initFromDefaults);
+
+    // Returns true if I changed anything
+    bool checkOrAdjustIntConsistency(int whichProcessor);
+    bool checkOrAdjustBoolConsistency(int whichProcessor);
 
     std::array<dsp::processor::ProcessorStorage, processorCount> processorStorage;
     std::array<dsp::processor::ProcessorControlDescription, processorCount> processorDescription;
