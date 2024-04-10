@@ -131,6 +131,44 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 if (v)
                 {
                     v->velocity = velocity;
+                    if (z->mapping.keyboardRange.fadeStart != z->mapping.keyboardRange.keyStart &&
+                        key < z->mapping.keyboardRange.fadeStart)
+                    {
+                        auto keyFade{((float)(key - z->mapping.keyboardRange.keyStart)) /
+                                     (z->mapping.keyboardRange.fadeStart -
+                                      z->mapping.keyboardRange.keyStart)};
+                        keyFade = std ::clamp(keyFade, 0.f, 1.f);
+                        v->velKeyFade *= keyFade;
+                    }
+                    if (z->mapping.keyboardRange.fadeEnd != z->mapping.keyboardRange.keyEnd &&
+                        key > z->mapping.keyboardRange.fadeEnd)
+                    {
+                        auto keyFade{
+                            ((float)(z->mapping.keyboardRange.keyEnd - key)) /
+                            (z->mapping.keyboardRange.keyEnd - z->mapping.keyboardRange.fadeEnd)};
+                        keyFade = std ::clamp(keyFade, 0.f, 1.f);
+                        v->velKeyFade *= keyFade;
+                    }
+                    uint8_t midiVel = velocity * 127;
+                    if (z->mapping.velocityRange.fadeStart != z->mapping.velocityRange.velStart &&
+                        midiVel < z->mapping.velocityRange.fadeStart)
+                    {
+                        auto velFade{((float)(midiVel - z->mapping.velocityRange.velStart)) /
+                                     (z->mapping.velocityRange.fadeStart -
+                                      z->mapping.velocityRange.velStart)};
+                        velFade = std ::clamp(velFade, 0.f, 1.f);
+                        v->velKeyFade *= velFade;
+                    }
+                    if (z->mapping.velocityRange.fadeEnd != z->mapping.velocityRange.velEnd &&
+                        midiVel > z->mapping.velocityRange.fadeEnd)
+                    {
+                        uint8_t midiVel = velocity * 127;
+                        auto velFade{
+                            ((float)(z->mapping.velocityRange.velEnd - midiVel)) /
+                            (z->mapping.velocityRange.velEnd - z->mapping.velocityRange.fadeEnd)};
+                        velFade = std ::clamp(velFade, 0.f, 1.f);
+                        v->velKeyFade *= velFade;
+                    }
                     v->originalMidiKey = key;
                     v->attack();
                 }
