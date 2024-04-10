@@ -70,6 +70,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     uint8_t originalMidiKey{
         60}; // the actual physical key pressed not the one I resolved to after tuning
     float velocity{1.f};
+    float velKeyFade{1.f};
 
     scxt::voice::modulation::Matrix modMatrix;
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;

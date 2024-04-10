@@ -44,7 +44,7 @@
 namespace scxt::ui::multi
 {
 
-const auto selZoneColor = juce::Colour(0x00, 0x90, 0xFF);
+const auto selZoneColor = juce::Colour(0xFF, 0xB9, 0x49);
 
 namespace cmsg = scxt::messaging::client;
 
@@ -92,6 +92,9 @@ struct MappingZones : juce::Component, HasEditor
 
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
+
+    void UpdateStartEndFade(int16_t newStart, int16_t newEnd, int16_t &start, int16_t &end,
+                            int16_t &fadeStart, int16_t &fadeEnd);
 
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
@@ -951,6 +954,8 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             lastMousePos.x = e.position.x;
             kr.keyStart += nx;
             kr.keyEnd += nx;
+            kr.fadeStart += nx;
+            kr.fadeEnd += nx;
 
             display->mappingView.rootKey = std::clamp(display->mappingView.rootKey + nx, 0, 127);
         }
@@ -968,6 +973,8 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             lastMousePos.y = e.position.y;
             vr.velStart += vy;
             vr.velEnd += vy;
+            vr.fadeStart += vy;
+            vr.fadeEnd += vy;
         }
 
         display->mappingChangedFromGUI();
@@ -1004,24 +1011,30 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             auto drs = abs(kr.keyStart - newX);     // distance from mouse to left edge
             auto dre = abs(keyEndRightEdge - newX); // ditto to right edge
 
+            auto newKeyStart{kr.keyStart};
+            auto newKeyEnd{kr.keyEnd};
+
             if (drs < dre)
             {
                 if (newX < (kr.keyStart -
                             0.5)) // change at halfway points, else we can't get to 1 key span
-                    kr.keyStart = newXRounded;
+                    newKeyStart = newXRounded;
                 else if (newX > (kr.keyStart + 0.5))
-                    kr.keyStart = newXRounded;
+                    newKeyStart = newXRounded;
             }
             else
             {
                 if (newX > (keyEndRightEdge + 0.5))
-                    kr.keyEnd =
+                    newKeyEnd =
                         newXRounded - 1; // this is -1 to make up for the +1 in keyEndRightEdge,
-                                         // without it the right edge behavior is super weird. Hence
-                                         // the clamp to 128, else we can't drag to the top note.
+                // without it the right edge behavior is super weird. Hence
+                // the clamp to 128, else we can't drag to the top note.
                 else if (newX < (keyEndRightEdge - 0.5))
-                    kr.keyEnd = newXRounded - 1;
+                    newKeyEnd = newXRounded - 1;
             }
+
+            UpdateStartEndFade(newKeyStart, newKeyEnd, kr.keyStart, kr.keyEnd, kr.fadeStart,
+                               kr.fadeEnd);
             // there was an std::swap here that's no longer needed.
         }
         // Same changes to up/down as to right/left.
@@ -1032,23 +1045,79 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             auto vrs = abs(vr.velStart - newY);
             auto vre = abs(velTopEdge - newY);
 
+            auto newVelStart{vr.velStart};
+            auto newVelEnd{vr.velEnd};
+
             if (vrs < vre)
             {
                 if (newY < (vr.velStart - 0.5))
-                    vr.velStart = newYRounded;
+                    newVelStart = newYRounded;
                 else if (newY > (vr.velStart + 0.5))
-                    vr.velStart = newYRounded;
+                    newVelStart = newYRounded;
             }
             else
             {
                 if (newY > (velTopEdge + 0.5))
-                    vr.velEnd = newYRounded - 1;
+                    newVelEnd = newYRounded - 1;
                 else if (newY < (velTopEdge - 0.5))
-                    vr.velEnd = newYRounded - 1;
+                    newVelEnd = newYRounded - 1;
             }
+            UpdateStartEndFade(newVelStart, newVelEnd, vr.velStart, vr.velEnd, vr.fadeStart,
+                               vr.fadeEnd);
         }
         display->mappingChangedFromGUI();
         repaint();
+    }
+}
+
+void MappingZones::UpdateStartEndFade(int16_t newStart, int16_t newEnd, int16_t &start,
+                                      int16_t &end, int16_t &fadeStart, int16_t &fadeEnd)
+{
+    if (newStart != start)
+    {
+        auto offset{newStart - start};
+        auto updateStart{newStart >= 0 && newStart <= end};
+        if (updateStart)
+        {
+            start = newStart;
+        }
+
+        auto updateFadeEnd{offset > 0 && start > fadeEnd && newStart <= end};
+        if (updateFadeEnd)
+        {
+            fadeEnd += offset;
+            fadeEnd = std::clamp(fadeEnd, start, end);
+        }
+
+        auto updateFadeStart{(offset < 0 || fadeStart < fadeEnd) && newStart <= end};
+        if (updateFadeStart)
+        {
+            fadeStart += offset;
+            fadeStart = std::clamp(fadeStart, start, end);
+        }
+    }
+    if (newEnd != end)
+    {
+        auto offset{newEnd - end};
+        auto updateEnd{newEnd < 127 && newEnd >= start};
+        if (updateEnd)
+        {
+            end = newEnd;
+        }
+
+        auto updateFadeStart{offset < 0 && end < fadeStart && newEnd >= start};
+        if (updateFadeStart)
+        {
+            fadeStart += offset;
+            fadeStart = std::clamp(fadeStart, start, end);
+        }
+
+        auto updateFadeEnd{(offset > 0 || fadeStart < fadeEnd) && newEnd >= start};
+        if (updateFadeEnd)
+        {
+            fadeEnd += offset;
+            fadeEnd = std::clamp(fadeEnd, start, end);
+        }
     }
 }
 
@@ -1184,28 +1253,167 @@ void MappingZones::paint(juce::Graphics &g)
             if (!(z.first == sel))
                 continue;
 
-            auto r = rectangleForZone(z.second);
+            const auto &[kb, vel, name] = z.second;
 
-            g.setColour(selZoneColor.withAlpha(0.2f));
-            g.fillRect(r);
+            auto c1{selZoneColor.withAlpha(0.f)};
+            auto c2{selZoneColor.withAlpha(0.5f)};
+
+            //todo do not draw the gradient if no fade
+            {
+                auto r{
+                    rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.velStart, vel.fadeStart)};
+
+                double scaleY{r.getHeight() / r.getWidth()};
+                double transY{(1 - scaleY) * r.getY()};
+
+                juce::ColourGradient grad{c2, r.getRight(), r.getY(), c1, r.getX(), r.getY(), true};
+
+                juce::FillType originalFill(grad);
+                juce::FillType newFill(originalFill.transformed(
+                    juce::AffineTransform::scale(1.f, scaleY).translated(0.f, transY)));
+                g.setFillType(newFill);
+                g.fillRect(r);
+            }
+
+            {
+                auto r{rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.velEnd, vel.fadeEnd)};
+
+                float xRange{r.getWidth()};
+                float yRange{r.getHeight()};
+                double scaleY{yRange / xRange};
+                double transY{(1 - scaleY) * r.getHeight()};
+                double transY2{(1 - scaleY) * r.getBottom()};
+
+                juce::ColourGradient grad{c2,       r.getRight(),  r.getBottom(), c1,
+                                          r.getX(), r.getBottom(), true};
+
+                juce::FillType originalFill(grad);
+                juce::FillType newFill(originalFill.transformed(
+                    juce::AffineTransform::scale(1, scaleY).translated(0, transY2)));
+                g.setFillType(newFill);
+                g.fillRect(r);
+            }
+
+            {
+                auto r{
+                    rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.fadeStart, vel.fadeEnd)};
+                juce::ColourGradient grad{c1,           r.getX(), r.getY(), c2,
+                                          r.getRight(), r.getY(), false};
+                g.setGradientFill(grad);
+                g.fillRect(r);
+            }
+
+            //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+            {
+                {
+                    auto r{
+                        rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.velStart, vel.fadeStart)};
+                    juce::ColourGradient grad{c1,       r.getX(), r.getBottom(), c2,
+                                              r.getX(), r.getY(), false};
+                    g.setGradientFill(grad);
+                    g.fillRect(r);
+                }
+
+                {
+                    auto r{rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.fadeEnd, vel.velEnd)};
+                    juce::ColourGradient grad{c1,       r.getX(),      r.getY(), c2,
+                                              r.getX(), r.getBottom(), false};
+                    g.setGradientFill(grad);
+                    g.fillRect(r);
+                }
+
+                // no gradient for the center
+                {
+                    auto r{rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.fadeStart, vel.fadeEnd)};
+                    g.setColour(c2);
+                    g.fillRect(r);
+                }
+            }
+            //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+            {
+                auto r{rectangleForRange(kb.fadeEnd + 1, kb.keyEnd, vel.fadeStart, vel.fadeEnd)};
+                juce::ColourGradient grad{c2,           r.getX(), r.getY(), c1,
+                                          r.getRight(), r.getY(), false};
+                g.setGradientFill(grad);
+                g.fillRect(r);
+            }
+
+            {
+                auto r{rectangleForRange(kb.fadeEnd + 1, kb.keyEnd, vel.velStart, vel.fadeStart)};
+
+                float xRange{r.getWidth()};
+                float yRange{r.getHeight()};
+                double scaleY{yRange / xRange};
+                double transY{(1 - scaleY) * r.getY()};
+
+                juce::ColourGradient grad{c2, r.getX(), r.getY(), c1, r.getRight(), r.getY(), true};
+
+                juce::FillType originalFill(grad);
+                juce::FillType newFill(originalFill.transformed(
+                    juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
+                g.setFillType(newFill);
+                g.fillRect(r);
+            }
+            {
+                auto r{rectangleForRange(kb.fadeEnd + 1, kb.keyEnd, vel.velEnd, vel.fadeEnd)};
+
+                float xRange{r.getWidth()};
+                float yRange{r.getHeight()};
+                double scaleY{yRange / xRange};
+                double transY{(1 - scaleY) * r.getBottom()};
+
+                juce::ColourGradient grad{c2,           r.getX(),      r.getBottom(), c1,
+                                          r.getRight(), r.getBottom(), true};
+
+                juce::FillType originalFill(grad);
+                juce::FillType newFill(originalFill.transformed(
+                    juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
+                g.setFillType(newFill);
+                g.fillRect(r);
+            }
 
             const float dashes[]{1.0f, 2.0f};
+            {
+                {
+                    auto r{rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.velStart, vel.velEnd)};
 
-            g.setColour(selZoneColor.withAlpha(0.8f));
-            g.drawDashedLine({{r.getX() + 1, 0}, {r.getX() + 1, r.getY()}}, dashes,
-                             juce::numElementsInArray(dashes));
-            g.drawDashedLine({{r.getX() + 1, r.getBottom()}, {r.getX() + 1, (float)getHeight()}},
-                             dashes, juce::numElementsInArray(dashes));
-            g.drawDashedLine({{r.getRight() - 1, 0}, {r.getRight() - 1, r.getY()}}, dashes,
-                             juce::numElementsInArray(dashes));
-            g.drawDashedLine(
-                {{r.getRight() - 1, r.getBottom()}, {r.getRight() - 1, (float)getHeight()}}, dashes,
-                juce::numElementsInArray(dashes));
+                    g.setColour(c2);
+                    g.drawDashedLine({{r.getX(), r.getY()}, {r.getX(), r.getBottom()}}, dashes,
+                                     juce::numElementsInArray(dashes));
+                    g.drawDashedLine({{r.getRight(), r.getY()}, {r.getRight(), r.getBottom()}},
+                                     dashes, juce::numElementsInArray(dashes));
+                }
 
+                {
+                    auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.fadeStart, vel.fadeEnd)};
+
+                    g.setColour(c2);
+                    g.drawDashedLine({{r.getX(), r.getY()}, {r.getRight(), r.getY()}}, dashes,
+                                     juce::numElementsInArray(dashes));
+                    g.drawDashedLine({{r.getX(), r.getBottom()}, {r.getRight(), r.getBottom()}},
+                                     dashes, juce::numElementsInArray(dashes));
+                }
+            }
+
+            auto r = rectangleForZone(z.second);
+            {
+                g.setColour(selZoneColor.withAlpha(0.8f));
+                g.drawDashedLine({{r.getX() + 1, 0}, {r.getX() + 1, r.getY()}}, dashes,
+                                 juce::numElementsInArray(dashes));
+                g.drawDashedLine(
+                    {{r.getX() + 1, r.getBottom()}, {r.getX() + 1, (float)getHeight()}}, dashes,
+                    juce::numElementsInArray(dashes));
+                g.drawDashedLine({{r.getRight() - 1, 0}, {r.getRight() - 1, r.getY()}}, dashes,
+                                 juce::numElementsInArray(dashes));
+                g.drawDashedLine(
+                    {{r.getRight() - 1, r.getBottom()}, {r.getRight() - 1, (float)getHeight()}},
+                    dashes, juce::numElementsInArray(dashes));
+            }
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
 
-            g.setColour(juce::Colours::white);
+            g.setColour(selZoneColor);
             g.setFont(editor->themeApplier.interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 

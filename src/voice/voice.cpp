@@ -386,6 +386,8 @@ template <bool OS> bool Voice::processWithOS()
 
     pao *= velMul;
 
+    pao *= velKeyFade;
+
     if constexpr (OS)
     {
         outputAmpOS.set_target(pao * pao * pao);
