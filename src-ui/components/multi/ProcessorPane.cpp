@@ -204,7 +204,8 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_CytomicSVF:
-        layoutControlsCytomicSVF();
+    case dsp::processor::proct_SurgeBiquads:
+        layoutControlsCytomicSVFAndBiquads();
         break;
 
     case dsp::processor::proct_eq_1band_parametric_A:

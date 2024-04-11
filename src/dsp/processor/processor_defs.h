@@ -80,6 +80,7 @@
 #include "sst/voice-effects/delay/FauxStereo.h"
 
 #include "sst/voice-effects/filter/CytomicSVF.h"
+#include "sst/voice-effects/filter/SurgeBiquads.h"
 
 namespace scxt::dsp::processor
 {
@@ -148,6 +149,10 @@ DEFINE_PROC(FauxStereo, sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<1>>,
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
             "Filters", "filt-cytomic");
+
+DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<2>>, proct_SurgeBiquads,
+            "Surge Biquads", "Filters", "filt-sstbiquad");
 
 } // namespace scxt::dsp::processor
 
