@@ -400,11 +400,29 @@ struct MappingDisplay : juce::Component,
             ffac::attachAndAdd(mappingView, v, this, a, w);
         };
 
+        auto iAddGuiStep = [this](auto &a, auto &r, auto &start, auto &end, const auto &newStart,
+                                  const auto &newEnd) {
+            connectors::addGuiStep(*a, [this, &r, &start, &end, &newStart, &newEnd](const auto &a) {
+                mappingZones->UpdateStartEndFade(newStart, newEnd, start, end, r.fadeStart,
+                                                 r.fadeEnd);
+
+                mappingChangedFromGUI();
+                mappingZones->repaint();
+            });
+        };
+
         iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
         makeLabel(labels.RootKey, "Root Key");
 
         iAdd(mappingView.keyboardRange.keyStart, intAttachments.KeyStart, textEds.KeyStart);
+        iAddGuiStep(intAttachments.KeyStart, mappingView.keyboardRange,
+                    intAttachments.KeyStart->prevValue, mappingView.keyboardRange.keyEnd,
+                    intAttachments.KeyStart->value, mappingView.keyboardRange.keyEnd);
         iAdd(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd);
+        iAddGuiStep(intAttachments.KeyEnd, mappingView.keyboardRange,
+                    mappingView.keyboardRange.keyStart, intAttachments.KeyEnd->prevValue,
+                    mappingView.keyboardRange.keyStart, intAttachments.KeyEnd->value);
+
         makeLabel(labels.KeyStart, "Key Range");
 
         iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, textEds.FadeStart);
@@ -412,7 +430,13 @@ struct MappingDisplay : juce::Component,
         makeLabel(labels.FadeStart, "Crossfade");
 
         iAdd(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart);
+        iAddGuiStep(intAttachments.VelStart, mappingView.velocityRange,
+                    intAttachments.VelStart->prevValue, mappingView.velocityRange.velEnd,
+                    intAttachments.VelStart->value, mappingView.velocityRange.velEnd);
         iAdd(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd);
+        iAddGuiStep(intAttachments.VelEnd, mappingView.velocityRange,
+                    mappingView.velocityRange.velStart, intAttachments.VelEnd->prevValue,
+                    mappingView.velocityRange.velStart, intAttachments.VelEnd->value);
         makeLabel(labels.VelStart, "Vel Range");
 
         iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart,
@@ -1258,7 +1282,7 @@ void MappingZones::paint(juce::Graphics &g)
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
-            //todo do not draw the gradient if no fade
+            // todo do not draw the gradient if no fade
             {
                 auto r{
                     rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.velStart, vel.fadeStart)};
