@@ -118,17 +118,19 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     typedef ValueType value_t;
 
     ValueType &value;
+    ValueType prevValue;
     std::string label;
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged{nullptr};
 
     PayloadDataAttachment(const datamodel::pmd &cd,
                           std::function<void(const PayloadDataAttachment &at)> oGVC, ValueType &v)
-        : description(cd), value(v), label(cd.name), onGuiValueChanged(std::move(oGVC))
+        : description(cd), value(v), prevValue(v), label(cd.name),
+          onGuiValueChanged(std::move(oGVC))
     {
     }
 
     PayloadDataAttachment(const datamodel::pmd &cd, ValueType &v)
-        : description(cd), value(v), label(cd.name), onGuiValueChanged(nullptr)
+        : description(cd), value(v), prevValue(v), label(cd.name), onGuiValueChanged(nullptr)
     {
     }
 
@@ -146,6 +148,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     float getValue() const override { return (float)value; }
     void setValueFromGUI(const float &f) override
     {
+        prevValue = value;
         value = (ValueType)f;
         if (onGuiValueChanged)
         {
@@ -190,7 +193,11 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
         }
         Continuous::setValueAsString(s);
     }
-    void setValueFromModel(const float &f) override { value = (ValueType)f; }
+    void setValueFromModel(const float &f) override
+    {
+        prevValue = value;
+        value = (ValueType)f;
+    }
 
     float getMin() const override { return description.minVal; }
     float getMax() const override { return description.maxVal; }
@@ -218,18 +225,20 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     typedef DiscretePayloadDataAttachment<Payload, ValueType> onGui_t;
 
     ValueType &value;
+    ValueType prevValue;
     std::string label;
     std::function<void(const DiscretePayloadDataAttachment &at)> onGuiValueChanged;
 
     DiscretePayloadDataAttachment(const datamodel::pmd &cd,
                                   std::function<void(const DiscretePayloadDataAttachment &at)> oGVC,
                                   ValueType &v)
-        : description(cd), value(v), label(cd.name), onGuiValueChanged(std::move(oGVC))
+        : description(cd), value(v), prevValue(v), label(cd.name),
+          onGuiValueChanged(std::move(oGVC))
     {
     }
 
     DiscretePayloadDataAttachment(const datamodel::pmd &cd, ValueType &v)
-        : description(cd), value(v), label(cd.name), onGuiValueChanged(nullptr)
+        : description(cd), value(v), prevValue(v), label(cd.name), onGuiValueChanged(nullptr)
     {
     }
 
@@ -243,10 +252,15 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     int getValue() const override { return (int)value; }
     void setValueFromGUI(const int &f) override
     {
+        prevValue = value;
         value = (ValueType)f;
         onGuiValueChanged(*this);
     }
-    void setValueFromModel(const int &f) override { value = (ValueType)f; }
+    void setValueFromModel(const int &f) override
+    {
+        prevValue = value;
+        value = (ValueType)f;
+    }
 
     int getMin() const override { return (int)description.minVal; }
     int getMax() const override { return (int)description.maxVal; }
