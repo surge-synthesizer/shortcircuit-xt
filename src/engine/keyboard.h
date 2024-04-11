@@ -43,12 +43,15 @@ struct KeyboardRange
     int16_t fadeStart{0}, fadeEnd{0};
 
     KeyboardRange() = default;
-    KeyboardRange(int s, int e) : keyStart(s), keyEnd(e) { normalize(); }
+    KeyboardRange(int s, int e) : keyStart(s), keyEnd(e), fadeStart(s), fadeEnd(e) { normalize(); }
 
     void normalize()
     {
         if (keyEnd < keyStart)
             std::swap(keyStart, keyEnd);
+        if (fadeEnd < fadeStart)
+            std::swap(fadeStart, fadeEnd);
+
         if (fadeStart + fadeEnd > keyEnd - keyStart)
         {
             // TODO: Handle this case
@@ -79,12 +82,15 @@ struct VelocityRange
     int16_t fadeStart{0}, fadeEnd{0};
 
     VelocityRange() = default;
-    VelocityRange(int s, int e) : velStart(s), velEnd(e) { normalize(); }
+    VelocityRange(int s, int e) : velStart(s), velEnd(e), fadeStart(s), fadeEnd(e) { normalize(); }
 
     void normalize()
     {
         if (velEnd < velStart)
             std::swap(velStart, velEnd);
+        if (fadeEnd < fadeStart)
+            std::swap(fadeStart, fadeEnd);
+        
         if (fadeStart + fadeEnd > velEnd - velStart)
         {
             // TODO: Handle this case

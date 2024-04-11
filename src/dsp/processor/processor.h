@@ -105,6 +105,7 @@ enum ProcessorType
     proct_biquadSBQ, // First zone
     proct_SuperSVF,
     proct_CytomicSVF,
+    proct_SurgeBiquads,
 
     proct_moogLP4sat,
     proct_eq_1band_parametric_A,
