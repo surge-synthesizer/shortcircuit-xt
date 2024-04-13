@@ -113,6 +113,8 @@ HAS_MEMFN(processMonoToStereo);
 HAS_MEMFN(tailLength);
 HAS_MEMFN(enableKeytrack);
 HAS_MEMFN(getKeytrack);
+HAS_MEMFN(checkParameterConsistency);
+
 #undef HAS_MEMFN
 
 template <typename T> struct SSTVoiceEffectShim : T
@@ -201,7 +203,42 @@ template <typename T> struct SSTVoiceEffectShim : T
             static_assert(HasMemFn_getKeytrack<T>::value);
             res.supportsKeytrack = true;
         }
+
+        if constexpr (HasMemFn_checkParameterConsistency<T>::value)
+        {
+            res.requiresConsistencyCheck = true;
+        }
+
         return res;
+    }
+
+    virtual void resetMetadata() override
+    {
+        for (int i = 0; i < T::floatParameterCount; ++i)
+            this->floatParameterMetaData[i] = T::paramAt(i);
+        for (int i = T::floatParameterCount; i < maxProcessorFloatParams; ++i)
+            this->floatParameterMetaData[i] = {};
+        if constexpr (T::numIntParams > 0)
+        {
+            for (int i = 0; i < T::intParameterCount; ++i)
+                this->intParameterMetaData[i] = T::intParamAt(i);
+        }
+        for (int i = T::intParameterCount; i < maxProcessorIntParams; ++i)
+            this->intParameterMetaData[i] = {};
+    }
+
+    bool supportsMakingParametersConsistent() override
+    {
+        return HasMemFn_checkParameterConsistency<T>::value;
+    }
+
+    bool makeParametersConsistent() override
+    {
+        if constexpr (HasMemFn_checkParameterConsistency<T>::value)
+        {
+            return T::checkParameterConsistency();
+        }
+        return false;
     }
 
     bool isKeytracked() const override
@@ -234,25 +271,11 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
     setKeytrack(p.isKeytracked);
 
     floatParameterCount = T::numFloatParams;
-
-    if (needsMetadata)
-    {
-        for (int i = 0; i < floatParameterCount; ++i)
-            this->floatParameterMetaData[i] = that->paramAt(i);
-        for (int i = floatParameterCount; i < maxProcessorFloatParams; ++i)
-            this->floatParameterMetaData[i] = {};
-    }
-
     intParameterCount = T::numIntParams;
+
     if (needsMetadata)
     {
-        if constexpr (T::numIntParams > 0)
-        {
-            for (int i = 0; i < intParameterCount; ++i)
-                this->intParameterMetaData[i] = that->intParamAt(i);
-        }
-        for (int i = intParameterCount; i < maxProcessorIntParams; ++i)
-            this->intParameterMetaData[i] = {};
+        resetMetadata();
     }
 
     for (int i = 0; i < 16; ++i)

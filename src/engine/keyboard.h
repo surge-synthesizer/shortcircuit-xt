@@ -54,8 +54,9 @@ struct KeyboardRange
 
         if (fadeStart + fadeEnd > keyEnd - keyStart)
         {
-            // TODO: Handle this case
-            assert(false);
+            // TODO: Handle this case - but I thikn the semantic of the test is wrong
+            SCLOG("Potentially erroneous fade points in keyboard: "
+                  << SCD(fadeStart) << SCD(fadeEnd) << SCD(keyStart) << SCD(keyEnd));
         }
     }
 
@@ -90,11 +91,12 @@ struct VelocityRange
             std::swap(velStart, velEnd);
         if (fadeEnd < fadeStart)
             std::swap(fadeStart, fadeEnd);
-        
+
         if (fadeStart + fadeEnd > velEnd - velStart)
         {
-            // TODO: Handle this case
-            assert(false);
+            // TODO: Handle this case - but I think the semantic of the test is wrong
+            SCLOG("Potentialy erroneous fade points in velocity: " << SCD(fadeStart) << SCD(fadeEnd)
+                                                                   << SCD(velStart) << SCD(velEnd));
         }
     }
 

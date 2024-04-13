@@ -33,6 +33,7 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/waveshapers/WaveshaperConfiguration.h"
+#include "sst/filters/FilterConfigurationLabels.h"
 #include <sst/jucegui/components/MenuButton.h>
 
 #include "theme/Layout.h"
@@ -199,8 +200,8 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     switch (processorControlDescription.type)
     {
-    case dsp::processor::proct_SuperSVF:
-        layoutControlsSuperSVF();
+    case dsp::processor::proct_SurgeFilters:
+        layoutControlsSurgeFilters();
         break;
 
     case dsp::processor::proct_CytomicSVF:
@@ -307,7 +308,7 @@ void ProcessorPane::layoutControls()
 }
 
 // May want to break this up
-void ProcessorPane::layoutControlsSuperSVF()
+void ProcessorPane::layoutControlsSurgeFilters()
 {
     // OK so we know we have 2 controls (cutoff and resonance), a mix, and two ints
     assert(processorControlDescription.numFloatParams == 2);
@@ -324,15 +325,31 @@ void ProcessorPane::layoutControlsSuperSVF()
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Resonance");
     lo::knobCX<locon::largeKnob>(*floatEditors[1], cols[1].getCentreX(), 5);
 
-    auto col0 = cols[0].withTrimmedTop(floatEditors[0]->label->getBottom() + 15).withHeight(23);
+    auto col0 = cols[0]
+                    .withTrimmedTop(floatEditors[0]->label->getBottom() + 15)
+                    .withHeight(18)
+                    .withWidth(cols[0].getWidth() + 15);
 
     for (int i = 0; i < 2; ++i)
     {
-        auto ms = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[i]);
-        ms->direction = jcmp::MultiSwitch::Direction::HORIZONTAL;
+        auto ms = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[i]);
         ms->setBounds(col0);
         col0 = col0.translated(0, 25);
+
+        if (i == 0)
+        {
+            editor->configureHasDiscreteMenuBuilder(ms.get());
+
+            ms->popupMenuBuilder->mode =
+                sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
+            ms->popupMenuBuilder->groupList = sst::filters::filterGroupName();
+        }
+
         intEditors[i] = std::make_unique<intEditor_t>(std::move(ms));
+        if (intAttachments[i]->getMin() == intAttachments[i]->getMax())
+        {
+            intEditors[i]->item->setEnabled(false);
+        }
     }
 
     mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
