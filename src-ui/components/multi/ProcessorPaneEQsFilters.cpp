@@ -478,9 +478,10 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
         isCytomic = true;
         assert(processorControlDescription.numFloatParams == 3);
         assert(processorControlDescription.numIntParams == 1);
-        eqdisp = std::make_unique<
+        /*eqdisp = std::make_unique<
             EqNBandDisplay<sst::voice_effects::filter::CytomicSVF<EqDisplayBase::EqAdapter>, 0>>(
             *this);
+            */
     }
     else if (processorView.type == dsp::processor::proct_SurgeBiquads)
     {
@@ -494,8 +495,10 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
     {
         assert(false);
     }
-    addAndMakeVisible(*eqdisp);
-
+    if (eqdisp)
+    {
+        addAndMakeVisible(*eqdisp);
+    }
     auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
         if (w)
         {
@@ -559,8 +562,11 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
         intAttachments[0]->andThenOnGui(thenRecalc);
     }
 
-    eqdisp->setBounds(bd.withTrimmedTop(intEditors[0]->item->getBottom() + 3));
-    otherEditors.push_back(std::move(eqdisp));
+    if (eqdisp)
+    {
+        eqdisp->setBounds(bd.withTrimmedTop(intEditors[0]->item->getBottom() + 3));
+        otherEditors.push_back(std::move(eqdisp));
+    }
 }
 
 } // namespace scxt::ui::multi
