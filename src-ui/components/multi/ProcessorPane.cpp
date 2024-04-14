@@ -258,7 +258,7 @@ void ProcessorPane::layoutControls()
     {
         floatEditors[i] = createWidgetAttachedTo(
             floatAttachments[i], processorControlDescription.floatControlDescriptions[i].name);
-        floatEditors[i]->item->setBounds(kb);
+        floatEditors[i]->item->setBounds(kb.reduced(3));
         floatEditors[i]->label->setBounds(lb);
 
         auto label = std::make_unique<sst::jucegui::components::Label>();
@@ -302,7 +302,7 @@ void ProcessorPane::layoutControls()
 
     {
         mixEditor = createWidgetAttachedTo<sst::jucegui::components::Knob>(mixAttachment, "mix");
-        mixEditor->item->setBounds(kb);
+        mixEditor->item->setBounds(kb.reduced(3));
         mixEditor->label->setBounds(lb);
     }
 }
