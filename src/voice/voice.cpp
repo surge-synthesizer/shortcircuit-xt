@@ -349,7 +349,7 @@ template <bool OS> bool Voice::processWithOS()
             else if (chainIsMono)
             {
                 // stereo to stereo. copy L to R then process
-                mech::copy_from_to<blockSize>(output[0], output[1]);
+                mech::copy_from_to<blockSize << (OS ? 1 : 0)>(output[0], output[1]);
                 chainIsMono = false;
                 processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
                 mix()->fade_blocks(output[0], tempbuf[0], output[0]);

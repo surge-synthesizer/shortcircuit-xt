@@ -79,6 +79,7 @@
 #include "sst/voice-effects/pitch/PitchRing.h"
 
 #include "sst/voice-effects/delay/FauxStereo.h"
+#include "sst/voice-effects/delay/ShortDelay.h"
 
 #include "sst/voice-effects/filter/CytomicSVF.h"
 #include "sst/voice-effects/filter/SurgeBiquads.h"
@@ -150,6 +151,9 @@ DEFINE_PROC(PitchRing, sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<1>>,
 DEFINE_PROC(FauxStereo, sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<2>>, proct_fx_fauxstereo,
             "Faux Stereo", "Delay Based", "fxstereo-fx", dsp::surgeSincTable);
+DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_short_delay,
+            "Short Delay", "Delay Based", "shortdel-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",

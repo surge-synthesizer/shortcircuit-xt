@@ -128,6 +128,7 @@ enum ProcessorType
     proct_fx_waveshaper,
     proct_fx_pitchring,
     proct_fx_fauxstereo,
+    proct_fx_short_delay,
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,

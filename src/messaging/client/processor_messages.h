@@ -203,6 +203,11 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
 
                     z->processorStorage[f] = ts;
                     z->processorStorage[t] = fs;
+
+                    z->checkOrAdjustBoolConsistency(f);
+                    z->checkOrAdjustIntConsistency(f);
+                    z->checkOrAdjustBoolConsistency(t);
+                    z->checkOrAdjustIntConsistency(t);
                 }
             },
             [a = *lz](const auto &engine) {
@@ -241,6 +246,11 @@ inline void swapGroupProcessors(const processorPair_t &whichToType, const engine
 
                     g->processorStorage[f] = ts;
                     g->processorStorage[t] = fs;
+
+                    g->checkOrAdjustBoolConsistency(f);
+                    g->checkOrAdjustIntConsistency(f);
+                    g->checkOrAdjustBoolConsistency(t);
+                    g->checkOrAdjustIntConsistency(t);
 
                     g->rePrepareAndBindGroupMatrix();
                 }
