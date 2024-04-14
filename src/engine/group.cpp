@@ -48,7 +48,6 @@ Group::Group()
     : id(GroupID::next()), name(id.to_string()), endpoints{nullptr},
       modulation::shared::HasModulators<Group>(this), osDownFilter(6, true)
 {
-    rePrepareAndBindGroupMatrix();
 }
 
 void Group::rePrepareAndBindGroupMatrix()
@@ -259,6 +258,8 @@ engine::Engine *Group::getEngine()
 
 void Group::setupOnUnstream(const engine::Engine &e)
 {
+    rePrepareAndBindGroupMatrix();
+
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
         stepLfos[i].setSampleRate(sampleRate, sampleRateInv);

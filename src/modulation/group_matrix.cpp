@@ -138,6 +138,7 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
 
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {
+        assert(g.getEngine());
         m.bindSourceValue(transportSources.phasors[i], g.getEngine()->transportPhasors[i]);
     }
 }
