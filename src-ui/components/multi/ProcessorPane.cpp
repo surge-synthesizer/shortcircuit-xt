@@ -342,7 +342,7 @@ void ProcessorPane::layoutControlsSurgeFilters()
 
             ms->popupMenuBuilder->mode =
                 sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
-            ms->popupMenuBuilder->groupList = sst::filters::filterGroupName();
+            ms->popupMenuBuilder->setGroupList(sst::filters::filterGroupName());
         }
 
         intEditors[i] = std::make_unique<intEditor_t>(std::move(ms));
@@ -384,7 +384,7 @@ void ProcessorPane::layoutControlsWaveshaper()
     editor->configureHasDiscreteMenuBuilder(wss.get());
     wss->popupMenuBuilder->mode =
         sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
-    wss->popupMenuBuilder->groupList = sst::waveshapers::WaveshaperGroupName();
+    wss->popupMenuBuilder->setGroupList(sst::waveshapers::WaveshaperGroupName());
     wss->setBounds(ja);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
 }
