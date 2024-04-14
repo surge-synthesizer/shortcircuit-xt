@@ -42,6 +42,7 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
            asT()->getEngine()->getMessageController()->threadingChecker.isAudioThread());
 
     auto &ps = processorStorage[whichProcessor];
+    auto &pd = processorDescription[whichProcessor];
     ps.type = type;
     ps.mix = 1.0;
 
@@ -49,10 +50,15 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
+    memcpy(pfp, ps.floatParams.data(), sizeof(ps.floatParams));
+    memcpy(ifp, ps.intParams.data(), sizeof(ps.intParams));
+
     // this processor is just used for params and the like so we can always assume
     // the non-oversampled case
     auto *tmpProcessor = spawnTempProcessor(whichProcessor, type, memory, pfp, ifp, true);
+
     setupProcessorControlDescriptions(whichProcessor, type, tmpProcessor);
+
     if (tmpProcessor)
     {
         dsp::processor::unspawnProcessor(tmpProcessor);
@@ -79,15 +85,18 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
     float pfp[dsp::processor::maxProcessorFloatParams];
     int ifp[dsp::processor::maxProcessorIntParams];
 
+    auto &ps = asT()->processorStorage[whichProcessor];
+
     // this is just used for params and stuff so assume no oversample
     if (!tmpProcessor)
     {
+        memcpy(pfp, ps.floatParams.data(), sizeof(ps.floatParams));
+        memcpy(ifp, ps.intParams.data(), sizeof(ps.intParams));
         tmpProcessor = spawnTempProcessor(whichProcessor, type, memory, pfp, ifp, false);
     }
 
     assert(tmpProcessor);
 
-    auto &ps = asT()->processorStorage[whichProcessor];
     tmpProcessor->setKeytrack(ps.isKeytracked);
 
     processorDescription[whichProcessor] = tmpProcessor->getControlDescription();
@@ -127,6 +136,12 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
                 SCLOG("Processor init from defaults");
                 tmpProcessor->init_params(); // thos blows out with default}
 
+                if (tmpProcessor && tmpProcessor->supportsMakingParametersConsistent())
+                {
+                    tmpProcessor->makeParametersConsistent();
+                    tmpProcessor->resetMetadata();
+                }
+
                 memcpy(&(ps.floatParams[0]), pfp, sizeof(ps.floatParams));
                 memcpy(&(ps.intParams[0]), ifp, sizeof(ps.intParams));
             }
@@ -144,7 +159,23 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
     if (pd.requiresConsistencyCheck)
     {
         auto &ps = asT()->processorStorage[whichProcessor];
-        asT()->setupProcessorControlDescriptions(whichProcessor, ps.type);
+        uint8_t memory[dsp::processor::processorMemoryBufferSize];
+        float pfp[dsp::processor::maxProcessorFloatParams];
+        int ifp[dsp::processor::maxProcessorIntParams];
+
+        memcpy(pfp, ps.floatParams.data(), sizeof(ps.floatParams));
+        memcpy(ifp, ps.intParams.data(), sizeof(ps.intParams));
+        auto tmpProcessor = spawnTempProcessor(whichProcessor, ps.type, memory, pfp, ifp, false);
+
+        auto restate = tmpProcessor->makeParametersConsistent();
+
+        setupProcessorControlDescriptions(whichProcessor, ps.type, tmpProcessor);
+
+        if (restate)
+        {
+            memcpy(ps.floatParams.data(), pfp, sizeof(ps.floatParams));
+            memcpy(ps.intParams.data(), ifp, sizeof(ps.intParams));
+        }
 
         // TODO: This could be more parsimonious
         messaging::audio::AudioToSerialization updateProc;
@@ -153,6 +184,8 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
         updateProc.payload.i[0] = forZone;
         updateProc.payload.i[1] = whichProcessor;
         asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
+
+        dsp::processor::unspawnProcessor(tmpProcessor);
     }
 
     return false;

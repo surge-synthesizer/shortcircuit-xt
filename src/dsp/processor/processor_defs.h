@@ -81,6 +81,7 @@
 
 #include "sst/voice-effects/filter/CytomicSVF.h"
 #include "sst/voice-effects/filter/SurgeBiquads.h"
+#include "sst/voice-effects/filter/SSTFilters.h"
 
 namespace scxt::dsp::processor
 {
@@ -153,6 +154,10 @@ DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>
 DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<2>>, proct_SurgeBiquads,
             "Surge Biquads", "Filters", "filt-sstbiquad");
+
+DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
+            "Surge Filters", "Filters", "filt-sstfilters");
 
 } // namespace scxt::dsp::processor
 

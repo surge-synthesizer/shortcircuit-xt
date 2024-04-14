@@ -106,6 +106,7 @@ enum ProcessorType
     proct_SuperSVF,
     proct_CytomicSVF,
     proct_SurgeBiquads,
+    proct_SurgeFilters,
 
     proct_moogLP4sat,
     proct_eq_1band_parametric_A,
@@ -236,6 +237,11 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual bool isKeytracked() const { return false; }
     virtual bool setKeytrack(bool b) { return false; }
+
+    virtual bool supportsMakingParametersConsistent() { return false; }
+    virtual bool makeParametersConsistent() { return false; }
+
+    virtual void resetMetadata() { assert(false); }
 
     /*
      * The default behavior of a processor is stereo -> stereo and all
