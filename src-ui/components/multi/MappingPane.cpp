@@ -2061,6 +2061,11 @@ struct SampleDisplay : juce::Component, HasEditor
         auto samp = editor->sampleManager.getSample(sampleView.samples[selectedVariation].sampleID);
         if (samp)
         {
+            for (auto &[k, a] : sampleAttachments)
+            {
+                a->sampleCount = samp->sample_length;
+            }
+
             fileButton->setButtonText(samp->displayName);
             fileInfos->srVal->setText(std::to_string(samp->sample_rate));
             fileInfos->bdVal->setText(samp->getBitDepthText());
