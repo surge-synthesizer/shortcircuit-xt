@@ -152,8 +152,8 @@ DEFINE_PROC(FauxStereo, sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<2>>, proct_fx_fauxstereo,
             "Faux Stereo", "Delay Based", "fxstereo-fx", dsp::surgeSincTable);
 DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_short_delay,
-            "Short Delay", "Delay Based", "shortdel-fx", dsp::surgeSincTable);
+            sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
+            "Simple Delay", "Delay Based", "simpdel-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
