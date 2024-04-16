@@ -88,9 +88,10 @@ struct ModulationCurves
             [](auto x) { return std::sin(2.0 * M_PI * x); });
         add('cosx', "Waveforms", std::string("cos(2") + u8"\U000003C0" + "x)", // thats pi
             [](auto x) { return std::cos(2.0 * M_PI * x); });
-        add('trix', "Waveforms", std::string("tri(x)"), [](auto ix) -> float {
+        add('trix', "Waveforms", std::string("tri(x)"), [](auto x) -> float {
             auto res = 0.f;
-            auto x = (ix + 1) * 0.5;
+            if (x < 0)
+                x += 1;
             if (x < 0.25)
             {
                 // 0 -> 0.25 maps to 0 -> 1
@@ -108,23 +109,22 @@ struct ModulationCurves
             }
             return res;
         });
-        add('trip', "Waveforms", std::string("tri(x+") + u8"\U000003C0" + "/2)",
-            [](auto ix) -> float {
-                auto res = 0.f;
-                auto x = (ix + 1) * 0.5;
-                if (x < 0.5)
-                {
-                    // 0 -> 0.5 maps to -1 -> 1
-                    res = 4 * x - 1.f;
-                }
-                else
-                {
-                    // 0.5 -> 1 maps to 1 -> -1
-                    res = (1.f - 4 * (x - 0.5));
-                }
-
-                return res;
-            });
+        add('trip', "Waveforms", "tri(x+1/4)", [](auto x) -> float {
+            auto res = 0.f;
+            if (x < 0)
+                x += 1;
+            if (x < 0.5)
+            {
+                // 0 -> 0.5 maps to -1 -> 1
+                res = 4 * x - 1.f;
+            }
+            else
+            {
+                // 0.5 -> 1 maps to 1 -> -1
+                res = (1.f - 4 * (x - 0.5));
+            }
+            return res;
+        });
 
         add('d.1 ', "Scale", "x / 10", [](auto x) { return x * 0.1; });
         add('d.01', "Scale", "x / 100", [](auto x) { return x * 0.01; });
