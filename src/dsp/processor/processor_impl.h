@@ -122,7 +122,14 @@ template <typename T> struct SSTVoiceEffectShim : T
     // You can have neither or one, but you can't have both
     static_assert(!(HasMemFn_processMonoToMono<T>::value &&
                     HasMemFn_processMonoToStereo<T>::value));
-    template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...) {}
+    template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...)
+    {
+#if DEBUG_LOG_CONFIG
+        SCLOG(T::effectName << " mono->mono=" << HasMemFn_processMonoToMono<T>::value
+                            << " mono->stereo=" << HasMemFn_processMonoToStereo<T>::value
+                            << " stereo->stereo=" << HasMemFn_processStereo<T>::value);
+#endif
+    }
 
     virtual ~SSTVoiceEffectShim() = default;
 
