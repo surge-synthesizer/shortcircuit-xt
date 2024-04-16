@@ -164,9 +164,12 @@ DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
             "Filters", "filt-cytomic");
 
-DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
-            "Static Phaser", "Filters", "filt-statph");
+DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticStereoPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::StaticStereoPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
+            "Static Phaser (Stereo)", "Filters", "filt-statph");
+DEFINE_PROC(MonoPhaser, sst::voice_effects::filter::StaticMonoPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::StaticMonoPhaser<SCXTVFXConfig<2>>, proct_MonoStaticPhaser,
+            "Static Phaser (Mono)", "Filters", "filt-mon-statph");
 
 DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<2>>, proct_SurgeBiquads,
