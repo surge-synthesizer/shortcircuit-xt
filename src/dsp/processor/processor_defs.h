@@ -80,10 +80,12 @@
 
 #include "sst/voice-effects/delay/FauxStereo.h"
 #include "sst/voice-effects/delay/ShortDelay.h"
+#include "sst/voice-effects/delay/StringExciter.h"
 
 #include "sst/voice-effects/filter/CytomicSVF.h"
 #include "sst/voice-effects/filter/SurgeBiquads.h"
 #include "sst/voice-effects/filter/SSTFilters.h"
+#include "sst/voice-effects/filter/StaticPhaser.h"
 
 namespace scxt::dsp::processor
 {
@@ -154,10 +156,17 @@ DEFINE_PROC(FauxStereo, sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<1>>,
 DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
             "Simple Delay", "Delay Based", "simpdel-fx", dsp::surgeSincTable);
+DEFINE_PROC(StringExciter, sst::voice_effects::delay::StringExciter<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::StringExciter<SCXTVFXConfig<2>>, proct_StringExciter,
+            "String Exciter", "Delay Based", "stringex-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
             "Filters", "filt-cytomic");
+
+DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
+            "Static Phaser", "Filters", "filt-statph");
 
 DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<2>>, proct_SurgeBiquads,
