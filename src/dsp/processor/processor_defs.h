@@ -64,6 +64,7 @@
 #include "sst/voice-effects/distortion/Microgate.h"
 #include "sst/voice-effects/distortion/BitCrusher.h"
 #include "sst/voice-effects/distortion/Slewer.h"
+#include "sst/voice-effects/distortion/RingModulator.h"
 #include "sst/voice-effects/waveshaper/WaveShaper.h"
 
 #include "sst/voice-effects/eq/EqNBandParametric.h"
@@ -102,6 +103,9 @@ DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig
 DEFINE_PROC(Slewer, sst::voice_effects::distortion::Slewer<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
             "Distortion", "slewer-fx");
+DEFINE_PROC(RingMod, sst::voice_effects::distortion::RingModulator<SCXTVFXConfig<1>>,
+            sst::voice_effects::distortion::RingModulator<SCXTVFXConfig<2>>, proct_fx_ringmod,
+            "Ring Modulator", "Distortion", "ringmod-fx");
 
 // Macros and commas don't get along
 namespace procimpl::detail
