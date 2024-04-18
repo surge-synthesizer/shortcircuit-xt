@@ -127,7 +127,7 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
     {
         assert(tmpProcessor);
         assert(asT()->getEngine());
-        if (asT()->isSampleRateSet())
+        if (asT()->getEngine()->isSampleRateSet())
         {
             tmpProcessor->setSampleRate(asT()->getEngine()->getSampleRate());
             tmpProcessor->init();
