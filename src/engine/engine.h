@@ -207,6 +207,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void setNoteExpression(voice::Voice *v, int32_t expression, double value) {}
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat) {}
         void setChannelPressure(voice::Voice *v, int8_t pres) {}
+        void allSoundsOff(){
+            engine.releaseAllVoices();
+        }
+        void allNotesOff(){
+            engine.stopAllSounds();
+        }
         void setMIDI1CC(voice::Voice *v, int8_t cc, int8_t val);
 
     } voiceManagerResponder{*this};
@@ -222,6 +228,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     }
     voice::Voice *initiateVoice(const pathToZone_t &path);
     void releaseVoice(int16_t channel, int16_t key, int32_t noteid, int32_t releaseVelocity);
+
+    void releaseAllVoices();
+    void stopAllSounds();
 
     // TODO: All this gets ripped out when voice management is fixed
     uint32_t activeVoiceCount();

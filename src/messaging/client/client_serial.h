@@ -107,6 +107,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_request_debug_action,
 
+    c2s_silence_engine,
+
     num_clientToSerializationMessages
 };
 
