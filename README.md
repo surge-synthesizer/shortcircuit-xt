@@ -52,8 +52,8 @@ cmake -Bignore/build -DCMAKE_BUILD_TYPE=Release
 cmake --build ignore/build --config Release --target scxt_plugin_All
 ```
 
-Our production build use clang and macos, and gcc on linux. We
-we test with a wide variety of compilers, including msvc on windows and several gcc versions.
+Our production build uses clang on macos, and gcc on linux. We
+will test with a wide variety of compilers, including msvc on windows and several gcc versions.
 If you are using a new compiler and have changes to the CMake or so on, please
 do send them to us.
 
