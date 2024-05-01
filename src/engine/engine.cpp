@@ -203,6 +203,30 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
 #endif
 }
 
+void Engine::releaseAllVoices() {
+    for (auto &v : voices){
+        if (v && v->isVoiceAssigned) 
+            v->release();
+    }
+}
+
+void Engine::stopAllSounds() {
+    std::array<voice::Voice *, maxVoices> toCleanUp{};
+    size_t cleanupIdx{0};
+    for (auto &v : voices)
+    {
+        if (v && v->isVoiceAssigned)
+        {
+            v->release(); // dont call cleanup here since it will break the weak pointers and the voices array
+            toCleanUp[cleanupIdx++] = v;
+        }
+    }
+    for (int i = 0; i < cleanupIdx; ++i)
+    {
+        toCleanUp[i]->cleanupVoice();
+    }
+}
+
 bool Engine::processAudio()
 {
     namespace mech = sst::basic_blocks::mechanics;
@@ -838,4 +862,5 @@ void Engine::updateTransportPhasors()
         mul = mul / 2;
     }
 }
+
 } // namespace scxt::engine

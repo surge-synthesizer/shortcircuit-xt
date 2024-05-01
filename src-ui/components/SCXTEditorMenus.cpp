@@ -125,6 +125,17 @@ void SCXTEditor::showMainMenu()
         });
     }
 
+    dp.addItem("Release all Voices", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::StopSounds{false});
+    });
+    dp.addItem("Stop all Sounds", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::StopSounds{true});
+    });
+
     m.addSubMenu("Developer", dp);
 
     m.showMenuAsync(defaultPopupMenuOptions());
