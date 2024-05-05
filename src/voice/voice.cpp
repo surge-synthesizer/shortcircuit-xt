@@ -499,6 +499,7 @@ void Voice::initializeGenerator()
     GD.sampleSubPos = 0;
     GD.loopLowerBound = sampleData.startSample;
     GD.loopUpperBound = sampleData.endSample;
+    GD.loopFade = sampleData.loopFade;
     GD.playbackLowerBound = sampleData.startSample;
     GD.playbackUpperBound = sampleData.endSample;
     GD.direction = 1;

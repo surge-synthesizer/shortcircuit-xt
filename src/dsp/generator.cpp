@@ -83,6 +83,11 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, bool loopActive, b
     return detail::generatorGet(loopValue, std::make_index_sequence<(1 << 5)>());
 }
 
+float getFadeGain(int32_t samplePos, int32_t x1, int32_t x2)
+{
+    return ((float)(x1 - samplePos)) / (x1 - x2);
+}
+
 template <int loopValue>
 void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 {
@@ -109,6 +114,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     float *__restrict OutputL;
     float *__restrict OutputR;
 
+    int loopFade = std::min(GD->loopFade, GD->loopLowerBound - GD->playbackLowerBound);
+    loopFade = std::min(loopFade, GD->loopUpperBound - GD->loopLowerBound);
+
+    bool fadeActive = SamplePos > (GD->loopUpperBound - loopFade);
+
     GD->positionWithinLoop = 0.f;
     GD->isInLoop = false;
 
@@ -128,9 +138,13 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     static constexpr int resampFIRSize{16};
     int16_t *__restrict readSampleL = nullptr;
     int16_t *__restrict readSampleR = nullptr;
+    int16_t *__restrict readFadeSampleL = nullptr;
+    int16_t *__restrict readFadeSampleR = nullptr;
     int16_t loopEndBufferL[resampFIRSize], loopEndBufferR[resampFIRSize];
     float *__restrict readSampleLF32 = nullptr;
     float *__restrict readSampleRF32 = nullptr;
+    float *__restrict readFadeSampleLF32 = nullptr;
+    float *__restrict readFadeSampleRF32 = nullptr;
     float loopEndBufferLF32[resampFIRSize], loopEndBufferRF32[resampFIRSize];
 
     if (fp)
@@ -141,6 +155,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
         if constexpr (loopActive)
         {
+            if (fadeActive)
+            {
+                auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
+                readFadeSampleLF32 = SampleDataFL + fadeSamplePos;
+                if (stereo)
+                    readFadeSampleRF32 = SampleDataFR + fadeSamplePos;
+            }
+
             if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
@@ -166,6 +188,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
         if constexpr (loopActive)
         {
+            if (fadeActive)
+            {
+                auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
+                readFadeSampleL = SampleDataL + fadeSamplePos;
+                if (stereo)
+                    readFadeSampleR = SampleDataR + fadeSamplePos;
+            }
+
             if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
@@ -191,7 +221,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     {
         // 2. Resample
         unsigned int m0 = ((SampleSubPos >> 12) & 0xff0);
-        if (fp)
+        if constexpr (fp)
         {
             // float32 path (SSE)
             __m128 lipol0, tmp[4], sL4, sR4;
@@ -215,7 +245,25 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             sL4 = _mm_hadd_ps(sL4, sL4);
 
             _mm_store_ss(&OutputL[i], sL4);
-            if (stereo)
+
+            if (fadeActive)
+            {
+                sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readFadeSampleLF32));
+                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readFadeSampleLF32 + 4)));
+                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readFadeSampleLF32 + 8)));
+                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readFadeSampleLF32 + 12)));
+                // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
+                sR4 = _mm_hadd_ps(sR4, sR4);
+                sR4 = _mm_hadd_ps(sR4, sR4);
+
+                float fadeVal{0.f};
+                _mm_store_ss(&fadeVal, sR4);
+                auto fadeGain(
+                    getFadeGain(SamplePos, GD->loopUpperBound - loopFade, GD->loopUpperBound));
+                OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+            }
+
+            if constexpr (stereo)
             {
                 sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readSampleRF32));
                 sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readSampleRF32 + 4)));
@@ -226,6 +274,24 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 sR4 = _mm_hadd_ps(sR4, sR4);
 
                 _mm_store_ss(&OutputR[i], sR4);
+
+                if (fadeActive)
+                {
+                    sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readFadeSampleRF32));
+                    sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readFadeSampleRF32 + 4)));
+                    sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readFadeSampleRF32 + 8)));
+                    sR4 =
+                        _mm_add_ps(sR4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readFadeSampleRF32 + 12)));
+                    // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
+                    sR4 = _mm_hadd_ps(sR4, sR4);
+                    sR4 = _mm_hadd_ps(sR4, sR4);
+
+                    float fadeVal{0.f};
+                    _mm_store_ss(&fadeVal, sR4);
+                    auto fadeGain(
+                        getFadeGain(SamplePos, GD->loopUpperBound - loopFade, GD->loopUpperBound));
+                    OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+                }
             }
         }
         else
@@ -239,31 +305,73 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             tmp = _mm_add_epi16(_mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0]), lipol0),
                                 *((__m128i *)&sincTable.SincTableI16[m0]));
             sL8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readSampleL));
-            if (stereo)
+            if constexpr (stereo)
                 sR8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readSampleR));
+
             tmp2 = _mm_add_epi16(
                 _mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0 + 8]), lipol0),
                 *((__m128i *)&sincTable.SincTableI16[m0 + 8]));
             sL8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readSampleL + 8)));
-            if (stereo)
+            if constexpr (stereo)
                 sR8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readSampleR + 8)));
+
             sL8A = _mm_add_epi32(sL8A, sL8B);
-            if (stereo)
+            if constexpr (stereo)
                 sR8A = _mm_add_epi32(sR8A, sR8B);
 
             int l alignas(16)[4], r alignas(16)[4];
             _mm_store_si128((__m128i *)&l, sL8A);
-            if (stereo)
+            if constexpr (stereo)
                 _mm_store_si128((__m128i *)&r, sR8A);
             l[0] = (l[0] + l[1]) + (l[2] + l[3]);
-            if (stereo)
+            if constexpr (stereo)
                 r[0] = (r[0] + r[1]) + (r[2] + r[3]);
+
             fL = _mm_mul_ss(_mm_cvtsi32_ss(fL, l[0]), I16InvScale_m128);
-            if (stereo)
+            if constexpr (stereo)
                 fR = _mm_mul_ss(_mm_cvtsi32_ss(fR, r[0]), I16InvScale_m128);
+
             _mm_store_ss(&OutputL[i], fL);
-            if (stereo)
+            if constexpr (stereo)
                 _mm_store_ss(&OutputR[i], fR);
+
+            if (fadeActive)
+            {
+                sL8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readFadeSampleL));
+                if constexpr (stereo)
+                    sR8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readFadeSampleR));
+                sL8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readFadeSampleL + 8)));
+                if constexpr (stereo)
+                    sR8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readFadeSampleR + 8)));
+
+                sL8A = _mm_add_epi32(sL8A, sL8B);
+                if constexpr (stereo)
+                    sR8A = _mm_add_epi32(sR8A, sR8B);
+
+                int l alignas(16)[4], r alignas(16)[4];
+                _mm_store_si128((__m128i *)&l, sL8A);
+                if constexpr (stereo)
+                    _mm_store_si128((__m128i *)&r, sR8A);
+                l[0] = (l[0] + l[1]) + (l[2] + l[3]);
+                if constexpr (stereo)
+                    r[0] = (r[0] + r[1]) + (r[2] + r[3]);
+
+                fL = _mm_mul_ss(_mm_cvtsi32_ss(fL, l[0]), I16InvScale_m128);
+                if constexpr (stereo)
+                    fR = _mm_mul_ss(_mm_cvtsi32_ss(fR, r[0]), I16InvScale_m128);
+
+                float fadeValL{0.f};
+                float fadeValR{0.f};
+                _mm_store_ss(&fadeValL, fL);
+                if constexpr (stereo)
+                    _mm_store_ss(&fadeValR, fR);
+
+                auto fadeGain(
+                    getFadeGain(SamplePos, GD->loopUpperBound - loopFade, GD->loopUpperBound));
+
+                OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeValL * fadeGain;
+                OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeValR * fadeGain;
+            }
 
 #define DEBUG_OUTPUT_MINMAX 0
 #if DEBUG_OUTPUT_MINMAX
@@ -461,6 +569,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     readSampleLF32 = SampleDataFL + SamplePos;
                     if (stereo)
                         readSampleRF32 = SampleDataFR + SamplePos;
+
+                    if (fadeActive)
+                    {
+                        auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
+                        readFadeSampleLF32 = SampleDataFL + fadeSamplePos;
+                        if (stereo)
+                            readFadeSampleRF32 = SampleDataFR + fadeSamplePos;
+                    }
                 }
             }
             else
@@ -487,6 +603,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     readSampleL = SampleDataL + SamplePos;
                     if (stereo)
                         readSampleR = SampleDataR + SamplePos;
+
+                    if (fadeActive)
+                    {
+                        auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
+                        readFadeSampleL = SampleDataL + fadeSamplePos;
+                        if (stereo)
+                            readFadeSampleR = SampleDataR + fadeSamplePos;
+                    }
                 }
             }
         }
