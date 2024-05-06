@@ -56,6 +56,8 @@ struct GeneratorState
 
     float positionWithinLoop{0};
     bool isInLoop{false};
+
+    int32_t loopFade{0};
 };
 
 struct GeneratorIO
