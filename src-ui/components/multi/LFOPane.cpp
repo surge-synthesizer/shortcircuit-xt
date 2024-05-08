@@ -653,15 +653,6 @@ void LfoPane::rebuildPanelComponents()
     using tfac = connectors::SingleValueFactory<triggerAttachment_t,
                                                 cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
 
-    sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
-                 selectedTab);
-    connectors::addGuiStep(*modulatorShapeA,
-                           [w = juce::Component::SafePointer(this)](const auto &x) {
-                               if (w)
-                                   w->setSubPaneVisibility();
-                           });
-
-    getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
     tfac::attach(ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
@@ -678,6 +669,16 @@ void LfoPane::rebuildPanelComponents()
     curveLfoPane = std::make_unique<CurveLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*curveLfoPane);
 
+    sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
+                 selectedTab);
+    connectors::addGuiStep(*modulatorShapeA,
+                           [w = juce::Component::SafePointer(this)](const auto &x) {
+                               if (w)
+                                   w->setSubPaneVisibility();
+                           });
+
+    getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
+    
     repositionContentAreaComponents();
     setSubPaneVisibility();
 
