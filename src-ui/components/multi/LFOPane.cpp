@@ -447,9 +447,9 @@ struct CurveLFOPane : juce::Component, HasEditor
 
         auto b = getLocalBounds();
 
-        auto knobw = b.getHeight() / 2 - lbHt - mg;
+        auto knobw = b.getHeight() / 2 - lbHt;
 
-        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2);
+        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(b.getWidth()/2, 0);
         rateK->setBounds(bx.withHeight(knobw));
         rateL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
@@ -460,8 +460,7 @@ struct CurveLFOPane : juce::Component, HasEditor
         phaseL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
 
-        bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(0, b.getHeight() / 2);
-
+        bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(b.getWidth()/2, b.getHeight() / 2);
         for (int i = 0; i < envSlots; ++i)
         {
             envS[i]->setBounds(bx.withHeight(knobw));
@@ -469,11 +468,13 @@ struct CurveLFOPane : juce::Component, HasEditor
             bx = bx.translated(knobw + mg, 0);
         }
 
-        auto curveBox = b.withTrimmedLeft((knobw + mg) * 3).withTrimmedBottom(mg).reduced(mg, 0);
+        auto bh = b.getHeight();
+        auto curveBox = b.withY(bh/2).withTrimmedRight(getWidth()/2).withTrimmedBottom(bh/2);
         curveDraw->setBounds(curveBox);
 
-        unipolarB->setBounds(curveBox.getRight() - 32 - mg, 2, 32, 18);
-        useenvB->setBounds(curveBox.getRight() - 70 - mg, 2, 32, 18);
+        auto buttonH = 18;
+        unipolarB->setBounds(0, bh/2 - mg - buttonH, b.getWidth()/4, buttonH);
+        useenvB->setBounds(b.getWidth()/4, bh/2 - mg - buttonH, b.getWidth()/4, buttonH);
     }
 
     std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA;
@@ -485,7 +486,7 @@ struct CurveLFOPane : juce::Component, HasEditor
 
     static constexpr int envSlots{3}; // DAR
     std::array<std::unique_ptr<LfoPane::attachment_t>, envSlots> envA;
-    std::array<std::unique_ptr<jcmp::Knob>, envSlots> envS;
+    std::array<std::unique_ptr<jcmp::VSlider>, envSlots> envS;
     std::array<std::unique_ptr<jcmp::Label>, envSlots> envL;
 
     std::unique_ptr<CurveDraw> curveDraw;
@@ -508,18 +509,18 @@ struct ENVLFOPane : juce::Component, HasEditor
             addAndMakeVisible(*lb);
         };
 
-        auto makeO = [&, this](auto &mem, auto &A, auto &K, auto &L) {
-            fac::attachAndAdd(ms, mem, this, A, K, parent->forZone, parent->selectedTab);
+        auto makeO = [&, this](auto &mem, auto &A, auto &S, auto &L) {
+            fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
             makeLabel(L, A->getLabel());
         };
 
-        makeO(ms.envLfoStorage.delay, delayA, delayK, delayL);
-        makeO(ms.envLfoStorage.attack, attackA, attackK, attackL);
-        makeO(ms.envLfoStorage.hold, holdA, holdK, holdL);
-        makeO(ms.envLfoStorage.decay, decayA, decayK, decayL);
-        makeO(ms.envLfoStorage.sustain, sustainA, sustainK, sustainL);
-        makeO(ms.envLfoStorage.release, releaseA, releaseK, releaseL);
+        makeO(ms.envLfoStorage.delay, delayA, delayS, delayL);
+        makeO(ms.envLfoStorage.attack, attackA, attackS, attackL);
+        makeO(ms.envLfoStorage.hold, holdA, holdS, holdL);
+        makeO(ms.envLfoStorage.decay, decayA, decayS, decayL);
+        makeO(ms.envLfoStorage.sustain, sustainA, sustainS, sustainL);
+        makeO(ms.envLfoStorage.release, releaseA, releaseS, releaseL);
     }
 
     void resized() override
@@ -532,36 +533,37 @@ struct ENVLFOPane : juce::Component, HasEditor
         auto knobw = b.getHeight() / 2 - lbHt - mg;
 
         auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2);
-        delayK->setBounds(bx.withHeight(knobw));
+        delayS->setBounds(bx.withHeight(knobw));
         delayL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
 
-        attackK->setBounds(bx.withHeight(knobw));
+        attackS->setBounds(bx.withHeight(knobw));
         attackL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
 
-        holdK->setBounds(bx.withHeight(knobw));
+        holdS->setBounds(bx.withHeight(knobw));
         holdL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
 
         bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(0, b.getHeight() / 2);
 
-        decayK->setBounds(bx.withHeight(knobw));
+        decayS->setBounds(bx.withHeight(knobw));
         decayL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
 
-        sustainK->setBounds(bx.withHeight(knobw));
+        sustainS->setBounds(bx.withHeight(knobw));
         sustainL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
 
-        releaseK->setBounds(bx.withHeight(knobw));
+        releaseS->setBounds(bx.withHeight(knobw));
         releaseL->setBounds(bx.withTrimmedTop(knobw));
         bx = bx.translated(knobw + mg, 0);
         bx = bx.translated(knobw + mg, 0);
     }
 
     std::unique_ptr<LfoPane::attachment_t> delayA, attackA, holdA, decayA, sustainA, releaseA;
-    std::unique_ptr<jcmp::Knob> delayK, attackK, holdK, decayK, sustainK, releaseK;
+    //std::unique_ptr<jcmp::Knob> delayK, attackK, holdK, decayK, sustainK, releaseK;
+    std::unique_ptr<jcmp::VSlider> delayS, attackS, holdS, decayS, sustainS, releaseS;
     std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL;
 };
 
@@ -698,13 +700,13 @@ void LfoPane::repositionContentAreaComponents()
     auto wd = 66;
     auto mg = 5;
 
-    modulatorShape->setBounds(0, 0, wd, ht);
-    triggerMode->setBounds(0, ht + mg, wd, 5 * ht);
-    auto paneArea = getContentArea().withX(0).withTrimmedLeft(wd + mg).withY(0);
+    triggerMode->setBounds(getContentArea().getWidth() - (wd + mg), 0, wd, 5 * ht);
+    auto paneArea = getContentArea().withX(mg).withTrimmedRight(wd + mg*3).withY(0).withTrimmedBottom(mg); ; // Trim bottom as well? 
     stepLfoPane->setBounds(paneArea);
     envLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);
     curveLfoPane->setBounds(paneArea);
+    modulatorShape->setBounds(mg, 0, wd, ht);
 }
 
 void LfoPane::setSubPaneVisibility()
