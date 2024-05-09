@@ -102,6 +102,14 @@ inline void configureUpdater(A &att, const typename A::payload_t &p, HasEditor *
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
 }
 
+template <typename A, typename F> inline void addGuiStepBeforeSend(A &att, F preStep)
+{
+    auto orig = att.onGuiValueChanged;
+    att.onGuiValueChanged = [orig, preStep](const auto &a) {
+        preStep(a);
+        orig(a);
+    };
+}
 template <typename A, typename F> inline void addGuiStep(A &att, F andThen)
 {
     auto orig = att.onGuiValueChanged;
