@@ -40,24 +40,46 @@ namespace scxt::engine
 struct KeyboardRange
 {
     int16_t keyStart{-1}, keyEnd{-1}; // Start is >= end is <= so a single note has start == end
+    /*
+     * Fades in short circuit work relative to the range and are interior regions.
+     * So a keyboard region with start/end at 48/60 with a fadeStart of 4 and fadeEnd
+     * of 2 will have note 48 have velocity 0, then 1/4, 1/2, 3/4 up to 1 and note 52
+     *
+     * This leads to a few constraints
+     * fadestart > 0
+     * fadeEnd > 0
+     * fadeStart + fadeEnd < start - end + 1
+     */
     int16_t fadeStart{0}, fadeEnd{0};
 
     KeyboardRange() = default;
-    KeyboardRange(int s, int e) : keyStart(s), keyEnd(e), fadeStart(s), fadeEnd(e) { normalize(); }
+    KeyboardRange(int s, int e) : keyStart(s), keyEnd(e) { normalize(); }
 
     void normalize()
     {
         if (keyEnd < keyStart)
             std::swap(keyStart, keyEnd);
-        if (fadeEnd < fadeStart)
-            std::swap(fadeStart, fadeEnd);
 
-        if (fadeStart + fadeEnd > keyEnd - keyStart)
+        if (fadeStart + fadeEnd > keyEnd - keyStart + 1)
         {
             // TODO: Handle this case - but I thikn the semantic of the test is wrong
             SCLOG("Potentially erroneous fade points in keyboard: "
                   << SCD(fadeStart) << SCD(fadeEnd) << SCD(keyStart) << SCD(keyEnd));
         }
+    }
+
+    float fadeAmpltiudeAt(int16_t toKey)
+    {
+        if (toKey < keyStart + fadeStart && fadeStart > 0)
+        {
+            return std::clamp(static_cast<float>(toKey - keyStart) / fadeStart, 0.f, 1.f);
+        }
+        else if (toKey > keyEnd - fadeEnd && fadeEnd > 0)
+        {
+            return std::clamp(static_cast<float>(keyEnd - toKey) / fadeEnd, 0.f, 1.f);
+        }
+
+        return 1;
     }
 
     bool includes(int16_t key)
@@ -80,17 +102,17 @@ struct KeyboardRange
 struct VelocityRange
 {
     int16_t velStart{0}, velEnd{127}; // Start is >= end is <= so a single note has start == end
+
+    // See comment above
     int16_t fadeStart{0}, fadeEnd{0};
 
     VelocityRange() = default;
-    VelocityRange(int s, int e) : velStart(s), velEnd(e), fadeStart(s), fadeEnd(e) { normalize(); }
+    VelocityRange(int s, int e) : velStart(s), velEnd(e) { normalize(); }
 
     void normalize()
     {
         if (velEnd < velStart)
             std::swap(velStart, velEnd);
-        if (fadeEnd < fadeStart)
-            std::swap(fadeStart, fadeEnd);
 
         if (fadeStart + fadeEnd > velEnd - velStart)
         {
@@ -107,6 +129,19 @@ struct VelocityRange
         if (vel >= velStart && vel <= velEnd)
             return true;
         return false;
+    }
+
+    float fadeAmpltiudeAt(int16_t toVel)
+    {
+        if (toVel < velStart + fadeStart && fadeStart > 0)
+        {
+            return std::clamp(static_cast<float>(toVel - velStart) / fadeStart, 0.f, 1.f);
+        }
+        else if (toVel > velEnd - fadeEnd && fadeEnd > 0)
+        {
+            return std::clamp(static_cast<float>(velEnd - toVel) / fadeEnd, 0.f, 1.f);
+        }
+        return 1;
     }
 
     bool operator==(const VelocityRange &other) const

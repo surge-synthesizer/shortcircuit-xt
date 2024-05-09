@@ -93,9 +93,6 @@ struct MappingZones : juce::Component, HasEditor
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
 
-    void UpdateStartEndFade(int16_t newStart, int16_t newEnd, int16_t &start, int16_t &end,
-                            int16_t &fadeStart, int16_t &fadeEnd);
-
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
@@ -400,48 +397,58 @@ struct MappingDisplay : juce::Component,
             ffac::attachAndAdd(mappingView, v, this, a, w);
         };
 
-        auto iAddGuiStep = [this](auto &a, auto &r, auto &start, auto &end, const auto &newStart,
-                                  const auto &newEnd) {
-            connectors::addGuiStep(*a, [this, &r, &start, &end, &newStart, &newEnd](const auto &a) {
-                mappingZones->UpdateStartEndFade(newStart, newEnd, start, end, r.fadeStart,
-                                                 r.fadeEnd);
-
-                mappingChangedFromGUI();
-                mappingZones->repaint();
-            });
+        auto iAddFadeConstraint = [this](auto &a, auto &r, bool isStart) {
+            if constexpr (std::is_same_v<std::remove_reference_t<decltype(r)>,
+                                         scxt::engine::KeyboardRange>)
+            {
+                connectors::addGuiStepBeforeSend(*a, [&aWrite = a, &r, isStart](const auto &a) {
+                    auto span = r.keyEnd - r.keyStart;
+                    auto fadeSpan = a.value + (isStart ? r.fadeEnd : r.fadeStart) + 1;
+                    if (fadeSpan > span + 1)
+                    {
+                        aWrite->value = a.prevValue;
+                    }
+                });
+            }
+            if constexpr (std::is_same_v<std::remove_reference_t<decltype(r)>,
+                                         scxt::engine::VelocityRange>)
+            {
+                connectors::addGuiStepBeforeSend(*a, [&aWrite = a, &r, isStart](const auto &a) {
+                    auto span = r.velEnd - r.velStart;
+                    auto fadeSpan = a.value + (isStart ? r.fadeEnd : r.fadeStart) + 1;
+                    if (fadeSpan > span + 1)
+                    {
+                        aWrite->value = a.prevValue;
+                    }
+                });
+            }
         };
 
         iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
         makeLabel(labels.RootKey, "Root Key");
 
+        SCLOG("Setup " << SCD(mappingView.keyboardRange.keyStart)
+                       << SCD(mappingView.keyboardRange.keyEnd));
         iAdd(mappingView.keyboardRange.keyStart, intAttachments.KeyStart, textEds.KeyStart);
-        iAddGuiStep(intAttachments.KeyStart, mappingView.keyboardRange,
-                    intAttachments.KeyStart->prevValue, mappingView.keyboardRange.keyEnd,
-                    intAttachments.KeyStart->value, mappingView.keyboardRange.keyEnd);
         iAdd(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd);
-        iAddGuiStep(intAttachments.KeyEnd, mappingView.keyboardRange,
-                    mappingView.keyboardRange.keyStart, intAttachments.KeyEnd->prevValue,
-                    mappingView.keyboardRange.keyStart, intAttachments.KeyEnd->value);
 
         makeLabel(labels.KeyStart, "Key Range");
-
         iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, textEds.FadeStart);
+        iAddFadeConstraint(intAttachments.FadeStart, mappingView.keyboardRange, true);
         iAdd(mappingView.keyboardRange.fadeEnd, intAttachments.FadeEnd, textEds.FadeEnd);
+        iAddFadeConstraint(intAttachments.FadeEnd, mappingView.keyboardRange, false);
         makeLabel(labels.FadeStart, "Crossfade");
 
         iAdd(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart);
-        iAddGuiStep(intAttachments.VelStart, mappingView.velocityRange,
-                    intAttachments.VelStart->prevValue, mappingView.velocityRange.velEnd,
-                    intAttachments.VelStart->value, mappingView.velocityRange.velEnd);
         iAdd(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd);
-        iAddGuiStep(intAttachments.VelEnd, mappingView.velocityRange,
-                    mappingView.velocityRange.velStart, intAttachments.VelEnd->prevValue,
-                    mappingView.velocityRange.velStart, intAttachments.VelEnd->value);
         makeLabel(labels.VelStart, "Vel Range");
 
         iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart,
              textEds.VelFadeStart);
+        iAddFadeConstraint(intAttachments.VelFadeStart, mappingView.velocityRange, true);
         iAdd(mappingView.velocityRange.fadeEnd, intAttachments.VelFadeEnd, textEds.VelFadeEnd);
+        iAddFadeConstraint(intAttachments.VelFadeEnd, mappingView.velocityRange, false);
+
         makeLabel(labels.VelFadeStart, "CrossFade");
 
         iAdd(mappingView.pbDown, intAttachments.PBDown, textEds.PBDown);
@@ -955,6 +962,62 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
     }
 }
 
+template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
+{
+    int span{0};
+
+    if constexpr (std::is_same_v<MAP, scxt::engine::KeyboardRange>)
+    {
+        span = kr.keyEnd - kr.keyStart;
+    }
+    else if constexpr (std::is_same_v<MAP, scxt::engine::VelocityRange>)
+    {
+        span = kr.velEnd - kr.velStart;
+    }
+    else
+    {
+        // Force a compile error
+        SCLOG("Unable to compile " << kr.notAMember);
+    }
+
+    auto fade = kr.fadeStart + kr.fadeEnd;
+
+    if (fade > span + 1)
+    {
+        auto amtToRemove = fade - span - 1;
+
+        if (startChanged)
+        {
+            auto dimStart = std::min((int)kr.fadeStart, (int)amtToRemove);
+            kr.fadeStart -= dimStart;
+            amtToRemove -= dimStart;
+        }
+        else
+        {
+            auto dimEnd = std::min((int)kr.fadeEnd, (int)amtToRemove);
+            kr.fadeEnd -= dimEnd;
+            amtToRemove -= dimEnd;
+        }
+
+        if (amtToRemove > 0)
+        {
+            if (kr.fadeStart > 0)
+            {
+                auto dimStart = std::min((int)kr.fadeStart, (int)amtToRemove);
+                kr.fadeStart -= dimStart;
+                amtToRemove -= dimStart;
+            }
+            if (kr.fadeEnd > 0)
+            {
+                auto dimEnd = std::min((int)kr.fadeEnd, (int)amtToRemove);
+                kr.fadeEnd -= dimEnd;
+                amtToRemove -= dimEnd;
+            }
+            assert(amtToRemove == 0);
+        }
+    }
+}
+
 void MappingZones::mouseDrag(const juce::MouseEvent &e)
 {
     if (mouseState == DRAG_SELECTED_ZONE)
@@ -978,8 +1041,6 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             lastMousePos.x = e.position.x;
             kr.keyStart += nx;
             kr.keyEnd += nx;
-            kr.fadeStart += nx;
-            kr.fadeEnd += nx;
 
             display->mappingView.rootKey = std::clamp(display->mappingView.rootKey + nx, 0, 127);
         }
@@ -997,8 +1058,6 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             lastMousePos.y = e.position.y;
             vr.velStart += vy;
             vr.velEnd += vy;
-            vr.fadeStart += vy;
-            vr.fadeEnd += vy;
         }
 
         display->mappingChangedFromGUI();
@@ -1027,6 +1086,7 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
         auto &vr = display->mappingView.velocityRange;
         auto &kr = display->mappingView.keyboardRange;
 
+        bool updatedMapping{false};
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_KEY)
         {
             auto keyEndRightEdge =
@@ -1057,9 +1117,21 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
                     newKeyEnd = newXRounded - 1;
             }
 
-            UpdateStartEndFade(newKeyStart, newKeyEnd, kr.keyStart, kr.keyEnd, kr.fadeStart,
-                               kr.fadeEnd);
-            // there was an std::swap here that's no longer needed.
+            bool startChanged = (newKeyStart != kr.keyStart);
+            if (newKeyEnd < newKeyStart)
+                std::swap(newKeyStart, newKeyEnd);
+
+            if (newKeyStart != kr.keyStart || newKeyEnd != kr.keyEnd)
+            {
+                updatedMapping = true;
+            }
+
+            if (updatedMapping)
+            {
+                kr.keyStart = newKeyStart;
+                kr.keyEnd = newKeyEnd;
+                constrainMappingFade(kr, startChanged);
+            }
         }
         // Same changes to up/down as to right/left.
         if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_VELOCITY)
@@ -1086,61 +1158,26 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
                 else if (newY < (velTopEdge - 0.5))
                     newVelEnd = newYRounded - 1;
             }
-            UpdateStartEndFade(newVelStart, newVelEnd, vr.velStart, vr.velEnd, vr.fadeStart,
-                               vr.fadeEnd);
-        }
-        display->mappingChangedFromGUI();
-        repaint();
-    }
-}
+            bool startChanged = (newVelStart != vr.velStart);
+            if (newVelEnd < newVelStart)
+                std::swap(newVelStart, newVelEnd);
 
-void MappingZones::UpdateStartEndFade(int16_t newStart, int16_t newEnd, int16_t &start,
-                                      int16_t &end, int16_t &fadeStart, int16_t &fadeEnd)
-{
-    if (newStart != start)
-    {
-        auto offset{newStart - start};
-        auto updateStart{newStart >= 0 && newStart <= end};
-        if (updateStart)
-        {
-            start = newStart;
-        }
+            if (newVelStart != vr.velStart || newVelEnd != vr.velEnd)
+            {
+                updatedMapping = true;
+            }
 
-        auto updateFadeEnd{offset > 0 && start > fadeEnd && newStart <= end};
-        if (updateFadeEnd)
-        {
-            fadeEnd += offset;
-            fadeEnd = std::clamp(fadeEnd, start, end);
+            if (updatedMapping)
+            {
+                vr.velStart = newVelStart;
+                vr.velEnd = newVelEnd;
+                constrainMappingFade(vr, startChanged);
+            }
         }
-
-        auto updateFadeStart{(offset < 0 || fadeStart < fadeEnd) && newStart <= end};
-        if (updateFadeStart)
+        if (updatedMapping)
         {
-            fadeStart += offset;
-            fadeStart = std::clamp(fadeStart, start, end);
-        }
-    }
-    if (newEnd != end)
-    {
-        auto offset{newEnd - end};
-        auto updateEnd{newEnd < 127 && newEnd >= start};
-        if (updateEnd)
-        {
-            end = newEnd;
-        }
-
-        auto updateFadeStart{offset < 0 && end < fadeStart && newEnd >= start};
-        if (updateFadeStart)
-        {
-            fadeStart += offset;
-            fadeStart = std::clamp(fadeStart, start, end);
-        }
-
-        auto updateFadeEnd{(offset > 0 || fadeStart < fadeEnd) && newEnd >= start};
-        if (updateFadeEnd)
-        {
-            fadeEnd += offset;
-            fadeEnd = std::clamp(fadeEnd, start, end);
+            display->mappingChangedFromGUI();
+            repaint();
         }
     }
 }
@@ -1282,10 +1319,12 @@ void MappingZones::paint(juce::Graphics &g)
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
-            // todo do not draw the gradient if no fade
+            // TODO: Center only if
+
+            // lower left corner
             {
-                auto r{
-                    rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.velStart, vel.fadeStart)};
+                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart - 1, vel.velStart,
+                                         vel.velStart + vel.fadeStart)};
 
                 double scaleY{r.getHeight() / r.getWidth()};
                 double transY{(1 - scaleY) * r.getY()};
@@ -1299,8 +1338,10 @@ void MappingZones::paint(juce::Graphics &g)
                 g.fillRect(r);
             }
 
+            // top left
             {
-                auto r{rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.velEnd, vel.fadeEnd)};
+                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart - 1,
+                                         vel.velEnd - vel.fadeEnd, vel.velEnd)};
 
                 float xRange{r.getWidth()};
                 float yRange{r.getHeight()};
@@ -1318,53 +1359,68 @@ void MappingZones::paint(juce::Graphics &g)
                 g.fillRect(r);
             }
 
+            // left side
             {
-                auto r{
-                    rectangleForRange(kb.keyStart, kb.fadeStart - 1, vel.fadeStart, vel.fadeEnd)};
+                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart - 1,
+                                         vel.velStart + vel.fadeStart, vel.velEnd - vel.fadeEnd)};
                 juce::ColourGradient grad{c1,           r.getX(), r.getY(), c2,
                                           r.getRight(), r.getY(), false};
                 g.setGradientFill(grad);
+
                 g.fillRect(r);
             }
 
             //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
             {
+                // bottom
                 {
-                    auto r{
-                        rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.velStart, vel.fadeStart)};
+                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                             vel.velStart, vel.velStart + vel.fadeStart)};
                     juce::ColourGradient grad{c1,       r.getX(), r.getBottom(), c2,
                                               r.getX(), r.getY(), false};
                     g.setGradientFill(grad);
+
                     g.fillRect(r);
                 }
 
+                // top region
                 {
-                    auto r{rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.fadeEnd, vel.velEnd)};
+                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                             vel.velEnd - vel.fadeEnd, vel.velEnd)};
                     juce::ColourGradient grad{c1,       r.getX(),      r.getY(), c2,
                                               r.getX(), r.getBottom(), false};
                     g.setGradientFill(grad);
+
                     g.fillRect(r);
                 }
 
                 // no gradient for the center
                 {
-                    auto r{rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.fadeStart, vel.fadeEnd)};
+                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                             vel.velStart + vel.fadeStart,
+                                             vel.velEnd - vel.fadeEnd)};
                     g.setColour(c2);
+
                     g.fillRect(r);
                 }
             }
             //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+            // Right side
             {
-                auto r{rectangleForRange(kb.fadeEnd + 1, kb.keyEnd, vel.fadeStart, vel.fadeEnd)};
+                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd,
+                                         vel.velStart + vel.fadeStart, vel.velEnd - vel.fadeEnd)};
                 juce::ColourGradient grad{c2,           r.getX(), r.getY(), c1,
                                           r.getRight(), r.getY(), false};
                 g.setGradientFill(grad);
+
                 g.fillRect(r);
             }
 
+            // bottom right corner
             {
-                auto r{rectangleForRange(kb.fadeEnd + 1, kb.keyEnd, vel.velStart, vel.fadeStart)};
+                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd, vel.velStart,
+                                         vel.velStart + vel.fadeStart)};
 
                 float xRange{r.getWidth()};
                 float yRange{r.getHeight()};
@@ -1377,10 +1433,14 @@ void MappingZones::paint(juce::Graphics &g)
                 juce::FillType newFill(originalFill.transformed(
                     juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
                 g.setFillType(newFill);
+
                 g.fillRect(r);
             }
+
+            // top left
             {
-                auto r{rectangleForRange(kb.fadeEnd + 1, kb.keyEnd, vel.velEnd, vel.fadeEnd)};
+                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd,
+                                         vel.velEnd - vel.fadeEnd, vel.velEnd)};
 
                 float xRange{r.getWidth()};
                 float yRange{r.getHeight()};
@@ -1394,23 +1454,29 @@ void MappingZones::paint(juce::Graphics &g)
                 juce::FillType newFill(originalFill.transformed(
                     juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
                 g.setFillType(newFill);
+
                 g.fillRect(r);
             }
 
             const float dashes[]{1.0f, 2.0f};
             {
+                // vertical dashes
                 {
-                    auto r{rectangleForRange(kb.fadeStart, kb.fadeEnd, vel.velStart, vel.velEnd)};
+                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                             vel.velStart, vel.velEnd)};
 
                     g.setColour(c2);
                     g.drawDashedLine({{r.getX(), r.getY()}, {r.getX(), r.getBottom()}}, dashes,
                                      juce::numElementsInArray(dashes));
+
                     g.drawDashedLine({{r.getRight(), r.getY()}, {r.getRight(), r.getBottom()}},
                                      dashes, juce::numElementsInArray(dashes));
                 }
 
+                // horizontal dashes
                 {
-                    auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.fadeStart, vel.fadeEnd)};
+                    auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart + vel.fadeStart,
+                                             vel.velEnd - vel.fadeEnd)};
 
                     g.setColour(c2);
                     g.drawDashedLine({{r.getX(), r.getY()}, {r.getRight(), r.getY()}}, dashes,
@@ -1421,19 +1487,6 @@ void MappingZones::paint(juce::Graphics &g)
             }
 
             auto r = rectangleForZone(z.second);
-            {
-                g.setColour(selZoneColor.withAlpha(0.8f));
-                g.drawDashedLine({{r.getX() + 1, 0}, {r.getX() + 1, r.getY()}}, dashes,
-                                 juce::numElementsInArray(dashes));
-                g.drawDashedLine(
-                    {{r.getX() + 1, r.getBottom()}, {r.getX() + 1, (float)getHeight()}}, dashes,
-                    juce::numElementsInArray(dashes));
-                g.drawDashedLine({{r.getRight() - 1, 0}, {r.getRight() - 1, r.getY()}}, dashes,
-                                 juce::numElementsInArray(dashes));
-                g.drawDashedLine(
-                    {{r.getRight() - 1, r.getBottom()}, {r.getRight() - 1, (float)getHeight()}},
-                    dashes, juce::numElementsInArray(dashes));
-            }
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
 
