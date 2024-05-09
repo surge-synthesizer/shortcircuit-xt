@@ -61,75 +61,67 @@
 #include "definition_helpers.h"
 #include "dsp/processor/processor_impl.h"
 
-#include "sst/voice-effects/distortion/Microgate.h"
+#include "sst/voice-effects/delay/Widener.h"
+#include "sst/voice-effects/delay/ShortDelay.h"
+#include "sst/voice-effects/delay/Microgate.h"
+
 #include "sst/voice-effects/distortion/BitCrusher.h"
-#include "sst/voice-effects/distortion/Slewer.h"
-#include "sst/voice-effects/distortion/RingModulator.h"
 #include "sst/voice-effects/waveshaper/WaveShaper.h"
 
 #include "sst/voice-effects/eq/EqNBandParametric.h"
 #include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/voice-effects/eq/MorphEQ.h"
 
+#include "sst/voice-effects/filter/CytomicSVF.h"
+// #include "sst/voice-effects/filter/SurgeBiquads.h"
+#include "sst/voice-effects/filter/SSTFilters.h"
+#include "sst/voice-effects/filter/Slewer.h"
+
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/GenSin.h"
 #include "sst/voice-effects/generator/GenSaw.h"
 #include "sst/voice-effects/generator/GenPulseSync.h"
-#include "sst/voice-effects/generator/GenPhaseMod.h"
+#include "sst/voice-effects/delay/StringResonator.h"
 
-#include "sst/voice-effects/pitch/PitchRing.h"
+#include "sst/voice-effects/modulation/FreqShiftMod.h"
+#include "sst/voice-effects/modulation/RingMod.h"
+#include "sst/voice-effects/modulation/PhaseMod.h"
+#include "sst/voice-effects/modulation/StaticPhaser.h"
 
-#include "sst/voice-effects/delay/FauxStereo.h"
-#include "sst/voice-effects/delay/ShortDelay.h"
-#include "sst/voice-effects/delay/StringExciter.h"
-
-#include "sst/voice-effects/filter/CytomicSVF.h"
-#include "sst/voice-effects/filter/SurgeBiquads.h"
-#include "sst/voice-effects/filter/SSTFilters.h"
-#include "sst/voice-effects/filter/StaticPhaser.h"
 
 namespace scxt::dsp::processor
 {
 // Just don't change the id or streaming name, basically
-DEFINE_PROC(MicroGate, sst::voice_effects::distortion::MicroGate<SCXTVFXConfig<1>>,
-            sst::voice_effects::distortion::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate,
-            "MicroGate", "Distortion", "micro-gate-fx");
+DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener,
+            "Widener", "Delay", "fxstereo-fx", dsp::surgeSincTable);
+DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
+            "Simple Delay", "Delay", "simpdel-fx", dsp::surgeSincTable);
+DEFINE_PROC(MicroGate, sst::voice_effects::delay::MicroGate<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate,
+            "MicroGate", "Delay", "micro-gate-fx");
+
 DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<2>>, proct_fx_bitcrusher,
             "BitCrusher", "Distortion", "bit-crusher-fx");
 DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<1>>,
             sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<2>>, proct_fx_waveshaper,
             "WaveShaper", "Distortion", "waveshaper-fx");
-DEFINE_PROC(Slewer, sst::voice_effects::distortion::Slewer<SCXTVFXConfig<1>>,
-            sst::voice_effects::distortion::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
-            "Distortion", "slewer-fx");
-DEFINE_PROC(RingMod, sst::voice_effects::distortion::RingModulator<SCXTVFXConfig<1>>,
-            sst::voice_effects::distortion::RingModulator<SCXTVFXConfig<2>>, proct_fx_ringmod,
-            "Ring Modulator", "Distortion", "ringmod-fx");
 
 // Macros and commas don't get along
 namespace procimpl::detail
 {
-using eq1impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 1>;
-using eq2impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 2>;
 using eq3impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 3>;
-
-using eq1impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 1>;
-using eq2impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 2>;
 using eq3impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 3>;
 
 } // namespace procimpl::detail
 
-DEFINE_PROC(EQ1Band, procimpl::detail::eq1impl, procimpl::detail::eq1impl_os,
-            proct_eq_1band_parametric_A, "1 Band Parametric", "EQ", "eq-parm-1band");
-DEFINE_PROC(EQ2Band, procimpl::detail::eq2impl, procimpl::detail::eq2impl_os,
-            proct_eq_2band_parametric_A, "2 Band Parametric", "EQ", "eq-parm-2band");
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
             proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
 DEFINE_PROC(EQGraphic6Band, sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<2>>, proct_eq_6band,
             "6 Band Graphic", "EQ", "eq-grp-6");
-
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "EQ",
             "eq-morph");
@@ -143,45 +135,43 @@ DEFINE_PROC(GenSaw, sst::voice_effects::generator::GenSaw<SCXTVFXConfig<1>>,
 DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<2>>, proct_osc_pulse_sync,
             "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);
-DEFINE_PROC(GenPhaseMod, sst::voice_effects::generator::GenPhaseMod<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::GenPhaseMod<SCXTVFXConfig<2>>, proct_osc_phasemod,
-            "Phase Mod", "Generators", "osc-phase-mod");
 DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<2>>,
             proct_osc_correlatednoise, "Correlated Noise", "Generators", "osc-correlated-noise");
+DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
+            "String Exciter", "Generators", "stringex-fx", dsp::surgeSincTable);
 
-DEFINE_PROC(PitchRing, sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<1>>,
-            sst::voice_effects::pitch::PitchRing<SCXTVFXConfig<2>>, proct_fx_pitchring, "PitchRing",
-            "Pitch and Frequency", "pitchring-fx");
 
-DEFINE_PROC(FauxStereo, sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::FauxStereo<SCXTVFXConfig<2>>, proct_fx_fauxstereo,
-            "Faux Stereo", "Delay Based", "fxstereo-fx", dsp::surgeSincTable);
-DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
-            "Simple Delay", "Delay Based", "simpdel-fx", dsp::surgeSincTable);
-DEFINE_PROC(StringExciter, sst::voice_effects::delay::StringExciter<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::StringExciter<SCXTVFXConfig<2>>, proct_StringExciter,
-            "String Exciter", "Delay Based", "stringex-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
             "Filters", "filt-cytomic");
-
-DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticStereoPhaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::StaticStereoPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
-            "Static Phaser (Stereo)", "Filters", "filt-statph");
-DEFINE_PROC(MonoPhaser, sst::voice_effects::filter::StaticMonoPhaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::StaticMonoPhaser<SCXTVFXConfig<2>>, proct_MonoStaticPhaser,
-            "Static Phaser (Mono)", "Filters", "filt-mon-statph");
-
-DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
+/* DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<2>>, proct_SurgeBiquads,
-            "Surge Biquads", "Filters", "filt-sstbiquad");
-
+            "Surge Biquads", "Filters", "filt-sstbiquad"); */
 DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
             "Surge Filters", "Filters", "filt-sstfilters");
+DEFINE_PROC(Slewer, sst::voice_effects::filter::Slewer<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
+            "Filters", "slewer-fx");
+
+DEFINE_PROC(FreqShiftMod, sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<2>>, proct_fx_freqshiftmod, "Freqshift Mod",
+            "Modulation", "pitchring-fx");
+DEFINE_PROC(PhaseMod, sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<2>>, proct_osc_phasemod,
+            "Phase Mod", "Modulation", "osc-phase-mod");
+DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod,
+            "Ring Mod", "Modulation", "ringmod-fx");
+DEFINE_PROC(StaticPhaser, sst::voice_effects::modulation::StaticStereoPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::StaticStereoPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
+            "Static Phaser (Stereo)", "Modulation", "filt-statph");
+DEFINE_PROC(MonoPhaser, sst::voice_effects::modulation::StaticMonoPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::StaticMonoPhaser<SCXTVFXConfig<2>>, proct_MonoStaticPhaser,
+            "Static Phaser (Mono)", "Modulation", "filt-mon-statph");
 
 } // namespace scxt::dsp::processor
 
