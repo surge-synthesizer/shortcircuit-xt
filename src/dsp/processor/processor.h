@@ -148,6 +148,7 @@ bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
 const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
 const char *getProcessorDisplayGroup(ProcessorType id);
+float getProcessorDefaultMix(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
 
 struct ProcessorDescription
@@ -316,8 +317,16 @@ template <ProcessorType ft> struct ProcessorImplementor
     typedef unimpl_t TOS;
 };
 
+template <ProcessorType ft> struct ProcessorDefaultMix
+{
+    static constexpr float defaultMix{1.0};
+};
+
 } // namespace scxt::dsp::processor
 
-SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage,
-            SC_FIELD(mix, datamodel::pmd().asPercent().withName("Mix")));
+SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage, SC_FIELD_COMPUTED(mix, {
+                auto dr = dsp::processor::getProcessorDefaultMix(payload.type);
+                return datamodel::pmd().asPercent().withName("Mix").withDefault(dr);
+            }));
+
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H

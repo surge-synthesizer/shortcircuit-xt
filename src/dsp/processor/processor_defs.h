@@ -128,9 +128,13 @@ DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
 DEFINE_PROC(GenSin, sst::voice_effects::generator::GenSin<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenSin<SCXTVFXConfig<2>>, proct_osc_sin, "Sin",
             "Generators", "osc-sin");
+PROC_DEFAULT_MIX(proct_osc_sin, 0.5);
+
 DEFINE_PROC(GenSaw, sst::voice_effects::generator::GenSaw<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenSaw<SCXTVFXConfig<2>>, proct_osc_saw, "Saw",
             "Generators", "osc-saw");
+PROC_DEFAULT_MIX(proct_osc_saw, 0.5);
+
 DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<2>>, proct_osc_pulse_sync,
             "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);

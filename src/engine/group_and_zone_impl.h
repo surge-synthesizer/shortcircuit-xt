@@ -44,7 +44,8 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
     auto &ps = processorStorage[whichProcessor];
     auto &pd = processorDescription[whichProcessor];
     ps.type = type;
-    ps.mix = 1.0;
+
+    ps.mix = dsp::processor::getProcessorDefaultMix(type);
 
     uint8_t memory[dsp::processor::processorMemoryBufferSize];
     float pfp[dsp::processor::maxProcessorFloatParams];

@@ -42,7 +42,7 @@ template <typename P, typename V> ptrdiff_t offV(const P &p, const V &l)
     auto pd = (uint8_t *)&(l) - (uint8_t *)&p;
     return pd;
 }
-template <typename P> sst::basic_blocks::params::ParamMetaData descFor(ptrdiff_t pd)
+template <typename P> sst::basic_blocks::params::ParamMetaData descFor(const P &, ptrdiff_t pd)
 {
     assert(false);
     return sst::basic_blocks::params::ParamMetaData()
@@ -55,7 +55,7 @@ template <typename P> sst::basic_blocks::params::ParamMetaData descFor(ptrdiff_t
 #define SC_DESCRIBE(T, ...)                                                                        \
     template <>                                                                                    \
     inline sst::basic_blocks::params::ParamMetaData scxt::datamodel::detail::descFor<T>(           \
-        ptrdiff_t(pd))                                                                             \
+        const T &payload, ptrdiff_t(pd))                                                           \
     {                                                                                              \
         using data = T;                                                                            \
         static_assert(std::is_standard_layout_v<T>);                                               \
@@ -70,6 +70,12 @@ template <typename P> sst::basic_blocks::params::ParamMetaData descFor(ptrdiff_t
     if (pd == offsetof(data, x))                                                                   \
     {                                                                                              \
         return __VA_ARGS__;                                                                        \
+    }
+
+#define SC_FIELD_COMPUTED(x, ...)                                                                  \
+    if (pd == offsetof(data, x))                                                                   \
+    {                                                                                              \
+        __VA_ARGS__;                                                                               \
     }
 
 #endif // SHORTCIRCUITXT_METADATA_DETAIL_H

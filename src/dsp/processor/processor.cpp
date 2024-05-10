@@ -50,6 +50,7 @@ namespace detail
 
 using boolOp_t = bool (*)();
 using constCharOp_t = const char *(*)();
+using floatOp_t = float (*)();
 
 template <size_t I> bool implIsProcessorImplemented()
 {
@@ -115,9 +116,20 @@ template <size_t I> const char *implGetProcessorDisplayGroup()
         return ProcessorImplementor<(ProcessorType)I>::T::processorDisplayGroup;
 }
 
+template <size_t I> float implGetProcessorDefaultMix()
+{
+    return ProcessorDefaultMix<(ProcessorType)I>::defaultMix;
+}
+
 template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequence<Is...>)
 {
     constexpr constCharOp_t fnc[] = {detail::implGetProcessorDisplayGroup<Is>...};
+    return fnc[ft]();
+}
+
+template <size_t... Is> auto getProcessorDefaultMix(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr floatOp_t fnc[] = {detail::implGetProcessorDefaultMix<Is>...};
     return fnc[ft]();
 }
 template <size_t I>
@@ -201,6 +213,12 @@ const char *getProcessorStreamingName(ProcessorType id)
 const char *getProcessorDisplayGroup(ProcessorType id)
 {
     return detail::getProcessorDisplayGroup(
+        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
+float getProcessorDefaultMix(ProcessorType id)
+{
+    return detail::getProcessorDefaultMix(
         id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
