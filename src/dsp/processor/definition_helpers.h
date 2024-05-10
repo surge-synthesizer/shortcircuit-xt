@@ -47,4 +47,10 @@
         static_assert(sizeof(TOS) < processorMemoryBufferSize);                                    \
     };
 
+#define PROC_DEFAULT_MIX(proct, mix)                                                               \
+    template <> struct ProcessorDefaultMix<proct>                                                  \
+    {                                                                                              \
+        static constexpr float defaultMix{mix};                                                    \
+    };
+
 #endif // SHORTCIRCUITXT_DEFINITION_HELPERS_H

@@ -43,7 +43,7 @@ using pmd = sst::basic_blocks::params::ParamMetaData;
 template <typename P, typename V> pmd describeValue(const P &p, const V &l)
 {
     auto pd = detail::offV(p, l);
-    return detail::descFor<P>(pd);
+    return detail::descFor<P>(p, pd);
 }
 } // namespace scxt::datamodel
 
