@@ -40,6 +40,8 @@ template <int OSFactor> struct SCXTVFXConfig
     using BaseClass = Processor;
     static constexpr int blockSize{scxt::blockSize * OSFactor};
 
+    static constexpr int16_t oversamplingRatio{OSFactor};
+
     static void preReservePool(BaseClass *b, size_t s)
     {
         if (b->memoryPool)
