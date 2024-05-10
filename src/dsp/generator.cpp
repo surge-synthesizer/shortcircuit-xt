@@ -52,42 +52,39 @@ float getFadeGain(int32_t samplePos, int32_t x1, int32_t x2)
     return gain * gain * gain; // closer to a decibel type response maybe?
 }
 
-#define USE_SINC_INTERPOLATION 1
-enum class KernelTypes
-{
-    Sinc,
-    ZeroOrderHold
-};
-
-template <KernelTypes KT, typename T> struct KernelOp
+template <InterpolationTypes KT, typename T> struct KernelOp
 {
 };
 
-template <KernelTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE> struct KernelProcessor;
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
+struct KernelProcessor;
 
-template <typename T> struct KernelOp<KernelTypes::ZeroOrderHold, T>
+template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
     static void
     Process(GeneratorState *__restrict GD,
-            KernelProcessor<KernelTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+            KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
-template <> struct KernelOp<KernelTypes::Sinc, float>
+template <> struct KernelOp<InterpolationTypes::Sinc, float>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-    static void Process(GeneratorState *__restrict GD,
-                        KernelProcessor<KernelTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
-template <> struct KernelOp<KernelTypes::Sinc, int16_t>
+template <> struct KernelOp<InterpolationTypes::Sinc, int16_t>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-    static void Process(GeneratorState *__restrict GD,
-                        KernelProcessor<KernelTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
-template <KernelTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE> struct KernelProcessor
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
+struct KernelProcessor
 {
     int32_t SamplePos, SampleSubPos;
     int32_t m0, i;
@@ -112,9 +109,9 @@ float NormalizeSampleToF32(int16_t val) { return val * I16InvScale2; }
 
 template <typename T>
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-void KernelOp<KernelTypes::ZeroOrderHold, T>::Process(
+void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<KernelTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+    KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -158,9 +155,9 @@ void KernelOp<KernelTypes::ZeroOrderHold, T>::Process(
 }
 
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-void KernelOp<KernelTypes::Sinc, float>::Process(
+void KernelOp<InterpolationTypes::Sinc, float>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<KernelTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+    KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -251,9 +248,9 @@ void KernelOp<KernelTypes::Sinc, float>::Process(
 }
 
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-void KernelOp<KernelTypes::Sinc, int16_t>::Process(
+void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<KernelTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+    KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -529,65 +526,68 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     int i{0};
     for (i = 0; i < NSamples && !IsFinished; i++)
     {
-        // 2. Resample
-        unsigned int m0 = ((SampleSubPos >> 12) & 0xff0);
+#define KPStereo(E, T, C, dataL, dataR, fadeL, fadeR)                                              \
+    KernelProcessor<E, T, C, loopActive> kp{SamplePos,  SampleSubPos,   int32_t(m0),               \
+                                            i,          {dataL, dataR}, {fadeL, fadeR},            \
+                                            fadeActive, loopFade,       {OutputL, OutputR}};       \
+    kp.ProcessKernel(GD);
 
+#define KPMono(E, T, C, data, fade)                                                                \
+    KernelProcessor<E, T, C, loopActive> ks{                                                       \
+        SamplePos, SampleSubPos, int32_t(m0), i, {data}, {fade}, fadeActive, loopFade, {OutputL}}; \
+    ks.ProcessKernel(GD);
+
+        using type_from_cond = typename std::conditional<fp, float, int16_t>::type;
+        type_from_cond *readL, *readFadeL, *readR, *readFadeR;
         if constexpr (fp)
         {
-            if (stereo)
+            readL = readSampleLF32;
+            readR = readSampleRF32;
+            readFadeL = readFadeSampleLF32;
+            readFadeR = readFadeSampleRF32;
+        }
+        else
+        {
+            readL = readSampleL;
+            readR = readSampleR;
+            readFadeL = readFadeSampleL;
+            readFadeR = readFadeSampleR;
+        }
+
+        // 2. Resample
+        unsigned int m0 = ((SampleSubPos >> 12) & 0xff0);
+        if (stereo)
+        {
+            switch (GD->interpolationType)
             {
-#if USE_SINC_INTERPOLATION
-                constexpr auto KT{KernelTypes::Sinc};
-#else
-                constexpr auto KT{KernelTypes::ZeroOrderHold};
-#endif
-                KernelProcessor<KT, float, 2, loopActive> ks{
-                    SamplePos,
-                    SampleSubPos,
-                    int32_t(m0),
-                    i,
-                    {readSampleLF32, readSampleRF32},
-                    {readFadeSampleLF32, readFadeSampleRF32},
-                    fadeActive,
-                    loopFade,
-                    {OutputL, OutputR}};
-                ks.ProcessKernel(GD);
+            case InterpolationTypes::Sinc:
+            {
+                KPStereo(InterpolationTypes::Sinc, type_from_cond, 2, readL, readR, readFadeL,
+                         readFadeR);
+                break;
             }
-            else
+            case InterpolationTypes::ZeroOrderHold:
             {
-                KernelProcessor<KernelTypes::Sinc, float, 1, loopActive> ks{
-                    SamplePos,  SampleSubPos,     int32_t(m0),
-                    i,          {readSampleLF32}, {readFadeSampleLF32},
-                    fadeActive, loopFade,         {OutputL}};
-                ks.ProcessKernel(GD);
+                KPStereo(InterpolationTypes::ZeroOrderHold, type_from_cond, 2, readL, readR,
+                         readFadeL, readFadeR);
+                break;
+            }
             }
         }
         else
         {
-            if (stereo)
+            switch (GD->interpolationType)
             {
-#if USE_SINC_INTERPOLATION
-                constexpr auto KT{KernelTypes::Sinc};
-#else
-                constexpr auto KT{KernelTypes::ZeroOrderHold};
-#endif
-                KernelProcessor<KT, int16_t, 2, loopActive> ks{SamplePos,
-                                                               SampleSubPos,
-                                                               int32_t(m0),
-                                                               i,
-                                                               {readSampleL, readSampleR},
-                                                               {readFadeSampleL, readFadeSampleR},
-                                                               fadeActive,
-                                                               loopFade,
-                                                               {OutputL, OutputR}};
-                ks.ProcessKernel(GD);
+            case InterpolationTypes::Sinc:
+            {
+                KPMono(InterpolationTypes::Sinc, type_from_cond, 1, readL, readFadeL);
+                break;
             }
-            else
+            case InterpolationTypes::ZeroOrderHold:
             {
-                KernelProcessor<KernelTypes::Sinc, int16_t, 1, loopActive> ks{
-                    SamplePos,         SampleSubPos, int32_t(m0), i,        {readSampleL},
-                    {readFadeSampleL}, fadeActive,   loopFade,    {OutputL}};
-                ks.ProcessKernel(GD);
+                KPMono(InterpolationTypes::Sinc, type_from_cond, 1, readL, readFadeL);
+                break;
+            }
             }
         }
 

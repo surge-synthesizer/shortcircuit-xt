@@ -32,6 +32,13 @@
 
 namespace scxt::dsp
 {
+
+enum class InterpolationTypes
+{
+    Sinc,
+    ZeroOrderHold
+};
+
 struct GeneratorState
 {
     int16_t direction{0}; // +1 for forward, -1 for back
@@ -58,6 +65,8 @@ struct GeneratorState
     bool isInLoop{false};
 
     int32_t loopFade{0};
+
+    InterpolationTypes interpolationType{InterpolationTypes::Sinc};
 };
 
 struct GeneratorIO
