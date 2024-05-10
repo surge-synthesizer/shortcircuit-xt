@@ -385,7 +385,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                         getFadeGain(SamplePos, GD->loopUpperBound - loopFade, GD->loopUpperBound));
 
                     OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeValL * fadeGain;
-                    OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeValR * fadeGain;
+                    if constexpr (stereo)
+                        OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeValR * fadeGain;
                 }
             }
 
