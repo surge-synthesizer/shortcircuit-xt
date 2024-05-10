@@ -110,7 +110,7 @@ enum ProcessorType
     proct_SurgeBiquads,
     proct_SurgeFilters,
 
-    proct_StringExciter,
+    proct_stringResonator,
 
     proct_moogLP4sat,
     proct_eq_1band_parametric_A,
@@ -130,8 +130,8 @@ enum ProcessorType
     proct_fx_ringmod,
     proct_fx_freqshift,
     proct_fx_waveshaper,
-    proct_fx_pitchring,
-    proct_fx_fauxstereo,
+    proct_fx_freqshiftmod,
+    proct_fx_widener,
     proct_fx_simple_delay,
     proct_osc_phasemod, // last part/fx
 
