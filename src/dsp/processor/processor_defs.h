@@ -97,6 +97,8 @@ DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
 DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
             "Simple Delay", "Delay", "simpdel-fx", dsp::surgeSincTable);
+PROC_DEFAULT_MIX(proct_fx_simple_delay, 0.333);
+
 DEFINE_PROC(MicroGate, sst::voice_effects::delay::MicroGate<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate, "MicroGate",
             "Delay", "micro-gate-fx");
@@ -138,12 +140,17 @@ PROC_DEFAULT_MIX(proct_osc_saw, 0.5);
 DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<2>>, proct_osc_pulse_sync,
             "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);
+PROC_DEFAULT_MIX(proct_osc_pulse_sync, 0.5);
+
 DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<2>>,
             proct_osc_correlatednoise, "Correlated Noise", "Generators", "osc-correlated-noise");
+PROC_DEFAULT_MIX(proct_osc_correlatednoise, 0.5);
+
 DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
             "String Exciter", "Generators", "stringex-fx", dsp::surgeSincTable);
+PROC_DEFAULT_MIX(proct_stringResonator, 0.5);
 
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
