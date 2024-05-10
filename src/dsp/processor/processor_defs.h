@@ -97,7 +97,7 @@ DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
 DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
             "Simple Delay", "Delay", "simpdel-fx", dsp::surgeSincTable);
-PROC_DEFAULT_MIX(proct_fx_simple_delay, 0.333);
+PROC_DEFAULT_MIX(proct_fx_simple_delay, 0.3);
 
 DEFINE_PROC(MicroGate, sst::voice_effects::delay::MicroGate<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate, "MicroGate",
