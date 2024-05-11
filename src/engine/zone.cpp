@@ -145,6 +145,7 @@ void Zone::removeVoice(voice::Voice *v)
             activeVoices--;
             if (activeVoices == 0)
             {
+                mUILag.instantlySnap();
                 parentGroup->removeActiveZone();
             }
             return;

@@ -245,6 +245,7 @@ void Group::removeActiveZone()
     activeZones--;
     if (activeZones == 0)
     {
+        mUILag.instantlySnap();
         parentPart->removeActiveGroup();
     }
 }
