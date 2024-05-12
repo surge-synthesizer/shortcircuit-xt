@@ -14,6 +14,10 @@ else()
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Get em")
     set(CLAP_WRAPPER_DONT_ADD_TARGETS TRUE CACHE BOOL "I'll targetize")
     set(CLAP_WRAPPER_BUILD_AUV2 TRUE CACHE BOOL "It's only logical")
+    if (APPLE)
+        # BaconPaul has jack kinda installed
+        set(RTAUDIO_API_JACK FALSE CACHE BOOL "Not on apple")
+    endif()
     add_subdirectory(clap/clap-wrapper)
 
     add_subdirectory(sst/sst-clap-helpers)
