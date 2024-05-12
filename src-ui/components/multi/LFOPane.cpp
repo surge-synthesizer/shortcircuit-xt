@@ -47,6 +47,8 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
+const int MG = 3;
+
 struct StepLFOPane : juce::Component, HasEditor
 {
     struct StepRender : juce::Component
@@ -399,7 +401,7 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
 
         auto makeLabel = [this](auto &lb, const std::string &l) {
-            lb = std::make_unique<sst::jucegui::components::Label>();
+            lb = std::make_unique<jcmp::Label>();
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
@@ -415,8 +417,12 @@ struct CurveLFOPane : juce::Component, HasEditor
                           parent->selectedTab);
         makeLabel(phaseL, "Phase");
 
-        fac::attachAndAdd(ms, ms.start_phase, this, angleA, angleK, parent->forZone,
-                          parent->selectedTab);
+        //fac::attachAndAdd(ms, ms.start_phase, this, angleA, angleK, parent->forZone,
+        //                  parent->selectedTab);
+        angleK = connectors::makeConnectedToDummy<jcmp::Knob>();
+        //angleK = std::make_unique<jcmp::Knob>();
+        //angleK->setSource(fakeModel->getDummySourceFor('knb2'));
+        addAndMakeVisible(*angleK);
         makeLabel(angleL, "Angle");
 
         fac::attachAndAdd(ms, ms.curveLfoStorage.delay, this, envA[0], envS[0], parent->forZone,
@@ -446,7 +452,6 @@ struct CurveLFOPane : juce::Component, HasEditor
 
     void resized() override
     {
-        auto mg = 3;
         auto lbHt = 12;
 
         auto b = getLocalBounds();
@@ -454,33 +459,32 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto knobw = b.getHeight() / 2 - lbHt;
 
         auto nKnobs = 4;
-        auto allKnobsStartX = b.getWidth()/4 + mg*2;
+        auto allKnobsStartX = b.getWidth()/4 + MG*2;
         auto allKnobsStartY = 0;
-        auto allKnobsWidth = 3*b.getWidth()/4 - mg*2;
-        auto allKnobsHeight = b.getHeight()/2 - mg;
+        auto allKnobsWidth = 3*b.getWidth()/4 - MG*2;
+        auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto knobWidth = (allKnobsWidth - mg * (nKnobs -1)) / nKnobs;
+        auto knobMg = 12;
+        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
         auto knobHeight = allKnobsHeight;
 
         auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
-        rateK->setBounds(knobBounds);
-        rateL->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
-        knobBounds = knobBounds.translated(knobWidth + mg, 0);
-        phaseK->setBounds(knobBounds);
-        phaseL->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
-        knobBounds = knobBounds.translated(knobWidth + mg, 0);
-        deformK->setBounds(knobBounds);
-        deformL->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
-        knobBounds = knobBounds.translated(knobWidth + mg, 0);
-        angleK->setBounds(knobBounds);
-        angleL->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
+        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
+            knob->setBounds(knobBounds.withTrimmedBottom(17)); // remove modulator_storage label
+            label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
+            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
+        };
+        makeKnobBounds(rateK, rateL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(phaseK, phaseL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(deformK, deformL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(angleK, angleL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
 
         auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(b.getWidth()/2, b.getHeight() / 2);
         for (int i = 0; i < envSlots; ++i)
         {
             envS[i]->setBounds(bx.withHeight(knobw));
             envL[i]->setBounds(bx.withTrimmedTop(knobw));
-            bx = bx.translated(knobw + mg, 0);
+            bx = bx.translated(knobw + MG, 0);
         }
 
         auto bh = b.getHeight();
@@ -488,12 +492,13 @@ struct CurveLFOPane : juce::Component, HasEditor
         curveDraw->setBounds(curveBox);
 
         auto buttonH = 18;
-        unipolarB->setBounds(0, bh/2 - mg - buttonH, b.getWidth()/4, buttonH);
+        unipolarB->setBounds(0, bh/2 - MG - buttonH, b.getWidth()/4, buttonH);
         useenvB->setBounds(0, bh/2, b.getWidth()/4, buttonH);
     }
 
     std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA, angleA;
     std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK, angleK;
+    //std::unique_ptr<connectors::FakeModel> fakeModel;
     std::unique_ptr<jcmp::Label> rateL, deformL, phaseL, angleL;
 
     std::unique_ptr<LfoPane::boolAttachment_t> unipolarA, useenvA;
@@ -577,7 +582,6 @@ struct ENVLFOPane : juce::Component, HasEditor
     }
 
     std::unique_ptr<LfoPane::attachment_t> delayA, attackA, holdA, decayA, sustainA, releaseA;
-    //std::unique_ptr<jcmp::Knob> delayK, attackK, holdK, decayK, sustainK, releaseK;
     std::unique_ptr<jcmp::VSlider> delayS, attackS, holdS, decayS, sustainS, releaseS;
     std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL;
 };
@@ -672,6 +676,10 @@ void LfoPane::rebuildPanelComponents()
     tfac::attach(ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
 
+    triggerL = std::make_unique<jcmp::Label>();
+    triggerL->setText("Trigger");
+    getContentAreaComponent()->addAndMakeVisible(*triggerL);
+
     stepLfoPane = std::make_unique<StepLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*stepLfoPane);
 
@@ -717,6 +725,8 @@ void LfoPane::repositionContentAreaComponents()
     auto mg = 5;
 
     triggerMode->setBounds(getContentArea().getWidth() - (triggerWidth + mg), 0, triggerWidth, 5 * ht);
+    triggerL->setBounds(getContentArea().getWidth() - (triggerWidth + mg), triggerMode->getHeight() + mg, triggerWidth, ht);
+
     auto paneArea = getContentArea().withX(mg).withTrimmedRight(triggerWidth + mg*3).withY(0).withTrimmedBottom(mg);
     stepLfoPane->setBounds(paneArea);
     envLfoPane->setBounds(paneArea);

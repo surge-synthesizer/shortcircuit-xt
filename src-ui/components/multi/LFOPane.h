@@ -45,6 +45,8 @@
 namespace scxt::ui::multi
 {
 
+namespace jcmp = sst::jucegui::components;
+
 struct StepLFOPane;
 struct CurveLFOPane;
 struct ENVLFOPane;
@@ -94,6 +96,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
 
     std::unique_ptr<triggerAttachment_t> triggerModeA;
     std::unique_ptr<sst::jucegui::components::MultiSwitch> triggerMode;
+    std::unique_ptr<jcmp::Label> triggerL;
 
     std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
 
