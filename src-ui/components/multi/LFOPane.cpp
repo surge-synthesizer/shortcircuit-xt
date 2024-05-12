@@ -458,10 +458,11 @@ struct CurveLFOPane : juce::Component, HasEditor
 
         auto knobw = b.getHeight() / 2 - lbHt;
 
+        // Knobs
         auto nKnobs = 4;
         auto allKnobsStartX = b.getWidth()/4 + MG*2;
         auto allKnobsStartY = 0;
-        auto allKnobsWidth = 3*b.getWidth()/4 - MG*2;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
         auto allKnobsHeight = b.getHeight()/2 - MG;
 
         auto knobMg = 12;
@@ -478,17 +479,30 @@ struct CurveLFOPane : juce::Component, HasEditor
         makeKnobBounds(phaseK, phaseL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
         makeKnobBounds(deformK, deformL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
         makeKnobBounds(angleK, angleL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        // Knobs (END)
 
-        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(b.getWidth()/2, b.getHeight() / 2);
+        // EnvSliders
+        auto nEnvSliders = 3;
+        auto allEnvSlidersStartX = 3*b.getWidth()/5 + MG*2;
+        auto allEnvSlidersStartY = b.getHeight()/2;
+        auto allEnvSlidersWidth = b.getWidth() - allEnvSlidersStartX;
+        auto allEnvSlidersHeight = b.getHeight()/2;
+
+        auto envSliderMg = 6;
+        auto envSliderWidth = (allEnvSlidersWidth - envSliderMg * (nEnvSliders -1)) / nEnvSliders;
+        auto envSliderHeight = allEnvSlidersHeight;
+
+        auto envSliderBounds = b.withWidth(envSliderWidth).withHeight(envSliderHeight).withX(allEnvSlidersStartX).withY(allEnvSlidersStartY);
         for (int i = 0; i < envSlots; ++i)
         {
-            envS[i]->setBounds(bx.withHeight(knobw));
-            envL[i]->setBounds(bx.withTrimmedTop(knobw));
-            bx = bx.translated(knobw + MG, 0);
+            envS[i]->setBounds(envSliderBounds.withTrimmedBottom(17));
+            envL[i]->setBounds(envSliderBounds.withTrimmedTop(envSliderHeight - lbHt));
+            envSliderBounds = envSliderBounds.translated(envSliderWidth + envSliderMg, 0);
         }
+        // EnvSliders (END)
 
         auto bh = b.getHeight();
-        auto curveBox = b.withY(bh/2).withTrimmedRight(getWidth()/2).withTrimmedBottom(bh/2);
+        auto curveBox = b.withY(bh/2).withWidth(3*getWidth()/5).withTrimmedBottom(bh/2);
         curveDraw->setBounds(curveBox);
 
         auto buttonH = 18;
