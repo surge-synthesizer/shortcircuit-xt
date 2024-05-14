@@ -489,11 +489,6 @@ template<typename T> std::unique_ptr<T> makeConnectedToDummy()
    return res;
 }
 
-struct FakeModel
-{
-   sst::jucegui::data::Continuous *getDummySourceFor(uint32_t id);
-};
-
 template <typename A, typename Msg>
 using BooleanSingleValueFactory =
     SingleValueFactory<A, Msg, DiscretePayloadDataAttachment<typename A::payload_t, bool>>;

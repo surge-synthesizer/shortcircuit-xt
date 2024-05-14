@@ -47,7 +47,8 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-const int MG = 3;
+const int MG = 5;
+const int BUTTON_H = 18;
 
 struct StepLFOPane : juce::Component, HasEditor
 {
@@ -326,42 +327,49 @@ struct StepLFOPane : juce::Component, HasEditor
     void resized() override
     {
         auto knobReg = 58;
-        auto mg = 3;
         auto b = getLocalBounds();
-        stepRender->setBounds(b.withTrimmedBottom(knobReg + mg));
 
+        stepRender->setBounds(b.withTrimmedTop(b.getHeight()/2));
         auto knobw = knobReg - 16;
         auto bot = b.withTrimmedTop(b.getHeight() - knobReg);
 
-        auto menht = 22;
-        auto jx = bot.withWidth(knobw * 2 - mg).withHeight(menht);
-        stepsJ->setBounds(jx);
+        auto buttonH = BUTTON_H;
+        cycleB->setBounds(0, b.getHeight()/2 - MG - buttonH, b.getWidth()/4, buttonH);
 
-        jx = jx.translated(0, menht + mg);
-        cycleB->setBounds(jx);
+        auto bx = bot.withWidth(knobw).translated(knobw * 2 + MG, 0);
+        
+        auto lbHt = 15;
+        // Knobs
+        auto nKnobs = 4;
+        auto allKnobsStartX = b.getWidth()/4 + MG*2;
+        auto allKnobsStartY = 0;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto bx = bot.withWidth(knobw).translated(knobw * 2 + mg, 0);
-        rateK->setBounds(bx.withHeight(knobw));
-        rateL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobMg = 15;
+        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
+        auto knobHeight = allKnobsHeight;
 
-        deformK->setBounds(bx.withHeight(knobw));
-        deformL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
+        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
+            knob->setBounds(knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
+            label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
+            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
+        };
+        makeKnobBounds(rateK, rateL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(phaseK, phaseL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(deformK, deformL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        // Knobs (END)
 
-        phaseK->setBounds(bx.withHeight(knobw));
-        phaseL->setBounds(bx.withTrimmedTop(knobw));
-
-        bx = bx.translated(knobw * 1.5 + mg, 0);
-        bx = bx.withWidth(bx.getWidth() * 1.2).reduced(0, mg);
-        auto bthrd = bx.getWidth() / 3;
-        auto rc = bx.toFloat().withWidth(bthrd);
-        jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
-
-        rc = rc.translated(bthrd, 0);
-
-        rc = rc.translated(bthrd, 0);
-        jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
+        // (use knobBounds to place this where the 4th knob would be)
+        stepsJ->setBounds(knobBounds.withHeight(buttonH));
+        auto jogBox = knobBounds.withHeight(buttonH).withY(knobBounds.getHeight() - buttonH).withWidth(knobBounds.getWidth()/2);
+        jog[2]->setBounds(jogBox);
+        jog[3]->setBounds(jogBox.withX(jogBox.getX() + jogBox.getWidth()));
+        std::cout<<2*jogBox.getWidth() << std::endl;
+        std::cout<<knobBounds.getWidth() << std::endl;
+        std::cout<<jogBox.getX() + 2*jogBox.getWidth() << std::endl;
+        std::cout<<b.getX() + b.getWidth() << std::endl;
     }
 };
 
@@ -443,10 +451,7 @@ struct CurveLFOPane : juce::Component, HasEditor
     void resized() override
     {
         auto lbHt = 15;
-
         auto b = getLocalBounds();
-
-        auto knobw = b.getHeight() / 2 - lbHt;
 
         // Knobs
         auto nKnobs = 4;
@@ -455,13 +460,13 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto allKnobsWidth = b.getWidth() - allKnobsStartX;
         auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto knobMg = 18;
+        auto knobMg = 15;
         auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
         auto knobHeight = allKnobsHeight;
 
         auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
         auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
-            knob->setBounds(knobBounds.withTrimmedBottom(23)); // remove modulator_storage label
+            knob->setBounds(knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
             label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
             knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
         };
@@ -495,14 +500,13 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto curveBox = b.withY(bh/2).withWidth(3*getWidth()/5).withTrimmedBottom(bh/2);
         curveDraw->setBounds(curveBox);
 
-        auto buttonH = 18;
+        auto buttonH = BUTTON_H;
         unipolarB->setBounds(0, bh/2 - MG - buttonH, b.getWidth()/4, buttonH);
         useenvB->setBounds(0, bh/2, b.getWidth()/4, buttonH);
     }
 
     std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA, angleA;
     std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK, angleK;
-    //std::unique_ptr<connectors::FakeModel> fakeModel;
     std::unique_ptr<jcmp::Label> rateL, deformL, phaseL, angleL;
 
     std::unique_ptr<LfoPane::boolAttachment_t> unipolarA, useenvA;
@@ -573,13 +577,13 @@ struct ENVLFOPane : juce::Component, HasEditor
         auto allKnobsWidth = b.getWidth() - allKnobsStartX;
         auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto knobMg = 18;
+        auto knobMg = 15;
         auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
         auto knobHeight = allKnobsHeight;
 
         auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
         auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
-            knob->setBounds(knobBounds.withTrimmedBottom(23)); // remove modulator_storage label
+            knob->setBounds(knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
             label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
             knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
         };
@@ -755,14 +759,14 @@ void LfoPane::repositionContentAreaComponents()
     if (!modulatorShape) // these are all created at once so single check is fine
         return;
 
-    auto ht = 18;
-    auto triggerWidth = 66;
-    auto mg = 5;
+    auto ht = BUTTON_H;
+    auto triggerWidth = 72;
+    auto mg = MG;
 
     triggerMode->setBounds(getContentArea().getWidth() - (triggerWidth + mg), 0, triggerWidth, 5 * ht);
     triggerL->setBounds(getContentArea().getWidth() - (triggerWidth + mg), triggerMode->getHeight() + mg, triggerWidth, ht);
 
-    auto paneArea = getContentArea().withX(mg).withTrimmedRight(triggerWidth + mg*3).withY(0).withTrimmedBottom(mg);
+    auto paneArea = getContentArea().withX(mg).withTrimmedRight(triggerWidth + mg*4).withY(0).withTrimmedBottom(mg);
     stepLfoPane->setBounds(paneArea);
     envLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);
