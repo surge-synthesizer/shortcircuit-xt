@@ -47,6 +47,9 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
+const int MG = 5;
+const int BUTTON_H = 18;
+
 struct StepLFOPane : juce::Component, HasEditor
 {
     struct StepRender : juce::Component
@@ -226,6 +229,17 @@ struct StepLFOPane : juce::Component, HasEditor
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
         auto &ls = ms.stepLfoStorage;
 
+        auto makeLabel = [this](auto &lb, const std::string &l) {
+            lb = std::make_unique<jcmp::Label>();
+            lb->setText(l);
+            addAndMakeVisible(*lb);
+        };
+        auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L) {
+            fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
+
+            makeLabel(L, A->getLabel());
+        };
+        
         ifac::attachAndAdd(ms, ms.stepLfoStorage.repeat, this, stepsA, stepsJ, parent->forZone,
                            parent->selectedTab);
         connectors::addGuiStep(*stepsA, [w = juce::Component::SafePointer(this)](const auto &a) {
@@ -237,26 +251,15 @@ struct StepLFOPane : juce::Component, HasEditor
                            parent->forZone, parent->selectedTab);
         cycleB->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED_BY_DATA);
 
-        fac::attachAndAdd(ms, ms.rate, this, rateA, rateK, parent->forZone, parent->selectedTab);
-        rateL = std::make_unique<jcmp::Label>();
-        rateL->setText("Rate");
-        addAndMakeVisible(*rateL);
+        aux(ms.rate, rateA, rateK, rateL);
+        aux(ls.smooth, deformA, deformK, deformL);
 
-        fac::attachAndAdd(ms, ms.stepLfoStorage.smooth, this, deformA, deformK, parent->forZone,
-                          parent->selectedTab);
-        deformL = std::make_unique<jcmp::Label>();
-        deformL->setText("Deform");
-        addAndMakeVisible(*deformL);
         connectors::addGuiStep(*deformA, [w = juce::Component::SafePointer(this)](const auto &a) {
             if (w)
                 w->stepRender->recalcCurve();
         });
 
-        fac::attachAndAdd(ms, ms.start_phase, this, phaseA, phaseK, parent->forZone,
-                          parent->selectedTab);
-        phaseL = std::make_unique<jcmp::Label>();
-        phaseL->setText("Phase");
-        addAndMakeVisible(*phaseL);
+        aux(ms.start_phase, phaseA, phaseK, phaseL);
 
         jog[2] = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::JOG_LEFT);
         jog[2]->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -324,42 +327,45 @@ struct StepLFOPane : juce::Component, HasEditor
     void resized() override
     {
         auto knobReg = 58;
-        auto mg = 3;
         auto b = getLocalBounds();
-        stepRender->setBounds(b.withTrimmedBottom(knobReg + mg));
 
+        stepRender->setBounds(b.withTrimmedTop(b.getHeight()/2));
         auto knobw = knobReg - 16;
         auto bot = b.withTrimmedTop(b.getHeight() - knobReg);
 
-        auto menht = 22;
-        auto jx = bot.withWidth(knobw * 2 - mg).withHeight(menht);
-        stepsJ->setBounds(jx);
+        auto buttonH = BUTTON_H;
+        cycleB->setBounds(0, b.getHeight()/2 - MG - buttonH, b.getWidth()/4, buttonH);
 
-        jx = jx.translated(0, menht + mg);
-        cycleB->setBounds(jx);
+        auto bx = bot.withWidth(knobw).translated(knobw * 2 + MG, 0);
+        
+        auto lbHt = 15;
+        // Knobs
+        auto nKnobs = 4;
+        auto allKnobsStartX = b.getWidth()/4 + MG*2;
+        auto allKnobsStartY = 0;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto bx = bot.withWidth(knobw).translated(knobw * 2 + mg, 0);
-        rateK->setBounds(bx.withHeight(knobw));
-        rateL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobMg = 15;
+        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
+        auto knobHeight = allKnobsHeight;
 
-        deformK->setBounds(bx.withHeight(knobw));
-        deformL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
+        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
+            knob->setBounds(knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
+            label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
+            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
+        };
+        makeKnobBounds(rateK, rateL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(phaseK, phaseL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(deformK, deformL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        // Knobs (END)
 
-        phaseK->setBounds(bx.withHeight(knobw));
-        phaseL->setBounds(bx.withTrimmedTop(knobw));
-
-        bx = bx.translated(knobw * 1.5 + mg, 0);
-        bx = bx.withWidth(bx.getWidth() * 1.2).reduced(0, mg);
-        auto bthrd = bx.getWidth() / 3;
-        auto rc = bx.toFloat().withWidth(bthrd);
-        jog[2]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
-
-        rc = rc.translated(bthrd, 0);
-
-        rc = rc.translated(bthrd, 0);
-        jog[3]->setBounds(rc.withHeight(bthrd).withCentre(rc.getCentre()).toNearestInt());
+        // (use knobBounds to place this where the 4th knob would be)
+        stepsJ->setBounds(knobBounds.withHeight(buttonH));
+        auto jogBox = knobBounds.withHeight(buttonH).withY(knobBounds.getHeight() - buttonH).withWidth(knobBounds.getWidth()/2);
+        jog[2]->setBounds(jogBox);
+        jog[3]->setBounds(jogBox.withX(jogBox.getX() + jogBox.getWidth()));
     }
 };
 
@@ -399,33 +405,31 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
 
         auto makeLabel = [this](auto &lb, const std::string &l) {
-            lb = std::make_unique<sst::jucegui::components::Label>();
+            lb = std::make_unique<jcmp::Label>();
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
+        auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L) {
+            fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
-        fac::attachAndAdd(ms, ms.rate, this, rateA, rateK, parent->forZone, parent->selectedTab);
-        makeLabel(rateL, "Rate");
+            makeLabel(L, A->getLabel());
+        };
 
-        fac::attachAndAdd(ms, ms.curveLfoStorage.deform, this, deformA, deformK, parent->forZone,
-                          parent->selectedTab);
-        makeLabel(deformL, "Deform");
+        aux(ms.rate, rateA, rateK, rateL);
+        aux(ms.curveLfoStorage.deform, deformA, deformK, deformL);
+        aux(ms.start_phase, phaseA, phaseK, phaseL);
 
-        fac::attachAndAdd(ms, ms.start_phase, this, phaseA, phaseK, parent->forZone,
-                          parent->selectedTab);
-        makeLabel(phaseL, "Phase");
+        //fac::attachAndAdd(ms, ms.start_phase, this, angleA, angleK, parent->forZone,
+        //                  parent->selectedTab);
+        //angleK = std::make_unique<jcmp::Knob>();
+        //angleK->setSource(fakeModel->getDummySourceFor('knb2'));
+        angleK = connectors::makeConnectedToDummy<jcmp::Knob>();
+        addAndMakeVisible(*angleK);
+        makeLabel(angleL, "Angle");
 
-        fac::attachAndAdd(ms, ms.curveLfoStorage.delay, this, envA[0], envS[0], parent->forZone,
-                          parent->selectedTab);
-        makeLabel(envL[0], "Delay");
-
-        fac::attachAndAdd(ms, ms.curveLfoStorage.attack, this, envA[1], envS[1], parent->forZone,
-                          parent->selectedTab);
-        makeLabel(envL[1], "Attack");
-
-        fac::attachAndAdd(ms, ms.curveLfoStorage.release, this, envA[2], envS[2], parent->forZone,
-                          parent->selectedTab);
-        makeLabel(envL[2], "Release");
+        aux(ms.curveLfoStorage.delay, envA[0], envS[0], envL[0]);
+        aux(ms.curveLfoStorage.attack, envA[1], envS[1], envL[1]);
+        aux(ms.curveLfoStorage.release, envA[2], envS[2], envL[2]);
 
         bfac::attachAndAdd(ms, ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB,
                            parent->forZone, parent->selectedTab);
@@ -442,50 +446,71 @@ struct CurveLFOPane : juce::Component, HasEditor
 
     void resized() override
     {
-        auto mg = 3;
-        auto lbHt = 12;
-
+        auto lbHt = 15;
         auto b = getLocalBounds();
 
-        auto knobw = b.getHeight() / 2 - lbHt - mg;
+        // Knobs
+        auto nKnobs = 4;
+        auto allKnobsStartX = b.getWidth()/4 + MG*2;
+        auto allKnobsStartY = 0;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2);
-        rateK->setBounds(bx.withHeight(knobw));
-        rateL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
-        deformK->setBounds(bx.withHeight(knobw));
-        deformL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
-        phaseK->setBounds(bx.withHeight(knobw));
-        phaseL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobMg = 15;
+        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
+        auto knobHeight = allKnobsHeight;
 
-        bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(0, b.getHeight() / 2);
+        auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
+        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
+            knob->setBounds(knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
+            label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
+            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
+        };
+        makeKnobBounds(rateK, rateL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(phaseK, phaseL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(deformK, deformL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(angleK, angleL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        // Knobs (END)
 
+        // EnvSliders
+        auto nEnvSliders = 3;
+        auto allEnvSlidersStartX = 3*b.getWidth()/5 + MG*2;
+        auto allEnvSlidersStartY = b.getHeight()/2;
+        auto allEnvSlidersWidth = b.getWidth() - allEnvSlidersStartX;
+        auto allEnvSlidersHeight = b.getHeight()/2;
+
+        auto envSliderMg = 6;
+        auto envSliderWidth = (allEnvSlidersWidth - envSliderMg * (nEnvSliders -1)) / nEnvSliders;
+        auto envSliderHeight = allEnvSlidersHeight;
+
+        auto envSliderBounds = b.withWidth(envSliderWidth).withHeight(envSliderHeight).withX(allEnvSlidersStartX).withY(allEnvSlidersStartY);
         for (int i = 0; i < envSlots; ++i)
         {
-            envS[i]->setBounds(bx.withHeight(knobw));
-            envL[i]->setBounds(bx.withTrimmedTop(knobw));
-            bx = bx.translated(knobw + mg, 0);
+            envS[i]->setBounds(envSliderBounds.withTrimmedBottom(17));
+            envL[i]->setBounds(envSliderBounds.withTrimmedTop(envSliderHeight - lbHt));
+            envSliderBounds = envSliderBounds.translated(envSliderWidth + envSliderMg, 0);
         }
+        // EnvSliders (END)
 
-        auto curveBox = b.withTrimmedLeft((knobw + mg) * 3).withTrimmedBottom(mg).reduced(mg, 0);
+        auto bh = b.getHeight();
+        auto curveBox = b.withY(bh/2).withWidth(3*getWidth()/5).withTrimmedBottom(bh/2);
         curveDraw->setBounds(curveBox);
 
-        unipolarB->setBounds(curveBox.getRight() - 32 - mg, 2, 32, 18);
-        useenvB->setBounds(curveBox.getRight() - 70 - mg, 2, 32, 18);
+        auto buttonH = BUTTON_H;
+        unipolarB->setBounds(0, bh/2 - MG - buttonH, b.getWidth()/4, buttonH);
+        useenvB->setBounds(0, bh/2, b.getWidth()/4, buttonH);
     }
 
-    std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA;
-    std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK;
-    std::unique_ptr<jcmp::Label> rateL, deformL, phaseL;
+    std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA, angleA;
+    std::unique_ptr<jcmp::Knob> rateK, deformK, phaseK, angleK;
+    std::unique_ptr<jcmp::Label> rateL, deformL, phaseL, angleL;
 
     std::unique_ptr<LfoPane::boolAttachment_t> unipolarA, useenvA;
     std::unique_ptr<jcmp::ToggleButton> unipolarB, useenvB;
 
     static constexpr int envSlots{3}; // DAR
     std::array<std::unique_ptr<LfoPane::attachment_t>, envSlots> envA;
-    std::array<std::unique_ptr<jcmp::Knob>, envSlots> envS;
+    std::array<std::unique_ptr<jcmp::VSlider>, envSlots> envS;
     std::array<std::unique_ptr<jcmp::Label>, envSlots> envL;
 
     std::unique_ptr<CurveDraw> curveDraw;
@@ -508,61 +533,92 @@ struct ENVLFOPane : juce::Component, HasEditor
             addAndMakeVisible(*lb);
         };
 
-        auto makeO = [&, this](auto &mem, auto &A, auto &K, auto &L) {
-            fac::attachAndAdd(ms, mem, this, A, K, parent->forZone, parent->selectedTab);
+        auto makeO = [&, this](auto &mem, auto &A, auto &S, auto &L) {
+            fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
             makeLabel(L, A->getLabel());
         };
 
-        makeO(ms.envLfoStorage.delay, delayA, delayK, delayL);
-        makeO(ms.envLfoStorage.attack, attackA, attackK, attackL);
-        makeO(ms.envLfoStorage.hold, holdA, holdK, holdL);
-        makeO(ms.envLfoStorage.decay, decayA, decayK, decayL);
-        makeO(ms.envLfoStorage.sustain, sustainA, sustainK, sustainL);
-        makeO(ms.envLfoStorage.release, releaseA, releaseK, releaseL);
+        makeO(ms.envLfoStorage.delay, delayA, delayS, delayL);
+        makeO(ms.envLfoStorage.attack, attackA, attackS, attackL);
+        makeO(ms.envLfoStorage.hold, holdA, holdS, holdL);
+        makeO(ms.envLfoStorage.decay, decayA, decayS, decayL);
+        makeO(ms.envLfoStorage.sustain, sustainA, sustainS, sustainL);
+        makeO(ms.envLfoStorage.release, releaseA, releaseS, releaseL);
+
+        factorK = connectors::makeConnectedToDummy<jcmp::Knob>();
+        addAndMakeVisible(*factorK);
+        makeLabel(factorL, "Factor");
+        curveA = connectors::makeConnectedToDummy<jcmp::Knob>();
+        addAndMakeVisible(*curveA);
+        makeLabel(curveAL, "Curve A");
+        curveD = connectors::makeConnectedToDummy<jcmp::Knob>();
+        addAndMakeVisible(*curveD);
+        makeLabel(curveDL, "Curve D");
+        curveR = connectors::makeConnectedToDummy<jcmp::Knob>();
+        addAndMakeVisible(*curveR);
+        makeLabel(curveRL, "Curve R");
     }
 
     void resized() override
     {
-        auto mg = 3;
-        auto lbHt = 12;
+        auto lbHt = 15;
 
         auto b = getLocalBounds();
 
-        auto knobw = b.getHeight() / 2 - lbHt - mg;
+        // Knobs
+        auto nKnobs = 4;
+        auto allKnobsStartX = b.getWidth()/4 + MG*2;
+        auto allKnobsStartY = 0;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsHeight = b.getHeight()/2 - MG;
 
-        auto bx = b.withWidth(knobw).withHeight(b.getHeight() / 2);
-        delayK->setBounds(bx.withHeight(knobw));
-        delayL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobMg = 15;
+        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs -1)) / nKnobs;
+        auto knobHeight = allKnobsHeight;
 
-        attackK->setBounds(bx.withHeight(knobw));
-        attackL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        auto knobBounds = b.withWidth(knobWidth).withHeight(knobHeight).withX(allKnobsStartX).withY(allKnobsStartY);
+        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth, int knobHeight, int knobMg){
+            knob->setBounds(knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
+            label->setBounds(knobBounds.withTrimmedTop(knobHeight -lbHt));
+            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
+        };
+        makeKnobBounds(factorK, factorL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(curveA, curveAL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(curveD, curveDL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(curveR, curveRL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        // Knobs (END)
 
-        holdK->setBounds(bx.withHeight(knobw));
-        holdL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
+        // Sliders
+        auto nSliders = 6;
+        auto allSlidersStartX = b.getWidth()/3 + MG*2;
+        auto allSlidersStartY = b.getHeight()/2;
+        auto allSlidersWidth = b.getWidth() - allSlidersStartX;
+        auto allSlidersHeight = b.getHeight()/2;
 
-        bx = b.withWidth(knobw).withHeight(b.getHeight() / 2).translated(0, b.getHeight() / 2);
+        auto sliderMg = 6;
+        auto sliderWidth = (allSlidersWidth - sliderMg * (nSliders -1)) / nSliders;
+        auto sliderHeight = allSlidersHeight;
 
-        decayK->setBounds(bx.withHeight(knobw));
-        decayL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
-
-        sustainK->setBounds(bx.withHeight(knobw));
-        sustainL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
-
-        releaseK->setBounds(bx.withHeight(knobw));
-        releaseL->setBounds(bx.withTrimmedTop(knobw));
-        bx = bx.translated(knobw + mg, 0);
-        bx = bx.translated(knobw + mg, 0);
+        auto sliderBounds = b.withWidth(sliderWidth).withHeight(sliderHeight).withX(allSlidersStartX).withY(allSlidersStartY);
+        auto makeSliderBounds = [](auto &slider, auto &label, auto &sliderBounds, int lbHt, int sliderWidth, int sliderHeight, int sliderMg){
+            slider->setBounds(sliderBounds.withTrimmedBottom(17)); // remove modulator_storage label
+            label->setBounds(sliderBounds.withTrimmedTop(sliderHeight -lbHt));
+            sliderBounds = sliderBounds.translated(sliderWidth + sliderMg, 0);
+        };
+        makeSliderBounds(delayS, delayL, sliderBounds, lbHt, sliderWidth, sliderHeight, sliderMg);
+        makeSliderBounds(attackS, attackL, sliderBounds, lbHt, sliderWidth, sliderHeight, sliderMg);
+        makeSliderBounds(holdS, holdL, sliderBounds, lbHt, sliderWidth, sliderHeight, sliderMg);
+        makeSliderBounds(decayS, decayL, sliderBounds, lbHt, sliderWidth, sliderHeight, sliderMg);
+        makeSliderBounds(sustainS, sustainL, sliderBounds, lbHt, sliderWidth, sliderHeight, sliderMg);
+        makeSliderBounds(releaseS, releaseL, sliderBounds, lbHt, sliderWidth, sliderHeight, sliderMg);
+        // Sliders (END)
     }
 
     std::unique_ptr<LfoPane::attachment_t> delayA, attackA, holdA, decayA, sustainA, releaseA;
-    std::unique_ptr<jcmp::Knob> delayK, attackK, holdK, decayK, sustainK, releaseK;
-    std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL;
+    std::unique_ptr<jcmp::VSlider> delayS, attackS, holdS, decayS, sustainS, releaseS;
+    std::unique_ptr<jcmp::Knob> factorK, curveA, curveD, curveR;
+    std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL, factorL, curveAL, curveDL, curveRL;
 };
 
 struct MSEGLFOPane : juce::Component
@@ -651,18 +707,13 @@ void LfoPane::rebuildPanelComponents()
     using tfac = connectors::SingleValueFactory<triggerAttachment_t,
                                                 cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
 
-    sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
-                 selectedTab);
-    connectors::addGuiStep(*modulatorShapeA,
-                           [w = juce::Component::SafePointer(this)](const auto &x) {
-                               if (w)
-                                   w->setSubPaneVisibility();
-                           });
-
-    getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
     tfac::attach(ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
+
+    triggerL = std::make_unique<jcmp::Label>();
+    triggerL->setText("Trigger");
+    getContentAreaComponent()->addAndMakeVisible(*triggerL);
 
     stepLfoPane = std::make_unique<StepLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*stepLfoPane);
@@ -675,6 +726,16 @@ void LfoPane::rebuildPanelComponents()
 
     curveLfoPane = std::make_unique<CurveLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*curveLfoPane);
+
+    sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
+                 selectedTab);
+    connectors::addGuiStep(*modulatorShapeA,
+                           [w = juce::Component::SafePointer(this)](const auto &x) {
+                               if (w)
+                                   w->setSubPaneVisibility();
+                           });
+
+    getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
     repositionContentAreaComponents();
     setSubPaneVisibility();
@@ -694,17 +755,19 @@ void LfoPane::repositionContentAreaComponents()
     if (!modulatorShape) // these are all created at once so single check is fine
         return;
 
-    auto ht = 18;
-    auto wd = 66;
-    auto mg = 5;
+    auto ht = BUTTON_H;
+    auto triggerWidth = 72;
+    auto mg = MG;
 
-    modulatorShape->setBounds(0, 0, wd, ht);
-    triggerMode->setBounds(0, ht + mg, wd, 5 * ht);
-    auto paneArea = getContentArea().withX(0).withTrimmedLeft(wd + mg).withY(0);
+    triggerMode->setBounds(getContentArea().getWidth() - (triggerWidth + mg), 0, triggerWidth, 5 * ht);
+    triggerL->setBounds(getContentArea().getWidth() - (triggerWidth + mg), triggerMode->getHeight() + mg, triggerWidth, ht);
+
+    auto paneArea = getContentArea().withX(mg).withTrimmedRight(triggerWidth + mg*4).withY(0).withTrimmedBottom(mg);
     stepLfoPane->setBounds(paneArea);
     envLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);
     curveLfoPane->setBounds(paneArea);
+    modulatorShape->setBounds(mg, 0, paneArea.getWidth()/4, ht);
 }
 
 void LfoPane::setSubPaneVisibility()

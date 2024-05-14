@@ -478,6 +478,25 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
     }
 };
 
+struct DummyContinuous : sst::jucegui::data::Continuous
+{
+    float f{0.5};
+    virtual float getValue() const override { return f; }
+    virtual void setValueFromGUI(const float &fv) override { f = fv; }
+    virtual void setValueFromModel(const float &fv) override { f = fv; };
+    virtual float getDefaultValue() const override { return 0.5f; };
+    virtual std::string getLabel() const override { return "Dummy"; };
+};
+template<typename T> std::unique_ptr<T> makeConnectedToDummy()
+{
+   auto res = std::make_unique<T>();
+   auto thisWillLeak = new DummyContinuous();
+   SCLOG("WARNING: Dummy Widget in ui. Memory leak until we attach");
+   //jassertfalse;
+   res->setSource(thisWillLeak);
+   return res;
+}
+
 template <typename A, typename Msg>
 using BooleanSingleValueFactory =
     SingleValueFactory<A, Msg, DiscretePayloadDataAttachment<typename A::payload_t, bool>>;
