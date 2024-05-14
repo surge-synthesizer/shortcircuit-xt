@@ -116,6 +116,7 @@ HAS_MEMFN(tailLength);
 HAS_MEMFN(enableKeytrack);
 HAS_MEMFN(getKeytrack);
 HAS_MEMFN(checkParameterConsistency);
+HAS_MEMFN(getMonoToStereoSetting)
 
 #undef HAS_MEMFN
 
@@ -123,7 +124,8 @@ template <typename T> struct SSTVoiceEffectShim : T
 {
     // You can have neither or one, but you can't have both
     static_assert(!(HasMemFn_processMonoToMono<T>::value &&
-                    HasMemFn_processMonoToStereo<T>::value));
+                    HasMemFn_processMonoToStereo<T>::value) ||
+                  HasMemFn_getMonoToStereoSetting<T>::value);
     template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...)
     {
 #if DEBUG_LOG_CONFIG
@@ -152,12 +154,16 @@ template <typename T> struct SSTVoiceEffectShim : T
         }
     }
 
-    virtual bool canProcessMono() override
+    bool canProcessMono() override
     {
         return HasMemFn_processMonoToMono<T>::value || HasMemFn_processMonoToStereo<T>::value;
     }
-    virtual bool monoInputCreatesStereoOutput() override
+    bool monoInputCreatesStereoOutput() override
     {
+        if constexpr (HasMemFn_getMonoToStereoSetting<T>::value)
+        {
+            return this->getMonoToStereoSetting();
+        }
         return HasMemFn_processMonoToStereo<T>::value;
     }
 
@@ -169,14 +175,25 @@ template <typename T> struct SSTVoiceEffectShim : T
         this->processStereo(datainL, datainR, dataoutL, dataoutR, pitch);
     }
 
-    virtual void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch) override
+    virtual void process_monoToMono(float *datain, float *dataoutL, float pitch) override
     {
         this->assertSampleRateSet();
         if constexpr (HasMemFn_processMonoToMono<T>::value)
         {
             this->processMonoToMono(datain, dataoutL, pitch);
         }
-        else if constexpr (HasMemFn_processMonoToStereo<T>::value)
+        else
+        {
+            // static assert plus routing constraint on canMono should mean this is never hit
+            assert(false);
+        }
+    }
+
+    virtual void process_monoToStereo(float *datain, float *dataoutL, float *dataoutR,
+                                      float pitch) override
+    {
+        this->assertSampleRateSet();
+        if constexpr (HasMemFn_processMonoToStereo<T>::value)
         {
             this->processMonoToStereo(datain, dataoutL, dataoutR, pitch);
         }

@@ -330,16 +330,18 @@ template <bool OS> bool Voice::processWithOS()
 
             mix()->set_target(*endpoints->processorTarget[i].mixP);
 
-            if (chainIsMono && processorConsumesMono[i] && !processorProducesStereo[i])
+            if (chainIsMono && processorConsumesMono[i] &&
+                !processors[i]->monoInputCreatesStereoOutput())
             {
                 // mono to mono
-                processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
+                processors[i]->process_monoToMono(output[0], tempbuf[0], fpitch);
                 mix()->fade_blocks(output[0], tempbuf[0], output[0]);
             }
-            else if (chainIsMono && processorConsumesMono[i] && processorProducesStereo[i])
+            else if (chainIsMono && processorConsumesMono[i])
             {
+                assert(processors[i]->monoInputCreatesStereoOutput());
                 // mono to stereo. process then toggle
-                processors[i]->process_mono(output[0], tempbuf[0], tempbuf[1], fpitch);
+                processors[i]->process_monoToStereo(output[0], tempbuf[0], tempbuf[1], fpitch);
                 mix()->fade_blocks(output[0], tempbuf[0], output[0]);
                 mix()->fade_blocks(output[0], tempbuf[1], output[1]);
                 // this out[0] is NOT a typo. Input is mono
@@ -348,6 +350,7 @@ template <bool OS> bool Voice::processWithOS()
             }
             else if (chainIsMono)
             {
+                assert(!processorConsumesMono[i]);
                 // stereo to stereo. copy L to R then process
                 mech::copy_from_to<blockSize << (OS ? 1 : 0)>(output[0], output[1]);
                 chainIsMono = false;
@@ -621,7 +624,6 @@ void Voice::initializeProcessors()
             processors[i]->setKeytrack(zone->processorStorage[i].isKeytracked);
 
             processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
-            processorProducesStereo[i] = processors[i]->monoInputCreatesStereoOutput();
         }
     }
 }
