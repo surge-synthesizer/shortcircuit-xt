@@ -267,7 +267,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
      */
     virtual bool canProcessMono() { return false; }
     virtual bool monoInputCreatesStereoOutput() { return false; }
-    virtual void process_mono(float *datain, float *dataoutL, float *dataoutR, float pitch)
+    virtual void process_monoToMono(float *datain, float *dataoutL, float pitch) { assert(false); }
+    virtual void process_monoToStereo(float *datain, float *dataoutL, float *dataoutR, float pitch)
     {
         assert(false);
     }

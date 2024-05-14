@@ -138,7 +138,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         16)[engine::processorCount][dsp::processor::maxProcessorIntParams];
     bool processorIsActive[engine::processorCount]{false, false, false, false};
     bool processorConsumesMono[engine::processorCount]{false, false, false, false};
-    bool processorProducesStereo[engine::processorCount]{false, false, false, false};
 
     void initializeProcessors();
 
