@@ -342,9 +342,11 @@ template <bool OS> bool Voice::processWithOS()
                 assert(processors[i]->monoInputCreatesStereoOutput());
                 // mono to stereo. process then toggle
                 processors[i]->process_monoToStereo(output[0], tempbuf[0], tempbuf[1], fpitch);
-                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
-                mix()->fade_blocks(output[0], tempbuf[1], output[1]);
+
                 // this out[0] is NOT a typo. Input is mono
+                // And this order matters. Have to splat [1] first to keep [0] around
+                mix()->fade_blocks(output[0], tempbuf[1], output[1]);
+                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
 
                 chainIsMono = false;
             }
