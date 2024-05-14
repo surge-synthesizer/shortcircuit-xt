@@ -366,10 +366,6 @@ struct StepLFOPane : juce::Component, HasEditor
         auto jogBox = knobBounds.withHeight(buttonH).withY(knobBounds.getHeight() - buttonH).withWidth(knobBounds.getWidth()/2);
         jog[2]->setBounds(jogBox);
         jog[3]->setBounds(jogBox.withX(jogBox.getX() + jogBox.getWidth()));
-        std::cout<<2*jogBox.getWidth() << std::endl;
-        std::cout<<knobBounds.getWidth() << std::endl;
-        std::cout<<jogBox.getX() + 2*jogBox.getWidth() << std::endl;
-        std::cout<<b.getX() + b.getWidth() << std::endl;
     }
 };
 
