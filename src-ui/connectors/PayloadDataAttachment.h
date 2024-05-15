@@ -487,14 +487,39 @@ struct DummyContinuous : sst::jucegui::data::Continuous
     virtual float getDefaultValue() const override { return 0.5f; };
     virtual std::string getLabel() const override { return "Dummy"; };
 };
-template<typename T> std::unique_ptr<T> makeConnectedToDummy()
+
+template <typename T> std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
 {
-   auto res = std::make_unique<T>();
-   auto thisWillLeak = new DummyContinuous();
-   SCLOG("WARNING: Dummy Widget in ui. Memory leak until we attach");
-   //jassertfalse;
-   res->setSource(thisWillLeak);
-   return res;
+    static std::unordered_map<uint32_t, std::unique_ptr<DummyContinuous>> dummyMap;
+
+    auto res = std::make_unique<T>();
+
+    DummyContinuous *thisWillLeak{nullptr};
+    auto dmp = dummyMap.find(index);
+    if (dmp != dummyMap.end())
+    {
+        thisWillLeak = dmp->second.get();
+    }
+    else
+    {
+        auto tmp = std::make_unique<DummyContinuous>();
+        thisWillLeak = tmp.get();
+        dummyMap[index] = std::move(tmp);
+        std::string s;
+
+        auto t = index;
+        for (int i = 0; i < 4; ++i)
+        {
+            char c = (char)((t & 0xFF000000) >> 24);
+            s += c;
+            t = t << 8;
+        }
+
+        SCLOG("WARNING: Dummy Widget in ui. Quasi-memory leak until we attach. '" << s << "'");
+    }
+
+    res->setSource(thisWillLeak);
+    return res;
 }
 
 template <typename A, typename Msg>
