@@ -74,11 +74,11 @@ jobs:
           isLinux: True
           scxtTarget: scxt_plugin_Standalone
           cmakeArgs:
-        lin-gcc13:
-          imageName: 'ubuntu-latest'
-          isLinux: True
-          scxtTarget: scxt_plugin_Standalone
-          cmakeArgs: -DCMAKE_CXX_COMPILER=g++-13 -DCMAKE_C_COMPILER=gcc-13
+        #lin-gcc13:
+        #  imageName: 'ubuntu-latest'
+        #  isLinux: True
+        #  scxtTarget: scxt_plugin_Standalone
+        #  cmakeArgs: -DCMAKE_CXX_COMPILER=g++-13 -DCMAKE_C_COMPILER=gcc-13
         lin-clap-first:
           imageName: 'ubuntu-latest'
           isLinux: True
