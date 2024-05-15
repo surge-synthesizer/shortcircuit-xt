@@ -761,6 +761,7 @@ void LfoPane::rebuildPanelComponents()
                                if (w)
                                    w->setSubPaneVisibility();
                            });
+    modulatorShapeA->setJogWrapsAtEnd(false);
 
     getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
