@@ -227,6 +227,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsEQGraphic();
         break;
 
+    case dsp::processor::proct_osc_correlatednoise:
+        layoutControlsCorrelatedNoiseGen();
+        break;
+
     default:
         layoutControls();
         break;
@@ -387,6 +391,33 @@ void ProcessorPane::layoutControlsWaveshaper()
     wss->popupMenuBuilder->setGroupList(sst::waveshapers::WaveshaperGroupName());
     wss->setBounds(ja);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
+}
+
+void ProcessorPane::layoutControlsCorrelatedNoiseGen()
+{
+    // Drive/Bias/Gain in the floats
+    // Type/OS in the ints
+    assert(processorControlDescription.numFloatParams == 2);
+    assert(processorControlDescription.numIntParams == 1);
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Color");
+    auto fePos = lo::knob<locon::largeKnob>(*floatEditors[0], 5, 10);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
+    fePos = lo::labeledAt(*floatEditors[1], lo::toRightOf(fePos));
+
+    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
+    fePos = lo::labeledAt(*mixEditor, lo::toRightOf(fePos));
+
+    // Rather than std::move to intEditors[0] we hand the toggle button to the
+    // main pane as an additional hamburger component
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
 }
 
 void ProcessorPane::reapplyStyle()
