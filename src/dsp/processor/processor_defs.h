@@ -149,7 +149,7 @@ PROC_DEFAULT_MIX(proct_osc_correlatednoise, 0.5);
 
 DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
-            "String Exciter", "Generators", "stringex-fx", dsp::surgeSincTable);
+            "String Resonator", "Generators", "stringex-fx", dsp::surgeSincTable);
 PROC_DEFAULT_MIX(proct_stringResonator, 0.5);
 
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
