@@ -81,6 +81,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
                         const std::set<int32_t> &otherTypes);
 
     void rebuildControlsFromDescription();
+    void attachRebuildToIntAttachment(int idx);
 
     void layoutControls();
     void layoutControlsSurgeFilters();

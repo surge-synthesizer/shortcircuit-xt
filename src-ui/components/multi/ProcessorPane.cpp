@@ -395,18 +395,21 @@ void ProcessorPane::layoutControlsWaveshaper()
 
 void ProcessorPane::layoutControlsCorrelatedNoiseGen()
 {
-    // Drive/Bias/Gain in the floats
-    // Type/OS in the ints
-    assert(processorControlDescription.numFloatParams == 2);
+    assert(processorControlDescription.numFloatParams == 3);
     assert(processorControlDescription.numIntParams == 1);
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Color");
-    auto fePos = lo::knob<locon::largeKnob>(*floatEditors[0], 5, 10);
+    auto fePos = lo::knob<locon::mediumKnob>(*floatEditors[0], 5, 10);
 
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
     fePos = lo::labeledAt(*floatEditors[1], lo::toRightOf(fePos));
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Width");
+    fePos = lo::labeledAt(*floatEditors[2], lo::toRightOf(fePos));
+
+    floatEditors[2]->setVisible(intAttachments[0]->getValue());
 
     mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
     fePos = lo::labeledAt(*mixEditor, lo::toRightOf(fePos));
@@ -417,7 +420,25 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
     stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
     stereo->setGlyph(jcmp::GlyphPainter::STEREO);
     stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    clearAdditionalHamburgerComponents();
     addAdditionalHamburgerComponent(std::move(stereo));
+
+    attachRebuildToIntAttachment(0);
+}
+
+void ProcessorPane::attachRebuildToIntAttachment(int idx)
+{
+    connectors::addGuiStep(*intAttachments[idx], [w = juce::Component::SafePointer(this)](auto &a) {
+        if (w)
+        {
+            juce::Timer::callAfterDelay(0, [w]() {
+                if (w)
+                {
+                    w->rebuildControlsFromDescription();
+                }
+            });
+        }
+    });
 }
 
 void ProcessorPane::reapplyStyle()
