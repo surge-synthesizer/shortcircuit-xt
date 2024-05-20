@@ -472,29 +472,12 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
 
     std::unique_ptr<EqDisplayBase> eqdisp;
 
-    bool isCytomic{false};
-    if (processorView.type == dsp::processor::proct_CytomicSVF)
-    {
-        isCytomic = true;
-        assert(processorControlDescription.numFloatParams == 3);
-        assert(processorControlDescription.numIntParams == 1);
-        /*eqdisp = std::make_unique<
-            EqNBandDisplay<sst::voice_effects::filter::CytomicSVF<EqDisplayBase::EqAdapter>, 0>>(
-            *this);
-            */
-    }
-    else if (processorView.type == dsp::processor::proct_SurgeBiquads)
-    {
-        assert(processorControlDescription.numFloatParams == 2);
-        assert(processorControlDescription.numIntParams == 1);
-        eqdisp = std::make_unique<
-            EqNBandDisplay<sst::voice_effects::filter::SurgeBiquads<EqDisplayBase::EqAdapter>, 0>>(
-            *this);
-    }
-    else
-    {
-        assert(false);
-    }
+    assert(processorControlDescription.numFloatParams == 3);
+    assert(processorControlDescription.numIntParams == 1);
+    /* eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::filter::CytomicSVF<EqDisplayBase::EqAdapter>, 0>>(
+        *this);*/
+
     if (eqdisp)
     {
         addAndMakeVisible(*eqdisp);
@@ -519,48 +502,37 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
     auto cols = lo::columns(rest, 3);
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Res");
     lo::knobCX<locon::mediumKnob>(*floatEditors[1], cols[0].getCentreX(), 0);
-    if (isCytomic)
-    {
-        floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Shelf");
-        lo::knobCX<locon::mediumKnob>(*floatEditors[2], cols[1].getCentreX(), 0);
-    }
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Shelf");
+    lo::knobCX<locon::mediumKnob>(*floatEditors[2], cols[1].getCentreX(), 0);
+
     mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
     lo::knobCX<locon::mediumKnob>(*mixEditor, cols[2].getCentreX(), 0);
 
-    for (int i = 0; i < (isCytomic ? 3 : 2); ++i)
+    for (int i = 0; i < 3; ++i)
         floatAttachments[i]->andThenOnGui(thenRecalc);
 
     auto wss = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
     wss->setBounds(rest.withTrimmedTop(rest.getHeight() - 18).reduced(4, 0).translated(0, -3));
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
 
-    if (isCytomic)
-    {
-        auto updateEnabled = [w = juce::Component::SafePointer(this), thenRecalc](auto &at) {
-            if (!w)
-                return;
-            auto md = (sst::filters::CytomicSVF::Mode)at.getValue();
-            if (md == sst::filters::CytomicSVF::HIGH_SHELF ||
-                md == sst::filters::CytomicSVF::LOW_SHELF || md == sst::filters::CytomicSVF::BELL)
-            {
-                w->floatEditors[2]->item->setEnabled(true);
-                w->floatEditors[2]->label->setEnabled(true);
-            }
-            else
-            {
-                w->floatEditors[2]->item->setEnabled(false);
-                w->floatEditors[2]->label->setEnabled(false);
-            }
-            w->floatEditors[2]->item->repaint();
-            thenRecalc(at);
-        };
-        updateEnabled(*intAttachments[0]);
-        intAttachments[0]->andThenOnGui(updateEnabled);
-    }
-    else
-    {
-        intAttachments[0]->andThenOnGui(thenRecalc);
-    }
+    auto updateEnabled = [w = juce::Component::SafePointer(this), thenRecalc](auto &at) {
+        if (!w)
+            return;
+        auto mode = (sst::filters::CytomicSVF::Mode)at.getValue();
+        bool showShelf =
+            (mode == sst::filters::CytomicSVF::HIGH_SHELF ||
+             mode == sst::filters::CytomicSVF::LOW_SHELF || mode == sst::filters::CytomicSVF::BELL)
+                ? true
+                : false;
+
+        w->floatEditors[2]->setVisible(showShelf);
+        w->floatEditors[2]->setVisible(showShelf);
+        w->floatEditors[2]->item->repaint();
+        thenRecalc(at);
+    };
+    updateEnabled(*intAttachments[0]);
+    intAttachments[0]->andThenOnGui(updateEnabled);
 
     if (eqdisp)
     {
