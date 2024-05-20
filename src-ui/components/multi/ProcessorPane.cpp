@@ -230,6 +230,10 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_osc_correlatednoise:
         layoutControlsCorrelatedNoiseGen();
         break;
+            
+    case dsp::processor::proct_stringResonator:
+            layoutControlsStringResonator();
+        break;
 
     default:
         layoutControls();
@@ -424,6 +428,57 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
     addAdditionalHamburgerComponent(std::move(stereo));
 
     attachRebuildToIntAttachment(0);
+}
+
+void ProcessorPane::layoutControlsStringResonator()
+{
+    assert(processorControlDescription.numFloatParams == 8);
+    assert(processorControlDescription.numIntParams == 1);
+    
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Level One");
+    auto firstRow = lo::knob<locon::mediumKnob>(*floatEditors[0], 5, 10);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level Two");
+    auto secondRow = lo::labeledAt(*floatEditors[1], lo::belowLabel(firstRow));
+    
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Tune One");
+    firstRow = lo::labeledAt(*floatEditors[2], lo::toRightOf(firstRow));
+    
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune Two");
+    secondRow = lo::labeledAt(*floatEditors[3], lo::toRightOf(secondRow));
+    
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Pan One");
+    firstRow = lo::labeledAt(*floatEditors[4], lo::toRightOf(firstRow));
+    
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan Two");
+    secondRow = lo::labeledAt(*floatEditors[5], lo::toRightOf(secondRow));
+    
+    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
+    firstRow = lo::labeledAt(*floatEditors[6], lo::toRightOf(firstRow));
+    
+    floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], "Stiffness");
+    secondRow = lo::labeledAt(*floatEditors[7], lo::toRightOf(secondRow));
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    clearAdditionalHamburgerComponents();
+    addAdditionalHamburgerComponent(std::move(stereo));
+    attachRebuildToIntAttachment(0);
+    
+    floatEditors[1]->setVisible(intAttachments[0]->getValue());
+    floatEditors[3]->setVisible(intAttachments[0]->getValue());
+    floatEditors[5]->setVisible(intAttachments[0]->getValue());
+    
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+    auto sliderWidth = 20;
+    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 20);
+    
+    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
+    mixEditor->item->setBounds(sliderBounds);
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)
