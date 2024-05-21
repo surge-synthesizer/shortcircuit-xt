@@ -235,6 +235,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsStringResonator();
         break;
 
+    case dsp::processor::proct_StaticPhaser:
+        layoutControlsStaticPhaser();
+        break;
+
     default:
         layoutControls();
         break;
@@ -437,29 +441,6 @@ void ProcessorPane::layoutControlsStringResonator()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Level One");
-    auto firstRow = lo::knob<locon::mediumKnob>(*floatEditors[0], 5, 10);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level Two");
-    auto secondRow = lo::labeledAt(*floatEditors[1], lo::belowLabel(firstRow));
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Tune One");
-    firstRow = lo::labeledAt(*floatEditors[2], lo::toRightOf(firstRow));
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune Two");
-    secondRow = lo::labeledAt(*floatEditors[3], lo::toRightOf(secondRow));
-
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Pan One");
-    firstRow = lo::labeledAt(*floatEditors[4], lo::toRightOf(firstRow));
-
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan Two");
-    secondRow = lo::labeledAt(*floatEditors[5], lo::toRightOf(secondRow));
-
-    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
-    firstRow = lo::labeledAt(*floatEditors[6], lo::toRightOf(firstRow));
-
-    floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], "Stiffness");
-    secondRow = lo::labeledAt(*floatEditors[7], lo::toRightOf(secondRow));
 
     auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
@@ -469,14 +450,103 @@ void ProcessorPane::layoutControlsStringResonator()
     addAdditionalHamburgerComponent(std::move(stereo));
     attachRebuildToIntAttachment(0);
 
-    floatEditors[1]->setVisible(intAttachments[0]->getValue());
-    floatEditors[3]->setVisible(intAttachments[0]->getValue());
-    floatEditors[5]->setVisible(intAttachments[0]->getValue());
+    bool stereoSwitch = intAttachments[1]->getValue();
+
+    std::string justLevel = "Vol";
+    std::string justTune = "Tune";
+    std::string justPan = "Pan";
+    if (stereoSwitch == true)
+    {
+        justLevel += " L";
+        justTune += " L";
+        justPan += " L";
+    }
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justLevel);
+    auto firstRow = lo::knob<locon::mediumKnob>(*floatEditors[0], 5, 10);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Vol 2");
+    auto secondRow = lo::labeledAt(*floatEditors[1], lo::belowLabel(firstRow));
+    floatEditors[1]->setVisible(stereoSwitch);
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], justTune);
+    firstRow = lo::labeledAt(*floatEditors[2], lo::toRightOf(firstRow));
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune 2");
+    secondRow = lo::labeledAt(*floatEditors[3], lo::toRightOf(secondRow));
+    floatEditors[3]->setVisible(stereoSwitch);
+
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], justPan);
+    firstRow = lo::labeledAt(*floatEditors[4], lo::toRightOf(firstRow));
+
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan 2");
+    secondRow = lo::labeledAt(*floatEditors[5], lo::toRightOf(secondRow));
+    floatEditors[5]->setVisible(stereoSwitch);
+
+    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
+    firstRow = lo::labeledAt(*floatEditors[6], lo::toRightOf(firstRow));
+
+    floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], "Stiffness");
+    secondRow = lo::labeledAt(*floatEditors[7], lo::toRightOf(secondRow));
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto sliderWidth = 20;
-    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 20);
+    auto sliderWidth = 15;
+    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 15);
 
+    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
+    mixEditor->item->setBounds(sliderBounds);
+}
+
+void ProcessorPane::layoutControlsStaticPhaser()
+{
+    assert(processorControlDescription.numFloatParams == 5);
+    assert(processorControlDescription.numIntParams == 2);
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    clearAdditionalHamburgerComponents();
+    addAdditionalHamburgerComponent(std::move(stereo));
+    attachRebuildToIntAttachment(1);
+
+    bool stereoSwitch = intAttachments[1]->getValue();
+
+    std::string justFreq = "Freq";
+    if (stereoSwitch == true)
+    {
+        justFreq += " L";
+    }
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justFreq);
+    lo::knob<45>(*floatEditors[0], 5, 10);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Freq R");
+    lo::knob<45>(*floatEditors[1], 5, 83);
+
+    floatEditors[1]->setVisible(stereoSwitch);
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Resonance");
+    lo::knob<45>(*floatEditors[3], 60, 10);
+
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Feedback");
+    lo::knob<45>(*floatEditors[4], 115, 10);
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Spacing");
+    lo::knob<45>(*floatEditors[2], 60, 83);
+
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+
+    auto stageSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
+    auto switchBounds = bounds.withLeft(115).withTop(78).withRight(170).withBottom(143);
+    stageSwitch->setBounds(switchBounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(stageSwitch));
+
+    auto sliderWidth = 15;
+    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 15);
     mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
     mixEditor->item->setBounds(sliderBounds);
 }

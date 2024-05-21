@@ -122,7 +122,7 @@ HAS_MEMFN(getMonoToStereoSetting)
 
 template <typename T> struct SSTVoiceEffectShim : T
 {
-    // You can have neither or one, but you can't have both
+    // If you have both of the former you should also have the latter
     static_assert(!(HasMemFn_processMonoToMono<T>::value &&
                     HasMemFn_processMonoToStereo<T>::value) ||
                   HasMemFn_getMonoToStereoSetting<T>::value);

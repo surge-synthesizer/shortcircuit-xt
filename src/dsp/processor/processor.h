@@ -106,7 +106,6 @@ enum ProcessorType
     proct_SuperSVF,
     proct_CytomicSVF,
     proct_StaticPhaser,
-    proct_MonoStaticPhaser,
     proct_SurgeBiquads,
     proct_SurgeFilters,
 

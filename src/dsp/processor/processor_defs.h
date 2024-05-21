@@ -174,12 +174,9 @@ DEFINE_PROC(PhaseMod, sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<1>>
 DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod, "Ring Mod",
             "Modulation", "ringmod-fx");
-DEFINE_PROC(StaticPhaser, sst::voice_effects::modulation::StaticStereoPhaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::StaticStereoPhaser<SCXTVFXConfig<2>>,
-            proct_StaticPhaser, "Static Phaser (Stereo)", "Modulation", "filt-statph");
-DEFINE_PROC(MonoPhaser, sst::voice_effects::modulation::StaticMonoPhaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::StaticMonoPhaser<SCXTVFXConfig<2>>,
-            proct_MonoStaticPhaser, "Static Phaser (Mono)", "Modulation", "filt-mon-statph");
+DEFINE_PROC(StaticPhaser, sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
+            "Static Phaser", "Modulation", "filt-statph");
 
 } // namespace scxt::dsp::processor
 
