@@ -437,7 +437,7 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
 void ProcessorPane::layoutControlsStringResonator()
 {
     assert(processorControlDescription.numFloatParams == 8);
-    assert(processorControlDescription.numIntParams == 1);
+    assert(processorControlDescription.numIntParams == 2);
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
@@ -450,16 +450,24 @@ void ProcessorPane::layoutControlsStringResonator()
     addAdditionalHamburgerComponent(std::move(stereo));
     attachRebuildToIntAttachment(0);
 
-    bool stereoSwitch = intAttachments[1]->getValue();
+    auto dual = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
+    dual->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    dual->setGlyph(jcmp::GlyphPainter::STEREO);
+    dual->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(dual));
+    attachRebuildToIntAttachment(1);
+
+    bool stereoSwitch = intAttachments[0]->getValue();
+    bool dualSwitch = intAttachments[1]->getValue();
 
     std::string justLevel = "Vol";
     std::string justTune = "Tune";
     std::string justPan = "Pan";
-    if (stereoSwitch == true)
+    if (dualSwitch == true)
     {
-        justLevel += " L";
-        justTune += " L";
-        justPan += " L";
+        justLevel += " 1";
+        justTune += " 1";
+        justPan += " 1";
     }
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justLevel);
@@ -467,21 +475,22 @@ void ProcessorPane::layoutControlsStringResonator()
 
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Vol 2");
     auto secondRow = lo::labeledAt(*floatEditors[1], lo::belowLabel(firstRow));
-    floatEditors[1]->setVisible(stereoSwitch);
+    floatEditors[1]->setVisible(dualSwitch);
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], justTune);
     firstRow = lo::labeledAt(*floatEditors[2], lo::toRightOf(firstRow));
 
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune 2");
     secondRow = lo::labeledAt(*floatEditors[3], lo::toRightOf(secondRow));
-    floatEditors[3]->setVisible(stereoSwitch);
+    floatEditors[3]->setVisible(dualSwitch);
 
     floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], justPan);
     firstRow = lo::labeledAt(*floatEditors[4], lo::toRightOf(firstRow));
+    floatEditors[4]->setVisible(stereoSwitch);
 
     floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan 2");
     secondRow = lo::labeledAt(*floatEditors[5], lo::toRightOf(secondRow));
-    floatEditors[5]->setVisible(stereoSwitch);
+    floatEditors[5]->setVisible(stereoSwitch && dualSwitch);
 
     floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
     firstRow = lo::labeledAt(*floatEditors[6], lo::toRightOf(firstRow));
@@ -490,8 +499,9 @@ void ProcessorPane::layoutControlsStringResonator()
     secondRow = lo::labeledAt(*floatEditors[7], lo::toRightOf(secondRow));
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto sliderWidth = 15;
-    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 15);
+
+    auto sliderWidth = 10;
+    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 10);
 
     mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
     mixEditor->item->setBounds(sliderBounds);
