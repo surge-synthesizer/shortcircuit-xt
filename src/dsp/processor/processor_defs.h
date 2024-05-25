@@ -87,6 +87,7 @@
 #include "sst/voice-effects/modulation/RingMod.h"
 #include "sst/voice-effects/modulation/PhaseMod.h"
 #include "sst/voice-effects/modulation/StaticPhaser.h"
+#include "sst/voice-effects/modulation/Tremolo.h"
 
 namespace scxt::dsp::processor
 {
@@ -176,6 +177,9 @@ DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
 DEFINE_PROC(StaticPhaser, sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Modulation", "filt-statph");
+DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
+            "Modulation", "tremolo");
 
 } // namespace scxt::dsp::processor
 
