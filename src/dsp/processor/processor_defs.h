@@ -178,8 +178,8 @@ DEFINE_PROC(StaticPhaser, sst::voice_effects::modulation::StaticPhaser<SCXTVFXCo
             sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Modulation", "filt-statph");
 DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo,
-            "Tremolo", "Modulation", "tremolo");
+            sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
+            "Modulation", "tremolo");
 
 } // namespace scxt::dsp::processor
 
