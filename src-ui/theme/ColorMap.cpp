@@ -46,6 +46,15 @@ struct WireframeColors : ColorMap
         case accent_2a:
             res = juce::Colour(0xFF2788D6);
             break;
+        case accent_2a_alpha_a:
+            res = getImpl(accent_2a, 0.08);
+            break;
+        case accent_2a_alpha_b:
+            res = getImpl(accent_2a, 0.32);
+            break;    
+        case accent_2a_alpha_c:
+            res = getImpl(accent_2a, 0.5);
+            break;
         case accent_2b:
             res = juce::Colour(0xFF004f8A);
             break;
@@ -70,7 +79,7 @@ struct WireframeColors : ColorMap
             res = juce::Colour(0xFFDFDFDF);
             break;
         case generic_content_medium:
-            res = juce::Colour(0xFFAFAFA);
+            res = juce::Colour(0xFFAFAFAF);
             break;
         case generic_content_low:
             res = juce::Colour(0xFF777777);
@@ -104,7 +113,8 @@ struct WireframeColors : ColorMap
             res = juce::Colour(0x00000000);
             break;
         }
-        return res.withAlpha(std::clamp(res.getAlpha() * alpha, 0.f, 1.f));
+        auto res2 = res.withAlpha(res.getAlpha() / 255.0f * alpha);
+        return res2;
     }
 };
 
@@ -124,6 +134,15 @@ struct TestColors : ColorMap
             break;
         case accent_2a:
             res = juce::Colours::aquamarine.darker(0.3);
+            break;
+        case accent_2a_alpha_a:
+            res = juce::Colours::aquamarine.darker(0.6);
+            break;
+        case accent_2a_alpha_b:
+            res = juce::Colours::aquamarine.darker(0.6);
+            break;    
+        case accent_2a_alpha_c:
+            res = juce::Colours::aquamarine.darker(0.6);
             break;
         case accent_2b:
             res = juce::Colours::cyan;
@@ -199,11 +218,18 @@ struct HiContrastDark : ColorMap
         case accent_1a:
             res = juce::Colour(0xFFFFA904);
             break;
-
         case accent_2a:
             res = juce::Colour(0xFF0788F6);
             break;
-
+        case accent_2a_alpha_a:
+            res = juce::Colour(0xFF22222A); // bg_2
+            break;
+        case accent_2a_alpha_b:
+            res = juce::Colour(0xFF0788F6); // accent_2a
+            break;
+        case accent_2a_alpha_c:
+            res = juce::Colour(0xFF22222A); // bg_2
+            break;
         case bg_1:
             res = juce::Colour(0xFF000000);
             break;
