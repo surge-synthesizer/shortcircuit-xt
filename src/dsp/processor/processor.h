@@ -109,6 +109,7 @@ enum ProcessorType
     proct_SurgeBiquads,
     proct_SurgeFilters,
     proct_Tremolo,
+    proct_Phaser,
 
     proct_stringResonator,
 

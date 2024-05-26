@@ -66,6 +66,7 @@
 #include "sst/voice-effects/delay/Microgate.h"
 
 #include "sst/voice-effects/distortion/BitCrusher.h"
+#include "sst/voice-effects/distortion/Slewer.h"
 #include "sst/voice-effects/waveshaper/WaveShaper.h"
 
 #include "sst/voice-effects/eq/EqNBandParametric.h"
@@ -75,7 +76,7 @@
 #include "sst/voice-effects/filter/CytomicSVF.h"
 // #include "sst/voice-effects/filter/SurgeBiquads.h"
 #include "sst/voice-effects/filter/SSTFilters.h"
-#include "sst/voice-effects/filter/Slewer.h"
+#include "sst/voice-effects/filter/StaticPhaser.h"
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/GenSin.h"
@@ -86,8 +87,8 @@
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
 #include "sst/voice-effects/modulation/RingMod.h"
 #include "sst/voice-effects/modulation/PhaseMod.h"
-#include "sst/voice-effects/modulation/StaticPhaser.h"
 #include "sst/voice-effects/modulation/Tremolo.h"
+#include "sst/voice-effects/modulation/Phaser.h"
 
 namespace scxt::dsp::processor
 {
@@ -110,6 +111,9 @@ DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig
 DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<1>>,
             sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<2>>, proct_fx_waveshaper,
             "WaveShaper", "Distortion", "waveshaper-fx");
+DEFINE_PROC(Slewer, sst::voice_effects::distortion::Slewer<SCXTVFXConfig<1>>,
+            sst::voice_effects::distortion::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
+            "Distortion", "slewer-fx");
 
 // Macros and commas don't get along
 namespace procimpl::detail
@@ -161,9 +165,10 @@ DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>
 DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
             "Surge Filters", "Filters", "filt-sstfilters");
-DEFINE_PROC(Slewer, sst::voice_effects::filter::Slewer<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
-            "Filters", "slewer-fx");
+DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
+            "Static Phaser", "Filters", "filt-statph");
+
 
 DEFINE_PROC(FreqShiftMod, sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<2>>, proct_fx_freqshiftmod,
@@ -174,12 +179,13 @@ DEFINE_PROC(PhaseMod, sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<1>>
 DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod, "Ring Mod",
             "Modulation", "ringmod-fx");
-DEFINE_PROC(StaticPhaser, sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
-            "Static Phaser", "Modulation", "filt-statph");
+
 DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
             "Modulation", "tremolo");
+DEFINE_PROC(Phaser, sst::voice_effects::modulation::Phaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser,
+            "Phaser", "Modulation", "modulated-phaser");
 
 } // namespace scxt::dsp::processor
 
