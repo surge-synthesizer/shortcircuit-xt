@@ -64,12 +64,12 @@ struct StepLFOPane : juce::Component, HasEditor
 
             auto &cmap = *parent->editor->themeApplier.colorMap();
             auto bg = cmap.get(theme::ColorMap::bg_2);
-            auto bgq = cmap.get(theme::ColorMap::bg_2).brighter(0.1);
+            auto bgq = cmap.get(theme::ColorMap::accent_2a_alpha_a);
             auto boxc = cmap.get(theme::ColorMap::generic_content_low);
             auto valc = cmap.get(theme::ColorMap::accent_2a);
             auto valhovc = valc.brighter(0.1);
 
-            auto hanc = cmap.get(theme::ColorMap::generic_content_high);
+            auto hanc = valhovc;
             auto hanhovc = hanc.brighter(0.1);
 
             int sp = modulation::modulators::StepLFOStorage::stepLfoSteps;
@@ -102,6 +102,7 @@ struct StepLFOPane : juce::Component, HasEditor
                     g.setColour(valc);
                     auto r = bx.withTop(hm).withTrimmedBottom((1.f + d) * hm).reduced(0.5, 0);
                     g.fillRect(r);
+
                     g.setColour(hanc);
                     auto rh = bx.withTrimmedBottom((1.f + d) * hm);
                     rh = rh.withTrimmedTop(rh.getHeight() - 1).reduced(0.5, 0).translated(0, -0.5);
@@ -111,7 +112,7 @@ struct StepLFOPane : juce::Component, HasEditor
                 bx = bx.translated(w, 0);
             }
 
-            g.setColour(hanc.brighter(0.3));
+            g.setColour(hanc);
             auto yscal = -getHeight() * 0.5;
             auto p = juce::Path();
             bool first{true};
@@ -129,7 +130,7 @@ struct StepLFOPane : juce::Component, HasEditor
                 }
                 first = false;
             }
-            g.strokePath(p, juce::PathStrokeType(2.0));
+            //g.strokePath(p, juce::PathStrokeType(1.0));
 
             g.setColour(boxc);
             g.drawRect(getLocalBounds());
