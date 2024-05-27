@@ -419,8 +419,8 @@ struct DriveFSListBoxRow : public juce::Component
             }
             else
             {
-                g.setColour(textColor.withAlpha(0.5f));
-                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::TUNING);
+                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::TUNING,
+                                               textColor.withAlpha(0.5f));
             }
             g.setColour(textColor);
             g.drawText(entry.path().filename().u8string(), 14, 1, width - 16, height - 2,

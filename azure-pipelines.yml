@@ -168,7 +168,7 @@ jobs:
           cmakeArgs: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           isWindows: True
         lin:
-          imageName: 'ubuntu-20.04'
+          imageName: 'ubuntu-latest'
           isLinux: True
           cmakeArgs:
 

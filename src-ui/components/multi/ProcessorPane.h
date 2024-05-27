@@ -81,6 +81,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
                         const std::set<int32_t> &otherTypes);
 
     void rebuildControlsFromDescription();
+    void attachRebuildToIntAttachment(int idx);
 
     void layoutControls();
     void layoutControlsSurgeFilters();
@@ -90,6 +91,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
     void layoutControlsCorrelatedNoiseGen();
+    void layoutControlsStringResonator();
+    void layoutControlsStaticPhaser();
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
