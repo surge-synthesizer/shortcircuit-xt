@@ -73,7 +73,7 @@ jobs:
           imageName: 'ubuntu-latest'
           isLinux: True
           scxtTarget: scxt_plugin_Standalone
-          cmakeArgs:
+          cmakeArgs: -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12
         #lin-gcc13:
         #  imageName: 'ubuntu-latest'
         #  isLinux: True
@@ -82,7 +82,7 @@ jobs:
         lin-clap-first:
           imageName: 'ubuntu-latest'
           isLinux: True
-          cmakeArgs: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+          cmakeArgs: -DSCXT_JUCE_CLASSIC_STYLE=FALSE -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12
           scxtTarget: scxt_clapfirst_all
 
     pool:
@@ -170,7 +170,7 @@ jobs:
         lin:
           imageName: 'ubuntu-20.04'
           isLinux: True
-          cmakeArgs:
+          cmakeArgs: -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12
 
 
     pool:
