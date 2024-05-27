@@ -93,6 +93,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsCorrelatedNoiseGen();
     void layoutControlsStringResonator();
     void layoutControlsStaticPhaser();
+    void LayoutControlsTremolo();
+    void layoutControlsPhaser();
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
