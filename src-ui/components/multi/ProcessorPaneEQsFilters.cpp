@@ -263,7 +263,7 @@ void ProcessorPane::layoutControlsEQNBandParm()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     std::unique_ptr<EqDisplayBase> eqdisp;
 
     switch (processorView.type)
@@ -370,7 +370,6 @@ void ProcessorPane::layoutControlsEQNBandParm()
         }
     }
 
-
     otherEditors.push_back(std::move(eqdisp));
 }
 
@@ -379,7 +378,7 @@ void ProcessorPane::layoutControlsEQMorph()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2>>(*this);
     auto bd = getContentAreaComponent()->getLocalBounds();
@@ -435,7 +434,7 @@ void ProcessorPane::layoutControlsEQGraphic()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
     auto bd = getContentAreaComponent()->getLocalBounds();
@@ -475,7 +474,7 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     // OK so we know we have 2 controls (cutoff and resonance), a mix, and two ints
 
     std::unique_ptr<EqDisplayBase> eqdisp;
