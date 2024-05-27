@@ -36,11 +36,18 @@
 
 namespace scxt::modulation::modulators
 {
-struct CurveLFO : SampleRateSupport
+struct CurveRateSupport : SampleRateSupport
+{
+    float envelope_rate_linear_nowrap(float f)
+    {
+        return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
+    }
+};
+struct CurveLFO : CurveRateSupport
 {
     float output{0.f};
 
-    using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveLFO, scxt::blockSize>;
+    using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveRateSupport, scxt::blockSize>;
     using senv_t = sst::basic_blocks::modulators::DAREnvelope<
         CurveLFO, scxt::blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>;
     slfo_t simpleLfo{this};
@@ -48,11 +55,6 @@ struct CurveLFO : SampleRateSupport
     friend slfo_t;
 
     slfo_t::Shape curveShape{slfo_t::SINE};
-
-    float envelope_rate_linear_nowrap(float f)
-    {
-        return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
-    }
 
     void attack(float initPhase, ModulatorStorage::ModulatorShape shape)
     {
