@@ -146,10 +146,10 @@ void HeaderRegion::paint(juce::Graphics &g)
     g.setFont(juce::Font("Comic Sans MS", 18, juce::Font::plain));
 
     auto vc = fmt::format("Dbg: {:.2f} Mb, Pos {:.2f} @ {} in {}/{}", memUsageInMegabytes,
-                          editor->sharedUiMemoryState.transportDisplay.hostpos,
-                          editor->sharedUiMemoryState.transportDisplay.tempo,
-                          editor->sharedUiMemoryState.transportDisplay.tsnum,
-                          editor->sharedUiMemoryState.transportDisplay.tsden);
+                          (double)editor->sharedUiMemoryState.transportDisplay.hostpos,
+                          (double)editor->sharedUiMemoryState.transportDisplay.tempo,
+                          (int)editor->sharedUiMemoryState.transportDisplay.tsnum,
+                          (int)editor->sharedUiMemoryState.transportDisplay.tsden);
     g.setColour(juce::Colours::white);
     g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
 #endif
