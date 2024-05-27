@@ -183,20 +183,6 @@ void ProcessorPane::rebuildControlsFromDescription()
         *at, processorView, this, forZone, index);
     mixAttachment = std::move(at);
 
-    if (processorControlDescription.supportsKeytrack)
-    {
-        keytrackAttackment =
-            std::make_unique<bool_attachment_t>("Keytrack", processorView.isKeytracked);
-        connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
-                                     bool_attachment_t::onGui_t>(*keytrackAttackment, processorView,
-                                                                 this, forZone, index);
-
-        auto kta = std::make_unique<jcmp::ToggleButton>();
-        kta->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
-        kta->setGlyph(sst::jucegui::components::GlyphPainter::KEYBOARD);
-        kta->setSource(keytrackAttackment.get());
-        addAdditionalHamburgerComponent(std::move(kta));
-    }
 
     switch (processorControlDescription.type)
     {
@@ -238,10 +224,33 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_StaticPhaser:
         layoutControlsStaticPhaser();
         break;
+            
+    case dsp::processor::proct_Tremolo:
+        LayoutControlsTremolo();
+        break;
+    
+    case dsp::processor::proct_Phaser:
+        layoutControlsPhaser();
+        break;
 
     default:
         layoutControls();
         break;
+    }
+    
+    if (processorControlDescription.supportsKeytrack)
+    {
+        keytrackAttackment =
+            std::make_unique<bool_attachment_t>("Keytrack", processorView.isKeytracked);
+        connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
+                                     bool_attachment_t::onGui_t>(*keytrackAttackment, processorView,
+                                                                 this, forZone, index);
+
+        auto kta = std::make_unique<jcmp::ToggleButton>();
+        kta->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
+        kta->setGlyph(sst::jucegui::components::GlyphPainter::KEYBOARD);
+        kta->setSource(keytrackAttackment.get());
+        addAdditionalHamburgerComponent(std::move(kta));
     }
 
     setToggleDataSource(nullptr);
@@ -258,6 +267,12 @@ void ProcessorPane::rebuildControlsFromDescription()
 
 void ProcessorPane::layoutControls()
 {
+    {
+        clearAdditionalHamburgerComponents();
+        mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+        addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    }
+    
     auto labelHeight = 18;
     auto rc = getContentAreaComponent()->getLocalBounds();
     auto rcw = rc.getWidth();
@@ -312,11 +327,6 @@ void ProcessorPane::layoutControls()
         }
     }
 
-    {
-        mixEditor = createWidgetAttachedTo<sst::jucegui::components::Knob>(mixAttachment, "mix");
-        mixEditor->item->setBounds(kb.reduced(3));
-        mixEditor->label->setBounds(lb);
-    }
 }
 
 // May want to break this up
@@ -329,7 +339,11 @@ void ProcessorPane::layoutControlsSurgeFilters()
     // FIXME
     namespace lo = theme::layout;
     namespace locon = lo::constants;
-
+    
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     auto cols = lo::columns(getContentAreaComponent()->getLocalBounds(), 2);
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Cutoff");
     lo::knobCX<locon::largeKnob>(*floatEditors[0], cols[0].getCentreX(), 5);
@@ -363,9 +377,6 @@ void ProcessorPane::layoutControlsSurgeFilters()
             intEditors[i]->item->setEnabled(false);
         }
     }
-
-    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
-    lo::knobCX<locon::mediumKnob>(*mixEditor, cols[1].getCentreX(), intEditors[0]->item->getY());
 }
 
 void ProcessorPane::layoutControlsWaveshaper()
@@ -377,6 +388,10 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
+    
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Drive");
     lo::knob<locon::extraLargeKnob>(*floatEditors[0], 5, 10);
 
@@ -385,9 +400,6 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Gain");
     lo::labeledAt(*floatEditors[2], lo::belowLabel(biasPos));
-
-    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
-    lo::labeledAt(*mixEditor, lo::toRightOf(biasPos));
 
     auto ja = getContentAreaComponent()->getLocalBounds();
     ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);
@@ -408,30 +420,39 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Color");
-    auto fePos = lo::knob<locon::mediumKnob>(*floatEditors[0], 5, 10);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
-    fePos = lo::labeledAt(*floatEditors[1], lo::toRightOf(fePos));
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Width");
-    fePos = lo::labeledAt(*floatEditors[2], lo::toRightOf(fePos));
-
-    floatEditors[2]->setVisible(intAttachments[0]->getValue());
-
-    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
-    fePos = lo::labeledAt(*mixEditor, lo::toRightOf(fePos));
-
+    
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     // Rather than std::move to intEditors[0] we hand the toggle button to the
     // main pane as an additional hamburger component
     auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
     stereo->setGlyph(jcmp::GlyphPainter::STEREO);
     stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    clearAdditionalHamburgerComponents();
     addAdditionalHamburgerComponent(std::move(stereo));
-
     attachRebuildToIntAttachment(0);
+    bool stereoSwitch = intAttachments[0]->getValue();
+    
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Color");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
+    if (stereoSwitch)
+    {
+        lo::knob<50>(*floatEditors[0], 20, 10);
+        lo::knob<50>(*floatEditors[1], 120, 10);
+    }
+    else
+    {
+        lo::knob<70>(*floatEditors[0], 10, 20);
+        lo::knob<70>(*floatEditors[1], 110, 20);
+    }
+
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Width");
+    lo::knob<50>(*floatEditors[2], 70, 75);
+    floatEditors[2]->setVisible(intAttachments[0]->getValue());
 }
 
 void ProcessorPane::layoutControlsStringResonator()
@@ -441,12 +462,15 @@ void ProcessorPane::layoutControlsStringResonator()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
+    
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
     auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
     stereo->setGlyph(jcmp::GlyphPainter::STEREO);
     stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    clearAdditionalHamburgerComponents();
     addAdditionalHamburgerComponent(std::move(stereo));
     attachRebuildToIntAttachment(0);
 
@@ -463,48 +487,57 @@ void ProcessorPane::layoutControlsStringResonator()
     std::string justLevel = "Vol";
     std::string justTune = "Tune";
     std::string justPan = "Pan";
-    if (dualSwitch == true)
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justLevel);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Vol 2");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], justTune);
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune 2");
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], justPan);
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan 2");
+    
+    floatEditors[1]->setVisible(dualSwitch);
+    floatEditors[3]->setVisible(dualSwitch);
+    floatEditors[4]->setVisible(stereoSwitch);
+    floatEditors[5]->setVisible(stereoSwitch && dualSwitch);
+    
+    if (dualSwitch && stereoSwitch)
+    {
+    justLevel += " 1";
+    justTune += " 1";
+    justPan += " 1";
+    lo::knob<40>(*floatEditors[0], 5, 10);
+    lo::knob<40>(*floatEditors[1], 5, 70);
+    lo::knob<40>(*floatEditors[2], 50, 10);
+    lo::knob<40>(*floatEditors[3], 50, 70);
+    lo::knob<40>(*floatEditors[4], 95, 10);
+    lo::knob<40>(*floatEditors[5], 95, 70);
+    }
+    else if (dualSwitch && !stereoSwitch)
     {
         justLevel += " 1";
         justTune += " 1";
-        justPan += " 1";
+        lo::knob<40>(*floatEditors[0], 5, 10);
+        lo::knob<40>(*floatEditors[1], 5, 70);
+        lo::knob<40>(*floatEditors[2], 72, 10);
+        lo::knob<40>(*floatEditors[3], 72, 70);
     }
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justLevel);
-    auto firstRow = lo::knob<locon::mediumKnob>(*floatEditors[0], 5, 10);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Vol 2");
-    auto secondRow = lo::labeledAt(*floatEditors[1], lo::belowLabel(firstRow));
-    floatEditors[1]->setVisible(dualSwitch);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], justTune);
-    firstRow = lo::labeledAt(*floatEditors[2], lo::toRightOf(firstRow));
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune 2");
-    secondRow = lo::labeledAt(*floatEditors[3], lo::toRightOf(secondRow));
-    floatEditors[3]->setVisible(dualSwitch);
-
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], justPan);
-    firstRow = lo::labeledAt(*floatEditors[4], lo::toRightOf(firstRow));
-    floatEditors[4]->setVisible(stereoSwitch);
-
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan 2");
-    secondRow = lo::labeledAt(*floatEditors[5], lo::toRightOf(secondRow));
-    floatEditors[5]->setVisible(stereoSwitch && dualSwitch);
-
+    else if (!dualSwitch && stereoSwitch)
+    {
+        lo::knob<40>(*floatEditors[0], 5, 40);
+        lo::knob<40>(*floatEditors[2], 50, 40);
+        lo::knob<40>(*floatEditors[4], 95, 40);
+    }
+    else
+    {
+        lo::knob<55>(*floatEditors[0], 5, 35);
+        lo::knob<55>(*floatEditors[2], 72, 35);
+    }
+    
     floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
-    firstRow = lo::labeledAt(*floatEditors[6], lo::toRightOf(firstRow));
+    lo::knob<40>(*floatEditors[6], 140, 10);
 
     floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], "Stiffness");
-    secondRow = lo::labeledAt(*floatEditors[7], lo::toRightOf(secondRow));
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto sliderWidth = 10;
-    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 10);
-
-    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
-    mixEditor->item->setBounds(sliderBounds);
+    lo::knob<40>(*floatEditors[7], 140, 70);
 }
 
 void ProcessorPane::layoutControlsStaticPhaser()
@@ -514,51 +547,145 @@ void ProcessorPane::layoutControlsStaticPhaser()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
+    
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
     auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
     stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
     stereo->setGlyph(jcmp::GlyphPainter::STEREO);
     stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    clearAdditionalHamburgerComponents();
     addAdditionalHamburgerComponent(std::move(stereo));
     attachRebuildToIntAttachment(1);
 
     bool stereoSwitch = intAttachments[1]->getValue();
 
+
     std::string justFreq = "Freq";
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justFreq);
     if (stereoSwitch == true)
     {
         justFreq += " L";
+        lo::knob<45>(*floatEditors[0], 5, 10);
+    }
+    else
+    {
+        lo::knob<45>(*floatEditors[0], 5, 43);
     }
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justFreq);
-    lo::knob<45>(*floatEditors[0], 5, 10);
 
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Freq R");
-    lo::knob<45>(*floatEditors[1], 5, 83);
+    lo::knob<45>(*floatEditors[1], 5, 85);
 
     floatEditors[1]->setVisible(stereoSwitch);
 
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Resonance");
-    lo::knob<45>(*floatEditors[3], 60, 10);
+    lo::knob<45>(*floatEditors[3], 65, 10);
 
     floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Feedback");
-    lo::knob<45>(*floatEditors[4], 115, 10);
+    lo::knob<45>(*floatEditors[4], 125, 10);
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Spacing");
-    lo::knob<45>(*floatEditors[2], 60, 83);
+    lo::knob<45>(*floatEditors[2], 65, 85);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
 
     auto stageSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
-    auto switchBounds = bounds.withLeft(115).withTop(78).withRight(170).withBottom(143);
+    auto switchBounds = bounds.withLeft(125).withTop(78).withRight(180).withBottom(145);
     stageSwitch->setBounds(switchBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(stageSwitch));
+}
 
-    auto sliderWidth = 15;
-    auto sliderBounds = bounds.withLeft(bounds.getWidth() - 15);
-    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
-    mixEditor->item->setBounds(sliderBounds);
+void ProcessorPane::LayoutControlsTremolo()
+{
+    assert(processorControlDescription.numFloatParams == 4);
+    assert(processorControlDescription.numIntParams == 3);
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+    
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
+    
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+    auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[1]);
+    auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
+    shapeSwitch->setBounds(switchBounds);
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
+    
+    auto harmonic = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
+    harmonic->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+    harmonic->setGlyph(jcmp::GlyphPainter::BIG_PLUS);
+    auto plusBounds = bounds.withLeft(148).withRight(160).withTop(0).withBottom(12);
+    harmonic->setBounds(plusBounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(harmonic));
+    attachRebuildToIntAttachment(0);
+    
+    bool harmonicSwitch = intAttachments[0]->getValue();
+    
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Volume");
+    lo::knob<50>(*floatEditors[0], 35, 5);
+    
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Crossover");
+    lo::knob<50>(*floatEditors[3], 100, 5);
+    floatEditors[3]->item->setEnabled(harmonicSwitch);
+    
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "LFO Rate");
+    lo::knob<50>(*floatEditors[1], 5, 80);
+    
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "LFO Depth");
+    lo::knob<50>(*floatEditors[2], 65, 80);
+}
+
+void ProcessorPane::layoutControlsPhaser()
+{
+    assert(processorControlDescription.numFloatParams == 6);
+    assert(processorControlDescription.numIntParams == 2);
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+    
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
+    
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+    auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
+    auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
+    shapeSwitch->setBounds(switchBounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
+    
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Feedback");
+    lo::knob<40>(*floatEditors[0], 5, 0);
+    
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Resonance");
+    lo::knob<40>(*floatEditors[2], 50, 20);
+    
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Spacing");
+    lo::knob<40>(*floatEditors[1], 95, 0);
+    
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Center Freq");
+    lo::knob<40>(*floatEditors[5], 140, 20);
+    
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "LFO Rate");
+    lo::knob<50>(*floatEditors[3], 5, 80);
+    
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "LFO Depth");
+    lo::knob<50>(*floatEditors[4], 65, 80);
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)

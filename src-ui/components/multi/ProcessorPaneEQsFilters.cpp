@@ -260,6 +260,10 @@ template <typename Proc, int nSub> struct EqNBandDisplay : EqDisplaySupport<Proc
 
 void ProcessorPane::layoutControlsEQNBandParm()
 {
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     std::unique_ptr<EqDisplayBase> eqdisp;
 
     switch (processorView.type)
@@ -366,14 +370,16 @@ void ProcessorPane::layoutControlsEQNBandParm()
         }
     }
 
-    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
-    mixEditor->item->setBounds(mx);
 
     otherEditors.push_back(std::move(eqdisp));
 }
 
 void ProcessorPane::layoutControlsEQMorph()
 {
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2>>(*this);
     auto bd = getContentAreaComponent()->getLocalBounds();
@@ -421,14 +427,15 @@ void ProcessorPane::layoutControlsEQMorph()
     eqdisp->setBounds(eq.withTrimmedTop(65));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
 
-    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
-    mixEditor->item->setBounds(mx);
-
     otherEditors.push_back(std::move(eqdisp));
 }
 
 void ProcessorPane::layoutControlsEQGraphic()
 {
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
     auto bd = getContentAreaComponent()->getLocalBounds();
@@ -460,14 +467,15 @@ void ProcessorPane::layoutControlsEQGraphic()
     eqdisp->setBounds(eq.withTrimmedTop(sliderHeight + 2));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
 
-    mixEditor = createWidgetAttachedTo<sst::jucegui::components::VSlider>(mixAttachment, "Mix");
-    mixEditor->item->setBounds(mx);
-
     otherEditors.push_back(std::move(eqdisp));
 }
 
 void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
 {
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
     // OK so we know we have 2 controls (cutoff and resonance), a mix, and two ints
 
     std::unique_ptr<EqDisplayBase> eqdisp;
@@ -505,9 +513,6 @@ void ProcessorPane::layoutControlsCytomicSVFAndBiquads()
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Shelf");
     lo::knobCX<locon::mediumKnob>(*floatEditors[2], cols[1].getCentreX(), 0);
-
-    mixEditor = createWidgetAttachedTo(mixAttachment, "Mix");
-    lo::knobCX<locon::mediumKnob>(*mixEditor, cols[2].getCentreX(), 0);
 
     for (int i = 0; i < 3; ++i)
         floatAttachments[i]->andThenOnGui(thenRecalc);
