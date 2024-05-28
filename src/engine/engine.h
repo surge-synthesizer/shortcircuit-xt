@@ -207,12 +207,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void setNoteExpression(voice::Voice *v, int32_t expression, double value) {}
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat) {}
         void setChannelPressure(voice::Voice *v, int8_t pres) {}
-        void allSoundsOff(){
-            engine.releaseAllVoices();
-        }
-        void allNotesOff(){
-            engine.stopAllSounds();
-        }
+        void allSoundsOff() { engine.releaseAllVoices(); }
+        void allNotesOff() { engine.stopAllSounds(); }
         void setMIDI1CC(voice::Voice *v, int8_t cc, int8_t val);
 
     } voiceManagerResponder{*this};
@@ -446,6 +442,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     void terminateVoicesForZone(Zone &z);
     void terminateVoicesForGroup(Group &g);
+
+    float noteToPitch(float f) { return tuning::equalTuning.note_to_pitch(f); }
+    float dbToLinear(float f) { return dsp::dbTable.dbToLinear(f); }
 
   private:
     std::unique_ptr<Patch> patch;

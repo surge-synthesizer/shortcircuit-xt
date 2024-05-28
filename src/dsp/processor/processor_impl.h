@@ -38,7 +38,7 @@ namespace scxt::dsp::processor
 template <int OSFactor> struct SCXTVFXConfig
 {
     using BaseClass = Processor;
-    static constexpr int blockSize{scxt::blockSize * OSFactor};
+    static constexpr size_t blockSize{scxt::blockSize * OSFactor};
 
     static constexpr int16_t oversamplingRatio{OSFactor};
 
@@ -89,6 +89,11 @@ template <int OSFactor> struct SCXTVFXConfig
     static float equalNoteToPitch(const BaseClass *b, float f)
     {
         return tuning::equalTuning.note_to_pitch(f);
+    }
+
+    static float envelope_rate_linear_nowrap(const BaseClass *b, float f)
+    {
+        return blockSize * b->getSampleRateInv() * dsp::twoToTheXTable.twoToThe(-f);
     }
 };
 

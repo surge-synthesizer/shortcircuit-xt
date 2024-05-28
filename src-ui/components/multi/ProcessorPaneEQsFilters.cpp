@@ -100,7 +100,7 @@ struct EqDisplayBase : juce::Component
             const dsp::processor::ProcessorStorage *mStorage{nullptr};
             void setStorage(dsp::processor::ProcessorStorage *p) { mStorage = p; }
         };
-        static constexpr int blockSize{scxt::blockSize};
+        static constexpr size_t blockSize{scxt::blockSize};
         static void setFloatParam(BaseClass *, int, float) {}
         static float getFloatParam(const BaseClass *bc, int idx)
         {
