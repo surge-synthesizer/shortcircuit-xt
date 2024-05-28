@@ -67,7 +67,8 @@ template <typename T> struct HasGroupZoneProcessors
     static constexpr int processorCount{scxt::processorsPerZoneAndGroup};
     void setProcessorType(int whichProcessor, dsp::processor::ProcessorType type);
     void setupProcessorControlDescriptions(int whichProcessor, dsp::processor::ProcessorType,
-                                           dsp::processor::Processor *tmpProcessor = nullptr);
+                                           dsp::processor::Processor *tmpProcessor = nullptr,
+                                           bool reClampFloatValues = false);
 
     dsp::processor::Processor *spawnTempProcessor(int whichProcessor,
                                                   dsp::processor::ProcessorType type, uint8_t *mem,
