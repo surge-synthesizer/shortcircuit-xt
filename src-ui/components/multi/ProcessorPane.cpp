@@ -188,11 +188,11 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_SurgeFilters:
         layoutControlsSurgeFilters();
         break;
-            
+
     case dsp::processor::proct_fx_microgate:
         layoutControlsMicroGate();
         break;
-            
+
     case dsp::processor::proct_CytomicSVF:
     case dsp::processor::proct_SurgeBiquads:
         layoutControlsCytomicSVFAndBiquads();
@@ -207,7 +207,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_fx_waveshaper:
         layoutControlsWaveshaper();
         break;
-            
+
     case dsp::processor::proct_fx_bitcrusher:
         layoutControlsBitcrusher();
         break;
@@ -394,7 +394,7 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
-    
+
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
@@ -431,7 +431,7 @@ void ProcessorPane::layoutControlsBitcrusher()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto filt = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     filt->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
@@ -442,16 +442,16 @@ void ProcessorPane::layoutControlsBitcrusher()
     attachRebuildToIntAttachment(0);
 
     bool filterSwitch = intAttachments[0]->getValue();
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Samplerate");
     lo::knob<50>(*floatEditors[0], 10, 5);
 
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bit Depth");
     lo::knob<50>(*floatEditors[1], 70, 5);
-    
+
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Zero Point");
     lo::knob<50>(*floatEditors[2], 130, 5);
-    
+
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Cutoff");
     lo::knob<50>(*floatEditors[3], 40, 80);
     floatEditors[3]->item->setEnabled(filterSwitch);
@@ -738,27 +738,25 @@ void ProcessorPane::layoutControlsMicroGate()
 {
     assert(processorControlDescription.numFloatParams == 4);
     assert(processorControlDescription.numIntParams == 0);
-    
+
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Hold");
     lo::knob<55>(*floatEditors[0], 25, 0);
-    
+
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Loop");
     lo::knob<55>(*floatEditors[1], 105, 0);
-    
+
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Threshold");
     lo::knob<55>(*floatEditors[2], 25, 75);
-    
+
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Reduction");
     lo::knob<55>(*floatEditors[3], 105, 75);
-
-    
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)
