@@ -124,6 +124,7 @@ struct MappingZones : juce::Component, HasEditor
         }
         setMouseCursor(juce::MouseCursor::NormalCursor);
     }
+    void mouseDoubleClick(const juce::MouseEvent &e) override;
 
     void setLeadZoneBounds(const engine::Part::zoneMappingItem_t &az)
     {
@@ -352,7 +353,8 @@ struct MappingDisplay : juce::Component,
     MapEls<std::unique_ptr<sst::jucegui::components::Label>> labels;
     MapEls<std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
 
-    MappingDisplay(MappingPane *p) : HasEditor(p->editor), mappingView(p->mappingView)
+    MappingDisplay(MappingPane *p)
+        : HasEditor(p->editor), mappingView(p->mappingView), parentPane(p)
     {
         // TODO: Upgrade all these attachments with the new factory style
         mappingZones = std::make_unique<MappingZones>(this);
@@ -466,6 +468,7 @@ struct MappingDisplay : juce::Component,
     }
 
     engine::Zone::ZoneMappingData &mappingView;
+    MappingPane *parentPane{nullptr};
 
     void resized() override
     {
@@ -960,6 +963,11 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
         }
     }
+}
+
+void MappingZones::mouseDoubleClick(const juce::MouseEvent &e)
+{
+    display->parentPane->selectTab(1);
 }
 
 template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
@@ -1564,6 +1572,7 @@ struct SampleWaveform : juce::Component, HasEditor
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseMove(const juce::MouseEvent &e) override;
+    void mouseDoubleClick(const juce::MouseEvent &e) override;
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1740,7 +1749,8 @@ struct SampleDisplay : juce::Component, HasEditor
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     SampleDisplay(MappingPane *p)
-        : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView)
+        : HasEditor(p->editor), sampleView(p->sampleView), mappingView(p->mappingView),
+          parentPane(p)
     {
         waveformsTabbedGroup = std::make_unique<MyTabbedComponent>(this);
         addAndMakeVisible(*waveformsTabbedGroup);
@@ -2375,6 +2385,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
     engine::Zone::AssociatedSampleSet &sampleView;
     engine::Zone::ZoneMappingData &mappingView;
+    MappingPane *parentPane{nullptr};
 };
 
 SampleWaveform::SampleWaveform(scxt::ui::multi::SampleDisplay *d) : display(d), HasEditor(d->editor)
@@ -2609,6 +2620,11 @@ void SampleWaveform::mouseMove(const juce::MouseEvent &e)
     }
 
     setMouseCursor(juce::MouseCursor::NormalCursor);
+}
+
+void SampleWaveform::mouseDoubleClick(const juce::MouseEvent &e)
+{
+    display->parentPane->selectTab(0);
 }
 
 void SampleWaveform::paint(juce::Graphics &g)
