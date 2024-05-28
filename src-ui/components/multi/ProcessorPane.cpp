@@ -188,7 +188,11 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_SurgeFilters:
         layoutControlsSurgeFilters();
         break;
-
+            
+    case dsp::processor::proct_fx_microgate:
+        layoutControlsMicroGate();
+        break;
+            
     case dsp::processor::proct_CytomicSVF:
     case dsp::processor::proct_SurgeBiquads:
         layoutControlsCytomicSVFAndBiquads();
@@ -202,6 +206,10 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     case dsp::processor::proct_fx_waveshaper:
         layoutControlsWaveshaper();
+        break;
+            
+    case dsp::processor::proct_fx_bitcrusher:
+        layoutControlsBitcrusher();
         break;
 
     case dsp::processor::proct_eq_morph:
@@ -386,7 +394,8 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     namespace lo = theme::layout;
     namespace locon = lo::constants;
-
+    
+    clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
@@ -409,6 +418,47 @@ void ProcessorPane::layoutControlsWaveshaper()
     wss->popupMenuBuilder->setGroupList(sst::waveshapers::WaveshaperGroupName());
     wss->setBounds(ja);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
+}
+
+void ProcessorPane::layoutControlsBitcrusher()
+{
+    assert(processorControlDescription.numFloatParams == 3);
+    assert(processorControlDescription.numIntParams == 1);
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+    auto filt = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
+    filt->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+    filt->setGlyph(jcmp::GlyphPainter::BIG_PLUS);
+    auto plusBounds = bounds.withLeft(148).withRight(160).withTop(75).withBottom(87);
+    filt->setBounds(plusBounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(filt));
+    attachRebuildToIntAttachment(0);
+
+    bool filterSwitch = intAttachments[0]->getValue();
+    
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Samplerate");
+    lo::knob<50>(*floatEditors[0], 10, 5);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bit Depth");
+    lo::knob<50>(*floatEditors[1], 70, 5);
+    
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Zero Point");
+    lo::knob<50>(*floatEditors[2], 130, 5);
+    
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Cutoff");
+    lo::knob<50>(*floatEditors[3], 40, 80);
+    floatEditors[3]->item->setEnabled(filterSwitch);
+
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Resonance");
+    lo::knob<50>(*floatEditors[4], 100, 80);
+    floatEditors[4]->item->setEnabled(filterSwitch);
 }
 
 void ProcessorPane::layoutControlsCorrelatedNoiseGen()
@@ -483,6 +533,12 @@ void ProcessorPane::layoutControlsStringResonator()
     std::string justLevel = "Vol";
     std::string justTune = "Tune";
     std::string justPan = "Pan";
+    if (dualSwitch)
+    {
+        justLevel += " 1";
+        justTune += " 1";
+        justPan += " 1";
+    }
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justLevel);
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Vol 2");
@@ -498,9 +554,7 @@ void ProcessorPane::layoutControlsStringResonator()
 
     if (dualSwitch && stereoSwitch)
     {
-        justLevel += " 1";
-        justTune += " 1";
-        justPan += " 1";
+
         lo::knob<40>(*floatEditors[0], 5, 10);
         lo::knob<40>(*floatEditors[1], 5, 70);
         lo::knob<40>(*floatEditors[2], 50, 10);
@@ -510,8 +564,6 @@ void ProcessorPane::layoutControlsStringResonator()
     }
     else if (dualSwitch && !stereoSwitch)
     {
-        justLevel += " 1";
-        justTune += " 1";
         lo::knob<40>(*floatEditors[0], 5, 10);
         lo::knob<40>(*floatEditors[1], 5, 70);
         lo::knob<40>(*floatEditors[2], 72, 10);
@@ -680,6 +732,33 @@ void ProcessorPane::layoutControlsPhaser()
 
     floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "LFO Depth");
     lo::knob<50>(*floatEditors[4], 65, 80);
+}
+
+void ProcessorPane::layoutControlsMicroGate()
+{
+    assert(processorControlDescription.numFloatParams == 4);
+    assert(processorControlDescription.numIntParams == 0);
+    
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Hold");
+    lo::knob<55>(*floatEditors[0], 25, 0);
+    
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Loop");
+    lo::knob<55>(*floatEditors[1], 105, 0);
+    
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Threshold");
+    lo::knob<55>(*floatEditors[2], 25, 75);
+    
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Reduction");
+    lo::knob<55>(*floatEditors[3], 105, 75);
+
+    
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)

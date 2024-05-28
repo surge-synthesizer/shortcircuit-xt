@@ -84,9 +84,11 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void attachRebuildToIntAttachment(int idx);
 
     void layoutControls();
+    void layoutControlsMicroGate();
     void layoutControlsSurgeFilters();
     void layoutControlsCytomicSVFAndBiquads();
     void layoutControlsWaveshaper();
+    void layoutControlsBitcrusher();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
