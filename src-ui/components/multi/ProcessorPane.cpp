@@ -422,9 +422,6 @@ void ProcessorPane::layoutControlsWaveshaper()
 
 void ProcessorPane::layoutControlsBitcrusher()
 {
-    assert(processorControlDescription.numFloatParams == 3);
-    assert(processorControlDescription.numIntParams == 1);
-
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 

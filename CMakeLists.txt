@@ -65,6 +65,7 @@ option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" OFF)
 option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
 option(SCXT_USE_FLAC "Include FLAC support" ON)
+option(SCXT_USE_MP3 "Include MP3 support" ON)
 
 option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
 

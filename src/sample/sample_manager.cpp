@@ -45,6 +45,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
             {
             case Sample::WAV_FILE:
             case Sample::FLAC_FILE:
+            case Sample::MP3_FILE:
             case Sample::AIFF_FILE:
             {
                 loadSampleByPathToID(addr.path, id);

@@ -41,6 +41,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         WAV_FILE,
         SF2_FILE,
         FLAC_FILE,
+        MP3_FILE,
         AIFF_FILE,
         MULTISAMPLE_FILE,
     } type{WAV_FILE};
@@ -80,6 +81,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     std::string getBitDepthText() const { return bitDepthName(bitDepth); }
 
     bool parseFlac(const fs::path &p);
+    bool parseMP3(const fs::path &p);
 
     void *__restrict sampleData[2]{nullptr, nullptr};
 
