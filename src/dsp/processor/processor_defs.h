@@ -80,9 +80,9 @@
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/GenVA.h"
-//#include "sst/voice-effects/generator/GenSin.h"
-//#include "sst/voice-effects/generator/GenSaw.h"
-//#include "sst/voice-effects/generator/GenPulseSync.h"
+// #include "sst/voice-effects/generator/GenSin.h"
+// #include "sst/voice-effects/generator/GenSaw.h"
+// #include "sst/voice-effects/generator/GenPulseSync.h"
 #include "sst/voice-effects/delay/StringResonator.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
@@ -158,7 +158,6 @@ DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig
             sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Filters", "filt-statph");
 
-
 DEFINE_PROC(FreqShiftMod, sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<2>>, proct_fx_freqshiftmod,
             "Freqshift Mod", "Modulation", "pitchring-fx");
@@ -173,11 +172,11 @@ DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
             "Modulation", "tremolo");
 DEFINE_PROC(Phaser, sst::voice_effects::modulation::Phaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser,
-            "Phaser", "Modulation", "modulated-phaser");
+            sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser, "Phaser",
+            "Modulation", "modulated-phaser");
 DEFINE_PROC(Chorus, sst::voice_effects::delay::Chorus<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::Chorus<SCXTVFXConfig<2>>, proct_Chorus,
-            "Chorus", "Modulation", "voice-chorus", dsp::surgeSincTable);
+            sst::voice_effects::delay::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
+            "Modulation", "voice-chorus", dsp::surgeSincTable);
 
 } // namespace scxt::dsp::processor
 

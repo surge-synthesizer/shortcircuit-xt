@@ -222,8 +222,8 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     case dsp::processor::proct_osc_correlatednoise:
         layoutControlsCorrelatedNoiseGen();
-            break;
-            
+        break;
+
     case dsp::processor::proct_osc_VA:
         layoutControlsVAOsc();
         break;
@@ -243,7 +243,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_Phaser:
         layoutControlsPhaser();
         break;
-            
+
     case dsp::processor::proct_Chorus:
         layoutControlsChorus();
         break;
@@ -745,39 +745,39 @@ void ProcessorPane::layoutControlsVAOsc()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto wave = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
     auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
     wave->setBounds(switchBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wave));
     attachRebuildToIntAttachment(0);
-    
+
     int waveSwitch = intAttachments[0]->getValue();
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Frequency");
     lo::knob<50>(*floatEditors[0], 35, 5);
-    
+
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
     lo::knob<50>(*floatEditors[1], 100, 5);
-    
+
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Sync");
     lo::knob<50>(*floatEditors[2], 5, 80);
-    
+
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Pulse Width");
     lo::knob<50>(*floatEditors[3], 65, 80);
-    
+
     floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "HP");
     lo::knob<50>(*floatEditors[4], 5, 80);
-    
+
     floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "LP");
     lo::knob<50>(*floatEditors[5], 65, 80);
-    
+
     floatEditors[2]->setVisible(false);
     floatEditors[3]->setVisible(false);
     floatEditors[4]->setVisible(false);
     floatEditors[5]->setVisible(false);
-    
+
     if (waveSwitch == 2)
     {
         floatEditors[2]->setVisible(true);
@@ -804,13 +804,13 @@ void ProcessorPane::layoutControlsChorus()
     stereo->setGlyph(jcmp::GlyphPainter::STEREO);
     stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
     addAdditionalHamburgerComponent(std::move(stereo));
-    
+
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
     auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
     shapeSwitch->setBounds(switchBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Time");
     lo::knob<50>(*floatEditors[0], 35, 5);
 
