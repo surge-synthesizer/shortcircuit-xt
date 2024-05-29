@@ -242,6 +242,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual bool isKeytracked() const { return false; }
     virtual bool setKeytrack(bool b) { return false; }
+    virtual bool getDefaultKeytrack() { return false; }
 
     virtual bool supportsMakingParametersConsistent() { return false; }
     virtual bool makeParametersConsistent() { return false; }

@@ -114,6 +114,7 @@ HAS_MEMFN(processMonoToMono);
 HAS_MEMFN(processMonoToStereo);
 HAS_MEMFN(tailLength);
 HAS_MEMFN(enableKeytrack);
+HAS_MEMFN(getKeytrackDefault);
 HAS_MEMFN(getKeytrack);
 HAS_MEMFN(checkParameterConsistency);
 HAS_MEMFN(getMonoToStereoSetting)
@@ -280,6 +281,14 @@ template <typename T> struct SSTVoiceEffectShim : T
         if constexpr (HasMemFn_enableKeytrack<T>::value)
         {
             return T::enableKeytrack(b);
+        }
+        return false;
+    }
+    bool getDefaultKeytrack() override
+    {
+        if constexpr (HasMemFn_getKeytrackDefault<T>::value)
+        {
+            return T::getKeytrackDefault();
         }
         return false;
     }
