@@ -147,6 +147,11 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
             if (initFromDefaults)
             {
                 SCLOG("Processor init from defaults");
+                // This is a no-op if you don't support keytrack
+                ps.previousIsKeytracked = -1;
+                ps.isKeytracked = tmpProcessor->getDefaultKeytrack();
+                tmpProcessor->setKeytrack(ps.isKeytracked);
+
                 tmpProcessor->init_params(); // thos blows out with default}
 
                 if (tmpProcessor && tmpProcessor->supportsMakingParametersConsistent())
