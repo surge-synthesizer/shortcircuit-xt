@@ -83,7 +83,7 @@ TEST_CASE("Stream a dsp::filter::ProcessorStorage")
     SECTION("Type Streams")
     {
         dsp::processor::ProcessorStorage k1, k2;
-        k1.type = dsp::processor::proct_osc_pulse_sync;
+        k1.type = dsp::processor::proct_osc_VA;
         REQUIRE(k1 != k2);
         auto s = testStream(k1);
         testUnstream(s, k2);
@@ -93,7 +93,7 @@ TEST_CASE("Stream a dsp::filter::ProcessorStorage")
     SECTION("Expanded Values Stream")
     {
         dsp::processor::ProcessorStorage k1, k2;
-        k1.type = dsp::processor::proct_osc_pulse_sync;
+        k1.type = dsp::processor::proct_osc_VA;
         k1.mix = 0.23;
         for (auto &fv : k1.floatParams)
             fv = 1.0 * (rand() % 10000) / 7842.2;
