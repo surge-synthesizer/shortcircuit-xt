@@ -431,7 +431,7 @@ void ProcessorPane::layoutControlsBitcrusher()
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto filt = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     filt->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    filt->setGlyph(jcmp::GlyphPainter::BIG_PLUS);
+    filt->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
     auto plusBounds = bounds.withLeft(148).withRight(160).withTop(75).withBottom(87);
     filt->setBounds(plusBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(filt));
@@ -653,7 +653,7 @@ void ProcessorPane::LayoutControlsTremolo()
 
     auto harmonic = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     harmonic->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    harmonic->setGlyph(jcmp::GlyphPainter::BIG_PLUS);
+    harmonic->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
     auto plusBounds = bounds.withLeft(148).withRight(160).withTop(0).withBottom(12);
     harmonic->setBounds(plusBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(harmonic));
