@@ -80,6 +80,17 @@ bool Sample::load(const fs::path &path)
             return true;
         }
     }
+    else if (extensionMatches(path, ".mp3"))
+    {
+        if (parseMP3(path))
+        {
+            sample_loaded = true;
+            type = MP3_FILE;
+            mFileName = path;
+            displayName = fmt::format("{}", path.filename().u8string());
+            return true;
+        }
+    }
     else if (extensionMatches(path, ".aif") || extensionMatches(path, ".aiff"))
     {
         auto fmv = std::make_unique<infrastructure::FileMapView>(path);
@@ -368,6 +379,9 @@ void Sample::dumpInformationToLog()
         break;
     case FLAC_FILE:
         SCLOG("FLAC File : " << getPath().u8string());
+        break;
+    case MP3_FILE:
+        SCLOG("MP3 File : " << getPath().u8string());
         break;
     case AIFF_FILE:
         SCLOG("AIFF File : " << getPath().u8string());
