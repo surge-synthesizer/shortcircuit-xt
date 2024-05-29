@@ -93,10 +93,12 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
     void layoutControlsCorrelatedNoiseGen();
+    void layoutControlsVAOsc();
     void layoutControlsStringResonator();
     void layoutControlsStaticPhaser();
     void LayoutControlsTremolo();
     void layoutControlsPhaser();
+    void layoutControlsChorus();
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
