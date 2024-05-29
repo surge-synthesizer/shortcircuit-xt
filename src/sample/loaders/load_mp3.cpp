@@ -46,6 +46,8 @@ bool Sample::parseMP3(const fs::path &p)
         }
     }
 
+    free(info.buffer);
+
     return true;
 }
 } // namespace scxt::sample
