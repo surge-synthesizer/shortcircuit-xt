@@ -79,9 +79,10 @@
 #include "sst/voice-effects/filter/StaticPhaser.h"
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
-#include "sst/voice-effects/generator/GenSin.h"
-#include "sst/voice-effects/generator/GenSaw.h"
-#include "sst/voice-effects/generator/GenPulseSync.h"
+#include "sst/voice-effects/generator/GenVA.h"
+// #include "sst/voice-effects/generator/GenSin.h"
+// #include "sst/voice-effects/generator/GenSaw.h"
+// #include "sst/voice-effects/generator/GenPulseSync.h"
 #include "sst/voice-effects/delay/StringResonator.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
@@ -89,6 +90,7 @@
 #include "sst/voice-effects/modulation/PhaseMod.h"
 #include "sst/voice-effects/modulation/Tremolo.h"
 #include "sst/voice-effects/modulation/Phaser.h"
+#include "sst/voice-effects/delay/Chorus.h"
 
 namespace scxt::dsp::processor
 {
@@ -132,20 +134,10 @@ DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "EQ",
             "eq-morph");
 
-DEFINE_PROC(GenSin, sst::voice_effects::generator::GenSin<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::GenSin<SCXTVFXConfig<2>>, proct_osc_sin, "Sin",
-            "Generators", "osc-sin");
-PROC_DEFAULT_MIX(proct_osc_sin, 0.5);
-
-DEFINE_PROC(GenSaw, sst::voice_effects::generator::GenSaw<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::GenSaw<SCXTVFXConfig<2>>, proct_osc_saw, "Saw",
-            "Generators", "osc-saw");
-PROC_DEFAULT_MIX(proct_osc_saw, 0.5);
-
-DEFINE_PROC(GenPulseSync, sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::GenPulseSync<SCXTVFXConfig<2>>, proct_osc_pulse_sync,
-            "Pulse Sync", "Generators", "osc-pulse-sync", dsp::sincTable);
-PROC_DEFAULT_MIX(proct_osc_pulse_sync, 0.5);
+DEFINE_PROC(GenVA, sst::voice_effects::generator::GenVA<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::GenVA<SCXTVFXConfig<2>>, proct_osc_VA, "VA Oscillator",
+            "Generators", "osc-va", dsp::sincTable);
+PROC_DEFAULT_MIX(proct_osc_VA, 0.5);
 
 DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<2>>,
@@ -159,16 +151,12 @@ DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXC
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
             "Filters", "filt-cytomic");
-/* DEFINE_PROC(SurgeBiquads, sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::SurgeBiquads<SCXTVFXConfig<2>>, proct_SurgeBiquads,
-            "Surge Biquads", "Filters", "filt-sstbiquad"); */
 DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
             "Surge Filters", "Filters", "filt-sstfilters");
 DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Filters", "filt-statph");
-
 
 DEFINE_PROC(FreqShiftMod, sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<2>>, proct_fx_freqshiftmod,
@@ -184,8 +172,11 @@ DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
             "Modulation", "tremolo");
 DEFINE_PROC(Phaser, sst::voice_effects::modulation::Phaser<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser,
-            "Phaser", "Modulation", "modulated-phaser");
+            sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser, "Phaser",
+            "Modulation", "modulated-phaser");
+DEFINE_PROC(Chorus, sst::voice_effects::delay::Chorus<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
+            "Modulation", "voice-chorus", dsp::surgeSincTable);
 
 } // namespace scxt::dsp::processor
 

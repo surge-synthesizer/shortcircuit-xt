@@ -48,7 +48,7 @@ endif ()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Never want shared if not specified")
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -65,6 +65,7 @@ option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" OFF)
 option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
 option(SCXT_USE_FLAC "Include FLAC support" ON)
+option(SCXT_USE_MP3 "Include MP3 support" ON)
 
 option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
 
@@ -94,7 +95,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
-            $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<VERSION_GREATER_EQUAL:${CMAKE_CXX_STANDARD},20>>:-fno-char8_t>
     )
 
     add_link_options(
@@ -102,19 +102,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
     )
 endif ()
-
-if (MSVC)
-    add_compile_options(
-        # Build with Multiple Processes (Clang-cl builds use Ninja instead)
-        $<$<CXX_COMPILER_ID:MSVC>:/MP>
-        # Set source and executable charsets to UTF-8
-        $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
-        # Do *not* use the new, breaking char8_t UTF-8 bits in C++20.
-        $<$<COMPILE_LANGUAGE:CXX>:/Zc:char8_t->
-        # amke msvc define __cplulsplus properly
-        $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>
-    )
-endif()
 
 add_compile_definitions(SCXT_ROOT_BUILD_DIR="${CMAKE_SOURCE_DIR}")
 

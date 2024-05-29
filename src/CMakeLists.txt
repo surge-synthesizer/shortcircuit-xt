@@ -24,6 +24,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_riff_wave.cpp
         sample/loaders/load_aiff.cpp
         sample/loaders/load_flac.cpp
+        sample/loaders/load_mp3.cpp
 
         sample/multisample_support/multisample_import.cpp
         sample/sfz_support/sfz_parse.cpp
@@ -80,5 +81,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         taocpp::json
 
         FLAC++
+        minimp3
+
         sc-compiler-options
         )

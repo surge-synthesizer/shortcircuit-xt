@@ -47,11 +47,10 @@ std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView
     return osdef;
 }
 
-const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".flac", ".aif",
-                                                                         ".aiff"};
+const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".flac", ".mp3", ".aif",
+                                                                   ".aiff"};
 
-const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz",
-                                                                        ".multisample"};
+const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz", ".multisample"};
 
 bool Browser::isLoadableFile(const fs::path &p)
 {

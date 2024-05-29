@@ -62,4 +62,12 @@ if (UNIX AND NOT APPLE)
     target_link_libraries(mts-esp-client PUBLIC dl)
 endif ()
 
+add_library(minimp3 INTERFACE)
+if (${SCXT_USE_MP3})
+    message(STATUS "Including MP3 support with minimp3")
+    # minimpe doesn't have a cmake but is header only
+    target_include_directories(minimp3 INTERFACE minimp3)
+    target_compile_definitions(minimp3 INTERFACE SCXT_USE_MP3=1)
+endif()
+
 add_subdirectory (melatonin_inspector)

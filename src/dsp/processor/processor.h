@@ -110,6 +110,7 @@ enum ProcessorType
     proct_SurgeFilters,
     proct_Tremolo,
     proct_Phaser,
+    proct_Chorus,
 
     proct_stringResonator,
 
@@ -137,11 +138,8 @@ enum ProcessorType
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,
-    proct_osc_pulse,
-    proct_osc_correlatednoise,
-    proct_osc_pulse_sync,
-    proct_osc_saw,
-    proct_osc_sin, // last zone
+    proct_osc_VA,
+    proct_osc_correlatednoise, // last zone
     proct_num_types,
 };
 
@@ -244,6 +242,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual bool isKeytracked() const { return false; }
     virtual bool setKeytrack(bool b) { return false; }
+    virtual bool getDefaultKeytrack() { return false; }
 
     virtual bool supportsMakingParametersConsistent() { return false; }
     virtual bool makeParametersConsistent() { return false; }

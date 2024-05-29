@@ -71,7 +71,7 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
 template <typename T>
 void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
     int whichProcessor, dsp::processor::ProcessorType type,
-    dsp::processor::Processor *tmpProcessorFromAfar)
+    dsp::processor::Processor *tmpProcessorFromAfar, bool reClampFloatValues)
 {
     if (type == dsp::processor::proct_none)
     {
@@ -107,6 +107,18 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
         processorDescription[whichProcessor].supportsKeytrack = false;
     }
 
+    if (reClampFloatValues)
+    {
+        // Clamp floats to min/max here. This matters when, say, you toggle
+        // keytrack and change ranges and so need to clamp inside the new range.
+        auto &pd = processorDescription[whichProcessor];
+        for (int i = 0; i < pd.numFloatParams; ++i)
+        {
+            ps.floatParams[i] = std::clamp(ps.floatParams[i], pd.floatControlDescriptions[i].minVal,
+                                           pd.floatControlDescriptions[i].maxVal);
+        }
+    }
+
     if (!tmpProcessorFromAfar)
         dsp::processor::unspawnProcessor(tmpProcessor);
 }
@@ -135,6 +147,11 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
             if (initFromDefaults)
             {
                 SCLOG("Processor init from defaults");
+                // This is a no-op if you don't support keytrack
+                ps.previousIsKeytracked = -1;
+                ps.isKeytracked = tmpProcessor->getDefaultKeytrack();
+                tmpProcessor->setKeytrack(ps.isKeytracked);
+
                 tmpProcessor->init_params(); // thos blows out with default}
 
                 if (tmpProcessor && tmpProcessor->supportsMakingParametersConsistent())
@@ -170,7 +187,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
 
         auto restate = tmpProcessor->makeParametersConsistent();
 
-        setupProcessorControlDescriptions(whichProcessor, ps.type, tmpProcessor);
+        setupProcessorControlDescriptions(whichProcessor, ps.type, tmpProcessor, restate);
 
         if (restate)
         {
@@ -203,7 +220,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
         if (ps.previousIsKeytracked < 0 || ps.isKeytracked != ps.previousIsKeytracked)
         {
             ps.previousIsKeytracked = ps.isKeytracked ? 1 : 0;
-            asT()->setupProcessorControlDescriptions(whichProcessor, ps.type);
+            asT()->setupProcessorControlDescriptions(whichProcessor, ps.type, nullptr, true);
 
             messaging::audio::AudioToSerialization updateProc;
             updateProc.id = messaging::audio::a2s_processor_refresh;
