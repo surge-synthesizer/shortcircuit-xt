@@ -102,8 +102,7 @@ static constexpr size_t processorLabelSize{32};
 enum ProcessorType
 {
     proct_none = 0,
-    proct_biquadSBQ, // First zone
-    proct_SuperSVF,
+    proct_SuperSVF, // First zone
     proct_CytomicSVF,
     proct_StaticPhaser,
     proct_SurgeBiquads,
