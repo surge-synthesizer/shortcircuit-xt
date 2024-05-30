@@ -151,15 +151,14 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
                 ps.previousIsKeytracked = -1;
                 ps.isKeytracked = tmpProcessor->getDefaultKeytrack();
                 tmpProcessor->setKeytrack(ps.isKeytracked);
-
                 tmpProcessor->init_params(); // thos blows out with default}
 
                 if (tmpProcessor && tmpProcessor->supportsMakingParametersConsistent())
                 {
                     tmpProcessor->makeParametersConsistent();
-                    tmpProcessor->resetMetadata();
                 }
 
+                tmpProcessor->resetMetadata();
                 memcpy(&(ps.floatParams[0]), pfp, sizeof(ps.floatParams));
                 memcpy(&(ps.intParams[0]), ifp, sizeof(ps.intParams));
             }
@@ -242,6 +241,14 @@ std::string HasGroupZoneProcessors<T>::toStringProcRoutingPath(
     {
     case procRoute_linear:
         return "procRoute_linear";
+    case procRoute_ser2:
+        return "procRoute_ser2";
+    case procRoute_ser3:
+        return "procRoute_ser3";
+    case procRoute_par1:
+        return "procRoete_par1";
+    case procRoute_par2:
+        return "procRoete_par2";
     case procRoute_bypass:
         return "procRoute_bypass";
     }
@@ -269,8 +276,37 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathDisplayName(
     {
     case procRoute_linear:
         return "Linear";
+    case procRoute_ser2:
+        return "> { 1 | 2 } > { 3 | 4 } >";
+    case procRoute_ser3:
+        return "> 1 > { 2 | 3 } > 4 >";
+    case procRoute_par1:
+        return "> { { 1>2 } | { 3 > 4 } } >";
+    case procRoute_par2:
+        return "> { 1 | 2 | 3 } > 4";
     case procRoute_bypass:
         return "Bypass";
+    }
+    return "ERROR";
+}
+
+template <typename T>
+std::string HasGroupZoneProcessors<T>::getProcRoutingPathShortName(ProcRoutingPath p)
+{
+    switch (p)
+    {
+    case procRoute_linear:
+        return "SER";
+    case procRoute_ser2:
+        return "SER2";
+    case procRoute_ser3:
+        return "SER3";
+    case procRoute_par1:
+        return "PAR1";
+    case procRoute_par2:
+        return "PAR2";
+    case procRoute_bypass:
+        return "BYP";
     }
     return "ERROR";
 }

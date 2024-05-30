@@ -187,6 +187,11 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         }
     }
     break;
+
+    case HasGroupZoneProcessors<Group>::procRoute_ser2:
+    case HasGroupZoneProcessors<Group>::procRoute_ser3:
+    case HasGroupZoneProcessors<Group>::procRoute_par1:
+    case HasGroupZoneProcessors<Group>::procRoute_par2:
     case HasGroupZoneProcessors<Group>::procRoute_bypass:
         break;
     }

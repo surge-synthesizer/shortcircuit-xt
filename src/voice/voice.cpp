@@ -329,6 +329,11 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
     break;
+
+    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
+    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
+    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par1:
+    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par2:
     case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_bypass:
         break;
     }
