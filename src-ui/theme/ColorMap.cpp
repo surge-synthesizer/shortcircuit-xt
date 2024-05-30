@@ -51,7 +51,7 @@ struct WireframeColors : ColorMap
             break;
         case accent_2a_alpha_b:
             res = getImpl(accent_2a, 0.32);
-            break;    
+            break;
         case accent_2a_alpha_c:
             res = getImpl(accent_2a, 0.5);
             break;
@@ -140,7 +140,7 @@ struct TestColors : ColorMap
             break;
         case accent_2a_alpha_b:
             res = juce::Colours::aquamarine.darker(0.6);
-            break;    
+            break;
         case accent_2a_alpha_c:
             res = juce::Colours::aquamarine.darker(0.6);
             break;

@@ -130,7 +130,7 @@ struct StepLFOPane : juce::Component, HasEditor
                 }
                 first = false;
             }
-            //g.strokePath(p, juce::PathStrokeType(1.0));
+            // g.strokePath(p, juce::PathStrokeType(1.0));
 
             g.setColour(boxc);
             g.drawRect(getLocalBounds());

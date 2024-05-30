@@ -193,9 +193,12 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsMicroGate();
         break;
 
+    case dsp::processor::proct_fx_simple_delay:
+        layoutControlsSimpleDelay();
+        break;
+
     case dsp::processor::proct_CytomicSVF:
-    case dsp::processor::proct_SurgeBiquads:
-        layoutControlsCytomicSVFAndBiquads();
+        layoutControlsFastSVF();
         break;
 
     case dsp::processor::proct_eq_1band_parametric_A:
@@ -343,6 +346,54 @@ void ProcessorPane::layoutControls()
     }
 }
 
+void ProcessorPane::layoutControlsSimpleDelay()
+{
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
+    attachRebuildToIntAttachment(0);
+    bool stereoSwitch = intAttachments[0]->getValue();
+
+    auto justTime = std::string("Time");
+    if (stereoSwitch)
+    {
+        justTime += " L";
+    }
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justTime);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Time R");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Feedback");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Crossfeed");
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Low Cut");
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "High Cut");
+
+    if (stereoSwitch)
+    {
+        lo::knob<45>(*floatEditors[0], 5, 5);
+        lo::knob<45>(*floatEditors[1], 70, 5);
+        floatEditors[3]->item->setEnabled(true);
+    }
+    else
+    {
+        lo::knob<45>(*floatEditors[0], 38, 5);
+        floatEditors[3]->item->setEnabled(false);
+    }
+
+    lo::knob<45>(*floatEditors[2], 140, 5);
+    lo::knob<45>(*floatEditors[3], 140, 85);
+    lo::knob<45>(*floatEditors[4], 5, 85);
+    lo::knob<45>(*floatEditors[5], 70, 85);
+}
+
 // May want to break this up
 void ProcessorPane::layoutControlsSurgeFilters()
 {
@@ -389,6 +440,67 @@ void ProcessorPane::layoutControlsSurgeFilters()
     }
 }
 
+void ProcessorPane::layoutControlsFastSVF()
+{
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
+    attachRebuildToIntAttachment(1);
+    bool stereoSwitch = intAttachments[1]->getValue();
+
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    auto bd = getContentArea();
+    auto rest = bd.withTrimmedLeft(60).withHeight(55);
+
+    auto justCutoff = std::string("Cutoff");
+    if (stereoSwitch)
+    {
+        justCutoff += " L";
+    }
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justCutoff);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Cutoff R");
+
+    if (stereoSwitch)
+    {
+        lo::knob<locon::largeKnob>(*floatEditors[0], 5, 5);
+        lo::knob<locon::largeKnob>(*floatEditors[1], 70, 45);
+    }
+    else
+    {
+        lo::knob<locon::extraLargeKnob>(*floatEditors[0], 35, 15);
+    }
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Res");
+    lo::knob<locon::mediumKnob>(*floatEditors[2], 140, 5);
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Gain");
+    lo::knob<locon::mediumKnob>(*floatEditors[3], 140, 60);
+    floatEditors[3]->item->setEnabled(false);
+
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+    bounds = bounds.withTop(bounds.getBottom() - 22).translated(0, -3).reduced(3, 0);
+
+    auto filterMode = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
+    filterMode->setBounds(bounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(filterMode));
+    attachRebuildToIntAttachment(0);
+    auto modeSwitch = intAttachments[0]->getValue();
+
+    if (modeSwitch > 5)
+    {
+        floatEditors[3]->item->setEnabled(true);
+    }
+}
+
 void ProcessorPane::layoutControlsWaveshaper()
 {
     namespace lo = theme::layout;
@@ -399,13 +511,13 @@ void ProcessorPane::layoutControlsWaveshaper()
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Drive");
-    lo::knob<locon::extraLargeKnob>(*floatEditors[0], 10, 10);
+    lo::knob<locon::extraLargeKnob>(*floatEditors[0], 35, 15);
 
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bias");
-    auto biasPos = lo::knob<locon::mediumKnob>(*floatEditors[1], 125, 0);
+    lo::knob<locon::mediumKnob>(*floatEditors[1], 140, 5);
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Gain");
-    lo::labeledAt(*floatEditors[2], lo::belowLabel(biasPos));
+    lo::knob<locon::mediumKnob>(*floatEditors[2], 140, 60);
 
     auto ja = getContentAreaComponent()->getLocalBounds();
     ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);
@@ -510,39 +622,29 @@ void ProcessorPane::layoutControlsStringResonator()
     addAdditionalHamburgerComponent(std::move(stereo));
     attachRebuildToIntAttachment(0);
 
+    auto bounds = getContentAreaComponent()->getLocalBounds();
     auto dual = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    dual->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    dual->setGlyph(jcmp::GlyphPainter::STEREO);
-    dual->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(dual));
+    dual->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+    dual->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+    auto dualBounds = bounds.withLeft(1).withRight(9).withTop(60).withBottom(69);
+    dual->setBounds(dualBounds);
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(dual));
     attachRebuildToIntAttachment(1);
 
     bool stereoSwitch = intAttachments[0]->getValue();
     bool dualSwitch = intAttachments[1]->getValue();
 
-    std::string justLevel = "Vol";
-    std::string justTune = "Tune";
-    std::string justPan = "Pan";
-    if (dualSwitch)
-    {
-        justLevel += " 1";
-        justTune += " 1";
-        justPan += " 1";
-    }
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justLevel);
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Vol 1");
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Vol 2");
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], justTune);
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Tune 1");
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Tune 2");
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], justPan);
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Pan 2");
     floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Pan 2");
 
-    floatEditors[1]->setVisible(dualSwitch);
-    floatEditors[3]->setVisible(dualSwitch);
     floatEditors[4]->setVisible(stereoSwitch);
-    floatEditors[5]->setVisible(stereoSwitch && dualSwitch);
+    floatEditors[5]->setVisible(stereoSwitch);
 
-    if (dualSwitch && stereoSwitch)
+    if (stereoSwitch)
     {
 
         lo::knob<40>(*floatEditors[0], 5, 10);
@@ -552,24 +654,17 @@ void ProcessorPane::layoutControlsStringResonator()
         lo::knob<40>(*floatEditors[4], 95, 10);
         lo::knob<40>(*floatEditors[5], 95, 70);
     }
-    else if (dualSwitch && !stereoSwitch)
+    else
     {
         lo::knob<40>(*floatEditors[0], 5, 10);
         lo::knob<40>(*floatEditors[1], 5, 70);
         lo::knob<40>(*floatEditors[2], 72, 10);
         lo::knob<40>(*floatEditors[3], 72, 70);
     }
-    else if (!dualSwitch && stereoSwitch)
-    {
-        lo::knob<40>(*floatEditors[0], 5, 40);
-        lo::knob<40>(*floatEditors[2], 50, 40);
-        lo::knob<40>(*floatEditors[4], 95, 40);
-    }
-    else
-    {
-        lo::knob<55>(*floatEditors[0], 5, 35);
-        lo::knob<55>(*floatEditors[2], 72, 35);
-    }
+
+    floatEditors[1]->item->setEnabled(dualSwitch);
+    floatEditors[3]->item->setEnabled(dualSwitch);
+    floatEditors[5]->item->setEnabled(dualSwitch);
 
     floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
     lo::knob<40>(*floatEditors[6], 140, 10);
