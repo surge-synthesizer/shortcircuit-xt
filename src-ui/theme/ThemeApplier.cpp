@@ -210,7 +210,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
      */
     base->setColour(Base::styleClass, Base::background,
                     cols.get(ColorMap::bg_2));
-
+                    
     base->setFont(BaseLabel::styleClass, BaseLabel::labelfont,
                   juce::Font(11, juce::Font::plain));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor,
@@ -306,7 +306,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(jcmp::NamedPanel::Styles::styleClass,
                     jcmp::NamedPanel::Styles::backgroundSelected, cols.get(ColorMap::bg_3));
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::labelrule,
-                    cols.get(ColorMap::generic_content_low));
+                    cols.get(ColorMap::generic_content_medium));
     auto npol = cols.get(ColorMap::panel_outline_2);
     if (npol.getAlpha() == 0)
         npol = cols.get(ColorMap::bg_2).brighter(0.05);
