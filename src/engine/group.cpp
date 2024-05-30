@@ -40,6 +40,7 @@
 #include "patch.h"
 #include "engine.h"
 #include "group_and_zone_impl.h"
+#include "dsp/processor/routing.h"
 
 namespace scxt::engine
 {
@@ -163,6 +164,24 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         }
     }
 
+    // Groups are always unpitched and stereo
+    auto fpitch = 0;
+    bool processorConsumesMono[4]{false, false, false, false};
+    bool chainIsMono{false};
+
+    if constexpr (OS)
+    {
+        scxt::dsp::processor::processSequential<true>(fpitch, processors.data(),
+                                                      processorConsumesMono, processorMixOS,
+                                                      &endpoints, chainIsMono, output);
+    }
+    else
+    {
+        scxt::dsp::processor::processSequential<false>(fpitch, processors.data(),
+                                                       processorConsumesMono, processorMix,
+                                                       &endpoints, chainIsMono, output);
+    }
+#if 0
     // for processor do the necessary
     for (int i = 0; i < engine::processorCount; ++i)
     {
@@ -189,6 +208,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             }
         }
     }
+#endif
 
     // Pan
     auto pvo = std::clamp(*endpoints.outputTarget.panP, -1.f, 1.f);

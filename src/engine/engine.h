@@ -207,12 +207,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void setNoteExpression(voice::Voice *v, int32_t expression, double value) {}
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat) {}
         void setChannelPressure(voice::Voice *v, int8_t pres) {}
-        void allSoundsOff(){
-            engine.releaseAllVoices();
-        }
-        void allNotesOff(){
-            engine.stopAllSounds();
-        }
+        void allSoundsOff() { engine.releaseAllVoices(); }
+        void allNotesOff() { engine.stopAllSounds(); }
         void setMIDI1CC(voice::Voice *v, int8_t cc, int8_t val);
 
     } voiceManagerResponder{*this};

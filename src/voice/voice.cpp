@@ -33,6 +33,7 @@
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/basic-blocks/dsp/PanLaws.h"
 #include "engine/engine.h"
+#include "dsp/processor/routing.h"
 
 namespace scxt::voice
 {
@@ -310,6 +311,19 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
 
+    if constexpr (OS)
+    {
+        scxt::dsp::processor::processSequential<true>(fpitch, processors, processorConsumesMono,
+                                                      processorMixOS, endpoints.get(), chainIsMono,
+                                                      output);
+    }
+    else
+    {
+        scxt::dsp::processor::processSequential<false>(fpitch, processors, processorConsumesMono,
+                                                       processorMix, endpoints.get(), chainIsMono,
+                                                       output);
+    }
+#if 0
     for (auto i = 0; i < engine::processorCount; ++i)
     {
         // TODO: FixMe for oversample
@@ -373,6 +387,8 @@ template <bool OS> bool Voice::processWithOS()
                                    */
         }
     }
+
+#endif
 
     /*
      * Implement output pan
@@ -531,8 +547,8 @@ void Voice::initializeGenerator()
     GD.interpolationType = dsp::InterpolationTypes::ZeroOrderHold;
 #endif
 
-    // TODO: This constant came from SC. Wonder why it is this value. There was a comment comparing
-    // with 167777216 so any speedup at all.
+    // TODO: This constant came from SC. Wonder why it is this value. There was a comment
+    // comparing with 167777216 so any speedup at all.
     useOversampling = std::abs(GD.ratio) > 18000000 || forceOversample;
     GD.blockSize = blockSize * (useOversampling ? 2 : 1);
 
