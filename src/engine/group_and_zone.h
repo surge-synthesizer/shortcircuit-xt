@@ -58,10 +58,10 @@ template <typename T> struct HasGroupZoneProcessors
     enum ProcRoutingPath : int16_t
     {
         procRoute_linear,
-        procRoute_bypass
+        procRoute_bypass // leave this as last
     };
     DECLARE_ENUM_STRING(ProcRoutingPath);
-    std::string getProcRoutingPathDisplayName(ProcRoutingPath p);
+    static std::string getProcRoutingPathDisplayName(ProcRoutingPath p);
 
     T *asT() { return static_cast<T *>(this); }
     static constexpr int processorCount{scxt::processorsPerZoneAndGroup};
