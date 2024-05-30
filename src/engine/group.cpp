@@ -169,47 +169,27 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     bool processorConsumesMono[4]{false, false, false, false};
     bool chainIsMono{false};
 
-    if constexpr (OS)
+    switch (outputInfo.procRouting)
     {
-        scxt::dsp::processor::processSequential<true>(fpitch, processors.data(),
-                                                      processorConsumesMono, processorMixOS,
-                                                      &endpoints, chainIsMono, output);
-    }
-    else
+    case HasGroupZoneProcessors<Group>::procRoute_linear:
     {
-        scxt::dsp::processor::processSequential<false>(fpitch, processors.data(),
-                                                       processorConsumesMono, processorMix,
-                                                       &endpoints, chainIsMono, output);
-    }
-#if 0
-    // for processor do the necessary
-    for (int i = 0; i < engine::processorCount; ++i)
-    {
-        auto *p = processors[i];
-        const auto &ps = processorStorage[i];
-        float tempbuf alignas(16)[2][BLOCK_SIZE << 1];
-
-        if (p && ps.isActive)
+        if constexpr (OS)
         {
-            endpoints.processorTarget[i].snapValues();
-
-            p->process_stereo(lOut, rOut, tempbuf[0], tempbuf[1], 0);
-            if constexpr (OS)
-            {
-                processorMixOS[i].set_target(ps.mix);
-                processorMixOS[i].fade_blocks(lOut, tempbuf[0], lOut);
-                processorMixOS[i].fade_blocks(rOut, tempbuf[1], rOut);
-            }
-            else
-            {
-                processorMix[i].set_target(ps.mix);
-                processorMix[i].fade_blocks(lOut, tempbuf[0], lOut);
-                processorMix[i].fade_blocks(rOut, tempbuf[1], rOut);
-            }
+            scxt::dsp::processor::processSequential<true>(fpitch, processors.data(),
+                                                          processorConsumesMono, processorMixOS,
+                                                          &endpoints, chainIsMono, output);
+        }
+        else
+        {
+            scxt::dsp::processor::processSequential<false>(fpitch, processors.data(),
+                                                           processorConsumesMono, processorMix,
+                                                           &endpoints, chainIsMono, output);
         }
     }
-#endif
-
+    break;
+    case HasGroupZoneProcessors<Group>::procRoute_bypass:
+        break;
+    }
     // Pan
     auto pvo = std::clamp(*endpoints.outputTarget.panP, -1.f, 1.f);
 

@@ -42,6 +42,7 @@ struct OutPaneZoneTraits
     static constexpr bool forZone{true};
     static constexpr const char *defaultRoutingLocationName{"Group Output"};
     using info_t = engine::Zone::ZoneOutputInfo;
+    using route_t = engine::Zone::ProcRoutingPath;
 
     using floatMsg_t = scxt::messaging::client::UpdateZoneOutputFloatValue;
     using int16Msg_t = scxt::messaging::client::UpdateZoneOutputInt16TValue;
@@ -52,11 +53,13 @@ struct OutPaneGroupTraits
     static constexpr bool forZone{false};
     static constexpr const char *defaultRoutingLocationName{"Part Output"};
     using info_t = engine::Group::GroupOutputInfo;
+    using route_t = engine::Group::ProcRoutingPath;
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
     using int16Msg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
 };
 template <typename OTTraits> struct OutputTab;
+template <typename OTTraits> struct ProcTab;
 
 template <typename OTTraits> struct OutputPane : sst::jucegui::components::NamedPanel, HasEditor
 {
@@ -68,7 +71,7 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
     void setOutputData(const typename OTTraits::info_t &);
 
     std::unique_ptr<OutputTab<OTTraits>> output;
-    std::unique_ptr<juce::Component> proc;
+    std::unique_ptr<ProcTab<OTTraits>> proc;
     bool active{false};
 };
 } // namespace scxt::ui::multi
