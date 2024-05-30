@@ -42,23 +42,77 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-struct cc : juce::Component, HasEditor
+template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
 {
-    cc(SCXTEditor *e) : HasEditor(e) {}
+    OutputPane<OTTraits> *outputPane{nullptr};
+    std::unique_ptr<jcmp::MenuButton> procRouting;
+
+    ProcTab(SCXTEditor *e, OutputPane<OTTraits> *pane) : HasEditor(e), outputPane(pane)
+    {
+        procRouting = std::make_unique<jcmp::MenuButton>();
+        procRouting->setLabel(OTTraits::defaultRoutingLocationName);
+        updateProcRoutingLabel();
+        procRouting->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->selectNewProcRouting();
+        });
+        addAndMakeVisible(*procRouting);
+    }
     void paint(juce::Graphics &g)
     {
         auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
                                            jcmp::Label::Styles::labelfont);
         g.setFont(ft.withHeight(14));
         g.setColour(juce::Colours::white);
-        g.drawText("Proc Routing", getLocalBounds().withTrimmedBottom(20),
-                   juce::Justification::centred);
-
-        g.setFont(ft.withHeight(12));
-        g.setColour(juce::Colours::white);
-        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(20),
-                   juce::Justification::centred);
+        g.drawText("Proc Routing", getLocalBounds().withHeight(30), juce::Justification::centred);
     }
+
+    void resized()
+    {
+        procRouting->setBounds(getLocalBounds()
+                                   .reduced(3, 0)
+                                   .withTrimmedTop(getHeight() * 0.5 - 12)
+                                   .withTrimmedBottom(getHeight() * 0.5 - 12));
+    }
+
+    std::string getRoutingName(typename OTTraits::route_t r)
+    {
+        auto zn = std::string();
+        if constexpr (OTTraits::forZone)
+            zn = scxt::engine::Zone::getProcRoutingPathDisplayName(r);
+        else
+            zn = scxt::engine::Group::getProcRoutingPathDisplayName(r);
+        return zn;
+    }
+    void updateProcRoutingLabel()
+    {
+        procRouting->setLabel(getRoutingName(info.procRouting));
+        procRouting->repaint();
+    }
+    void selectNewProcRouting()
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Proc Routing");
+        p.addSeparator();
+        for (int i = OTTraits::route_t::procRoute_linear; i <= OTTraits::route_t::procRoute_bypass;
+             ++i)
+        {
+            auto r = (typename OTTraits::route_t)i;
+            p.addItem(getRoutingName(r), true, info.procRouting == r,
+                      [w = juce::Component::SafePointer(this), r]() {
+                          if (w)
+                          {
+                              w->info.procRouting = r;
+                              w->template sendSingleToSerialization<typename OTTraits::int16Msg_t>(
+                                  w->info, w->info.procRouting);
+                              w->updateProcRoutingLabel();
+                          }
+                      });
+        }
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    typename OTTraits::info_t info;
 };
 
 template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
@@ -194,7 +248,7 @@ OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEdito
 
     output = std::make_unique<OutputTab<OTTraits>>(editor, this);
     addAndMakeVisible(*output);
-    proc = std::make_unique<cc>(editor);
+    proc = std::make_unique<ProcTab<OTTraits>>(editor, this);
     addChildComponent(*proc);
 
     resetTabState();
@@ -236,6 +290,10 @@ void OutputPane<OTTraits>::setOutputData(const typename OTTraits::info_t &d)
     output->info = d;
     output->updateRoutingLabel();
     output->repaint();
+
+    proc->info = d;
+    proc->updateProcRoutingLabel();
+    proc->repaint();
 }
 
 template struct OutputPane<OutPaneGroupTraits>;

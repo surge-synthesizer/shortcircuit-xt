@@ -40,6 +40,7 @@
 #include "patch.h"
 #include "engine.h"
 #include "group_and_zone_impl.h"
+#include "dsp/processor/routing.h"
 
 namespace scxt::engine
 {
@@ -163,33 +164,32 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         }
     }
 
-    // for processor do the necessary
-    for (int i = 0; i < engine::processorCount; ++i)
+    // Groups are always unpitched and stereo
+    auto fpitch = 0;
+    bool processorConsumesMono[4]{false, false, false, false};
+    bool chainIsMono{false};
+
+    switch (outputInfo.procRouting)
     {
-        auto *p = processors[i];
-        const auto &ps = processorStorage[i];
-        float tempbuf alignas(16)[2][BLOCK_SIZE << 1];
-
-        if (p && ps.isActive)
+    case HasGroupZoneProcessors<Group>::procRoute_linear:
+    {
+        if constexpr (OS)
         {
-            endpoints.processorTarget[i].snapValues();
-
-            p->process_stereo(lOut, rOut, tempbuf[0], tempbuf[1], 0);
-            if constexpr (OS)
-            {
-                processorMixOS[i].set_target(ps.mix);
-                processorMixOS[i].fade_blocks(lOut, tempbuf[0], lOut);
-                processorMixOS[i].fade_blocks(rOut, tempbuf[1], rOut);
-            }
-            else
-            {
-                processorMix[i].set_target(ps.mix);
-                processorMix[i].fade_blocks(lOut, tempbuf[0], lOut);
-                processorMix[i].fade_blocks(rOut, tempbuf[1], rOut);
-            }
+            scxt::dsp::processor::processSequential<true>(fpitch, processors.data(),
+                                                          processorConsumesMono, processorMixOS,
+                                                          &endpoints, chainIsMono, output);
+        }
+        else
+        {
+            scxt::dsp::processor::processSequential<false>(fpitch, processors.data(),
+                                                           processorConsumesMono, processorMix,
+                                                           &endpoints, chainIsMono, output);
         }
     }
-
+    break;
+    case HasGroupZoneProcessors<Group>::procRoute_bypass:
+        break;
+    }
     // Pan
     auto pvo = std::clamp(*endpoints.outputTarget.panP, -1.f, 1.f);
 

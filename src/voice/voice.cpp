@@ -33,6 +33,7 @@
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/basic-blocks/dsp/PanLaws.h"
 #include "engine/engine.h"
+#include "dsp/processor/routing.h"
 
 namespace scxt::voice
 {
@@ -310,68 +311,26 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
 
-    for (auto i = 0; i < engine::processorCount; ++i)
+    switch (zone->outputInfo.procRouting)
     {
-        // TODO: FixMe for oversample
-        if (processors[i])
+    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_linear:
+    {
+        if constexpr (OS)
         {
-            auto mix = [this, i]() {
-                if constexpr (OS)
-                {
-                    return &processorMixOS[i];
-                }
-                else
-                {
-                    return &processorMix[i];
-                }
-            };
-            endpoints->processorTarget[i].snapValues();
-            // TODO: Snap int values here (and same in group)
-
-            mix()->set_target(*endpoints->processorTarget[i].mixP);
-
-            if (chainIsMono && processorConsumesMono[i] &&
-                !processors[i]->monoInputCreatesStereoOutput())
-            {
-                // mono to mono
-                processors[i]->process_monoToMono(output[0], tempbuf[0], fpitch);
-                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
-            }
-            else if (chainIsMono && processorConsumesMono[i])
-            {
-                assert(processors[i]->monoInputCreatesStereoOutput());
-                // mono to stereo. process then toggle
-                processors[i]->process_monoToStereo(output[0], tempbuf[0], tempbuf[1], fpitch);
-
-                // this out[0] is NOT a typo. Input is mono
-                // And this order matters. Have to splat [1] first to keep [0] around
-                mix()->fade_blocks(output[0], tempbuf[1], output[1]);
-                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
-
-                chainIsMono = false;
-            }
-            else if (chainIsMono)
-            {
-                assert(!processorConsumesMono[i]);
-                // stereo to stereo. copy L to R then process
-                mech::copy_from_to<blockSize << (OS ? 1 : 0)>(output[0], output[1]);
-                chainIsMono = false;
-                processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
-                mix()->fade_blocks(output[1], tempbuf[1], output[1]);
-            }
-            else
-            {
-                // stereo to stereo. process
-                processors[i]->process_stereo(output[0], output[1], tempbuf[0], tempbuf[1], fpitch);
-                mix()->fade_blocks(output[0], tempbuf[0], output[0]);
-                mix()->fade_blocks(output[1], tempbuf[1], output[1]);
-            }
-            // TODO: What was the filter_modout? Seems SC2 never finished it
-            /*
-            filter_modout[0] = voice_filter[0]->modulation_output;
-                                   */
+            scxt::dsp::processor::processSequential<true>(fpitch, processors, processorConsumesMono,
+                                                          processorMixOS, endpoints.get(),
+                                                          chainIsMono, output);
         }
+        else
+        {
+            scxt::dsp::processor::processSequential<false>(fpitch, processors,
+                                                           processorConsumesMono, processorMix,
+                                                           endpoints.get(), chainIsMono, output);
+        }
+    }
+    break;
+    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_bypass:
+        break;
     }
 
     /*
@@ -531,8 +490,8 @@ void Voice::initializeGenerator()
     GD.interpolationType = dsp::InterpolationTypes::ZeroOrderHold;
 #endif
 
-    // TODO: This constant came from SC. Wonder why it is this value. There was a comment comparing
-    // with 167777216 so any speedup at all.
+    // TODO: This constant came from SC. Wonder why it is this value. There was a comment
+    // comparing with 167777216 so any speedup at all.
     useOversampling = std::abs(GD.ratio) > 18000000 || forceOversample;
     GD.blockSize = blockSize * (useOversampling ? 2 : 1);
 

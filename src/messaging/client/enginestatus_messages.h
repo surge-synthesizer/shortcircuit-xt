@@ -74,20 +74,17 @@ inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
 CLIENT_TO_SERIAL(UnstreamIntoEngine, c2s_unstream_state, streamState_t,
                  onUnstream(payload, engine, cont));
 
-
-
-
 using stopSounds_t = bool;
-inline void stopSoundsMessage(const stopSounds_t &payload,
-                                messaging::MessageController &cont)
+inline void stopSoundsMessage(const stopSounds_t &payload, messaging::MessageController &cont)
 {
     cont.scheduleAudioThreadCallback([p = payload](scxt::engine::Engine &e) {
-        if (p) e.stopAllSounds();
-        else e.releaseAllVoices();
+        if (p)
+            e.stopAllSounds();
+        else
+            e.releaseAllVoices();
     });
 }
-CLIENT_TO_SERIAL(StopSounds, c2s_silence_engine, stopSounds_t,
-                 stopSoundsMessage(payload, cont));
+CLIENT_TO_SERIAL(StopSounds, c2s_silence_engine, stopSounds_t, stopSoundsMessage(payload, cont));
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H
