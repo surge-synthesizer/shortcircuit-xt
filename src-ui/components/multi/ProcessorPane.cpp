@@ -380,10 +380,12 @@ void ProcessorPane::layoutControlsSimpleDelay()
     {
         lo::knob<45>(*floatEditors[0], 5, 5);
         lo::knob<45>(*floatEditors[1], 70, 5);
+        floatEditors[3]->item->setEnabled(true);
     }
     else
     {
         lo::knob<45>(*floatEditors[0], 38, 5);
+        floatEditors[3]->item->setEnabled(false);
     }
 
     lo::knob<45>(*floatEditors[2], 140, 5);
