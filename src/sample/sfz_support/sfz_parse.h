@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SFZ_SUPPORT_SFZ_PARSE_H
-#define SCXT_SRC_SFZ_SUPPORT_SFZ_PARSE_H
+#ifndef SCXT_SRC_SAMPLE_SFZ_SUPPORT_SFZ_PARSE_H
+#define SCXT_SRC_SAMPLE_SFZ_SUPPORT_SFZ_PARSE_H
 
 #include <string>
 #include <variant>
