@@ -47,7 +47,10 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
 
     endpoints->processorTarget[i].snapValues();
 
-    mix[i].set_target(*endpoints->processorTarget[i].mixP);
+    auto mixl = *endpoints->processorTarget[i].mixP;
+    if (processors[i]->getType() == proct_none)
+        mixl = 1.0;
+    mix[i].set_target(mixl);
 
     if constexpr (forceStereo)
     {
@@ -120,10 +123,69 @@ inline void processSequential(float fpitch, Processor *processors[engine::proces
 }
 
 // -> { 1 | 2 } -> { 3 | 4 } ->
+
+// All in parallel
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
-void processSerial2Pattern(float fpitch, Processor *processors[engine::processorCount],
-                           bool processorConsumesMono[engine::processorCount], Mix &mix,
-                           Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+void processPar1Pattern(float fpitch, Processor *processors[engine::processorCount],
+                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+{
+    namespace mech = sst::basic_blocks::mechanics;
+
+    float tmpbuf alignas(16)[engine::processorCount][2][N];
+    bool isMute[engine::processorCount]{};
+
+    // The mono handling here is tricky so for now just force stereo. Fix this obvs
+    if (chainIsMono)
+    {
+        chainIsMono = false;
+        mech::copy_from_to<blockSize << OS>(output[0], output[1]);
+    }
+
+    int numUnMuted = 0;
+
+    for (int i = 0; i < engine::processorCount; ++i)
+    {
+        if (processors[i])
+        {
+            isMute[i] = processors[i]->isMuteProcessor();
+            runSingleProcessor<OS, true>(i, fpitch, processors, processorConsumesMono, mix,
+                                         endpoints, chainIsMono, output, tmpbuf[i]);
+        }
+        else
+        {
+            isMute[i] = false;
+            mech::copy_from_to<blockSize << OS>(output[0], tmpbuf[i][0]);
+            mech::copy_from_to<blockSize << OS>(output[1], tmpbuf[i][1]);
+        }
+        numUnMuted += (isMute[i] ? 0 : 1);
+    }
+
+    mech::clear_block<blockSize << OS>(output[0]);
+    mech::clear_block<blockSize << OS>(output[1]);
+    if (numUnMuted == 0)
+    {
+        // special case - we can't scale and don't have anything else to do
+    }
+    else
+    {
+        float scale = 1.f / numUnMuted;
+        for (int i = 0; i < engine::processorCount; ++i)
+        {
+            if (!isMute[i])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][1], scale, output[1]);
+            }
+        }
+    }
+}
+
+// -> { { 1->2} | { 3->4 } ->
+template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
+void processPar2Pattern(float fpitch, Processor *processors[engine::processorCount],
+                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
 
@@ -133,16 +195,21 @@ void processSerial2Pattern(float fpitch, Processor *processors[engine::processor
     bool mono12 = chainIsMono;
     bool mono34 = chainIsMono;
 
+    bool muteIn12 = false;
+    bool muteIn34 = false;
+
     mech::copy_from_to<scxt::blockSize << OS>(output[0], tempbuf12[0]);
     mech::copy_from_to<scxt::blockSize << OS>(output[1], tempbuf12[1]);
 
     if (processors[0])
     {
+        muteIn12 |= processors[0]->isMuteProcessor();
         runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
                                             endpoints, mono12, tempbuf12, tempbuf12);
     }
     if (processors[1])
     {
+        muteIn12 |= processors[1]->isMuteProcessor();
         runSingleProcessor<OS, forceStereo>(1, fpitch, processors, processorConsumesMono, mix,
                                             endpoints, mono12, tempbuf12, tempbuf12);
     }
@@ -152,11 +219,13 @@ void processSerial2Pattern(float fpitch, Processor *processors[engine::processor
 
     if (processors[2])
     {
+        muteIn34 |= processors[2]->isMuteProcessor();
         runSingleProcessor<OS, forceStereo>(2, fpitch, processors, processorConsumesMono, mix,
                                             endpoints, mono34, tempbuf34, tempbuf34);
     }
     if (processors[3])
     {
+        muteIn34 |= processors[3]->isMuteProcessor();
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
                                             endpoints, mono34, tempbuf34, tempbuf34);
     }
@@ -206,17 +275,20 @@ void processSerial2Pattern(float fpitch, Processor *processors[engine::processor
         mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
     }
 
-    // since this sends the signal down both chains, half the
-    // amplitude.
-    // static constexpr float amp{0.707106781186548f};
-    static constexpr float amp{0.5f};
-    if (chainIsMono)
+    if (!muteIn12 && !muteIn34)
     {
-        mech::scale_by<scxt::blockSize << OS>(amp, output[0]);
-    }
-    else
-    {
-        mech::scale_by<scxt::blockSize << OS>(amp, output[0], output[1]);
+        // since this sends the signal down both chains, half the
+        // amplitude.
+        // static constexpr float amp{0.707106781186548f};
+        static constexpr float amp{0.5f};
+        if (chainIsMono)
+        {
+            mech::scale_by<scxt::blockSize << OS>(amp, output[0]);
+        }
+        else
+        {
+            mech::scale_by<scxt::blockSize << OS>(amp, output[0], output[1]);
+        }
     }
 }
 } // namespace scxt::dsp::processor

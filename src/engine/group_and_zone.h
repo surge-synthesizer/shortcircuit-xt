@@ -60,8 +60,9 @@ template <typename T> struct HasGroupZoneProcessors
         procRoute_linear, // 1 -> 2 -> 3 -> 4
         procRoute_ser2,   // -> { 1 | 2 } -> { 3 | 4 } ->
         procRoute_ser3,   // -> 1 -> { 2 | 3 } -> 4 ->
-        procRoute_par1,   // -> { { 1->2 } | { 3 -> 4 } } ->
-        procRoute_par2,   // -> { 1 | 2 | 3 } -> 4
+        procRoute_par1,   // -> { 1|2|3|4 } ->
+        procRoute_par2,   // -> { { 1->2 } | { 3 -> 4 } } ->
+        procRoute_par3,   // -> { 1 | 2 | 3 } -> 4
         procRoute_bypass  // bypass all procs.
     };
     DECLARE_ENUM_STRING(ProcRoutingPath);

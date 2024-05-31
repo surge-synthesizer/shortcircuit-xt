@@ -172,29 +172,39 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     if (processors[0] || processors[1] || processors[2] || processors[3])
     {
 
+#define CALL_ROUTE(FNN)                                                                            \
+    if constexpr (OS)                                                                              \
+    {                                                                                              \
+        scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
+                                            processorMixOS, &endpoints, chainIsMono, output);      \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+        scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
+                                            processorMix, &endpoints, chainIsMono, output);        \
+    }
+
         switch (outputInfo.procRouting)
         {
         case HasGroupZoneProcessors<Group>::procRoute_linear:
         {
-            if constexpr (OS)
-            {
-                scxt::dsp::processor::processSequential<OS, true>(
-                    fpitch, processors.data(), processorConsumesMono, processorMixOS, &endpoints,
-                    chainIsMono, output);
-            }
-            else
-            {
-                scxt::dsp::processor::processSequential<OS, true>(
-                    fpitch, processors.data(), processorConsumesMono, processorMix, &endpoints,
-                    chainIsMono, output);
-            }
+            CALL_ROUTE(processSequential);
         }
         break;
 
+        case HasGroupZoneProcessors<Group>::procRoute_par1:
+        {
+            CALL_ROUTE(processPar1Pattern);
+        }
+        break;
+        case HasGroupZoneProcessors<Group>::procRoute_par2:
+        {
+            CALL_ROUTE(processPar2Pattern);
+        }
+        break;
         case HasGroupZoneProcessors<Group>::procRoute_ser2:
         case HasGroupZoneProcessors<Group>::procRoute_ser3:
-        case HasGroupZoneProcessors<Group>::procRoute_par1:
-        case HasGroupZoneProcessors<Group>::procRoute_par2:
+        case HasGroupZoneProcessors<Group>::procRoute_par3:
         case HasGroupZoneProcessors<Group>::procRoute_bypass:
             break;
         }
@@ -236,7 +246,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
     }
-}
+} // namespace scxt::engine
 
 void Group::addActiveZone()
 {
@@ -302,32 +312,21 @@ void Group::onSampleRateChanged()
 
 void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 {
-    if (t != dsp::processor::ProcessorType::proct_none)
+    if (processors[w])
     {
-        if (processors[w])
-        {
-            dsp::processor::unspawnProcessor(processors[w]);
-        }
-        // FIXME - replace the float params with something modulatable
-        processors[w] = dsp::processor::spawnProcessorInPlace(
-            t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],
-            dsp::processor::processorMemoryBufferSize, processorStorage[w],
-            endpoints.processorTarget[w].fp, processorStorage[w].intParams.data(),
-            outputInfo.oversample, false);
-
-        if (processors[w])
-        {
-            processors[w]->setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
-            processors[w]->init();
-        }
+        dsp::processor::unspawnProcessor(processors[w]);
     }
-    else
+    // FIXME - replace the float params with something modulatable
+    processors[w] = dsp::processor::spawnProcessorInPlace(
+        t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],
+        dsp::processor::processorMemoryBufferSize, processorStorage[w],
+        endpoints.processorTarget[w].fp, processorStorage[w].intParams.data(),
+        outputInfo.oversample, false);
+
+    if (processors[w])
     {
-        if (processors[w])
-        {
-            dsp::processor::unspawnProcessor(processors[w]);
-            processors[w] = nullptr;
-        }
+        processors[w]->setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+        processors[w]->init();
     }
 }
 

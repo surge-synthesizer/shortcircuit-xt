@@ -84,6 +84,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void attachRebuildToIntAttachment(int idx);
 
     void layoutControls();
+    void layoutControlsNone();
     void layoutControlsMicroGate();
     void layoutControlsSimpleDelay();
     void layoutControlsSurgeFilters();
@@ -193,7 +194,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
 
-    std::unique_ptr<bool_attachment_t> bypassAttachment, keytrackAttackment;
+    std::unique_ptr<bool_attachment_t> isActiveAttachment, keytrackAttackment;
 
     std::vector<std::unique_ptr<juce::Component>> otherEditors;
 

@@ -151,12 +151,14 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     setName(processorControlDescription.typeDisplayName);
 
+    /*
     if (processorControlDescription.type == dsp::processor::proct_none)
     {
         setToggleDataSource(nullptr);
         repaint();
         return;
     }
+     */
 
     for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
     {
@@ -182,6 +184,20 @@ void ProcessorPane::rebuildControlsFromDescription()
     connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue, attachment_t>(
         *at, processorView, this, forZone, index);
     mixAttachment = std::move(at);
+
+    setToggleDataSource(nullptr);
+    isActiveAttachment = std::make_unique<bool_attachment_t>("Bypass", processorView.isActive);
+    connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
+                                 bool_attachment_t::onGui_t>(*isActiveAttachment, processorView,
+                                                             this, forZone, index);
+    setToggleDataSource(isActiveAttachment.get());
+    if (processorControlDescription.type == dsp::processor::proct_none)
+    {
+        isActiveAttachment->andThenOnGui([w = juce::Component::SafePointer(this)](auto &a) {
+            if (w)
+                w->rebuildControlsFromDescription();
+        });
+    }
 
     switch (processorControlDescription.type)
     {
@@ -251,6 +267,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsChorus();
         break;
 
+    case dsp::processor::proct_none:
+        layoutControlsNone();
+        break;
+
     default:
         layoutControls();
         break;
@@ -270,13 +290,6 @@ void ProcessorPane::rebuildControlsFromDescription()
         kta->setSource(keytrackAttackment.get());
         addAdditionalHamburgerComponent(std::move(kta));
     }
-
-    setToggleDataSource(nullptr);
-    bypassAttachment = std::make_unique<bool_attachment_t>("Bypass", processorView.isActive);
-    connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
-                                 bool_attachment_t::onGui_t>(*bypassAttachment, processorView, this,
-                                                             forZone, index);
-    setToggleDataSource(bypassAttachment.get());
 
     reapplyStyle();
 
@@ -343,6 +356,21 @@ void ProcessorPane::layoutControls()
             kb = kb.translated(-getContentArea().getWidth(), kw + labelHeight);
             lb = lb.translated(-getContentArea().getWidth(), kw + labelHeight);
         }
+    }
+}
+
+void ProcessorPane::layoutControlsNone()
+{
+    if (isActiveAttachment && !isActiveAttachment->getValue())
+    {
+        auto p = std::make_unique<jcmp::GlyphPainter>(jcmp::GlyphPainter::MUTE);
+        auto sz = 80;
+        auto xp = (getContentArea().getWidth() - sz) * 0.5;
+        auto yp = (getContentArea().getHeight() - sz) * 0.5;
+
+        p->setBounds(xp, yp, sz, sz);
+        getContentAreaComponent()->addAndMakeVisible(*p);
+        otherEditors.push_back(std::move(p));
     }
 }
 

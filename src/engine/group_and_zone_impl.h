@@ -76,7 +76,7 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
     if (type == dsp::processor::proct_none)
     {
         processorDescription[whichProcessor] = {};
-        processorDescription[whichProcessor].typeDisplayName = "Off";
+        processorDescription[whichProcessor].typeDisplayName = dsp::processor::noneDisplayName;
         return;
     }
 
@@ -230,6 +230,13 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
         }
         // SCLOG("And check is required");
     }
+
+    if (pd.type == dsp::processor::proct_none && forGroup)
+    {
+        // This is a mute toggle
+        asT()->onProcessorTypeChanged(whichProcessor, dsp::processor::proct_none);
+    }
+
     return false;
 }
 
@@ -249,6 +256,8 @@ std::string HasGroupZoneProcessors<T>::toStringProcRoutingPath(
         return "procRoete_par1";
     case procRoute_par2:
         return "procRoete_par2";
+    case procRoute_par3:
+        return "procRoete_par3";
     case procRoute_bypass:
         return "procRoute_bypass";
     }
@@ -281,8 +290,10 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathDisplayName(
     case procRoute_ser3:
         return "> 1 > { 2 | 3 } > 4 >";
     case procRoute_par1:
-        return "> { { 1>2 } | { 3 > 4 } } >";
+        return "> { 1 | 2 | 3 |4 } >";
     case procRoute_par2:
+        return "> { { 1>2 } | { 3 > 4 } } >";
+    case procRoute_par3:
         return "> { 1 | 2 | 3 } > 4";
     case procRoute_bypass:
         return "Bypass";
@@ -296,7 +307,7 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathShortName(ProcRoutingPa
     switch (p)
     {
     case procRoute_linear:
-        return "SER";
+        return "SER1";
     case procRoute_ser2:
         return "SER2";
     case procRoute_ser3:
@@ -305,6 +316,8 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathShortName(ProcRoutingPa
         return "PAR1";
     case procRoute_par2:
         return "PAR2";
+    case procRoute_par3:
+        return "PAR3";
     case procRoute_bypass:
         return "BYP";
     }

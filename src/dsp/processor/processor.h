@@ -76,6 +76,10 @@
 #include <optional>
 #include <vector>
 #include <utility>
+
+#include "infrastructure/sse_include.h"
+#include "sst/basic-blocks/mechanics/block-ops.h"
+
 #include "datamodel/metadata.h"
 #include "utils.h"
 #include "dsp/data_tables.h"
@@ -142,6 +146,8 @@ enum ProcessorType
     proct_num_types,
 };
 
+static constexpr const char *noneDisplayName{"None"};
+
 bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
 const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
@@ -194,7 +200,7 @@ struct ProcessorControlDescription
     ~ProcessorControlDescription() = default;
 
     ProcessorType type{proct_none};
-    std::string typeDisplayName{"Off"};
+    std::string typeDisplayName{noneDisplayName};
 
     bool requiresConsistencyCheck{false};
     bool supportsKeytrack{false};
@@ -235,6 +241,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual bool init_freq_graph() { return false; } // old z-plot honk (visa p� waveformdisplay)
     virtual float get_freq_graph(float f) { return 0; }
+
+    virtual bool isMuteProcessor() { return false; }
 
     virtual void init_params() {}
     virtual void init() {}
@@ -294,6 +302,26 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     int intParameterCount{0};
     std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorIntParams>
         intParameterMetaData;
+};
+
+template <bool OS> struct MuteSpecialProcessor : Processor
+{
+    MuteSpecialProcessor() { myType = proct_none; }
+    void process_stereo(float *datainL, float *datainR, float *dataoutL, float *dataoutR,
+                        float pitch) override
+    {
+        sst::basic_blocks::mechanics::clear_block<scxt::blockSize << OS>(dataoutL);
+        sst::basic_blocks::mechanics::clear_block<scxt::blockSize << OS>(dataoutR);
+    }
+
+    bool canProcessMono() override { return true; }
+    bool monoInputCreatesStereoOutput() override { return false; }
+    void process_monoToMono(float *datain, float *dataoutL, float pitch) override
+    {
+        sst::basic_blocks::mechanics::clear_block<scxt::blockSize << OS>(dataoutL);
+    }
+
+    bool isMuteProcessor() override { return true; }
 };
 
 /**
