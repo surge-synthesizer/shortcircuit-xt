@@ -88,6 +88,7 @@
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
 #include "sst/voice-effects/modulation/RingMod.h"
 #include "sst/voice-effects/modulation/PhaseMod.h"
+#include "sst/voice-effects/modulation/FMFilter.h"
 #include "sst/voice-effects/modulation/Tremolo.h"
 #include "sst/voice-effects/modulation/Phaser.h"
 #include "sst/voice-effects/delay/Chorus.h"
@@ -164,6 +165,9 @@ DEFINE_PROC(FreqShiftMod, sst::voice_effects::modulation::FreqShiftMod<SCXTVFXCo
 DEFINE_PROC(PhaseMod, sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<2>>, proct_osc_phasemod,
             "Phase Mod", "Modulation", "osc-phase-mod");
+DEFINE_PROC(FMFilter, sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<2>>, proct_fmfilter,
+            "FM Filter", "Modulation", "filt-fm");
 DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod, "Ring Mod",
             "Modulation", "ringmod-fx");
