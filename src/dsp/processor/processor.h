@@ -76,6 +76,10 @@
 #include <optional>
 #include <vector>
 #include <utility>
+
+#include "infrastructure/sse_include.h"
+#include "sst/basic-blocks/mechanics/block-ops.h"
+
 #include "datamodel/metadata.h"
 #include "utils.h"
 #include "dsp/data_tables.h"
@@ -143,6 +147,8 @@ enum ProcessorType
     proct_num_types,
 };
 
+static constexpr const char *noneDisplayName{"None"};
+
 bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
 const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
@@ -195,7 +201,7 @@ struct ProcessorControlDescription
     ~ProcessorControlDescription() = default;
 
     ProcessorType type{proct_none};
-    std::string typeDisplayName{"Off"};
+    std::string typeDisplayName{noneDisplayName};
 
     bool requiresConsistencyCheck{false};
     bool supportsKeytrack{false};

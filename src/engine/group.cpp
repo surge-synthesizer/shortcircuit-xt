@@ -169,32 +169,47 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     bool processorConsumesMono[4]{false, false, false, false};
     bool chainIsMono{false};
 
-    switch (outputInfo.procRouting)
+    if (processors[0] || processors[1] || processors[2] || processors[3])
     {
-    case HasGroupZoneProcessors<Group>::procRoute_linear:
-    {
-        if constexpr (OS)
-        {
-            scxt::dsp::processor::processSequential<true>(fpitch, processors.data(),
-                                                          processorConsumesMono, processorMixOS,
-                                                          &endpoints, chainIsMono, output);
-        }
-        else
-        {
-            scxt::dsp::processor::processSequential<false>(fpitch, processors.data(),
-                                                           processorConsumesMono, processorMix,
-                                                           &endpoints, chainIsMono, output);
-        }
-    }
-    break;
 
-    case HasGroupZoneProcessors<Group>::procRoute_ser2:
-    case HasGroupZoneProcessors<Group>::procRoute_ser3:
-    case HasGroupZoneProcessors<Group>::procRoute_par1:
-    case HasGroupZoneProcessors<Group>::procRoute_par2:
-    case HasGroupZoneProcessors<Group>::procRoute_bypass:
-        break;
+#define CALL_ROUTE(FNN)                                                                            \
+    if constexpr (OS)                                                                              \
+    {                                                                                              \
+        scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
+                                            processorMixOS, &endpoints, chainIsMono, output);      \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+        scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
+                                            processorMix, &endpoints, chainIsMono, output);        \
     }
+
+        switch (outputInfo.procRouting)
+        {
+        case HasGroupZoneProcessors<Group>::procRoute_linear:
+        {
+            CALL_ROUTE(processSequential);
+        }
+        break;
+
+        case HasGroupZoneProcessors<Group>::procRoute_par1:
+        {
+            CALL_ROUTE(processPar1Pattern);
+        }
+        break;
+        case HasGroupZoneProcessors<Group>::procRoute_par2:
+        {
+            CALL_ROUTE(processPar2Pattern);
+        }
+        break;
+        case HasGroupZoneProcessors<Group>::procRoute_ser2:
+        case HasGroupZoneProcessors<Group>::procRoute_ser3:
+        case HasGroupZoneProcessors<Group>::procRoute_par3:
+        case HasGroupZoneProcessors<Group>::procRoute_bypass:
+            break;
+        }
+    }
+
     // Pan
     auto pvo = std::clamp(*endpoints.outputTarget.panP, -1.f, 1.f);
 

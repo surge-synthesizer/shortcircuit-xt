@@ -311,33 +311,64 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
 
-    switch (zone->outputInfo.procRouting)
-    {
-    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_linear:
-    {
-        if constexpr (OS)
-        {
-            scxt::dsp::processor::processSequential<true>(fpitch, processors, processorConsumesMono,
-                                                          processorMixOS, endpoints.get(),
-                                                          chainIsMono, output);
-        }
-        else
-        {
-            scxt::dsp::processor::processSequential<false>(fpitch, processors,
-                                                           processorConsumesMono, processorMix,
-                                                           endpoints.get(), chainIsMono, output);
-        }
+#define CALL_ROUTE(FNN)                                                                            \
+    if (chainIsMono)                                                                               \
+    {                                                                                              \
+        if constexpr (OS)                                                                          \
+        {                                                                                          \
+            scxt::dsp::processor::FNN<OS, false>(fpitch, processors, processorConsumesMono,        \
+                                                 processorMixOS, endpoints.get(), chainIsMono,     \
+                                                 output);                                          \
+        }                                                                                          \
+        else                                                                                       \
+        {                                                                                          \
+            scxt::dsp::processor::FNN<OS, false>(fpitch, processors, processorConsumesMono,        \
+                                                 processorMix, endpoints.get(), chainIsMono,       \
+                                                 output);                                          \
+        }                                                                                          \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+        if constexpr (OS)                                                                          \
+        {                                                                                          \
+            scxt::dsp::processor::FNN<OS, true>(fpitch, processors, processorConsumesMono,         \
+                                                processorMixOS, endpoints.get(), chainIsMono,      \
+                                                output);                                           \
+        }                                                                                          \
+        else                                                                                       \
+        {                                                                                          \
+            scxt::dsp::processor::FNN<OS, true>(fpitch, processors, processorConsumesMono,         \
+                                                processorMix, endpoints.get(), chainIsMono,        \
+                                                output);                                           \
+        }                                                                                          \
     }
-    break;
 
-    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
-    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
-    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par1:
-    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par2:
-    case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_bypass:
+    if (processors[0] || processors[1] || processors[2] || processors[3])
+    {
+        switch (zone->outputInfo.procRouting)
+        {
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_linear:
+        {
+            CALL_ROUTE(processSequential);
+        }
         break;
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par1:
+        {
+            CALL_ROUTE(processPar1Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par2:
+        {
+            CALL_ROUTE(processPar2Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par3:
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_bypass:
+            break;
+        }
     }
-
     /*
      * Implement output pan
      */
@@ -577,7 +608,8 @@ void Voice::initializeProcessors()
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
 
-        if (processorIsActive[i])
+        if ((processorIsActive[i] && processorType[i] != dsp::processor::proct_none) ||
+            (processorType[i] == dsp::processor::proct_none && !processorIsActive[i]))
         {
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], zone->getEngine()->getMemoryPool().get(),
