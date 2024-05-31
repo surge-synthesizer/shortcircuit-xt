@@ -165,7 +165,37 @@ void processSerial2Pattern(float fpitch, Processor *processors[engine::processor
     {
         if (mono12 && mono34)
         {
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
         }
+        else if (mono12)
+        {
+            // 34 is stereo so
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
+            // this 0/1 is right. mono 12 ont stereo 32
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[1]);
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
+        }
+        else if (mono34)
+        {
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf34[0], tempbuf12[0]);
+            // this 0/1 is right. mono 34 ont stereo 12
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf34[0], tempbuf12[1]);
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf12[0], output[0]);
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf12[1], output[1]);
+        }
+        else
+        {
+            // both sides stereo
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
+            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[1], tempbuf34[1]);
+
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
+            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
+        }
+
+        chainIsMono = mono12 && mono34;
     }
     else
     {
@@ -174,6 +204,19 @@ void processSerial2Pattern(float fpitch, Processor *processors[engine::processor
 
         mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
         mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
+    }
+
+    // since this sends the signal down both chains, half the
+    // amplitude.
+    // static constexpr float amp{0.707106781186548f};
+    static constexpr float amp{0.5f};
+    if (chainIsMono)
+    {
+        mech::scale_by<scxt::blockSize << OS>(amp, output[0]);
+    }
+    else
+    {
+        mech::scale_by<scxt::blockSize << OS>(amp, output[0], output[1]);
     }
 }
 } // namespace scxt::dsp::processor
