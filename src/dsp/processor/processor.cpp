@@ -74,7 +74,7 @@ template <size_t... Is> auto isProcessorImplemented(size_t ft, std::index_sequen
 template <size_t I> const char *implGetProcessorName()
 {
     if constexpr (I == ProcessorType::proct_none)
-        return "Off";
+        return scxt::dsp::processor::noneDisplayName;
 
     if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
         return "error";
@@ -246,9 +246,9 @@ processorList_t getAllProcessorDescriptions()
         }
     }
     std::sort(res.begin(), res.end(), [](const auto &a, const auto &b) {
-        if (a.displayName == "Off")
+        if (a.displayName == scxt::dsp::processor::noneDisplayName)
             return true;
-        if (b.displayName == "Off")
+        if (b.displayName == scxt::dsp::processor::noneDisplayName)
             return false;
 
         if (a.displayGroup == b.displayGroup)
@@ -269,6 +269,10 @@ Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8
                                  bool oversample, bool needsMetadata)
 {
     assert(memorySize >= processorMemoryBufferSize);
+    if (id == proct_none)
+    {
+        return nullptr;
+    }
     if (oversample)
     {
         return detail::spawnOntoOS(

@@ -352,15 +352,19 @@ template <bool OS> bool Voice::processWithOS()
             CALL_ROUTE(processSequential);
         }
         break;
-
-        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par1:
         {
-            CALL_ROUTE(processSerial2Pattern);
+            CALL_ROUTE(processPar1Pattern);
         }
         break;
-        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
-        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par1:
         case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par2:
+        {
+            CALL_ROUTE(processPar2Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par3:
         case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_bypass:
             break;
         }
@@ -604,7 +608,8 @@ void Voice::initializeProcessors()
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
 
-        if (processorIsActive[i])
+        if ((processorIsActive[i] && processorType[i] != dsp::processor::proct_none) ||
+            (processorType[i] == dsp::processor::proct_none && !processorIsActive[i]))
         {
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], zone->getEngine()->getMemoryPool().get(),
