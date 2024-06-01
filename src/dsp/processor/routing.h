@@ -136,8 +136,6 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     auto m1 = chainIsMono;
     auto m2 = chainIsMono;
 
-    SCLOG("PRE PAIR " << A << " " << B << " " << chainIsMono);
-
     float tmpbuf alignas(16)[2][2][N];
     bool isMute[2]{true, true};
 
@@ -146,7 +144,6 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
         isMute[0] = false;
         runSingleProcessor<OS, forceStereo>(A, fpitch, processors, processorConsumesMono, mix,
                                             endpoints, m1, output, tmpbuf[0]);
-        SCLOG("Post " << A << " " << m1);
     }
 
     if (processors[B])
@@ -154,8 +151,6 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
         isMute[1] = false;
         runSingleProcessor<OS, forceStereo>(B, fpitch, processors, processorConsumesMono, mix,
                                             endpoints, m2, output, tmpbuf[1]);
-
-        SCLOG("Post " << B << " " << m2);
     }
 
     chainIsMono = m1 && m2;
@@ -164,7 +159,6 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     auto scale = 1.0 / (!isMute[0] + !isMute[1]);
     if (forceStereo || !m1 || !m2)
     {
-        SCLOG("Stereo Path " << m1 << " " << m2);
         // stereo
         mech::clear_block<blockSize << OS>(output[0]);
         mech::clear_block<blockSize << OS>(output[1]);
@@ -273,8 +267,6 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
     }
 
     bool isStereo = forceStereo || !(localMono[0] && localMono[1] && localMono[2] && localMono[3]);
-
-    SCLOG("Stereo Par1 : " << isStereo);
 
     if (numUnMuted == 0)
     {
@@ -479,9 +471,9 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
         }
 
         chainIsMono = m1 && m2 && m3;
-        bool isStereo = forceStereo && !chainIsMono;
+        bool isStereo = forceStereo || !chainIsMono;
         assert(!isMute[0] || !isMute[1] || !isMute[2]);
-        auto scale = 1.f / (isMute[0] + isMute[1] + isMute[2]);
+        auto scale = 1.f / (!isMute[0] + !isMute[1] + !isMute[2]);
         if (!isStereo)
         {
             mech::clear_block<blockSize << OS>(output[0]);
