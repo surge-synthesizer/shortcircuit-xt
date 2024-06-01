@@ -26,10 +26,10 @@ jobs:
           pushd ignore
           git clone https://github.com/jidicula/clang-format-action
           popd
-          ./ignore/clang-format-action/check.sh 16 src llvm
-          ./ignore/clang-format-action/check.sh 16 src-ui llvm
-          ./ignore/clang-format-action/check.sh 16 tests llvm
-          ./ignore/clang-format-action/check.sh 16 clients llvm
+          ./ignore/clang-format-action/check.sh 17 src llvm
+          ./ignore/clang-format-action/check.sh 17 src-ui llvm
+          ./ignore/clang-format-action/check.sh 17 tests llvm
+          ./ignore/clang-format-action/check.sh 17 clients llvm
 
         displayName: Do Codequal
 
