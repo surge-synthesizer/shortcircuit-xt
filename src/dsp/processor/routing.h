@@ -122,7 +122,116 @@ inline void processSequential(float fpitch, Processor *processors[engine::proces
     }
 }
 
+// -> { A | B } ->
+template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
+void processParallelPair(int A, int B, float fpitch, Processor *processors[engine::processorCount],
+                         bool processorConsumesMono[engine::processorCount], Mix &mix,
+                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+{
+    namespace mech = sst::basic_blocks::mechanics;
+
+    auto m1 = chainIsMono;
+    auto m2 = chainIsMono;
+
+    float tmpbuf alignas(16)[2][2][N];
+    bool isMute[2]{true, true};
+
+    if (processors[A])
+    {
+        isMute[0] = false;
+        runSingleProcessor<OS, true>(A, fpitch, processors, processorConsumesMono, mix, endpoints,
+                                     m1, output, tmpbuf[0]);
+    }
+
+    if (processors[B])
+    {
+        isMute[1] = false;
+        runSingleProcessor<OS, true>(B, fpitch, processors, processorConsumesMono, mix, endpoints,
+                                     m2, output, tmpbuf[1]);
+    }
+
+    chainIsMono = m1 && m2;
+
+    assert(!isMute[0] || !isMute[1]);
+    auto scale = 1.0 / (!isMute[0] + !isMute[1]);
+    if (forceStereo || !m1 || !m2)
+    {
+        // stereo
+        mech::clear_block<blockSize << OS>(output[0]);
+        mech::clear_block<blockSize << OS>(output[1]);
+
+        if (!isMute[0])
+        {
+            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
+            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][m1 ? 0 : 1], scale,
+                                                            output[1]);
+        }
+        if (!isMute[1])
+        {
+            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
+            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][m2 ? 0 : 1], scale,
+                                                            output[1]);
+        }
+    }
+    else
+    {
+        mech::clear_block<blockSize << OS>(output[0]);
+
+        // m1 and m2 are both mono
+        if (!isMute[0])
+        {
+            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
+        }
+        if (!isMute[1])
+        {
+            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
+        }
+    }
+}
+
 // -> { 1 | 2 } -> { 3 | 4 } ->
+template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
+void processSer2Pattern(float fpitch, Processor *processors[engine::processorCount],
+                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+{
+    if (processors[0] || processors[1])
+    {
+        processParallelPair<OS, forceStereo>(0, 1, fpitch, processors, processorConsumesMono, mix,
+                                             endpoints, chainIsMono, output);
+    }
+
+    if (processors[2] || processors[3])
+    {
+        processParallelPair<OS, forceStereo>(2, 3, fpitch, processors, processorConsumesMono, mix,
+                                             endpoints, chainIsMono, output);
+    }
+}
+
+// -> 1 -> { 2 | 3 } -> 4 ->
+template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
+void processSer3Pattern(float fpitch, Processor *processors[engine::processorCount],
+                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+{
+    if (processors[0])
+    {
+        runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
+                                            endpoints, chainIsMono, output, output);
+    }
+
+    if (processors[1] || processors[2])
+    {
+        processParallelPair<OS, forceStereo>(1, 2, fpitch, processors, processorConsumesMono, mix,
+                                             endpoints, chainIsMono, output);
+    }
+
+    if (processors[3])
+    {
+        runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
+                                            endpoints, chainIsMono, output, output);
+    }
+}
 
 // All in parallel
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
@@ -304,5 +413,97 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
         }
     }
 }
+
+// -> { 1 | 2 | 3 } -> 4
+template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
+void processPar3Pattern(float fpitch, Processor *processors[engine::processorCount],
+                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+{
+    namespace mech = sst::basic_blocks::mechanics;
+
+    bool processed = false;
+
+    if (processors[0] || processors[1] || processors[2])
+    {
+        bool m1 = chainIsMono;
+        bool m2 = chainIsMono;
+        bool m3 = chainIsMono;
+
+        float tmpbuf alignas(16)[3][2][N];
+        bool isMute[3]{true, true, true};
+
+        if (processors[0])
+        {
+            isMute[0] = false;
+            runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
+                                                endpoints, m1, output, tmpbuf[0]);
+        }
+
+        if (processors[1])
+        {
+            isMute[1] = false;
+            runSingleProcessor<OS, forceStereo>(1, fpitch, processors, processorConsumesMono, mix,
+                                                endpoints, m2, output, tmpbuf[1]);
+        }
+
+        if (processors[2])
+        {
+            isMute[2] = false;
+            runSingleProcessor<OS, forceStereo>(2, fpitch, processors, processorConsumesMono, mix,
+                                                endpoints, m3, output, tmpbuf[2]);
+        }
+
+        bool isStereo = forceStereo && !m1 && !m2 && !m3;
+        assert(isMute[0] || isMute[1] || isMute[2]);
+        auto scale = 1.f / (isMute[0] + isMute[1] + isMute[2]);
+        if (!isStereo)
+        {
+            mech::clear_block<blockSize << OS>(output[0]);
+            if (!isMute[0])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
+            }
+            if (!isMute[1])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
+            }
+            if (!isMute[2])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[2][0], scale, output[0]);
+            }
+        }
+        else
+        {
+            mech::clear_block<blockSize << OS>(output[0]);
+            mech::clear_block<blockSize << OS>(output[1]);
+            if (!isMute[0])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][m1 ? 0 : 1], scale,
+                                                                output[1]);
+            }
+            if (!isMute[1])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][m2 ? 0 : 1], scale,
+                                                                output[1]);
+            }
+            if (!isMute[2])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[2][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[2][m3 ? 0 : 1], scale,
+                                                                output[1]);
+            }
+        }
+    }
+
+    if (processors[3])
+    {
+        runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
+                                            endpoints, chainIsMono, output, output);
+    }
+}
+
 } // namespace scxt::dsp::processor
 #endif // SHORTCIRCUITXT_ROUTING_H
