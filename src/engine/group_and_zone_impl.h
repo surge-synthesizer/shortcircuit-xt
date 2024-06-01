@@ -204,6 +204,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
         asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
 
         dsp::processor::unspawnProcessor(tmpProcessor);
+        return true;
     }
 
     return false;
@@ -228,8 +229,8 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
             updateProc.payload.i[0] = forZone;
             updateProc.payload.i[1] = whichProcessor;
             asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
+            return true;
         }
-        // SCLOG("And check is required");
     }
 
     return false;

@@ -464,14 +464,8 @@ void ProcessorPane::layoutControlsFastSVF()
     auto bd = getContentArea();
     auto rest = bd.withTrimmedLeft(60).withHeight(55);
 
-    auto justCutoff = std::string("Cutoff");
-    if (stereoSwitch)
-    {
-        justCutoff += " L";
-    }
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justCutoff);
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Cutoff R");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
 
     if (stereoSwitch)
     {
