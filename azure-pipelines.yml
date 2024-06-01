@@ -21,6 +21,7 @@ jobs:
         # submodules: recursive # can't do submodules here b'cuz depth=1 fails with Github
 
       - bash: |
+          set -e
           mkdir ignore
           pushd ignore
           git clone https://github.com/jidicula/clang-format-action
