@@ -965,7 +965,15 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
 
 void MappingZones::mouseDoubleClick(const juce::MouseEvent &e)
 {
-    display->parentPane->selectTab(1);
+    for (const auto &ks : lastSelectedZone)
+    {
+        if (ks.contains(e.position))
+        {
+            // CHECK SPACE HERE
+            display->parentPane->selectTab(1);
+            return;
+        }
+    }
 }
 
 template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
