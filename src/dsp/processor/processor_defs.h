@@ -166,8 +166,8 @@ DEFINE_PROC(PhaseMod, sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<1>>
             sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<2>>, proct_osc_phasemod,
             "Phase Mod", "Modulation", "osc-phase-mod");
 DEFINE_PROC(FMFilter, sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<1>>,
-            sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<2>>, proct_fmfilter,
-            "FM Filter", "Modulation", "filt-fm");
+            sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<2>>, proct_fmfilter, "FM Filter",
+            "Modulation", "filt-fm");
 DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod, "Ring Mod",
             "Modulation", "ringmod-fx");

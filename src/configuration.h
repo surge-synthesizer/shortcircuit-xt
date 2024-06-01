@@ -60,7 +60,7 @@ static constexpr uint16_t maxEffectsPerBus{4};
 static constexpr uint16_t maxSendsPerBus{4};
 
 static constexpr size_t maxProcessorFloatParams{9};
-static constexpr size_t maxProcessorIntParams{3};
+static constexpr size_t maxProcessorIntParams{5};
 
 static constexpr uint16_t lfosPerZone{3};
 static constexpr uint16_t maxSamplesPerZone{16};
