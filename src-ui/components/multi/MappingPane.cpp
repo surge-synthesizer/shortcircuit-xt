@@ -429,8 +429,6 @@ struct MappingDisplay : juce::Component,
         iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
         makeLabel(labels.RootKey, "Root Key");
 
-        SCLOG("Setup " << SCD(mappingView.keyboardRange.keyStart)
-                       << SCD(mappingView.keyboardRange.keyEnd));
         iAdd(mappingView.keyboardRange.keyStart, intAttachments.KeyStart, textEds.KeyStart);
         iAdd(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd);
 

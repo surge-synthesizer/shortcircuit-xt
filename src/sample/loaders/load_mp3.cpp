@@ -54,18 +54,22 @@ bool Sample::parseMP3(const fs::path &p)
     if (channels == 1)
     {
         allocateI16(0, sample_length);
-        memcpy(sampleData[0], info.buffer, sample_length * sizeof(mp3d_sample_t));
+        auto *dat = GetSamplePtrI16(0);
+        memcpy(dat, info.buffer, sample_length * sizeof(mp3d_sample_t));
     }
     else
     {
         allocateI16(0, sample_length);
         allocateI16(1, sample_length);
 
+        auto *dat0 = GetSamplePtrI16(0);
+        auto *dat1 = GetSamplePtrI16(1);
+
         // de-interleave by hand I guess
         for (int i = 0; i < sample_length; ++i)
         {
-            ((int16_t *)sampleData[0])[i] = info.buffer[i * 2];
-            ((int16_t *)sampleData[1])[i] = info.buffer[i * 2 + 1];
+            dat0[i] = info.buffer[i * 2];
+            dat1[i] = info.buffer[i * 2 + 1];
         }
     }
 

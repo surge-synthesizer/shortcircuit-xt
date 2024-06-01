@@ -505,8 +505,20 @@ void Voice::initializeGenerator()
 
     GDIO.outputL = output[0];
     GDIO.outputR = output[1];
-    GDIO.sampleDataL = s->sampleData[0];
-    GDIO.sampleDataR = s->sampleData[1];
+    if (s->bitDepth == sample::Sample::BD_I16)
+    {
+        GDIO.sampleDataL = s->GetSamplePtrI16(0);
+        GDIO.sampleDataR = s->GetSamplePtrI16(1);
+    }
+    else if (s->bitDepth == sample::Sample::BD_F32)
+    {
+        GDIO.sampleDataL = s->GetSamplePtrF32(0);
+        GDIO.sampleDataR = s->GetSamplePtrF32(1);
+    }
+    else
+    {
+        assert(false);
+    }
     GDIO.waveSize = s->sample_length;
 
     GD.samplePos = sampleData.startSample;

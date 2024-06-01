@@ -510,6 +510,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     auto q = k + SamplePos;
                     if (q >= GD->loopUpperBound || q >= WaveSize)
                         q -= LoopOffset;
+
                     loopEndBufferL[k] = SampleDataL[q];
                     if (stereo)
                         loopEndBufferR[k] = SampleDataR[q];
@@ -585,7 +586,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             }
             case InterpolationTypes::ZeroOrderHold:
             {
-                KPMono(InterpolationTypes::Sinc, type_from_cond, 1, readL, readFadeL);
+                KPMono(InterpolationTypes::ZeroOrderHold, type_from_cond, 1, readL, readFadeL);
                 break;
             }
             }
@@ -657,7 +658,9 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 // Upper
                 if (offset > GD->loopUpperBound)
+                {
                     offset -= LoopOffset;
+                }
             }
             else
             {
