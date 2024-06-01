@@ -352,6 +352,16 @@ template <bool OS> bool Voice::processWithOS()
             CALL_ROUTE(processSequential);
         }
         break;
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
+        {
+            CALL_ROUTE(processSer2Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
+        {
+            CALL_ROUTE(processSer3Pattern);
+        }
+        break;
         case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par1:
         {
             CALL_ROUTE(processPar1Pattern);
@@ -362,9 +372,11 @@ template <bool OS> bool Voice::processWithOS()
             CALL_ROUTE(processPar2Pattern);
         }
         break;
-        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser2:
-        case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_ser3:
         case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_par3:
+        {
+            CALL_ROUTE(processPar3Pattern);
+        }
+        break;
         case engine::HasGroupZoneProcessors<engine::Zone>::procRoute_bypass:
             break;
         }

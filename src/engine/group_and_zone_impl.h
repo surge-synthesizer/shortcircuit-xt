@@ -146,7 +146,8 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
             tmpProcessor->init();
             if (initFromDefaults)
             {
-                SCLOG("Processor init from defaults");
+                SCLOG("Processor init from defaults [" << dsp::processor::getProcessorName(type)
+                                                       << "]");
                 // This is a no-op if you don't support keytrack
                 ps.previousIsKeytracked = -1;
                 ps.isKeytracked = tmpProcessor->getDefaultKeytrack();
@@ -278,17 +279,17 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathDisplayName(
     switch (p)
     {
     case procRoute_linear:
-        return "Linear";
+        return "Ser 1 : Linear";
     case procRoute_ser2:
-        return "> { 1 | 2 } > { 3 | 4 } >";
+        return "Ser 2 : > { 1 | 2 } > { 3 | 4 } >";
     case procRoute_ser3:
-        return "> 1 > { 2 | 3 } > 4 >";
+        return "Ser 3 : > 1 > { 2 | 3 } > 4 >";
     case procRoute_par1:
-        return "> { 1 | 2 | 3 |4 } >";
+        return "Par 1 : > { 1 | 2 | 3 |4 } >";
     case procRoute_par2:
-        return "> { { 1>2 } | { 3 > 4 } } >";
+        return "Par 2 : > { { 1>2 } | { 3 > 4 } } >";
     case procRoute_par3:
-        return "> { 1 | 2 | 3 } > 4";
+        return "Par 3 : > { 1 | 2 | 3 } > 4 >";
     case procRoute_bypass:
         return "Bypass";
     }

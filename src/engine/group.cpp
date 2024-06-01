@@ -186,26 +186,37 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
         switch (outputInfo.procRouting)
         {
-        case HasGroupZoneProcessors<Group>::procRoute_linear:
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_linear:
         {
             CALL_ROUTE(processSequential);
         }
         break;
-
-        case HasGroupZoneProcessors<Group>::procRoute_par1:
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_ser2:
+        {
+            CALL_ROUTE(processSer2Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_ser3:
+        {
+            CALL_ROUTE(processSer3Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_par1:
         {
             CALL_ROUTE(processPar1Pattern);
         }
         break;
-        case HasGroupZoneProcessors<Group>::procRoute_par2:
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_par2:
         {
             CALL_ROUTE(processPar2Pattern);
         }
         break;
-        case HasGroupZoneProcessors<Group>::procRoute_ser2:
-        case HasGroupZoneProcessors<Group>::procRoute_ser3:
-        case HasGroupZoneProcessors<Group>::procRoute_par3:
-        case HasGroupZoneProcessors<Group>::procRoute_bypass:
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_par3:
+        {
+            CALL_ROUTE(processPar3Pattern);
+        }
+        break;
+        case engine::HasGroupZoneProcessors<engine::Group>::procRoute_bypass:
             break;
         }
     }
