@@ -138,6 +138,7 @@ enum ProcessorType
     proct_fx_freqshiftmod,
     proct_fx_widener,
     proct_fx_simple_delay,
+    proct_fmfilter,
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,
