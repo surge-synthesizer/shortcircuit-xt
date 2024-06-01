@@ -220,7 +220,7 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         auto &d = z.processorDescription[t.index];
         if (d.type == dsp::processor::proct_none)
             return "";
-        return "mix";
+        return "Mix";
     };
 
     registerVoiceModTarget(e, mixT, ptFn, mixFn);
