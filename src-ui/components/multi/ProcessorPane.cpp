@@ -239,6 +239,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsStaticPhaser();
         break;
 
+    case dsp::processor::proct_fmfilter:
+        layoutControlsFMFilter();
+        break;
+
     case dsp::processor::proct_Tremolo:
         LayoutControlsTremolo();
         break;
@@ -691,7 +695,7 @@ void ProcessorPane::layoutControlsStaticPhaser()
 
     bool stereoSwitch = intAttachments[1]->getValue();
 
-    std::string justFreq = "Freq";
+    std::string justFreq = "Frequency";
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justFreq);
     if (stereoSwitch == true)
     {
@@ -703,7 +707,7 @@ void ProcessorPane::layoutControlsStaticPhaser()
         lo::knob<45>(*floatEditors[0], 5, 43);
     }
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Freq R");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Frequency R");
     lo::knob<45>(*floatEditors[1], 5, 85);
 
     floatEditors[1]->setVisible(stereoSwitch);
@@ -917,6 +921,65 @@ void ProcessorPane::layoutControlsChorus()
 
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "LFO Depth");
     lo::knob<50>(*floatEditors[3], 65, 80);
+}
+
+void ProcessorPane::layoutControlsFMFilter()
+{
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
+    attachRebuildToIntAttachment(0);
+
+    bool stereoSwitch = intAttachments[0]->getValue();
+
+    std::string justFreq = "Frequency";
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], justFreq);
+    if (stereoSwitch == true)
+    {
+        justFreq += " L";
+        lo::knob<45>(*floatEditors[0], 5, 5);
+    }
+    else
+    {
+        lo::knob<45>(*floatEditors[0], 5, 37);
+    }
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Frequency R");
+    lo::knob<45>(*floatEditors[1], 30, 65);
+
+    floatEditors[1]->setVisible(stereoSwitch);
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "FM Depth");
+    lo::knob<45>(*floatEditors[2], 65, 5);
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Resonance");
+    lo::knob<45>(*floatEditors[3], 95, 65);
+
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+
+    auto numBounds = bounds.withTop(5).withBottom(27).withLeft(130).withRight(180);
+    auto num = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[2]);
+    num->setBounds(numBounds);
+    intEditors[2] = std::make_unique<intEditor_t>(std::move(num));
+
+    auto denomBounds = bounds.withTop(32).withBottom(54).withLeft(130).withRight(180);
+    auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[3]);
+    denom->setBounds(denomBounds);
+    intEditors[3] = std::make_unique<intEditor_t>(std::move(denom));
+
+    auto modeBounds = bounds.withTop(bounds.getBottom() - 22).translated(0, -3).reduced(3, 0);
+    auto filterMode = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
+    filterMode->setBounds(modeBounds);
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(filterMode));
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)
