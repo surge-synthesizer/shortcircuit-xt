@@ -57,6 +57,8 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
         processors[i]->process_stereo(input[0], input[1], tempbuf[0], tempbuf[1], fpitch);
         mix[i].fade_blocks(input[0], tempbuf[0], output[0]);
         mix[i].fade_blocks(input[1], tempbuf[1], output[1]);
+
+        chainIsMono = false;
     }
     else
     {
@@ -65,7 +67,7 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
         {
             // mono to mono
             processors[i]->process_monoToMono(input[0], tempbuf[0], fpitch);
-            mix[i].fade_blocks(input[0], tempbuf[0], input[0]);
+            mix[i].fade_blocks(input[0], tempbuf[0], output[0]);
         }
         else if (chainIsMono && processorConsumesMono[i])
         {
@@ -73,7 +75,7 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
             // mono to stereo. process then toggle
             processors[i]->process_monoToStereo(input[0], tempbuf[0], tempbuf[1], fpitch);
 
-            // this out[0] is NOT a typo. Input is mono
+            // this input[0] is NOT a typo. Input is mono
             // And this order matters. Have to splat [1] first to keep [0] around
             mix[i].fade_blocks(input[0], tempbuf[1], output[1]);
             mix[i].fade_blocks(input[0], tempbuf[0], output[0]);
@@ -96,6 +98,7 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
             processors[i]->process_stereo(input[0], input[1], tempbuf[0], tempbuf[1], fpitch);
             mix[i].fade_blocks(input[0], tempbuf[0], output[0]);
             mix[i].fade_blocks(input[1], tempbuf[1], output[1]);
+            chainIsMono = false;
         }
     }
     // TODO: What was the filter_modout? Seems SC2 never finished it
@@ -133,21 +136,26 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     auto m1 = chainIsMono;
     auto m2 = chainIsMono;
 
+    SCLOG("PRE PAIR " << A << " " << B << " " << chainIsMono);
+
     float tmpbuf alignas(16)[2][2][N];
     bool isMute[2]{true, true};
 
     if (processors[A])
     {
         isMute[0] = false;
-        runSingleProcessor<OS, true>(A, fpitch, processors, processorConsumesMono, mix, endpoints,
-                                     m1, output, tmpbuf[0]);
+        runSingleProcessor<OS, forceStereo>(A, fpitch, processors, processorConsumesMono, mix,
+                                            endpoints, m1, output, tmpbuf[0]);
+        SCLOG("Post " << A << " " << m1);
     }
 
     if (processors[B])
     {
         isMute[1] = false;
-        runSingleProcessor<OS, true>(B, fpitch, processors, processorConsumesMono, mix, endpoints,
-                                     m2, output, tmpbuf[1]);
+        runSingleProcessor<OS, forceStereo>(B, fpitch, processors, processorConsumesMono, mix,
+                                            endpoints, m2, output, tmpbuf[1]);
+
+        SCLOG("Post " << B << " " << m2);
     }
 
     chainIsMono = m1 && m2;
@@ -156,6 +164,7 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     auto scale = 1.0 / (!isMute[0] + !isMute[1]);
     if (forceStereo || !m1 || !m2)
     {
+        SCLOG("Stereo Path " << m1 << " " << m2);
         // stereo
         mech::clear_block<blockSize << OS>(output[0]);
         mech::clear_block<blockSize << OS>(output[1]);
@@ -175,9 +184,9 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     }
     else
     {
+        // m1 and m2 are both mono
         mech::clear_block<blockSize << OS>(output[0]);
 
-        // m1 and m2 are both mono
         if (!isMute[0])
         {
             mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
@@ -243,13 +252,8 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
 
     float tmpbuf alignas(16)[engine::processorCount][2][N];
     bool isMute[engine::processorCount]{};
-
-    // The mono handling here is tricky so for now just force stereo. Fix this obvs
-    if (chainIsMono)
-    {
-        chainIsMono = false;
-        mech::copy_from_to<blockSize << OS>(output[0], output[1]);
-    }
+    static_assert(engine::processorCount == 4); // for the init below
+    bool localMono[engine::processorCount]{chainIsMono, chainIsMono, chainIsMono, chainIsMono};
 
     int numUnMuted = 0;
 
@@ -258,8 +262,8 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
         if (processors[i])
         {
             isMute[i] = false;
-            runSingleProcessor<OS, true>(i, fpitch, processors, processorConsumesMono, mix,
-                                         endpoints, chainIsMono, output, tmpbuf[i]);
+            runSingleProcessor<OS, forceStereo>(i, fpitch, processors, processorConsumesMono, mix,
+                                                endpoints, localMono[i], output, tmpbuf[i]);
         }
         else
         {
@@ -268,23 +272,43 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
         numUnMuted += (isMute[i] ? 0 : 1);
     }
 
-    mech::clear_block<blockSize << OS>(output[0]);
-    mech::clear_block<blockSize << OS>(output[1]);
+    bool isStereo = forceStereo || !(localMono[0] && localMono[1] && localMono[2] && localMono[3]);
+
+    SCLOG("Stereo Par1 : " << isStereo);
+
     if (numUnMuted == 0)
     {
-        // special case - we can't scale and don't have anything else to do
+        return;
     }
-    else
+
+    if (isStereo)
     {
+        mech::clear_block<blockSize << OS>(output[0]);
+        mech::clear_block<blockSize << OS>(output[1]);
         float scale = 1.f / numUnMuted;
         for (int i = 0; i < engine::processorCount; ++i)
         {
             if (!isMute[i])
             {
                 mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][0], scale, output[0]);
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][1], scale, output[1]);
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][localMono[i] ? 0 : 1],
+                                                                scale, output[1]);
             }
         }
+        chainIsMono = false;
+    }
+    else
+    {
+        mech::clear_block<blockSize << OS>(output[0]);
+        float scale = 1.f / numUnMuted;
+        for (int i = 0; i < engine::processorCount; ++i)
+        {
+            if (!isMute[i])
+            {
+                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][0], scale, output[0]);
+            }
+        }
+        chainIsMono = true;
     }
 }
 
@@ -454,8 +478,9 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
                                                 endpoints, m3, output, tmpbuf[2]);
         }
 
-        bool isStereo = forceStereo && !m1 && !m2 && !m3;
-        assert(isMute[0] || isMute[1] || isMute[2]);
+        chainIsMono = m1 && m2 && m3;
+        bool isStereo = forceStereo && !chainIsMono;
+        assert(!isMute[0] || !isMute[1] || !isMute[2]);
         auto scale = 1.f / (isMute[0] + isMute[1] + isMute[2]);
         if (!isStereo)
         {
