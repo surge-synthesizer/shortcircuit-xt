@@ -509,7 +509,7 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
                               cms::groupOutputInfoUpdate_t{true, g->outputInfo},
                               *(engine.getMessageController()));
 
-    for (int i = 0; i < engine::Group::egPerGroup; ++i)
+    for (int i = 0; i < scxt::egPerGroup; ++i)
     {
         serializationSendToClient(
             cms::s2c_update_group_or_zone_adsr_view,
@@ -543,7 +543,7 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
 
 void SelectionManager::sendDisplayDataForNoGroupSelected()
 {
-    for (int i = 0; i < engine::Group::egPerGroup; ++i)
+    for (int i = 0; i < scxt::egPerGroup; ++i)
     {
         serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
                                   cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, false, {}},

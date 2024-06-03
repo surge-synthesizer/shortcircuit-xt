@@ -59,11 +59,11 @@ template <typename T> struct HasModulators
     scxt::modulation::modulators::EnvLFO envLfos[lfosPerObject];
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        T, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
+        T, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>
         ahdsrenv_t;
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        T, blockSize << 1, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
+        T, blockSize << 1, sst::basic_blocks::modulators::TwentyFiveSecondExp>
         ahdsrenvOS_t;
 
     ahdsrenv_t eg[2];

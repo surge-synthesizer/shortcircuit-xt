@@ -690,12 +690,24 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     {
                         SCLOG("ERROR: PreAttach Delay which we don't support");
                     }
+                    // auto s2a_thirtytwo_2tox = [](double s) {
+                    //     auto l2s = log2(s);
+                    //     auto scs = l2s -
+                    //     sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin; auto ncs =
+                    //         scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
+                    //                sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
+                    //     return std::clamp(ncs, 0., 1.);
+                    // };
+
                     auto s2a = [](double s) {
-                        auto l2s = log2(s);
-                        auto scs = l2s - sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin;
-                        auto ncs =
-                            scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
-                                   sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
+                        using rp = sst::basic_blocks::modulators::TwentyFiveSecondExp;
+                        // OK so its S = exp(A + X (B-A)) - C)/D
+                        // D S + C = exp(A + X (B-a))
+                        // log(D S + C) = A + X (B-A)
+                        // (log (D S + C) - A) / (B - A) = X
+
+                        auto logb = std::log(std::max(rp::D * s + rp::C, 0.0000001));
+                        auto ncs = (logb - rp::A) / (rp::B - rp::A);
                         return std::clamp(ncs, 0., 1.);
                     };
 

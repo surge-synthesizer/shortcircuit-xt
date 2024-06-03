@@ -129,6 +129,7 @@ struct ModulatorStorage
 };
 } // namespace scxt::modulation
 
+// Original way - unused
 inline scxt::datamodel::pmd envelopeThirtyTwo()
 {
     return scxt::datamodel::pmd()
@@ -142,12 +143,15 @@ inline scxt::datamodel::pmd envelopeThirtyTwo()
             sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin, "s");
 }
 
+// New way
+inline scxt::datamodel::pmd envTime() { return scxt::datamodel::pmd().as25SecondExpTime(); }
+
 SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
-    SC_FIELD(a, envelopeThirtyTwo().withName("Attack"));
-    SC_FIELD(h, envelopeThirtyTwo().withDefault(0.f).withName("Hold"));
-    SC_FIELD(d, envelopeThirtyTwo().withName("Decay"));
+    SC_FIELD(a, envTime().withName("Attack"));
+    SC_FIELD(h, envTime().withDefault(0.f).withName("Hold"));
+    SC_FIELD(d, envTime().withName("Decay"));
     SC_FIELD(s, pmd().asPercent().withDefault(1.f).withName("Sustain"));
-    SC_FIELD(r, envelopeThirtyTwo().withDefault(0.5).withName("Release"));
+    SC_FIELD(r, envTime().withDefault(0.5).withName("Release"));
     SC_FIELD(aShape, pmd().asPercentBipolar().withName("Attack Shape"));
     SC_FIELD(dShape, pmd().asPercentBipolar().withName("Decay Shape"));
     SC_FIELD(rShape, pmd().asPercentBipolar().withName("Release Shape"));
@@ -208,18 +212,18 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                                      .withCustomMaxDisplay("RATE: STEP"));
 
     SC_FIELD(curveLfoStorage.deform, pmd().asPercentBipolar().withName("Deform"));
-    SC_FIELD(curveLfoStorage.delay, envelopeThirtyTwo().withDefault(0).withName("Delay"));
-    SC_FIELD(curveLfoStorage.attack, envelopeThirtyTwo().withDefault(0).withName("Attack"));
-    SC_FIELD(curveLfoStorage.release, envelopeThirtyTwo().withDefault(1).withName("Release"));
+    SC_FIELD(curveLfoStorage.delay, envTime().withDefault(0).withName("Delay"));
+    SC_FIELD(curveLfoStorage.attack, envTime().withDefault(0).withName("Attack"));
+    SC_FIELD(curveLfoStorage.release, envTime().withDefault(1).withName("Release"));
     SC_FIELD(curveLfoStorage.unipolar, pmd().asBool().withName("Unipolar"));
     SC_FIELD(curveLfoStorage.useenv, pmd().asBool().withName("Use Envelope"));
 
-    SC_FIELD(envLfoStorage.delay, envelopeThirtyTwo().withDefault(0).withName("Delay"));
-    SC_FIELD(envLfoStorage.attack, envelopeThirtyTwo().withDefault(0).withName("Attack"));
-    SC_FIELD(envLfoStorage.hold, envelopeThirtyTwo().withDefault(0).withName("Hold"));
-    SC_FIELD(envLfoStorage.decay, envelopeThirtyTwo().withDefault(0).withName("Decay"));
+    SC_FIELD(envLfoStorage.delay, envTime().withDefault(0).withName("Delay"));
+    SC_FIELD(envLfoStorage.attack, envTime().withDefault(0).withName("Attack"));
+    SC_FIELD(envLfoStorage.hold, envTime().withDefault(0).withName("Hold"));
+    SC_FIELD(envLfoStorage.decay, envTime().withDefault(0).withName("Decay"));
     SC_FIELD(envLfoStorage.sustain, pmd().asPercent().withDefault(1.f).withName("Sustain"));
-    SC_FIELD(envLfoStorage.release, envelopeThirtyTwo().withDefault(1).withName("Release"));
+    SC_FIELD(envLfoStorage.release, envTime().withDefault(1).withName("Release"));
 })
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H
