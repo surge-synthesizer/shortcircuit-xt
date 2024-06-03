@@ -171,13 +171,7 @@ struct Group : MoveableOnly<Group>,
     lipol outputAmp;
     lipolOS outputAmpOS;
 
-    static constexpr int egPerGroup{scxt::egPerGroup};
     std::array<modulation::modulators::AdsrStorage, egPerGroup> gegStorage{};
-    typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        Group, blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>
-        ahdsrenv_t;
-    std::array<ahdsrenv_t, egPerGroup> gegEvaluators{this, this};
-    std::array<bool, egPerGroup> gegUsed{};
 
     std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
     std::array<modulation::modulators::StepLFO, lfosPerGroup> stepLfos;

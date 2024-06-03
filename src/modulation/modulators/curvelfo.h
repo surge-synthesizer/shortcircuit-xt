@@ -42,7 +42,7 @@ struct CurveLFO : SampleRateSupport
 
     using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveLFO, scxt::blockSize>;
     using senv_t = sst::basic_blocks::modulators::DAREnvelope<
-        CurveLFO, scxt::blockSize, sst::basic_blocks::modulators::ThirtyTwoSecondRange>;
+        CurveLFO, scxt::blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>;
     slfo_t simpleLfo{this};
     senv_t simpleEnv{this};
     friend slfo_t;
