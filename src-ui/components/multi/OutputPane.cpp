@@ -244,7 +244,13 @@ OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEdito
 {
     hasHamburger = false;
     isTabbed = true;
-    tabNames = {"OUTPUT", "PROC ROUTING"};
+    if (OTTraits::forZone)
+        tabNames = {"PROC ROUTING", "OUTPUT"};
+    else
+        tabNames = {
+            "OUTPUT",
+            "PROC ROUTING",
+        };
 
     output = std::make_unique<OutputTab<OTTraits>>(editor, this);
     addAndMakeVisible(*output);
@@ -256,7 +262,7 @@ OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEdito
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
         if (!wt)
             return;
-        if (i == 0)
+        if ((OTTraits::forZone && i == 1) || (!OTTraits::forZone && i == 0))
         {
             wt->output->setVisible(wt->active);
             wt->proc->setVisible(false);
