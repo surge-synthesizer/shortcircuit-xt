@@ -35,6 +35,7 @@ namespace scxt::json
 template <typename T> struct scxt_traits : public tao::json::traits<T>
 {
 };
+
 using scxt_value = tao::json::basic_value<scxt_traits>;
 
 template <typename V, typename R> bool findIf(V &v, const std::string &key, R &r)
@@ -116,6 +117,9 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
             toBlock                                                                                \
         }                                                                                          \
     };
+
+#define SC_UNSTREAMING_FROM_THIS_OR_OLDER(x)                                                       \
+    engine::Engine::isFullEngineUnstream &&engine::Engine::fullEngineUnstreamStreamingVersion <= x
 
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SCXT_TRAITS_H

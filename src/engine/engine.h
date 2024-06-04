@@ -324,6 +324,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         } transportDisplay;
     } sharedUIMemoryState;
 
+    /* When we actually unstream an entire engine we want to know if we are doing
+     * that full unstream and what the version we are streaming from is. Lots of ways
+     * to do this, but the easiest is to have a thread local static set up in the unstream
+     */
+    static thread_local bool isFullEngineUnstream;
+    static thread_local uint64_t fullEngineUnstreamStreamingVersion;
+
     /**
      * The VoiceDisplayState structure is updated at some relatively low (like 30hz)
      * frequency by the engine for communication to a potential client if the message
