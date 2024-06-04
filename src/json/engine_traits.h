@@ -51,10 +51,25 @@
 #include "datamodel_traits.h"
 #include "selection_traits.h"
 #include "engine/bus.h"
+#include "messaging/messaging.h"
 
 namespace scxt::json
 {
 
+struct EngineStreamGuard
+{
+    EngineStreamGuard(uint64_t sv)
+    {
+        SCLOG("Unstreaming engine with streaming version = " << std::hex << sv);
+        engine::Engine::isFullEngineUnstream = true;
+        engine::Engine::fullEngineUnstreamStreamingVersion = sv;
+    }
+    ~EngineStreamGuard()
+    {
+        engine::Engine::isFullEngineUnstream = false;
+        engine::Engine::fullEngineUnstreamStreamingVersion = 0;
+    }
+};
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  v = {{"streamingVersion", scxt::json::currentStreamingVersion},
                       {"patch", from.getPatch()},
@@ -62,6 +77,11 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                       {"sampleManager", from.getSampleManager()}};
              }),
              SC_TO({
+                 assert(to.getMessageController()->threadingChecker.isSerialThread());
+                 auto sv{0};
+                 findIf(v, "streamingVersion", sv);
+                 EngineStreamGuard sg(sv);
+
                  // TODO: engine gets a SV? Guess maybe
                  // Order matters here. Samples need to be there before the patch and patch
                  // before selection
@@ -231,7 +251,16 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
         findIf(v, "velocityRange", zmd.velocityRange);
         findIf(v, "pbDown", zmd.pbDown);
         findIf(v, "pbUp", zmd.pbUp);
+
         findIf(v, "amplitude", zmd.amplitude);
+        if (SC_UNSTREAMING_FROM_THIS_OR_OLDER(0x20240603))
+        {
+            // amplitude used to be in percent 0...1 and now
+            // is in decibels -36 to 36.
+            auto db = 20 * std::log10(zmd.amplitude);
+            zmd.amplitude = std::clamp(db, -36.f, 36.f);
+        }
+
         findIf(v, "pan", zmd.pan);
         findIf(v, "pitchOffset", zmd.pitchOffset);
         findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);

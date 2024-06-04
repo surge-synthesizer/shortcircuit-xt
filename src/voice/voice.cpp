@@ -284,7 +284,7 @@ template <bool OS> bool Voice::processWithOS()
         mech::mul_block<blockSize << (OS ? 1 : 0)>(output[0], invsqrt2);
     }
 
-    auto pva = *endpoints->mappingTarget.ampP;
+    auto pva = dsp::dbTable.dbToLinear(*endpoints->mappingTarget.ampP);
 
     if constexpr (OS)
     {

@@ -142,6 +142,9 @@ Engine::~Engine()
     }
 }
 
+thread_local bool Engine::isFullEngineUnstream{false};
+thread_local uint64_t Engine::fullEngineUnstreamStreamingVersion{0};
+
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
 {
 #if DEBUG_VOICE_LIFECYCLE

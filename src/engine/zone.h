@@ -204,7 +204,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int16_t exclusiveGroup;
 
         float velocitySens{1.0};
-        float amplitude{1.0};   // linear
+        float amplitude{0.0};   // decibels
         float pan{0.0};         // -1..1
         float pitchOffset{0.0}; // semitones/keys
 
@@ -257,7 +257,7 @@ SC_DESCRIBE(
     SC_FIELD(velocityRange.fadeEnd, pmd().asMIDIPitch().withUnit("").withName("Velocity Fade End"));
     SC_FIELD(pbDown, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Down"));
     SC_FIELD(pbUp, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Up"));
-    SC_FIELD(amplitude, pmd().asPercent().withName("Amplitude").withDefault(1.0));
+    SC_FIELD(amplitude, pmd().asDecibelWithRange(-36, 36).withName("Amplitude").withDefault(0.f));
     SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan").withDefault(0.0));
     SC_FIELD(pitchOffset, pmd().asSemitoneRange().withName("Pitch").withDefault(0.0)););
 
