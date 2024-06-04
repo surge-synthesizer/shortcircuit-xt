@@ -74,15 +74,11 @@
 #include "sst/voice-effects/eq/MorphEQ.h"
 
 #include "sst/voice-effects/filter/CytomicSVF.h"
-// #include "sst/voice-effects/filter/SurgeBiquads.h"
 #include "sst/voice-effects/filter/SSTFilters.h"
 #include "sst/voice-effects/filter/StaticPhaser.h"
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/GenVA.h"
-// #include "sst/voice-effects/generator/GenSin.h"
-// #include "sst/voice-effects/generator/GenSaw.h"
-// #include "sst/voice-effects/generator/GenPulseSync.h"
 #include "sst/voice-effects/delay/StringResonator.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
@@ -92,13 +88,12 @@
 #include "sst/voice-effects/modulation/Tremolo.h"
 #include "sst/voice-effects/modulation/Phaser.h"
 #include "sst/voice-effects/delay/Chorus.h"
+#include "sst/voice-effects/utilities/VolumeAndPan.h"
 
 namespace scxt::dsp::processor
 {
 // Just don't change the id or streaming name, basically
-DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
-            "Delay", "fxstereo-fx", dsp::surgeSincTable);
+
 DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<2>>, proct_fx_simple_delay,
             "Simple Delay", "Delay", "simpdel-fx", dsp::surgeSincTable);
@@ -127,13 +122,19 @@ using eq3impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 3
 } // namespace procimpl::detail
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
-            proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
+            proct_eq_3band_parametric_A, "3 Band Parametric", "EQ & Utility", "eq-parm-3band");
 DEFINE_PROC(EQGraphic6Band, sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<2>>, proct_eq_6band,
-            "6 Band Graphic", "EQ", "eq-grp-6");
+            "6 Band Graphic", "EQ & Utility", "eq-grp-6");
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
-            sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "EQ",
+            sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",
             "eq-morph");
+DEFINE_PROC(VolPan, sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<1>>,
+            sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<2>>, proct_volpan,
+            "Volume & Pan", "EQ & Utility", "volume-pan");
+DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
+            sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
+            "EQ & Utility", "fxstereo-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(GenVA, sst::voice_effects::generator::GenVA<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenVA<SCXTVFXConfig<2>>, proct_osc_VA, "VA Oscillator",
@@ -161,16 +162,16 @@ DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig
 
 DEFINE_PROC(FreqShiftMod, sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::FreqShiftMod<SCXTVFXConfig<2>>, proct_fx_freqshiftmod,
-            "Freqshift Mod", "Modulation", "pitchring-fx");
+            "Freqshift Mod", "Audio Rate Mod", "pitchring-fx");
 DEFINE_PROC(PhaseMod, sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::PhaseMod<SCXTVFXConfig<2>>, proct_osc_phasemod,
-            "Phase Mod", "Modulation", "osc-phase-mod");
+            "Phase Mod", "Audio Rate Mod", "osc-phase-mod");
 DEFINE_PROC(FMFilter, sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<2>>, proct_fmfilter, "FM Filter",
-            "Modulation", "filt-fm");
+            "Audio Rate Mod", "filt-fm");
 DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod, "Ring Mod",
-            "Modulation", "ringmod-fx");
+            "Audio Rate Mod", "ringmod-fx");
 
 DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
