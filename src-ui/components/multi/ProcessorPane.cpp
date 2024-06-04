@@ -516,33 +516,33 @@ void ProcessorPane::layoutControlsWaveshaper()
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Gain");
     lo::knob<locon::mediumKnob>(*floatEditors[2], 87, 65);
-    
+
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "HP Freq");
     lo::knob<locon::mediumKnob>(*floatEditors[3], 140, 5);
-    
+
     floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "LP Freq");
     lo::knob<locon::mediumKnob>(*floatEditors[4], 140, 65);
-    
+
     auto bounds = getContentAreaComponent()->getLocalBounds();
-    
+
     auto hpLight = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
     hpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
     hpLight->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
     auto hpBounds = bounds.withLeft(175).withRight(185).withTop(0).withBottom(10);
     hpLight->setBounds(hpBounds);
     intEditors[1] = std::make_unique<intEditor_t>(std::move(hpLight));
-    
+
     attachRebuildToIntAttachment(1);
     bool hpOn = intAttachments[1]->getValue();
     floatEditors[3]->item->setEnabled(hpOn);
-    
+
     auto lpLight = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
     lpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
     lpLight->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
     auto lpBounds = bounds.withLeft(175).withRight(185).withTop(60).withBottom(70);
     lpLight->setBounds(lpBounds);
     intEditors[2] = std::make_unique<intEditor_t>(std::move(lpLight));
-    
+
     attachRebuildToIntAttachment(2);
     bool lpOn = intAttachments[2]->getValue();
     floatEditors[4]->item->setEnabled(lpOn);
@@ -717,7 +717,7 @@ void ProcessorPane::layoutControlsStaticPhaser()
     attachRebuildToIntAttachment(1);
 
     bool stereoSwitch = intAttachments[1]->getValue();
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     if (stereoSwitch == true)
     {
@@ -962,7 +962,7 @@ void ProcessorPane::layoutControlsFMFilter()
     attachRebuildToIntAttachment(0);
 
     bool stereoSwitch = intAttachments[0]->getValue();
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     if (stereoSwitch == true)
     {

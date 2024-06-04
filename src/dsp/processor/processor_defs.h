@@ -130,8 +130,8 @@ DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",
             "eq-morph");
 DEFINE_PROC(VolPan, sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<1>>,
-            sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<2>>, proct_volpan, "Volume & Pan",
-            "EQ & Utility", "volume-pan");
+            sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<2>>, proct_volpan,
+            "Volume & Pan", "EQ & Utility", "volume-pan");
 DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
             "EQ & Utility", "fxstereo-fx", dsp::surgeSincTable);
