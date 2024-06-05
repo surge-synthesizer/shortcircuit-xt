@@ -181,7 +181,7 @@ struct ProcessorStorage
     }
 
     ProcessorType type{proct_none};
-    float mix{0};
+    float mix{0}, outputLevelInDecibels{0};
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int32_t, maxProcessorIntParams> intParams;
     bool isActive{true};
@@ -332,9 +332,14 @@ template <ProcessorType ft> struct ProcessorDefaultMix
 
 } // namespace scxt::dsp::processor
 
-SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage, SC_FIELD_COMPUTED(mix, {
-                auto dr = dsp::processor::getProcessorDefaultMix(payload.type);
-                return datamodel::pmd().asPercent().withName("Mix").withDefault(dr);
-            }));
+SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage,
+            SC_FIELD_COMPUTED(mix,
+                              {
+                                  auto dr = dsp::processor::getProcessorDefaultMix(payload.type);
+                                  return datamodel::pmd().asPercent().withName("Mix").withDefault(
+                                      dr);
+                              });
+            SC_FIELD(outputLevelInDecibels,
+                     pmd().asDecibelWithRange(-192, 36).withDefault(0).withName("Output")););
 
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H

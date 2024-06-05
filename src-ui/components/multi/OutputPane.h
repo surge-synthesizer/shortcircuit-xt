@@ -37,6 +37,7 @@
 namespace scxt::ui::multi
 {
 
+struct ProcessorPane;
 struct OutPaneZoneTraits
 {
     static constexpr bool forZone{true};
@@ -73,6 +74,19 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
     std::unique_ptr<OutputTab<OTTraits>> output;
     std::unique_ptr<ProcTab<OTTraits>> proc;
     bool active{false};
+
+    /* Since we contain the processor output info here, we need
+     * the processor data path. We could dup it or we could just
+     * have a reference to the processor pane here so
+     */
+    void addWeakProcessorPaneReference(int idx,
+                                       const juce::Component::SafePointer<ProcessorPane> &p)
+    {
+        procWeakRefs[idx] = p;
+    }
+    void updateFromProcessorPanes();
+    std::array<juce::Component::SafePointer<ProcessorPane>, scxt::processorsPerZoneAndGroup>
+        procWeakRefs;
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUIT_MAPPINGPANE_H

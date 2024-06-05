@@ -84,6 +84,7 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
     auto &p = z.processorStorage[index];
     auto &d = z.processorDescription[index];
     shmo::bindEl(m, p, mixT, p.mix, mixP);
+    shmo::bindEl(m, p, outputLevelDbT, p.outputLevelInDecibels, outputLevelDbP);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
@@ -223,7 +224,15 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         return "Mix";
     };
 
+    auto levFn = [](const engine::Zone &z, const MatrixConfig::TargetIdentifier &t) -> std::string {
+        auto &d = z.processorDescription[t.index];
+        if (d.type == dsp::processor::proct_none)
+            return "";
+        return "Output Level";
+    };
+
     registerVoiceModTarget(e, mixT, ptFn, mixFn);
+    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn);
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
         auto elFn = [icopy = i](const engine::Zone &z,
