@@ -340,6 +340,6 @@ SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage,
                                       dr);
                               });
             SC_FIELD(outputLevelInDecibels,
-                     pmd().asDecibelWithRange(-192, 36).withDefault(0).withName("Output")););
+                     pmd().asDecibelWithRange(-24, 24).withDefault(0).withName("Output")););
 
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H
