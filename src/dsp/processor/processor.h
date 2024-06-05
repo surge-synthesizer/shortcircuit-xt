@@ -114,6 +114,7 @@ enum ProcessorType
     proct_Tremolo,
     proct_Phaser,
     proct_Chorus,
+    proct_volpan,
 
     proct_stringResonator,
 
