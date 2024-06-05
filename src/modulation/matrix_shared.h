@@ -155,7 +155,8 @@ template <typename TG, uint32_t gn> struct LFOTargetEndpointData
 
 template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
 {
-    ProcessorTargetEndpointData(uint32_t p) : index{p}, mixT{gn, 'mix ', p}
+    ProcessorTargetEndpointData(uint32_t p)
+        : index{p}, mixT{gn, 'mix ', p}, outputLevelDbT{gn, 'oldb', p}
     {
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
@@ -163,8 +164,9 @@ template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
         }
     }
     uint32_t index;
-    TG mixT, fpT[scxt::maxProcessorFloatParams];
+    TG mixT, outputLevelDbT, fpT[scxt::maxProcessorFloatParams];
     const float *mixP{nullptr};
+    const float *outputLevelDbP{nullptr};
     const float *floatP[scxt::maxProcessorFloatParams]; // FIX CONSTANT
     float fp[scxt::maxProcessorFloatParams]{};
 

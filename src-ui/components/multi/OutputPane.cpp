@@ -26,6 +26,7 @@
  */
 
 #include "OutputPane.h"
+#include "ProcessorPane.h"
 #include "components/SCXTEditor.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
@@ -67,13 +68,7 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         g.drawText("Proc Routing", getLocalBounds().withHeight(30), juce::Justification::centred);
     }
 
-    void resized()
-    {
-        procRouting->setBounds(getLocalBounds()
-                                   .reduced(3, 0)
-                                   .withTrimmedTop(getHeight() * 0.5 - 12)
-                                   .withTrimmedBottom(getHeight() * 0.5 - 12));
-    }
+    void resized() { procRouting->setBounds(getLocalBounds().reduced(3, 5).withHeight(24)); }
 
     std::string getRoutingName(typename OTTraits::route_t r)
     {
@@ -110,6 +105,48 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
                       });
         }
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    static constexpr int nOuts{scxt::processorsPerZoneAndGroup};
+    std::array<std::unique_ptr<ProcessorPane::attachment_t>, nOuts> levelA;
+    std::array<std::unique_ptr<jcmp::Knob>, nOuts> levelK;
+
+    void updateFromProcessorPanes()
+    {
+        for (auto &k : levelK)
+        {
+            if (k)
+            {
+                removeChildComponent(k.get());
+            }
+        }
+
+        for (int i = 0; i < nOuts; ++i)
+        {
+            auto w = outputPane->procWeakRefs[i];
+
+            auto kw = 36;
+            if (w)
+            {
+                auto at = std::make_unique<ProcessorPane::attachment_t>(
+                    datamodel::describeValue(w->processorView,
+                                             w->processorView.outputLevelInDecibels),
+                    w->processorView.outputLevelInDecibels);
+                connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue,
+                                             ProcessorPane::attachment_t>(*at, w->processorView, w,
+                                                                          OTTraits::forZone, i);
+                levelA[i] = std::move(at);
+
+                levelK[i] = std::make_unique<jcmp::Knob>();
+                levelK[i]->setSource(levelA[i].get());
+
+                levelK[i]->setBounds(5 + i * (kw + 5), 40, kw, kw);
+                levelK[i]->setEnabled(w->processorView.type != dsp::processor::proct_none);
+                setupWidgetForValueTooltip(levelK[i].get(), levelA[i].get());
+                SCLOG_ONCE("Fix up accessibility for this knob");
+                addAndMakeVisible(*levelK[i]);
+            }
+        }
     }
 
     typename OTTraits::info_t info;
@@ -300,6 +337,11 @@ void OutputPane<OTTraits>::setOutputData(const typename OTTraits::info_t &d)
     proc->info = d;
     proc->updateProcRoutingLabel();
     proc->repaint();
+}
+
+template <typename OTTraits> void OutputPane<OTTraits>::updateFromProcessorPanes()
+{
+    proc->updateFromProcessorPanes();
 }
 
 template struct OutputPane<OutPaneGroupTraits>;

@@ -101,6 +101,15 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
             chainIsMono = false;
         }
     }
+
+    // TODO: Smooth This
+    auto ol = dsp::dbTable.dbToLinear(*endpoints->processorTarget[i].outputLevelDbP);
+    mech::scale_by<blockSize << OS>(ol, output[0]);
+    if (forceStereo || !chainIsMono)
+    {
+        mech::scale_by<blockSize << OS>(ol, output[1]);
+    }
+
     // TODO: What was the filter_modout? Seems SC2 never finished it
     /*
     filter_modout[0] = voice_filter[0]->modulation_output;

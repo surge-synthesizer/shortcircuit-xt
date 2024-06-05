@@ -149,6 +149,12 @@ MultiScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(MultiScreen *pare
     modPane =
         std::make_unique<multi::ModPane<typename ZGTrait::ModPaneTraits>>(parent->editor, forZone);
     outPane = std::make_unique<multi::OutputPane<typename ZGTrait::OutPaneTraits>>(parent->editor);
+    for (int i = 0; i < scxt::processorsPerZoneAndGroup; ++i)
+    {
+        outPane->addWeakProcessorPaneReference(i,
+                                               juce::Component::SafePointer(processors[i].get()));
+    }
+    outPane->updateFromProcessorPanes();
     parent->addChildComponent(*modPane);
     parent->addChildComponent(*outPane);
 

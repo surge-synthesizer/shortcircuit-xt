@@ -54,10 +54,20 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             auto &d = z.processorDescription[t.index];
             if (d.type == dsp::processor::proct_none)
                 return "";
-            return "mix";
+            return "Mix";
+        };
+
+        auto levFn = [](const engine::Group &z,
+                        const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return "Output Level";
         };
 
         registerGroupModTarget(e, mixT, ptFn, mixFn);
+        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn);
+
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
             auto elFn = [icopy = i](const engine::Group &z,
@@ -93,6 +103,7 @@ void GroupMatrixEndpoints::ProcessorTarget::bind(scxt::modulation::GroupMatrix &
     auto &p = g.processorStorage[index];
     auto &d = g.processorDescription[index];
     shmo::bindEl(m, p, mixT, p.mix, mixP);
+    shmo::bindEl(m, p, outputLevelDbT, p.outputLevelInDecibels, outputLevelDbP);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {

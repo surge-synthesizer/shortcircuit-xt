@@ -119,6 +119,7 @@ void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
         multiScreen->getZoneElements()->processors[which]->setEnabled(enabled);
         multiScreen->getZoneElements()->processors[which]->setProcessorControlDescriptionAndStorage(
             control, storage);
+        multiScreen->getZoneElements()->outPane->updateFromProcessorPanes();
     }
     else
     {
@@ -126,6 +127,7 @@ void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
         multiScreen->getGroupElements()
             ->processors[which]
             ->setProcessorControlDescriptionAndStorage(control, storage);
+        multiScreen->getZoneElements()->outPane->updateFromProcessorPanes();
     }
 }
 

@@ -70,12 +70,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         processorView = ps;
         rebuildControlsFromDescription();
     }
-    void setProcessorStorage(const dsp::processor::ProcessorStorage &p)
-    {
-        multiZone = false;
-        processorView = p;
-        repaint();
-    }
 
     void setAsMultiZone(int32_t primaryType, const std::string &nm,
                         const std::set<int32_t> &otherTypes);
