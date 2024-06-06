@@ -62,6 +62,17 @@ struct GroupMatrixConfig
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
+    static std::unordered_set<TargetIdentifier> multiplicativeTargets;
+    static void setIsMultiplicative(const TargetIdentifier &ti)
+    {
+        multiplicativeTargets.insert(ti);
+    }
+    static bool getIsMultiplicative(const TargetIdentifier &ti)
+    {
+        auto res = multiplicativeTargets.find(ti) != multiplicativeTargets.end();
+        return res;
+    }
+    
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
 

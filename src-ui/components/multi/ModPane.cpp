@@ -51,7 +51,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     std::unique_ptr<attachment_t> depthAttachment;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
-    std::unique_ptr<juce::Component> x1, x2, a1, a2;
+    std::unique_ptr<jcmp::GlyphPainter> x1, x2, a1, a2;
     std::unique_ptr<jcmp::TextPushButton> consistentButton;
 
     std::unique_ptr<jcmp::HSlider> depth;
@@ -59,7 +59,6 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane<GZTrait> *p) : HasEditor(e), index(i), parent(p)
     {
-
         auto &row = parent->routingTable.routes[i];
 
         consistentButton = std::make_unique<jcmp::TextPushButton>();
@@ -273,6 +272,18 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             if (ci == row.curve)
             {
                 curve->setLabel(cn.second);
+            }
+        }
+
+        if (row.target.has_value())
+        {
+            if (GZTrait::isMultiplicative(*(row.target)))
+            {
+                a2->glyph = sst::jucegui::components::GlyphPainter::ARROW_L_TO_R_WITH_MUL;
+            }
+            else
+            {
+                a2->glyph = sst::jucegui::components::GlyphPainter::ARROW_L_TO_R;
             }
         }
 

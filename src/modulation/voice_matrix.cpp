@@ -35,6 +35,8 @@
 namespace scxt::voice::modulation
 {
 
+std::unordered_set<MatrixConfig::TargetIdentifier> MatrixConfig::multiplicativeTargets;
+
 namespace shmo = scxt::modulation::shared;
 
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -233,6 +235,8 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
 
     registerVoiceModTarget(e, mixT, ptFn, mixFn);
     registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn);
+
+    MatrixConfig::setIsMultiplicative(outputLevelDbT);
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
         auto elFn = [icopy = i](const engine::Zone &z,

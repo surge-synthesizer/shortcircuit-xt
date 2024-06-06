@@ -34,6 +34,8 @@
 namespace scxt::modulation
 {
 
+std::unordered_set<GroupMatrixConfig::TargetIdentifier> GroupMatrixConfig::multiplicativeTargets;
+
 namespace shmo = scxt::modulation::shared;
 
 GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
@@ -67,6 +69,8 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
 
         registerGroupModTarget(e, mixT, ptFn, mixFn);
         registerGroupModTarget(e, outputLevelDbT, ptFn, levFn);
+
+        GroupMatrixConfig::setIsMultiplicative(outputLevelDbT);
 
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
