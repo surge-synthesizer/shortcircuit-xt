@@ -181,7 +181,9 @@ struct ProcessorStorage
     }
 
     ProcessorType type{proct_none};
-    float mix{0}, outputLevelInDecibels{0};
+    float mix{0}, outputCubAmp{0};
+    static constexpr float maxOutputDB{18.f};
+    static constexpr float maxOutputAmp{7.943282347242815}; //  std::pow(10.f, maxOutputDB / 20.0);
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int32_t, maxProcessorIntParams> intParams;
     bool isActive{true};
@@ -339,7 +341,9 @@ SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage,
                                   return datamodel::pmd().asPercent().withName("Mix").withDefault(
                                       dr);
                               });
-            SC_FIELD(outputLevelInDecibels,
-                     pmd().asDecibelWithRange(-24, 24).withDefault(0).withName("Output")););
+            SC_FIELD(outputCubAmp,
+                     pmd()
+                         .asCubicDecibelUpTo(scxt::dsp::processor::ProcessorStorage::maxOutputDB)
+                         .withName("Output")););
 
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H

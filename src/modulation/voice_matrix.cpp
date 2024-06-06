@@ -84,7 +84,7 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
     auto &p = z.processorStorage[index];
     auto &d = z.processorDescription[index];
     shmo::bindEl(m, p, mixT, p.mix, mixP);
-    shmo::bindEl(m, p, outputLevelDbT, p.outputLevelInDecibels, outputLevelDbP);
+    shmo::bindEl(m, p, outputLevelDbT, p.outputCubAmp, outputLevelDbP);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
