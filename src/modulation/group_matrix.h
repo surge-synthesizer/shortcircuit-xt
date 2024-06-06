@@ -72,7 +72,7 @@ struct GroupMatrixConfig
         auto res = multiplicativeTargets.find(ti) != multiplicativeTargets.end();
         return res;
     }
-    
+
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
 
