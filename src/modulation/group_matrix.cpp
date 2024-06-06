@@ -103,7 +103,7 @@ void GroupMatrixEndpoints::ProcessorTarget::bind(scxt::modulation::GroupMatrix &
     auto &p = g.processorStorage[index];
     auto &d = g.processorDescription[index];
     shmo::bindEl(m, p, mixT, p.mix, mixP);
-    shmo::bindEl(m, p, outputLevelDbT, p.outputLevelInDecibels, outputLevelDbP);
+    shmo::bindEl(m, p, outputLevelDbT, p.outputCubAmp, outputLevelDbP);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {

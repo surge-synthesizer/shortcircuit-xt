@@ -49,7 +49,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                  {
                      v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
                           {"mix", t.mix},
-                          {"out", t.outputLevelInDecibels},
+                          {"out", t.outputCubAmp},
                           {"isKeytracked", t.isKeytracked},
                           {"floatParams", t.floatParams},
                           {"intParams", t.intParams},
@@ -76,7 +76,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                  else
                  {
                      findIf(v, "mix", result.mix);
-                     findIf(v, "out", result.outputLevelInDecibels);
+                     findIf(v, "out", result.outputCubAmp);
                      fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
                      fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
                      findOrSet(v, "isActive", false, result.isActive);

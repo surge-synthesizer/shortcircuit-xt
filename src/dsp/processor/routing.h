@@ -103,7 +103,8 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
     }
 
     // TODO: Smooth This
-    auto ol = dsp::dbTable.dbToLinear(*endpoints->processorTarget[i].outputLevelDbP);
+    auto ol = *endpoints->processorTarget[i].outputLevelDbP;
+    ol = ol * ol * ol * dsp::processor::ProcessorStorage::maxOutputAmp;
     mech::scale_by<blockSize << OS>(ol, output[0]);
     if (forceStereo || !chainIsMono)
     {

@@ -129,9 +129,8 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
             if (w)
             {
                 auto at = std::make_unique<ProcessorPane::attachment_t>(
-                    datamodel::describeValue(w->processorView,
-                                             w->processorView.outputLevelInDecibels),
-                    w->processorView.outputLevelInDecibels);
+                    datamodel::describeValue(w->processorView, w->processorView.outputCubAmp),
+                    w->processorView.outputCubAmp);
                 connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue,
                                              ProcessorPane::attachment_t>(*at, w->processorView, w,
                                                                           OTTraits::forZone, i);
