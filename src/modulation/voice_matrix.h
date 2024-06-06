@@ -63,6 +63,16 @@ struct MatrixConfig
     {
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
+    static std::unordered_set<TargetIdentifier> multiplicativeTargets;
+    static void setIsMultiplicative(const TargetIdentifier &ti)
+    {
+        multiplicativeTargets.insert(ti);
+    }
+    static bool getIsMultiplicative(const TargetIdentifier &ti)
+    {
+        auto res = multiplicativeTargets.find(ti) != multiplicativeTargets.end();
+        return res;
+    }
 
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
@@ -146,6 +156,8 @@ struct MatrixEndpoints
                 registerVoiceModTarget(e, panT, "Mapping", "Pan");
                 registerVoiceModTarget(e, ampT, "Mapping", "Amplitude");
                 registerVoiceModTarget(e, playbackRatioT, "Mapping", "Playback Ratio");
+
+                MatrixConfig::setIsMultiplicative(ampT);
             }
         }
         TG pitchOffsetT, panT, ampT, playbackRatioT;
@@ -166,6 +178,8 @@ struct MatrixEndpoints
             {
                 registerVoiceModTarget(e, panT, "Output", "Pan");
                 registerVoiceModTarget(e, ampT, "Output", "Amplitude");
+
+                MatrixConfig::setIsMultiplicative(ampT);
             }
         }
         TG panT, ampT;
