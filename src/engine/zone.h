@@ -69,6 +69,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         initialize();
     }
     Zone(Zone &&) = default;
+    virtual ~Zone() { terminateAllVoices(); }
 
     ZoneID id;
     enum VariantPlaybackMode : uint16_t
