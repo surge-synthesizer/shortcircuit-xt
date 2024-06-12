@@ -49,6 +49,7 @@ inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
         cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
             try
             {
+                nonconste.stopAllSounds();
                 scxt::json::unstreamEngineState(nonconste, payload);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
@@ -63,6 +64,7 @@ inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
     {
         try
         {
+            engine.stopAllSounds();
             scxt::json::unstreamEngineState(engine, payload);
         }
         catch (std::exception &err)
