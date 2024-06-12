@@ -494,7 +494,7 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     }
 }
 
-#define USE_ZOH_INTERPOLATION 0
+#define INTERPOLATION_METHOD dsp::InterpolationTypes::Sinc
 
 void Voice::initializeGenerator()
 {
@@ -546,9 +546,7 @@ void Voice::initializeGenerator()
 
     calculateGeneratorRatio(calculateVoicePitch());
 
-#if USE_ZOH_INTERPOLATION
-    GD.interpolationType = dsp::InterpolationTypes::ZeroOrderHold;
-#endif
+    GD.interpolationType = INTERPOLATION_METHOD;
 
     // TODO: This constant came from SC. Wonder why it is this value. There was a comment
     // comparing with 167777216 so any speedup at all.

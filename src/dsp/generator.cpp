@@ -67,6 +67,14 @@ template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
             KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
+template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
+{
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::Linear, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+};
+
 template <> struct KernelOp<InterpolationTypes::Sinc, float>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
@@ -140,6 +148,62 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
         auto OutputR{ks.Output[1]};
 
         OutputR[i] = NormalizeSampleToF32(readSampleR[0]);
+
+        if constexpr (LOOP_ACTIVE)
+        {
+            if (ks.fadeActive)
+            {
+                float fadeVal{NormalizeSampleToF32(readFadeSampleR[0])};
+                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
+                                          GD->loopUpperBound));
+                OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+            }
+        }
+    }
+}
+
+template <typename T>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+void KernelOp<InterpolationTypes::Linear, T>::Process(
+    GeneratorState *__restrict GD,
+    KernelProcessor<InterpolationTypes::Linear, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+{
+    auto readSampleL{ks.ReadSample[0]};
+    auto readFadeSampleL{ks.ReadFadeSample[0]};
+    auto OutputL{ks.Output[0]};
+    auto SamplePos{ks.SamplePos};
+    auto m0{ks.m0};
+    auto i{ks.i};
+
+    auto f_subPos = (float)(ks.SampleSubPos);
+    f_subPos /= (1 << 24);
+
+    auto y0{NormalizeSampleToF32(readSampleL[0])};
+    auto y1{NormalizeSampleToF32(readSampleL[1])};
+
+    OutputL[i] = (y0 * (1 - f_subPos) + y1 * (f_subPos));
+
+    if constexpr (LOOP_ACTIVE)
+    {
+        if (ks.fadeActive)
+        {
+            auto fadeVal{NormalizeSampleToF32(readFadeSampleL[0])};
+            auto fadeGain(
+                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
+            OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+        }
+    }
+
+    if constexpr (NUM_CHANNELS == 2)
+    {
+        auto readSampleR{ks.ReadSample[1]};
+        auto readFadeSampleR{ks.ReadFadeSample[1]};
+        auto OutputR{ks.Output[1]};
+
+        auto y0{NormalizeSampleToF32(readSampleR[0])};
+        auto y1{NormalizeSampleToF32(readSampleR[1])};
+
+        OutputR[i] = (y0 * (1 - f_subPos) + y1 * (f_subPos));
 
         if constexpr (LOOP_ACTIVE)
         {
@@ -567,6 +631,12 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                          readFadeR);
                 break;
             }
+            case InterpolationTypes::Linear:
+            {
+                KPStereo(InterpolationTypes::Linear, type_from_cond, 2, readL, readR, readFadeL,
+                         readFadeR);
+                break;
+            }
             case InterpolationTypes::ZeroOrderHold:
             {
                 KPStereo(InterpolationTypes::ZeroOrderHold, type_from_cond, 2, readL, readR,
@@ -582,6 +652,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             case InterpolationTypes::Sinc:
             {
                 KPMono(InterpolationTypes::Sinc, type_from_cond, 1, readL, readFadeL);
+                break;
+            }
+            case InterpolationTypes::Linear:
+            {
+                KPMono(InterpolationTypes::Linear, type_from_cond, 1, readL, readFadeL);
                 break;
             }
             case InterpolationTypes::ZeroOrderHold:
