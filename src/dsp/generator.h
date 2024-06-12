@@ -36,6 +36,7 @@ namespace scxt::dsp
 enum class InterpolationTypes
 {
     Sinc,
+    Linear,
     ZeroOrderHold
 };
 
