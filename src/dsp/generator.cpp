@@ -101,11 +101,17 @@ constexpr float I16InvScale = (1.f / (16384.f * 32768.f));
 constexpr float I16InvScale2 = (1.f / (32768.f));
 const __m128 I16InvScale_m128 = _mm_set1_ps(I16InvScale);
 
-float getFadeGain(int32_t samplePos, int32_t x1, int32_t x2)
+inline float getFadeGainToAmp(float g)
+{
+    // return std::cbrt(g);
+    // return 4.f / 3.f * (1 - 1 / ((1 + g) * (1 + g)));
+    return 2 * (1 - 1 / (1 + g));
+}
+inline float getFadeGain(int32_t samplePos, int32_t x1, int32_t x2)
 {
     assert(x1 <= samplePos && samplePos <= x2);
     auto gain = ((float)(x1 - samplePos)) / (x1 - x2);
-    return gain * gain * gain; // closer to a decibel type response maybe?
+    return gain;
 }
 
 template <InterpolationTypes KT, typename T> struct KernelOp
@@ -194,7 +200,10 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
             auto fadeVal{NormalizeSampleToF32(readFadeSampleL[readPos])};
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
         }
     }
 
@@ -213,7 +222,10 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
                 float fadeVal{NormalizeSampleToF32(readFadeSampleR[readPos])};
                 auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
                                           GD->loopUpperBound));
-                OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+                auto aOut = getFadeGainToAmp(1.f - fadeGain);
+                fadeGain = getFadeGainToAmp(fadeGain);
+
+                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
             }
         }
     }
@@ -250,7 +262,10 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
             auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
         }
     }
 
@@ -275,7 +290,10 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
 
                 auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
                                           GD->loopUpperBound));
-                OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+                auto aOut = getFadeGainToAmp(1.f - fadeGain);
+                fadeGain = getFadeGainToAmp(fadeGain);
+
+                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
             }
         }
     }
@@ -347,7 +365,10 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
             _mm_store_ss(&fadeVal, sR4);
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
         }
     }
 
@@ -383,7 +404,10 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
                 _mm_store_ss(&fadeVal, sR4);
                 auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
                                           GD->loopUpperBound));
-                OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
+                auto aOut = getFadeGainToAmp(1.f - fadeGain);
+                fadeGain = getFadeGainToAmp(fadeGain);
+
+                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
             }
         }
     }
@@ -489,9 +513,12 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
 
-            OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeValL * fadeGain;
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeValL * fadeGain;
             if constexpr (stereo)
-                OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeValR * fadeGain;
+                OutputR[i] = OutputR[i] * aOut + fadeValR * fadeGain;
         }
     }
 }
