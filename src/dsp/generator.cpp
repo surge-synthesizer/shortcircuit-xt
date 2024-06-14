@@ -39,6 +39,62 @@
 #include <array>
 #include <cassert>
 
+/*
+ * This is the Generator, the core class which moves from the sample data to an output
+ * stream. It handles looping, fades, interpolation methods, f32 vs i16 and more.
+ *
+ * There's three "big ideas" you need to udnerstand it
+ *
+ * The first is we have multiple processors by template type. Sinc, ZOH, Linear, etc...
+ * These have the job that given a block of input and a sample position, generate
+ * the appropriate output.
+ *
+ * The second is we have the generator state which contains sample position, loop information
+ * etc... The job of this generator is to advance that sample state to make sure we loop
+ *
+ * And the last is to deal positionally correctly with the input data mapping the sample
+ * pos in the second to the interpolation model in the first. So what do we expect for input
+ * sample data?
+ *
+ * So at input, we expect the sample data in GDIO to be pointing at the top of the sample
+ * but that sample is sitting in a buffer which is allocated FIROffset (=8) buffers
+ * wider on either side with 0s. That is, we hace valid memory from
+ * sample-8 to sample + samplesize + 8 - 1 with zero pads.
+ *
+ * 0 0 0 0 0 0 0 0 s s s s .... s s s s 0 0 0 0 0 0 0 0
+ *                 ^                  ^
+ *               sample            sample + waveSize
+ *
+ * This allows the processors to have a FIRipol_N{16} wide window in which to interpolate
+ *
+ * So then we get to the last bit of index shuffling. This generator is factored
+ * so individual prcoessors have their own process method which generates a samlpe
+ * intput output buffer {i} from a given chunk of data. The sample alignment for
+ * those processors is such that they get FIRipon_N{16} samples centered around
+ * SamplePos with SampleSubPos. Or the expectation is
+ *
+ * 1 2 3 4 5 6 7 8 9 A B C D E F
+ *             | |
+ *          SamplePos in this range
+ *
+ * The job of the harness which calls the processor (GeneratorSample) is to set up
+ * that indexing and the job of the processor itself is to find the value. The sinc
+ * processor, for instance, uses a 16 wide FIR but the ZOH just uses position FIRoffset-1.
+ *
+ * Since zero-pad-at-end is not always the right answer (for instance, with a
+ * loop you want to pad with the start of the loop) the GeneratorSampel below does the
+ * index shuffling and sometimes makes temporaries before calling a processor.
+ *
+ * The processors also have the opportunity to have a fade region where they
+ * cross fade between two sets of FIR-wide sample inputs aligned in the same
+ * fashion using the fade value defined below.
+ *
+ * And everything is templated so we can constexpr out the code we don't need
+ * and use a function pointer at voice on with the appropriate compile time config.
+ *
+ * Good luck!
+ */
+
 namespace scxt::dsp
 {
 constexpr float I16InvScale = (1.f / (16384.f * 32768.f));
@@ -105,6 +161,8 @@ struct KernelProcessor
 
     float *Output[NUM_CHANNELS];
 
+    GeneratorIO *IO{nullptr}; // only used for debug constraints
+
     void ProcessKernel(GeneratorState *__restrict GD)
     {
         return KernelOp<KT, T>::Process(GD, *this);
@@ -124,17 +182,16 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
     auto OutputL{ks.Output[0]};
-    auto SamplePos{ks.SamplePos};
-    auto m0{ks.m0};
     auto i{ks.i};
 
-    OutputL[i] = NormalizeSampleToF32(readSampleL[0]);
+    auto readPos = FIRoffset - 1;
+    OutputL[i] = NormalizeSampleToF32(readSampleL[readPos]);
 
     if constexpr (LOOP_ACTIVE)
     {
         if (ks.fadeActive)
         {
-            auto fadeVal{NormalizeSampleToF32(readFadeSampleL[0])};
+            auto fadeVal{NormalizeSampleToF32(readFadeSampleL[readPos])};
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
             OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
@@ -147,13 +204,13 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
         auto readFadeSampleR{ks.ReadFadeSample[1]};
         auto OutputR{ks.Output[1]};
 
-        OutputR[i] = NormalizeSampleToF32(readSampleR[0]);
+        OutputR[i] = NormalizeSampleToF32(readSampleR[readPos]);
 
         if constexpr (LOOP_ACTIVE)
         {
             if (ks.fadeActive)
             {
-                float fadeVal{NormalizeSampleToF32(readFadeSampleR[0])};
+                float fadeVal{NormalizeSampleToF32(readFadeSampleR[readPos])};
                 auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
                                           GD->loopUpperBound));
                 OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
@@ -178,8 +235,9 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
     auto f_subPos = (float)(ks.SampleSubPos);
     f_subPos /= (1 << 24);
 
-    auto y0{NormalizeSampleToF32(readSampleL[0])};
-    auto y1{NormalizeSampleToF32(readSampleL[1])};
+    auto readPos = FIRoffset - 1;
+    auto y0{NormalizeSampleToF32(readSampleL[readPos])};
+    auto y1{NormalizeSampleToF32(readSampleL[readPos + 1])};
 
     OutputL[i] = (y0 * (1 - f_subPos) + y1 * (f_subPos));
 
@@ -187,7 +245,9 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
     {
         if (ks.fadeActive)
         {
-            auto fadeVal{NormalizeSampleToF32(readFadeSampleL[0])};
+            auto fadeVal0{NormalizeSampleToF32(readFadeSampleL[readPos])};
+            auto fadeVal1{NormalizeSampleToF32(readFadeSampleL[readPos + 1])};
+            auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
             OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeVal * fadeGain;
@@ -200,8 +260,8 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
         auto readFadeSampleR{ks.ReadFadeSample[1]};
         auto OutputR{ks.Output[1]};
 
-        auto y0{NormalizeSampleToF32(readSampleR[0])};
-        auto y1{NormalizeSampleToF32(readSampleR[1])};
+        auto y0{NormalizeSampleToF32(readSampleR[readPos])};
+        auto y1{NormalizeSampleToF32(readSampleR[readPos + 1])};
 
         OutputR[i] = (y0 * (1 - f_subPos) + y1 * (f_subPos));
 
@@ -209,7 +269,10 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
         {
             if (ks.fadeActive)
             {
-                float fadeVal{NormalizeSampleToF32(readFadeSampleR[0])};
+                float fadeVal0{NormalizeSampleToF32(readFadeSampleR[readPos])};
+                float fadeVal1{NormalizeSampleToF32(readFadeSampleR[readPos + 1])};
+                auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
+
                 auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
                                           GD->loopUpperBound));
                 OutputR[i] = OutputR[i] * (1.f - fadeGain) + fadeVal * fadeGain;
@@ -226,9 +289,24 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
     auto OutputL{ks.Output[0]};
-    auto SamplePos{ks.SamplePos};
     auto m0{ks.m0};
     auto i{ks.i};
+
+#if DEBUG_CODE_I_WANT_TO_RETAIN
+    /* This code only works if theres no loop etc but please leave it here
+     * since it is useful when debugging in the future
+     */
+    {
+        ptrdiff_t space = (float *)readSampleL - (float *)ks.IO->sampleDataL;
+        float above = space - ks.IO->waveSize + FIRipol_N;
+
+        if (space < -(int64_t)FIRoffset || above > FIRoffset)
+            SCLOG(SCD(ks.IO->sampleDataL)
+                  << SCD(readSampleL) << SCD(space) << SCD(above) << SCD(ks.IO->waveSize));
+
+        assert(space >= -(int64_t)FIRoffset && above <= FIRoffset);
+    }
+#endif
 
     // float32 path (SSE)
     __m128 lipol0, tmp[4], sL4, sR4;
@@ -319,7 +397,6 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
     auto OutputL{ks.Output[0]};
-    auto SamplePos{ks.SamplePos};
     auto m0{ks.m0};
     auto i{ks.i};
     constexpr auto stereo = NUM_CHANNELS == 2;
@@ -410,7 +487,7 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
                 _mm_store_ss(&fadeValR, fR);
 
             auto fadeGain(
-                getFadeGain(SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
+                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
 
             OutputL[i] = OutputL[i] * (1.f - fadeGain) + fadeValL * fadeGain;
             if constexpr (stereo)
@@ -520,25 +597,26 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
     if (fp)
     {
-        readSampleLF32 = SampleDataFL + SamplePos;
+        // See comment above - the generator wants an FIRoffset centered data set
+        readSampleLF32 = SampleDataFL + SamplePos - FIRoffset;
         if (stereo)
-            readSampleRF32 = SampleDataFR + SamplePos;
+            readSampleRF32 = SampleDataFR + SamplePos - FIRoffset;
 
         if constexpr (loopActive)
         {
             if (fadeActive)
             {
                 auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                readFadeSampleLF32 = SampleDataFL + fadeSamplePos;
+                readFadeSampleLF32 = SampleDataFL + fadeSamplePos - FIRoffset;
                 if (stereo)
-                    readFadeSampleRF32 = SampleDataFR + fadeSamplePos;
+                    readFadeSampleRF32 = SampleDataFR + fadeSamplePos - FIRoffset;
             }
 
             if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
                 {
-                    auto q = k + SamplePos;
+                    auto q = k + SamplePos - FIRoffset;
                     if (q >= GD->loopUpperBound || q >= WaveSize)
                         q -= LoopOffset;
                     loopEndBufferLF32[k] = SampleDataFL[q];
@@ -553,25 +631,25 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     }
     else
     {
-        readSampleL = SampleDataL + SamplePos;
+        readSampleL = SampleDataL + SamplePos - FIRoffset;
         if (stereo)
-            readSampleR = SampleDataR + SamplePos;
+            readSampleR = SampleDataR + SamplePos - FIRoffset;
 
         if constexpr (loopActive)
         {
             if (fadeActive)
             {
                 auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                readFadeSampleL = SampleDataL + fadeSamplePos;
+                readFadeSampleL = SampleDataL + fadeSamplePos - FIRoffset;
                 if (stereo)
-                    readFadeSampleR = SampleDataR + fadeSamplePos;
+                    readFadeSampleR = SampleDataR + fadeSamplePos - FIRoffset;
             }
 
             if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
                 {
-                    auto q = k + SamplePos;
+                    auto q = k + SamplePos - FIRoffset;
                     if (q >= GD->loopUpperBound || q >= WaveSize)
                         q -= LoopOffset;
 
@@ -592,14 +670,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     for (i = 0; i < NSamples && !IsFinished; i++)
     {
 #define KPStereo(E, T, C, dataL, dataR, fadeL, fadeR)                                              \
-    KernelProcessor<E, T, C, loopActive> kp{SamplePos,  SampleSubPos,   int32_t(m0),               \
-                                            i,          {dataL, dataR}, {fadeL, fadeR},            \
-                                            fadeActive, loopFade,       {OutputL, OutputR}};       \
+    KernelProcessor<E, T, C, loopActive> kp{                                                       \
+        SamplePos,  SampleSubPos, int32_t(m0),        i, {dataL, dataR}, {fadeL, fadeR},           \
+        fadeActive, loopFade,     {OutputL, OutputR}, IO};                                         \
     kp.ProcessKernel(GD);
 
 #define KPMono(E, T, C, data, fade)                                                                \
     KernelProcessor<E, T, C, loopActive> ks{                                                       \
-        SamplePos, SampleSubPos, int32_t(m0), i, {data}, {fade}, fadeActive, loopFade, {OutputL}}; \
+        SamplePos, SampleSubPos, int32_t(m0), i,         {data},                                   \
+        {fade},    fadeActive,   loopFade,    {OutputL}, IO};                                      \
     ks.ProcessKernel(GD);
 
         using type_from_cond = typename std::conditional<fp, float, int16_t>::type;
@@ -714,15 +793,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
             if constexpr (fp)
             {
-                readSampleLF32 = SampleDataFL + SamplePos;
+                readSampleLF32 = SampleDataFL + SamplePos - FIRoffset;
                 if (stereo)
-                    readSampleRF32 = SampleDataFR + SamplePos;
+                    readSampleRF32 = SampleDataFR + SamplePos - FIRoffset;
             }
             else
             {
-                readSampleL = SampleDataL + SamplePos;
+                readSampleL = SampleDataL + SamplePos - FIRoffset;
                 if (stereo)
-                    readSampleR = SampleDataR + SamplePos;
+                    readSampleR = SampleDataR + SamplePos - FIRoffset;
             }
         }
         else if constexpr (!loopWhileGated && loopForward)
@@ -848,7 +927,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     for (int k = 0; k < resampFIRSize; ++k)
                     {
-                        auto q = k + SamplePos;
+                        auto q = k + SamplePos - FIRoffset;
                         if (q >= GD->loopUpperBound || q >= WaveSize)
                             q -= LoopOffset;
                         loopEndBufferLF32[k] = SampleDataFL[q];
@@ -861,16 +940,16 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 }
                 else
                 {
-                    readSampleLF32 = SampleDataFL + SamplePos;
+                    readSampleLF32 = SampleDataFL + SamplePos - FIRoffset;
                     if (stereo)
-                        readSampleRF32 = SampleDataFR + SamplePos;
+                        readSampleRF32 = SampleDataFR + SamplePos - FIRoffset;
 
                     if (fadeActive)
                     {
                         auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                        readFadeSampleLF32 = SampleDataFL + fadeSamplePos;
+                        readFadeSampleLF32 = SampleDataFL + fadeSamplePos - FIRoffset;
                         if (stereo)
-                            readFadeSampleRF32 = SampleDataFR + fadeSamplePos;
+                            readFadeSampleRF32 = SampleDataFR + fadeSamplePos - FIRoffset;
                     }
                 }
             }
@@ -882,7 +961,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     for (int k = 0; k < resampFIRSize; ++k)
                     {
-                        auto q = k + SamplePos;
+                        auto q = k + SamplePos - FIRoffset;
                         if (q >= GD->loopUpperBound || q >= WaveSize)
                             q -= LoopOffset;
                         loopEndBufferL[k] = SampleDataL[q];
@@ -895,16 +974,16 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 }
                 else
                 {
-                    readSampleL = SampleDataL + SamplePos;
+                    readSampleL = SampleDataL + SamplePos - FIRoffset;
                     if (stereo)
-                        readSampleR = SampleDataR + SamplePos;
+                        readSampleR = SampleDataR + SamplePos - FIRoffset;
 
                     if (fadeActive)
                     {
                         auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                        readFadeSampleL = SampleDataL + fadeSamplePos;
+                        readFadeSampleL = SampleDataL + fadeSamplePos - FIRoffset;
                         if (stereo)
-                            readFadeSampleR = SampleDataR + fadeSamplePos;
+                            readFadeSampleR = SampleDataR + fadeSamplePos - FIRoffset;
                     }
                 }
             }
