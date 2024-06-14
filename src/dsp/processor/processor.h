@@ -181,9 +181,10 @@ struct ProcessorStorage
     }
 
     ProcessorType type{proct_none};
-    float mix{0}, outputCubAmp{0};
     static constexpr float maxOutputDB{18.f};
     static constexpr float maxOutputAmp{7.943282347242815}; //  std::pow(10.f, maxOutputDB / 20.0);
+    static constexpr float zeroDbAmp{0.5011872336272724};
+    float mix{0}, outputCubAmp{zeroDbAmp}; // thats 1.0 / cubrt(maxOutputAmp)
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int32_t, maxProcessorIntParams> intParams;
     bool isActive{true};
