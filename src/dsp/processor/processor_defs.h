@@ -89,6 +89,8 @@
 #include "sst/voice-effects/modulation/Phaser.h"
 #include "sst/voice-effects/delay/Chorus.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
+// #include "sst/voice-effects/dynamics/Compressor.h"
+#include "sst/voice-effects/dynamics/AutoWah.h"
 
 namespace scxt::dsp::processor
 {
@@ -112,6 +114,13 @@ DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig
 DEFINE_PROC(Slewer, sst::voice_effects::distortion::Slewer<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
             "Distortion", "slewer-fx");
+
+// DEFINE_PROC(Compressor, sst::voice_effects::dynamics::Compressor<SCXTVFXConfig<1>>,
+//             sst::voice_effects::dynamics::Compressor<SCXTVFXConfig<2>>, proct_Compressor,
+//             "Compressor", "Dynamics", "compressor");
+DEFINE_PROC(AutoWah, sst::voice_effects::dynamics::AutoWah<SCXTVFXConfig<1>>,
+            sst::voice_effects::dynamics::AutoWah<SCXTVFXConfig<2>>, proct_autowah, "Auto Wah",
+            "Dynamics", "autowah");
 
 // Macros and commas don't get along
 namespace procimpl::detail
