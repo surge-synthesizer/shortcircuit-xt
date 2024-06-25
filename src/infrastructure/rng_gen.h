@@ -44,13 +44,13 @@ struct RNGGen
     inline float rand01() { return z1(g); }
     inline float randPM1() { return pm1(g); }
     inline uint32_t randU32() { return u32(g); }
-    
+
     float gaussScale(bool bip)
     {
-        float val = gauss(g); //very few values outside +/- 3 with this dist
+        float val = gauss(g);                       // very few values outside +/- 3 with this dist
         return (bip) ? val / 3.f : val / 6.f + .5f; // rescale that
     }
-    
+
     inline float gauss01() { return gaussScale(false); }
     inline float gaussPM1() { return gaussScale(true); }
 

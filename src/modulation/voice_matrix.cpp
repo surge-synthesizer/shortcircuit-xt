@@ -155,7 +155,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
         m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);
         m.bindSourceValue(transportSources.voicePhasors[i], v.transportPhasors[i]);
     }
-    
+
     for (int i = 0; i < 8; ++i)
     {
         bool bip = (i % 4 > 1) ? false : true;

@@ -268,7 +268,7 @@ struct MatrixEndpoints
             SR phasors[scxt::numTransportPhasors];
             SR voicePhasors[scxt::numTransportPhasors];
         } transportSources;
-        
+
         struct RNGSources
         {
             RNGSources(engine::Engine *e)
@@ -279,7 +279,7 @@ struct MatrixEndpoints
                     name = (i % 4 > 1) ? "Unipolar " : "Bipolar ";
                     name += (i < 4) ? "Even " : "Gaussian ";
                     name += std::to_string(i % 2 + 1);
-                    
+
                     randoms[i] = SR{'zrng', 'rnds', i};
                     registerVoiceModSource(e, randoms[i], "Random", name);
                 }
