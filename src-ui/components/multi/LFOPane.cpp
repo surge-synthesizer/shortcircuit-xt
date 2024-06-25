@@ -769,6 +769,16 @@ void LfoPane::rebuildPanelComponents()
     repositionContentAreaComponents();
     setSubPaneVisibility();
 
+    std::unique_ptr<jcmp::ToggleButton> tsb;
+    using tsfac = connectors::BooleanSingleValueFactory<boolAttachment_t,
+                                                        cmsg::UpdateZoneOrGroupModStorageBoolValue>;
+    tsfac::attach(ms, ms.temposync, this, tempoSyncA, tsb, forZone, selectedTab);
+    tsb->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+    tsb->setGlyph(jcmp::GlyphPainter::METRONOME);
+
+    clearAdditionalHamburgerComponents();
+    addAdditionalHamburgerComponent(std::move(tsb));
+
     if (forZone)
     {
         editor->themeApplier.applyZoneMultiScreenModulationTheme(this);

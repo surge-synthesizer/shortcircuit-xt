@@ -98,6 +98,8 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<sst::jucegui::components::MultiSwitch> triggerMode;
     std::unique_ptr<jcmp::Label> triggerL;
 
+    std::unique_ptr<boolAttachment_t> tempoSyncA;
+
     std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
 
     void pickPresets();
