@@ -488,13 +488,24 @@ struct DummyContinuous : sst::jucegui::data::Continuous
     virtual std::string getLabel() const override { return "Dummy"; };
 };
 
-template <typename T> std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
+struct DummyDiscrete : sst::jucegui::data::Discrete
 {
-    static std::unordered_map<uint32_t, std::unique_ptr<DummyContinuous>> dummyMap;
+    int v{1};
+    int getValue() const override { return v; }
+    void setValueFromGUI(const int &f) override { v = f; };
+    void setValueFromModel(const int &f) override { v = f; };
+    int getDefaultValue() const override { return 0; }
+    std::string getLabel() const override { return "Dummy"; }
+};
+
+template <typename T, typename C = DummyContinuous>
+std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
+{
+    static std::unordered_map<uint32_t, std::unique_ptr<C>> dummyMap;
 
     auto res = std::make_unique<T>();
 
-    DummyContinuous *thisWillLeak{nullptr};
+    C *thisWillLeak{nullptr};
     auto dmp = dummyMap.find(index);
     if (dmp != dummyMap.end())
     {
@@ -502,7 +513,7 @@ template <typename T> std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
     }
     else
     {
-        auto tmp = std::make_unique<DummyContinuous>();
+        auto tmp = std::make_unique<C>();
         thisWillLeak = tmp.get();
         dummyMap[index] = std::move(tmp);
         std::string s;

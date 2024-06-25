@@ -189,6 +189,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                   {modulation::ModulatorStorage::RELEASE, "RELEASE"},
                                   {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
                               }));
+    SC_FIELD(temposync, pmd().asBool().withName("Temposync"));
     SC_FIELD(rate, pmd().asLfoRate().withName("Rate"));
     SC_FIELD(start_phase, pmd().asPercent().withName("Phase"));
 
