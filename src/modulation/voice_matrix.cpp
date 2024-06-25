@@ -31,6 +31,7 @@
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"
+#include "infrastructure/rng_gen.h"
 
 namespace scxt::voice::modulation
 {
@@ -38,6 +39,7 @@ namespace scxt::voice::modulation
 std::unordered_set<MatrixConfig::TargetIdentifier> MatrixConfig::multiplicativeTargets;
 
 namespace shmo = scxt::modulation::shared;
+infrastructure::RNGGen rngGen;
 
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
@@ -94,6 +96,32 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
     }
 }
 
+float randomRoll(bool bipolar, int distribution)
+{
+    if (bipolar)
+    {
+        if (distribution == 0)
+        {
+            return rngGen.randPM1();
+        }
+        else
+        {
+            return rngGen.gaussPM1();
+        }
+    }
+    else
+    {
+        if (distribution == 0)
+        {
+            return rngGen.rand01();
+        }
+        else
+        {
+            return rngGen.gauss01();
+        }
+    }
+}
+
 void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z,
                                     voice::Voice &v)
 {
@@ -126,6 +154,13 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     {
         m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);
         m.bindSourceValue(transportSources.voicePhasors[i], v.transportPhasors[i]);
+    }
+    
+    for (int i = 0; i < 8; ++i)
+    {
+        bool bip = (i % 4 > 1) ? false : true;
+        int dist = (i < 4) ? 0 : 1;
+        m.bindSourceConstantValue(rngSources.randoms[i], randomRoll(bip, dist));
     }
 }
 
