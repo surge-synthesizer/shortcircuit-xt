@@ -99,6 +99,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<jcmp::Label> triggerL;
 
     std::unique_ptr<boolAttachment_t> tempoSyncA;
+    template <typename T> void setAttachmentAsTemposync(T &t);
 
     std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
 

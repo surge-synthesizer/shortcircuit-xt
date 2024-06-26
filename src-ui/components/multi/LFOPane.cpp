@@ -47,6 +47,15 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
+template <typename T> void LfoPane::setAttachmentAsTemposync(T &t)
+{
+    t.setTemposyncFunction([w = juce::Component::SafePointer(this)](const auto &a) {
+        if (w)
+            return w->modulatorStorageData[w->selectedTab].temposync;
+        return false;
+    });
+}
+
 const int MG = 5;
 const int BUTTON_H = 18;
 
@@ -238,6 +247,11 @@ struct StepLFOPane : juce::Component, HasEditor
         auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L) {
             fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
+            if (A->description.canTemposync)
+            {
+                parent->setAttachmentAsTemposync(*A);
+            }
+
             makeLabel(L, A->getLabel());
         };
 
@@ -421,6 +435,10 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L) {
             fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
+            if (A->description.canTemposync)
+            {
+                parent->setAttachmentAsTemposync(*A);
+            }
             makeLabel(L, A->getLabel());
         };
 
