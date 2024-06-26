@@ -155,6 +155,14 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
 
     std::string getLabel() const override { return label; }
     float getValue() const override { return (float)value; }
+
+    void setValueFromGUIQuantized(const float &f) override
+    {
+        if (description.supportsQuantization())
+            setValueFromGUI(description.quantize(f));
+        else
+            setValueFromGUI(f);
+    }
     void setValueFromGUI(const float &f) override
     {
         prevValue = value;

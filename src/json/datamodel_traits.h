@@ -57,6 +57,8 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                       {"customMaxDisplay", t.customMaxDisplay},
                       {"discreteValues", dvStream},
                       {"decimalPlaces", t.decimalPlaces},
+                      {"quantization", (int)t.quantization},
+                      {"quantizationParam", t.quantizationParam},
                       {"svA", t.svA},
                       {"svB", t.svB},
                       {"svC", t.svC},
@@ -71,6 +73,8 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findIf(v, "canTemposync", to.canTemposync);
                  findIf(v, "supportsStringConversion", to.supportsStringConversion);
                  findEnumIf(v, "displayScale", to.displayScale);
+                 findEnumIf(v, "quantization", to.quantization);
+                 findIf(v, "quantizationParam", to.quantizationParam);
                  findIf(v, "unit", to.unit);
                  findIf(v, "customMinDisplay", to.customMinDisplay);
                  findIf(v, "customMaxDisplay", to.customMaxDisplay);
