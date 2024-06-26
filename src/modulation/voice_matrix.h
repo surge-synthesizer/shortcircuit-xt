@@ -216,7 +216,7 @@ struct MatrixEndpoints
     {
         Sources(engine::Engine *e)
             : lfoSources(e), midiSources(e), aegSource{'zneg', 'aeg ', 0},
-              eg2Source{'zneg', 'eg2 ', 0}, transportSources(e)
+              eg2Source{'zneg', 'eg2 ', 0}, transportSources(e), rngSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
@@ -268,6 +268,24 @@ struct MatrixEndpoints
             SR phasors[scxt::numTransportPhasors];
             SR voicePhasors[scxt::numTransportPhasors];
         } transportSources;
+
+        struct RNGSources
+        {
+            RNGSources(engine::Engine *e)
+            {
+                for (uint32_t i = 0; i < 8; ++i)
+                {
+                    std::string name = "";
+                    name = (i % 4 > 1) ? "Unipolar " : "Bipolar ";
+                    name += (i < 4) ? "Even " : "Gaussian ";
+                    name += std::to_string(i % 2 + 1);
+
+                    randoms[i] = SR{'zrng', 'rnds', i};
+                    registerVoiceModSource(e, randoms[i], "Random", name);
+                }
+            }
+            SR randoms[8];
+        } rngSources;
 
         SR aegSource, eg2Source;
 
