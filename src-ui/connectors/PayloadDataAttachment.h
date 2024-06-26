@@ -129,6 +129,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     ValueType prevValue;
     std::string label;
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged{nullptr};
+    std::function<bool(const PayloadDataAttachment &at)> isTemposynced{nullptr};
 
     PayloadDataAttachment(const datamodel::pmd &cd,
                           std::function<void(const PayloadDataAttachment &at)> oGVC, ValueType &v)
@@ -169,7 +170,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     {
         if (description.supportsStringConversion)
         {
-            auto res = description.valueToString(f);
+            auto res = description.valueToString(f, getFeatureState());
             if (res.has_value())
                 return *res;
         }
@@ -222,6 +223,22 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
             if (f)
                 f(at);
         };
+    }
+
+    void setTemposyncFunction(std::function<bool(const PayloadDataAttachment &at)> f)
+    {
+        assert(description.canTemposync);
+        isTemposynced = f;
+    }
+
+    sst::basic_blocks::params::ParamMetaData::FeatureState getFeatureState() const
+    {
+        auto res = sst::basic_blocks::params::ParamMetaData::FeatureState();
+
+        if (isTemposynced)
+            res = res.withTemposync(isTemposynced(*this));
+
+        return res;
     }
 };
 
