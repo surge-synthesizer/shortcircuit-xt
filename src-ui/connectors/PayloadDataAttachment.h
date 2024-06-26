@@ -158,18 +158,34 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
 
     void setValueFromGUIQuantized(const float &f) override
     {
-        if (description.supportsQuantization())
-            setValueFromGUI(description.quantize(f));
-        else
-            setValueFromGUI(f);
-    }
-    void setValueFromGUI(const float &f) override
-    {
-        prevValue = value;
-        value = (ValueType)f;
-        if (onGuiValueChanged)
+        if (isTemposynced && isTemposynced(*this))
         {
-            onGuiValueChanged(*this);
+            setValueFromGUI(f);
+        }
+        if (description.supportsQuantization())
+        {
+            setValueFromGUI(description.quantize(f));
+        }
+        else
+        {
+            setValueFromGUI(f);
+        }
+    }
+    void setValueFromGUI(const float &ff) override
+    {
+        float f = ff;
+        if (isTemposynced && isTemposynced(*this))
+        {
+            f = description.snapToTemposync(f);
+        }
+        if (f != prevValue)
+        {
+            prevValue = value;
+            value = (ValueType)f;
+            if (onGuiValueChanged)
+            {
+                onGuiValueChanged(*this);
+            }
         }
     }
 
