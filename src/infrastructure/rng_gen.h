@@ -37,7 +37,7 @@ struct RNGGen
 {
     RNGGen()
         : g(std::chrono::system_clock::now().time_since_epoch().count()), pm1(-1.f, 1.f),
-          z1(0.f, 1.f), gauss(0.f, 1.f), u32(0, 0xFFFFFFFF)
+          z1(0.f, 1.f), gauss(0.f, .33333f), u32(0, 0xFFFFFFFF)
     {
     }
 
@@ -45,14 +45,8 @@ struct RNGGen
     inline float randPM1() { return pm1(g); }
     inline uint32_t randU32() { return u32(g); }
 
-    float gaussScale(bool bip)
-    {
-        float val = gauss(g);                       // very few values outside +/- 3 with this dist
-        return (bip) ? val / 3.f : val / 6.f + .5f; // rescale that
-    }
-
-    inline float gauss01() { return gaussScale(false); }
-    inline float gaussPM1() { return gaussScale(true); }
+    inline float gauss01() { return gauss(g); }
+    inline float gaussPM1() { return fabsf(gauss(g)); }
 
   private:
     std::minstd_rand g;
