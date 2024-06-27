@@ -178,6 +178,7 @@ void SCXTProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuf
         engine->transport.tempo = 120;
         engine->transport.signature.numerator = 4;
         engine->transport.signature.denominator = 4;
+        engine->onTransportUpdated();
     }
 
     auto midiIt = midiMessages.findNextSamplePosition(0);
