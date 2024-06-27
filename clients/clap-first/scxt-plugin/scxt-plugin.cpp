@@ -209,6 +209,7 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
         engine->transport.tempo = 120;
         engine->transport.signature.numerator = 4;
         engine->transport.signature.denominator = 4;
+        engine->onTransportUpdated();
     }
 
     auto &ptch = engine->getPatch();

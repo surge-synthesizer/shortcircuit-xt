@@ -109,8 +109,8 @@ void Voice::voiceStarted()
         {
             stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
-            stepLfos[i].assign(&zone->modulatorStorage[i], endpoints->lfo[i].rateP, nullptr,
-                               engine->rngGen);
+            stepLfos[i].assign(&zone->modulatorStorage[i], endpoints->lfo[i].rateP,
+                               &engine->transport, engine->rngGen);
         }
         else if (lfoEvaluator[i] == CURVE)
         {

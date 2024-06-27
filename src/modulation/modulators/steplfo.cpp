@@ -185,7 +185,7 @@ float QuadraticBSpline(float y0, float y1, float y2, float mu)
 StepLFO::StepLFO() {}
 
 void StepLFO::assign(modulation::ModulatorStorage *settings, const float *rate,
-                     datamodel::TimeData *td, infrastructure::RNGGen &rngGen)
+                     scxt::engine::Transport *td, infrastructure::RNGGen &rngGen)
 {
     this->settings = settings;
     this->td = td;
@@ -209,7 +209,7 @@ void StepLFO::assign(modulation::ModulatorStorage *settings, const float *rate,
     else if (false) // if (settings->triggerMode == 1)
     {
         double ipart; //,tsrate = localcopy[rate].f;
-        phase = (float)modf(0.5f * td->ppqPos * pow(2.0, (double)*rate), &ipart);
+        phase = (float)modf(0.5f * td->timeInBeats * pow(2.0, (double)*rate), &ipart);
         int i = (int)ipart;
         state = i % ls.repeat;
     }
