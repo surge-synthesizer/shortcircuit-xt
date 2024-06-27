@@ -251,6 +251,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     {
                         zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
                     }
+                    else if (oc.name == "key")
+                    {
+                        auto pmn = parseMidiNote(oc.value);
+                        zn->mapping.rootKey = pmn;
+                        zn->mapping.keyboardRange.keyStart = pmn;
+                        zn->mapping.keyboardRange.keyEnd = pmn;
+                    }
                     else if (oc.name == "lovel")
                     {
                         zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
@@ -263,6 +270,21 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     {
                         // dealt with above
                     }
+                    else if (oc.name == "ampeg_sustain")
+                    {
+                        zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
+                    }
+
+#define APPLYEG(v, d, t)                                                                           \
+    else if (oc.name == v)                                                                         \
+    {                                                                                              \
+        zn->egStorage[d].t =                                                                       \
+            scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
+    }
+
+                    APPLYEG("ampeg_attack", 0, a)
+                    APPLYEG("ampeg_decay", 0, d)
+                    APPLYEG("ampeg_release", 0, r)
                     else
                     {
                         SCLOG("    Skipped OpCode <region>: " << oc.name << " -> " << oc.value);
