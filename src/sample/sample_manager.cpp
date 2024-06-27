@@ -91,6 +91,7 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
 
     if (!sp->load(p))
     {
+        SCLOG("Failed to load sample from '" << p.u8string() << "'");
         return std::nullopt;
     }
 

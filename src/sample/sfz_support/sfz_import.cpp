@@ -30,14 +30,35 @@
 #include "sfz_parse.h"
 #include "messaging/messaging.h"
 #include "engine/engine.h"
+#include <cctype>
 
 namespace scxt::sfz_support
 {
 int parseMidiNote(const std::string &s)
 {
+    static constexpr int noteShift[7] = {-3, -1, 0, 2, 4, 5, 7};
+    static constexpr int octShift[7] = {1, 1, 0, 0, 0, 0, 0};
     if ((s[0] >= 'a' && s[0] <= 'g') || (s[0] >= 'A' && s[0] <= 'G'))
     {
-        return 60;
+        auto bn = std::clamp((int)std::tolower(s[0]) - (int)'a', 0, 7);
+        int oct = 4;
+        auto diff = 0;
+        if (s[1] == '#' || s[1] == 'b')
+        {
+            diff = s[1] == '#' ? 1 : 0;
+            oct = std::atol(s.c_str() + 2);
+        }
+        else
+        {
+            oct = std::atol(s.c_str() + 1);
+        }
+
+        // C4 is 60 so
+        auto nsv = noteShift[bn];
+        oct += octShift[bn]; // so a4 is actually abve c4
+        auto res = nsv + diff + (oct + 1) * 12;
+
+        return res;
     }
     return std::atol(s.c_str());
 }
@@ -93,33 +114,39 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto &group = part->getGroup(groupId);
 
             // Find the sample
-            std::string sampleFile = "<-->";
+            std::string sampleFileString = "<-->";
             for (auto &oc : list)
             {
                 if (oc.name == "sample")
                 {
-                    sampleFile = oc.value;
+                    sampleFileString = oc.value;
                 }
             }
             // fs always works with / and on windows also works with back
-            std::replace(sampleFile.begin(), sampleFile.end(), '\\', '/');
-            if (!fs::exists(sampleDir / sampleFile) && !fs::exists(sampleFile))
+            std::replace(sampleFileString.begin(), sampleFileString.end(), '\\', '/');
+            // Is it contained in quotes
+            if (sampleFileString.back() == '"')
             {
-                SCLOG("Cannot find SampleFile [" << (sampleDir / sampleFile).u8string() << "]");
-                return false;
+                sampleFileString = sampleFileString.substr(0, sampleFileString.size() - 1);
             }
+            if (sampleFileString[0] == '"')
+            {
+                sampleFileString = sampleFileString.substr(1);
+            }
+            auto sampleFile = fs::path{sampleFileString};
+            auto samplePath = (sampleDir / sampleFile).lexically_normal();
 
             SampleID sid;
-            if (fs::exists(sampleDir / sampleFile))
+            if (fs::exists(samplePath))
             {
-                auto lsid = e.getSampleManager()->loadSampleByPath(sampleDir / sampleFile);
+                auto lsid = e.getSampleManager()->loadSampleByPath(samplePath);
                 if (lsid.has_value())
                 {
                     sid = *lsid;
                 }
                 else
                 {
-                    SCLOG("Cannot load Sample : " << (sampleDir / sampleFile).u8string());
+                    SCLOG("Cannot load Sample : " << samplePath.u8string());
                     break;
                 }
             }
@@ -135,6 +162,12 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     SCLOG("Cannot load Sample : " << sampleFile);
                     return false;
                 }
+            }
+            else
+            {
+                SCLOG("Unable to load either '" << samplePath.u8string() << "' or '"
+                                                << sampleFile.u8string() << "'");
+                return false;
             }
 
             // OK so do we have a sequence position > 1
@@ -197,7 +230,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 {
                     e.getMessageController()->reportErrorToClient(
                         "Mis-mapped SFZ Round Robin",
-                        std::string("Unable to locate zone for sample ") + sampleFile);
+                        std::string("Unable to locate zone for sample ") + sampleFile.u8string());
                 }
             }
             else
