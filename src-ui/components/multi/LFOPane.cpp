@@ -200,7 +200,7 @@ struct StepLFOPane : juce::Component, HasEditor
             float stepSamples{renderSR / std::pow(2.0f, rate) /
                               blockSize}; // how manu samples in a step
             int captureEvery{(int)(stepSamples / (ms.stepLfoStorage.repeat * 10))};
-            scxt::datamodel::TimeData td{};
+            scxt::engine::Transport td{};
             scxt::infrastructure::RNGGen gen;
             so->assign(&ms, &rate, &td, gen);
 

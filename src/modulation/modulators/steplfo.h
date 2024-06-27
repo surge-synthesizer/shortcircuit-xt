@@ -28,7 +28,7 @@
 #ifndef SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
 #define SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
 
-#include "datamodel/timedata.h"
+#include "engine/transport.h"
 #include "utils.h"
 #include <array>
 #include <vector>
@@ -102,8 +102,8 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
   public:
     StepLFO();
     ~StepLFO();
-    void assign(modulation::ModulatorStorage *settings, const float *rate, datamodel::TimeData *td,
-                infrastructure::RNGGen &);
+    void assign(modulation::ModulatorStorage *settings, const float *rate,
+                scxt::engine::Transport *td, infrastructure::RNGGen &);
     void sync();
     void process(int samples);
     float output{0.f};
@@ -120,7 +120,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     float ratemult;
     int shuffle_id;
     const float *rate{nullptr};
-    datamodel::TimeData *td{nullptr};
+    engine::Transport *td{nullptr};
     modulation::ModulatorStorage *settings{nullptr};
 };
 } // namespace scxt::modulation::modulators
