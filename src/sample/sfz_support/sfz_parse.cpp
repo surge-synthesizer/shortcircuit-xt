@@ -355,10 +355,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
                 cp += opcode.size() + 1;
                 auto [key, pos] = readUntilEndOfKey(cp, opcode == "sample");
                 cp = pos - 1;
-                OpCode oc;
-                oc.name = opcode;
-                oc.value = stripTrailing(key);
-                res.back().second.push_back(oc);
+                res.back().second.insert({opcode, key});
             }
             else
             {

@@ -32,6 +32,7 @@
 #include <variant>
 #include <vector>
 #include <filesystem>
+#include <unordered_map>
 #include "filesystem/import.h"
 
 namespace scxt::sfz_support
@@ -55,14 +56,8 @@ struct SFZParser
         } type{unknown};
         std::string name;
     };
-    struct OpCode
-    {
-        std::string name;
-        // std::variant<float, std::string, bool> value; // the bool means no value
-        std::string value;
-    };
 
-    typedef std::vector<OpCode> opCodes_t;
+    typedef std::unordered_map<std::string, std::string> opCodes_t;
     typedef std::pair<Header, opCodes_t> section_t;
     typedef std::vector<section_t> document_t;
 

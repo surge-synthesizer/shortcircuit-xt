@@ -80,8 +80,43 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
     int groupId = -1;
     int firstGroupWithZonesAdded = -1;
+    SFZParser::opCodes_t groupList;
     for (const auto &[r, list] : doc)
     {
+        std::unordered_set<std::string> usedOpcodes;
+        auto testAndGetFrom = [&usedOpcodes](const auto &key, auto &onto, const auto &l) {
+            auto it = l.find(key);
+            if (it != l.end())
+            {
+                usedOpcodes.insert(key);
+                onto = it->second;
+                return true;
+            }
+            return false;
+        };
+        auto testAndGet = [testAndGetFrom, &l = list](const auto &key, auto &onto) {
+            return testAndGetFrom(key, onto, l);
+        };
+
+        auto testAndGetMidiNote = [testAndGet](const auto &key, auto defNote) {
+            std::string val;
+            if (testAndGet(key, val))
+                return parseMidiNote(val);
+
+            return defNote;
+        };
+
+        auto testAndGetXForm = [testAndGet](const auto &key, double defVal,
+                                            std::function<double(double)> f) {
+            std::string val;
+            if (testAndGet(key, val))
+            {
+                return f(std::atoi(val.c_str()));
+            }
+
+            return defVal;
+        };
+
         if (r.type != SFZParser::Header::region)
         {
             SCLOG("Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------");
@@ -90,19 +125,12 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         {
         case SFZParser::Header::group:
         {
+            groupList = list;
             groupId = part->addGroup() - 1;
             auto &group = part->getGroup(groupId);
-            for (auto &oc : list)
-            {
-                if (oc.name == "group_label" || oc.name == "name")
-                {
-                    group->name = oc.value;
-                }
-                else
-                {
-                    SCLOG("     Skipped OpCode <group>: " << oc.name << " -> " << oc.value);
-                }
-            }
+            testAndGet("group_label", group->name) || testAndGet("name", group->name);
+            // special case - we query for group sample below
+            usedOpcodes.insert("sample");
         }
         break;
         case SFZParser::Header::region:
@@ -114,14 +142,14 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto &group = part->getGroup(groupId);
 
             // Find the sample
-            std::string sampleFileString = "<-->";
-            for (auto &oc : list)
+            std::string sampleFileString = "";
+            if (!testAndGet("sample", sampleFileString) &&
+                !testAndGetFrom("sample", sampleFileString, groupList))
             {
-                if (oc.name == "sample")
-                {
-                    sampleFileString = oc.value;
-                }
+                SCLOG("Unable to find sample in region or parent group");
+                return false;
             }
+
             // fs always works with / and on windows also works with back
             std::replace(sampleFileString.begin(), sampleFileString.end(), '\\', '/');
             // Is it contained in quotes
@@ -172,16 +200,14 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
             // OK so do we have a sequence position > 1
             int roundRobinPosition{-1};
-            for (auto &oc : list)
+            std::string val;
+            if (testAndGet("seq_position", val))
             {
-                if (oc.name == "seq_position")
+                auto pos = std::atoi(val.c_str());
+                if (pos > 1)
                 {
-                    auto pos = std::atoi(oc.value.c_str());
-                    if (pos > 1)
-                    {
-                        roundRobinPosition = pos;
-                    };
-                }
+                    roundRobinPosition = pos;
+                };
             }
 
             if (roundRobinPosition > 0)
@@ -189,26 +215,11 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 int16_t rk{0}, ks{0}, ke{0}, vs{0}, ve{0};
                 for (auto &oc : list)
                 {
-                    if (oc.name == "pitch_keycenter")
-                    {
-                        rk = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "lokey")
-                    {
-                        ks = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "hikey")
-                    {
-                        ke = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "lovel")
-                    {
-                        vs = std::atol(oc.value.c_str());
-                    }
-                    else if (oc.name == "hivel")
-                    {
-                        ve = std::atol(oc.value.c_str());
-                    }
+                    rk = testAndGetMidiNote("pitch_keycenter", 0);
+                    ks = testAndGetMidiNote("lokey", 0);
+                    ke = testAndGetMidiNote("hikey", 0);
+                    vs = testAndGetMidiNote("lovel", 0);
+                    ve = testAndGetMidiNote("hivel", 0);
                 }
 
                 bool attached{false};
@@ -237,59 +248,33 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             {
                 auto zn = std::make_unique<engine::Zone>(sid);
 
-                for (auto &oc : list)
+                std::string key;
+
+                zn->mapping.rootKey = testAndGetMidiNote("pitch_keycenter", 69);
+                zn->mapping.keyboardRange.keyStart = testAndGetMidiNote("lokey", 0);
+                zn->mapping.keyboardRange.keyEnd = testAndGetMidiNote("hikey", 127);
+                zn->mapping.velocityRange.velStart = testAndGetMidiNote("lovel", 0);
+                zn->mapping.velocityRange.velEnd = testAndGetMidiNote("hivel", 127);
+
+                if (testAndGet("key", key))
                 {
-                    if (oc.name == "pitch_keycenter")
-                    {
-                        zn->mapping.rootKey = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "lokey")
-                    {
-                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "hikey")
-                    {
-                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "key")
-                    {
-                        auto pmn = parseMidiNote(oc.value);
-                        zn->mapping.rootKey = pmn;
-                        zn->mapping.keyboardRange.keyStart = pmn;
-                        zn->mapping.keyboardRange.keyEnd = pmn;
-                    }
-                    else if (oc.name == "lovel")
-                    {
-                        zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
-                    }
-                    else if (oc.name == "hivel")
-                    {
-                        zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
-                    }
-                    else if (oc.name == "sample" || oc.name == "seq_position")
-                    {
-                        // dealt with above
-                    }
-                    else if (oc.name == "ampeg_sustain")
-                    {
-                        zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
-                    }
-
-#define APPLYEG(v, d, t)                                                                           \
-    else if (oc.name == v)                                                                         \
-    {                                                                                              \
-        zn->egStorage[d].t =                                                                       \
-            scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
-    }
-
-                    APPLYEG("ampeg_attack", 0, a)
-                    APPLYEG("ampeg_decay", 0, d)
-                    APPLYEG("ampeg_release", 0, r)
-                    else
-                    {
-                        SCLOG("    Skipped OpCode <region>: " << oc.name << " -> " << oc.value);
-                    }
+                    auto pm = parseMidiNote(key);
+                    zn->mapping.rootKey = pm;
+                    zn->mapping.keyboardRange.keyStart = pm;
+                    zn->mapping.keyboardRange.keyEnd = pm;
                 }
+
+                auto etf = [](double d) { return scxt::modulation::secondsToNormalizedEnvTime(d); };
+                zn->egStorage[0].a = testAndGetXForm("ampeg_attack", 0, etf);
+                zn->egStorage[0].h = testAndGetXForm("ampeg_hold", 0, etf);
+                zn->egStorage[0].h = testAndGetXForm("ampeg_decay", 0, etf);
+                zn->egStorage[0].h =
+                    testAndGetXForm("ampeg_sustain", 1, [](auto a) { return a * 0.01; });
+                zn->egStorage[0].h = testAndGetXForm("ampeg_release", etf(0.01), etf);
+                zn->egStorage[0].d = 0;
+                zn->egStorage[0].s = 1;
+                zn->egStorage[0].r = 0;
+
                 zn->attachToSample(*e.getSampleManager());
                 group->addZone(zn);
             }
@@ -301,20 +286,12 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         break;
         case SFZParser::Header::control:
         {
-            for (const auto &oc : list)
+            std::string vv;
+            if (testAndGet("default_path", vv))
             {
-                if (oc.name == "default_path")
-                {
-                    auto vv = oc.value;
-                    std::replace(vv.begin(), vv.end(), '\\', '/');
-                    sampleDir = rootDir / vv;
-                    SCLOG("Control: Resetting sample dir to " << sampleDir);
-                    ;
-                }
-                else
-                {
-                    SCLOG("    Skipped OpCode <control>: " << oc.name << " -> " << oc.value);
-                }
+                std::replace(vv.begin(), vv.end(), '\\', '/');
+                sampleDir = rootDir / vv;
+                SCLOG("Control: Resetting sample dir to " << sampleDir);
             }
         }
         break;
@@ -323,10 +300,18 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             SCLOG("Ignoring SFZ Header " << r.name << " with " << list.size() << " keywords");
             for (const auto &oc : list)
             {
-                SCLOG("  " << oc.name << " -> |" << oc.value << "|");
+                SCLOG("  " << oc.first << " -> |" << oc.second << "|");
             }
         }
         break;
+        }
+
+        for (auto [k, v] : list)
+        {
+            if (usedOpcodes.find(k) == usedOpcodes.end())
+            {
+                SCLOG("Unused Opcode in <" << r.name << "> : '" << k << "' -> " << v);
+            }
         }
     }
 
