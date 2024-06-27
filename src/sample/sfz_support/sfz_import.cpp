@@ -80,6 +80,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
     int groupId = -1;
     int firstGroupWithZonesAdded = -1;
+    SFZParser::opCodes_t currentGroupOpcodes;
     for (const auto &[r, list] : doc)
     {
         if (r.type != SFZParser::Header::region)
@@ -91,6 +92,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         case SFZParser::Header::group:
         {
             groupId = part->addGroup() - 1;
+            currentGroupOpcodes = list;
             auto &group = part->getGroup(groupId);
             for (auto &oc : list)
             {
@@ -100,7 +102,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCLOG("     Skipped OpCode <group>: " << oc.name << " -> " << oc.value);
+                    // We take a second shot at this below
+                    // SCLOG("     Skipped OpCode <group>: " << oc.name << " -> " << oc.value);
                 }
             }
         }
@@ -115,6 +118,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
             // Find the sample
             std::string sampleFileString = "<-->";
+            for (auto &oc : currentGroupOpcodes)
+            {
+                if (oc.name == "sample")
+                {
+                    sampleFileString = oc.value;
+                }
+            }
             for (auto &oc : list)
             {
                 if (oc.name == "sample")
@@ -236,44 +246,57 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             else
             {
                 auto zn = std::make_unique<engine::Zone>(sid);
+                // SFZ defaults
+                zn->mapping.rootKey = 69;
+                zn->mapping.keyboardRange.keyStart = 0;
+                zn->mapping.keyboardRange.keyEnd = 127;
+                zn->mapping.velocityRange.velStart = 0;
+                zn->mapping.velocityRange.velEnd = 127;
 
-                for (auto &oc : list)
+                for (const auto &[n, ls] :
+                     {std::make_pair(std::string("Group"), currentGroupOpcodes), {"Region", list}})
                 {
-                    if (oc.name == "pitch_keycenter")
+                    for (auto &oc : ls)
                     {
-                        zn->mapping.rootKey = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "lokey")
-                    {
-                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "hikey")
-                    {
-                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
-                    }
-                    else if (oc.name == "key")
-                    {
-                        auto pmn = parseMidiNote(oc.value);
-                        zn->mapping.rootKey = pmn;
-                        zn->mapping.keyboardRange.keyStart = pmn;
-                        zn->mapping.keyboardRange.keyEnd = pmn;
-                    }
-                    else if (oc.name == "lovel")
-                    {
-                        zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
-                    }
-                    else if (oc.name == "hivel")
-                    {
-                        zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
-                    }
-                    else if (oc.name == "sample" || oc.name == "seq_position")
-                    {
-                        // dealt with above
-                    }
-                    else if (oc.name == "ampeg_sustain")
-                    {
-                        zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
-                    }
+                        if (oc.name == "pitch_keycenter")
+                        {
+                            zn->mapping.rootKey = parseMidiNote(oc.value);
+                        }
+                        else if (oc.name == "lokey")
+                        {
+                            zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
+                        }
+                        else if (oc.name == "hikey")
+                        {
+                            zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
+                        }
+                        else if (oc.name == "key")
+                        {
+                            auto pmn = parseMidiNote(oc.value);
+                            zn->mapping.rootKey = pmn;
+                            zn->mapping.keyboardRange.keyStart = pmn;
+                            zn->mapping.keyboardRange.keyEnd = pmn;
+                        }
+                        else if (oc.name == "lovel")
+                        {
+                            zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
+                        }
+                        else if (oc.name == "hivel")
+                        {
+                            zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
+                        }
+                        else if (oc.name == "sample" || oc.name == "seq_position")
+                        {
+                            // dealt with above
+                        }
+                        else if (oc.name == "ampeg_sustain")
+                        {
+                            zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
+                        }
+                        else if (oc.name == "volume")
+                        {
+                            zn->mapping.amplitude = std::atof(oc.value.c_str()); // decibels
+                        }
 
 #define APPLYEG(v, d, t)                                                                           \
     else if (oc.name == v)                                                                         \
@@ -282,12 +305,14 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
     }
 
-                    APPLYEG("ampeg_attack", 0, a)
-                    APPLYEG("ampeg_decay", 0, d)
-                    APPLYEG("ampeg_release", 0, r)
-                    else
-                    {
-                        SCLOG("    Skipped OpCode <region>: " << oc.name << " -> " << oc.value);
+                        APPLYEG("ampeg_attack", 0, a)
+                        APPLYEG("ampeg_decay", 0, d)
+                        APPLYEG("ampeg_release", 0, r)
+                        else
+                        {
+                            SCLOG("    Skipped " << n << "-originated OpCode for region: "
+                                                 << oc.name << " -> " << oc.value);
+                        }
                     }
                 }
                 zn->attachToSample(*e.getSampleManager());
