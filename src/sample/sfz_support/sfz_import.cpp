@@ -72,7 +72,6 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     auto doc = parser.parse(f);
     auto rootDir = f.parent_path();
     auto sampleDir = rootDir;
-    SCLOG(SCD(rootDir.u8string()));
 
     auto pt = std::clamp(e.getSelectionManager()->selectedPart, 0, (int)numParts);
 
@@ -132,17 +131,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     sampleFileString = oc.value;
                 }
             }
-            // fs always works with / and on windows also works with back
+            // fs always works with / and on windows also works with back. Quotes are
+            // stripped by the parser now
             std::replace(sampleFileString.begin(), sampleFileString.end(), '\\', '/');
-            // Is it contained in quotes
-            if (sampleFileString.back() == '"')
-            {
-                sampleFileString = sampleFileString.substr(0, sampleFileString.size() - 1);
-            }
-            if (sampleFileString[0] == '"')
-            {
-                sampleFileString = sampleFileString.substr(1);
-            }
             auto sampleFile = fs::path{sampleFileString};
             auto samplePath = (sampleDir / sampleFile).lexically_normal();
 

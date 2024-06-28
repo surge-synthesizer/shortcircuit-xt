@@ -32,3 +32,5 @@ if (${SCXT_JUCE_CLASSIC_STYLE})
 else()
     add_subdirectory(clap-first)
 endif()
+
+add_subdirectory(sfz-token-dump)
