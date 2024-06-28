@@ -313,13 +313,21 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
         return {oss.str(), from};
     };
 
-    auto stripTrailing = [](const auto &s) {
+    auto stripTrailingAndQuotes = [](const auto &s) {
         auto ep = s.size() - 1;
         while (ep >= 0 && (s[ep] == ' ' || s[ep] == '\n' || s[ep] == '\r'))
         {
             ep--;
         }
-        return s.substr(0, ep + 1);
+        auto res = s.substr(0, ep + 1);
+        if (!res.empty())
+        {
+            if (res.size() > 1 && res[0] == '"' && res.back() == '"')
+            {
+                res = res.substr(1, res.size() - 2);
+            }
+        }
+        return res;
     };
 
     auto e = s.size();
@@ -357,7 +365,7 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
                 cp = pos - 1;
                 OpCode oc;
                 oc.name = opcode;
-                oc.value = stripTrailing(key);
+                oc.value = stripTrailingAndQuotes(key);
                 res.back().second.push_back(oc);
             }
             else
