@@ -175,8 +175,8 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     }
     int32_t WaveDataSamples = 8 * WaveDataSize / (wh.wBitsPerSample * wh.nChannels);
 
-    SCLOG("Loaded wav file " << SCD(wh.nChannels) << SCD(wh.nSamplesPerSec)
-                             << SCD(wh.wBitsPerSample) << SCD(WaveDataSamples));
+    /*SCLOG("Loaded wav file " << SCD(wh.nChannels) << SCD(wh.nSamplesPerSec)
+                             << SCD(wh.wBitsPerSample) << SCD(WaveDataSamples)); */
 
     /* get pointer to the sampledata */
 
