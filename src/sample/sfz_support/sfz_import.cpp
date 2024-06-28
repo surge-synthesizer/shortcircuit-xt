@@ -238,7 +238,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             {
                 auto zn = std::make_unique<engine::Zone>(sid);
                 // SFZ defaults
-                zn->mapping.rootKey = 69;
+                zn->mapping.rootKey = 60;
                 zn->mapping.keyboardRange.keyStart = 0;
                 zn->mapping.keyboardRange.keyEnd = 127;
                 zn->mapping.velocityRange.velStart = 0;
