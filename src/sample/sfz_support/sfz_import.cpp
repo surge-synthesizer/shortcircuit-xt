@@ -238,7 +238,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             {
                 auto zn = std::make_unique<engine::Zone>(sid);
                 // SFZ defaults
-                zn->mapping.rootKey = 69;
+                zn->mapping.rootKey = 60;
                 zn->mapping.keyboardRange.keyStart = 0;
                 zn->mapping.keyboardRange.keyEnd = 127;
                 zn->mapping.velocityRange.velStart = 0;
@@ -288,6 +288,25 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         {
                             zn->mapping.amplitude = std::atof(oc.value.c_str()); // decibels
                         }
+                        else if (oc.name == "tune")
+                        {
+                            // Tune is supplied in cents. Our pitch offset is in semitones
+                            zn->mapping.pitchOffset = std::atof(oc.value.c_str()) * 0.01;
+                        }
+                        else if (oc.name == "loop_mode")
+                        {
+                            if (oc.value == "loop_continuous")
+                            {
+                                // FIXME: In round robin looping modes this is probably wrong
+                                zn->sampleData.samples[0].loopActive = true;
+                                zn->sampleData.samples[0].loopMode =
+                                    engine::Zone::LOOP_DURING_VOICE;
+                            }
+                            else
+                            {
+                                SCLOG("Unsupported loop_mode : " << oc.value);
+                            }
+                        }
 
 #define APPLYEG(v, d, t)                                                                           \
     else if (oc.name == v)                                                                         \
@@ -301,8 +320,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         APPLYEG("ampeg_release", 0, r)
                         else
                         {
-                            SCLOG("    Skipped " << n << "-originated OpCode for region: "
-                                                 << oc.name << " -> " << oc.value);
+                            if (n != "Group")
+                                SCLOG("    Skipped " << n << "-originated OpCode for region: "
+                                                     << oc.name << " -> " << oc.value);
                         }
                     }
                 }

@@ -70,22 +70,34 @@ SampleManager::~SampleManager() { SCLOG("Destroying Sample Manager"); }
 
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {
+    for (const auto &[alreadyId, sm] : samples)
+    {
+        if (sm->getPath() == p)
+        {
+            return alreadyId;
+        }
+    }
+
     return loadSampleByPathToID(p, SampleID::next());
 }
 
 std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, const SampleID &id)
 {
-    SCLOG("Loading sample " << p.u8string() << " into " << id.to_string());
     assert(threadingChecker.isSerialThread());
     SampleID::guaranteeNextAbove(id);
 
-    for (const auto &[id, sm] : samples)
+    for (const auto &[alreadyId, sm] : samples)
     {
         if (sm->getPath() == p)
         {
-            return id;
+            SCLOG("Potential concern: Asked to load '"
+                  << p.u8string() << "' into " << id.to_string() << " but it already exists at "
+                  << alreadyId.to_string());
+            return alreadyId;
         }
     }
+
+    SCLOG("Loading sample " << p.u8string() << " into " << id.to_string());
 
     auto sp = std::make_shared<Sample>(id);
 
