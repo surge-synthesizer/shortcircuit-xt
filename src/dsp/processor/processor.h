@@ -115,7 +115,7 @@ enum ProcessorType
     proct_Phaser,
     proct_Chorus,
     proct_volpan,
-    //    proct_Compressor,
+    proct_Compressor,
     proct_autowah,
 
     proct_stringResonator,
