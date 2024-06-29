@@ -166,6 +166,16 @@ void ProcessorPane::rebuildControlsFromDescription()
             *at, processorView, this, forZone, index);
 
         floatAttachments[i] = std::move(at);
+
+        if (processorControlDescription.floatControlDescriptions[i].canTemposync)
+        {
+            floatAttachments[i]->setTemposyncFunction(
+                [w = juce::Component::SafePointer(this)](const auto &a) {
+                    if (w)
+                        return w->processorView.isTemposynced;
+                    return false;
+                });
+        }
     }
 
     for (int i = 0; i < processorControlDescription.numIntParams; ++i)
@@ -273,6 +283,21 @@ void ProcessorPane::rebuildControlsFromDescription()
         kta->setGlyph(sst::jucegui::components::GlyphPainter::KEYBOARD);
         kta->setSource(keytrackAttackment.get());
         addAdditionalHamburgerComponent(std::move(kta));
+    }
+
+    if (processorControlDescription.supportsTemposync)
+    {
+        temposyncAttachment =
+            std::make_unique<bool_attachment_t>("Temposync", processorView.isTemposynced);
+        connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
+                                     bool_attachment_t::onGui_t>(
+            *temposyncAttachment, processorView, this, forZone, index);
+
+        auto ts = std::make_unique<jcmp::ToggleButton>();
+        ts->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
+        ts->setGlyph(sst::jucegui::components::GlyphPainter::METRONOME);
+        ts->setSource(temposyncAttachment.get());
+        addAdditionalHamburgerComponent(std::move(ts));
     }
 
     setToggleDataSource(nullptr);

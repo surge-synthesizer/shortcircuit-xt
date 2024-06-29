@@ -646,6 +646,8 @@ void Voice::initializeProcessors()
         if (processors[i])
         {
             processors[i]->setSampleRate(sampleRate * (forceOversample ? 2 : 1));
+            processors[i]->setTempoPointer(&(zone->getEngine()->transport.tempo));
+
             processors[i]->init();
             processors[i]->setKeytrack(zone->processorStorage[i].isKeytracked);
 
