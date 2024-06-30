@@ -79,6 +79,20 @@ template <int OSFactor> struct SCXTVFXConfig
     static void setIntParam(BaseClass *b, size_t index, int val) { b->iparam[index] = val; }
     static int getIntParam(const BaseClass *b, size_t index) { return b->iparam[index]; }
 
+    static bool isTemposync(const BaseClass *c)
+    {
+        auto ts = c->temposync;
+        if (ts)
+            return *ts;
+        return false;
+    }
+
+    static double *getTempoPointer(const BaseClass *c)
+    {
+        assert(c->getTempoPointer());
+        return c->getTempoPointer();
+    }
+
     static float dbToLinear(BaseClass *b, float db) { return dsp::dbTable.dbToLinear(db); }
 
     // In voice.cpp and group.cpp we set the sample rate on the processor
@@ -223,12 +237,19 @@ template <typename T> struct SSTVoiceEffectShim : T
 
     ProcessorControlDescription getControlDescription() const override
     {
-        auto res = T::getControlDescription();
+        ProcessorControlDescription res = T::getControlDescription();
 
         if constexpr (HasMemFn_enableKeytrack<T>::value)
         {
             static_assert(HasMemFn_getKeytrack<T>::value);
             res.supportsKeytrack = true;
+        }
+
+        res.supportsTemposync = false;
+        for (int i = 0; i < res.numFloatParams; ++i)
+        {
+            res.supportsTemposync =
+                res.supportsTemposync || res.floatControlDescriptions[i].canTemposync;
         }
 
         if constexpr (HasMemFn_checkParameterConsistency<T>::value)
@@ -302,6 +323,7 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
     memoryPool = mp;
     param = fp;
     iparam = ip;
+    temposync = &p.isTemposynced;
 
     setKeytrack(p.isKeytracked);
 

@@ -192,6 +192,7 @@ struct ProcessorStorage
     bool isActive{true};
     bool isKeytracked{false};
     int previousIsKeytracked{-1}; // make this an int and -1 means don't know previous
+    bool isTemposynced{false};
 
     bool operator==(const ProcessorStorage &other) const
     {
@@ -211,6 +212,7 @@ struct ProcessorControlDescription
 
     bool requiresConsistencyCheck{false};
     bool supportsKeytrack{false};
+    bool supportsTemposync{false};
 
     int numFloatParams{0}; // between 0 and max
     std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorFloatParams>
@@ -261,6 +263,10 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual void resetMetadata() { assert(false); }
 
+    double *tempoPointer{nullptr};
+    virtual void setTempoPointer(double *t) { tempoPointer = t; }
+    virtual double *getTempoPointer() const { return tempoPointer; }
+
     /*
      * The default behavior of a processor is stereo -> stereo and all
      * processors must implement process_stereo.
@@ -300,6 +306,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     engine::MemoryPool *memoryPool{nullptr};
     float *param{nullptr};
     int *iparam{nullptr};
+    const bool *temposync{nullptr};
     int floatParameterCount{0};
     std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorFloatParams>
         floatParameterMetaData;

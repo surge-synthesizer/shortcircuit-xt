@@ -51,6 +51,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                           {"mix", t.mix},
                           {"out", t.outputCubAmp},
                           {"isKeytracked", t.isKeytracked},
+                          {"isTemposynced", t.isTemposynced},
                           {"floatParams", t.floatParams},
                           {"intParams", t.intParams},
                           {"isActive", t.isActive}};
@@ -81,6 +82,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                      fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
                      findOrSet(v, "isActive", false, result.isActive);
                      findOrSet(v, "isKeytracked", false, result.isKeytracked);
+                     findOrSet(v, "isTemposynced", false, result.isTemposynced);
                  }
              }))
 
@@ -114,6 +116,7 @@ SC_STREAMDEF(
             {"numIntParams", t.numIntParams},
             {"intControlDescriptions", t.intControlDescriptions},
             {"supportsKeytrack", t.supportsKeytrack},
+            {"supportsTemposync", t.supportsTemposync},
         };
     }),
     SC_TO({
@@ -126,6 +129,7 @@ SC_STREAMDEF(
         findIf(v, "numIntParams", to.numIntParams);
         findIf(v, "intControlDescriptions", to.intControlDescriptions);
         findIf(v, "supportsKeytrack", to.supportsKeytrack);
+        findIf(v, "supportsTemposync", to.supportsTemposync);
     }))
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DSP_TRAITS_H

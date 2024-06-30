@@ -340,6 +340,8 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
         if (processors[w])
         {
             processors[w]->setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+            processors[w]->setTempoPointer(&(getEngine()->transport.tempo));
+
             processors[w]->init();
         }
     }

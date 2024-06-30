@@ -143,7 +143,9 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
         if (asT()->getEngine()->isSampleRateSet())
         {
             tmpProcessor->setSampleRate(asT()->getEngine()->getSampleRate());
+            tmpProcessor->setTempoPointer(&(asT()->getEngine()->transport.tempo));
             tmpProcessor->init();
+
             if (initFromDefaults)
             {
                 SCLOG("Processor init from defaults [" << dsp::processor::getProcessorName(type)
