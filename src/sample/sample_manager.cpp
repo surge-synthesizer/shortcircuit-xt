@@ -53,7 +53,8 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
             break;
             case Sample::SF2_FILE:
             {
-                loadSampleFromSF2ToID(addr.path, nullptr, addr.instrument, addr.region, id);
+                loadSampleFromSF2ToID(addr.path, nullptr, addr.preset, addr.instrument, addr.region,
+                                      id);
             }
             break;
             case Sample::MULTISAMPLE_FILE:
@@ -112,13 +113,13 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
 }
 
 std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2::File *f,
-                                                         int instrument, int region)
+                                                         int preset, int instrument, int region)
 {
-    return loadSampleFromSF2ToID(p, f, instrument, region, SampleID::next());
+    return loadSampleFromSF2ToID(p, f, preset, instrument, region, SampleID::next());
 }
 
 std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, sf2::File *f,
-                                                             int instrument, int region,
+                                                             int preset, int instrument, int region,
                                                              const SampleID &sid)
 {
     if (!f)
@@ -146,16 +147,15 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
     {
         if (sm->type == Sample::SF2_FILE)
         {
-            const auto &[type, path, inst, reg] = sm->getSampleFileAddress();
-            if (path == p && instrument == inst && region == reg)
+            const auto &[type, path, pre, inst, reg] = sm->getSampleFileAddress();
+            if (path == p && pre == preset && instrument == inst && region == reg)
                 return id;
         }
     }
 
     auto sp = std::make_shared<Sample>(sid);
 
-    SCLOG("Loading individual sf2 sample " << SCD(instrument) << SCD(region) << SCD(p.u8string()));
-    if (!sp->loadFromSF2(p, f, instrument, region))
+    if (!sp->loadFromSF2(p, f, preset, instrument, region))
         return {};
 
     samples[sp->id] = sp;

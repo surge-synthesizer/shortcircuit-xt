@@ -637,7 +637,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     if (sfsamp == nullptr)
                         continue;
 
-                    auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), i, j);
+                    auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), pc, i, j);
                     if (!sid.has_value())
                         continue;
 

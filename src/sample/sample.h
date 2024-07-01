@@ -55,11 +55,12 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     std::string displayName{};
     std::string getDisplayName() const { return displayName; }
     bool load(const fs::path &path);
-    bool loadFromSF2(const fs::path &path, sf2::File *f, int inst, int region);
+    bool loadFromSF2(const fs::path &path, sf2::File *f, int preset, int inst, int region);
 
     const fs::path &getPath() const { return mFileName; }
 
-    int instrument{-1}, region{-1};
+    int preset{-1}, instrument{-1}, region{-1};
+    int getCompoundPreset() const { return preset; }
     int getCompoundInstrument() const { return instrument; }
     int getCompoundRegion() const { return region; }
 
@@ -67,13 +68,14 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     {
         SourceType type{WAV_FILE};
         fs::path path{};
+        int preset{-1};
         int instrument{-1};
         int region{-1};
     };
 
     SampleFileAddress getSampleFileAddress() const
     {
-        return {type, getPath(), getCompoundInstrument(), getCompoundRegion()};
+        return {type, getPath(), getCompoundPreset(), getCompoundInstrument(), getCompoundRegion()};
     }
 
     size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }
