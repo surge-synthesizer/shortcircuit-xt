@@ -111,13 +111,30 @@ bool Sample::load(const fs::path &path)
     return false;
 }
 
-bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int inst, int reg)
+bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int presetNum, int inst, int reg)
 {
     mFileName = p;
+    preset = presetNum;
     instrument = inst;
     region = reg;
     type = SF2_FILE;
-    auto sfsample = f->GetInstrument(inst)->GetRegion(region)->GetSample();
+
+    auto *preset = f->GetPreset(presetNum);
+
+    auto *presetRegion = preset->GetRegion(inst);
+    sf2::Instrument *instr = presetRegion->pInstrument;
+
+    if (instr->pGlobalRegion)
+    {
+        // TODO: Global Region
+    }
+
+    auto sfsample = instr->GetRegion(region)->GetSample();
+    if (!sfsample)
+        return false;
+
+    SCLOG("Loading individual sf2 sample '" << sfsample->Name << "' " << SCD(presetNum)
+                                            << SCD(instrument) << SCD(region) << SCD(p.u8string()));
 
     auto frameSize = sfsample->GetFrameSize();
     channels = sfsample->GetChannelCount();

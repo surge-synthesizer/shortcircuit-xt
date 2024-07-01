@@ -100,6 +100,7 @@ template <> struct scxt_traits<sample::Sample::SampleFileAddress>
     {
         v = {{"type", f.type},
              {"path", f.path.u8string()},
+             {"preset", f.preset},
              {"instrument", f.instrument},
              {"region", f.region}};
     }
@@ -112,6 +113,7 @@ template <> struct scxt_traits<sample::Sample::SampleFileAddress>
         std::string p;
         findIf(v, "path", p);
         f.path = fs::path{p};
+        findOrSet(v, "preset", 0, f.preset); // 0 here since we forgot to stream for a bit
         findOrSet(v, "instrument", -1, f.instrument);
         findOrSet(v, "region", -1, f.region);
     }
