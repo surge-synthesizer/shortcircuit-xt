@@ -70,6 +70,7 @@ enum AvailableBusEffects
 {
     none,
     reverb1,
+    reverb2,
     flanger,
     phaser,
     delay,
@@ -202,6 +203,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "none";
     case reverb1:
         return "reverb1";
+    case reverb2:
+        return "reverb2";
     case flanger:
         return "flanger";
     case phaser:
