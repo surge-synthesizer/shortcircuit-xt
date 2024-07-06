@@ -76,6 +76,8 @@ struct Config
 
     using BiquadAdapter = EngineBiquadAdapter;
 
+    static constexpr bool widthIsLinear{true}; // use +/- 200% not +/- 24db
+
     static inline float floatValueAt(const BaseClass *const e, const ValueStorage *const v, int idx)
     {
         return v[idx];
