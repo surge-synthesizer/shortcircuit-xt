@@ -394,10 +394,10 @@ void ProcessorPane::layoutControlsSimpleDelay()
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Feedback");
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Crossfeed");
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Low Cut");
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "High Cut");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], floatAttachments[5]->getLabel());
 
     if (stereoSwitch)
     {
@@ -429,10 +429,10 @@ void ProcessorPane::layoutControlsSurgeFilters()
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
     auto cols = lo::columns(getContentAreaComponent()->getLocalBounds(), 2);
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Cutoff");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knobCX<locon::largeKnob>(*floatEditors[0], cols[0].getCentreX(), 5);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Resonance");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knobCX<locon::largeKnob>(*floatEditors[1], cols[1].getCentreX(), 5);
 
     auto col0 = cols[0]
@@ -496,10 +496,10 @@ void ProcessorPane::layoutControlsFastSVF()
         lo::knob<locon::extraLargeKnob>(*floatEditors[0], 35, 15);
     }
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Res");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<locon::mediumKnob>(*floatEditors[2], 140, 5);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Gain");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<locon::mediumKnob>(*floatEditors[3], 140, 60);
     floatEditors[3]->item->setEnabled(false);
 
@@ -527,19 +527,19 @@ void ProcessorPane::layoutControlsWaveshaper()
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Drive");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<locon::extraLargeKnob>(*floatEditors[0], 5, 15);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bias");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<locon::mediumKnob>(*floatEditors[1], 87, 5);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Gain");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<locon::mediumKnob>(*floatEditors[2], 87, 65);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "HP Freq");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<locon::mediumKnob>(*floatEditors[3], 140, 5);
 
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "LP Freq");
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
     lo::knob<locon::mediumKnob>(*floatEditors[4], 140, 65);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
@@ -601,17 +601,17 @@ void ProcessorPane::layoutControlsBitcrusher()
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<50>(*floatEditors[0], 10, 5);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Bit Depth");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<50>(*floatEditors[1], 70, 5);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Zero Point");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<50>(*floatEditors[2], 130, 5);
 
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<50>(*floatEditors[3], 40, 80);
     floatEditors[3]->item->setEnabled(filterSwitch);
 
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Resonance");
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
     lo::knob<50>(*floatEditors[4], 100, 80);
     floatEditors[4]->item->setEnabled(filterSwitch);
 }
@@ -635,8 +635,8 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
     attachRebuildToIntAttachment(0);
     bool stereoSwitch = intAttachments[0]->getValue();
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Color");
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     if (stereoSwitch)
     {
         lo::knob<50>(*floatEditors[0], 20, 10);
@@ -648,7 +648,7 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
         lo::knob<70>(*floatEditors[1], 110, 20);
     }
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Width");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<50>(*floatEditors[2], 70, 75);
     floatEditors[2]->setVisible(intAttachments[0]->getValue());
 }
@@ -712,10 +712,10 @@ void ProcessorPane::layoutControlsStringResonator()
     floatEditors[3]->item->setEnabled(dualSwitch);
     floatEditors[5]->item->setEnabled(dualSwitch);
 
-    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Decay");
+    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], floatAttachments[6]->getLabel());
     lo::knob<40>(*floatEditors[6], 140, 10);
 
-    floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], "Stiffness");
+    floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], floatAttachments[7]->getLabel());
     lo::knob<40>(*floatEditors[7], 140, 70);
 }
 
@@ -753,13 +753,13 @@ void ProcessorPane::layoutControlsStaticPhaser()
 
     floatEditors[1]->setVisible(stereoSwitch);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Resonance");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<45>(*floatEditors[3], 65, 10);
 
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "Feedback");
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
     lo::knob<45>(*floatEditors[4], 125, 10);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Spacing");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<45>(*floatEditors[2], 65, 85);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
@@ -801,7 +801,7 @@ void ProcessorPane::LayoutControlsTremolo()
 
     bool harmonicSwitch = intAttachments[0]->getValue();
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Volume");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<50>(*floatEditors[0], 35, 5);
 
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
@@ -811,7 +811,7 @@ void ProcessorPane::LayoutControlsTremolo()
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<50>(*floatEditors[1], 5, 80);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "LFO Depth");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<50>(*floatEditors[2], 65, 80);
 }
 
@@ -836,13 +836,13 @@ void ProcessorPane::layoutControlsPhaser()
     shapeSwitch->setBounds(switchBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Feedback");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<40>(*floatEditors[0], 5, 0);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Resonance");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<40>(*floatEditors[2], 50, 20);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Spacing");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<40>(*floatEditors[1], 95, 0);
 
     floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], floatAttachments[5]->getLabel());
@@ -851,7 +851,7 @@ void ProcessorPane::layoutControlsPhaser()
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<50>(*floatEditors[3], 5, 80);
 
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], "LFO Depth");
+    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
     lo::knob<50>(*floatEditors[4], 65, 80);
 }
 
@@ -864,16 +864,16 @@ void ProcessorPane::layoutControlsMicroGate()
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Hold");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<55>(*floatEditors[0], 25, 0);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Loop");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<55>(*floatEditors[1], 105, 0);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Threshold");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<55>(*floatEditors[2], 25, 75);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Reduction");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<55>(*floatEditors[3], 105, 75);
 }
 
@@ -898,13 +898,13 @@ void ProcessorPane::layoutControlsVAOsc()
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<50>(*floatEditors[0], 35, 5);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Level");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<50>(*floatEditors[1], 100, 5);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Sync");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<50>(*floatEditors[2], 5, 80);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Pulse Width");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<50>(*floatEditors[3], 65, 80);
 
     floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
@@ -951,16 +951,16 @@ void ProcessorPane::layoutControlsChorus()
     shapeSwitch->setBounds(switchBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Time");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<50>(*floatEditors[0], 35, 5);
 
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Feedback");
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<50>(*floatEditors[1], 100, 5);
 
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<50>(*floatEditors[2], 5, 80);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "LFO Depth");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<50>(*floatEditors[3], 65, 80);
 }
 
@@ -997,10 +997,10 @@ void ProcessorPane::layoutControlsFMFilter()
 
     floatEditors[1]->setVisible(stereoSwitch);
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "FM Depth");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
     lo::knob<42>(*floatEditors[2], 68, 5);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Resonance");
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
     lo::knob<42>(*floatEditors[3], 98, 65);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
