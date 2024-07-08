@@ -482,8 +482,6 @@ void ProcessorPane::layoutControlsFastSVF()
 
     auto bd = getContentArea();
     auto rest = bd.withTrimmedLeft(60).withHeight(55);
-    
-
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
@@ -506,14 +504,14 @@ void ProcessorPane::layoutControlsFastSVF()
     floatEditors[3]->item->setEnabled(false);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
-    
+
     auto slopeSwitch = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
     slopeSwitch->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
     slopeSwitch->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
     auto slopeBounds = bounds.withLeft(175).withRight(185).withTop(5).withBottom(15);
     slopeSwitch->setBounds(slopeBounds);
     intEditors[2] = std::make_unique<intEditor_t>(std::move(slopeSwitch));
-    
+
     bounds = bounds.withTop(bounds.getBottom() - 22).translated(0, -3).reduced(3, 0);
 
     auto filterMode = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
