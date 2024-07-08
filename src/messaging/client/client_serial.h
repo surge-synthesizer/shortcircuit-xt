@@ -89,6 +89,7 @@ enum ClientToSerializationMessagesIds
     c2s_create_group,
     c2s_move_zone,
     c2s_delete_zone,
+    c2s_add_blank_zone,
     c2s_delete_selected_zones,
     c2s_delete_group,
     c2s_clear_part,

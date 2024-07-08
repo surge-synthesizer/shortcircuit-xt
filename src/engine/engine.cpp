@@ -148,7 +148,7 @@ thread_local uint64_t Engine::fullEngineUnstreamStreamingVersion{0};
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
 {
 #if DEBUG_VOICE_LIFECYCLE
-    SCLOG("Initializing Voice at " << SCDBGV((int)path.key));
+    SCLOG("Initializing Voice at " << SCD((int)path.key));
 #endif
 
     assert(zoneByPath(path));
@@ -550,6 +550,40 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
     zptr->mapping.velocityRange = vrange;
     zptr->mapping.rootKey = rootKey;
     zptr->attachToSample(*sampleManager);
+
+    // Drop into selected group logic goes here
+    auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
+
+    // 3. Send a message to the audio thread saying to add that zone and
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+
+            // 4. have the audio thread message back here to refresh the ui
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+        });
+}
+
+void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::VelocityRange vrange)
+{
+    SCLOG("Engine Create Empty Zone");
+
+    assert(messageController->threadingChecker.isSerialThread());
+
+    // 2. Create a zone object on this thread but don't add it
+    auto zptr = std::make_unique<Zone>();
+    // TODO fixme
+    zptr->mapping.keyboardRange = krange;
+    zptr->mapping.velocityRange = vrange;
+    zptr->mapping.rootKey = (krange.keyStart + krange.keyEnd) / 2;
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);

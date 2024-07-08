@@ -53,7 +53,20 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
 
-        if (z->sampleData.variantPlaybackMode == Zone::UNISON)
+        if (nbSampleLoadedInZone == 0)
+        {
+            z->sampleIndex = -1;
+            auto v = engine.initiateVoice(path);
+            if (v)
+            {
+                v->velocity = velocity;
+                v->originalMidiKey = key;
+                v->attack();
+            }
+            voiceInitWorkingBuffer[idx] = v;
+            idx++;
+        }
+        else if (z->sampleData.variantPlaybackMode == Zone::UNISON)
         {
             for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
             {

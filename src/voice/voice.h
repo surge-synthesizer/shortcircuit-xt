@@ -53,7 +53,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     engine::Zone *zone{nullptr};
     engine::Engine *engine{nullptr};
     engine::Engine::pathToZone_t zonePath{};
-    size_t sampleIndex{0};
+    int8_t sampleIndex{0}; // int since - == no sample
 
     bool forceOversample{true};
 
@@ -170,7 +170,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     void attack()
     {
-        assert(zone->samplePointers[0]);
         isGated = true;
         isGeneratorRunning = true;
         isAEGRunning = true;

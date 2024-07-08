@@ -133,6 +133,19 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputInt16TValue, c2s_update_zone_output
                              detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
                                                            engine, cont));
 
+using addBlankZonePayload_t = std::array<int, 6>;
+inline void addBlankZone(const addBlankZonePayload_t &payload, engine::Engine &engine,
+                         MessageController &cont)
+{
+    auto [part, group, ks, ke, vs, ve] = payload;
+    SCLOG("Adding to part/group " << part << " " << group);
+    SCLOG("Would add zone at " << ks << " " << ke << " " << vs << " " << ve);
+    engine.createEmptyZone({ks, ke}, {vs, ve});
+}
+
+CLIENT_TO_SERIAL(AddBlankZone, c2s_add_blank_zone, addBlankZonePayload_t,
+                 addBlankZone(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H

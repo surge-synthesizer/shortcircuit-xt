@@ -155,10 +155,6 @@ template <bool OS> bool Voice::processWithOS()
         memset(output, 0, sizeof(output));
         return true;
     }
-    // TODO round robin state
-    auto &s = zone->samplePointers[sampleIndex];
-    auto &sdata = zone->sampleData.samples[sampleIndex];
-    assert(s);
 
     // Run Modulators - these run at base rate never oversampled
     for (auto i = 0; i < engine::lfosPerZone; ++i)
@@ -193,10 +189,15 @@ template <bool OS> bool Voice::processWithOS()
     // are modulatable
 
     // TODO SHape Fixes
-    bool envGate = (sdata.playMode == engine::Zone::NORMAL && isGated) ||
-                   (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
-                   (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
+    bool envGate{isGated};
+    if (sampleIndex >= 0)
+    {
+        auto &sdata = zone->sampleData.samples[sampleIndex];
 
+        envGate = (sdata.playMode == engine::Zone::NORMAL && isGated) ||
+                  (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
+                  (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
+    }
     auto &aegp = endpoints->aeg;
     if constexpr (OS)
     {
@@ -227,13 +228,20 @@ template <bool OS> bool Voice::processWithOS()
     fpitch -= 69;
 
     // TODO : Start and End Points
-    GD.sampleStart = 0;
-    GD.sampleStop = s->sample_length;
+    if (sampleIndex >= 0)
+    {
+        auto &s = zone->samplePointers[sampleIndex];
+        assert(s);
 
-    GD.gated = isGated;
-    GD.loopInvertedBounds = 1.f / std::max(1, GD.loopUpperBound - GD.loopLowerBound);
-    GD.playbackInvertedBounds = 1.f / std::max(1, GD.playbackUpperBound - GD.playbackLowerBound);
-    if (!GD.isFinished)
+        GD.sampleStart = 0;
+        GD.sampleStop = s->sample_length;
+
+        GD.gated = isGated;
+        GD.loopInvertedBounds = 1.f / std::max(1, GD.loopUpperBound - GD.loopLowerBound);
+        GD.playbackInvertedBounds =
+            1.f / std::max(1, GD.playbackUpperBound - GD.playbackLowerBound);
+    }
+    if (!GD.isFinished && Generator)
     {
         Generator(&GD, &GDIO);
 
@@ -498,7 +506,18 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
 
 void Voice::initializeGenerator()
 {
-    // TODO round robin
+    if (sampleIndex < 0)
+    {
+        // For now we just null out the generator and deal but an alternate
+        // approach in the future would be to have a family of built in generators
+        // which we can run which just do DSP. Because honestly its a sampler.
+        Generator = nullptr;
+        GD.isFinished = false;
+        monoGenerator = true;
+        return;
+    }
+
+    // but the default of course is to use the sapmle index
     auto &s = zone->samplePointers[sampleIndex];
     auto &sampleData = zone->sampleData.samples[sampleIndex];
     assert(s);
@@ -601,12 +620,15 @@ void Voice::calculateGeneratorRatio(float pitch)
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
 
-    // TODO gross for now - correct
-    float ndiff = pitch - zone->mapping.rootKey;
-    auto fac = tuning::equalTuning.note_to_pitch(ndiff);
-    // TODO round robin
-    GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate *
-                         sampleRateInv * (1.0 + *endpoints->mappingTarget.playbackRatioP));
+    if (sampleIndex >= 0)
+    {
+        // TODO gross for now - correct
+        float ndiff = pitch - zone->mapping.rootKey;
+        auto fac = tuning::equalTuning.note_to_pitch(ndiff);
+        // TODO round robin
+        GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate *
+                             sampleRateInv * (1.0 + *endpoints->mappingTarget.playbackRatioP));
+    }
 }
 
 void Voice::initializeProcessors()
