@@ -195,6 +195,8 @@ struct Group : MoveableOnly<Group>,
         16)[engine::processorCount][dsp::processor::maxProcessorIntParams];
     lipol processorMix[engine::processorCount];
     lipolOS processorMixOS[engine::processorCount];
+    lipol processorLevel[engine::processorCount];
+    lipolOS processorLevelOS[engine::processorCount];
 
     sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
 

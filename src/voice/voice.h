@@ -149,9 +149,11 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     void panOutputsBy(bool inputIsMono, const lipol &pv);
 
-    // TODO - this should be more carefully structured for modulation onto the entire filter
     lipol processorMix[engine::processorCount];
     lipolOS processorMixOS[engine::processorCount];
+
+    lipol processorLevel[engine::processorCount];
+    lipolOS processorLevelOS[engine::processorCount];
 
     /*
      * Voice State on Creation
