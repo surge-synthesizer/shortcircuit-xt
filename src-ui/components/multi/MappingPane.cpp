@@ -156,13 +156,15 @@ struct MappingZones : juce::Component, HasEditor
         DRAG_VELOCITY,
         DRAG_KEY,
         DRAG_KEY_AND_VEL,
-        DRAG_SELECTED_ZONE
+        DRAG_SELECTED_ZONE,
+        MULTI_SELECT,
+        CREATE_EMPTY_ZONE
     } mouseState{NONE};
 
     std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones,
         lastSelectedZone;
 
-    juce::Point<float> lastMousePos{0.f, 0.f};
+    juce::Point<float> firstMousePos{0.f, 0.f}, lastMousePos{0.f, 0.f};
 };
 
 struct MappingZoneHeader : juce::Component
@@ -961,6 +963,14 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
         }
     }
+    else
+    {
+        if (e.mods.isCommandDown())
+            mouseState = CREATE_EMPTY_ZONE;
+        else
+            mouseState = MULTI_SELECT;
+        firstMousePos = e.position.toFloat();
+    }
 }
 
 void MappingZones::mouseDoubleClick(const juce::MouseEvent &e)
@@ -1194,11 +1204,73 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             repaint();
         }
     }
+
+    if (mouseState == MULTI_SELECT || mouseState == CREATE_EMPTY_ZONE)
+    {
+        lastMousePos = e.position.toFloat();
+        repaint();
+    }
 }
 
 void MappingZones::mouseUp(const juce::MouseEvent &e)
 {
     setMouseCursor(juce::MouseCursor::NormalCursor);
+    if (mouseState == MULTI_SELECT)
+    {
+        auto rz = juce::Rectangle<float>(firstMousePos, e.position);
+        bool selectedLead{false};
+        if (display->editor->currentLeadZoneSelection.has_value())
+        {
+            const auto &sel = *(display->editor->currentLeadZoneSelection);
+            for (const auto &z : display->summary)
+            {
+                if (!(z.first == sel))
+                    continue;
+                if (rz.intersects(rectangleForZone(z.second)))
+                    selectedLead = true;
+            }
+        }
+        bool additiveSelect = e.mods.isShiftDown();
+        bool firstAsLead = !selectedLead && !additiveSelect;
+        bool first = true;
+        for (const auto &z : display->summary)
+        {
+            if (rz.intersects(rectangleForZone(z.second)))
+            {
+                display->editor->doSelectionAction(z.first, true, false, first && firstAsLead);
+                first = false;
+            }
+            else if (!additiveSelect)
+            {
+                display->editor->doSelectionAction(z.first, false, false, false);
+            }
+        }
+    }
+    if (mouseState == CREATE_EMPTY_ZONE)
+    {
+        auto r = juce::Rectangle<float>(firstMousePos, e.position);
+        SCLOG("Creating empty zone " << r.toString());
+
+        auto lb = getLocalBounds().toFloat();
+        auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
+        auto kw = displayRegion.getWidth() /
+                  (Keyboard::lastMidiNote -
+                   Keyboard::firstMidiNote); // this had a +1, which doesn't seem to be needed?
+        auto vh = displayRegion.getHeight() / 127.f;
+
+        auto ks = (int)std::clamp(std::floor(r.getX() / kw + Keyboard::firstMidiNote), 0.f, 127.f);
+        auto ke =
+            (int)std::clamp(std::ceil(r.getRight() / kw + Keyboard::firstMidiNote), 0.f, 127.f);
+        auto vs = (int)std::clamp(127.f - std::floor(r.getBottom() / vh), 0.f, 127.f);
+        auto ve = (int)std::clamp(127.f - std::ceil(r.getY() / vh), 0.f, 127.f);
+
+        namespace cmsg = scxt::messaging::client;
+        auto za{editor->currentLeadZoneSelection};
+
+        sendToSerialization(cmsg::AddBlankZone({za->part, za->group, ks, ke, vs, ve}));
+    }
+    mouseState = NONE;
+    repaint();
 }
 
 juce::Rectangle<float> MappingZones::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
@@ -1518,6 +1590,43 @@ void MappingZones::paint(juce::Graphics &g)
         auto rb = rectangleForRange(rr[1], rr[2], 0, 127);
         g.setColour(juce::Colour(0xFF, 0x90, 0x00).withAlpha(0.4f));
         g.fillRect(rb);
+    }
+
+    if (mouseState == MULTI_SELECT || mouseState == CREATE_EMPTY_ZONE)
+    {
+        auto r = juce::Rectangle<float>(firstMousePos, lastMousePos);
+        if (mouseState == MULTI_SELECT)
+        {
+            juce::PathStrokeType stroke(1);       // Stroke of width 5
+            juce::Array<float> dashLengths{5, 5}; // Dashes of 5px, spaces of 5px
+
+            for (const auto &z : display->summary)
+            {
+                auto rz = rectangleForZone(z.second);
+                if (rz.intersects(r))
+                {
+                    g.setColour(juce::Colours::white);
+
+                    g.drawRect(rz, 2);
+                }
+            }
+
+            g.setColour(juce::Colours::white);
+            auto p = juce::Path();
+            p.addRectangle(r);
+
+            juce::Path dashedPath;
+            stroke.createDashedStroke(dashedPath, p, dashLengths.getRawDataPointer(),
+                                      dashLengths.size());
+            g.strokePath(dashedPath, stroke);
+        }
+        else
+        {
+            g.setColour(juce::Colour(100, 255, 100).withAlpha(0.3f));
+            g.fillRect(r);
+            g.setColour(juce::Colour(100, 255, 100).withAlpha(1.f));
+            g.drawRect(r, 2);
+        }
     }
 }
 

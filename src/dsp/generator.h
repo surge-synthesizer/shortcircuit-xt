@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_DSP_GENERATOR_H
 #define SCXT_SRC_DSP_GENERATOR_H
 #include <cstdint>
+#include <cstring>
 #include "configuration.h"
 
 namespace scxt::dsp
