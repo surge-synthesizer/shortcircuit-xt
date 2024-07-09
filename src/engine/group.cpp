@@ -176,12 +176,14 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     if constexpr (OS)                                                                              \
     {                                                                                              \
         scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
-                                            processorMixOS, &endpoints, chainIsMono, output);      \
+                                            processorMixOS, processorLevelOS, &endpoints,          \
+                                            chainIsMono, output);                                  \
     }                                                                                              \
     else                                                                                           \
     {                                                                                              \
         scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
-                                            processorMix, &endpoints, chainIsMono, output);        \
+                                            processorMix, processorLevel, &endpoints, chainIsMono, \
+                                            output);                                               \
     }
 
         switch (outputInfo.procRouting)
@@ -362,6 +364,11 @@ void Group::attack()
         const auto &ps = processorStorage[i];
         processorMix[i].set_target_instant(ps.mix);
         processorMixOS[i].set_target_instant(ps.mix);
+
+        auto ol = ps.outputCubAmp;
+        ol = ol * ol * ol * dsp::processor::ProcessorStorage::maxOutputAmp;
+        processorLevel[i].set_target_instant(ol);
+        processorLevelOS[i].set_target_instant(ol);
     }
 
     osDownFilter.reset();

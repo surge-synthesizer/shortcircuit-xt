@@ -38,8 +38,8 @@ namespace scxt::dsp::processor
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine::processorCount],
                                bool processorConsumesMono[engine::processorCount], Mix &mix,
-                               Endpoints *endpoints, bool &chainIsMono, float input[2][N],
-                               float output[2][N])
+                               Mix &outLev, Endpoints *endpoints, bool &chainIsMono,
+                               float input[2][N], float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
 
@@ -105,10 +105,15 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
     // TODO: Smooth This
     auto ol = *endpoints->processorTarget[i].outputLevelDbP;
     ol = ol * ol * ol * dsp::processor::ProcessorStorage::maxOutputAmp;
-    mech::scale_by<blockSize << OS>(ol, output[0]);
-    if (forceStereo || !chainIsMono)
+    outLev[i].set_target(ol);
+
+    if (!forceStereo || chainIsMono)
     {
-        mech::scale_by<blockSize << OS>(ol, output[1]);
+        outLev[i].multiply_block(output[0]);
+    }
+    else
+    {
+        outLev[i].multiply_2_blocks(output[0], output[1]);
     }
 
     // TODO: What was the filter_modout? Seems SC2 never finished it
@@ -121,7 +126,8 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 inline void processSequential(float fpitch, Processor *processors[engine::processorCount],
                               bool processorConsumesMono[engine::processorCount], Mix &mix,
-                              Endpoints *endpoints, bool &chainIsMono, float output[2][N])
+                              Mix &outLev, Endpoints *endpoints, bool &chainIsMono,
+                              float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
 
@@ -130,7 +136,7 @@ inline void processSequential(float fpitch, Processor *processors[engine::proces
         if (processors[i])
         {
             runSingleProcessor<OS, forceStereo>(i, fpitch, processors, processorConsumesMono, mix,
-                                                endpoints, chainIsMono, output, output);
+                                                outLev, endpoints, chainIsMono, output, output);
         }
     }
 }
@@ -138,7 +144,7 @@ inline void processSequential(float fpitch, Processor *processors[engine::proces
 // -> { A | B } ->
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 void processParallelPair(int A, int B, float fpitch, Processor *processors[engine::processorCount],
-                         bool processorConsumesMono[engine::processorCount], Mix &mix,
+                         bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                          Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
@@ -153,14 +159,14 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     {
         isMute[0] = false;
         runSingleProcessor<OS, forceStereo>(A, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, m1, output, tmpbuf[0]);
+                                            outLev, endpoints, m1, output, tmpbuf[0]);
     }
 
     if (processors[B])
     {
         isMute[1] = false;
         runSingleProcessor<OS, forceStereo>(B, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, m2, output, tmpbuf[1]);
+                                            outLev, endpoints, m2, output, tmpbuf[1]);
     }
 
     chainIsMono = m1 && m2;
@@ -205,51 +211,51 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
 // -> { 1 | 2 } -> { 3 | 4 } ->
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 void processSer2Pattern(float fpitch, Processor *processors[engine::processorCount],
-                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     if (processors[0] || processors[1])
     {
         processParallelPair<OS, forceStereo>(0, 1, fpitch, processors, processorConsumesMono, mix,
-                                             endpoints, chainIsMono, output);
+                                             outLev, endpoints, chainIsMono, output);
     }
 
     if (processors[2] || processors[3])
     {
         processParallelPair<OS, forceStereo>(2, 3, fpitch, processors, processorConsumesMono, mix,
-                                             endpoints, chainIsMono, output);
+                                             outLev, endpoints, chainIsMono, output);
     }
 }
 
 // -> 1 -> { 2 | 3 } -> 4 ->
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 void processSer3Pattern(float fpitch, Processor *processors[engine::processorCount],
-                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     if (processors[0])
     {
         runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, chainIsMono, output, output);
+                                            outLev, endpoints, chainIsMono, output, output);
     }
 
     if (processors[1] || processors[2])
     {
         processParallelPair<OS, forceStereo>(1, 2, fpitch, processors, processorConsumesMono, mix,
-                                             endpoints, chainIsMono, output);
+                                             outLev, endpoints, chainIsMono, output);
     }
 
     if (processors[3])
     {
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, chainIsMono, output, output);
+                                            outLev, endpoints, chainIsMono, output, output);
     }
 }
 
 // All in parallel
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 void processPar1Pattern(float fpitch, Processor *processors[engine::processorCount],
-                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
@@ -267,7 +273,7 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
         {
             isMute[i] = false;
             runSingleProcessor<OS, forceStereo>(i, fpitch, processors, processorConsumesMono, mix,
-                                                endpoints, localMono[i], output, tmpbuf[i]);
+                                                outLev, endpoints, localMono[i], output, tmpbuf[i]);
         }
         else
         {
@@ -317,7 +323,7 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
 // -> { { 1->2} | { 3->4 } ->
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 void processPar2Pattern(float fpitch, Processor *processors[engine::processorCount],
-                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
@@ -346,12 +352,12 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
     if (processors[0])
     {
         runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, mono12, tempbuf12, tempbuf12);
+                                            outLev, endpoints, mono12, tempbuf12, tempbuf12);
     }
     if (processors[1])
     {
         runSingleProcessor<OS, forceStereo>(1, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, mono12, tempbuf12, tempbuf12);
+                                            outLev, endpoints, mono12, tempbuf12, tempbuf12);
     }
 
     if (processors[2] || processors[3])
@@ -370,12 +376,12 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
     if (processors[2])
     {
         runSingleProcessor<OS, forceStereo>(2, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, mono34, tempbuf34, tempbuf34);
+                                            outLev, endpoints, mono34, tempbuf34, tempbuf34);
     }
     if (processors[3])
     {
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, mono34, tempbuf34, tempbuf34);
+                                            outLev, endpoints, mono34, tempbuf34, tempbuf34);
     }
 
     if constexpr (!forceStereo)
@@ -443,7 +449,7 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
 // -> { 1 | 2 | 3 } -> 4
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 void processPar3Pattern(float fpitch, Processor *processors[engine::processorCount],
-                        bool processorConsumesMono[engine::processorCount], Mix &mix,
+                        bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
     namespace mech = sst::basic_blocks::mechanics;
@@ -463,21 +469,21 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
         {
             isMute[0] = false;
             runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
-                                                endpoints, m1, output, tmpbuf[0]);
+                                                outLev, endpoints, m1, output, tmpbuf[0]);
         }
 
         if (processors[1])
         {
             isMute[1] = false;
             runSingleProcessor<OS, forceStereo>(1, fpitch, processors, processorConsumesMono, mix,
-                                                endpoints, m2, output, tmpbuf[1]);
+                                                outLev, endpoints, m2, output, tmpbuf[1]);
         }
 
         if (processors[2])
         {
             isMute[2] = false;
             runSingleProcessor<OS, forceStereo>(2, fpitch, processors, processorConsumesMono, mix,
-                                                endpoints, m3, output, tmpbuf[2]);
+                                                outLev, endpoints, m3, output, tmpbuf[2]);
         }
 
         chainIsMono = m1 && m2 && m3;
@@ -528,7 +534,7 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
     if (processors[3])
     {
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
-                                            endpoints, chainIsMono, output, output);
+                                            outLev, endpoints, chainIsMono, output, output);
     }
 }
 

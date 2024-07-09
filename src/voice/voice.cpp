@@ -325,14 +325,14 @@ template <bool OS> bool Voice::processWithOS()
         if constexpr (OS)                                                                          \
         {                                                                                          \
             scxt::dsp::processor::FNN<OS, false>(fpitch, processors, processorConsumesMono,        \
-                                                 processorMixOS, endpoints.get(), chainIsMono,     \
-                                                 output);                                          \
+                                                 processorMixOS, processorLevelOS,                 \
+                                                 endpoints.get(), chainIsMono, output);            \
         }                                                                                          \
         else                                                                                       \
         {                                                                                          \
             scxt::dsp::processor::FNN<OS, false>(fpitch, processors, processorConsumesMono,        \
-                                                 processorMix, endpoints.get(), chainIsMono,       \
-                                                 output);                                          \
+                                                 processorMix, processorLevel, endpoints.get(),    \
+                                                 chainIsMono, output);                             \
         }                                                                                          \
     }                                                                                              \
     else                                                                                           \
@@ -340,14 +340,14 @@ template <bool OS> bool Voice::processWithOS()
         if constexpr (OS)                                                                          \
         {                                                                                          \
             scxt::dsp::processor::FNN<OS, true>(fpitch, processors, processorConsumesMono,         \
-                                                processorMixOS, endpoints.get(), chainIsMono,      \
-                                                output);                                           \
+                                                processorMixOS, processorLevelOS, endpoints.get(), \
+                                                chainIsMono, output);                              \
         }                                                                                          \
         else                                                                                       \
         {                                                                                          \
             scxt::dsp::processor::FNN<OS, true>(fpitch, processors, processorConsumesMono,         \
-                                                processorMix, endpoints.get(), chainIsMono,        \
-                                                output);                                           \
+                                                processorMix, processorLevel, endpoints.get(),     \
+                                                chainIsMono, output);                              \
         }                                                                                          \
     }
 
@@ -646,6 +646,12 @@ void Voice::initializeProcessors()
         processorIsActive[i] = zone->processorStorage[i].isActive;
         processorMix[i].set_target_instant(*endpoints->processorTarget[i].mixP);
         processorMixOS[i].set_target_instant(*endpoints->processorTarget[i].mixP);
+
+        auto ol = *endpoints->processorTarget[i].outputLevelDbP;
+        ol = ol * ol * ol * dsp::processor::ProcessorStorage::maxOutputAmp;
+
+        processorLevel[i].set_target_instant(ol);
+        processorLevelOS[i].set_target_instant(ol);
 
         processorType[i] = zone->processorStorage[i].type;
 
