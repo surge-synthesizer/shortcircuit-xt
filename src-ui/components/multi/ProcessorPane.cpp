@@ -265,6 +265,14 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsChorus();
         break;
 
+    case dsp::processor::proct_fx_ringmod:
+        layoutControlsRingMod();
+        break;
+
+    case dsp::processor::proct_osc_phasemod:
+        layoutControlsPhaseMod();
+        break;
+
     default:
         layoutControls();
         break;
@@ -1027,6 +1035,59 @@ void ProcessorPane::layoutControlsFMFilter()
     auto filterMode = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
     filterMode->setBounds(modeBounds);
     intEditors[1] = std::make_unique<intEditor_t>(std::move(filterMode));
+}
+
+void ProcessorPane::layoutControlsRingMod()
+{
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
+    lo::knob<locon::extraLargeKnob>(*floatEditors[0], 30, 15);
+
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+
+    auto numBounds = bounds.withTop(35).withBottom(57).withLeft(130).withRight(180);
+    auto num = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
+    num->setBounds(numBounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(num));
+
+    auto denomBounds = bounds.withTop(62).withBottom(84).withLeft(130).withRight(180);
+    auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
+    denom->setBounds(denomBounds);
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(denom));
+}
+
+void ProcessorPane::layoutControlsPhaseMod()
+{
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    clearAdditionalHamburgerComponents();
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
+    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
+    lo::knob<locon::largeKnob>(*floatEditors[0], 5, 5);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
+    lo::knob<locon::largeKnob>(*floatEditors[1], 60, 60);
+
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+
+    auto numBounds = bounds.withTop(35).withBottom(57).withLeft(130).withRight(180);
+    auto num = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
+    num->setBounds(numBounds);
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(num));
+
+    auto denomBounds = bounds.withTop(62).withBottom(84).withLeft(130).withRight(180);
+    auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
+    denom->setBounds(denomBounds);
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(denom));
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)

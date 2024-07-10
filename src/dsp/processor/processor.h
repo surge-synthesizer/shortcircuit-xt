@@ -142,10 +142,12 @@ enum ProcessorType
     proct_fx_widener,
     proct_fx_simple_delay,
     proct_fmfilter,
+    proct_noise_am,
     proct_osc_phasemod, // last part/fx
 
     proct_fx_treemonster,
     proct_osc_VA,
+    proct_osc_tiltnoise,
     proct_osc_correlatednoise, // last zone
     proct_num_types,
 };
