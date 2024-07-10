@@ -95,6 +95,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsPhaser();
     void layoutControlsChorus();
     void layoutControlsFMFilter();
+    void layoutControlsRingMod();
+    void layoutControlsPhaseMod();
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<

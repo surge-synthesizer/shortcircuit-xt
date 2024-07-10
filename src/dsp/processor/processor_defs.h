@@ -78,6 +78,7 @@
 #include "sst/voice-effects/filter/StaticPhaser.h"
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
+#include "sst/voice-effects/generator/TiltNoise.h"
 #include "sst/voice-effects/generator/GenVA.h"
 #include "sst/voice-effects/delay/StringResonator.h"
 
@@ -87,6 +88,7 @@
 #include "sst/voice-effects/modulation/FMFilter.h"
 #include "sst/voice-effects/modulation/Tremolo.h"
 #include "sst/voice-effects/modulation/Phaser.h"
+#include "sst/voice-effects/modulation/NoiseAM.h"
 #include "sst/voice-effects/delay/Chorus.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
 #include "sst/voice-effects/dynamics/Compressor.h"
@@ -155,6 +157,11 @@ DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNois
             proct_osc_correlatednoise, "Correlated Noise", "Generators", "osc-correlated-noise");
 PROC_DEFAULT_MIX(proct_osc_correlatednoise, 0.5);
 
+DEFINE_PROC(GenTiltNoise, sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<2>>,
+            proct_osc_tiltnoise, "Tilt Noise", "Generators", "osc-tilt-noise");
+PROC_DEFAULT_MIX(proct_osc_tiltnoise, 0.5);
+
 DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
             "String Resonator", "Generators", "stringex-fx", dsp::surgeSincTable);
@@ -181,6 +188,9 @@ DEFINE_PROC(FMFilter, sst::voice_effects::modulation::FMFilter<SCXTVFXConfig<1>>
 DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::RingMod<SCXTVFXConfig<2>>, proct_fx_ringmod, "Ring Mod",
             "Audio Rate Mod", "ringmod-fx");
+DEFINE_PROC(NoiseAM, sst::voice_effects::modulation::NoiseAM<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::NoiseAM<SCXTVFXConfig<2>>, proct_noise_am, "Noise AM",
+            "Audio Rate Mod", "noise-am");
 
 DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
