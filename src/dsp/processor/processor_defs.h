@@ -158,8 +158,8 @@ DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNois
 PROC_DEFAULT_MIX(proct_osc_correlatednoise, 0.5);
 
 DEFINE_PROC(GenTiltNoise, sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<2>>,
-            proct_osc_tiltnoise, "Tilt Noise", "Generators", "osc-tilt-noise");
+            sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<2>>, proct_osc_tiltnoise,
+            "Tilt Noise", "Generators", "osc-tilt-noise");
 PROC_DEFAULT_MIX(proct_osc_tiltnoise, 0.5);
 
 DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXConfig<1>>,

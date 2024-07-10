@@ -264,11 +264,11 @@ void ProcessorPane::rebuildControlsFromDescription()
     case dsp::processor::proct_Chorus:
         layoutControlsChorus();
         break;
-            
+
     case dsp::processor::proct_fx_ringmod:
         layoutControlsRingMod();
         break;
-            
+
     case dsp::processor::proct_osc_phasemod:
         layoutControlsPhaseMod();
         break;
@@ -1045,10 +1045,10 @@ void ProcessorPane::layoutControlsRingMod()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<locon::extraLargeKnob>(*floatEditors[0], 30, 15);
-    
+
     auto bounds = getContentAreaComponent()->getLocalBounds();
 
     auto numBounds = bounds.withTop(35).withBottom(57).withLeft(130).withRight(180);
@@ -1070,13 +1070,13 @@ void ProcessorPane::layoutControlsPhaseMod()
     clearAdditionalHamburgerComponents();
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
-    
+
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<locon::largeKnob>(*floatEditors[0], 5, 5);
-    
+
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
     lo::knob<locon::largeKnob>(*floatEditors[1], 60, 60);
-    
+
     auto bounds = getContentAreaComponent()->getLocalBounds();
 
     auto numBounds = bounds.withTop(35).withBottom(57).withLeft(130).withRight(180);
