@@ -299,7 +299,7 @@ void Group::setupOnUnstream(const engine::Engine &e)
         stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
         stepLfos[i].assign(&modulatorStorage[i], endpoints.lfo[i].rateP, nullptr,
-                           getEngine()->rngGen);
+                           getEngine()->rng);
     }
 
     for (int p = 0; p < processorCount; ++p)
@@ -392,7 +392,7 @@ void Group::resetLFOs(int whichLFO)
             stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 
             stepLfos[i].assign(&modulatorStorage[i], endpoints.lfo[i].rateP, nullptr,
-                               getEngine()->rngGen);
+                               getEngine()->rng);
         }
         else if (lfoEvaluator[i] == CURVE)
         {

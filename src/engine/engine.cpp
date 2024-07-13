@@ -58,7 +58,7 @@ Engine::Engine()
 {
     SCLOG("Shortcircuit XT : Constructing Engine - Version " << scxt::build::FullVersionStr);
 
-    id.id = rngGen.randU32() % 1024;
+    id.id = rng.unifU32() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);
     dsp::sincTable.init();

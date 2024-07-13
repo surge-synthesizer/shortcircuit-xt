@@ -42,8 +42,8 @@
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/accessibility/FocusDebugger.h"
 #include "sst/jucegui/components/WindowPanel.h"
+#include "sst/basic-blocks/dsp/RNG.h"
 #include "messaging/client/zone_messages.h"
-#include "infrastructure/rng_gen.h"
 #include "browser/browser.h"
 
 #include "HasEditor.h"
@@ -104,7 +104,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
      */
     theme::ThemeApplier themeApplier;
 
-    infrastructure::RNGGen rngGen;
+    sst::basic_blocks::dsp::RNG rng;
 
     static constexpr int edWidth{1186}, edHeight{816};
 

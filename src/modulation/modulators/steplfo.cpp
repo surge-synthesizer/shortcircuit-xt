@@ -30,7 +30,7 @@
 #include <cmath>
 #include "tuning/equal.h"
 #include "configuration.h"
-#include "infrastructure/rng_gen.h"
+#include "sst/basic-blocks/dsp/RNG.h"
 
 namespace scxt::modulation::modulators
 {
@@ -42,7 +42,7 @@ void clear_lfo(modulation::ModulatorStorage &settings)
     ls.smooth = 0;
     std::fill(ls.data.begin(), ls.data.end(), 0.f);
 }
-void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, infrastructure::RNGGen &rngGen)
+void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, sst::basic_blocks::dsp::RNG &rng)
 {
     int t;
     switch (id)
@@ -120,7 +120,7 @@ void load_lfo_preset(LFOPresets id, StepLFOStorage &settings, infrastructure::RN
 
         for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
         {
-            noisev[t] = (rngGen.rand01() * 2 - 1);
+            noisev[t] = rng.unifPM1();
             noisev[t] /= (float)nmean;
         }
         for (t = 0; t < StepLFOStorage::stepLfoSteps; t++)
@@ -185,7 +185,7 @@ float QuadraticBSpline(float y0, float y1, float y2, float mu)
 StepLFO::StepLFO() {}
 
 void StepLFO::assign(modulation::ModulatorStorage *settings, const float *rate,
-                     scxt::engine::Transport *td, infrastructure::RNGGen &rngGen)
+                     scxt::engine::Transport *td, sst::basic_blocks::dsp::RNG &rng)
 {
     this->settings = settings;
     this->td = td;
@@ -203,8 +203,8 @@ void StepLFO::assign(modulation::ModulatorStorage *settings, const float *rate,
     {
         // simulate free running lfo by randomizing start phase
         // TODO: Use songpos for freerun properly maybe?
-        phase = rngGen.rand01();
-        state = rngGen.randU32() % ls.repeat;
+        phase = rng.unif01();
+        state = rng.unifInt(0, ls.repeat - 1);
     }
     else if (false) // if (settings->triggerMode == 1)
     {

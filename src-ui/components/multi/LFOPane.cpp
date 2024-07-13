@@ -201,7 +201,7 @@ struct StepLFOPane : juce::Component, HasEditor
                               blockSize}; // how manu samples in a step
             int captureEvery{(int)(stepSamples / (ms.stepLfoStorage.repeat * 10))};
             scxt::engine::Transport td{};
-            scxt::infrastructure::RNGGen gen;
+            sst::basic_blocks::dsp::RNG gen;
             so->assign(&ms, &rate, &td, gen);
 
             so->UpdatePhaseIncrement();
@@ -863,7 +863,7 @@ void LfoPane::pickPresets()
             if (!wt)
                 return;
             auto &ld = wt->lfoData[wt->selectedTab];
-            modulation::modulators::load_lfo_preset(lp, ld, wt->editor->rngGen);
+            modulation::modulators::load_lfo_preset(lp, ld, wt->editor->rng);
             wt->pushCurrentLfoUpdate();
         });
     }

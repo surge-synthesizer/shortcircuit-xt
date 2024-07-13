@@ -34,7 +34,7 @@
 #include <vector>
 #include <utility>
 #include <modulation/modulator_storage.h>
-#include "infrastructure/rng_gen.h"
+#include "sst/basic-blocks/dsp/RNG.h"
 
 #include "modulation/modulator_storage.h"
 
@@ -94,7 +94,7 @@ inline std::string getLfoPresetName(LFOPresets p)
 }
 
 void clear_lfo(modulation::ModulatorStorage &settings);
-void load_lfo_preset(LFOPresets preset, StepLFOStorage &settings, infrastructure::RNGGen &);
+void load_lfo_preset(LFOPresets preset, StepLFOStorage &settings, sst::basic_blocks::dsp::RNG &);
 float lfo_ipol(float *step_history, float phase, float smooth, int odd);
 
 struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
@@ -103,7 +103,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     StepLFO();
     ~StepLFO();
     void assign(modulation::ModulatorStorage *settings, const float *rate,
-                scxt::engine::Transport *td, infrastructure::RNGGen &);
+                scxt::engine::Transport *td, sst::basic_blocks::dsp::RNG &);
     void sync();
     void process(int samples);
     float output{0.f};

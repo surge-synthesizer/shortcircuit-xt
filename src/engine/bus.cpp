@@ -97,7 +97,7 @@ struct Config
     static inline bool isDeactivated(EffectStorage *e, int idx) { return false; }
     static inline bool isExtended(EffectStorage *e, int idx) { return false; }
 
-    static inline float rand01(GlobalStorage *s) { return s->rngGen.rand01(); }
+    static inline float rand01(GlobalStorage *s) { return s->rng.unif01(); }
 
     static inline double sampleRate(GlobalStorage *s) { return s->getSampleRate(); }
 
