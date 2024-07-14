@@ -46,14 +46,13 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
 {
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127));
-    
+
     int idx{0};
     for (const auto &path : nts)
     {
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
-        auto initVoice = [&](int sampleIndex)
-        {
+        auto initVoice = [&](int sampleIndex) {
             if (!z->samplePointers[sampleIndex])
             {
                 // SCLOG( "Skipping voice with missing sample data" );
@@ -67,7 +66,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     v->velKeyFade = z->mapping.keyboardRange.fadeAmpltiudeAt(key);
                     v->velKeyFade *= z->mapping.velocityRange.fadeAmpltiudeAt(
                         (int16_t)std::clamp(velocity * 127.0, 0., 127.));
-                    
+
                     v->originalMidiKey = key;
                     v->attack();
                 }
@@ -86,65 +85,64 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             z->sampleIndex = 0;
             initVoice(z->sampleIndex);
         }
-        
+
         int nextAvail{0};
-        
+
         switch (z->sampleData.variantPlaybackMode)
         {
-            case Zone::FORWARD_RR:
-                z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
-                initVoice(z->sampleIndex);
-                break;
-            case Zone::TRUE_RANDOM:
-                z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
-                initVoice(z->sampleIndex);
-                break;
-            case Zone::RANDOM_CYCLE:
-                if (nbSampleLoadedInZone == 2)
+        case Zone::FORWARD_RR:
+            z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+            initVoice(z->sampleIndex);
+            break;
+        case Zone::TRUE_RANDOM:
+            z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
+            initVoice(z->sampleIndex);
+            break;
+        case Zone::RANDOM_CYCLE:
+            if (nbSampleLoadedInZone == 2)
+            {
+                z->sampleIndex = (z->sampleIndex + 1) % 2;
+            }
+            else
+            {
+                if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
                 {
-                    z->sampleIndex = (z->sampleIndex + 1) % 2;
+                    for (auto i = 0; i < nbSampleLoadedInZone; ++i)
+                    {
+                        z->rrs[i] = i;
+                    }
+                    z->numAvail = nbSampleLoadedInZone;
+                    z->setupFor = nbSampleLoadedInZone;
+
+                    nextAvail = engine.rng.unifInt(0, z->numAvail);
+                    if (z->rrs[nextAvail] == z->lastPlayed)
+                    {
+                        nextAvail = (nextAvail + engine.rng.unifInt(0, z->numAvail));
+                    }
                 }
                 else
                 {
-                    if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
-                    {
-                        for (auto i = 0; i < nbSampleLoadedInZone; ++i)
-                        {
-                            z->rrs[i] = i;
-                        }
-                        z->numAvail = nbSampleLoadedInZone;
-                        z->setupFor = nbSampleLoadedInZone;
-                        
-                        nextAvail = engine.rng.unifInt(0, z->numAvail);
-                        if (z->rrs[nextAvail] == z->lastPlayed)
-                        {
-                            nextAvail =
-                                (nextAvail + engine.rng.unifInt(0, z->numAvail));
-                        }
-                    }
-                    else
-                    {
-                        nextAvail = z->numAvail == 1 ? 0 : engine.rng.unifInt(0, z->numAvail);
-                    }
-                    auto voice = z->rrs[nextAvail];              // we've used it so its a gap
-                    z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
-                    z->numAvail--; // and move the endpoint back by one
-                    z->lastPlayed = voice;
-                    z->sampleIndex = voice;
-                    initVoice(z->sampleIndex);
+                    nextAvail = z->numAvail == 1 ? 0 : engine.rng.unifInt(0, z->numAvail);
                 }
-                break;
-            case Zone::UNISON:
-                for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
-                {
-                    z->sampleIndex = uv;
-                    initVoice(z->sampleIndex);
-                }
-                break;
-            default:
-                z->sampleIndex = -1;
+                auto voice = z->rrs[nextAvail];              // we've used it so its a gap
+                z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
+                z->numAvail--;                               // and move the endpoint back by one
+                z->lastPlayed = voice;
+                z->sampleIndex = voice;
                 initVoice(z->sampleIndex);
-                break;
+            }
+            break;
+        case Zone::UNISON:
+            for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
+            {
+                z->sampleIndex = uv;
+                initVoice(z->sampleIndex);
+            }
+            break;
+        default:
+            z->sampleIndex = -1;
+            initVoice(z->sampleIndex);
+            break;
         }
     }
     engine.midiNoteStateCounter++;
