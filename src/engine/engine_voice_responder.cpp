@@ -101,8 +101,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 }
                 else if (z->sampleData.variantPlaybackMode == Zone::TRUE_RANDOM)
                 {
-                    z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone -1);
-                    // (min,max) inclusive hence the -1
+                    z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
                 }
                 else if (z->sampleData.variantPlaybackMode == Zone::RANDOM_CYCLE)
                 {
@@ -115,17 +114,16 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                         z->numAvail = nbSampleLoadedInZone;
                         z->setupFor = nbSampleLoadedInZone;
 
-                        nextAvail = engine.rng.unifInt(0, z->numAvail - 1);
+                        nextAvail = engine.rng.unifInt(0, z->numAvail);
                         if (z->rrs[nextAvail] == z->lastPlayed)
                         {
                             nextAvail =
-                                (nextAvail + engine.rng.unifInt(0, z->numAvail - 1)) %
-                                z->numAvail;
+                                (nextAvail + engine.rng.unifInt(0, z->numAvail));
                         }
                     }
                     else
                     {
-                        nextAvail = z->numAvail == 1 ? 0 : engine.rng.unifInt(0, z->numAvail - 1);
+                        nextAvail = z->numAvail == 1 ? 0 : engine.rng.unifInt(0, z->numAvail);
                     }
                     auto voice = z->rrs[nextAvail];              // we've used it so its a gap
                     z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
@@ -160,6 +158,24 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     engine.midiNoteStateCounter++;
     return idx;
 }
+
+int findRoundRobin(const int numSamplesLoaded, const int current)
+{
+    if (numSamplesLoaded == 1)
+    {
+        return 0;
+    }
+    else
+    {
+        return (current + 1) % numSamplesLoaded;
+    };
+}
+
+int findTrueRandom(const int numSamplesLoaded)
+{
+    return engine.rng.unifInt(0, numSamplesLoaded);
+};
+
 
 void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity) { v->release(); }
 
