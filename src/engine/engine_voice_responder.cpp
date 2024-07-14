@@ -85,64 +85,65 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             z->sampleIndex = 0;
             initVoice(z->sampleIndex);
         }
-
-        int nextAvail{0};
-
-        switch (z->sampleData.variantPlaybackMode)
+        else
         {
-        case Zone::FORWARD_RR:
-            z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
-            initVoice(z->sampleIndex);
-            break;
-        case Zone::TRUE_RANDOM:
-            z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
-            initVoice(z->sampleIndex);
-            break;
-        case Zone::RANDOM_CYCLE:
-            if (nbSampleLoadedInZone == 2)
+            int nextAvail{0};
+            switch (z->sampleData.variantPlaybackMode)
             {
-                z->sampleIndex = (z->sampleIndex + 1) % 2;
-            }
-            else
-            {
-                if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+            case Zone::FORWARD_RR:
+                z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+                initVoice(z->sampleIndex);
+                break;
+            case Zone::TRUE_RANDOM:
+                z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
+                initVoice(z->sampleIndex);
+                break;
+            case Zone::RANDOM_CYCLE:
+                if (nbSampleLoadedInZone == 2)
                 {
-                    for (auto i = 0; i < nbSampleLoadedInZone; ++i)
-                    {
-                        z->rrs[i] = i;
-                    }
-                    z->numAvail = nbSampleLoadedInZone;
-                    z->setupFor = nbSampleLoadedInZone;
-
-                    nextAvail = engine.rng.unifInt(0, z->numAvail);
-                    if (z->rrs[nextAvail] == z->lastPlayed)
-                    {
-                        nextAvail = (nextAvail + engine.rng.unifInt(0, z->numAvail));
-                    }
+                    z->sampleIndex = (z->sampleIndex + 1) % 2;
                 }
                 else
                 {
-                    nextAvail = z->numAvail == 1 ? 0 : engine.rng.unifInt(0, z->numAvail);
+                    if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
+                    {
+                        for (auto i = 0; i < nbSampleLoadedInZone; ++i)
+                        {
+                            z->rrs[i] = i;
+                        }
+                        z->numAvail = nbSampleLoadedInZone;
+                        z->setupFor = nbSampleLoadedInZone;
+
+                        nextAvail = engine.rng.unifInt(0, z->numAvail);
+                        if (z->rrs[nextAvail] == z->lastPlayed)
+                        {
+                            nextAvail = (nextAvail + engine.rng.unifInt(0, z->numAvail));
+                        }
+                    }
+                    else
+                    {
+                        nextAvail = z->numAvail == 1 ? 0 : engine.rng.unifInt(0, z->numAvail);
+                    }
+                    auto voice = z->rrs[nextAvail];              // we've used it so its a gap
+                    z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
+                    z->numAvail--; // and move the endpoint back by one
+                    z->lastPlayed = voice;
+                    z->sampleIndex = voice;
+                    initVoice(z->sampleIndex);
                 }
-                auto voice = z->rrs[nextAvail];              // we've used it so its a gap
-                z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
-                z->numAvail--;                               // and move the endpoint back by one
-                z->lastPlayed = voice;
-                z->sampleIndex = voice;
+                break;
+            case Zone::UNISON:
+                for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
+                {
+                    z->sampleIndex = uv;
+                    initVoice(z->sampleIndex);
+                }
+                break;
+            default:
+                z->sampleIndex = -1;
                 initVoice(z->sampleIndex);
+                break;
             }
-            break;
-        case Zone::UNISON:
-            for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
-            {
-                z->sampleIndex = uv;
-                initVoice(z->sampleIndex);
-            }
-            break;
-        default:
-            z->sampleIndex = -1;
-            initVoice(z->sampleIndex);
-            break;
         }
     }
     engine.midiNoteStateCounter++;
