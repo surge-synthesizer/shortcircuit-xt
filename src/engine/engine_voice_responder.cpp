@@ -46,64 +46,65 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
 {
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127));
-
+    
     int idx{0};
     for (const auto &path : nts)
     {
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
-
-        if (nbSampleLoadedInZone == 0)
+        auto initVoice = [&](int sampleIndex)
         {
-            z->sampleIndex = -1;
-            auto v = engine.initiateVoice(path);
-            if (v)
+            if (!z->samplePointers[sampleIndex])
             {
-                v->velocity = velocity;
-                v->originalMidiKey = key;
-                v->attack();
+                // SCLOG( "Skipping voice with missing sample data" );
             }
-            voiceInitWorkingBuffer[idx] = v;
-            idx++;
-        }
-        else if (z->sampleData.variantPlaybackMode == Zone::UNISON)
-        {
-            for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
+            else
             {
-                z->sampleIndex = uv;
                 auto v = engine.initiateVoice(path);
                 if (v)
                 {
                     v->velocity = velocity;
+                    v->velKeyFade = z->mapping.keyboardRange.fadeAmpltiudeAt(key);
+                    v->velKeyFade *= z->mapping.velocityRange.fadeAmpltiudeAt(
+                        (int16_t)std::clamp(velocity * 127.0, 0., 127.));
+                    
                     v->originalMidiKey = key;
                     v->attack();
                 }
                 voiceInitWorkingBuffer[idx] = v;
-                idx++;
             }
-        }
-        else
+            idx++;
+        };
+
+        if (nbSampleLoadedInZone == 0)
         {
-            int nextAvail{0};
-            if (nbSampleLoadedInZone == 1)
-            {
-                z->sampleIndex = 0;
-            }
-            if (nbSampleLoadedInZone == 2)
-            {
-                z->sampleIndex = (z->sampleIndex + 1) % 2;
-            }
-            else
-            {
-                if (z->sampleData.variantPlaybackMode == Zone::FORWARD_RR)
+            z->sampleIndex = -1;
+            initVoice(z->sampleIndex);
+        }
+        else if (nbSampleLoadedInZone == 1)
+        {
+            z->sampleIndex = 0;
+            initVoice(z->sampleIndex);
+        }
+        
+        int nextAvail{0};
+        
+        switch (z->sampleData.variantPlaybackMode)
+        {
+            case Zone::FORWARD_RR:
+                z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+                initVoice(z->sampleIndex);
+                break;
+            case Zone::TRUE_RANDOM:
+                z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
+                initVoice(z->sampleIndex);
+                break;
+            case Zone::RANDOM_CYCLE:
+                if (nbSampleLoadedInZone == 2)
                 {
-                    z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
+                    z->sampleIndex = (z->sampleIndex + 1) % 2;
                 }
-                else if (z->sampleData.variantPlaybackMode == Zone::TRUE_RANDOM)
-                {
-                    z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
-                }
-                else if (z->sampleData.variantPlaybackMode == Zone::RANDOM_CYCLE)
+                else
                 {
                     if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
                     {
@@ -113,7 +114,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                         }
                         z->numAvail = nbSampleLoadedInZone;
                         z->setupFor = nbSampleLoadedInZone;
-
+                        
                         nextAvail = engine.rng.unifInt(0, z->numAvail);
                         if (z->rrs[nextAvail] == z->lastPlayed)
                         {
@@ -130,52 +131,25 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     z->numAvail--; // and move the endpoint back by one
                     z->lastPlayed = voice;
                     z->sampleIndex = voice;
+                    initVoice(z->sampleIndex);
                 }
-            }
-
-            if (!z->samplePointers[z->sampleIndex])
-            {
-                // SCLOG( "Skipping voice with missing sample data" );
-            }
-            else
-            {
-                auto v = engine.initiateVoice(path);
-                if (v)
+                break;
+            case Zone::UNISON:
+                for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
                 {
-                    v->velocity = velocity;
-                    v->velKeyFade = z->mapping.keyboardRange.fadeAmpltiudeAt(key);
-                    v->velKeyFade *= z->mapping.velocityRange.fadeAmpltiudeAt(
-                        (int16_t)std::clamp(velocity * 127.0, 0., 127.));
-
-                    v->originalMidiKey = key;
-                    v->attack();
+                    z->sampleIndex = uv;
+                    initVoice(z->sampleIndex);
                 }
-                voiceInitWorkingBuffer[idx] = v;
-                idx++;
-            }
+                break;
+            default:
+                z->sampleIndex = -1;
+                initVoice(z->sampleIndex);
+                break;
         }
     }
     engine.midiNoteStateCounter++;
     return idx;
 }
-
-int findRoundRobin(const int numSamplesLoaded, const int current)
-{
-    if (numSamplesLoaded == 1)
-    {
-        return 0;
-    }
-    else
-    {
-        return (current + 1) % numSamplesLoaded;
-    };
-}
-
-int findTrueRandom(const int numSamplesLoaded)
-{
-    return engine.rng.unifInt(0, numSamplesLoaded);
-};
-
 
 void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity) { v->release(); }
 
