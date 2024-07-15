@@ -44,6 +44,7 @@
 #include "sst/effects/Phaser.h"
 #include "sst/effects/Delay.h"
 #include "sst/effects/Bonsai.h"
+#include "sst/effects/TreeMonster.h"
 #include "sst/effects/EffectCoreDetails.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
@@ -172,6 +173,9 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     case phaser:
         return std::make_unique<dtl::Impl<sfx::phaser::Phaser<dtl::Config>>>(e, s,
                                                                              s->params.data());
+    case treemonster:
+        return std::make_unique<dtl::Impl<sfx::treemonster::TreeMonster<dtl::Config>>>(
+            e, s, s->params.data());
     case delay:
         return std::make_unique<dtl::Impl<sfx::delay::Delay<dtl::Config>>>(e, s, s->params.data());
     case bonsai:
