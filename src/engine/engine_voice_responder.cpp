@@ -101,7 +101,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 }
                 else if (z->sampleData.variantPlaybackMode == Zone::TRUE_RANDOM)
                 {
-                    z->sampleIndex = engine.rngGen.randU32() % nbSampleLoadedInZone;
+                    z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
                 }
                 else if (z->sampleData.variantPlaybackMode == Zone::RANDOM_CYCLE)
                 {
@@ -114,17 +114,17 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                         z->numAvail = nbSampleLoadedInZone;
                         z->setupFor = nbSampleLoadedInZone;
 
-                        nextAvail = engine.rngGen.randU32() % z->numAvail;
+                        nextAvail = engine.rng.unifInt(0, z->numAvail);
                         if (z->rrs[nextAvail] == z->lastPlayed)
                         {
-                            nextAvail =
-                                (nextAvail + (engine.rngGen.randU32() % (z->numAvail - 1))) %
-                                z->numAvail;
+                            // the -1 here makes sure we don't re-reach ourselves
+                            nextAvail = (nextAvail + (engine.rng.unifInt(0, z->numAvail - 1))) %
+                                        z->numAvail;
                         }
                     }
                     else
                     {
-                        nextAvail = z->numAvail == 1 ? 0 : (engine.rngGen.randU32() % z->numAvail);
+                        nextAvail = z->numAvail == 1 ? 0 : (engine.rng.unifInt(0, z->numAvail));
                     }
                     auto voice = z->rrs[nextAvail];              // we've used it so its a gap
                     z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point

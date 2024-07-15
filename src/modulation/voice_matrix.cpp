@@ -31,7 +31,7 @@
 #include "voice_matrix.h"
 #include "engine/zone.h"
 #include "voice/voice.h"
-#include "infrastructure/rng_gen.h"
+#include "sst/basic-blocks/dsp/RNG.h"
 
 namespace scxt::voice::modulation
 {
@@ -39,7 +39,7 @@ namespace scxt::voice::modulation
 std::unordered_set<MatrixConfig::TargetIdentifier> MatrixConfig::multiplicativeTargets;
 
 namespace shmo = scxt::modulation::shared;
-infrastructure::RNGGen rngGen;
+sst::basic_blocks::dsp::RNG rng;
 
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
@@ -102,22 +102,22 @@ float randomRoll(bool bipolar, int distribution)
     {
         if (distribution == 0)
         {
-            return rngGen.randPM1();
+            return rng.unifPM1();
         }
         else
         {
-            return rngGen.gaussPM1();
+            return rng.normPM1();
         }
     }
     else
     {
         if (distribution == 0)
         {
-            return rngGen.rand01();
+            return rng.unif01();
         }
         else
         {
-            return rngGen.gauss01();
+            return rng.half01();
         }
     }
 }

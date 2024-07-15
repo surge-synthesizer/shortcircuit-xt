@@ -50,7 +50,7 @@
 #include "selection/selection_manager.h"
 #include "memory_pool.h"
 #include "tuning/midikey_retuner.h"
-#include "infrastructure/rng_gen.h"
+#include "sst/basic-blocks/dsp/RNG.h"
 
 #include "modulation/voice_matrix.h"
 #include "transport.h"
@@ -345,7 +345,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     /*
      * Random Number support
      */
-    infrastructure::RNGGen rngGen;
+    sst::basic_blocks::dsp::RNG rng;
 
     /*
      * Serialization thread originated mutation apis
