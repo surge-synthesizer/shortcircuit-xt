@@ -74,6 +74,7 @@ enum AvailableBusEffects
     flanger,
     phaser,
     delay,
+    treemonster,
     bonsai // if you make bonsai not last, make sure to update the fromString range
 };
 
@@ -205,6 +206,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "reverb1";
     case reverb2:
         return "reverb2";
+    case treemonster:
+        return "treemonster";
     case flanger:
         return "flanger";
     case phaser:
