@@ -67,6 +67,7 @@
 
 #include "sst/voice-effects/distortion/BitCrusher.h"
 #include "sst/voice-effects/distortion/Slewer.h"
+#include "sst/voice-effects/distortion/TreeMonster.h"
 #include "sst/voice-effects/waveshaper/WaveShaper.h"
 
 #include "sst/voice-effects/eq/EqNBandParametric.h"
@@ -116,6 +117,9 @@ DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig
 DEFINE_PROC(Slewer, sst::voice_effects::distortion::Slewer<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::Slewer<SCXTVFXConfig<2>>, proct_fx_slewer, "Slewer",
             "Distortion", "slewer-fx");
+DEFINE_PROC(TreeMonster, sst::voice_effects::distortion::TreeMonster<SCXTVFXConfig<1>>,
+            sst::voice_effects::distortion::TreeMonster<SCXTVFXConfig<2>>, proct_fx_treemonster,
+            "Treemonster", "Distortion", "treemonster-voice");
 
 DEFINE_PROC(Compressor, sst::voice_effects::dynamics::Compressor<SCXTVFXConfig<1>>,
             sst::voice_effects::dynamics::Compressor<SCXTVFXConfig<2>>, proct_Compressor,
