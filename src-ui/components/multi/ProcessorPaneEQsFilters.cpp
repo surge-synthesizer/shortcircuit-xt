@@ -260,10 +260,6 @@ template <typename Proc, int nSub> struct EqNBandDisplay : EqDisplaySupport<Proc
 
 void ProcessorPane::layoutControlsEQNBandParm()
 {
-    clearAdditionalHamburgerComponents();
-    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
-    addAdditionalHamburgerComponent(std::move(mixEditor->item));
-
     std::unique_ptr<EqDisplayBase> eqdisp;
 
     switch (processorView.type)
@@ -375,10 +371,6 @@ void ProcessorPane::layoutControlsEQNBandParm()
 
 void ProcessorPane::layoutControlsEQMorph()
 {
-    clearAdditionalHamburgerComponents();
-    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
-    addAdditionalHamburgerComponent(std::move(mixEditor->item));
-
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2>>(*this);
     auto bd = getContentAreaComponent()->getLocalBounds();
@@ -431,10 +423,6 @@ void ProcessorPane::layoutControlsEQMorph()
 
 void ProcessorPane::layoutControlsEQGraphic()
 {
-    clearAdditionalHamburgerComponents();
-    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
-    addAdditionalHamburgerComponent(std::move(mixEditor->item));
-
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
     auto bd = getContentAreaComponent()->getLocalBounds();

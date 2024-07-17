@@ -30,7 +30,9 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/NamedPanel.h>
+#include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/GlyphPainter.h>
+#include <sst/jucegui/layouts/ExplicitLayout.h>
 #include <unordered_set>
 
 #include "components/HasEditor.h"
@@ -86,9 +88,33 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     template <typename T> T *attachWidgetToFloat(int index);
     juce::Component *attachMenuButtonToInt(int index);
     juce::Component *attachToggleToDeactivated(int index);
+    template <typename T> juce::Component *addTypedLabel(const std::string &txt);
+    juce::Component *addLabel(const std::string &txt)
+    {
+        return addTypedLabel<sst::jucegui::components::Label>(txt);
+    }
+
+    template <typename T>
+    T *layoutWidgetToFloat(const sst::jucegui::layout::ExplicitLayout &elo, int index,
+                           const std::string &lotag)
+    {
+        auto r = attachWidgetToFloat<T>(index);
+        r->setBounds(elo.positionFor(lotag));
+        return r;
+    }
+    template <typename T>
+    T *layoutWidgetToFloat(const sst::jucegui::layout::ExplicitLayout &elo, int index,
+                           const std::string &lotag, const std::string &label)
+    {
+        auto r = layoutWidgetToFloat<T>(elo, index, lotag);
+        auto l = addLabel(label);
+        l->setBounds(elo.labelPositionFor(lotag));
+        return r;
+    }
 
     // Generic
     void rebuildDefaultLayout();
+    void rebuildDelayLayout();
     template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
 
     // Specific

@@ -31,7 +31,12 @@
 
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/layouts/ExplicitLayout.h"
+
+// These are included just for enums to get argument indices in explicit layouts
+#include "sst/effects/Delay.h"
 
 namespace scxt::ui::mixer
 {
@@ -87,9 +92,47 @@ void PartEffectsPane::rebuild()
 
     switch (t)
     {
+    case engine::AvailableBusEffects::delay:
+        rebuildDelayLayout();
+        break;
     default:
         rebuildDefaultLayout();
         break;
+    }
+
+    clearAdditionalHamburgerComponents();
+    bool hasTemposync{false};
+    for (auto &p : params)
+        hasTemposync = hasTemposync || p.canTemposync;
+
+    if (hasTemposync)
+    {
+        auto res = std::make_unique<jcmp::ToggleButton>();
+        res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
+        res->setGlyph(jcmp::GlyphPainter::GlyphType::METRONOME);
+
+        auto &data = mixer->busEffectsData[busAddress][fxSlot];
+        auto onGuiChange = [w = juce::Component::SafePointer(this)](auto &a) {
+            if (w)
+            {
+                // Fix this 0
+                w->busEffectStorageChangedFromGUI(a, 0);
+                // Need to finish this gui action before rebuilding, which could destroy myself
+                juce::Timer::callAfterDelay(0, [w]() {
+                    if (w)
+                        w->rebuild();
+                });
+                // w->rebuild();
+            }
+        };
+
+        auto at = std::make_unique<boolAttachment_t>(
+            "Active", onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.isTemposync);
+        res->setSource(at.get());
+        addAndMakeVisible(*res);
+
+        boolAttachments.insert(std::move(at));
+        addAdditionalHamburgerComponent(std::move(res));
     }
 
     repaint();
@@ -117,8 +160,23 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
     }
     auto w = std::make_unique<T>();
     w->setSource(at.get());
+
+    if (pmd.canDeactivate && data.second.isDeactivated(pidx))
+    {
+        w->setEnabled(false);
+    }
+    else
+    {
+        w->setEnabled(true);
+    }
+
     setupWidgetForValueTooltip(w, at);
     addAndMakeVisible(*w);
+
+    if constexpr (std::is_same_v<T, jcmp::Knob>)
+    {
+        w->setDrawLabel(false);
+    }
 
     auto retVal = w.get();
     components.insert(std::move(w));
@@ -189,7 +247,6 @@ juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
     auto onGuiChange = [w = juce::Component::SafePointer(this), index](auto &a) {
         if (w)
         {
-            SCLOG("OnGUIChange " << a.value);
             w->busEffectStorageChangedFromGUI(a, index);
             // Need to finish this gui action before rebuilding, which could destroy myself
             juce::Timer::callAfterDelay(0, [w]() {
@@ -211,6 +268,78 @@ juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
     boolAttachments.insert(std::move(at));
 
     return retVal;
+}
+
+template <typename T> juce::Component *PartEffectsPane::addTypedLabel(const std::string &txt)
+{
+    auto l = std::make_unique<T>();
+    l->setText(txt);
+    if constexpr (std::is_same_v<T, jcmp::Label>)
+        l->setJustification(juce::Justification::centred);
+    addAndMakeVisible(*l);
+    auto res = l.get();
+    components.insert(std::move(l));
+    return res;
+}
+
+void PartEffectsPane::rebuildDelayLayout()
+{
+    namespace jcmp = sst::jucegui::components;
+    namespace jlay = sst::jucegui::layout;
+    using np = jlay::ExplicitLayout::NamedPosition;
+    namespace sdly = sst::effects::delay;
+
+    auto elo = jlay::ExplicitLayout();
+    const auto &cr = getContentArea();
+    elo.addNamedPositionAndLabel(np("left").scaled(cr, 0.05, 0.025, 0.35));
+    elo.addNamedPositionAndLabel(np("right").scaled(cr, 0.6, 0.025, 0.35));
+    elo.addPowerButtonPositionTo("right");
+
+    elo.addNamedPositionAndLabel(np("input").scaled(cr, 0.425, 0.3, 0.15));
+
+    elo.addNamedPositionAndLabel(np("fb").scaled(cr, 0.025, 0.65, 0.2));
+    elo.addNamedPositionAndLabel(np("cf").scaled(cr, 0.275, 0.65, 0.2));
+    elo.addNamedPosition(np("fbgroup").scaled(cr, 0.025, 0.58, 0.45, 0.06));
+
+    elo.addNamedPositionAndLabel(np("lc").scaled(cr, 0.525, 0.65, 0.2));
+    elo.addPowerButtonPositionTo("lc", 8);
+    elo.addNamedPositionAndLabel(np("hc").scaled(cr, 0.775, 0.65, 0.2));
+    elo.addPowerButtonPositionTo("hc", 8);
+    elo.addNamedPosition(np("filtgroup").scaled(cr, 0.525, 0.58, 0.45, 0.06));
+
+    elo.addNamedPositionAndLabel(np("modr").scaled(cr, 0.025, 1.05, 0.2));
+    elo.addNamedPositionAndLabel(np("modd").scaled(cr, 0.275, 1.05, 0.2));
+    elo.addNamedPosition(np("modgroup").scaled(cr, 0.025, 0.98, 0.45, 0.06));
+    elo.addNamedPositionAndLabel(np("width").scaled(cr, 0.525, 1.05, 0.2));
+    elo.addNamedPositionAndLabel(np("mix").scaled(cr, 0.775, 1.05, 0.2));
+    elo.addNamedPosition(np("outgroup").scaled(cr, 0.525, 0.98, 0.45, 0.06));
+
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_time_left, "left", "Left");
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_time_right, "right", "Right");
+    attachToggleToDeactivated(sdly::delay_params::dly_time_right)
+        ->setBounds(elo.powerButtonPositionFor("right"));
+
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_input_channel, "input", "Input");
+
+    addTypedLabel<jcmp::RuledLabel>("Feedback")->setBounds(elo.positionFor("fbgroup"));
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_feedback, "fb", "Feedback");
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_crossfeed, "cf", "Cross");
+
+    addTypedLabel<jcmp::RuledLabel>("Filter")->setBounds(elo.positionFor("filtgroup"));
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_lowcut, "lc", "Low Cut");
+    attachToggleToDeactivated(sdly::delay_params::dly_lowcut)
+        ->setBounds(elo.powerButtonPositionFor("lc"));
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_highcut, "hc", "High Cut");
+    attachToggleToDeactivated(sdly::delay_params::dly_highcut)
+        ->setBounds(elo.powerButtonPositionFor("hc"));
+
+    addTypedLabel<jcmp::RuledLabel>("Modulation")->setBounds(elo.positionFor("modgroup"));
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_mod_rate, "modr", "Rate");
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_mod_depth, "modd", "Depth");
+
+    addTypedLabel<jcmp::RuledLabel>("Output")->setBounds(elo.positionFor("outgroup"));
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_width, "width", "Width");
+    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_mix, "mix", "Mix");
 }
 
 void PartEffectsPane::rebuildDefaultLayout()
@@ -246,14 +375,6 @@ void PartEffectsPane::rebuildDefaultLayout()
                 // make slidera
                 auto w = attachWidgetToFloat<jcmp::Knob>(idx);
                 w->setBounds(r.withHeight(bx).reduced(2));
-                if (p.canDeactivate && b.second.isDeactivated(idx))
-                {
-                    w->setEnabled(false);
-                }
-                else
-                {
-                    w->setEnabled(true);
-                }
             }
             else if (p.type == sst::basic_blocks::params::ParamMetaData::INT)
             {
@@ -282,37 +403,6 @@ void PartEffectsPane::rebuildDefaultLayout()
             }
         }
         idx++;
-    }
-
-    clearAdditionalHamburgerComponents();
-    if (hasTemposync)
-    {
-        auto res = std::make_unique<jcmp::ToggleButton>();
-        res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
-        res->setGlyph(jcmp::GlyphPainter::GlyphType::METRONOME);
-
-        auto &data = mixer->busEffectsData[busAddress][fxSlot];
-        auto onGuiChange = [w = juce::Component::SafePointer(this)](auto &a) {
-            if (w)
-            {
-                // Fix this 0
-                w->busEffectStorageChangedFromGUI(a, 0);
-                // Need to finish this gui action before rebuilding, which could destroy myself
-                juce::Timer::callAfterDelay(0, [w]() {
-                    if (w)
-                        w->rebuild();
-                });
-                // w->rebuild();
-            }
-        };
-
-        auto at = std::make_unique<boolAttachment_t>(
-            "Active", onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.isTemposync);
-        res->setSource(at.get());
-        addAndMakeVisible(*res);
-
-        boolAttachments.insert(std::move(at));
-        addAdditionalHamburgerComponent(std::move(res));
     }
 }
 

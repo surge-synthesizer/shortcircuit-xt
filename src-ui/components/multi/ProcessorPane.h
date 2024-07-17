@@ -37,6 +37,9 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/LabeledItem.h"
+#include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/GlyphPainter.h"
+#include "sst/jucegui/layouts/ExplicitLayout.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "dsp/processor/processor.h"
 #include "components/HasEditor.h"
@@ -203,6 +206,32 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     std::unique_ptr<sst::jucegui::components::TextPushButton> multiButton;
 
     std::string multiName;
+
+    // Layout helpers
+    std::unique_ptr<intEditor_t>
+    createAndLayoutPowerButton(const sst::jucegui::layout::ExplicitLayout &elo,
+                               const std::string &lotag,
+                               const std::unique_ptr<int_attachment_t> &at)
+    {
+        namespace jcmp = sst::jucegui::components;
+        auto res = createWidgetAttachedTo<jcmp::ToggleButton>(at);
+        res->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+        res->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+        res->setBounds(elo.powerButtonPositionFor(lotag));
+        return std::make_unique<intEditor_t>(std::move(res));
+    }
+
+    template <typename T = sst::jucegui::components::Knob>
+    std::unique_ptr<floatEditor_t> createAndLayoutLabeledFloatWidget(
+        const sst::jucegui::layout::ExplicitLayout &elo, const std::string &lotag,
+        const std::unique_ptr<attachment_t> &at, const std::string &label = "")
+    {
+        auto res = createWidgetAttachedTo<T>(at, label.empty() ? at->getLabel() : label);
+        res->item->setBounds(elo.positionFor(lotag));
+        res->label->setBounds(elo.labelPositionFor(lotag));
+
+        return res;
+    }
 };
 } // namespace scxt::ui::multi
 
