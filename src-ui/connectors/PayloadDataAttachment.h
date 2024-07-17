@@ -339,12 +339,12 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, boo
 {
     using payload_t = Payload;
     using value_t = bool;
+    using parent_t = DiscretePayloadDataAttachment<Payload, bool>;
 
     BooleanPayloadDataAttachment(
         const std::string &l,
         std::function<void(const DiscretePayloadDataAttachment<Payload, bool> &at)> oGVC, bool &v)
-        : DiscretePayloadDataAttachment<Payload, bool>(
-              datamodel::pmd().withType(datamodel::pmd::BOOL).withName(l), oGVC, v)
+        : parent_t(datamodel::pmd().withType(datamodel::pmd::BOOL).withName(l), oGVC, v)
     {
     }
 
@@ -358,8 +358,32 @@ struct BooleanPayloadDataAttachment : DiscretePayloadDataAttachment<Payload, boo
     }
     int getMin() const override { return (int)0; }
     int getMax() const override { return (int)1; }
+    int getValue() const override
+    {
+        if (isInverted)
+            return !parent_t::getValue();
+        else
+            return parent_t::getValue();
+    }
+    void setValueFromGUI(const int &f) override
+    {
+        if (isInverted)
+            parent_t::setValueFromGUI(!f);
+        else
+            parent_t::setValueFromGUI(f);
+    }
 
-    std::string getValueAsStringFor(int i) const override { return i == 0 ? "Off" : "On"; }
+    // Don't override setValueFromModel since invert is a gui-side only concept. I think.
+
+    std::string getValueAsStringFor(int i) const override
+    {
+        if (isInverted)
+            return i == 0 ? "On" : "Off";
+        else
+            return i == 0 ? "Off" : "On";
+    }
+
+    bool isInverted{false};
 };
 
 struct DirectBooleanPayloadDataAttachment : sst::jucegui::data::Discrete

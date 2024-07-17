@@ -84,7 +84,12 @@ struct BusEffectStorage
     static constexpr int maxBusEffectParams{scxt::maxBusEffectParams};
     AvailableBusEffects type{AvailableBusEffects::none};
     bool isActive{true};
+    bool isTemposync{false};
     std::array<float, maxBusEffectParams> params{};
+    std::array<bool, maxBusEffectParams> deact{};
+
+    inline bool isDeactivated(int idx) { return deact[idx]; }
+    inline bool isExtended(int idx) { return false; }
 };
 struct BusEffect
 {

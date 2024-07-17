@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/NamedPanel.h>
+#include <sst/jucegui/components/GlyphPainter.h>
 #include <unordered_set>
 
 #include "components/HasEditor.h"
@@ -75,17 +76,20 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
 
     std::unordered_set<std::unique_ptr<juce::Component>> components;
     typedef connectors::PayloadDataAttachment<engine::BusEffectStorage> attachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<engine::BusEffectStorage> boolAttachment_t;
     std::unordered_set<std::unique_ptr<attachment_t>> floatAttachments;
+    std::unordered_set<std::unique_ptr<boolAttachment_t>> boolAttachments;
 
   protected:
     // This returns a pointer which is owned by the class; do not delete it or
     // move it.
     template <typename T> T *attachWidgetToFloat(int index);
     juce::Component *attachMenuButtonToInt(int index);
+    juce::Component *attachToggleToDeactivated(int index);
 
     // Generic
     void rebuildDefaultLayout();
-    void floatParameterChangedFromGui(const attachment_t &at, int idx);
+    template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
 
     // Specific
     // void rebuildDelayLayout();

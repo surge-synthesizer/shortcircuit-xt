@@ -50,6 +50,9 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                       {"maxVal", t.maxVal},
                       {"defaultVal", t.defaultVal},
                       {"canTemposync", t.canTemposync},
+                      {"canExtend", t.canExtend},
+                      {"canDeactivate", t.canDeactivate},
+                      {"canAbsolute", t.canAbsolute},
                       {"temposyncMultiplier", t.temposyncMultiplier},
                       {"supportsStringConversion", t.supportsStringConversion},
                       {"displayScale", (int)t.displayScale},
@@ -72,6 +75,9 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findIf(v, "maxVal", to.maxVal);
                  findIf(v, "defaultVal", to.defaultVal);
                  findIf(v, "canTemposync", to.canTemposync);
+                 findIf(v, "canDeactivate", to.canDeactivate);
+                 findIf(v, "canExtend", to.canExtend);
+                 findIf(v, "canAbsolute", to.canAbsolute);
                  findIf(v, "temposyncMultiplier", to.temposyncMultiplier);
                  findIf(v, "supportsStringConversion", to.supportsStringConversion);
                  findEnumIf(v, "displayScale", to.displayScale);
