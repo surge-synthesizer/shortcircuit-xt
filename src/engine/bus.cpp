@@ -93,10 +93,16 @@ struct Config
         return blockSize * s->getSampleRateInv() * dsp::twoToTheXTable.twoToThe(-f);
     }
 
-    static inline float temposyncRatio(GlobalStorage *s, EffectStorage *e, int idx) { return 1; }
+    static inline float temposyncRatio(GlobalStorage *s, EffectStorage *e, int idx)
+    {
+        if (e->isTemposync)
+            return s->transport.tempo / 120.f;
+        else
+            return 1.f;
+    }
 
-    static inline bool isDeactivated(EffectStorage *e, int idx) { return false; }
-    static inline bool isExtended(EffectStorage *e, int idx) { return false; }
+    static inline bool isDeactivated(EffectStorage *e, int idx) { return e->isExtended(idx); }
+    static inline bool isExtended(EffectStorage *e, int idx) { return e->isExtended(idx); }
 
     static inline float rand01(GlobalStorage *s) { return s->rng.unif01(); }
 

@@ -101,11 +101,20 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
     auto &pmd = data.first[pidx];
     auto onGuiChange = [w = juce::Component::SafePointer(this), pidx](auto &a) {
         if (w)
-            w->floatParameterChangedFromGui(a, pidx);
+            w->busEffectStorageChangedFromGUI(a, pidx);
     };
 
     auto at = std::make_unique<attachment_t>(
         pmd, onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.params[pidx]);
+
+    if (pmd.canTemposync)
+    {
+        at->setTemposyncFunction([w = juce::Component::SafePointer(this)](const auto &a) {
+            if (w)
+                return w->mixer->busEffectsData[w->busAddress][w->fxSlot].second.isTemposync;
+            return false;
+        });
+    }
     auto w = std::make_unique<T>();
     w->setSource(at.get());
     setupWidgetForValueTooltip(w, at);
@@ -169,6 +178,41 @@ juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
     return retVal;
 }
 
+juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
+{
+    auto res = std::make_unique<jcmp::ToggleButton>();
+    res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
+    res->setGlyph(jcmp::GlyphPainter::GlyphType::POWER_LIGHT);
+
+    auto &data = mixer->busEffectsData[busAddress][fxSlot];
+    auto &pmd = data.first[index];
+    auto onGuiChange = [w = juce::Component::SafePointer(this), index](auto &a) {
+        if (w)
+        {
+            SCLOG("OnGUIChange " << a.value);
+            w->busEffectStorageChangedFromGUI(a, index);
+            // Need to finish this gui action before rebuilding, which could destroy myself
+            juce::Timer::callAfterDelay(0, [w]() {
+                if (w)
+                    w->rebuild();
+            });
+            // w->rebuild();
+        }
+    };
+
+    auto at = std::make_unique<boolAttachment_t>(
+        "Active", onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.deact[index]);
+    at->isInverted = true; // deact is no power light mkay
+    res->setSource(at.get());
+    addAndMakeVisible(*res);
+
+    auto retVal = res.get();
+    components.insert(std::move(res));
+    boolAttachments.insert(std::move(at));
+
+    return retVal;
+}
+
 void PartEffectsPane::rebuildDefaultLayout()
 {
     namespace jcmp = sst::jucegui::components;
@@ -183,8 +227,11 @@ void PartEffectsPane::rebuildDefaultLayout()
     auto r =
         into.withHeight(bx + labht).withWidth(bx).translated((into.getWidth() - bx * 3) * 0.5, 0);
     int idx{0};
+    bool hasTemposync{false};
     for (const auto &p : b.first)
     {
+        if (p.canTemposync)
+            hasTemposync = true;
         if (p.type != sst::basic_blocks::params::ParamMetaData::NONE)
         {
             auto l = std::make_unique<jcmp::Label>();
@@ -199,6 +246,14 @@ void PartEffectsPane::rebuildDefaultLayout()
                 // make slidera
                 auto w = attachWidgetToFloat<jcmp::Knob>(idx);
                 w->setBounds(r.withHeight(bx).reduced(2));
+                if (p.canDeactivate && b.second.isDeactivated(idx))
+                {
+                    w->setEnabled(false);
+                }
+                else
+                {
+                    w->setEnabled(true);
+                }
             }
             else if (p.type == sst::basic_blocks::params::ParamMetaData::INT)
             {
@@ -211,6 +266,15 @@ void PartEffectsPane::rebuildDefaultLayout()
                 SCLOG("No widget for type " << p.type << " / " << p.name);
             }
 
+            if (p.canDeactivate)
+            {
+                auto pbsz{12};
+                auto da = attachToggleToDeactivated(idx);
+                auto q =
+                    r.withTrimmedLeft(r.getWidth() - pbsz).withTrimmedBottom(r.getHeight() - pbsz);
+                da->setBounds(q);
+            }
+
             r = r.translated(bx, 0);
             if (!into.contains(r))
             {
@@ -219,10 +283,40 @@ void PartEffectsPane::rebuildDefaultLayout()
         }
         idx++;
     }
+
+    clearAdditionalHamburgerComponents();
+    if (hasTemposync)
+    {
+        auto res = std::make_unique<jcmp::ToggleButton>();
+        res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
+        res->setGlyph(jcmp::GlyphPainter::GlyphType::METRONOME);
+
+        auto &data = mixer->busEffectsData[busAddress][fxSlot];
+        auto onGuiChange = [w = juce::Component::SafePointer(this)](auto &a) {
+            if (w)
+            {
+                // Fix this 0
+                w->busEffectStorageChangedFromGUI(a, 0);
+                // Need to finish this gui action before rebuilding, which could destroy myself
+                juce::Timer::callAfterDelay(0, [w]() {
+                    if (w)
+                        w->rebuild();
+                });
+                // w->rebuild();
+            }
+        };
+
+        auto at = std::make_unique<boolAttachment_t>(
+            "Active", onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.isTemposync);
+        res->setSource(at.get());
+        addAndMakeVisible(*res);
+
+        boolAttachments.insert(std::move(at));
+        addAdditionalHamburgerComponent(std::move(res));
+    }
 }
 
-void PartEffectsPane::floatParameterChangedFromGui(
-    const scxt::ui::mixer::PartEffectsPane::attachment_t &at, int idx)
+template <typename Att> void PartEffectsPane::busEffectStorageChangedFromGUI(const Att &at, int idx)
 {
     updateValueTooltip(at);
     auto &data = mixer->busEffectsData[busAddress][fxSlot];

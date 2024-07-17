@@ -505,7 +505,9 @@ template <> struct scxt_traits<engine::BusEffectStorage>
         {
             v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)},
                  {"isActive", t.isActive},
-                 {"params", t.params}};
+                 {"params", t.params},
+                 {"deact", t.deact},
+                 {"temposync", t.isTemposync}};
         }
     }
 
@@ -524,6 +526,8 @@ template <> struct scxt_traits<engine::BusEffectStorage>
         {
             findIf(v, "params", r.params);
             findOrSet(v, "isActive", true, r.isActive);
+            findIf(v, "deact", r.deact);
+            findIf(v, "temposync", r.isTemposync);
         }
     }
 };
