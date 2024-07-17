@@ -1,0 +1,68 @@
+{
+    "defaults": {
+        "coordinate-system": "absolute",
+        "component": "knob",
+        "label-mode": "auto",
+        "type": "float"
+    },
+    "components": [
+        {
+            "index": 0,
+            "coordinates": [
+                10,
+                5,
+                50,
+                50
+            ]
+        },
+        {
+            "index": 1,
+            "coordinates": [
+                70,
+                5,
+                50,
+                50
+            ]
+        },
+        {
+            "index": 2,
+            "coordinates": [
+                130,
+                5,
+                50,
+                50
+            ]
+        },
+        {
+            "index": 3,
+            "coordinates": [
+                40,
+                80,
+                50,
+                50
+            ],
+            "enable-if": 0
+        },
+        {
+            "index": 4,
+            "coordinates": [
+                100,
+                80,
+                50,
+                50
+            ],
+            "enable-if": 0
+        },
+        {
+            "type": "int",
+            "component": "power",
+            "index": 0,
+            "coordinates": [
+                100,
+                80,
+                50,
+                50
+            ]
+        }
+    ]
+}

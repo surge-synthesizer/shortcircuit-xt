@@ -79,6 +79,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     void rebuildControlsFromDescription();
     void attachRebuildToIntAttachment(int idx);
+    void attachRebuildToDeactivateAttachment(int idx);
 
     void layoutControls();
     void layoutControlsMicroGate();
@@ -86,7 +87,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsSurgeFilters();
     void layoutControlsFastSVF();
     void layoutControlsWaveshaper();
-    void layoutControlsBitcrusher();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
@@ -100,6 +100,10 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsFMFilter();
     void layoutControlsRingMod();
     void layoutControlsPhaseMod();
+
+    void layoutControlsFromJSON(const std::string &jsonpath);
+    void layoutControlsFromJSON(const std::string &jsonpath,
+                                sst::jucegui::layout::ExplicitLayout &elo);
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
@@ -128,6 +132,19 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<T> createWidgetAttachedTo(const std::unique_ptr<int_attachment_t> &at)
+    {
+        auto kn = std::make_unique<T>();
+        kn->setSource(at.get());
+        kn->setTitle(at->getLabel());
+        kn->setDescription(at->getLabel());
+
+        getContentAreaComponent()->addAndMakeVisible(*kn);
+
+        return std::move(kn);
+    }
+
+    template <typename T = sst::jucegui::components::ToggleButton>
+    std::unique_ptr<T> createWidgetAttachedTo(const std::unique_ptr<bool_attachment_t> &at)
     {
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
@@ -182,16 +199,21 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     using floatEditor_t =
         sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>;
+    using intEditor_t =
+        sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>;
+
     std::array<std::unique_ptr<floatEditor_t>, dsp::processor::maxProcessorFloatParams>
         floatEditors;
+    std::array<std::unique_ptr<intEditor_t>, dsp::processor::maxProcessorFloatParams>
+        floatDeactivateEditors;
     std::array<std::unique_ptr<attachment_t>, dsp::processor::maxProcessorFloatParams>
         floatAttachments;
 
-    using intEditor_t =
-        sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>;
     std::array<std::unique_ptr<intEditor_t>, dsp::processor::maxProcessorIntParams> intEditors;
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
+    std::array<std::unique_ptr<bool_attachment_t>, dsp::processor::maxProcessorFloatParams>
+        deactivateAttachments;
 
     std::unique_ptr<bool_attachment_t> bypassAttachment, keytrackAttackment, temposyncAttachment;
 

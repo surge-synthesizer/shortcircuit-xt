@@ -1,0 +1,158 @@
+{
+    "defaults": {
+        "coordinate-system": "relative",
+        "component": "knob"
+    },
+    "components": [
+        {
+            "coordinates": [
+                0.05,
+                0.025,
+                0.35,
+                0.35
+            ],
+            "label": "Left",
+            "index": 0
+        },
+        {
+            "coordinates": [
+                0.6,
+                0.025,
+                0.35,
+                0.35
+            ],
+            "label": "Right",
+            "index": 1
+        },
+        {
+            "coordinates": [
+                0.425,
+                0.3,
+                0.15,
+                0.15
+            ],
+            "label": "Input",
+            "index": 8
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                0.025,
+                0.58,
+                0.45,
+                0.06
+            ],
+            "label": "Feedback"
+        },
+        {
+            "coordinates": [
+                0.025,
+                0.65,
+                0.2,
+                0.2
+            ],
+            "label": "Feedback",
+            "index": 2
+        },
+        {
+            "coordinates": [
+                0.275,
+                0.65,
+                0.2,
+                0.2
+            ],
+            "label": "Cross",
+            "index": 3
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                0.525,
+                0.58,
+                0.45,
+                0.06
+            ],
+            "label": "Filter"
+        },
+        {
+            "coordinates": [
+                0.525,
+                0.65,
+                0.2,
+                0.2
+            ],
+            "label": "Lo Cut",
+            "index": 4
+        },
+        {
+            "coordinates": [
+                0.775,
+                0.65,
+                0.2,
+                0.2
+            ],
+            "label": "Hi Cut",
+            "index": 5
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                0.025,
+                0.98,
+                0.45,
+                0.06
+            ],
+            "label": "Modulation"
+        },
+        {
+            "coordinates": [
+                0.025,
+                1.05,
+                0.2,
+                0.2
+            ],
+            "label": "Rate",
+            "index": 7
+        },
+        {
+            "coordinates": [
+                0.275,
+                1.05,
+                0.2,
+                0.2
+            ],
+            "label": "Depth",
+            "index": 8
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                0.525,
+                0.98,
+                0.45,
+                0.06
+            ],
+            "label": "Output"
+        },
+        {
+            "coordinates": [
+                0.525,
+                1.05,
+                0.2,
+                0.2
+            ],
+            "label": "Width",
+            "index": 11
+        },
+        {
+            "coordinates": [
+                0.775,
+                1.05,
+                0.2,
+                0.2
+            ],
+            "label": "Mix",
+            "index": 10
+        }
+    ]
+}

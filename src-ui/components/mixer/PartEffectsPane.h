@@ -87,6 +87,7 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     // move it.
     template <typename T> T *attachWidgetToFloat(int index);
     juce::Component *attachMenuButtonToInt(int index);
+    template <typename T> juce::Component *attachWidgetToInt(int index);
     juce::Component *attachToggleToDeactivated(int index);
     template <typename T> juce::Component *addTypedLabel(const std::string &txt);
     juce::Component *addLabel(const std::string &txt)
@@ -112,9 +113,10 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
         return r;
     }
 
-    // Generic
+    // Generic, no JSON
     void rebuildDefaultLayout();
-    void rebuildDelayLayout();
+    void rebuildFromJSONLibrary(const std::string &path);
+
     template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
 
     // Specific

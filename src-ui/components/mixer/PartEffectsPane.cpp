@@ -29,14 +29,14 @@
 #include "components/SCXTEditor.h"
 #include "components/MixerScreen.h"
 
+#include "connectors/JSONLayoutConsumer.h"
+
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/jucegui/layouts/ExplicitLayout.h"
-
-// These are included just for enums to get argument indices in explicit layouts
-#include "sst/effects/Delay.h"
 
 namespace scxt::ui::mixer
 {
@@ -93,7 +93,10 @@ void PartEffectsPane::rebuild()
     switch (t)
     {
     case engine::AvailableBusEffects::delay:
-        rebuildDelayLayout();
+        rebuildFromJSONLibrary("bus-effects/delay.json");
+        break;
+    case engine::AvailableBusEffects::phaser:
+        rebuildFromJSONLibrary("bus-effects/phaser.json");
         break;
     default:
         rebuildDefaultLayout();
@@ -183,6 +186,11 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
     floatAttachments.insert(std::move(at));
 
     return retVal;
+}
+
+template <typename T> juce::Component *PartEffectsPane::attachWidgetToInt(int pidx)
+{
+    return nullptr;
 }
 
 juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
@@ -282,64 +290,118 @@ template <typename T> juce::Component *PartEffectsPane::addTypedLabel(const std:
     return res;
 }
 
-void PartEffectsPane::rebuildDelayLayout()
+void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
 {
+    auto dlyjs = connectors::JSONLayoutLibrary::jsonForComponent(path);
+    connectors::JSONLayoutConsumer con;
+    try
+    {
+        tao::json::events::from_string(con, dlyjs);
+    }
+    catch (const std::exception &e)
+    {
+        SCLOG("JSON Parsing failed on '" << path << "' : " << e.what());
+        return;
+    }
+
+    SCLOG("JSON Layout for bus effect '" << path << "' yielded " << con.result.size()
+                                         << " components");
+
     namespace jcmp = sst::jucegui::components;
     namespace jlay = sst::jucegui::layout;
     using np = jlay::ExplicitLayout::NamedPosition;
-    namespace sdly = sst::effects::delay;
+
+    const auto &metadata = mixer->busEffectsData[busAddress][fxSlot].first;
 
     auto elo = jlay::ExplicitLayout();
     const auto &cr = getContentArea();
-    elo.addNamedPositionAndLabel(np("left").scaled(cr, 0.05, 0.025, 0.35));
-    elo.addNamedPositionAndLabel(np("right").scaled(cr, 0.6, 0.025, 0.35));
-    elo.addPowerButtonPositionTo("right");
 
-    elo.addNamedPositionAndLabel(np("input").scaled(cr, 0.425, 0.3, 0.15));
+    int idx{0};
+    for (const auto &currentComponent : con.result)
+    {
+        auto ctag = [&currentComponent](auto key, auto val) -> std::string {
+            auto itv = currentComponent.map.find(key);
+            if (itv == currentComponent.map.end())
+                return val;
+            return itv->second;
+        };
 
-    elo.addNamedPositionAndLabel(np("fb").scaled(cr, 0.025, 0.65, 0.2));
-    elo.addNamedPositionAndLabel(np("cf").scaled(cr, 0.275, 0.65, 0.2));
-    elo.addNamedPosition(np("fbgroup").scaled(cr, 0.025, 0.58, 0.45, 0.06));
+        auto cm = ctag("coordinate-system", "relative");
+        auto nm = ctag("name", std::string("anon_") + std::to_string(idx));
 
-    elo.addNamedPositionAndLabel(np("lc").scaled(cr, 0.525, 0.65, 0.2));
-    elo.addPowerButtonPositionTo("lc", 8);
-    elo.addNamedPositionAndLabel(np("hc").scaled(cr, 0.775, 0.65, 0.2));
-    elo.addPowerButtonPositionTo("hc", 8);
-    elo.addNamedPosition(np("filtgroup").scaled(cr, 0.525, 0.58, 0.45, 0.06));
+        if (cm != "relative")
+            throw std::runtime_error("Coming soon");
+        auto &co = currentComponent.coords;
+        auto el = np(nm).scaled(cr, co[0], co[1], co[2], co[3]);
+        auto lab = ctag("label", "");
 
-    elo.addNamedPositionAndLabel(np("modr").scaled(cr, 0.025, 1.05, 0.2));
-    elo.addNamedPositionAndLabel(np("modd").scaled(cr, 0.275, 1.05, 0.2));
-    elo.addNamedPosition(np("modgroup").scaled(cr, 0.025, 0.98, 0.45, 0.06));
-    elo.addNamedPositionAndLabel(np("width").scaled(cr, 0.525, 1.05, 0.2));
-    elo.addNamedPositionAndLabel(np("mix").scaled(cr, 0.775, 1.05, 0.2));
-    elo.addNamedPosition(np("outgroup").scaled(cr, 0.525, 0.98, 0.45, 0.06));
+        if (currentComponent.index >= 0)
+        {
+            auto comp = ctag("component", "knob");
+            if (!lab.empty())
+            {
+                elo.addNamedPositionAndLabel(el);
+            }
+            else
+            {
+                elo.addNamedPosition(el);
+            }
 
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_time_left, "left", "Left");
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_time_right, "right", "Right");
-    attachToggleToDeactivated(sdly::delay_params::dly_time_right)
-        ->setBounds(elo.powerButtonPositionFor("right"));
+            if (comp == "knob")
+            {
+                if (!lab.empty())
+                {
+                    layoutWidgetToFloat<jcmp::Knob>(elo, currentComponent.index, nm, lab);
+                }
+                else
+                {
+                    layoutWidgetToFloat<jcmp::Knob>(elo, currentComponent.index, nm);
+                }
+            }
+            else if (comp == "menubutton")
+            {
+                attachMenuButtonToInt(currentComponent.index)->setBounds(elo.positionFor(nm));
+            }
+            else if (comp == "jogupdown")
+            {
+                attachWidgetToInt<jcmp::JogUpDownButton>(currentComponent.index)
+                    ->setBounds(elo.positionFor(nm));
+            }
+            else
+            {
+                SCLOG("Unknown component : " << comp);
+            }
 
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_input_channel, "input", "Input");
+            if (metadata[currentComponent.index].canDeactivate)
+            {
+                elo.addPowerButtonPositionTo(nm, 8);
+                attachToggleToDeactivated(currentComponent.index)
+                    ->setBounds(elo.powerButtonPositionFor(nm));
+            }
+        }
+        else
+        {
+            auto comp = ctag("component", "");
+            if (comp.empty())
+                throw std::runtime_error("No Component");
+            if (comp == "subheader")
+            {
+                elo.addNamedPosition(el);
+                addTypedLabel<jcmp::RuledLabel>(lab)->setBounds(elo.positionFor(nm));
+            }
+            else if (comp == "label")
+            {
+                elo.addNamedPosition(el);
+                addLabel(lab)->setBounds(elo.positionFor(nm));
+            }
+            else
+            {
+                SCLOG("Unknown component : " << comp);
+            }
+        }
 
-    addTypedLabel<jcmp::RuledLabel>("Feedback")->setBounds(elo.positionFor("fbgroup"));
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_feedback, "fb", "Feedback");
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_crossfeed, "cf", "Cross");
-
-    addTypedLabel<jcmp::RuledLabel>("Filter")->setBounds(elo.positionFor("filtgroup"));
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_lowcut, "lc", "Low Cut");
-    attachToggleToDeactivated(sdly::delay_params::dly_lowcut)
-        ->setBounds(elo.powerButtonPositionFor("lc"));
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_highcut, "hc", "High Cut");
-    attachToggleToDeactivated(sdly::delay_params::dly_highcut)
-        ->setBounds(elo.powerButtonPositionFor("hc"));
-
-    addTypedLabel<jcmp::RuledLabel>("Modulation")->setBounds(elo.positionFor("modgroup"));
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_mod_rate, "modr", "Rate");
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_mod_depth, "modd", "Depth");
-
-    addTypedLabel<jcmp::RuledLabel>("Output")->setBounds(elo.positionFor("outgroup"));
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_width, "width", "Width");
-    layoutWidgetToFloat<jcmp::Knob>(elo, sdly::delay_params::dly_mix, "mix", "Mix");
+        idx++;
+    }
 }
 
 void PartEffectsPane::rebuildDefaultLayout()

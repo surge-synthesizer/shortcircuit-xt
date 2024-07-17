@@ -28,6 +28,8 @@
 #include "ProcessorPane.h"
 #include "components/SCXTEditor.h"
 
+#include "connectors/JSONLayoutConsumer.h"
+
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
 #include "sst/jucegui/components/Label.h"
@@ -177,6 +179,18 @@ void ProcessorPane::rebuildControlsFromDescription()
                     return false;
                 });
         }
+
+        deactivateAttachments[i].reset();
+        if (processorControlDescription.floatControlDescriptions[i].canDeactivate)
+        {
+            auto dat = std::make_unique<bool_attachment_t>(
+                "Deactivate " + processorControlDescription.floatControlDescriptions[i].name,
+                processorView.deactivated[i]);
+            connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue,
+                                         bool_attachment_t, bool_attachment_t::parent_t>(
+                *dat, processorView, this, forZone, index);
+            deactivateAttachments[i] = std::move(dat);
+        }
     }
 
     for (int i = 0; i < processorControlDescription.numIntParams; ++i)
@@ -227,7 +241,8 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_fx_bitcrusher:
-        layoutControlsBitcrusher();
+        // layoutControlsBitcrusher();
+        layoutControlsFromJSON("processors/bitcrusher.json");
         break;
 
     case dsp::processor::proct_eq_morph:
@@ -523,89 +538,123 @@ void ProcessorPane::layoutControlsFastSVF()
 
 void ProcessorPane::layoutControlsWaveshaper()
 {
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
+    auto elo = sst::jucegui::layout::ExplicitLayout();
+    layoutControlsFromJSON("processors/waveshaper.json", elo);
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<locon::extraLargeKnob>(*floatEditors[0], 5, 15);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<locon::mediumKnob>(*floatEditors[1], 87, 5);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<locon::mediumKnob>(*floatEditors[2], 87, 65);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<locon::mediumKnob>(*floatEditors[3], 140, 5);
-
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
-    lo::knob<locon::mediumKnob>(*floatEditors[4], 140, 65);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto hpLight = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    hpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    hpLight->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
-    auto hpBounds = bounds.withLeft(175).withRight(185).withTop(0).withBottom(10);
-    hpLight->setBounds(hpBounds);
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(hpLight));
-
-    attachRebuildToIntAttachment(1);
-    bool hpOn = intAttachments[1]->getValue();
-    floatEditors[3]->item->setEnabled(hpOn);
-
-    auto lpLight = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
-    lpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    lpLight->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
-    auto lpBounds = bounds.withLeft(175).withRight(185).withTop(60).withBottom(70);
-    lpLight->setBounds(lpBounds);
-    intEditors[2] = std::make_unique<intEditor_t>(std::move(lpLight));
-
-    attachRebuildToIntAttachment(2);
-    bool lpOn = intAttachments[2]->getValue();
-    floatEditors[4]->item->setEnabled(lpOn);
-
-    auto ja = getContentAreaComponent()->getLocalBounds();
-    ja = ja.withTop(ja.getBottom() - 22).translated(0, -3).reduced(3, 0);
-
+    // NEED to do a custom for this
     auto wss = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
     editor->configureHasDiscreteMenuBuilder(wss.get());
     wss->popupMenuBuilder->mode =
         sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
     wss->popupMenuBuilder->setGroupList(sst::waveshapers::WaveshaperGroupName());
-    wss->setBounds(ja);
+    wss->setBounds(elo.positionFor("wstype"));
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
 }
 
-void ProcessorPane::layoutControlsBitcrusher()
+void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath)
 {
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
+    auto elo = sst::jucegui::layout::ExplicitLayout();
+    layoutControlsFromJSON(jsonpath, elo);
+}
+
+void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
+                                           sst::jucegui::layout::ExplicitLayout &elo)
+{
+    auto dlyjs = connectors::JSONLayoutLibrary::jsonForComponent(jsonpath);
+    connectors::JSONLayoutConsumer con;
+    try
+    {
+        tao::json::events::from_string(con, dlyjs);
+    }
+    catch (const std::exception &e)
+    {
+        SCLOG("JSON Parsing failed on '" << jsonpath << "' : " << e.what());
+        return;
+    }
+
     namespace jlay = sst::jucegui::layout;
     using np = jlay::ExplicitLayout::NamedPosition;
 
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto elo = jlay::ExplicitLayout();
-    elo.addNamedPositionAndLabel(np("sr").at({10, 5, 50, 50}));
-    elo.addNamedPositionAndLabel(np("bd").at({70, 5, 50, 50}));
-    elo.addNamedPositionAndLabel(np("zp").at({130, 5, 50, 50}));
-    elo.addNamedPositionAndLabel(np("co").at({40, 80, 50, 50}));
-    elo.addNamedPositionAndLabel(np("re").at({100, 80, 50, 50}));
-    elo.addPowerButtonPositionTo("re", 8);
+    int cidx{0};
+    for (const auto &c : con.result)
+    {
+        // Move these to the component
+        auto ctag = [&c](auto key, auto val) -> std::string {
+            auto itv = c.map.find(key);
+            if (itv == c.map.end())
+                return val;
+            return itv->second;
+        };
+        auto ictag = [&c](auto key, auto val) -> int64_t {
+            auto itv = c.intMap.find(key);
+            if (itv == c.intMap.end())
+                return val;
+            return itv->second;
+        };
+        auto cm = ctag("coordinate-system", "absolute");
+        auto tp = ctag("type", "float");
+        auto nm = ctag("name", std::string("anon_") + std::to_string(cidx));
+        auto lb = ctag("label", "");
+        auto comp = ctag("component", "knob");
 
-    bool filterSwitch = intAttachments[0]->getValue();
+        elo.addNamedPositionAndLabel(
+            np(nm).at({c.coords[0], c.coords[1], c.coords[2], c.coords[3]}));
 
-    floatEditors[0] = createAndLayoutLabeledFloatWidget(elo, "sr", floatAttachments[0]);
-    floatEditors[1] = createAndLayoutLabeledFloatWidget(elo, "bd", floatAttachments[1]);
-    floatEditors[2] = createAndLayoutLabeledFloatWidget(elo, "zp", floatAttachments[2]);
-    floatEditors[3] = createAndLayoutLabeledFloatWidget(elo, "co", floatAttachments[3]);
-    floatEditors[4] = createAndLayoutLabeledFloatWidget(elo, "re", floatAttachments[4]);
+        if (tp == "float" && c.index >= 0)
+        {
+            const auto &pmd = processorControlDescription.floatControlDescriptions[c.index];
 
-    floatEditors[3]->item->setEnabled(filterSwitch);
-    floatEditors[4]->item->setEnabled(filterSwitch);
+            if (comp != "knob")
+                SCLOG("WARNING: Implement non-knob json!");
 
-    intEditors[0] = createAndLayoutPowerButton(elo, "re", intAttachments[0]);
-    attachRebuildToIntAttachment(0);
+            auto lm = ctag("label-mode", "auto");
+
+            if (lm == "auto" || lb.empty())
+            {
+                floatEditors[c.index] =
+                    createAndLayoutLabeledFloatWidget(elo, nm, floatAttachments[c.index]);
+            }
+            else
+            {
+                floatEditors[c.index] =
+                    createAndLayoutLabeledFloatWidget(elo, nm, floatAttachments[c.index], lb);
+            }
+
+            if (pmd.canDeactivate)
+            {
+                elo.addPowerButtonPositionTo(nm, 8);
+                auto hpLight =
+                    createWidgetAttachedTo<jcmp::ToggleButton>(deactivateAttachments[c.index]);
+                hpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+                hpLight->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+                hpLight->setBounds(elo.powerButtonPositionFor(nm));
+                floatDeactivateEditors[c.index] = std::make_unique<intEditor_t>(std::move(hpLight));
+                attachRebuildToDeactivateAttachment(c.index);
+                floatEditors[c.index]->item->setEnabled(processorView.deactivated[c.index]);
+            }
+
+            auto ei = ictag("enable-if", -1);
+            if (ei >= 0)
+            {
+                floatEditors[c.index]->item->setEnabled(intAttachments[ei]->getValue());
+            }
+        }
+        else if (tp == "int" && c.index >= 0)
+        {
+            if (comp == "power")
+            {
+                elo.addPowerButtonPositionTo(nm, 8);
+
+                intEditors[c.index] = createAndLayoutPowerButton(elo, nm, intAttachments[c.index]);
+                attachRebuildToIntAttachment(c.index);
+            }
+            else
+            {
+                SCLOG("Unknown int component '" << comp << "'");
+            }
+        }
+        cidx++;
+    }
 }
 
 void ProcessorPane::layoutControlsCorrelatedNoiseGen()
@@ -1035,6 +1084,22 @@ void ProcessorPane::attachRebuildToIntAttachment(int idx)
             });
         }
     });
+}
+
+void ProcessorPane::attachRebuildToDeactivateAttachment(int idx)
+{
+    connectors::addGuiStep(*deactivateAttachments[idx],
+                           [w = juce::Component::SafePointer(this)](auto &a) {
+                               if (w)
+                               {
+                                   juce::Timer::callAfterDelay(0, [w]() {
+                                       if (w)
+                                       {
+                                           w->rebuildControlsFromDescription();
+                                       }
+                                   });
+                               }
+                           });
 }
 
 void ProcessorPane::reapplyStyle()

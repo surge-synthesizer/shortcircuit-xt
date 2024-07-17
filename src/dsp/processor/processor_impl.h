@@ -87,6 +87,14 @@ template <int OSFactor> struct SCXTVFXConfig
         return false;
     }
 
+    static bool isDeactivated(const BaseClass *c, int index)
+    {
+        auto ts = c->deactivated;
+        if (ts)
+            return ts[index];
+        return false;
+    }
+
     static double *getTempoPointer(const BaseClass *c)
     {
         assert(c->getTempoPointer());
@@ -324,6 +332,7 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
     param = fp;
     iparam = ip;
     temposync = &p.isTemposynced;
+    deactivated = p.deactivated.data();
 
     setKeytrack(p.isKeytracked);
 

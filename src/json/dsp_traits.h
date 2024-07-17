@@ -54,6 +54,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                           {"isTemposynced", t.isTemposynced},
                           {"floatParams", t.floatParams},
                           {"intParams", t.intParams},
+                          {"deactivated", t.deactivated},
                           {"isActive", t.isActive}};
                  }
              }),
@@ -80,6 +81,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                      findIf(v, "out", result.outputCubAmp);
                      fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
                      fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
+                     findIf(v, "deactivated", result.deactivated);
                      findOrSet(v, "isActive", false, result.isActive);
                      findOrSet(v, "isKeytracked", false, result.isKeytracked);
                      findOrSet(v, "isTemposynced", false, result.isTemposynced);
