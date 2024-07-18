@@ -1,0 +1,65 @@
+{
+    "defaults": {
+        "coordinate-system": "absolute",
+        "component": "knob",
+        "label-mode": "auto",
+        "type": "float"
+    },
+    "components": [
+        {
+            "index": 0,
+            "coordinates": [
+                5,
+                15,
+                80,
+                80
+            ]
+        },
+        {
+            "index": 1,
+            "coordinates": [
+                87,
+                5,
+                40,
+                40
+            ]
+        },
+        {
+            "index": 2,
+            "coordinates": [
+                87,
+                65,
+                40,
+                40
+            ]
+        },
+        {
+            "index": 3,
+            "coordinates": [
+                140,
+                5,
+                40,
+                40
+            ]
+        },
+        {
+            "index": 4,
+            "coordinates": [
+                140,
+                65,
+                40,
+                40
+            ]
+        },
+        {
+            "name": "wstype",
+            "component": "custom",
+            "coordinates": [
+                10,
+                128,
+                180,
+                22
+            ]
+        }
+    ]
+}

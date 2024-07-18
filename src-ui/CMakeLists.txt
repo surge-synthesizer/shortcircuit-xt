@@ -33,12 +33,23 @@ add_library(${PROJECT_NAME} STATIC
         components/widgets/ShortCircuitMenuButton.cpp
 
         connectors/SCXTResources.cpp
+        connectors/JSONLayoutConsumer.cpp
 
         theme/ColorMap.cpp
         theme/ThemeApplier.cpp
 
         )
 
+message(STATUS "Globbing json-layout directory for cmrc")
+file(GLOB_RECURSE scxt_json_sources
+        LIST_DIRECTORIES false
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+        json-layout/*.json
+)
+cmrc_add_resource_library(scxtui_json_layouts
+        NAMESPACE scxtui_json_layouts
+        ${scxt_json_sources}
+)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-core
@@ -48,6 +59,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
         sst-plugininfra::strnatcmp
         melatonin_inspector
+
+        scxtui_json_layouts
         )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE

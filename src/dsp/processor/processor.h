@@ -191,6 +191,7 @@ struct ProcessorStorage
     float mix{0}, outputCubAmp{zeroDbAmp}; // thats 1.0 / cubrt(maxOutputAmp)
     std::array<float, maxProcessorFloatParams> floatParams;
     std::array<int32_t, maxProcessorIntParams> intParams;
+    std::array<bool, maxProcessorIntParams> deactivated{};
     bool isActive{true};
     bool isKeytracked{false};
     int previousIsKeytracked{-1}; // make this an int and -1 means don't know previous
@@ -308,6 +309,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     engine::MemoryPool *memoryPool{nullptr};
     float *param{nullptr};
     int *iparam{nullptr};
+    const bool *deactivated{nullptr};
     const bool *temposync{nullptr};
     int floatParameterCount{0};
     std::array<sst::basic_blocks::params::ParamMetaData, maxProcessorFloatParams>
