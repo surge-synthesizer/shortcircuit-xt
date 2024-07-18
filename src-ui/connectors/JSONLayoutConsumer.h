@@ -29,6 +29,7 @@
 #define SCXT_SRC_UI_CONNECTORS_JSONLAYOUTCONSUMER_H
 
 #include <string>
+#include <vector>
 
 #include "tao/json/binary_view.hpp"
 #include "tao/json/events/from_string.hpp"
