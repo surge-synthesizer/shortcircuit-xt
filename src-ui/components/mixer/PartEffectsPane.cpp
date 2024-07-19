@@ -382,8 +382,8 @@ void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
             }
             else if (comp == "jogupdown")
             {
-                attachWidgetToInt<jcmp::JogUpDownButton>(currentComponent.index)
-                    ->setBounds(elo.positionFor(nm));
+                // attachWidgetToInt<jcmp::JogUpDownButton>(currentComponent.index)
+                //     ->setBounds(elo.positionFor(nm));
             }
             else
             {
