@@ -90,18 +90,27 @@ void PartEffectsPane::rebuild()
     if (getHeight() < 10)
         return;
 
+#define CS(x)                                                                                      \
+    case engine::AvailableBusEffects::x:                                                           \
+        rebuildFromJSONLibrary("bus-effects/" #x ".json");                                         \
+        break;
+
     switch (t)
     {
-    case engine::AvailableBusEffects::delay:
-        rebuildFromJSONLibrary("bus-effects/delay.json");
-        break;
-    case engine::AvailableBusEffects::phaser:
-        rebuildFromJSONLibrary("bus-effects/phaser.json");
-        break;
-    default:
-        rebuildDefaultLayout();
+        CS(reverb1);
+        CS(reverb2)
+        CS(flanger);
+        CS(delay);
+        CS(phaser);
+        CS(treemonster);
+        CS(bonsai);
+
+    case engine::AvailableBusEffects::none:
+        // Explicitly do nothing
         break;
     }
+
+#undef CS
 
     clearAdditionalHamburgerComponents();
     bool hasTemposync{false};
@@ -292,15 +301,24 @@ template <typename T> juce::Component *PartEffectsPane::addTypedLabel(const std:
 
 void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
 {
+    bool parseWorked{false};
     auto dlyjs = connectors::JSONLayoutLibrary::jsonForComponent(path);
     connectors::JSONLayoutConsumer con;
     try
     {
         tao::json::events::from_string(con, dlyjs);
+        parseWorked = !con.result.empty();
     }
     catch (const std::exception &e)
     {
         SCLOG("JSON Parsing failed on '" << path << "' : " << e.what());
+    }
+
+    if (!parseWorked)
+    {
+        SCLOG("Parsing and loading components for json '"
+              << path << "' didn't yield layout. Using default.");
+        rebuildDefaultLayout();
         return;
     }
 

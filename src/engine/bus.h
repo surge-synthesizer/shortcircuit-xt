@@ -66,6 +66,21 @@ enum BusAddress : int16_t
 
 struct Engine;
 
+/*
+ * When you add an effect here you also need to add it to
+ * - bus.cpp
+ *      - as an include of the effect
+ *      - in createEffect
+ *      - in the toStringAvaialble
+ * - src-ui/json-layout/bus-effects
+ *      - add 'foo.json' as a blank ("{}") json file
+ * - src-ui/componetns/Mixer.cpp
+ *      - the menu switch
+ *      - the call to 'add'
+ *  - src-ui/components/mixer/PartEffectsPane.cpop
+ *      - in the rebuild switch with the name of the json
+ *
+ */
 enum AvailableBusEffects
 {
     none,
