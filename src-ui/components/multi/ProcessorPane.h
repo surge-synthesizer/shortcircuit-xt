@@ -101,8 +101,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsRingMod();
     void layoutControlsPhaseMod();
 
-    void layoutControlsFromJSON(const std::string &jsonpath);
-    void layoutControlsFromJSON(const std::string &jsonpath,
+    bool layoutControlsFromJSON(const std::string &jsonpath);
+    bool layoutControlsFromJSON(const std::string &jsonpath,
                                 sst::jucegui::layout::ExplicitLayout &elo);
 
     template <typename T = sst::jucegui::components::Knob>
