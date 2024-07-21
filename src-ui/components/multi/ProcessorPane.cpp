@@ -293,6 +293,11 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsPhaseMod();
         break;
 
+    case dsp::processor::proct_noise_am:
+        if (!layoutControlsFromJSON("processors/noiseam.json"))
+            layoutControls();
+        break;
+
     default:
         layoutControls();
         break;
@@ -551,13 +556,13 @@ void ProcessorPane::layoutControlsWaveshaper()
     intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
 }
 
-void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath)
+bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath)
 {
     auto elo = sst::jucegui::layout::ExplicitLayout();
-    layoutControlsFromJSON(jsonpath, elo);
+    return layoutControlsFromJSON(jsonpath, elo);
 }
 
-void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
+bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                                            sst::jucegui::layout::ExplicitLayout &elo)
 {
     auto dlyjs = connectors::JSONLayoutLibrary::jsonForComponent(jsonpath);
@@ -569,7 +574,13 @@ void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
     catch (const std::exception &e)
     {
         SCLOG("JSON Parsing failed on '" << jsonpath << "' : " << e.what());
-        return;
+        return false;
+    }
+
+    if (con.result.empty())
+    {
+        SCLOG("JSON Parsing produced no components on '" << jsonpath << "'");
+        return false;
     }
 
     namespace jlay = sst::jucegui::layout;
@@ -602,6 +613,7 @@ void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
 
         if (tp == "float" && c.index >= 0)
         {
+            assert(floatAttachments[c.index]);
             const auto &pmd = processorControlDescription.floatControlDescriptions[c.index];
 
             if (comp != "knob")
@@ -641,12 +653,27 @@ void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
         }
         else if (tp == "int" && c.index >= 0)
         {
+            assert(intAttachments[c.index]);
             if (comp == "power")
             {
                 elo.addPowerButtonPositionTo(nm, 8);
 
                 intEditors[c.index] = createAndLayoutPowerButton(elo, nm, intAttachments[c.index]);
                 attachRebuildToIntAttachment(c.index);
+            }
+            else if (comp == "multiswitch")
+            {
+                auto ms = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[c.index]);
+                attachRebuildToIntAttachment(c.index);
+                ms->setBounds(elo.positionFor(nm));
+                if (!lb.empty())
+                {
+                    elo.addLabelPositionTo(nm);
+                    auto lw = createLabel(lb);
+                    lw->setBounds(elo.labelPositionFor(nm));
+                    otherEditors.push_back(std::move(lw));
+                }
+                intEditors[c.index] = std::make_unique<intEditor_t>(std::move(ms));
             }
             else
             {
@@ -655,6 +682,7 @@ void ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
         }
         cidx++;
     }
+    return true;
 }
 
 void ProcessorPane::layoutControlsCorrelatedNoiseGen()
