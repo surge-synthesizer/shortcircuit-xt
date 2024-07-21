@@ -185,6 +185,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         return std::move(res);
     }
 
+    void createHamburgerStereo(int attachmentId);
+
     void resetControls();
 
     void resized() override;
