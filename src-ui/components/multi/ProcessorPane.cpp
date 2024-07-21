@@ -236,15 +236,6 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsEQNBandParm();
         break;
 
-    case dsp::processor::proct_fx_waveshaper:
-        layoutControlsWaveshaper();
-        break;
-
-    case dsp::processor::proct_fx_bitcrusher:
-        // layoutControlsBitcrusher();
-        layoutControlsFromJSON("processors/bitcrusher.json");
-        break;
-
     case dsp::processor::proct_eq_morph:
         layoutControlsEQMorph();
         break;
@@ -289,13 +280,21 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsRingMod();
         break;
 
-    case dsp::processor::proct_osc_phasemod:
-        layoutControlsPhaseMod();
+    case dsp::processor::proct_fx_bitcrusher:
+        layoutControlsFromJSONOrDefault("processors/bitcrusher.json");
         break;
 
     case dsp::processor::proct_noise_am:
-        if (!layoutControlsFromJSON("processors/noiseam.json"))
-            layoutControls();
+        layoutControlsFromJSONOrDefault("processors/noiseam.json");
+        break;
+
+    case dsp::processor::proct_osc_phasemod:
+        layoutControlsFromJSONOrDefault("processors/phasemod.json");
+        break;
+
+    case dsp::processor::proct_fx_waveshaper:
+        // Does JSON internally to allow custom widget creation
+        layoutControlsWaveshaper();
         break;
 
     default:
@@ -654,6 +653,7 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
         else if (tp == "int" && c.index >= 0)
         {
             assert(intAttachments[c.index]);
+            bool attemptLabel{false};
             if (comp == "power")
             {
                 elo.addPowerButtonPositionTo(nm, 8);
@@ -666,19 +666,48 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                 auto ms = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[c.index]);
                 attachRebuildToIntAttachment(c.index);
                 ms->setBounds(elo.positionFor(nm));
-                if (!lb.empty())
-                {
-                    elo.addLabelPositionTo(nm);
-                    auto lw = createLabel(lb);
-                    lw->setBounds(elo.labelPositionFor(nm));
-                    otherEditors.push_back(std::move(lw));
-                }
                 intEditors[c.index] = std::make_unique<intEditor_t>(std::move(ms));
+                attemptLabel = true;
+            }
+            else if (comp == "jogupdown")
+            {
+                auto ms = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[c.index]);
+                attachRebuildToIntAttachment(c.index);
+                ms->setBounds(elo.positionFor(nm));
+                intEditors[c.index] = std::make_unique<intEditor_t>(std::move(ms));
+                attemptLabel = true;
             }
             else
             {
                 SCLOG("Unknown int component '" << comp << "'");
             }
+
+            if (attemptLabel && !lb.empty())
+            {
+                elo.addLabelPositionTo(nm);
+                auto lw = createLabel(lb);
+                lw->setBounds(elo.labelPositionFor(nm));
+                lw->setJustification(juce::Justification::centred);
+                otherEditors.push_back(std::move(lw));
+            }
+        }
+        else if (c.index < 0)
+        {
+            if (comp == "label")
+            {
+                auto lw = createLabel(lb);
+                lw->setBounds(elo.positionFor(nm));
+                lw->setJustification(juce::Justification::centredLeft);
+                otherEditors.push_back(std::move(lw));
+            }
+            else
+            {
+                SCLOG("Unknown free component of type '" << comp << "'");
+            }
+        }
+        else
+        {
+            SCLOG("Index >0 and type is unknown value type '" << tp << "'");
         }
         cidx++;
     }

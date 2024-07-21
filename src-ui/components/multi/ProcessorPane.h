@@ -104,6 +104,11 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     bool layoutControlsFromJSON(const std::string &jsonpath);
     bool layoutControlsFromJSON(const std::string &jsonpath,
                                 sst::jucegui::layout::ExplicitLayout &elo);
+    void layoutControlsFromJSONOrDefault(const std::string &jsonpath)
+    {
+        if (!layoutControlsFromJSON(jsonpath))
+            layoutControls();
+    }
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
