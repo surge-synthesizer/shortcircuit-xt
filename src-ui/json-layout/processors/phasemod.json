@@ -1,0 +1,83 @@
+{
+    "defaults": {
+        "coordinate-system": "absolute",
+        "component": "knob",
+        "label-mode": "auto",
+        "type": "float"
+    },
+    "components": [
+        {
+            "index": 0,
+            "coordinates": [
+                10,
+                5,
+                70,
+                70
+            ]
+        },
+        {
+            "index": 1,
+            "coordinates": [
+                100,
+                5,
+                70,
+                70
+            ]
+        },
+        {
+            "type": "int",
+            "component": "jogupdown",
+            "index": 0,
+            "coordinates": [
+                20,
+                95,
+                50,
+                20
+            ]
+        },
+        {
+            "type": "int",
+            "component": "jogupdown",
+            "index": 1,
+            "coordinates": [
+                20,
+                115,
+                50,
+                20
+            ],
+            "comment": "we could put label here but it is then litited to knob width"
+        },
+        {
+            "component": "label",
+            "label": "Frequency Ratio",
+            "coordinates": [
+                5,
+                135,
+                70,
+                20
+            ]
+        },
+        {
+            "comment": "free standing label for numerator and denominator as an example",
+            "component": "label",
+            "label": "N",
+            "coordinates": [
+                10,
+                95,
+                20,
+                20
+            ]
+        },
+        {
+            "comment": "free standing label for numerator and denominator as an example",
+            "component": "label",
+            "label": "D",
+            "coordinates": [
+                10,
+                115,
+                20,
+                20
+            ]
+        }
+    ]
+}
