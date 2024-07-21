@@ -406,12 +406,7 @@ void ProcessorPane::layoutControlsSimpleDelay()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
-    attachRebuildToIntAttachment(0);
+    createHamburgerStereo(0);
     bool stereoSwitch = intAttachments[0]->getValue();
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
@@ -483,12 +478,7 @@ void ProcessorPane::layoutControlsSurgeFilters()
 
 void ProcessorPane::layoutControlsFastSVF()
 {
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
-    attachRebuildToIntAttachment(1);
+    createHamburgerStereo(1);
     bool stereoSwitch = intAttachments[1]->getValue();
 
     namespace lo = theme::layout;
@@ -719,14 +709,7 @@ void ProcessorPane::layoutControlsCorrelatedNoiseGen()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    // Rather than std::move to intEditors[0] we hand the toggle button to the
-    // main pane as an additional hamburger component
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
-    attachRebuildToIntAttachment(0);
+    createHamburgerStereo(0);
     bool stereoSwitch = intAttachments[0]->getValue();
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
@@ -752,12 +735,7 @@ void ProcessorPane::layoutControlsStringResonator()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
-    attachRebuildToIntAttachment(0);
+    createHamburgerStereo(0);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto dual = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
@@ -814,13 +792,7 @@ void ProcessorPane::layoutControlsStaticPhaser()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
-    attachRebuildToIntAttachment(1);
-
+    createHamburgerStereo(1);
     bool stereoSwitch = intAttachments[1]->getValue();
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
@@ -861,11 +833,7 @@ void ProcessorPane::LayoutControlsTremolo()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
+    createHamburgerStereo(2);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[1]);
@@ -902,11 +870,7 @@ void ProcessorPane::layoutControlsPhaser()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
+    createHamburgerStereo(1);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
@@ -1005,11 +969,7 @@ void ProcessorPane::layoutControlsChorus()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
+    createHamburgerStereo(1);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
@@ -1035,12 +995,7 @@ void ProcessorPane::layoutControlsFMFilter()
     namespace lo = theme::layout;
     namespace locon = lo::constants;
 
-    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
-    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
-    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
-    addAdditionalHamburgerComponent(std::move(stereo));
-    attachRebuildToIntAttachment(0);
+    createHamburgerStereo(0);
 
     bool stereoSwitch = intAttachments[0]->getValue();
 
@@ -1126,6 +1081,16 @@ void ProcessorPane::layoutControlsPhaseMod()
     auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
     denom->setBounds(denomBounds);
     intEditors[1] = std::make_unique<intEditor_t>(std::move(denom));
+}
+
+void ProcessorPane::createHamburgerStereo(int attachmentId)
+{
+    auto stereo = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[attachmentId]);
+    stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+    stereo->setGlyph(jcmp::GlyphPainter::STEREO);
+    stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    addAdditionalHamburgerComponent(std::move(stereo));
+    attachRebuildToIntAttachment(attachmentId);
 }
 
 void ProcessorPane::attachRebuildToIntAttachment(int idx)
