@@ -33,6 +33,7 @@
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/jucegui/layouts/ExplicitLayout.h"
 #include "sst/waveshapers/WaveshaperConfiguration.h"
@@ -189,6 +190,7 @@ void ProcessorPane::rebuildControlsFromDescription()
             connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue,
                                          bool_attachment_t, bool_attachment_t::parent_t>(
                 *dat, processorView, this, forZone, index);
+            dat->isInverted = true; // on means not deactivated
             deactivateAttachments[i] = std::move(dat);
         }
     }
@@ -220,10 +222,6 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     case dsp::processor::proct_fx_microgate:
         layoutControlsMicroGate();
-        break;
-
-    case dsp::processor::proct_fx_simple_delay:
-        layoutControlsSimpleDelay();
         break;
 
     case dsp::processor::proct_CytomicSVF:
@@ -290,6 +288,10 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     case dsp::processor::proct_osc_phasemod:
         layoutControlsFromJSONOrDefault("processors/phasemod.json");
+        break;
+
+    case dsp::processor::proct_fx_simple_delay:
+        layoutControlsFromJSON("processors/simpledelay.json");
         break;
 
     case dsp::processor::proct_fx_waveshaper:
@@ -399,39 +401,6 @@ void ProcessorPane::layoutControls()
             lb = lb.translated(-getContentArea().getWidth(), kw + labelHeight);
         }
     }
-}
-
-void ProcessorPane::layoutControlsSimpleDelay()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(0);
-    bool stereoSwitch = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], floatAttachments[5]->getLabel());
-
-    if (stereoSwitch)
-    {
-        lo::knob<45>(*floatEditors[0], 5, 5);
-        lo::knob<45>(*floatEditors[1], 70, 5);
-        floatEditors[3]->item->setEnabled(true);
-    }
-    else
-    {
-        lo::knob<45>(*floatEditors[0], 38, 5);
-        floatEditors[3]->item->setEnabled(false);
-    }
-
-    lo::knob<45>(*floatEditors[2], 140, 5);
-    lo::knob<45>(*floatEditors[3], 140, 85);
-    lo::knob<45>(*floatEditors[4], 5, 85);
-    lo::knob<45>(*floatEditors[5], 70, 85);
 }
 
 // May want to break this up
@@ -597,6 +566,26 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
         auto lb = ctag("label", "");
         auto comp = ctag("component", "knob");
 
+        auto ei = ictag("display-if", -1);
+        if (ei >= 0)
+        {
+            auto eiv = intAttachments[ei]->getValue();
+            if (!eiv)
+            {
+                continue;
+            }
+        }
+
+        ei = ictag("display-unless", -1);
+        if (ei >= 0)
+        {
+            auto eiv = intAttachments[ei]->getValue();
+            if (eiv)
+            {
+                continue;
+            }
+        }
+
         elo.addNamedPositionAndLabel(
             np(nm).at({c.coords[0], c.coords[1], c.coords[2], c.coords[3]}));
 
@@ -608,7 +597,7 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
             if (comp != "knob")
                 SCLOG("WARNING: Implement non-knob json!");
 
-            auto lm = ctag("label-mode", "auto");
+            auto lm = ctag("label-mode", "");
 
             if (lm == "auto" || lb.empty())
             {
@@ -631,7 +620,7 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                 hpLight->setBounds(elo.powerButtonPositionFor(nm));
                 floatDeactivateEditors[c.index] = std::make_unique<intEditor_t>(std::move(hpLight));
                 attachRebuildToDeactivateAttachment(c.index);
-                floatEditors[c.index]->item->setEnabled(processorView.deactivated[c.index]);
+                floatEditors[c.index]->item->setEnabled(!processorView.deactivated[c.index]);
             }
 
             auto ei = ictag("enable-if", -1);
@@ -650,6 +639,10 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
 
                 intEditors[c.index] = createAndLayoutPowerButton(elo, nm, intAttachments[c.index]);
                 attachRebuildToIntAttachment(c.index);
+            }
+            else if (comp == "hamburger-stereo")
+            {
+                createHamburgerStereo(c.index);
             }
             else if (comp == "multiswitch")
             {
@@ -689,6 +682,16 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                 lw->setBounds(elo.positionFor(nm));
                 lw->setJustification(juce::Justification::centredLeft);
                 otherEditors.push_back(std::move(lw));
+            }
+            else if (comp == "subheader")
+            {
+                auto lw = createLabel<jcmp::RuledLabel>(lb);
+                lw->setBounds(elo.positionFor(nm));
+                otherEditors.push_back(std::move(lw));
+            }
+            else if (comp == "custom")
+            {
+                // Up to you!
             }
             else
             {
