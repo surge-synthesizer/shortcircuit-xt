@@ -1,0 +1,86 @@
+{
+    "defaults": {
+        "coordinate-system": "absolute",
+        "component": "knob",
+        "type": "float"
+    },
+    "components": [
+        {
+            "index": 0,
+            "coordinates": [
+                5,
+                25,
+                60,
+                60
+            ],
+            "display-if": 1
+        },
+        {
+            "index": 0,
+            "coordinates": [
+                25,
+                15,
+                80,
+                80
+            ],
+            "display-unless": 1
+        },
+        {
+            "index": 1,
+            "coordinates": [
+                70,
+                25,
+                60,
+                60
+            ],
+            "display-if": 1
+        },
+        {
+            "index": 2,
+            "coordinates": [
+                138,
+                2,
+                40,
+                40
+            ],
+            "label": "Res"
+        },
+        {
+            "index": 3,
+            "coordinates": [
+                138,
+                60,
+                40,
+                40
+            ],
+            "label": "Shelf"
+        },
+        {
+            "type": "int",
+            "index": 1,
+            "component": "hamburger-stereo"
+        },
+        {
+            "type": "int",
+            "index": 0,
+            "component": "jogupdown",
+            "coordinates": [
+                3,
+                128,
+                90,
+                22
+            ]
+        },
+        {
+            "type": "int",
+            "index": 2,
+            "component": "jogupdown",
+            "coordinates": [
+                96,
+                128,
+                90,
+                22
+            ]
+        }
+    ]
+}

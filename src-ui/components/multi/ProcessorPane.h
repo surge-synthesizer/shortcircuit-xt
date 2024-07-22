@@ -98,7 +98,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsChorus();
     void layoutControlsFMFilter();
     void layoutControlsRingMod();
-    void layoutControlsPhaseMod();
 
     bool layoutControlsFromJSON(const std::string &jsonpath);
     bool layoutControlsFromJSON(const std::string &jsonpath,
