@@ -190,8 +190,8 @@ struct ProcessorStorage
     static constexpr float zeroDbAmp{0.5011872336272724};
     float mix{0}, outputCubAmp{zeroDbAmp}; // thats 1.0 / cubrt(maxOutputAmp)
     std::array<float, maxProcessorFloatParams> floatParams;
+    std::array<bool, maxProcessorFloatParams> deactivated{};
     std::array<int32_t, maxProcessorIntParams> intParams;
-    std::array<bool, maxProcessorIntParams> deactivated{};
     bool isActive{true};
     bool isKeytracked{false};
     int previousIsKeytracked{-1}; // make this an int and -1 means don't know previous
