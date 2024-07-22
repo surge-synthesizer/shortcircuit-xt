@@ -447,56 +447,15 @@ void ProcessorPane::layoutControlsSurgeFilters()
 
 void ProcessorPane::layoutControlsFastSVF()
 {
-    createHamburgerStereo(1);
-    bool stereoSwitch = intAttachments[1]->getValue();
-
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    auto bd = getContentArea();
-    auto rest = bd.withTrimmedLeft(60).withHeight(55);
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-
-    if (stereoSwitch)
+    if (!layoutControlsFromJSON("processors/fastsvf.json"))
     {
-        lo::knob<locon::largeKnob>(*floatEditors[0], 5, 5);
-        lo::knob<locon::largeKnob>(*floatEditors[1], 70, 45);
-    }
-    else
-    {
-        lo::knob<locon::extraLargeKnob>(*floatEditors[0], 35, 15);
+        SCLOG("Failed to layout SVF; Reverting to default");
+        layoutControls();
+        return;
     }
 
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<locon::mediumKnob>(*floatEditors[2], 135, 5);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<locon::mediumKnob>(*floatEditors[3], 135, 60);
-    floatEditors[3]->item->setEnabled(false);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto slopeSwitch = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
-    slopeSwitch->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    slopeSwitch->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
-    auto slopeBounds = bounds.withLeft(175).withRight(185).withTop(5).withBottom(15);
-    slopeSwitch->setBounds(slopeBounds);
-    intEditors[2] = std::make_unique<intEditor_t>(std::move(slopeSwitch));
-
-    bounds = bounds.withTop(bounds.getBottom() - 22).translated(0, -3).reduced(3, 0);
-
-    auto filterMode = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
-    filterMode->setBounds(bounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(filterMode));
-    attachRebuildToIntAttachment(0);
     auto modeSwitch = intAttachments[0]->getValue();
-
-    if (modeSwitch > 5)
-    {
-        floatEditors[3]->item->setEnabled(true);
-    }
+    floatEditors[3]->item->setEnabled(modeSwitch > 5);
 }
 
 void ProcessorPane::layoutControlsWaveshaper()
@@ -1048,30 +1007,6 @@ void ProcessorPane::layoutControlsRingMod()
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
     lo::knob<locon::extraLargeKnob>(*floatEditors[0], 30, 15);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto numBounds = bounds.withTop(35).withBottom(57).withLeft(130).withRight(180);
-    auto num = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
-    num->setBounds(numBounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(num));
-
-    auto denomBounds = bounds.withTop(62).withBottom(84).withLeft(130).withRight(180);
-    auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    denom->setBounds(denomBounds);
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(denom));
-}
-
-void ProcessorPane::layoutControlsPhaseMod()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<locon::largeKnob>(*floatEditors[0], 5, 5);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<locon::largeKnob>(*floatEditors[1], 60, 60);
 
     auto bounds = getContentAreaComponent()->getLocalBounds();
 
