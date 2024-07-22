@@ -83,7 +83,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     void layoutControls();
     void layoutControlsMicroGate();
-    void layoutControlsSimpleDelay();
     void layoutControlsSurgeFilters();
     void layoutControlsFastSVF();
     void layoutControlsWaveshaper();
@@ -177,9 +176,10 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         return std::move(res);
     }
 
-    std::unique_ptr<sst::jucegui::components::Label> createLabel(const std::string &txt)
+    template <typename T = sst::jucegui::components::Label>
+    std::unique_ptr<T> createLabel(const std::string &txt)
     {
-        auto res = std::make_unique<sst::jucegui::components::Label>();
+        auto res = std::make_unique<T>();
         res->setText(txt);
         getContentAreaComponent()->addAndMakeVisible(*res);
         return std::move(res);
