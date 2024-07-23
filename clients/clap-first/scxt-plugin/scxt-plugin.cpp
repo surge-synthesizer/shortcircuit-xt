@@ -133,7 +133,7 @@ bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
     {
         info->id = 0;
         info->in_place_pair = CLAP_INVALID_ID;
-        strncpy(info->name, "Main Output", sizeof(info->name));
+        strncpy(info->name, "Main Out", sizeof(info->name));
         info->flags = CLAP_AUDIO_PORT_IS_MAIN;
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;
@@ -142,7 +142,7 @@ bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
     {
         info->id = 1000 + index - 1;
         info->in_place_pair = CLAP_INVALID_ID;
-        snprintf(info->name, sizeof(info->name) - 1, "Output %02d", index);
+        snprintf(info->name, sizeof(info->name) - 1, "Out %d", index);
         info->flags = 0;
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;
