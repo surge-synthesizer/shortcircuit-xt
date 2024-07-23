@@ -178,7 +178,7 @@ template <> struct scxt_traits<scxt::engine::Group>
         findIf(v, "outputInfo", group.outputInfo);
         findIf(v, "processorStorage", group.processorStorage);
         findIf(v, "routingTable", group.routingTable);
-        findIf(v, "modulatorStorage", group.modulatorStorage);
+        findIfArray(v, "modulatorStorage", group.modulatorStorage);
         group.clearZones();
 
         auto vzones = v.at("zones").get_array();
@@ -374,7 +374,7 @@ template <> struct scxt_traits<scxt::engine::Zone>
         fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
 
         findIf(v, "routingTable", zone.routingTable);
-        findIf(v, "modulatorStorage", zone.modulatorStorage);
+        findIfArray(v, "modulatorStorage", zone.modulatorStorage);
         findOrDefault(v, "aegStorage", zone.egStorage[0]);
         findOrDefault(v, "eg2Storage", zone.egStorage[1]);
     }

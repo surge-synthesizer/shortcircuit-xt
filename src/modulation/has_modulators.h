@@ -53,7 +53,7 @@ template <typename T> struct HasModulators
         CURVE,
         ENV,
         MSEG
-    } lfoEvaluator[lfosPerObject]{STEP, STEP, STEP}; // FIXME
+    } lfoEvaluator[lfosPerObject]{};
     scxt::modulation::modulators::StepLFO stepLfos[lfosPerObject];
     scxt::modulation::modulators::CurveLFO curveLfos[lfosPerObject];
     scxt::modulation::modulators::EnvLFO envLfos[lfosPerObject];

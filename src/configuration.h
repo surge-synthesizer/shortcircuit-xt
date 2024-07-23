@@ -62,10 +62,10 @@ static constexpr uint16_t maxSendsPerBus{4};
 static constexpr size_t maxProcessorFloatParams{9};
 static constexpr size_t maxProcessorIntParams{5};
 
-static constexpr uint16_t lfosPerZone{3};
+static constexpr uint16_t lfosPerZone{4};
 static constexpr uint16_t maxSamplesPerZone{16};
 
-static constexpr uint16_t lfosPerGroup{3};
+static constexpr uint16_t lfosPerGroup{4};
 static constexpr uint16_t egPerGroup{2};
 
 static constexpr uint16_t processorsPerZoneAndGroup{4};

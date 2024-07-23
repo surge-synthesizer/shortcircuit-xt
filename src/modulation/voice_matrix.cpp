@@ -125,7 +125,7 @@ float randomRoll(bool bipolar, int distribution)
 void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z,
                                     voice::Voice &v)
 {
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < lfosPerZone; ++i)
     {
         switch (v.lfoEvaluator[i])
         {
