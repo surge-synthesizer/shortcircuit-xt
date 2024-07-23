@@ -689,7 +689,7 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
     // setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
     hasHamburger = true;
     isTabbed = true;
-    tabNames = {"LFO 1", "LFO 2", "LFO 3"};
+    tabNames = {"LFO 1", "LFO 2", "LFO 3", "LFO 4"};
 
     resetTabState();
 

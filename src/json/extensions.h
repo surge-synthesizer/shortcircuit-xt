@@ -75,4 +75,14 @@ void fromArrayWithSizeDifference(const tao::json::basic_value<Traits> &s, Target
         arr[i].to(t[i]);
     }
 }
+
+template <typename R, typename Target>
+void findIfArray(const R &v, const std::string &key, Target &t)
+{
+    auto vs = v.find(key);
+    if (vs)
+    {
+        fromArrayWithSizeDifference(*vs, t);
+    }
+}
 #endif // SHORTCIRCUIT_EXTENSIONS_H
