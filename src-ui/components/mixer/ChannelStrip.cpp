@@ -280,7 +280,7 @@ void ChannelStrip::effectsChanged()
 void ChannelStrip::showAuxRouting(int idx)
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Aux " + std::to_string(idx + 1) + " routing");
+    p.addSectionHeader("Aux " + std::to_string(idx + 1) + " Routing");
     p.addSeparator();
 
     // if you change the routing change this menu too
@@ -307,7 +307,7 @@ void ChannelStrip::showAuxRouting(int idx)
 void ChannelStrip::showPluginOutput()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Plugin routing");
+    p.addSectionHeader("Plugin Routing");
     p.addSeparator();
 
     // if you change the routing change this menu too
@@ -318,7 +318,7 @@ void ChannelStrip::showPluginOutput()
         std::string label{"Main"};
         if (i > 0)
         {
-            label = "Output " + std::to_string(i);
+            label = "Out " + std::to_string(i + 1);
         }
         p.addItem(label, true, i == cr, [w = juce::Component::SafePointer(this), i]() {
             if (!w)
@@ -341,6 +341,6 @@ void ChannelStrip::labelPluginOutput()
     if (cr == 0)
         outputMenu->setLabel("MAIN");
     else
-        outputMenu->setLabel("OUTPUT " + std::to_string(cr));
+        outputMenu->setLabel("OUT " + std::to_string(cr + 1));
 }
 } // namespace scxt::ui::mixer
