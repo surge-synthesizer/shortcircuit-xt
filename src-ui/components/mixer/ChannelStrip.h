@@ -115,5 +115,5 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
         vuR = R;
     }
 };
-}; // namespace scxt::ui::mixer
+};     // namespace scxt::ui::mixer
 #endif // SHORTCIRCUITXT_CHANNELSTRIP_H
