@@ -91,6 +91,7 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
 
     void mouseDown(const juce::MouseEvent &) override;
     void showAuxRouting(int idx);
+    void resetAuxRoutingGlyph(int idx);
     void labelPluginOutput();
     void showPluginOutput();
 
@@ -114,5 +115,5 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
         vuR = R;
     }
 };
-};     // namespace scxt::ui::mixer
+}; // namespace scxt::ui::mixer
 #endif // SHORTCIRCUITXT_CHANNELSTRIP_H
