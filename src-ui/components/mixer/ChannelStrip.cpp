@@ -128,11 +128,13 @@ ChannelStrip::ChannelStrip(scxt::ui::SCXTEditor *e, MixerScreen *m, int bi, BusT
         idx = 0;
         for (auto &axt : auxPrePost)
         {
-            axt = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::ARROW_L_TO_R);
+            axt = std::make_unique<jcmp::GlyphButton>(
+                jcmp::GlyphPainter::GlyphType::ROUTING_PRE_FADER);
             axt->setOnCallback([w = juce::Component::SafePointer(this), idx]() {
                 if (w)
                     w->showAuxRouting(idx);
             });
+            resetAuxRoutingGlyph(idx);
             addAndMakeVisible(*axt);
             idx++;
         }
@@ -218,9 +220,11 @@ void ChannelStrip::resized()
         fx = fx.translated(0, fxheight);
         for (int i = 0; i < auxSlider.size(); ++i)
         {
-            auto tr = fx.withTrimmedBottom(1).withWidth(10);
-            auto mr = fx.withTrimmedBottom(1).withTrimmedLeft(11).withTrimmedRight(11);
+            auto tr = fx.withTrimmedBottom(1).withWidth(9);
+            auto mr = fx.withTrimmedBottom(1).withTrimmedLeft(11).withTrimmedRight(14);
             auto gr = fx.withTrimmedBottom(1).withLeft(mr.getRight() + 1);
+            auto gh = gr.getHeight() - gr.getWidth();
+            gr = gr.withTrimmedTop(gh / 2).withTrimmedBottom(gh / 2);
             auxToggle[i]->setBounds(tr);
             auxSlider[i]->setBounds(mr);
             auxPrePost[i]->setBounds(gr);
@@ -263,6 +267,26 @@ void ChannelStrip::resized()
     }
 }
 
+void ChannelStrip::resetAuxRoutingGlyph(int idx)
+{
+    assert(auxPrePost[idx]);
+    const auto &w = auxPrePost[idx];
+    auto ar = mixer->busSendData[busIndex].auxLocation[idx];
+    switch (ar)
+    {
+
+    case engine::Bus::BusSendStorage::PRE_FX:
+        w->glyph = sst::jucegui::components::GlyphPainter::ROUTING_PRE_FX;
+        break;
+    case engine::Bus::BusSendStorage::POST_FX_PRE_VCA:
+        w->glyph = sst::jucegui::components::GlyphPainter::ROUTING_PRE_FADER;
+        break;
+    case engine::Bus::BusSendStorage::POST_VCA:
+        w->glyph = sst::jucegui::components::GlyphPainter::ROUTING_POST_FADER;
+        break;
+    }
+    w->repaint();
+}
 void ChannelStrip::effectsChanged()
 {
     auto &bed = mixer->busEffectsData[busIndex];
@@ -298,6 +322,7 @@ void ChannelStrip::showAuxRouting(int idx)
                 (engine::Bus::BusSendStorage::AuxLocation)i;
 
             w->mixer->sendBusSendStorage(w->busIndex);
+            w->resetAuxRoutingGlyph(idx);
         });
     }
 
