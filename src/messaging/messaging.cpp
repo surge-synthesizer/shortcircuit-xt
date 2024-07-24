@@ -51,7 +51,7 @@ void MessageController::parseAudioMessageOnSerializationThread(
     case audio::a2s_structure_refresh:
         // TODO: Factor this a bit better
         serializationSendToClient(client::s2c_send_pgz_structure,
-                                  engine.getPartGroupZoneStructure(-1), *this);
+                                  engine.getPartGroupZoneStructure(), *this);
         break;
     case audio::a2s_processor_refresh:
         SCLOG("Processor Refresh Requestioned. TODO: Minimize this message "

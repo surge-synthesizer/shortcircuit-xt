@@ -67,8 +67,17 @@ static constexpr uint16_t maxSamplesPerZone{16};
 
 static constexpr uint16_t lfosPerGroup{4};
 static constexpr uint16_t egPerGroup{2};
-
 static constexpr uint16_t processorsPerZoneAndGroup{4};
+
+/*
+ * This namespace guards some very useful debugging guards and logs in the code.
+ */
+namespace log
+{
+static constexpr bool selection{false};
+static constexpr bool uiStructure{false};
+static constexpr bool groupZoneMutation{false};
+} // namespace log
 
 } // namespace scxt
 #endif // __SCXT__CONFIGURATION_H

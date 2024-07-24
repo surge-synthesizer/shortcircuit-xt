@@ -393,15 +393,12 @@ Engine::getProcessorStorage(const processorAddress_t &addr) const
     return {};
 }
 
-Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
+Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
 {
     Engine::pgzStructure_t res;
     int32_t partidx{0};
     for (const auto &part : *patch)
     {
-        if (partFilter >= 0 && partFilter != partidx)
-            continue;
-
         res.push_back({{partidx, -1, -1}, part->getName()});
 
         int32_t groupidx{0};
@@ -420,11 +417,14 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure(int partFilter) const
 
         partidx++;
     }
-    /*
-    SCLOG( "Returning partgroup structure size " << res.size() );;
-    for (const auto &pg : res)
-        SCLOG( "   " << pg.first );;
-        */
+    if constexpr (scxt::log::uiStructure)
+    {
+        SCLOG("Returning partgroup structure size " << res.size());
+
+        for (const auto &pg : res)
+            SCLOG("   " << pg.first << " @ " << pg.second);
+    }
+
     return res;
 }
 
@@ -499,7 +499,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             loadSf2MultiSampleIntoSelectedPart(p);
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(-1), *messageController);
+                                      getPartGroupZoneStructure(), *messageController);
         });
         return;
     }
@@ -512,7 +512,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
                 messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(-1), *messageController);
+                                      getPartGroupZoneStructure(), *messageController);
         });
         return;
     }
@@ -524,7 +524,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
                 messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(-1), *messageController);
+                                      getPartGroupZoneStructure(), *messageController);
         });
         return;
     }

@@ -34,6 +34,7 @@
 
 namespace scxt::messaging::client
 {
+SERIAL_TO_CLIENT(SelectedPart, s2c_send_selected_part, int16_t, onSelectedPart);
 SERIAL_TO_CLIENT(SelectedGroupZoneMappingSummary, s2c_send_selected_group_zone_mapping_summary,
                  engine::Part::zoneMappingSummary_t, onGroupZoneMappingSummary);
 } // namespace scxt::messaging::client

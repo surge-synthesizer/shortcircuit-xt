@@ -121,5 +121,8 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
 #define SC_UNSTREAMING_FROM_THIS_OR_OLDER(x)                                                       \
     engine::Engine::isFullEngineUnstream &&engine::Engine::fullEngineUnstreamStreamingVersion <= x
 
+#define SC_UNSTREAMING_FROM_PRIOR_TO(x)                                                            \
+    engine::Engine::isFullEngineUnstream &&engine::Engine::fullEngineUnstreamStreamingVersion < x
+
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SCXT_TRAITS_H

@@ -69,7 +69,7 @@ Part::zoneMappingSummary_t Part::getZoneMappingSummary()
 {
     zoneMappingSummary_t res;
 
-    int pidx{0}; // FIXME this is obviously wrong
+    int pidx{partNumber};
     int gidx{0};
     for (const auto &g : groups)
     {

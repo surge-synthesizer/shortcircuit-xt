@@ -48,13 +48,11 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
     void rebuild()
     {
         auto &sbo = sidebar->editor->currentLeadZoneSelection;
-        sidebar->part = 0;
-        if (sbo.has_value() && sbo->part >= 0)
-            sidebar->part = sbo->part;
+
         auto &pgz = sidebar->partGroupSidebar->pgzStructure;
         thisGroup.clear();
         for (const auto &el : pgz)
-            if (el.first.part == sidebar->part && el.first.group >= 0)
+            if (el.first.part == sidebar->editor->selectedPart && el.first.group >= 0)
                 thisGroup.push_back(el);
     }
     int getNumRows() override { return thisGroup.size() + 1; /* for the plus */ }

@@ -47,6 +47,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     engine::Engine::pgzStructure_t pgzStructure;
     void setPartGroupZoneStructure(const engine::Engine::pgzStructure_t &p);
     void editorSelectionChanged();
+    void selectedPartChanged();
 
     void selectParts() {}
     void selectGroups() {}

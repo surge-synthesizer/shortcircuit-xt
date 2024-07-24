@@ -61,7 +61,7 @@ inline void renameGroup(const renameGroup_t &payload, const engine::Engine &engi
 {
     const auto &[p, g, z] = std::get<0>(payload);
     engine.getPatch()->getPart(p)->getGroup(g)->name = std::get<1>(payload);
-    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(p), cont);
+    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
 }
 CLIENT_TO_SERIAL(RenameGroup, c2s_rename_group, renameGroup_t, renameGroup(payload, engine, cont));
 

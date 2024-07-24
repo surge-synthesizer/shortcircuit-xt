@@ -54,6 +54,9 @@ CLIENT_TO_SERIAL(DoMultiSelectAction, c2s_do_multi_select_action,
                  std::vector<selection::SelectionManager::SelectActionContents>,
                  doMultiSelectAction(payload, engine));
 
+CLIENT_TO_SERIAL(DoSelectPart, c2s_select_part, int16_t,
+                 engine.getSelectionManager()->selectPart(payload));
+
 // Lead Zone, Zone Selection, Gropu Selection
 typedef std::tuple<std::optional<selection::SelectionManager::ZoneAddress>,
                    selection::SelectionManager::selectedZones_t,

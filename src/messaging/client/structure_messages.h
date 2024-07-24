@@ -42,8 +42,7 @@ namespace scxt::messaging::client
  */
 inline void pgzSerialSide(const int &partNum, const engine::Engine &engine, MessageController &cont)
 {
-    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(partNum),
-                              cont);
+    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
 }
 
 CLIENT_SERIAL_REQUEST_RESPONSE(PartGroupZoneStructure, c2s_request_pgz_structure, int32_t,
@@ -121,10 +120,12 @@ inline void createGroupIn(int partNumber, engine::Engine &engine, MessageControl
 {
     if (partNumber < 0 || partNumber > numParts)
         partNumber = 0;
+    SCLOG_IF(groupZoneMutation, "Creating group in part " << partNumber);
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [p = partNumber](auto &e) { e.getPatch()->getPart(p)->addGroup(); },
         [p = partNumber](auto &engine) {
-            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(p),
+            SCLOG_IF(groupZoneMutation, "Responding with part group zone structure in " << p);
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
 
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
@@ -132,6 +133,7 @@ inline void createGroupIn(int partNumber, engine::Engine &engine, MessageControl
                                       *(engine.getMessageController()));
             if (engine.getSelectionManager()->currentlySelectedZones().empty())
             {
+                SCLOG_IF(selection, "Empty selection when creating group in " << p);
                 // ooof what to do
                 int32_t g = engine.getPatch()->getPart(p)->getGroups().size() - 1;
                 engine.getSelectionManager()->selectAction(
@@ -160,8 +162,7 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
             }
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
-            serializationSendToClient(s2c_send_pgz_structure,
-                                      engine.getPartGroupZoneStructure(t.part),
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
                                       engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
@@ -173,11 +174,12 @@ CLIENT_TO_SERIAL(DeleteZone, c2s_delete_zone, selection::SelectionManager::ZoneA
 
 inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageController &cont)
 {
-    auto zs = engine.getSelectionManager()->allSelectedZones;
+    auto part = engine.getSelectionManager()->selectedPart;
+
+    auto zs = engine.getSelectionManager()->allSelectedZones[part];
 
     if (zs.empty())
         return;
-    auto part = zs.begin()->part;
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [sz = zs](auto &e) {
@@ -199,7 +201,7 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 
-            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(t),
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
                                       engine.getPatch()->getPart(t)->getZoneMappingSummary(),
@@ -243,8 +245,7 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 
-            serializationSendToClient(s2c_send_pgz_structure,
-                                      engine.getPartGroupZoneStructure(t.part),
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
                                       engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
@@ -271,7 +272,7 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 
-            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(pt),
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
                                       engine.getPatch()->getPart(pt)->getZoneMappingSummary(),
@@ -305,8 +306,7 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
             tc.zone = nad;
             auto act = selection::SelectionManager::SelectActionContents(tc, true, true, true);
             engine.getSelectionManager()->selectAction(act);
-            serializationSendToClient(s2c_send_pgz_structure,
-                                      engine.getPartGroupZoneStructure(t.part),
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
                                       engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
