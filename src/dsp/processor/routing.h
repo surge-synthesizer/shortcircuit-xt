@@ -102,18 +102,17 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
         }
     }
 
-    // TODO: Smooth This
     auto ol = *endpoints->processorTarget[i].outputLevelDbP;
     ol = ol * ol * ol * dsp::processor::ProcessorStorage::maxOutputAmp;
     outLev[i].set_target(ol);
 
-    if (!forceStereo || chainIsMono)
+    if (forceStereo || !chainIsMono)
     {
-        outLev[i].multiply_block(output[0]);
+        outLev[i].multiply_2_blocks(output[0], output[1]);
     }
     else
     {
-        outLev[i].multiply_2_blocks(output[0], output[1]);
+        outLev[i].multiply_block(output[0]);
     }
 
     // TODO: What was the filter_modout? Seems SC2 never finished it
