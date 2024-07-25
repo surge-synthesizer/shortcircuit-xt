@@ -101,19 +101,33 @@ template <> struct scxt_traits<selection::SelectionManager>
         v = {{"zones", e.allSelectedZones},
              {"leadZone", e.leadZone},
              {"groups", e.allSelectedGroups},
-             {"tabs", e.otherTabSelection}};
+             {"tabs", e.otherTabSelection},
+             {"selectedPart", e.selectedPart}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, sm_t &z)
     {
-        selection::SelectionManager::ZoneAddress za;
-        findIf(v, "tabs", z.otherTabSelection);
-        findIf(v, "zones", z.allSelectedZones);
-        findIf(v, "groups", z.allSelectedGroups);
-        findIf(v, "leadZone", z.leadZone);
+        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'07'24))
+        {
+            z.selectedPart = 0;
+            findIf(v, "tabs", z.otherTabSelection);
+            findIf(v, "zones", z.allSelectedZones[0]);
+            findIf(v, "groups", z.allSelectedGroups[0]);
+            findIf(v, "leadZone", z.leadZone[0]);
+        }
+        else
+        {
+            findIf(v, "tabs", z.otherTabSelection);
+            findIf(v, "zones", z.allSelectedZones);
+            findIf(v, "groups", z.allSelectedGroups);
+            findIf(v, "leadZone", z.leadZone);
+            findIf(v, "selectedPart", z.selectedPart);
+        }
 
-        selection::SelectionManager::SelectActionContents sac{z.leadZone};
+        selection::SelectionManager::ZoneAddress za;
+
+        selection::SelectionManager::SelectActionContents sac{z.leadZone[z.selectedPart]};
         sac.distinct = false;
         z.selectAction(sac);
     }

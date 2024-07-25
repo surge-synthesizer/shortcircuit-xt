@@ -73,7 +73,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     auto rootDir = f.parent_path();
     auto sampleDir = rootDir;
 
-    auto pt = std::clamp(e.getSelectionManager()->selectedPart, 0, (int)numParts);
+    auto pt = std::clamp(e.getSelectionManager()->selectedPart, (int16_t)0, (int16_t)numParts);
 
     auto &part = e.getPatch()->getPart(pt);
 

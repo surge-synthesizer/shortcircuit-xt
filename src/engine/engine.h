@@ -395,11 +395,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * Get the Part/Group/Zone structure as a set o fzone addreses. A part with
      * no groups will be (p,-1,-1); a group with no zones will be (p,g,-1).
      *
-     * @param partFilter -1 for all parts; 0-16 for a specific part
-     * @return The vector of zones matching the filter in the running engine
+     * @return The vector of zones in the running engine
      * independent of selection.
      */
-    pgzStructure_t getPartGroupZoneStructure(int partFilter) const;
+    pgzStructure_t getPartGroupZoneStructure() const;
 
     const std::unique_ptr<MemoryPool> &getMemoryPool()
     {

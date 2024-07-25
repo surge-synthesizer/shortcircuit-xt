@@ -374,4 +374,6 @@ void SCXTEditor::configureHasDiscreteMenuBuilder(
     };
 }
 
+int16_t SCXTEditor::getSelectedPart() const { return selectedPart; }
+
 } // namespace scxt::ui

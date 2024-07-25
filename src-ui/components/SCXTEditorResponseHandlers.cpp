@@ -217,6 +217,15 @@ void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOu
 void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &d)
 {
     multiScreen->sample->setGroupZoneMappingSummary(d);
+
+    if constexpr (scxt::log::uiStructure)
+    {
+        SCLOG("Updated zone mapping summary");
+        for (const auto &[addr, item] : d)
+        {
+            SCLOG("  " << addr << " " << std::get<2>(item));
+        }
+    }
 }
 
 void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
@@ -229,6 +238,7 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
 {
     allZoneSelections = std::get<1>(a);
     allGroupSelections = std::get<2>(a);
+
     auto optLead = std::get<0>(a);
     if (optLead.has_value())
     {
@@ -249,6 +259,32 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
 
     multiScreen->parts->editorSelectionChanged();
     multiScreen->sample->editorSelectionChanged();
+
+    repaint();
+
+    if constexpr (scxt::log::selection)
+    {
+        SCLOG("Selection State Update");
+        for (const auto &z : allZoneSelections)
+        {
+            SCLOG("   z : " << z);
+        }
+        for (const auto &z : allGroupSelections)
+        {
+            SCLOG("   g : " << z);
+        }
+    }
+}
+
+void SCXTEditor::onSelectedPart(const int16_t p)
+{
+    if constexpr (scxt::log::uiStructure)
+    {
+        SCLOG("Selected Part: " << p);
+    }
+    selectedPart = p; // I presume I will shortly get structure messages so don't do anything else
+    if (multiScreen && multiScreen->parts)
+        multiScreen->parts->selectedPartChanged();
 
     repaint();
 }

@@ -34,7 +34,7 @@
 namespace scxt::json
 {
 
-static constexpr uint64_t currentStreamingVersion{0x20240604};
+static constexpr uint64_t currentStreamingVersion{0x2024'07'24};
 
 std::string streamPatch(const engine::Patch &p, bool pretty = false);
 std::string streamEngineState(const engine::Engine &e, bool pretty = false);

@@ -30,6 +30,7 @@
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/Viewport.h"
 #include "messaging/messaging.h"
 #include "components/MultiScreen.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -40,22 +41,75 @@ namespace scxt::ui::multi
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
+struct SinglePart : juce::Component, HasEditor
+{
+    int index;
+    static constexpr int height{110};
+    std::unique_ptr<jcmp::Label> partLabel;
+    SinglePart(int idx, SCXTEditor *e) : index(idx), HasEditor(e)
+    {
+        partLabel = std::make_unique<jcmp::Label>();
+        partLabel->setText("Part " + std::to_string(index + 1));
+        addAndMakeVisible(*partLabel);
+        partLabel->setInterceptsMouseClicks(false, false);
+    }
+    void paint(juce::Graphics &g) override
+    {
+        auto r = getLocalBounds().reduced(1);
+        g.setColour(juce::Colour(index * 255 / 16, 40, 40));
+        g.fillRect(r);
+
+        if (editor->getSelectedPart() == index)
+        {
+            g.setColour(juce::Colours::yellow);
+        }
+        else
+        {
+            g.setColour(juce::Colours::lightgrey);
+        }
+        g.drawRect(r);
+    }
+
+    void mouseDown(const juce::MouseEvent &e) override
+    {
+        sendToSerialization(cmsg::DoSelectPart(index));
+    }
+
+    void resized() override
+    {
+        partLabel->setBounds(getLocalBounds());
+        partLabel->setJustification(juce::Justification::centred);
+    }
+};
+
 struct PartSidebar : juce::Component, HasEditor
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
-    PartSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
-    void paint(juce::Graphics &g) override
-    {
-        auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::labelfont);
-        g.setFont(ft.withHeight(20));
-        g.setColour(juce::Colours::white);
-        g.drawText("Parts", getLocalBounds().withTrimmedBottom(20), juce::Justification::centred);
+    std::unique_ptr<jcmp::Viewport> viewport;
+    std::unique_ptr<juce::Component> viewportContents;
+    std::array<std::unique_ptr<SinglePart>, scxt::numParts> parts;
 
-        g.setFont(ft.withHeight(14));
-        g.setColour(juce::Colours::white);
-        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(20),
-                   juce::Justification::centred);
+    PartSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
+    {
+        viewport = std::make_unique<jcmp::Viewport>("Parts");
+        viewportContents = std::make_unique<juce::Component>();
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            parts[i] = std::make_unique<SinglePart>(i, editor);
+            viewportContents->addAndMakeVisible(*parts[i]);
+        }
+        viewport->setViewedComponent(viewportContents.get(), false);
+        addAndMakeVisible(*viewport);
+    }
+    void resized() override
+    {
+        viewport->setBounds(getLocalBounds());
+        auto w = getWidth() - viewport->getScrollBarThickness() - 2;
+        viewportContents->setBounds(0, 0, w, SinglePart::height * scxt::numParts);
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            parts[i]->setBounds(0, i * SinglePart::height, w, SinglePart::height);
+        }
     }
 };
 
@@ -63,7 +117,6 @@ template <typename T>
 struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropContainer
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
-    int part{0};
     std::unique_ptr<juce::ListBox> listBox;
     std::unique_ptr<detail::GroupZoneListBoxModel<T>> listBoxModel;
 
@@ -91,7 +144,7 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
     void addGroup()
     {
         auto &mc = partGroupSidebar->editor->msgCont;
-        partGroupSidebar->sendToSerialization(cmsg::CreateGroup(part));
+        partGroupSidebar->sendToSerialization(cmsg::CreateGroup(editor->selectedPart));
     }
     void updateSelectionFrom(const selection::SelectionManager::selectedZones_t &sel)
     {
@@ -366,6 +419,16 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
         }
     }
 #endif
+    groupSidebar->listBoxModel->rebuild();
+    groupSidebar->listBox->updateContent();
+    zoneSidebar->listBoxModel->rebuild();
+    zoneSidebar->listBox->updateContent();
+    editorSelectionChanged();
+    repaint();
+}
+
+void PartGroupSidebar::selectedPartChanged()
+{
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();
     zoneSidebar->listBoxModel->rebuild();

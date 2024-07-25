@@ -82,7 +82,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         return false;
     }
 
-    auto pt = std::clamp(engine.getSelectionManager()->selectedPart, 0, (int)numParts);
+    auto pt = std::clamp(engine.getSelectionManager()->selectedPart, (int16_t)0, (int16_t)numParts);
     auto &part = engine.getPatch()->getPart(pt);
 
     std::vector<int> addedGroupIndices;

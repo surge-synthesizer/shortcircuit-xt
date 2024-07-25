@@ -193,6 +193,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &);
     void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);
+    void onSelectedPart(const int16_t);
+    int16_t getSelectedPart() const;
 
     void onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
     void onMixerBusSendData(const scxt::messaging::client::busSendData_t &);
@@ -216,6 +218,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::optional<selection::SelectionManager::ZoneAddress> currentLeadZoneSelection;
     selection::SelectionManager::selectedZones_t allZoneSelections;
     selection::SelectionManager::selectedZones_t allGroupSelections;
+    int16_t selectedPart{0};
 
     // TODO: Do we allow part multi-select? I think we don't
     std::set<int> groupsWithSelectedZones;

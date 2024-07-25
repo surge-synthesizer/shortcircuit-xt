@@ -34,20 +34,25 @@
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
 
-#define DEBUG_SELECTION 0
-
 namespace scxt::selection
 {
 namespace cms = messaging::client;
 
 void SelectionManager::sendClientDataForLeadSelectionState()
 {
-    auto [p, g, z] = leadZone;
+    if constexpr (scxt::log::selection)
+    {
+        SCLOG("Sending full selection data to client for part=" << selectedPart);
+    }
+    serializationSendToClient(cms::s2c_send_selected_part, selectedPart,
+                              *(engine.getMessageController()));
+
+    auto [p, g, z] = leadZone[selectedPart];
+    assert(p < 0 || p == selectedPart);
 
     // Check if I deserialized a valid zone and adjust if not
     if (p >= 0)
     {
-        selectedPart = p;
         if (p >= numParts)
         {
             p = -1;
@@ -78,13 +83,13 @@ void SelectionManager::sendClientDataForLeadSelectionState()
                                   *(engine.getMessageController()));
     }
 
-    if (allSelectedGroups.size() > 1)
+    if (allSelectedGroups[selectedPart].size() > 1)
     {
         SCLOG_UNIMPL("Multi-group selection to do");
     }
-    else if (allSelectedGroups.size() == 1)
+    else if (allSelectedGroups[selectedPart].size() == 1)
     {
-        auto [gp, gg, gz] = *(allSelectedGroups.begin());
+        auto [gp, gg, gz] = *(allSelectedGroups[selectedPart].begin());
         sendDisplayDataForSingleGroup(gp, gg);
     }
     else
@@ -185,12 +190,28 @@ void SelectionManager::selectAction(
     debugDumpSelectionState();
 }
 
+void SelectionManager::selectPart(int16_t part)
+{
+    selectedPart = part;
+
+    if constexpr (scxt::log::selection)
+    {
+        SCLOG("SELECT PART " << part);
+    }
+
+    guaranteeSelectedLead();
+    sendClientDataForLeadSelectionState();
+    sendSelectedZonesToClient();
+    debugDumpSelectionState();
+}
+
 void SelectionManager::adjustInternalStateForAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
-#if DEBUG_SELECTION
-    SCLOG_WFUNC(z);
-#endif
+    if constexpr (scxt::log::selection)
+    {
+        SCLOG_WFUNC(z);
+    }
     auto za = (ZoneAddress)z;
 
     if (z.forZone)
@@ -198,44 +219,51 @@ void SelectionManager::adjustInternalStateForAction(
         // OK so basically theres a few cases
         if (!z.selecting)
         {
-            allSelectedZones.erase(za);
+            allSelectedZones[selectedPart].erase(za);
         }
         else
         {
             // So we are selecting
             if (z.distinct)
             {
-                allSelectedZones.clear();
-                allSelectedZones.insert(za);
-                leadZone = za;
+                allSelectedZones[selectedPart].clear();
+                allSelectedZones[selectedPart].insert(za);
+                leadZone[selectedPart] = za;
             }
             else
             {
-                allSelectedZones.insert(za);
+                allSelectedZones[selectedPart].insert(za);
                 if (z.selectingAsLead)
-                    leadZone = za;
+                    leadZone[selectedPart] = za;
             }
         }
     }
     else
     {
         SCLOG("Group Naive Single Selection Selection " << za);
-        allSelectedGroups.clear();
-        allSelectedGroups.insert(za);
-        leadGroup = za;
+        allSelectedGroups[selectedPart].clear();
+        allSelectedGroups[selectedPart].insert(za);
+        leadGroup[selectedPart] = za;
     }
 }
 
 void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &engine)
 {
     bool morphed{false};
-    auto zit = allSelectedZones.begin();
-    while (zit != allSelectedZones.end())
+    auto zit = allSelectedZones[selectedPart].begin();
+    while (zit != allSelectedZones[selectedPart].end())
     {
         if (!zit->isIn(engine))
         {
+            SCLOG_IF(groupZoneMutation,
+                     "Removing zone " << *zit << " from selection on group delete");
+            if (leadZone[selectedPart] == *zit)
+            {
+                SCLOG_IF(groupZoneMutation, "Lead zone removed from selection");
+                leadZone[selectedPart] = {};
+            }
             morphed = true;
-            zit = allSelectedZones.erase(zit);
+            zit = allSelectedZones[selectedPart].erase(zit);
         }
         else
         {
@@ -243,13 +271,21 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
         }
     }
 
-    auto git = allSelectedGroups.begin();
-    while (git != allSelectedGroups.end())
+    auto git = allSelectedGroups[selectedPart].begin();
+    while (git != allSelectedGroups[selectedPart].end())
     {
         if (!git->isIn(engine))
         {
             morphed = true;
-            git = allSelectedGroups.erase(git);
+            SCLOG_IF(groupZoneMutation,
+                     "Removing group " << *git << " from selection on group delete");
+            if (leadGroup[selectedPart] == *git)
+            {
+                SCLOG_IF(groupZoneMutation, "Lead group removed from selection");
+                leadGroup[selectedPart] = {};
+            }
+
+            git = allSelectedGroups[selectedPart].erase(git);
         }
         else
         {
@@ -269,67 +305,73 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
 void SelectionManager::guaranteeSelectedLead()
 {
     // Now at the end of this the lead zone could not be selected
-    if (allSelectedZones.find(leadZone) == allSelectedZones.end())
+    if (allSelectedZones[selectedPart].find(leadZone[selectedPart]) ==
+        allSelectedZones[selectedPart].end())
     {
-        if (allSelectedZones.empty() && leadZone.part >= 0)
+        if (allSelectedZones[selectedPart].empty() && leadZone[selectedPart].part >= 0)
         {
             // Oh what to do here. Well reject it.
-            SCLOG_WFUNC("Be careful - we are promoting " << SCD(leadZone));
-            allSelectedZones.insert(leadZone);
+            SCLOG_WFUNC("Be careful - we are promoting " << SCD(leadZone[selectedPart]));
+            allSelectedZones[selectedPart].insert(leadZone[selectedPart]);
         }
-        else if (!allSelectedZones.empty())
+        else if (!allSelectedZones[selectedPart].empty())
         {
-            leadZone = *(allSelectedZones.begin());
+            leadZone[selectedPart] = *(allSelectedZones[selectedPart].begin());
         }
         else
         {
-            leadZone = {};
+            leadZone[selectedPart] = {};
         }
     }
 
     // Still at group single so far
-    assert(allSelectedGroups.size() < 2);
-    if (allSelectedGroups.find(leadGroup) == allSelectedGroups.end())
+    assert(allSelectedGroups[selectedPart].size() < 2);
+    if (allSelectedGroups[selectedPart].find(leadGroup[selectedPart]) ==
+        allSelectedGroups[selectedPart].end())
     {
-        if (!allSelectedGroups.empty())
+        if (!allSelectedGroups[selectedPart].empty())
         {
-            leadGroup = *(allSelectedGroups.begin());
+            leadGroup[selectedPart] = *(allSelectedGroups[selectedPart].begin());
         }
         else
         {
-            leadGroup = {};
+            leadGroup[selectedPart] = {};
         }
     }
 }
 
 void SelectionManager::debugDumpSelectionState()
 {
-#if DEBUG_SELECTION
-    SCLOG("---------------------------");
-    SCLOG("ZONES: Selected=" << allSelectedZones.size());
-    SCLOG("   LEAD ZONE : " << leadZone);
-    for (const auto &z : allSelectedZones)
-        SCLOG("      Z Selected : " << z);
+    if constexpr (scxt::log::selection)
+    {
+        SCLOG("---------------------------");
+        SCLOG("PART: " << selectedPart);
+        SCLOG("ZONES: Selected=" << allSelectedZones[selectedPart].size());
+        SCLOG("   LEAD ZONE : " << leadZone[selectedPart]);
+        for (const auto &z : allSelectedZones[selectedPart])
+            SCLOG("      Z Selected : " << z);
 
-    SCLOG("GROUPS: Selected=" << allSelectedGroups.size());
-    SCLOG("   LEAD GROUP : " << leadGroup);
-    for (const auto &z : allSelectedGroups)
-        SCLOG("      G Selected : " << z);
-    SCLOG("---------------------------");
-#endif
+        SCLOG("GROUPS: Selected=" << allSelectedGroups[selectedPart].size());
+        SCLOG("   LEAD GROUP : " << leadGroup[selectedPart]);
+        for (const auto &z : allSelectedGroups[selectedPart])
+            SCLOG("      G Selected : " << z);
+        SCLOG("---------------------------");
+    }
 }
 
 void SelectionManager::sendSelectedZonesToClient()
 {
-#if DEBUG_SELECTION
-    SCLOG("Sending selection data to client");
-    debugDumpSelectionState();
-#endif
+    if constexpr (scxt::log::selection)
+    {
+        SCLOG("Sending selected zones to client");
+        debugDumpSelectionState();
+    }
 
-    serializationSendToClient(
-        cms::s2c_send_selection_state,
-        cms::selectedStateMessage_t{leadZone, allSelectedZones, allSelectedGroups},
-        *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_send_selection_state,
+                              cms::selectedStateMessage_t{leadZone[selectedPart],
+                                                          allSelectedZones[selectedPart],
+                                                          allSelectedGroups[selectedPart]},
+                              *(engine.getMessageController()));
 }
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const
@@ -374,23 +416,16 @@ std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::En
 
         return {sp, sg};
     }
-    if (allSelectedZones.empty())
+    if (allSelectedZones[selectedPart].empty())
     {
-        return {0, 0};
+        return {selectedPart, 0};
     }
 
-    // For now pick the highest group in the lowest part
-    auto pt = 17;
+    // For now pick the highest group in the selected part
+    auto pt = selectedPart;
     auto gp = 0;
-    for (const auto &s : allSelectedZones)
-    {
-        if (s.part >= 0)
-            pt = std::min(pt, s.part);
-    }
-    if (pt == 17)
-        pt = 0;
 
-    for (const auto &s : allSelectedZones)
+    for (const auto &s : allSelectedZones[selectedPart])
     {
         if (s.part == pt && s.group >= 0)
             gp = std::max(gp, s.group);
@@ -564,7 +599,7 @@ std::set<dsp::processor::ProcessorType> SelectionManager::processorTypesForSelec
     std::set<dsp::processor::ProcessorType> res;
 
     const auto &pt = engine.getPatch();
-    for (const auto &z : allSelectedZones)
+    for (const auto &z : allSelectedZones[selectedPart])
     {
         if (z.isIn(engine))
         {
@@ -583,12 +618,12 @@ void SelectionManager::copyZoneProcessorLeadToAll(int which)
     auto lz = currentLeadZone(engine);
     if (!lz.has_value())
         return;
-    if (allSelectedZones.size() < 2)
+    if (allSelectedZones[selectedPart].size() < 2)
         return;
 
     auto &cont = engine.getMessageController();
     cont->scheduleAudioThreadCallback(
-        [asz = allSelectedZones, from = *lz, which](auto &e) {
+        [asz = allSelectedZones[selectedPart], from = *lz, which](auto &e) {
             const auto &fz =
                 e.getPatch()->getPart(from.part)->getGroup(from.group)->getZone(from.zone);
             auto ftype = fz->processorStorage[which].type;
@@ -653,7 +688,7 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
         }
     }
 
-    if (allSelectedZones.size() == 1)
+    if (allSelectedZones[selectedPart].size() == 1)
     {
         for (auto &row : zp->routingTable.routes)
             row.extraPayload->selConsistent = true;
@@ -670,7 +705,7 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
         auto &rt = zp->routingTable;
         for (auto &row : rt.routes)
             row.extraPayload->selConsistent = true;
-        for (const auto &sz : allSelectedZones)
+        for (const auto &sz : allSelectedZones[selectedPart])
         {
             const auto &szrt = engine.getPatch()
                                    ->getPart(sz.part)

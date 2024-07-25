@@ -166,7 +166,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
         // If it is the year 2112 and you just had a regtest fail because
         // this is earlier than the streaming version you just changed, then
         // this software lived too long
-        streamingVersion = 0x21120101;
+        streamingVersion = 0x2112'01'01;
         for (int i = 0; i < numParts; ++i)
         {
             parts[i] = std::make_unique<Part>(i);

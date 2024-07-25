@@ -46,6 +46,7 @@ enum ClientToSerializationMessagesIds
     c2s_single_select_address,
     c2s_do_select_action,
     c2s_do_multi_select_action,
+    c2s_select_part,
 
     c2s_begin_edit, // not implemented yet
     c2s_end_edit,   // implemented as a hammer
@@ -135,6 +136,7 @@ enum SerializationToClientMessageIds
     s2c_respond_single_processor_metadata_and_data,
     s2c_notify_mismatched_processors_for_zone,
 
+    s2c_send_selected_part,
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,
 

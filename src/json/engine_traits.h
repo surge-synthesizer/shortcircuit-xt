@@ -253,7 +253,7 @@ template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
         findIf(v, "pbUp", zmd.pbUp);
 
         findIf(v, "amplitude", zmd.amplitude);
-        if (SC_UNSTREAMING_FROM_THIS_OR_OLDER(0x20240603))
+        if (SC_UNSTREAMING_FROM_THIS_OR_OLDER(0x2024'06'03))
         {
             // amplitude used to be in percent 0...1 and now
             // is in decibels -36 to 36.

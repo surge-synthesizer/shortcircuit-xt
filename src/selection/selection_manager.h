@@ -151,6 +151,7 @@ struct SelectionManager
     void selectAction(const SelectActionContents &z);
     void multiSelectAction(const std::vector<SelectActionContents> &v);
     void guaranteeConsistencyAfterDeletes(const engine::Engine &);
+    void selectPart(int16_t part);
 
   protected:
     void adjustInternalStateForAction(const SelectActionContents &);
@@ -158,35 +159,26 @@ struct SelectionManager
     void debugDumpSelectionState();
 
   public:
-    int selectedPart{-1};
+    int16_t selectedPart{0};
     typedef std::unordered_set<ZoneAddress, ZoneAddress::Hash> selectedZones_t;
-    selectedZones_t currentlySelectedZones() { return allSelectedZones; }
+    selectedZones_t currentlySelectedZones() { return allSelectedZones[selectedPart]; }
     // This will have -1 for every zone of course
-    selectedZones_t currentlySelectedGroups() { return allSelectedGroups; }
+    selectedZones_t currentlySelectedGroups() { return allSelectedGroups[selectedPart]; }
     std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e) const
     {
-        if (leadZone.isIn(e))
-            return leadZone;
+        if (leadZone[selectedPart].isIn(e))
+            return leadZone[selectedPart];
         return {};
     }
     std::optional<ZoneAddress> currentLeadGroup(const engine::Engine &e) const
     {
-        if (leadGroup.isInWithPartials(e))
-            return leadGroup;
+        if (leadGroup[selectedPart].isInWithPartials(e))
+            return leadGroup[selectedPart];
         return {};
     }
     std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
 
-    int currentlySelectedPart(const engine::Engine &e) const
-    {
-        auto lz = currentLeadZone(e);
-        if (lz.has_value())
-            return lz->part;
-        auto lg = currentLeadGroup(e);
-        if (lg.has_value())
-            return lg->part;
-        return 0;
-    }
+    int currentlySelectedPart(const engine::Engine &e) const { return selectedPart; }
 
     void sendSelectedZonesToClient();
     void sendClientDataForLeadSelectionState();
@@ -203,8 +195,8 @@ struct SelectionManager
 
   public:
     std::unordered_map<std::string, std::string> otherTabSelection;
-    selectedZones_t allSelectedZones, allSelectedGroups;
-    ZoneAddress leadZone, leadGroup;
+    std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups;
+    std::array<ZoneAddress, scxt::numParts> leadZone, leadGroup;
 
   protected:
     std::map<size_t, std::set<size_t>> selectedGroupByPart;

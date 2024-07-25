@@ -28,7 +28,9 @@
 #ifndef SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
 #define SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
 
-#include "sst/jucegui/style/StyleAndSettingsConsumer.h"
+#include <cstdint>
+#include <cassert>
+#include <type_traits>
 
 namespace scxt::ui
 {
