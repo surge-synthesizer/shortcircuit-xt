@@ -65,3 +65,7 @@
 [submodule "libs/minimp3"]
 	path = libs/minimp3
 	url = https://github.com/lieff/minimp3.git
+[submodule "libs/eurorack"]
+	path = libs/eurorack/eurorack
+	url = https://github.com/surge-synthesizer/eurorack
+	branch = surge

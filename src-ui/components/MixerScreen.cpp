@@ -140,6 +140,8 @@ std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool f
         return forMenu ? "Reverb 1" : "REVERB 1";
     case engine::reverb2:
         return forMenu ? "Reverb 2" : "REVERB 2";
+    case engine::nimbus:
+        return forMenu ? "Nimbus" : "NIMBUS";
     case engine::treemonster:
         return forMenu ? "TreeMonster" : "TREEMONSTER";
     case engine::bonsai:
@@ -176,6 +178,7 @@ void MixerScreen::showFXSelectionMenu(int bus, int slot)
     add(engine::AvailableBusEffects::flanger);
     add(engine::AvailableBusEffects::phaser);
     add(engine::AvailableBusEffects::treemonster);
+    add(engine::AvailableBusEffects::nimbus);
     add(engine::AvailableBusEffects::bonsai);
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
