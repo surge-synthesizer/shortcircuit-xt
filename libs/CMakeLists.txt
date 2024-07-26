@@ -35,6 +35,8 @@ add_subdirectory(sqlite3-3.42.0)
 
 add_subdirectory(xiph)
 
+add_subdirectory(eurorack)
+
 add_subdirectory(sst/sst-cpputils)
 
 # set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform filesystem")
