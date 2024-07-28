@@ -3,9 +3,6 @@
 trigger:
   - main
 
-pr:
-  - main
-
 variables:
   - group: mac-signing
 

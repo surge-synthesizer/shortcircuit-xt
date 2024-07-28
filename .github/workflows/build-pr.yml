@@ -1,0 +1,72 @@
+name: Build Pull Request
+on:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_plugin:
+    name: PR - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: "windows msvc"
+            os: windows-latest
+            target: scxt_plugin_Standalone
+            cmakeConfig: -A x64
+            runTests: false
+          - name: "windows clang"
+            os: windows-latest
+            target: scxt_plugin_Standalone
+            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            runTests: false
+          - name: "mac standalone"
+            os: macos-latest
+            target: scxt_plugin_Standalone
+            runTests: true
+          - name: "ubuntu standalone"
+            os: ubuntu-latest
+            target: scxt_plugin_Standalone
+            runTests: true
+
+          - name: "windows clap first"
+            os: windows-latest
+            target: scxt_clapfirst_all
+            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            runTests: false
+          - name: "mac clap first"
+            os: macos-latest
+            target: scxt_clapfirst_all
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            runTests: false
+          - name: "ubuntu clap first"
+            os: ubuntu-latest
+            target: scxt_clapfirst_all
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            runTests: false
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Prepare for JUCE
+        uses: surge-synthesizer/sst-githubactions/prepare-for-juce@main
+        with:
+          os: ${{ runner.os }}
+
+      - name: Build pull request version
+        run: |
+          cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cmakeConfig }}
+          cmake --build ./build --config Debug --target ${{ matrix.cmakeTarget }} --parallel 3
+
+      - name: Run Tests
+        run: |
+          cmake --build build --config Debug --target scxt-test --parallel 4
+          ./build/tests/scxt-test
+
