@@ -8,7 +8,7 @@ defaults:
 
 jobs:
   build_plugin:
-    name: PR - ${{ matrix.os }}
+    name: PR - ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
