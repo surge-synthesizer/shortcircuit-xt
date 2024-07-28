@@ -66,6 +66,7 @@ jobs:
           cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 3
 
       - name: Run Tests
+        if: ${{ matrix.runTests }}
         run: |
           cmake --build build --config Debug --target scxt-test --parallel 4
           ./build/tests/scxt-test
