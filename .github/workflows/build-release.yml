@@ -1,4 +1,4 @@
-name: Build Release Installer
+name: Build Release or Nightly Installer
 on:
   push:
     branches:
@@ -80,7 +80,7 @@ jobs:
       - name: Post to Discord
         uses: surge-synthesizer/sst-githubactions/discord-release-notify@main
         with:
-          webhook: ${{ secrets.DISCORD_MONOPLUGS_WEBHOOK }}
+          webhook: ${{ secrets.DISCORD_SHORTCIRCUIT_WEBHOOK }}
           tag: Nightly
           title: "A New ShortCircuit Nightly is Available"
           subtitle: "Still pre-alpha! Use care!"
@@ -103,7 +103,7 @@ jobs:
       - name: Post to Discord
         uses: surge-synthesizer/sst-githubactions/discord-release-notify@main
         with:
-          webhook: ${{ secrets.DISCORD_MONOPLUGS_WEBHOOK }}
+          webhook: ${{ secrets.DISCORD_SHORTCIRCUIT_WEBHOOK }}
           tag: ${{ github.ref_name }}
           title: "A New ShortCircuit XT Release is Available"
           subtitle: "Release ${{ github.ref_name }}"
