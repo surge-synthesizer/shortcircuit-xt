@@ -63,7 +63,7 @@ jobs:
       - name: Build pull request version
         run: |
           cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cmakeConfig }}
-          cmake --build ./build --config Debug --target ${{ matrix.cmakeTarget }} --parallel 3
+          cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 3
 
       - name: Run Tests
         run: |
