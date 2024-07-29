@@ -7,7 +7,7 @@ crashing bugs, and may have DSP errors which cause unbounded
 sound. Still, it is becoming more stable and usable and we
 do have testers and developers running it.
 
-If you use ShortCircuit a few things
+If you use ShortCircuit a few things of note:
 
 - You may want to use a limiter on the SC bus, in case there is a DSP error, and definitely do not use in-ear headphones
 - Most of the discussion about what works and doesn't happens on our discord. Please join!
