@@ -119,6 +119,7 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
     PartGroupSidebar *partGroupSidebar{nullptr};
     std::unique_ptr<juce::ListBox> listBox;
     std::unique_ptr<detail::GroupZoneListBoxModel<T>> listBoxModel;
+    std::unique_ptr<jcmp::MenuButton> partSelector;
 
     T *asT() { return static_cast<T *>(this); }
 
@@ -140,7 +141,42 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
         listBox->setColour(juce::ListBox::backgroundColourId, juce::Colour(0, 0, 0).withAlpha(0.f));
 
         addAndMakeVisible(*listBox);
+
+        partSelector = std::make_unique<jcmp::MenuButton>();
+        partSelector->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showPartSelectorMenu();
+        });
+        partSelector->setLabel("Part 1");
+        addAndMakeVisible(*partSelector);
     }
+
+    void showPartSelectorMenu()
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Part");
+        p.addSeparator();
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            p.addItem("Part " + std::to_string(i + 1), true, i == editor->selectedPart,
+                      [w = juce::Component::SafePointer(this), index = i]() {
+                          w->sendToSerialization(cmsg::DoSelectPart(index));
+                      });
+        }
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void showSelectedPart(int part) { partSelector->setLabel("Part " + std::to_string(part + 1)); }
+
+    juce::Rectangle<int> baseResize()
+    {
+        auto r = getLocalBounds();
+        auto pg = r.withHeight(22);
+        auto res = r.withTrimmedTop(24);
+        partSelector->setBounds(pg);
+        return res;
+    }
+
     void addGroup()
     {
         auto &mc = partGroupSidebar->editor->msgCont;
@@ -208,9 +244,10 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar>
 
     void resized() override
     {
+        auto b = baseResize();
         auto ht = 200;
-        auto lb = getLocalBounds().withTrimmedBottom(ht);
-        auto cb = getLocalBounds().withY(lb.getBottom()).withHeight(ht);
+        auto lb = b.withTrimmedBottom(ht);
+        auto cb = b.withY(lb.getBottom()).withHeight(ht);
         listBox->setBounds(lb);
         groupControls->setBounds(cb);
     }
@@ -260,7 +297,7 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar>
         if (partGroupSidebar->editor->currentLeadZoneSelection.has_value())
             lastZoneClicked = *(partGroupSidebar->editor->currentLeadZoneSelection);
     }
-    void resized() override { listBox->setBounds(getLocalBounds()); }
+    void resized() override { listBox->setBounds(baseResize()); }
 
     void processRowsChanged()
     {
@@ -429,10 +466,14 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 
 void PartGroupSidebar::selectedPartChanged()
 {
+    groupSidebar->showSelectedPart(editor->selectedPart);
     groupSidebar->listBoxModel->rebuild();
     groupSidebar->listBox->updateContent();
+
+    zoneSidebar->showSelectedPart(editor->selectedPart);
     zoneSidebar->listBoxModel->rebuild();
     zoneSidebar->listBox->updateContent();
+
     editorSelectionChanged();
     repaint();
 }
