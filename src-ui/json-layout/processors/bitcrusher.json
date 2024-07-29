@@ -36,7 +36,7 @@
         {
             "index": 3,
             "coordinates": [
-                40,
+                70,
                 80,
                 50,
                 50
@@ -46,7 +46,7 @@
         {
             "index": 4,
             "coordinates": [
-                100,
+                130,
                 80,
                 50,
                 50
@@ -58,11 +58,23 @@
             "component": "power",
             "index": 0,
             "coordinates": [
-                100,
+                130,
                 80,
                 50,
                 50
             ]
+        },
+        {
+            "type": "int",
+            "component": "multiswitch",
+            "index": 1,
+            "coordinates": [
+                10,
+                80,
+                50,
+                50
+            ],
+            "enable-if": 0
         }
     ]
 }

@@ -632,6 +632,16 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                 lw->setJustification(juce::Justification::centred);
                 otherEditors.push_back(std::move(lw));
             }
+
+            auto ei = ictag("enable-if", -1);
+            if (ei >= 0)
+            {
+                if (ei == c.index)
+                {
+                    SCLOG("WARNING: Enable-if set to self on component " << c.index);
+                }
+                intEditors[c.index]->item->setEnabled(intAttachments[ei]->getValue());
+            }
         }
         else if (c.index < 0)
         {
