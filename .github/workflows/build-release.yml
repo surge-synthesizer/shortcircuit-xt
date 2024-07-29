@@ -76,6 +76,7 @@ jobs:
           reuse_tag: true
           create_tag: false
           token: ${{ secrets.GITHUB_TOKEN }}
+          release_blurb_file: docs/NightlyBlurb.md
 
       - name: Post to Discord
         uses: surge-synthesizer/sst-githubactions/discord-release-notify@main
