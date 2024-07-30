@@ -71,3 +71,21 @@ jobs:
           cmake --build build --config Debug --target scxt-test --parallel 4
           ./build/tests/scxt-test
 
+
+  build_plugin_lindoc:
+    name: PR - U18 Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build in Docker
+        uses: surge-synthesizer/sst-githubactions/cmake-in-docker@main
+        with:
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          cmakeArgs: -DCMAKE_BUILD_TYPE=Debug -GNinja
+          target: scxt_plugin_Standalone
+
