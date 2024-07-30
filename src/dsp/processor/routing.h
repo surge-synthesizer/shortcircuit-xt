@@ -175,34 +175,38 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     if (forceStereo || !m1 || !m2)
     {
         // stereo
-        mech::clear_block<blockSize << OS>(output[0]);
-        mech::clear_block<blockSize << OS>(output[1]);
+        mech::clear_block<blockSize << (OS ? 1 : 0)>(output[0]);
+        mech::clear_block<blockSize << (OS ? 1 : 0)>(output[1]);
 
         if (!isMute[0])
         {
-            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
-            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][m1 ? 0 : 1], scale,
-                                                            output[1]);
+            mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[0][0], scale,
+                                                                      output[0]);
+            mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[0][m1 ? 0 : 1], scale,
+                                                                      output[1]);
         }
         if (!isMute[1])
         {
-            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
-            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][m2 ? 0 : 1], scale,
-                                                            output[1]);
+            mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[1][0], scale,
+                                                                      output[0]);
+            mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[1][m2 ? 0 : 1], scale,
+                                                                      output[1]);
         }
     }
     else
     {
         // m1 and m2 are both mono
-        mech::clear_block<blockSize << OS>(output[0]);
+        mech::clear_block<blockSize << (OS ? 1 : 0)>(output[0]);
 
         if (!isMute[0])
         {
-            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
+            mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[0][0], scale,
+                                                                      output[0]);
         }
         if (!isMute[1])
         {
-            mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
+            mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[1][0], scale,
+                                                                      output[0]);
         }
     }
 }
@@ -290,29 +294,31 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
 
     if (isStereo)
     {
-        mech::clear_block<blockSize << OS>(output[0]);
-        mech::clear_block<blockSize << OS>(output[1]);
+        mech::clear_block<blockSize << (OS ? 1 : 0)>(output[0]);
+        mech::clear_block<blockSize << (OS ? 1 : 0)>(output[1]);
         float scale = 1.f / numUnMuted;
         for (int i = 0; i < engine::processorCount; ++i)
         {
             if (!isMute[i])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][0], scale, output[0]);
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][localMono[i] ? 0 : 1],
-                                                                scale, output[1]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[i][0], scale,
+                                                                          output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(
+                    tmpbuf[i][localMono[i] ? 0 : 1], scale, output[1]);
             }
         }
         chainIsMono = false;
     }
     else
     {
-        mech::clear_block<blockSize << OS>(output[0]);
+        mech::clear_block<blockSize << (OS ? 1 : 0)>(output[0]);
         float scale = 1.f / numUnMuted;
         for (int i = 0; i < engine::processorCount; ++i)
         {
             if (!isMute[i])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[i][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[i][0], scale,
+                                                                          output[0]);
             }
         }
         chainIsMono = true;
@@ -339,13 +345,13 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
     if (processors[0] || processors[1])
     {
         muteIn12 = false;
-        mech::copy_from_to<scxt::blockSize << OS>(output[0], tempbuf12[0]);
-        mech::copy_from_to<scxt::blockSize << OS>(output[1], tempbuf12[1]);
+        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], tempbuf12[0]);
+        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[1], tempbuf12[1]);
     }
     else
     {
-        mech::clear_block<scxt::blockSize << OS>(tempbuf12[0]);
-        mech::clear_block<scxt::blockSize << OS>(tempbuf12[1]);
+        mech::clear_block<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0]);
+        mech::clear_block<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[1]);
     }
 
     if (processors[0])
@@ -362,14 +368,14 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
     if (processors[2] || processors[3])
     {
         muteIn34 = false;
-        mech::copy_from_to<scxt::blockSize << OS>(output[0], tempbuf34[0]);
-        mech::copy_from_to<scxt::blockSize << OS>(output[1], tempbuf34[1]);
+        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], tempbuf34[0]);
+        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[1], tempbuf34[1]);
     }
     else
     {
 
-        mech::clear_block<scxt::blockSize << OS>(tempbuf34[0]);
-        mech::clear_block<scxt::blockSize << OS>(tempbuf34[1]);
+        mech::clear_block<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0]);
+        mech::clear_block<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[1]);
     }
 
     if (processors[2])
@@ -387,45 +393,45 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
     {
         if (mono12 && mono34)
         {
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0], tempbuf34[0]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0], output[0]);
         }
         else if (mono12)
         {
             // 34 is stereo so
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0], tempbuf34[0]);
             // this 0/1 is right. mono 12 ont stereo 32
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[1]);
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0], tempbuf34[1]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0], output[0]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[1], output[1]);
         }
         else if (mono34)
         {
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf34[0], tempbuf12[0]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0], tempbuf12[0]);
             // this 0/1 is right. mono 34 ont stereo 12
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf34[0], tempbuf12[1]);
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf12[0], output[0]);
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf12[1], output[1]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0], tempbuf12[1]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0], output[0]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[1], output[1]);
         }
         else
         {
             // both sides stereo
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
-            mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[1], tempbuf34[1]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0], tempbuf34[0]);
+            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[1], tempbuf34[1]);
 
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
-            mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0], output[0]);
+            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[1], output[1]);
         }
 
         chainIsMono = mono12 && mono34;
     }
     else
     {
-        mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[0], tempbuf34[0]);
-        mech::accumulate_from_to<scxt::blockSize << OS>(tempbuf12[1], tempbuf34[1]);
+        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[0], tempbuf34[0]);
+        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[1], tempbuf34[1]);
 
-        mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[0], output[0]);
-        mech::copy_from_to<scxt::blockSize << OS>(tempbuf34[1], output[1]);
+        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[0], output[0]);
+        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[1], output[1]);
     }
 
     if (!muteIn12 && !muteIn34)
@@ -436,11 +442,11 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
         static constexpr float amp{0.5f};
         if (chainIsMono)
         {
-            mech::scale_by<scxt::blockSize << OS>(amp, output[0]);
+            mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(amp, output[0]);
         }
         else
         {
-            mech::scale_by<scxt::blockSize << OS>(amp, output[0], output[1]);
+            mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(amp, output[0], output[1]);
         }
     }
 }
@@ -491,41 +497,47 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
         auto scale = 1.f / (!isMute[0] + !isMute[1] + !isMute[2]);
         if (!isStereo)
         {
-            mech::clear_block<blockSize << OS>(output[0]);
+            mech::clear_block<blockSize << (OS ? 1 : 0)>(output[0]);
             if (!isMute[0])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[0][0], scale,
+                                                                          output[0]);
             }
             if (!isMute[1])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[1][0], scale,
+                                                                          output[0]);
             }
             if (!isMute[2])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[2][0], scale, output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[2][0], scale,
+                                                                          output[0]);
             }
         }
         else
         {
-            mech::clear_block<blockSize << OS>(output[0]);
-            mech::clear_block<blockSize << OS>(output[1]);
+            mech::clear_block<blockSize << (OS ? 1 : 0)>(output[0]);
+            mech::clear_block<blockSize << (OS ? 1 : 0)>(output[1]);
             if (!isMute[0])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][0], scale, output[0]);
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[0][m1 ? 0 : 1], scale,
-                                                                output[1]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[0][0], scale,
+                                                                          output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[0][m1 ? 0 : 1],
+                                                                          scale, output[1]);
             }
             if (!isMute[1])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][0], scale, output[0]);
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[1][m2 ? 0 : 1], scale,
-                                                                output[1]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[1][0], scale,
+                                                                          output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[1][m2 ? 0 : 1],
+                                                                          scale, output[1]);
             }
             if (!isMute[2])
             {
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[2][0], scale, output[0]);
-                mech::scale_accumulate_from_to<blockSize << OS>(tmpbuf[2][m3 ? 0 : 1], scale,
-                                                                output[1]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[2][0], scale,
+                                                                          output[0]);
+                mech::scale_accumulate_from_to<blockSize << (OS ? 1 : 0)>(tmpbuf[2][m3 ? 0 : 1],
+                                                                          scale, output[1]);
             }
         }
     }
