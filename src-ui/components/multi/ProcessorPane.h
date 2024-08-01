@@ -244,7 +244,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         namespace jcmp = sst::jucegui::components;
         auto res = createWidgetAttachedTo<jcmp::ToggleButton>(at);
         res->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-        res->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+        res->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
         res->setBounds(elo.powerButtonPositionFor(lotag));
         return std::make_unique<intEditor_t>(std::move(res));
     }

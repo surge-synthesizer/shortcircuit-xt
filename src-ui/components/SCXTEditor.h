@@ -136,9 +136,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     enum ActiveScreen
     {
+        PLAY,
         MULTI,
         MIXER,
-        PLAY
     } activeScreen{MULTI};
     void setActiveScreen(ActiveScreen s);
     void showAboutOverlay();

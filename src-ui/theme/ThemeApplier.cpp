@@ -37,6 +37,8 @@
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/VUMeter.h"
 #include "sst/jucegui/components/ScrollBar.h"
@@ -122,6 +124,21 @@ void init()
 
 } // namespace group
 } // namespace multi
+namespace header
+{
+static constexpr sheet_t::Class TextPushButton{"header.textbutton"};
+static constexpr sheet_t::Class ToggleButton{"header.togglebutton"};
+static constexpr sheet_t::Class MenuButton{"header.menubutton"};
+static constexpr sheet_t::Class GlyphButton{"header.menubutton"};
+void applyColors(const sheet_t::ptr_t &, const ColorMap &);
+void init()
+{
+    sheet_t::addClass(TextPushButton).withBaseClass(jcmp::TextPushButton::Styles::styleClass);
+    sheet_t::addClass(ToggleButton).withBaseClass(jcmp::ToggleButton::Styles::styleClass);
+    sheet_t::addClass(MenuButton).withBaseClass(jcmp::MenuButton::Styles::styleClass);
+    sheet_t::addClass(GlyphButton).withBaseClass(jcmp::GlyphButton::Styles::styleClass);
+}
+} // namespace header
 } // namespace detail
 
 ThemeApplier::ThemeApplier()
@@ -133,6 +150,7 @@ ThemeApplier::ThemeApplier()
         detail::multi::init();
         detail::multi::zone::init();
         detail::multi::group::init();
+        detail::header::init();
         detailInitialized = true;
     }
     colors = ColorMap::createColorMap(ColorMap::WIREFRAME);
@@ -144,6 +162,7 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     detail::multi::applyColors(s, *colors);
     detail::multi::zone::applyColors(s, *colors);
     detail::multi::group::applyColors(s, *colors);
+    detail::header::applyColors(s, *colors);
 }
 
 void ThemeApplier::recolorStylesheetWith(std::unique_ptr<ColorMap> &&c, const sheet_t::ptr_t &s)
@@ -187,6 +206,16 @@ void ThemeApplier::applyGroupMultiScreenTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::MultiSwitch>(detail::multi::group::MultiSwitch);
     map.addCustomClass<jcmp::NamedPanel>(detail::multi::group::NamedPanel);
     map.addCustomClass<jcmp::Knob>(detail::multi::group::Knob);
+    map.applyMapTo(toThis);
+}
+
+void ThemeApplier::applyHeaderTheme(juce::Component *toThis)
+{
+    jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::TextPushButton>(detail::header::TextPushButton);
+    map.addCustomClass<jcmp::ToggleButton>(detail::header::ToggleButton);
+    map.addCustomClass<jcmp::MenuButton>(detail::header::MenuButton);
+    map.addCustomClass<jcmp::GlyphButton>(detail::header::GlyphButton);
     map.applyMapTo(toThis);
 }
 
@@ -411,5 +440,19 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 }
 } // namespace group
 } // namespace multi
+namespace header
+{
+void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
+{
+    base->setColour(TextPushButton, jcmp::TextPushButton::Styles::fill, cols.get(ColorMap::bg_2));
+    base->setColour(TextPushButton, jcmp::TextPushButton::Styles::fill_hover,
+                    cols.get(ColorMap::bg_3));
+    base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill, cols.get(ColorMap::bg_2));
+    base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill_hover, cols.get(ColorMap::bg_3));
+    base->setColour(MenuButton, jcmp::MenuButton::Styles::fill, cols.get(ColorMap::bg_2));
+    base->setColour(GlyphButton, jcmp::GlyphButton::Styles::fill, cols.get(ColorMap::bg_2));
+    base->setColour(GlyphButton, jcmp::GlyphButton::Styles::fill_hover, cols.get(ColorMap::bg_3));
+}
+} // namespace header
 } // namespace detail
 } // namespace scxt::ui::theme

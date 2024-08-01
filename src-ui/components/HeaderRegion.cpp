@@ -36,6 +36,7 @@ namespace scxt::ui
 {
 
 namespace cmsg = scxt::messaging::client;
+namespace jcmp = sst::jucegui::components;
 
 struct spData : sst::jucegui::data::Discrete
 {
@@ -67,9 +68,9 @@ struct spData : sst::jucegui::data::Discrete
             switch ((SCXTEditor::ActiveScreen)i)
             {
             case SCXTEditor::MULTI:
-                return "MULTI";
+                return "EDIT";
             case SCXTEditor::MIXER:
-                return "MIXER";
+                return "MIX";
             case SCXTEditor::PLAY:
                 return "PLAY";
             }
@@ -93,12 +94,60 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     vuMeter->direction = sst::jucegui::components::VUMeter::HORIZONTAL;
     addAndMakeVisible(*vuMeter);
 
-    scMenu = std::make_unique<widgets::ShortCircuitMenuButton>();
+    scMenu = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SHORTCIRCUIT_LOGO);
     scMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (w)
             w->editor->showMainMenu();
     });
     addAndMakeVisible(*scMenu);
+
+    undoButton = std::make_unique<jcmp::TextPushButton>();
+    undoButton->setLabel("Undo");
+    addAndMakeVisible(*undoButton);
+
+    redoButton = std::make_unique<jcmp::TextPushButton>();
+    redoButton->setLabel("Redo");
+    addAndMakeVisible(*redoButton);
+
+    tuningButton = std::make_unique<jcmp::TextPushButton>();
+    tuningButton->setLabel("Tune");
+    addAndMakeVisible(*tuningButton);
+
+    zoomButton = std::make_unique<jcmp::TextPushButton>();
+    zoomButton->setLabel("Zoom");
+    addAndMakeVisible(*zoomButton);
+
+    chipButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::MEMORY);
+    addAndMakeVisible(*chipButton);
+
+    saveAsButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SAVE);
+    addAndMakeVisible(*saveAsButton);
+
+    multiMenuButton = std::make_unique<jcmp::MenuButton>();
+    multiMenuButton->setLabel("This is my Super Awesome Multi");
+    addAndMakeVisible(*multiMenuButton);
+
+    cpuLabel = std::make_unique<jcmp::Label>();
+    cpuLabel->setText("CPU");
+    cpuLabel->setJustification(juce::Justification::centredLeft);
+    addAndMakeVisible(*cpuLabel);
+
+    cpuLevel = std::make_unique<jcmp::Label>();
+    cpuLevel->setText("x%");
+    cpuLevel->setJustification(juce::Justification::centredRight);
+    addAndMakeVisible(*cpuLevel);
+
+    ramLabel = std::make_unique<jcmp::Label>();
+    ramLabel->setText("RAM");
+    ramLabel->setJustification(juce::Justification::centredLeft);
+    addAndMakeVisible(*ramLabel);
+
+    ramLevel = std::make_unique<jcmp::Label>();
+    ramLevel->setText("xMB");
+    ramLevel->setJustification(juce::Justification::centredRight);
+    addAndMakeVisible(*ramLevel);
+
+    editor->themeApplier.applyHeaderTheme(this);
 }
 
 HeaderRegion::~HeaderRegion()
@@ -109,9 +158,29 @@ HeaderRegion::~HeaderRegion()
 
 void HeaderRegion::resized()
 {
-    selectedPage->setBounds(4, 4, 170, getHeight() - 8);
-    scMenu->setBounds(getWidth() - getHeight() - 8, 4, getHeight() - 8, getHeight() - 8);
-    vuMeter->setBounds(getWidth() - getHeight() - 8 - 140, 4, 135, getHeight() - 8);
+    auto b = getBounds().reduced(6);
+    selectedPage->setBounds(b.withWidth(196));
+
+    undoButton->setBounds(b.withTrimmedLeft(246).withWidth(48));
+    redoButton->setBounds(b.withTrimmedLeft(246 + 50).withWidth(48));
+
+    tuningButton->setBounds(b.withTrimmedLeft(823).withWidth(48));
+    zoomButton->setBounds(b.withTrimmedLeft(823 + 50).withWidth(48));
+
+    chipButton->setBounds(b.withTrimmedLeft(393).withWidth(24));
+    saveAsButton->setBounds(b.withTrimmedLeft(755).withWidth(24));
+
+    multiMenuButton->setBounds(b.withTrimmedLeft(421).withWidth(330));
+
+    scMenu->setBounds(b.withTrimmedLeft(1148).withWidth(24));
+
+    cpuLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(12));
+    ramLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(12).translated(0, 12));
+
+    cpuLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(12));
+    ramLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(12).translated(0, 12));
+
+    vuMeter->setBounds(b.withTrimmedLeft(1048).withWidth(96));
 }
 
 void HeaderRegion::setVULevel(float L, float R)
@@ -133,38 +202,4 @@ void HeaderRegion::setVULevel(float L, float R)
     }
 }
 
-void HeaderRegion::paint(juce::Graphics &g)
-
-{
-#if DEBUG_VOICE_COUNT
-    auto vc = fmt::format("Voices: {}", voiceCount);
-    g.setColour(juce::Colours::white);
-    g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
-#endif
-
-#if MAC
-    g.setFont(juce::Font("Comic Sans MS", 18, juce::Font::plain));
-
-    auto vc = fmt::format("Dbg: {:.2f} Mb, Pos {:.2f} @ {} in {}/{}", memUsageInMegabytes,
-                          (double)editor->sharedUiMemoryState.transportDisplay.hostpos,
-                          (double)editor->sharedUiMemoryState.transportDisplay.tempo,
-                          (int)editor->sharedUiMemoryState.transportDisplay.tsnum,
-                          (int)editor->sharedUiMemoryState.transportDisplay.tsden);
-    g.setColour(juce::Colours::white);
-    g.drawText(vc, getLocalBounds().reduced(3, 1), juce::Justification::centred);
-#endif
-
-    return;
-#if BUILD_IS_DEBUG
-    g.fillAll(juce::Colours::red);
-    g.setColour(juce::Colours::pink.contrasting());
-    g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
-    g.drawText("DEBUG DEBUG DEBUG", getLocalBounds(), juce::Justification::centred);
-#else
-    g.fillAll(juce::Colours::pink);
-    g.setColour(juce::Colours::pink.contrasting());
-    g.setFont(juce::Font("Comic Sans MS", 14, juce::Font::plain));
-    g.drawText("header", getLocalBounds(), juce::Justification::centred);
-#endif
-}
 } // namespace scxt::ui
