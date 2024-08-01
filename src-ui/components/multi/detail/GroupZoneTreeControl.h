@@ -321,7 +321,7 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
         std::unique_ptr<jcmp::GlyphButton> gBut;
         rowAddComponent()
         {
-            gBut = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::BIG_PLUS);
+            gBut = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::PLUS);
             addAndMakeVisible(*gBut);
             gBut->glyphButtonPad = 3;
             gBut->setOnCallback([this]() { gsb->addGroup(); });

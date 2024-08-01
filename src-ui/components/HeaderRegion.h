@@ -30,6 +30,10 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/ToggleButton.h>
+#include <sst/jucegui/components/TextPushButton.h>
+#include <sst/jucegui/components/MenuButton.h>
+#include <sst/jucegui/components/GlyphButton.h>
+#include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/VUMeter.h>
 #include <fmt/core.h>
 
@@ -46,15 +50,19 @@ struct SCXTEditor;
 
 struct HeaderRegion : juce::Component, HasEditor
 {
-    std::unique_ptr<widgets::ShortCircuitMenuButton> scMenu;
     std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedPage;
     std::unique_ptr<sst::jucegui::data::Discrete> selectedPageData;
     std::unique_ptr<sst::jucegui::components::VUMeter> vuMeter;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> undoButton, redoButton, tuningButton,
+        zoomButton;
+    std::unique_ptr<sst::jucegui::components::Label> cpuLevel, ramLevel;
+    std::unique_ptr<sst::jucegui::components::Label> cpuLabel, ramLabel;
+
+    std::unique_ptr<sst::jucegui::components::GlyphButton> chipButton, saveAsButton, scMenu;
+    std::unique_ptr<sst::jucegui::components::MenuButton> multiMenuButton;
 
     HeaderRegion(SCXTEditor *);
     ~HeaderRegion();
-
-    void paint(juce::Graphics &g) override;
 
     void resized() override;
 

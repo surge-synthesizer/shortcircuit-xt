@@ -52,6 +52,7 @@ struct ThemeApplier
     void applyGroupMultiScreenModulationTheme(juce::Component *toThis);
     void applyMixerEffectTheme(juce::Component *toThis);
     void applyMixerChannelTheme(juce::Component *toThis);
+    void applyHeaderTheme(juce::Component *toThis);
 
     const std::unique_ptr<ColorMap> &colorMap() { return colors; }
 

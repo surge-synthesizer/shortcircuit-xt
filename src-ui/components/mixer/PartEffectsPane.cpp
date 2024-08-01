@@ -258,7 +258,7 @@ juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
 {
     auto res = std::make_unique<jcmp::ToggleButton>();
     res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
-    res->setGlyph(jcmp::GlyphPainter::GlyphType::POWER_LIGHT);
+    res->setGlyph(jcmp::GlyphPainter::GlyphType::SMALL_POWER_LIGHT);
 
     auto &data = mixer->busEffectsData[busAddress][fxSlot];
     auto &pmd = data.first[index];

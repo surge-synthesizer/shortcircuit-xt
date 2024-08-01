@@ -575,7 +575,7 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                 auto hpLight =
                     createWidgetAttachedTo<jcmp::ToggleButton>(deactivateAttachments[c.index]);
                 hpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-                hpLight->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+                hpLight->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
                 hpLight->setBounds(elo.powerButtonPositionFor(nm));
                 floatDeactivateEditors[c.index] = std::make_unique<intEditor_t>(std::move(hpLight));
                 attachRebuildToDeactivateAttachment(c.index);
@@ -712,7 +712,7 @@ void ProcessorPane::layoutControlsStringResonator()
     auto bounds = getContentAreaComponent()->getLocalBounds();
     auto dual = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
     dual->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    dual->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+    dual->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
     auto dualBounds = bounds.withLeft(1).withRight(11).withTop(63).withBottom(74);
     dual->setBounds(dualBounds);
     intEditors[1] = std::make_unique<intEditor_t>(std::move(dual));
@@ -815,7 +815,7 @@ void ProcessorPane::LayoutControlsTremolo()
 
     auto harmonic = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[0]);
     harmonic->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    harmonic->setGlyph(jcmp::GlyphPainter::POWER_LIGHT);
+    harmonic->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
     auto plusBounds = bounds.withLeft(148).withRight(160).withTop(0).withBottom(12);
     harmonic->setBounds(plusBounds);
     intEditors[0] = std::make_unique<intEditor_t>(std::move(harmonic));

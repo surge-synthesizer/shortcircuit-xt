@@ -150,10 +150,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             addAndMakeVisible(*r);
             return r;
         };
-        x1 = mg(jcmp::GlyphPainter::CROSS);
-        x2 = mg(jcmp::GlyphPainter::CROSS);
+        x1 = mg(jcmp::GlyphPainter::CLOSE);
+        x2 = mg(jcmp::GlyphPainter::CLOSE);
         a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
-        a2 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
+        a2 = mg(jcmp::GlyphPainter::MODULATION_ADDITIVE);
 
         refreshRow();
     }
@@ -171,15 +171,23 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             b = b.translated(sz + 2, 0);
         };
 
+        auto sqr = [&b](const auto &wd, auto sz) {
+            auto bx = b.withWidth(sz);
+            if (bx.getHeight() > sz)
+                bx = bx.reduced(0, (b.getHeight() - sz) * 0.5f);
+            wd->setBounds(bx);
+            b = b.translated(sz + 2, 0);
+        };
+
         map(power, b.getHeight());
         map(source, 90);
-        map(x1, 6);
+        sqr(x1, 12);
         map(sourceVia, 90);
-        map(x2, 6);
+        sqr(x2, 12);
         map(depth, 120, 2);
-        map(a1, 10);
+        sqr(a1, 12);
         map(curve, 60);
-        map(a2, 10);
+        sqr(a2, 12);
         map(target, getWidth() - b.getX());
     }
     void refreshRow()
@@ -279,11 +287,11 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         {
             if (GZTrait::isMultiplicative(*(row.target)))
             {
-                a2->glyph = sst::jucegui::components::GlyphPainter::ARROW_L_TO_R_WITH_MUL;
+                a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE;
             }
             else
             {
-                a2->glyph = sst::jucegui::components::GlyphPainter::ARROW_L_TO_R;
+                a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_ADDITIVE;
             }
         }
 
