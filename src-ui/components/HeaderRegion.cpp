@@ -30,7 +30,6 @@
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
-#include "widgets/ShortCircuitMenuButton.h"
 
 namespace scxt::ui
 {
