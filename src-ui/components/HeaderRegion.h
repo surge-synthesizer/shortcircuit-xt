@@ -41,7 +41,6 @@
 
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
-#include "widgets/ShortCircuitMenuButton.h"
 #include "HasEditor.h"
 
 namespace scxt::ui
