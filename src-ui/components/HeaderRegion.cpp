@@ -150,7 +150,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     editor->themeApplier.applyHeaderTheme(this);
     editor->themeApplier.setLabelToHighlight(cpuLevel.get());
     editor->themeApplier.setLabelToHighlight(ramLevel.get());
-    editor->themeApplier.setGlyphButtonToAccent(scMenu.get());
+    editor->themeApplier.applyHeaderSCButtonTheme(scMenu.get());
 }
 
 HeaderRegion::~HeaderRegion()

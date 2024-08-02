@@ -54,14 +54,14 @@ struct ThemeApplier
     void applyMixerEffectTheme(juce::Component *toThis);
     void applyMixerChannelTheme(juce::Component *toThis);
     void applyHeaderTheme(juce::Component *toThis);
+    void applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *);
 
     // Some utilities to move single items
     void setLabelToHighlight(sst::jucegui::style::StyleConsumer *);
-    void setGlyphButtonToAccent(sst::jucegui::style::StyleConsumer *);
 
     const std::unique_ptr<ColorMap> &colorMap() { return colors; }
 
-    juce::Font interMediumFor(int ht);
+    juce::Font interMediumFor(int ht) const;
 
   protected:
     std::unique_ptr<ColorMap> colors;

@@ -130,26 +130,23 @@ static constexpr sheet_t::Class TextPushButton{"header.textbutton"};
 static constexpr sheet_t::Class ToggleButton{"header.togglebutton"};
 static constexpr sheet_t::Class MenuButton{"header.menubutton"};
 static constexpr sheet_t::Class GlyphButton{"header.menubutton"};
-void applyColors(const sheet_t::ptr_t &, const ColorMap &);
+static constexpr sheet_t::Class GlyphButtonAccent{"header.menubutton.accent"};
+void applyColorsAndFonts(const sheet_t::ptr_t &, const ColorMap &, const ThemeApplier &);
 void init()
 {
     sheet_t::addClass(TextPushButton).withBaseClass(jcmp::TextPushButton::Styles::styleClass);
     sheet_t::addClass(ToggleButton).withBaseClass(jcmp::ToggleButton::Styles::styleClass);
     sheet_t::addClass(MenuButton).withBaseClass(jcmp::MenuButton::Styles::styleClass);
     sheet_t::addClass(GlyphButton).withBaseClass(jcmp::GlyphButton::Styles::styleClass);
+    sheet_t::addClass(GlyphButtonAccent).withBaseClass(GlyphButton);
 }
 } // namespace header
 namespace util
 {
 static constexpr sheet_t::Class LabelHighlight("util.label.highlight");
-static constexpr sheet_t::Class GlyphButtonAccent("util.glyphbutton.accent");
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 
-void init()
-{
-    sheet_t::addClass(LabelHighlight).withBaseClass(jcmp::Label::Styles::styleClass);
-    sheet_t::addClass(GlyphButtonAccent).withBaseClass(jcmp::GlyphButton::Styles::styleClass);
-}
+void init() { sheet_t::addClass(LabelHighlight).withBaseClass(jcmp::Label::Styles::styleClass); }
 } // namespace util
 } // namespace detail
 
@@ -175,7 +172,7 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     detail::multi::applyColors(s, *colors);
     detail::multi::zone::applyColors(s, *colors);
     detail::multi::group::applyColors(s, *colors);
-    detail::header::applyColors(s, *colors);
+    detail::header::applyColorsAndFonts(s, *colors, *this);
     detail::util::applyColors(s, *colors);
 }
 
@@ -238,12 +235,12 @@ void ThemeApplier::setLabelToHighlight(sst::jucegui::style::StyleConsumer *s)
     s->setCustomClass(detail::util::LabelHighlight);
 }
 
-void ThemeApplier::setGlyphButtonToAccent(sst::jucegui::style::StyleConsumer *s)
+void ThemeApplier::applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *s)
 {
-    s->setCustomClass(detail::util::GlyphButtonAccent);
+    s->setCustomClass(detail::header::GlyphButtonAccent);
 }
 
-juce::Font ThemeApplier::interMediumFor(int ht)
+juce::Font ThemeApplier::interMediumFor(int ht) const
 {
     static auto interMed =
         connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
@@ -466,16 +463,24 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 } // namespace multi
 namespace header
 {
-void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
+void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const ThemeApplier &t)
 {
     base->setColour(TextPushButton, jcmp::TextPushButton::Styles::fill, cols.get(ColorMap::bg_2));
     base->setColour(TextPushButton, jcmp::TextPushButton::Styles::fill_hover,
                     cols.get(ColorMap::bg_3));
+    base->setFont(TextPushButton, jcmp::TextPushButton::Styles::labelfont, t.interMediumFor(14));
     base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill, cols.get(ColorMap::bg_2));
     base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill_hover, cols.get(ColorMap::bg_3));
+    base->setFont(ToggleButton, jcmp::ToggleButton::Styles::labelfont, t.interMediumFor(14));
     base->setColour(MenuButton, jcmp::MenuButton::Styles::fill, cols.get(ColorMap::bg_2));
+    base->setFont(MenuButton, jcmp::MenuButton::Styles::labelfont, t.interMediumFor(14));
     base->setColour(GlyphButton, jcmp::GlyphButton::Styles::fill, cols.get(ColorMap::bg_2));
     base->setColour(GlyphButton, jcmp::GlyphButton::Styles::fill_hover, cols.get(ColorMap::bg_3));
+
+    base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor,
+                    cols.get(ColorMap::accent_1a));
+    base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor_hover,
+                    cols.get(ColorMap::accent_1a));
 }
 } // namespace header
 
@@ -485,10 +490,6 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 {
     base->setColour(LabelHighlight, jcmp::Label::Styles::labelcolor,
                     cols.get(ColorMap::generic_content_highest));
-    base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor,
-                    cols.get(ColorMap::accent_1a));
-    base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor_hover,
-                    cols.get(ColorMap::accent_1a));
 }
 } // namespace util
 } // namespace detail
