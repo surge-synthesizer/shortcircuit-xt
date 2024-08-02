@@ -33,6 +33,9 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/Viewport.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -44,9 +47,8 @@
 namespace scxt::ui::multi
 {
 
-const auto selZoneColor = juce::Colour(0xFF, 0xB9, 0x49);
-
 namespace cmsg = scxt::messaging::client;
+namespace jcmp = sst::jucegui::components;
 
 struct MappingDisplay;
 struct Keyboard : juce::Component, HasEditor
@@ -54,7 +56,7 @@ struct Keyboard : juce::Component, HasEditor
     MappingDisplay *display{nullptr};
 
     static constexpr int firstMidiNote{0}, lastMidiNote{128};
-    static constexpr int keyboardHeight{25};
+    static constexpr int keyboardHeight{18};
 
     int32_t heldNote{-1};
 
@@ -167,16 +169,68 @@ struct MappingZones : juce::Component, HasEditor
     juce::Point<float> firstMousePos{0.f, 0.f}, lastMousePos{0.f, 0.f};
 };
 
-struct MappingZoneHeader : juce::Component
+struct MappingZoneHeader : HasEditor, juce::Component
 {
-    int paints{0};
-    void paint(juce::Graphics &g)
+    std::unique_ptr<jcmp::TextPushButton> autoMap, fixOverlap, fadeOverlap, zoneSolo;
+    std::unique_ptr<jcmp::GlyphButton> midiButton, midiLRButton, midiUDButton, lockButton;
+    std::unique_ptr<jcmp::Label> fileLabel;
+    std::unique_ptr<jcmp::MenuButton> fileMenu;
+
+    MappingZoneHeader(SCXTEditor *ed) : HasEditor(ed)
     {
-        g.setColour(juce::Colours::darkgreen);
-        g.fillAll();
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font("Comic Sans MS", 20, juce::Font::plain));
-        g.drawText("Zones Header", getLocalBounds(), juce::Justification::centred);
+        autoMap = std::make_unique<jcmp::TextPushButton>();
+        autoMap->setLabel("AUTO-MAP");
+        addAndMakeVisible(*autoMap);
+
+        midiButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::MIDI);
+        addAndMakeVisible(*midiButton);
+
+        midiUDButton = std::make_unique<jcmp::GlyphButton>(
+            jcmp::GlyphPainter::GlyphType::MIDI, jcmp::GlyphPainter::GlyphType::UP_DOWN, 16);
+        addAndMakeVisible(*midiUDButton);
+
+        midiLRButton = std::make_unique<jcmp::GlyphButton>(
+            jcmp::GlyphPainter::GlyphType::MIDI, jcmp::GlyphPainter::GlyphType::LEFT_RIGHT, 16);
+        addAndMakeVisible(*midiLRButton);
+
+        fixOverlap = std::make_unique<jcmp::TextPushButton>();
+        fixOverlap->setLabel("FIX OVERLAP");
+        addAndMakeVisible(*fixOverlap);
+
+        fadeOverlap = std::make_unique<jcmp::TextPushButton>();
+        fadeOverlap->setLabel("FADE OVERLAP");
+        addAndMakeVisible(*fadeOverlap);
+
+        zoneSolo = std::make_unique<jcmp::TextPushButton>();
+        zoneSolo->setLabel("ZONE SOLO");
+        addAndMakeVisible(*zoneSolo);
+
+        lockButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::LOCK);
+        addAndMakeVisible(*lockButton);
+
+        fileLabel = std::make_unique<jcmp::Label>();
+        fileLabel->setText("FILE");
+        addAndMakeVisible(*fileLabel);
+
+        fileMenu = std::make_unique<jcmp::MenuButton>();
+        fileMenu->setLabel("sample-name-to-come.wav");
+        addAndMakeVisible(*fileMenu);
+    }
+
+    void resized() override
+    {
+        auto b = getLocalBounds().reduced(1);
+        autoMap->setBounds(b.withWidth(85));
+
+        midiButton->setBounds(b.withTrimmedLeft(91).withWidth(16));
+        midiLRButton->setBounds(b.withTrimmedLeft(113).withWidth(28));
+        midiUDButton->setBounds(b.withTrimmedLeft(147).withWidth(28));
+        fixOverlap->setBounds(b.withTrimmedLeft(181).withWidth(85));
+        fadeOverlap->setBounds(b.withTrimmedLeft(181 + 87).withWidth(85));
+        zoneSolo->setBounds(b.withTrimmedLeft(181 + 2 * 87).withWidth(85));
+        lockButton->setBounds(b.withTrimmedLeft(181 + 3 * 87).withWidth(16));
+        fileLabel->setBounds(b.withTrimmedLeft(181 + 3 * 87 + 20).withWidth(40));
+        fileMenu->setBounds(b.withTrimmedLeft(500));
     }
 };
 
@@ -365,7 +419,7 @@ struct MappingDisplay : juce::Component,
         mappingViewport = std::make_unique<Zoomable>(mappingZones.get());
         addAndMakeVisible(*mappingViewport);
 
-        zoneHeader = std::make_unique<MappingZoneHeader>();
+        zoneHeader = std::make_unique<MappingZoneHeader>(editor);
         addAndMakeVisible(*zoneHeader);
 
         keyboard = std::make_unique<Keyboard>(this);
@@ -473,7 +527,7 @@ struct MappingDisplay : juce::Component,
     void resized() override
     {
         static constexpr int mapSize{620};
-        static constexpr int headerSize{22};
+        static constexpr int headerSize{20};
 
         // Header
         auto b = getLocalBounds();
@@ -763,6 +817,7 @@ void Keyboard::paint(juce::Graphics &g)
             g.fillRect(kr);
         }
 
+        auto selZoneColor = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1b);
         if (i == display->mappingView.rootKey)
         {
             g.setColour(selZoneColor);
@@ -774,16 +829,28 @@ void Keyboard::paint(juce::Graphics &g)
     }
 
     constexpr auto lastOctave = 11;
+    auto font = editor->themeApplier.interMediumFor(13);
     for (int octave = 0; octave < lastOctave; ++octave)
     {
         assert(octave <= 10);
         auto r = rectangleForKey(octave * 12);
         r.setLeft(r.getX() + 1);
         r.setWidth(r.getWidth() * 12);
-        g.setColour(juce::Colours::black);
         // defaultMidiNoteOctaveOffset = -1 => first octave is C-2
         auto offset = -1 + sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset;
-        g.drawText(fmt::format("C{}", octave + offset), r, juce::Justification::bottomLeft);
+
+        auto txt = fmt::format("C{}", octave + offset);
+        juce::Path textPath;
+        juce::GlyphArrangement glyphs;
+        glyphs.addFittedText(font, txt, r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+                             juce::Justification::centredLeft, 1);
+        glyphs.createPath(textPath);
+
+        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::bg_1));
+        juce::PathStrokeType strokeType(2.5f);
+        g.strokePath(textPath, strokeType);
+        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_highest));
+        g.fillPath(textPath);
     }
 }
 
@@ -1285,7 +1352,7 @@ juce::Rectangle<float> MappingZones::rectangleForZone(const engine::Part::zoneMa
 
 juce::Rectangle<float> MappingZones::rectangleForRange(int kL, int kH, int vL, int vH)
 {
-    auto lb = getLocalBounds().toFloat();
+    auto lb = getLocalBounds().toFloat().withTrimmedTop(1.f);
     auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
     auto kw = displayRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote);
     auto vh = displayRegion.getHeight() / 127.0;
@@ -1294,8 +1361,8 @@ juce::Rectangle<float> MappingZones::rectangleForRange(int kL, int kH, int vL, i
     float x1 = (kH - Keyboard::firstMidiNote + 1) * kw;
     if (x1 < x0)
         std::swap(x1, x0);
-    float y0 = (127 - vL) * vh;
-    float y1 = (127 - vH) * vh;
+    float y0 = (127 - vL) * vh + lb.getY();
+    float y1 = (127 - vH) * vh + lb.getY();
     if (y1 < y0)
         std::swap(y1, y0);
 
@@ -1309,14 +1376,18 @@ void MappingZones::paint(juce::Graphics &g)
 
     // Draw the background
     {
-        auto lb = getLocalBounds().toFloat();
+        auto lb = getLocalBounds().toFloat().withTrimmedTop(1.f);
         auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
 
-        auto dashCol = juce::Colour(80, 80, 80);
+        auto dashCol =
+            editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_low, 0.4f);
         g.setColour(dashCol);
-        g.drawRect(displayRegion, 1.f);
+        g.drawVerticalLine(lb.getX() + 1, lb.getY(), lb.getY() + lb.getHeight());
+        g.drawVerticalLine(lb.getX() + lb.getWidth() - 1, lb.getY(), lb.getY() + lb.getHeight());
+        g.drawHorizontalLine(lb.getY(), lb.getX(), lb.getX() + lb.getWidth());
+        g.drawHorizontalLine(lb.getY() + lb.getHeight() - 1, lb.getX(), lb.getX() + lb.getWidth());
 
-        dashCol = juce::Colour(50, 50, 60);
+        dashCol = dashCol.withAlpha(0.2f);
         g.setColour(dashCol);
 
         auto dh = displayRegion.getHeight() / 4.0;
@@ -1379,15 +1450,16 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto nonSelZoneColor = juce::Colour(140, 140, 140);
+            auto nonSelZoneColor =
+                editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_medium);
             if (drawSelected)
-                nonSelZoneColor = juce::Colour(0xFF, 0x90, 0x00);
-            g.setColour(nonSelZoneColor.withAlpha(0.2f));
+                nonSelZoneColor = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1a);
+            g.setColour(nonSelZoneColor.withAlpha(drawSelected ? 0.5f : 0.2f));
             g.fillRect(r);
             g.setColour(nonSelZoneColor);
             g.drawRect(r, 2.f);
             g.setColour(nonSelZoneColor.brighter());
-            g.setFont(editor->themeApplier.interMediumFor(12));
+            g.setFont(editor->themeApplier.interMediumFor(11));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
@@ -1406,6 +1478,7 @@ void MappingZones::paint(juce::Graphics &g)
 
             const auto &[kb, vel, name] = z.second;
 
+            auto selZoneColor = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1b);
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
@@ -1579,7 +1652,8 @@ void MappingZones::paint(juce::Graphics &g)
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
 
-            g.setColour(selZoneColor);
+            g.setColour(
+                editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_highest));
             g.setFont(editor->themeApplier.interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
@@ -1592,7 +1666,7 @@ void MappingZones::paint(juce::Graphics &g)
     {
         auto rr = rootAndRangeForPosition(display->currentDragPoint);
         auto rb = rectangleForRange(rr[1], rr[2], 0, 127);
-        g.setColour(juce::Colour(0xFF, 0x90, 0x00).withAlpha(0.4f));
+        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1a, 0.4f));
         g.fillRect(rb);
     }
 
@@ -1609,13 +1683,15 @@ void MappingZones::paint(juce::Graphics &g)
                 auto rz = rectangleForZone(z.second);
                 if (rz.intersects(r))
                 {
-                    g.setColour(juce::Colours::white);
+                    g.setColour(editor->themeApplier.colorMap()->get(
+                        theme::ColorMap::generic_content_high));
 
                     g.drawRect(rz, 2);
                 }
             }
 
-            g.setColour(juce::Colours::white);
+            g.setColour(
+                editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_highest));
             auto p = juce::Path();
             p.addRectangle(r);
 
@@ -1626,9 +1702,10 @@ void MappingZones::paint(juce::Graphics &g)
         }
         else
         {
-            g.setColour(juce::Colour(100, 255, 100).withAlpha(0.3f));
+            auto col = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_2a);
+            g.setColour(col.withAlpha(0.3f));
             g.fillRect(r);
-            g.setColour(juce::Colour(100, 255, 100).withAlpha(1.f));
+            g.setColour(col);
             g.drawRect(r, 2);
         }
     }
@@ -2842,13 +2919,14 @@ void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
     samplePlaybackPosition.setTopLeftPosition(x, 0);
 }
 
-struct MacroDisplay : juce::Component
+struct MacroDisplay : HasEditor, juce::Component
 {
+    MacroDisplay(SCXTEditor *e) : HasEditor(e) {}
     void paint(juce::Graphics &g)
     {
-        g.setColour(juce::Colours::yellow);
-        g.setFont(juce::Font("Comic Sans MS", 50, juce::Font::plain));
-        g.drawText("Macro Region", getLocalBounds(), juce::Justification::centred);
+        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::warning_1a));
+        g.setFont(editor->themeApplier.interMediumFor(25));
+        g.drawText("Macro Region Coming Soon", getLocalBounds(), juce::Justification::centred);
     }
 };
 
@@ -2864,7 +2942,7 @@ MappingPane::MappingPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("
     sampleDisplay = std::make_unique<SampleDisplay>(this);
     addChildComponent(*sampleDisplay);
 
-    macroDisplay = std::make_unique<MacroDisplay>();
+    macroDisplay = std::make_unique<MacroDisplay>(editor);
     addChildComponent(*macroDisplay);
 
     resetTabState();
