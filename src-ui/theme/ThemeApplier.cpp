@@ -199,7 +199,12 @@ void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
     populateSharedGroupZoneMultiModulation(map);
     map.applyMapTo(toThis);
 }
-void ThemeApplier::applyZoneMultiScreenTheme(juce::Component *toThis) {}
+void ThemeApplier::applyZoneMultiScreenTheme(juce::Component *toThis)
+{
+    jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::NamedPanel>(jcmp::NamedPanel::Styles::styleClass);
+    map.applyMapTo(toThis);
+}
 
 void ThemeApplier::applyGroupMultiScreenModulationTheme(juce::Component *toThis)
 {

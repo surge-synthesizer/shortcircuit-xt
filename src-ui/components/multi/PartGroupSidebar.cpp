@@ -113,12 +113,12 @@ struct PartSidebar : juce::Component, HasEditor
     }
 };
 
-template <typename T>
+template <typename T, bool forZone>
 struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropContainer
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
     std::unique_ptr<juce::ListBox> listBox;
-    std::unique_ptr<detail::GroupZoneListBoxModel<T>> listBoxModel;
+    std::unique_ptr<detail::GroupZoneListBoxModel<T, forZone>> listBoxModel;
     std::unique_ptr<jcmp::MenuButton> partSelector;
 
     T *asT() { return static_cast<T *>(this); }
@@ -133,7 +133,7 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
 
     void postInit()
     {
-        listBoxModel = std::make_unique<detail::GroupZoneListBoxModel<T>>(asT());
+        listBoxModel = std::make_unique<detail::GroupZoneListBoxModel<T, forZone>>(asT());
         listBoxModel->rebuild();
         listBox = std::make_unique<juce::ListBox>();
         listBox->setModel(listBoxModel.get());
@@ -230,10 +230,10 @@ struct GroupControls : juce::Component, HasEditor
     }
 };
 
-struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar>
+struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
 {
 
-    GroupSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<GroupSidebar>(p)
+    GroupSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<GroupSidebar, false>(p)
     {
         groupControls = std::make_unique<GroupControls>(this);
         addAndMakeVisible(*groupControls);
@@ -286,9 +286,9 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar>
     std::unique_ptr<GroupControls> groupControls;
 };
 
-struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar>
+struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
 {
-    ZoneSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<ZoneSidebar>(p) {}
+    ZoneSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<ZoneSidebar, true>(p) {}
     ~ZoneSidebar() = default;
 
     void updateSelection()
@@ -411,6 +411,11 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
 
         w->editor->multiScreen->setSelectionMode(g ? MultiScreen::SelectionMode::GROUP
                                                    : MultiScreen::SelectionMode::ZONE);
+
+        if (g)
+            w->editor->themeApplier.applyGroupMultiScreenTheme(w);
+        else
+            w->editor->themeApplier.applyZoneMultiScreenTheme(w);
     };
     resetTabState();
 

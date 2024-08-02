@@ -526,7 +526,7 @@ struct MappingDisplay : juce::Component,
 
     void resized() override
     {
-        static constexpr int mapSize{620};
+        static constexpr int controlSize{140};
         static constexpr int headerSize{20};
 
         // Header
@@ -535,7 +535,7 @@ struct MappingDisplay : juce::Component,
 
         // Mapping Display
         auto z = b.withTrimmedTop(headerSize);
-        auto viewArea = z.withWidth(mapSize);
+        auto viewArea = z.withWidth(getWidth() - controlSize - 5);
         mappingViewport->setBounds(viewArea);
         auto kbdY = viewArea.getBottom() - mappingViewport->viewport->getScrollBarThickness() -
                     Keyboard::keyboardHeight;
@@ -546,7 +546,7 @@ struct MappingDisplay : juce::Component,
         static constexpr int rowHeight{16}, rowMargin{4};
         static constexpr int typeinWidth{32};
         static constexpr int typeinPad{4}, typeinMargin{2};
-        auto r = z.withLeft(mapSize + 2);
+        auto r = z.withLeft(getWidth() - controlSize);
         auto cr = r.withHeight(rowHeight);
 
         auto co2 = [=](auto &c) {
