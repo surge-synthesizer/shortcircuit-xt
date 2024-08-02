@@ -817,7 +817,7 @@ void Keyboard::paint(juce::Graphics &g)
             g.fillRect(kr);
         }
 
-        auto selZoneColor = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1b);
+        auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1b);
         if (i == display->mappingView.rootKey)
         {
             g.setColour(selZoneColor);
@@ -846,10 +846,10 @@ void Keyboard::paint(juce::Graphics &g)
                              juce::Justification::centredLeft, 1);
         glyphs.createPath(textPath);
 
-        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::bg_1));
+        g.setColour(editor->themeColor(theme::ColorMap::bg_1));
         juce::PathStrokeType strokeType(2.5f);
         g.strokePath(textPath, strokeType);
-        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_highest));
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
         g.fillPath(textPath);
     }
 }
@@ -1379,8 +1379,7 @@ void MappingZones::paint(juce::Graphics &g)
         auto lb = getLocalBounds().toFloat().withTrimmedTop(1.f);
         auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
 
-        auto dashCol =
-            editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_low, 0.4f);
+        auto dashCol = editor->themeColor(theme::ColorMap::generic_content_low, 0.4f);
         g.setColour(dashCol);
         g.drawVerticalLine(lb.getX() + 1, lb.getY(), lb.getY() + lb.getHeight());
         g.drawVerticalLine(lb.getX() + lb.getWidth() - 1, lb.getY(), lb.getY() + lb.getHeight());
@@ -1450,10 +1449,9 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto nonSelZoneColor =
-                editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_medium);
+            auto nonSelZoneColor = editor->themeColor(theme::ColorMap::generic_content_medium);
             if (drawSelected)
-                nonSelZoneColor = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1a);
+                nonSelZoneColor = editor->themeColor(theme::ColorMap::accent_1a);
             g.setColour(nonSelZoneColor.withAlpha(drawSelected ? 0.5f : 0.2f));
             g.fillRect(r);
             g.setColour(nonSelZoneColor);
@@ -1478,7 +1476,7 @@ void MappingZones::paint(juce::Graphics &g)
 
             const auto &[kb, vel, name] = z.second;
 
-            auto selZoneColor = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1b);
+            auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1b);
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
@@ -1652,8 +1650,7 @@ void MappingZones::paint(juce::Graphics &g)
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
 
-            g.setColour(
-                editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_highest));
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
             g.setFont(editor->themeApplier.interMediumFor(12));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
@@ -1666,7 +1663,7 @@ void MappingZones::paint(juce::Graphics &g)
     {
         auto rr = rootAndRangeForPosition(display->currentDragPoint);
         auto rb = rectangleForRange(rr[1], rr[2], 0, 127);
-        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::accent_1a, 0.4f));
+        g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.4f));
         g.fillRect(rb);
     }
 
@@ -1683,15 +1680,13 @@ void MappingZones::paint(juce::Graphics &g)
                 auto rz = rectangleForZone(z.second);
                 if (rz.intersects(r))
                 {
-                    g.setColour(editor->themeApplier.colorMap()->get(
-                        theme::ColorMap::generic_content_high));
+                    g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
 
                     g.drawRect(rz, 2);
                 }
             }
 
-            g.setColour(
-                editor->themeApplier.colorMap()->get(theme::ColorMap::generic_content_highest));
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
             auto p = juce::Path();
             p.addRectangle(r);
 
@@ -1702,7 +1697,7 @@ void MappingZones::paint(juce::Graphics &g)
         }
         else
         {
-            auto col = editor->themeApplier.colorMap()->get(theme::ColorMap::accent_2a);
+            auto col = editor->themeColor(theme::ColorMap::accent_2a);
             g.setColour(col.withAlpha(0.3f));
             g.fillRect(r);
             g.setColour(col);
@@ -2924,7 +2919,7 @@ struct MacroDisplay : HasEditor, juce::Component
     MacroDisplay(SCXTEditor *e) : HasEditor(e) {}
     void paint(juce::Graphics &g)
     {
-        g.setColour(editor->themeApplier.colorMap()->get(theme::ColorMap::warning_1a));
+        g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
         g.setFont(editor->themeApplier.interMediumFor(25));
         g.drawText("Macro Region Coming Soon", getLocalBounds(), juce::Justification::centred);
     }

@@ -79,17 +79,18 @@ struct HeaderRegion : juce::Component, HasEditor
     float memUsageInMegabytes{0.f};
     void setMemUsage(float m)
     {
-#if MAC
         if (m != memUsageInMegabytes)
         {
             memUsageInMegabytes = m;
-            repaint();
+            ramLevel->setText(fmt::format("{:.0f} MB", m));
         }
-#endif
     }
 
-    float vuLevel[2];
+    float vuLevel[2]{0, 0};
     void setVULevel(float L, float R);
+
+    float cpuLevValue{-100};
+    void setCPULevel(float);
 };
 } // namespace scxt::ui
 

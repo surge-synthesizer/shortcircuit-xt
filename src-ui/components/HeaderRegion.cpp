@@ -177,11 +177,11 @@ void HeaderRegion::resized()
 
     scMenu->setBounds(b.withTrimmedLeft(1148).withWidth(24));
 
-    cpuLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(14));
-    ramLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(14).translated(0, 14));
+    cpuLabel->setBounds(b.withTrimmedLeft(975).withWidth(20).withHeight(14));
+    ramLabel->setBounds(b.withTrimmedLeft(975).withWidth(20).withHeight(14).translated(0, 14));
 
-    cpuLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(14));
-    ramLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(14).translated(0, 14));
+    cpuLevel->setBounds(b.withTrimmedLeft(1000).withWidth(40).withHeight(14));
+    ramLevel->setBounds(b.withTrimmedLeft(1000).withWidth(40).withHeight(14).translated(0, 14));
 
     vuMeter->setBounds(b.withTrimmedLeft(1048).withWidth(96).withHeight(28));
 }
@@ -202,6 +202,15 @@ void HeaderRegion::setVULevel(float L, float R)
             vuMeter->setLevels(vuLevel[0], vuLevel[1]);
             vuMeter->repaint();
         }
+    }
+}
+
+void HeaderRegion::setCPULevel(float lev)
+{
+    if (std::fabs(cpuLevValue - lev) > 1.5)
+    {
+        cpuLevValue = lev;
+        cpuLevel->setText(fmt::format("{:.0f} %", lev));
     }
 }
 

@@ -232,30 +232,14 @@ void SCXTEditor::idle()
 
     headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],
                              sharedUiMemoryState.busVULevels[0][1]);
+    headerRegion->setCPULevel((double)sharedUiMemoryState.cpuLevel);
 
     if (mixerScreen->isVisible())
     {
         mixerScreen->setVULevelForBusses(sharedUiMemoryState.busVULevels);
     }
 
-#if MAC
-    struct task_basic_info t_info;
-    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
-
-    if (KERN_SUCCESS ==
-        task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count))
-    {
-        auto pmm = (1.f * t_info.resident_size) / 1024 / 1024;
-        if (std::fabs(pmm - lastProcessMemoryInMegabytes) > 0.1)
-        {
-            lastProcessMemoryInMegabytes = pmm;
-            // SCLOG("MEM: macOS Memory Stats: res=" << lastProcessMemoryInMegabytes << " Mb");
-            headerRegion->setMemUsage(lastProcessMemoryInMegabytes);
-        }
-    }
-
-    headerRegion->repaint();
-#endif
+    headerRegion->setMemUsage((float)std::round(sampleManager.sampleMemoryInBytes / 1024 / 1024));
 }
 
 void SCXTEditor::drainCallbackQueue()
@@ -375,5 +359,10 @@ void SCXTEditor::configureHasDiscreteMenuBuilder(
 }
 
 int16_t SCXTEditor::getSelectedPart() const { return selectedPart; }
+
+juce::Colour SCXTEditor::themeColor(scxt::ui::theme::ColorMap::Colors c, float alpha)
+{
+    return themeApplier.colors->get(c, alpha);
+}
 
 } // namespace scxt::ui

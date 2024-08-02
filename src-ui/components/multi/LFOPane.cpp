@@ -71,11 +71,11 @@ struct StepLFOPane : juce::Component, HasEditor
             if (!parent)
                 return;
 
-            auto &cmap = *parent->editor->themeApplier.colorMap();
-            auto bg = cmap.get(theme::ColorMap::bg_2);
-            auto bgq = cmap.get(theme::ColorMap::accent_2a_alpha_a);
-            auto boxc = cmap.get(theme::ColorMap::generic_content_low);
-            auto valc = cmap.get(theme::ColorMap::accent_2a);
+            auto *ed = parent->editor;
+            auto bg = ed->themeColor(theme::ColorMap::bg_2);
+            auto bgq = ed->themeColor(theme::ColorMap::accent_2a_alpha_a);
+            auto boxc = ed->themeColor(theme::ColorMap::generic_content_low);
+            auto valc = ed->themeColor(theme::ColorMap::accent_2a);
             auto valhovc = valc.brighter(0.1);
 
             auto hanc = valhovc;

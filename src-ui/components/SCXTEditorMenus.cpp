@@ -204,7 +204,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
         {theme::ColorMap::HICONTRAST_DARK, "High Contrast Dark"},
         {theme::ColorMap::TEST, "Test Colors"},
     };
-    auto cid = themeApplier.colorMap()->myId;
+    auto cid = themeApplier.colors->myId;
     for (const auto &[mo, d] : maps)
     {
         p.addItem(d, true, cid == mo, [m = mo, w = juce::Component::SafePointer(this)]() {
@@ -223,13 +223,13 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
     }
 
     p.addSeparator();
-    auto knobsOn = themeApplier.colorMap()->hasKnobs;
+    auto knobsOn = themeApplier.colors->hasKnobs;
     p.addItem("Use Knob Bodies", true, knobsOn, [w = juce::Component::SafePointer(this)]() {
         if (w)
         {
-            w->themeApplier.colorMap()->hasKnobs = !w->themeApplier.colorMap()->hasKnobs;
+            w->themeApplier.colors->hasKnobs = !w->themeApplier.colors->hasKnobs;
             w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::showKnobs,
-                                                       w->themeApplier.colorMap()->hasKnobs);
+                                                       w->themeApplier.colors->hasKnobs);
 
             w->themeApplier.recolorStylesheet(w->style());
             w->setStyle(w->style());

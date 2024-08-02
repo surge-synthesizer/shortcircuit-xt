@@ -236,6 +236,8 @@ void Engine::stopAllSounds()
 
 bool Engine::processAudio()
 {
+    auto processingStartTime = std::chrono::high_resolution_clock::now();
+
     namespace mech = sst::basic_blocks::mechanics;
 #if BUILD_IS_DEBUG
     messageController->threadingChecker.registerAsAudioThread();
@@ -354,6 +356,15 @@ bool Engine::processAudio()
     }
     lastUpdateVoiceDisplayState++;
 
+    auto processingEndTime = std::chrono::high_resolution_clock::now();
+
+    auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(processingEndTime -
+                                                                               processingStartTime);
+    // auto maxtime = blockSize * sampleRateInv;
+    // auto pct = time_span.count / maxtime;
+    //  or...
+    auto pct = time_span.count() * sampleRate * blockSizeInv * 100.0;
+    sharedUIMemoryState.cpuLevel = pct;
     return true;
 }
 
