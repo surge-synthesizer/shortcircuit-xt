@@ -32,6 +32,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/style/StyleSheet.h>
+#include <sst/jucegui/components/Label.h>
 
 #include "ColorMap.h"
 
@@ -53,6 +54,10 @@ struct ThemeApplier
     void applyMixerEffectTheme(juce::Component *toThis);
     void applyMixerChannelTheme(juce::Component *toThis);
     void applyHeaderTheme(juce::Component *toThis);
+
+    // Some utilities to move single items
+    void setLabelToHighlight(sst::jucegui::style::StyleConsumer *);
+    void setGlyphButtonToAccent(sst::jucegui::style::StyleConsumer *);
 
     const std::unique_ptr<ColorMap> &colorMap() { return colors; }
 

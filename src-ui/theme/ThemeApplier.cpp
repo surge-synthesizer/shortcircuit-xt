@@ -139,6 +139,18 @@ void init()
     sheet_t::addClass(GlyphButton).withBaseClass(jcmp::GlyphButton::Styles::styleClass);
 }
 } // namespace header
+namespace util
+{
+static constexpr sheet_t::Class LabelHighlight("util.label.highlight");
+static constexpr sheet_t::Class GlyphButtonAccent("util.glyphbutton.accent");
+void applyColors(const sheet_t::ptr_t &, const ColorMap &);
+
+void init()
+{
+    sheet_t::addClass(LabelHighlight).withBaseClass(jcmp::Label::Styles::styleClass);
+    sheet_t::addClass(GlyphButtonAccent).withBaseClass(jcmp::GlyphButton::Styles::styleClass);
+}
+} // namespace util
 } // namespace detail
 
 ThemeApplier::ThemeApplier()
@@ -151,6 +163,7 @@ ThemeApplier::ThemeApplier()
         detail::multi::zone::init();
         detail::multi::group::init();
         detail::header::init();
+        detail::util::init();
         detailInitialized = true;
     }
     colors = ColorMap::createColorMap(ColorMap::WIREFRAME);
@@ -163,6 +176,7 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     detail::multi::zone::applyColors(s, *colors);
     detail::multi::group::applyColors(s, *colors);
     detail::header::applyColors(s, *colors);
+    detail::util::applyColors(s, *colors);
 }
 
 void ThemeApplier::recolorStylesheetWith(std::unique_ptr<ColorMap> &&c, const sheet_t::ptr_t &s)
@@ -217,6 +231,16 @@ void ThemeApplier::applyHeaderTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::MenuButton>(detail::header::MenuButton);
     map.addCustomClass<jcmp::GlyphButton>(detail::header::GlyphButton);
     map.applyMapTo(toThis);
+}
+
+void ThemeApplier::setLabelToHighlight(sst::jucegui::style::StyleConsumer *s)
+{
+    s->setCustomClass(detail::util::LabelHighlight);
+}
+
+void ThemeApplier::setGlyphButtonToAccent(sst::jucegui::style::StyleConsumer *s)
+{
+    s->setCustomClass(detail::util::GlyphButtonAccent);
 }
 
 juce::Font ThemeApplier::interMediumFor(int ht)
@@ -454,5 +478,18 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(GlyphButton, jcmp::GlyphButton::Styles::fill_hover, cols.get(ColorMap::bg_3));
 }
 } // namespace header
+
+namespace util
+{
+void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
+{
+    base->setColour(LabelHighlight, jcmp::Label::Styles::labelcolor,
+                    cols.get(ColorMap::generic_content_highest));
+    base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor,
+                    cols.get(ColorMap::accent_1a));
+    base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor_hover,
+                    cols.get(ColorMap::accent_1a));
+}
+} // namespace util
 } // namespace detail
 } // namespace scxt::ui::theme

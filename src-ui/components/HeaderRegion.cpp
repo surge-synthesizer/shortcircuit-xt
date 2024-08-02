@@ -148,6 +148,9 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     addAndMakeVisible(*ramLevel);
 
     editor->themeApplier.applyHeaderTheme(this);
+    editor->themeApplier.setLabelToHighlight(cpuLevel.get());
+    editor->themeApplier.setLabelToHighlight(ramLevel.get());
+    editor->themeApplier.setGlyphButtonToAccent(scMenu.get());
 }
 
 HeaderRegion::~HeaderRegion()
@@ -174,22 +177,22 @@ void HeaderRegion::resized()
 
     scMenu->setBounds(b.withTrimmedLeft(1148).withWidth(24));
 
-    cpuLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(12));
-    ramLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(12).translated(0, 12));
+    cpuLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(14));
+    ramLabel->setBounds(b.withTrimmedLeft(979).withWidth(20).withHeight(14).translated(0, 14));
 
-    cpuLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(12));
-    ramLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(12).translated(0, 12));
+    cpuLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(14));
+    ramLevel->setBounds(b.withTrimmedLeft(1002).withWidth(35).withHeight(14).translated(0, 14));
 
-    vuMeter->setBounds(b.withTrimmedLeft(1048).withWidth(96));
+    vuMeter->setBounds(b.withTrimmedLeft(1048).withWidth(96).withHeight(28));
 }
 
 void HeaderRegion::setVULevel(float L, float R)
 {
     if (vuMeter)
     {
-        float ub = 1.4f;
-        auto nvuL = sqrt(std::clamp(L, 0.f, ub)) / sqrt(ub);
-        auto nvuR = sqrt(std::clamp(R, 0.f, ub)) / sqrt(ub);
+        float ub = 8.f;
+        auto nvuL = sqrt(std::clamp(L, 0.f, ub)); // sqrt(ub);
+        auto nvuR = sqrt(std::clamp(R, 0.f, ub)); // sqrt(ub);
 
         if (std::fabs(nvuL - vuLevel[0]) + std::fabs(nvuR - vuLevel[1]) > 1e-6)
         {
