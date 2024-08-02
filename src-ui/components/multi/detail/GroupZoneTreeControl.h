@@ -40,8 +40,9 @@ namespace scxt::ui::multi::detail
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxModel
+template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::ListBoxModel
 {
+    static constexpr bool forZone{fz};
     SidebarParent *sidebar{nullptr};
     engine::Engine::pgzStructure_t thisGroup;
     GroupZoneListBoxModel(SidebarParent *sb) : sidebar(sb) { rebuild(); }
@@ -81,7 +82,7 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
     {
         int rowNumber{-1};
         bool isSelected{false};
-        GroupZoneListBoxModel<SidebarParent> *lbm{nullptr};
+        GroupZoneListBoxModel<SidebarParent, forZone> *lbm{nullptr};
         SidebarParent *gsb{nullptr};
 
         std::unique_ptr<juce::TextEditor> renameEditor;
@@ -92,7 +93,8 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
             renameEditor->addListener(this);
         }
 
-        int zonePad = 20;
+        int zonePad = 16;
+        int grouplabelPad = zonePad;
 
         void paint(juce::Graphics &g) override
         {
@@ -110,18 +112,42 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
             g.setFont(st->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
 
             // TODO: Style all of these
-            auto borderColor = juce::Colour(0xFF, 0x90, 0x00).darker(0.4);
-            auto textColor = juce::Colour(190, 190, 190);
-            auto lowTextColor = textColor.darker(0.4);
-            auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
+            auto editor = gsb->partGroupSidebar->editor;
 
-            if (isSelected)
-                fillColor = juce::Colour(0x40, 0x20, 0x00);
-            if (isLeadZone)
+            auto borderColor = editor->themeColor(theme::ColorMap::accent_1b, 0.4);
+            auto textColor = editor->themeColor(theme::ColorMap::generic_content_medium);
+            auto lowTextColor = editor->themeColor(theme::ColorMap::generic_content_low);
+            auto fillColor = editor->themeColor(theme::ColorMap::bg_2);
+            if (!forZone || isGroup())
+                fillColor = editor->themeColor(theme::ColorMap::bg_3);
+
+            if (forZone)
             {
-                fillColor = juce::Colour(0x15, 0x15, 0x50);
-                textColor = juce::Colour(170, 170, 220);
+                if (isSelected && isZone())
+                {
+                    fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.2);
+                    textColor = editor->themeColor(theme::ColorMap::generic_content_high);
+                }
+                if (isLeadZone && isZone())
+                {
+                    fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.3);
+                    textColor = editor->themeColor(theme::ColorMap::generic_content_highest);
+                }
+                if (isGroup())
+                {
+                    textColor = editor->themeColor(theme::ColorMap::generic_content_high);
+                }
             }
+            else
+            {
+                if (isSelected && isGroup())
+                {
+                    fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.4);
+                    textColor = editor->themeColor(theme::ColorMap::generic_content_highest);
+                    lowTextColor = editor->themeColor(theme::ColorMap::accent_1a);
+                }
+            }
+
             if (sg.first.zone < 0)
             {
                 g.setColour(fillColor);
@@ -130,8 +156,8 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
                 g.setColour(borderColor);
                 g.drawLine(0, getHeight(), getWidth(), getHeight());
 
-                auto bx = getLocalBounds().withWidth(zonePad);
-                auto nb = getLocalBounds().withTrimmedLeft(zonePad);
+                auto bx = getLocalBounds().withWidth(grouplabelPad);
+                auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad);
                 g.setColour(lowTextColor);
                 g.drawText(std::to_string(sg.first.group + 1), bx,
                            juce::Justification::centredLeft);
@@ -153,11 +179,11 @@ template <typename SidebarParent> struct GroupZoneListBoxModel : juce::ListBoxMo
 
                 if (isLeadZone)
                 {
-                    g.drawText("*",
-                               getLocalBounds()
-                                   .translated(zonePad + 2, 0)
-                                   .withWidth(getWidth() - zonePad - 5),
-                               juce::Justification::centredRight);
+                    auto b = getLocalBounds().withWidth(zonePad).withTrimmedLeft(2);
+                    auto q = b.getHeight() - b.getWidth();
+                    b = b.withTrimmedTop(q / 2).withTrimmedBottom(q / 2);
+                    jcmp::GlyphPainter::paintGlyph(g, b, jcmp::GlyphPainter::JOG_RIGHT,
+                                                   textColor.withAlpha(0.5f));
                 }
             }
         }
