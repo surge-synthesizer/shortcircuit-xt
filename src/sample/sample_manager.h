@@ -123,15 +123,20 @@ struct SampleManager : MoveableOnly<SampleManager>
         samples.clear();
         sf2FilesByPath.clear();
         streamingVersion = 0x2112'01'01;
+        updateSampleMemory();
     }
 
     std::vector<fs::path> missingList;
     void resetMissingList() { missingList.clear(); }
 
     uint64_t streamingVersion{0x2112'01'01}; // see comment in patch.h
-    std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
+
+    std::atomic<uint64_t> sampleMemoryInBytes{0};
 
   private:
+    void updateSampleMemory();
+
+    std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
     std::unordered_map<std::string,
                        std::pair<std::unique_ptr<RIFF::File>, std::unique_ptr<sf2::File>>>
         sf2FilesByPath;

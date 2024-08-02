@@ -109,6 +109,7 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
     }
 
     samples[sp->id] = sp;
+    updateSampleMemory();
     return sp->id;
 }
 
@@ -159,6 +160,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
         return {};
 
     samples[sp->id] = sp;
+    updateSampleMemory();
     return sp->id;
 }
 
@@ -173,6 +175,7 @@ std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &
     sp->region = idx;
     sp->mFileName = p;
     samples[sp->id] = sp;
+    updateSampleMemory();
     return sp->id;
 }
 
@@ -197,6 +200,7 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
     sp->region = idx;
     sp->mFileName = p;
     samples[sp->id] = sp;
+    updateSampleMemory();
 
     free(data);
 
@@ -226,5 +230,16 @@ void SampleManager::purgeUnreferencedSamples()
     {
         SCLOG_WFUNC("PostPurge : Purged " << (preSize - samples.size()));
     }
+    updateSampleMemory();
+}
+
+void SampleManager::updateSampleMemory()
+{
+    uint64_t res = 0;
+    for (const auto &[id, smp] : samples)
+    {
+        res += smp->sample_length * smp->channels * (smp->bitDepth == Sample::BD_I16 ? 4 : 8);
+    }
+    sampleMemoryInBytes = res;
 }
 } // namespace scxt::sample

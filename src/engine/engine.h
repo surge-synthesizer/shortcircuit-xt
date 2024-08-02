@@ -322,6 +322,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             std::atomic<int> tsnum, tsden;
             std::atomic<double> hostpos, timepos;
         } transportDisplay;
+
+        std::atomic<float> cpuLevel{0};
+        std::atomic<float> ramUsage{0};
     } sharedUIMemoryState;
 
     /* When we actually unstream an entire engine we want to know if we are doing

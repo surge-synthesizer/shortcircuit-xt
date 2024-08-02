@@ -36,7 +36,10 @@
 
 #include "ColorMap.h"
 
-namespace scxt::ui::theme
+namespace scxt::ui
+{
+struct SCXTEditor;
+namespace theme
 {
 struct ThemeApplier
 {
@@ -59,12 +62,13 @@ struct ThemeApplier
     // Some utilities to move single items
     void setLabelToHighlight(sst::jucegui::style::StyleConsumer *);
 
-    const std::unique_ptr<ColorMap> &colorMap() { return colors; }
-
     juce::Font interMediumFor(int ht) const;
 
-  protected:
+    friend scxt::ui::SCXTEditor;
+
+  private:
     std::unique_ptr<ColorMap> colors;
 };
-} // namespace scxt::ui::theme
+} // namespace theme
+} // namespace scxt::ui
 #endif // SHORTCIRCUITXT_THEMEAPPLIER_H

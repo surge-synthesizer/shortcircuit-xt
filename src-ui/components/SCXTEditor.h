@@ -103,6 +103,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
      * This is an object responsible for theme and color management
      */
     theme::ThemeApplier themeApplier;
+    juce::Colour themeColor(scxt::ui::theme::ColorMap::Colors, float alpha = 1.f);
 
     sst::basic_blocks::dsp::RNG rng;
 

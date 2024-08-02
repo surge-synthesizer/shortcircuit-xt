@@ -206,7 +206,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         if (!curvesBuilt)
             rebuildCurves();
 
-        auto &colorMap = mProcessorPane.editor->themeApplier.colorMap();
+        auto ed = mProcessorPane.editor;
 
         auto c2p = [this](auto &c) {
             auto p = juce::Path();
@@ -227,23 +227,23 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             return p;
         };
 
-        g.setColour(colorMap->get(theme::ColorMap::bg_1));
+        g.setColour(ed->themeColor(theme::ColorMap::bg_1));
         g.fillRect(getLocalBounds());
 
-        g.setColour(colorMap->get(theme::ColorMap::panel_outline_2));
+        g.setColour(ed->themeColor(theme::ColorMap::panel_outline_2));
         g.drawRect(getLocalBounds());
 
-        g.setColour(colorMap->get(theme::ColorMap::accent_2b));
+        g.setColour(ed->themeColor(theme::ColorMap::accent_2b));
         g.drawLine(0, getHeight() * centerPoint, getWidth(), getHeight() * centerPoint);
 
         for (int i = 0; i < nSub; ++i)
         {
             auto p = c2p(curves[i + 1]);
-            g.setColour(colorMap->get(theme::ColorMap::accent_1b).withAlpha(0.7f));
+            g.setColour(ed->themeColor(theme::ColorMap::accent_1b).withAlpha(0.7f));
             g.strokePath(p, juce::PathStrokeType(1));
         }
         auto p = c2p(curves[0]);
-        g.setColour(colorMap->get(theme::ColorMap::accent_1a));
+        g.setColour(ed->themeColor(theme::ColorMap::accent_1a));
         g.strokePath(p, juce::PathStrokeType(3));
     }
 };
