@@ -245,10 +245,30 @@ void ThemeApplier::applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *
     s->setCustomClass(detail::header::GlyphButtonAccent);
 }
 
+juce::Font ThemeApplier::interBoldFor(int ht) const
+{
+    static auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Bold.ttf");
+    return juce::Font(interMed).withHeight(ht);
+}
+
 juce::Font ThemeApplier::interMediumFor(int ht) const
 {
     static auto interMed =
         connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
+    return juce::Font(interMed).withHeight(ht);
+}
+
+juce::Font ThemeApplier::interRegularFor(int ht) const
+{
+    static auto interMed =
+        connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");
+    return juce::Font(interMed).withHeight(ht);
+}
+
+juce::Font ThemeApplier::interLightFor(int ht) const
+{
+    static auto interMed =
+        connectors::resources::loadTypeface("fonts/Inter/static/Inter-Light.ttf");
     return juce::Font(interMed).withHeight(ht);
 }
 

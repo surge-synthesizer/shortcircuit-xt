@@ -62,7 +62,10 @@ struct ThemeApplier
     // Some utilities to move single items
     void setLabelToHighlight(sst::jucegui::style::StyleConsumer *);
 
+    juce::Font interBoldFor(int ht) const;
     juce::Font interMediumFor(int ht) const;
+    juce::Font interRegularFor(int ht) const;
+    juce::Font interLightFor(int ht) const;
 
     friend scxt::ui::SCXTEditor;
 

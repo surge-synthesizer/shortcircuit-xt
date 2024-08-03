@@ -829,7 +829,7 @@ void Keyboard::paint(juce::Graphics &g)
     }
 
     constexpr auto lastOctave = 11;
-    auto font = editor->themeApplier.interMediumFor(13);
+    auto font = editor->themeApplier.interRegularFor(13);
     for (int octave = 0; octave < lastOctave; ++octave)
     {
         assert(octave <= 10);
@@ -1449,15 +1449,23 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto nonSelZoneColor = editor->themeColor(theme::ColorMap::generic_content_medium);
+            auto borderColor = editor->themeColor(theme::ColorMap::accent_1b);
+            auto fillColor = borderColor.withAlpha(0.2f);
+            auto textColor = editor->themeColor(theme::ColorMap::accent_1b);
+
             if (drawSelected)
-                nonSelZoneColor = editor->themeColor(theme::ColorMap::accent_1a);
-            g.setColour(nonSelZoneColor.withAlpha(drawSelected ? 0.5f : 0.2f));
+            {
+                borderColor = editor->themeColor(theme::ColorMap::accent_1a);
+                fillColor = borderColor.withAlpha(0.5f);
+                textColor = editor->themeColor(theme::ColorMap::accent_1a);
+            }
+
+            g.setColour(fillColor);
             g.fillRect(r);
-            g.setColour(nonSelZoneColor);
-            g.drawRect(r, 2.f);
-            g.setColour(nonSelZoneColor.brighter());
-            g.setFont(editor->themeApplier.interMediumFor(11));
+            g.setColour(borderColor);
+            g.drawRect(r, 1.f);
+            g.setColour(textColor);
+            g.setFont(editor->themeApplier.interRegularFor(11));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
@@ -1476,7 +1484,7 @@ void MappingZones::paint(juce::Graphics &g)
 
             const auto &[kb, vel, name] = z.second;
 
-            auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1b);
+            auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1a);
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
@@ -1650,8 +1658,8 @@ void MappingZones::paint(juce::Graphics &g)
             g.setColour(selZoneColor);
             g.drawRect(r, 2.f);
 
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
-            g.setFont(editor->themeApplier.interMediumFor(12));
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+            g.setFont(editor->themeApplier.interRegularFor(11));
             g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
