@@ -55,7 +55,16 @@ struct BrowserDB;
  */
 struct Browser
 {
-    Browser(BrowserDB &, const infrastructure::DefaultsProvider &);
+    using errorReporter_t = std::function<void(const std::string &, const std::string &)>;
+
+    Browser(BrowserDB &, const infrastructure::DefaultsProvider &, const fs::path &userDirectory,
+            errorReporter_t reportError);
+
+    /*
+     * Paths for user content
+     */
+    fs::path userDirectory;    // like "Documents"/Shortcircuit XT
+    fs::path patchIODirectory; // user/Patches
 
     /*
      * Filesystem Views: Very simple. The Browser gives you a set of
@@ -68,17 +77,23 @@ struct Browser
     void addRootPathForDeviceView(const fs::path &);
 
     static bool isLoadableFile(const fs::path &);
+    static bool isLoadableSample(const fs::path &);
+    static bool isLoadableSingleSample(const fs::path &);
+    static bool isLoadableMultiSample(const fs::path &);
+    static bool isShortCircuitFormatFile(const fs::path &);
 
     struct LoadableFile
     {
         static const std::vector<std::string> singleSample;
         static const std::vector<std::string> multiSample;
+        static const std::vector<std::string> shortcircuitFormats;
     };
 
     std::vector<std::pair<fs::path, std::string>> getOSDefaultRootPathsForDeviceView() const;
 
     const infrastructure::DefaultsProvider &defaultsProvider;
     BrowserDB &browserDb;
+    errorReporter_t errorReporter;
 };
 } // namespace scxt::browser
 #endif // SHORTCIRCUITXT_BROWSER_H

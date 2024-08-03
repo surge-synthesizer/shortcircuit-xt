@@ -139,7 +139,7 @@ struct Group : MoveableOnly<Group>,
         return zones[idx];
     }
 
-    std::unique_ptr<Zone> removeZone(ZoneID &zid)
+    std::unique_ptr<Zone> removeZone(const ZoneID &zid)
     {
         auto idx = getZoneIndex(zid);
         if (idx < 0 || idx >= (int)zones.size())

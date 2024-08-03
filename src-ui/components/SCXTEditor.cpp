@@ -302,22 +302,6 @@ void SCXTEditor::doMultiSelectionAction(
     repaint();
 }
 
-bool SCXTEditor::isInterestedInFileDrag(const juce::StringArray &files)
-{
-    // TODO be more parsimonious
-    return std::all_of(files.begin(), files.end(), [this](const auto &f) {
-        try
-        {
-            auto pt = fs::path{(const char *)(f.toUTF8())};
-            return browser.isLoadableFile(pt);
-        }
-        catch (fs::filesystem_error &e)
-        {
-        }
-        return false;
-    });
-}
-
 void SCXTEditor::showTooltip(const juce::Component &relativeTo)
 {
     auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());

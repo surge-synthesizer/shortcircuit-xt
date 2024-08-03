@@ -47,7 +47,7 @@ namespace scxt::ui
 {
 struct SCXTEditor;
 
-struct HeaderRegion : juce::Component, HasEditor
+struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
 {
     std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedPage;
     std::unique_ptr<sst::jucegui::data::Discrete> selectedPageData;
@@ -75,6 +75,9 @@ struct HeaderRegion : juce::Component, HasEditor
         }
     }
 
+    bool isInterestedInFileDrag(const juce::StringArray &files) override;
+    void filesDropped(const juce::StringArray &files, int x, int y) override;
+
     float memUsageInMegabytes{0.f};
     void setMemUsage(float m)
     {
@@ -90,6 +93,12 @@ struct HeaderRegion : juce::Component, HasEditor
 
     float cpuLevValue{-100};
     void setCPULevel(float);
+
+    void showSaveMenu();
+    void doSaveMulti();
+    void doLoadMulti();
+
+    std::unique_ptr<juce::FileChooser> fileChooser;
 };
 } // namespace scxt::ui
 

@@ -163,7 +163,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
                 return idx;
         return -1;
     }
-    std::unique_ptr<Group> removeGroup(GroupID &zid)
+    std::unique_ptr<Group> removeGroup(const GroupID &zid)
     {
         auto idx = getGroupIndex(zid);
         if (idx < 0 || idx >= (int)groups.size())
