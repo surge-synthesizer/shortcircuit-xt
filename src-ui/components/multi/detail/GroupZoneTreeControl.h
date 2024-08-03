@@ -108,11 +108,16 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
             bool isLeadZone = isZone() && gsb->isLeadZone(sg.first);
 
-            auto st = gsb->partGroupSidebar->style();
-            g.setFont(st->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
-
-            // TODO: Style all of these
             auto editor = gsb->partGroupSidebar->editor;
+
+            auto st = gsb->partGroupSidebar->style();
+            auto zoneFont = editor->themeApplier.interLightFor(11);
+            auto groupFont = editor->themeApplier.interRegularFor(11);
+
+            if (isZone())
+                g.setFont(zoneFont);
+            else
+                g.setFont(groupFont);
 
             auto borderColor = editor->themeColor(theme::ColorMap::accent_1b, 0.4);
             auto textColor = editor->themeColor(theme::ColorMap::generic_content_medium);
