@@ -179,6 +179,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->noteId = path.noteid;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
             voices[idx]->endpoints = std::move(mp);
+            activeVoices++;
             return voices[idx];
         }
     }
@@ -248,7 +249,7 @@ bool Engine::processAudio()
 #endif
     messageController->engineProcessRuns++;
     messageController->isAudioRunning = true;
-    auto av = activeVoiceCount();
+    auto av = (uint32_t)activeVoices;
 
     bool tryToDrain{true};
     while (tryToDrain && !messageController->serializationToAudioQueue.empty())
@@ -316,7 +317,11 @@ bool Engine::processAudio()
             bl[idx++][c] = a.vuLevel[c];
     }
 
-    auto pav = activeVoiceCount();
+    auto pav = (uint32_t)activeVoices;
+#if BUILD_IS_DEBUG
+    if (pav != av)
+        assertActiveVoiceCount();
+#endif
 
     bool doUpdate = messageController->isClientConnected &&
                     (
@@ -372,7 +377,7 @@ bool Engine::processAudio()
     return true;
 }
 
-uint32_t Engine::activeVoiceCount()
+void Engine::assertActiveVoiceCount()
 {
     uint32_t res{0};
     for (const auto v : voices)
@@ -380,7 +385,7 @@ uint32_t Engine::activeVoiceCount()
         if (v)
             res += (v->isVoiceAssigned && v->isVoicePlaying);
     }
-    return res;
+    assert(res == activeVoices);
 }
 
 const std::optional<dsp::processor::ProcessorStorage>

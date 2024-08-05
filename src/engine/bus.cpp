@@ -289,7 +289,15 @@ void Bus::process()
     for (int c = 0; c < 2; ++c)
     {
         vuLevel[c] = std::min(2.f, a * vuLevel[c]);
-        vuLevel[c] = std::max((float)vuLevel[c], mech::blockAbsMax<BLOCK_SIZE>(output[c]));
+        /* we use this as a proxy for a silent block without having to scan the entire
+         * block. If the block isn't silent, we will get the next vlock if we just get
+         * unlucky with sample 0 except in a super pathological case of an exactly
+         * 16 sample sin wave or something.
+         */
+        if (std::fabs(output[c][0]) > 1e-15)
+        {
+            vuLevel[c] = std::max((float)vuLevel[c], mech::blockAbsMax<BLOCK_SIZE>(output[c]));
+        }
     }
 }
 
