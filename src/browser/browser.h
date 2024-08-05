@@ -31,6 +31,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <functional>
 #include "filesystem/import.h"
 
 namespace scxt::infrastructure
