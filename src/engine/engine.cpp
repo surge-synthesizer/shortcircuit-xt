@@ -39,6 +39,7 @@
 #include "sample/sfz_support/sfz_import.h"
 #include "sample/multisample_support/multisample_import.h"
 #include "infrastructure/user_defaults.h"
+#include "infrastructure/md5support.h"
 #include "browser/browser.h"
 #include "browser/browser_db.h"
 
@@ -655,6 +656,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
     {
         auto riff = std::make_unique<RIFF::File>(p.u8string());
         auto sf = std::make_unique<sf2::File>(riff.get());
+        auto md5 = infrastructure::createMD5SumFromFile(p);
 
         auto sz = getSelectionManager()->currentLeadZone(*this);
         auto pt = 0;
@@ -694,6 +696,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), pc, i, j);
                     if (!sid.has_value())
                         continue;
+                    sampleManager->getSample(*sid)->md5Sum = md5;
 
                     if (firstGroup < 0)
                         firstGroup = grpnum;

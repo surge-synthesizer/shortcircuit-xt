@@ -27,6 +27,7 @@
 
 #include <cassert>
 #include "sample_manager.h"
+#include "infrastructure/md5support.h"
 
 namespace scxt::sample
 {
@@ -133,14 +134,15 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 auto sf = std::make_unique<sf2::File>(riff.get());
-                sf2FilesByPath[p.u8string()] = {std::move(riff), std::move(sf)};
+                sf2FilesByPath[p.u8string()] = {std::move(riff), std::move(sf),
+                                                infrastructure::createMD5SumFromFile(p)};
             }
             catch (RIFF::Exception e)
             {
                 return {};
             }
         }
-        f = sf2FilesByPath[p.u8string()].second.get();
+        f = std::get<1>(sf2FilesByPath[p.u8string()]).get();
     }
 
     assert(f);
@@ -148,7 +150,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
     {
         if (sm->type == Sample::SF2_FILE)
         {
-            const auto &[type, path, pre, inst, reg] = sm->getSampleFileAddress();
+            const auto &[type, path, md5sum, pre, inst, reg] = sm->getSampleFileAddress();
             if (path == p && pre == preset && instrument == inst && region == reg)
                 return id;
         }
@@ -158,6 +160,9 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
     if (!sp->loadFromSF2(p, f, preset, instrument, region))
         return {};
+
+    sp->md5Sum = std::get<2>(sf2FilesByPath[p.u8string()]);
+    SCLOG("Sapmle MD5 Sum is " << sp->md5Sum);
 
     samples[sp->id] = sp;
     updateSampleMemory();

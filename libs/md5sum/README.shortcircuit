@@ -1,0 +1,4 @@
+This is a direct import of the MIT licensed code https://github.com/dnomd343/md5sum at hash
+ 951c952, We didn't make it a submodule since it has all of googletest as a submodule itself which
+would expand our recursive updates, so just copied it here with the third_party directory removed
+the CMakeLists adjusted to just build the static lib, but otherwise unchanged.

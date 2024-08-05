@@ -25,11 +25,12 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "sample.h"
-#include "infrastructure/file_map_view.h"
-#include "dsp/resampling.h"
-#include "sst/basic-blocks/mechanics/endian-ops.h"
 #include <sstream>
+#include "sst/basic-blocks/mechanics/endian-ops.h"
+#include "infrastructure/file_map_view.h"
+#include "infrastructure/md5support.h"
+#include "dsp/resampling.h"
+#include "sample.h"
 
 namespace scxt::sample
 {
@@ -49,6 +50,8 @@ bool Sample::load(const fs::path &path)
 {
     if (!fs::exists(path))
         return false;
+
+    md5Sum = infrastructure::createMD5SumFromFile(path);
 
     // If you add a type here add it in Browser::isLoadableFile also to stay in sync
     if (extensionMatches(path, ".wav"))
