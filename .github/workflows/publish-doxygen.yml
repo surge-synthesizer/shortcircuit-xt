@@ -1,0 +1,19 @@
+name: Publish Doxygen
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish_doxygen:
+    name: Publish Doxygen
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Publish Doxygen
+        uses: surge-synthesizer/sst-githubactions/publish-doxygen@main
+        with:
+          destination: ${{ github.event.repository.name }}
+          token: ${{ secrets.SST_DOCS_ACCESS_TOKEN }}
