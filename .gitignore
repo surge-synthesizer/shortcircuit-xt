@@ -18,3 +18,5 @@ ignore/
 
 minst.sh
 .cache/
+
+doxy-out/
