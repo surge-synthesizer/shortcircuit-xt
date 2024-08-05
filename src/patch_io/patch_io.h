@@ -25,20 +25,18 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_JSON_STREAM_H
-#define SCXT_SRC_JSON_STREAM_H
+#ifndef SCXT_SRC_PATCH_IO_PATCH_IO_H
+#define SCXT_SRC_PATCH_IO_PATCH_IO_H
 
 #include "engine/patch.h"
-#include "engine/engine.h"
+#include "engine/part.h"
 
-namespace scxt::json
+namespace scxt::patch_io
 {
+bool saveMulti(const fs::path &toFile, const scxt::engine::Engine &);
+bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
+bool streamPart(const fs::path &toFile, const scxt::engine::Part &);
+bool unstreamPart(const fs::path &fromFile, scxt::engine::Part &);
+} // namespace scxt::patch_io
 
-static constexpr uint64_t currentStreamingVersion{0x2024'08'04};
-
-std::string streamPatch(const engine::Patch &p, bool pretty = false);
-std::string streamEngineState(const engine::Engine &e, bool pretty = false);
-void unstreamEngineState(engine::Engine &e, const std::string &jsonData, bool msgPack = false);
-} // namespace scxt::json
-
-#endif // SHORTCIRCUIT_STREAM_H
+#endif // SHORTCIRCUITXT_PATCH_IO_H

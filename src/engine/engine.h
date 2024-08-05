@@ -374,9 +374,16 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void sendMetadataToClient() const;
 
     /*
+     * Send everything we need upon a reset or register
+     */
+    void sendFullRefreshToClient() const;
+
+    /*
      * Update the audio playing state
      */
     void sendEngineStatusToClient() const;
+
+    void clearAll();
 
     struct EngineStatusMessage
     {
@@ -453,6 +460,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     void terminateVoicesForZone(Zone &z);
     void terminateVoicesForGroup(Group &g);
+
+    std::optional<fs::path> setupUserStorageDirectory();
 
   private:
     std::unique_ptr<Patch> patch;

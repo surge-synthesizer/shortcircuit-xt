@@ -111,6 +111,12 @@ enum ClientToSerializationMessagesIds
 
     c2s_silence_engine,
 
+    c2s_save_multi,
+    c2s_save_part,
+
+    c2s_load_multi,
+    c2s_load_part,
+
     num_clientToSerializationMessages
 };
 

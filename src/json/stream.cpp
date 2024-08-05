@@ -70,12 +70,23 @@ std::string streamEngineState(const engine::Engine &e, bool pretty)
     return streamValue(json::scxt_value(e), pretty);
 }
 
-void unstreamEngineState(engine::Engine &e, const std::string &xml)
+void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPack)
 {
-    tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
-    tao::json::events::from_string(consumer, xml);
-    auto jv = std::move(consumer.value);
-    jv.to(e);
+    e.clearAll();
+    if (msgPack)
+    {
+        tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
+        tao::json::msgpack::events::from_string(consumer, data);
+        auto jv = std::move(consumer.value);
+        jv.to(e);
+    }
+    else
+    {
+        tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
+        tao::json::events::from_string(consumer, data);
+        auto jv = std::move(consumer.value);
+        jv.to(e);
+    }
 
     if (!e.getSampleManager()->missingList.empty())
     {
@@ -87,5 +98,7 @@ void unstreamEngineState(engine::Engine &e, const std::string &xml)
         }
         e.getMessageController()->reportErrorToClient("Missing Samples", oss.str());
     }
+
+    e.sendFullRefreshToClient();
 }
 } // namespace scxt::json

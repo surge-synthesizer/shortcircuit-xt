@@ -100,30 +100,60 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*scMenu);
 
+    auto comingSoon = []() {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
+                                               "This feature is not yet implemented", "OK");
+    };
+
     undoButton = std::make_unique<jcmp::TextPushButton>();
     undoButton->setLabel("Undo");
+    undoButton->setOnCallback(comingSoon);
     addAndMakeVisible(*undoButton);
 
     redoButton = std::make_unique<jcmp::TextPushButton>();
     redoButton->setLabel("Redo");
+    redoButton->setOnCallback(comingSoon);
     addAndMakeVisible(*redoButton);
 
     tuningButton = std::make_unique<jcmp::TextPushButton>();
     tuningButton->setLabel("Tune");
+    tuningButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        juce::PopupMenu p;
+        w->editor->addTuningMenu(p, true);
+        p.showMenuAsync(w->editor->defaultPopupMenuOptions(w->tuningButton.get()));
+    });
     addAndMakeVisible(*tuningButton);
 
     zoomButton = std::make_unique<jcmp::TextPushButton>();
     zoomButton->setLabel("Zoom");
+    zoomButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        juce::PopupMenu p;
+        w->editor->addZoomMenu(p, true);
+        p.showMenuAsync(w->editor->defaultPopupMenuOptions(w->zoomButton.get()));
+    });
     addAndMakeVisible(*zoomButton);
 
     chipButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::MEMORY);
+    chipButton->setOnCallback(comingSoon);
     addAndMakeVisible(*chipButton);
 
     saveAsButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SAVE);
+    saveAsButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+
+        w->showSaveMenu();
+        /// used to do stuff with auto mod = juce::ModifierKeys::currentModifiers;
+    });
     addAndMakeVisible(*saveAsButton);
 
     multiMenuButton = std::make_unique<jcmp::MenuButton>();
     multiMenuButton->setLabel("This is my Super Awesome Multi");
+    multiMenuButton->setOnCallback(comingSoon);
     addAndMakeVisible(*multiMenuButton);
 
     cpuLabel = std::make_unique<jcmp::Label>();
@@ -213,4 +243,73 @@ void HeaderRegion::setCPULevel(float lev)
     }
 }
 
+bool HeaderRegion::isInterestedInFileDrag(const juce::StringArray &files)
+{
+    return files.size() == 1 && std::all_of(files.begin(), files.end(), [this](const auto &f) {
+               try
+               {
+                   auto pt = fs::path{(const char *)(f.toUTF8())};
+                   return editor->browser.isShortCircuitFormatFile(pt);
+               }
+               catch (fs::filesystem_error &e)
+               {
+               }
+               return false;
+           });
+}
+
+void HeaderRegion::filesDropped(const juce::StringArray &files, int x, int y)
+{
+    SCLOG("Got a file drop of " << files[0]);
+}
+
+void HeaderRegion::doSaveMulti()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Save Multi", juce::File(editor->browser.patchIODirectory.u8string()), "*.scm");
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+            juce::FileBrowserComponent::warnAboutOverwriting,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            // send a 'save multi' message
+            w->sendToSerialization(cmsg::SaveMulti(result[0].getFullPathName().toStdString()));
+        });
+}
+
+void HeaderRegion::doLoadMulti()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Load Multi", juce::File(editor->browser.patchIODirectory.u8string()), "*.scm");
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            w->sendToSerialization(cmsg::LoadMulti(result[0].getFullPathName().toStdString()));
+        });
+}
+
+void HeaderRegion::showSaveMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Save");
+    p.addSeparator();
+    p.addItem("Save Multi", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveMulti();
+    });
+    p.addItem("Load Multi", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doLoadMulti();
+    });
+    p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
+}
 } // namespace scxt::ui

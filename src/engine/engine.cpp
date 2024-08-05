@@ -51,6 +51,8 @@
 #include <version.h>
 #include <filesystem>
 #include <mutex>
+#include "messaging/client/client_serial.h"
+
 namespace scxt::engine
 {
 
@@ -70,23 +72,25 @@ Engine::Engine()
     patch = std::make_unique<Patch>();
     patch->parentEngine = this;
 
-    auto docpath = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
-    try
+    auto tdp = setupUserStorageDirectory();
+    if (tdp.has_value())
     {
-        if (!fs::is_directory(docpath))
-            fs::create_directory(docpath);
+        defaults = std::make_unique<infrastructure::DefaultsProvider>(
+            *tdp, "ShortcircuitXT",
+            [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
+            [](auto em, auto t) {
+                SCLOG("Defaults Parse Error :" << em << " " << t << std::endl);
+            });
+
+        browserDb = std::make_unique<browser::BrowserDB>(*tdp);
+        browser = std::make_unique<browser::Browser>(
+            *browserDb, *defaults, *tdp,
+            [this](const auto &a, const auto &b) { messageController->reportErrorToClient(a, b); });
     }
-    catch (std::exception &e)
+    else
     {
+        messageController->reportErrorToClient("Unlikely to work", "No documents dir. Not tested.");
     }
-
-    defaults = std::make_unique<infrastructure::DefaultsProvider>(
-        docpath, "ShortcircuitXT",
-        [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
-        [](auto em, auto t) { SCLOG("Defaults Parse Error :" << em << " " << t << std::endl); });
-
-    browserDb = std::make_unique<browser::BrowserDB>(docpath);
-    browser = std::make_unique<browser::Browser>(*browserDb, *defaults);
 
     for (auto &v : voices)
         v = nullptr;
@@ -915,6 +919,69 @@ void Engine::updateTransportPhasors()
         transportPhasors[i] = std::modf((float)(transport.timeInBeats) * mul, &rawBeat);
         mul = mul / 2;
     }
+}
+
+std::optional<fs::path> Engine::setupUserStorageDirectory()
+{
+    try
+    {
+        auto res = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
+        if (!fs::is_directory(res))
+            fs::create_directories(res);
+        if (fs::is_directory(res))
+            return res;
+    }
+    catch (const fs::filesystem_error &e)
+    {
+        messageController->reportErrorToClient("FS Error creating user dir", e.what());
+    }
+    return std::nullopt;
+}
+
+void Engine::sendFullRefreshToClient() const
+{
+    auto &cont = getMessageController();
+    assert(cont->threadingChecker.isSerialThread());
+    sendMetadataToClient();
+    serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                              getPartGroupZoneStructure(), *cont);
+    if (getSelectionManager()->currentLeadZone(*this).has_value())
+    {
+        // We want to re-send the action as if a lead was selected.
+        // TODO - make this API less gross
+        selection::SelectionManager::SelectActionContents sac{
+            *(getSelectionManager()->currentLeadZone(*this))};
+        sac.distinct = false;
+        getSelectionManager()->selectAction(sac);
+    }
+}
+
+void Engine::clearAll()
+{
+    selectionManager = std::make_unique<selection::SelectionManager>(*this);
+    for (auto &part : *patch)
+    {
+        for (auto &group : *part)
+        {
+            std::vector<ZoneID> zids;
+            for (const auto &z : *group)
+                zids.push_back(z->id);
+            for (const auto &zid : zids)
+            {
+                group->removeZone(zid);
+            }
+        }
+
+        std::vector<GroupID> gids;
+        for (const auto &g : *part)
+            gids.push_back(g->id);
+        for (const auto &gid : gids)
+        {
+            part->removeGroup(gid);
+        }
+    }
+
+    sampleManager->purgeUnreferencedSamples();
 }
 
 } // namespace scxt::engine

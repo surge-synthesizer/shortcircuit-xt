@@ -178,34 +178,47 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
     MappingZoneHeader(SCXTEditor *ed) : HasEditor(ed)
     {
+        auto comingSoon = []() {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
+                                                   "This feature is not yet implemented", "OK");
+        };
+
         autoMap = std::make_unique<jcmp::TextPushButton>();
         autoMap->setLabel("AUTO-MAP");
+        autoMap->setOnCallback(comingSoon);
         addAndMakeVisible(*autoMap);
 
         midiButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::MIDI);
+        midiButton->setOnCallback(comingSoon);
         addAndMakeVisible(*midiButton);
 
         midiUDButton = std::make_unique<jcmp::GlyphButton>(
             jcmp::GlyphPainter::GlyphType::MIDI, jcmp::GlyphPainter::GlyphType::UP_DOWN, 16);
+        midiUDButton->setOnCallback(comingSoon);
         addAndMakeVisible(*midiUDButton);
 
         midiLRButton = std::make_unique<jcmp::GlyphButton>(
             jcmp::GlyphPainter::GlyphType::MIDI, jcmp::GlyphPainter::GlyphType::LEFT_RIGHT, 16);
+        midiLRButton->setOnCallback(comingSoon);
         addAndMakeVisible(*midiLRButton);
 
         fixOverlap = std::make_unique<jcmp::TextPushButton>();
         fixOverlap->setLabel("FIX OVERLAP");
+        fixOverlap->setOnCallback(comingSoon);
         addAndMakeVisible(*fixOverlap);
 
         fadeOverlap = std::make_unique<jcmp::TextPushButton>();
         fadeOverlap->setLabel("FADE OVERLAP");
+        fadeOverlap->setOnCallback(comingSoon);
         addAndMakeVisible(*fadeOverlap);
 
         zoneSolo = std::make_unique<jcmp::TextPushButton>();
         zoneSolo->setLabel("ZONE SOLO");
+        zoneSolo->setOnCallback(comingSoon);
         addAndMakeVisible(*zoneSolo);
 
         lockButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::LOCK);
+        lockButton->setOnCallback(comingSoon);
         addAndMakeVisible(*lockButton);
 
         fileLabel = std::make_unique<jcmp::Label>();
@@ -214,6 +227,7 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
         fileMenu = std::make_unique<jcmp::MenuButton>();
         fileMenu->setLabel("sample-name-to-come.wav");
+        fileMenu->setOnCallback(comingSoon);
         addAndMakeVisible(*fileMenu);
     }
 
@@ -712,7 +726,17 @@ struct MappingDisplay : juce::Component,
 
     bool isInterestedInFileDrag(const juce::StringArray &files) override
     {
-        return editor->isInterestedInFileDrag(files);
+        return std::all_of(files.begin(), files.end(), [this](const auto &f) {
+            try
+            {
+                auto pt = fs::path{(const char *)(f.toUTF8())};
+                return editor->browser.isLoadableSample(pt);
+            }
+            catch (fs::filesystem_error &e)
+            {
+            }
+            return false;
+        });
     }
     void fileDragEnter(const juce::StringArray &files, int x, int y) override
     {
@@ -1858,7 +1882,18 @@ struct SampleDisplay : juce::Component, HasEditor
 
         bool isInterestedInFileDrag(const juce::StringArray &files) override
         {
-            return editor->isInterestedInFileDrag(files) && getNumTabs() <= maxSamplesPerZone;
+            auto loadable = std::all_of(files.begin(), files.end(), [this](const auto &f) {
+                try
+                {
+                    auto pt = fs::path{(const char *)(f.toUTF8())};
+                    return editor->browser.isLoadableSingleSample(pt);
+                }
+                catch (fs::filesystem_error &e)
+                {
+                }
+                return false;
+            });
+            return loadable && getNumTabs() <= maxSamplesPerZone;
         }
 
         void filesDropped(const juce::StringArray &files, int x, int y) override
@@ -1881,7 +1916,6 @@ struct SampleDisplay : juce::Component, HasEditor
             };
 
             auto tabIndex{getTabIndexFromPosition(x, y)};
-
             if (tabIndex != -1)
             {
                 processFilesDropped(files, tabIndex);
@@ -2371,7 +2405,8 @@ struct SampleDisplay : juce::Component, HasEditor
 
             for (const auto &entry : fs::directory_iterator(parent_path))
             {
-                if (entry.is_regular_file() && browser::Browser::isLoadableFile(entry.path()))
+                if (entry.is_regular_file() &&
+                    browser::Browser::isLoadableSingleSample(entry.path()))
                 {
                     v.push_back(entry.path().u8string());
                 }

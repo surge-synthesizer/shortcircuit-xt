@@ -87,13 +87,20 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
         template <template <typename...> class Traits>                                             \
         static void assign(tao::json::basic_value<Traits> &v, const E &s)                          \
         {                                                                                          \
-            v = {{#E, toS(s)}};                                                                    \
+            v = {{"e", toS(s)}};                                                                   \
         }                                                                                          \
         template <template <typename...> class Traits>                                             \
         static void to(const tao::json::basic_value<Traits> &v, E &r)                              \
         {                                                                                          \
             std::string s;                                                                         \
-            findIf(v, #E, s);                                                                      \
+            if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'04))                                        \
+            {                                                                                      \
+                findIf(v, #E, s);                                                                  \
+            }                                                                                      \
+            else                                                                                   \
+            {                                                                                      \
+                findIf(v, "e", s);                                                                 \
+            }                                                                                      \
             r = fromS(s);                                                                          \
         }                                                                                          \
     };

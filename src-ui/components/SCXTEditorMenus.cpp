@@ -51,6 +51,7 @@ void SCXTEditor::showMainMenu()
 
     m.addSectionHeader("ShortCircuit XT");
 #if BUILD_IS_DEBUG
+    m.addSeparator();
     m.addSectionHeader("(Debug Build)");
 #endif
 
@@ -138,7 +139,14 @@ void SCXTEditor::showMainMenu()
 
     m.addSubMenu("Developer", dp);
 
-    m.showMenuAsync(defaultPopupMenuOptions());
+    if (headerRegion && headerRegion->scMenu)
+    {
+        m.showMenuAsync(defaultPopupMenuOptions(headerRegion->scMenu.get()));
+    }
+    else
+    {
+        m.showMenuAsync(defaultPopupMenuOptions());
+    }
 }
 
 void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)

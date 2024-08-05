@@ -48,6 +48,8 @@ add_library(${PROJECT_NAME} STATIC
 
         voice/voice.cpp
 
+        patch_io/patch_io.cpp
+
         utils.cpp
         )
 

@@ -152,9 +152,6 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void resized() override;
     void parentHierarchyChanged() override;
 
-    // no more used as FileDragAndDropTarget but still used by children
-    bool isInterestedInFileDrag(const juce::StringArray &files);
-
     // Deal with message queues.
     void idle();
     void drainCallbackQueue();
@@ -162,9 +159,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     uint64_t inboundMessageBytes{0};
 
     // Popup Menu Options
-    juce::PopupMenu::Options defaultPopupMenuOptions()
+    juce::PopupMenu::Options defaultPopupMenuOptions(juce::Component *on = nullptr)
     {
         auto r = juce::PopupMenu::Options().withParentComponent(this);
+        if (on)
+            r = r.withTargetComponent(on);
         return r;
     }
     void configureHasDiscreteMenuBuilder(sst::jucegui::components::HasDiscreteParamMenuBuilder *);

@@ -25,20 +25,23 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_JSON_STREAM_H
-#define SCXT_SRC_JSON_STREAM_H
+#ifndef SCXT_SRC_MESSAGING_CLIENT_PATCH_IO_MESSAGES_H
+#define SCXT_SRC_MESSAGING_CLIENT_PATCH_IO_MESSAGES_H
 
-#include "engine/patch.h"
-#include "engine/engine.h"
+#include "patch_io/patch_io.h"
 
-namespace scxt::json
+namespace scxt::messaging::client
 {
+inline void doSaveMulti(const std::string &s, engine::Engine &engine, MessageController &cont)
+{
+    patch_io::saveMulti(fs::path{s}, engine);
 
-static constexpr uint64_t currentStreamingVersion{0x2024'08'04};
+    SCLOG("Remember to update the browser also");
+    // engine.getBrowser()->doSomething;
+}
+CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, std::string, doSaveMulti(payload, engine, cont));
 
-std::string streamPatch(const engine::Patch &p, bool pretty = false);
-std::string streamEngineState(const engine::Engine &e, bool pretty = false);
-void unstreamEngineState(engine::Engine &e, const std::string &jsonData, bool msgPack = false);
-} // namespace scxt::json
-
-#endif // SHORTCIRCUIT_STREAM_H
+CLIENT_TO_SERIAL(LoadMulti, c2s_load_multi, std::string,
+                 patch_io::loadMulti(fs::path{payload}, engine));
+} // namespace scxt::messaging::client
+#endif // SHORTCIRCUITXT_PATCH_IO_MESSAGES_H
