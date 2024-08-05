@@ -68,6 +68,7 @@ void Voice::cleanupVoice()
     zone = nullptr;
     isVoiceAssigned = false;
     engine->voiceManagerResponder.doVoiceEndCallback(this);
+    engine->activeVoices--;
 
     // We cleanup processors here since they may have, say,
     // memory pool resources checked out that others could

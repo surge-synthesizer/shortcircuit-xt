@@ -229,7 +229,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void stopAllSounds();
 
     // TODO: All this gets ripped out when voice management is fixed
-    uint32_t activeVoiceCount();
+    void assertActiveVoiceCount();
+    std::atomic<uint32_t> activeVoices{0};
 
     const std::unique_ptr<messaging::MessageController> &getMessageController() const
     {

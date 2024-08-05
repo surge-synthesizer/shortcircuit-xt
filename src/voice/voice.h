@@ -178,6 +178,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
         isVoicePlaying = true;
         isVoiceAssigned = true;
+
         voiceStarted();
     }
     void release() { isGated = false; }
