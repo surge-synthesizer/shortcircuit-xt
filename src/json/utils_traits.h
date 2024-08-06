@@ -42,18 +42,29 @@ template <int idType> struct scxt_traits<ID<idType>>
     template <template <typename...> class Traits>
     static void assign(tao::json::basic_value<Traits> &v, const ID<idType> &t)
     {
-        v = {{"id", t.id}, {"idType", t.idType}, {"idDisplayName", t.display_name()}};
+        v = {{"i", t.id}, {"t", t.idType}};
     }
 
     template <template <typename...> class Traits>
     static void to(const tao::json::basic_value<Traits> &v, ID<idType> &result)
     {
         const auto &object = v.get_object();
-        if (result.idType != v.at("idType").template as<int32_t>())
+        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'06))
         {
-            throw std::logic_error("Unstreaming different result types");
+            if (result.idType != v.at("idType").template as<int32_t>())
+            {
+                throw std::logic_error("Unstreaming different result types");
+            }
+            v.at("id").to(result.id);
         }
-        v.at("id").to(result.id);
+        else
+        {
+            if (result.idType != v.at("t").template as<int32_t>())
+            {
+                throw std::logic_error("Unstreaming different result types");
+            }
+            v.at("i").to(result.id);
+        }
     }
 };
 } // namespace scxt::json
