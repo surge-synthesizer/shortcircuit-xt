@@ -14,6 +14,7 @@ add_library(${PROJECT_NAME} STATIC
         components/SendFXScreen.cpp
         components/AboutScreen.cpp
         components/LogScreen.cpp
+        components/WelcomeScreen.cpp
 
         components/browser/BrowserPane.cpp
 

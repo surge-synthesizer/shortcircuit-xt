@@ -38,6 +38,7 @@
 #include "MixerScreen.h"
 #include "AboutScreen.h"
 #include "LogScreen.h"
+#include "WelcomeScreen.h"
 #include "SCXTJuceLookAndFeel.h"
 #include "sst/jucegui/components/ToolTip.h"
 #include <sst/jucegui/components/DiscreteParamMenuBuilder.h>
@@ -107,6 +108,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     aboutScreen = std::make_unique<AboutScreen>(this);
     addChildComponent(*aboutScreen);
 
+    welcomeScreen = std::make_unique<WelcomeScreen>(this);
+    addChildComponent(*welcomeScreen);
+
     logScreen = std::make_unique<LogScreen>(this);
     addChildComponent(*logScreen);
 
@@ -164,6 +168,7 @@ void SCXTEditor::showAboutOverlay()
     aboutScreen->toFront(true);
     aboutScreen->setVisible(true);
     logScreen->setVisible(false);
+    welcomeScreen->setVisible(false);
     resized();
 }
 
@@ -172,6 +177,16 @@ void SCXTEditor::showLogOverlay()
     logScreen->toFront(true);
     logScreen->setVisible(true);
     aboutScreen->setVisible(false);
+    welcomeScreen->setVisible(false);
+    resized();
+}
+
+void SCXTEditor::showWelcomeOverlay()
+{
+    welcomeScreen->toFront(true);
+    welcomeScreen->setVisible(true);
+    aboutScreen->setVisible(false);
+    logScreen->setVisible(false);
     resized();
 }
 
@@ -190,6 +205,8 @@ void SCXTEditor::resized()
         aboutScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
     if (logScreen->isVisible())
         logScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+    if (welcomeScreen->isVisible())
+        welcomeScreen->setBounds(0, 0, getWidth(), getHeight());
 }
 
 void SCXTEditor::idle()
@@ -240,6 +257,20 @@ void SCXTEditor::idle()
     }
 
     headerRegion->setMemUsage((float)std::round(sampleManager.sampleMemoryInBytes / 1024 / 1024));
+
+    if (checkWelcomeCountdown == 0)
+    {
+        auto sc = defaultsProvider.getUserDefaultValue(scxt::infrastructure::welcomeScreenSeen, -1);
+        if (sc != WelcomeScreen::welcomeVersion)
+        {
+            showWelcomeOverlay();
+        }
+        checkWelcomeCountdown = -1;
+    }
+    else if (checkWelcomeCountdown > 0)
+    {
+        checkWelcomeCountdown--;
+    }
 }
 
 void SCXTEditor::drainCallbackQueue()

@@ -25,24 +25,33 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_INFRASTRUCTURE_MD5SUPPORT_H
-#define SCXT_SRC_INFRASTRUCTURE_MD5SUPPORT_H
+#ifndef SCXT_SRC_UI_COMPONENTS_WELCOMESCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_WELCOMESCREEN_H
 
-#include <string>
-#include "filesystem_import.h"
-#include "file_map_view.h"
-#include "md5.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "sst/jucegui/components/TextPushButton.h"
+#include "HasEditor.h"
 
-namespace scxt::infrastructure
+namespace scxt::ui
 {
-inline std::string createMD5SumFromFile(const fs::path &path)
+struct WelcomeScreen : juce::Component, HasEditor
 {
-    auto fmp = infrastructure::FileMapView(path);
-    if (!fmp.isMapped())
-        return {};
+    /*
+     * If you update this version the user will see the welcome screen
+     * on their next startup even if they dismissed a prior version
+     */
+    static constexpr int welcomeVersion{1};
+    WelcomeScreen(SCXTEditor *e);
 
-    return md5::MD5::Hash(fmp.data(), fmp.dataSize());
-}
+    void visibilityChanged() override;
+    void mouseDown(const juce::MouseEvent &e) override { okGotItDontShowAgain(); }
+    void paint(juce::Graphics &g) override;
 
-} // namespace scxt::infrastructure
-#endif // SHORTCIRCUITXT_MD5SUPPORT_H
+    bool keyPressed(const juce::KeyPress &key) override;
+
+    void okGotItDontShowAgain();
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WelcomeScreen);
+};
+} // namespace scxt::ui
+#endif // SHORTCIRCUITXT_WELCOMESCREEN_H
