@@ -39,6 +39,7 @@ enum DefaultKeys
     invertScroll,
     showKnobs,
     colormapId,
+    welcomeScreenSeen,
 
     nKeys // must be last K?
 };
@@ -58,6 +59,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "invertScroll";
     case showKnobs:
         return "showKnobs";
+    case welcomeScreenSeen:
+        return "welcomeScreenSeen";
     default:
         std::terminate(); // for now
     }

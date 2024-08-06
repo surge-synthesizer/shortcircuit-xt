@@ -65,6 +65,7 @@ struct HeaderRegion;
 struct MultiScreen;
 struct MixerScreen;
 struct AboutScreen;
+struct WelcomeScreen;
 struct PlayScreen;
 struct LogScreen;
 struct SCXTJuceLookAndFeel;
@@ -124,6 +125,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::unique_ptr<MixerScreen> mixerScreen;
     std::unique_ptr<PlayScreen> playScreen;
     std::unique_ptr<AboutScreen> aboutScreen;
+    std::unique_ptr<WelcomeScreen> welcomeScreen;
     std::unique_ptr<LogScreen> logScreen;
 
     std::unique_ptr<sst::jucegui::components::ToolTip> toolTip;
@@ -144,6 +146,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void setActiveScreen(ActiveScreen s);
     void showAboutOverlay();
     void showLogOverlay();
+    void showWelcomeOverlay();
+    int32_t checkWelcomeCountdown{20};
 
     float zoomFactor{1.f};
     void setZoomFactor(float zoomFactor); // 1.0 == 100%
