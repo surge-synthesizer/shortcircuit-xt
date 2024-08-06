@@ -32,6 +32,7 @@
 
 #include <miniz.h>
 #include "messaging/messaging.h"
+#include "infrastructure/md5support.h"
 
 namespace scxt::multisample_support
 {
@@ -45,6 +46,8 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
     if (!status)
         return false;
+
+    auto md5 = infrastructure::createMD5SumFromFile(p);
 
     // Step one: Build a zip file to index map
     std::map<std::string, int> fileToIndex;
@@ -95,8 +98,8 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         return false;
     }
 
-    auto addSampleFromElement = [&p, &part, &engine, &zip_archive, &fileToIndex,
-                                 &addedGroupIndices](TiXmlElement *fc, int32_t group_index = -1) {
+    auto addSampleFromElement = [&p, &part, &engine, &zip_archive, &fileToIndex, &addedGroupIndices,
+                                 &md5](TiXmlElement *fc, int32_t group_index = -1) {
         /*
          * <sample file="60 Clavinet E5 05.wav" gain="-0.96" group="4" parameter-1="0.0000"
     parameter-2="0.0000" parameter-3="0.0000" reverse="false" sample-start="0.000"
@@ -124,6 +127,8 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
             SCLOG("Wierd - no lsid value");
             return false;
         }
+
+        engine.getSampleManager()->getSample(*lsid)->md5Sum = md5;
 
         auto kr{90}, ks{0}, ke{127}, vs{0}, ve{127};
         auto key = fc->FirstChildElement("key");

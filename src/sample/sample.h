@@ -58,6 +58,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     bool loadFromSF2(const fs::path &path, sf2::File *f, int preset, int inst, int region);
 
     const fs::path &getPath() const { return mFileName; }
+    std::string md5Sum{};
+    std::string getMD5Sum() const { return md5Sum; }
 
     int preset{-1}, instrument{-1}, region{-1};
     int getCompoundPreset() const { return preset; }
@@ -68,6 +70,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     {
         SourceType type{WAV_FILE};
         fs::path path{};
+        std::string md5sum{};
         int preset{-1};
         int instrument{-1};
         int region{-1};
@@ -75,7 +78,18 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     SampleFileAddress getSampleFileAddress() const
     {
-        return {type, getPath(), getCompoundPreset(), getCompoundInstrument(), getCompoundRegion()};
+#if BUILD_IS_DEBUG
+        if (getMD5Sum().empty())
+        {
+            SCLOG("Streaming empty MD5 sum for " << getPath().u8string());
+        }
+#endif
+        return {type,
+                getPath(),
+                getMD5Sum(),
+                getCompoundPreset(),
+                getCompoundInstrument(),
+                getCompoundRegion()};
     }
 
     size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }

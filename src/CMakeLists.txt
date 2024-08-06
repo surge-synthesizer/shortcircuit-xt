@@ -86,6 +86,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
         FLAC++
         minimp3
+        md5sum::md5
 
         sc-compiler-options
         )

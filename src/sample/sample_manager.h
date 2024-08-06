@@ -137,9 +137,9 @@ struct SampleManager : MoveableOnly<SampleManager>
     void updateSampleMemory();
 
     std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
-    std::unordered_map<std::string,
-                       std::pair<std::unique_ptr<RIFF::File>, std::unique_ptr<sf2::File>>>
-        sf2FilesByPath;
+    std::unordered_map<std::string, std::tuple<std::unique_ptr<RIFF::File>,
+                                               std::unique_ptr<sf2::File>, std::string>>
+        sf2FilesByPath; // last is the md5sum
 
     std::unordered_map<std::string, std::unique_ptr<ZipArchiveHolder>> zipArchives;
 };

@@ -73,3 +73,4 @@ if (${SCXT_USE_MP3})
 endif()
 
 add_subdirectory (melatonin_inspector)
+add_subdirectory(md5sum)
