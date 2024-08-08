@@ -58,12 +58,23 @@ if (APPLE)
 endif()
 
 set(SA_TARGET ${PROJECT_NAME}_standalone)
-add_executable(${SA_TARGET} scxt-clap-entry.cpp)
-target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})
-target_add_standalone_wrapper(TARGET ${SA_TARGET}
-        OUTPUT_NAME "Shortcircuit XT Clap First"
-        STATICALLY_LINKED_CLAP_ENTRY True
-        PLUGIN_ID "org.surge-synth-team.scxt.clap-first.scxt-plugin")
+if (APPLE)
+    add_executable(${SA_TARGET} MACOSX_BUNDLE)
+elseif(Win32)
+    add_executable(${SA_TARGET} WIN32)
+else()
+    add_executable(${SA_TARGET})
+endif()
+target_sources(${SA_TARGET} PRIVATE scxt-juce-standalone/scxt-juce-standalone.cpp)
+target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET} juce::juce_audio_devices juce::juce_audio_utils)
+target_compile_definitions(${SA_TARGET} PRIVATE JUCE_USE_FLAC=0)
+
+#add_executable(${SA_TARGET} scxt-clap-entry.cpp)
+#target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})
+#target_add_standalone_wrapper(TARGET ${SA_TARGET}
+#        OUTPUT_NAME "Shortcircuit XT Clap First"
+#        STATICALLY_LINKED_CLAP_ENTRY True
+#        PLUGIN_ID "org.surge-synth-team.scxt.clap-first.scxt-plugin")
 
 set(ALL_TARGET ${PROJECT_NAME}_all)
 add_custom_target(${ALL_TARGET})
