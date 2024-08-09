@@ -39,17 +39,25 @@ function(shortcircuit_package format suffix)
                 get_target_property(output_name scxt_clapfirst_${format} OUTPUT_NAME)
             endif()
 
-            message(STATUS "Adding scxt_clapfirst_${format} to installer from '${output_dir}/${output_name}${suffix}'")
             add_dependencies(shortcircuit-products scxt_clapfirst_${format})
 
+            # This is all a bit messy. Think about this some
             set(isdir 0)
             if (APPLE)
                 set(isdir 1)
             else()
                 if ("${suffix}" STREQUAL ".vst3")
                     set(isdir 1)
+                    if (UNIX)
+                        # There must be a better way to do this. Darn fake bundles.
+                        get_target_property(output_dir scxt_clapfirst_${format} LIBRARY_OUTPUT_DIRECTORY)
+                        message(STATUS "Unix VST3: Re-got output dir and it is ${output_dir}")
+                        set(output_dir "${output_dir}/../../..")
+                    endif()
                 endif()
             endif()
+
+            message(STATUS "Adding scxt_clapfirst_${format} to installer from '${output_dir}/${output_name}${suffix}'")
 
             if (${isdir} EQUAL 1)
                 add_custom_command(
