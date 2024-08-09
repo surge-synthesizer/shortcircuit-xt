@@ -13,7 +13,7 @@ file(MAKE_DIRECTORY ${SCXT_PRODUCT_DIR})
 add_custom_target(shortcircuit-products ALL)
 add_custom_target(shortcircuit-installer)
 
-function(shortcircuit_package format)
+function(shortcircuit_package format suffix)
     if (TARGET scxt_plugin)
         get_target_property(output_dir scxt_plugin RUNTIME_OUTPUT_DIRECTORY)
 
@@ -29,14 +29,62 @@ function(shortcircuit_package format)
             )
         endif ()
     endif()
+
+    if (TARGET scxt_clapfirst_all)
+        get_target_property(output_dir scxt_clapfirst_all ARTEFACT_DIRECTORY)
+
+        if (TARGET scxt_clapfirst_${format})
+            get_target_property(output_name scxt_clapfirst_${format} LIBRARY_OUTPUT_NAME)
+            if( ${output_name} STREQUAL "output_name-NOTFOUND")
+                get_target_property(output_name scxt_clapfirst_${format} OUTPUT_NAME)
+            endif()
+
+            message(STATUS "Adding scxt_clapfirst_${format} to installer from '${output_dir}/${output_name}${suffix}'")
+            add_dependencies(shortcircuit-products scxt_clapfirst_${format})
+
+            set(isdir 0)
+            if (APPLE)
+                set(isdir 1)
+            else()
+                if (${suffix} STREQUAL ".vst3")
+                    set(isdir 1)
+                endif()
+            endif()
+
+            if (${isdir} EQUAL 1)
+                add_custom_command(
+                        TARGET shortcircuit-products
+                        POST_BUILD
+                        USES_TERMINAL
+                        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                        COMMAND echo "Installing directory '${output_dir}/${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
+                        COMMAND ${CMAKE_COMMAND} -E copy_directory "${output_dir}/${output_name}${suffix}" "${SCXT_PRODUCT_DIR}/${output_name}${suffix}"
+                )
+            else()
+                add_custom_command(
+                        TARGET shortcircuit-products
+                        POST_BUILD
+                        USES_TERMINAL
+                        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                        COMMAND echo "Installing file '${output_dir}/${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
+                        COMMAND ${CMAKE_COMMAND} -E copy "${output_dir}/${output_name}${suffix}" "${SCXT_PRODUCT_DIR}/"
+
+                )
+            endif()
+        endif()
+    endif()
 endfunction()
 
-shortcircuit_package(VST3)
-shortcircuit_package(VST)
-shortcircuit_package(LV2)
-shortcircuit_package(AU)
-shortcircuit_package(CLAP)
-shortcircuit_package(Standalone)
+shortcircuit_package(VST3 ".vst3")
+shortcircuit_package(AU ".component")
+shortcircuit_package(CLAP ".clap")
+if (APPLE)
+    shortcircuit_package(Standalone ".app")
+elseif (UNIX)
+    shortcircuit_package(Standalone "")
+else()
+    shortcircuit_package(Standalone ".exe")
+endif()
 
 if (WIN32)
     message(STATUS "Including special Windows cleanup installer stage")

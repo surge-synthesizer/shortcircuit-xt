@@ -34,17 +34,17 @@ jobs:
 
           - name: "windows clap first"
             os: windows-latest
-            target: scxt_clapfirst_all
+            target: shortcircuit-installer
             cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=FALSE
             runTests: false
           - name: "mac clap first"
             os: macos-latest
-            target: scxt_clapfirst_all
+            target: shortcircuit-installer
             cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
             runTests: false
           - name: "ubuntu clap first"
             os: ubuntu-latest
-            target: scxt_clapfirst_all
+            target: shortcircuit-installer
             cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
             runTests: false
 
