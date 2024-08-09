@@ -1,22 +1,28 @@
 /*
- * Conduit - a project highlighting CLAP-first development
- *           and exercising the surge synth team libraries.
+ * Shortcircuit XT - a Surge Synth Team product
  *
- * Copyright 2023 Paul Walker and authors in github
+ * A fully featured creative sampler, available as a standalone
+ * and plugin for multiple platforms.
  *
- * This file you are viewing now is released under the
- * MIT license as described in LICENSE.md
+ * Copyright 2019 - 2024, Various authors, as described in the github
+ * transaction log.
  *
- * The assembled program which results from compiling this
- * project has GPL3 dependencies, so if you distribute
- * a binary, the combined work would be a GPL3 product.
+ * ShortcircuitXT is released under the Gnu General Public Licence
+ * V3 or later (GPL-3.0-or-later). The license is found in the file
+ * "LICENSE" in the root of this repository or at
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
  *
- * Roughly, that means you are welcome to copy the code and
- * ideas in the src/ directory, but perhaps not code from elsewhere
- * if you are closed source or non-GPL3. And if you do copy this code
- * you will need to replace some of the dependencies. Please see
- * the discussion in README.md for further information on what this may
- * mean for you.
+ * Individual sections of code which comprises ShortcircuitXT in this
+ * repository may also be used under an MIT license. Please see the
+ * section  "Licensing" in "README.md" for details.
+ *
+ * ShortcircuitXT is inspired by, and shares code with, the
+ * commercial product Shortcircuit 1 and 2, released by VemberTech
+ * in the mid 2000s. The code for Shortcircuit 2 was opensourced in
+ * 2020 at the outset of this project.
+ *
+ * All source for ShortcircuitXT is available at
+ * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
 /*
