@@ -81,7 +81,7 @@ function(shortcircuit_package format suffix)
                         USES_TERMINAL
                         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                         COMMAND echo "Installing file '${output_dir}/${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
-                        COMMAND ${CMAKE_COMMAND} -E copy "${output_dir}/${output_name}${suffix}" "${SCXT_PRODUCT_DIR}/"
+                        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:scxt_clapfirst_${format}>" "${SCXT_PRODUCT_DIR}/"
 
                 )
             endif()
