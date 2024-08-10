@@ -1362,7 +1362,14 @@ void MappingZones::mouseUp(const juce::MouseEvent &e)
         namespace cmsg = scxt::messaging::client;
         auto za{editor->currentLeadZoneSelection};
 
-        sendToSerialization(cmsg::AddBlankZone({za->part, za->group, ks, ke, vs, ve}));
+        if (!za.has_value())
+        {
+            sendToSerialization(cmsg::AddBlankZone({0, 0, ks, ke, vs, ve}));
+        }
+        else
+        {
+            sendToSerialization(cmsg::AddBlankZone({za->part, za->group, ks, ke, vs, ve}));
+        }
     }
     mouseState = NONE;
     repaint();
