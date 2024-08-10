@@ -32,20 +32,20 @@ jobs:
             target: scxt_plugin_Standalone
             runTests: true
 
-          - name: "windows clap first"
+          - name: "windows juce style"
             os: windows-latest
             target: shortcircuit-installer
-            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
-          - name: "mac clap first"
+          - name: "mac juce style"
             os: macos-latest
             target: shortcircuit-installer
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
-          - name: "ubuntu clap first"
+          - name: "ubuntu juce style"
             os: ubuntu-latest
             target: shortcircuit-installer
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
 
 
