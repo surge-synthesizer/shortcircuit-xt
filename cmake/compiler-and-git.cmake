@@ -61,7 +61,6 @@ else ()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         set(OS_COMPILE_OPTIONS
-                /arch:SSE42
                 /wd4244   # convert float from double
                 /wd4305   # truncate from double to float
                 /wd4018   # signed unsigned compare

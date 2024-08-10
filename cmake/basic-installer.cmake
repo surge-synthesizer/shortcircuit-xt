@@ -47,12 +47,18 @@ function(shortcircuit_package format suffix)
                 set(isdir 1)
             else()
                 if ("${suffix}" STREQUAL ".vst3")
-                    set(isdir 1)
                     if (UNIX)
+                        set(isdir 1)
                         # There must be a better way to do this. Darn fake bundles.
                         get_target_property(output_dir scxt_clapfirst_${format} LIBRARY_OUTPUT_DIRECTORY)
                         message(STATUS "Unix VST3: Re-got output dir and it is ${output_dir}")
                         set(output_dir "${output_dir}/../../..")
+                    endif()
+                endif()
+                if ("${suffix}" STREQUAL ".clap")
+                    if (WIN32)
+                        # WHY is this the case?
+                        set(output_dir "${output_dir}/CLAP")
                     endif()
                 endif()
             endif()
@@ -95,8 +101,10 @@ else()
 endif()
 
 if (WIN32)
-    message(STATUS "Including special Windows cleanup installer stage")
-    add_custom_command(TARGET shortcircuit-products
+    if (TARGET scxt_plugin)
+
+        message(STATUS "Including special Windows cleanup installer stage")
+        add_custom_command(TARGET shortcircuit-products
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             COMMAND ${CMAKE_COMMAND} -E echo "Cleaning up Windows goobits"
@@ -105,6 +113,7 @@ if (WIN32)
             COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.lib"
             COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.pdb"
             )
+    endif()
 endif ()
 
 add_dependencies(shortcircuit-installer shortcircuit-products)
