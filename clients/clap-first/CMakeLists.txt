@@ -35,6 +35,7 @@ target_link_libraries(${VST3_TARGET} PUBLIC ${IMPL_TARGET})
 target_add_vst3_wrapper(TARGET ${VST3_TARGET}
         OUTPUT_NAME ${name}
         SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
+        WINDOWS_FOLDER_VST3 TRUE
         )
 if (${SCXT_COPY_PLUGIN_AFTER_BUILD})
     target_vst3_copy_after_build(TARGET ${VST3_TARGET})

@@ -41,29 +41,18 @@ function(shortcircuit_package format suffix)
 
             add_dependencies(shortcircuit-products scxt_clapfirst_${format})
 
-            # This is all a bit messy. Think about this some
             set(isdir 0)
             if (APPLE)
                 set(isdir 1)
+                set(target_to_root "../../..")
             else()
                 if ("${suffix}" STREQUAL ".vst3")
-                    if (UNIX)
-                        set(isdir 1)
-                        # There must be a better way to do this. Darn fake bundles.
-                        get_target_property(output_dir scxt_clapfirst_${format} LIBRARY_OUTPUT_DIRECTORY)
-                        message(STATUS "Unix VST3: Re-got output dir and it is ${output_dir}")
-                        set(output_dir "${output_dir}/../../..")
-                    endif()
-                endif()
-                if ("${suffix}" STREQUAL ".clap")
-                    if (WIN32)
-                        # WHY is this the case?
-                        set(output_dir "${output_dir}/CLAP")
-                    endif()
+                    set(isdir 1)
+                    set(target_to_root "../../..")
                 endif()
             endif()
 
-            message(STATUS "Adding scxt_clapfirst_${format} to installer from '${output_dir}/${output_name}${suffix}'")
+            message(STATUS "Adding scxt_clapfirst_${format} to installer from '${output_name}${suffix}'")
 
             if (${isdir} EQUAL 1)
                 add_custom_command(
@@ -71,8 +60,8 @@ function(shortcircuit_package format suffix)
                         POST_BUILD
                         USES_TERMINAL
                         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                        COMMAND echo "Installing directory '${output_dir}/${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
-                        COMMAND ${CMAKE_COMMAND} -E copy_directory "${output_dir}/${output_name}${suffix}" "${SCXT_PRODUCT_DIR}/${output_name}${suffix}"
+                        COMMAND echo "Installing directory '${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
+                        COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_FILE_DIR:scxt_clapfirst_${format}>/${target_to_root}/${output_name}${suffix}" "${SCXT_PRODUCT_DIR}/${output_name}${suffix}"
                 )
             else()
                 add_custom_command(
