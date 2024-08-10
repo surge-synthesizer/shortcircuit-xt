@@ -15,37 +15,37 @@ jobs:
         include:
           - name: "windows msvc"
             os: windows-latest
-            target: scxt_plugin_Standalone
+            target: scxt_clapfirst_Standalone
             cmakeConfig: -A x64
             runTests: false
           - name: "windows clang"
             os: windows-latest
-            target: scxt_plugin_Standalone
+            target: scxt_clapfirst_Standalone
             cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
           - name: "mac standalone"
             os: macos-latest
-            target: scxt_plugin_Standalone
+            target: scxt_clapfirst_Standalone
             runTests: true
           - name: "ubuntu standalone"
             os: ubuntu-latest
-            target: scxt_plugin_Standalone
+            target: shortcircuit-installer
             runTests: true
 
-          - name: "windows clap first"
+          - name: "windows juce style"
             os: windows-latest
-            target: shortcircuit-installer
-            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            target: scxt_plugin_Standalone
+            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
-          - name: "mac clap first"
+          - name: "mac juce style"
             os: macos-latest
-            target: shortcircuit-installer
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            target: scxt_plugin_Standalone
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
-          - name: "ubuntu clap first"
+          - name: "ubuntu juce style"
             os: ubuntu-latest
-            target: shortcircuit-installer
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=FALSE
+            target: scxt_plugin_Standalone
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
 
 
@@ -87,5 +87,5 @@ jobs:
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
           cmakeArgs: -DCMAKE_BUILD_TYPE=Debug -GNinja
-          target: scxt_plugin_Standalone
+          target: shortcircuit-products
 

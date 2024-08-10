@@ -23,8 +23,8 @@ add_library(${CLAP_TARGET} MODULE scxt-clap-entry.cpp)
 target_link_libraries(${CLAP_TARGET} PUBLIC ${IMPL_TARGET})
 target_library_make_clap(TARGET ${CLAP_TARGET}
         CLAP_NAME ${name}
-        CLAP_MACOS_BUNDLE_IDENTIFIER "org.surge-synth-team.scxt.clap_first.clap"
-        CLAP_MACOS_BUNDLE_VERSION "0.0.1"
+        CLAP_MACOS_BUNDLE_IDENTIFIER "org.surge-synth-team.shortcircuit-xt.clap"
+        CLAP_MACOS_BUNDLE_VERSION "${ShortcircuitXT_VERSION}"
         COPY_AFTER_BUILD ${SCXT_COPY_PLUGIN_AFTER_BUILD}
         )
 
@@ -36,7 +36,11 @@ target_add_vst3_wrapper(TARGET ${VST3_TARGET}
         OUTPUT_NAME ${name}
         SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
         WINDOWS_FOLDER_VST3 TRUE
-        )
+        # Re-use the JUCE tuid
+        SINGLE_PLUGIN_TUID ABCDEF019182FAEB566D624153635854
+        BUNDLE_IDENTIFIER "org.surge-synth-team.shortcircuit-xt.vst3"
+        BUNDLE_VERSION "${ShortcircuitXT_VERSION}"
+)
 if (${SCXT_COPY_PLUGIN_AFTER_BUILD})
     target_vst3_copy_after_build(TARGET ${VST3_TARGET})
 endif()
@@ -49,10 +53,17 @@ if (APPLE)
     target_add_auv2_wrapper(
             TARGET ${AUV2_TARGET}
             OUTPUT_NAME ${name}
-            BUNDLE_IDENTIFIER "org.surge-synth-team.scxt.clap_first.auv2"
-            BUNDLE_VERSION 0.0.1
 
             CLAP_TARGET_FOR_CONFIG ${CLAP_TARGET}
+
+            MANUFACTURER_NAME "Surge Synth Team"
+            MANUFACTURER_CODE VmbA
+            SUBTYPE_CODE ScXT
+
+            DICTIONARY_STREAM_FORMAT "JUCE"
+
+            BUNDLE_IDENTIFIER "org.surge-synth-team.shortcircuit-xt.component"
+            BUNDLE_VERSION "${ShortcircuitXT_VERSION}"
     )
     if (${SCXT_COPY_PLUGIN_AFTER_BUILD})
         target_auv2_copy_after_build(TARGET ${AUV2_TARGET})

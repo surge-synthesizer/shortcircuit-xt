@@ -85,7 +85,7 @@ static bool clap_get_auv2_info(const clap_plugin_factory_as_auv2 *factory, uint3
 
     if (strcmp(plugin_id, scxt::clap_first::scxt_plugin::getDescription()->id) == 0)
     {
-        strncpy(info->au_subt, "scCF", 5);
+        strncpy(info->au_subt, "ScXT", 5);
         return true;
     }
 
