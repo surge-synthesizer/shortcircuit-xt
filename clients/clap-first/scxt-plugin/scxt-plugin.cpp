@@ -38,8 +38,8 @@ const clap_plugin_descriptor *getDescription()
     static const char *features[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SAMPLER,
                                      CLAP_PLUGIN_FEATURE_SYNTHESIZER, nullptr};
     static clap_plugin_descriptor desc = {CLAP_VERSION,
-                                          "org.surge-synth-team.scxt.clap-first.scxt-plugin",
-                                          "Shortcircuit XT (Clap First Version)",
+                                          "org.surge-synth-team.shortcircuit-xt",
+                                          "Shortcircuit XT",
                                           "Surge Synth Team",
                                           "https://surge-synth-team.org",
                                           "",
@@ -93,7 +93,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
         auto xml = scxt::json::streamEngineState(*engine);
 
         auto c = xml.c_str();
-        auto s = xml.length(); // write the null terminator
+        auto s = xml.length() + 1; // write the null terminator
         while (s > 0)
         {
             auto r = ostream->write(ostream, c, s);

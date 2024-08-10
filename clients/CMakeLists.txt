@@ -2,6 +2,7 @@ project(scxt-clients LANGUAGES CXX)
 
 
 if (${SCXT_JUCE_CLASSIC_STYLE})
+    message(STATUS "Building JUCE_CLASSIC style plugins")
     add_subdirectory(juce-plugin)
 
     if(DEFINED ENV{ASIOSDK_DIR} OR BUILD_USING_MY_ASIO_LICENSE)
@@ -30,6 +31,7 @@ if (${SCXT_JUCE_CLASSIC_STYLE})
         set(JUCE_ASIO_SUPPORT TRUE)
     endif()
 else()
+    message(STATUS "Building clap-first / wrapper plugins")
     add_subdirectory(clap-first)
 endif()
 
