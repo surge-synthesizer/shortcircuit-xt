@@ -82,7 +82,7 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s)
 
     if (s->getSampleLength() > 0)
     {
-        return std::sqrtf(ms);
+        return sqrt(ms);
     }
 
     // What should the RMS of an empty sample be?
