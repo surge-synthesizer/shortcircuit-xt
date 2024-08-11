@@ -34,7 +34,7 @@ using namespace scxt;
 
 TEST_CASE("Sample Analytics", "[sample]")
 {
-    float _scratch; // Create a scratch float for modf
+    double _scratch; // Create a scratch double for modf
 
     // SineBuffer is a 440Hz size at 0.6 amplitude
     // sine rms = amp / sqrt(2)
