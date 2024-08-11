@@ -27,14 +27,13 @@
 
 #include "catch2/catch2.hpp"
 #include "dsp/sample_analytics.h"
-#include <cmath>
 #include <limits>
 
 using namespace scxt;
 
 TEST_CASE("Sample Analytics", "[sample]")
 {
-    double _scratch; // Create a scratch double for modf
+    float _scratch; // Create a scratch double for modf
 
     // SineBuffer is a 440Hz size at 0.6 amplitude
     // sine rms = amp / sqrt(2)
@@ -63,7 +62,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < squareBuffer.size(); i++)
     {
         const float t = float(i) / squareBuffer.size();
-        squareBuffer[i] = 0.8f * (modf(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
+        squareBuffer[i] = 0.8f * (modff(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
     }
     squareSample->load_data_f32(0, squareBuffer.data(), squareBuffer.size(), sizeof(float));
     squareSample->sample_length = squareBuffer.size();
@@ -81,7 +80,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < sawBuffer.size(); i++)
     {
         const float t = float(i) / sawBuffer.size();
-        sawBuffer[i] = static_cast<int16_t>((0.6f * modf(110.0f * t, &_scratch) - 0.3f) *
+        sawBuffer[i] = static_cast<int16_t>((0.6f * modff(110.0f * t, &_scratch) - 0.3f) *
                                             std::numeric_limits<int16_t>::max());
     }
     sawSample->load_data_i16(0, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
