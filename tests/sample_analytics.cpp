@@ -32,6 +32,32 @@ using namespace scxt;
 
 TEST_CASE("Sample Analytics", "[sample]")
 {
+    float sineBuffer[1024];
+    float squareBuffer[1024];
+    float sawBuffer[1024];
+    float _scratch; // Create a scratch float for modf
+
+    // SineBuffer is a 440Hz size at 0.6 amplitude
+    for (int i = 0; i < sizeof(sineBuffer); i++)
+    {
+        const float t = float(i) / sizeof(sineBuffer);
+        sineBuffer[i] = 0.6f * sin(2.0f * float(M_PI) * 440.0f * t);
+    }
+
+    // SquareBuffer is a 220Hz square wave at 0.8 amplitude
+    for (int i = 0; i < sizeof(squareBuffer); i++)
+    {
+        const float t = float(i) / sizeof(squareBuffer);
+        squareBuffer[i] = 0.8f * (modf(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
+    }
+
+    // SawBuffer is a 110Hz saw wave at 0.3 amplitude
+    for (int i = 0; i < sizeof(sawBuffer); i++)
+    {
+        const float t = float(i) / sizeof(sawBuffer);
+        sawBuffer[i] = 0.6f * modf(110.0f * t, &_scratch) - 0.3f;
+    }
+
     std::shared_ptr<sample::Sample> sample = std::make_shared<sample::Sample>();
     sample->allocateF32(0, 1024);
     // TODO Generate the sample (sin, square, and saw) which we know have analytic solutions for
