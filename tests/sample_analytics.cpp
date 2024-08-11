@@ -38,7 +38,7 @@ TEST_CASE("Sample Analytics", "[sample]")
 
     // SineBuffer is a 440Hz size at 0.6 amplitude
     // sine rms = amp / sqrt(2)
-    std::array<float, 1024> sineBuffer {};
+    std::array<float, 1024> sineBuffer{};
     constexpr float sine_amp = 0.6f;
     const float sine_rms = sine_amp / sqrt(2.0f);
     const auto sineSample = std::make_shared<sample::Sample>();
@@ -50,12 +50,12 @@ TEST_CASE("Sample Analytics", "[sample]")
     }
     sineSample->load_data_f32(0, sineBuffer.data(), sineBuffer.size(), sizeof(float));
     sineSample->sample_length = sineBuffer.size();
-    sineSample ->channels =1;
+    sineSample->channels = 1;
     sineSample->sample_loaded = true;
 
     // SquareBuffer is a 220Hz square wave at 0.8 amplitude
     // square rms = amp
-    std::array<float, 1024> squareBuffer {};
+    std::array<float, 1024> squareBuffer{};
     constexpr float square_amp = 0.8f;
     const float square_rms = square_amp;
     const auto squareSample = std::make_shared<sample::Sample>();
@@ -67,12 +67,12 @@ TEST_CASE("Sample Analytics", "[sample]")
     }
     squareSample->load_data_f32(0, squareBuffer.data(), squareBuffer.size(), sizeof(float));
     squareSample->sample_length = squareBuffer.size();
-    squareSample-> channels = 1;
+    squareSample->channels = 1;
     squareSample->sample_loaded = true;
 
     // SawBuffer is a 110Hz saw wave at 0.3 amplitude in stereo using i16s to sample
     // saw rms = amp / sqrt(3)
-    std::array<int16_t, 1024> sawBuffer {};
+    std::array<int16_t, 1024> sawBuffer{};
     constexpr float saw_amp = 0.3f;
     const float saw_rms = saw_amp / sqrt(3.0f);
     const auto sawSample = std::make_shared<sample::Sample>();
@@ -81,7 +81,8 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < sawBuffer.size(); i++)
     {
         const float t = float(i) / sawBuffer.size();
-        sawBuffer[i] = static_cast<int16_t>((0.6f * modf(110.0f * t, &_scratch) - 0.3f) * std::numeric_limits<int16_t>::max());
+        sawBuffer[i] = static_cast<int16_t>((0.6f * modf(110.0f * t, &_scratch) - 0.3f) *
+                                            std::numeric_limits<int16_t>::max());
     }
     sawSample->load_data_i16(0, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
     sawSample->load_data_i16(1, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
@@ -93,15 +94,23 @@ TEST_CASE("Sample Analytics", "[sample]")
     // to go smaller).
     constexpr float tolerance = 0.0001f;
 
-    SECTION("Peak Analysis") {
-        REQUIRE_THAT(dsp::sample_analytics::computePeak(sineSample), Catch::WithinRel(sine_amp, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computePeak(squareSample), Catch::WithinRel(square_amp, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computePeak(sawSample), Catch::WithinRel(saw_amp, tolerance));
+    SECTION("Peak Analysis")
+    {
+        REQUIRE_THAT(dsp::sample_analytics::computePeak(sineSample),
+                     Catch::WithinRel(sine_amp, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computePeak(squareSample),
+                     Catch::WithinRel(square_amp, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computePeak(sawSample),
+                     Catch::WithinRel(saw_amp, tolerance));
     }
 
-    SECTION("RMS Analysis") {
-        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sineSample), Catch::WithinRel(sine_rms, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computeRMS(squareSample), Catch::WithinRel(square_rms, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sawSample), Catch::WithinRel(saw_rms, tolerance));
+    SECTION("RMS Analysis")
+    {
+        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sineSample),
+                     Catch::WithinRel(sine_rms, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computeRMS(squareSample),
+                     Catch::WithinRel(square_rms, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sawSample),
+                     Catch::WithinRel(saw_rms, tolerance));
     }
 }
