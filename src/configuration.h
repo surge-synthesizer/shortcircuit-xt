@@ -44,6 +44,8 @@ static constexpr uint16_t mainOutput{0};
 static constexpr uint16_t firstPartOutput{1};
 static constexpr uint16_t firstAuxOutput{firstPartOutput + numParts};
 
+static constexpr size_t macrosPerPart{16};
+
 static constexpr uint16_t numNonMainPluginOutputs{20};
 static constexpr uint16_t numPluginOutputs{numNonMainPluginOutputs + 1};
 
