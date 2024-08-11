@@ -27,40 +27,81 @@
 
 #include "catch2/catch2.hpp"
 #include "dsp/sample_analytics.h"
+#include <cmath>
+#include <limits>
 
 using namespace scxt;
 
 TEST_CASE("Sample Analytics", "[sample]")
 {
-    float sineBuffer[1024];
-    float squareBuffer[1024];
-    float sawBuffer[1024];
     float _scratch; // Create a scratch float for modf
 
     // SineBuffer is a 440Hz size at 0.6 amplitude
-    for (int i = 0; i < sizeof(sineBuffer); i++)
+    // sine rms = amp / sqrt(2)
+    std::array<float, 1024> sineBuffer {};
+    constexpr float sine_amp = 0.6f;
+    const float sine_rms = sine_amp / sqrt(2.0f);
+    const auto sineSample = std::make_shared<sample::Sample>();
+    sineSample->allocateF32(0, sineBuffer.size());
+    for (int i = 0; i < sineBuffer.size(); i++)
     {
-        const float t = float(i) / sizeof(sineBuffer);
+        const float t = float(i) / sineBuffer.size();
         sineBuffer[i] = 0.6f * sin(2.0f * float(M_PI) * 440.0f * t);
     }
+    sineSample->load_data_f32(0, sineBuffer.data(), sineBuffer.size(), sizeof(float));
+    sineSample->sample_length = sineBuffer.size();
+    sineSample ->channels =1;
+    sineSample->sample_loaded = true;
 
     // SquareBuffer is a 220Hz square wave at 0.8 amplitude
-    for (int i = 0; i < sizeof(squareBuffer); i++)
+    // square rms = amp
+    std::array<float, 1024> squareBuffer {};
+    constexpr float square_amp = 0.8f;
+    const float square_rms = square_amp;
+    const auto squareSample = std::make_shared<sample::Sample>();
+    squareSample->allocateF32(0, squareBuffer.size());
+    for (int i = 0; i < squareBuffer.size(); i++)
     {
-        const float t = float(i) / sizeof(squareBuffer);
+        const float t = float(i) / squareBuffer.size();
         squareBuffer[i] = 0.8f * (modf(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
     }
+    squareSample->load_data_f32(0, squareBuffer.data(), squareBuffer.size(), sizeof(float));
+    squareSample->sample_length = squareBuffer.size();
+    squareSample-> channels = 1;
+    squareSample->sample_loaded = true;
 
-    // SawBuffer is a 110Hz saw wave at 0.3 amplitude
-    for (int i = 0; i < sizeof(sawBuffer); i++)
+    // SawBuffer is a 110Hz saw wave at 0.3 amplitude in stereo using i16s to sample
+    // saw rms = amp / sqrt(3)
+    std::array<int16_t, 1024> sawBuffer {};
+    constexpr float saw_amp = 0.3f;
+    const float saw_rms = saw_amp / sqrt(3.0f);
+    const auto sawSample = std::make_shared<sample::Sample>();
+    sawSample->allocateI16(0, sawBuffer.size());
+    sawSample->allocateI16(1, sawBuffer.size());
+    for (int i = 0; i < sawBuffer.size(); i++)
     {
-        const float t = float(i) / sizeof(sawBuffer);
-        sawBuffer[i] = 0.6f * modf(110.0f * t, &_scratch) - 0.3f;
+        const float t = float(i) / sawBuffer.size();
+        sawBuffer[i] = static_cast<int16_t>((0.6f * modf(110.0f * t, &_scratch) - 0.3f) * std::numeric_limits<int16_t>::max());
+    }
+    sawSample->load_data_i16(0, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
+    sawSample->load_data_i16(1, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
+    sawSample->sample_length = sawBuffer.size();
+    sawSample->channels = 2;
+    sawSample->sample_loaded = true;
+
+    // The smallest tolerance before test failure (only tested factors of 10, so might be able
+    // to go smaller).
+    constexpr float tolerance = 0.0001f;
+
+    SECTION("Peak Analysis") {
+        REQUIRE_THAT(dsp::sample_analytics::computePeak(sineSample), Catch::WithinRel(sine_amp, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computePeak(squareSample), Catch::WithinRel(square_amp, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computePeak(sawSample), Catch::WithinRel(saw_amp, tolerance));
     }
 
-    std::shared_ptr<sample::Sample> sample = std::make_shared<sample::Sample>();
-    sample->allocateF32(0, 1024);
-    // TODO Generate the sample (sin, square, and saw) which we know have analytic solutions for
-    // their RMS
-    SECTION("Peak Analysis") {}
+    SECTION("RMS Analysis") {
+        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sineSample), Catch::WithinRel(sine_rms, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computeRMS(squareSample), Catch::WithinRel(square_rms, tolerance));
+        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sawSample), Catch::WithinRel(saw_rms, tolerance));
+    }
 }
