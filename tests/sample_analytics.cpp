@@ -63,7 +63,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < squareBuffer.size(); i++)
     {
         const float t = float(i) / squareBuffer.size();
-        squareBuffer[i] = 0.8f * (std::modff(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
+        squareBuffer[i] = 0.8f * (std::modf(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
     }
     squareSample->load_data_f32(0, squareBuffer.data(), squareBuffer.size(), sizeof(float));
     squareSample->sample_length = squareBuffer.size();
@@ -81,7 +81,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < sawBuffer.size(); i++)
     {
         const float t = float(i) / sawBuffer.size();
-        sawBuffer[i] = static_cast<int16_t>((0.6f * std::modff(110.0f * t, &_scratch) - 0.3f) *
+        sawBuffer[i] = static_cast<int16_t>((0.6f * std::modf(110.0f * t, &_scratch) - 0.3f) *
                                             std::numeric_limits<int16_t>::max());
     }
     sawSample->load_data_i16(0, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
