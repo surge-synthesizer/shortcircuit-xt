@@ -28,6 +28,7 @@
 #include "catch2/catch2.hpp"
 #include "dsp/sample_analytics.h"
 #include <limits>
+#include <cmath>
 
 using namespace scxt;
 
@@ -45,7 +46,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < sineBuffer.size(); i++)
     {
         const float t = float(i) / sineBuffer.size();
-        sineBuffer[i] = 0.6f * sin(2.0f * float(M_PI) * 440.0f * t);
+        sineBuffer[i] = 0.6f * std::sin(2.0f * float(M_PI) * 440.0f * t);
     }
     sineSample->load_data_f32(0, sineBuffer.data(), sineBuffer.size(), sizeof(float));
     sineSample->sample_length = sineBuffer.size();
@@ -56,13 +57,13 @@ TEST_CASE("Sample Analytics", "[sample]")
     // square rms = amp
     std::array<float, 1024> squareBuffer{};
     constexpr float square_amp = 0.8f;
-    const float square_rms = square_amp;
+    constexpr float square_rms = square_amp;
     const auto squareSample = std::make_shared<sample::Sample>();
     squareSample->allocateF32(0, squareBuffer.size());
     for (int i = 0; i < squareBuffer.size(); i++)
     {
         const float t = float(i) / squareBuffer.size();
-        squareBuffer[i] = 0.8f * (modff(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
+        squareBuffer[i] = 0.8f * (std::modff(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
     }
     squareSample->load_data_f32(0, squareBuffer.data(), squareBuffer.size(), sizeof(float));
     squareSample->sample_length = squareBuffer.size();
@@ -80,7 +81,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     for (int i = 0; i < sawBuffer.size(); i++)
     {
         const float t = float(i) / sawBuffer.size();
-        sawBuffer[i] = static_cast<int16_t>((0.6f * modff(110.0f * t, &_scratch) - 0.3f) *
+        sawBuffer[i] = static_cast<int16_t>((0.6f * std::modff(110.0f * t, &_scratch) - 0.3f) *
                                             std::numeric_limits<int16_t>::max());
     }
     sawSample->load_data_i16(0, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));

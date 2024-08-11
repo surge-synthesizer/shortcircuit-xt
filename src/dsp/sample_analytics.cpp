@@ -27,6 +27,7 @@
 
 #include "sample_analytics.h"
 #include <limits>
+#include <cmath>
 
 namespace scxt::dsp::sample_analytics
 {
@@ -74,13 +75,13 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s)
                 sample = s->GetSamplePtrF32(chan)[i];
                 break;
             }
-            ms += powf(sample, 2) * divisor_recip;
+            ms += std::powf(sample, 2) * divisor_recip;
         }
     }
 
     if (s->getSampleLength() > 0)
     {
-        return sqrt(ms);
+        return std::sqrt(ms);
     }
 
     // What should the RMS of an empty sample be?
