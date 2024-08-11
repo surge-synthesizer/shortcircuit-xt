@@ -27,6 +27,7 @@
 
 #include "sample_analytics.h"
 #include <limits>
+#include <cmath>
 
 namespace scxt::dsp::sample_analytics
 {
