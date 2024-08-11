@@ -75,7 +75,7 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s)
                 sample = s->GetSamplePtrF32(chan)[i];
                 break;
             }
-            ms += std::pow(sample, 2) * divisor_recip;
+            ms += std::powf(sample, 2.0f) * divisor_recip;
         }
     }
 
