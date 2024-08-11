@@ -186,6 +186,7 @@ struct SelectionManager
     void sendDisplayDataForNoZoneSelected();
     void sendDisplayDataForSingleGroup(int part, int group);
     void sendDisplayDataForNoGroupSelected();
+    void sendSelectedPartMacrosToClient();
     void configureAndSendZoneModMatrixMetadata(int p, int g, int z);
 
     // To ponder. Does this belong on this object or the engine?

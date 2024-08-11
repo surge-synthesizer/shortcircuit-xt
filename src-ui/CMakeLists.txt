@@ -30,6 +30,7 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/PartGroupSidebar.cpp
         components/multi/ProcessorPane.cpp
         components/multi/ProcessorPaneEQsFilters.cpp
+        components/multi/SingleMacroEditor.cpp
 
         connectors/SCXTResources.cpp
         connectors/JSONLayoutConsumer.cpp

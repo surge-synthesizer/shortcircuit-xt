@@ -70,6 +70,7 @@ inline void onRegister(engine::Engine &engine, MessageController &cont)
         sac.distinct = false;
         engine.getSelectionManager()->selectAction(sac);
     }
+    engine.getSelectionManager()->sendSelectedPartMacrosToClient();
 }
 CLIENT_TO_SERIAL(OnRegister, c2s_on_register, bool, onRegister(engine, cont));
 

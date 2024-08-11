@@ -27,6 +27,7 @@
 
 #include "MappingPane.h"
 #include "components/SCXTEditor.h"
+#include "components/multi/SingleMacroEditor.h"
 #include "datamodel/metadata.h"
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
@@ -38,6 +39,7 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/Viewport.h"
+#include "sst/jucegui/components/Knob.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
@@ -2966,12 +2968,45 @@ void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
 
 struct MacroDisplay : HasEditor, juce::Component
 {
-    MacroDisplay(SCXTEditor *e) : HasEditor(e) {}
-    void paint(juce::Graphics &g)
+    std::array<std::unique_ptr<SingleMacroEditor>, scxt::macrosPerPart> macros;
+    MacroDisplay(SCXTEditor *e) : HasEditor(e)
     {
-        g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
-        g.setFont(editor->themeApplier.interMediumFor(25));
-        g.drawText("Macro Region Coming Soon", getLocalBounds(), juce::Justification::centred);
+        for (int i = 0; i < scxt::macrosPerPart; ++i)
+        {
+            macros[i] = std::make_unique<SingleMacroEditor>(editor, editor->selectedPart, i);
+            addAndMakeVisible(*macros[i]);
+            //  grab whatever data we have
+            macroDataChanged(editor->selectedPart, i);
+        }
+    }
+    void resized() override
+    {
+        auto b = getLocalBounds();
+        auto dx = b.getWidth() / scxt::macrosPerPart * 2;
+        auto dy = b.getHeight() / 2;
+        auto kr = b.withWidth(dx).withHeight(dy).reduced(3);
+        for (int i = 0; i < scxt::macrosPerPart; ++i)
+        {
+            macros[i]->setBounds(kr);
+            kr = kr.translated(dx, 0);
+            if (i == scxt::macrosPerPart / 2 - 1)
+                kr = kr.withX(3).translated(0, dy);
+        }
+    }
+
+    void selectedPartChanged()
+    {
+        for (auto &m : macros)
+        {
+            m->changePart(editor->selectedPart);
+        }
+        repaint();
+    }
+
+    void macroDataChanged(int part, int index)
+    {
+        assert(part == editor->selectedPart);
+        macros[index]->updateFromEditorData();
     }
 };
 
@@ -3059,4 +3094,10 @@ void MappingPane::updateSamplePlaybackPosition(size_t sampleIndex, int64_t sampl
             .waveform->updateSamplePlaybackPosition(samplePos);
 }
 
+void MappingPane::selectedPartChanged() { macroDisplay->selectedPartChanged(); }
+void MappingPane::macroDataChanged(int part, int index)
+{
+    assert(part == editor->selectedPart);
+    macroDisplay->macroDataChanged(part, index);
+}
 } // namespace scxt::ui::multi

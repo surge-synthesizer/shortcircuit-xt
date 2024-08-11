@@ -224,7 +224,8 @@ struct GroupMatrixEndpoints
     struct Sources
     {
         Sources(engine::Engine *e)
-            : lfoSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e)
+            : lfoSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}},
+              transportSources(e), macroSources(e)
         {
             registerGroupModSource(e, egSource[0], "", "EG1");
             registerGroupModSource(e, egSource[1], "", "EG2");
@@ -264,6 +265,13 @@ struct GroupMatrixEndpoints
             SR phasors[scxt::numTransportPhasors];
         } transportSources;
 
+        struct MacroSources
+        {
+            MacroSources(engine::Engine *e);
+
+            SR macros[macrosPerPart];
+        } macroSources;
+
         float zeroSource{0.f};
 
         void bind(GroupMatrix &matrix, engine::Group &group);
@@ -282,6 +290,6 @@ typedef std::vector<namedCurve_t> namedCurveVector_t;
 typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t>
     groupMatrixMetadata_t;
 
-groupMatrixMetadata_t getGroupMatrixMetadata(engine::Group &z);
+groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &z);
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_GROUP_MATRIX_H

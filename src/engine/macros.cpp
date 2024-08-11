@@ -30,4 +30,9 @@
 namespace scxt::engine
 {
 sst::basic_blocks::params::ParamMetaData Macro::getMetadata() const { return {}; }
+void Macro::setNormalizedValue(float f)
+{
+    normalizedValue = f;
+    modulationValue = f;
+}
 } // namespace scxt::engine

@@ -162,6 +162,12 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
         int dist = (i < 4) ? 0 : 1;
         m.bindSourceConstantValue(rngSources.randoms[i], randomRoll(bip, dist));
     }
+
+    auto *part = z.parentGroup->parentPart;
+    for (int i = 0; i < macrosPerPart; ++i)
+    {
+        m.bindSourceValue(macroSources.macros[i], part->macros[i].modulationValue);
+    }
 }
 
 void MatrixEndpoints::registerVoiceModTarget(
@@ -186,7 +192,7 @@ void MatrixEndpoints::registerVoiceModSource(
     e->registerVoiceModSource(t, pathFn, nameFn);
 }
 
-voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
+voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
 {
     auto e = z.getEngine();
 
@@ -195,8 +201,15 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z)
     namedCurveVector_t cr;
 
     auto identCmp = [](const auto &a, const auto &b) {
+        const auto &srca = a.first;
+        const auto &srcb = b.first;
         const auto &ida = a.second;
         const auto &idb = b.second;
+        if (srca.gid == 'zmac' && srcb.gid == 'zmac')
+        {
+            return srca.index < srcb.index;
+        }
+
         if (ida.first == idb.first)
         {
             if (ida.second == idb.second)
@@ -345,4 +358,14 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
     }
 }
 
+MatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
+{
+    for (auto i = 0U; i < macrosPerPart; ++i)
+    {
+        macros[i] = SR{'zmac', 'mcro', i};
+        registerVoiceModSource(
+            e, macros[i], [](auto &a, auto &b) { return "Macro"; },
+            [i](auto &zone, auto &s) { return zone.parentGroup->parentPart->macros[i].name; });
+    }
+}
 } // namespace scxt::voice::modulation

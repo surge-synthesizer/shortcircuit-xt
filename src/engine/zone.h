@@ -234,6 +234,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
     void setupOnUnstream(const engine::Engine &e);
     engine::Engine *getEngine();
+    const engine::Engine *getEngine() const;
 
     sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
     void onSampleRateChanged() override;

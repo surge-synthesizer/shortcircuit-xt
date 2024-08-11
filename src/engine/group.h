@@ -87,6 +87,7 @@ struct Group : MoveableOnly<Group>,
     } outputInfo;
 
     Engine *getEngine();
+    const Engine *getEngine() const;
 
     float output alignas(16)[2][blockSize << 1];
     void attack();

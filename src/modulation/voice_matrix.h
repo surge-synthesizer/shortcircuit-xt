@@ -216,7 +216,7 @@ struct MatrixEndpoints
     {
         Sources(engine::Engine *e)
             : lfoSources(e), midiSources(e), aegSource{'zneg', 'aeg ', 0},
-              eg2Source{'zneg', 'eg2 ', 0}, transportSources(e), rngSources(e)
+              eg2Source{'zneg', 'eg2 ', 0}, transportSources(e), rngSources(e), macroSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
@@ -287,6 +287,13 @@ struct MatrixEndpoints
             SR randoms[8];
         } rngSources;
 
+        struct MacroSources
+        {
+            MacroSources(engine::Engine *e);
+
+            SR macros[macrosPerPart];
+        } macroSources;
+
         SR aegSource, eg2Source;
 
         void bind(Matrix &m, engine::Zone &z, voice::Voice &v);
@@ -343,7 +350,7 @@ typedef std::vector<namedCurve_t> namedCurveVector_t;
 typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t>
     voiceMatrixMetadata_t;
 
-voiceMatrixMetadata_t getVoiceMatrixMetadata(engine::Zone &z);
+voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z);
 } // namespace scxt::voice::modulation
 
 #endif // __SCXT_VOICE_MATRIX_H

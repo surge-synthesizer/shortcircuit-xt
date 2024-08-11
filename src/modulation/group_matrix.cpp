@@ -156,6 +156,12 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
         assert(g.getEngine());
         m.bindSourceValue(transportSources.phasors[i], g.getEngine()->transportPhasors[i]);
     }
+
+    auto *part = g.parentPart;
+    for (int i = 0; i < macrosPerPart; ++i)
+    {
+        m.bindSourceValue(macroSources.macros[i], part->macros[i].modulationValue);
+    }
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(
@@ -184,7 +190,7 @@ void GroupMatrixEndpoints::registerGroupModSource(
     e->registerGroupModSource(t, pathFn, nameFn);
 }
 
-groupMatrixMetadata_t getGroupMatrixMetadata(engine::Group &g)
+groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
 {
     // somewhat dissatisfied with amount of copying here also
     auto e = g.getEngine();
@@ -194,8 +200,14 @@ groupMatrixMetadata_t getGroupMatrixMetadata(engine::Group &g)
     namedCurveVector_t cr;
 
     auto identCmp = [](const auto &a, const auto &b) {
+        const auto &srca = a.first;
+        const auto &srcb = b.first;
         const auto &ida = a.second;
         const auto &idb = b.second;
+        if (srca.gid == 'gmac' && srcb.gid == 'gmac')
+        {
+            return srca.index < srcb.index;
+        }
         if (ida.first == idb.first)
         {
             if (ida.second == idb.second)
@@ -241,5 +253,15 @@ groupMatrixMetadata_t getGroupMatrixMetadata(engine::Group &g)
     }
 
     return groupMatrixMetadata_t{true, sr, tg, cr};
+}
+GroupMatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
+{
+    for (auto i = 0U; i < macrosPerPart; ++i)
+    {
+        macros[i] = SR{'gmac', 'mcro', i};
+        registerGroupModSource(
+            e, macros[i], [](auto &a, auto &b) { return "Macro"; },
+            [i](auto &grp, auto &s) { return grp.parentPart->macros[i].name; });
+    }
 }
 } // namespace scxt::modulation

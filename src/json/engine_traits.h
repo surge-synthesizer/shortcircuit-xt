@@ -40,6 +40,7 @@
 #include "engine/group.h"
 #include "engine/zone.h"
 #include "engine/keyboard.h"
+#include "engine/macros.h"
 #include "engine/engine.h"
 
 #include "scxt_traits.h"
@@ -121,22 +122,39 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
                  findIf(v, "busses", patch.busses);
              }))
 
-SC_STREAMDEF(scxt::engine::Part, SC_FROM({
-                 // TODO: Do a non-empty part stream with the If variant
-                 v = {{"channel", from.channel}, {"groups", from.getGroups()}};
+SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
+                 v = {
+                     {"nv", t.normalizedValue},
+                     {"bp", t.isBipolar},
+                     {"nm", t.name},
+                 };
              }),
              SC_TO({
-                 auto &part = to;
-                 part.clearGroups();
+                 float normVal;
+                 findIf(v, "nv", normVal);
+                 findIf(v, "bp", result.isBipolar);
+                 findIf(v, "nm", result.name);
+                 result.setNormalizedValue(normVal);
+             }));
 
-                 findIf(v, "channel", part.channel);
-                 auto vzones = v.at("groups").get_array();
-                 for (const auto vz : vzones)
-                 {
-                     auto idx = part.addGroup() - 1;
-                     vz.to(*(part.getGroup(idx)));
-                 }
-             }))
+SC_STREAMDEF(
+    scxt::engine::Part, SC_FROM({
+        // TODO: Do a non-empty part stream with the If variant
+        v = {{"channel", from.channel}, {"groups", from.getGroups()}, {"macros", from.macros}};
+    }),
+    SC_TO({
+        auto &part = to;
+        part.clearGroups();
+
+        findIf(v, "channel", part.channel);
+        findIf(v, "macros", part.macros);
+        auto vzones = v.at("groups").get_array();
+        for (const auto vz : vzones)
+        {
+            auto idx = part.addGroup() - 1;
+            vz.to(*(part.getGroup(idx)));
+        }
+    }))
 
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},   {"pan", t.pan},
@@ -552,5 +570,6 @@ template <> struct scxt_traits<engine::Patch::Busses>
         r.reconfigureOutputBusses();
     }
 };
+
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H

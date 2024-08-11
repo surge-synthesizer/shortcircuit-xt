@@ -962,6 +962,7 @@ void Engine::sendFullRefreshToClient() const
         sac.distinct = false;
         getSelectionManager()->selectAction(sac);
     }
+    getSelectionManager()->sendSelectedPartMacrosToClient();
 }
 
 void Engine::clearAll()
