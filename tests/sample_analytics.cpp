@@ -24,16 +24,17 @@
  * All source for ShortcircuitXT is available at
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
-#ifndef SCXT_SRC_DSP_SAMPLE_ANALYTICS_H
-#define SCXT_SRC_DSP_SAMPLE_ANALYTICS_H
 
-#include <memory>
-#include <sample/sample.h>
+#include "catch2/catch2.hpp"
+#include "dsp/sample_analytics.h"
 
-namespace scxt::dsp::sample_analytics
+using namespace scxt;
+
+TEST_CASE("Sample Analytics", "[sample]")
 {
-float computePeak(const std::shared_ptr<sample::Sample> &s);
-float computeRMS(const std::shared_ptr<sample::Sample> &s);
-}; // namespace scxt::dsp::sample_analytics
-
-#endif // SCXT_SRC_DSP_SAMPLE_ANALYTICS_H
+    std::shared_ptr<sample::Sample> sample = std::make_shared<sample::Sample>();
+    sample->allocateF32(0, 1024);
+    // TODO Generate the sample (sin, square, and saw) which we know have analytic solutions for
+    // their RMS
+    SECTION("Peak Analysis") {}
+}

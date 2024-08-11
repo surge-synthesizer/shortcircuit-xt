@@ -1,5 +1,5 @@
 /*
-* Shortcircuit XT - a Surge Synth Team product
+ * Shortcircuit XT - a Surge Synth Team product
  *
  * A fully featured creative sampler, available as a standalone
  * and plugin for multiple platforms.
@@ -26,19 +26,36 @@
  */
 
 #include "sample_analytics.h"
+#include <limits>
 
-namespace scxt::dsp::sample_analytics {
-    float computePeak(const std::shared_ptr<sample::Sample> &s) {
-        float peak = 0.0f;
-        for(size_t i = 0; i < s->getSampleLength(); i++) {
-            for(int chan = 0; chan < s->channels; chan++) {
-                peak = std::max(peak, std::abs(*s->GetSamplePtrF32(chan)));
+namespace scxt::dsp::sample_analytics
+{
+float computePeak(const std::shared_ptr<sample::Sample> &s)
+{
+    float peak = 0.0f;
+    for (size_t i = 0; i < s->getSampleLength(); i++)
+    {
+        for (int chan = 0; chan < s->channels; chan++)
+        {
+            float sample = 0.0;
+            switch (s->bitDepth)
+            {
+                case sample::Sample::BD_I16:
+                sample = static_cast<float>(*s->GetSamplePtrI16(chan)) / std::numeric_limits<int16_t>::max();
+                break;
+            case sample::Sample::BD_F32:
+                sample = *s->GetSamplePtrF32(chan);
+                break;
+                // what to do if a bitdepth isn't handled?
             }
+            peak = std::max(peak, std::abs(sample));
         }
-        return peak;
     }
+    return peak;
+}
 
-    float computeRMS(const std::shared_ptr<sample::Sample> &s) {
+float computeRMS(const std::shared_ptr<sample::Sample> &s)
+{
     /*
          *fn rms(data: &[f32]) -> f32 {
         // Calculate the mean square
@@ -54,19 +71,34 @@ namespace scxt::dsp::sample_analytics {
         };
         }
     */
-        float ms = 0.0f;
-        const float divisor = static_cast<float>(s->channels) * static_cast<float>(s->getSampleLength());
-        for(size_t i = 0; i < s->getSampleLength(); i++) {
-            for(int chan = 0; chan < s->channels; chan++) {
-                ms += std::powf(*s->GetSamplePtrF32(chan), 2) / divisor;
+    float ms = 0.0f;
+    const float divisor =
+        static_cast<float>(s->channels) * static_cast<float>(s->getSampleLength());
+    for (size_t i = 0; i < s->getSampleLength(); i++)
+    {
+        for (int chan = 0; chan < s->channels; chan++)
+        {
+            float sample = 0.0;
+            switch (s->bitDepth)
+            {
+            case sample::Sample::BD_I16:
+                sample = static_cast<float>(*s->GetSamplePtrI16(chan)) / std::numeric_limits<int16_t>::max();
+                break;
+            case sample::Sample::BD_F32:
+                sample = *s->GetSamplePtrF32(chan);
+                break;
+                // what to do if a bitdepth isn't handled?
             }
+            ms += std::powf(sample, 2) / divisor;
         }
-
-        if (s->getSampleLength() > 0) {
-            return std::sqrtf(ms);
-        }
-
-        // What should the RMS of an empty sample be?
-        return 0.0f;
     }
+
+    if (s->getSampleLength() > 0)
+    {
+        return std::sqrtf(ms);
+    }
+
+    // What should the RMS of an empty sample be?
+    return 0.0f;
 }
+} // namespace scxt::dsp::sample_analytics
