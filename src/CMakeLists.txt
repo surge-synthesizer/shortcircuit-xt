@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME} STATIC
         dsp/generator.cpp
         dsp/data_tables.cpp
         dsp/processor/processor.cpp
+        dsp/sample_analytics.cpp
 
         engine/engine.cpp
         engine/engine_voice_responder.cpp
