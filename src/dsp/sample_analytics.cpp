@@ -27,7 +27,7 @@
 
 #include "sample_analytics.h"
 
-namespace scxt::dsp {
+namespace scxt::dsp::sample_analytics {
     float computePeak(const std::shared_ptr<sample::Sample> &s) {
         float peak = 0.0f;
         for(size_t i = 0; i < s->getSampleLength(); i++) {
