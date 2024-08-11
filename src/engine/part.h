@@ -38,6 +38,7 @@
 #include "dsp/smoothers.h"
 
 #include "bus.h"
+#include "macros.h"
 
 namespace scxt::engine
 {
@@ -150,6 +151,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         for (auto &g : groups)
             g->setSampleRate(samplerate);
     }
+
+    std::array<Macro, macrosPerPart> macros;
 
     // TODO: A group by ID which throws an SCXTError
     typedef std::vector<std::unique_ptr<Group>> groupContainer_t;

@@ -162,7 +162,6 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
         return {};
 
     sp->md5Sum = std::get<2>(sf2FilesByPath[p.u8string()]);
-    SCLOG("Sapmle MD5 Sum is " << sp->md5Sum);
 
     samples[sp->id] = sp;
     updateSampleMemory();

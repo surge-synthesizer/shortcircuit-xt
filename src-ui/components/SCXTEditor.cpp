@@ -256,7 +256,7 @@ void SCXTEditor::idle()
         mixerScreen->setVULevelForBusses(sharedUiMemoryState.busVULevels);
     }
 
-    headerRegion->setMemUsage((float)std::round(sampleManager.sampleMemoryInBytes / 1024 / 1024));
+    headerRegion->setMemUsage(sampleManager.sampleMemoryInBytes);
 
     if (checkWelcomeCountdown == 0)
     {

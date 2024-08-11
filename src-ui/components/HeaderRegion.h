@@ -42,6 +42,7 @@
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
 #include "HasEditor.h"
+#include "utils.h"
 
 namespace scxt::ui
 {
@@ -78,13 +79,25 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     bool isInterestedInFileDrag(const juce::StringArray &files) override;
     void filesDropped(const juce::StringArray &files, int x, int y) override;
 
-    float memUsageInMegabytes{0.f};
+    float memUsageInBytes{-1.f};
     void setMemUsage(float m)
     {
-        if (m != memUsageInMegabytes)
+        if (m != memUsageInBytes)
         {
-            memUsageInMegabytes = m;
-            ramLevel->setText(fmt::format("{:.0f} MB", m));
+            memUsageInBytes = m;
+            auto mb = memUsageInBytes / 1024.f / 1024.f;
+            if (mb < 10)
+            {
+                ramLevel->setText(fmt::format("{:.2f} MB", mb));
+            }
+            else if (mb < 100)
+            {
+                ramLevel->setText(fmt::format("{:.1f} MB", mb));
+            }
+            else
+            {
+                ramLevel->setText(fmt::format("{:.0f} MB", mb));
+            }
         }
     }
 
