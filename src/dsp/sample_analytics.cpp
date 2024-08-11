@@ -41,13 +41,12 @@ float computePeak(const std::shared_ptr<sample::Sample> &s)
             switch (s->bitDepth)
             {
             case sample::Sample::BD_I16:
-                sample = static_cast<float>(*s->GetSamplePtrI16(chan)) /
+                sample = static_cast<float>(s->GetSamplePtrI16(chan)[i]) /
                          std::numeric_limits<int16_t>::max();
                 break;
             case sample::Sample::BD_F32:
-                sample = *s->GetSamplePtrF32(chan);
+                sample = s->GetSamplePtrF32(chan)[i];
                 break;
-                // what to do if a bitdepth isn't handled?
             }
             peak = std::max(peak, std::abs(sample));
         }
@@ -58,8 +57,8 @@ float computePeak(const std::shared_ptr<sample::Sample> &s)
 float computeRMS(const std::shared_ptr<sample::Sample> &s)
 {
     float ms = 0.0f;
-    const float divisor =
-        static_cast<float>(s->channels) * static_cast<float>(s->getSampleLength());
+    const float divisor_recip =
+        1.0f / (static_cast<float>(s->channels) * static_cast<float>(s->getSampleLength()));
     for (size_t i = 0; i < s->getSampleLength(); i++)
     {
         for (int chan = 0; chan < s->channels; chan++)
@@ -68,15 +67,14 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s)
             switch (s->bitDepth)
             {
             case sample::Sample::BD_I16:
-                sample = static_cast<float>(*s->GetSamplePtrI16(chan)) /
+                sample = static_cast<float>(s->GetSamplePtrI16(chan)[i]) /
                          std::numeric_limits<int16_t>::max();
                 break;
             case sample::Sample::BD_F32:
-                sample = *s->GetSamplePtrF32(chan);
+                sample = s->GetSamplePtrF32(chan)[i];
                 break;
-                // what to do if a bitdepth isn't handled?
             }
-            ms += powf(sample, 2) / divisor;
+            ms += powf(sample, 2) * divisor_recip;
         }
     }
 
