@@ -117,6 +117,9 @@ enum ClientToSerializationMessagesIds
     c2s_load_multi,
     c2s_load_part,
 
+    c2s_set_macro_full_state,
+    c2s_set_macro_value,
+
     num_clientToSerializationMessages
 };
 
@@ -150,6 +153,9 @@ enum SerializationToClientMessageIds
     s2c_bus_send_data,
 
     s2c_refresh_browser,
+
+    s2c_update_macro_full_state,
+    s2c_update_macro_value,
 
     num_serializationToClientMessages
 };

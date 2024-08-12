@@ -202,6 +202,7 @@ void SelectionManager::selectPart(int16_t part)
     guaranteeSelectedLead();
     sendClientDataForLeadSelectionState();
     sendSelectedZonesToClient();
+    sendSelectedPartMacrosToClient();
     debugDumpSelectionState();
 }
 
@@ -736,5 +737,14 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
     {
         r.extraPayload = std::nullopt;
     }
+}
+
+void SelectionManager::sendSelectedPartMacrosToClient()
+{
+    const auto &part = engine.getPatch()->getPart(selectedPart);
+    for (int i = 0; i < macrosPerPart; ++i)
+        serializationSendToClient(cms::s2c_update_macro_full_state,
+                                  cms::macroFullState_t{selectedPart, i, part->macros[i]},
+                                  *(engine.getMessageController()));
 }
 } // namespace scxt::selection

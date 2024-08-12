@@ -290,6 +290,13 @@ engine::Engine *Group::getEngine()
     return nullptr;
 }
 
+const engine::Engine *Group::getEngine() const
+{
+    if (parentPart && parentPart->parentPatch)
+        return parentPart->parentPatch->parentEngine;
+    return nullptr;
+}
+
 void Group::setupOnUnstream(const engine::Engine &e)
 {
     rePrepareAndBindGroupMatrix();

@@ -251,19 +251,32 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         target->setLabel("Target");
         curve->setLabel("-");
 
+        auto makeSourceName = [](auto &si, auto &sn) {
+            // This is the second location where we are assuming default macro name
+            // as mentioned in part.h
+            auto nm = sn.second;
+
+            if (si.gid == 'zmac' || si.gid == 'gmac')
+            {
+                auto defname = "Macro " + std::to_string(si.index + 1);
+                if (nm != defname)
+                {
+                    nm = "M" + std::to_string(si.index + 1) + ": " + nm;
+                }
+            }
+
+            return nm;
+        };
+
         for (const auto &[si, sn] : srcs)
         {
             if (si == row.source)
             {
-                auto nm = /* sn.first + (sn.first.empty() ? "" : " - ") + */ sn.second;
-
-                source->setLabel(nm);
+                source->setLabel(makeSourceName(si, sn));
             }
             if (si == row.sourceVia)
             {
-                auto nm = /* sn.first + (sn.first.empty() ? "" : " - ") + */ sn.second;
-
-                sourceVia->setLabel(nm);
+                sourceVia->setLabel(makeSourceName(si, sn));
             }
         }
 
@@ -441,6 +454,16 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 subTicked = true;
 
             auto nm = sn.second;
+            if (si.gid == 'gmac' || si.gid == 'zmac')
+            {
+                // This is where we are assuming default macro name
+                // from part.h
+                auto defName = "Macro " + std::to_string(si.index + 1);
+                if (nm != defName)
+                {
+                    nm = defName + " (" + nm + ")";
+                }
+            }
             sub.addItem(nm, true, selected, mkCallback(si));
         }
 

@@ -213,6 +213,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
         allProcessors = v;
     }
 
+    std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
+    void onMacroFullState(const scxt::messaging::client::macroFullState_t &);
+    void onMacroValue(const scxt::messaging::client::macroValue_t &);
+
     // Originate client to serialization messages
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,
                            bool distinct, bool asLead);

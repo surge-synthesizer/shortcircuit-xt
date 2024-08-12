@@ -285,6 +285,8 @@ void SCXTEditor::onSelectedPart(const int16_t p)
     selectedPart = p; // I presume I will shortly get structure messages so don't do anything else
     if (multiScreen && multiScreen->parts)
         multiScreen->parts->selectedPartChanged();
+    if (multiScreen && multiScreen->sample)
+        multiScreen->sample->selectedPartChanged();
 
     repaint();
 }
@@ -329,5 +331,17 @@ void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugRespon
     {
         SCLOG(k << " " << s);
     }
+}
+
+void SCXTEditor::onMacroFullState(const scxt::messaging::client::macroFullState_t &s)
+{
+    const auto &[part, index, macro] = s;
+    macroCache[part][index] = macro;
+    multiScreen->sample->macroDataChanged(part, index);
+}
+
+void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &)
+{
+    SCLOG_WFUNC("Implement");
 }
 } // namespace scxt::ui

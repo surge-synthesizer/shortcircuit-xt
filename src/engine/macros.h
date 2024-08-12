@@ -38,6 +38,7 @@ struct Macro
     float modulationValue{0.f}; // Calcluated from normalized value
 
     bool isBipolar{false};
+    std::string name{};
 
     void setNormalizedValue(float f);
 

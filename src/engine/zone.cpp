@@ -161,6 +161,13 @@ engine::Engine *Zone::getEngine()
     return nullptr;
 }
 
+const engine::Engine *Zone::getEngine() const
+{
+    if (parentGroup && parentGroup->parentPart && parentGroup->parentPart->parentPatch)
+        return parentGroup->parentPart->parentPatch->parentEngine;
+    return nullptr;
+}
+
 void Zone::initialize()
 {
     for (auto &v : voiceWeakPointers)

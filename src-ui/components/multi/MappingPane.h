@@ -51,6 +51,8 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     void setMappingData(const engine::Zone::ZoneMappingData &);
     void setSampleData(const engine::Zone::AssociatedSampleSet &);
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &);
+    void selectedPartChanged();
+    void macroDataChanged(int part, int index);
     void editorSelectionChanged();
     void setActive(bool b);
 
