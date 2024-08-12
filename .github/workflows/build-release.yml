@@ -76,7 +76,7 @@ jobs:
         with:
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          cmakeArgs: -DCMAKE_BUILD_TYPE=Release -GNinja
+          cmakeArgs: -DSCXT_JUCE_CLASSIC_STYLE=TRUE -DCMAKE_BUILD_TYPE=Release -GNinja
           target: shortcircuit-installer
 
 
