@@ -372,7 +372,9 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
                  {"loopDirection", s.loopDirection},
                  {"loopCountWhenCounted", s.loopCountWhenCounted},
                  {"loopFade", s.loopFade},
-                 {"normalizationFactor", s.normalizationFactor}};
+                 {"normalizationFactor", s.normalizationFactor},
+                 {"pitchOffset", s.pitchOffset},
+                 {"amplitude", s.amplitude}};
         }
         else
         {
@@ -400,6 +402,8 @@ template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
             findOrSet(v, "loopFade", 0, s.loopFade);
             findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
             findOrSet(v, "normalizationFactor", 0.f, s.normalizationFactor);
+            findOrSet(v, "pitchOffset", 0.f, s.pitchOffset);
+            findOrSet(v, "amplitude", 0.f, s.amplitude);
         }
         else
         {

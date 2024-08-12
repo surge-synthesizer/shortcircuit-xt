@@ -120,13 +120,17 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
         int64_t loopFade{0};
         float normalizationFactor{0.f}; // db
+        // per-sample pitch and amplitude
+        float pitchOffset{0.f}; // semitones
+        float amplitude{0.f}; // db
 
         bool operator==(const AssociatedSample &other) const
         {
             return active == other.active && sampleID == other.sampleID &&
                    startSample == other.startSample && endSample == other.endSample &&
                    startLoop == other.startLoop && endLoop == other.endLoop &&
-                   normalizationFactor == other.normalizationFactor;
+                   normalizationFactor == other.normalizationFactor &&
+                   pitchOffset == other.pitchOffset && amplitude == other.amplitude;
         }
     };
 
