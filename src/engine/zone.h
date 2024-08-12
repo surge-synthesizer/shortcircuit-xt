@@ -119,12 +119,14 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};
+        float normalizationFactor{0.f};
 
         bool operator==(const AssociatedSample &other) const
         {
             return active == other.active && sampleID == other.sampleID &&
                    startSample == other.startSample && endSample == other.endSample &&
-                   startLoop == other.startLoop && endLoop == other.endLoop;
+                   startLoop == other.startLoop && endLoop == other.endLoop &&
+                   normalizationFactor == other.normalizationFactor;
         }
     };
 
