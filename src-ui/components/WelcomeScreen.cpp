@@ -75,7 +75,7 @@ auto txt =
 
     "\n"
     "We love early testers, documenters, and designers on all our projects. The best way to "
-    "chat with the Surge Synth Team devs about ShortcircutiXT is to join the Surge Synth Team "
+    "chat with the Surge Synth Team devs about ShortcircuitXT is to join the Surge Synth Team "
     "discord and hop into the #using-shortcircuit or #sc-development channels.\n\n"
     "Finally, we love developers too! If you want to join the team and help sling some code on the "
     "project, please get in touch.\n\n"
