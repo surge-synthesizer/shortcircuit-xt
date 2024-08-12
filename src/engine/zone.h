@@ -119,7 +119,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};
-        float normalizationFactor{0.f};
+        float normalizationFactor{0.f}; // db
 
         bool operator==(const AssociatedSample &other) const
         {
