@@ -122,7 +122,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         float normalizationFactor{0.f}; // db
         // per-sample pitch and amplitude
         float pitchOffset{0.f}; // semitones
-        float amplitude{0.f}; // db
+        float amplitude{0.f};   // db
 
         bool operator==(const AssociatedSample &other) const
         {
