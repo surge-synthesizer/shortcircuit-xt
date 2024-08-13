@@ -28,21 +28,43 @@
 #ifndef SCXT_SRC_ENGINE_MACROS_H
 #define SCXT_SRC_ENGINE_MACROS_H
 
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
+#include <algorithm>
+
 #include "sst/basic-blocks/params/ParamMetadata.h"
 
 namespace scxt::engine
 {
 struct Macro
 {
-    float normalizedValue{0.f}; // always 0...1
-    float modulationValue{0.f}; // Calcluated from normalized value
+    float value{0.f}; // -1 .. 1
 
-    bool isBipolar{false};
+    bool isBipolar{false}; // The value is expected in range -1..1
+    bool isStepped{false}; // The value has discrete stepped value
+    size_t stepCount{1};   // how many steps between min and max.
+                           // So 1 means a 0..1 or -1..1 toggle
     std::string name{};
 
-    void setNormalizedValue(float f);
-
-    sst::basic_blocks::params::ParamMetaData getMetadata() const;
+    void setIsBipolar(bool b)
+    {
+        isBipolar = b;
+        setValueConstrained(value);
+    }
+    void setValueConstrained(float f) { value = std::clamp(f, isBipolar ? -1.f : 0.f, 1.f); }
+    void setFrom01(float f)
+    {
+        assert(f >= 0.f && f <= 1.f);
+        if (isBipolar)
+        {
+            value = f * 2 - 1.0;
+        }
+        else
+        {
+            value = f;
+        }
+    }
 };
 } // namespace scxt::engine
 #endif // SHORTCIRCUITXT_MACROS_H

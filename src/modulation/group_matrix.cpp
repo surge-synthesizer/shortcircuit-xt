@@ -160,7 +160,7 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
     auto *part = g.parentPart;
     for (int i = 0; i < macrosPerPart; ++i)
     {
-        m.bindSourceValue(macroSources.macros[i], part->macros[i].modulationValue);
+        m.bindSourceValue(macroSources.macros[i], part->macros[i].value);
     }
 }
 

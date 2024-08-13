@@ -124,17 +124,16 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
 
 SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  v = {
-                     {"nv", t.normalizedValue},
-                     {"bp", t.isBipolar},
-                     {"nm", t.name},
+                     {"v", t.value},      {"bp", t.isBipolar}, {"st", t.isStepped},
+                     {"sc", t.stepCount}, {"nm", t.name},
                  };
              }),
              SC_TO({
-                 float normVal;
-                 findIf(v, "nv", normVal);
+                 findIf(v, "v", result.value);
                  findIf(v, "bp", result.isBipolar);
+                 findIf(v, "st", result.isStepped);
+                 findIf(v, "sc", result.stepCount);
                  findIf(v, "nm", result.name);
-                 result.setNormalizedValue(normVal);
              }));
 
 SC_STREAMDEF(
