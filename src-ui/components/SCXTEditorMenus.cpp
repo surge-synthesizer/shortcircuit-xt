@@ -180,10 +180,12 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
     }
     for (auto v : {75, 100, 125, 150, 200})
     {
-        p.addItem(juce::String(v) + "%", [w = juce::Component::SafePointer(this), v]() {
-            if (w)
-                w->setZoomFactor(v * 0.01);
-        });
+        bool checked = (std::fabs(zoomFactor * 100 - v) < 1);
+        p.addItem(juce::String(v) + "%", true, checked,
+                  [w = juce::Component::SafePointer(this), v]() {
+                      if (w)
+                          w->setZoomFactor(v * 0.01);
+                  });
     }
 
     auto r = juce::PopupMenu();
