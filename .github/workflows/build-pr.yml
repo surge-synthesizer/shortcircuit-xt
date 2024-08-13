@@ -21,8 +21,9 @@ jobs:
           - name: "windows clang"
             os: windows-latest
             target: scxt_clapfirst_Standalone
-            cmakeConfig: -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl
+            cmakeConfig: -G"Unix Makefiles" -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl
             runTests: false
+            
           - name: "mac standalone"
             os: macos-latest
             target: scxt_clapfirst_Standalone
