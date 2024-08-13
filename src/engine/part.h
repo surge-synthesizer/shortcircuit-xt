@@ -50,13 +50,10 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     Part(int16_t c) : id(PartID::next()), partNumber(c), channel(c)
     {
         pitchBendSmoother.setTarget(0);
-        int idx{1};
+        int idx{0};
         for (auto &m : macros)
         {
-            // If you change this format you also need to change
-            // the two comparisons with default in src-ui/.../ModPane.cpp
-            // at the comments "assuming default macro name"
-            m.name = "Macro " + std::to_string(idx);
+            m.name = Macro::defaultNameFor(idx);
             idx++;
         }
     }

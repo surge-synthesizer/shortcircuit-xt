@@ -120,6 +120,9 @@ enum ClientToSerializationMessagesIds
     c2s_set_macro_full_state,
     c2s_set_macro_value,
 
+    c2s_request_host_callback,
+    c2s_macro_begin_end_edit,
+
     num_clientToSerializationMessages
 };
 

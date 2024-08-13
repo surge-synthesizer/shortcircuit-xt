@@ -310,6 +310,18 @@ struct MessageController : MoveableOnly<MessageController>
      */
     uint64_t c2sMessageCount{0}, c2sMessageBytes{0};
 
+    /*
+     * This is a function which causes the plugin to issue a callback.
+     * Basically it's a way to dependency break a call to
+     * `clap_host_t::request_callback` but maybe in the future it
+     * can be used for other things like notifying standalone CLI
+     * programs and stuff. Lets see!
+     *
+     * The function you provide here can be called from any thread
+     * and should not lock.
+     */
+    std::function<void(uint64_t)> requestHostCallback{nullptr};
+
   private:
     uint64_t inboundClientMessageCount{0};
     void runSerialization();
@@ -323,6 +335,15 @@ struct MessageController : MoveableOnly<MessageController>
     sst::cpputils::SimpleRingBuffer<serializationToAudioMessage_t, 1024> serializationToAudioQueue;
     sst::cpputils::SimpleRingBuffer<audioToSerializationMessage_t, 1024> audioToSerializationQueue;
 
+  public:
+    // Some engine events are passed onto the hosting processor. This
+    // again really just lets us keep the engine free of clap, juce, etc...
+    // and put those apis in the clients directory. Defacto this has
+    // param events now.
+    std::atomic<bool> passWrapperEventsToWrapperQueue{false};
+    sst::cpputils::SimpleRingBuffer<serializationToAudioMessage_t, 1024> engineToPluginWrapperQueue;
+
+  private:
     std::queue<clientToSerializationMessage_t> clientToSerializationQueue;
     std::mutex clientToSerializationMutex;
     std::condition_variable clientToSerializationConditionVar;

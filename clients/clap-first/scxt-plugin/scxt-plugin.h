@@ -40,6 +40,7 @@
 #include <memory>
 #include <random>
 #include <tuple>
+#include <cstdint>
 
 #include "sst/clap_juce_shim/clap_juce_shim.h"
 
@@ -63,6 +64,16 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
     bool activate(double sampleRate, uint32_t minFrameCount,
                   uint32_t maxFrameCount) noexcept override;
 
+    /*
+     * What can we do on main thread
+     */
+    enum MainThreadActions : uint64_t
+    {
+        RESCAN_PARAM_IVT = 1 << 0,
+    };
+    std::atomic<uint64_t> nextMainThreadAction;
+    void onMainThread() noexcept override;
+
     bool implementsAudioPorts() const noexcept override { return true; }
     uint32_t audioPortsCount(bool isInput) const noexcept override;
     bool audioPortsInfo(uint32_t index, bool isInput,
@@ -79,6 +90,26 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
     bool implementsState() const noexcept override { return true; }
     bool stateSave(const clap_ostream *stream) noexcept override;
     bool stateLoad(const clap_istream *stream) noexcept override;
+
+    bool implementsParams() const noexcept override { return true; }
+    uint32_t paramsCount() const noexcept override;
+    bool paramsInfo(uint32_t paramIndex, clap_param_info *info) const noexcept override;
+    bool paramsValue(clap_id paramId, double *value) noexcept override;
+    bool paramsValueToText(clap_id paramId, double value, char *display,
+                           uint32_t size) noexcept override;
+    bool paramsTextToValue(clap_id paramId, const char *display, double *value) noexcept override;
+    void paramsFlush(const clap_input_events *in, const clap_output_events *out) noexcept override;
+
+    const scxt::engine::Macro &macroFor(uint32_t paramId) const
+    {
+        auto part = engine::Macro::macroIDToPart(paramId);
+        auto idx = engine::Macro::macroIDToIndex(paramId);
+        assert(part >= 0 && part < scxt::numParts);
+        assert(idx >= 0 && idx < scxt::macrosPerPart);
+        return engine->getPatch()->getPart(part)->macros[idx];
+    }
+
+    void handleParamValueEvent(const clap_event_param_value *);
 
   public:
     bool implementsGui() const noexcept override { return clapJuceShim != nullptr; }

@@ -52,6 +52,7 @@ enum AudioToSerializationMessageId
     a2s_note_off,
     a2s_structure_refresh,
     a2s_processor_refresh,
+    a2s_macro_updated,
 };
 
 /**
@@ -94,7 +95,11 @@ enum SerializationToAudioMessageId
 {
     s2a_none,
     s2a_dispatch_to_pointer,
-    s2a_dispatch_to_pointer_under_structurelock
+    s2a_dispatch_to_pointer_under_structurelock,
+
+    s2a_param_beginendedit,
+    s2a_param_set_value,
+    s2a_param_refresh
 };
 
 /**
@@ -106,6 +111,11 @@ struct SerializationToAudio
 
     // std::variant does not allow an array type and
     // i kinda want this fixed size anyway
+    struct FourUintsFourFloats
+    {
+        uint32_t u[4];
+        float f[4];
+    };
     union Payload
     {
         int32_t i[8];
@@ -113,6 +123,7 @@ struct SerializationToAudio
         float f[8];
         char c[32];
         void *p;
+        FourUintsFourFloats mix;
     } payload{};
 
     enum PayloadType : uint8_t
@@ -122,7 +133,8 @@ struct SerializationToAudio
         UINT,
         FLOAT,
         CHAR,
-        VOID_STAR
+        VOID_STAR,
+        FOUR_FOUR_MIX
     } payloadType{INT};
 };
 

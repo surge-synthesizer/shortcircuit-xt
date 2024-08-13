@@ -252,14 +252,11 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         curve->setLabel("-");
 
         auto makeSourceName = [](auto &si, auto &sn) {
-            // This is the second location where we are assuming default macro name
-            // as mentioned in part.h
             auto nm = sn.second;
 
             if (si.gid == 'zmac' || si.gid == 'gmac')
             {
-                auto defname = "Macro " + std::to_string(si.index + 1);
-                if (nm != defname)
+                if (nm != scxt::engine::Macro::defaultNameFor(si.index))
                 {
                     nm = "M" + std::to_string(si.index + 1) + ": " + nm;
                 }
@@ -456,12 +453,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             auto nm = sn.second;
             if (si.gid == 'gmac' || si.gid == 'zmac')
             {
-                // This is where we are assuming default macro name
-                // from part.h
-                auto defName = "Macro " + std::to_string(si.index + 1);
-                if (nm != defName)
+                if (nm != scxt::engine::Macro::defaultNameFor(si.index))
                 {
-                    nm = defName + " (" + nm + ")";
+                    nm = scxt::engine::Macro::defaultNameFor(si.index) + " (" + nm + ")";
                 }
             }
             sub.addItem(nm, true, selected, mkCallback(si));

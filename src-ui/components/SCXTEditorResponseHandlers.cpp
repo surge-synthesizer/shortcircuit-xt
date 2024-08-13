@@ -340,8 +340,10 @@ void SCXTEditor::onMacroFullState(const scxt::messaging::client::macroFullState_
     multiScreen->sample->macroDataChanged(part, index);
 }
 
-void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &)
+void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
 {
-    SCLOG_WFUNC("Implement");
+    const auto &[part, index, value] = s;
+    macroCache[part][index].value = value;
+    multiScreen->sample->repaint();
 }
 } // namespace scxt::ui

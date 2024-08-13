@@ -462,6 +462,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void terminateVoicesForZone(Zone &z);
     void terminateVoicesForGroup(Group &g);
 
+    void setMacro01ValueFromPlugin(int part, int index, float value01);
+
     std::optional<fs::path> setupUserStorageDirectory();
 
   private:

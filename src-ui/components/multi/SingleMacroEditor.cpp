@@ -126,14 +126,27 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i)
         w->editor->showTooltip(*(w->knob));
         w->editor->setTooltipContents(w->valueAttachment->getLabel(),
                                       w->valueAttachment->getValueAsString());
+        w->sendToSerialization(messaging::client::MacroBeginEndEdit({true, w->part, w->index}));
     };
     knob->onEndEdit = [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
         w->editor->hideTooltip();
+        w->sendToSerialization(messaging::client::MacroBeginEndEdit({false, w->part, w->index}));
     };
-    knob->onIdleHover = knob->onBeginEdit;
-    knob->onIdleHoverEnd = knob->onEndEdit;
+
+    knob->onIdleHover = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->showTooltip(*(w->knob));
+        w->editor->setTooltipContents(w->valueAttachment->getLabel(),
+                                      w->valueAttachment->getValueAsString());
+    };
+    knob->onIdleHoverEnd = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->hideTooltip();
+    };
 
     valueAttachment = std::make_unique<MacroValueAttachment>(editor, part, index);
     knob->setSource(valueAttachment.get());
@@ -150,6 +163,7 @@ SingleMacroEditor::~SingleMacroEditor() {}
 void SingleMacroEditor::changePart(int p)
 {
     valueAttachment->part = p;
+    part = p;
     repaint();
 }
 

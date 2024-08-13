@@ -72,5 +72,16 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
     }
 }
 CLIENT_TO_SERIAL(NoteFromGUI, c2s_noteonoff, noteOnOff_t, processMidiFromGUI(payload, engine, cont))
+
+inline void doHostCallback(uint64_t pl, MessageController &cont)
+{
+    if (cont.requestHostCallback)
+    {
+        cont.requestHostCallback(pl);
+    }
+}
+CLIENT_TO_SERIAL(RequestHostCallback, c2s_request_host_callback, uint64_t,
+                 doHostCallback(payload, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H
