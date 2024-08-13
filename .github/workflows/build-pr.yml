@@ -21,8 +21,9 @@ jobs:
           - name: "windows clang"
             os: windows-latest
             target: scxt_clapfirst_Standalone
-            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            cmakeConfig: -G"Unix Makefiles" -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
+
           - name: "mac standalone"
             os: macos-latest
             target: scxt_clapfirst_Standalone
@@ -35,8 +36,9 @@ jobs:
           - name: "windows juce style"
             os: windows-latest
             target: scxt_plugin_Standalone
-            cmakeConfig: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DSCXT_JUCE_CLASSIC_STYLE=TRUE
+            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
+
           - name: "mac juce style"
             os: macos-latest
             target: scxt_plugin_Standalone
