@@ -54,15 +54,24 @@ struct MacroValueAttachment : HasEditor, sst::jucegui::data::Continuous
     }
 
     std::string getLabel() const override { return macro().name; }
-    float getValue() const override { return macro().normalizedValue; }
+    float getValue() const override { return macro().value; }
     void setValueFromGUI(const float &f) override
     {
-        macro().normalizedValue = f;
-        sendToSerialization(scxt::messaging::client::SetMacroValue({part, index, f}));
+        macro().setValueConstrained(f);
+        sendToSerialization(scxt::messaging::client::SetMacroValue({part, index, macro().value}));
         editor->setTooltipContents(getLabel(), getValueAsString());
     }
     void setValueFromModel(const float &) override {}
     float getDefaultValue() const override { return 0; }
+    bool isBipolar() const override { return macro().isBipolar; }
+    float getMin() const override
+    {
+        if (macro().isBipolar)
+            return -1;
+        else
+            return 0;
+    }
+    float getMax() const override { return 1; }
 };
 
 struct NarrowVerticalMenu : HasEditor, juce::Component
@@ -163,7 +172,25 @@ void SingleMacroEditor::paint(juce::Graphics &g)
 #endif
 }
 
-void SingleMacroEditor::showMenu() { SCLOG("Show Menu"); }
+void SingleMacroEditor::showMenu()
+{
+    assert(part >= 0 && part < scxt::numParts);
+    assert(index >= 0 && index < scxt::macrosPerPart);
+    const auto &macro = editor->macroCache[part][index];
+    juce::PopupMenu p;
+    p.addSectionHeader(macro.name);
+    p.addSeparator();
+    p.addItem("Bipolar", true, macro.isBipolar, [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        auto &macro = w->editor->macroCache[w->part][w->index];
+        macro.setIsBipolar(!macro.isBipolar);
+        w->sendToSerialization(
+            scxt::messaging::client::SetMacroFullState({w->part, w->index, macro}));
+        w->repaint();
+    });
+    p.showMenuAsync(editor->defaultPopupMenuOptions(menuButton.get()));
+}
 void SingleMacroEditor::onStyleChanged()
 {
     // Update the text editor

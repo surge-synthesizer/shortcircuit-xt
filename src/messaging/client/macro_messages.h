@@ -50,9 +50,9 @@ inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine
     cont.scheduleAudioThreadCallback(
         [part = p, index = i, macro = m](auto &e) {
             // Set everything except the value
-            auto v = e.getPatch()->getPart(part)->macros[index].normalizedValue;
+            auto v = e.getPatch()->getPart(part)->macros[index].value;
             engine::Macro macroCopy = macro;
-            macroCopy.setNormalizedValue(v);
+            macroCopy.setValueConstrained(v);
             e.getPatch()->getPart(part)->macros[index] = macroCopy;
         },
         [](const auto &e) {
@@ -84,8 +84,9 @@ inline void updateMacroValue(const macroValue_t &t, const engine::Engine &engine
 {
     const auto &[p, i, f] = t;
     cont.scheduleAudioThreadCallback([part = p, index = i, value = f](auto &e) {
-        // Set everything except the value
-        e.getPatch()->getPart(part)->macros[index].setNormalizedValue(value);
+        // Set the value
+        auto &macro = e.getPatch()->getPart(part)->macros[index];
+        macro.setValueConstrained(value);
     });
 }
 CLIENT_TO_SERIAL(SetMacroValue, c2s_set_macro_value, macroValue_t,
