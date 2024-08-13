@@ -7,7 +7,10 @@
 static_assert(sizeof(uintptr_t) == 8,
     "Project only works on 64-bits architecture.");
 
-#ifdef _MSC_VER
+//// SURGE PATCH: clang windows defines _MSC_VER so push this first
+#if defined(__clang__)
+static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,
+#elif _MSC_VER
 static_assert('\x01\x02\x03\x04' == 0x04030201,
 #else
 static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,

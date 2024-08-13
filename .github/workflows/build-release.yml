@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            cmakeArgs: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            cmakeArgs: -G"Unix Makefiles" -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
           - os: macos-latest
             cmakeArgs: -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
     steps:
