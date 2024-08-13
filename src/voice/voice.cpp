@@ -483,7 +483,7 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     {
         chainIsMono = false;
         pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
-        for (int i = 0; i < blockSize << forceOversample; ++i)
+        for (int i = 0; i < blockSize << (forceOversample ? 1 : 0); ++i)
         {
             output[1][i] = output[0][i] * pmat[3];
             output[0][i] = output[0][i] * pmat[0];
@@ -493,7 +493,7 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     {
         pl::stereoEqualPower(pv, pmat);
 
-        for (int i = 0; i < blockSize << forceOversample; ++i)
+        for (int i = 0; i < blockSize << (forceOversample ? 1 : 0); ++i)
         {
             auto il = output[0][i];
             auto ir = output[1][i];

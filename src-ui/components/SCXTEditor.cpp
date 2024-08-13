@@ -354,6 +354,7 @@ void SCXTEditor::parentHierarchyChanged() { setZoomFactor(zoomFactor); }
 
 void SCXTEditor::setZoomFactor(float zf)
 {
+    // SCLOG("Setting zoom factor to " << zf);
     zoomFactor = zf;
     setTransform(juce::AffineTransform().scaled(zoomFactor));
     defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::zoomLevel,
