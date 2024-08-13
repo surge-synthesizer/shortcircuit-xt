@@ -87,7 +87,8 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
     ADD_SHIM_LINUX_TIMER(clapJuceShim)
     std::unique_ptr<juce::Component> createEditor() override;
 
-    bool registerOrUnregisterTimer(clap_id &id, int ms, bool reg) override {
+    bool registerOrUnregisterTimer(clap_id &id, int ms, bool reg) override
+    {
         if (!_host.canUseTimerSupport())
             return false;
         if (reg)

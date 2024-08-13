@@ -78,13 +78,15 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
     ed->onZoomChanged = [this](auto f) {
         if (_host.canUseGui() && clapJuceShim->isEditorAttached())
         {
-            // SCLOG("On Zoom Changed with " << f << " - requesting resize of " << scxt::ui::SCXTEditor::edWidth * f << "x" << scxt::ui::SCXTEditor::edHeight * f)
+            // SCLOG("On Zoom Changed with " << f << " - requesting resize of " <<
+            // scxt::ui::SCXTEditor::edWidth * f << "x" << scxt::ui::SCXTEditor::edHeight * f)
             _host.guiRequestResize(scxt::ui::SCXTEditor::edWidth * f,
                                    scxt::ui::SCXTEditor::edHeight * f);
         }
     };
     onShow = [e = ed.get()]() {
-        e->setZoomFactor(e->zoomFactor); return true;
+        e->setZoomFactor(e->zoomFactor);
+        return true;
     };
     ed->setSize(scxt::ui::SCXTEditor::edWidth, scxt::ui::SCXTEditor::edHeight);
     return ed;
