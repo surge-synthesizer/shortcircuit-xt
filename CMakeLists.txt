@@ -21,6 +21,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+message(STATUS "CMAKE_CXX_COMPIELR is ${CMAKE_CXX_COMPILER}")
 # TODO Remove This before we ship non beta version. Remember
 # the AU rescans only when versions change even if binaries are
 # different.
