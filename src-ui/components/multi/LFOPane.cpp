@@ -72,57 +72,52 @@ struct StepLFOPane : juce::Component, HasEditor
                 return;
 
             auto *ed = parent->editor;
-            auto bg = ed->themeColor(theme::ColorMap::bg_2);
+            auto bg = ed->themeColor(theme::ColorMap::accent_2b_alpha_a);
             auto bgq = ed->themeColor(theme::ColorMap::accent_2a_alpha_a);
             auto boxc = ed->themeColor(theme::ColorMap::generic_content_low);
-            auto valc = ed->themeColor(theme::ColorMap::accent_2a);
+            auto valc = ed->themeColor(theme::ColorMap::accent_2b);
             auto valhovc = valc.brighter(0.1);
 
-            auto hanc = valhovc;
+            auto hanc = ed->themeColor(theme::ColorMap::accent_2a);
             auto hanhovc = hanc.brighter(0.1);
 
             int sp = modulation::modulators::StepLFOStorage::stepLfoSteps;
             auto &ls = parent->modulatorStorageData[parent->selectedTab].stepLfoStorage;
             auto w = getWidth() * 1.f / ls.repeat;
             auto bx = getLocalBounds().toFloat().withWidth(w);
-            auto hm = bx.getHeight() * 0.5;
+
             for (int i = 0; i < ls.repeat; ++i)
             {
                 g.setColour(i % 2 == 0 ? bg : bgq);
-                g.fillRect(bx);
+                g.fillRect(bx.reduced(0.5, 0));
 
                 auto d = ls.data[i];
+                auto hancbx =
+                    bx.reduced(0.5, 0).translated(0, bx.getHeight() / 2 - 0.5).withHeight(1);
 
+                g.setColour(valc);
                 if (d > 0)
                 {
-                    g.setColour(valc);
-                    auto r = bx.withTrimmedTop((1.f - d) * hm).withBottom(hm).reduced(0.5, 0);
-                    g.fillRect(r);
-
-                    g.setColour(hanc);
-                    auto rh = bx.withTrimmedTop((1.f - d) * hm)
-                                  .withHeight(1)
-                                  .reduced(0.5, 0)
-                                  .translated(0, -0.5);
-                    g.fillRect(rh);
+                    g.fillRect(bx.reduced(0.5, 0)
+                                   .withTrimmedBottom(bx.getHeight() / 2)
+                                   .withTrimmedTop((1 - d) * bx.getHeight() / 2));
                 }
                 else
                 {
-                    g.setColour(valc);
-                    auto r = bx.withTop(hm).withTrimmedBottom((1.f + d) * hm).reduced(0.5, 0);
-                    g.fillRect(r);
-
-                    g.setColour(hanc);
-                    auto rh = bx.withTrimmedBottom((1.f + d) * hm);
-                    rh = rh.withTrimmedTop(rh.getHeight() - 1).reduced(0.5, 0).translated(0, -0.5);
-                    g.fillRect(rh);
+                    g.fillRect(bx.reduced(0.5, 0)
+                                   .withTrimmedTop(bx.getHeight() / 2)
+                                   .withTrimmedBottom((1 + d) * bx.getHeight() / 2));
                 }
+
+                g.setColour(hanc);
+                g.fillRect(hancbx.translated(0, -d * bx.getHeight() / 2));
 
                 bx = bx.translated(w, 0);
             }
 
+            /*
             g.setColour(hanc);
-            auto yscal = -getHeight() * 0.5;
+            auto yscal = 1;
             auto p = juce::Path();
             bool first{true};
             for (auto &[xf, yf] : cycleCurve)
@@ -139,7 +134,8 @@ struct StepLFOPane : juce::Component, HasEditor
                 }
                 first = false;
             }
-            // g.strokePath(p, juce::PathStrokeType(1.0));
+            g.strokePath(p, juce::PathStrokeType(1.0));
+            */
 
             g.setColour(boxc);
             g.drawRect(getLocalBounds());
