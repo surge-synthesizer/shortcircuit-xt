@@ -72,8 +72,8 @@ struct StepLFOPane : juce::Component, HasEditor
                 return;
 
             auto *ed = parent->editor;
-            auto bg = ed->themeColor(theme::ColorMap::accent_2a_alpha_a);
-            auto bgq = ed->themeColor(theme::ColorMap::accent_2b_alpha_a);
+            auto bg = ed->themeColor(theme::ColorMap::accent_2b_alpha_a);
+            auto bgq = ed->themeColor(theme::ColorMap::accent_2a_alpha_a);
             auto boxc = ed->themeColor(theme::ColorMap::generic_content_low);
             auto valc = ed->themeColor(theme::ColorMap::accent_2b);
             auto valhovc = valc.brighter(0.1);
