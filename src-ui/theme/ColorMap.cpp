@@ -58,6 +58,15 @@ struct WireframeColors : ColorMap
         case accent_2b:
             res = juce::Colour(0xFF004f8A);
             break;
+        case accent_2b_alpha_a:
+            res = getImpl(accent_2b, 0.08);
+            break;
+        case accent_2b_alpha_b:
+            res = getImpl(accent_2b, 0.32);
+            break;
+        case accent_2b_alpha_c:
+            res = getImpl(accent_2b, 0.5);
+            break;
         case bg_1:
             res = juce::Colour(0xFF1B1D20);
             break;
@@ -146,6 +155,15 @@ struct TestColors : ColorMap
             break;
         case accent_2b:
             res = juce::Colours::cyan;
+            break;
+        case accent_2b_alpha_a:
+            res = juce::Colours::cyan.darker(0.3);
+            break;
+        case accent_2b_alpha_b:
+            res = juce::Colours::cyan.darker(0.3);
+            break;
+        case accent_2b_alpha_c:
+            res = juce::Colours::cyan.darker(0.3);
             break;
         case bg_1:
             res = juce::Colours::greenyellow;
