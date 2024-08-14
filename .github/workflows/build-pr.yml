@@ -18,38 +18,30 @@ jobs:
             target: scxt_clapfirst_Standalone
             cmakeConfig: -A x64
             runTests: false
+
           - name: "windows clang"
             os: windows-latest
             target: scxt_clapfirst_Standalone
-            cmakeConfig: -G"Unix Makefiles" -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
 
           - name: "mac standalone"
             os: macos-latest
             target: scxt_clapfirst_Standalone
+            cmakeConfig: -GNinja
             runTests: true
+
           - name: "ubuntu standalone"
             os: ubuntu-latest
-            target: shortcircuit-installer
+            target: scxt_clapfirst_Standalone
+            cmakeConfig: -GNinja
             runTests: true
 
-          - name: "windows juce style"
-            os: windows-latest
-            target: scxt_plugin_Standalone
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
-            runTests: false
-
-          - name: "mac juce style"
-            os: macos-latest
-            target: scxt_plugin_Standalone
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
-            runTests: false
           - name: "ubuntu juce style"
             os: ubuntu-latest
             target: scxt_plugin_Standalone
-            cmakeConfig: -DSCXT_JUCE_CLASSIC_STYLE=TRUE
+            cmakeConfig: -GNinja -DSCXT_JUCE_CLASSIC_STYLE=TRUE
             runTests: false
-
 
     steps:
       - name: Checkout code
@@ -64,7 +56,7 @@ jobs:
 
       - name: Build pull request version
         run: |
-          cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cmakeConfig }}
+          cmake -S . -B ./build ${{ matrix.cmakeConfig }} -DCMAKE_BUILD_TYPE=Debug 
           cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 3
 
       - name: Run Tests
