@@ -209,6 +209,7 @@ void ThemeApplier::applyZoneMultiScreenTheme(juce::Component *toThis)
 void ThemeApplier::applyGroupMultiScreenModulationTheme(juce::Component *toThis)
 {
     jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::NamedPanel>(detail::multi::group::ModulationNamedPanel);
     map.addCustomClass<jcmp::MultiSwitch>(detail::multi::group::ModulationMultiSwitch);
     map.addCustomClass<jcmp::NamedPanel>(detail::multi::group::NamedPanel);
     map.addCustomClass<jcmp::VSlider>(detail::multi::group::ModulationVSlider);
@@ -484,6 +485,9 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(ModulationKnob, jcmp::Knob::Styles::value, cols.get(ColorMap::accent_2a));
     base->setColour(ModulationKnob, jcmp::Knob::Styles::value_hover,
                     cols.get(ColorMap::accent_2a).brighter(0.1));
+
+    base->setColour(ModulationNamedPanel, jcmp::NamedPanel::Styles::selectedtab,
+                    cols.get(ColorMap::accent_2a));
 }
 } // namespace group
 } // namespace multi

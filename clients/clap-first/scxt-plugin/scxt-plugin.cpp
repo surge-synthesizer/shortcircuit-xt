@@ -552,7 +552,6 @@ void SCXTPlugin::onMainThread() noexcept
     {
         if (_host.canUseParams())
         {
-            SCLOG("Rescanning params");
             _host.paramsRescan(CLAP_PARAM_RESCAN_INFO | CLAP_PARAM_RESCAN_VALUES |
                                CLAP_PARAM_RESCAN_TEXT);
         }
