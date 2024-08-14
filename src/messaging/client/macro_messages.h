@@ -74,6 +74,10 @@ inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine
                                           modulation::getGroupMatrixMetadata(*group),
                                           *(e.getMessageController()));
             }
+
+            messaging::audio::SerializationToAudio s2am;
+            s2am.id = audio::s2a_param_refresh;
+            e.getMessageController()->sendSerializationToAudio(s2am);
         });
 }
 CLIENT_TO_SERIAL(SetMacroFullState, c2s_set_macro_full_state, macroFullState_t,
@@ -83,14 +87,45 @@ inline void updateMacroValue(const macroValue_t &t, const engine::Engine &engine
                              MessageController &cont)
 {
     const auto &[p, i, f] = t;
-    cont.scheduleAudioThreadCallback([part = p, index = i, value = f](auto &e) {
-        // Set the value
-        auto &macro = e.getPatch()->getPart(part)->macros[index];
-        macro.setValueConstrained(value);
-    });
+    cont.scheduleAudioThreadCallback(
+        [part = p, index = i, value = f](auto &e) {
+            // Set the value
+            auto &macro = e.getPatch()->getPart(part)->macros[index];
+            macro.setValueConstrained(value);
+        },
+        [part = p, index = i](auto &e) {
+            // a separate perhaps dropped message to update plugins
+            messaging::audio::SerializationToAudio s2am;
+            auto &macro = e.getPatch()->getPart(part)->macros[index];
+            s2am.id = audio::s2a_param_set_value;
+            s2am.payloadType = audio::SerializationToAudio::FOUR_FOUR_MIX;
+            s2am.payload.mix.u[0] = engine::Macro::partIndexToMacroID(part, index);
+            s2am.payload.mix.f[0] = macro.getValue01();
+
+            e.getMessageController()->sendSerializationToAudio(s2am);
+        });
 }
 CLIENT_TO_SERIAL(SetMacroValue, c2s_set_macro_value, macroValue_t,
                  updateMacroValue(payload, engine, cont));
+
+using macroBeginEndEdit_t = std::tuple<bool, int16_t, int16_t>; // begin=true, id, val
+inline void doMacroBeginEndEdit(const macroBeginEndEdit_t &payload, const engine::Engine &e,
+                                messaging::MessageController &cont)
+{
+    auto [doIt, part, index] = payload;
+    messaging::audio::SerializationToAudio s2am;
+    s2am.id = audio::s2a_param_beginendedit;
+    s2am.payloadType = audio::SerializationToAudio::FOUR_FOUR_MIX;
+    auto &macro = e.getPatch()->getPart(part)->macros[index];
+
+    s2am.payload.mix.u[0] = doIt;
+    s2am.payload.mix.u[1] = engine::Macro::partIndexToMacroID(part, index);
+    s2am.payload.mix.f[0] = macro.getValue01();
+
+    cont.sendSerializationToAudio(s2am);
+}
+CLIENT_TO_SERIAL(MacroBeginEndEdit, c2s_macro_begin_end_edit, macroBeginEndEdit_t,
+                 doMacroBeginEndEdit(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_MACRO_MESSAGES_H

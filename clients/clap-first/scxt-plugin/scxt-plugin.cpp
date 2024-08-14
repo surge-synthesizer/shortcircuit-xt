@@ -25,6 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <cassert>
+
 #include "scxt-plugin.h"
 #include "version.h"
 #include "components/SCXTEditor.h"
@@ -59,7 +61,18 @@ const clap_plugin *makeSCXTPlugin(const clap_host *host)
 SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 {
     engine = std::make_unique<scxt::engine::Engine>();
-    engine->runningEnvironment = "Clap-First Plugin plus Wrapper";
+    engine->getMessageController()->passWrapperEventsToWrapperQueue = true;
+    engine->runningEnvironment =
+        "Clap-First " + std::string(h->name) + " " + std::string(h->version);
+    engine->getMessageController()->requestHostCallback = [this, h](uint64_t flag) {
+        if (h)
+        {
+            SCLOG("Request Host CallbacK");
+            // FIXME - atomics better here
+            this->nextMainThreadAction |= flag;
+            h->request_callback(h);
+        }
+    };
 
     clapJuceShim = std::make_unique<sst::clap_juce_shim::ClapJuceShim>(this);
     clapJuceShim->setResizable(true);
@@ -92,6 +105,7 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
     ed->setSize(scxt::ui::SCXTEditor::edWidth, scxt::ui::SCXTEditor::edHeight);
     return ed;
 }
+
 bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
 {
     engine->getSampleManager()->purgeUnreferencedSamples();
@@ -117,6 +131,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
     }
     return true;
 }
+
 bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
 {
     static constexpr uint32_t initSize = 1 << 16, chunkSize = 1 << 8;
@@ -141,8 +156,13 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
 
     auto xml = std::string(buffer.data());
 
+    SCLOG("About to load state with size " << xml.size());
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::UnstreamIntoEngine{xml}, *engine->getMessageController());
+    scxt::messaging::client::clientSendToSerialization(
+        scxt::messaging::client::RequestHostCallback{(uint64_t)RESCAN_PARAM_IVT},
+        *engine->getMessageController());
+
     return true;
 }
 
@@ -153,6 +173,7 @@ uint32_t SCXTPlugin::audioPortsCount(bool isInput) const noexcept
     else
         return numPluginOutputs;
 }
+
 bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
                                 clap_audio_port_info *info) const noexcept
 {
@@ -200,8 +221,12 @@ bool SCXTPlugin::notePortsInfo(uint32_t index, bool isInput,
     }
     return true;
 }
+
 clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
 {
+#if BUILD_IS_DEBUG
+    engine->getMessageController()->threadingChecker.registerAsAudioThread();
+#endif
     float **out = process->audio_outputs[0].data32;
     auto chans = process->audio_outputs->channel_count;
     if (chans != 2)
@@ -248,6 +273,8 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
     auto ev = process->in_events;
     auto sz = ev->size(ev);
 
+    auto ov = process->out_events;
+
     const clap_event_header_t *nextEvent{nullptr};
     uint32_t nextEventIndex{0};
     if (sz != 0)
@@ -273,6 +300,66 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
             engine->processAudio();
             engine->transport.timeInBeats += (double)scxt::blockSize * engine->transport.tempo *
                                              engine->getSampleRateInv() / 60.f;
+
+            bool tryToDrain{true};
+            while (tryToDrain &&
+                   !engine->getMessageController()->engineToPluginWrapperQueue.empty())
+            {
+                auto msgopt = engine->getMessageController()->engineToPluginWrapperQueue.pop();
+                if (!msgopt.has_value())
+                {
+                    tryToDrain = false;
+                    break;
+                }
+
+                switch (msgopt->id)
+                {
+                case messaging::audio::s2a_param_beginendedit:
+                {
+                    auto begin = msgopt->payload.mix.u[0];
+                    auto parm = msgopt->payload.mix.u[1];
+                    auto val = msgopt->payload.mix.f[0];
+
+                    auto evt = clap_event_param_gesture();
+                    evt.header.size = sizeof(clap_event_param_gesture);
+                    evt.header.type =
+                        (begin ? CLAP_EVENT_PARAM_GESTURE_BEGIN : CLAP_EVENT_PARAM_GESTURE_END);
+                    evt.header.time = s;
+                    evt.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                    evt.header.flags = 0;
+                    evt.param_id = parm;
+
+                    ov->try_push(ov, &evt.header);
+                }
+                break;
+                case messaging::audio::s2a_param_set_value:
+                {
+                    auto parm = msgopt->payload.mix.u[0];
+                    auto val = msgopt->payload.mix.f[0];
+
+                    auto evt = clap_event_param_value();
+                    evt.header.size = sizeof(clap_event_param_value);
+                    evt.header.type = (uint16_t)CLAP_EVENT_PARAM_VALUE;
+                    evt.header.time = 0; // for now
+                    evt.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                    evt.header.flags = 0;
+                    evt.param_id = parm;
+                    evt.value = val;
+
+                    ov->try_push(ov, &evt.header);
+                }
+                break;
+                case messaging::audio::s2a_param_refresh:
+                {
+                    nextMainThreadAction |= RESCAN_PARAM_IVT;
+                    _host.requestCallback();
+                }
+                break;
+                default:
+                    SCLOG("Unexpected message " << msgopt->id);
+                    break;
+                }
+            }
         }
 
         // TODO: this can be way more efficient and block wise and stuff
@@ -348,6 +435,12 @@ bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
             engine->voiceManager.processNoteOffEvent(nevt->port_index, nevt->channel, nevt->key,
                                                      nevt->note_id, nevt->velocity);
         }
+
+        case CLAP_EVENT_PARAM_VALUE:
+        {
+            auto pevt = reinterpret_cast<const clap_event_param_value *>(nextEvent);
+            handleParamValueEvent(pevt);
+        }
         break;
         }
     }
@@ -359,6 +452,111 @@ bool SCXTPlugin::activate(double sampleRate, uint32_t minFrameCount,
 {
     engine->prepareToPlay(sampleRate);
     return true;
+}
+
+/*
+ * Parameter support
+ */
+uint32_t SCXTPlugin::paramsCount() const noexcept { return scxt::numParts * scxt::macrosPerPart; }
+
+using mac = engine::Macro;
+
+bool SCXTPlugin::paramsInfo(uint32_t paramIndex, clap_param_info *info) const noexcept
+{
+    static constexpr int firstMacroIndex{0};
+    static constexpr int lastMacroIndex{scxt::numParts * scxt::macrosPerPart};
+    if (paramIndex >= firstMacroIndex && paramIndex < lastMacroIndex)
+    {
+        int p0 = paramIndex - firstMacroIndex;
+        int index = p0 % scxt::macrosPerPart;
+        int part = p0 / scxt::macrosPerPart;
+
+        info->id = mac::partIndexToMacroID(part, index);
+        assert(mac::macroIDToPart(info->id) == part);
+        assert(mac::macroIDToIndex(info->id) == index);
+        info->flags = CLAP_PARAM_IS_AUTOMATABLE;
+        info->cookie = nullptr; // super easy to reverse engineer
+        const auto &macro = engine->getPatch()->getPart(part)->macros[index];
+        strncpy(info->name, macro.pluginParameterNameFor(part, index).c_str(), CLAP_NAME_SIZE);
+        std::string moduleName = "Part " + std::to_string(part + 1) + " / Macros";
+        strncpy(info->module, moduleName.c_str(), CLAP_NAME_SIZE);
+        info->min_value = 0;
+        info->max_value = 1;
+        info->default_value = (macro.isBipolar ? 0.5 : 0);
+        return true;
+    }
+    return false;
+}
+
+bool SCXTPlugin::paramsValue(clap_id paramId, double *value) noexcept
+{
+    if (mac::isMacroID(paramId))
+    {
+        *value = macroFor(paramId).getValue01();
+
+        return true;
+    }
+    return false;
+}
+
+bool SCXTPlugin::paramsTextToValue(clap_id paramId, const char *display, double *value) noexcept
+{
+    if (mac::isMacroID(paramId))
+    {
+        *value = macroFor(paramId).value01FromString(display);
+        return true;
+    }
+    return false;
+}
+bool SCXTPlugin::paramsValueToText(clap_id paramId, double value, char *display,
+                                   uint32_t size) noexcept
+{
+    if (mac::isMacroID(paramId))
+    {
+        auto fs = macroFor(paramId).value01ToString(value);
+
+        strncpy(display, fs.c_str(), size);
+        return true;
+    }
+    return false;
+}
+void SCXTPlugin::paramsFlush(const clap_input_events *ev, const clap_output_events *out) noexcept
+{
+    auto sz = ev->size(ev);
+    for (int ei = 0; ei < sz; ++ei)
+    {
+        auto nextEvent = ev->get(ev, ei);
+        if (nextEvent->space_id == CLAP_CORE_EVENT_SPACE_ID &&
+            nextEvent->type == CLAP_EVENT_PARAM_VALUE)
+        {
+            auto pevt = reinterpret_cast<const clap_event_param_value *>(nextEvent);
+            handleParamValueEvent(pevt);
+        }
+    }
+}
+
+void SCXTPlugin::handleParamValueEvent(const clap_event_param_value *pev)
+{
+    if (mac::isMacroID(pev->param_id))
+    {
+        engine->setMacro01ValueFromPlugin(mac::macroIDToPart(pev->param_id),
+                                          mac::macroIDToIndex(pev->param_id), pev->value);
+    }
+}
+void SCXTPlugin::onMainThread() noexcept
+{
+    // Fixme - better atomics
+    uint64_t a = nextMainThreadAction;
+    nextMainThreadAction = 0;
+    if (a & RESCAN_PARAM_IVT)
+    {
+        if (_host.canUseParams())
+        {
+            SCLOG("Rescanning params");
+            _host.paramsRescan(CLAP_PARAM_RESCAN_INFO | CLAP_PARAM_RESCAN_VALUES |
+                               CLAP_PARAM_RESCAN_TEXT);
+        }
+    }
 }
 
 } // namespace scxt::clap_first::scxt_plugin

@@ -290,6 +290,14 @@ bool Engine::processAudio()
             messageController->audioToSerializationQueue.push(rt);
         }
         break;
+        case messaging::audio::s2a_param_beginendedit:
+        case messaging::audio::s2a_param_set_value:
+        case messaging::audio::s2a_param_refresh:
+        {
+            if (messageController->passWrapperEventsToWrapperQueue)
+                messageController->engineToPluginWrapperQueue.push(*msgopt);
+        }
+        break;
         case messaging::audio::s2a_none:
             break;
         }
@@ -993,4 +1001,19 @@ void Engine::clearAll()
     sampleManager->purgeUnreferencedSamples();
 }
 
+void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
+{
+    // Open Question: What about with paramFlush
+    assert(getMessageController()->threadingChecker.isAudioThread());
+    assert(part >= 0 && part < scxt::numParts);
+    assert(index >= 0 && index < scxt::macrosPerPart);
+    getPatch()->getPart(part)->macros[index].setValue01(value01);
+
+    scxt::messaging::audio::AudioToSerialization a2s;
+    a2s.id = messaging::audio::a2s_macro_updated;
+    a2s.payloadType = scxt::messaging::audio::AudioToSerialization::INT;
+    a2s.payload.i[0] = part;
+    a2s.payload.i[1] = index;
+    getMessageController()->sendAudioToSerialization(a2s);
+}
 } // namespace scxt::engine

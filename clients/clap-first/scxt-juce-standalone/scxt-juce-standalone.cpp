@@ -63,6 +63,7 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
           optionsButton("Options")
     {
         engine = std::make_unique<scxt::engine::Engine>();
+        engine->runningEnvironment = "Temporary SCXT Standalone";
 
         editor = std::make_unique<scxt::ui::SCXTEditor>(
             *(engine->getMessageController()), *(engine->defaults), *(engine->getSampleManager()),
