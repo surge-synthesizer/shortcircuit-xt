@@ -59,6 +59,7 @@ const clap_plugin *makeSCXTPlugin(const clap_host *host)
 SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 {
     engine = std::make_unique<scxt::engine::Engine>();
+    engine->runningEnvironment = "Clap-First Plugin plus Wrapper";
 
     clapJuceShim = std::make_unique<sst::clap_juce_shim::ClapJuceShim>(this);
     clapJuceShim->setResizable(true);

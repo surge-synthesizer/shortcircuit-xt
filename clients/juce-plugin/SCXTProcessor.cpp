@@ -68,7 +68,7 @@ SCXTProcessor::SCXTProcessor()
     {
         wrapperTypeString += std::string(" in ") + juce::PluginHostType().getHostDescription();
     }
-    engine->runningEnvironment = wrapperTypeString;
+    engine->runningEnvironment = std::string("JUCE Style ") + wrapperTypeString;
 }
 
 SCXTProcessor::~SCXTProcessor()
