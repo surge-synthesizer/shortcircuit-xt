@@ -298,7 +298,7 @@ void SCXTEditor::drainCallbackQueue()
 #if BUILD_IS_DEBUG
             inboundMessageCount++;
             inboundMessageBytes += queueMsg.size();
-            if (inboundMessageCount % 100 == 0)
+            if (inboundMessageCount % 500 == 0)
             {
                 SCLOG("Serial -> Client Message Count: "
                       << inboundMessageCount << " size: " << inboundMessageBytes

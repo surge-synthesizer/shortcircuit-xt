@@ -58,10 +58,8 @@ void MessageController::parseAudioMessageOnSerializationThread(
         int16_t pt = as.payload.i[0];
         int16_t idx = as.payload.i[1];
 
-        serializationSendToClient(client::s2c_update_macro_value,
-                                  messaging::client::macroValue_t{
-                                      pt, idx, engine.getPatch()->getPart(pt)->macros[idx].value},
-                                  *this);
+        macroSetValueCompressorUsed = true;
+        macroSetValueCompressor[pt][idx] = true;
     }
     break;
     case audio::a2s_processor_refresh:
@@ -214,6 +212,7 @@ void MessageController::runSerialization()
 
             // TODO: Drain SerToAudioQ if there's no audio thread
             bool tryToDrain{true};
+            prepareSerializationThreadForAudioQueueDrain();
             while (tryToDrain && !audioToSerializationQueue.empty())
             {
                 auto msgopt = audioToSerializationQueue.pop();
@@ -225,6 +224,7 @@ void MessageController::runSerialization()
                 else
                     tryToDrain = false;
             }
+            serializationThreadPostAudioQueueDrain();
         }
         else
         {
@@ -321,4 +321,31 @@ void MessageController::reportErrorToClient(const std::string &title, const std:
                                       *(this));
 }
 
+void MessageController::prepareSerializationThreadForAudioQueueDrain()
+{
+    assert(!macroSetValueCompressorUsed);
+}
+void MessageController::serializationThreadPostAudioQueueDrain()
+{
+    if (macroSetValueCompressorUsed)
+    {
+        for (int pt = 0; pt < numParts; ++pt)
+        {
+            for (int idx = 0; idx < macrosPerPart; ++idx)
+            {
+                if (macroSetValueCompressor[pt][idx])
+                {
+                    serializationSendToClient(
+                        client::s2c_update_macro_value,
+                        messaging::client::macroValue_t{
+                            pt, idx, engine.getPatch()->getPart(pt)->macros[idx].value},
+                        *this);
+                    macroSetValueCompressor[pt][idx] = false;
+                }
+            }
+        }
+
+        macroSetValueCompressorUsed = false;
+    }
+}
 } // namespace scxt::messaging
