@@ -301,7 +301,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(PushButton::styleClass, PushButton::fill_pressed,
                     cols.getHover(ColorMap::bg_1));
 
-    base->setColour(ValueBearing::styleClass, ValueBearing::value, cols.get(ColorMap::accent_1a));
+    base->setColour(ValueBearing::styleClass, ValueBearing::value, cols.get(ColorMap::accent_1b));
     base->setColour(ValueBearing::styleClass, ValueBearing::value_hover,
                     cols.getHover(ColorMap::accent_1a));
     base->setColour(ValueBearing::styleClass, ValueBearing::valuelabel,
