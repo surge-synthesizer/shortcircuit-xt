@@ -2973,7 +2973,7 @@ struct MacroDisplay : HasEditor, juce::Component
     {
         for (int i = 0; i < scxt::macrosPerPart; ++i)
         {
-            macros[i] = std::make_unique<SingleMacroEditor>(editor, editor->selectedPart, i);
+            macros[i] = std::make_unique<SingleMacroEditor>(editor, editor->selectedPart, i, false);
             addAndMakeVisible(*macros[i]);
             //  grab whatever data we have
             macroDataChanged(editor->selectedPart, i);

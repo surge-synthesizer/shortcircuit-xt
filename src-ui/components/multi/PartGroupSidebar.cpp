@@ -35,59 +35,19 @@
 #include "components/MultiScreen.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "detail/GroupZoneTreeControl.h"
+#include "PartSidebarCard.h"
 
 namespace scxt::ui::multi
 {
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-struct SinglePart : juce::Component, HasEditor
-{
-    int index;
-    static constexpr int height{110};
-    std::unique_ptr<jcmp::Label> partLabel;
-    SinglePart(int idx, SCXTEditor *e) : index(idx), HasEditor(e)
-    {
-        partLabel = std::make_unique<jcmp::Label>();
-        partLabel->setText("Part " + std::to_string(index + 1));
-        addAndMakeVisible(*partLabel);
-        partLabel->setInterceptsMouseClicks(false, false);
-    }
-    void paint(juce::Graphics &g) override
-    {
-        auto r = getLocalBounds().reduced(1);
-        g.setColour(juce::Colour(index * 255 / 16, 40, 40));
-        g.fillRect(r);
-
-        if (editor->getSelectedPart() == index)
-        {
-            g.setColour(juce::Colours::yellow);
-        }
-        else
-        {
-            g.setColour(juce::Colours::lightgrey);
-        }
-        g.drawRect(r);
-    }
-
-    void mouseDown(const juce::MouseEvent &e) override
-    {
-        sendToSerialization(cmsg::DoSelectPart(index));
-    }
-
-    void resized() override
-    {
-        partLabel->setBounds(getLocalBounds());
-        partLabel->setJustification(juce::Justification::centred);
-    }
-};
-
 struct PartSidebar : juce::Component, HasEditor
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
     std::unique_ptr<jcmp::Viewport> viewport;
     std::unique_ptr<juce::Component> viewportContents;
-    std::array<std::unique_ptr<SinglePart>, scxt::numParts> parts;
+    std::array<std::unique_ptr<PartSidebarCard>, scxt::numParts> parts;
 
     PartSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
     {
@@ -95,7 +55,7 @@ struct PartSidebar : juce::Component, HasEditor
         viewportContents = std::make_unique<juce::Component>();
         for (int i = 0; i < scxt::numParts; ++i)
         {
-            parts[i] = std::make_unique<SinglePart>(i, editor);
+            parts[i] = std::make_unique<PartSidebarCard>(i, editor);
             viewportContents->addAndMakeVisible(*parts[i]);
         }
         viewport->setViewedComponent(viewportContents.get(), false);
@@ -105,10 +65,10 @@ struct PartSidebar : juce::Component, HasEditor
     {
         viewport->setBounds(getLocalBounds());
         auto w = getWidth() - viewport->getScrollBarThickness() - 2;
-        viewportContents->setBounds(0, 0, w, SinglePart::height * scxt::numParts);
+        viewportContents->setBounds(0, 0, w, PartSidebarCard::height * scxt::numParts);
         for (int i = 0; i < scxt::numParts; ++i)
         {
-            parts[i]->setBounds(0, i * SinglePart::height, w, SinglePart::height);
+            parts[i]->setBounds(0, i * PartSidebarCard::height, w, PartSidebarCard::height);
         }
     }
 };

@@ -102,7 +102,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     mixerScreen = std::make_unique<MixerScreen>(this);
     addChildComponent(*mixerScreen);
 
-    playScreen = std::make_unique<PlayScreen>();
+    playScreen = std::make_unique<PlayScreen>(this);
     addChildComponent(*playScreen);
 
     aboutScreen = std::make_unique<AboutScreen>(this);
