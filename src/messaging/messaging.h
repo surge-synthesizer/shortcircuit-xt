@@ -159,6 +159,10 @@ struct MessageController : MoveableOnly<MessageController>
     {
         serializationToAudioQueue.subscribe();
         audioToSerializationQueue.subscribe();
+
+        for (auto &ma : macroSetValueCompressor)
+            for (auto &m : ma)
+                m = false;
     }
     ~MessageController();
 
@@ -326,6 +330,10 @@ struct MessageController : MoveableOnly<MessageController>
     uint64_t inboundClientMessageCount{0};
     void runSerialization();
     void parseAudioMessageOnSerializationThread(const audio::AudioToSerialization &as);
+    void prepareSerializationThreadForAudioQueueDrain();
+    void serializationThreadPostAudioQueueDrain();
+    bool macroSetValueCompressorUsed{false};
+    std::array<std::array<bool, scxt::macrosPerPart>, scxt::numParts> macroSetValueCompressor{};
 
     // serialization thread only please
     AudioThreadCallback *getAudioThreadCallback();
@@ -333,7 +341,8 @@ struct MessageController : MoveableOnly<MessageController>
     std::stack<AudioThreadCallback *> cbStore;
 
     sst::cpputils::SimpleRingBuffer<serializationToAudioMessage_t, 1024> serializationToAudioQueue;
-    sst::cpputils::SimpleRingBuffer<audioToSerializationMessage_t, 1024> audioToSerializationQueue;
+    sst::cpputils::SimpleRingBuffer<audioToSerializationMessage_t, 1024 * 16>
+        audioToSerializationQueue;
 
   public:
     // Some engine events are passed onto the hosting processor. This
