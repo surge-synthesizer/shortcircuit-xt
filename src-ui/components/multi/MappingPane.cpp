@@ -1077,7 +1077,7 @@ void MappingZones::mouseDoubleClick(const juce::MouseEvent &e)
         if (ks.contains(e.position))
         {
             // CHECK SPACE HERE
-            display->parentPane->selectTab(1);
+            display->parentPane->selectTab(2);
             return;
         }
     }
@@ -1346,7 +1346,6 @@ void MappingZones::mouseUp(const juce::MouseEvent &e)
     if (mouseState == CREATE_EMPTY_ZONE)
     {
         auto r = juce::Rectangle<float>(firstMousePos, e.position);
-        SCLOG("Creating empty zone " << r.toString());
 
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb.withTrimmedBottom(Keyboard::keyboardHeight);
@@ -2866,7 +2865,7 @@ void SampleWaveform::mouseMove(const juce::MouseEvent &e)
 
 void SampleWaveform::mouseDoubleClick(const juce::MouseEvent &e)
 {
-    display->parentPane->selectTab(0);
+    display->parentPane->selectTab(1);
 }
 
 void SampleWaveform::paint(juce::Graphics &g)
@@ -3014,7 +3013,8 @@ MappingPane::MappingPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("
 {
     hasHamburger = true;
     isTabbed = true;
-    tabNames = {"MAPPING", "SAMPLE", "MACROS"};
+    tabNames = {"MACROS", "MAPPING", "SAMPLE"};
+    selectTab(1);
 
     mappingDisplay = std::make_unique<MappingDisplay>(this);
     addAndMakeVisible(*mappingDisplay);
@@ -3030,9 +3030,9 @@ MappingPane::MappingPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
         if (wt)
         {
-            wt->mappingDisplay->setVisible(i == 0);
-            wt->sampleDisplay->setVisible(i == 1);
-            wt->macroDisplay->setVisible(i == 2);
+            wt->sampleDisplay->setVisible(i == 2);
+            wt->mappingDisplay->setVisible(i == 1);
+            wt->macroDisplay->setVisible(i == 0);
         }
     };
 }
@@ -3061,9 +3061,10 @@ void MappingPane::setSampleData(const engine::Zone::AssociatedSampleSet &m)
 void MappingPane::setActive(bool b)
 {
     mappingDisplay->setActive(b);
-    mappingDisplay->setVisible(selectedTab == 0);
+    mappingDisplay->setVisible(selectedTab == 1);
     sampleDisplay->setActive(b);
-    sampleDisplay->setVisible(selectedTab == 1);
+    sampleDisplay->setVisible(selectedTab == 2);
+    macroDisplay->setVisible(selectedTab == 0);
 }
 
 void MappingPane::setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)

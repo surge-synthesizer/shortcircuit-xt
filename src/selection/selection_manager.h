@@ -152,6 +152,7 @@ struct SelectionManager
     void multiSelectAction(const std::vector<SelectActionContents> &v);
     void guaranteeConsistencyAfterDeletes(const engine::Engine &);
     void selectPart(int16_t part);
+    void clearAllSelections();
 
   protected:
     void adjustInternalStateForAction(const SelectActionContents &);
@@ -198,9 +199,6 @@ struct SelectionManager
     std::unordered_map<std::string, std::string> otherTabSelection;
     std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups;
     std::array<ZoneAddress, scxt::numParts> leadZone, leadGroup;
-
-  protected:
-    std::map<size_t, std::set<size_t>> selectedGroupByPart;
 };
 } // namespace scxt::selection
 

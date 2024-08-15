@@ -666,12 +666,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
         auto sf = std::make_unique<sf2::File>(riff.get());
         auto md5 = infrastructure::createMD5SumFromFile(p);
 
-        auto sz = getSelectionManager()->currentLeadZone(*this);
-        auto pt = 0;
-        if (sz.has_value())
-            pt = sz->part;
-        if (pt < 0 || pt >= numParts)
-            pt = 0;
+        auto pt = getSelectionManager()->selectedPart;
 
         auto &part = getPatch()->getPart(pt);
         int firstGroup = -1;
@@ -980,6 +975,9 @@ void Engine::sendFullRefreshToClient() const
                 *(getMessageController()));
         }
     }
+    getSelectionManager()->sendClientDataForLeadSelectionState();
+    getSelectionManager()->sendSelectedZonesToClient();
+    getSelectionManager()->sendSelectedPartMacrosToClient();
 }
 
 void Engine::clearAll()
@@ -1025,4 +1023,5 @@ void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
     a2s.payload.i[1] = index;
     getMessageController()->sendAudioToSerialization(a2s);
 }
+
 } // namespace scxt::engine

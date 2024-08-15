@@ -83,5 +83,19 @@ inline void doHostCallback(uint64_t pl, MessageController &cont)
 CLIENT_TO_SERIAL(RequestHostCallback, c2s_request_host_callback, uint64_t,
                  doHostCallback(payload, cont));
 
+inline void doResetEngine(bool pl, const engine::Engine &e, MessageController &cont)
+{
+    cont.scheduleAudioThreadCallback(
+        [](auto &engine) {
+            engine.stopAllSounds();
+            engine.getPatch()->resetToBlankPatch();
+        },
+        [](auto &engine) {
+            engine.getSelectionManager()->clearAllSelections();
+            engine.sendFullRefreshToClient();
+        });
+}
+CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, bool, doResetEngine(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H

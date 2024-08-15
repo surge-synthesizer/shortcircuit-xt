@@ -48,7 +48,7 @@ class SampleFLACDecoder : public FLAC::Decoder::File
     virtual ::FLAC__StreamDecoderWriteStatus write_callback(const ::FLAC__Frame *frame,
                                                             const FLAC__int32 *const buffer[])
     {
-        if (sample->bitDepth == Sample::BD_I16)
+        if (bitDepth == 16 && sample->bitDepth == Sample::BD_I16)
         {
             for (int c = 0; c < sample->channels; ++c)
             {
@@ -59,8 +59,40 @@ class SampleFLACDecoder : public FLAC::Decoder::File
                 }
             }
             streamPos += frame->header.blocksize;
+            return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
-        return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+        else if (bitDepth == 24 && sample->bitDepth == Sample::BD_F32)
+        {
+            for (int c = 0; c < sample->channels; ++c)
+            {
+                auto sdata = sample->GetSamplePtrF32(c);
+                for (int i = 0; i < frame->header.blocksize; i++)
+                {
+                    sdata[i + streamPos] = buffer[c][i] * 1.f / (1 << 24);
+                }
+            }
+            streamPos += frame->header.blocksize;
+
+            return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+        }
+        else if (bitDepth == 32 && sample->bitDepth == Sample::BD_F32)
+        {
+            for (int c = 0; c < sample->channels; ++c)
+            {
+                auto sdata = sample->GetSamplePtrF32(c);
+                for (int i = 0; i < frame->header.blocksize; i++)
+                {
+                    sdata[i + streamPos] = (double)(buffer[c][i] * 1.0) / (1L << 32);
+                }
+            }
+            streamPos += frame->header.blocksize;
+
+            return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+        }
+
+        SCLOG("Unable to load flac; bitdepth ("
+              << bitDepth << " ) and sample bitdepth are not a supported combo. Aborting.");
+        return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
     virtual void metadata_callback(const ::FLAC__StreamMetadata *metadata)
     {
@@ -89,12 +121,32 @@ class SampleFLACDecoder : public FLAC::Decoder::File
                     sample->allocateI16(1, total_samples);
                 }
                 isValid = true;
+                bitDepth = 16;
+            }
+            else if (bps == 24 || bps == 32)
+            {
+                if (channels == 1)
+                {
+                    sample->allocateF32(0, total_samples);
+                }
+                else if (channels == 2)
+                {
+                    sample->allocateF32(0, total_samples);
+                    sample->allocateF32(1, total_samples);
+                }
+                isValid = true;
+                bitDepth = bps;
+            }
+            else
+            {
+                SCLOG("Unsupported FLAC bit depth " << bps);
             }
         }
     }
     virtual void error_callback(::FLAC__StreamDecoderErrorStatus status) {}
 
   private:
+    int bitDepth{-1};
     SampleFLACDecoder(const SampleFLACDecoder &);
     SampleFLACDecoder &operator=(const SampleFLACDecoder &);
 };

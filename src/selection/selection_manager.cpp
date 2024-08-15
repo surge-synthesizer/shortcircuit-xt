@@ -747,4 +747,17 @@ void SelectionManager::sendSelectedPartMacrosToClient()
                                   cms::macroFullState_t{selectedPart, i, part->macros[i]},
                                   *(engine.getMessageController()));
 }
+
+void SelectionManager::clearAllSelections()
+{
+    for (auto &s : allSelectedZones)
+        s.clear();
+    for (auto &s : allSelectedGroups)
+        s.clear();
+    for (auto &z : leadZone)
+        z = {};
+    for (auto &g : leadGroup)
+        g = {};
+    selectedPart = 0;
+}
 } // namespace scxt::selection

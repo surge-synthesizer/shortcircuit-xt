@@ -127,9 +127,12 @@ template <> struct scxt_traits<selection::SelectionManager>
 
         selection::SelectionManager::ZoneAddress za;
 
-        selection::SelectionManager::SelectActionContents sac{z.leadZone[z.selectedPart]};
-        sac.distinct = false;
-        z.selectAction(sac);
+        if (!z.allSelectedZones[z.selectedPart].empty())
+        {
+            selection::SelectionManager::SelectActionContents sac{z.leadZone[z.selectedPart]};
+            sac.distinct = false;
+            z.selectAction(sac);
+        }
     }
 };
 } // namespace scxt::json

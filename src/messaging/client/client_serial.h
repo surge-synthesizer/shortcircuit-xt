@@ -40,6 +40,7 @@ namespace scxt::messaging::client
 enum ClientToSerializationMessagesIds
 {
     c2s_on_register,
+    c2s_reset_engine,
 
     c2s_unstream_state,
 
