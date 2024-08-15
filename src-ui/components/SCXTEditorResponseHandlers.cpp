@@ -38,6 +38,7 @@
 #include "multi/MappingPane.h"
 #include "AboutScreen.h"
 #include "browser/BrowserPane.h"
+#include "PlayScreen.h"
 
 namespace scxt::ui
 {
@@ -337,7 +338,9 @@ void SCXTEditor::onMacroFullState(const scxt::messaging::client::macroFullState_
 {
     const auto &[part, index, macro] = s;
     macroCache[part][index] = macro;
-    multiScreen->sample->macroDataChanged(part, index);
+    if (part == selectedPart)
+        multiScreen->sample->macroDataChanged(part, index);
+    playScreen->macroDataChanged(part, index);
 }
 
 void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
@@ -345,5 +348,6 @@ void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
     const auto &[part, index, value] = s;
     macroCache[part][index].value = value;
     multiScreen->sample->repaint();
+    playScreen->repaint();
 }
 } // namespace scxt::ui

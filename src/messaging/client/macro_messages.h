@@ -53,6 +53,9 @@ inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine
             engine::Macro macroCopy = macro;
             macroCopy.setValueConstrained(v);
             e.getPatch()->getPart(part)->macros[index] = macroCopy;
+            SCLOG("Setting part/index macro to "
+                  << SCD(part) << SCD(index) << SCD(macroCopy.name)
+                  << SCD(e.getPatch()->getPart(part)->macros[index].name));
         },
         [](const auto &e) {
             const auto &lz = e.getSelectionManager()->currentLeadZone(e);

@@ -13,6 +13,7 @@ add_library(${PROJECT_NAME} STATIC
         components/MultiScreen.cpp
         components/SendFXScreen.cpp
         components/AboutScreen.cpp
+        components/PlayScreen.cpp
         components/LogScreen.cpp
         components/WelcomeScreen.cpp
 
@@ -28,6 +29,7 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/ModPane.cpp
         components/multi/OutputPane.cpp
         components/multi/PartGroupSidebar.cpp
+        components/multi/PartSidebarCard.cpp
         components/multi/ProcessorPane.cpp
         components/multi/ProcessorPaneEQsFilters.cpp
         components/multi/SingleMacroEditor.cpp

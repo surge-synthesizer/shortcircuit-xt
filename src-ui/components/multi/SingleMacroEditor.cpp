@@ -105,19 +105,13 @@ struct NarrowVerticalMenu : HasEditor, juce::Component
     }
     std::function<void()> cb;
 };
-SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i)
+SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
     : HasEditor(e),
       sst::jucegui::style::StyleConsumer(sst::jucegui::components::NamedPanel::Styles::styleClass),
-      part(p), index(i)
+      part(p), index(i), valueOnly(vo)
 {
-    auto mb = std::make_unique<NarrowVerticalMenu>(e);
-    addAndMakeVisible(*mb);
-    mb->cb = [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->showMenu();
-    };
-    menuButton = std::move(mb);
     knob = connectors::makeConnectedToDummy<sst::jucegui::components::Knob>('mcro');
+    knob->setDrawLabel(false);
     addAndMakeVisible(*knob);
 
     knob->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
@@ -151,11 +145,27 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i)
     valueAttachment = std::make_unique<MacroValueAttachment>(editor, part, index);
     knob->setSource(valueAttachment.get());
 
-    macroNameEditor = std::make_unique<juce::TextEditor>("Name");
-    macroNameEditor->setText("Macro");
-    macroNameEditor->setJustification(juce::Justification::centred);
-    macroNameEditor->addListener(this);
-    addAndMakeVisible(*macroNameEditor);
+    if (valueOnly)
+    {
+        macroNameLabel = std::make_unique<sst::jucegui::components::Label>();
+        addAndMakeVisible(*macroNameLabel);
+    }
+    else
+    {
+        auto mb = std::make_unique<NarrowVerticalMenu>(e);
+        addAndMakeVisible(*mb);
+        mb->cb = [w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showMenu();
+        };
+        menuButton = std::move(mb);
+
+        macroNameEditor = std::make_unique<juce::TextEditor>("Name");
+        macroNameEditor->setText("Macro");
+        macroNameEditor->setJustification(juce::Justification::centred);
+        macroNameEditor->addListener(this);
+        addAndMakeVisible(*macroNameEditor);
+    }
 }
 
 SingleMacroEditor::~SingleMacroEditor() {}
@@ -169,11 +179,28 @@ void SingleMacroEditor::changePart(int p)
 
 void SingleMacroEditor::resized()
 {
-    auto b = getLocalBounds();
-    knob->setBounds(b.withHeight(b.getWidth()).reduced(15));
-    menuButton->setBounds(b.withWidth(12).withHeight(24).translated(0, 10));
-    macroNameEditor->setBounds(
-        b.withTrimmedTop(b.getWidth() - 12 + 3).withHeight(18).reduced(3, 0));
+    if (valueOnly)
+    {
+        auto b = getLocalBounds().reduced(2);
+        auto kw = b.getHeight() - 18;
+        macroNameLabel->setBounds(getLocalBounds().withTrimmedTop(kw));
+
+        auto kb = getLocalBounds().withHeight(kw - 3);
+        if (kb.getWidth() > kb.getHeight())
+        {
+            auto overShoot = kb.getWidth() - kb.getHeight();
+            kb = kb.reduced(overShoot / 2, 0);
+        }
+        knob->setBounds(kb);
+    }
+    else
+    {
+        auto b = getLocalBounds();
+        knob->setBounds(b.withHeight(b.getWidth()).reduced(15));
+        menuButton->setBounds(b.withWidth(12).withHeight(24).translated(0, 10));
+        macroNameEditor->setBounds(
+            b.withTrimmedTop(b.getWidth() - 12 + 3).withHeight(18).reduced(3, 0));
+    }
 }
 
 void SingleMacroEditor::paint(juce::Graphics &g)
@@ -183,6 +210,7 @@ void SingleMacroEditor::paint(juce::Graphics &g)
     g.setColour(juce::Colours::red);
     auto txt = std::to_string(part) + "/" + std::to_string(index);
     g.drawText(txt, getLocalBounds(), juce::Justification::topRight);
+    g.drawRect(getLocalBounds());
 #endif
 }
 
@@ -207,19 +235,22 @@ void SingleMacroEditor::showMenu()
 }
 void SingleMacroEditor::onStyleChanged()
 {
-    // Update the text editor
-    macroNameEditor->setFont(editor->themeApplier.interMediumFor(12));
-    macroNameEditor->setColour(juce::TextEditor::ColourIds::textColourId,
-                               editor->themeColor(theme::ColorMap::generic_content_high));
-    macroNameEditor->setColour(juce::TextEditor::ColourIds::backgroundColourId,
-                               editor->themeColor(theme::ColorMap::bg_1));
-    macroNameEditor->setColour(juce::TextEditor::ColourIds::outlineColourId,
-                               juce::Colours::black.withAlpha(0.f));
-    macroNameEditor->setColour(juce::TextEditor::ColourIds::focusedOutlineColourId,
-                               juce::Colours::black.withAlpha(0.f));
-    macroNameEditor->applyColourToAllText(editor->themeColor(theme::ColorMap::generic_content_high),
-                                          true);
-    macroNameEditor->applyFontToAllText(editor->themeApplier.interMediumFor(13), true);
+    if (macroNameEditor)
+    {
+        // Update the text editor
+        macroNameEditor->setFont(editor->themeApplier.interMediumFor(12));
+        macroNameEditor->setColour(juce::TextEditor::ColourIds::textColourId,
+                                   editor->themeColor(theme::ColorMap::generic_content_high));
+        macroNameEditor->setColour(juce::TextEditor::ColourIds::backgroundColourId,
+                                   editor->themeColor(theme::ColorMap::bg_1));
+        macroNameEditor->setColour(juce::TextEditor::ColourIds::outlineColourId,
+                                   juce::Colours::black.withAlpha(0.f));
+        macroNameEditor->setColour(juce::TextEditor::ColourIds::focusedOutlineColourId,
+                                   juce::Colours::black.withAlpha(0.f));
+        macroNameEditor->applyColourToAllText(
+            editor->themeColor(theme::ColorMap::generic_content_high), true);
+        macroNameEditor->applyFontToAllText(editor->themeApplier.interMediumFor(13), true);
+    }
 }
 
 void SingleMacroEditor::updateFromEditorData()
@@ -227,12 +258,25 @@ void SingleMacroEditor::updateFromEditorData()
     assert(part >= 0 && part < scxt::numParts);
     assert(index >= 0 && index < scxt::macrosPerPart);
     const auto &macro = editor->macroCache[part][index];
-    macroNameEditor->setText(macro.name, juce::NotificationType::dontSendNotification);
+    if (macroNameEditor)
+    {
+        macroNameEditor->setText(macro.name, juce::NotificationType::dontSendNotification);
+    }
+    if (macroNameLabel)
+    {
+        macroNameLabel->setText(macro.name);
+    }
+    repaint();
 }
 void SingleMacroEditor::textEditorReturnKeyPressed(juce::TextEditor &e)
 {
     auto &macro = editor->macroCache[part][index];
     macro.name = e.getText().toStdString();
+    if (macro.name.empty())
+    {
+        macro.name = engine::Macro::defaultNameFor(index);
+        e.setText(macro.name, juce::NotificationType::dontSendNotification);
+    }
     sendToSerialization(scxt::messaging::client::SetMacroFullState({part, index, macro}));
 }
 
@@ -246,6 +290,11 @@ void SingleMacroEditor::textEditorFocusLost(juce::TextEditor &e)
 {
     auto &macro = editor->macroCache[part][index];
     macro.name = e.getText().toStdString();
+    if (macro.name.empty())
+    {
+        macro.name = engine::Macro::defaultNameFor(index);
+        e.setText(macro.name, juce::NotificationType::dontSendNotification);
+    }
     sendToSerialization(scxt::messaging::client::SetMacroFullState({part, index, macro}));
 }
 

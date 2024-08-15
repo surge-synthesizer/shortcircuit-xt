@@ -40,6 +40,7 @@ enum DefaultKeys
     showKnobs,
     colormapId,
     welcomeScreenSeen,
+    playModeExpanded,
 
     nKeys // must be last K?
 };
@@ -61,6 +62,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "showKnobs";
     case welcomeScreenSeen:
         return "welcomeScreenSeen";
+    case playModeExpanded:
+        return "playModeExpanded";
     default:
         std::terminate(); // for now
     }

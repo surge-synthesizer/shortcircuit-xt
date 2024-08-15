@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/style/StyleAndSettingsConsumer.h"
 #include "components/HasEditor.h"
 
@@ -45,7 +46,8 @@ struct SingleMacroEditor : HasEditor,
     std::unique_ptr<sst::jucegui::components::Knob> knob;
     std::unique_ptr<juce::Component> menuButton;
     std::unique_ptr<juce::TextEditor> macroNameEditor;
-    SingleMacroEditor(SCXTEditor *e, int part, int index);
+    std::unique_ptr<sst::jucegui::components::Label> macroNameLabel;
+    SingleMacroEditor(SCXTEditor *e, int part, int index, bool valueOnly);
     ~SingleMacroEditor();
     void resized() override;
     void paint(juce::Graphics &g) override;
@@ -61,6 +63,7 @@ struct SingleMacroEditor : HasEditor,
 
   private:
     int16_t part{-1}, index{-1};
+    bool valueOnly{false};
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUITXT_SINGLEMACROEDITOR_H

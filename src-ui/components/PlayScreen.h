@@ -29,21 +29,59 @@
 #define SCXT_SRC_UI_COMPONENTS_PLAYSCREEN_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <array>
+#include <memory>
+#include "configuration.h"
+#include "HasEditor.h"
+
+#include "sst/jucegui/components/Viewport.h"
+#include "sst/jucegui/components/NamedPanel.h"
+#include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/component-adapters/DiscreteToReference.h"
+#include "multi/PartSidebarCard.h"
+#include "multi/SingleMacroEditor.h"
 
 namespace scxt::ui
 {
-struct PlayScreen : juce::Component
+
+namespace browser
 {
-    void paint(juce::Graphics &g)
-    {
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(60, juce::Font::plain));
-        g.drawText("Play Mode", getLocalBounds().withTrimmedBottom(40),
-                   juce::Justification::centred);
-        g.setFont(juce::Font(20, juce::Font::plain));
-        g.drawText("Coming A Bit Less Soon", getLocalBounds().withTrimmedTop(40),
-                   juce::Justification::centred);
-    }
+struct BrowserPane;
+}
+struct PlayScreen : juce::Component, HasEditor
+{
+    static constexpr int browserPanelWidth = 196; // copied from multi for now
+
+    std::array<std::array<std::unique_ptr<multi::SingleMacroEditor>, scxt::macrosPerPart>,
+               scxt::numParts>
+        macroEditors;
+    std::array<std::unique_ptr<multi::PartSidebarCard>, scxt::numParts> partSidebars;
+    std::unique_ptr<sst::jucegui::components::Viewport> viewport;
+    std::unique_ptr<juce::Component> viewportContents;
+
+    using skinnyPage_t = sst::jucegui::component_adapters::DiscreteToValueReference<
+        sst::jucegui::components::MultiSwitch, bool>;
+    std::array<std::unique_ptr<skinnyPage_t>, scxt::numParts> skinnyPageSwitches;
+    std::array<bool, scxt::numParts> skinnyPage{};
+
+    std::unique_ptr<sst::jucegui::components::NamedPanel> playNamedPanel;
+    std::unique_ptr<browser::BrowserPane> browser;
+
+    PlayScreen(SCXTEditor *e);
+    ~PlayScreen();
+
+    void resized() override;
+    void visibilityChanged() override;
+    void macroDataChanged(int p, int i) { macroEditors[p][i]->updateFromEditorData(); }
+
+    void rebuildPositionsAndVisibilites();
+    void showMenu();
+
+    bool tallMode{true};
+    static constexpr size_t interPartMargin{3};
+    juce::Rectangle<int> rectangleForPart(int part);
+
+    static constexpr size_t sidebarWidth{180};
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUITXT_PLAYSCREEN_H

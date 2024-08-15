@@ -74,6 +74,7 @@ inline void doDebugAction(const std::string &payload, const engine::Engine &engi
 
         std::ostringstream oss;
         dbto_pretty_stream(oss, json::scxt_value(p));
+        SCLOG("Dumping json for part " << pid);
         SCLOG(oss.str());
     }
     else

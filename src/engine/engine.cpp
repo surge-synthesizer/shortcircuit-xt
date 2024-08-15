@@ -970,7 +970,16 @@ void Engine::sendFullRefreshToClient() const
         sac.distinct = false;
         getSelectionManager()->selectAction(sac);
     }
-    getSelectionManager()->sendSelectedPartMacrosToClient();
+    for (int p = 0; p < numParts; ++p)
+    {
+        for (int i = 0; i < macrosPerPart; ++i)
+        {
+            serializationSendToClient(
+                messaging::client::s2c_update_macro_full_state,
+                messaging::client::macroFullState_t{p, i, getPatch()->getPart(p)->macros[i]},
+                *(getMessageController()));
+        }
+    }
 }
 
 void Engine::clearAll()
