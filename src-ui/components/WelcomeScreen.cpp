@@ -38,7 +38,7 @@ namespace scxt::ui
 WelcomeScreen::WelcomeScreen(SCXTEditor *e) : HasEditor(e)
 {
     setAccessible(true);
-    setTitle("Welcome to ShortCircuit XT Pre-Alpha. Please use care. Press escape to use sampler.");
+    setTitle("Welcome to ShortCircuit XT Alpha. Please use care. Press escape to use sampler.");
     setWantsKeyboardFocus(true);
 }
 void WelcomeScreen::visibilityChanged()
@@ -64,14 +64,15 @@ void WelcomeScreen::okGotItDontShowAgain()
 }
 
 auto txt =
-    "Shortcircuit XT is in a pre-alpha release. This version has incomplete and "
-    "missing features, may have crashing bugs, may generate improper sounds, and is not streaming "
-    "stable (so saved sessions may not work in the future).\n"
+    "Shortcircuit XT is in a alpha release. This version has incomplete and "
+    "missing features, may have crashing bugs, and may generate improper sounds\n"
     "\n"
     "We welcome testers in this pre-alpha period but recommend a few precautions:\n\n"
     "- Consider using limiter and don't use in-ear headphones when experimenting.\n"
-    "- The platform is not streaming stable; if you make music you like, bounce stems.\n"
     "- There is no missing sample resolution; don't move underlying files.\n"
+    "- We beleive we have both the streaming and Plugin ID/Params stable as of mid Aug 24\n"
+    "   but we could be wrong. If you make music you love, please do bounce stems so you can\n"
+    "   recreate it.\n"
 
     "\n"
     "We love early testers, documenters, and designers on all our projects. The best way to "
@@ -89,7 +90,7 @@ void WelcomeScreen::paint(juce::Graphics &g)
 
     g.fillAll(editor->themeColor(theme::ColorMap::bg_1).withAlpha(0.6f));
 
-    auto bd = r.reduced(140, 130);
+    auto bd = r.reduced(140, 120);
 
     g.setColour(editor->themeColor(theme::ColorMap::bg_1));
     g.fillRect(bd);
@@ -99,8 +100,7 @@ void WelcomeScreen::paint(juce::Graphics &g)
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
     g.drawText("Welcome to ShortcircuitXT", bd.reduced(10), juce::Justification::centredTop);
     g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
-    g.drawText("Pre-Alpha Release", bd.reduced(10).translated(0, 50),
-               juce::Justification::centredTop);
+    g.drawText("Alpha Release", bd.reduced(10).translated(0, 50), juce::Justification::centredTop);
 
     g.setFont(editor->themeApplier.interLightFor(22));
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));

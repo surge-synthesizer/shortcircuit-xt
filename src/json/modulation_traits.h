@@ -55,50 +55,67 @@ SC_STREAMDEF(scxt::modulation::modulators::StepLFOStorage, SC_FROM({
              }))
 
 SC_STREAMDEF(scxt::modulation::modulators::CurveLFOStorage, SC_FROM({
-                 v = {{"deform", t.deform},   {"delay", t.delay},       {"attack", t.attack},
-                      {"release", t.release}, {"unipolar", t.unipolar}, {"useenv", t.useenv}};
+                 v = tao::json::empty_object;
+                 addUnlessDefault<val_t>(v, "attack", 0.f, from.attack);
+                 addUnlessDefault<val_t>(v, "deform", 0.f, from.deform);
+                 addUnlessDefault<val_t>(v, "delay", 0.f, from.delay);
+                 addUnlessDefault<val_t>(v, "release", 0.f, from.release);
+                 addUnlessDefault<val_t>(v, "unipolar", false, from.unipolar);
+                 addUnlessDefault<val_t>(v, "useenv", false, from.useenv);
              }),
              SC_TO({
                  const auto &object = v.get_object();
-                 findIf(v, "deform", result.deform);
-                 findIf(v, "delay", result.delay);
-                 findIf(v, "attack", result.attack);
-                 findIf(v, "release", result.release);
-                 findIf(v, "unipolar", result.unipolar);
-                 findIf(v, "useenv", result.useenv);
+                 findOrSet(v, "deform", 0.f, result.deform);
+                 findOrSet(v, "delay", 0.f, result.delay);
+                 findOrSet(v, "attack", 0.f, result.attack);
+                 findOrSet(v, "release", 0.f, result.release);
+                 findOrSet(v, "unipolar", false, result.unipolar);
+                 findOrSet(v, "useenv", false, result.useenv);
              }))
 
 SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
-                 v = {{"deform", t.deform},  {"delay", t.delay}, {"attack", t.attack},
-                      {"hold", t.hold},      {"decay", t.decay}, {"sustain", t.sustain},
-                      {"release", t.release}};
+                 v = tao::json::empty_object;
+                 addUnlessDefault<val_t>(v, "attack", 0.f, from.attack);
+                 addUnlessDefault<val_t>(v, "decay", 0.f, from.decay);
+                 addUnlessDefault<val_t>(v, "deform", 0.f, from.deform);
+                 addUnlessDefault<val_t>(v, "delay", 0.f, from.delay);
+                 addUnlessDefault<val_t>(v, "hold", 0.f, from.hold);
+                 addUnlessDefault<val_t>(v, "release", 0.f, from.release);
+                 addUnlessDefault<val_t>(v, "sustain", 1.f, from.sustain);
              }),
              SC_TO({
                  const auto &object = v.get_object();
-                 findIf(v, "deform", result.deform);
-                 findIf(v, "delay", result.delay);
-                 findIf(v, "attack", result.attack);
-                 findIf(v, "hold", result.hold);
-                 findIf(v, "decay", result.decay);
-                 findIf(v, "sustain", result.sustain);
-                 findIf(v, "release", result.release);
+                 findOrSet(v, "deform", 0.f, result.deform);
+                 findOrSet(v, "delay", 0.f, result.delay);
+                 findOrSet(v, "attack", 0.f, result.attack);
+                 findOrSet(v, "hold", 0.f, result.hold);
+                 findOrSet(v, "decay", 0.f, result.decay);
+                 findOrSet(v, "sustain", 1.f, result.sustain);
+                 findOrSet(v, "release", 0.f, result.release);
              }))
 
 SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
-                 v = {{"a", t.a},           {"h", t.h},           {"d", t.d},
-                      {"s", t.s},           {"r", t.r},           {"isDigital", t.isDigital},
-                      {"aShape", t.aShape}, {"dShape", t.dShape}, {"rShape", t.rShape}};
+                 v = tao::json::empty_object;
+                 addUnlessDefault<val_t>(v, "a", 0.f, from.a);
+                 addUnlessDefault<val_t>(v, "d", 0.f, from.d);
+                 addUnlessDefault<val_t>(v, "h", 0.f, from.h);
+                 addUnlessDefault<val_t>(v, "s", 1.f, from.s);
+                 addUnlessDefault<val_t>(v, "r", 0.5f, from.r);
+                 addUnlessDefault<val_t>(v, "aShape", 0.f, from.aShape);
+                 addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
+                 addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
+                 addUnlessDefault<val_t>(v, "isDigital", true, from.isDigital);
              }),
              SC_TO({
-                 findIf(v, "a", result.a);
-                 findIf(v, "h", result.h);
-                 findIf(v, "d", result.d);
-                 findIf(v, "s", result.s);
-                 findIf(v, "r", result.r);
-                 findIf(v, "isDigital", result.isDigital);
-                 findIf(v, "aShape", result.aShape);
-                 findIf(v, "dShape", result.dShape);
-                 findIf(v, "rShape", result.rShape);
+                 findOrSet(v, "a", 0.f, result.a);
+                 findOrSet(v, "h", 0.f, result.h);
+                 findOrSet(v, "d", 0.f, result.d);
+                 findOrSet(v, "s", 1.f, result.s);
+                 findOrSet(v, "r", 0.5f, result.r);
+                 findOrSet(v, "isDigital", true, result.isDigital);
+                 findOrSet(v, "aShape", 0.f, result.aShape);
+                 findOrSet(v, "dShape", 0.f, result.dShape);
+                 findOrSet(v, "rShape", 0.f, result.rShape);
              }))
 
 STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
@@ -166,15 +183,20 @@ SC_STREAMDEF(scxt::modulation::shared::RoutingExtraPayload, SC_FROM({
 // Its a mild bummer we have to dup this for group and zone but they differ by trait so have
 // distinct types Ahh well. Fixable with an annoying refactor but leave it for now
 SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
-                 v = {{"active", t.active},
-                      {"source", t.source},
-                      {"sourceVia", t.sourceVia},
-                      {"target", t.target},
-                      {"curve", t.curve},
-                      {"depth", t.depth},
-                      {"extraPayload", t.extraPayload}};
+                 if (t.hasDefaultValues())
+                 {
+                     v = tao::json::empty_object;
+                 }
+                 else
+                 {
+                     v = {{"active", t.active}, {"source", t.source}, {"sourceVia", t.sourceVia},
+                          {"target", t.target}, {"curve", t.curve},   {"depth", t.depth}};
+                     if (SC_STREAMING_FOR_IN_PROCESS)
+                         addToObject<val_t>(v, "extraPayload", t.extraPayload);
+                 }
              }),
              SC_TO({
+                 result = rt_t();
                  findIf(v, "active", result.active);
                  findIf(v, "source", result.source);
                  findIf(v, "sourceVia", result.sourceVia);
@@ -198,15 +220,20 @@ SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable, SC_FROM({
              }));
 
 SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable::Routing, SC_FROM({
-                 v = {{"active", t.active},
-                      {"source", t.source},
-                      {"sourceVia", t.sourceVia},
-                      {"target", t.target},
-                      {"curve", t.curve},
-                      {"depth", t.depth},
-                      {"extraPayload", t.extraPayload}};
+                 if (t.hasDefaultValues())
+                 {
+                     v = tao::json::empty_object;
+                 }
+                 else
+                 {
+                     v = {{"active", t.active}, {"source", t.source}, {"sourceVia", t.sourceVia},
+                          {"target", t.target}, {"curve", t.curve},   {"depth", t.depth}};
+                     if (SC_STREAMING_FOR_IN_PROCESS)
+                         addToObject<val_t>(v, "extraPayload", t.extraPayload);
+                 }
              }),
              SC_TO({
+                 result = rt_t();
                  findIf(v, "active", result.active);
                  findIf(v, "source", result.source);
                  findIf(v, "sourceVia", result.sourceVia);

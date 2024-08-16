@@ -43,7 +43,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                  auto &t = from;
                  if (t.type == dsp::processor::proct_none)
                  {
-                     v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)}};
+                     v = tao::json::empty_object;
                  }
                  else
                  {
@@ -62,8 +62,13 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
                  auto &result = to;
                  const auto &object = v.get_object();
 
-                 auto optType = scxt::dsp::processor::fromProcessorStreamingName(
-                     v.at("type").template as<std::string>());
+                 std::string type;
+                 findOrSet(
+                     v, {"t", "type"},
+                     scxt::dsp::processor::getProcessorStreamingName(dsp::processor::proct_none),
+                     type);
+
+                 auto optType = scxt::dsp::processor::fromProcessorStreamingName(type);
 
                  if (optType.has_value())
                      result.type = *optType;

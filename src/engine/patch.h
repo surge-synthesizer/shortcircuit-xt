@@ -163,10 +163,6 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
 
     void resetToBlankPatch()
     {
-        // If it is the year 2112 and you just had a regtest fail because
-        // this is earlier than the streaming version you just changed, then
-        // this software lived too long
-        streamingVersion = 0x2112'01'01;
         for (int i = 0; i < numParts; ++i)
         {
             parts[i] = std::make_unique<Part>(i);
@@ -178,7 +174,6 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
     bool usesOutputBus(int bus) { return busses.usesOutput[bus]; }
     void setupBussesOnUnstream(Engine &e);
     PatchID id;
-    uint64_t streamingVersion{0}; // we use hex dates for these
 
     Engine *parentEngine{nullptr};
 

@@ -327,6 +327,11 @@ inline bool extensionMatches(const fs::path &p, const std::string &s)
     };
     return std::equal(pes.begin(), pes.end(), s.begin(), cic);
 }
+
+inline std::string humanReadableVersion(uint64_t v)
+{
+    return fmt::format("{:04x}-{:02x}-{:02x}", (v >> 16) & 0xFFFF, (v >> 8) & 0xFF, v & 0xFF);
+}
 } // namespace scxt
 
 // Make the ID hashable so we can use it as a map key

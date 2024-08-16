@@ -37,6 +37,9 @@
 
 namespace scxt::json
 {
+/*
+ * Leave this one un-convererd to SC_STREAMDEF because of the double template
+ */
 template <int idType> struct scxt_traits<ID<idType>>
 {
     template <template <typename...> class Traits>

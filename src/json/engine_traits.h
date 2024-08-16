@@ -57,22 +57,21 @@
 namespace scxt::json
 {
 
-struct EngineStreamGuard
-{
-    EngineStreamGuard(uint64_t sv)
-    {
-        SCLOG("Unstreaming engine with streaming version = " << std::hex << sv);
-        engine::Engine::isFullEngineUnstream = true;
-        engine::Engine::fullEngineUnstreamStreamingVersion = sv;
-    }
-    ~EngineStreamGuard()
-    {
-        engine::Engine::isFullEngineUnstream = false;
-        engine::Engine::fullEngineUnstreamStreamingVersion = 0;
-    }
-};
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
-                 v = {{"streamingVersion", scxt::json::currentStreamingVersion},
+                 if (SC_STREAMING_FOR_IN_PROCESS)
+                 {
+                     /*
+                      * If you see this warning you probably want to make an
+                      * engine::Engine::StreamGuard with DAW or MULTi before you
+                      * call your JSON conversion, unless its just a debug json
+                      * dump, in which case this is OK
+                      */
+                     SCLOG("Warning: Engine is streaming for state 'IN_PROCESS'");
+                 }
+
+                 v = {{"streamingVersion", scxt::currentStreamingVersion},
+                      {"streamingVersionHumanReadable",
+                       scxt::humanReadableVersion(scxt::currentStreamingVersion)},
                       {"patch", from.getPatch()},
                       {"selectionManager", from.getSelectionManager()},
                       {"sampleManager", from.getSampleManager()}};
@@ -81,7 +80,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  assert(to.getMessageController()->threadingChecker.isSerialThread());
                  auto sv{0};
                  findIf(v, "streamingVersion", sv);
-                 EngineStreamGuard sg(sv);
+                 engine::Engine::UnstreamGuard sg(sv);
 
                  // TODO: engine gets a SV? Guess maybe
                  // Order matters here. Samples need to be there before the patch and patch
@@ -100,14 +99,11 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
              }))
 
 SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
-                 v = {{"streamingVersion", scxt::json::currentStreamingVersion},
-                      {"parts", from.getParts()},
-                      {"busses", from.busses}};
+                 v = {{"parts", from.getParts()}, {"busses", from.busses}};
              }),
              SC_TO({
                  auto &patch = to;
                  patch.resetToBlankPatch();
-                 findIf(v, "streamingVersion", patch.streamingVersion);
 
                  // TODO: I could expose the array but I want to go to a limited stream in the
                  // future
@@ -125,14 +121,11 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
 SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  v = {{"p", t.part}, {"i", t.index}, {"v", t.value}};
 
-                 if (t.isBipolar)
-                     SC_INSERT(v, "bp", t.isBipolar);
-                 if (t.isStepped)
-                     SC_INSERT(v, "st", t.isStepped);
-                 if (t.stepCount != 1)
-                     SC_INSERT(v, "sc", t.stepCount);
-                 if (t.name != scxt::engine::Macro::defaultNameFor(t.index))
-                     SC_INSERT(v, "nm", t.name);
+                 addUnlessDefault<val_t>(v, "bp", false, t.isBipolar);
+                 addUnlessDefault<val_t>(v, "st", false, t.isStepped);
+                 addUnlessDefault<val_t>(v, "sc", (size_t)1, t.stepCount);
+                 addUnlessDefault<val_t>(v, "nm", scxt::engine::Macro::defaultNameFor(t.index),
+                                         t.name);
              }),
              SC_TO({
                  findIf(v, "v", result.value);
@@ -181,117 +174,94 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  result.routeTo = (engine::BusAddress)(rt);
              }));
 
-template <> struct scxt_traits<scxt::engine::Group>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Group &t)
-    {
-        v = {{"zones", t.getZones()},
-             {"name", t.getName()},
-             {"outputInfo", t.outputInfo},
-             {"routingTable", t.routingTable},
-             {"gegStorage", t.gegStorage},
-             {"modulatorStorage", t.modulatorStorage},
-             {"processorStorage", t.processorStorage}};
-    }
+SC_STREAMDEF(scxt::engine::Group, SC_FROM({
+                 v = {{"zones", t.getZones()},
+                      {"name", t.getName()},
+                      {"outputInfo", t.outputInfo},
+                      {"routingTable", t.routingTable},
+                      {"gegStorage", t.gegStorage},
+                      {"modulatorStorage", t.modulatorStorage},
+                      {"processorStorage", t.processorStorage}};
+             }),
+             SC_TO({
+                 auto &group = to;
+                 findIf(v, "name", group.name);
+                 findIf(v, "gegStorage", group.gegStorage);
+                 findIf(v, "outputInfo", group.outputInfo);
+                 findIf(v, "processorStorage", group.processorStorage);
+                 findIf(v, "routingTable", group.routingTable);
+                 findIfArray(v, "modulatorStorage", group.modulatorStorage);
+                 group.clearZones();
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Group &group)
-    {
-        findIf(v, "name", group.name);
-        findIf(v, "gegStorage", group.gegStorage);
-        findIf(v, "outputInfo", group.outputInfo);
-        findIf(v, "processorStorage", group.processorStorage);
-        findIf(v, "routingTable", group.routingTable);
-        findIfArray(v, "modulatorStorage", group.modulatorStorage);
-        group.clearZones();
+                 auto vzones = v.at("zones").get_array();
+                 for (const auto vz : vzones)
+                 {
+                     auto idx = group.addZone(std::make_unique<scxt::engine::Zone>()) - 1;
+                     vz.to(*(group.getZone(idx)));
+                     if (group.parentPart && group.parentPart->parentPatch &&
+                         group.parentPart->parentPatch->parentEngine)
+                     {
+                         // TODO: MOve this somewhere more intelligent
+                         group.getZone(idx)->setupOnUnstream(
+                             *(group.parentPart->parentPatch->parentEngine));
+                     }
+                 }
+                 group.setupOnUnstream(*(group.parentPart->parentPatch->parentEngine));
+             }));
 
-        auto vzones = v.at("zones").get_array();
-        for (const auto vz : vzones)
-        {
-            auto idx = group.addZone(std::make_unique<scxt::engine::Zone>()) - 1;
-            vz.to(*(group.getZone(idx)));
-            if (group.parentPart && group.parentPart->parentPatch &&
-                group.parentPart->parentPatch->parentEngine)
-            {
-                // TODO: MOve this somewhere more intelligent
-                group.getZone(idx)->setupOnUnstream(*(group.parentPart->parentPatch->parentEngine));
-            }
-        }
-        group.setupOnUnstream(*(group.parentPart->parentPatch->parentEngine));
-    }
-};
+SC_STREAMDEF(scxt::engine::Zone::ZoneOutputInfo, SC_FROM({
+                 v = {{"amp", t.amplitude}, {"pan", t.pan}, {"to", (int)t.routeTo}};
+                 addUnlessDefault<val_t>(v, "prt", engine::Zone::ProcRoutingPath::procRoute_linear,
+                                         t.procRouting);
+                 addUnlessDefault<val_t>(v, "muted", false, t.muted);
+             }),
+             SC_TO({
+                 auto &zo = to;
+                 int rt;
+                 findIf(v, {"amp", "amplitude"}, zo.amplitude);
+                 findIf(v, "pan", zo.pan);
+                 findOrSet(v, "muted", false, zo.muted);
+                 findOrSet(v, {"prt", "procRouting"},
+                           engine::Zone::ProcRoutingPath::procRoute_linear, zo.procRouting);
+                 findIf(v, "routeTo", rt);
+                 zo.routeTo = (engine::BusAddress)(rt);
+             }));
 
-template <> struct scxt_traits<scxt::engine::Zone::ZoneOutputInfo>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::engine::Zone::ZoneOutputInfo &t)
-    {
-        v = {{"amplitude", t.amplitude},
-             {"pan", t.pan},
-             {"muted", t.muted},
-             {"procRouting", t.procRouting},
-             {"routeTo", (int)t.routeTo}};
-    }
+SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
+                 v = {{"rootKey", t.rootKey},
+                      {"keyR", t.keyboardRange},
+                      {"velR", t.velocityRange},
+                      {"pbDown", t.pbDown},
+                      {"pbUp", t.pbUp},
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::ZoneOutputInfo &zo)
-    {
-        int rt;
-        findIf(v, "amplitude", zo.amplitude);
-        findIf(v, "pan", zo.pan);
-        findIf(v, "muted", zo.muted);
-        findIf(v, "procRouting", zo.procRouting);
-        findIf(v, "routeTo", rt);
-        zo.routeTo = (engine::BusAddress)(rt);
-    }
-};
+                      {"exclusiveGroup", t.exclusiveGroup},
+                      {"velocitySens", t.velocitySens},
+                      {"amplitude", t.amplitude},
+                      {"pan", t.pan},
+                      {"pitchOffset", t.pitchOffset}};
+             }),
+             SC_TO({
+                 auto &zmd = to;
+                 findOrSet(v, "rootKey", 60, zmd.rootKey);
+                 findIf(v, {"keyR", "keyboardRange"}, zmd.keyboardRange);
+                 findIf(v, {"velR", "velocityRange"}, zmd.velocityRange);
+                 findIf(v, "pbDown", zmd.pbDown);
+                 findIf(v, "pbUp", zmd.pbUp);
 
-template <> struct scxt_traits<scxt::engine::Zone::ZoneMappingData>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::engine::Zone::ZoneMappingData &t)
-    {
-        v = {{"rootKey", t.rootKey},
-             {"keyboardRange", t.keyboardRange},
-             {"velocityRange", t.velocityRange},
-             {"pbDown", t.pbDown},
-             {"pbUp", t.pbUp},
+                 findIf(v, "amplitude", zmd.amplitude);
+                 if (SC_UNSTREAMING_FROM_THIS_OR_OLDER(0x2024'06'03))
+                 {
+                     // amplitude used to be in percent 0...1 and now
+                     // is in decibels -36 to 36.
+                     auto db = 20 * std::log10(zmd.amplitude);
+                     zmd.amplitude = std::clamp(db, -36.f, 36.f);
+                 }
 
-             {"exclusiveGroup", t.exclusiveGroup},
-             {"velocitySens", t.velocitySens},
-             {"amplitude", t.amplitude},
-             {"pan", t.pan},
-             {"pitchOffset", t.pitchOffset}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::engine::Zone::ZoneMappingData &zmd)
-    {
-        findOrSet(v, "rootKey", 60, zmd.rootKey);
-        findIf(v, "keyboardRange", zmd.keyboardRange);
-        findIf(v, "velocityRange", zmd.velocityRange);
-        findIf(v, "pbDown", zmd.pbDown);
-        findIf(v, "pbUp", zmd.pbUp);
-
-        findIf(v, "amplitude", zmd.amplitude);
-        if (SC_UNSTREAMING_FROM_THIS_OR_OLDER(0x2024'06'03))
-        {
-            // amplitude used to be in percent 0...1 and now
-            // is in decibels -36 to 36.
-            auto db = 20 * std::log10(zmd.amplitude);
-            zmd.amplitude = std::clamp(db, -36.f, 36.f);
-        }
-
-        findIf(v, "pan", zmd.pan);
-        findIf(v, "pitchOffset", zmd.pitchOffset);
-        findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
-        findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
-    }
-};
+                 findIf(v, "pan", zmd.pan);
+                 findIf(v, "pitchOffset", zmd.pitchOffset);
+                 findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
+                 findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
+             }));
 
 STREAM_ENUM(engine::Zone::PlayMode, engine::Zone::toStringPlayMode,
             engine::Zone::fromStringPlayMode);
@@ -306,62 +276,55 @@ STREAM_ENUM(engine::Group::ProcRoutingPath, engine::Group::toStringProcRoutingPa
 STREAM_ENUM(engine::Zone::VariantPlaybackMode, engine::Zone::toStringVariantPlaybackMode,
             engine::Zone::fromStringVariantPlaybackMode);
 
-template <> struct scxt_traits<scxt::engine::Zone::AssociatedSample>
-{
-
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::engine::Zone::AssociatedSample &s)
-    {
-        if (s.active)
-        {
-            v = {{"active", s.active},
-                 {"id", s.sampleID},
-                 {"startSample", s.startSample},
-                 {"endSample", s.endSample},
-                 {"startLoop", s.startLoop},
-                 {"endLoop", s.endLoop},
-                 {"playMode", s.playMode},
-                 {"loopActive", s.loopActive},
-                 {"playReverse", s.playReverse},
-                 {"loopMode", s.loopMode},
-                 {"loopDirection", s.loopDirection},
-                 {"loopCountWhenCounted", s.loopCountWhenCounted},
-                 {"loopFade", s.loopFade}};
-        }
-        else
-        {
-            v = {{"active", s.active}};
-        }
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone::AssociatedSample &s)
-    {
-        findOrSet(v, "active", false, s.active);
-        if (s.active)
-        {
-            findIf(v, "id", s.sampleID);
-            findOrSet(v, "startSample", -1, s.startSample);
-            findOrSet(v, "endSample", -1, s.endSample);
-            findOrSet(v, "startLoop", -1, s.startLoop);
-            findOrSet(v, "endLoop", -1, s.endLoop);
-            findOrSet(v, "playMode", engine::Zone::PlayMode::NORMAL, s.playMode);
-            findOrSet(v, "loopActive", false, s.loopActive);
-            findOrSet(v, "playReverse", false, s.playReverse);
-            findOrSet(v, "loopMode", engine::Zone::LoopMode::LOOP_DURING_VOICE, s.loopMode);
-            findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY,
-                      s.loopDirection);
-            findOrSet(v, "loopFade", 0, s.loopFade);
-            findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
-        }
-        else
-        {
-            s = scxt::engine::Zone::AssociatedSample();
-            assert(!s.active);
-        }
-    }
-};
+SC_STREAMDEF(scxt::engine::Zone::AssociatedSample, SC_FROM({
+                 auto &s = from;
+                 if (s.active)
+                 {
+                     v = {{"active", s.active},
+                          {"id", s.sampleID},
+                          {"startSample", s.startSample},
+                          {"endSample", s.endSample},
+                          {"startLoop", s.startLoop},
+                          {"endLoop", s.endLoop},
+                          {"playMode", s.playMode},
+                          {"loopActive", s.loopActive},
+                          {"playReverse", s.playReverse},
+                          {"loopMode", s.loopMode},
+                          {"loopDirection", s.loopDirection},
+                          {"loopCountWhenCounted", s.loopCountWhenCounted},
+                          {"loopFade", s.loopFade}};
+                 }
+                 else
+                 {
+                     v = tao::json::empty_object;
+                 }
+             }),
+             SC_TO({
+                 auto &s = to;
+                 findOrSet(v, "active", false, s.active);
+                 if (s.active)
+                 {
+                     findIf(v, "id", s.sampleID);
+                     findOrSet(v, "startSample", -1, s.startSample);
+                     findOrSet(v, "endSample", -1, s.endSample);
+                     findOrSet(v, "startLoop", -1, s.startLoop);
+                     findOrSet(v, "endLoop", -1, s.endLoop);
+                     findOrSet(v, "playMode", engine::Zone::PlayMode::NORMAL, s.playMode);
+                     findOrSet(v, "loopActive", false, s.loopActive);
+                     findOrSet(v, "playReverse", false, s.playReverse);
+                     findOrSet(v, "loopMode", engine::Zone::LoopMode::LOOP_DURING_VOICE,
+                               s.loopMode);
+                     findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY,
+                               s.loopDirection);
+                     findOrSet(v, "loopFade", 0, s.loopFade);
+                     findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
+                 }
+                 else
+                 {
+                     s = scxt::engine::Zone::AssociatedSample();
+                     assert(!s.active);
+                 }
+             }));
 
 SC_STREAMDEF(scxt::engine::Zone::AssociatedSampleSet, SC_FROM({
                  v = {{"samples", t.samples}, {"variantPlaybackMode", t.variantPlaybackMode}};
@@ -371,151 +334,91 @@ SC_STREAMDEF(scxt::engine::Zone::AssociatedSampleSet, SC_FROM({
                  findIf(v, "variantPlaybackMode", result.variantPlaybackMode);
              }));
 
-template <> struct scxt_traits<scxt::engine::Zone>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::Zone &t)
-    {
-        /*
-        auto rtArray = toIndexedArrayIf<Traits>(t.routingTable, [](const auto &r) {
-            // TODO we really don't need this we should just stream the table
-            return (r.dst != scxt::modulation::vmd_none || r.src != scxt::modulation::vms_none ||
-                    r.depth != 0 || !r.active || r.curve != scxt::modulation::modc_none);
-        });
-         */
+SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
+                 v = {{"sampleData", t.sampleData},     {"mappingData", t.mapping},
+                      {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
+                      {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
+                      {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]}};
+             }),
+             SC_TO({
+                 auto &zone = to;
+                 findIf(v, "sampleData", zone.sampleData);
+                 findIf(v, "mappingData", zone.mapping);
+                 findIf(v, "outputInfo", zone.outputInfo);
+                 fromArrayWithSizeDifference<Traits>(v.at("processorStorage"),
+                                                     zone.processorStorage);
 
-        v = {{"sampleData", t.sampleData},     {"mappingData", t.mapping},
-             {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
-             {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
-             {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]}};
-    }
+                 findIf(v, "routingTable", zone.routingTable);
+                 findIfArray(v, "modulatorStorage", zone.modulatorStorage);
+                 findOrDefault(v, "aegStorage", zone.egStorage[0]);
+                 findOrDefault(v, "eg2Storage", zone.egStorage[1]);
+             }));
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::Zone &zone)
-    {
-        findIf(v, "sampleData", zone.sampleData);
-        findIf(v, "mappingData", zone.mapping);
-        findIf(v, "outputInfo", zone.outputInfo);
-        fromArrayWithSizeDifference<Traits>(v.at("processorStorage"), zone.processorStorage);
+SC_STREAMDEF(scxt::engine::KeyboardRange, SC_FROM({
+                 v = {{"ks", t.keyStart}, {"ke", t.keyEnd}, {"fs", t.fadeStart}, {"fe", t.fadeEnd}};
+             }),
+             SC_TO({
+                 findIf(v, {"ks", "keyStart"}, to.keyStart);
+                 findIf(v, {"ke", "keyEnd"}, to.keyEnd);
+                 findIf(v, {"fs", "fadeStart"}, to.fadeStart);
+                 findIf(v, {"fe", "fadeEnd"}, to.fadeEnd);
+             }));
+SC_STREAMDEF(scxt::engine::VelocityRange, SC_FROM({
+                 v = {{"vs", t.velStart}, {"ve", t.velEnd}, {"fs", t.fadeStart}, {"fe", t.fadeEnd}};
+             }),
+             SC_TO({
+                 findIf(v, {"vs", "velStart"}, to.velStart);
+                 findIf(v, {"ve", "velEnd"}, to.velEnd);
+                 findIf(v, {"fs", "fadeStart"}, to.fadeStart);
+                 findIf(v, {"fe", "fadeEnd"}, to.fadeEnd);
+             }));
 
-        findIf(v, "routingTable", zone.routingTable);
-        findIfArray(v, "modulatorStorage", zone.modulatorStorage);
-        findOrDefault(v, "aegStorage", zone.egStorage[0]);
-        findOrDefault(v, "eg2Storage", zone.egStorage[1]);
-    }
-};
+SC_STREAMDEF(engine::Engine::EngineStatusMessage, SC_FROM({
+                 v = {{"isAudioRunning", t.isAudioRunning},
+                      {"sampleRate", t.sampleRate},
+                      {"runningEnvironment", t.runningEnvironment}};
+             }),
+             SC_TO({
+                 findIf(v, "isAudioRunning", to.isAudioRunning);
+                 findIf(v, "sampleRate", to.sampleRate);
+                 findIf(v, "runningEnvironment", to.runningEnvironment);
+             }));
 
-template <> struct scxt_traits<scxt::engine::KeyboardRange>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::KeyboardRange &t)
-    {
-        v = {{"keyStart", t.keyStart},
-             {"keyEnd", t.keyEnd},
-             {"fadeStart", t.fadeStart},
-             {"fadeEnd", t.fadeEnd}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::KeyboardRange &r)
-    {
-        findIf(v, "keyStart", r.keyStart);
-        findIf(v, "keyEnd", r.keyEnd);
-        findIf(v, "fadeStart", r.fadeStart);
-        findIf(v, "fadeEnd", r.fadeEnd);
-    }
-};
-
-template <> struct scxt_traits<scxt::engine::VelocityRange>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::engine::VelocityRange &t)
-    {
-        v = {{"velStart", t.velStart},
-             {"velEnd", t.velEnd},
-             {"fadeStart", t.fadeStart},
-             {"fadeEnd", t.fadeEnd}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::engine::VelocityRange &r)
-    {
-        findIf(v, "velStart", r.velStart);
-        findIf(v, "velEnd", r.velEnd);
-        findIf(v, "fadeStart", r.fadeStart);
-        findIf(v, "fadeEnd", r.fadeEnd);
-    }
-};
-
-template <> struct scxt_traits<engine::Engine::EngineStatusMessage>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const engine::Engine::EngineStatusMessage &t)
-    {
-        v = {{"isAudioRunning", t.isAudioRunning},
-             {"sampleRate", t.sampleRate},
-             {"runningEnvironment", t.runningEnvironment}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, engine::Engine::EngineStatusMessage &r)
-    {
-        findIf(v, "isAudioRunning", r.isAudioRunning);
-        findIf(v, "sampleRate", r.sampleRate);
-        findIf(v, "runningEnvironment", r.runningEnvironment);
-    }
-};
-
-template <> struct scxt_traits<engine::Bus>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const engine::Bus &t)
-    {
+SC_STREAMDEF(
+    engine::Bus, SC_FROM({
         v = {{"busSendStorage", t.busSendStorage}, {"busEffectStorage", t.busEffectStorage}};
-    }
+    }),
+    SC_TO({
+        findIf(v, "busSendStorage", to.busSendStorage);
+        findIf(v, "busEffectStorage", to.busEffectStorage);
+        to.resetSendState();
+    }));
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, engine::Bus &r)
-    {
-        findIf(v, "busSendStorage", r.busSendStorage);
-        findIf(v, "busEffectStorage", r.busEffectStorage);
-        r.resetSendState();
-    }
-};
+STREAM_ENUM_WITH_DEFAULT(engine::Bus::BusSendStorage::AuxLocation,
+                         engine::Bus::BusSendStorage::AuxLocation::POST_VCA,
+                         engine::Bus::BusSendStorage::toStringAuxLocation,
+                         engine::Bus::BusSendStorage::fromStringAuxLocation)
 
-STREAM_ENUM(engine::Bus::BusSendStorage::AuxLocation,
-            engine::Bus::BusSendStorage::toStringAuxLocation,
-            engine::Bus::BusSendStorage::fromStringAuxLocation)
-
-template <> struct scxt_traits<engine::Bus::BusSendStorage>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const engine::Bus::BusSendStorage &t)
-    {
-        v = {{"supportsSends", t.supportsSends},
-             {"auxLocation", t.auxLocation},
-             {"sendLevels", t.sendLevels},
-             {"level", t.level},
-             {"mute", t.mute},
-             {"solo", t.solo},
-             {"pan", t.pan},
-             {"pluginOutputBus", t.pluginOutputBus}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, engine::Bus::BusSendStorage &r)
-    {
-        findIf(v, "supportsSends", r.supportsSends);
-        findIf(v, "auxLocation", r.auxLocation);
-        findIf(v, "sendLevels", r.sendLevels);
-        findIf(v, "level", r.level);
-        findIf(v, "mute", r.mute);
-        findIf(v, "solo", r.solo);
-        findIf(v, "pan", r.pan);
-        findIf(v, "pluginOutputBus", r.pluginOutputBus);
-    }
-};
+SC_STREAMDEF(engine::Bus::BusSendStorage, SC_FROM({
+                 v = {{"supportsSends", t.supportsSends},
+                      {"auxLocation", t.auxLocation},
+                      {"sendLevels", t.sendLevels},
+                      {"pluginOutputBus", t.pluginOutputBus}};
+                 addUnlessDefault<val_t>(v, "mute", false, t.mute);
+                 addUnlessDefault<val_t>(v, "solo", false, t.solo);
+                 addUnlessDefault<val_t>(v, "level", 1.f, t.level);
+                 addUnlessDefault<val_t>(v, "pan", 0.f, t.pan);
+             }),
+             SC_TO({
+                 findIf(v, "supportsSends", to.supportsSends);
+                 findIf(v, "auxLocation", to.auxLocation);
+                 findIf(v, "sendLevels", to.sendLevels);
+                 findOrSet(v, "level", 1.f, to.level);
+                 findOrSet(v, "mute", false, to.mute);
+                 findOrSet(v, "solo", false, to.solo);
+                 findOrSet(v, "pan", 0.f, to.pan);
+                 findIf(v, "pluginOutputBus", to.pluginOutputBus);
+             }));
 
 SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
                  if (from.type == scxt::engine::AvailableBusEffects::none)
@@ -550,26 +453,18 @@ SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
                  }
              }));
 
-template <> struct scxt_traits<engine::Patch::Busses>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const engine::Patch::Busses &t)
-    {
-        // TODO fixme don't stream as int
+SC_STREAMDEF(
+    engine::Patch::Busses, SC_FROM({
         v = {{"mainBus", t.mainBus}, {"partBusses", t.partBusses}, {"auxBusses", t.auxBusses}};
-    }
+    }),
+    SC_TO({
+        findIf(v, "mainBus", to.mainBus);
+        findIf(v, "partBusses", to.partBusses);
+        findIf(v, "auxBusses", to.auxBusses);
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, engine::Patch::Busses &r)
-    {
-        findIf(v, "mainBus", r.mainBus);
-        findIf(v, "partBusses", r.partBusses);
-        findIf(v, "auxBusses", r.auxBusses);
-
-        r.reconfigureSolo();
-        r.reconfigureOutputBusses();
-    }
-};
+        to.reconfigureSolo();
+        to.reconfigureOutputBusses();
+    }));
 
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H

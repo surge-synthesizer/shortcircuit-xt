@@ -30,12 +30,10 @@
 
 #include "engine/patch.h"
 #include "engine/engine.h"
+#include "configuration.h"
 
 namespace scxt::json
 {
-
-static constexpr uint64_t currentStreamingVersion{0x2024'08'06};
-
 std::string streamPatch(const engine::Patch &p, bool pretty = false);
 std::string streamEngineState(const engine::Engine &e, bool pretty = false);
 void unstreamEngineState(engine::Engine &e, const std::string &jsonData, bool msgPack = false);

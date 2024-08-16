@@ -98,6 +98,11 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
     void onDataChanged()
     {
         labelPluginOutput();
+        for (int i = 0; i < numAux; ++i)
+        {
+            if (auxPrePost[i])
+                resetAuxRoutingGlyph(i);
+        }
         repaint();
     }
 

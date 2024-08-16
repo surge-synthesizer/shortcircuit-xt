@@ -202,7 +202,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
         int16_t pbDown{2}, pbUp{2};
 
-        int16_t exclusiveGroup;
+        int16_t exclusiveGroup{0};
 
         float velocitySens{1.0};
         float amplitude{0.0};   // decibels

@@ -48,6 +48,8 @@ SERIAL_TO_CLIENT(DebugInfoGenerated, s2c_send_debug_info, debugResponse_t, onDeb
 struct DebugActions
 {
     static constexpr const char *pretty_json{"pretty_json"};
+    static constexpr const char *pretty_json_daw{"pretty_json_daw"};
+    static constexpr const char *pretty_json_multi{"pretty_json_multi"};
     static constexpr const char *pretty_json_part{"pretty_json_part"};
 };
 
@@ -62,10 +64,24 @@ inline void dbto_pretty_stream(std::ostream &os, const tao::json::basic_value<Tr
 inline void doDebugAction(const std::string &payload, const engine::Engine &engine,
                           MessageController &cont)
 {
-    if (payload == DebugActions::pretty_json)
+    if (payload == DebugActions::pretty_json || payload == DebugActions::pretty_json_daw ||
+        payload == DebugActions::pretty_json_multi)
     {
+        auto sr = scxt::engine::Engine::StreamReason::IN_PROCESS;
+        if (payload == DebugActions::pretty_json_multi)
+        {
+            sr = engine::Engine::FOR_MULTI;
+        }
+        if (payload == DebugActions::pretty_json_daw)
+        {
+            sr = engine::Engine::FOR_DAW;
+        }
+        auto g = scxt::engine::Engine::StreamGuard(sr);
         auto res = scxt::json::streamEngineState(engine, true);
         SCLOG(res);
+
+        auto nopres = scxt::json::streamEngineState(engine, false);
+        SCLOG("Non-pretty engine state size " << nopres.size());
     }
     else if (payload == DebugActions::pretty_json_part)
     {
