@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_JSON_SCXT_TRAITS_H
 #define SCXT_SRC_JSON_SCXT_TRAITS_H
 
+#include <initializer_list>
 #include "tao/json/traits.hpp"
 
 namespace scxt::json
@@ -45,6 +46,21 @@ template <typename V, typename R> bool findIf(V &v, const std::string &key, R &r
     {
         vs->to(r);
         return true;
+    }
+    return false;
+}
+
+template <typename V, typename R>
+bool findIf(V &v, const std::initializer_list<std::string> &keys, R &r)
+{
+    for (const auto &key : keys)
+    {
+        auto vs = v.find(key);
+        if (vs)
+        {
+            vs->to(r);
+            return true;
+        }
     }
     return false;
 }
@@ -73,6 +89,13 @@ template <typename V, typename D, typename R>
 void findOrSet(V &v, const std::string &key, const D &d, R &r)
 {
     if (!findIf(v, key, r))
+        r = d;
+}
+
+template <typename V, typename D, typename R>
+void findOrSet(V &v, const std::initializer_list<std::string> &keys, const D &d, R &r)
+{
+    if (!findIf(v, keys, r))
         r = d;
 }
 
@@ -105,6 +128,7 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
         }                                                                                          \
     };
 
+#define SC_INSERT(x, a, b) x.insert({{a, tao::json::basic_value<Traits>(b)}});
 #define SC_FROM(...) __VA_ARGS__
 #define SC_TO(...) __VA_ARGS__
 #define SC_STREAMDEF(type, assignBlock, toBlock)                                                   \
