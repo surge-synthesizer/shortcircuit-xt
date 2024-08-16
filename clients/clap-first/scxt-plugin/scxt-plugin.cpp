@@ -111,6 +111,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
     engine->getSampleManager()->purgeUnreferencedSamples();
     try
     {
+        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_DAW);
         auto xml = scxt::json::streamEngineState(*engine);
 
         auto c = xml.c_str();

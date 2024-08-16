@@ -90,6 +90,7 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
 
     try
     {
+        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_MULTI);
         auto msg = tao::json::msgpack::to_string(json::scxt_value(e));
 
         auto f = std::make_unique<RIFF::File>('SCXT');

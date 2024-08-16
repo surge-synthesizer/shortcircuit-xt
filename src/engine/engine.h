@@ -333,7 +333,56 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * to do this, but the easiest is to have a thread local static set up in the unstream
      */
     static thread_local bool isFullEngineUnstream;
+    enum StreamReason
+    {
+        IN_PROCESS,
+        FOR_MULTI,
+        FOR_DAW
+    };
+    static thread_local StreamReason streamReason;
     static thread_local uint64_t fullEngineUnstreamStreamingVersion;
+    struct UnstreamGuard
+    {
+        bool pIs{false};
+        uint64_t pVer{0};
+        explicit UnstreamGuard(uint64_t sv)
+        {
+            SCLOG("Unstreaming engine with streaming version = " << scxt::humanReadableVersion(sv));
+            pIs = engine::Engine::isFullEngineUnstream;
+            pVer = engine::Engine::fullEngineUnstreamStreamingVersion;
+            engine::Engine::isFullEngineUnstream = true;
+            engine::Engine::fullEngineUnstreamStreamingVersion = sv;
+        }
+        ~UnstreamGuard()
+        {
+            engine::Engine::isFullEngineUnstream = pIs;
+            engine::Engine::fullEngineUnstreamStreamingVersion = pVer;
+        }
+    };
+    struct StreamGuard
+    {
+        StreamReason pIs{IN_PROCESS};
+        explicit StreamGuard(StreamReason sr)
+        {
+            switch (sr)
+            {
+            case IN_PROCESS:
+                SCLOG("Engine Stream Guard - In Process");
+                break;
+
+            case FOR_DAW:
+                SCLOG("Engine Stream Guard - For DAW");
+                break;
+
+            case FOR_MULTI:
+                SCLOG("Engine Stream Guard - For Multi");
+                break;
+            }
+            pIs = engine::Engine::streamReason;
+            engine::Engine::streamReason = sr;
+        }
+        ~StreamGuard() { engine::Engine::streamReason = pIs; }
+    };
 
     /**
      * The VoiceDisplayState structure is updated at some relatively low (like 30hz)

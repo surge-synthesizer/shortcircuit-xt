@@ -95,7 +95,17 @@ void SCXTEditor::showMainMenu()
     auto dp = juce::PopupMenu();
     dp.addSectionHeader("Developer");
     dp.addSeparator();
-    dp.addItem("Pretty JSON", [w = juce::Component::SafePointer(this)]() {
+    dp.addItem("Pretty JSON (DAW)", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json_daw});
+    });
+    dp.addItem("Pretty JSON (MULTI)", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json_multi});
+    });
+    dp.addItem("Pretty JSON (PROCESS)", [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
         w->sendToSerialization(cmsg::RequestDebugAction{cmsg::DebugActions::pretty_json});

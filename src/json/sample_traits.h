@@ -35,104 +35,110 @@
 #include "stream.h"
 
 #include "sample/sample_manager.h"
+#include "browser/browser.h"
 #include "scxt_traits.h"
 
 namespace scxt::json
 {
-// TODO - REPLACE THIS with an Enum Stream fn
-template <> struct scxt_traits<scxt::sample::Sample::SourceType>
-{
-    static constexpr const char *key = "sourceType";
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::sample::Sample::SourceType &e)
-    {
-        switch (e)
-        {
-        case sample::Sample::WAV_FILE:
-            v = {{key, "wav_file"}};
-            break;
-        case sample::Sample::FLAC_FILE:
-            v = {{key, "flac_file"}};
-            break;
-        case sample::Sample::MP3_FILE:
-            v = {{key, "mp3_file"}};
-            break;
-        case sample::Sample::SF2_FILE:
-            v = {{key, "sf2_file"}};
-            break;
-        case sample::Sample::AIFF_FILE:
-            v = {{key, "aiff_file"}};
-            break;
-        case sample::Sample::MULTISAMPLE_FILE:
-            v = {{key, "multisample_file"}};
-            break;
-        }
-    }
+// This was written before SC_STREAM_ENUM and i didn't want to
+// break streaming at the ALPHA point which is why it is a bit odd.
+SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
+                 static constexpr const char *key = "sourceType";
+                 switch (from)
+                 {
+                 case sample::Sample::WAV_FILE:
+                     v = "wav";
+                     break;
+                 case sample::Sample::FLAC_FILE:
+                     v = "flac";
+                     break;
+                 case sample::Sample::MP3_FILE:
+                     v = "mp3";
+                     break;
+                 case sample::Sample::SF2_FILE:
+                     v = "sf2";
+                     break;
+                 case sample::Sample::AIFF_FILE:
+                     v = "aiff";
+                     break;
+                 case sample::Sample::MULTISAMPLE_FILE:
+                     v = "multisample";
+                     break;
+                 }
+             }),
+             SC_TO({
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'16))
+                 {
+                     static constexpr const char *key = "sourceType";
+                     std::string k{};
+                     findIf(v, key, k);
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::sample::Sample::SourceType &r)
-    {
-        std::string k{};
-        findIf(v, key, k);
+                     if (k == "wav_file")
+                         to = sample::Sample::WAV_FILE;
+                     if (k == "sf2_file")
+                         to = sample::Sample::SF2_FILE;
+                     if (k == "flac_file")
+                         to = sample::Sample::FLAC_FILE;
+                     if (k == "mp3_file")
+                         to = sample::Sample::MP3_FILE;
+                     if (k == "aiff_file")
+                         to = sample::Sample::AIFF_FILE;
+                     if (k == "multisample_file")
+                         to = sample::Sample::MULTISAMPLE_FILE;
+                 }
+                 else
+                 {
+                     if (!v.is_string())
+                     {
+                         throw std::logic_error("Unstreamed non-string");
+                     }
+                     auto k = v.get_string();
+                     if (k == "wav")
+                         to = sample::Sample::WAV_FILE;
+                     if (k == "sf2")
+                         to = sample::Sample::SF2_FILE;
+                     if (k == "flac")
+                         to = sample::Sample::FLAC_FILE;
+                     if (k == "mp3")
+                         to = sample::Sample::MP3_FILE;
+                     if (k == "aiff")
+                         to = sample::Sample::AIFF_FILE;
+                     if (k == "multisample")
+                         to = sample::Sample::MULTISAMPLE_FILE;
+                 }
 
-        if (k == "wav_file")
-            r = sample::Sample::WAV_FILE;
-        if (k == "sf2_file")
-            r = sample::Sample::SF2_FILE;
-        if (k == "flac_file")
-            r = sample::Sample::FLAC_FILE;
-        if (k == "mp3_file")
-            r = sample::Sample::MP3_FILE;
-        if (k == "aiff_file")
-            r = sample::Sample::AIFF_FILE;
-        if (k == "multisample_file")
-            r = sample::Sample::MULTISAMPLE_FILE;
+                 return;
+             }));
 
-        return;
-    }
-};
+SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
+                 v = {{"type", from.type}, {"path", from.path.u8string()}, {"md5sum", from.md5sum}};
+                 if (from.type == sample::Sample::SF2_FILE ||
+                     from.type == sample::Sample::MULTISAMPLE_FILE)
+                 {
+                     addToObject<val_t>(v, "preset", from.preset);
+                     addToObject<val_t>(v, "instrument", from.instrument);
+                     addToObject<val_t>(v, "region", from.region);
+                 }
+             }),
+             SC_TO({
+                 findOrSet(v, "type", sample::Sample::WAV_FILE, to.type);
+                 std::string p;
+                 findIf(v, "path", p);
+                 to.path = fs::path{p};
+                 findIf(v, "md5sum", to.md5sum);
+                 findOrSet(v, "preset", 0, to.preset); // 0 here since we forgot to stream for a bit
+                 findOrSet(v, "instrument", -1, to.instrument);
+                 findOrSet(v, "region", -1, to.region);
+             }));
 
-template <> struct scxt_traits<sample::Sample::SampleFileAddress>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v,
-                       const scxt::sample::Sample::SampleFileAddress &f)
-    {
-        v = {{"type", f.type},     {"path", f.path.u8string()},  {"md5sum", f.md5sum},
-             {"preset", f.preset}, {"instrument", f.instrument}, {"region", f.region}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v,
-                   scxt::sample::Sample::SampleFileAddress &f)
-    {
-        findOrSet(v, "type", sample::Sample::WAV_FILE, f.type);
-        std::string p;
-        findIf(v, "path", p);
-        f.path = fs::path{p};
-        findIf(v, "md5sum", f.md5sum);
-        findOrSet(v, "preset", 0, f.preset); // 0 here since we forgot to stream for a bit
-        findOrSet(v, "instrument", -1, f.instrument);
-        findOrSet(v, "region", -1, f.region);
-    }
-};
-template <> struct scxt_traits<scxt::sample::SampleManager>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const scxt::sample::SampleManager &e)
-    {
-        // TODO: Probably stream samples better than this
-        v = {{"sampleAddresses", e.getSampleAddressesAndIDs()}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, scxt::sample::SampleManager &mgr)
-    {
-        mgr.reset();
-        sample::SampleManager::sampleAddressesAndIds_t res;
-        findIf(v, "sampleAddresses", res);
-        mgr.restoreFromSampleAddressesAndIDs(res);
-    }
-};
+SC_STREAMDEF(scxt::sample::SampleManager, SC_FROM({
+                 v = {{"sampleAddresses", from.getSampleAddressesAndIDs()}};
+             }),
+             SC_TO({
+                 to.reset();
+                 sample::SampleManager::sampleAddressesAndIds_t res;
+                 findIf(v, "sampleAddresses", res);
+                 to.restoreFromSampleAddressesAndIDs(res);
+             }));
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SAMPLE_TRAITS_H

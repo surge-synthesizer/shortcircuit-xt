@@ -42,99 +42,79 @@
 namespace scxt::json
 {
 
-template <> struct scxt_traits<scxt::selection::SelectionManager::SelectActionContents>
-{
-    typedef scxt::selection::SelectionManager::SelectActionContents za_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const za_t &e)
-    {
-        v = {{"part", e.part},
-             {"group", e.group},
-             {"zone", e.zone},
-             {"selecting", e.selecting},
-             {"distinct", e.distinct},
-             {"selectingAsLead", e.selectingAsLead},
-             {"forZone", e.forZone},
-             {"isContiguous", e.isContiguous},
-             {"contiguousFrom", e.contiguousFrom}};
-    }
+SC_STREAMDEF(scxt::selection::SelectionManager::SelectActionContents, SC_FROM({
+                 auto &e = from;
+                 assert(SC_STREAMING_FOR_IN_PROCESS);
+                 v = {{"p", e.part},      {"g", e.group},         {"z", e.zone},
+                      {"s", e.selecting}, {"d", e.distinct},      {"sl", e.selectingAsLead},
+                      {"fz", e.forZone},  {"ic", e.isContiguous}, {"cf", e.contiguousFrom}};
+             }),
+             SC_TO({
+                 auto &z = to;
+                 findIf(v, "p", z.part);
+                 findIf(v, "g", z.group);
+                 findIf(v, "z", z.zone);
+                 findIf(v, "s", z.selecting);
+                 findIf(v, "d", z.distinct);
+                 findIf(v, "sl", z.selectingAsLead);
+                 findIf(v, "fz", z.forZone);
+                 findIf(v, "ic", z.isContiguous);
+                 findIf(v, "cf", z.contiguousFrom);
+             }));
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, za_t &z)
-    {
-        findIf(v, "part", z.part);
-        findIf(v, "group", z.group);
-        findIf(v, "zone", z.zone);
-        findIf(v, "selecting", z.selecting);
-        findIf(v, "distinct", z.distinct);
-        findIf(v, "selectingAsLead", z.selectingAsLead);
-        findIf(v, "forZone", z.forZone);
-        findIf(v, "isContiguous", z.isContiguous);
-        findIf(v, "contiguousFrom", z.contiguousFrom);
-    }
-};
+SC_STREAMDEF(scxt::selection::SelectionManager::ZoneAddress, SC_FROM({
+                 if (t.part == -1 && t.group == -1 && t.zone == -1)
+                 {
+                     v = tao::json::empty_object;
+                 }
+                 else
+                 {
+                     v = {{"p", t.part}, {"g", t.group}, {"z", t.zone}};
+                 }
+             }),
+             SC_TO({
+                 findOrSet(v, {"p", "part"}, -1, result.part);
+                 findOrSet(v, {"g", "group"}, -1, result.group);
+                 findOrSet(v, {"z", "zone"}, -1, result.zone);
+             }));
 
-template <> struct scxt_traits<scxt::selection::SelectionManager::ZoneAddress>
-{
-    typedef scxt::selection::SelectionManager::ZoneAddress za_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const za_t &e)
-    {
-        v = {{"part", e.part}, {"group", e.group}, {"zone", e.zone}};
-    }
+SC_STREAMDEF(selection::SelectionManager, SC_FROM({
+                 auto &e = from;
+                 v = {{"zones", e.allSelectedZones},
+                      {"leadZone", e.leadZone},
+                      {"groups", e.allSelectedGroups},
+                      {"tabs", e.otherTabSelection},
+                      {"selectedPart", e.selectedPart}};
+             }),
+             SC_TO({
+                 auto &z = to;
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'07'24))
+                 {
+                     z.selectedPart = 0;
+                     findIf(v, "tabs", z.otherTabSelection);
+                     findIf(v, "zones", z.allSelectedZones[0]);
+                     findIf(v, "groups", z.allSelectedGroups[0]);
+                     findIf(v, "leadZone", z.leadZone[0]);
+                 }
+                 else
+                 {
+                     findIf(v, "tabs", z.otherTabSelection);
+                     findIf(v, "zones", z.allSelectedZones);
+                     findIf(v, "groups", z.allSelectedGroups);
+                     findIf(v, "leadZone", z.leadZone);
+                     findIf(v, "selectedPart", z.selectedPart);
+                 }
 
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, za_t &z)
-    {
-        findIf(v, "part", z.part);
-        findIf(v, "group", z.group);
-        findIf(v, "zone", z.zone);
-    }
-};
+                 selection::SelectionManager::ZoneAddress za;
 
-template <> struct scxt_traits<selection::SelectionManager>
-{
-    typedef selection::SelectionManager sm_t;
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const sm_t &e)
-    {
-        v = {{"zones", e.allSelectedZones},
-             {"leadZone", e.leadZone},
-             {"groups", e.allSelectedGroups},
-             {"tabs", e.otherTabSelection},
-             {"selectedPart", e.selectedPart}};
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, sm_t &z)
-    {
-        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'07'24))
-        {
-            z.selectedPart = 0;
-            findIf(v, "tabs", z.otherTabSelection);
-            findIf(v, "zones", z.allSelectedZones[0]);
-            findIf(v, "groups", z.allSelectedGroups[0]);
-            findIf(v, "leadZone", z.leadZone[0]);
-        }
-        else
-        {
-            findIf(v, "tabs", z.otherTabSelection);
-            findIf(v, "zones", z.allSelectedZones);
-            findIf(v, "groups", z.allSelectedGroups);
-            findIf(v, "leadZone", z.leadZone);
-            findIf(v, "selectedPart", z.selectedPart);
-        }
-
-        selection::SelectionManager::ZoneAddress za;
-
-        if (!z.allSelectedZones[z.selectedPart].empty())
-        {
-            selection::SelectionManager::SelectActionContents sac{z.leadZone[z.selectedPart]};
-            sac.distinct = false;
-            z.selectAction(sac);
-        }
-    }
-};
+                 if (!z.allSelectedZones[z.selectedPart].empty())
+                 {
+                     selection::SelectionManager::SelectActionContents sac{
+                         z.leadZone[z.selectedPart]};
+                     sac.distinct = false;
+                     z.selectAction(sac);
+                 }
+             }));
 } // namespace scxt::json
 
 #endif // SHORTCIRCUIT_SELECTION_TRAITS_H

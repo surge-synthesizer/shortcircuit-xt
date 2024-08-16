@@ -318,6 +318,7 @@ void SCXTProcessor::getStateInformation(juce::MemoryBlock &destData)
     engine->getSampleManager()->purgeUnreferencedSamples();
     try
     {
+        auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_DAW);
         auto xml = scxt::json::streamEngineState(*engine);
         SCLOG("Streaming State Information: " << xml.size() << " bytes");
         destData.replaceAll(xml.c_str(), xml.size() + 1);

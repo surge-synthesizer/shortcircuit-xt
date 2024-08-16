@@ -117,6 +117,7 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
         engine->getSampleManager()->purgeUnreferencedSamples();
         try
         {
+            auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_DAW);
             auto engineXml = scxt::json::streamEngineState(*engine);
             SCLOG("Streaming State Information: " << engineXml.size() << " bytes");
             properties->setValue("engineState", juce::String(engineXml));

@@ -148,6 +148,7 @@ Engine::~Engine()
 }
 
 thread_local bool Engine::isFullEngineUnstream{false};
+thread_local Engine::StreamReason Engine::streamReason{StreamReason::IN_PROCESS};
 thread_local uint64_t Engine::fullEngineUnstreamStreamingVersion{0};
 
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)

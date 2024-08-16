@@ -104,6 +104,18 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
     findOrSet(v, key, R{}, r);
 }
 
+template <typename T, typename V, typename R>
+void addToObject(V &v, const std::string &key, const R &val)
+{
+    v.insert({{key, T(val)}});
+}
+template <typename T, typename V, typename R>
+void addUnlessDefault(V &v, const std::string &key, const R &defVal, const R &val)
+{
+    if (val != defVal)
+        v.insert({{key, T(val)}});
+}
+
 #define STREAM_ENUM(E, toS, fromS)                                                                 \
     template <> struct scxt_traits<E>                                                              \
     {                                                                                              \
@@ -128,7 +140,44 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
         }                                                                                          \
     };
 
-#define SC_INSERT(x, a, b) x.insert({{a, tao::json::basic_value<Traits>(b)}});
+/* Be careful using this, It applies to all streams in all context
+ * so only use it for tightly managed enums which are used in one place
+ * and so on
+ */
+#define STREAM_ENUM_WITH_DEFAULT(E, d, toS, fromS)                                                 \
+    template <> struct scxt_traits<E>                                                              \
+    {                                                                                              \
+        template <template <typename...> class Traits>                                             \
+        static void assign(tao::json::basic_value<Traits> &v, const E &s)                          \
+        {                                                                                          \
+            if (s == (d))                                                                          \
+            {                                                                                      \
+                v = tao::json::empty_object;                                                       \
+            }                                                                                      \
+            else                                                                                   \
+            {                                                                                      \
+                v = {{"e", toS(s)}};                                                               \
+            };                                                                                     \
+        }                                                                                          \
+        template <template <typename...> class Traits>                                             \
+        static void to(const tao::json::basic_value<Traits> &v, E &r)                              \
+        {                                                                                          \
+            std::string s;                                                                         \
+            if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'04))                                        \
+            {                                                                                      \
+                findIf(v, #E, s);                                                                  \
+            }                                                                                      \
+            else                                                                                   \
+            {                                                                                      \
+                if (!findIf(v, "e", s))                                                            \
+                {                                                                                  \
+                    s = toS(d);                                                                    \
+                }                                                                                  \
+            }                                                                                      \
+            r = fromS(s);                                                                          \
+        }                                                                                          \
+    };
+
 #define SC_FROM(...) __VA_ARGS__
 #define SC_TO(...) __VA_ARGS__
 #define SC_STREAMDEF(type, assignBlock, toBlock)                                                   \
@@ -138,6 +187,7 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
         template <template <typename...> class Traits>                                             \
         static void assign(tao::json::basic_value<Traits> &v, const rt_t &from)                    \
         {                                                                                          \
+            using val_t = tao::json::basic_value<Traits>;                                          \
             auto &t = from;                                                                        \
             assignBlock                                                                            \
         }                                                                                          \
@@ -154,6 +204,14 @@ template <typename V, typename R> void findOrDefault(V &v, const std::string &ke
 
 #define SC_UNSTREAMING_FROM_PRIOR_TO(x)                                                            \
     engine::Engine::isFullEngineUnstream &&engine::Engine::fullEngineUnstreamStreamingVersion < x
+
+#define SC_STREAMING_FOR_IN_PROCESS                                                                \
+    (engine::Engine::streamReason == engine::Engine::StreamReason::IN_PROCESS)
+#define SC_STREAMING_FOR_DAW (engine::Engine::streamReason == engine::Engine::StreamReason::FOR_DAW)
+#define SC_STREAMING_FOR_MULTI                                                                     \
+    (engine::Engine::streamReason == engine::Engine::StreamReason::FOR_MULTI)
+
+#define SC_STREAMING_FOR_DAW_OR_MULTI (SC_STREAMING_FOR_DAW || SC_STREAMING_FOR_MULTI)
 
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SCXT_TRAITS_H

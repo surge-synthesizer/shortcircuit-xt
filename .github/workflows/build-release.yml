@@ -124,8 +124,8 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_SHORTCIRCUIT_WEBHOOK }}
           tag: Nightly
-          title: "A New ShortCircuit Nightly is Available"
-          subtitle: "Still pre-alpha! Use care!"
+          title: "A New Shortcircuit XT Nightly is Available"
+          subtitle: "Shortcircuit XT is alpha software. Please use care."
 
 
   publish-scxt-release:
