@@ -43,6 +43,8 @@ struct Macro
 {
     float value{0.f}; // -1 .. 1
 
+    int16_t part{-1}, index{-1};
+
     bool isBipolar{false}; // The value is expected in range -1..1
     bool isStepped{false}; // The value has discrete stepped value
     size_t stepCount{1};   // how many steps between min and max.
@@ -100,17 +102,17 @@ struct Macro
     }
 
     static std::string defaultNameFor(int index) { return "Macro " + std::to_string(index + 1); }
-    std::string pluginParameterNameFor(int part, int index) const
+    std::string pluginParameterNameFor(int p, int i) const
     {
-        auto dn = defaultNameFor(index);
+        auto dn = defaultNameFor(i);
         if (name == dn)
         {
-            return std::string("P" + std::to_string(part + 1) + " " + name);
+            return std::string("P" + std::to_string(p + 1) + " " + name);
         }
         else
         {
-            return std::string("P" + std::to_string(part + 1) + " M" + std::to_string(index + 1) +
-                               " - " + name);
+            return std::string("P" + std::to_string(p + 1) + " M" + std::to_string(i + 1) + " - " +
+                               name);
         }
     }
 
@@ -129,9 +131,9 @@ struct Macro
     }
     static int macroIDToPart(uint32_t id) { return (id - firstMacroParam) / macroParamPartStride; }
     static int macroIDToIndex(uint32_t id) { return (id - firstMacroParam) % macroParamPartStride; }
-    static uint32_t partIndexToMacroID(uint32_t part, uint32_t index)
+    static uint32_t partIndexToMacroID(uint32_t pt, uint32_t id)
     {
-        return firstMacroParam + part * macroParamPartStride + index;
+        return firstMacroParam + pt * macroParamPartStride + id;
     }
 };
 } // namespace scxt::engine

@@ -123,17 +123,25 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
              }))
 
 SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
-                 v = {
-                     {"v", t.value},      {"bp", t.isBipolar}, {"st", t.isStepped},
-                     {"sc", t.stepCount}, {"nm", t.name},
-                 };
+                 v = {{"p", t.part}, {"i", t.index}, {"v", t.value}};
+
+                 if (t.isBipolar)
+                     SC_INSERT(v, "bp", t.isBipolar);
+                 if (t.isStepped)
+                     SC_INSERT(v, "st", t.isStepped);
+                 if (t.stepCount != 1)
+                     SC_INSERT(v, "sc", t.stepCount);
+                 if (t.name != scxt::engine::Macro::defaultNameFor(t.index))
+                     SC_INSERT(v, "nm", t.name);
              }),
              SC_TO({
                  findIf(v, "v", result.value);
-                 findIf(v, "bp", result.isBipolar);
-                 findIf(v, "st", result.isStepped);
-                 findIf(v, "sc", result.stepCount);
-                 findIf(v, "nm", result.name);
+                 findIf(v, "i", result.index);
+                 findIf(v, "p", result.part);
+                 findOrSet(v, "bp", false, result.isBipolar);
+                 findOrSet(v, "st", false, result.isStepped);
+                 findOrSet(v, "sc", 1, result.stepCount);
+                 findOrSet(v, "nm", scxt::engine::Macro::defaultNameFor(result.index), result.name);
              }));
 
 SC_STREAMDEF(
@@ -509,45 +517,38 @@ template <> struct scxt_traits<engine::Bus::BusSendStorage>
     }
 };
 
-template <> struct scxt_traits<engine::BusEffectStorage>
-{
-    template <template <typename...> class Traits>
-    static void assign(tao::json::basic_value<Traits> &v, const engine::BusEffectStorage &t)
-    {
-        if (t.type == scxt::engine::AvailableBusEffects::none)
-        {
-            v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)}};
-        }
-        else
-        {
-            v = {{"type", scxt::engine::toStringAvailableBusEffects(t.type)},
-                 {"isActive", t.isActive},
-                 {"params", t.params},
-                 {"deact", t.deact},
-                 {"temposync", t.isTemposync}};
-        }
-    }
-
-    template <template <typename...> class Traits>
-    static void to(const tao::json::basic_value<Traits> &v, engine::BusEffectStorage &r)
-    {
-        std::string tp;
-        findIf(v, "type", tp);
-        r.type = scxt::engine::fromStringAvailableBusEffects(tp);
-        if (r.type == engine::AvailableBusEffects::none)
-        {
-            r = engine::BusEffectStorage();
-            r.type = engine::AvailableBusEffects::none;
-        }
-        else
-        {
-            findIf(v, "params", r.params);
-            findOrSet(v, "isActive", true, r.isActive);
-            findIf(v, "deact", r.deact);
-            findIf(v, "temposync", r.isTemposync);
-        }
-    }
-};
+SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
+                 if (from.type == scxt::engine::AvailableBusEffects::none)
+                 {
+                     v = tao::json::empty_object;
+                 }
+                 else
+                 {
+                     v = {{"t", scxt::engine::toStringAvailableBusEffects(from.type)},
+                          {"isActive", from.isActive},
+                          {"p", from.params},
+                          {"deact", from.deact},
+                          {"temposync", from.isTemposync}};
+                 }
+             }),
+             SC_TO({
+                 std::string tp{
+                     scxt::engine::toStringAvailableBusEffects(engine::AvailableBusEffects::none)};
+                 findIf(v, {"t", "type"}, tp);
+                 to.type = scxt::engine::fromStringAvailableBusEffects(tp);
+                 if (to.type == engine::AvailableBusEffects::none)
+                 {
+                     to = engine::BusEffectStorage();
+                     to.type = engine::AvailableBusEffects::none;
+                 }
+                 else
+                 {
+                     findIf(v, {"p", "params"}, to.params);
+                     findOrSet(v, "isActive", true, to.isActive);
+                     findIf(v, "deact", to.deact);
+                     findIf(v, "temposync", to.isTemposync);
+                 }
+             }));
 
 template <> struct scxt_traits<engine::Patch::Busses>
 {

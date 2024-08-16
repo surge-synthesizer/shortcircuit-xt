@@ -53,6 +53,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         int idx{0};
         for (auto &m : macros)
         {
+            m.index = idx;
+            m.part = partNumber;
             m.name = Macro::defaultNameFor(idx);
             idx++;
         }
