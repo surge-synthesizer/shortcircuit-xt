@@ -111,6 +111,8 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void doSaveMulti();
     void doLoadMulti();
 
+    void showMultiSelectionMenu();
+
     std::unique_ptr<juce::FileChooser> fileChooser;
 };
 } // namespace scxt::ui

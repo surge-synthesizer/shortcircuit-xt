@@ -153,7 +153,10 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 
     multiMenuButton = std::make_unique<jcmp::MenuButton>();
     multiMenuButton->setLabel("This is my Super Awesome Multi");
-    multiMenuButton->setOnCallback(comingSoon);
+    multiMenuButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showMultiSelectionMenu();
+    });
     addAndMakeVisible(*multiMenuButton);
 
     cpuLabel = std::make_unique<jcmp::Label>();
@@ -310,6 +313,27 @@ void HeaderRegion::showSaveMenu()
         if (w)
             w->doLoadMulti();
     });
+    p.addSeparator();
+    p.addItem("Reset Engine To Blank", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->sendToSerialization(cmsg::ResetEngine(true));
+        }
+    });
     p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
+}
+
+void HeaderRegion::showMultiSelectionMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Multis - Coming Soon");
+    p.addSeparator();
+    p.addItem("Reset Engine To Blank", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->sendToSerialization(cmsg::ResetEngine(true));
+        }
+    });
+    p.showMenuAsync(editor->defaultPopupMenuOptions(multiMenuButton.get()));
 }
 } // namespace scxt::ui

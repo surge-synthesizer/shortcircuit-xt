@@ -138,8 +138,6 @@ inline void addBlankZone(const addBlankZonePayload_t &payload, engine::Engine &e
                          MessageController &cont)
 {
     auto [part, group, ks, ke, vs, ve] = payload;
-    SCLOG("Adding to part/group " << part << " " << group);
-    SCLOG("Would add zone at " << ks << " " << ke << " " << vs << " " << ve);
     engine.createEmptyZone({ks, ke}, {vs, ve});
 }
 
