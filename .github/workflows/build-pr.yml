@@ -81,5 +81,5 @@ jobs:
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
           cmakeArgs: -DCMAKE_BUILD_TYPE=Debug -GNinja
-          target: shortcircuit-products
+          target: scxt_plugin_Standalone
 
