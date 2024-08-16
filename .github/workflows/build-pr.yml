@@ -13,9 +13,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: "windows msvc"
+          - name: "windows msvc (core subset)"
             os: windows-latest
-            target: scxt_clapfirst_Standalone
+            target: scxt-core
             cmakeConfig: -A x64
             runTests: false
 
@@ -27,13 +27,13 @@ jobs:
 
           - name: "mac standalone"
             os: macos-latest
-            target: scxt_clapfirst_Standalone
+            target: scxt_clapfirst_AU
             cmakeConfig: -GNinja
             runTests: true
 
           - name: "ubuntu standalone"
             os: ubuntu-latest
-            target: scxt_clapfirst_Standalone
+            target: scxt_clapfirst_VST3
             cmakeConfig: -GNinja
             runTests: true
 
