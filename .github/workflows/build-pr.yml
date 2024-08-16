@@ -81,5 +81,5 @@ jobs:
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
           cmakeArgs: -DCMAKE_BUILD_TYPE=Debug -GNinja
-          target: scxt_plugin_Standalone
+          target: scxt_clapfirst_Standalone
 
