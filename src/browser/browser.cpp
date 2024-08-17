@@ -50,6 +50,7 @@ Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp, cons
         return {};
     };
     patchIODirectory = create("Patches");
+    themeDirectory = create("Themes");
 }
 
 std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView() const

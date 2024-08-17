@@ -63,15 +63,7 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     setStyle(sst::jucegui::style::StyleSheet::getBuiltInStyleSheet(
         sst::jucegui::style::StyleSheet::EMPTY));
 
-    auto cmid = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::colormapId,
-                                                     theme::ColorMap::WIREFRAME);
-    auto cm = theme::ColorMap::createColorMap((theme::ColorMap::BuiltInColorMaps)cmid);
-
-    auto showK =
-        defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::showKnobs, false);
-    cm->hasKnobs = showK;
-
-    themeApplier.recolorStylesheetWith(std::move(cm), style());
+    resetColorsFromUserPreferences();
 
     // TODO what happens with two windows open when I go away?
     lnf = std::make_unique<SCXTJuceLookAndFeel>();
@@ -376,9 +368,51 @@ void SCXTEditor::configureHasDiscreteMenuBuilder(
 
 int16_t SCXTEditor::getSelectedPart() const { return selectedPart; }
 
-juce::Colour SCXTEditor::themeColor(scxt::ui::theme::ColorMap::Colors c, float alpha)
+juce::Colour SCXTEditor::themeColor(scxt::ui::theme::ColorMap::Colors c, float alpha) const
 {
     return themeApplier.colors->get(c, alpha);
+}
+
+void SCXTEditor::resetColorsFromUserPreferences()
+{
+    auto cmid = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::colormapId,
+                                                     theme::ColorMap::WIREFRAME);
+    std::unique_ptr<theme::ColorMap> cm;
+    if (cmid == theme::ColorMap::FILE_COLORMAP_ID)
+    {
+        auto pt = defaultsProvider.getUserDefaultValue(
+            infrastructure::DefaultKeys::colormapPathIfFile, "");
+        try
+        {
+            auto path = fs::path{pt};
+            if (fs::exists(path))
+            {
+                std::ifstream t(path);
+                std::stringstream buffer;
+                buffer << t.rdbuf();
+                cm = theme::ColorMap::jsonToColormap(buffer.str());
+            }
+        }
+        catch (fs::filesystem_error &e)
+        {
+        }
+        if (!cm)
+        {
+            SCLOG("Attempted to load colormap from missing colormap file " << pt);
+            cm = theme::ColorMap::createColorMap(theme::ColorMap::WIREFRAME);
+        }
+    }
+    else
+    {
+        cm = theme::ColorMap::createColorMap((theme::ColorMap::BuiltInColorMaps)cmid);
+    }
+
+    assert(cm);
+    auto showK =
+        defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::showKnobs, false);
+    cm->hasKnobs = showK;
+
+    themeApplier.recolorStylesheetWith(std::move(cm), style());
 }
 
 } // namespace scxt::ui

@@ -30,7 +30,7 @@
 #include <utils.h>
 
 #include <filesystem/import.h>
-#include "JSONLayoutConsumer.h"
+#include "JSONAssetSupport.h"
 
 #include <cmrc/cmrc.hpp>
 
@@ -38,7 +38,7 @@ CMRC_DECLARE(scxtui_json_layouts);
 
 namespace scxt::ui::connectors
 {
-std::string JSONLayoutLibrary::jsonForComponent(const std::string &nm)
+std::string JSONAssetLibrary::jsonForAsset(const std::string &nm)
 {
     static bool checkedForLocal{false};
     static bool isLocal{false};
@@ -61,7 +61,7 @@ std::string JSONLayoutLibrary::jsonForComponent(const std::string &nm)
 
         if (!isLocal)
         {
-            auto rp = fs::path{"src-ui"} / "json-layout";
+            auto rp = fs::path{"src-ui"} / "json-assets";
             if (fs::exists(rp))
             {
                 SCLOG("Setting JSON path from working dir: " << rp.u8string());
@@ -98,7 +98,7 @@ std::string JSONLayoutLibrary::jsonForComponent(const std::string &nm)
     try
     {
         auto fs = cmrc::scxtui_json_layouts::get_filesystem();
-        auto fn = "json-layout/" + nm;
+        auto fn = "json-assets/" + nm;
         auto jsnf = fs.open(fn);
         std::string json(jsnf.begin(), jsnf.end());
 

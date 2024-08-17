@@ -28,7 +28,7 @@
 #include "ProcessorPane.h"
 #include "components/SCXTEditor.h"
 
-#include "connectors/JSONLayoutConsumer.h"
+#include "connectors/JSONAssetSupport.h"
 
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
@@ -482,7 +482,7 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath)
 bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
                                            sst::jucegui::layout::ExplicitLayout &elo)
 {
-    auto dlyjs = connectors::JSONLayoutLibrary::jsonForComponent(jsonpath);
+    auto dlyjs = connectors::JSONAssetLibrary::jsonForAsset(jsonpath);
     connectors::JSONLayoutConsumer con;
     try
     {

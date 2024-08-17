@@ -1,0 +1,35 @@
+[
+    {
+        "version": "1",
+        "hoverfactor": "0.25"
+    },
+    {
+        "accent_1a": "#ffffb949",
+        "accent_1b": "#ffd09030",
+        "accent_2a": "#ff2788d6",
+        "accent_2a_alpha_a": "#142788d6",
+        "accent_2a_alpha_b": "#522788d6",
+        "accent_2a_alpha_c": "#802788d6",
+        "accent_2b": "#ff004f8a",
+        "accent_2b_alpha_a": "#14004f8a",
+        "accent_2b_alpha_b": "#52004f8a",
+        "accent_2b_alpha_c": "#80004f8a",
+        "bg_1": "#ff1b1d20",
+        "bg_2": "#ff262a2f",
+        "bg_3": "#ff333333",
+        "generic_content_high": "#ffdfdfdf",
+        "generic_content_highest": "#ffffffff",
+        "generic_content_low": "#ff777777",
+        "generic_content_lowest": "#ff000000",
+        "generic_content_medium": "#ffafafaf",
+        "grid_primary": "#a8393939",
+        "grid_secondary": "#14a6a6a6",
+        "gutter_2": "#ff333333",
+        "gutter_3": "#ff262a2f",
+        "knob_fill": "#ff525252",
+        "panel_outline_2": "#FFEEEEEE",
+        "panel_outline_3": "#FFCCCCCC",
+        "warning_1a": "#ffd67272",
+        "warning_1b": "#ff8a0000"
+    }
+]

@@ -37,13 +37,19 @@ struct ColorMap
     enum BuiltInColorMaps : uint32_t
     {
         WIREFRAME = 'wire',
-        TEST = 'test',
-        HICONTRAST_DARK = 'hidk'
+        LIGHT = 'lite',
+        HICONTRAST_DARK = 'hico',
+        TEST = 'test'
     } myId{WIREFRAME};
+    static constexpr uint32_t FILE_COLORMAP_ID{'fcmp'};
     static std::unique_ptr<ColorMap> createColorMap(BuiltInColorMaps cm);
 
     virtual ~ColorMap() = default;
-    enum Colors
+    /*
+     * the order of these doesn't matter - we stream as strings - but they must
+     * be continguous and you have to update lastColor if you change the last color
+     */
+    enum Colors : size_t
     {
         accent_1a,
         accent_1b,
@@ -77,9 +83,12 @@ struct ColorMap
         grid_secondary,
 
         warning_1a,
-        warning_1b
+        warning_1b, // update lastColor if you add after this please!
     };
+    static constexpr int lastColor{(int)Colors::warning_1b};
+
     bool hasKnobs{false};
+    float hoverFactor{0.1f};
 
     juce::Colour get(Colors c, float alpha = 1.f) const
     {
@@ -91,9 +100,16 @@ struct ColorMap
     virtual juce::Colour getHover(Colors c, float alpha = 1.f) const
     {
         auto cres = get(c, alpha);
-        return cres.brighter(0.1);
+        if (hoverFactor > 0)
+            return cres.brighter(hoverFactor);
+        else
+            return cres.darker(-hoverFactor);
     }
     virtual juce::Colour getImpl(Colors c, float alpha = 1.f) const = 0;
+
+    // https://www.youtube.com/watch?v=e0RWtQOeuRo
+    std::string toJson() const;
+    static std::unique_ptr<ColorMap> jsonToColormap(const std::string &json);
 };
 
 } // namespace scxt::ui::theme

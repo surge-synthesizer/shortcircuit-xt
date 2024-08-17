@@ -39,6 +39,7 @@ enum DefaultKeys
     invertScroll,
     showKnobs,
     colormapId,
+    colormapPathIfFile,
     welcomeScreenSeen,
     playModeExpanded,
 
@@ -52,6 +53,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "zoomLevel";
     case colormapId:
         return "colormapId";
+    case colormapPathIfFile:
+        return "colormapPathIfFile";
     case octave0:
         return "octave0";
     case nKeys:

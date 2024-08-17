@@ -66,6 +66,7 @@ struct Browser
      */
     fs::path userDirectory;    // like "Documents"/Shortcircuit XT
     fs::path patchIODirectory; // user/Patches
+    fs::path themeDirectory;   // user/Themes
 
     /*
      * Filesystem Views: Very simple. The Browser gives you a set of
