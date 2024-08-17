@@ -1,34 +1,34 @@
 [
-   {
-      "version": "1"
-   },
-   {
-      "accent_1a": "#ffda70d6",
-      "accent_1b": "#ffffc0cb",
-      "accent_2a": "#ff61c4a3",
-      "accent_2a_alpha_a": "#ff4f9f84",
-      "accent_2a_alpha_b": "#ff4f9f84",
-      "accent_2a_alpha_c": "#ff4f9f84",
-      "accent_2b": "#ff00ffff",
-      "accent_2b_alpha_a": "#ff00c4c4",
-      "accent_2b_alpha_b": "#ff00c4c4",
-      "accent_2b_alpha_c": "#ff00c4c4",
-      "bg_1": "#ffadff2f",
-      "bg_2": "#ffb8860b",
-      "bg_3": "#ffffc0cb",
-      "generic_content_high": "#ff0000da",
-      "generic_content_highest": "#ff0000ff",
-      "generic_content_low": "#ff000077",
-      "generic_content_lowest": "#ff000000",
-      "generic_content_medium": "#ff0000af",
-      "grid_primary": "#ff393939",
-      "grid_secondary": "#ffa6a6a6",
-      "gutter_2": "#ffffc0cb",
-      "gutter_3": "#ffb8860b",
-      "knob_fill": "#00000000",
-      "panel_outline_2": "#ff000000",
-      "panel_outline_3": "#ff000000",
-      "warning_1a": "#ffd67272",
-      "warning_1b": "#ff8a0000"
-   }
+    {
+        "version": "1"
+    },
+    {
+        "accent_1a": "#ffda70d6",
+        "accent_1b": "#ffffc0cb",
+        "accent_2a": "#ff61c4a3",
+        "accent_2a_alpha_a": "#ff4f9f84",
+        "accent_2a_alpha_b": "#ff4f9f84",
+        "accent_2a_alpha_c": "#ff4f9f84",
+        "accent_2b": "#ff00ffff",
+        "accent_2b_alpha_a": "#ff00c4c4",
+        "accent_2b_alpha_b": "#ff00c4c4",
+        "accent_2b_alpha_c": "#ff00c4c4",
+        "bg_1": "#ffadff2f",
+        "bg_2": "#ffb8860b",
+        "bg_3": "#ffffc0cb",
+        "generic_content_high": "#ff0000da",
+        "generic_content_highest": "#ff0000ff",
+        "generic_content_low": "#ff000077",
+        "generic_content_lowest": "#ff000000",
+        "generic_content_medium": "#ff0000af",
+        "grid_primary": "#ff393939",
+        "grid_secondary": "#ffa6a6a6",
+        "gutter_2": "#ffffc0cb",
+        "gutter_3": "#ffb8860b",
+        "knob_fill": "#ffcc00cc",
+        "panel_outline_2": "#ff000000",
+        "panel_outline_3": "#ff000000",
+        "warning_1a": "#ffd67272",
+        "warning_1b": "#ff8a0000"
+    }
 ]

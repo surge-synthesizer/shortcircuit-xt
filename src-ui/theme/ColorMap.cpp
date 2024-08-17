@@ -162,7 +162,7 @@ std::string ColorMap::toJson() const
     for (int i = 0; i <= lastColor; ++i)
     {
         Colors c = (Colors)i;
-        auto col = get(c);
+        auto col = getImpl(c);
         auto cols = fmt::format("#{:02x}{:02x}{:02x}{:02x}", col.getAlpha(), col.getRed(),
                                 col.getGreen(), col.getBlue());
         auto keys = keyName(c);
