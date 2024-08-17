@@ -65,6 +65,17 @@ typedef std::tuple<std::optional<selection::SelectionManager::ZoneAddress>,
 SERIAL_TO_CLIENT(SetSelectionState, s2c_send_selection_state, selectedStateMessage_t,
                  onSelectionState);
 
+SERIAL_TO_CLIENT(SetOtherTabSelection, s2c_send_othertab_selection,
+                 scxt::selection::SelectionManager::otherTabSelection_t, onOtherTabSelection);
+
+using updateOther_t = std::pair<std::string, std::string>;
+inline void doUpdateOtherTabSelection(const updateOther_t &pl, const engine::Engine &engine)
+{
+    engine.getSelectionManager()->otherTabSelection[pl.first] = pl.second;
+}
+CLIENT_TO_SERIAL(UpdateOtherTabSelection, c2s_set_othertab_selection, updateOther_t,
+                 doUpdateOtherTabSelection(payload, engine));
+
 // Begin and End Edit messages. These are a mess. See #775
 using editGestureFor_t = bool;
 inline void doBeginEndEdit(bool isBegin, const editGestureFor_t &payload,

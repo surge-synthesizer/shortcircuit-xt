@@ -201,6 +201,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void onSelectedPart(const int16_t);
     int16_t getSelectedPart() const;
 
+    selection::SelectionManager::otherTabSelection_t otherTabSelection;
+    void onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p);
+    std::string queryTabSelection(const std::string &k);
+    void setTabSelection(const std::string &k, const std::string &t);
+
     void onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
     void onMixerBusSendData(const scxt::messaging::client::busSendData_t &);
 

@@ -124,6 +124,8 @@ enum ClientToSerializationMessagesIds
     c2s_request_host_callback,
     c2s_macro_begin_end_edit,
 
+    c2s_set_othertab_selection,
+
     num_clientToSerializationMessages
 };
 
@@ -152,6 +154,7 @@ enum SerializationToClientMessageIds
     s2c_send_selected_part,
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,
+    s2c_send_othertab_selection,
 
     s2c_bus_effect_full_data,
     s2c_bus_send_data,

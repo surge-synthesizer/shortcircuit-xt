@@ -236,6 +236,44 @@ void MultiScreen::ZoneOrGroupElements<ZGTrait>::layoutInto(const juce::Rectangle
     lfo->setBounds(envRect.withWidth(ew * 2).translated(ew * 2, 0));
 }
 
+void MultiScreen::onOtherTabSelection()
+{
+    auto pgz = editor->queryTabSelection(tabKey("multi.pgz"));
+    if (pgz.empty())
+    {
+    }
+    if (pgz == "part")
+        parts->setSelectedTab(0);
+    else if (pgz == "group")
+        parts->setSelectedTab(1);
+    else if (pgz == "zone")
+        parts->setSelectedTab(2);
+    else
+        SCLOG("Unknown multi.pgz key " << pgz);
+
+    auto gts = editor->queryTabSelection(tabKey("multi.group.lfo"));
+    if (!gts.empty())
+    {
+        auto gt = std::atoi(gts.c_str());
+        if (gt >= 0 && gt < lfosPerGroup)
+            groupElements->lfo->selectTab(gt);
+    }
+    auto zts = editor->queryTabSelection(tabKey("multi.zone.lfo"));
+    if (!zts.empty())
+    {
+        auto zt = std::atoi(zts.c_str());
+        if (zt >= 0 && zt < lfosPerZone)
+            zoneElements->lfo->selectTab(zt);
+    }
+    auto mts = editor->queryTabSelection(tabKey("multi.mapping"));
+    if (!mts.empty())
+    {
+        auto mt = std::atoi(mts.c_str());
+        if (mt >= 0 && mt < 3)
+            sample->setSelectedTab(mt);
+    }
+}
+
 template struct MultiScreen::ZoneOrGroupElements<typename MultiScreen::ZoneTraits>;
 template struct MultiScreen::ZoneOrGroupElements<typename MultiScreen::GroupTraits>;
 } // namespace scxt::ui

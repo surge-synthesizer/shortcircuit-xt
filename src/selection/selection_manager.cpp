@@ -748,6 +748,12 @@ void SelectionManager::sendSelectedPartMacrosToClient()
                                   *(engine.getMessageController()));
 }
 
+void SelectionManager::sendOtherTabsSelectionToClient()
+{
+    serializationSendToClient(cms::s2c_send_othertab_selection, otherTabSelection,
+                              *(engine.getMessageController()));
+}
+
 void SelectionManager::clearAllSelections()
 {
     for (auto &s : allSelectedZones)

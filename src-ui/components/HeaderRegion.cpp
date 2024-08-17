@@ -336,4 +336,5 @@ void HeaderRegion::showMultiSelectionMenu()
     });
     p.showMenuAsync(editor->defaultPopupMenuOptions(multiMenuButton.get()));
 }
+
 } // namespace scxt::ui

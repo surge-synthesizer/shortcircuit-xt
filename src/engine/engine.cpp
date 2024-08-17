@@ -979,6 +979,7 @@ void Engine::sendFullRefreshToClient() const
     getSelectionManager()->sendClientDataForLeadSelectionState();
     getSelectionManager()->sendSelectedZonesToClient();
     getSelectionManager()->sendSelectedPartMacrosToClient();
+    getSelectionManager()->sendOtherTabsSelectionToClient();
 }
 
 void Engine::clearAll()

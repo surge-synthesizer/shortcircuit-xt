@@ -188,6 +188,7 @@ struct SelectionManager
     void sendDisplayDataForSingleGroup(int part, int group);
     void sendDisplayDataForNoGroupSelected();
     void sendSelectedPartMacrosToClient();
+    void sendOtherTabsSelectionToClient();
     void configureAndSendZoneModMatrixMetadata(int p, int g, int z);
 
     // To ponder. Does this belong on this object or the engine?
@@ -196,7 +197,8 @@ struct SelectionManager
     std::set<dsp::processor::ProcessorType> processorTypesForSelectedZones(int pidx);
 
   public:
-    std::unordered_map<std::string, std::string> otherTabSelection;
+    using otherTabSelection_t = std::unordered_map<std::string, std::string>;
+    otherTabSelection_t otherTabSelection;
     std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups;
     std::array<ZoneAddress, scxt::numParts> leadZone, leadGroup;
 };

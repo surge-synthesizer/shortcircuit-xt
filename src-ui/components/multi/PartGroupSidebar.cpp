@@ -364,18 +364,7 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
         if (!w->partSidebar || !w->groupSidebar || !w->zoneSidebar)
             return;
 
-        bool p = (t == 0), g = (t == 1), z = (t == 2);
-        w->partSidebar->setVisible(p);
-        w->groupSidebar->setVisible(g);
-        w->zoneSidebar->setVisible(z);
-
-        w->editor->multiScreen->setSelectionMode(g ? MultiScreen::SelectionMode::GROUP
-                                                   : MultiScreen::SelectionMode::ZONE);
-
-        if (g)
-            w->editor->themeApplier.applyGroupMultiScreenTheme(w);
-        else
-            w->editor->themeApplier.applyZoneMultiScreenTheme(w);
+        w->setSelectedTab(t);
     };
     resetTabState();
 
@@ -453,6 +442,27 @@ void PartGroupSidebar::editorSelectionChanged()
     {
         zoneSidebar->updateSelection();
     }
+    repaint();
+}
+
+void PartGroupSidebar::setSelectedTab(int t)
+{
+    selectedTab = t;
+    bool p = (t == 0), g = (t == 1), z = (t == 2);
+    partSidebar->setVisible(p);
+    groupSidebar->setVisible(g);
+    zoneSidebar->setVisible(z);
+
+    editor->multiScreen->setSelectionMode(g ? MultiScreen::SelectionMode::GROUP
+                                            : MultiScreen::SelectionMode::ZONE);
+
+    if (g)
+        editor->themeApplier.applyGroupMultiScreenTheme(this);
+    else
+        editor->themeApplier.applyZoneMultiScreenTheme(this);
+
+    editor->setTabSelection(editor->multiScreen->tabKey("multi.pgz"),
+                            (t == 0 ? "part" : (t == 1 ? "group" : "zone")));
     repaint();
 }
 } // namespace scxt::ui::multi

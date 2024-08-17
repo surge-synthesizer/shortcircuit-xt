@@ -131,6 +131,11 @@ struct MultiScreen : juce::Component, HasEditor
     } selectionMode{SelectionMode::NONE};
     void setSelectionMode(SelectionMode m);
 
+    void onOtherTabSelection();
+    // This allows us, in the future, to make this return s + selected part to have
+    // part differentiated selection
+    std::string tabKey(const std::string &s) { return s; }
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MultiScreen);
 };
 } // namespace scxt::ui

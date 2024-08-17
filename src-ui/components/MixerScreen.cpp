@@ -114,6 +114,7 @@ void MixerScreen::selectBus(int index)
         b->setSelected(false);
     }
     busPane->channelStrips[index]->selected = true;
+    editor->setTabSelection("mixer_screen", std::to_string(index));
     repaint();
 }
 
@@ -194,6 +195,19 @@ void MixerScreen::setVULevelForBusses(
     for (const auto &[i, cs] : sst::cpputils::enumerate(busPane->channelStrips))
     {
         cs->setVULevel(x[i][0], x[i][1]);
+    }
+}
+
+void MixerScreen::onOtherTabSelection()
+{
+    auto bs = editor->queryTabSelection("mixer_screen");
+    if (!bs.empty())
+    {
+        auto v = std::atoi(bs.c_str());
+        if (v >= 0 && v < busPane->channelStrips.size())
+        {
+            selectBus(v);
+        }
     }
 }
 

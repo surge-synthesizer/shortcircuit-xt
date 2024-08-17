@@ -87,6 +87,8 @@ struct MixerScreen : juce::Component, HasEditor
 
     void setVULevelForBusses(
         const std::array<std::array<std::atomic<float>, 2>, engine::Patch::Busses::busCount> &x);
+
+    void onOtherTabSelection();
 };
 } // namespace scxt::ui
 #endif // SHORTCIRCUIT_SENDFXSCREEN_H

@@ -288,6 +288,8 @@ void SCXTEditor::onSelectedPart(const int16_t p)
         multiScreen->parts->selectedPartChanged();
     if (multiScreen && multiScreen->sample)
         multiScreen->sample->selectedPartChanged();
+    if (multiScreen)
+        multiScreen->onOtherTabSelection();
 
     repaint();
 }
@@ -349,5 +351,42 @@ void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
     macroCache[part][index].value = value;
     multiScreen->sample->repaint();
     playScreen->repaint();
+}
+
+void SCXTEditor::onOtherTabSelection(
+    const scxt::selection::SelectionManager::otherTabSelection_t &p)
+{
+    otherTabSelection = p;
+
+    auto mainScreen = queryTabSelection("main_screen");
+    if (mainScreen.empty())
+    {
+    }
+    else if (mainScreen == "mixer")
+    {
+        setActiveScreen(MIXER);
+    }
+    else if (mainScreen == "multi")
+    {
+        setActiveScreen(MULTI);
+    }
+    else if (mainScreen == "play")
+    {
+        setActiveScreen(PLAY);
+    }
+    else
+    {
+        SCLOG("Unknown main screen " << mainScreen);
+    }
+
+    if (mixerScreen)
+    {
+        mixerScreen->onOtherTabSelection();
+    }
+
+    if (multiScreen)
+    {
+        multiScreen->onOtherTabSelection();
+    }
 }
 } // namespace scxt::ui

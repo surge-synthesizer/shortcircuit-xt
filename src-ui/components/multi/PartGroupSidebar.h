@@ -52,6 +52,8 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void selectParts() {}
     void selectGroups() {}
 
+    void setSelectedTab(int t); // part / group / zone
+
     std::unique_ptr<ZoneSidebar> zoneSidebar;
     std::unique_ptr<GroupSidebar> groupSidebar;
     std::unique_ptr<PartSidebar> partSidebar;
