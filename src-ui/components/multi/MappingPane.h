@@ -55,6 +55,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     void macroDataChanged(int part, int index);
     void editorSelectionChanged();
     void setActive(bool b);
+    void setSelectedTab(int i);
 
     std::unique_ptr<MappingDisplay> mappingDisplay;
     std::unique_ptr<SampleDisplay> sampleDisplay;

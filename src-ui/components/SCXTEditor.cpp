@@ -129,12 +129,14 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
     activeScreen = s;
     aboutScreen->setVisible(false);
     logScreen->setVisible(false);
+    std::string val{};
     switch (s)
     {
     case MULTI:
         multiScreen->setVisible(true);
         mixerScreen->setVisible(false);
         playScreen->setVisible(false);
+        val = "multi";
         resized();
         break;
 
@@ -142,6 +144,7 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
         multiScreen->setVisible(false);
         mixerScreen->setVisible(true);
         playScreen->setVisible(false);
+        val = "mixer";
         resized();
         break;
 
@@ -149,9 +152,12 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
         multiScreen->setVisible(false);
         mixerScreen->setVisible(false);
         playScreen->setVisible(true);
+        val = "play";
         resized();
         break;
     }
+
+    setTabSelection("main_screen", val);
     repaint();
 }
 
@@ -415,4 +421,16 @@ void SCXTEditor::resetColorsFromUserPreferences()
     themeApplier.recolorStylesheetWith(std::move(cm), style());
 }
 
+std::string SCXTEditor::queryTabSelection(const std::string &k)
+{
+    auto p = otherTabSelection.find(k);
+    if (p != otherTabSelection.end())
+        return p->second;
+    return {};
+}
+
+void SCXTEditor::setTabSelection(const std::string &k, const std::string &t)
+{
+    sendToSerialization(messaging::client::UpdateOtherTabSelection({k, t}));
+}
 } // namespace scxt::ui

@@ -40,6 +40,7 @@
 
 // Included so we can have UI-thread exceution for curve rendering
 #include "modulation/modulators/steplfo.h"
+#include "components/MultiScreen.h"
 
 namespace scxt::ui::multi
 {
@@ -712,6 +713,8 @@ void LfoPane::tabChanged(int i)
 {
     getContentAreaComponent()->removeAllChildren();
     rebuildPanelComponents();
+    auto kn = std::string("multi") + (forZone ? ".zone.lfo" : ".group.lfo");
+    editor->setTabSelection(editor->multiScreen->tabKey(kn), std::to_string(i));
 }
 
 void LfoPane::setActive(int i, bool b)

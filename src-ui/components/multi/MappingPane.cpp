@@ -27,6 +27,7 @@
 
 #include "MappingPane.h"
 #include "components/SCXTEditor.h"
+#include "components/MultiScreen.h"
 #include "components/multi/SingleMacroEditor.h"
 #include "datamodel/metadata.h"
 #include "selection/selection_manager.h"
@@ -2414,7 +2415,7 @@ struct SampleDisplay : juce::Component, HasEditor
             for (const auto &entry : fs::directory_iterator(parent_path))
             {
                 if (entry.is_regular_file() &&
-                    browser::Browser::isLoadableSingleSample(entry.path()))
+                    scxt::browser::Browser::isLoadableSingleSample(entry.path()))
                 {
                     v.push_back(entry.path().u8string());
                 }
@@ -2455,7 +2456,7 @@ struct SampleDisplay : juce::Component, HasEditor
     void showFileBrowser()
     {
         std::string filePattern;
-        for (auto s : browser::Browser::LoadableFile::singleSample)
+        for (auto s : scxt::browser::Browser::LoadableFile::singleSample)
         {
             filePattern += "*" + s + ",";
         }
@@ -3030,14 +3031,25 @@ MappingPane::MappingPane(SCXTEditor *e) : sst::jucegui::components::NamedPanel("
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
         if (wt)
         {
-            wt->sampleDisplay->setVisible(i == 2);
-            wt->mappingDisplay->setVisible(i == 1);
-            wt->macroDisplay->setVisible(i == 0);
+            wt->setSelectedTab(i);
         }
     };
 }
 
 MappingPane::~MappingPane() {}
+
+void MappingPane::setSelectedTab(int i)
+{
+    if (i < 0 || i > 2)
+        return;
+    selectedTab = i;
+    sampleDisplay->setVisible(i == 2);
+    mappingDisplay->setVisible(i == 1);
+    macroDisplay->setVisible(i == 0);
+
+    repaint();
+    editor->setTabSelection(editor->multiScreen->tabKey("multi.mapping"), std::to_string(i));
+}
 
 void MappingPane::resized()
 {
