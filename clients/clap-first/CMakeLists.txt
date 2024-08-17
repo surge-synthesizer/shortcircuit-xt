@@ -76,7 +76,10 @@ set_target_properties(${SA_TARGET} PROPERTIES
             OUTPUT_NAME ${name})
 target_sources(${SA_TARGET} PRIVATE scxt-juce-standalone/scxt-juce-standalone.cpp)
 target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET} juce::juce_audio_devices juce::juce_audio_utils)
-target_compile_definitions(${SA_TARGET} PRIVATE JUCE_USE_FLAC=0)
+target_compile_definitions(${SA_TARGET} PRIVATE
+        JUCE_ALSA=$<IF:$<BOOL:${SCXT_USE_ALSA}>,1,0>
+        JUCE_JACK=$<IF:$<BOOL:${SCXT_USE_JACK}>,1,0>
+        JUCE_USE_FLAC=0)
 
 #add_executable(${SA_TARGET} scxt-clap-entry.cpp)
 #target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})
