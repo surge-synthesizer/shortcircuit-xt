@@ -19,29 +19,23 @@ jobs:
             cmakeConfig: -A x64
             runTests: false
 
-          - name: "windows clang"
+          - name: "windows clang VST3"
             os: windows-latest
-            target: scxt_clapfirst_Standalone
+            target: scxt_clapfirst_VST3
             cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
 
-          - name: "mac standalone"
+          - name: "mac AU"
             os: macos-latest
             target: scxt_clapfirst_AU
             cmakeConfig: -GNinja
             runTests: true
 
-          - name: "ubuntu standalone"
+          - name: "ubuntu Standalone"
             os: ubuntu-latest
-            target: scxt_clapfirst_VST3
+            target: scxt_clapfirst_Standalone
             cmakeConfig: -GNinja
             runTests: true
-
-          - name: "ubuntu juce style"
-            os: ubuntu-latest
-            target: scxt_plugin_Standalone
-            cmakeConfig: -GNinja -DSCXT_JUCE_CLASSIC_STYLE=TRUE
-            runTests: false
 
     steps:
       - name: Checkout code
@@ -57,7 +51,7 @@ jobs:
       - name: Build pull request version
         run: |
           cmake -S . -B ./build ${{ matrix.cmakeConfig }} -DCMAKE_BUILD_TYPE=Debug 
-          cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 3
+          cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 4
 
       - name: Run Tests
         if: ${{ matrix.runTests }}
