@@ -1760,7 +1760,7 @@ std::array<int16_t, 3> MappingZones::rootAndRangeForPosition(const juce::Point<i
                               (float)Keyboard::firstMidiNote, (float)Keyboard::lastMidiNote);
 
     auto fromTop = std::clamp(p.getY(), 0, getHeight()) * 1.f / getHeight();
-    auto span = (1.0f - fromTop) * 80 + 1;
+    auto span = (1.0f - sqrt(fromTop)) * 80;
     auto low = std::clamp(rootKey - span, 0.f, 127.f);
     auto high = std::clamp(rootKey + span, 0.f, 127.f);
     return {(int16_t)rootKey, (int16_t)low, (int16_t)high};
