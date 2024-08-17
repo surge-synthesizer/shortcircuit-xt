@@ -199,13 +199,17 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int presetNum, int ins
 short *Sample::GetSamplePtrI16(int Channel)
 {
     if (bitDepth != BD_I16)
-        return 0;
+        return nullptr;
+    if (!sampleData[Channel])
+        return nullptr;
     return &((short *)sampleData[Channel])[scxt::dsp::FIRoffset];
 }
 float *Sample::GetSamplePtrF32(int Channel)
 {
     if (bitDepth != BD_F32)
-        return 0;
+        return nullptr;
+    if (!sampleData[Channel])
+        return nullptr;
     return &((float *)sampleData[Channel])[scxt::dsp::FIRoffset];
 }
 
