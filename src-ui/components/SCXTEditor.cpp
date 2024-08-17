@@ -431,6 +431,7 @@ std::string SCXTEditor::queryTabSelection(const std::string &k)
 
 void SCXTEditor::setTabSelection(const std::string &k, const std::string &t)
 {
+    otherTabSelection[k] = t;
     sendToSerialization(messaging::client::UpdateOtherTabSelection({k, t}));
 }
 } // namespace scxt::ui

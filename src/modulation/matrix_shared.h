@@ -57,6 +57,17 @@ struct TargetIdentifier
     {
         return gid == other.gid && tid == other.tid && index == other.index;
     }
+
+    bool isProcessorTarget(size_t procNum) const
+    {
+        return (gid == 'proc' || gid == 'gprc') && index == procNum;
+    }
+
+    void setProcessorTargetTo(size_t t)
+    {
+        assert(gid == 'proc' || gid == 'gprc');
+        index = t;
+    }
 };
 
 struct RoutingExtraPayload

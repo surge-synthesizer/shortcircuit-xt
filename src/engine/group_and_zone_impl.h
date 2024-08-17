@@ -321,4 +321,19 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathShortName(ProcRoutingPa
     }
     return "ERROR";
 }
+
+template <typename T>
+void HasGroupZoneProcessors<T>::updateRoutingTableAfterProcessorSwap(size_t f, size_t t)
+{
+    for (auto &r : asT()->routingTable.routes)
+    {
+        if (r.active && r.target.has_value())
+        {
+            if (r.target->isProcessorTarget(f))
+                r.target->setProcessorTargetTo(t);
+            else if (r.target->isProcessorTarget(t))
+                r.target->setProcessorTargetTo(f);
+        }
+    }
+}
 } // namespace scxt::engine
