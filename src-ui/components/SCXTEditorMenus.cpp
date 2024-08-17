@@ -117,6 +117,8 @@ void SCXTEditor::showMainMenu()
     });
     // dp.addItem("Focus Debugger Toggle", []() {});
     dp.addSeparator();
+    dp.addItem("Dump Colormap JSON", [this]() { SCLOG(themeApplier.colors->toJson()); });
+    dp.addSeparator();
 
     if (melatoninInspector)
     {
@@ -226,6 +228,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
     p.addSectionHeader("Themes");
     std::vector<std::pair<theme::ColorMap::BuiltInColorMaps, std::string>> maps = {
         {theme::ColorMap::WIREFRAME, "Wireframe Colors"},
+        {theme::ColorMap::LIGHT, "Wireframe Light"},
         {theme::ColorMap::HICONTRAST_DARK, "High Contrast Dark"},
         {theme::ColorMap::TEST, "Test Colors"},
     };
@@ -247,6 +250,50 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
         });
     }
 
+    p.addSeparator();
+    p.addItem("Save Theme...", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->fileChooser = std::make_unique<juce::FileChooser>(
+            "Save Theme", juce::File(w->browser.themeDirectory.u8string()), "*.json");
+        w->fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                        juce::FileBrowserComponent::saveMode |
+                                        juce::FileBrowserComponent::warnAboutOverwriting,
+                                    [w](const juce::FileChooser &c) {
+                                        auto result = c.getResults();
+                                        if (result.isEmpty() || result.size() > 1)
+                                        {
+                                            return;
+                                        }
+                                        // send a 'save multi' message
+                                        auto json = w->themeApplier.colors->toJson();
+                                        result[0].replaceWithText(json);
+                                    });
+    });
+    p.addItem("Load Theme...", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->fileChooser = std::make_unique<juce::FileChooser>(
+            "Load Theme", juce::File(w->browser.themeDirectory.u8string()), "*.json");
+        w->fileChooser->launchAsync(
+            juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+            [w](const juce::FileChooser &c) {
+                auto result = c.getResults();
+                if (result.isEmpty() || result.size() > 1)
+                {
+                    return;
+                }
+                auto json = result[0].loadFileAsString();
+                auto cm = theme::ColorMap::jsonToColormap(json.toStdString());
+                if (cm)
+                    w->themeApplier.recolorStylesheetWith(std::move(cm), w->style());
+                w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
+                                                           theme::ColorMap::FILE_COLORMAP_ID);
+                w->defaultsProvider.updateUserDefaultValue(
+                    infrastructure::DefaultKeys::colormapPathIfFile,
+                    result[0].getFullPathName().toStdString());
+            });
+    });
     p.addSeparator();
     auto knobsOn = themeApplier.colors->hasKnobs;
     p.addItem("Use Knob Bodies", true, knobsOn, [w = juce::Component::SafePointer(this)]() {

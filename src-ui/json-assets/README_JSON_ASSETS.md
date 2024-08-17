@@ -16,7 +16,7 @@ the first commit.
 
 ## Core Concepts - Mechanics
 
-- Each 'screen' has a json file which lives in `src-ui/json-layouts`
+- Each 'screen' has a json file which lives in `src-ui/json-assets`
 - Those json files have a common high level model but based on the
   type of thing they are mapping to, will have different features.
   For instance, voice processors have float and int parameters
@@ -30,7 +30,7 @@ the first commit.
     - Method 1: Run ShortCircuit with the working directory as the
       root of the repo, and it will auto-detect the files
     - Method 2: Set the environment variabe `SCXT_LAYOUT_SOURCE_DIR`
-      to the json-layout directory (so to `<scroot>/src-ui/json-layout`)
+      to the json-assets directory (so to `<scroot>/src-ui/json-assets`)
     - With either of these methods in place, editing the source and
       then rebuilding (so select a different zone and select back)
       for procs or a different bus and back for FX) will reload
@@ -58,3 +58,7 @@ and scan for consistency
 
 Document this after I do a few more and collect the result
 and scan for consistency
+
+## Theme Color Maps
+
+Pretty self explanatory

@@ -104,7 +104,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
      * This is an object responsible for theme and color management
      */
     theme::ThemeApplier themeApplier;
-    juce::Colour themeColor(scxt::ui::theme::ColorMap::Colors, float alpha = 1.f);
+    juce::Colour themeColor(scxt::ui::theme::ColorMap::Colors, float alpha = 1.f) const;
+    void resetColorsFromUserPreferences();
 
     sst::basic_blocks::dsp::RNG rng;
 
@@ -281,6 +282,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     }
 
     std::unique_ptr<melatonin::Inspector> melatoninInspector;
+
+  public:
+    std::unique_ptr<juce::FileChooser> fileChooser;
 };
 
 template <typename T> inline void HasEditor::sendToSerialization(const T &msg)

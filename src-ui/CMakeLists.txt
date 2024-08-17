@@ -35,18 +35,18 @@ add_library(${PROJECT_NAME} STATIC
         components/multi/SingleMacroEditor.cpp
 
         connectors/SCXTResources.cpp
-        connectors/JSONLayoutConsumer.cpp
+        connectors/JSONAssetSupport.cpp
 
         theme/ColorMap.cpp
         theme/ThemeApplier.cpp
 
         )
 
-message(STATUS "Globbing json-layout directory for cmrc")
+message(STATUS "Globbing json-assets directory for cmrc")
 file(GLOB_RECURSE scxt_json_sources
         LIST_DIRECTORIES false
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-        json-layout/*.json
+        json-assets/*.json
 )
 cmrc_add_resource_library(scxtui_json_layouts
         NAMESPACE scxtui_json_layouts

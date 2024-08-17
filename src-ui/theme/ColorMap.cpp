@@ -26,303 +26,213 @@
  */
 
 #include "ColorMap.h"
+#include <map>
+#include <fmt/core.h>
+
+#include <tao/json/to_string.hpp>
+#include <tao/json/from_string.hpp>
+#include <tao/json/contrib/traits.hpp>
+#include <tao/json/events/from_string.hpp>
+
+#include "json/scxt_traits.h"
+
+#include "connectors/JSONAssetSupport.h"
+
+#include "utils.h"
 
 namespace scxt::ui::theme
 {
-struct WireframeColors : ColorMap
+
+using metadata_t = std::map<std::string, std::string>;
+using colors_t = std::map<std::string, std::string>;
+using colormap_t = std::tuple<metadata_t, colors_t>;
+
+std::string keyName(ColorMap::Colors c)
 {
+#define C(x)                                                                                       \
+    case ColorMap::Colors::x:                                                                      \
+        return #x;
+
+    switch (c)
+    {
+        C(accent_1a);
+        C(accent_1b);
+        C(accent_2a);
+        C(accent_2a_alpha_a);
+        C(accent_2a_alpha_b);
+        C(accent_2a_alpha_c);
+        C(accent_2b);
+        C(accent_2b_alpha_a);
+        C(accent_2b_alpha_b);
+        C(accent_2b_alpha_c);
+        C(bg_1);
+        C(bg_2);
+        C(bg_3);
+        C(gutter_2);
+        C(gutter_3);
+        C(panel_outline_2);
+        C(panel_outline_3);
+        C(knob_fill);
+        C(generic_content_highest);
+        C(generic_content_high);
+        C(generic_content_medium);
+        C(generic_content_low);
+        C(generic_content_lowest);
+        C(grid_primary);
+        C(grid_secondary);
+        C(warning_1a);
+        C(warning_1b);
+    }
+#undef C
+    return "error";
+}
+
+struct StdMapColormap : ColorMap
+{
+    colors_t colorMap;
+
+    std::array<juce::Colour, ColorMap::lastColor + 1> resolvedMap;
+    StdMapColormap(colors_t &c) { setupFromColormap(c); }
+    void setupFromColormap(colors_t &c)
+    {
+        colorMap = c;
+        std::fill(resolvedMap.begin(), resolvedMap.end(), juce::Colours::red);
+        std::map<std::string, int> nameToIndex;
+        for (int i = 0; i < lastColor + 1; ++i)
+        {
+            nameToIndex[keyName((ColorMap::Colors(i)))] = i;
+        }
+        for (auto &[k, m] : colorMap)
+        {
+            auto n2f = nameToIndex.find(k);
+            if (n2f != nameToIndex.end())
+            {
+                auto idx = n2f->second;
+                if (idx != -1)
+                {
+                    uint32_t cx;
+                    std::stringstream ss;
+                    ss << std::hex << m.substr(1);
+                    ss >> cx;
+                    resolvedMap[idx] = juce::Colour(cx);
+                    nameToIndex[k] = -1;
+                }
+                else
+                {
+                    SCLOG("Warning: Key appears twice in colormap " << k);
+                }
+            }
+            else
+            {
+                SCLOG("Error: Unable to resolve colormap key '" << k << "'gre");
+            }
+        }
+        for (auto &[k, i] : nameToIndex)
+        {
+            if (i >= 0)
+            {
+                SCLOG("Error: Color map didn't contain key '" << k << "'");
+            }
+        }
+    }
     juce::Colour getImpl(ColorMap::Colors c, float alpha) const override
     {
-        auto res = juce::Colours::red;
+        auto ic = (size_t)c;
+        auto res = resolvedMap[ic];
+        if (alpha == 1.f)
+            return res;
 
-        switch (c)
-        {
-        case accent_1a:
-            res = juce::Colour(0xFFFFB949);
-            break;
-        case accent_1b:
-            res = juce::Colour(0xFFD09030);
-            break;
-        case accent_2a:
-            res = juce::Colour(0xFF2788D6);
-            break;
-        case accent_2a_alpha_a:
-            res = getImpl(accent_2a, 0.08);
-            break;
-        case accent_2a_alpha_b:
-            res = getImpl(accent_2a, 0.32);
-            break;
-        case accent_2a_alpha_c:
-            res = getImpl(accent_2a, 0.5);
-            break;
-        case accent_2b:
-            res = juce::Colour(0xFF004f8A);
-            break;
-        case accent_2b_alpha_a:
-            res = getImpl(accent_2b, 0.08);
-            break;
-        case accent_2b_alpha_b:
-            res = getImpl(accent_2b, 0.32);
-            break;
-        case accent_2b_alpha_c:
-            res = getImpl(accent_2b, 0.5);
-            break;
-        case bg_1:
-            res = juce::Colour(0xFF1B1D20);
-            break;
-        case bg_2:
-            res = juce::Colour(0xFF262a2f);
-            break;
-        case bg_3:
-            res = juce::Colour(0xFF333333);
-            break;
-
-        case knob_fill:
-            res = juce::Colour(82, 82, 82);
-            break;
-
-        case generic_content_highest:
-            res = juce::Colour(0xFFFFFFFF);
-            break;
-        case generic_content_high:
-            res = juce::Colour(0xFFDFDFDF);
-            break;
-        case generic_content_medium:
-            res = juce::Colour(0xFFAFAFAF);
-            break;
-        case generic_content_low:
-            res = juce::Colour(0xFF777777);
-            break;
-        case generic_content_lowest:
-            res = juce::Colour(0xFF000000);
-            break;
-
-        case grid_primary:
-            res = juce::Colour(0xA8393939);
-            break;
-        case grid_secondary:
-            res = juce::Colour(0x14A6A6A6);
-            break;
-
-        case warning_1a:
-            res = juce::Colour(0xFFD67272);
-            break;
-        case warning_1b:
-            res = juce::Colour(0xFF8A0000);
-            break;
-
-        case gutter_2:
-            res = getImpl(bg_3, alpha);
-            break;
-        case gutter_3:
-            res = getImpl(bg_2, alpha);
-            break;
-        case panel_outline_2:
-        case panel_outline_3:
-            res = juce::Colour(0x00000000);
-            break;
-        }
-        auto res2 = res.withAlpha(res.getAlpha() / 255.0f * alpha);
-        return res2;
+        auto alp = res.getAlpha();
+        auto nalp = res.getAlpha() * 1.f / 255 * alpha;
+        return res.withAlpha(nalp);
     }
 };
 
-struct TestColors : ColorMap
+template <template <typename...> class... Transformers, template <typename...> class Traits>
+void to_pretty_stream(std::ostream &os, const tao::json::basic_value<Traits> &v)
 {
-    juce::Colour getImpl(ColorMap::Colors c, float alpha) const override
-    {
-        auto res = juce::Colours::red;
+    tao::json::events::transformer<tao::json::events::to_pretty_stream, Transformers...> consumer(
+        os, 3);
+    tao::json::events::from_value(consumer, v);
+}
 
-        switch (c)
-        {
-        case accent_1a:
-            res = juce::Colours::orchid;
-            break;
-        case accent_1b:
-            res = juce::Colours::pink;
-            break;
-        case accent_2a:
-            res = juce::Colours::aquamarine.darker(0.3);
-            break;
-        case accent_2a_alpha_a:
-            res = juce::Colours::aquamarine.darker(0.6);
-            break;
-        case accent_2a_alpha_b:
-            res = juce::Colours::aquamarine.darker(0.6);
-            break;
-        case accent_2a_alpha_c:
-            res = juce::Colours::aquamarine.darker(0.6);
-            break;
-        case accent_2b:
-            res = juce::Colours::cyan;
-            break;
-        case accent_2b_alpha_a:
-            res = juce::Colours::cyan.darker(0.3);
-            break;
-        case accent_2b_alpha_b:
-            res = juce::Colours::cyan.darker(0.3);
-            break;
-        case accent_2b_alpha_c:
-            res = juce::Colours::cyan.darker(0.3);
-            break;
-        case bg_1:
-            res = juce::Colours::greenyellow;
-            break;
-        case bg_2:
-            res = juce::Colours::darkgoldenrod;
-            break;
-        case bg_3:
-            res = juce::Colours::pink;
-            break;
-
-        case knob_fill:
-            res = juce::Colours::greenyellow;
-            break;
-
-        case generic_content_highest:
-            res = juce::Colour(0xFF0000FF);
-            break;
-        case generic_content_high:
-            res = juce::Colour(0xFF0000DA);
-            break;
-        case generic_content_medium:
-            res = juce::Colour(0xFF0000AF);
-            break;
-        case generic_content_low:
-            res = juce::Colour(0xFF000077);
-            break;
-        case generic_content_lowest:
-            res = juce::Colour(0xFF000000);
-            break;
-
-        case grid_primary:
-            res = juce::Colour(0xA8393939);
-            break;
-        case grid_secondary:
-            res = juce::Colour(0x14A6A6A6);
-            break;
-
-        case warning_1a:
-            res = juce::Colour(0xFFD67272);
-            break;
-        case warning_1b:
-            res = juce::Colour(0xFF8A0000);
-            break;
-
-        case gutter_2:
-            res = getImpl(bg_3, alpha);
-            break;
-        case gutter_3:
-            res = getImpl(bg_2, alpha);
-            break;
-        case panel_outline_2:
-        case panel_outline_3:
-            res = juce::Colour(0x00000000);
-            break;
-        }
-        return res.withAlpha(alpha);
-    }
-};
-
-struct HiContrastDark : ColorMap
+std::string ColorMap::toJson() const
 {
-    WireframeColors under;
-    juce::Colour getImpl(ColorMap::Colors c, float alpha) const override
+    colors_t colorMap;
+    for (int i = 0; i <= lastColor; ++i)
     {
-        auto res = juce::Colours::red;
-
-        switch (c)
-        {
-        case accent_1a:
-            res = juce::Colour(0xFFFFA904);
-            break;
-        case accent_2a:
-            res = juce::Colour(0xFF0788F6);
-            break;
-        case accent_2a_alpha_a:
-            res = juce::Colour(0xFF22222A); // bg_2
-            break;
-        case accent_2a_alpha_b:
-            res = juce::Colour(0xFF0788F6); // accent_2a
-            break;
-        case accent_2a_alpha_c:
-            res = juce::Colour(0xFF22222A); // bg_2
-            break;
-        case bg_1:
-            res = juce::Colour(0xFF000000);
-            break;
-        case bg_2:
-            res = juce::Colour(0xFF22222A);
-            break;
-        case bg_3:
-            res = juce::Colour(0xFF222A22);
-            break;
-
-        case knob_fill:
-            res = juce::Colour(82, 82, 82);
-            break;
-
-        case generic_content_highest:
-            res = juce::Colour(0xFFFFFFFF);
-            break;
-        case generic_content_high:
-            res = juce::Colour(0xFFDFDFDF);
-            break;
-        case generic_content_medium:
-            res = juce::Colour(0xFFCFCFC);
-            break;
-        case generic_content_low:
-            res = juce::Colour(0xFF999999);
-            break;
-        case generic_content_lowest:
-            res = juce::Colour(0xFF000000);
-            break;
-
-        case gutter_2:
-            res = juce::Colour(0xFF888899);
-            break;
-        case gutter_3:
-            res = juce::Colour(0xFF889988);
-            break;
-        case panel_outline_2:
-            res = juce::Colour(0xFFAAAABB);
-            break;
-        case panel_outline_3:
-            res = juce::Colour(0xFFAABBAA);
-            break;
-        default:
-            res = under.get(c, alpha);
-            break;
-        }
-        return res.withAlpha(std::clamp(res.getAlpha() * alpha, 0.f, 1.f));
+        Colors c = (Colors)i;
+        auto col = get(c);
+        auto cols = fmt::format("#{:02x}{:02x}{:02x}{:02x}", col.getAlpha(), col.getRed(),
+                                col.getGreen(), col.getBlue());
+        auto keys = keyName(c);
+        colorMap[keys] = cols;
     }
 
-    virtual juce::Colour getHover(Colors c, float alpha = 1.f) const override
+    metadata_t meta{{"version", "1"}, {"hoverfactor", std::to_string(hoverFactor)}};
+    colormap_t doc{meta, colorMap};
+
+    tao::json::value jsonv = doc;
+    std::ostringstream oss;
+    to_pretty_stream(oss, jsonv);
+    return oss.str();
+}
+
+std::unique_ptr<ColorMap> ColorMap::jsonToColormap(const std::string &json)
+{
+    colormap_t cm;
+    tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
+    tao::json::events::from_string(consumer, json);
+    auto jv = std::move(consumer.value);
+    jv.to(cm);
+
+    auto meta = std::get<0>(cm);
+
+    auto res = std::make_unique<StdMapColormap>(std::get<1>(cm));
+    auto hvi = meta.find("hoverfactor");
+    if (hvi != meta.end())
     {
-        auto cres = get(c, alpha);
-        return cres.brighter(0.25);
+        auto hf = std::atof(hvi->second.c_str());
+        if (hf == 0.f)
+            hf = 0.1;
+        res->hoverFactor = hf;
     }
-};
+    else
+    {
+        res->hoverFactor = 0.1;
+    }
+
+    return res;
+}
 
 std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::BuiltInColorMaps cm)
 {
     std::unique_ptr<ColorMap> res;
+    std::string json;
     switch (cm)
     {
     case TEST:
-        res = std::make_unique<TestColors>();
+        json = connectors::JSONAssetLibrary::jsonForAsset("themes/test-colors.json");
+        res = ColorMap::jsonToColormap(json);
         break;
     case WIREFRAME:
-        res = std::make_unique<WireframeColors>();
+        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-dark.json");
+        res = ColorMap::jsonToColormap(json);
         break;
     case HICONTRAST_DARK:
-        res = std::make_unique<HiContrastDark>();
+        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-dark-hicontrast.json");
+        res = ColorMap::jsonToColormap(json);
+        break;
+    case LIGHT:
+        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-light.json");
+        res = ColorMap::jsonToColormap(json);
         break;
     }
 
     if (!res)
     {
-        res = std::make_unique<WireframeColors>();
+        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-dark.json");
+        res = ColorMap::jsonToColormap(json);
         res->myId = WIREFRAME;
     }
     else
@@ -330,6 +240,8 @@ std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::Bu
         res->myId = cm;
     }
 
+    assert(res);
     return res;
 }
+
 } // namespace scxt::ui::theme

@@ -34,11 +34,13 @@
 #include "tao/json/binary_view.hpp"
 #include "tao/json/events/from_string.hpp"
 
+#include "utils.h"
+
 namespace scxt::ui::connectors
 {
-struct JSONLayoutLibrary
+struct JSONAssetLibrary
 {
-    static std::string jsonForComponent(const std::string &nm);
+    static std::string jsonForAsset(const std::string &nm);
 };
 
 struct JSONLayoutConsumer

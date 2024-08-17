@@ -29,7 +29,7 @@
 #include "components/SCXTEditor.h"
 #include "components/MixerScreen.h"
 
-#include "connectors/JSONLayoutConsumer.h"
+#include "connectors/JSONAssetSupport.h"
 
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
@@ -303,7 +303,7 @@ template <typename T> juce::Component *PartEffectsPane::addTypedLabel(const std:
 void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
 {
     bool parseWorked{false};
-    auto dlyjs = connectors::JSONLayoutLibrary::jsonForComponent(path);
+    auto dlyjs = connectors::JSONAssetLibrary::jsonForAsset(path);
     connectors::JSONLayoutConsumer con;
     try
     {
