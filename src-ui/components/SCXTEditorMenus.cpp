@@ -255,7 +255,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
         if (!w)
             return;
         w->fileChooser = std::make_unique<juce::FileChooser>(
-            "Save Theme", juce::File(w->browser.themeDirectory.u8string()), "*.json");
+            "Save Theme", juce::File(w->browser.themeDirectory.u8string()), "*.sctheme");
         w->fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
                                         juce::FileBrowserComponent::saveMode |
                                         juce::FileBrowserComponent::warnAboutOverwriting,
@@ -274,7 +274,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
         if (!w)
             return;
         w->fileChooser = std::make_unique<juce::FileChooser>(
-            "Load Theme", juce::File(w->browser.themeDirectory.u8string()), "*.json");
+            "Load Theme", juce::File(w->browser.themeDirectory.u8string()), "*.sctheme");
         w->fileChooser->launchAsync(
             juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
             [w](const juce::FileChooser &c) {
