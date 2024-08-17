@@ -83,6 +83,7 @@ template <typename T> struct HasGroupZoneProcessors
     // Returns true if I changed anything
     bool checkOrAdjustIntConsistency(int whichProcessor);
     bool checkOrAdjustBoolConsistency(int whichProcessor);
+    void updateRoutingTableAfterProcessorSwap(size_t f, size_t t);
 
     std::array<dsp::processor::ProcessorStorage, processorCount> processorStorage;
     std::array<dsp::processor::ProcessorControlDescription, processorCount> processorDescription;

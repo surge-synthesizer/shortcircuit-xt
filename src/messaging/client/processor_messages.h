@@ -204,6 +204,8 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
                     z->processorStorage[f] = ts;
                     z->processorStorage[t] = fs;
 
+                    z->updateRoutingTableAfterProcessorSwap(f, t);
+
                     z->checkOrAdjustBoolConsistency(f);
                     z->checkOrAdjustIntConsistency(f);
                     z->checkOrAdjustBoolConsistency(t);
@@ -246,6 +248,8 @@ inline void swapGroupProcessors(const processorPair_t &whichToType, const engine
 
                     g->processorStorage[f] = ts;
                     g->processorStorage[t] = fs;
+
+                    g->updateRoutingTableAfterProcessorSwap(f, t);
 
                     g->checkOrAdjustBoolConsistency(f);
                     g->checkOrAdjustIntConsistency(f);

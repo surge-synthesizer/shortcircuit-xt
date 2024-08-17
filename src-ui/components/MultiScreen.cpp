@@ -180,7 +180,8 @@ MultiScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(MultiScreen *pare
     }
     else
     {
-        lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3"};
+        lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3", "GLFO 4"};
+        assert(lfo->tabNames.size() == scxt::lfosPerGroup);
         lfo->resetTabState();
         eg[0]->setName("GRP EG1");
         eg[1]->setName("GRP EG2");
