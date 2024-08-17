@@ -53,6 +53,7 @@ enum AudioToSerializationMessageId
     a2s_structure_refresh,
     a2s_processor_refresh,
     a2s_macro_updated,
+    a2s_delete_this_pointer,
 };
 
 /**
@@ -64,6 +65,17 @@ struct AudioToSerialization
 
     // std::variant does not allow an array type and
     // i kinda want this fixed size anyway
+    struct ToBeDeleted
+    {
+        void *ptr;
+        enum uint16_t
+        {
+            engine_Zone,
+            engine_Group,
+        } type;
+    };
+
+    static_assert(sizeof(ToBeDeleted) < 8 * sizeof(int32_t));
     union Payload
     {
         int32_t i[8];
@@ -71,6 +83,7 @@ struct AudioToSerialization
         float f[8];
         char c[32];
         void *p;
+        ToBeDeleted delThis;
     } payload{};
 
     enum PayloadType : uint8_t
@@ -80,7 +93,8 @@ struct AudioToSerialization
         UINT,
         FLOAT,
         CHAR,
-        VOID_STAR
+        VOID_STAR,
+        TO_BE_DELETED
     } payloadType{INT};
 };
 

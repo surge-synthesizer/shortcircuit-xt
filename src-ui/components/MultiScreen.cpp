@@ -242,7 +242,7 @@ void MultiScreen::onOtherTabSelection()
     if (pgz.empty())
     {
     }
-    if (pgz == "part")
+    else if (pgz == "part")
         parts->setSelectedTab(0);
     else if (pgz == "group")
         parts->setSelectedTab(1);

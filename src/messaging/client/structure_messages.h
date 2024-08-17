@@ -147,20 +147,22 @@ CLIENT_TO_SERIAL(CreateGroup, c2s_create_group, int, createGroupIn(payload, engi
 inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                        MessageController &cont)
 {
-    engine::Zone *zoneToFree{nullptr};
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a, &zoneToFree](auto &e) {
+        [s = a](auto &e) {
             auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
             e.terminateVoicesForZone(*zoneO);
             auto zid = zoneO->id;
             auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
-            zoneToFree = z.release();
+            auto zoneToFree = z.release();
+
+            messaging::audio::AudioToSerialization a2s;
+            a2s.id = audio::a2s_delete_this_pointer;
+            a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
+            a2s.payload.delThis.ptr = zoneToFree;
+            a2s.payload.delThis.type = audio::AudioToSerialization::ToBeDeleted::engine_Zone;
+            e.getMessageController()->sendAudioToSerialization(a2s);
         },
-        [t = a, &zoneToFree](auto &engine) {
-            if (zoneToFree)
-            {
-                delete zoneToFree;
-            }
+        [t = a](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
@@ -215,34 +217,25 @@ CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
 inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                         MessageController &cont)
 {
-    engine::Group *groupToFree{nullptr};
-
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a, &groupToFree](auto &e) {
-            if (e.getPatch()->getPart(s.part)->getGroups().size() <= 1)
-            {
-                groupToFree = nullptr;
-            }
-            else
-            {
-                auto &groupO = e.getPatch()->getPart(s.part)->getGroup(s.group);
-                e.terminateVoicesForGroup(*groupO);
+        [s = a](auto &e) {
+            if (e.getPatch()->getPart(s.part)->getGroups().size() < s.group)
+                return;
 
-                auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
-                groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
-            }
+            auto &groupO = e.getPatch()->getPart(s.part)->getGroup(s.group);
+            e.terminateVoicesForGroup(*groupO);
+
+            auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
+            auto groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
+
+            messaging::audio::AudioToSerialization a2s;
+            a2s.id = audio::a2s_delete_this_pointer;
+            a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
+            a2s.payload.delThis.ptr = groupToFree;
+            a2s.payload.delThis.type = audio::AudioToSerialization::ToBeDeleted::engine_Group;
+            e.getMessageController()->sendAudioToSerialization(a2s);
         },
-        [t = a, &groupToFree](auto &engine) {
-            if (groupToFree)
-            {
-                delete groupToFree;
-            }
-            else
-            {
-                engine.getMessageController()->reportErrorToClient(
-                    "Unable to Remove Group", "All parts must have one group; you tried to "
-                                              "remove the last group in the part");
-            }
+        [t = a](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
 

@@ -63,10 +63,32 @@ void MessageController::parseAudioMessageOnSerializationThread(
     }
     break;
     case audio::a2s_processor_refresh:
+    {
         SCLOG("Processor Refresh Requestioned. TODO: Minimize this message "
               << (as.payload.i[0] ? "Zone" : "Group") << " slot " << as.payload.i[1]);
         engine.getSelectionManager()->sendClientDataForLeadSelectionState();
         break;
+    }
+    case audio::a2s_delete_this_pointer:
+    {
+        assert(as.payloadType == audio::AudioToSerialization::TO_BE_DELETED);
+        switch (as.payload.delThis.type)
+        {
+        case audio::AudioToSerialization::ToBeDeleted::engine_Zone:
+        {
+            auto z = (engine::Zone *)(as.payload.delThis.ptr);
+            delete z;
+        }
+        break;
+        case audio::AudioToSerialization::ToBeDeleted::engine_Group:
+        {
+            auto g = (engine::Group *)(as.payload.delThis.ptr);
+            delete g;
+        }
+        break;
+        }
+    }
+    break;
     case audio::a2s_none:
         break;
     }
