@@ -60,7 +60,7 @@ void addSCManifest(const std::unique_ptr<RIFF::File> &f, const std::string &type
 std::unordered_map<std::string, std::string> readSCManifest(const std::unique_ptr<RIFF::File> &f)
 {
     auto c1 = f->GetSubChunk('scmf');
-    std::string s((char *)c1->LoadChunkData());
+    std::string s((char *)c1->LoadChunkData(), c1->GetSize());
 
     tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
     tao::json::events::from_string(consumer, s);

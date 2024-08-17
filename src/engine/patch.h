@@ -43,13 +43,16 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
     // TODO - does this really belong in the patch? I think it probably does
     struct Busses
     {
-        Busses() : mainBus(MAIN_0)
+        Busses() : mainBus(MAIN_0) { initialize(); }
+        void initialize()
         {
             std::fill(partToVSTRouting.begin(), partToVSTRouting.end(), 0);
             std::fill(auxToVSTRouting.begin(), auxToVSTRouting.end(), 0);
             int adr = PART_0;
+            mainBus.resetBus();
             for (auto &p : partBusses)
             {
+                p.resetBus();
                 p.address = (BusAddress)adr;
                 p.busSendStorage.supportsSends = true;
                 adr++;
@@ -57,6 +60,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
             adr = AUX_0;
             for (auto &p : auxBusses)
             {
+                p.resetBus();
                 p.address = (BusAddress)adr;
                 adr++;
             }
@@ -168,6 +172,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
             parts[i] = std::make_unique<Part>(i);
             parts[i]->parentPatch = this;
         }
+        busses.initialize();
         setSampleRate(1);
     }
 

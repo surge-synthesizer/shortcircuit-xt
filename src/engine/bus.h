@@ -134,6 +134,16 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
         assert(address != DEFAULT_BUS && address != ERROR_BUS);
     }
 
+    void resetBus()
+    {
+        busSendStorage = BusSendStorage();
+        for (int i = 0; i < maxEffectsPerBus; ++i)
+        {
+            busEffectStorage[i] = BusEffectStorage();
+            busEffects[i].reset();
+        }
+    }
+
     float output alignas(16)[2][blockSize];
     float outputOS alignas(16)[2][blockSize << 1];
     bool hasOSSignal{false}, previousHadOSSignal{false};
