@@ -138,15 +138,32 @@ SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
              }));
 
 SC_STREAMDEF(
+    scxt::engine::Part::PartConfiguration,
+    SC_FROM(v = {{"a", from.active}, {"c", from.channel}, {"m", from.mute}, {"s", from.solo}};),
+    SC_TO({
+        findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
+        findOrSet(v, "a", true, to.active);
+        findOrSet(v, "m", false, to.mute);
+        findOrSet(v, "s", false, to.solo);
+    }));
+
+SC_STREAMDEF(
     scxt::engine::Part, SC_FROM({
         // TODO: Do a non-empty part stream with the If variant
-        v = {{"channel", from.channel}, {"groups", from.getGroups()}, {"macros", from.macros}};
+        v = {{"config", from.configuration}, {"groups", from.getGroups()}, {"macros", from.macros}};
     }),
     SC_TO({
         auto &part = to;
         part.clearGroups();
 
-        findIf(v, "channel", part.channel);
+        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
+        {
+            findIf(v, "channel", part.configuration.channel);
+        }
+        else
+        {
+            findIf(v, "config", part.configuration);
+        }
         findIf(v, "macros", part.macros);
         auto vzones = v.at("groups").get_array();
         for (const auto vz : vzones)

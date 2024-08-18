@@ -29,8 +29,13 @@
 #define SCXT_SRC_UI_COMPONENTS_MULTI_PARTSIDEBARCARD_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/HSliderFilled.h"
 #include "components/HasEditor.h"
+#include "connectors/PayloadDataAttachment.h"
+#include "engine/part.h"
 
 namespace scxt::ui::multi
 {
@@ -38,25 +43,28 @@ struct PartSidebarCard : juce::Component, HasEditor
 {
     int part;
 
+    using boolattachment_t =
+        scxt::ui::connectors::BooleanPayloadDataAttachment<engine::Part::PartConfiguration>;
+
+    static constexpr int row0{2}, rowHeight{20}, rowMargin{2};
+
     static constexpr int height{88}, width{172};
+
+    std::unique_ptr<sst::jucegui::components::ToggleButton> solo, mute;
+    std::unique_ptr<boolattachment_t> muteAtt, soloAtt;
+    std::unique_ptr<sst::jucegui::components::MenuButton> patchName;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> midiMode, outBus, polyCount;
+    std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan, tuning;
     bool selfAccent{true};
-    std::unique_ptr<sst::jucegui::components::Label> partLabel;
-    PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
-    {
-        partLabel = std::make_unique<sst::jucegui::components::Label>();
-        partLabel->setText("Part " + std::to_string(part + 1));
-        addAndMakeVisible(*partLabel);
-        partLabel->setInterceptsMouseClicks(false, false);
-    }
+    PartSidebarCard(int p, SCXTEditor *e);
     void paint(juce::Graphics &g) override;
 
-    void mouseDown(const juce::MouseEvent &e) override;
+    void showMidiModeMenu();
 
-    void resized() override
-    {
-        partLabel->setBounds(getLocalBounds());
-        partLabel->setJustification(juce::Justification::centred);
-    }
+    void mouseDown(const juce::MouseEvent &e) override;
+    void resized() override;
+
+    void resetFromEditorCache();
 };
 } // namespace scxt::ui::multi
 #endif // SHORTCIRCUITXT_PARTSIDEBARCARD_H

@@ -100,19 +100,14 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*scMenu);
 
-    auto comingSoon = []() {
-        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
-                                               "This feature is not yet implemented", "OK");
-    };
-
     undoButton = std::make_unique<jcmp::TextPushButton>();
     undoButton->setLabel("Undo");
-    undoButton->setOnCallback(comingSoon);
+    undoButton->setOnCallback(editor->makeComingSoon());
     addAndMakeVisible(*undoButton);
 
     redoButton = std::make_unique<jcmp::TextPushButton>();
     redoButton->setLabel("Redo");
-    redoButton->setOnCallback(comingSoon);
+    redoButton->setOnCallback(editor->makeComingSoon());
     addAndMakeVisible(*redoButton);
 
     tuningButton = std::make_unique<jcmp::TextPushButton>();
@@ -138,7 +133,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     addAndMakeVisible(*zoomButton);
 
     chipButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::MEMORY);
-    chipButton->setOnCallback(comingSoon);
+    chipButton->setOnCallback(editor->makeComingSoon());
     addAndMakeVisible(*chipButton);
 
     saveAsButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SAVE);

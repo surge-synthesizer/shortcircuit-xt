@@ -70,13 +70,14 @@ struct DriveListBoxModel : juce::ListBoxModel
                                                     jcmp::Label::Styles::labelfont));
 
             // TODO: Style all of these
-            auto textColor = juce::Colour(190, 190, 190);
+            auto textColor =
+                browserPane->editor->themeColor(theme::ColorMap::generic_content_medium);
             auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
 
             if (rowIsSelected)
             {
-                fillColor = juce::Colour(0x40, 0x20, 0x00);
-                textColor = textColor.brighter(0.4);
+                fillColor = browserPane->editor->themeColor(theme::ColorMap::bg_3);
+                textColor = browserPane->editor->themeColor(theme::ColorMap::generic_content_high);
             }
             g.setColour(fillColor);
             g.fillRect(0, 0, width, height);
@@ -398,13 +399,14 @@ struct DriveFSListBoxRow : public juce::Component
                                                     jcmp::Label::Styles::labelfont));
 
             // TODO: Style all of these
-            auto textColor = juce::Colour(190, 190, 190);
+            auto textColor =
+                browserPane->editor->themeColor(theme::ColorMap::generic_content_medium);
             auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
 
             if (isSelected)
             {
-                fillColor = juce::Colour(0x40, 0x20, 0x00);
-                textColor = textColor.brighter(0.4);
+                fillColor = browserPane->editor->themeColor(theme::ColorMap::bg_3);
+                textColor = browserPane->editor->themeColor(theme::ColorMap::generic_content_high);
             }
             g.setColour(fillColor);
             g.fillRect(0, 0, width, height);

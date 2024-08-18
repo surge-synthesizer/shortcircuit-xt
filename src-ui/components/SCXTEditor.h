@@ -201,6 +201,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void onSelectedPart(const int16_t);
     int16_t getSelectedPart() const;
 
+    void onPartConfiguration(const scxt::messaging::client::partConfigurationPayload_t &);
+    std::array<scxt::engine::Part::PartConfiguration, scxt::numParts> partConfigurations;
+
     selection::SelectionManager::otherTabSelection_t otherTabSelection;
     void onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p);
     std::string queryTabSelection(const std::string &k);
@@ -262,6 +265,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
     engine::Engine::EngineStatusMessage engineStatus;
+
+    std::function<void()> makeComingSoon(const std::string &feature = "This feature") const;
 
     /*
      * Items to deal with the shared memory reads

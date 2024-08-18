@@ -546,31 +546,41 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
 struct DummyContinuous : sst::jucegui::data::Continuous
 {
     float f{0.5};
+    bool bip{false};
+    std::string lab{"Unimpl"};
     virtual float getValue() const override { return f; }
-    virtual void setValueFromGUI(const float &fv) override { f = fv; }
+    virtual void setValueFromGUI(const float &fv) override
+    {
+        if (!everEdited && onFirstEdit)
+            onFirstEdit();
+        f = fv;
+        everEdited = true;
+    }
     virtual void setValueFromModel(const float &fv) override { f = fv; };
     virtual float getDefaultValue() const override { return 0.5f; };
-    virtual std::string getLabel() const override { return "Dummy"; };
+    virtual bool isBipolar() const override { return bip; }
+    float getMin() const override { return isBipolar() ? -1 : 0; }
+
+    virtual std::string getLabel() const override
+    {
+        if (lab != "Unimpl")
+            return lab + " (Unimplemented)";
+        return lab;
+    };
+
+    std::function<void()> onFirstEdit{nullptr};
+    bool everEdited{false};
 };
 
-struct DummyDiscrete : sst::jucegui::data::Discrete
+template <typename T>
+std::unique_ptr<T> makeConnectedToDummy(uint32_t index, const std::string &lab, float initVal,
+                                        bool isBip, std::function<void()> onFirstEdit)
 {
-    int v{1};
-    int getValue() const override { return v; }
-    void setValueFromGUI(const int &f) override { v = f; };
-    void setValueFromModel(const int &f) override { v = f; };
-    int getDefaultValue() const override { return 0; }
-    std::string getLabel() const override { return "Dummy"; }
-};
-
-template <typename T, typename C = DummyContinuous>
-std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
-{
-    static std::unordered_map<uint32_t, std::unique_ptr<C>> dummyMap;
+    static std::unordered_map<uint32_t, std::unique_ptr<DummyContinuous>> dummyMap;
 
     auto res = std::make_unique<T>();
 
-    C *thisWillLeak{nullptr};
+    DummyContinuous *thisWillLeak{nullptr};
     auto dmp = dummyMap.find(index);
     if (dmp != dummyMap.end())
     {
@@ -578,8 +588,14 @@ std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
     }
     else
     {
-        auto tmp = std::make_unique<C>();
+        auto tmp = std::make_unique<DummyContinuous>();
         thisWillLeak = tmp.get();
+
+        thisWillLeak->f = initVal;
+        thisWillLeak->bip = isBip;
+        thisWillLeak->lab = lab;
+        thisWillLeak->onFirstEdit = onFirstEdit;
+
         dummyMap[index] = std::move(tmp);
         std::string s;
 
@@ -591,7 +607,7 @@ std::unique_ptr<T> makeConnectedToDummy(uint32_t index)
             t = t << 8;
         }
 
-        SCLOG("WARNING: Dummy Widget in ui. Quasi-memory leak until we attach. '" << s << "'");
+        SCLOG("Incomplete UI bound to dummy source '" << s << "'");
     }
 
     res->setSource(thisWillLeak);

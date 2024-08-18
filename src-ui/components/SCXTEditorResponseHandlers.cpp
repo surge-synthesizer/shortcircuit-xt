@@ -389,4 +389,17 @@ void SCXTEditor::onOtherTabSelection(
         multiScreen->onOtherTabSelection();
     }
 }
+
+void SCXTEditor::onPartConfiguration(
+    const scxt::messaging::client::partConfigurationPayload_t &payload)
+{
+    const auto &[pt, c] = payload;
+    assert(pt >= 0 && pt < scxt::numParts);
+    partConfigurations[pt] = c;
+    // When I have active show/hide i will need to rewrite this i bet
+    if (playScreen && playScreen->partSidebars[pt])
+        playScreen->partSidebars[pt]->resetFromEditorCache();
+    if (multiScreen && multiScreen->parts)
+        multiScreen->parts->partConfigurationChanged(pt);
+}
 } // namespace scxt::ui

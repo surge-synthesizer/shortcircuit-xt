@@ -126,6 +126,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_set_othertab_selection,
 
+    c2s_send_full_part_config,
+
     num_clientToSerializationMessages
 };
 
@@ -151,6 +153,7 @@ enum SerializationToClientMessageIds
     s2c_respond_single_processor_metadata_and_data,
     s2c_notify_mismatched_processors_for_zone,
 
+    s2c_send_part_configuration,
     s2c_send_selected_part,
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,
