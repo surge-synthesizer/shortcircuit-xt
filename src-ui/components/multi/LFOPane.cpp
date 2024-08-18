@@ -447,7 +447,8 @@ struct CurveLFOPane : juce::Component, HasEditor
         //                   parent->selectedTab);
         // angleK = std::make_unique<jcmp::Knob>();
         // angleK->setSource(fakeModel->getDummySourceFor('knb2'));
-        angleK = connectors::makeConnectedToDummy<jcmp::Knob>('angl');
+        angleK = connectors::makeConnectedToDummy<jcmp::Knob>('angl', "Angle", 0, true,
+                                                              editor->makeComingSoon("Angle"));
         addAndMakeVisible(*angleK);
         makeLabel(angleL, "Angle");
 
@@ -578,16 +579,20 @@ struct ENVLFOPane : juce::Component, HasEditor
         makeO(ms.envLfoStorage.sustain, sustainA, sustainS, sustainL);
         makeO(ms.envLfoStorage.release, releaseA, releaseS, releaseL);
 
-        factorK = connectors::makeConnectedToDummy<jcmp::Knob>('fact');
+        factorK = connectors::makeConnectedToDummy<jcmp::Knob>('fact', "Factor", 0.5, false,
+                                                               editor->makeComingSoon("Factor"));
         addAndMakeVisible(*factorK);
         makeLabel(factorL, "Factor");
-        curveA = connectors::makeConnectedToDummy<jcmp::Knob>('crva');
+        curveA = connectors::makeConnectedToDummy<jcmp::Knob>(
+            'crva', "Curve A", 0.5, false, editor->makeComingSoon("Curve Attack"));
         addAndMakeVisible(*curveA);
         makeLabel(curveAL, "Curve A");
-        curveD = connectors::makeConnectedToDummy<jcmp::Knob>('crvd');
+        curveD = connectors::makeConnectedToDummy<jcmp::Knob>(
+            'crvd', "Curve D", 0.5, false, editor->makeComingSoon("Curve Decay"));
         addAndMakeVisible(*curveD);
         makeLabel(curveDL, "Curve D");
-        curveR = connectors::makeConnectedToDummy<jcmp::Knob>('crvr');
+        curveR = connectors::makeConnectedToDummy<jcmp::Knob>(
+            'crvr', "Curve R", 0.5, false, editor->makeComingSoon("Curve Release"));
         addAndMakeVisible(*curveR);
         makeLabel(curveRL, "Curve R");
     }

@@ -110,7 +110,7 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
       sst::jucegui::style::StyleConsumer(sst::jucegui::components::NamedPanel::Styles::styleClass),
       part(p), index(i), valueOnly(vo)
 {
-    knob = connectors::makeConnectedToDummy<sst::jucegui::components::Knob>('mcro');
+    knob = std::make_unique<sst::jucegui::components::Knob>();
     knob->setDrawLabel(false);
     addAndMakeVisible(*knob);
 

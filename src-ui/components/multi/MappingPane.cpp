@@ -181,47 +181,42 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
     MappingZoneHeader(SCXTEditor *ed) : HasEditor(ed)
     {
-        auto comingSoon = []() {
-            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
-                                                   "This feature is not yet implemented", "OK");
-        };
-
         autoMap = std::make_unique<jcmp::TextPushButton>();
         autoMap->setLabel("AUTO-MAP");
-        autoMap->setOnCallback(comingSoon);
+        autoMap->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*autoMap);
 
         midiButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::MIDI);
-        midiButton->setOnCallback(comingSoon);
+        midiButton->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*midiButton);
 
         midiUDButton = std::make_unique<jcmp::GlyphButton>(
             jcmp::GlyphPainter::GlyphType::MIDI, jcmp::GlyphPainter::GlyphType::UP_DOWN, 16);
-        midiUDButton->setOnCallback(comingSoon);
+        midiUDButton->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*midiUDButton);
 
         midiLRButton = std::make_unique<jcmp::GlyphButton>(
             jcmp::GlyphPainter::GlyphType::MIDI, jcmp::GlyphPainter::GlyphType::LEFT_RIGHT, 16);
-        midiLRButton->setOnCallback(comingSoon);
+        midiLRButton->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*midiLRButton);
 
         fixOverlap = std::make_unique<jcmp::TextPushButton>();
         fixOverlap->setLabel("FIX OVERLAP");
-        fixOverlap->setOnCallback(comingSoon);
+        fixOverlap->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*fixOverlap);
 
         fadeOverlap = std::make_unique<jcmp::TextPushButton>();
         fadeOverlap->setLabel("FADE OVERLAP");
-        fadeOverlap->setOnCallback(comingSoon);
+        fadeOverlap->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*fadeOverlap);
 
         zoneSolo = std::make_unique<jcmp::TextPushButton>();
         zoneSolo->setLabel("ZONE SOLO");
-        zoneSolo->setOnCallback(comingSoon);
+        zoneSolo->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*zoneSolo);
 
         lockButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::LOCK);
-        lockButton->setOnCallback(comingSoon);
+        lockButton->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*lockButton);
 
         fileLabel = std::make_unique<jcmp::Label>();
@@ -230,7 +225,7 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
         fileMenu = std::make_unique<jcmp::MenuButton>();
         fileMenu->setLabel("sample-name-to-come.wav");
-        fileMenu->setOnCallback(comingSoon);
+        fileMenu->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*fileMenu);
     }
 

@@ -968,6 +968,10 @@ void Engine::sendFullRefreshToClient() const
     }
     for (int p = 0; p < numParts; ++p)
     {
+        serializationSendToClient(
+            messaging::client::s2c_send_part_configuration,
+            messaging::client::partConfigurationPayload_t{p, getPatch()->getPart(p)->configuration},
+            *(getMessageController()));
         for (int i = 0; i < macrosPerPart; ++i)
         {
             serializationSendToClient(

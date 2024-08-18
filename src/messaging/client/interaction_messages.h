@@ -54,7 +54,7 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
         return;
 
     auto p = sel;
-    auto ch = engine.getPatch()->getPart(p)->channel;
+    auto ch = engine.getPatch()->getPart(p)->configuration.channel;
     if (ch < 0)
         ch = 0;
 

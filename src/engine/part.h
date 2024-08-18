@@ -47,7 +47,7 @@ struct Engine;
 
 struct Part : MoveableOnly<Part>, SampleRateSupport
 {
-    Part(int16_t c) : id(PartID::next()), partNumber(c), channel(c)
+    Part(int16_t c) : id(PartID::next()), partNumber(c)
     {
         pitchBendSmoother.setTarget(0);
         int idx{0};
@@ -58,25 +58,33 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
             m.name = Macro::defaultNameFor(idx);
             idx++;
         }
+        configuration.channel = c;
     }
     virtual ~Part() = default;
 
     PartID id;
     int16_t partNumber;
-    int16_t channel;
     Patch *parentPatch{nullptr};
 
-    BusAddress routeTo{DEFAULT_BUS};
-    void process(Engine &onto);
+    struct PartConfiguration
+    {
+        static constexpr int16_t omniChannel{-1};
 
-    // TODO: have a channel mode like OMNI and MPE and everything
-    static constexpr int16_t omniChannel{-1};
+        bool active{true};
+        int16_t channel{omniChannel}; // a midi channel or a special value like omni
+        bool mute{false};
+        bool solo{false};
+
+        BusAddress routeTo{DEFAULT_BUS};
+    } configuration;
+    void process(Engine &onto);
 
     // TODO: editable name
     std::string getName() const
     {
-        return fmt::format("Part ch={}",
-                           (channel == omniChannel ? "OMNI" : std::to_string(channel + 1)));
+        return fmt::format("Part ch={}", (configuration.channel == PartConfiguration::omniChannel
+                                              ? "OMNI"
+                                              : std::to_string(configuration.channel + 1)));
     }
 
     // TODO: Multiple outputs
@@ -195,5 +203,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     groupContainer_t groups;
 };
 } // namespace scxt::engine
+
+SC_DESCRIBE(scxt::engine::Part::PartConfiguration,
+            SC_FIELD(channel, pmd().asInt().withRange(-1, 15)););
 
 #endif

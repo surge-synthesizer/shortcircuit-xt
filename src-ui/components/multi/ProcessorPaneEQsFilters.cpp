@@ -280,7 +280,7 @@ void ProcessorPane::layoutControlsEQNBandParm()
         return;
     }
     auto bd = getContentAreaComponent()->getLocalBounds();
-    auto slWidth = 20;
+    auto slWidth = 0;
     auto eq = bd.withTrimmedRight(slWidth);
     auto mx = bd.withLeft(bd.getWidth() - slWidth);
 
@@ -330,7 +330,7 @@ void ProcessorPane::layoutControlsEQNBandParm()
                     w->rebuildCurves();
                 }
             };
-        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[(i % 3) + 1].getCentreX(), 5);
+        lo::knobCX<locon::mediumKnob>(*floatEditors[i], cols[(i % 3) + 1].getCentreX(), 2);
         if (i < 3)
             floatEditors[i]->setVisible(true);
         else

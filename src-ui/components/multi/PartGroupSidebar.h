@@ -58,6 +58,8 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<GroupSidebar> groupSidebar;
     std::unique_ptr<PartSidebar> partSidebar;
 
+    void partConfigurationChanged(int i);
+
     void resized() override;
 };
 } // namespace scxt::ui::multi

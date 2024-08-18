@@ -465,4 +465,9 @@ void PartGroupSidebar::setSelectedTab(int t)
                             (t == 0 ? "part" : (t == 1 ? "group" : "zone")));
     repaint();
 }
+
+void PartGroupSidebar::partConfigurationChanged(int i)
+{
+    partSidebar->parts[i]->resetFromEditorCache();
+}
 } // namespace scxt::ui::multi

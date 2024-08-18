@@ -136,7 +136,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         std::vector<pathToZone_t> res;
         for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
         {
-            if (part->channel == channel || part->channel == Part::omniChannel)
+            if (!part->configuration.mute &&
+                (part->configuration.channel == channel ||
+                 part->configuration.channel == Part::PartConfiguration::omniChannel))
             {
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
