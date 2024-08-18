@@ -606,8 +606,6 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
 
 void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::VelocityRange vrange)
 {
-    SCLOG("Engine Create Empty Zone");
-
     assert(messageController->threadingChecker.isSerialThread());
 
     // 2. Create a zone object on this thread but don't add it
