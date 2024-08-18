@@ -59,7 +59,9 @@ namespace scxt::engine
 
 Engine::Engine()
 {
-    SCLOG("Shortcircuit XT : Constructing Engine - Version " << scxt::build::FullVersionStr);
+    SCLOG("Shortcircuit XT : Constructing Engine");
+    SCLOG("    Version   = " << scxt::build::FullVersionStr);
+    SCLOG("    Stream V  = " << humanReadableVersion(scxt::currentStreamingVersion));
 
     id.id = rng.unifU32() % 1024;
 

@@ -137,7 +137,7 @@ struct GroupMatrixEndpoints
         LFOTarget(engine::Engine *e, uint32_t p) : shared::LFOTargetEndpointData<TG, 'glfo'>(p)
         {
             if (e)
-                SCLOG_UNIMPL("Engine Attach Group LFO");
+                SCLOG_UNIMPL_ONCE("Engine Attach Group LFO");
         }
         void bind(GroupMatrix &m, engine::Group &g);
     };

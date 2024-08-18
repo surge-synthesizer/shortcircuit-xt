@@ -142,7 +142,6 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
                 levelK[i]->setBounds(5 + i * (kw + 5), 40, kw, kw);
                 levelK[i]->setEnabled(w->processorView.type != dsp::processor::proct_none);
                 setupWidgetForValueTooltip(levelK[i].get(), levelA[i].get());
-                SCLOG_ONCE("Fix up accessibility for this knob");
                 addAndMakeVisible(*levelK[i]);
             }
         }

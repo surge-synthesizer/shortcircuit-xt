@@ -99,7 +99,7 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
         }
     }
 
-    SCLOG("Loading sample " << p.u8string() << " into " << id.to_string());
+    SCLOG("Loading [" << p.u8string() << "]  @ [" << id.to_string() << "]");
 
     auto sp = std::make_shared<Sample>(id);
 

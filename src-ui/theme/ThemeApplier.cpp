@@ -155,7 +155,6 @@ ThemeApplier::ThemeApplier()
     static bool detailInitialized{false};
     if (!detailInitialized)
     {
-        SCLOG("Initializing All Theme Stylesheets");
         detail::multi::init();
         detail::multi::zone::init();
         detail::multi::group::init();
