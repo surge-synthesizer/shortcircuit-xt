@@ -63,12 +63,14 @@ struct PartSidebar : juce::Component, HasEditor
     }
     void resized() override
     {
-        viewport->setBounds(getLocalBounds());
-        auto w = getWidth() - viewport->getScrollBarThickness() - 2;
-        viewportContents->setBounds(0, 0, w, PartSidebarCard::height * scxt::numParts);
+        auto w = PartSidebarCard::width + viewport->getScrollBarThickness() + 2;
+        viewport->setBounds(getLocalBounds().withWidth(w).translated(3, 0));
+        viewportContents->setBounds(0, 0, PartSidebarCard::width,
+                                    PartSidebarCard::height * scxt::numParts);
         for (int i = 0; i < scxt::numParts; ++i)
         {
-            parts[i]->setBounds(0, i * PartSidebarCard::height, w, PartSidebarCard::height);
+            parts[i]->setBounds(0, i * PartSidebarCard::height, PartSidebarCard::width,
+                                PartSidebarCard::height);
         }
     }
 };

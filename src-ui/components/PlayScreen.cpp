@@ -52,7 +52,7 @@ struct ViewportComponent : juce::Component, HasEditor
             g.setColour(col);
             auto bx =
                 playScreen->rectangleForPart(i).withTrimmedBottom(PlayScreen::interPartMargin);
-            g.drawRect(bx, 1);
+            g.drawRoundedRectangle(bx.toFloat(), 2, 1);
             g.drawVerticalLine(bx.getX() + multi::PartSidebarCard::width, bx.getY(),
                                bx.getY() + bx.getHeight());
         }
