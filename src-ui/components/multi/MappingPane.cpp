@@ -131,8 +131,15 @@ struct MappingZones : juce::Component, HasEditor
     }
     void mouseDoubleClick(const juce::MouseEvent &e) override;
 
+    void resetLeadZoneBounds()
+    {
+        if (cacheLastZone.has_value())
+            setLeadZoneBounds(*cacheLastZone);
+    }
+    std::optional<engine::Part::zoneMappingItem_t> cacheLastZone;
     void setLeadZoneBounds(const engine::Part::zoneMappingItem_t &az)
     {
+        cacheLastZone = az;
         auto r = rectangleForZone(az);
         lastSelectedZone.clear();
         lastSelectedZone.push_back(r);
@@ -248,7 +255,6 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
 struct Zoomable : public juce::Component
 {
-
     std::unique_ptr<juce::Viewport> viewport;
     int scrollDirection = 1;
     void invertScroll(bool invert) { scrollDirection = invert ? -1 : 1; }
@@ -800,6 +806,8 @@ struct MappingDisplay : juce::Component,
                                     keyboard->getHeight());
                 isResizingZones = false;
             }
+
+            mappingZones->resetLeadZoneBounds();
         }
         else if (&component == keyboard.get())
         {
@@ -1763,13 +1771,14 @@ std::array<int16_t, 3> MappingZones::rootAndRangeForPosition(const juce::Point<i
 {
     assert(Keyboard::lastMidiNote > Keyboard::firstMidiNote);
     auto lb = getLocalBounds().toFloat();
+    auto bip = getBoundsInParent();
     auto keyRegion = lb.withTop(lb.getBottom() - Keyboard::keyboardHeight + 1);
     auto kw = keyRegion.getWidth() / (Keyboard::lastMidiNote - Keyboard::firstMidiNote);
 
-    auto rootKey = std::clamp(p.getX() * 1.f / kw + Keyboard::firstMidiNote,
+    auto rootKey = std::clamp((p.getX() - bip.getX()) * 1.f / kw + Keyboard::firstMidiNote,
                               (float)Keyboard::firstMidiNote, (float)Keyboard::lastMidiNote);
 
-    auto fromTop = std::clamp(p.getY(), 0, getHeight()) * 1.f / getHeight();
+    auto fromTop = std::clamp((p.getY() - bip.getY()), 0, getHeight()) * 1.f / getHeight();
     auto span = (1.0f - sqrt(fromTop)) * 80;
     auto low = std::clamp(rootKey - span, 0.f, 127.f);
     auto high = std::clamp(rootKey + span, 0.f, 127.f);
