@@ -127,7 +127,7 @@ void PartSidebarCard::paint(juce::Graphics &g)
     {
         auto rb = getLocalBounds().reduced(1);
 
-        g.drawRect(rb);
+        g.drawRoundedRectangle(rb.toFloat(), 2, 1);
     }
     auto r = juce::Rectangle<int>(5, row0 + rowMargin, 18, rowHeight - 2 * rowMargin);
     g.setFont(editor->themeApplier.interMediumFor(12));
@@ -136,7 +136,7 @@ void PartSidebarCard::paint(juce::Graphics &g)
     r = r.translated(0, rowHeight);
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::MIDI, med);
     r = r.translated(0, rowHeight);
-    jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::VOLUME, med);
+    jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::SPEAKER, med);
     r = r.translated(0, rowHeight);
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::POLYPHONY, med);
 
