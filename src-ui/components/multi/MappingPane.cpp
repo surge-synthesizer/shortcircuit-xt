@@ -255,10 +255,10 @@ struct Zoomable : public juce::Component
 
     struct zoomFactor
     {
-        float acc = 1.f;
-        int val = 1;
-        float min = 1.f;
-        float max = 4.f;
+        float acc{0.f};
+        float val{1.f};
+        float min{1.f};
+        float max{4.f};
     } zoomX, zoomY;
 
     enum class Axis
@@ -270,8 +270,8 @@ struct Zoomable : public juce::Component
     Zoomable(juce::Component *attachedComponent,
              std::pair<float, float> minMaxX = std::make_pair(1.f, 4.f),
              std::pair<float, float> minMaxY = std::make_pair(1.f, 4.f))
-        : zoomX({1.f, 1, minMaxX.first, minMaxX.second}),
-          zoomY({1.f, 1, minMaxY.first, minMaxY.second})
+        : zoomX({0.f, 1, minMaxX.first, minMaxX.second}),
+          zoomY({0.f, 1, minMaxY.first, minMaxY.second})
     {
         viewport = std::make_unique<sst::jucegui::components::Viewport>();
         viewport->setViewedComponent(attachedComponent, false);
@@ -301,52 +301,61 @@ struct Zoomable : public juce::Component
     void zoom(Axis axis, float delta, const juce::Point<float> &p)
     {
         constexpr auto acceleration = 10.f;
-
         auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
+        // If zoome is allowe
         if (z.min != z.max)
         {
+            // accumulate the zoom
             z.acc += delta * acceleration * scrollDirection;
-            auto m = 0.f;
-            std::modf(z.acc, &m);
-            auto zoom = m != 0.f;
-            if (zoom)
+
+            // and if the number of pixels the accumlated zoom makes
+            auto pxdf = std::fabs(z.acc * getWidth());
+
+            // are more than 3 (somewhat arbitrarily)
+            if (pxdf > 3)
             {
+                // then we want to zoom
                 auto prevVal = static_cast<float>(z.val);
-                z.val = std::clamp(z.val + m, z.min, z.max);
-                z.acc = 0.f;
+                z.val = std::clamp(z.val + z.acc, z.min, z.max);
+                z.acc = 0;
 
                 auto viewedComp = viewport->getViewedComponent();
 
+                // Now we know the position and size of the viewed component
                 auto x = viewedComp->getX();
                 auto y = viewedComp->getY();
 
-                auto w = viewport->getWidth() * zoomX.val;
+                auto wu = viewedComp->getWidth();
+                auto hu = viewedComp->getHeight();
+
+                auto w = (int)(viewport->getWidth() * zoomX.val);
                 if (viewport->isVerticalScrollBarShown())
                 {
                     w -= viewport->getScrollBarThickness();
                 }
-                auto h = viewport->getHeight() * zoomY.val;
+                auto h = (int)(viewport->getHeight() * zoomY.val);
                 if (viewport->isHorizontalScrollBarShown())
                 {
                     h -= viewport->getScrollBarThickness();
                 }
 
-                auto applyZoom = [prevVal, z](auto &compPos, auto compSize, auto viewSize,
-                                              auto mousePos) {
-                    auto hvs = viewSize / 2;
-                    auto offset = hvs - mousePos;
-                    compPos += offset;
-                    offset = hvs - compPos;
-                    compPos -= offset * (z.val / prevVal - 1);
-                    compPos = std::clamp(compPos, -compSize + viewSize, 0);
-                };
                 if (axis == Axis::horizontalZoom)
                 {
-                    applyZoom(x, w, viewport->getWidth(), p.x);
+                    // How far in percentage is the mouse in the underlyer
+                    auto mpU = 1.f * (p.x - x) / wu;
+                    // Whats the new width
+                    auto newWidth = w;
+                    // so we want the position the same namely
+                    // (px -xold) / wold = (px - xnew)/wnew
+                    // (px - xold) * wnew / wold = px - xnew
+                    // xnew = px - (px - xold) * wnew / wold
+                    x = p.x - mpU * newWidth;
                 }
                 else
                 {
-                    applyZoom(y, h, viewport->getHeight(), p.y);
+                    auto mpU = 1.f * (p.y - y) / hu;
+                    auto newHeight = h;
+                    y = p.y - mpU * newHeight;
                 }
 
                 viewedComp->setBounds(x, y, w, h);
@@ -358,9 +367,15 @@ struct Zoomable : public juce::Component
     {
         if (e.mods.isAltDown())
         {
-            auto axis = e.mods.isShiftDown() ? Axis::horizontalZoom : Axis::verticalZoom;
+            auto axis = e.mods.isShiftDown() ? Axis::verticalZoom : Axis::horizontalZoom;
             zoom(axis, w.deltaY, e.position);
         }
+    }
+
+    void mouseMagnify(const juce::MouseEvent &e, float scaleFactor) override
+    {
+        auto axis = e.mods.isShiftDown() ? Axis::verticalZoom : Axis::horizontalZoom;
+        zoom(axis, 0.1 * (scaleFactor - 1), e.position);
     }
 };
 
