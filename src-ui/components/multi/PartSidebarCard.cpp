@@ -121,13 +121,17 @@ void PartSidebarCard::paint(juce::Graphics &g)
     }
     else
     {
-        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        g.setColour(editor->themeColor(theme::ColorMap::accent_1a).withAlpha(0.3f));
     }
     if (selfAccent)
     {
         auto rb = getLocalBounds().reduced(1);
 
         g.drawRoundedRectangle(rb.toFloat(), 2, 1);
+    }
+    if (editor->getSelectedPart() != part)
+    {
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
     }
     auto r = juce::Rectangle<int>(5, row0 + rowMargin, 18, rowHeight - 2 * rowMargin);
     g.setFont(editor->themeApplier.interMediumFor(12));

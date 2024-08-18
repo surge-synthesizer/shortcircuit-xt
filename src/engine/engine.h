@@ -349,7 +349,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         uint64_t pVer{0};
         explicit UnstreamGuard(uint64_t sv)
         {
-            SCLOG("Unstreaming engine with streaming version = " << scxt::humanReadableVersion(sv));
+            SCLOG("Unstreaming engine::Engine. Version : " << scxt::humanReadableVersion(sv));
             pIs = engine::Engine::isFullEngineUnstream;
             pVer = engine::Engine::fullEngineUnstreamStreamingVersion;
             engine::Engine::isFullEngineUnstream = true;
@@ -366,20 +366,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         StreamReason pIs{IN_PROCESS};
         explicit StreamGuard(StreamReason sr)
         {
-            switch (sr)
-            {
-            case IN_PROCESS:
-                SCLOG("Engine Stream Guard - In Process");
-                break;
-
-            case FOR_DAW:
-                SCLOG("Engine Stream Guard - For DAW");
-                break;
-
-            case FOR_MULTI:
-                SCLOG("Engine Stream Guard - For Multi");
-                break;
-            }
             pIs = engine::Engine::streamReason;
             engine::Engine::streamReason = sr;
         }
