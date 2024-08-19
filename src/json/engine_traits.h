@@ -180,13 +180,13 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"routeTo", (int)t.routeTo}};
              }),
              SC_TO({
-                 int rt;
                  findIf(v, "amplitude", result.amplitude);
                  findIf(v, "pan", result.pan);
                  findIf(v, "muted", result.muted);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
                  findIf(v, "oversample", result.oversample);
+                 int rt{engine::BusAddress::DEFAULT_BUS};
                  findIf(v, "routeTo", rt);
                  result.routeTo = (engine::BusAddress)(rt);
              }));
@@ -234,14 +234,22 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneOutputInfo, SC_FROM({
              }),
              SC_TO({
                  auto &zo = to;
-                 int rt;
                  findIf(v, {"amp", "amplitude"}, zo.amplitude);
                  findIf(v, "pan", zo.pan);
                  findOrSet(v, "muted", false, zo.muted);
                  findOrSet(v, {"prt", "procRouting"},
                            engine::Zone::ProcRoutingPath::procRoute_linear, zo.procRouting);
-                 findIf(v, "routeTo", rt);
-                 zo.routeTo = (engine::BusAddress)(rt);
+                 int rt{engine::BusAddress::DEFAULT_BUS};
+                 findIf(v, {"to", "routeTo"}, rt);
+
+                 // There was an error which streamed garbage for a while.
+                 // Might as well be defensive hereon out even though I
+                 // could bump
+                 if (rt >= engine::BusAddress::ERROR_BUS &&
+                     rt <= engine::BusAddress::AUX_0 + numAux)
+                     zo.routeTo = (engine::BusAddress)(rt);
+                 else
+                     zo.routeTo = engine::BusAddress::DEFAULT_BUS;
              }));
 
 SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
