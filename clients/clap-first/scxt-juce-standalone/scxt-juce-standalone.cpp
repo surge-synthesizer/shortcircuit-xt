@@ -38,7 +38,7 @@
 #include "version.h"
 
 #include "engine/engine.h"
-#include "components/SCXTEditor.h"
+#include "app/SCXTEditor.h"
 #include "sst/voicemanager/midi1_to_voicemanager.h"
 
 using namespace juce;
@@ -52,7 +52,8 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
         void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::red); }
         void resized() override
         {
-            onto.setBounds(0, 0, scxt::ui::SCXTEditor::edWidth, scxt::ui::SCXTEditor::edHeight);
+            onto.setBounds(0, 0, scxt::ui::app::SCXTEditor::edWidth,
+                           scxt::ui::app::SCXTEditor::edHeight);
         }
     };
     SCXTApplicationWindow()
@@ -65,15 +66,15 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
         engine = std::make_unique<scxt::engine::Engine>();
         engine->runningEnvironment = "Temporary SCXT Standalone";
 
-        editor = std::make_unique<scxt::ui::SCXTEditor>(
+        editor = std::make_unique<scxt::ui::app::SCXTEditor>(
             *(engine->getMessageController()), *(engine->defaults), *(engine->getSampleManager()),
             *(engine->getBrowser()), engine->sharedUIMemoryState);
         editorHolder = std::make_unique<Intermediate>(*editor);
         editor->onZoomChanged = [this](auto f) {
-            this->setSize(scxt::ui::SCXTEditor::edWidth * f,
-                          scxt::ui::SCXTEditor::edHeight * f + getTitleBarHeight());
+            this->setSize(scxt::ui::app::SCXTEditor::edWidth * f,
+                          scxt::ui::app::SCXTEditor::edHeight * f + getTitleBarHeight());
         };
-        editor->setSize(scxt::ui::SCXTEditor::edWidth, scxt::ui::SCXTEditor::edHeight);
+        editor->setSize(scxt::ui::app::SCXTEditor::edWidth, scxt::ui::app::SCXTEditor::edHeight);
         Component::addAndMakeVisible(*editorHolder);
 
         setTitleBarButtonsRequired(DocumentWindow::minimiseButton | DocumentWindow::closeButton,
@@ -302,7 +303,7 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
     AudioDeviceManager deviceManager;
 
     std::unique_ptr<scxt::engine::Engine> engine;
-    std::unique_ptr<scxt::ui::SCXTEditor> editor;
+    std::unique_ptr<scxt::ui::app::SCXTEditor> editor;
     std::unique_ptr<juce::PropertiesFile> properties;
     std::unique_ptr<Intermediate> editorHolder;
 };

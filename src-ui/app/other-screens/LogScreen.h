@@ -24,35 +24,34 @@
  * All source for ShortcircuitXT is available at
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
-#ifndef CLIENTS_JUCE_PLUGIN_SCXTPLUGINEDITOR_H
-#define CLIENTS_JUCE_PLUGIN_SCXTPLUGINEDITOR_H
 
-#include <juce_audio_processors/juce_audio_processors.h>
-#include "SCXTProcessor.h"
-#include "engine/engine.h"
-#include "messaging/messaging.h"
-#include "app/SCXTEditor.h"
-#include "browser/browser.h"
+#ifndef SCXT_SRC_UI_COMPONENTS_LOGSCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_LOGSCREEN_H
 
-//==============================================================================
-/**
- */
-class SCXTPluginEditor : public juce::AudioProcessorEditor
+#include "app/HasEditor.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+
+namespace scxt::ui::app::other_screens
 {
-  public:
-    SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &,
-                     scxt::infrastructure::DefaultsProvider &, const scxt::sample::SampleManager &,
-                     const scxt::browser::Browser &,
-                     const scxt::engine::Engine::SharedUIMemoryState &);
-    ~SCXTPluginEditor();
+struct LogScreen : juce::Component, HasEditor
+{
+    LogScreen(SCXTEditor *e);
 
-    //==============================================================================
+    std::unique_ptr<juce::TextEditor> logDisplay;
+    std::unique_ptr<juce::TextButton> copyButton, closeButton;
+
+    juce::Font displayFont;
+
+    void visibilityChanged() override;
+    void reshowLog();
     void resized() override;
 
-  private:
-    std::unique_ptr<scxt::ui::app::SCXTEditor> ed;
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colour(0x90, 0x90, 0x90)); }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTPluginEditor)
+    bool keyPressed(const juce::KeyPress &key) override;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LogScreen);
 };
+} // namespace scxt::ui::app::other_screens
 
-#endif // CLIENTS_JUCE-PLUGIN_SCXTPLUGINEDITOR_H
+#endif // SHORTCIRCUIT_ABOUTESCREEN_H

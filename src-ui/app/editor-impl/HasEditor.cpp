@@ -24,35 +24,11 @@
  * All source for ShortcircuitXT is available at
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
-#ifndef CLIENTS_JUCE_PLUGIN_SCXTPLUGINEDITOR_H
-#define CLIENTS_JUCE_PLUGIN_SCXTPLUGINEDITOR_H
 
-#include <juce_audio_processors/juce_audio_processors.h>
-#include "SCXTProcessor.h"
-#include "engine/engine.h"
-#include "messaging/messaging.h"
+#include "app/HasEditor.h"
 #include "app/SCXTEditor.h"
-#include "browser/browser.h"
 
-//==============================================================================
-/**
- */
-class SCXTPluginEditor : public juce::AudioProcessorEditor
+namespace scxt::ui::app
 {
-  public:
-    SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &,
-                     scxt::infrastructure::DefaultsProvider &, const scxt::sample::SampleManager &,
-                     const scxt::browser::Browser &,
-                     const scxt::engine::Engine::SharedUIMemoryState &);
-    ~SCXTPluginEditor();
-
-    //==============================================================================
-    void resized() override;
-
-  private:
-    std::unique_ptr<scxt::ui::app::SCXTEditor> ed;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTPluginEditor)
-};
-
-#endif // CLIENTS_JUCE-PLUGIN_SCXTPLUGINEDITOR_H
+HasEditor::HasEditor(SCXTEditor *e) : editor(e) {}
+} // namespace scxt::ui::app

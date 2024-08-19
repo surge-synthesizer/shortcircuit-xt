@@ -1,38 +1,36 @@
 project(scxt-ui LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
+        app/browser-ui/BrowserPane.cpp
 
-        components/SCXTEditor.cpp
-        components/SCXTEditorMenus.cpp
-        components/SCXTEditorResponseHandlers.cpp
+        app/editor-impl/HasEditor.cpp
+        app/editor-impl/SCXTEditor.cpp
+        app/editor-impl/SCXTEditorMenus.cpp
+        app/editor-impl/SCXTEditorResponseHandlers.cpp
 
-        components/HasEditor.cpp
+        app/edit-screen/EditScreen.cpp
+        app/edit-screen/components/AdsrPane.cpp
+        app/edit-screen/components/LFOPane.cpp
+        app/edit-screen/components/MappingPane.cpp
+        app/edit-screen/components/ModPane.cpp
+        app/edit-screen/components/OutputPane.cpp
+        app/edit-screen/components/PartGroupSidebar.cpp
+        app/edit-screen/components/ProcessorPane.cpp
+        app/edit-screen/components/ProcessorPaneEQsFilters.cpp
 
-        components/HeaderRegion.cpp
-        components/MixerScreen.cpp
-        components/MultiScreen.cpp
-        components/SendFXScreen.cpp
-        components/AboutScreen.cpp
-        components/PlayScreen.cpp
-        components/LogScreen.cpp
-        components/WelcomeScreen.cpp
+        app/mixer-screen/MixerScreen.cpp
+        app/mixer-screen/components/BusPane.cpp
+        app/mixer-screen/components/ChannelStrip.cpp
+        app/mixer-screen/components/PartEffectsPane.cpp
 
-        components/browser/BrowserPane.cpp
+        app/other-screens/AboutScreen.cpp
+        app/other-screens/LogScreen.cpp
+        app/other-screens/WelcomeScreen.cpp
+        app/play-screen/PlayScreen.cpp
 
-        components/mixer/BusPane.cpp
-        components/mixer/PartEffectsPane.cpp
-        components/mixer/ChannelStrip.cpp
-
-        components/multi/AdsrPane.cpp
-        components/multi/LFOPane.cpp
-        components/multi/MappingPane.cpp
-        components/multi/ModPane.cpp
-        components/multi/OutputPane.cpp
-        components/multi/PartGroupSidebar.cpp
-        components/multi/PartSidebarCard.cpp
-        components/multi/ProcessorPane.cpp
-        components/multi/ProcessorPaneEQsFilters.cpp
-        components/multi/SingleMacroEditor.cpp
+        app/shared/HeaderRegion.cpp
+        app/shared/PartSidebarCard.cpp
+        app/shared/SingleMacroEditor.cpp
 
         connectors/SCXTResources.cpp
         connectors/JSONAssetSupport.cpp
