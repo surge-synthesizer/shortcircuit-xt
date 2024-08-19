@@ -27,7 +27,7 @@
 
 #include "SCXTProcessor.h"
 #include "SCXTPluginEditor.h"
-#include "components/SCXTEditor.h"
+#include "app/SCXTEditor.h"
 #include "engine/engine.h"
 
 //==============================================================================
@@ -38,12 +38,12 @@ SCXTPluginEditor::SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageCon
                                    const scxt::engine::Engine::SharedUIMemoryState &st)
     : juce::AudioProcessorEditor(&p)
 {
-    ed = std::make_unique<scxt::ui::SCXTEditor>(mc, d, s, br, st);
+    ed = std::make_unique<scxt::ui::app::SCXTEditor>(mc, d, s, br, st);
     ed->onZoomChanged = [this](auto f) {
-        setSize(scxt::ui::SCXTEditor::edWidth * f, scxt::ui::SCXTEditor::edHeight * f);
+        setSize(scxt::ui::app::SCXTEditor::edWidth * f, scxt::ui::app::SCXTEditor::edHeight * f);
     };
     addAndMakeVisible(*ed);
-    setSize(scxt::ui::SCXTEditor::edWidth, scxt::ui::SCXTEditor::edHeight);
+    setSize(scxt::ui::app::SCXTEditor::edWidth, scxt::ui::app::SCXTEditor::edHeight);
     ed->setBounds(0, 0, getWidth(), getHeight());
     setResizable(false, false);
 }

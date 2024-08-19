@@ -38,7 +38,10 @@
 
 namespace scxt::ui
 {
+namespace app
+{
 struct SCXTEditor;
+}
 namespace theme
 {
 struct ThemeApplier
@@ -67,7 +70,7 @@ struct ThemeApplier
     juce::Font interRegularFor(int ht) const;
     juce::Font interLightFor(int ht) const;
 
-    friend scxt::ui::SCXTEditor;
+    friend scxt::ui::app::SCXTEditor;
 
   private:
     std::unique_ptr<ColorMap> colors;

@@ -73,10 +73,10 @@ jobs:
             juce_style: FALSE
             installer_name: ""
             installer_dir: clapfirst
-          - name: Juce Style
-            juce_style: TRUE
-            installer_name: "OldJuceStyle-"
-            installer_dir: jucestyle
+          #- name: Juce Style
+          #  juce_style: TRUE
+          #  installer_name: "OldJuceStyle-"
+          #  installer_dir: jucestyle
 
     steps:
       - name: Checkout code

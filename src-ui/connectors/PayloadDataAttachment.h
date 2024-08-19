@@ -37,13 +37,13 @@
 #include "sst/jucegui/data/Discrete.h"
 #include "datamodel/metadata.h"
 #include "sample/sample.h"
-#include "components/HasEditor.h"
+#include "app/HasEditor.h"
 
 namespace scxt::ui::connectors
 {
 
 template <typename M, typename P, typename V, typename... Args>
-inline void updateSingleValue(const P &p, V &value, HasEditor *e, Args... args)
+inline void updateSingleValue(const P &p, V &value, app::HasEditor *e, Args... args)
 {
     static_assert(std::is_standard_layout_v<P>);
 
@@ -62,7 +62,7 @@ inline void updateSingleValue(const P &p, V &value, HasEditor *e, Args... args)
 
 template <typename M, typename A, typename ABase, typename... Args>
 inline std::function<void(const ABase &)> makeUpdater(A &att, const typename A::payload_t &p,
-                                                      HasEditor *e, Args... args)
+                                                      app::HasEditor *e, Args... args)
 {
     static_assert(std::is_standard_layout_v<typename A::payload_t>);
 
@@ -97,7 +97,8 @@ inline std::function<void(const ABase &)> makeUpdater(A &att, const typename A::
 }
 
 template <typename M, typename A, typename ABase = A, typename... Args>
-inline void configureUpdater(A &att, const typename A::payload_t &p, HasEditor *e, Args... args)
+inline void configureUpdater(A &att, const typename A::payload_t &p, app::HasEditor *e,
+                             Args... args)
 {
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
 }
@@ -449,7 +450,7 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
     template <typename W, typename... Args>
     static std::pair<std::unique_ptr<A>, std::unique_ptr<W>>
     attachR(const datamodel::pmd &md, const typename A::payload_t &p, typename A::value_t &val,
-            HasEditor *e, Args... args)
+            app::HasEditor *e, Args... args)
     {
         auto att = std::make_unique<A>(md, val);
         configureUpdater<Msg, A, ABase>(*att, p, e, std::forward<Args>(args)...);
@@ -467,7 +468,7 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
     }
 
     template <typename W, typename... Args>
-    static void attach(const typename A::payload_t &p, typename A::value_t &val, HasEditor *e,
+    static void attach(const typename A::payload_t &p, typename A::value_t &val, app::HasEditor *e,
                        std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes, Args... args)
     {
         auto md = scxt::datamodel::describeValue(p, val);
@@ -479,7 +480,7 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
 
     template <typename W, typename... Args>
     static void attach(const datamodel::pmd &md, const typename A::payload_t &p,
-                       typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
+                       typename A::value_t &val, app::HasEditor *e, std::unique_ptr<A> &aRes,
                        std::unique_ptr<W> &wRes, Args... args)
     {
         auto [a, w] = attachR<W>(md, p, val, e, std::forward<Args>(args)...);
@@ -489,7 +490,7 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
 
     template <typename W, typename... Args>
     static void attachAndAdd(const datamodel::pmd &md, const typename A::payload_t &p,
-                             typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
+                             typename A::value_t &val, app::HasEditor *e, std::unique_ptr<A> &aRes,
                              std::unique_ptr<W> &wRes, Args... args)
     {
         auto [a, w] = attachR<W>(md, p, val, e, std::forward<Args>(args)...);
@@ -504,8 +505,9 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
     }
 
     template <typename W, typename... Args>
-    static void attachAndAdd(const typename A::payload_t &p, typename A::value_t &val, HasEditor *e,
-                             std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes, Args... args)
+    static void attachAndAdd(const typename A::payload_t &p, typename A::value_t &val,
+                             app::HasEditor *e, std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes,
+                             Args... args)
     {
         auto md = scxt::datamodel::describeValue(p, val);
         attachAndAdd(md, p, val, e, aRes, wRes, std::forward<Args>(args)...);
@@ -513,8 +515,9 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
 
     template <typename W, typename... Args>
     static void attachLabelAndAdd(const datamodel::pmd &md, const typename A::payload_t &p,
-                                  typename A::value_t &val, HasEditor *e, std::unique_ptr<A> &aRes,
-                                  std::unique_ptr<W> &wRes, const std::string &lab, Args... args)
+                                  typename A::value_t &val, app::HasEditor *e,
+                                  std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes,
+                                  const std::string &lab, Args... args)
     {
         assert(!wRes);
         wRes = std::make_unique<W>();
@@ -535,8 +538,8 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
 
     template <typename W, typename... Args>
     static void attachLabelAndAdd(const typename A::payload_t &p, typename A::value_t &val,
-                                  HasEditor *e, std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes,
-                                  const std::string &lab, Args... args)
+                                  app::HasEditor *e, std::unique_ptr<A> &aRes,
+                                  std::unique_ptr<W> &wRes, const std::string &lab, Args... args)
     {
         auto md = scxt::datamodel::describeValue(p, val);
         attachLabelAndAdd(md, p, val, e, aRes, wRes, lab, std::forward<Args>(args)...);

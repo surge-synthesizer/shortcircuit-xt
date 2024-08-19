@@ -62,7 +62,7 @@ namespace global
 void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols);
 } // namespace global
 
-namespace multi
+namespace edit
 {
 static constexpr sheet_t::Class ModulationJogButon{"multi.modulation.jogbutton"};
 static constexpr sheet_t::Class ModulationToggle{"multi.modulation.toggle"};
@@ -123,7 +123,7 @@ void init()
 }
 
 } // namespace group
-} // namespace multi
+} // namespace edit
 namespace header
 {
 static constexpr sheet_t::Class TextPushButton{"header.textbutton"};
@@ -155,9 +155,9 @@ ThemeApplier::ThemeApplier()
     static bool detailInitialized{false};
     if (!detailInitialized)
     {
-        detail::multi::init();
-        detail::multi::zone::init();
-        detail::multi::group::init();
+        detail::edit::init();
+        detail::edit::zone::init();
+        detail::edit::group::init();
         detail::header::init();
         detail::util::init();
         detailInitialized = true;
@@ -168,9 +168,9 @@ ThemeApplier::ThemeApplier()
 void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_t &s)
 {
     detail::global::applyColors(s, *colors);
-    detail::multi::applyColors(s, *colors);
-    detail::multi::zone::applyColors(s, *colors);
-    detail::multi::group::applyColors(s, *colors);
+    detail::edit::applyColors(s, *colors);
+    detail::edit::zone::applyColors(s, *colors);
+    detail::edit::group::applyColors(s, *colors);
     detail::header::applyColorsAndFonts(s, *colors, *this);
     detail::util::applyColors(s, *colors);
 }
@@ -183,18 +183,18 @@ void ThemeApplier::recolorStylesheetWith(std::unique_ptr<ColorMap> &&c, const sh
 
 void populateSharedGroupZoneMultiModulation(jstl::CustomTypeMap &map)
 {
-    map.addCustomClass<jcmp::JogUpDownButton>(detail::multi::ModulationJogButon);
-    map.addCustomClass<jcmp::ToggleButton>(detail::multi::ModulationToggle);
-    map.addCustomClass<jcmp::MenuButton>(detail::multi::ModulationMenu);
-    map.addCustomClass<jcmp::HSliderFilled>(detail::multi::ModulationHSliderFilled);
+    map.addCustomClass<jcmp::JogUpDownButton>(detail::edit::ModulationJogButon);
+    map.addCustomClass<jcmp::ToggleButton>(detail::edit::ModulationToggle);
+    map.addCustomClass<jcmp::MenuButton>(detail::edit::ModulationMenu);
+    map.addCustomClass<jcmp::HSliderFilled>(detail::edit::ModulationHSliderFilled);
 }
 void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
 {
     jstl::CustomTypeMap map;
-    map.addCustomClass<jcmp::NamedPanel>(detail::multi::zone::ModulationNamedPanel);
-    map.addCustomClass<jcmp::MultiSwitch>(detail::multi::zone::ModulationMultiSwitch);
-    map.addCustomClass<jcmp::VSlider>(detail::multi::zone::ModulationVSlider);
-    map.addCustomClass<jcmp::Knob>(detail::multi::zone::ModulationKnob);
+    map.addCustomClass<jcmp::NamedPanel>(detail::edit::zone::ModulationNamedPanel);
+    map.addCustomClass<jcmp::MultiSwitch>(detail::edit::zone::ModulationMultiSwitch);
+    map.addCustomClass<jcmp::VSlider>(detail::edit::zone::ModulationVSlider);
+    map.addCustomClass<jcmp::Knob>(detail::edit::zone::ModulationKnob);
     populateSharedGroupZoneMultiModulation(map);
     map.applyMapTo(toThis);
 }
@@ -208,20 +208,20 @@ void ThemeApplier::applyZoneMultiScreenTheme(juce::Component *toThis)
 void ThemeApplier::applyGroupMultiScreenModulationTheme(juce::Component *toThis)
 {
     jstl::CustomTypeMap map;
-    map.addCustomClass<jcmp::NamedPanel>(detail::multi::group::ModulationNamedPanel);
-    map.addCustomClass<jcmp::MultiSwitch>(detail::multi::group::ModulationMultiSwitch);
-    map.addCustomClass<jcmp::NamedPanel>(detail::multi::group::NamedPanel);
-    map.addCustomClass<jcmp::VSlider>(detail::multi::group::ModulationVSlider);
-    map.addCustomClass<jcmp::Knob>(detail::multi::group::ModulationKnob);
+    map.addCustomClass<jcmp::NamedPanel>(detail::edit::group::ModulationNamedPanel);
+    map.addCustomClass<jcmp::MultiSwitch>(detail::edit::group::ModulationMultiSwitch);
+    map.addCustomClass<jcmp::NamedPanel>(detail::edit::group::NamedPanel);
+    map.addCustomClass<jcmp::VSlider>(detail::edit::group::ModulationVSlider);
+    map.addCustomClass<jcmp::Knob>(detail::edit::group::ModulationKnob);
     populateSharedGroupZoneMultiModulation(map);
     map.applyMapTo(toThis);
 }
 void ThemeApplier::applyGroupMultiScreenTheme(juce::Component *toThis)
 {
     jstl::CustomTypeMap map;
-    map.addCustomClass<jcmp::MultiSwitch>(detail::multi::group::MultiSwitch);
-    map.addCustomClass<jcmp::NamedPanel>(detail::multi::group::NamedPanel);
-    map.addCustomClass<jcmp::Knob>(detail::multi::group::Knob);
+    map.addCustomClass<jcmp::MultiSwitch>(detail::edit::group::MultiSwitch);
+    map.addCustomClass<jcmp::NamedPanel>(detail::edit::group::NamedPanel);
+    map.addCustomClass<jcmp::Knob>(detail::edit::group::Knob);
     map.applyMapTo(toThis);
 }
 
@@ -388,7 +388,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                   sst::jucegui::components::ToolTip::Styles::datafont, fw);
 }
 } // namespace global
-namespace multi
+namespace edit
 {
 void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 {
@@ -489,7 +489,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_2a));
 }
 } // namespace group
-} // namespace multi
+} // namespace edit
 namespace header
 {
 void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const ThemeApplier &t)

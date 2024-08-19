@@ -24,35 +24,45 @@
  * All source for ShortcircuitXT is available at
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
-#ifndef CLIENTS_JUCE_PLUGIN_SCXTPLUGINEDITOR_H
-#define CLIENTS_JUCE_PLUGIN_SCXTPLUGINEDITOR_H
 
-#include <juce_audio_processors/juce_audio_processors.h>
-#include "SCXTProcessor.h"
-#include "engine/engine.h"
-#include "messaging/messaging.h"
-#include "app/SCXTEditor.h"
-#include "browser/browser.h"
+#ifndef SCXT_SRC_UI_COMPONENTS_ABOUTSCREEN_H
+#define SCXT_SRC_UI_COMPONENTS_ABOUTSCREEN_H
 
-//==============================================================================
-/**
- */
-class SCXTPluginEditor : public juce::AudioProcessorEditor
+#include "app/HasEditor.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+
+namespace scxt::ui::app::other_screens
 {
-  public:
-    SCXTPluginEditor(SCXTProcessor &p, scxt::messaging::MessageController &,
-                     scxt::infrastructure::DefaultsProvider &, const scxt::sample::SampleManager &,
-                     const scxt::browser::Browser &,
-                     const scxt::engine::Engine::SharedUIMemoryState &);
-    ~SCXTPluginEditor();
+struct AboutScreen : juce::Component, HasEditor
+{
+    struct AboutInfo
+    {
+        std::string title;
+        std::string value;
+        bool isBig{true};
+    };
+    std::vector<AboutInfo> info;
 
-    //==============================================================================
+    explicit AboutScreen(SCXTEditor *e);
+    void paint(juce::Graphics &g) override;
+
+    std::unique_ptr<juce::Drawable> icon;
+    std::unique_ptr<juce::TextButton> copyButton;
+
+    juce::Font titleFont, subtitleFont, infoFont, aboutFont;
+
+    void resetInfo();
+    void copyInfo();
     void resized() override;
 
-  private:
-    std::unique_ptr<scxt::ui::app::SCXTEditor> ed;
+    void visibilityChanged() override;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SCXTPluginEditor)
+    void mouseUp(const juce::MouseEvent &e) override { setVisible(false); }
+
+    static constexpr int infoh = 23;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutScreen);
 };
+} // namespace scxt::ui::app::other_screens
 
-#endif // CLIENTS_JUCE-PLUGIN_SCXTPLUGINEDITOR_H
+#endif // SCXT_SRC_UI_COMPONENTS_ABOUTSCREEN_H

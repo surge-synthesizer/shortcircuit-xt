@@ -29,7 +29,7 @@
 
 #include "scxt-plugin.h"
 #include "version.h"
-#include "components/SCXTEditor.h"
+#include "app/SCXTEditor.h"
 
 #include "sst/voicemanager/midi1_to_voicemanager.h"
 
@@ -86,7 +86,7 @@ SCXTPlugin::~SCXTPlugin()
 
 std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 {
-    auto ed = std::make_unique<scxt::ui::SCXTEditor>(
+    auto ed = std::make_unique<scxt::ui::app::SCXTEditor>(
         *(engine->getMessageController()), *(engine->defaults), *(engine->getSampleManager()),
         *(engine->getBrowser()), engine->sharedUIMemoryState);
     ed->onZoomChanged = [this](auto f) {
@@ -94,15 +94,15 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
         {
             // SCLOG("On Zoom Changed with " << f << " - requesting resize of " <<
             // scxt::ui::SCXTEditor::edWidth * f << "x" << scxt::ui::SCXTEditor::edHeight * f)
-            _host.guiRequestResize(scxt::ui::SCXTEditor::edWidth * f,
-                                   scxt::ui::SCXTEditor::edHeight * f);
+            _host.guiRequestResize(scxt::ui::app::SCXTEditor::edWidth * f,
+                                   scxt::ui::app::SCXTEditor::edHeight * f);
         }
     };
     onShow = [e = ed.get()]() {
         e->setZoomFactor(e->zoomFactor);
         return true;
     };
-    ed->setSize(scxt::ui::SCXTEditor::edWidth, scxt::ui::SCXTEditor::edHeight);
+    ed->setSize(scxt::ui::app::SCXTEditor::edWidth, scxt::ui::app::SCXTEditor::edHeight);
     return ed;
 }
 
