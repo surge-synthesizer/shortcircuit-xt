@@ -4,28 +4,24 @@ add_library(simde INTERFACE)
 target_include_directories(simde INTERFACE simde)
 add_library(shortcircuit::simde ALIAS simde)
 
-if (${SCXT_JUCE_CLASSIC_STYLE})
-    add_subdirectory(JUCE)
-    add_subdirectory(clap/clap-juce-extensions clap-extensions EXCLUDE_FROM_ALL)
-else()
-    add_subdirectory(clap/clap)
-    add_subdirectory(clap/clap-helpers)
+add_subdirectory(clap/clap)
+add_subdirectory(clap/clap-helpers)
 
-    set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Get em")
-    set(CLAP_WRAPPER_DONT_ADD_TARGETS TRUE CACHE BOOL "I'll targetize")
-    set(CLAP_WRAPPER_BUILD_AUV2 TRUE CACHE BOOL "It's only logical")
-    if (APPLE)
-        # BaconPaul has jack kinda installed
-        set(RTAUDIO_API_JACK FALSE CACHE BOOL "Not on apple")
-    endif()
-    add_subdirectory(clap/clap-wrapper)
-
-    add_subdirectory(sst/sst-clap-helpers)
-    if (NOT DEFINED JUCE_PATH)
-        set(JUCE_PATH "${CMAKE_SOURCE_DIR}/libs/JUCE")
-    endif()
-    add_clap_juce_shim(JUCE_PATH ${JUCE_PATH})
+set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Get em")
+set(CLAP_WRAPPER_DONT_ADD_TARGETS TRUE CACHE BOOL "I'll targetize")
+set(CLAP_WRAPPER_BUILD_AUV2 TRUE CACHE BOOL "It's only logical")
+if (APPLE)
+    # BaconPaul has jack kinda installed
+    set(RTAUDIO_API_JACK FALSE CACHE BOOL "Not on apple")
 endif()
+add_subdirectory(clap/clap-wrapper)
+
+add_subdirectory(sst/sst-clap-helpers)
+if (NOT DEFINED JUCE_PATH)
+    set(JUCE_PATH "${CMAKE_SOURCE_DIR}/libs/JUCE")
+endif()
+add_clap_juce_shim(JUCE_PATH ${JUCE_PATH})
+
 
 add_subdirectory(fmt)
 # Modify this basedon the outcome of https://github.com/taocpp/PEGTL/issues/347

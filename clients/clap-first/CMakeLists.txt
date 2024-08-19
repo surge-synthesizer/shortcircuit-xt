@@ -1,5 +1,6 @@
 project(scxt_clapfirst)
 
+message(STATUS "Shortcircuit XT building clap-first wrappers")
 set(name "Shortcircuit XT")
 set(IMPL_TARGET ${PROJECT_NAME}_impl)
 add_library(${IMPL_TARGET} STATIC clap-config.cpp

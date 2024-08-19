@@ -70,13 +70,7 @@ jobs:
       matrix:
         include:
           - name: Clap First
-            juce_style: FALSE
-            installer_name: ""
             installer_dir: clapfirst
-          #- name: Juce Style
-          #  juce_style: TRUE
-          #  installer_name: "OldJuceStyle-"
-          #  installer_dir: jucestyle
 
     steps:
       - name: Checkout code
@@ -89,7 +83,7 @@ jobs:
         with:
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          cmakeArgs: -DSCXT_JUCE_CLASSIC_STYLE=${{ matrix.juce_style }} -DSCXT_EXTRA_INSTALLER_NAME="${{matrix.installer_name }}" -DCMAKE_BUILD_TYPE=Release -GNinja
+          cmakeArgs: -DCMAKE_BUILD_TYPE=Release -GNinja
           target: shortcircuit-installer
 
 
