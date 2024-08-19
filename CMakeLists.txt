@@ -33,8 +33,6 @@ math(EXPR PART1 "${DAY_OF_YEAR} + 1")
 project(ShortcircuitXT VERSION 0.${PART0}.${PART1}.0 LANGUAGES C CXX ASM)
 set(ShortcircuitXT_VERSION ${PROJECT_VERSION})
 
-option(SCXT_JUCE_CLASSIC_STYLE "Use juse classic vs clap-first style" OFF)
-
 if (APPLE)
     enable_language(OBJC)
     enable_language(OBJCXX)
