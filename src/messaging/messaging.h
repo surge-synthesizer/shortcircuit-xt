@@ -326,6 +326,24 @@ struct MessageController : MoveableOnly<MessageController>
      */
     std::function<void(uint64_t)> requestHostCallback{nullptr};
 
+    /*
+     * A client which requests streaming can use this mutex and condition
+     * variable to communicate on number of unstreams. See the scxt-plugin
+     * setState for an example
+     */
+    std::mutex streamNotificationMutex;
+    std::condition_variable streamNotificationConditionVariable;
+    uint64_t streamNotificationCount{1743}; // just dont start at zero to help debug
+    void sendStreamCompleteNotification()
+    {
+        {
+            // Notify any waiting unstreamers
+            std::lock_guard<std::mutex> nguard{streamNotificationMutex};
+            streamNotificationCount++;
+        }
+        streamNotificationConditionVariable.notify_all();
+    }
+
   private:
     uint64_t inboundClientMessageCount{0};
     void runSerialization();

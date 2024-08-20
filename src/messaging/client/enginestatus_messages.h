@@ -40,9 +40,9 @@ namespace scxt::messaging::client
 SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
                  onEngineStatus);
 
-using streamState_t = std::string;
-inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
-                       MessageController &cont)
+using unstreamEngineStatePayload_t = std::string;
+inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
+                                  engine::Engine &engine, MessageController &cont)
 {
     if (cont.isAudioRunning)
     {
@@ -53,6 +53,7 @@ inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
                 scxt::json::unstreamEngineState(nonconste, payload);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
+                cont.sendStreamCompleteNotification();
             }
             catch (std::exception &err)
             {
@@ -66,6 +67,7 @@ inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
         {
             engine.stopAllSounds();
             scxt::json::unstreamEngineState(engine, payload);
+            cont.sendStreamCompleteNotification();
         }
         catch (std::exception &err)
         {
@@ -73,8 +75,8 @@ inline void onUnstream(const streamState_t &payload, engine::Engine &engine,
         }
     }
 }
-CLIENT_TO_SERIAL(UnstreamIntoEngine, c2s_unstream_state, streamState_t,
-                 onUnstream(payload, engine, cont));
+CLIENT_TO_SERIAL(UnstreamEngineState, c2s_unstream_engine_state, unstreamEngineStatePayload_t,
+                 doUnstreamEngineState(payload, engine, cont));
 
 using stopSounds_t = bool;
 inline void stopSoundsMessage(const stopSounds_t &payload, messaging::MessageController &cont)

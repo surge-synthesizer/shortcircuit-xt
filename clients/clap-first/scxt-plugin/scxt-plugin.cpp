@@ -26,6 +26,7 @@
  */
 
 #include <cassert>
+#include <chrono>
 
 #include "scxt-plugin.h"
 #include "version.h"
@@ -157,9 +158,8 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
 
     auto xml = std::string(buffer.data());
 
-    SCLOG("About to load state with size " << xml.size());
-    scxt::messaging::client::clientSendToSerialization(
-        scxt::messaging::client::UnstreamIntoEngine{xml}, *engine->getMessageController());
+    synchronousEngineUnstream(engine, xml);
+
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::RequestHostCallback{(uint64_t)RESCAN_PARAM_IVT},
         *engine->getMessageController());
@@ -557,6 +557,31 @@ void SCXTPlugin::onMainThread() noexcept
                                CLAP_PARAM_RESCAN_TEXT);
         }
     }
+}
+
+bool SCXTPlugin::synchronousEngineUnstream(const std::unique_ptr<scxt::engine::Engine> &engine,
+                                           const std::string &payload)
+{
+    auto &cont = engine->getMessageController();
+    std::unique_lock<std::mutex> guard(cont->streamNotificationMutex);
+    auto originalStreamCount{cont->streamNotificationCount};
+
+    SCLOG("About to load state with size " << payload.size());
+    scxt::messaging::client::clientSendToSerialization(
+        scxt::messaging::client::UnstreamEngineState{payload}, *engine->getMessageController());
+
+    auto secondsBeforeTimeout{5.0};
+    auto waitDuration = std::chrono::milliseconds(100);
+    auto maxIterations = secondsBeforeTimeout / 100;
+
+    int iterations = 0;
+    while (cont->streamNotificationCount == originalStreamCount && iterations < maxIterations)
+    {
+        cont->streamNotificationConditionVariable.wait_for(guard, waitDuration);
+        iterations++;
+    }
+
+    return iterations < maxIterations;
 }
 
 } // namespace scxt::clap_first::scxt_plugin

@@ -56,7 +56,7 @@ SERIAL_TO_CLIENT(SendAllProcessorDescriptions, s2c_send_all_processor_descriptio
  * A message the client auto-sends when it registers just so we can respond
  */
 
-inline void onRegister(engine::Engine &engine, MessageController &cont)
+inline void doRegisterClient(engine::Engine &engine, MessageController &cont)
 {
     assert(cont.threadingChecker.isSerialThread());
     engine.sendMetadataToClient();
@@ -72,7 +72,7 @@ inline void onRegister(engine::Engine &engine, MessageController &cont)
     }
     engine.getSelectionManager()->sendSelectedPartMacrosToClient();
 }
-CLIENT_TO_SERIAL(OnRegister, c2s_on_register, bool, onRegister(engine, cont));
+CLIENT_TO_SERIAL(RegisterClient, c2s_register_client, bool, doRegisterClient(engine, cont));
 
 /*
  * A message the client auto-sends when it registers just so we can respond

@@ -132,6 +132,10 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
         }
         return true;
     }
+
+    // a few top level non-clap factored functions
+    static bool synchronousEngineUnstream(const std::unique_ptr<scxt::engine::Engine> &e,
+                                          const std::string &payload);
 };
 
 } // namespace scxt::clap_first::scxt_plugin

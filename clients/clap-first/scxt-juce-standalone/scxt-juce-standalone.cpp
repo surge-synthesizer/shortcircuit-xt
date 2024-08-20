@@ -41,6 +41,8 @@
 #include "app/SCXTEditor.h"
 #include "sst/voicemanager/midi1_to_voicemanager.h"
 
+#include "scxt-plugin/scxt-plugin.h"
+
 using namespace juce;
 
 struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
@@ -101,9 +103,8 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
         auto streamedState = properties->getValue("engineState");
         if (!streamedState.isEmpty())
         {
-            scxt::messaging::client::clientSendToSerialization(
-                scxt::messaging::client::UnstreamIntoEngine{streamedState.toStdString()},
-                *engine->getMessageController());
+            scxt::clap_first::scxt_plugin::SCXTPlugin::synchronousEngineUnstream(
+                engine, streamedState.toStdString());
         }
 
         setupAudio();

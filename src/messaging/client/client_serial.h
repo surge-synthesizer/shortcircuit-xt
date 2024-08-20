@@ -36,15 +36,43 @@ namespace scxt::messaging::client
  * These IDs are used inside a session only and are not streamed,
  * so add whatever you want as long as (1) you keep them contig
  * (so don't assign values) and (2) the num_ enum is the last one
+ *
+ * These ids follow a naming convention which matches with the objects
+ * created in the CLIENT_TO_SERIAL.. and SERIAL_TO_CLIENT... macros
+ * used throughout messaging/client. That naming convention is
+ *
+ * S2C:
+ * - Prefer the verb "Send", since S2C is sending authoritative state
+ * - Use the structure s2c_send_class_thing, for instance
+ *   s2c_send_selection_state
+ * - Name the object a camelcase version of the enum without s2c,
+ *   so for instance SendSelectionState
+ * - Make the SCXT Editor callback names onObjectName
+ * - name the payloads as objectNamePayload_t so sendSelectionStatePayload_t
+ *   if the payload type is a custom type.
+ *
+ * C2S:
+ * - Prefer the verb corresponding to the action like set, swap, create
+ *   delete, etc. Do not use send in a C2S. Prefer set over update.
+ * - Class name follows per S2C above as does payload name
+ * - If an inline function is used to handle a message use the name
+ *   'doObjectName' so 'doSetZoneOrGroupModstorage`
  */
 enum ClientToSerializationMessagesIds
 {
-    c2s_on_register,
+    // Registration and Reset Messages
+    c2s_register_client,
     c2s_reset_engine,
 
-    c2s_unstream_state,
+    // Stream and IO Messages
+    c2s_unstream_engine_state,
+    c2s_save_multi,
+    c2s_save_selected_part,
 
-    c2s_single_select_address,
+    c2s_load_multi,
+    c2s_load_part_into,
+
+    // Messages we haven't dealt with yet
     c2s_do_select_action,
     c2s_do_multi_select_action,
     c2s_select_part,
@@ -111,12 +139,6 @@ enum ClientToSerializationMessagesIds
     c2s_request_debug_action,
 
     c2s_silence_engine,
-
-    c2s_save_multi,
-    c2s_save_part,
-
-    c2s_load_multi,
-    c2s_load_part,
 
     c2s_set_macro_full_state,
     c2s_set_macro_value,

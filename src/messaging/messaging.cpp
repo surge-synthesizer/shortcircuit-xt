@@ -302,7 +302,7 @@ void MessageController::registerClient(const std::string &nm, clientCallback_t &
     }
 
     threadingChecker.registerAsClientThread();
-    client::clientSendToSerialization(client::OnRegister(true), *this);
+    client::clientSendToSerialization(client::RegisterClient(true), *this);
 
     for (const auto &pcc : preClientConnectionCache)
     {
