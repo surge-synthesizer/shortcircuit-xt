@@ -25,7 +25,9 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#if HAS_MELATONIN_INSPECTOR
 #include "melatonin_inspector/melatonin_inspector.h"
+#endif
 
 #include "infrastructure/user_defaults.h"
 #include "app/SCXTEditor.h"
@@ -120,6 +122,7 @@ void SCXTEditor::showMainMenu()
     dp.addItem("Dump Colormap JSON", [this]() { SCLOG(themeApplier.colors->toJson()); });
     dp.addSeparator();
 
+#if HAS_MELATONIN_INSPECTOR
     if (melatoninInspector)
     {
         dp.addItem("Close Melatonin Inspector", [w = juce::Component::SafePointer(this)]() {
@@ -142,6 +145,7 @@ void SCXTEditor::showMainMenu()
             w->melatoninInspector->setVisible(true);
         });
     }
+#endif
 
     dp.addItem("Release all Voices", [w = juce::Component::SafePointer(this)]() {
         if (!w)

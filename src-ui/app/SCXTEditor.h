@@ -305,7 +305,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
         sendToSerialization(scxt::messaging::client::EndEdit{true});
     }
 
+#if HAS_MELATONIN_INSPECTOR
     std::unique_ptr<melatonin::Inspector> melatoninInspector;
+#endif
 
   public:
     std::unique_ptr<juce::FileChooser> fileChooser;

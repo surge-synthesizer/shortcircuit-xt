@@ -30,6 +30,9 @@ add_subdirectory(taocpp_json)
 add_subdirectory(sqlite3-3.42.0)
 
 add_subdirectory(xiph)
+set_target_properties(FLAC PROPERTIES UNITY_BUILD FALSE)
+set_target_properties(FLAC++ PROPERTIES UNITY_BUILD FALSE)
+
 
 add_subdirectory(eurorack)
 
