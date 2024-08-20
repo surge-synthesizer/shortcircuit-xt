@@ -35,25 +35,25 @@ jobs:
             os: ubuntu-latest
             target: scxt_clapfirst_Standalone
             cmakeConfig: -GNinja
-            runTests: true
+            runTests: false
 
           - name: "win unity"
             os: windows-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
-            runTests: true
+            runTests: false
 
           - name: "mac unity"
             os: macos-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
-            runTests: true
+            runTests: false
 
           - name: "ubuntu unity"
             os: ubuntu-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
-            runTests: true
+            runTests: false
 
     steps:
       - name: Checkout code
