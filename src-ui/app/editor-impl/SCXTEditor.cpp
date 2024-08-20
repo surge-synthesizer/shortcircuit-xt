@@ -25,6 +25,11 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#if HAS_MELATONIN_INSPECTOR
+// this has to go first because otherwise windows defines 'small' on me.
+#include "melatonin_inspector/melatonin_inspector.h"
+#endif
+
 #include "app/SCXTEditor.h"
 
 #include "app/play-screen/PlayScreen.h"
@@ -44,10 +49,6 @@
 
 #if MAC
 #include <mach/mach.h>
-#endif
-
-#if HAS_MELATONIN_INSPECTOR
-#include "melatonin_inspector/melatonin_inspector.h"
 #endif
 
 namespace scxt::ui::app
