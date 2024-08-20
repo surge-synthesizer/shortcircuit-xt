@@ -37,13 +37,19 @@ jobs:
             cmakeConfig: -GNinja
             runTests: true
 
-          - name: "mac Standlone Unity"
+          - name: "win unity"
+            os: windows-latest
+            target: shortcircuit-products
+            cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            runTests: true
+
+          - name: "mac unity"
             os: macos-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
             runTests: true
 
-          - name: "ubuntu Standalone Unity"
+          - name: "ubuntu unity"
             os: ubuntu-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
