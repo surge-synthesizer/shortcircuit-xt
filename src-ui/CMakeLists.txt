@@ -50,18 +50,24 @@ cmrc_add_resource_library(scxtui_json_layouts
         NAMESPACE scxtui_json_layouts
         ${scxt_json_sources}
 )
+set_target_properties(scxtui_json_layouts PROPERTIES UNITY_BUILD FALSE)
+
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-core
         scxt-resources
         sst-jucegui
-        juce::juce_gui_basics
 
         sst-plugininfra::strnatcmp
-        melatonin_inspector
 
         scxtui_json_layouts
         )
+
+if (NOT CMAKE_UNITY_BUILD)
+        message(STATUS "Includeing Melatonin")
+        target_link_libraries(${PROJECT_NAME} PUBLIC melatonin_inspector)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_MELATONIN_INSPECTOR=1)
+endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         JUCE_STANDALONE_APPLICATION=0

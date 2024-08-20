@@ -81,6 +81,8 @@ target_compile_definitions(${SA_TARGET} PRIVATE
         JUCE_ALSA=$<IF:$<BOOL:${SCXT_USE_ALSA}>,1,0>
         JUCE_JACK=$<IF:$<BOOL:${SCXT_USE_JACK}>,1,0>
         JUCE_USE_FLAC=0)
+set_target_properties(${SA_TARGET} PROPERTIES UNITY_BUILD FALSE)
+
 
 #add_executable(${SA_TARGET} scxt-clap-entry.cpp)
 #target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})

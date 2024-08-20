@@ -37,6 +37,18 @@ jobs:
             cmakeConfig: -GNinja
             runTests: true
 
+          - name: "mac Standlone Unity"
+            os: macos-latest
+            target: scxt_clapfirst_Standalone
+            cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
+            runTests: true
+
+          - name: "ubuntu Standalone Unity"
+            os: ubuntu-latest
+            target: scxt_clapfirst_Standalone
+            cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
+            runTests: true
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

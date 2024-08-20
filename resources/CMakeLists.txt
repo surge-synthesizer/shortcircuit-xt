@@ -9,3 +9,4 @@ cmrc_add_resource_library(${PROJECT_NAME}
         "fonts/Anonymous_Pro/AnonymousPro-Regular.ttf"
         "images/SCicon.svg"
         )
+set_target_properties(scxt-resources PROPERTIES UNITY_BUILD FALSE)

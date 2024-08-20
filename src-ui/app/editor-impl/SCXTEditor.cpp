@@ -25,7 +25,6 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "melatonin_inspector/melatonin_inspector.h"
 #include "app/SCXTEditor.h"
 
 #include "app/play-screen/PlayScreen.h"
@@ -45,6 +44,10 @@
 
 #if MAC
 #include <mach/mach.h>
+#endif
+
+#if HAS_MELATONIN_INSPECTOR
+#include "melatonin_inspector/melatonin_inspector.h"
 #endif
 
 namespace scxt::ui::app

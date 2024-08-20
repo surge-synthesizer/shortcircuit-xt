@@ -25,6 +25,9 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#ifndef SCXT_SRC_ENGINE_GROUP_AND_ZONE_IMPL_H
+#define SCXT_SRC_ENGINE_GROUP_AND_ZONE_IMPL_H
+
 #include "group_and_zone.h"
 
 /*
@@ -337,3 +340,5 @@ void HasGroupZoneProcessors<T>::updateRoutingTableAfterProcessorSwap(size_t f, s
     }
 }
 } // namespace scxt::engine
+
+#endif
