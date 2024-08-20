@@ -39,13 +39,13 @@ jobs:
 
           - name: "mac Standlone Unity"
             os: macos-latest
-            target: scxt_clapfirst_Standalone
+            target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
             runTests: true
 
           - name: "ubuntu Standalone Unity"
             os: ubuntu-latest
-            target: scxt_clapfirst_Standalone
+            target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
             runTests: true
 
