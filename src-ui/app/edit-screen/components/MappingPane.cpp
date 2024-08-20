@@ -2969,6 +2969,19 @@ void SampleWaveform::paint(juce::Graphics &g)
                        getHeight());
         }
     }
+
+    if (samp->meta.n_slices > 0)
+    {
+        g.setColour(editor->themeColor(theme::ColorMap::grid_primary));
+        for (int i = 0; i < samp->meta.n_slices; ++i)
+        {
+            auto sp = samp->meta.slice_start[i] * fac;
+            auto ep = samp->meta.slice_end[i] * fac;
+            g.drawVerticalLine(sp, 0, getHeight());
+            g.drawVerticalLine(ep, 0, getHeight());
+        }
+    }
+
     g.setColour(juce::Colours::white);
     g.drawRect(r, 1);
 }
