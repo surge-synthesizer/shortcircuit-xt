@@ -87,6 +87,8 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
     void updateFromProcessorPanes();
     std::array<juce::Component::SafePointer<ProcessorPane>, scxt::processorsPerZoneAndGroup>
         procWeakRefs;
+
+    void setSelectedTab(int i);
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUIT_MAPPINGPANE_H

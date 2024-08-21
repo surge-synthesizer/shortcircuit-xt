@@ -164,7 +164,7 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
         },
         [t = a](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
-            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, true, t);
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
@@ -202,7 +202,8 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
         },
         [t = part](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
-            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, true,
+                                                                           {t, -1, -1});
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
@@ -237,7 +238,7 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
         },
         [t = a](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
-            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false, t);
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
@@ -264,7 +265,8 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
         },
         [pt = p](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
-            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine);
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false,
+                                                                           {pt, -1, -1});
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));

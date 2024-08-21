@@ -267,6 +267,21 @@ void EditScreen::onOtherTabSelection()
         if (zt >= 0 && zt < lfosPerZone)
             zoneElements->lfo->selectTab(zt);
     }
+
+    gts = editor->queryTabSelection(tabKey("multi.group.output"));
+    if (!gts.empty())
+    {
+        auto gt = std::atoi(gts.c_str());
+        if (gt >= 0 && gt < lfosPerGroup)
+            groupElements->outPane->selectTab(gt);
+    }
+    zts = editor->queryTabSelection(tabKey("multi.zone.output"));
+    if (!zts.empty())
+    {
+        auto zt = std::atoi(zts.c_str());
+        if (zt >= 0 && zt < lfosPerZone)
+            zoneElements->outPane->selectTab(zt);
+    }
     auto mts = editor->queryTabSelection(tabKey("multi.mapping"));
     if (!mts.empty())
     {

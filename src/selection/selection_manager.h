@@ -150,13 +150,15 @@ struct SelectionManager
 
     void selectAction(const SelectActionContents &z);
     void multiSelectAction(const std::vector<SelectActionContents> &v);
-    void guaranteeConsistencyAfterDeletes(const engine::Engine &);
+    void guaranteeConsistencyAfterDeletes(const engine::Engine &, bool zoneDeleted,
+                                          const ZoneAddress &addressDeleted);
     void selectPart(int16_t part);
     void clearAllSelections();
 
   protected:
     void adjustInternalStateForAction(const SelectActionContents &);
     void guaranteeSelectedLead();
+    void guaranteeSelectedLeadSomewhereIn(int part, int group, int zone);
     void debugDumpSelectionState();
 
   public:

@@ -297,21 +297,28 @@ OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEdito
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
         if (!wt)
             return;
-        if ((OTTraits::forZone && i == 1) || (!OTTraits::forZone && i == 0))
-        {
-            wt->output->setVisible(wt->active);
-            wt->proc->setVisible(false);
-        }
-        else
-        {
-            wt->output->setVisible(false);
-            wt->proc->setVisible(wt->active);
-        }
+        wt->setSelectedTab(i);
     };
     onTabSelected(selectedTab);
 }
 
 template <typename OTTraits> OutputPane<OTTraits>::~OutputPane() {}
+
+template <typename OTTraits> void OutputPane<OTTraits>::setSelectedTab(int i)
+{
+    if ((OTTraits::forZone && i == 1) || (!OTTraits::forZone && i == 0))
+    {
+        output->setVisible(active);
+        proc->setVisible(false);
+    }
+    else
+    {
+        output->setVisible(false);
+        proc->setVisible(active);
+    }
+    auto kn = std::string("multi") + (OTTraits::forZone ? ".zone.output" : ".group.output");
+    editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(i));
+}
 
 template <typename OTTraits> void OutputPane<OTTraits>::resized()
 {
