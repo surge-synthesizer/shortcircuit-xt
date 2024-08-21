@@ -248,7 +248,9 @@ void SelectionManager::adjustInternalStateForAction(
     }
 }
 
-void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &engine)
+void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &engine,
+                                                        bool zoneDeleted,
+                                                        const ZoneAddress &whatIDeleted)
 {
     bool morphed{false};
     auto zit = allSelectedZones[selectedPart].begin();
@@ -296,10 +298,51 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
 
     if (morphed)
     {
-        guaranteeSelectedLead();
+        auto [p, g, z] = whatIDeleted;
+        guaranteeSelectedLeadSomewhereIn(p, (zoneDeleted ? g : -1), -1);
         sendClientDataForLeadSelectionState();
         sendSelectedZonesToClient();
         debugDumpSelectionState();
+    }
+}
+
+void SelectionManager::guaranteeSelectedLeadSomewhereIn(int part, int group, int zone)
+{
+    guaranteeSelectedLead();
+    if (leadZone[selectedPart] == ZoneAddress())
+    {
+        const auto &partO = engine.getPatch()->getPart(part);
+        bool gotOne{false};
+        if (!partO->getGroups().empty())
+        {
+            if (group >= 0 && group < partO->getGroups().size())
+            {
+                auto &groupO = partO->getGroup(group);
+                if (!groupO->getZones().empty())
+                {
+                    leadZone[selectedPart] = {part, group, 0};
+                    leadGroup[selectedPart] = {part, group, -1};
+                    gotOne = true;
+                }
+            }
+            if (!gotOne)
+            {
+                auto gs = partO->getGroups().size();
+                for (int i = 0; i < gs && !gotOne; ++i)
+                {
+                    if (!partO->getGroup(i)->getZones().empty())
+                    {
+                        leadZone[selectedPart] = {part, i, 0};
+                        leadGroup[selectedPart] = {part, group, -1};
+                        gotOne = true;
+                    }
+                }
+            }
+            if (gotOne)
+            {
+                guaranteeSelectedLead();
+            }
+        }
     }
 }
 
