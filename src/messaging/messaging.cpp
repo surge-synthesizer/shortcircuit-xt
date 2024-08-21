@@ -370,4 +370,23 @@ void MessageController::serializationThreadPostAudioQueueDrain()
         macroSetValueCompressorUsed = false;
     }
 }
+
+void MessageController::updateClientActivityNotification(const std::string &msg, int idx)
+{
+    serializationSendToClient(client::s2c_send_activity_notification,
+                              client::activityNotificationPayload_t{idx, msg},
+                              *(engine.getMessageController()));
+}
+
+MessageController::ClientActivityNotificationGuard::ClientActivityNotificationGuard(
+    const std::string &ms, MessageController &m)
+    : man(m)
+{
+    man.updateClientActivityNotification(ms, 1);
+}
+
+MessageController::ClientActivityNotificationGuard::~ClientActivityNotificationGuard()
+{
+    man.updateClientActivityNotification("", 0);
+}
 } // namespace scxt::messaging

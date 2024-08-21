@@ -47,8 +47,8 @@ namespace scxt::messaging::client
  *   s2c_send_selection_state
  * - Name the object a camelcase version of the enum without s2c,
  *   so for instance SendSelectionState
- * - Make the SCXT Editor callback names onObjectName
- * - name the payloads as objectNamePayload_t so sendSelectionStatePayload_t
+ * - Make the SCXT Editor callback names onSelectionState
+ * - name the payloads as objectNamePayload_t so selectionStatePayload_t
  *   if the payload type is a custom type.
  *
  * C2S:
@@ -158,6 +158,8 @@ enum SerializationToClientMessageIds
     s2c_report_error,
     s2c_send_initial_metadata,
     s2c_send_debug_info,
+    s2c_send_activity_notification,
+
     s2c_engine_status,
     s2c_update_group_or_zone_adsr_view,
     s2c_respond_zone_mapping,

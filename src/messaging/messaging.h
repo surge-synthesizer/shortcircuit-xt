@@ -344,6 +344,17 @@ struct MessageController : MoveableOnly<MessageController>
         streamNotificationConditionVariable.notify_all();
     }
 
+    /*
+     * Helping the client know things like a waiting message and so on
+     */
+    void updateClientActivityNotification(const std::string &msg, int idx = -1);
+    struct ClientActivityNotificationGuard
+    {
+        MessageController &man;
+        ClientActivityNotificationGuard(const std::string &ms, MessageController &m);
+        ~ClientActivityNotificationGuard();
+    };
+
   private:
     uint64_t inboundClientMessageCount{0};
     void runSerialization();

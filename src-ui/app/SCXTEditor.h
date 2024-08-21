@@ -236,6 +236,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
         allProcessors = v;
     }
 
+    void onActivityNotification(const scxt::messaging::client::activityNotificationPayload_t &);
+
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
     void onMacroFullState(const scxt::messaging::client::macroFullState_t &);
     void onMacroValue(const scxt::messaging::client::macroValue_t &);
