@@ -36,6 +36,7 @@
 #include "connectors/PayloadDataAttachment.h"
 #include "datamodel/metadata.h"
 #include "theme/Layout.h"
+#include "app/edit-screen/EditScreen.h"
 
 namespace scxt::ui::app::edit_screen
 {
