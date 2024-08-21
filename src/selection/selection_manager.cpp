@@ -127,7 +127,6 @@ void SelectionManager::selectAction(
         auto zt = z.contiguousFrom;
         if (zt < zf)
         {
-            SCLOG("Swapping ZF and ZT");
             std::swap(zf, zt);
         }
         if (zf.part != zt.part)
@@ -809,4 +808,5 @@ void SelectionManager::clearAllSelections()
         g = {};
     selectedPart = 0;
 }
+
 } // namespace scxt::selection

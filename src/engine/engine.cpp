@@ -661,6 +661,9 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
+    auto cng = messaging::MessageController::ClientActivityNotificationGuard(
+        "Loading SF2", *(getMessageController()));
+
     try
     {
         auto riff = std::make_unique<RIFF::File>(p.u8string());
@@ -697,6 +700,8 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                     if (sfsamp == nullptr)
                         continue;
 
+                    messageController->updateClientActivityNotification("Loading sample " +
+                                                                        std::to_string(j));
                     auto sid = sampleManager->loadSampleFromSF2(p, sf.get(), pc, i, j);
                     if (!sid.has_value())
                         continue;

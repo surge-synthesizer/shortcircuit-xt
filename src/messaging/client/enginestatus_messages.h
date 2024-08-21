@@ -89,6 +89,11 @@ inline void stopSoundsMessage(const stopSounds_t &payload, messaging::MessageCon
     });
 }
 CLIENT_TO_SERIAL(StopSounds, c2s_silence_engine, stopSounds_t, stopSoundsMessage(payload, cont));
+
+// First in here is: -1, show if open, 0, close, 1, show and open
+using activityNotificationPayload_t = std::pair<int, std::string>;
+SERIAL_TO_CLIENT(SendActivityNotification, s2c_send_activity_notification,
+                 activityNotificationPayload_t, onActivityNotification);
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H
