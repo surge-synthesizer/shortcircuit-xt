@@ -36,6 +36,7 @@
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "group_and_zone_impl.h"
+#include "dsp/sample_analytics.h"
 
 namespace scxt::engine
 {
@@ -152,6 +153,24 @@ void Zone::removeVoice(voice::Voice *v)
         }
     }
     assert(false);
+}
+
+void Zone::setNormalizedSampleLevel(const bool usePeak, const int associatedSampleID)
+{
+    const auto startSample = (associatedSampleID < 0) ? 0 : associatedSampleID;
+    const auto endSample = (associatedSampleID < 0) ? maxSamplesPerZone : associatedSampleID;
+
+    for (auto i = startSample; i < endSample; ++i)
+    {
+        if (sampleData.samples[i].active && samplePointers[i])
+        {
+            auto normVal = usePeak ? dsp::sample_analytics::computePeak(samplePointers[i])
+                                   : dsp::sample_analytics::computeRMS(samplePointers[i]);
+            // convert linear measure into db
+            // To undo this, std::pow(amp / 10.f, 10.f)
+            sampleData.samples[i].normalizationAmplitude = 10.f * std::log10f(normVal);
+        }
+    }
 }
 
 engine::Engine *Zone::getEngine()
