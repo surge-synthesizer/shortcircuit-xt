@@ -119,7 +119,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};
-        float normalizationFactor{1.f}; // db
+        float normalizationAmplitude{1.f}; // db
         // per-sample pitch and amplitude
         float pitchOffset{0.f}; // semitones
         float amplitude{1.f};   // db
@@ -129,7 +129,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
             return active == other.active && sampleID == other.sampleID &&
                    startSample == other.startSample && endSample == other.endSample &&
                    startLoop == other.startLoop && endLoop == other.endLoop &&
-                   normalizationFactor == other.normalizationFactor &&
+                   normalizationAmplitude == other.normalizationAmplitude &&
                    pitchOffset == other.pitchOffset && amplitude == other.amplitude;
         }
     };

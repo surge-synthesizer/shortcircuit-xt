@@ -318,7 +318,7 @@ SC_STREAMDEF(scxt::engine::Zone::AssociatedSample, SC_FROM({
                           {"loopDirection", s.loopDirection},
                           {"loopCountWhenCounted", s.loopCountWhenCounted},
                           {"loopFade", s.loopFade},
-                          {"normalizationFactor", s.normalizationFactor},
+                          {"normalizationAmplitude", s.normalizationAmplitude},
                           {"pitchOffset", s.pitchOffset},
                           {"amplitude", s.amplitude}};
                  }
@@ -346,7 +346,7 @@ SC_STREAMDEF(scxt::engine::Zone::AssociatedSample, SC_FROM({
                                s.loopDirection);
                      findOrSet(v, "loopFade", 0, s.loopFade);
                      findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
-                     findOrSet(v, "normalizationFactor", 1.f, s.normalizationFactor);
+                     findOrSet(v, "normalizationAmplitude", 1.f, s.normalizationAmplitude);
                      findOrSet(v, "pitchOffset", 0.f, s.pitchOffset);
                      findOrSet(v, "amplitude", 1.f, s.amplitude);
                  }
