@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_HEADERREGION_H
-#define SCXT_SRC_UI_COMPONENTS_HEADERREGION_H
+#ifndef SCXT_SRC_UI_APP_SHARED_HEADERREGION_H
+#define SCXT_SRC_UI_APP_SHARED_HEADERREGION_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/ToggleButton.h>

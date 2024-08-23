@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_MIXER_BUSPANE_H
-#define SCXT_SRC_UI_COMPONENTS_MIXER_BUSPANE_H
+#ifndef SCXT_SRC_UI_APP_MIXER_SCREEN_COMPONENTS_BUSPANE_H
+#define SCXT_SRC_UI_APP_MIXER_SCREEN_COMPONENTS_BUSPANE_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

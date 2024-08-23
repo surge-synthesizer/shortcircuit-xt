@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_WELCOMESCREEN_H
-#define SCXT_SRC_UI_COMPONENTS_WELCOMESCREEN_H
+#ifndef SCXT_SRC_UI_APP_OTHER_SCREENS_WELCOMESCREEN_H
+#define SCXT_SRC_UI_APP_OTHER_SCREENS_WELCOMESCREEN_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/TextPushButton.h"

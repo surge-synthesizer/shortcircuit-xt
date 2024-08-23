@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_DETAIL_GROUPZONETREECONTROL_H
-#define SCXT_SRC_UI_COMPONENTS_MULTI_DETAIL_GROUPZONETREECONTROL_H
+#ifndef SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_GROUPZONETREECONTROL_H
+#define SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_GROUPZONETREECONTROL_H
 
 #include <juce_graphics/juce_graphics.h>
 #include <juce_core/juce_core.h>

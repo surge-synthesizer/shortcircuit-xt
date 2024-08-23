@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_MIXER_CHANNELSTRIP_H
-#define SCXT_SRC_UI_COMPONENTS_MIXER_CHANNELSTRIP_H
+#ifndef SCXT_SRC_UI_APP_MIXER_SCREEN_COMPONENTS_CHANNELSTRIP_H
+#define SCXT_SRC_UI_APP_MIXER_SCREEN_COMPONENTS_CHANNELSTRIP_H
 
 #include "engine/bus.h"
 #include "app/HasEditor.h"

@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_MULTISCREEN_H
-#define SCXT_SRC_UI_COMPONENTS_MULTISCREEN_H
+#ifndef SCXT_SRC_UI_APP_EDIT_SCREEN_EDITSCREEN_H
+#define SCXT_SRC_UI_APP_EDIT_SCREEN_EDITSCREEN_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
