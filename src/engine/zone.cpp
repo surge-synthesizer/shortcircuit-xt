@@ -168,7 +168,7 @@ void Zone::setNormalizedSampleLevel(const bool usePeak, const int associatedSamp
                                    : dsp::sample_analytics::computeRMS(samplePointers[i]);
             // convert linear measure into db
             // To undo this, std::pow(amp / 10.f, 10.f)
-            sampleData.samples[i].normalizationAmplitude = 10.f * std::log10f(normVal);
+            sampleData.samples[i].normalizationAmplitude = 10.f * std::log10(normVal);
         }
     }
 }
