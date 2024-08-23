@@ -54,5 +54,5 @@ struct EnvLFO : SampleRateSupport
         output = envelope.outBlock0;
     }
 };
-}; // namespace scxt::modulation::modulators
+};     // namespace scxt::modulation::modulators
 #endif // SHORTCIRCUITXT_ENVLFO_H

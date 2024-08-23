@@ -131,8 +131,10 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  findOrSet(v, "region", -1, to.region);
              }));
 
-SC_STREAMDEF(scxt::sample::SampleManager,
-             SC_FROM({ v = {{"sampleAddresses", from.getSampleAddressesAndIDs()}}; }), SC_TO({
+SC_STREAMDEF(scxt::sample::SampleManager, SC_FROM({
+                 v = {{"sampleAddresses", from.getSampleAddressesAndIDs()}};
+             }),
+             SC_TO({
                  to.reset();
                  sample::SampleManager::sampleAddressesAndIds_t res;
                  findIf(v, "sampleAddresses", res);
