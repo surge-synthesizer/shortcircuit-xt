@@ -151,19 +151,15 @@ SC_STREAMDEF(scxt::modulation::ModulatorStorage, SC_FROM({
                  result.configureCalculatedState();
              }))
 
-SC_STREAMDEF(scxt::modulation::shared::TargetIdentifier, SC_FROM({
-                 v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::modulation::shared::TargetIdentifier,
+             SC_FROM({ v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}}; }), SC_TO({
                  findIf(v, "g", result.gid);
                  findIf(v, "t", result.tid);
                  findIf(v, "i", result.index);
              }));
 
-SC_STREAMDEF(scxt::modulation::shared::SourceIdentifier, SC_FROM({
-                 v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::modulation::shared::SourceIdentifier,
+             SC_FROM({ v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}}; }), SC_TO({
                  findIf(v, "g", result.gid);
                  findIf(v, "t", result.tid);
                  findIf(v, "i", result.index);
@@ -206,10 +202,8 @@ SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
                  findIf(v, "extraPayload", result.extraPayload);
              }));
 
-SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable, SC_FROM({
-                 v = {{"routes", t.routes}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable,
+             SC_FROM({ v = {{"routes", t.routes}}; }), SC_TO({
                  const auto &object = v.get_object();
 
                  std::fill(result.routes.begin(), result.routes.end(), rt_t::Routing());
@@ -243,9 +237,7 @@ SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable::Routing, SC_FROM({
                  findIf(v, "extraPayload", result.extraPayload);
              }));
 
-SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable, SC_FROM({
-                 v = {{"routes", t.routes}};
-             }),
+SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable, SC_FROM({ v = {{"routes", t.routes}}; }),
              SC_TO({
                  const auto &object = v.get_object();
 
