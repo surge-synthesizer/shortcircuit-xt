@@ -72,24 +72,28 @@ if (APPLE)
 endif()
 
 set(SA_TARGET ${PROJECT_NAME}_Standalone)
-add_executable(${SA_TARGET} MACOSX_BUNDLE WIN32)
-set_target_properties(${SA_TARGET} PROPERTIES
+
+if (${SCXT_USE_CLAP_WRAPPER_STANDALONE})
+    message(STATUS "Standalone is CLap Wrapper")
+    add_executable(${SA_TARGET} scxt-clap-entry.cpp)
+    target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})
+    target_add_standalone_wrapper(TARGET ${SA_TARGET}
+            OUTPUT_NAME ${name}
+            STATICALLY_LINKED_CLAP_ENTRY True
+            PLUGIN_ID "org.surge-synth-team.shortcircuit-xt")
+else()
+    message(STATUS "Standalone is BaconPaul's Bodged Juce Thing")
+    add_executable(${SA_TARGET} MACOSX_BUNDLE WIN32)
+    set_target_properties(${SA_TARGET} PROPERTIES
             OUTPUT_NAME ${name})
-target_sources(${SA_TARGET} PRIVATE scxt-juce-standalone/scxt-juce-standalone.cpp)
-target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET} juce::juce_audio_devices juce::juce_audio_utils)
-target_compile_definitions(${SA_TARGET} PRIVATE
-        JUCE_ALSA=$<IF:$<BOOL:${SCXT_USE_ALSA}>,1,0>
-        JUCE_JACK=$<IF:$<BOOL:${SCXT_USE_JACK}>,1,0>
-        JUCE_USE_FLAC=0)
-set_target_properties(${SA_TARGET} PROPERTIES UNITY_BUILD FALSE)
-
-
-#add_executable(${SA_TARGET} scxt-clap-entry.cpp)
-#target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})
-#target_add_standalone_wrapper(TARGET ${SA_TARGET}
-#        OUTPUT_NAME ${name}
-#        STATICALLY_LINKED_CLAP_ENTRY True
-#        PLUGIN_ID "org.surge-synth-team.scxt.clap-first.scxt-plugin")
+    target_sources(${SA_TARGET} PRIVATE scxt-juce-standalone/scxt-juce-standalone.cpp)
+    target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET} juce::juce_audio_devices juce::juce_audio_utils)
+    target_compile_definitions(${SA_TARGET} PRIVATE
+            JUCE_ALSA=$<IF:$<BOOL:${SCXT_USE_ALSA}>,1,0>
+            JUCE_JACK=$<IF:$<BOOL:${SCXT_USE_JACK}>,1,0>
+            JUCE_USE_FLAC=0)
+    set_target_properties(${SA_TARGET} PROPERTIES UNITY_BUILD FALSE)
+endif()
 
 set(ALL_TARGET ${PROJECT_NAME}_all)
 add_custom_target(${ALL_TARGET})
