@@ -168,7 +168,21 @@ void Zone::setNormalizedSampleLevel(const bool usePeak, const int associatedSamp
                                    : dsp::sample_analytics::computeRMS(samplePointers[i]);
             // convert linear measure into db
             // To undo this, std::pow(amp / 10.f, 10.f)
-            sampleData.samples[i].normalizationAmplitude = 10.f * std::log10(normVal);
+            sampleData.samples[i].normalizationAmplitude = 10.f * std::log10(1.f / normVal);
+        }
+    }
+}
+
+void Zone::clearNormalizedSampleLevel(const int associatedSampleID)
+{
+    const auto startSample = (associatedSampleID < 0) ? 0 : associatedSampleID;
+    const auto endSample = (associatedSampleID < 0) ? maxSamplesPerZone : associatedSampleID;
+
+    for (auto i = startSample; i < endSample; ++i)
+    {
+        if (sampleData.samples[i].active && samplePointers[i])
+        {
+            sampleData.samples[i].normalizationAmplitude = 0.f;
         }
     }
 }

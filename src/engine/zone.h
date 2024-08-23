@@ -200,6 +200,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         return attachToSample(manager, variation);
     }
     void setNormalizedSampleLevel(bool usePeak = false, int associatedSampleID = -1);
+    void clearNormalizedSampleLevel(int associatedSampleID = -1);
 
     struct ZoneMappingData
     {
