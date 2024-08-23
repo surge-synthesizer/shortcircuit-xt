@@ -113,6 +113,26 @@ CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
                  associatedSampleVariationPayload_t,
                  samplesSelectedZoneUpdate(payload, engine, cont));
 
+using associatedSampleZoneNormalizePayload_t = std::tuple<size_t, bool>;
+inline void doAssociatedSampleZoneNormalize(const associatedSampleZoneNormalizePayload_t &payload,
+                                            const engine::Engine &engine, MessageController &cont)
+{
+    const auto &samples = payload;
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+            auto &[idx, use_peak] = sampv;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(use_peak,
+                                                                                          idx);
+        });
+    }
+}
+CLIENT_TO_SERIAL(AssociatedSampleZoneNomalizeRequest, c2s_normalize_zone_samples,
+                 associatedSampleZoneNormalizePayload_t,
+                 doAssociatedSampleZoneNormalize(payload, engine, cont));
+
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneAssociatedSampleSetInt16TValue,
                              c2s_update_zone_sampleset_int16_t, detail::diffMsg_t<int16_t>,
                              engine::Zone::AssociatedSampleSet,
