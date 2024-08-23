@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
-#define SCXT_SRC_UI_COMPONENTS_BROWSER_BROWSERPANE_H
+#ifndef SCXT_SRC_UI_APP_BROWSER_UI_BROWSERPANE_H
+#define SCXT_SRC_UI_APP_BROWSER_UI_BROWSERPANE_H
 
 #include <vector>
 #include "filesystem/import.h"

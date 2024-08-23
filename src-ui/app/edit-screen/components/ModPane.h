@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_MULTI_MODPANE_H
-#define SCXT_SRC_UI_COMPONENTS_MULTI_MODPANE_H
+#ifndef SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_MODPANE_H
+#define SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_MODPANE_H
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "app/HasEditor.h"

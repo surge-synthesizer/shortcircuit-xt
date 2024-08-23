@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_CONNECTORS_JSONLAYOUTCONSUMER_H
-#define SCXT_SRC_UI_CONNECTORS_JSONLAYOUTCONSUMER_H
+#ifndef SCXT_SRC_UI_CONNECTORS_JSONASSETSUPPORT_H
+#define SCXT_SRC_UI_CONNECTORS_JSONASSETSUPPORT_H
 
 #include <string>
 #include <vector>

@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
-#define SCXT_SRC_UI_COMPONENTS_HASEDITOR_H
+#ifndef SCXT_SRC_UI_APP_HASEDITOR_H
+#define SCXT_SRC_UI_APP_HASEDITOR_H
 
 #include <cstdint>
 #include <cassert>
