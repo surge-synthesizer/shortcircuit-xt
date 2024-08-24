@@ -37,6 +37,7 @@
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
 #include "sample/sfz_support/sfz_import.h"
+#include "sample/exs_support/exs_import.h"
 #include "sample/multisample_support/multisample_import.h"
 #include "infrastructure/user_defaults.h"
 #include "infrastructure/md5support.h"
@@ -542,6 +543,19 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             auto res = sfz_support::importSFZ(p, *this);
             if (!res)
                 messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+            messageController->restartAudioThreadFromSerial();
+            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                      getPartGroupZoneStructure(), *messageController);
+        });
+        return;
+    }
+    else if (extensionMatches(p, ".exs"))
+    {
+        // TODO ok this refresh and restart is a bit unsatisfactory
+        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+            auto res = exs_support::importEXS(p, *this);
+            if (!res)
+                messageController->reportErrorToClient("EXS Import Failed", "Dunno why");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);

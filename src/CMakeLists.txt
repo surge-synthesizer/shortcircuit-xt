@@ -28,6 +28,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_flac.cpp
         sample/loaders/load_mp3.cpp
 
+        sample/exs_support/exs_import.cpp
         sample/multisample_support/multisample_import.cpp
         sample/sfz_support/sfz_parse.cpp
         sample/sfz_support/sfz_import.cpp
