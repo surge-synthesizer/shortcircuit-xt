@@ -279,6 +279,8 @@ void Group::addActiveZone()
         parentPart->addActiveGroup();
         attack();
     }
+    // Important we do this *after* the attack since it allows
+    // isActive to be accurate with processor ringout
     activeZones++;
     ringoutTime = 0;
 }
@@ -412,6 +414,13 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 
 void Group::attack()
 {
+    if (isActive())
+    {
+        // I *thin* we need to do this
+        rePrepareAndBindGroupMatrix();
+        return;
+    }
+
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {
         const auto &ps = processorStorage[i];
