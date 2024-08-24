@@ -207,6 +207,15 @@ struct Group : MoveableOnly<Group>,
     int32_t ringoutTime{0};
     int32_t ringoutMax{0};
 
+    bool hasActiveZones() const { return activeZones != 0; }
+    bool inRingout() const { return ringoutTime < ringoutMax; }
+    bool hasActiveEGs() const
+    {
+        const auto eg0A = (int)eg[0].stage <= (int)ahdsrenv_t::s_release;
+        const auto eg1A = (int)eg[1].stage <= (int)ahdsrenv_t::s_release;
+        return eg0A || eg1A;
+    }
+
     // Was attack on this group called in this block?
     // In that case, your voices may still be initializing
     // when you start EGs so assume gated for one block

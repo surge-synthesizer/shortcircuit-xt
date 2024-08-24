@@ -261,10 +261,16 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
     }
-    if (activeZones == 0 && updateRingout() && ringoutMax > 0)
+    if (activeZones == 0)
     {
-        ringoutTime += blockSize;
-        if (ringoutTime >= ringoutMax)
+        auto hasR = updateRingout() && (ringoutMax > 0) && inRingout();
+        auto hasEG = hasActiveEGs();
+
+        if (hasR || hasEG)
+        {
+            ringoutTime += blockSize;
+        }
+        else
         {
             mUILag.instantlySnap();
             parentPart->removeActiveGroup();
@@ -324,12 +330,7 @@ void Group::removeActiveZone()
     {
         ringoutMax = 0;
         ringoutTime = 0;
-        auto hasRingout = updateRingout();
-        if (!hasRingout)
-        {
-            mUILag.instantlySnap();
-            parentPart->removeActiveGroup();
-        }
+        updateRingout();
     }
 }
 
@@ -415,8 +416,13 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 
 void Group::attack()
 {
+    attackInThisBlock = true;
+
     if (isActive())
     {
+        eg[0].attackFrom(eg[0].outBlock0);
+        eg[1].attackFrom(eg[1].outBlock0);
+
         // I *thin* we need to do this
         rePrepareAndBindGroupMatrix();
         return;
@@ -444,8 +450,6 @@ void Group::attack()
     for (auto p : processors)
         if (p)
             p->init();
-
-    attackInThisBlock = true;
 }
 
 void Group::resetLFOs(int whichLFO)
@@ -485,12 +489,10 @@ void Group::resetLFOs(int whichLFO)
 
 bool Group::isActive() const
 {
-    const auto az = activeZones != 0;
-    const auto procRO = ringoutTime < ringoutMax;
-
-    // structuring it so we can do AEG and env LFO shortly also
-
-    return az || procRO;
+    auto haz = hasActiveZones();
+    auto hae = hasActiveEGs();
+    auto ir = inRingout();
+    return haz || hae || ir;
 }
 
 template struct HasGroupZoneProcessors<Group>;

@@ -162,6 +162,9 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
     {
         m.bindSourceValue(macroSources.macros[i], part->macros[i].value);
     }
+
+    m.bindSourceValue(egSource[0], g.eg[0].outBlock0);
+    m.bindSourceValue(egSource[1], g.eg[1].outBlock0);
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(
