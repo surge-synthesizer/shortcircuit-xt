@@ -96,7 +96,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     float *lOut = output[0];
     float *rOut = output[1];
 
-    bool gated{false};
+    bool gated{attackInThisBlock};
+    attackInThisBlock = false;
     for (const auto &z : zones)
     {
         gated = gated || (z->gatedVoiceCount > 0);
@@ -260,14 +261,14 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
     }
-    if (activeZones == 0)
+    if (activeZones == 0 && updateRingout() && ringoutMax > 0)
     {
         ringoutTime += blockSize;
-        updateRingout();
         if (ringoutTime >= ringoutMax)
         {
             mUILag.instantlySnap();
             parentPart->removeActiveGroup();
+            ringoutMax = 0;
         }
     }
 }
@@ -435,11 +436,16 @@ void Group::attack()
 
     osDownFilter.reset();
     resetLFOs();
+    eg[0].attackFrom(0.f);
+    eg[1].attackFrom(0.f);
+
     rePrepareAndBindGroupMatrix();
 
     for (auto p : processors)
         if (p)
             p->init();
+
+    attackInThisBlock = true;
 }
 
 void Group::resetLFOs(int whichLFO)
