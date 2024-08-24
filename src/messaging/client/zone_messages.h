@@ -113,14 +113,7 @@ CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
                  associatedSampleVariationPayload_t,
                  samplesSelectedZoneUpdate(payload, engine, cont));
 
-enum class AssociatedSampleZoneNormalizeMode
-{
-    CLEAR = 0,
-    PEAK,
-    RMS,
-};
-using associatedSampleZoneNormalizePayload_t =
-    std::tuple<size_t, AssociatedSampleZoneNormalizeMode>;
+using associatedSampleZoneNormalizePayload_t = std::tuple<size_t, bool>;
 inline void doAssociatedSampleZoneNormalize(const associatedSampleZoneNormalizePayload_t &payload,
                                             const engine::Engine &engine, MessageController &cont)
 {
@@ -130,28 +123,35 @@ inline void doAssociatedSampleZoneNormalize(const associatedSampleZoneNormalizeP
     {
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
-            auto &[idx, mode] = sampv;
-            switch (mode)
-            {
-            case AssociatedSampleZoneNormalizeMode::CLEAR:
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->clearNormalizedSampleLevel(
-                    idx);
-                break;
-            case AssociatedSampleZoneNormalizeMode::PEAK:
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(true,
-                                                                                              idx);
-                break;
-            case AssociatedSampleZoneNormalizeMode::RMS:
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(false,
-                                                                                              idx);
-                break;
-            }
+            auto &[idx, use_peak] = sampv;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(use_peak,
+                                                                                          idx);
         });
     }
 }
 CLIENT_TO_SERIAL(AssociatedSampleZoneNomalizeRequest, c2s_normalize_zone_samples,
                  associatedSampleZoneNormalizePayload_t,
                  doAssociatedSampleZoneNormalize(payload, engine, cont));
+
+using associatedSampleZoneNormalizeClearPayload_t = size_t;
+inline void
+doAssociatedSampleZoneNormalizeClear(const associatedSampleZoneNormalizeClearPayload_t &payload,
+                                     const engine::Engine &engine, MessageController &cont)
+{
+    const auto &samples = payload;
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+            auto &idx = sampv;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->clearNormalizedSampleLevel(idx);
+        });
+    }
+}
+CLIENT_TO_SERIAL(AssociatedSampleZoneNomalizeClearRequest, c2s_clear_normalize_zone_samples,
+                 associatedSampleZoneNormalizeClearPayload_t,
+                 doAssociatedSampleZoneNormalizeClear(payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneAssociatedSampleSetInt16TValue,
                              c2s_update_zone_sampleset_int16_t, detail::diffMsg_t<int16_t>,
