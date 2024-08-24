@@ -207,6 +207,11 @@ struct Group : MoveableOnly<Group>,
     int32_t ringoutTime{0};
     int32_t ringoutMax{0};
 
+    // Was attack on this group called in this block?
+    // In that case, your voices may still be initializing
+    // when you start EGs so assume gated for one block
+    bool attackInThisBlock{false};
+
     bool updateRingout();
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
