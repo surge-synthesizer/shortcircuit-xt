@@ -57,6 +57,9 @@ std::string keyName(ColorMap::Colors c)
     {
         C(accent_1a);
         C(accent_1b);
+        C(accent_1b_alpha_a);
+        C(accent_1b_alpha_b);
+        C(accent_1b_alpha_c);
         C(accent_2a);
         C(accent_2a_alpha_a);
         C(accent_2a_alpha_b);

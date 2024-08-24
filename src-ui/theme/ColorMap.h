@@ -53,6 +53,9 @@ struct ColorMap
     {
         accent_1a,
         accent_1b,
+        accent_1b_alpha_a,
+        accent_1b_alpha_b,
+        accent_1b_alpha_c,
         accent_2a,
         accent_2a_alpha_a,
         accent_2a_alpha_b,
