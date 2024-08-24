@@ -152,7 +152,7 @@ struct Group : MoveableOnly<Group>,
         return res;
     }
 
-    bool isActive() { return activeZones != 0; }
+    bool isActive() const;
     void addActiveZone();
     void removeActiveZone();
 
@@ -204,6 +204,10 @@ struct Group : MoveableOnly<Group>,
     void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t);
 
     uint32_t activeZones{0};
+    int32_t ringoutTime{0};
+    int32_t ringoutMax{0};
+
+    bool updateRingout();
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
 
