@@ -260,6 +260,16 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
     }
+    if (activeZones == 0)
+    {
+        ringoutTime += blockSize;
+        updateRingout();
+        if (ringoutTime >= ringoutMax)
+        {
+            mUILag.instantlySnap();
+            parentPart->removeActiveGroup();
+        }
+    }
 }
 
 void Group::addActiveZone()
@@ -270,6 +280,37 @@ void Group::addActiveZone()
         attack();
     }
     activeZones++;
+    ringoutTime = 0;
+}
+
+bool Group::updateRingout()
+{
+    auto res{false};
+    int32_t mx{0};
+    for (auto &p : processors)
+    {
+        if (!p)
+            continue;
+        auto tl = p->tail_length();
+        if (tl != 0)
+        {
+            if (tl == -1)
+            {
+                /*
+                 * Someone is infinite. So set ringout time to 0
+                 * then if someone drops away from infinite we start
+                 * counting at their max
+                 */
+                mx = std::numeric_limits<int32_t>::max();
+                ringoutTime = 0;
+            }
+            else
+                mx = std::max(mx, tl);
+            res = true;
+        }
+    }
+    ringoutMax = mx;
+    return res;
 }
 
 void Group::removeActiveZone()
@@ -278,8 +319,14 @@ void Group::removeActiveZone()
     activeZones--;
     if (activeZones == 0)
     {
-        mUILag.instantlySnap();
-        parentPart->removeActiveGroup();
+        ringoutMax = 0;
+        ringoutTime = 0;
+        auto hasRingout = updateRingout();
+        if (!hasRingout)
+        {
+            mUILag.instantlySnap();
+            parentPart->removeActiveGroup();
+        }
     }
 }
 
@@ -380,6 +427,10 @@ void Group::attack()
     osDownFilter.reset();
     resetLFOs();
     rePrepareAndBindGroupMatrix();
+
+    for (auto p : processors)
+        if (p)
+            p->init();
 }
 
 void Group::resetLFOs(int whichLFO)
@@ -415,6 +466,16 @@ void Group::resetLFOs(int whichLFO)
             SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
         }
     }
+}
+
+bool Group::isActive() const
+{
+    const auto az = activeZones != 0;
+    const auto procRO = ringoutTime < ringoutMax;
+
+    // structuring it so we can do AEG and env LFO shortly also
+
+    return az || procRO;
 }
 
 template struct HasGroupZoneProcessors<Group>;

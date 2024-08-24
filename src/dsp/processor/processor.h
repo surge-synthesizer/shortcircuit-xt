@@ -294,9 +294,11 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
         assert(false);
     }
 
-    // processors are required to be able to process stereo blocks if stereo is true in the
-    // constructor
     virtual void suspend() {}
+
+    /*
+     * Tail length in samples
+     */
     virtual int tail_length() { return 0; }
 
     float modulation_output; // processors can use this to output modulation data to the matrix
