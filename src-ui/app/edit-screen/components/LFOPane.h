@@ -66,7 +66,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
         boolBaseAttachment_t;
     typedef connectors::BooleanPayloadDataAttachment<modulation::ModulatorStorage> boolAttachment_t;
 
-    typedef connectors::DiscretePayloadDataAttachment<modulation::ModulatorStorage, int16_t>
+    typedef connectors::PayloadDataAttachment<modulation::ModulatorStorage, int16_t>
         int16Attachment_t;
 
     LfoPane(SCXTEditor *, bool forZone);
