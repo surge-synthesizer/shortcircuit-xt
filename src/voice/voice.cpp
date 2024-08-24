@@ -250,6 +250,15 @@ template <bool OS> bool Voice::processWithOS()
         {
             halfRate.process_block_D2(output[0], output[1], blockSize << 1);
         }
+
+        auto scale_db = zone->sampleData.samples[sampleIndex].normalizationAmplitude;
+        // we are in dB so 0 change is 1 dB
+        if (scale_db != 1)
+        {
+            const float linear_scale = std::pow(scale_db / 10.0f, 10.0f);
+            sst::basic_blocks::mechanics::scale_by<blockSize>(linear_scale + 1.f, output[0],
+                                                              output[1]);
+        }
     }
     else
         memset(output, 0, sizeof(output));
