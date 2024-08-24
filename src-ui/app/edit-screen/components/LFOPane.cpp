@@ -37,6 +37,7 @@
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/DraggableTextEditableValue.h"
 
 // Included so we can have UI-thread exceution for curve rendering
 #include "modulation/modulators/steplfo.h"
@@ -251,14 +252,19 @@ struct StepLFOPane : juce::Component, app::HasEditor
 
             makeLabel(L, A->getLabel());
         };
+        auto makeGlyph = [this](auto &c, sst::jucegui::components::GlyphPainter::GlyphType g) {
+            c = std::make_unique<sst::jucegui::components::GlyphPainter>(g);
+            addAndMakeVisible(*c);
+        };
 
-        ifac::attachAndAdd(ms, ms.stepLfoStorage.repeat, this, stepsA, stepsJ, parent->forZone,
+        ifac::attachAndAdd(ms, ms.stepLfoStorage.repeat, this, stepsA, stepsEd, parent->forZone,
                            parent->selectedTab);
         connectors::addGuiStep(*stepsA, [w = juce::Component::SafePointer(this)](const auto &a) {
             if (w)
                 w->stepRender->recalcCurve();
         });
-        stepsA->setJogWrapsAtEnd(false);
+        makeGlyph(stepsGlyph, sst::jucegui::components::GlyphPainter::STEP_COUNT);
+        // stepsA->setJogWrapsAtEnd(false);
 
         bfac::attachAndAdd(ms, ms.stepLfoStorage.rateIsForSingleStep, this, cycleA, cycleB,
                            parent->forZone, parent->selectedTab);
@@ -330,7 +336,8 @@ struct StepLFOPane : juce::Component, app::HasEditor
     std::unique_ptr<jcmp::Label> rateL, deformL, phaseL;
 
     std::unique_ptr<LfoPane::int16Attachment_t> stepsA;
-    std::unique_ptr<jcmp::JogUpDownButton> stepsJ;
+    std::unique_ptr<jcmp::DraggableTextEditableValue> stepsEd;
+    std::unique_ptr<jcmp::GlyphPainter> stepsGlyph;
 
     std::unique_ptr<LfoPane::boolBaseAttachment_t> cycleA;
     std::unique_ptr<jcmp::ToggleButton> cycleB;
@@ -380,7 +387,10 @@ struct StepLFOPane : juce::Component, app::HasEditor
         // Knobs (END)
 
         // (use knobBounds to place this where the 4th knob would be)
-        stepsJ->setBounds(knobBounds.withHeight(buttonH));
+        stepsEd->setBounds(
+            knobBounds.withHeight(buttonH).withTrimmedLeft(knobBounds.getWidth() / 2));
+        stepsGlyph->setBounds(
+            knobBounds.withHeight(buttonH).withTrimmedRight(knobBounds.getWidth() / 2));
         auto jogBox = knobBounds.withHeight(buttonH)
                           .withY(knobBounds.getHeight() - buttonH)
                           .withWidth(knobBounds.getWidth() / 2);
