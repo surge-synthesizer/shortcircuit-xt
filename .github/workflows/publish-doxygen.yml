@@ -17,3 +17,4 @@ jobs:
         with:
           destination: ${{ github.event.repository.name }}
           token: ${{ secrets.SST_DOCS_ACCESS_TOKEN }}
+          configdir: doc/doxygen
