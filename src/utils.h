@@ -93,60 +93,12 @@ template <> inline const std::string SampleID::display_name() const { return "Sa
 typedef ID<7> EngineID;
 template <> inline const std::string EngineID::display_name() const { return "Engine"; }
 
-#define USE_SIMPLE_LEAK_DETECTOR 1
-#if USE_SIMPLE_LEAK_DETECTOR
-extern std::map<std::string, std::pair<int, int>> allocLog;
-void showLeakLog();
-#else
-inline void showLeakLog() {}
-#endif
-
-template <typename T> class LeakDetected
-{
-  protected:
-    LeakDetected()
-    {
-#if USE_SIMPLE_LEAK_DETECTOR
-        leakDetect(+1);
-#endif
-    };
-    LeakDetected(LeakDetected &&)
-    {
-#if USE_SIMPLE_LEAK_DETECTOR
-        leakDetect(+1);
-#endif
-    }
-    LeakDetected(const LeakDetected &)
-    {
-#if USE_SIMPLE_LEAK_DETECTOR
-        leakDetect(+1);
-#endif
-    }
-
-    ~LeakDetected()
-    {
-#if USE_SIMPLE_LEAK_DETECTOR
-        leakDetect(-1);
-#endif
-    }
-#if USE_SIMPLE_LEAK_DETECTOR
-    void leakDetect(int dir)
-    {
-        auto tn = typeid(T).name();
-        if (dir == 1)
-            allocLog[tn].first++;
-        else if (dir == -1)
-            allocLog[tn].second++;
-    }
-#endif
-};
-
 /**
  * A class which forces move semantics and optionally runs a naive leak detector
  *
  * @tparam T - use this in the standard mixin/CRTP way namely struct A : MoveableOnly<A>
  */
-template <typename T> class MoveableOnly : public LeakDetected<T>
+template <typename T> class MoveableOnly
 {
   public:
     MoveableOnly(MoveableOnly &&) = default;
@@ -154,7 +106,7 @@ template <typename T> class MoveableOnly : public LeakDetected<T>
     MoveableOnly &operator=(const MoveableOnly &) = delete;
 
   protected:
-    MoveableOnly() : LeakDetected<T>() {}
+    MoveableOnly() {}
     ~MoveableOnly() = default;
 };
 

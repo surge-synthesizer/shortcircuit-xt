@@ -79,11 +79,7 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
     clapJuceShim->setResizable(true);
 }
 
-SCXTPlugin::~SCXTPlugin()
-{
-    engine.reset(nullptr);
-    scxt::showLeakLog();
-}
+SCXTPlugin::~SCXTPlugin() { engine.reset(nullptr); }
 
 std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 {

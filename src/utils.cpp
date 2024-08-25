@@ -64,20 +64,6 @@ void printStackTrace(int depth)
 void printStackTrace(int fd) { SCLOG("printStackTrace unavailable on this platform"); }
 #endif
 
-#if USE_SIMPLE_LEAK_DETECTOR
-std::map<std::string, std::pair<int, int>> allocLog;
-void showLeakLog()
-{
-    for (const auto &[k, v] : allocLog)
-    {
-        auto [a, d] = v;
-        if (a != d)
-            std::cout << "LEAK:   class=" << k << "  ctor=" << a << " dtor=" << d
-                      << ((a != d) ? " ERROR!!" : " OK") << std::endl;
-    }
-}
-#endif
-
 std::mutex logMutex;
 std::deque<std::string> logMessages;
 void postToLog(const std::string &s)
