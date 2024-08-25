@@ -377,6 +377,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  findIfArray(v, "modulatorStorage", zone.modulatorStorage);
                  findOrDefault(v, "aegStorage", zone.egStorage[0]);
                  findOrDefault(v, "eg2Storage", zone.egStorage[1]);
+                 zone.onRoutingChanged();
              }));
 
 SC_STREAMDEF(scxt::engine::KeyboardRange, SC_FROM({

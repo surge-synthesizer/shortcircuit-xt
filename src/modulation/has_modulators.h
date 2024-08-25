@@ -41,11 +41,14 @@ namespace scxt::modulation::shared
 
 static_assert(lfosPerGroup == lfosPerZone,
               "If this is false you need to template out the count below");
+static_assert(egsPerGroup == egsPerZone,
+              "If this is false you need to template out the count below");
 template <typename T> struct HasModulators
 {
     HasModulators(T *that) : eg{that, that}, egOS{that, that} {}
 
     static constexpr uint16_t lfosPerObject{lfosPerZone};
+    static constexpr uint16_t egsPerObject{egsPerZone};
 
     enum LFOEvaluator
     {
@@ -66,8 +69,11 @@ template <typename T> struct HasModulators
         T, blockSize << 1, sst::basic_blocks::modulators::TwentyFiveSecondExp>
         ahdsrenvOS_t;
 
-    ahdsrenv_t eg[2];
-    ahdsrenvOS_t egOS[2];
+    ahdsrenv_t eg[egsPerObject];
+    ahdsrenvOS_t egOS[egsPerObject];
+
+    std::array<bool, lfosPerObject> lfosActive{};
+    std::array<bool, egsPerObject> egsActive{};
 };
 } // namespace scxt::modulation::shared
 #endif // SHORTCIRCUITXT_HAS_MODULATORS_H

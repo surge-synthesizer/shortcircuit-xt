@@ -63,11 +63,16 @@ inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
         cont.scheduleAudioThreadCallback(
             [index = i, row = r, zs = sz](auto &eng) {
                 for (const auto &z : zs)
-                    eng.getPatch()
-                        ->getPart(z.part)
-                        ->getGroup(z.group)
-                        ->getZone(z.zone)
-                        ->routingTable.routes[index] = row;
+                {
+                    auto &zone =
+                        eng.getPatch()->getPart(z.part)->getGroup(z.group)->getZone(z.zone);
+                    auto depthChange = (zone->routingTable.routes[index].depth != row.depth);
+                    zone->routingTable.routes[index] = row;
+                    if (!depthChange)
+                    {
+                        zone->onRoutingChanged();
+                    }
+                }
             },
             [doUpdate = b](auto &eng) {
                 if (doUpdate)
@@ -106,6 +111,7 @@ inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload
                     grp->routingTable.routes[index] = row;
                     if (structureDiff)
                     {
+                        grp->onRoutingChanged();
                         grp->rePrepareAndBindGroupMatrix();
                     }
                 }

@@ -350,6 +350,7 @@ const engine::Engine *Group::getEngine() const
 
 void Group::setupOnUnstream(const engine::Engine &e)
 {
+    onRoutingChanged();
     rePrepareAndBindGroupMatrix();
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
@@ -494,6 +495,8 @@ bool Group::isActive() const
     auto ir = inRingout();
     return haz || hae || ir;
 }
+
+void Group::onRoutingChanged() { SCLOG_ONCE("Implement Group LFO modulator use optimization"); }
 
 template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine

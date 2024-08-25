@@ -84,6 +84,9 @@ void Voice::voiceStarted()
 {
     forceOversample = zone->parentGroup->outputInfo.oversample;
 
+    lfosActive = zone->lfosActive;
+    egsActive = zone->egsActive;
+
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
         const auto &ms = zone->modulatorStorage[i];
@@ -105,6 +108,10 @@ void Voice::voiceStarted()
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
+        if (!lfosActive[i])
+        {
+            continue;
+        }
         const auto &ms = zone->modulatorStorage[i];
         if (lfoEvaluator[i] == STEP)
         {
@@ -130,7 +137,10 @@ void Voice::voiceStarted()
     }
 
     aeg.attackFrom(0.0); // TODO Envelope Legato Mode
-    eg2.attackFrom(0.0);
+    if (egsActive[1])
+    {
+        eg2.attackFrom(0.0);
+    }
     if (forceOversample)
     {
         aegOS.attackFrom(0.0);
@@ -160,6 +170,10 @@ template <bool OS> bool Voice::processWithOS()
     // Run Modulators - these run at base rate never oversampled
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
+        if (!lfosActive[i])
+        {
+            continue;
+        }
         if (lfoEvaluator[i] == STEP)
         {
             stepLfos[i].process(blockSize);
@@ -199,6 +213,11 @@ template <bool OS> bool Voice::processWithOS()
                   (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
                   (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
     }
+
+    /*
+     * Voice always runs the AEG which is default routed, so ignore
+     * the egsActive[0] flag
+     */
     auto &aegp = endpoints->aeg;
     if constexpr (OS)
     {
@@ -213,10 +232,12 @@ template <bool OS> bool Voice::processWithOS()
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
-    auto &eg2p = endpoints->eg2;
-    eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
-                     *eg2p.rsP, envGate);
-
+    if (egsActive[1])
+    {
+        auto &eg2p = endpoints->eg2;
+        eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
+                         *eg2p.rsP, envGate);
+    }
     updateTransportPhasors();
 
     // TODO and probably just want to process the envelopes here
