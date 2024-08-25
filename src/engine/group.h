@@ -172,7 +172,7 @@ struct Group : MoveableOnly<Group>,
     lipol outputAmp;
     lipolOS outputAmpOS;
 
-    std::array<modulation::modulators::AdsrStorage, egPerGroup> gegStorage{};
+    std::array<modulation::modulators::AdsrStorage, egsPerGroup> gegStorage{};
 
     std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
     std::array<modulation::modulators::StepLFO, lfosPerGroup> stepLfos;
@@ -182,6 +182,7 @@ struct Group : MoveableOnly<Group>,
     modulation::GroupMatrix modMatrix;
     modulation::GroupMatrixEndpoints endpoints;
     modulation::GroupMatrix::RoutingTable routingTable;
+    void onRoutingChanged();
     void rePrepareAndBindGroupMatrix();
 
     inline float envelope_rate_linear_nowrap(float f)

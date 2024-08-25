@@ -368,6 +368,49 @@ void Zone::terminateAllVoices()
         toCleanUp[i]->cleanupVoice();
     }
 }
+void Zone::onRoutingChanged()
+{
+    voice::modulation::MatrixEndpoints::Sources usedForScanning(nullptr);
+    std::fill(lfosActive.begin(), lfosActive.end(), false);
+    egsActive[0] = true; // the AEG always runs
+    egsActive[1] = false;
+    auto doCheck = [this, &usedForScanning](const voice::modulation::MatrixEndpoints::SR &src) {
+        for (int i = 0; i < lfosPerZone; ++i)
+        {
+            if (src == usedForScanning.lfoSources.sources[i])
+            {
+                lfosActive[i] = true;
+            }
+        }
+        if (src == usedForScanning.aegSource)
+        {
+            egsActive[0] = true;
+        }
+
+        if (src == usedForScanning.eg2Source)
+        {
+            egsActive[1] = true;
+        }
+    };
+    for (auto &r : routingTable.routes)
+    {
+        // If we aren't mapped anywhere we don't care about this row
+        if (!r.target.has_value())
+            continue;
+
+        // Similarly if we aren't active
+        if (!r.active)
+            continue;
+
+        if (r.source.has_value())
+            doCheck(*r.source);
+
+        if (r.sourceVia.has_value())
+            doCheck(*r.sourceVia);
+    }
+    // SCLOG("Post check: " << SCD(lfosActive[0]) << SCD(lfosActive[1]) << SCD(lfosActive[2])
+    //                      << SCD(lfosActive[3]) << SCD(egsActive[0]) << SCD(egsActive[1]))
+}
 
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine

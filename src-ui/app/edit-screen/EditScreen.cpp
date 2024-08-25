@@ -159,7 +159,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     parent->addChildComponent(*modPane);
     parent->addChildComponent(*outPane);
 
-    for (int i = 0; i < scxt::egPerGroup; ++i)
+    for (int i = 0; i < scxt::egsPerGroup; ++i)
     {
         auto egt = std::make_unique<edit_screen::AdsrPane>(parent->editor, i, forZone);
         eg[i] = std::move(egt);

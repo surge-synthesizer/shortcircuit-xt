@@ -98,10 +98,8 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  to.getPatch()->setSampleRate(to.getSampleRate());
              }))
 
-SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
-                 v = {{"parts", from.getParts()}, {"busses", from.busses}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::engine::Patch,
+             SC_FROM({ v = {{"parts", from.getParts()}, {"busses", from.busses}}; }), SC_TO({
                  auto &patch = to;
                  patch.resetToBlankPatch();
 
@@ -147,31 +145,32 @@ SC_STREAMDEF(
         findOrSet(v, "s", false, to.solo);
     }));
 
-SC_STREAMDEF(
-    scxt::engine::Part, SC_FROM({
-        // TODO: Do a non-empty part stream with the If variant
-        v = {{"config", from.configuration}, {"groups", from.getGroups()}, {"macros", from.macros}};
-    }),
-    SC_TO({
-        auto &part = to;
-        part.clearGroups();
+SC_STREAMDEF(scxt::engine::Part, SC_FROM({
+                 // TODO: Do a non-empty part stream with the If variant
+                 v = {{"config", from.configuration},
+                      {"groups", from.getGroups()},
+                      {"macros", from.macros}};
+             }),
+             SC_TO({
+                 auto &part = to;
+                 part.clearGroups();
 
-        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
-        {
-            findIf(v, "channel", part.configuration.channel);
-        }
-        else
-        {
-            findIf(v, "config", part.configuration);
-        }
-        findIf(v, "macros", part.macros);
-        auto vzones = v.at("groups").get_array();
-        for (const auto vz : vzones)
-        {
-            auto idx = part.addGroup() - 1;
-            vz.to(*(part.getGroup(idx)));
-        }
-    }))
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
+                 {
+                     findIf(v, "channel", part.configuration.channel);
+                 }
+                 else
+                 {
+                     findIf(v, "config", part.configuration);
+                 }
+                 findIf(v, "macros", part.macros);
+                 auto vzones = v.at("groups").get_array();
+                 for (const auto vz : vzones)
+                 {
+                     auto idx = part.addGroup() - 1;
+                     vz.to(*(part.getGroup(idx)));
+                 }
+             }))
 
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},   {"pan", t.pan},
@@ -377,6 +376,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  findIfArray(v, "modulatorStorage", zone.modulatorStorage);
                  findOrDefault(v, "aegStorage", zone.egStorage[0]);
                  findOrDefault(v, "eg2Storage", zone.egStorage[1]);
+                 zone.onRoutingChanged();
              }));
 
 SC_STREAMDEF(scxt::engine::KeyboardRange, SC_FROM({
@@ -409,15 +409,15 @@ SC_STREAMDEF(engine::Engine::EngineStatusMessage, SC_FROM({
                  findIf(v, "runningEnvironment", to.runningEnvironment);
              }));
 
-SC_STREAMDEF(
-    engine::Bus, SC_FROM({
-        v = {{"busSendStorage", t.busSendStorage}, {"busEffectStorage", t.busEffectStorage}};
-    }),
-    SC_TO({
-        findIf(v, "busSendStorage", to.busSendStorage);
-        findIf(v, "busEffectStorage", to.busEffectStorage);
-        to.resetSendState();
-    }));
+SC_STREAMDEF(engine::Bus, SC_FROM({
+                 v = {{"busSendStorage", t.busSendStorage},
+                      {"busEffectStorage", t.busEffectStorage}};
+             }),
+             SC_TO({
+                 findIf(v, "busSendStorage", to.busSendStorage);
+                 findIf(v, "busEffectStorage", to.busEffectStorage);
+                 to.resetSendState();
+             }));
 
 STREAM_ENUM_WITH_DEFAULT(engine::Bus::BusSendStorage::AuxLocation,
                          engine::Bus::BusSendStorage::AuxLocation::POST_VCA,
@@ -478,18 +478,19 @@ SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
                  }
              }));
 
-SC_STREAMDEF(
-    engine::Patch::Busses, SC_FROM({
-        v = {{"mainBus", t.mainBus}, {"partBusses", t.partBusses}, {"auxBusses", t.auxBusses}};
-    }),
-    SC_TO({
-        findIf(v, "mainBus", to.mainBus);
-        findIf(v, "partBusses", to.partBusses);
-        findIf(v, "auxBusses", to.auxBusses);
+SC_STREAMDEF(engine::Patch::Busses, SC_FROM({
+                 v = {{"mainBus", t.mainBus},
+                      {"partBusses", t.partBusses},
+                      {"auxBusses", t.auxBusses}};
+             }),
+             SC_TO({
+                 findIf(v, "mainBus", to.mainBus);
+                 findIf(v, "partBusses", to.partBusses);
+                 findIf(v, "auxBusses", to.auxBusses);
 
-        to.reconfigureSolo();
-        to.reconfigureOutputBusses();
-    }));
+                 to.reconfigureSolo();
+                 to.reconfigureOutputBusses();
+             }));
 
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H

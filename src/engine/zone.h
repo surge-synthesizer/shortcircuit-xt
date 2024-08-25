@@ -225,8 +225,12 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void removeVoice(voice::Voice *);
 
     voice::modulation::Matrix::RoutingTable routingTable;
+    void onRoutingChanged();
 
     std::array<modulation::ModulatorStorage, lfosPerZone> modulatorStorage;
+
+    std::array<bool, lfosPerZone> lfosActive{};
+    std::array<bool, egsPerZone> egsActive{};
 
     // 0 is the AEG, 1 is EG2
     std::array<modulation::modulators::AdsrStorage, 2> egStorage;
