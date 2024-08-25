@@ -5,6 +5,9 @@
     {
         "accent_1a": "#ffda70d6",
         "accent_1b": "#ffffc0cb",
+        "accent_1b_alpha_a": "#14ffc0cb",
+        "accent_1b_alpha_b": "#52ffc0cb",
+        "accent_1b_alpha_c": "#80ffc0cb",
         "accent_2a": "#ff61c4a3",
         "accent_2a_alpha_a": "#ff4f9f84",
         "accent_2a_alpha_b": "#ff4f9f84",

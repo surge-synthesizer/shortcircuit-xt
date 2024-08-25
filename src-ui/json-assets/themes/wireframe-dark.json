@@ -6,6 +6,9 @@
     {
         "accent_1a": "#ffffb949",
         "accent_1b": "#ffd09030",
+        "accent_1b_alpha_a": "#14d09030",
+        "accent_1b_alpha_b": "#52d09030",
+        "accent_1b_alpha_c": "#80d09030",
         "accent_2a": "#ff2788d6",
         "accent_2a_alpha_a": "#142788d6",
         "accent_2a_alpha_b": "#522788d6",
