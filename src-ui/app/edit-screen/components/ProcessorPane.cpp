@@ -52,6 +52,7 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index, bool fz)
       forZone(fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
+    setOptionalCursorForNameArea(juce::MouseCursor::DraggingHandCursor);
     hasHamburger = true;
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
@@ -1110,6 +1111,7 @@ void ProcessorPane::itemDropped(const juce::DragAndDropTarget::SourceDetails &dr
     {
         sendToSerialization(cmsg::SwapGroupProcessors({index, pp->index}));
     }
+    setIsAccented(false);
 }
 
 void ProcessorPane::mouseDrag(const juce::MouseEvent &e)
@@ -1142,6 +1144,14 @@ void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::string &nm,
     setToggleDataSource(nullptr);
     resized();
     repaint();
+}
+void ProcessorPane::itemDragEnter(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
+{
+    setIsAccented(true);
+}
+void ProcessorPane::itemDragExit(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
+{
+    setIsAccented(false);
 }
 
 } // namespace scxt::ui::app::edit_screen

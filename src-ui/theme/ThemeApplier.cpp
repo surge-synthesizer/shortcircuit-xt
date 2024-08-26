@@ -67,7 +67,6 @@ namespace edit
 static constexpr sheet_t::Class ModulationJogButon{"multi.modulation.jogbutton"};
 static constexpr sheet_t::Class ModulationToggle{"multi.modulation.toggle"};
 static constexpr sheet_t::Class ModulationMenu{"multi.modulation.menu"};
-static constexpr sheet_t::Class ModulationHSliderFilled{"multi.modulation.hsliderfilled"};
 
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
@@ -75,8 +74,6 @@ void init()
     sheet_t::addClass(ModulationJogButon).withBaseClass(jcmp::JogUpDownButton::Styles::styleClass);
     sheet_t::addClass(ModulationToggle).withBaseClass(jcmp::ToggleButton::Styles::styleClass);
     sheet_t::addClass(ModulationMenu).withBaseClass(jcmp::MenuButton::Styles::styleClass);
-    sheet_t::addClass(ModulationHSliderFilled)
-        .withBaseClass(jcmp::HSliderFilled::Styles::styleClass);
 }
 
 namespace zone
@@ -87,6 +84,7 @@ static constexpr sheet_t::Class ModulationVSlider{"multi.zone.modulation.vslider
 static constexpr sheet_t::Class ModulationKnob{"multi.zone.modulation.knob"};
 static constexpr sheet_t::Class ModulationDraggableTextEditableValue{
     "multi.zone.modulation.draggabletexteditablevalue"};
+static constexpr sheet_t::Class ModulationHSliderFilled{"multi.zone.modulation.hsliderfilled"};
 
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
@@ -97,6 +95,8 @@ void init()
     sheet_t::addClass(ModulationKnob).withBaseClass(jcmp::Knob::Styles::styleClass);
     sheet_t::addClass(ModulationDraggableTextEditableValue)
         .withBaseClass(jcmp::DraggableTextEditableValue::Styles::styleClass);
+    sheet_t::addClass(ModulationHSliderFilled)
+        .withBaseClass(jcmp::HSliderFilled::Styles::styleClass);
 }
 
 } // namespace zone
@@ -115,6 +115,7 @@ static constexpr sheet_t::Class ModulationKnob{"multi.group.modulation.knob"};
 static constexpr sheet_t::Class ModulationVSlider{"multi.group.modulation.vslider"};
 static constexpr sheet_t::Class ModulationDraggableTextEditableValue{
     "multi.group.modulation.draggabletexteditablevalue"};
+static constexpr sheet_t::Class ModulationHSliderFilled{"multi.group.modulation.hsliderfilled"};
 
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
@@ -132,6 +133,8 @@ void init()
     sheet_t::addClass(ModulationVSlider).withBaseClass(VSlider);
     sheet_t::addClass(ModulationDraggableTextEditableValue)
         .withBaseClass(DraggableTextEditableValue);
+    sheet_t::addClass(ModulationHSliderFilled)
+        .withBaseClass(jcmp::HSliderFilled::Styles::styleClass);
 }
 
 } // namespace group
@@ -198,7 +201,6 @@ void populateSharedGroupZoneMultiModulation(jstl::CustomTypeMap &map)
     map.addCustomClass<jcmp::JogUpDownButton>(detail::edit::ModulationJogButon);
     map.addCustomClass<jcmp::ToggleButton>(detail::edit::ModulationToggle);
     map.addCustomClass<jcmp::MenuButton>(detail::edit::ModulationMenu);
-    map.addCustomClass<jcmp::HSliderFilled>(detail::edit::ModulationHSliderFilled);
 }
 void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
 {
@@ -207,6 +209,7 @@ void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::MultiSwitch>(detail::edit::zone::ModulationMultiSwitch);
     map.addCustomClass<jcmp::VSlider>(detail::edit::zone::ModulationVSlider);
     map.addCustomClass<jcmp::Knob>(detail::edit::zone::ModulationKnob);
+    map.addCustomClass<jcmp::HSliderFilled>(detail::edit::zone::ModulationHSliderFilled);
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::zone::ModulationDraggableTextEditableValue);
     populateSharedGroupZoneMultiModulation(map);
@@ -230,6 +233,7 @@ void ThemeApplier::applyGroupMultiScreenModulationTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::Knob>(detail::edit::group::ModulationKnob);
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::group::ModulationDraggableTextEditableValue);
+    map.addCustomClass<jcmp::HSliderFilled>(detail::edit::group::ModulationHSliderFilled);
     populateSharedGroupZoneMultiModulation(map);
     map.applyMapTo(toThis);
 }
@@ -395,6 +399,8 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     npol);
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::selectedtab,
                     cols.get(ColorMap::accent_1a));
+    base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::accentedPanel,
+                    cols.get(ColorMap::accent_1b));
 
     base->setColour(jcmp::MenuButton::Styles::styleClass, jcmp::MenuButton::Styles::menuarrow_hover,
                     cols.get(ColorMap::accent_1a));
@@ -429,15 +435,6 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(ModulationMenu, jcmp::MenuButton::Styles::menuarrow_hover,
                     cols.get(ColorMap::accent_2a));
 
-    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::value,
-                    cols.get(ColorMap::accent_2b));
-    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::value_hover,
-                    cols.getHover(ColorMap::accent_2b));
-    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::handle,
-                    cols.get(ColorMap::accent_2a));
-    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::handle_hover,
-                    cols.getHover(ColorMap::accent_2a));
-
     base->setColour(ModulationToggle, jcmp::ToggleButton::Styles::value,
                     cols.get(ColorMap::accent_2a));
     base->setColour(ModulationToggle, jcmp::ToggleButton::Styles::value_hover,
@@ -457,6 +454,15 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.getHover(ColorMap::accent_2a));
     base->setColour(ModulationMultiSwitch, jcmp::MultiSwitch::Styles::valuelabel_hover,
                     cols.getHover(ColorMap::generic_content_high));
+
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::value,
+                    cols.get(ColorMap::accent_2b));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::value_hover,
+                    cols.getHover(ColorMap::accent_2b));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::handle,
+                    cols.get(ColorMap::accent_2a));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::handle_hover,
+                    cols.getHover(ColorMap::accent_2a));
 
     base->setColour(ModulationVSlider, jcmp::VSlider::Styles::value, cols.get(ColorMap::accent_2a));
     base->setColour(ModulationVSlider, jcmp::VSlider::Styles::value_hover,
@@ -529,6 +535,19 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(ModulationVSlider, jcmp::VSlider::Styles::value, cols.get(ColorMap::accent_2a));
     base->setColour(ModulationVSlider, jcmp::VSlider::Styles::value_hover,
                     cols.getHover(ColorMap::accent_2a));
+
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::value,
+                    cols.get(ColorMap::accent_2b));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::value_hover,
+                    cols.getHover(ColorMap::accent_2b));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::handle,
+                    cols.get(ColorMap::accent_2a));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::handle_hover,
+                    cols.getHover(ColorMap::accent_2a));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::gutter,
+                    cols.get(ColorMap::bg_2));
+    base->setColour(ModulationHSliderFilled, jcmp::HSliderFilled::Styles::gutter_hover,
+                    cols.getHover(ColorMap::bg_2));
 
     base->setColour(ModulationKnob, jcmp::Knob::Styles::value, cols.get(ColorMap::accent_2a));
     base->setColour(ModulationKnob, jcmp::Knob::Styles::value_hover,
