@@ -116,6 +116,14 @@ struct MatrixEndpoints
     {
     }
 
+    static void registerVoiceModSource(engine::Engine *e, const MatrixConfig::SourceIdentifier &t,
+                                       const std::string &path, const std::string &name)
+    {
+        registerVoiceModSource(
+            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
+            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+    }
+
     // We will need to refactor this when we do group. One step at a time
     struct LFOTarget : scxt::modulation::shared::LFOTargetEndpointData<TG, 'lfo '>
     {
@@ -221,18 +229,8 @@ struct MatrixEndpoints
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
         }
-        struct LFOSources
-        {
-            LFOSources(engine::Engine *e)
-            {
-                for (uint32_t i = 0; i < lfosPerZone; ++i)
-                {
-                    sources[i] = SR{'znlf', 'outp', i};
-                    registerVoiceModSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
-                }
-            }
-            std::array<SR, scxt::lfosPerZone> sources;
-        } lfoSources;
+
+        LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource> lfoSources;
 
         struct MIDISources
         {
@@ -245,29 +243,7 @@ struct MatrixEndpoints
             SR modWheelSource, velocitySource;
         } midiSources;
 
-        struct TransportSources
-        {
-            TransportSources(engine::Engine *e)
-            {
-                auto ctr = (scxt::numTransportPhasors - 1) / 2;
-                for (uint32_t i = 0; i < scxt::numTransportPhasors; ++i)
-                {
-                    std::string name = "Beat";
-                    if (i < ctr)
-                        name = std::string("Beat / ") + std::to_string(1 << (ctr - i));
-                    if (i > ctr)
-                        name = std::string("Beat x ") + std::to_string(1 << (i - ctr));
-
-                    phasors[i] = SR{'ztsp', 'phsr', i};
-                    registerVoiceModSource(e, phasors[i], "Transport", name);
-
-                    voicePhasors[i] = SR{'ztsp', 'vphr', i};
-                    registerVoiceModSource(e, voicePhasors[i], "Transport", "Voice " + name);
-                }
-            }
-            SR phasors[scxt::numTransportPhasors];
-            SR voicePhasors[scxt::numTransportPhasors];
-        } transportSources;
+        TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
 
         struct RNGSources
         {
@@ -317,14 +293,6 @@ struct MatrixEndpoints
             pathFn,
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             nameFn);
-
-    static void registerVoiceModSource(engine::Engine *e, const MatrixConfig::SourceIdentifier &t,
-                                       const std::string &path, const std::string &name)
-    {
-        registerVoiceModSource(
-            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
-            [n = name](const auto &a, const auto &b) -> std::string { return n; });
-    }
 
     static void registerVoiceModSource(
         engine::Engine *e, const MatrixConfig::SourceIdentifier &,

@@ -127,29 +127,9 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
 
 void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
+    lfoSources.bind(m, g, zeroSource);
+
     int idx{0};
-    for (int i = 0; i < lfosPerGroup; ++i)
-    {
-        switch (g.lfoEvaluator[i])
-        {
-        case engine::Group::CURVE:
-        {
-            m.bindSourceValue(lfoSources.sources[i], g.curveLfos[i].output);
-        }
-        break;
-        case engine::Group::STEP:
-        {
-            m.bindSourceValue(lfoSources.sources[i], g.stepLfos[i].output);
-        }
-        break;
-        case engine::Group::ENV:
-            m.bindSourceValue(lfoSources.sources[i], g.envLfos[i].output);
-            break;
-        case engine::Group::MSEG:
-            m.bindSourceValue(lfoSources.sources[i], zeroSource);
-            break;
-        }
-    }
 
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {

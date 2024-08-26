@@ -1022,7 +1022,6 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
         if (r.contains(e.position) && display->editor->isAnyZoneFromGroupSelected(z.first.group))
         {
             potentialZones.push_back(z.first);
-            SCLOG("Adding potential zone " << z.first);
         }
     }
     selection::SelectionManager::ZoneAddress nextZone;
