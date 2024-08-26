@@ -368,7 +368,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_1b_alpha_a));
     base->setColour(jcmp::DraggableTextEditableValue::Styles::styleClass,
                     jcmp::DraggableTextEditableValue::Styles::background_hover,
-                    cols.getHover(ColorMap::accent_1b_alpha_a));
+                    cols.get(ColorMap::accent_1b_alpha_b));
 
     base->setColour(jcmp::MultiSwitch::Styles::styleClass, jcmp::MultiSwitch::Styles::background,
                     cols.get(ColorMap::bg_2));
@@ -485,7 +485,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_2a_alpha_a));
     base->setColour(ModulationDraggableTextEditableValue,
                     jcmp::DraggableTextEditableValue::Styles::background_hover,
-                    cols.getHover(ColorMap::accent_2a_alpha_a));
+                    cols.get(ColorMap::accent_2a_alpha_b));
 
     base->setColour(jcmp::MultiSwitch::Styles::styleClass, jcmp::MultiSwitch::Styles::valuebg,
                     cols.get(ColorMap::accent_1b_alpha_a));
@@ -563,7 +563,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_2a_alpha_a));
     base->setColour(ModulationDraggableTextEditableValue,
                     jcmp::DraggableTextEditableValue::Styles::background_hover,
-                    cols.getHover(ColorMap::accent_2a_alpha_a));
+                    cols.get(ColorMap::accent_2a_alpha_b));
 }
 } // namespace group
 } // namespace edit
