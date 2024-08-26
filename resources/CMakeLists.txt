@@ -8,5 +8,6 @@ cmrc_add_resource_library(${PROJECT_NAME}
         "fonts/Inter/static/Inter-Bold.ttf"
         "fonts/Anonymous_Pro/AnonymousPro-Regular.ttf"
         "images/SCicon.svg"
+        "opensource-credits.txt"
         )
 set_target_properties(scxt-resources PROPERTIES UNITY_BUILD FALSE)

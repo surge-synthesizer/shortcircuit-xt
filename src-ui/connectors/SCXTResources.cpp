@@ -70,5 +70,23 @@ std::unique_ptr<juce::Drawable> loadImageDrawable(const std::string &path)
     SCLOG("Image '" << path << "' failed to load");
     return nullptr;
 }
+
+std::string loadTextFile(const std::string &path)
+{
+    try
+    {
+        auto fs = cmrc::scxt_resources::get_filesystem();
+        auto txtf = fs.open(path);
+        std::string res(txtf.begin(), txtf.end());
+
+        return res;
+    }
+    catch (std::exception &e)
+    {
+    }
+    SCLOG("Text File '" << path << "' failed to load");
+    return {};
+}
+
 } // namespace scxt::ui::connectors::resources
   //

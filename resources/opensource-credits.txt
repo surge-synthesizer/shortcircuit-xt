@@ -1,0 +1,62 @@
+https://github.com/free-audio/
+CLAP, the open plugin standard, including the clap, clap-helpers and clap-wrapper packages
+
+https://github.com/juce-framework/JUCE
+User Interface constructed with the JUCE framework, used under GPL3.
+
+https://github.com/steinbergmedia/vst3sdk
+VST3 supported is provided by the VST3 SDK, by Steinberg GmbH, used under GPL3.
+
+https://github.com/apple/AudioUnitSDK
+Audio unit support provided by the Apple Audio Unit SDK.
+
+https://github.com/simd-everywhere/simde
+SSE to Neon and other instruction sets provided by simd-everywhere SIMDE package.
+
+https://github.com/oddsound/MTS-ESP/
+Microtuning support provided by Oddsound MTS-ESP.
+
+https://github.com/pichenettes/eurorack
+The Nimbus effect uses Mutable Instruments eurorack software by Emile Pitcenettes. MIT license
+
+https://github.com/patrickdowling/superparasites.git
+The Nimbus effect includes the superparasites expanded Mutable firmware by Patrick Dowling. MIT license.
+
+https://github.com/fmtlib/fmt.git
+Support for C++ std::format for C++17 provided by fmtlib
+
+https://github.com/dnomd343/md5sum
+md5sum support provided by the open source md5sum implementation by Dnomd343
+
+https://github.com/sudara/melatonin_inspector.git
+The Melatonin Inspector developer UI tool by sudara
+
+https://github.com/lieff/minimp3
+MP3 import support provided by minimp3, by lieff
+
+https://github.com/sqlite/sqlite
+SQLite light weight sql database
+
+https://github.com/taocpp/json
+JSON operations and communications by the art of cpp taocpp-json library
+
+https://github.com/xiph/flac
+Flac support via the XIPH project
+
+https://github.com/gulrak/filesystem
+gulrak filesystem provides std::filesystem support on macOS and older linuxes
+
+https://github.com/drbye78/libgig
+libgig provides SF2 and some RIFF file capabilities
+
+https://github.com/richgel999/miniz
+miniz provides a single file zip archive read/write program
+
+http://sourcefrog.net/projects/natsort/
+natsort provides a robust natural sort for ascii strings
+
+https://github.com/thestk
+The clap standalone wrapper uses rtaudio and rtmidi for audio and midi
+
+https://github.com/surge-synthesizer/
+A large amount of ShortcircuitXT is available as separate opensource libraries with the sst- prefix
