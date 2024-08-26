@@ -125,24 +125,8 @@ float randomRoll(bool bipolar, int distribution)
 void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z,
                                     voice::Voice &v)
 {
-    for (int i = 0; i < lfosPerZone; ++i)
-    {
-        switch (v.lfoEvaluator[i])
-        {
-        case Voice::CURVE:
-            m.bindSourceValue(lfoSources.sources[i], v.curveLfos[i].output);
-            break;
-        case Voice::STEP:
-            m.bindSourceValue(lfoSources.sources[i], v.stepLfos[i].output);
-            break;
-        case Voice::ENV:
-            m.bindSourceValue(lfoSources.sources[i], v.envLfos[i].output);
-            break;
-        case Voice::MSEG:
-            m.bindSourceValue(lfoSources.sources[i], zeroSource);
-            break;
-        }
-    }
+    lfoSources.bind(m, v, zeroSource);
+
     m.bindSourceValue(aegSource, v.aeg.outBlock0);
     m.bindSourceValue(eg2Source, v.eg2.outBlock0);
 

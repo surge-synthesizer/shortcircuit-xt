@@ -33,6 +33,11 @@
 #include <ostream>
 #include <string>
 
+namespace scxt::engine
+{
+struct Engine;
+};
+
 namespace scxt::modulation::shared
 {
 struct SourceIdentifier
@@ -315,5 +320,74 @@ inline std::ostream &operator<<(std::ostream &os,
     scxt::modulation::shared::identifierToStream(os, tg, "Source");
     return os;
 }
+
+template <typename SR, uint32_t gid, bool includeVoice,
+          void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
+                                 const std::string &)>
+struct TransportSourceBase
+{
+    TransportSourceBase(scxt::engine::Engine *e)
+    {
+        auto ctr = (scxt::numTransportPhasors - 1) / 2;
+        for (uint32_t i = 0; i < scxt::numTransportPhasors; ++i)
+        {
+            std::string name = "Beat";
+            if (i < ctr)
+                name = std::string("Beat / ") + std::to_string(1 << (ctr - i));
+            if (i > ctr)
+                name = std::string("Beat x ") + std::to_string(1 << (i - ctr));
+
+            phasors[i] = SR{gid, 'phsr', i};
+            registerSource(e, phasors[i], "Transport", name);
+
+            if constexpr (includeVoice)
+            {
+                voicePhasors[i] = SR{gid, 'vphr', i};
+                registerSource(e, voicePhasors[i], "Transport", "Voice " + name);
+            }
+        }
+    }
+
+    std::array<SR, scxt::numTransportPhasors> phasors;
+    std::conditional_t<includeVoice, std::array<SR, scxt::numTransportPhasors>, char> voicePhasors;
+};
+
+template <typename SR, uint32_t gid, size_t numLfo,
+          void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
+                                 const std::string &)>
+struct LFOSourceBase
+{
+    LFOSourceBase(scxt::engine::Engine *e)
+    {
+        for (uint32_t i = 0; i < numLfo; ++i)
+        {
+            sources[i] = SR{gid, 'outp', i};
+            registerSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
+        }
+    }
+    std::array<SR, numLfo> sources;
+
+    template <typename M, typename S> void bind(M &m, S &s, float &zeroSource)
+    {
+        for (int i = 0; i < numLfo; ++i)
+        {
+            switch (s.lfoEvaluator[i])
+            {
+            case S::CURVE:
+                m.bindSourceValue(sources[i], s.curveLfos[i].output);
+                break;
+            case S::STEP:
+                m.bindSourceValue(sources[i], s.stepLfos[i].output);
+                break;
+            case S::ENV:
+                m.bindSourceValue(sources[i], s.envLfos[i].output);
+                break;
+            case S::MSEG:
+                m.bindSourceValue(sources[i], zeroSource);
+                break;
+            }
+        }
+    }
+};
 
 #endif // SHORTCIRCUITXT_MATRIX_SHARED_H
