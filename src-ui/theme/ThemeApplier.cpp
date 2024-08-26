@@ -201,6 +201,7 @@ void populateSharedGroupZoneMultiModulation(jstl::CustomTypeMap &map)
     map.addCustomClass<jcmp::JogUpDownButton>(detail::edit::ModulationJogButon);
     map.addCustomClass<jcmp::ToggleButton>(detail::edit::ModulationToggle);
     map.addCustomClass<jcmp::MenuButton>(detail::edit::ModulationMenu);
+    map.addCustomClass<jcmp::MenuButtonDiscreteEditor>(detail::edit::ModulationMenu);
 }
 void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
 {
@@ -308,7 +309,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(Base::styleClass, Base::background, cols.get(ColorMap::bg_2));
     base->setColour(Base::styleClass, Base::background_hover, cols.getHover(ColorMap::bg_2));
 
-    base->setFont(BaseLabel::styleClass, BaseLabel::labelfont, juce::Font(11, juce::Font::plain));
+    base->setFont(BaseLabel::styleClass, BaseLabel::labelfont, juce::Font(12, juce::Font::plain));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor,
                     cols.get(ColorMap::generic_content_medium));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor_hover,
@@ -576,7 +577,8 @@ void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const
                     cols.get(ColorMap::bg_3));
     base->setFont(TextPushButton, jcmp::TextPushButton::Styles::labelfont, t.interMediumFor(14));
     base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill, cols.get(ColorMap::bg_2));
-    base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill_hover, cols.get(ColorMap::bg_3));
+    base->setColour(ToggleButton, jcmp::ToggleButton::Styles::fill_hover,
+                    cols.getHover(ColorMap::bg_2));
     base->setFont(ToggleButton, jcmp::ToggleButton::Styles::labelfont, t.interMediumFor(14));
     base->setColour(MenuButton, jcmp::MenuButton::Styles::fill, cols.get(ColorMap::bg_2));
     base->setFont(MenuButton, jcmp::MenuButton::Styles::labelfont, t.interMediumFor(14));

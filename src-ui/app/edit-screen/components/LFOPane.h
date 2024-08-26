@@ -92,7 +92,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     void repositionContentAreaComponents();
 
     std::unique_ptr<shapeAttachment_t> modulatorShapeA;
-    std::unique_ptr<sst::jucegui::components::JogUpDownButton> modulatorShape;
+    std::unique_ptr<sst::jucegui::components::MenuButtonDiscreteEditor> modulatorShape;
 
     std::unique_ptr<triggerAttachment_t> triggerModeA;
     std::unique_ptr<sst::jucegui::components::MultiSwitch> triggerMode;
