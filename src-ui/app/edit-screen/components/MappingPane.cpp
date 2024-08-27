@@ -1065,17 +1065,23 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
             {
                 // alt click promotes it to lead
                 display->editor->doSelectionAction(nextZone, true, false, true);
+                lastMousePos = e.position;
+                mouseState = DRAG_SELECTED_ZONE;
             }
             else
             {
                 // single click makes it a single lead
                 display->editor->doSelectionAction(nextZone, true, true, true);
+                lastMousePos = e.position;
+                mouseState = DRAG_SELECTED_ZONE;
             }
         }
         else
         {
             display->editor->doSelectionAction(
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
+            lastMousePos = e.position;
+            mouseState = DRAG_SELECTED_ZONE;
         }
     }
     else
