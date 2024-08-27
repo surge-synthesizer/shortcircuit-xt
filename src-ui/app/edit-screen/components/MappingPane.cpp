@@ -1499,14 +1499,14 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto borderColor = editor->themeColor(theme::ColorMap::accent_1b);
-            auto fillColor = borderColor.withAlpha(0.2f);
-            auto textColor = editor->themeColor(theme::ColorMap::accent_1b);
+            auto borderColor = editor->themeColor(theme::ColorMap::accent_2a);
+            auto fillColor = editor->themeColor(theme::ColorMap::accent_2b).withAlpha(0.32f);
+            auto textColor = editor->themeColor(theme::ColorMap::accent_2a);
 
             if (drawSelected)
             {
-                borderColor = editor->themeColor(theme::ColorMap::accent_1a);
-                fillColor = borderColor.withAlpha(0.5f);
+                borderColor = editor->themeColor(theme::ColorMap::accent_1b);
+                fillColor = borderColor.withAlpha(0.32f);
                 textColor = editor->themeColor(theme::ColorMap::accent_1a);
             }
 
@@ -1516,7 +1516,7 @@ void MappingZones::paint(juce::Graphics &g)
             g.drawRect(r, 1.f);
             g.setColour(textColor);
             g.setFont(editor->themeApplier.interRegularFor(11));
-            g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+            g.drawText(std::get<2>(z.second), r.reduced(5, 4), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
             drawVoiceMarkers(r, ct);
@@ -1706,11 +1706,14 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
             g.setColour(selZoneColor);
-            g.drawRect(r, 2.f);
+            g.drawRect(r, 3.f);
 
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
-            g.setFont(editor->themeApplier.interRegularFor(11));
-            g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_lowest));
+            auto f = editor->themeApplier.interRegularFor(11);
+            auto txt = std::get<2>(z.second);
+            auto rr = r.reduced(5, 4);
+            g.setFont(f);
+            g.drawText(std::get<2>(z.second), rr, juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
             drawVoiceMarkers(r, ct);
