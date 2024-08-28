@@ -646,10 +646,7 @@ struct MappingDisplay : juce::Component,
         textEds.Pitch->setBounds(cQ(3));
     }
 
-    void mappingChangedFromGUI()
-    {
-        sendToSerialization(cmsg::MappingSelectedZoneUpdateRequest(mappingView));
-    }
+    void mappingChangedFromGUI() { sendToSerialization(cmsg::UpdateLeadZoneMapping(mappingView)); }
 
     void setActive(bool b) { setVisible(b); }
 
@@ -2288,7 +2285,7 @@ struct SampleDisplay : juce::Component, HasEditor
 
     void onSamplePointChangedFromGUI()
     {
-        sendToSerialization(cmsg::SamplesSelectedZoneUpdateRequest{
+        sendToSerialization(cmsg::UpdateLeadZoneAssociatedSample{
             {selectedVariation, sampleView.samples[selectedVariation]}});
         waveforms[selectedVariation].waveform->rebuildHotZones();
         waveforms[selectedVariation].waveform->repaint();

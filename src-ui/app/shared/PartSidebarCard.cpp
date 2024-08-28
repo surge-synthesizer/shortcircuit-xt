@@ -110,7 +110,7 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
 
 void PartSidebarCard::mouseDown(const juce::MouseEvent &event)
 {
-    sendToSerialization(cmsg::DoSelectPart(part));
+    sendToSerialization(cmsg::SelectPart(part));
 }
 
 void PartSidebarCard::paint(juce::Graphics &g)

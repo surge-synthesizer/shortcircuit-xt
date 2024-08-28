@@ -122,7 +122,7 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
         {
             p.addItem("Part " + std::to_string(i + 1), true, i == editor->selectedPart,
                       [w = juce::Component::SafePointer(this), index = i]() {
-                          w->sendToSerialization(cmsg::DoSelectPart(index));
+                          w->sendToSerialization(cmsg::SelectPart(index));
                       });
         }
         p.showMenuAsync(editor->defaultPopupMenuOptions());

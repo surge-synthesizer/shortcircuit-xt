@@ -375,12 +375,12 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     {
         if constexpr (GZTrait::forZone)
         {
-            sendToSerialization(cmsg::IndexedZoneRoutingRowUpdated(
+            sendToSerialization(cmsg::UpdateZoneRoutingRow(
                 {index, parent->routingTable.routes[index], forceUpdate}));
         }
         else
         {
-            sendToSerialization(cmsg::IndexedGroupRoutingRowUpdated(
+            sendToSerialization(cmsg::UpdateGroupRoutingRow(
                 {index, parent->routingTable.routes[index], forceUpdate}));
         }
     }
