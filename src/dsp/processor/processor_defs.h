@@ -89,6 +89,7 @@
 #include "sst/voice-effects/modulation/FMFilter.h"
 #include "sst/voice-effects/modulation/Tremolo.h"
 #include "sst/voice-effects/modulation/Phaser.h"
+#include "sst/voice-effects/modulation/ShepardPhaser.h"
 #include "sst/voice-effects/modulation/NoiseAM.h"
 #include "sst/voice-effects/delay/Chorus.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
@@ -202,6 +203,9 @@ DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
 DEFINE_PROC(Phaser, sst::voice_effects::modulation::Phaser<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser, "Phaser",
             "Modulation", "modulated-phaser");
+DEFINE_PROC(ShepardPhaser, sst::voice_effects::modulation::ShepardPhaser<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::ShepardPhaser<SCXTVFXConfig<2>>, proct_shepard, "Shepard Phaser",
+            "Modulation", "shepard");
 DEFINE_PROC(Chorus, sst::voice_effects::delay::Chorus<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
             "Modulation", "voice-chorus", dsp::surgeSincTable);
