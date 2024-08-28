@@ -177,6 +177,8 @@ struct MappingZones : juce::Component, HasEditor
         lastSelectedZone;
 
     juce::Point<float> firstMousePos{0.f, 0.f}, lastMousePos{0.f, 0.f};
+
+    void showZoneMenu(const selection::SelectionManager::ZoneAddress &za);
 };
 
 struct MappingZoneHeader : HasEditor, juce::Component
@@ -976,7 +978,31 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
         return;
     mouseState = NONE;
 
-    // const auto &sel = display->editor->currentSingleSelection;
+    if (e.mods.isPopupMenu())
+    {
+        bool gotOne = false;
+        selection::SelectionManager::ZoneAddress za;
+
+        for (auto &z : display->summary)
+        {
+            auto r = rectangleForZone(z.second);
+            if (r.contains(e.position))
+            {
+                gotOne = display->editor->isSelected(z.first);
+                if (!gotOne)
+                {
+                    gotOne = true;
+                    display->editor->doSelectionAction(z.first, true, false, true);
+                }
+                za = z.first;
+            }
+        }
+        if (gotOne)
+        {
+            showZoneMenu(za);
+            return;
+        }
+    }
 
     for (const auto &ks : keyboardHotZones)
     {
@@ -1105,6 +1131,16 @@ void MappingZones::mouseDoubleClick(const juce::MouseEvent &e)
             return;
         }
     }
+}
+
+void MappingZones::showZoneMenu(const selection::SelectionManager::ZoneAddress &za)
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Zones");
+    p.addSeparator();
+    p.addItem("Coming Soon", []() {});
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
