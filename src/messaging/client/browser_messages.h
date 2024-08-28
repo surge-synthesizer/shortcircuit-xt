@@ -39,14 +39,14 @@
 namespace scxt::messaging::client
 {
 
-inline void addDeviceLocation(const fs::path &p, const engine::Engine &engine,
-                              MessageController &cont)
+inline void doAddBrowserDeviceLocation(const fs::path &p, const engine::Engine &engine,
+                                       MessageController &cont)
 {
     engine.getBrowser()->addRootPathForDeviceView(p);
     serializationSendToClient(s2c_refresh_browser, true, cont);
 }
-CLIENT_TO_SERIAL(AddBrowserDeviceLocation, c2s_browser_add_device_location, std::string,
-                 addDeviceLocation(fs::path{payload}, engine, cont));
+CLIENT_TO_SERIAL(AddBrowserDeviceLocation, c2s_add_browser_device_location, std::string,
+                 doAddBrowserDeviceLocation(fs::path{payload}, engine, cont));
 
 SERIAL_TO_CLIENT(RefreshBrowser, s2c_refresh_browser, bool, onBrowserRefresh)
 

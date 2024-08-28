@@ -35,7 +35,7 @@ typedef std::tuple<bool, int, bool, modulation::modulators::AdsrStorage> adsrVie
 SERIAL_TO_CLIENT(AdsrGroupOrZoneUpdate, s2c_update_group_or_zone_adsr_view,
                  adsrViewResponsePayload_t, onGroupOrZoneEnvelopeUpdated);
 
-CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneGroupEGFloatValue, c2s_update_zone_or_group_adsr_value,
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGFloatValue, c2s_update_zone_or_group_eg_float_value,
                              detail::indexedZoneOrGroupDiffMsg_t<float>,
                              modulation::modulators::AdsrStorage,
                              detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,

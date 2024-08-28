@@ -316,7 +316,7 @@ void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddres
 {
     namespace cmsg = scxt::messaging::client;
     currentLeadZoneSelection = a;
-    sendToSerialization(cmsg::DoSelectAction(selection::SelectionManager::SelectActionContents{
+    sendToSerialization(cmsg::ApplySelectAction(selection::SelectionManager::SelectActionContents{
         a.part, a.group, a.zone, selecting, distinct, asLead}));
     repaint();
 }
@@ -324,14 +324,14 @@ void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddres
 void SCXTEditor::doSelectionAction(const selection::SelectionManager::SelectActionContents &p)
 {
     namespace cmsg = scxt::messaging::client;
-    sendToSerialization(cmsg::DoSelectAction(p));
+    sendToSerialization(cmsg::ApplySelectAction(p));
     repaint();
 }
 void SCXTEditor::doMultiSelectionAction(
     const std::vector<selection::SelectionManager::SelectActionContents> &p)
 {
     namespace cmsg = scxt::messaging::client;
-    sendToSerialization(cmsg::DoMultiSelectAction(p));
+    sendToSerialization(cmsg::ApplyMultiSelectAction(p));
     repaint();
 }
 

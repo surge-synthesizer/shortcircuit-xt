@@ -50,9 +50,9 @@ SERIAL_TO_CLIENT(UpdateGroupMatrix, s2c_update_group_matrix, modulation::GroupMa
 
 // which row, what data, and force a full update
 typedef std::tuple<int, voice::modulation::Matrix::RoutingTable::Routing, bool>
-    indexedZoneRowUpdate_t;
-inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
-                                         const engine::Engine &engine, MessageController &cont)
+    zoneRoutingRowPayload_t;
+inline void doUpdateZoneRoutingRow(const zoneRoutingRowPayload_t &payload,
+                                   const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &[i, r, b] = payload;
@@ -87,14 +87,14 @@ inline void indexedZoneRoutingRowUpdated(const indexedZoneRowUpdate_t &payload,
             });
     }
 }
-CLIENT_TO_SERIAL(IndexedZoneRoutingRowUpdated, c2s_update_zone_routing_row, indexedZoneRowUpdate_t,
-                 indexedZoneRoutingRowUpdated(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateZoneRoutingRow, c2s_update_zone_routing_row, zoneRoutingRowPayload_t,
+                 doUpdateZoneRoutingRow(payload, engine, cont));
 
 // which row, what data, and force a full update
 typedef std::tuple<int, modulation::GroupMatrix::RoutingTable::Routing, bool>
-    indexedGroupRowUpdate_t;
-inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload,
-                                          const engine::Engine &engine, MessageController &cont)
+    updateGroupRoutingRowPayload_t;
+inline void doUpdateGroupRoutingRow(const updateGroupRoutingRowPayload_t &payload,
+                                    const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &[i, r, b] = payload;
@@ -127,8 +127,8 @@ inline void indexedGroupRoutingRowUpdated(const indexedGroupRowUpdate_t &payload
             });
     }
 }
-CLIENT_TO_SERIAL(IndexedGroupRoutingRowUpdated, c2s_update_group_routing_row,
-                 indexedGroupRowUpdate_t, indexedGroupRoutingRowUpdated(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateGroupRoutingRow, c2s_update_group_routing_row,
+                 updateGroupRoutingRowPayload_t, doUpdateGroupRoutingRow(payload, engine, cont));
 
 // forzone, active, which, data
 typedef std::tuple<bool, bool, int, modulation::ModulatorStorage> indexedModulatorStorageUpdate_t;

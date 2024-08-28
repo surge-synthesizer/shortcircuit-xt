@@ -40,7 +40,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
 {
     hasHamburger = true;
 
-    using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneGroupEGFloatValue>;
+    using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneOrGroupEGFloatValue>;
 
     // c++ partial application is a bummer
     auto attc = [&](auto &t, auto &a, auto &w) {

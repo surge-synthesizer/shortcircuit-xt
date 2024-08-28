@@ -35,26 +35,26 @@
 namespace scxt::messaging::client
 {
 
-inline void doSelectAction(const selection::SelectionManager::SelectActionContents &za,
-                           const engine::Engine &engine)
+inline void doApplySelectAction(const selection::SelectionManager::SelectActionContents &za,
+                                const engine::Engine &engine)
 {
     engine.getSelectionManager()->selectAction(za);
 }
-CLIENT_TO_SERIAL(DoSelectAction, c2s_do_select_action,
+CLIENT_TO_SERIAL(ApplySelectAction, c2s_apply_select_action,
                  selection::SelectionManager::SelectActionContents,
-                 doSelectAction(payload, engine));
+                 doApplySelectAction(payload, engine));
 
 inline void
-doMultiSelectAction(const std::vector<selection::SelectionManager::SelectActionContents> &za,
-                    const engine::Engine &engine)
+doApplyMultiSelectAction(const std::vector<selection::SelectionManager::SelectActionContents> &za,
+                         const engine::Engine &engine)
 {
     engine.getSelectionManager()->multiSelectAction(za);
 }
-CLIENT_TO_SERIAL(DoMultiSelectAction, c2s_do_multi_select_action,
+CLIENT_TO_SERIAL(ApplyMultiSelectAction, c2s_apply_multi_select_action,
                  std::vector<selection::SelectionManager::SelectActionContents>,
-                 doMultiSelectAction(payload, engine));
+                 doApplyMultiSelectAction(payload, engine));
 
-CLIENT_TO_SERIAL(DoSelectPart, c2s_select_part, int16_t,
+CLIENT_TO_SERIAL(SelectPart, c2s_select_part, int16_t,
                  engine.getSelectionManager()->selectPart(payload));
 
 // Lead Zone, Zone Selection, Gropu Selection
