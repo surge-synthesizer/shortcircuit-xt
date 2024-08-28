@@ -327,7 +327,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
         sl += vl;
 
+        std::vector<jcmp::ToolTip::Row> rows;
         auto lineOne = sl + " " + u8"\U00002192" + " " + tl;
+        rows.push_back(jcmp::ToolTip::Row(lineOne));
 
         auto &epo = parent->routingTable.routes[index].extraPayload;
         if (!epo.has_value())
@@ -340,18 +342,33 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         auto ep = *epo;
         datamodel::pmd &md = ep.targetMetadata;
 
+        bool isSourceBipolar{false}; // fixme - we shoudl determine this one day
         auto v = md.modulationNaturalToString(ep.targetBaseValue,
-                                              at.value * (md.maxVal - md.minVal), false);
+                                              at.value * (md.maxVal - md.minVal), isSourceBipolar);
 
-        std::string modLineOne{}, modLineTwo{};
+        auto rMove = jcmp::ToolTip::Row();
+        auto rDelta = jcmp::ToolTip::Row();
 
         if (v.has_value())
         {
-            modLineOne = v->singleLineModulationSummary;
-            modLineTwo =
-                fmt::format("depth={:.2f}%, {}={}", at.value * 100, u8"\U00000394", v->changeUp);
+            if (isSourceBipolar)
+            {
+                rMove.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LINK;
+                rMove.centerAlignText = v->baseValue;
+                rMove.leftAlignText = v->valDown;
+                rMove.rightAlignText = v->valUp;
+            }
+            else
+            {
+                rMove.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LINK;
+                rMove.centerAlignText = v->baseValue;
+                rMove.rightAlignText = v->valUp;
+            }
+            rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::SPEAKER;
+            rDelta.leftAlignText = fmt::format("{:.2f}%", at.value * 100);
+            rDelta.rightAlignText = fmt::format("{}", v->changeUp);
         }
-        editor->setTooltipContents(lineOne, {modLineOne, modLineTwo});
+        editor->setTooltipContents(lineOne, {rMove, rDelta});
     }
 
     void pushRowUpdate(bool forceUpdate = false)
