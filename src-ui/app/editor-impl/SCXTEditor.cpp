@@ -352,6 +352,12 @@ void SCXTEditor::setTooltipContents(const std::string &title, const std::vector<
     toolTip->setTooltipTitleAndData(title, data);
 }
 
+void SCXTEditor::setTooltipContents(const std::string &title,
+                                    const std::vector<sst::jucegui::components::ToolTip::Row> &data)
+{
+    toolTip->setTooltipTitleAndData(title, data);
+}
+
 void SCXTEditor::parentHierarchyChanged() { setZoomFactor(zoomFactor); }
 
 void SCXTEditor::setZoomFactor(float zf)
