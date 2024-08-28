@@ -282,7 +282,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         {
             if (di == row.target)
             {
-                target->setLabel(dn.first + " - " + dn.second);
+                target->setLabel(dn.first + ": " + dn.second);
             }
         }
 
@@ -347,34 +347,28 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         auto v = md.modulationNaturalToString(ep.targetBaseValue,
                                               at.value * (md.maxVal - md.minVal), isSourceBipolar);
 
-        auto rMove = jcmp::ToolTip::Row();
+        auto rDepth = jcmp::ToolTip::Row();
         auto rDelta = jcmp::ToolTip::Row();
 
         if (v.has_value())
         {
             if (isSourceBipolar)
             {
-                rMove.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LINK;
-                rMove.centerAlignText = v->baseValue;
-                rMove.leftAlignText = v->valDown;
-                rMove.rightAlignText = v->valUp;
+                rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LEFT_RIGHT;
+                rDelta.leftAlignText = v->valDown;
+                rDelta.centerAlignText = v->baseValue;
+                rDelta.rightAlignText = v->valUp;
             }
             else
             {
-                rMove.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LINK;
-                rMove.centerAlignText = v->baseValue;
-                rMove.rightAlignText = v->valUp;
+                rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LEFT_RIGHT;
+                rDelta.leftAlignText = v->baseValue;
+                rDelta.centerAlignText = v->valUp;
             }
-            rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::SPEAKER;
-            rDelta.leftAlignText = fmt::format("{:.2f}%", at.value * 100);
-            rDelta.rightAlignText = fmt::format("{}", v->changeUp);
-            
-            auto modLineOne = fmt::format("Depth: {:.2f} %", at.value * 100);
-            auto modLineTwo = fmt::format("Range: {:.2f} {} {} {:.2f} {}", ep.targetBaseValue, md.unit,
-                                     u8"\U0000279D", at.value * (md.maxVal - md.minVal),
-                                     md.unit); // v->singleLineModulationSummary;
+            rDepth.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::VOLUME;
+            rDepth.leftAlignText = fmt::format("{:.2f} %", at.value * 100);
         }
-        editor->setTooltipContents(lineOne, {rMove, rDelta});
+        editor->setTooltipContents(lineOne, {rDepth, rDelta});
     }
 
     void pushRowUpdate(bool forceUpdate = false)
@@ -621,7 +615,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
             if (tn.first.empty())
             {
-                p.addItem(tn.first + " - " + tn.second, true, selected, mop);
+                p.addItem(tn.first + ": " + tn.second, true, selected, mop);
             }
             else
             {
@@ -637,7 +631,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                     subMenu.addSectionHeader(tn.first);
                     subMenu.addSeparator();
                 }
-                subMenu.addItem(tn.first + " - " + tn.second, true, selected, mop);
+                subMenu.addItem(tn.first + ": " + tn.second, true, selected, mop);
                 checkPath = checkPath || selected;
             }
         }
