@@ -137,7 +137,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 w->showCurveMenu();
         });
         addAndMakeVisible(*curve);
-        curve->setCenterTextAndExcludeArrow(true);
+        curve->centerTextAndExcludeArrow = true;
 
         target = std::make_unique<jcmp::MenuButton>();
         target->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -349,6 +349,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
         auto rDepth = jcmp::ToolTip::Row();
         auto rDelta = jcmp::ToolTip::Row();
+        rDelta.drawLRArrow = true;
+        if (isSourceBipolar)
+            rDelta.drawRLArrow = true;
 
         if (v.has_value())
         {
