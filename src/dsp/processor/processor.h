@@ -113,6 +113,7 @@ enum ProcessorType
     proct_SurgeFilters,
     proct_Tremolo,
     proct_Phaser,
+    proct_shepard,
     proct_Chorus,
     proct_volpan,
     proct_Compressor,

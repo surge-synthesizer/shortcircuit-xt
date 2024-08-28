@@ -177,6 +177,8 @@ struct MappingZones : juce::Component, HasEditor
         lastSelectedZone;
 
     juce::Point<float> firstMousePos{0.f, 0.f}, lastMousePos{0.f, 0.f};
+
+    void showZoneMenu(const selection::SelectionManager::ZoneAddress &za);
 };
 
 struct MappingZoneHeader : HasEditor, juce::Component
@@ -976,7 +978,31 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
         return;
     mouseState = NONE;
 
-    // const auto &sel = display->editor->currentSingleSelection;
+    if (e.mods.isPopupMenu())
+    {
+        bool gotOne = false;
+        selection::SelectionManager::ZoneAddress za;
+
+        for (auto &z : display->summary)
+        {
+            auto r = rectangleForZone(z.second);
+            if (r.contains(e.position))
+            {
+                gotOne = display->editor->isSelected(z.first);
+                if (!gotOne)
+                {
+                    gotOne = true;
+                    display->editor->doSelectionAction(z.first, true, false, true);
+                }
+                za = z.first;
+            }
+        }
+        if (gotOne)
+        {
+            showZoneMenu(za);
+            return;
+        }
+    }
 
     for (const auto &ks : keyboardHotZones)
     {
@@ -1022,7 +1048,6 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
         if (r.contains(e.position) && display->editor->isAnyZoneFromGroupSelected(z.first.group))
         {
             potentialZones.push_back(z.first);
-            SCLOG("Adding potential zone " << z.first);
         }
     }
     selection::SelectionManager::ZoneAddress nextZone;
@@ -1066,17 +1091,23 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
             {
                 // alt click promotes it to lead
                 display->editor->doSelectionAction(nextZone, true, false, true);
+                lastMousePos = e.position;
+                mouseState = DRAG_SELECTED_ZONE;
             }
             else
             {
                 // single click makes it a single lead
                 display->editor->doSelectionAction(nextZone, true, true, true);
+                lastMousePos = e.position;
+                mouseState = DRAG_SELECTED_ZONE;
             }
         }
         else
         {
             display->editor->doSelectionAction(
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
+            lastMousePos = e.position;
+            mouseState = DRAG_SELECTED_ZONE;
         }
     }
     else
@@ -1100,6 +1131,16 @@ void MappingZones::mouseDoubleClick(const juce::MouseEvent &e)
             return;
         }
     }
+}
+
+void MappingZones::showZoneMenu(const selection::SelectionManager::ZoneAddress &za)
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Zones");
+    p.addSeparator();
+    p.addItem("Coming Soon", []() {});
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
@@ -1500,14 +1541,14 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
 
-            auto borderColor = editor->themeColor(theme::ColorMap::accent_1b);
-            auto fillColor = borderColor.withAlpha(0.2f);
-            auto textColor = editor->themeColor(theme::ColorMap::accent_1b);
+            auto borderColor = editor->themeColor(theme::ColorMap::accent_2a);
+            auto fillColor = editor->themeColor(theme::ColorMap::accent_2b).withAlpha(0.32f);
+            auto textColor = editor->themeColor(theme::ColorMap::accent_2a);
 
             if (drawSelected)
             {
-                borderColor = editor->themeColor(theme::ColorMap::accent_1a);
-                fillColor = borderColor.withAlpha(0.5f);
+                borderColor = editor->themeColor(theme::ColorMap::accent_1b);
+                fillColor = borderColor.withAlpha(0.32f);
                 textColor = editor->themeColor(theme::ColorMap::accent_1a);
             }
 
@@ -1517,7 +1558,7 @@ void MappingZones::paint(juce::Graphics &g)
             g.drawRect(r, 1.f);
             g.setColour(textColor);
             g.setFont(editor->themeApplier.interRegularFor(11));
-            g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+            g.drawText(std::get<2>(z.second), r.reduced(5, 4), juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
             drawVoiceMarkers(r, ct);
@@ -1707,11 +1748,14 @@ void MappingZones::paint(juce::Graphics &g)
 
             auto r = rectangleForZone(z.second);
             g.setColour(selZoneColor);
-            g.drawRect(r, 2.f);
+            g.drawRect(r, 3.f);
 
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
-            g.setFont(editor->themeApplier.interRegularFor(11));
-            g.drawText(std::get<2>(z.second), r.reduced(5, 3), juce::Justification::topLeft);
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_lowest));
+            auto f = editor->themeApplier.interRegularFor(11);
+            auto txt = std::get<2>(z.second);
+            auto rr = r.reduced(5, 4);
+            g.setFont(f);
+            g.drawText(std::get<2>(z.second), rr, juce::Justification::topLeft);
 
             auto ct = display->voiceCountFor(z.first);
             drawVoiceMarkers(r, ct);

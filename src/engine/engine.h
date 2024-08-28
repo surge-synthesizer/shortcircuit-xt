@@ -53,6 +53,7 @@
 #include "sst/basic-blocks/dsp/RNG.h"
 
 #include "modulation/voice_matrix.h"
+#include "modulation/group_matrix.h"
 #include "transport.h"
 
 #define DEBUG_VOICE_LIFECYCLE 0
@@ -109,7 +110,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     Transport transport;
     void onTransportUpdated();
-    float transportPhasors[numTransportPhasors]{};
+    std::array<float, numTransportPhasors> transportPhasors{};
     void updateTransportPhasors();
 
     /**

@@ -33,6 +33,8 @@
 #include "voice/voice.h"
 #include "sst/basic-blocks/dsp/RNG.h"
 
+#include "modulation/modulator_storage.h"
+
 namespace scxt::voice::modulation
 {
 
@@ -125,24 +127,8 @@ float randomRoll(bool bipolar, int distribution)
 void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z,
                                     voice::Voice &v)
 {
-    for (int i = 0; i < lfosPerZone; ++i)
-    {
-        switch (v.lfoEvaluator[i])
-        {
-        case Voice::CURVE:
-            m.bindSourceValue(lfoSources.sources[i], v.curveLfos[i].output);
-            break;
-        case Voice::STEP:
-            m.bindSourceValue(lfoSources.sources[i], v.stepLfos[i].output);
-            break;
-        case Voice::ENV:
-            m.bindSourceValue(lfoSources.sources[i], v.envLfos[i].output);
-            break;
-        case Voice::MSEG:
-            m.bindSourceValue(lfoSources.sources[i], zeroSource);
-            break;
-        }
-    }
+    lfoSources.bind(m, v, zeroSource);
+
     m.bindSourceValue(aegSource, v.aeg.outBlock0);
     m.bindSourceValue(eg2Source, v.eg2.outBlock0);
 
@@ -345,16 +331,16 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
 
         registerVoiceModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
         registerVoiceModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
-        registerVoiceModTarget(e, curve.delayT, ptFn, curveLabel("Curve Delay"));
-        registerVoiceModTarget(e, curve.attackT, ptFn, curveLabel("Curve Attack"));
-        registerVoiceModTarget(e, curve.releaseT, ptFn, curveLabel("Curve Release"));
-        registerVoiceModTarget(e, step.smoothT, ptFn, stepLabel("Step Smooth"));
-        registerVoiceModTarget(e, env.delayT, ptFn, envLabel("Env Delay"));
-        registerVoiceModTarget(e, env.attackT, ptFn, envLabel("Env Attack"));
-        registerVoiceModTarget(e, env.holdT, ptFn, envLabel("Env Hold"));
-        registerVoiceModTarget(e, env.decayT, ptFn, envLabel("Env Decay"));
-        registerVoiceModTarget(e, env.sustainT, ptFn, envLabel("Env Sustain"));
-        registerVoiceModTarget(e, env.releaseT, ptFn, envLabel("Env Release"));
+        registerVoiceModTarget(e, curve.delayT, ptFn, curveLabel(nm(ms.curveLfoStorage.delay)));
+        registerVoiceModTarget(e, curve.attackT, ptFn, curveLabel(nm(ms.curveLfoStorage.attack)));
+        registerVoiceModTarget(e, curve.releaseT, ptFn, curveLabel(nm(ms.curveLfoStorage.release)));
+        registerVoiceModTarget(e, step.smoothT, ptFn, stepLabel(nm(ms.stepLfoStorage.smooth)));
+        registerVoiceModTarget(e, env.delayT, ptFn, envLabel(nm(ms.envLfoStorage.delay)));
+        registerVoiceModTarget(e, env.attackT, ptFn, envLabel(nm(ms.envLfoStorage.attack)));
+        registerVoiceModTarget(e, env.holdT, ptFn, envLabel(nm(ms.envLfoStorage.hold)));
+        registerVoiceModTarget(e, env.decayT, ptFn, envLabel(nm(ms.envLfoStorage.decay)));
+        registerVoiceModTarget(e, env.sustainT, ptFn, envLabel(nm(ms.envLfoStorage.sustain)));
+        registerVoiceModTarget(e, env.releaseT, ptFn, envLabel(nm(ms.envLfoStorage.release)));
     }
 }
 

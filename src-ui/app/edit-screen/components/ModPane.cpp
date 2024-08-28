@@ -87,7 +87,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         addAndMakeVisible(*power);
 
         source = std::make_unique<jcmp::MenuButton>();
-        source->setLabel("Source");
+        source->setLabel("SOURCE");
         source->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
                 w->showSourceMenu(false);
@@ -95,7 +95,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         addAndMakeVisible(*source);
 
         sourceVia = std::make_unique<jcmp::MenuButton>();
-        sourceVia->setLabel("Via");
+        sourceVia->setLabel("VIA");
         sourceVia->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
                 w->showSourceMenu(true);
@@ -137,6 +137,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 w->showCurveMenu();
         });
         addAndMakeVisible(*curve);
+        curve->setCenterTextAndExcludeArrow(true);
 
         target = std::make_unique<jcmp::MenuButton>();
         target->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -184,7 +185,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         sqr(x1, 12);
         map(sourceVia, 90);
         sqr(x2, 12);
-        map(depth, 120, 2);
+        map(depth, 120, 3);
         sqr(a1, 12);
         map(curve, 60);
         sqr(a2, 12);
@@ -246,9 +247,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
 
         // this linear search kinda sucks bot
-        source->setLabel("Source");
-        sourceVia->setLabel("Via");
-        target->setLabel("Target");
+        source->setLabel("SOURCE");
+        sourceVia->setLabel("VIA");
+        target->setLabel("TARGET");
         curve->setLabel("-");
 
         auto makeSourceName = [](auto &si, auto &sn) {
@@ -319,15 +320,17 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             sl = "Unmapped";
         if (vl == "Via")
         {
-            vl = "";
+            vl = " ";
         }
         else
         {
-            vl = " x " + vl;
+            vl = " " + std::string(u8"\U000000D7") + " " + vl;
         }
         sl += vl;
 
+        std::vector<jcmp::ToolTip::Row> rows;
         auto lineOne = sl + " " + u8"\U00002192" + " " + tl;
+        rows.push_back(jcmp::ToolTip::Row(lineOne));
 
         auto &epo = parent->routingTable.routes[index].extraPayload;
         if (!epo.has_value())
@@ -340,18 +343,38 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         auto ep = *epo;
         datamodel::pmd &md = ep.targetMetadata;
 
+        bool isSourceBipolar{false}; // fixme - we shoudl determine this one day
         auto v = md.modulationNaturalToString(ep.targetBaseValue,
-                                              at.value * (md.maxVal - md.minVal), false);
+                                              at.value * (md.maxVal - md.minVal), isSourceBipolar);
 
-        std::string modLineOne{}, modLineTwo{};
+        auto rMove = jcmp::ToolTip::Row();
+        auto rDelta = jcmp::ToolTip::Row();
 
         if (v.has_value())
         {
-            modLineOne = v->singleLineModulationSummary;
-            modLineTwo =
-                fmt::format("depth={:.2f}%, {}={}", at.value * 100, u8"\U00000394", v->changeUp);
+            if (isSourceBipolar)
+            {
+                rMove.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LINK;
+                rMove.centerAlignText = v->baseValue;
+                rMove.leftAlignText = v->valDown;
+                rMove.rightAlignText = v->valUp;
+            }
+            else
+            {
+                rMove.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LINK;
+                rMove.centerAlignText = v->baseValue;
+                rMove.rightAlignText = v->valUp;
+            }
+            rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::SPEAKER;
+            rDelta.leftAlignText = fmt::format("{:.2f}%", at.value * 100);
+            rDelta.rightAlignText = fmt::format("{}", v->changeUp);
+            
+            auto modLineOne = fmt::format("Depth: {:.2f} %", at.value * 100);
+            auto modLineTwo = fmt::format("Range: {:.2f} {} {} {:.2f} {}", ep.targetBaseValue, md.unit,
+                                     u8"\U0000279D", at.value * (md.maxVal - md.minVal),
+                                     md.unit); // v->singleLineModulationSummary;
         }
-        editor->setTooltipContents(lineOne, {modLineOne, modLineTwo});
+        editor->setTooltipContents(lineOne, {rMove, rDelta});
     }
 
     void pushRowUpdate(bool forceUpdate = false)
