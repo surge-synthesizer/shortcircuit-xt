@@ -349,7 +349,13 @@ void SCXTEditor::hideTooltip() { toolTip->setVisible(false); }
 
 void SCXTEditor::setTooltipContents(const std::string &title, const std::vector<std::string> &data)
 {
-    toolTip->setTooltipTitleAndData(title, data);
+    std::vector<sst::jucegui::components::ToolTip::Row> d;
+    std::transform(data.begin(), data.end(), std::back_inserter(d), [](auto &a) {
+        auto r = sst::jucegui::components::ToolTip::Row(a);
+        r.leftIsMonospace = true;
+        return r;
+    });
+    toolTip->setTooltipTitleAndData(title, d);
 }
 
 void SCXTEditor::setTooltipContents(const std::string &title,
