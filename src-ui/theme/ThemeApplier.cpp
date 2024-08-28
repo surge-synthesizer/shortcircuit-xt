@@ -309,7 +309,8 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(Base::styleClass, Base::background, cols.get(ColorMap::bg_2));
     base->setColour(Base::styleClass, Base::background_hover, cols.getHover(ColorMap::bg_2));
 
-    base->setFont(BaseLabel::styleClass, BaseLabel::labelfont, juce::Font(12, juce::Font::plain));
+    base->setFont(BaseLabel::styleClass, BaseLabel::labelfont,
+                  juce::Font(juce::Font::plain).withPointHeight(12));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor,
                     cols.get(ColorMap::generic_content_medium));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor_hover,
@@ -415,8 +416,9 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(jcmp::HSliderFilled::Styles::styleClass,
                     jcmp::HSliderFilled::Styles::handle_hover, cols.getHover(ColorMap::accent_1a));
 
-    auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
-    base->replaceFontsWithTypeface(interMed);
+    // auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
+    auto interReg = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");
+    base->replaceFontsWithTypeface(interReg);
 
     auto fixedWidth =
         connectors::resources::loadTypeface("fonts/Anonymous_Pro/AnonymousPro-Regular.ttf");
