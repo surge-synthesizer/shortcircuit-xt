@@ -191,7 +191,7 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
         const auto &srcb = b.first;
         const auto &ida = a.second;
         const auto &idb = b.second;
-        if (srca.gid == 'zmac' && srcb.gid == 'zmac')
+        if (srca.gid == srcb.gid && (srca.gid == 'zmac' || srca.gid == 'self'))
         {
             return srca.index < srcb.index;
         }

@@ -144,6 +144,7 @@ struct MappingZones : juce::Component, HasEditor
         lastSelectedZone.clear();
         lastSelectedZone.push_back(r);
 
+        // if you change the population order here also change the from settings in mouseDown
         auto side = r.withWidth(8).translated(0, -2).withTrimmedTop(10).withTrimmedBottom(10);
         keyboardHotZones.clear();
         keyboardHotZones.push_back(side);
@@ -172,6 +173,11 @@ struct MappingZones : juce::Component, HasEditor
         MULTI_SELECT,
         CREATE_EMPTY_ZONE
     } mouseState{NONE};
+    enum DragFrom
+    {
+        FROM_START,
+        FROM_END
+    } dragFrom[2]; // key and velocity
 
     std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones,
         lastSelectedZone;
@@ -486,6 +492,14 @@ struct MappingDisplay : juce::Component,
         auto iAdd = [this](auto &v, auto &a, auto &w) {
             ifac::attachAndAdd(mappingView, v, this, a, w);
         };
+        auto iAddConstrained = [this](auto &v, auto &a, auto &w, std::function<bool(int)> accept) {
+            ifac::attachAndAdd(mappingView, v, this, a, w);
+            connectors::addGuiStepBeforeSend(*a, [&aWrite = a, accept](const auto &a) {
+                if (!accept(aWrite->value))
+                    aWrite->value = a.prevValue;
+            });
+        };
+
         auto fAdd = [this](auto &v, auto &a, auto &w) {
             ffac::attachAndAdd(mappingView, v, this, a, w);
         };
@@ -520,8 +534,18 @@ struct MappingDisplay : juce::Component,
         iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
         makeLabel(labels.RootKey, "Root Key");
 
-        iAdd(mappingView.keyboardRange.keyStart, intAttachments.KeyStart, textEds.KeyStart);
-        iAdd(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd);
+        iAddConstrained(mappingView.keyboardRange.keyStart, intAttachments.KeyStart,
+                        textEds.KeyStart, [w = juce::Component::SafePointer(this)](auto v) {
+                            if (!w)
+                                return true;
+                            return v <= w->mappingView.keyboardRange.keyEnd;
+                        });
+        iAddConstrained(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd,
+                        [w = juce::Component::SafePointer(this)](auto v) {
+                            if (!w)
+                                return true;
+                            return v >= w->mappingView.keyboardRange.keyStart;
+                        });
 
         makeLabel(labels.KeyStart, "Key Range");
         iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, textEds.FadeStart);
@@ -530,8 +554,18 @@ struct MappingDisplay : juce::Component,
         iAddFadeConstraint(intAttachments.FadeEnd, mappingView.keyboardRange, false);
         makeLabel(labels.FadeStart, "Crossfade");
 
-        iAdd(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart);
-        iAdd(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd);
+        iAddConstrained(mappingView.velocityRange.velStart, intAttachments.VelStart,
+                        textEds.VelStart, [w = juce::Component::SafePointer(this)](auto v) {
+                            if (!w)
+                                return true;
+                            return v <= w->mappingView.velocityRange.velEnd;
+                        });
+        iAddConstrained(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd,
+                        [w = juce::Component::SafePointer(this)](auto v) {
+                            if (!w)
+                                return true;
+                            return v >= w->mappingView.velocityRange.velStart;
+                        });
         makeLabel(labels.VelStart, "Vel Range");
 
         iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart,
@@ -1001,28 +1035,40 @@ void MappingZones::mouseDown(const juce::MouseEvent &e)
         }
     }
 
-    for (const auto &ks : keyboardHotZones)
+    if (keyboardHotZones[0].contains(e.position))
     {
-        if (ks.contains(e.position))
-        {
-            mouseState = DRAG_KEY;
-            return;
-        }
+        mouseState = DRAG_KEY;
+        dragFrom[0] = FROM_START;
+        return;
+    }
+    if (keyboardHotZones[1].contains(e.position))
+    {
+        mouseState = DRAG_KEY;
+        dragFrom[0] = FROM_END;
+        return;
     }
 
-    for (const auto &ks : velocityHotZones)
+    if (velocityHotZones[0].contains(e.position))
     {
-        if (ks.contains(e.position))
-        {
-            mouseState = DRAG_VELOCITY;
-            return;
-        }
+        mouseState = DRAG_VELOCITY;
+        dragFrom[1] = FROM_END;
+        return;
+    }
+    if (velocityHotZones[1].contains(e.position))
+    {
+        mouseState = DRAG_VELOCITY;
+        dragFrom[1] = FROM_START;
+        return;
     }
 
-    for (const auto &ks : bothHotZones)
+    for (int idx = 0; idx < 4; ++idx)
     {
-        if (ks.contains(e.position))
+        if (bothHotZones[idx].contains(e.position))
         {
+            // 0 1
+            // 3 2
+            dragFrom[0] = (idx == 1 || idx == 2) ? FROM_END : FROM_START;
+            dragFrom[1] = (idx < 2) ? FROM_END : FROM_START;
             mouseState = DRAG_KEY_AND_VEL;
             return;
         }
@@ -1270,19 +1316,17 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
             auto keyEndRightEdge =
                 kr.keyEnd + 1; // that's where right edge is drawn, so that's what we compare to
 
-            auto drs = abs(kr.keyStart - newX);     // distance from mouse to left edge
-            auto dre = abs(keyEndRightEdge - newX); // ditto to right edge
-
             auto newKeyStart{kr.keyStart};
             auto newKeyEnd{kr.keyEnd};
 
-            if (drs < dre)
+            if (dragFrom[0] == FROM_START)
             {
                 if (newX < (kr.keyStart -
                             0.5)) // change at halfway points, else we can't get to 1 key span
                     newKeyStart = newXRounded;
                 else if (newX > (kr.keyStart + 0.5))
                     newKeyStart = newXRounded;
+                newKeyStart = std::min(newKeyStart, kr.keyEnd);
             }
             else
             {
@@ -1293,11 +1337,9 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
                 // the clamp to 128, else we can't drag to the top note.
                 else if (newX < (keyEndRightEdge - 0.5))
                     newKeyEnd = newXRounded - 1;
-            }
 
-            bool startChanged = (newKeyStart != kr.keyStart);
-            if (newKeyEnd < newKeyStart)
-                std::swap(newKeyStart, newKeyEnd);
+                newKeyEnd = std::max(newKeyEnd, kr.keyStart);
+            }
 
             if (newKeyStart != kr.keyStart || newKeyEnd != kr.keyEnd)
             {
@@ -1306,6 +1348,7 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
 
             if (updatedMapping)
             {
+                bool startChanged = (newKeyStart != kr.keyStart);
                 kr.keyStart = newKeyStart;
                 kr.keyEnd = newKeyEnd;
                 constrainMappingFade(kr, startChanged);
@@ -1316,18 +1359,16 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
         {
             auto velTopEdge = vr.velEnd + 1;
 
-            auto vrs = abs(vr.velStart - newY);
-            auto vre = abs(velTopEdge - newY);
-
             auto newVelStart{vr.velStart};
             auto newVelEnd{vr.velEnd};
 
-            if (vrs < vre)
+            if (dragFrom[1] == FROM_START)
             {
                 if (newY < (vr.velStart - 0.5))
                     newVelStart = newYRounded;
                 else if (newY > (vr.velStart + 0.5))
                     newVelStart = newYRounded;
+                newVelStart = std::min(newVelStart, vr.velEnd);
             }
             else
             {
@@ -1335,10 +1376,8 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
                     newVelEnd = newYRounded - 1;
                 else if (newY < (velTopEdge - 0.5))
                     newVelEnd = newYRounded - 1;
+                newVelEnd = std::max(newVelEnd, vr.velStart);
             }
-            bool startChanged = (newVelStart != vr.velStart);
-            if (newVelEnd < newVelStart)
-                std::swap(newVelStart, newVelEnd);
 
             if (newVelStart != vr.velStart || newVelEnd != vr.velEnd)
             {
@@ -1347,6 +1386,7 @@ void MappingZones::mouseDrag(const juce::MouseEvent &e)
 
             if (updatedMapping)
             {
+                bool startChanged = (newVelStart != vr.velStart);
                 vr.velStart = newVelStart;
                 vr.velEnd = newVelEnd;
                 constrainMappingFade(vr, startChanged);
