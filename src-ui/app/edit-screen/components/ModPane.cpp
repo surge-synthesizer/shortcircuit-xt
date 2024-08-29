@@ -54,7 +54,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     std::unique_ptr<jcmp::GlyphPainter> x1, x2, a1, a2;
     std::unique_ptr<jcmp::TextPushButton> consistentButton;
 
-    std::unique_ptr<jcmp::HSlider> depth;
+    std::unique_ptr<jcmp::HSliderFilled> depth;
 
     // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane<GZTrait> *p) : HasEditor(e), index(i), parent(p)
@@ -114,6 +114,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             },
             row.depth);
         depth = std::make_unique<jcmp::HSliderFilled>();
+        depth->verticalReduction = 3;
+
         depth->setSource(depthAttachment.get());
         depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
             if (!w)
@@ -185,7 +187,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         sqr(x1, 12);
         map(sourceVia, 90);
         sqr(x2, 12);
-        map(depth, 120, 3);
+        map(depth, 120, 0);
+        depth->verticalReduction = 3; // retain the hit zone just shrink the paint
         sqr(a1, 12);
         map(curve, 60);
         sqr(a2, 12);
@@ -316,9 +319,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         auto vl = sourceVia->getLabel();
         auto tl = target->getLabel();
 
-        if (sl == "Source")
-            sl = "Unmapped";
-        if (vl == "Via")
+        if (sl == "SOURCE")
+            sl = "NO SOURCE";
+        if (vl == "VIA")
         {
             vl = " ";
         }
