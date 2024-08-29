@@ -360,10 +360,22 @@ SC_STREAMDEF(scxt::engine::Zone::AssociatedSampleSet, SC_FROM({
              }));
 
 SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
+                 // special case. before given name for empty samples we used id.
+                 // crystalize this name for old patches. You can probably remove this
+                 // code in october 2024.
+                 auto useGivenName = t.givenName;
+                 if (useGivenName.empty() && !t.sampleData.samples[0].active)
+                 {
+                     SCLOG("Crystalizing given name on stream");
+                     useGivenName = t.getName();
+                 }
+                 // but just that bit
+
                  v = {{"sampleData", t.sampleData},     {"mappingData", t.mapping},
                       {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
                       {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
-                      {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]}};
+                      {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]},
+                      {"givenName", useGivenName}};
              }),
              SC_TO({
                  auto &zone = to;
@@ -377,6 +389,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  findIfArray(v, "modulatorStorage", zone.modulatorStorage);
                  findOrDefault(v, "aegStorage", zone.egStorage[0]);
                  findOrDefault(v, "eg2Storage", zone.egStorage[1]);
+                 findOrSet(v, "givenName", "", zone.givenName);
                  zone.onRoutingChanged();
              }));
 

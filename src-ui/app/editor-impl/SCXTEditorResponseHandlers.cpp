@@ -106,7 +106,12 @@ void SCXTEditor::onSamplesUpdated(
 void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
 {
     if (editScreen && editScreen->partSidebar)
+    {
         editScreen->partSidebar->setPartGroupZoneStructure(s);
+    }
+    if (editScreen && editScreen->mappingPane)
+    {
+    }
 }
 
 void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(

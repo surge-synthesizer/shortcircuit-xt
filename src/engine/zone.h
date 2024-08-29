@@ -162,9 +162,11 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void process(Engine &onto);
     template <bool OS> void processWithOS(Engine &onto);
 
-    // TODO: editable name
+    std::string givenName{};
     std::string getName() const
     {
+        if (!givenName.empty())
+            return givenName;
         if (samplePointers[0])
             return samplePointers[0]->getDisplayName();
         return id.to_string();

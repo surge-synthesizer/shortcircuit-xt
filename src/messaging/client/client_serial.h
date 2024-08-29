@@ -121,6 +121,7 @@ enum ClientToSerializationMessagesIds
     c2s_delete_selected_zones,
     c2s_delete_group,
     c2s_clear_part,
+    c2s_rename_zone,
     c2s_rename_group,
 
     c2s_set_tuning_mode,

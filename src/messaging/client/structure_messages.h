@@ -285,23 +285,42 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
     auto &src = payload.first;
     auto &tgt = payload.second;
 
+    assert(src.part == tgt.part);
+
     auto nad = engine.getPatch()->getPart(tgt.part)->getGroup(tgt.group)->getZones().size();
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [s = src, t = tgt](auto &e) {
-            auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
-            e.terminateVoicesForZone(*zoneO);
+            if (s.group == t.group)
+            {
+                // Its a zone swap
+                auto &group = e.getPatch()->getPart(s.part)->getGroup(s.group);
+                auto &zoneS = group->getZone(s.zone);
+                auto &zoneT = group->getZone(t.zone);
+                e.terminateVoicesForZone(*zoneS);
+                e.terminateVoicesForZone(*zoneT);
+                group->swapZonesByIndex(s.zone, t.zone);
+            }
+            else
+            {
+                auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+                e.terminateVoicesForZone(*zoneO);
 
-            auto zid = zoneO->id;
-            auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
-            if (z)
-                e.getPatch()->getPart(t.part)->getGroup(t.group)->addZone(z);
+                auto zid = zoneO->id;
+                auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
+                if (z)
+                    e.getPatch()->getPart(t.part)->getGroup(t.group)->addZone(z);
+            }
         },
-        [nad, t = tgt](auto &engine) {
-            auto tc = t;
-            tc.zone = nad;
-            auto act = selection::SelectionManager::SelectActionContents(tc, true, true, true);
-            engine.getSelectionManager()->selectAction(act);
+        [nad, s = src, t = tgt](auto &engine) {
+            if (s.group != t.group)
+            {
+                // Swapped groups. We almost definitely need to select in the new group
+                auto tc = t;
+                tc.zone = nad;
+                auto act = selection::SelectionManager::SelectActionContents(tc, true, true, true);
+                engine.getSelectionManager()->selectAction(act);
+            }
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
