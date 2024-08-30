@@ -61,6 +61,8 @@ struct ThemeApplier
     void applyMixerChannelTheme(juce::Component *toThis);
     void applyHeaderTheme(juce::Component *toThis);
     void applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *);
+    void applyChannelStripTheme(juce::Component *toThis);
+    void applyAuxChannelStripTheme(juce::Component *toThis);
 
     // Some utilities to move single items
     void setLabelToHighlight(sst::jucegui::style::StyleConsumer *);
