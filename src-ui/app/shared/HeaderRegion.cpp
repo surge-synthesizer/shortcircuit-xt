@@ -204,11 +204,11 @@ void HeaderRegion::resized()
 
     scMenu->setBounds(b.withTrimmedLeft(1148).withWidth(24));
 
-    cpuLabel->setBounds(b.withTrimmedLeft(975).withWidth(20).withHeight(14));
-    ramLabel->setBounds(b.withTrimmedLeft(975).withWidth(20).withHeight(14).translated(0, 14));
+    cpuLabel->setBounds(b.withTrimmedLeft(962).withWidth(25).withHeight(14));
+    ramLabel->setBounds(b.withTrimmedLeft(962).withWidth(25).withHeight(14).translated(0, 14));
 
-    cpuLevel->setBounds(b.withTrimmedLeft(1000).withWidth(40).withHeight(14));
-    ramLevel->setBounds(b.withTrimmedLeft(1000).withWidth(40).withHeight(14).translated(0, 14));
+    cpuLevel->setBounds(b.withTrimmedLeft(992).withWidth(48).withHeight(14));
+    ramLevel->setBounds(b.withTrimmedLeft(992).withWidth(48).withHeight(14).translated(0, 14));
 
     vuMeter->setBounds(b.withTrimmedLeft(1048).withWidth(96).withHeight(28));
 }
