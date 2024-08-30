@@ -386,7 +386,7 @@ bool Engine::processAudio()
     // auto pct = time_span.count / maxtime;
     //  or...
     auto pct = time_span.count() * sampleRate * blockSizeInv * 100.0;
-    sharedUIMemoryState.cpuLevel = pct;
+    sharedUIMemoryState.cpuLevel = std::max(sharedUIMemoryState.cpuLevel * 0.9995, pct);
     return true;
 }
 
