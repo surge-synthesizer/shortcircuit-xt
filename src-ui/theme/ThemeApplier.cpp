@@ -156,6 +156,32 @@ void init()
     sheet_t::addClass(GlyphButtonAccent).withBaseClass(GlyphButton);
 }
 } // namespace header
+
+namespace mix
+{
+namespace channelstrip
+{
+static constexpr sheet_t::Class CSPanel{"channelstrip.namedpanel"};
+static constexpr sheet_t::Class VUMeter{"channelstrip.vumeter"};
+void applyColorsAndFonts(const sheet_t::ptr_t &, const ColorMap &, const ThemeApplier &);
+void init()
+{
+    sheet_t::addClass(CSPanel).withBaseClass(jcmp::NamedPanel::Styles::styleClass);
+    sheet_t::addClass(VUMeter).withBaseClass(jcmp::VUMeter::Styles::styleClass);
+}
+} // namespace channelstrip
+namespace auxchannelstrip
+{
+static constexpr sheet_t::Class AuxPanel{"auxchannelstrip.namedpanel"};
+static constexpr sheet_t::Class VUMeter{"auzchannelstrip.vumeter"};
+void applyColorsAndFonts(const sheet_t::ptr_t &, const ColorMap &, const ThemeApplier &);
+void init()
+{
+    sheet_t::addClass(AuxPanel).withBaseClass(jcmp::NamedPanel::Styles::styleClass);
+    sheet_t::addClass(VUMeter).withBaseClass(jcmp::VUMeter::Styles::styleClass);
+}
+} // namespace auxchannelstrip
+} // namespace mix
 namespace util
 {
 static constexpr sheet_t::Class LabelHighlight("util.label.highlight");
@@ -175,6 +201,8 @@ ThemeApplier::ThemeApplier()
         detail::edit::group::init();
         detail::header::init();
         detail::util::init();
+        detail::mix::channelstrip::init();
+        detail::mix::auxchannelstrip::init();
         detailInitialized = true;
     }
     colors = ColorMap::createColorMap(ColorMap::WIREFRAME);
@@ -187,6 +215,8 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     detail::edit::zone::applyColors(s, *colors);
     detail::edit::group::applyColors(s, *colors);
     detail::header::applyColorsAndFonts(s, *colors, *this);
+    detail::mix::channelstrip::applyColorsAndFonts(s, *colors, *this);
+    detail::mix::auxchannelstrip::applyColorsAndFonts(s, *colors, *this);
     detail::util::applyColors(s, *colors);
 }
 
@@ -267,6 +297,22 @@ void ThemeApplier::setLabelToHighlight(sst::jucegui::style::StyleConsumer *s)
 void ThemeApplier::applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *s)
 {
     s->setCustomClass(detail::header::GlyphButtonAccent);
+}
+
+void ThemeApplier::applyChannelStripTheme(juce::Component *toThis)
+{
+    jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::NamedPanel>(detail::mix::channelstrip::CSPanel);
+    map.addCustomClass<jcmp::VUMeter>(detail::mix::channelstrip::VUMeter);
+    map.applyMapTo(toThis);
+}
+
+void ThemeApplier::applyAuxChannelStripTheme(juce::Component *toThis)
+{
+    jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::NamedPanel>(detail::mix::auxchannelstrip::AuxPanel);
+    map.addCustomClass<jcmp::VUMeter>(detail::mix::auxchannelstrip::VUMeter);
+    map.applyMapTo(toThis);
 }
 
 juce::Font ThemeApplier::interBoldFor(int ht) const
@@ -363,7 +409,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(jcmp::VUMeter::Styles::styleClass, jcmp::VUMeter::Styles::vu_gradend,
                     cols.get(ColorMap::accent_1a));
     base->setColour(jcmp::VUMeter::Styles::styleClass, jcmp::VUMeter::Styles::vu_overload,
-                    cols.get(ColorMap::warning_1b));
+                    cols.get(ColorMap::warning_1a));
 
     base->setColour(jcmp::DraggableTextEditableValue::Styles::styleClass,
                     jcmp::DraggableTextEditableValue::Styles::background,
@@ -594,6 +640,23 @@ void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const
 }
 } // namespace header
 
+namespace mix
+{
+namespace channelstrip
+{
+void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const ThemeApplier &t)
+{
+    base->setColour(VUMeter, jcmp::VUMeter::Styles::vu_gutter, cols.get(ColorMap::bg_1));
+}
+} // namespace channelstrip
+namespace auxchannelstrip
+{
+void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const ThemeApplier &t)
+{
+    base->setColour(VUMeter, jcmp::VUMeter::Styles::vu_gutter, cols.get(ColorMap::bg_1));
+}
+} // namespace auxchannelstrip
+} // namespace mix
 namespace util
 {
 void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
