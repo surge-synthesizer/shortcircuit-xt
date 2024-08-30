@@ -55,15 +55,5 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputBoolValue, c2s_update_group_output
                              detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
                                                             engine, cont));
 
-using renameGroup_t = std::tuple<selection::SelectionManager::ZoneAddress, std::string>;
-inline void renameGroup(const renameGroup_t &payload, const engine::Engine &engine,
-                        MessageController &cont)
-{
-    const auto &[p, g, z] = std::get<0>(payload);
-    engine.getPatch()->getPart(p)->getGroup(g)->name = std::get<1>(payload);
-    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
-}
-CLIENT_TO_SERIAL(RenameGroup, c2s_rename_group, renameGroup_t, renameGroup(payload, engine, cont));
-
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H

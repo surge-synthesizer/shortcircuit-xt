@@ -152,6 +152,11 @@ struct Group : MoveableOnly<Group>,
         return res;
     }
 
+    void swapZonesByIndex(size_t zoneIndex0, size_t zoneIndex1)
+    {
+        std::swap(zones[zoneIndex0], zones[zoneIndex1]);
+    }
+
     bool isActive() const;
     void addActiveZone();
     void removeActiveZone();

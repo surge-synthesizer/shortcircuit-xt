@@ -624,10 +624,12 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
 
     // 2. Create a zone object on this thread but don't add it
     auto zptr = std::make_unique<Zone>();
-    // TODO fixme
     zptr->mapping.keyboardRange = krange;
     zptr->mapping.velocityRange = vrange;
     zptr->mapping.rootKey = (krange.keyStart + krange.keyEnd) / 2;
+    zptr->givenName = "Empty Zone (" + std::to_string(zptr->id.id) + ")";
+
+    // give it a name
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
