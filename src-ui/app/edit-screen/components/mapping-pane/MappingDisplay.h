@@ -36,6 +36,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/ZoomContainer.h"
 #include "engine/part.h"
 #include "selection/selection_manager.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -76,143 +77,11 @@ struct MappingZoneHeader : HasEditor, juce::Component
     }
 };
 
-struct Zoomable : public juce::Component
-{
-    std::unique_ptr<juce::Viewport> viewport;
-    int scrollDirection = 1;
-    void invertScroll(bool invert) { scrollDirection = invert ? -1 : 1; }
-
-    struct zoomFactor
-    {
-        float acc{0.f};
-        float val{1.f};
-        float min{1.f};
-        float max{4.f};
-    } zoomX, zoomY;
-
-    enum class Axis
-    {
-        horizontalZoom,
-        verticalZoom
-    };
-
-    Zoomable(juce::Component *attachedComponent,
-             std::pair<float, float> minMaxX = std::make_pair(1.f, 4.f),
-             std::pair<float, float> minMaxY = std::make_pair(1.f, 4.f))
-        : zoomX({0.f, 1, minMaxX.first, minMaxX.second}),
-          zoomY({0.f, 1, minMaxY.first, minMaxY.second})
-    {
-        viewport = std::make_unique<sst::jucegui::components::Viewport>();
-        viewport->setViewedComponent(attachedComponent, false);
-        addAndMakeVisible(*viewport);
-
-        viewport->getVerticalScrollBar().setAutoHide(false);
-        viewport->getHorizontalScrollBar().setAutoHide(false);
-    }
-
-    void resized() override
-    {
-        viewport->setBounds(0, 0, getWidth(), getHeight());
-        auto viewArea = getLocalBounds();
-        viewArea = viewArea.withWidth(viewArea.getWidth() * zoomX.val)
-                       .withHeight(viewArea.getHeight() * zoomY.val);
-        if (viewport->isVerticalScrollBarShown())
-        {
-            viewArea.setWidth(viewArea.getWidth() - viewport->getScrollBarThickness());
-        }
-        if (viewport->isHorizontalScrollBarShown())
-        {
-            viewArea.setHeight(viewArea.getHeight() - viewport->getScrollBarThickness());
-        }
-        viewport->getViewedComponent()->setBounds(viewArea);
-    }
-
-    void zoom(Axis axis, float delta, const juce::Point<float> &p)
-    {
-        constexpr auto acceleration = 10.f;
-        auto &z = axis == Axis::horizontalZoom ? zoomX : zoomY;
-        // If zoome is allowe
-        if (z.min != z.max)
-        {
-            // accumulate the zoom
-            z.acc += delta * acceleration * scrollDirection;
-
-            // and if the number of pixels the accumlated zoom makes
-            auto pxdf = std::fabs(z.acc * getWidth());
-
-            // are more than 3 (somewhat arbitrarily)
-            if (pxdf > 3)
-            {
-                // then we want to zoom
-                auto prevVal = static_cast<float>(z.val);
-                z.val = std::clamp(z.val + z.acc, z.min, z.max);
-                z.acc = 0;
-
-                auto viewedComp = viewport->getViewedComponent();
-
-                // Now we know the position and size of the viewed component
-                auto x = viewedComp->getX();
-                auto y = viewedComp->getY();
-
-                auto wu = viewedComp->getWidth();
-                auto hu = viewedComp->getHeight();
-
-                auto w = (int)(viewport->getWidth() * zoomX.val);
-                if (viewport->isVerticalScrollBarShown())
-                {
-                    w -= viewport->getScrollBarThickness();
-                }
-                auto h = (int)(viewport->getHeight() * zoomY.val);
-                if (viewport->isHorizontalScrollBarShown())
-                {
-                    h -= viewport->getScrollBarThickness();
-                }
-
-                if (axis == Axis::horizontalZoom)
-                {
-                    // How far in percentage is the mouse in the underlyer
-                    auto mpU = 1.f * (p.x - x) / wu;
-                    // Whats the new width
-                    auto newWidth = w;
-                    // so we want the position the same namely
-                    // (px -xold) / wold = (px - xnew)/wnew
-                    // (px - xold) * wnew / wold = px - xnew
-                    // xnew = px - (px - xold) * wnew / wold
-                    x = p.x - mpU * newWidth;
-                }
-                else
-                {
-                    auto mpU = 1.f * (p.y - y) / hu;
-                    auto newHeight = h;
-                    y = p.y - mpU * newHeight;
-                }
-
-                viewedComp->setBounds(x, y, w, h);
-            }
-        }
-    }
-
-    void mouseWheelMove(const juce::MouseEvent &e, const juce::MouseWheelDetails &w) override
-    {
-        if (e.mods.isAltDown())
-        {
-            auto axis = e.mods.isShiftDown() ? Axis::verticalZoom : Axis::horizontalZoom;
-            zoom(axis, w.deltaY, e.position);
-        }
-    }
-
-    void mouseMagnify(const juce::MouseEvent &e, float scaleFactor) override
-    {
-        auto axis = e.mods.isShiftDown() ? Axis::verticalZoom : Axis::horizontalZoom;
-        zoom(axis, 0.1 * (scaleFactor - 1), e.position);
-    }
-};
-
 struct MappingDisplay : juce::Component,
                         HasEditor,
                         juce::FileDragAndDropTarget,
-                        juce::DragAndDropTarget,
-                        juce::ComponentListener
+                        juce::DragAndDropTarget
+
 {
 
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
@@ -220,11 +89,24 @@ struct MappingDisplay : juce::Component,
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, float>
         floatAttachment_t;
 
-    std::unique_ptr<Zoomable> mappingViewport;
-    std::unique_ptr<ZoneLayoutDisplay> mappingZones;
+    std::unique_ptr<sst::jucegui::components::ZoomContainer> zoneLayoutViewport;
 
-    std::unique_ptr<Zoomable> keyboardViewPort;
-    std::unique_ptr<ZoneLayoutKeyboard> keyboard;
+    struct LayoutAndKeyboard : juce::Component, sst::jucegui::components::ZoomContainerClient
+    {
+        Component *associatedComponent() override { return this; }
+        bool supportsVerticalZoom() const override { return true; }
+        bool supportsHorizontalZoom() const override { return true; }
+        void setHorizontalZoom(float pctStart, float zoomFactor) override;
+        void setVerticalZoom(float pctStart, float zoomFactor) override;
+        LayoutAndKeyboard(MappingDisplay *that);
+        std::unique_ptr<ZoneLayoutDisplay> mappingZones;
+        std::unique_ptr<ZoneLayoutKeyboard> keyboard;
+
+        void resized() override;
+    };
+    // Weak refs here since they are owned by the zoom viewport
+    ZoneLayoutDisplay *mappingZones{nullptr};
+    ZoneLayoutKeyboard *keyboard{nullptr};
 
     bool isMovingKeyboard{false};
     bool isResizingKeyboard{false};
@@ -299,8 +181,6 @@ struct MappingDisplay : juce::Component,
     void fileDragMove(const juce::StringArray &files, int x, int y) override;
     void fileDragExit(const juce::StringArray &files) override;
     void filesDropped(const juce::StringArray &files, int x, int y) override;
-    void componentMovedOrResized(juce::Component &component, bool wasMoved,
-                                 bool wasResized) override;
 
     engine::Part::zoneMappingSummary_t summary{};
 };

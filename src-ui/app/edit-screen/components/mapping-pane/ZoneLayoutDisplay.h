@@ -134,6 +134,22 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     juce::Point<float> firstMousePos{0.f, 0.f}, lastMousePos{0.f, 0.f};
 
     void showZoneMenu(const selection::SelectionManager::ZoneAddress &za);
+
+    float hPct{0.0}, hZoom{1.0}, vPct{0.0}, vZoom{1.0};
+    void setHorizontalZoom(float pctStart, float zoomFactor)
+    {
+        hPct = pctStart;
+        hZoom = zoomFactor;
+        resetLeadZoneBounds();
+        repaint();
+    }
+    void setVerticalZoom(float pctStart, float zoomFactor)
+    {
+        vPct = pctStart;
+        vZoom = zoomFactor;
+        resetLeadZoneBounds();
+        repaint();
+    }
 };
 
 } // namespace scxt::ui::app::edit_screen

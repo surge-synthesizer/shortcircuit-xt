@@ -34,27 +34,19 @@
 namespace scxt::ui::app::edit_screen
 {
 namespace cmsg = scxt::messaging::client;
+namespace jcmp = sst::jucegui::components;
 
 MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     : HasEditor(p->editor), mappingView(p->mappingView), parentPane(p)
 {
-    // TODO: Upgrade all these attachments with the new factory style
-    mappingZones = std::make_unique<ZoneLayoutDisplay>(this);
-    mappingZones->addComponentListener(this);
-
-    mappingViewport = std::make_unique<Zoomable>(mappingZones.get());
-    addAndMakeVisible(*mappingViewport);
+    auto tmpLOK = std::make_unique<LayoutAndKeyboard>(this);
+    mappingZones = tmpLOK->mappingZones.get();
+    keyboard = tmpLOK->keyboard.get();
+    zoneLayoutViewport = std::make_unique<jcmp::ZoomContainer>(std::move(tmpLOK));
+    addAndMakeVisible(*zoneLayoutViewport);
 
     zoneHeader = std::make_unique<MappingZoneHeader>(editor);
     addAndMakeVisible(*zoneHeader);
-
-    keyboard = std::make_unique<ZoneLayoutKeyboard>(this);
-    keyboard->addComponentListener(this);
-
-    keyboardViewPort = std::make_unique<Zoomable>(keyboard.get(), std::make_pair(1.f, 4.f),
-                                                  std::make_pair(1.f, 1.f));
-    keyboardViewPort->viewport->setScrollBarsShown(false, false, false, true);
-    addAndMakeVisible(*keyboardViewPort);
 
     // Start here tomorrow
     using ffac =
@@ -176,6 +168,37 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
 
 MappingDisplay::~MappingDisplay() = default;
 
+MappingDisplay::LayoutAndKeyboard::LayoutAndKeyboard(
+    scxt::ui::app::edit_screen::MappingDisplay *that)
+{
+    mappingZones = std::make_unique<ZoneLayoutDisplay>(that);
+    addAndMakeVisible(*mappingZones);
+    keyboard = std::make_unique<ZoneLayoutKeyboard>(that);
+    addAndMakeVisible(*keyboard);
+}
+
+void MappingDisplay::LayoutAndKeyboard::setHorizontalZoom(float pctStart, float zoomFactor)
+{
+    mappingZones->setHorizontalZoom(pctStart, zoomFactor);
+    keyboard->setHorizontalZoom(pctStart, zoomFactor);
+    repaint();
+}
+
+void MappingDisplay::LayoutAndKeyboard::setVerticalZoom(float pctStart, float zoomFactor)
+{
+    mappingZones->setVerticalZoom(pctStart, zoomFactor);
+    repaint();
+}
+
+void MappingDisplay::LayoutAndKeyboard::resized()
+{
+    auto lo = getLocalBounds().withTrimmedBottom(ZoneLayoutKeyboard::keyboardHeight);
+    auto kb = getLocalBounds().withTrimmedTop(getHeight() - ZoneLayoutKeyboard::keyboardHeight);
+
+    mappingZones->setBounds(lo);
+    keyboard->setBounds(kb);
+}
+
 void MappingDisplay::resized()
 
 {
@@ -189,11 +212,14 @@ void MappingDisplay::resized()
     // Mapping Display
     auto z = b.withTrimmedTop(headerSize);
     auto viewArea = z.withWidth(getWidth() - controlSize - 5);
-    mappingViewport->setBounds(viewArea);
+    zoneLayoutViewport->setBounds(viewArea);
+    /*
+     * mappingViewport->setBounds(viewArea);
     auto kbdY = viewArea.getBottom() - mappingViewport->viewport->getScrollBarThickness() -
                 ZoneLayoutKeyboard::keyboardHeight;
     auto kbdW = viewArea.getWidth() - mappingViewport->viewport->getScrollBarThickness();
     keyboardViewPort->setBounds({0, kbdY, kbdW, ZoneLayoutKeyboard::keyboardHeight});
+*/
 
     // Side Pane
     static constexpr int rowHeight{16}, rowMargin{4};
@@ -400,47 +426,6 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
     }
     isUndertakingDrop = false;
     repaint();
-}
-
-void MappingDisplay::componentMovedOrResized(juce::Component &component, bool wasMoved,
-                                             bool wasResized)
-{
-    if (&component == mappingZones.get())
-    {
-        if (wasMoved && !isMovingKeyboard)
-        {
-            isMovingZones = true;
-            keyboard->setTopLeftPosition(component.getX(), keyboard->getY());
-            isMovingZones = false;
-        }
-        if (wasResized && !isMovingKeyboard)
-        {
-            isResizingZones = true;
-            keyboardViewPort->zoomX = mappingViewport->zoomX;
-            keyboard->setBounds(component.getX(), keyboard->getY(), component.getWidth(),
-                                keyboard->getHeight());
-            isResizingZones = false;
-        }
-
-        mappingZones->resetLeadZoneBounds();
-    }
-    else if (&component == keyboard.get())
-    {
-        if (wasMoved && !isMovingZones)
-        {
-            isMovingKeyboard = true;
-            mappingZones->setTopLeftPosition(component.getX(), mappingZones->getY());
-            isMovingKeyboard = false;
-        }
-        if (wasResized && !isMovingZones)
-        {
-            isResizingKeyboard = true;
-            mappingViewport->zoomX = keyboardViewPort->zoomX;
-            mappingZones->setBounds(component.getX(), mappingZones->getY(), component.getWidth(),
-                                    mappingZones->getHeight());
-            isResizingKeyboard = false;
-        }
-    }
 }
 
 } // namespace scxt::ui::app::edit_screen

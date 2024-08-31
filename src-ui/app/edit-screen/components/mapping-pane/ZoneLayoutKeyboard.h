@@ -54,16 +54,14 @@ struct ZoneLayoutKeyboard : juce::Component, HasEditor
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
 
-    juce::Rectangle<float> rectangleForKey(int midiNote) const
+    juce::Rectangle<float> rectangleForKey(int midiNote) const;
+
+    float pctStart{0.f}, zoomFactor{1.f};
+    void setHorizontalZoom(float ps, float zf)
     {
-        assert(lastMidiNote > firstMidiNote);
-        auto lb = getLocalBounds().toFloat();
-        auto keyRegion = lb.withTop(lb.getBottom() - keyboardHeight + 1);
-        auto kw = keyRegion.getWidth() / (lastMidiNote - firstMidiNote);
-
-        keyRegion = keyRegion.withWidth(kw).translated(kw * (midiNote - firstMidiNote), 0);
-
-        return keyRegion;
+        pctStart = ps;
+        zoomFactor = zf;
+        repaint();
     }
 };
 
