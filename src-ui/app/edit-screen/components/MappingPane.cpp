@@ -1900,6 +1900,7 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
 
     int64_t sampleForXPixel(float xpos);
     int xPixelForSample(int64_t samplePos, bool doClamp = true);
+    int xPixelForSampleDistance(int64_t sampleDistance);
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
@@ -2762,7 +2763,7 @@ void SampleWaveform::rebuildHotZones()
     }
     auto r = getLocalBounds();
 
-    auto fade = xPixelForSample(v.loopFade);
+    auto fade = xPixelForSampleDistance(v.loopFade);
     auto start = xPixelForSample(v.startSample);
     auto end = xPixelForSample(v.endSample);
     auto ls = xPixelForSample(v.startLoop);
@@ -2797,6 +2798,21 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
     return (int64_t)std::clamp(res, 0.f, l * 1.f);
 }
 
+int SampleWaveform::xPixelForSampleDistance(int64_t sampleDistance)
+{
+    auto r = getLocalBounds();
+    auto &v = display->sampleView.samples[display->selectedVariation];
+    auto sample = editor->sampleManager.getSample(v.sampleID);
+    if (sample)
+    {
+        auto l = sample->getSampleLength();
+        float sPct = 1.0 * sampleDistance / l;
+        sPct *= zoomFactor;
+        sPct *= getWidth();
+        return sPct;
+    }
+    return 0;
+}
 int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
 {
     auto r = getLocalBounds();
@@ -3070,6 +3086,8 @@ void SampleWaveform::paint(juce::Graphics &g)
     if (v.loopActive)
     {
         auto ls = xPixelForSample(v.startLoop, false);
+        auto fs = xPixelForSample(v.startLoop - v.loopFade, false);
+        auto fe = xPixelForSample(v.startLoop + v.loopFade, false);
         auto le = xPixelForSample(v.endLoop, false);
 
         g.setColour(juce::Colours::aliceblue);
@@ -3083,11 +3101,10 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.fillRect(endLoopHZ);
             g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
         }
-        if (v.loopFade > 0)
+        if (v.loopFade > 0 && ((fe >= 0 && fe < getWidth()) || (fs >= 0 && fs <= getWidth())))
         {
-            g.drawLine(fadeLoopHz.getX(), getHeight(), startLoopHZ.getX(), 0);
-            g.drawLine(startLoopHZ.getX(), 0, startLoopHZ.getX() + fadeLoopHz.getWidth(),
-                       getHeight());
+            g.drawLine(fs, getHeight(), ls, 0);
+            g.drawLine(ls, 0, fe, getHeight());
         }
     }
 
