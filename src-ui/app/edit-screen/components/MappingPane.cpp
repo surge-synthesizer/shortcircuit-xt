@@ -41,6 +41,7 @@
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/Viewport.h"
 #include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/ZoomContainer.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
@@ -1872,7 +1873,7 @@ struct SampleCursor : juce::Component
     void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
 };
 
-struct SampleWaveform : juce::Component, HasEditor
+struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::ZoomContainerClient
 {
     SampleDisplay *display{nullptr};
     SampleWaveform(SampleDisplay *d);
@@ -1898,12 +1899,26 @@ struct SampleWaveform : juce::Component, HasEditor
     void updateSamplePlaybackPosition(int64_t samplePos);
 
     int64_t sampleForXPixel(float xpos);
-    int xPixelForSample(int64_t samplePos);
+    int xPixelForSample(int64_t samplePos, bool doClamp = true);
+    int xPixelForSampleDistance(int64_t sampleDistance);
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseMove(const juce::MouseEvent &e) override;
     void mouseDoubleClick(const juce::MouseEvent &e) override;
+
+    Component *associatedComponent() override { return this; }
+    bool supportsVerticalZoom() const override { return false; }
+    bool supportsHorizontalZoom() const override { return true; }
+
+    float pctStart{0.f}, zoomFactor{1.f};
+    void setHorizontalZoom(float ps, float zf) override
+    {
+        pctStart = ps;
+        zoomFactor = zf;
+        rebuildHotZones();
+        repaint();
+    }
 };
 
 struct SampleDisplay : juce::Component, HasEditor
@@ -1937,8 +1952,8 @@ struct SampleDisplay : juce::Component, HasEditor
 
     struct ZoomableWaveform
     {
-        std::unique_ptr<Zoomable> waveformViewport;
-        std::unique_ptr<SampleWaveform> waveform;
+        std::unique_ptr<sst::jucegui::components::ZoomContainer> waveformViewport;
+        SampleWaveform *waveform{nullptr};
     };
     std::array<ZoomableWaveform, maxSamplesPerZone> waveforms;
 
@@ -2097,9 +2112,11 @@ struct SampleDisplay : juce::Component, HasEditor
         addAndMakeVisible(*waveformsTabbedGroup);
         for (auto i = 0; i < maxSamplesPerZone; ++i)
         {
-            waveforms[i].waveform = std::make_unique<SampleWaveform>(this);
-            waveforms[i].waveformViewport = std::make_unique<Zoomable>(
-                waveforms[i].waveform.get(), std::make_pair(1.f, 50.f), std::make_pair(1.f, 10.f));
+            waveforms[i].waveformViewport =
+                std::make_unique<sst::jucegui::components::ZoomContainer>(
+                    std::make_unique<SampleWaveform>(this));
+            waveforms[i].waveform = static_cast<SampleWaveform *>(
+                waveforms[i].waveformViewport->contents->associatedComponent());
         }
 
         variantPlayModeLabel = std::make_unique<sst::jucegui::components::Label>();
@@ -2745,13 +2762,12 @@ void SampleWaveform::rebuildHotZones()
         return;
     }
     auto r = getLocalBounds();
-    auto l = samp->getSampleLength();
-    auto fac = 1.0 * r.getWidth() / l;
-    auto fade = v.loopFade * fac;
-    auto start = v.startSample * fac;
-    auto end = v.endSample * fac;
-    auto ls = v.startLoop * fac;
-    auto le = v.endLoop * fac;
+
+    auto fade = xPixelForSampleDistance(v.loopFade);
+    auto start = xPixelForSample(v.startSample);
+    auto end = xPixelForSample(v.endSample);
+    auto ls = xPixelForSample(v.startLoop);
+    auto le = xPixelForSample(v.endLoop);
 
     startSampleHZ = juce::Rectangle<int>(start + r.getX(), r.getBottom() - hotZoneSize, hotZoneSize,
                                          hotZoneSize);
@@ -2766,23 +2782,53 @@ void SampleWaveform::rebuildHotZones()
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
 {
-    // TODO probably cache this
     auto r = getLocalBounds();
     auto &v = display->sampleView.samples[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!samp)
+        return -1;
+
+    // OK so going the other way
+    // (sp / l - start) * zf * width = px (taht's below) so
+    // px / (zf * width) = sp / l - start
+    // (px / (zf * width) + start) * l = sp
+
     auto l = samp->getSampleLength();
-    return (int64_t)std::clamp(1.0 * l * xpos / r.getWidth(), 0.0, l * 1.0);
+    auto res = (xpos / (zoomFactor * getWidth()) + pctStart) * l;
+    return (int64_t)std::clamp(res, 0.f, l * 1.f);
 }
 
-int SampleWaveform::xPixelForSample(int64_t samplePos)
+int SampleWaveform::xPixelForSampleDistance(int64_t sampleDistance)
 {
     auto r = getLocalBounds();
     auto &v = display->sampleView.samples[display->selectedVariation];
     auto sample = editor->sampleManager.getSample(v.sampleID);
-    if (sample && samplePos >= 0)
+    if (sample)
     {
         auto l = sample->getSampleLength();
-        return std::clamp(static_cast<int>(r.getWidth() * samplePos / l), 0, r.getWidth());
+        float sPct = 1.0 * sampleDistance / l;
+        sPct *= zoomFactor;
+        sPct *= getWidth();
+        return sPct;
+    }
+    return 0;
+}
+int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
+{
+    auto r = getLocalBounds();
+    auto &v = display->sampleView.samples[display->selectedVariation];
+    auto sample = editor->sampleManager.getSample(v.sampleID);
+    if (sample)
+    {
+        auto l = sample->getSampleLength();
+        float sPct = 1.0 * samplePos / l;
+        sPct -= pctStart;
+        sPct *= zoomFactor;
+
+        if (doClamp)
+            return std::clamp(static_cast<int>(r.getWidth() * sPct), 0, r.getWidth());
+        else
+            return static_cast<int>(r.getWidth() * sPct);
     }
     else
     {
@@ -2803,69 +2849,62 @@ juce::Path SampleWaveform::pathForSample()
         return res;
     }
 
+    /*
+     * OK so we have pctStart and zoomFactor so whats that in sample space
+     */
     auto l = samp->getSampleLength();
-    std::vector<float> topLine, bottomLine;
+    auto startSample = std::clamp((int)std::floor(l * pctStart), 0, (int)l);
+    auto numSamples = (int)std::ceil(1.f * l / zoomFactor);
+    auto endSample = std::clamp(startSample + numSamples, 0, (int)l);
+
+    std::vector<std::pair<size_t, float>> topLine, bottomLine;
+    auto fac = 1.0 * numSamples / r.getWidth();
+    fac = std::max(fac, 20.0);
+
+    auto downSampleForUI = [startSample, endSample, fac, &topLine, &bottomLine](auto *data) {
+        using T = std::remove_pointer_t<decltype(data)>;
+        double c = startSample;
+        int ct = 0;
+        T mx = std::numeric_limits<T>::min();
+        T mn = std::numeric_limits<T>::max();
+
+        T normFactor{1};
+        if constexpr (std::is_same_v<T, int16_t>)
+        {
+            normFactor = std::numeric_limits<T>::max();
+        }
+        for (int s = startSample; s < endSample; ++s)
+        {
+            if (c + fac < s)
+            {
+                double nmx = 1.0 - mx * 1.0 / normFactor;
+                double nmn = 1.0 - mn * 1.0 / normFactor;
+
+                nmx = (nmx + 1) * 0.25;
+                nmn = (nmn + 1) * 0.25;
+
+                topLine.emplace_back(s, nmx);
+                bottomLine.emplace_back(s, nmn);
+
+                c += fac;
+                ct++;
+                mx = std::numeric_limits<T>::min();
+                mn = std::numeric_limits<T>::max();
+            }
+            mx = std::max(data[s], mx);
+            mn = std::min(data[s], mn);
+        }
+    };
 
     if (samp->bitDepth == sample::Sample::BD_I16)
     {
-        auto fac = 1.0 * l / r.getWidth();
         auto d = samp->GetSamplePtrI16(0);
-        double c = 0;
-        int ct = 0;
-        int16_t mx = std::numeric_limits<int16_t>::min();
-        int16_t mn = std::numeric_limits<int16_t>::max();
-
-        for (int s = 0; s < l; ++s)
-        {
-            if (c + fac < s)
-            {
-                double nmx = 1.0 - mx * 1.0 / std::numeric_limits<int16_t>::max();
-                double nmn = 1.0 - mn * 1.0 / std::numeric_limits<int16_t>::max();
-
-                nmx = (nmx + 1) * 0.25;
-                nmn = (nmn + 1) * 0.25;
-
-                topLine.push_back(nmx);
-                bottomLine.push_back(nmn);
-
-                c += fac;
-                ct++;
-                mx = std::numeric_limits<int16_t>::min();
-                mn = std::numeric_limits<int16_t>::max();
-            }
-            mx = std::max(d[s], mx);
-            mn = std::min(d[s], mn);
-        }
+        downSampleForUI(d);
     }
     else if (samp->bitDepth == sample::Sample::BD_F32)
     {
-        auto fac = 1.0 * l / r.getWidth();
         auto d = samp->GetSamplePtrF32(0);
-        double c = 0;
-        int ct = 0;
-
-        float mx = -100.f, mn = 100.f;
-
-        for (int s = 0; s < l; ++s)
-        {
-            if (c + fac < s)
-            {
-                double nmx = 1.0 - mx;
-                double nmn = 1.0 - mn;
-
-                nmx = (nmx + 1) * 0.25;
-                nmn = (nmn + 1) * 0.25;
-
-                topLine.push_back(nmx);
-                bottomLine.push_back(nmn);
-                c += fac;
-                ct++;
-                mx = -100.f;
-                mn = 100.f;
-            }
-            mx = std::max(d[s], mx);
-            mn = std::min(d[s], mn);
-        }
+        downSampleForUI(d);
     }
     else
     {
@@ -2873,25 +2912,26 @@ juce::Path SampleWaveform::pathForSample()
     }
 
     std::reverse(bottomLine.begin(), bottomLine.end());
-    int index{0};
-    for (auto &l : topLine)
+    bool first{true};
+    for (auto &[smp, val] : topLine)
     {
-        if (index == 0)
+        auto pos = xPixelForSample(smp);
+        if (first)
         {
-            res.startNewSubPath(index, l * r.getHeight());
+            res.startNewSubPath(pos, val * r.getHeight());
+            first = false;
         }
         else
         {
-            res.lineTo(index, l * r.getHeight());
+            res.lineTo(pos, val * r.getHeight());
         }
-        index++;
     }
 
-    index--;
-    for (auto &l : bottomLine)
+    for (auto &[smp, val] : bottomLine)
     {
-        res.lineTo(index, l * r.getHeight());
-        index--;
+        auto pos = xPixelForSample(smp);
+
+        res.lineTo(pos, val * r.getHeight());
     }
     res.closeSubPath();
 
@@ -2983,7 +3023,6 @@ void SampleWaveform::paint(juce::Graphics &g)
     }
 
     auto l = samp->getSampleLength();
-    auto fac = 1.0 * r.getWidth() / l;
 
     auto wfp = pathForSample();
     {
@@ -3000,7 +3039,8 @@ void SampleWaveform::paint(juce::Graphics &g)
 
     {
         juce::Graphics::ScopedSaveState gs(g);
-        auto cr = r.withLeft(fac * v.startSample).withRight(fac * v.endSample);
+        auto cr =
+            r.withLeft(xPixelForSample(v.startSample)).withRight(xPixelForSample(v.endSample));
         g.reduceClipRegion(cr);
 
         g.setColour(juce::Colour(0x15, 0x15, 0x15));
@@ -3016,7 +3056,7 @@ void SampleWaveform::paint(juce::Graphics &g)
     if (v.loopActive)
     {
         juce::Graphics::ScopedSaveState gs(g);
-        auto cr = r.withLeft(fac * v.startLoop).withRight(fac * v.endLoop);
+        auto cr = r.withLeft(xPixelForSample(v.startLoop)).withRight(xPixelForSample(v.endLoop));
         g.reduceClipRegion(cr);
 
         g.setColour(juce::Colour(0x15, 0x15, 0x35));
@@ -3030,24 +3070,41 @@ void SampleWaveform::paint(juce::Graphics &g)
     }
 
     g.setColour(juce::Colours::white);
-    g.fillRect(startSampleHZ);
-    g.drawVerticalLine(startSampleHZ.getX(), 0, getHeight());
-    g.fillRect(endSampleHZ);
-    g.drawVerticalLine(endSampleHZ.getRight(), 0, getHeight());
 
+    auto ss = xPixelForSample(v.startSample, false);
+    auto se = xPixelForSample(v.endSample, false);
+    if (ss >= 0 && ss < getWidth())
+    {
+        g.fillRect(startSampleHZ);
+        g.drawVerticalLine(startSampleHZ.getX(), 0, getHeight());
+    }
+    if (se >= 0 && se < getWidth())
+    {
+        g.fillRect(endSampleHZ);
+        g.drawVerticalLine(endSampleHZ.getRight(), 0, getHeight());
+    }
     if (v.loopActive)
     {
-        g.setColour(juce::Colours::aliceblue);
-        g.fillRect(startLoopHZ);
-        g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
-        g.fillRect(endLoopHZ);
-        g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+        auto ls = xPixelForSample(v.startLoop, false);
+        auto fs = xPixelForSample(v.startLoop - v.loopFade, false);
+        auto fe = xPixelForSample(v.startLoop + v.loopFade, false);
+        auto le = xPixelForSample(v.endLoop, false);
 
-        if (v.loopFade > 0)
+        g.setColour(juce::Colours::aliceblue);
+        if (ls >= 0 && ls < getWidth())
         {
-            g.drawLine(fadeLoopHz.getX(), getHeight(), startLoopHZ.getX(), 0);
-            g.drawLine(startLoopHZ.getX(), 0, startLoopHZ.getX() + fadeLoopHz.getWidth(),
-                       getHeight());
+            g.fillRect(startLoopHZ);
+            g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
+        }
+        if (le >= 0 && le < getWidth())
+        {
+            g.fillRect(endLoopHZ);
+            g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+        }
+        if (v.loopFade > 0 && ((fe >= 0 && fe < getWidth()) || (fs >= 0 && fs <= getWidth())))
+        {
+            g.drawLine(fs, getHeight(), ls, 0);
+            g.drawLine(ls, 0, fe, getHeight());
         }
     }
 
@@ -3056,8 +3113,8 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.setColour(editor->themeColor(theme::ColorMap::grid_primary));
         for (int i = 0; i < samp->meta.n_slices; ++i)
         {
-            auto sp = samp->meta.slice_start[i] * fac;
-            auto ep = samp->meta.slice_end[i] * fac;
+            auto sp = xPixelForSample(samp->meta.slice_start[i]);
+            auto ep = xPixelForSample(samp->meta.slice_end[i]);
             g.drawVerticalLine(sp, 0, getHeight());
             g.drawVerticalLine(ep, 0, getHeight());
         }
@@ -3210,7 +3267,7 @@ void MappingPane::invertScroll(bool invert)
     mappingDisplay->mappingViewport->invertScroll(invert);
     for (auto &w : sampleDisplay->waveforms)
     {
-        w.waveformViewport->invertScroll(invert);
+        // w.waveformViewport->invertScroll(invert);
     }
 }
 
