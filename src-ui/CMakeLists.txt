@@ -11,12 +11,19 @@ add_library(${PROJECT_NAME} STATIC
         app/edit-screen/EditScreen.cpp
         app/edit-screen/components/AdsrPane.cpp
         app/edit-screen/components/LFOPane.cpp
-        app/edit-screen/components/MappingPane.cpp
+        app/edit-screen/components/MacroMappingVariantPane.cpp
         app/edit-screen/components/ModPane.cpp
         app/edit-screen/components/OutputPane.cpp
         app/edit-screen/components/PartGroupSidebar.cpp
         app/edit-screen/components/ProcessorPane.cpp
         app/edit-screen/components/ProcessorPaneEQsFilters.cpp
+
+        app/edit-screen/components/mapping-pane/MappingDisplay.cpp
+        app/edit-screen/components/mapping-pane/MacroDisplay.cpp
+        app/edit-screen/components/mapping-pane/VariantDisplay.cpp
+        app/edit-screen/components/mapping-pane/SampleWaveform.cpp
+        app/edit-screen/components/mapping-pane/ZoneLayoutDisplay.cpp
+        app/edit-screen/components/mapping-pane/ZoneLayoutKeyboard.cpp
 
         app/mixer-screen/MixerScreen.cpp
         app/mixer-screen/components/BusPane.cpp

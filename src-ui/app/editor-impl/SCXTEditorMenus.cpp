@@ -38,7 +38,7 @@
 #include "app/edit-screen/components/ProcessorPane.h"
 #include "app/edit-screen/components/PartGroupSidebar.h"
 #include "app/shared/HeaderRegion.h"
-#include "app/edit-screen/components/MappingPane.h"
+#include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
 
 #include <version.h>

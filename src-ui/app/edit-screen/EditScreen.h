@@ -51,7 +51,7 @@ struct OutPaneGroupTraits;
 template <typename T> struct OutputPane;
 
 struct PartGroupSidebar;
-struct MappingPane;
+struct MacroMappingVariantPane;
 
 struct ModPaneZoneTraits;
 struct ModPaneGroupTraits;
@@ -68,7 +68,7 @@ struct EditScreen : juce::Component, HasEditor
     static constexpr int pad = 0;
 
     std::unique_ptr<browser_ui::BrowserPane> browser;
-    std::unique_ptr<MappingPane> mappingPane;
+    std::unique_ptr<MacroMappingVariantPane> mappingPane;
     std::unique_ptr<PartGroupSidebar> partSidebar;
 
     struct ZoneTraits

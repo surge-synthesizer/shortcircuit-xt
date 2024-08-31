@@ -67,7 +67,7 @@ run the super-tiny regtest (#412). Support Stereo SF2 (#475)
 - Selection Manager streamed
 - Attachment pattern gets a bit tigher
 - Mapping Region highlights selected zone in sync with sidebar
-- Keyboard layout which actually plays notes (at fixed velocity)
+- ZoneLayoutKeyboard layout which actually plays notes (at fixed velocity)
 - Click Zone to Select works
 - Sidebar shows selection in sync with zones and startup path
 - Drag to edit zone mappings
