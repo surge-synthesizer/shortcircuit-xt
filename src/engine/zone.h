@@ -60,12 +60,12 @@ constexpr int lfosPerZone{scxt::lfosPerZone};
 
 struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSupport
 {
-    static constexpr int maxSamplesPerZone{scxt::maxSamplesPerZone};
+    static constexpr int maxVariantsPerZone{scxt::maxVariantsPerZone};
     Zone() : id(ZoneID::next()) { initialize(); }
     Zone(SampleID sid) : id(ZoneID::next())
     {
-        sampleData.samples[0].sampleID = sid;
-        sampleData.samples[0].active = true;
+        variantData.variants[0].sampleID = sid;
+        variantData.variants[0].active = true;
         initialize();
     }
     Zone(Zone &&) = default;
@@ -104,7 +104,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     };
     DECLARE_ENUM_STRING(LoopDirection);
 
-    struct AssociatedSample
+    struct SingleVariant
     {
         bool active{false};
         SampleID sampleID;
@@ -120,7 +120,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
         int64_t loopFade{0};
 
-        bool operator==(const AssociatedSample &other) const
+        bool operator==(const SingleVariant &other) const
         {
             return active == other.active && sampleID == other.sampleID &&
                    startSample == other.startSample && endSample == other.endSample &&
@@ -128,24 +128,24 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         }
     };
 
-    struct AssociatedSampleSet
+    struct Variants
     {
-        std::array<AssociatedSample, maxSamplesPerZone> samples;
+        std::array<SingleVariant, maxVariantsPerZone> variants;
         VariantPlaybackMode variantPlaybackMode{FORWARD_RR};
-    } sampleData;
+    } variantData;
 
-    std::array<std::shared_ptr<sample::Sample>, maxSamplesPerZone> samplePointers;
+    std::array<std::shared_ptr<sample::Sample>, maxVariantsPerZone> samplePointers;
     int8_t sampleIndex{-1};
 
     int numAvail{0};
     int setupFor{0};
     int lastPlayed{-1};
-    std::array<int, maxSamplesPerZone> rrs{};
+    std::array<int, maxVariantsPerZone> rrs{};
 
     auto getNumSampleLoaded() const
     {
-        return std::distance(sampleData.samples.begin(),
-                             std::find_if(sampleData.samples.begin(), sampleData.samples.end(),
+        return std::distance(variantData.variants.begin(),
+                             std::find_if(variantData.variants.begin(), variantData.variants.end(),
                                           [](const auto &s) { return s.active == false; }));
     }
 
@@ -190,8 +190,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     bool attachToSampleAtVariation(const sample::SampleManager &manager, const SampleID &sid,
                                    int16_t variation)
     {
-        sampleData.samples[variation].sampleID = sid;
-        sampleData.samples[variation].active = true;
+        variantData.variants[variation].sampleID = sid;
+        variantData.variants[variation].active = true;
 
         return attachToSample(manager, variation);
     }

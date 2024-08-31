@@ -490,7 +490,7 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
                               cms::MappingSelectedZoneView::s2c_payload_t{true, zp->mapping},
                               *(engine.getMessageController()));
     serializationSendToClient(cms::s2c_respond_zone_samples,
-                              cms::SampleSelectedZoneView::s2c_payload_t{true, zp->sampleData},
+                              cms::SampleSelectedZoneView::s2c_payload_t{true, zp->variantData},
                               *(engine.getMessageController()));
     serializationSendToClient(
         cms::s2c_update_group_or_zone_adsr_view,

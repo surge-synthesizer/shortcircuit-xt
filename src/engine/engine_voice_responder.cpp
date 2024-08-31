@@ -67,7 +67,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             voiceInitWorkingBuffer[idx] = v;
         }
-        else if (z->sampleData.variantPlaybackMode == Zone::UNISON)
+        else if (z->variantData.variantPlaybackMode == Zone::UNISON)
         {
             for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
             {
@@ -95,15 +95,15 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             else
             {
-                if (z->sampleData.variantPlaybackMode == Zone::FORWARD_RR)
+                if (z->variantData.variantPlaybackMode == Zone::FORWARD_RR)
                 {
                     z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
                 }
-                else if (z->sampleData.variantPlaybackMode == Zone::TRUE_RANDOM)
+                else if (z->variantData.variantPlaybackMode == Zone::TRUE_RANDOM)
                 {
                     z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
                 }
-                else if (z->sampleData.variantPlaybackMode == Zone::RANDOM_CYCLE)
+                else if (z->variantData.variantPlaybackMode == Zone::RANDOM_CYCLE)
                 {
                     if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
                     {

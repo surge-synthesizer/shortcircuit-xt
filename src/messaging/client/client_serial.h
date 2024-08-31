@@ -87,8 +87,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_lead_zone_mapping,
     c2s_update_zone_mapping_float,
     c2s_update_zone_mapping_int16_t,
-    c2s_update_lead_zone_associated_sample,
-    c2s_update_zone_associated_sample_set_int16_t,
+    c2s_update_lead_zone_single_variant,
+    c2s_update_zone_variants_int16_t,
 
     c2s_update_zone_output_float_value,
     c2s_update_zone_output_int16_t_value,

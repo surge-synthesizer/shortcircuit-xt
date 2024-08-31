@@ -298,8 +298,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                             if (oc.value == "loop_continuous")
                             {
                                 // FIXME: In round robin looping modes this is probably wrong
-                                zn->sampleData.samples[0].loopActive = true;
-                                zn->sampleData.samples[0].loopMode =
+                                zn->variantData.variants[0].loopActive = true;
+                                zn->variantData.variants[0].loopMode =
                                     engine::Zone::LOOP_DURING_VOICE;
                             }
                             else
