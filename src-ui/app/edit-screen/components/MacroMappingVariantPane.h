@@ -36,15 +36,14 @@
 
 namespace scxt::ui::app::edit_screen
 {
-// Each of these are in the cpp file
 struct MappingDisplay;
-struct SampleDisplay;
+struct VariantDisplay;
 struct MacroDisplay;
 
-struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
+struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    MappingPane(SCXTEditor *e);
-    ~MappingPane();
+    MacroMappingVariantPane(SCXTEditor *e);
+    ~MacroMappingVariantPane();
 
     void resized() override;
 
@@ -58,7 +57,7 @@ struct MappingPane : sst::jucegui::components::NamedPanel, HasEditor
     void setSelectedTab(int i);
 
     std::unique_ptr<MappingDisplay> mappingDisplay;
-    std::unique_ptr<SampleDisplay> sampleDisplay;
+    std::unique_ptr<VariantDisplay> sampleDisplay;
     std::unique_ptr<MacroDisplay> macroDisplay;
 
     engine::Zone::ZoneMappingData mappingView;

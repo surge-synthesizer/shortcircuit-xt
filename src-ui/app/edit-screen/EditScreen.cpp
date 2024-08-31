@@ -29,7 +29,7 @@
 #include "app/browser-ui/BrowserPane.h"
 #include "app/edit-screen/components/AdsrPane.h"
 #include "app/edit-screen/components/LFOPane.h"
-#include "app/edit-screen/components/MappingPane.h"
+#include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/edit-screen/components/ModPane.h"
 #include "app/edit-screen/components/OutputPane.h"
 #include "app/edit-screen/components/ProcessorPane.h"
@@ -75,7 +75,7 @@ EditScreen::EditScreen(SCXTEditor *e) : HasEditor(e)
     auto br = std::make_unique<browser_ui::BrowserPane>(editor);
     browser = std::move(br);
     addAndMakeVisible(*browser);
-    mappingPane = std::make_unique<edit_screen::MappingPane>(editor);
+    mappingPane = std::make_unique<edit_screen::MacroMappingVariantPane>(editor);
     addAndMakeVisible(*mappingPane);
 
     zoneElements = std::make_unique<ZoneOrGroupElements<ZoneTraits>>(this);

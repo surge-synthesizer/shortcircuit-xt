@@ -35,7 +35,7 @@
 #include "app/edit-screen/components/OutputPane.h"
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/shared/HeaderRegion.h"
-#include "app/edit-screen/components/MappingPane.h"
+#include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "app/play-screen/PlayScreen.h"
