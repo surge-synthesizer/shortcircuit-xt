@@ -466,7 +466,7 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
                                 VelocityRange vrange)
 {
     assert(messageController->threadingChecker.isSerialThread());
-    assert(sampleID < maxSamplesPerZone);
+    assert(sampleID < maxVariantsPerZone);
 
     // TODO: Deal with compound types more comprehensively
     // If you add a type here add it to Browser::isLoadableFile also
@@ -508,8 +508,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
         [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
             zone->terminateAllVoices();
-            zone->sampleData.samples[sID].sampleID = sample;
-            zone->sampleData.samples[sID].active = true;
+            zone->variantData.variants[sID].sampleID = sample;
+            zone->variantData.variants[sID].active = true;
             zone->attachToSample(*e.getSampleManager(), sID,
                                  (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
         },
@@ -755,7 +755,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         SCLOG("ERROR: Can't attach to sample");
                         return;
                     }
-                    auto &znSD = zn->sampleData.samples[0];
+                    auto &znSD = zn->variantData.variants[0];
 
                     auto p = region->GetPan(presetRegion);
                     // pan in SF2 is -64 to 63 so hackety hack a bit

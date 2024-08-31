@@ -195,7 +195,7 @@ void Zone::setupOnUnstream(const engine::Engine &e)
 bool Zone::attachToSample(const sample::SampleManager &manager, int index,
                           SampleInformationRead sir)
 {
-    auto &s = sampleData.samples[index];
+    auto &s = variantData.variants[index];
     if (s.sampleID.isValid())
     {
         samplePointers[index] = manager.getSample(s.sampleID);

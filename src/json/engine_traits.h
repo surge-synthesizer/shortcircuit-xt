@@ -301,7 +301,7 @@ STREAM_ENUM(engine::Group::ProcRoutingPath, engine::Group::toStringProcRoutingPa
 STREAM_ENUM(engine::Zone::VariantPlaybackMode, engine::Zone::toStringVariantPlaybackMode,
             engine::Zone::fromStringVariantPlaybackMode);
 
-SC_STREAMDEF(scxt::engine::Zone::AssociatedSample, SC_FROM({
+SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                  auto &s = from;
                  if (s.active)
                  {
@@ -346,16 +346,16 @@ SC_STREAMDEF(scxt::engine::Zone::AssociatedSample, SC_FROM({
                  }
                  else
                  {
-                     s = scxt::engine::Zone::AssociatedSample();
+                     s = scxt::engine::Zone::SingleVariant();
                      assert(!s.active);
                  }
              }));
 
-SC_STREAMDEF(scxt::engine::Zone::AssociatedSampleSet, SC_FROM({
-                 v = {{"samples", t.samples}, {"variantPlaybackMode", t.variantPlaybackMode}};
+SC_STREAMDEF(scxt::engine::Zone::Variants, SC_FROM({
+                 v = {{"variants", t.variants}, {"variantPlaybackMode", t.variantPlaybackMode}};
              }),
              SC_TO({
-                 findIf(v, "samples", result.samples);
+                 findIf(v, {"variants", "samples"}, result.variants);
                  findIf(v, "variantPlaybackMode", result.variantPlaybackMode);
              }));
 
@@ -364,14 +364,14 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  // crystalize this name for old patches. You can probably remove this
                  // code in october 2024.
                  auto useGivenName = t.givenName;
-                 if (useGivenName.empty() && !t.sampleData.samples[0].active)
+                 if (useGivenName.empty() && !t.variantData.variants[0].active)
                  {
                      SCLOG("Crystalizing given name on stream");
                      useGivenName = t.getName();
                  }
                  // but just that bit
 
-                 v = {{"sampleData", t.sampleData},     {"mappingData", t.mapping},
+                 v = {{"variantData", t.variantData},   {"mappingData", t.mapping},
                       {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
                       {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
                       {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]},
@@ -379,7 +379,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
              }),
              SC_TO({
                  auto &zone = to;
-                 findIf(v, "sampleData", zone.sampleData);
+                 findIf(v, {"variantData", "sampleData"}, zone.variantData);
                  findIf(v, "mappingData", zone.mapping);
                  findIf(v, "outputInfo", zone.outputInfo);
                  fromArrayWithSizeDifference<Traits>(v.at("processorStorage"),

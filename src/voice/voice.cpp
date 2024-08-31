@@ -207,11 +207,11 @@ template <bool OS> bool Voice::processWithOS()
     bool envGate{isGated};
     if (sampleIndex >= 0)
     {
-        auto &sdata = zone->sampleData.samples[sampleIndex];
+        auto &vdata = zone->variantData.variants[sampleIndex];
 
-        envGate = (sdata.playMode == engine::Zone::NORMAL && isGated) ||
-                  (sdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
-                  (sdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
+        envGate = (vdata.playMode == engine::Zone::NORMAL && isGated) ||
+                  (vdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
+                  (vdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
     }
 
     /*
@@ -541,7 +541,7 @@ void Voice::initializeGenerator()
 
     // but the default of course is to use the sapmle index
     auto &s = zone->samplePointers[sampleIndex];
-    auto &sampleData = zone->sampleData.samples[sampleIndex];
+    auto &variantData = zone->variantData.variants[sampleIndex];
     assert(s);
 
     GDIO.outputL = output[0];
@@ -562,23 +562,23 @@ void Voice::initializeGenerator()
     }
     GDIO.waveSize = s->sample_length;
 
-    GD.samplePos = sampleData.startSample;
+    GD.samplePos = variantData.startSample;
     GD.sampleSubPos = 0;
-    GD.loopLowerBound = sampleData.startSample;
-    GD.loopUpperBound = sampleData.endSample;
-    GD.loopFade = sampleData.loopFade;
-    GD.playbackLowerBound = sampleData.startSample;
-    GD.playbackUpperBound = sampleData.endSample;
+    GD.loopLowerBound = variantData.startSample;
+    GD.loopUpperBound = variantData.endSample;
+    GD.loopFade = variantData.loopFade;
+    GD.playbackLowerBound = variantData.startSample;
+    GD.playbackUpperBound = variantData.endSample;
     GD.direction = 1;
     GD.isFinished = false;
 
-    if (sampleData.loopActive)
+    if (variantData.loopActive)
     {
-        GD.loopLowerBound = sampleData.startLoop;
-        GD.loopUpperBound = sampleData.endLoop;
+        GD.loopLowerBound = variantData.startLoop;
+        GD.loopUpperBound = variantData.endLoop;
     }
 
-    if (sampleData.playReverse)
+    if (variantData.playReverse)
     {
         GD.samplePos = GD.playbackUpperBound;
         GD.direction = -1;
@@ -598,9 +598,9 @@ void Voice::initializeGenerator()
 
     monoGenerator = s->channels == 1;
     Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, s->bitDepth == sample::Sample::BD_F32,
-                                            sampleData.loopActive,
-                                            sampleData.loopDirection == engine::Zone::FORWARD_ONLY,
-                                            sampleData.loopMode == engine::Zone::LOOP_WHILE_GATED);
+                                            variantData.loopActive,
+                                            variantData.loopDirection == engine::Zone::FORWARD_ONLY,
+                                            variantData.loopMode == engine::Zone::LOOP_WHILE_GATED);
 }
 
 float Voice::calculateVoicePitch()
