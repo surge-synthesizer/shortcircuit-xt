@@ -172,4 +172,16 @@ void ZoneLayoutKeyboard::mouseUp(const juce::MouseEvent &e)
     }
 }
 
+juce::Rectangle<float> ZoneLayoutKeyboard::rectangleForKey(int midiNote) const
+{
+    assert(lastMidiNote > firstMidiNote);
+    auto normMidiNote = 1.0 * midiNote / (lastMidiNote - firstMidiNote);
+    auto lb = getLocalBounds().toFloat();
+    auto kw = zoomFactor * lb.getWidth() / (lastMidiNote - firstMidiNote);
+    auto x = (normMidiNote - pctStart) * zoomFactor * lb.getWidth();
+    auto res = lb.withWidth(kw).translated(x, 0);
+
+    return res;
+}
+
 } // namespace scxt::ui::app::edit_screen

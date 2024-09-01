@@ -278,7 +278,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == DRAG_SELECTED_ZONE)
     {
         auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb.withTrimmedBottom(ZoneLayoutKeyboard::keyboardHeight);
+        auto displayRegion = lb;
 
         auto kw = displayRegion.getWidth() /
                   (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote + 1);
@@ -323,7 +323,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == DRAG_VELOCITY || mouseState == DRAG_KEY || mouseState == DRAG_KEY_AND_VEL)
     {
         auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb.withTrimmedBottom(ZoneLayoutKeyboard::keyboardHeight);
+        auto displayRegion = lb;
         auto kw =
             displayRegion.getWidth() /
             (ZoneLayoutKeyboard::lastMidiNote -
@@ -478,7 +478,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         auto r = juce::Rectangle<float>(firstMousePos, e.position);
 
         auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb.withTrimmedBottom(ZoneLayoutKeyboard::keyboardHeight);
+        auto displayRegion = lb;
         auto kw =
             displayRegion.getWidth() /
             (ZoneLayoutKeyboard::lastMidiNote -
@@ -517,22 +517,35 @@ ZoneLayoutDisplay::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 
 juce::Rectangle<float> ZoneLayoutDisplay::rectangleForRange(int kL, int kH, int vL, int vH)
 {
-    auto lb = getLocalBounds().toFloat().withTrimmedTop(1.f);
-    auto displayRegion = lb.withTrimmedBottom(ZoneLayoutKeyboard::keyboardHeight);
-    auto kw = displayRegion.getWidth() /
-              (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
-    auto vh = displayRegion.getHeight() / 127.0;
+    auto lb = getLocalBounds().toFloat().withTrimmedTop(2.f);
+    auto displayRegion = lb;
 
-    float x0 = (kL - ZoneLayoutKeyboard::firstMidiNote) * kw;
-    float x1 = (kH - ZoneLayoutKeyboard::firstMidiNote + 1) * kw;
+    // OK so keys first
+    auto normkL = 1.0 * kL / (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
+    auto normkH = 1.0 * kH / (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
+
+    auto sckL = (normkL - hPct) * hZoom;
+    auto sckH = (normkH - hPct) * hZoom;
+
+    auto x0 = sckL * lb.getWidth();
+    auto x1 = sckH * lb.getWidth();
+
     if (x1 < x0)
         std::swap(x1, x0);
-    float y0 = (127 - vL) * vh + lb.getY();
-    float y1 = (127 - vH) * vh + lb.getY();
+
+    // Then velocities
+    auto normvL = 1.0 - 1.0 * vL / 128;
+    auto normvH = 1.0 - 1.0 * vH / 128;
+
+    auto scvL = (normvL - vPct) * vZoom;
+    auto scvH = (normvH - vPct) * vZoom;
+
+    float y0 = scvL * lb.getHeight();
+    float y1 = scvH * lb.getHeight();
     if (y1 < y0)
         std::swap(y1, y0);
 
-    return {x0, y0, x1 - x0, y1 - y0};
+    return {(float)x0, (float)y0, (float)(x1 - x0), (float)(y1 - y0)};
 }
 
 void ZoneLayoutDisplay::paint(juce::Graphics &g)
@@ -543,7 +556,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
     // Draw the background
     {
         auto lb = getLocalBounds().toFloat().withTrimmedTop(1.f);
-        auto displayRegion = lb.withTrimmedBottom(ZoneLayoutKeyboard::keyboardHeight);
+        auto displayRegion = lb;
 
         auto dashCol = editor->themeColor(theme::ColorMap::generic_content_low, 0.4f);
         g.setColour(dashCol);
@@ -555,17 +568,24 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         dashCol = dashCol.withAlpha(0.2f);
         g.setColour(dashCol);
 
-        auto dh = displayRegion.getHeight() / 4.0;
-        for (int i = 1; i < 4; ++i)
+        auto dVel = 1.0 / 4.0;
+        if (vZoom >= 2.0)
+            dVel = 1.0 / 8.0;
+        if (vZoom >= 3.0)
+            dVel = 1.0 / 16.0;
+        for (float fv = 0; fv < 1.0; fv += dVel)
         {
-            g.drawHorizontalLine(i * dh, lb.getX(), lb.getX() + lb.getWidth());
+            auto y = (fv - vPct) * vZoom * getHeight();
+            g.drawHorizontalLine(y, lb.getX(), lb.getX() + lb.getWidth());
         }
 
-        auto oct = displayRegion.getWidth() / 127.0 * 12.0;
-        for (int i = 0; i < 127; i += 12)
+        auto hMul = 1.0;
+        if (hZoom >= 2.0)
+            hMul = 0.5;
+        for (float f = 0; f <= 1.0; f += hMul * 12.0 / 128.0)
         {
-            auto o = i / 12;
-            g.drawVerticalLine(o * oct, lb.getY(), lb.getY() + lb.getHeight());
+            auto x = (f - hPct) * hZoom * getWidth();
+            g.drawVerticalLine(x, lb.getY(), lb.getY() + lb.getHeight());
         }
     }
 
@@ -658,7 +678,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             // lower left corner
             {
-                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart - 1, vel.velStart,
+                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart, vel.velStart,
                                          vel.velStart + vel.fadeStart)};
 
                 double scaleY{r.getHeight() / r.getWidth()};
@@ -675,7 +695,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             // top left
             {
-                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart - 1,
+                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart,
                                          vel.velEnd - vel.fadeEnd, vel.velEnd)};
 
                 float xRange{r.getWidth()};
@@ -696,7 +716,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             // left side
             {
-                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart - 1,
+                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart,
                                          vel.velStart + vel.fadeStart, vel.velEnd - vel.fadeEnd)};
                 juce::ColourGradient grad{c1,           r.getX(), r.getY(), c2,
                                           r.getRight(), r.getY(), false};
@@ -742,7 +762,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             // Right side
             {
-                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd,
+                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd, kb.keyEnd,
                                          vel.velStart + vel.fadeStart, vel.velEnd - vel.fadeEnd)};
                 juce::ColourGradient grad{c2,           r.getX(), r.getY(), c1,
                                           r.getRight(), r.getY(), false};
@@ -753,7 +773,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             // bottom right corner
             {
-                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd, vel.velStart,
+                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd, kb.keyEnd, vel.velStart,
                                          vel.velStart + vel.fadeStart)};
 
                 float xRange{r.getWidth()};
@@ -773,7 +793,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             // top left
             {
-                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd,
+                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd, kb.keyEnd,
                                          vel.velEnd - vel.fadeEnd, vel.velEnd)};
 
                 float xRange{r.getWidth()};
@@ -890,9 +910,8 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
     assert(ZoneLayoutKeyboard::lastMidiNote > ZoneLayoutKeyboard::firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto bip = getBoundsInParent();
-    auto keyRegion = lb.withTop(lb.getBottom() - ZoneLayoutKeyboard::keyboardHeight + 1);
-    auto kw = keyRegion.getWidth() /
-              (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
+    auto kw =
+        lb.getWidth() / (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
 
     auto rootKey = std::clamp(
         (p.getX() - bip.getX()) * 1.f / kw + ZoneLayoutKeyboard::firstMidiNote,
