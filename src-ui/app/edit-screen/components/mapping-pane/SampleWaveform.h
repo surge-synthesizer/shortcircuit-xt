@@ -48,8 +48,14 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     SampleWaveform(VariantDisplay *d);
     void paint(juce::Graphics &g) override;
     void resized() override;
-
-    juce::Path pathForSample();
+    void visibilityChanged() override
+    {
+        if (isVisible())
+        {
+            rebuildLegacyPathForSample();
+            repaint();
+        }
+    }
 
     juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ, fadeLoopHz;
     void rebuildHotZones();
@@ -69,6 +75,12 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
         void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
     } samplePlaybackPosition;
     void updateSamplePlaybackPosition(int64_t samplePos);
+
+    void rebuildPaths();
+
+    juce::Path legacyPath;
+    juce::Path upperEnvelope, lowerEnvelope;
+    void rebuildLegacyPathForSample();
 
     int64_t sampleForXPixel(float xpos);
     int xPixelForSample(int64_t samplePos, bool doClamp = true);
