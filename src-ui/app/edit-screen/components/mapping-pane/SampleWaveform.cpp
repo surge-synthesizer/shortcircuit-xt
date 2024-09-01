@@ -141,12 +141,13 @@ void SampleWaveform::rebuildEnvelopePaths()
      * OK so we have pctStart and zoomFactor so whats that in sample space
      */
     auto l = samp->getSampleLength();
-    auto startSample = std::clamp((int)std::floor(l * pctStart), 0, (int)l);
+    int samplePad{10}; // a fudge for very very high zooms stops start glitches
+    auto startSample = std::clamp((int)std::floor(l * pctStart) - samplePad, 0, (int)l);
     auto numSamples = (int)std::ceil(1.f * l / zoomFactor);
-    auto endSample = std::clamp(startSample + numSamples, 0, (int)l);
+    auto endSample = std::clamp(startSample + numSamples + 2 * samplePad, 0, (int)l);
 
     std::vector<std::pair<size_t, float>> topLine, bottomLine;
-    auto fac = 1.0 * numSamples / r.getWidth();
+    auto fac = std::max(1.0 * numSamples / r.getWidth(), 1.0);
 
     auto downSampleForUI = [startSample, endSample, fac, &topLine, &bottomLine](auto *data) {
         using T = std::remove_pointer_t<decltype(data)>;
@@ -356,6 +357,9 @@ void SampleWaveform::paint(juce::Graphics &g)
     {
         return;
     }
+
+    g.setColour(editor->themeColor(theme::ColorMap::grid_secondary));
+    g.drawHorizontalLine(getHeight() / 2, 0, getWidth());
 
     auto l = samp->getSampleLength();
 
