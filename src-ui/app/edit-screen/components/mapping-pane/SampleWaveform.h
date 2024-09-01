@@ -86,6 +86,7 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
 
     int64_t sampleForXPixel(float xpos);
     int xPixelForSample(int64_t samplePos, bool doClamp = true);
+    int yPixelForAmplitude(float amp, float zeroPoint, float extraScale);
     int xPixelForSampleDistance(int64_t sampleDistance);
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
@@ -94,7 +95,7 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     void mouseDoubleClick(const juce::MouseEvent &e) override;
 
     Component *associatedComponent() override { return this; }
-    bool supportsVerticalZoom() const override { return false; }
+    bool supportsVerticalZoom() const override { return true; }
     bool supportsHorizontalZoom() const override { return true; }
 
     float pctStart{0.f}, zoomFactor{1.f};
@@ -102,6 +103,15 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     {
         pctStart = ps;
         zoomFactor = zf;
+        rebuildHotZones();
+        repaint();
+    }
+
+    float vStart{0.f}, vZoom{1.f};
+    void setVerticalZoom(float ps, float zf) override
+    {
+        vStart = ps;
+        vZoom = zf;
         rebuildHotZones();
         repaint();
     }

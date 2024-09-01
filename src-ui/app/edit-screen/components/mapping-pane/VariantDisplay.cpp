@@ -51,8 +51,8 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     variantPlayModeLabel->setText("Variant");
     addAndMakeVisible(*variantPlayModeLabel);
 
-    variantPlaymodeButton = std::make_unique<juce::TextButton>("Variant");
-    variantPlaymodeButton->onClick = [this]() { showVariantPlaymodeMenu(); };
+    variantPlaymodeButton = std::make_unique<sst::jucegui::components::TextPushButton>();
+    variantPlaymodeButton->setOnCallback([this]() { showVariantPlaymodeMenu(); });
     addAndMakeVisible(*variantPlaymodeButton);
 
     fileLabel = std::make_unique<sst::jucegui::components::Label>();
@@ -71,10 +71,16 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     prevFileButton->onClick = [this]() { selectNextFile(false); };
     addAndMakeVisible(*prevFileButton);
 
-    fileInfoButton = std::make_unique<juce::TextButton>("i");
-    fileInfoButton->setClickingTogglesState(true);
-    fileInfoButton->onClick = [this]() { showFileInfos(); };
-    addAndMakeVisible(*fileInfoButton);
+    auto ms = std::make_unique<sst::jucegui::components::ToggleButton>();
+    ms->setLabel("I");
+    addAndMakeVisible(*ms);
+    auto ds = std::make_unique<boolToggle_t>(ms, fileInfoShowing);
+    ds->onValueChanged = [w = juce::Component::SafePointer(this)](auto v) {
+        if (w)
+            w->showFileInfos();
+    };
+
+    fileInfoButton = std::move(ds);
 
     fileInfos = std::make_unique<FileInfos>();
     addChildComponent(*fileInfos);
@@ -301,14 +307,14 @@ void VariantDisplay::resized()
     variantPlayModeLabel->setBounds({getWidth() / 2, 0, 40, p.getHeight()});
     variantPlaymodeButton->setBounds({variantPlayModeLabel->getRight(), 0, 60, p.getHeight()});
 
-    fileInfoButton->setBounds(
+    fileInfoButton->widget->setBounds(
         {variantPlaymodeButton->getRight() + 5, 0, p.getHeight(), p.getHeight()});
-    fileLabel->setBounds({fileInfoButton->getRight(), 0, 30, p.getHeight()});
+    fileLabel->setBounds({fileInfoButton->widget->getRight(), 0, 30, p.getHeight()});
     fileButton->setBounds({fileLabel->getRight(), 0, 100, p.getHeight()});
     prevFileButton->setBounds({fileButton->getRight(), 0, p.getHeight(), p.getHeight()});
     nextFileButton->setBounds({prevFileButton->getRight(), 0, p.getHeight(), p.getHeight()});
 
-    fileInfos->setBounds({getWidth() / 4, 20, getWidth() / 2, 20});
+    fileInfos->setBounds({5, 20, getWidth(), 20});
 }
 
 void VariantDisplay::rebuild()
@@ -353,16 +359,16 @@ void VariantDisplay::rebuild()
     switch (variantView.variantPlaybackMode)
     {
     case engine::Zone::FORWARD_RR:
-        variantPlaymodeButton->setButtonText("Round robin");
+        variantPlaymodeButton->setLabel("Round robin");
         break;
     case engine::Zone::TRUE_RANDOM:
-        variantPlaymodeButton->setButtonText("Random");
+        variantPlaymodeButton->setLabel("Random");
         break;
     case engine::Zone::RANDOM_CYCLE:
-        variantPlaymodeButton->setButtonText("Random per Cycle");
+        variantPlaymodeButton->setLabel("Random per Cycle");
         break;
     case engine::Zone::UNISON:
-        variantPlaymodeButton->setButtonText("Unison");
+        variantPlaymodeButton->setLabel("Unison");
         break;
     }
 

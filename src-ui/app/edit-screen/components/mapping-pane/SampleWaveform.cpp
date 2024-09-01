@@ -124,6 +124,20 @@ int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
     }
 }
 
+int SampleWaveform::yPixelForAmplitude(float val, float baselineShift, float allotedHeight)
+{
+    // val is -1..1 so invert it
+    auto nval = -val;
+    // Now we want it starting at baselineShift using half the allottedHeight
+    nval = (nval + 1) * 0.5 * allotedHeight; // now we are betwen 0 and allotted height
+    nval += baselineShift;
+
+    // OK so now we have it in unzoomed coordantes so
+    nval = (nval - vStart) * vZoom;
+
+    // and finaly add the height factor
+    return nval * getHeight();
+}
 void SampleWaveform::rebuildEnvelopePaths()
 {
     if (display->selectedVariation < 0 || display->selectedVariation > scxt::maxVariantsPerZone)
@@ -213,19 +227,16 @@ void SampleWaveform::rebuildEnvelopePaths()
         lowerStroke[ch] = juce::Path();
 
         auto sVToPx = [this, ch](float val) {
-            // val is -1..1 so move it to 0..1 inverted
-            auto nval = (-val + 1) * 0.5;
-            // then scale it by height if used channels is one
-            if (usedChannels != 2)
+            if (usedChannels == 2)
             {
-                return nval * getHeight();
+                if (ch == 0)
+                    return yPixelForAmplitude(val, 0.0, 0.5);
+                else
+                    return yPixelForAmplitude(val, 0.5, 0.5);
             }
             else
             {
-                if (ch == 0)
-                    return nval * getHeight() / 2;
-                else
-                    return nval * getHeight() / 2 + getHeight() / 2;
+                return yPixelForAmplitude(val, 0., 1);
             }
         };
 
@@ -377,12 +388,13 @@ void SampleWaveform::paint(juce::Graphics &g)
     g.setColour(editor->themeColor(theme::ColorMap::grid_secondary));
     if (usedChannels == 2)
     {
-        g.drawHorizontalLine(getHeight() * 0.25, 0, getWidth());
-        g.drawHorizontalLine(getHeight() * 0.75, 0, getWidth());
+        g.drawHorizontalLine((0.25 - vStart) * getHeight() * vZoom, 0, getWidth());
+        g.drawHorizontalLine((0.75 - vStart) * getHeight() * vZoom, 0, getWidth());
     }
     else
     {
-        g.drawHorizontalLine(getHeight() / 2, 0, getWidth());
+        g.setColour(juce::Colours::red);
+        g.drawHorizontalLine((0.5 - vStart) * getHeight() * vZoom, 0, getWidth());
     }
 
     auto l = samp->getSampleLength();
@@ -394,35 +406,39 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto a1b = editor->themeColor(theme::ColorMap::accent_1b);
     auto a2a = editor->themeColor(theme::ColorMap::accent_2a);
 
-    for (int ch = 0; ch < usedChannels; ++ch)
-    {
-        auto gStart = 0.f;
-        auto gCenter = getHeight() / 2.f;
-        auto gEnd = getHeight() * 1.f;
+    auto gPos = [this](auto ch) {
+        auto gStart = 0.5f;
+        auto gCenter = 0.5f;
+        auto gEnd = 1.f;
 
         if (usedChannels == 2)
         {
             if (ch == 0)
             {
                 gStart = 0;
-                gCenter = getHeight() * 0.25f;
-                gEnd = getHeight() * 0.5f;
+                gCenter = 0.25f;
+                gEnd = 0.5f;
             }
             else
             {
-                gStart = getHeight() * 0.5f;
-                gCenter = getHeight() * 0.75f;
-                gEnd = getHeight() * 1.f;
+                gStart = 0.5f;
+                gCenter = 0.75f;
+                gEnd = 1.f;
             }
         }
+        gStart = (gStart - vStart) * vZoom * getHeight();
+        gCenter = (gCenter - vStart) * vZoom * getHeight();
+        gEnd = (gEnd - vStart) * vZoom * getHeight();
+        return std::make_tuple(gStart, gCenter, gEnd);
+    };
+    for (int ch = 0; ch < usedChannels; ++ch)
+    {
+        auto [gStart, gCenter, gEnd] = gPos(ch);
         auto gTop = juce::ColourGradient{a1b, 0, gStart, a1b.withAlpha(0.32f), 0, gCenter, false};
         auto gBot = juce::ColourGradient{a1b.withAlpha(0.32f), 0, gCenter, a1b, 0, gEnd, false};
 
         auto sTop = juce::ColourGradient{a1a, 0, gStart, a1a.withAlpha(0.32f), 0, gCenter, false};
         auto sBot = juce::ColourGradient{a1a.withAlpha(0.32f), 0, gCenter, a1a, 0, gEnd, false};
-
-        auto lTop = juce::ColourGradient{a2a, 0, gStart, a2a.withAlpha(0.32f), 0, gCenter, false};
-        auto lBot = juce::ColourGradient{a2a.withAlpha(0.32f), 0, gCenter, a2a, 0, gEnd, false};
 
         if (ssp >= 0)
         {
@@ -466,27 +482,28 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
             g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
         }
+    }
+    if (v.loopActive)
+    {
+        auto ls = std::clamp(xPixelForSample(v.startLoop), 0, getWidth());
+        auto le = std::clamp(xPixelForSample(v.endLoop), 0, getWidth());
+        auto a2b = editor->themeColor(theme::ColorMap::accent_2b);
+        auto dr = r.withLeft(ls).withRight(le);
 
-        if (v.loopActive)
+        g.setColour(editor->themeColor(theme::ColorMap::bg_2));
+        g.fillRect(dr);
+        g.setColour(a2b.withAlpha(0.2f));
+        g.fillRect(dr);
+
+        for (int ch = 0; ch < 2; ++ch)
         {
-            auto ls = std::clamp(xPixelForSample(v.startLoop), 0, getWidth());
-            auto le = std::clamp(xPixelForSample(v.endLoop), 0, getWidth());
+            auto [gStart, gCenter, gEnd] = gPos(ch);
 
+            auto lTop =
+                juce::ColourGradient{a2a, 0, gStart, a2a.withAlpha(0.32f), 0, gCenter, false};
+            auto lBot = juce::ColourGradient{a2a.withAlpha(0.32f), 0, gCenter, a2a, 0, gEnd, false};
             if (!((ls < 0 && le < 0) || (ls > getWidth() && le > getWidth())))
             {
-                auto a2b = editor->themeColor(theme::ColorMap::accent_2b);
-                auto dr = r.withLeft(ls).withRight(le);
-                if (usedChannels == 2)
-                {
-                    if (ch == 0)
-                        dr = dr.withTrimmedBottom(getHeight() / 2);
-                    else
-                        dr = dr.withTrimmedTop(getHeight() / 2);
-                }
-                g.setColour(editor->themeColor(theme::ColorMap::bg_2));
-                g.fillRect(dr);
-                g.setColour(a2b.withAlpha(0.2f));
-                g.fillRect(dr);
 
                 juce::Graphics::ScopedSaveState gs(g);
                 g.reduceClipRegion(dr);
