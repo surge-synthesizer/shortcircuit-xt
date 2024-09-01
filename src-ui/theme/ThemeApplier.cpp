@@ -356,7 +356,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(Base::styleClass, Base::background_hover, cols.getHover(ColorMap::bg_2));
 
     base->setFont(BaseLabel::styleClass, BaseLabel::labelfont,
-                  juce::Font(juce::Font::plain).withPointHeight(12));
+                  juce::Font(juce::Font::plain).withPointHeight(11));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor,
                     cols.get(ColorMap::generic_content_medium));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor_hover,
