@@ -164,7 +164,7 @@ void SampleWaveform::rebuildEnvelopePaths()
                 seedmx = -100.f;
                 seedmn = 100.f;
             }
-            auto mx = seedmn;
+            auto mx = seedmx;
             auto mn = seedmn;
 
             T normFactor{1};
@@ -207,7 +207,6 @@ void SampleWaveform::rebuildEnvelopePaths()
             jassertfalse;
         }
 
-        bool first{true};
         upperFill[ch] = juce::Path();
         upperStroke[ch] = juce::Path();
         lowerFill[ch] = juce::Path();
@@ -229,6 +228,8 @@ void SampleWaveform::rebuildEnvelopePaths()
                     return nval * getHeight() / 2 + getHeight() / 2;
             }
         };
+
+        bool first{true};
         for (const auto &[smp, val] : topLine)
         {
             auto pos = xPixelForSample(smp);
@@ -247,6 +248,7 @@ void SampleWaveform::rebuildEnvelopePaths()
             }
         }
 
+        first = true;
         for (const auto &[smp, val] : bottomLine)
         {
             auto pos = xPixelForSample(smp);
@@ -583,7 +585,7 @@ void SampleWaveform::resized()
 
 void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
 {
-    auto x = xPixelForSample(samplePos);
-    samplePlaybackPosition.setTopLeftPosition(x, 0);
+    // auto x = xPixelForSample(samplePos);
+    // samplePlaybackPosition.setTopLeftPosition(x, 0);
 }
 } // namespace scxt::ui::app::edit_screen

@@ -232,13 +232,17 @@ void SCXTEditor::idle()
         }
     }
 
+#if 0
+    /*
+     * This basically doesn't work.
+     */
     if (editScreen->isVisible())
     {
         if (currentLeadZoneSelection.has_value())
         {
+            bool anyActive{false};
             for (const auto &v : sharedUiMemoryState.voiceDisplayItems)
             {
-
                 if (v.active && v.group == currentLeadZoneSelection->group &&
                     v.part == currentLeadZoneSelection->part &&
                     v.zone == currentLeadZoneSelection->zone)
@@ -246,8 +250,13 @@ void SCXTEditor::idle()
                     editScreen->updateSamplePlaybackPosition(v.sample, v.samplePos);
                 }
             }
+            if (!anyActive)
+            {
+                editScreen->hideSamplePlaybackPosition();
+            }
         }
     }
+#endif
 
     headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],
                              sharedUiMemoryState.busVULevels[0][1]);

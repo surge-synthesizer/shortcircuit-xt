@@ -236,18 +236,19 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     if (rebuildTabs)
     {
         auto selectedTab{selectedVariation};
+        auto bg2 = editor->themeColor(theme::ColorMap::bg_2);
         waveformsTabbedGroup->clearTabs();
         for (auto i = 0; i < maxVariantsPerZone; ++i)
         {
             if (variantView.variants[i].active)
             {
-                waveformsTabbedGroup->addTab(std::to_string(i + 1), juce::Colours::darkgrey,
+                waveformsTabbedGroup->addTab(std::to_string(i + 1), bg2,
                                              waveforms[i].waveformViewport.get(), false, i);
             }
         }
         if (waveformsTabbedGroup->getNumTabs() < maxVariantsPerZone)
         {
-            waveformsTabbedGroup->addTab("+", juce::Colours::darkgrey,
+            waveformsTabbedGroup->addTab("+", bg2,
                                          waveforms[maxVariantsPerZone - 1].waveformViewport.get(),
                                          false, maxVariantsPerZone - 1);
         }
