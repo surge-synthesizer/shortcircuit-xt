@@ -34,6 +34,9 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
+
+#include "sst/jucegui/component-adapters/DiscreteToReference.h"
 #include "app/HasEditor.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -155,7 +158,7 @@ struct VariantDisplay : juce::Component, HasEditor
     void showFileBrowser();
     void showFileInfos()
     {
-        auto show{fileInfoButton->getToggleState()};
+        auto show{fileInfoShowing};
         fileInfos->setVisible(show);
     }
 
@@ -164,9 +167,16 @@ struct VariantDisplay : juce::Component, HasEditor
     void showVariantPlaymodeMenu();
     void showLoopDirectionMenu();
 
+    using boolToggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<
+        sst::jucegui::components::ToggleButton, bool>;
+    bool fileInfoShowing{false};
+
     std::unique_ptr<sst::jucegui::components::Label> playModeLabel, variantPlayModeLabel, fileLabel;
+    std::unique_ptr<boolToggle_t> fileInfoButton;
+
+    std::unique_ptr<sst::jucegui::components::TextPushButton> variantPlaymodeButton;
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton,
-        variantPlaymodeButton, fileInfoButton, fileButton, nextFileButton, prevFileButton;
+        fileButton, nextFileButton, prevFileButton;
 
     struct FileInfos : juce::Component
     {
@@ -178,10 +188,10 @@ struct VariantDisplay : juce::Component, HasEditor
                 addAndMakeVisible(*comp);
             };
 
-            createComp(srLabel, "Sample Rate: ");
-            createComp(bdLabel, "Bit Depth: ");
-            createComp(sizeLabel, "Size: ");
-            createComp(lengthLabel, "Length: ");
+            createComp(srLabel, "SR: ");
+            createComp(bdLabel, "BD: ");
+            createComp(sizeLabel, "SMP: ");
+            createComp(lengthLabel, "LEN: ");
 
             createComp(srVal, "Sample Rate Val");
             createComp(bdVal, "Bit Depth Val");
@@ -192,24 +202,24 @@ struct VariantDisplay : juce::Component, HasEditor
         void resized()
         {
             auto p{getLocalBounds().withWidth(40)};
-            srLabel->setBounds(p.withWidth(60));
+            srLabel->setBounds(p.withWidth(30));
             p.translate(srLabel->getWidth(), 0);
-            srVal->setBounds(p);
+            srVal->setBounds(p.withWidth(60));
             p.translate(srVal->getWidth(), 0);
 
-            bdLabel->setBounds(p.withWidth(60));
+            bdLabel->setBounds(p.withWidth(30));
             p.translate(bdLabel->getWidth(), 0);
             bdVal->setBounds(p.withWidth(60));
             p.translate(bdVal->getWidth(), 0);
 
-            sizeLabel->setBounds(p);
+            sizeLabel->setBounds(p.withWidth(30));
             p.translate(sizeLabel->getWidth(), 0);
-            sizeVal->setBounds(p);
+            sizeVal->setBounds(p.withWidth(60));
             p.translate(sizeVal->getWidth(), 0);
 
-            lengthLabel->setBounds(p);
+            lengthLabel->setBounds(p.withWidth(30));
             p.translate(lengthLabel->getWidth(), 0);
-            lengthVal->setBounds(p);
+            lengthVal->setBounds(p.withWidth(60));
             p.translate(lengthVal->getWidth(), 0);
         }
 
