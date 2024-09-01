@@ -72,7 +72,9 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
 
     struct PlaybackCursor : juce::Component
     {
-        void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::white); }
+        void paint(juce::Graphics &g) override
+        { /*g.fillAll(juce::Colours::white);*/
+        }
     } samplePlaybackPosition;
     void updateSamplePlaybackPosition(int64_t samplePos);
 
