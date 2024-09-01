@@ -40,6 +40,7 @@ SampleWaveform::SampleWaveform(VariantDisplay *d) : display(d), HasEditor(d->edi
 
 void SampleWaveform::rebuildHotZones()
 {
+    rebuildLegacyPathForSample();
     static constexpr int hotZoneSize{10};
     auto &v = display->variantView.variants[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
@@ -64,6 +65,7 @@ void SampleWaveform::rebuildHotZones()
         juce::Rectangle<int>(le + r.getX() - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
 
     fadeLoopHz = juce::Rectangle<int>(r.getX() + ls - fade, r.getY(), fade, r.getHeight());
+    repaint();
 }
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
@@ -122,17 +124,17 @@ int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
     }
 }
 
-juce::Path SampleWaveform::pathForSample()
+void SampleWaveform::rebuildLegacyPathForSample()
 {
-    juce::Path res;
+    if (display->selectedVariation < 0 || display->selectedVariation > scxt::maxVariantsPerZone)
+        return;
 
     auto r = getLocalBounds();
     auto &v = display->variantView.variants[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
     {
-        SCLOG("Null Sample: Null Path");
-        return res;
+        return;
     }
 
     /*
@@ -145,14 +147,21 @@ juce::Path SampleWaveform::pathForSample()
 
     std::vector<std::pair<size_t, float>> topLine, bottomLine;
     auto fac = 1.0 * numSamples / r.getWidth();
-    fac = std::max(fac, 20.0);
 
     auto downSampleForUI = [startSample, endSample, fac, &topLine, &bottomLine](auto *data) {
         using T = std::remove_pointer_t<decltype(data)>;
         double c = startSample;
         int ct = 0;
-        T mx = std::numeric_limits<T>::min();
-        T mn = std::numeric_limits<T>::max();
+        auto seedmx = std::numeric_limits<T>::min();
+        auto seedmn = std::numeric_limits<T>::max();
+
+        if constexpr (std::is_same_v<T, float>)
+        {
+            seedmx = -100.f;
+            seedmn = 100.f;
+        }
+        auto mx = seedmn;
+        auto mn = seedmn;
 
         T normFactor{1};
         if constexpr (std::is_same_v<T, int16_t>)
@@ -163,19 +172,23 @@ juce::Path SampleWaveform::pathForSample()
         {
             if (c + fac < s)
             {
-                double nmx = 1.0 - mx * 1.0 / normFactor;
-                double nmn = 1.0 - mn * 1.0 / normFactor;
+                // nmx are in -1..1 coordinates. We want to go to 0..1 coordinates
+                // and opposite
+                mx = std::max(T(0), mx);
+                mn = std::min(T(0), mn);
+                double nmx = mx * 1.0 / normFactor;
+                double nmn = mn * 1.0 / normFactor;
 
-                nmx = (nmx + 1) * 0.25;
-                nmn = (nmn + 1) * 0.25;
+                double pmx = (-nmx + 1) * 0.5;
+                double pmn = (-nmn + 1) * 0.5;
 
-                topLine.emplace_back(s, nmx);
-                bottomLine.emplace_back(s, nmn);
+                topLine.emplace_back(s, pmx);
+                bottomLine.emplace_back(s, pmn);
 
                 c += fac;
                 ct++;
-                mx = std::numeric_limits<T>::min();
-                mn = std::numeric_limits<T>::max();
+                mx = seedmx;
+                mn = seedmn;
             }
             mx = std::max(data[s], mx);
             mn = std::min(data[s], mn);
@@ -197,8 +210,13 @@ juce::Path SampleWaveform::pathForSample()
         jassertfalse;
     }
 
-    std::reverse(bottomLine.begin(), bottomLine.end());
+    juce::Path res;
+
     bool first{true};
+    upperEnvelope = juce::Path();
+    lowerEnvelope = juce::Path();
+    upperEnvelope.startNewSubPath(0, getHeight() / 2);
+    lowerEnvelope.startNewSubPath(getWidth(), getHeight() / 2);
     for (auto &[smp, val] : topLine)
     {
         auto pos = xPixelForSample(smp);
@@ -211,7 +229,20 @@ juce::Path SampleWaveform::pathForSample()
         {
             res.lineTo(pos, val * r.getHeight());
         }
+        upperEnvelope.lineTo(pos, val * r.getHeight());
     }
+
+    std::reverse(bottomLine.begin(), bottomLine.end());
+
+    first = true;
+    for (auto &[smp, val] : bottomLine)
+    {
+        auto pos = xPixelForSample(smp);
+        lowerEnvelope.lineTo(pos, val * r.getHeight());
+    }
+
+    upperEnvelope.lineTo(getWidth(), getHeight() / 2);
+    lowerEnvelope.lineTo(0, getHeight() / 2);
 
     for (auto &[smp, val] : bottomLine)
     {
@@ -221,7 +252,7 @@ juce::Path SampleWaveform::pathForSample()
     }
     res.closeSubPath();
 
-    return res;
+    legacyPath = res;
 }
 
 void SampleWaveform::mouseDown(const juce::MouseEvent &e)
@@ -297,6 +328,7 @@ void SampleWaveform::mouseDoubleClick(const juce::MouseEvent &e)
 
 void SampleWaveform::paint(juce::Graphics &g)
 {
+    g.fillAll(editor->themeColor(theme::ColorMap::bg_2));
     if (!display->active)
         return;
 
@@ -310,64 +342,123 @@ void SampleWaveform::paint(juce::Graphics &g)
 
     auto l = samp->getSampleLength();
 
-    auto wfp = pathForSample();
+    /*g.setColour(juce::Colours::red);
+    g.fillPath(upperEnvelope);
+    g.setColour(juce::Colours::blue);
+    g.fillPath(lowerEnvelope);
+     */
+
+    auto ssp = xPixelForSample(v.startSample);
+    auto esp = xPixelForSample(v.endSample);
+
+    auto a1b = editor->themeColor(theme::ColorMap::accent_1b);
+    auto gTop = juce::ColourGradient{a1b, 0, 0, a1b.withAlpha(0.32f), 0, getHeight() / 2.f, false};
+    auto gBot = juce::ColourGradient{a1b.withAlpha(0.32f), 0,    getHeight() / 2.f, a1b, 0,
+                                     getHeight() * 1.f,    false};
+
+    auto a1a = editor->themeColor(theme::ColorMap::accent_1a);
+    auto sTop = juce::ColourGradient{a1a, 0, 0, a1a.withAlpha(0.32f), 0, getHeight() / 2.f, false};
+    auto sBot = juce::ColourGradient{a1a.withAlpha(0.32f), 0,    getHeight() / 2.f, a1a, 0,
+                                     getHeight() * 1.f,    false};
+
+    auto a2a = editor->themeColor(theme::ColorMap::accent_2a);
+    auto lTop = juce::ColourGradient{a2a, 0, 0, a2a.withAlpha(0.32f), 0, getHeight() / 2.f, false};
+    auto lBot = juce::ColourGradient{a2a.withAlpha(0.32f), 0,    getHeight() / 2.f, a2a, 0,
+                                     getHeight() * 1.f,    false};
+
+    if (ssp >= 0)
     {
         juce::Graphics::ScopedSaveState gs(g);
-
-        g.setColour(juce::Colour(0x30, 0x30, 0x40));
-        g.fillRect(r);
-
-        g.setColour(juce::Colour(0xFF, 0x90, 0x00).withAlpha(0.2f));
-        g.fillPath(wfp);
-        g.setColour(juce::Colours::white.withAlpha(0.4f));
-        g.strokePath(wfp, juce::PathStrokeType(1.f));
-    }
-
-    {
-        juce::Graphics::ScopedSaveState gs(g);
-        auto cr =
-            r.withLeft(xPixelForSample(v.startSample)).withRight(xPixelForSample(v.endSample));
+        auto cr = r.withRight(ssp);
         g.reduceClipRegion(cr);
 
-        g.setColour(juce::Colour(0x15, 0x15, 0x15));
-        g.fillRect(r);
+        g.setGradientFill(gTop);
+        g.fillPath(upperEnvelope);
 
-        g.setColour(juce::Colour(0xFF, 0x90, 0x00));
-        g.fillPath(wfp);
+        g.setGradientFill(gBot);
+        g.fillPath(lowerEnvelope);
+    }
+    if (esp <= getWidth())
+    {
+        juce::Graphics::ScopedSaveState gs(g);
+        auto cr = r.withTrimmedLeft(esp);
+        g.reduceClipRegion(cr);
 
-        g.setColour(juce::Colours::white);
-        g.strokePath(wfp, juce::PathStrokeType(1.f));
+        g.setGradientFill(gTop);
+        g.fillPath(upperEnvelope);
+
+        g.setGradientFill(gBot);
+        g.fillPath(lowerEnvelope);
+    }
+
+    auto spC = std::clamp(ssp, 0, getWidth());
+    auto epC = std::clamp(esp, 0, getWidth());
+    {
+        juce::Graphics::ScopedSaveState gs(g);
+        auto cr = r.withLeft(spC).withRight(epC);
+        g.reduceClipRegion(cr);
+
+        g.setGradientFill(sTop);
+        g.fillPath(upperEnvelope);
+
+        g.setGradientFill(sBot);
+        g.fillPath(lowerEnvelope);
+
+        g.setColour(a1a);
+        g.strokePath(upperEnvelope, juce::PathStrokeType(1));
+        g.strokePath(lowerEnvelope, juce::PathStrokeType(1));
     }
 
     if (v.loopActive)
     {
-        juce::Graphics::ScopedSaveState gs(g);
-        auto cr = r.withLeft(xPixelForSample(v.startLoop)).withRight(xPixelForSample(v.endLoop));
-        g.reduceClipRegion(cr);
+        auto ls = std::clamp(xPixelForSample(v.startLoop), 0, getWidth());
+        auto le = std::clamp(xPixelForSample(v.endLoop), 0, getWidth());
 
-        g.setColour(juce::Colour(0x15, 0x15, 0x35));
-        g.fillRect(r);
+        if (!((ls < 0 && le < 0) || (ls > getWidth() && le > getWidth())))
+        {
+            auto a2b = editor->themeColor(theme::ColorMap::accent_2b);
+            auto dr = r.withLeft(ls).withRight(le);
+            g.setColour(editor->themeColor(theme::ColorMap::bg_2));
+            g.fillRect(dr);
+            g.setColour(a2b.withAlpha(0.2f));
+            g.fillRect(dr);
 
-        g.setColour(juce::Colour(0x90, 0x90, 0xFF));
-        g.fillPath(wfp);
+            juce::Graphics::ScopedSaveState gs(g);
+            g.reduceClipRegion(dr);
 
-        g.setColour(juce::Colours::white);
-        g.strokePath(wfp, juce::PathStrokeType(1.f));
+            g.setGradientFill(lTop);
+            g.fillPath(upperEnvelope);
+
+            g.setGradientFill(lBot);
+            g.fillPath(lowerEnvelope);
+
+            g.setColour(a1a);
+            g.strokePath(upperEnvelope, juce::PathStrokeType(1));
+            g.strokePath(lowerEnvelope, juce::PathStrokeType(1));
+        }
     }
-
-    g.setColour(juce::Colours::white);
 
     auto ss = xPixelForSample(v.startSample, false);
     auto se = xPixelForSample(v.endSample, false);
-    if (ss >= 0 && ss < getWidth())
+    auto bg1 = editor->themeColor(theme::ColorMap::bg_1);
+    auto imf = editor->themeApplier.interBoldFor(10);
+    if (ss >= 0 && ss <= getWidth())
     {
+        g.setColour(a1a);
         g.fillRect(startSampleHZ);
         g.drawVerticalLine(startSampleHZ.getX(), 0, getHeight());
+        g.setColour(bg1);
+        g.setFont(imf);
+        g.drawText("S", startSampleHZ, juce::Justification::centred);
     }
-    if (se >= 0 && se < getWidth())
+    if (se >= 0 && se <= getWidth())
     {
+        g.setColour(a1a);
         g.fillRect(endSampleHZ);
         g.drawVerticalLine(endSampleHZ.getRight(), 0, getHeight());
+        g.setColour(bg1);
+        g.setFont(imf);
+        g.drawText("E", endSampleHZ, juce::Justification::centred);
     }
     if (v.loopActive)
     {
@@ -377,18 +468,31 @@ void SampleWaveform::paint(juce::Graphics &g)
         auto le = xPixelForSample(v.endLoop, false);
 
         g.setColour(juce::Colours::aliceblue);
-        if (ls >= 0 && ls < getWidth())
+        if (ls >= 0 && ls <= getWidth())
         {
+            g.setColour(a2a);
+
             g.fillRect(startLoopHZ);
             g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
+
+            g.setColour(bg1);
+            g.setFont(imf);
+            g.drawText(">", startLoopHZ, juce::Justification::centred);
         }
-        if (le >= 0 && le < getWidth())
+        if (le >= 0 && le <= getWidth())
         {
+            g.setColour(a2a);
+
             g.fillRect(endLoopHZ);
             g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+
+            g.setColour(bg1);
+            g.setFont(imf);
+            g.drawText("<", endLoopHZ, juce::Justification::centred);
         }
-        if (v.loopFade > 0 && ((fe >= 0 && fe < getWidth()) || (fs >= 0 && fs <= getWidth())))
+        if (v.loopFade > 0 && ((fe >= 0 && fe <= getWidth()) || (fs >= 0 && fs <= getWidth())))
         {
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
             g.drawLine(fs, getHeight(), ls, 0);
             g.drawLine(ls, 0, fe, getHeight());
         }
@@ -405,9 +509,6 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.drawVerticalLine(ep, 0, getHeight());
         }
     }
-
-    g.setColour(juce::Colours::white);
-    g.drawRect(r, 1);
 }
 
 void SampleWaveform::resized()
