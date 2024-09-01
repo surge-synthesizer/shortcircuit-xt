@@ -137,6 +137,7 @@ void SampleWaveform::rebuildEnvelopePaths()
         return;
     }
 
+    usedChannels = std::min((int)samp->channels, 2);
     /*
      * OK so we have pctStart and zoomFactor so whats that in sample space
      */
@@ -145,132 +146,145 @@ void SampleWaveform::rebuildEnvelopePaths()
     auto startSample = std::clamp((int)std::floor(l * pctStart) - samplePad, 0, (int)l);
     auto numSamples = (int)std::ceil(1.f * l / zoomFactor);
     auto endSample = std::clamp(startSample + numSamples + 2 * samplePad, 0, (int)l);
-
-    std::vector<std::pair<size_t, float>> topLine, bottomLine;
     auto fac = std::max(1.0 * numSamples / r.getWidth(), 1.0);
 
-    auto downSampleForUI = [startSample, endSample, fac, &topLine, &bottomLine](auto *data) {
-        using T = std::remove_pointer_t<decltype(data)>;
-        double c = startSample;
-        int ct = 0;
-        auto seedmx = std::numeric_limits<T>::min();
-        auto seedmn = std::numeric_limits<T>::max();
+    for (int ch = 0; ch < usedChannels; ++ch)
+    {
+        std::vector<std::pair<size_t, float>> topLine, bottomLine;
 
-        if constexpr (std::is_same_v<T, float>)
-        {
-            seedmx = -100.f;
-            seedmn = 100.f;
-        }
-        auto mx = seedmn;
-        auto mn = seedmn;
+        auto downSampleForUI = [startSample, endSample, fac, &topLine, &bottomLine](auto *data) {
+            using T = std::remove_pointer_t<decltype(data)>;
+            double c = startSample;
+            int ct = 0;
+            auto seedmx = std::numeric_limits<T>::min();
+            auto seedmn = std::numeric_limits<T>::max();
 
-        T normFactor{1};
-        if constexpr (std::is_same_v<T, int16_t>)
-        {
-            normFactor = std::numeric_limits<T>::max();
-        }
-        for (int s = startSample; s < endSample; ++s)
-        {
-            if (c + fac < s)
+            if constexpr (std::is_same_v<T, float>)
             {
-                double nmx = mx * 1.0 / normFactor;
-                double nmn = mn * 1.0 / normFactor;
-
-                topLine.emplace_back(s, nmx);
-                bottomLine.emplace_back(s, nmn);
-
-                c += fac;
-                ct++;
-                mx = seedmx;
-                mn = seedmn;
+                seedmx = -100.f;
+                seedmn = 100.f;
             }
-            mx = std::max(data[s], mx);
-            mn = std::min(data[s], mn);
-        }
-    };
+            auto mx = seedmn;
+            auto mn = seedmn;
 
-    if (samp->bitDepth == sample::Sample::BD_I16)
-    {
-        auto d = samp->GetSamplePtrI16(0);
-        downSampleForUI(d);
-    }
-    else if (samp->bitDepth == sample::Sample::BD_F32)
-    {
-        auto d = samp->GetSamplePtrF32(0);
-        downSampleForUI(d);
-    }
-    else
-    {
-        jassertfalse;
-    }
+            T normFactor{1};
+            if constexpr (std::is_same_v<T, int16_t>)
+            {
+                normFactor = std::numeric_limits<T>::max();
+            }
+            for (int s = startSample; s < endSample; ++s)
+            {
+                if (c + fac < s)
+                {
+                    double nmx = mx * 1.0 / normFactor;
+                    double nmn = mn * 1.0 / normFactor;
 
-    bool first{true};
-    upperFill = juce::Path();
-    upperStroke = juce::Path();
-    lowerFill = juce::Path();
-    lowerStroke = juce::Path();
+                    topLine.emplace_back(s, nmx);
+                    bottomLine.emplace_back(s, nmn);
 
-    auto sVToPx = [this](float val) {
-        // val is -1..1 so move it to 0..1 inverted
-        auto nval = (-val + 1) * 0.5;
-        // then scale it by height
-        return nval * getHeight();
-    };
-    for (const auto &[smp, val] : topLine)
-    {
-        auto pos = xPixelForSample(smp);
-        auto uval = std::max(val, 0.0f);
+                    c += fac;
+                    ct++;
+                    mx = seedmx;
+                    mn = seedmn;
+                }
+                mx = std::max(data[s], mx);
+                mn = std::min(data[s], mn);
+            }
+        };
 
-        if (first)
+        if (samp->bitDepth == sample::Sample::BD_I16)
         {
-            upperStroke.startNewSubPath(pos, sVToPx(val));
-            upperFill.startNewSubPath(pos, sVToPx(uval));
-            first = false;
+            auto d = samp->GetSamplePtrI16(ch);
+            downSampleForUI(d);
+        }
+        else if (samp->bitDepth == sample::Sample::BD_F32)
+        {
+            auto d = samp->GetSamplePtrF32(ch);
+            downSampleForUI(d);
         }
         else
         {
-            upperStroke.lineTo(pos, sVToPx(val));
-            upperFill.lineTo(pos, sVToPx(uval));
+            jassertfalse;
         }
-    }
 
-    for (const auto &[smp, val] : bottomLine)
-    {
-        auto pos = xPixelForSample(smp);
-        auto lval = std::min(val, 0.0f);
-        if (first)
+        bool first{true};
+        upperFill[ch] = juce::Path();
+        upperStroke[ch] = juce::Path();
+        lowerFill[ch] = juce::Path();
+        lowerStroke[ch] = juce::Path();
+
+        auto sVToPx = [this, ch](float val) {
+            // val is -1..1 so move it to 0..1 inverted
+            auto nval = (-val + 1) * 0.5;
+            // then scale it by height if used channels is one
+            if (usedChannels != 2)
+            {
+                return nval * getHeight();
+            }
+            else
+            {
+                if (ch == 0)
+                    return nval * getHeight() / 2;
+                else
+                    return nval * getHeight() / 2 + getHeight() / 2;
+            }
+        };
+        for (const auto &[smp, val] : topLine)
         {
-            lowerStroke.startNewSubPath(pos, sVToPx(val));
-            lowerFill.startNewSubPath(pos, sVToPx(lval));
-            first = false;
+            auto pos = xPixelForSample(smp);
+            auto uval = std::max(val, 0.0f);
+
+            if (first)
+            {
+                upperStroke[ch].startNewSubPath(pos, sVToPx(val));
+                upperFill[ch].startNewSubPath(pos, sVToPx(uval));
+                first = false;
+            }
+            else
+            {
+                upperStroke[ch].lineTo(pos, sVToPx(val));
+                upperFill[ch].lineTo(pos, sVToPx(uval));
+            }
         }
-        else
+
+        for (const auto &[smp, val] : bottomLine)
         {
-            lowerStroke.lineTo(pos, sVToPx(val));
-            lowerFill.lineTo(pos, sVToPx(lval));
+            auto pos = xPixelForSample(smp);
+            auto lval = std::min(val, 0.0f);
+            if (first)
+            {
+                lowerStroke[ch].startNewSubPath(pos, sVToPx(val));
+                lowerFill[ch].startNewSubPath(pos, sVToPx(lval));
+                first = false;
+            }
+            else
+            {
+                lowerStroke[ch].lineTo(pos, sVToPx(val));
+                lowerFill[ch].lineTo(pos, sVToPx(lval));
+            }
         }
+
+        std::reverse(bottomLine.begin(), bottomLine.end());
+        std::reverse(topLine.begin(), topLine.end());
+
+        first = true;
+        for (const auto &[smp, val] : bottomLine)
+        {
+            auto pos = xPixelForSample(smp);
+            auto uval = std::max(val, 0.f);
+            upperFill[ch].lineTo(pos, sVToPx(uval));
+        }
+
+        for (const auto &[smp, val] : topLine)
+        {
+            auto pos = xPixelForSample(smp);
+            auto uval = std::min(val, 0.f);
+            lowerFill[ch].lineTo(pos, sVToPx(uval));
+        }
+
+        upperFill[ch].closeSubPath();
+        lowerFill[ch].closeSubPath();
     }
-
-    std::reverse(bottomLine.begin(), bottomLine.end());
-    std::reverse(topLine.begin(), topLine.end());
-
-    first = true;
-    for (const auto &[smp, val] : bottomLine)
-    {
-        auto pos = xPixelForSample(smp);
-        auto uval = std::max(val, 0.f);
-        upperFill.lineTo(pos, sVToPx(uval));
-    }
-
-    for (const auto &[smp, val] : topLine)
-    {
-        auto pos = xPixelForSample(smp);
-        auto uval = std::min(val, 0.f);
-        lowerFill.lineTo(pos, sVToPx(uval));
-    }
-
-    upperFill.closeSubPath();
-    lowerFill.closeSubPath();
 }
 
 void SampleWaveform::mouseDown(const juce::MouseEvent &e)
@@ -359,97 +373,132 @@ void SampleWaveform::paint(juce::Graphics &g)
     }
 
     g.setColour(editor->themeColor(theme::ColorMap::grid_secondary));
-    g.drawHorizontalLine(getHeight() / 2, 0, getWidth());
+    if (usedChannels == 2)
+    {
+        g.drawHorizontalLine(getHeight() * 0.25, 0, getWidth());
+        g.drawHorizontalLine(getHeight() * 0.75, 0, getWidth());
+    }
+    else
+    {
+        g.drawHorizontalLine(getHeight() / 2, 0, getWidth());
+    }
 
     auto l = samp->getSampleLength();
 
     auto ssp = xPixelForSample(v.startSample);
     auto esp = xPixelForSample(v.endSample);
 
-    auto a1b = editor->themeColor(theme::ColorMap::accent_1b);
-    auto gTop = juce::ColourGradient{a1b, 0, 0, a1b.withAlpha(0.32f), 0, getHeight() / 2.f, false};
-    auto gBot = juce::ColourGradient{a1b.withAlpha(0.32f), 0,    getHeight() / 2.f, a1b, 0,
-                                     getHeight() * 1.f,    false};
-
     auto a1a = editor->themeColor(theme::ColorMap::accent_1a);
-    auto sTop = juce::ColourGradient{a1a, 0, 0, a1a.withAlpha(0.32f), 0, getHeight() / 2.f, false};
-    auto sBot = juce::ColourGradient{a1a.withAlpha(0.32f), 0,    getHeight() / 2.f, a1a, 0,
-                                     getHeight() * 1.f,    false};
-
+    auto a1b = editor->themeColor(theme::ColorMap::accent_1b);
     auto a2a = editor->themeColor(theme::ColorMap::accent_2a);
-    auto lTop = juce::ColourGradient{a2a, 0, 0, a2a.withAlpha(0.32f), 0, getHeight() / 2.f, false};
-    auto lBot = juce::ColourGradient{a2a.withAlpha(0.32f), 0,    getHeight() / 2.f, a2a, 0,
-                                     getHeight() * 1.f,    false};
 
-    if (ssp >= 0)
+    for (int ch = 0; ch < usedChannels; ++ch)
     {
-        juce::Graphics::ScopedSaveState gs(g);
-        auto cr = r.withRight(ssp);
-        g.reduceClipRegion(cr);
+        auto gStart = 0.f;
+        auto gCenter = getHeight() / 2.f;
+        auto gEnd = getHeight() * 1.f;
 
-        g.setGradientFill(gTop);
-        g.fillPath(upperFill);
-
-        g.setGradientFill(gBot);
-        g.fillPath(lowerFill);
-    }
-    if (esp <= getWidth())
-    {
-        juce::Graphics::ScopedSaveState gs(g);
-        auto cr = r.withTrimmedLeft(esp);
-        g.reduceClipRegion(cr);
-
-        g.setGradientFill(gTop);
-        g.fillPath(upperFill);
-
-        g.setGradientFill(gBot);
-        g.fillPath(lowerFill);
-    }
-
-    auto spC = std::clamp(ssp, 0, getWidth());
-    auto epC = std::clamp(esp, 0, getWidth());
-    {
-        juce::Graphics::ScopedSaveState gs(g);
-        auto cr = r.withLeft(spC).withRight(epC);
-        g.reduceClipRegion(cr);
-
-        g.setGradientFill(sTop);
-        g.fillPath(upperFill);
-
-        g.setGradientFill(sBot);
-        g.fillPath(lowerFill);
-
-        g.setColour(a1a);
-        g.strokePath(upperStroke, juce::PathStrokeType(1));
-        g.strokePath(lowerStroke, juce::PathStrokeType(1));
-    }
-
-    if (v.loopActive)
-    {
-        auto ls = std::clamp(xPixelForSample(v.startLoop), 0, getWidth());
-        auto le = std::clamp(xPixelForSample(v.endLoop), 0, getWidth());
-
-        if (!((ls < 0 && le < 0) || (ls > getWidth() && le > getWidth())))
+        if (usedChannels == 2)
         {
-            auto a2b = editor->themeColor(theme::ColorMap::accent_2b);
-            auto dr = r.withLeft(ls).withRight(le);
-            g.setColour(editor->themeColor(theme::ColorMap::bg_2));
-            g.fillRect(dr);
-            g.setColour(a2b.withAlpha(0.2f));
-            g.fillRect(dr);
+            if (ch == 0)
+            {
+                gStart = 0;
+                gCenter = getHeight() * 0.25f;
+                gEnd = getHeight() * 0.5f;
+            }
+            else
+            {
+                gStart = getHeight() * 0.5f;
+                gCenter = getHeight() * 0.75f;
+                gEnd = getHeight() * 1.f;
+            }
+        }
+        auto gTop = juce::ColourGradient{a1b, 0, gStart, a1b.withAlpha(0.32f), 0, gCenter, false};
+        auto gBot = juce::ColourGradient{a1b.withAlpha(0.32f), 0, gCenter, a1b, 0, gEnd, false};
 
+        auto sTop = juce::ColourGradient{a1a, 0, gStart, a1a.withAlpha(0.32f), 0, gCenter, false};
+        auto sBot = juce::ColourGradient{a1a.withAlpha(0.32f), 0, gCenter, a1a, 0, gEnd, false};
+
+        auto lTop = juce::ColourGradient{a2a, 0, gStart, a2a.withAlpha(0.32f), 0, gCenter, false};
+        auto lBot = juce::ColourGradient{a2a.withAlpha(0.32f), 0, gCenter, a2a, 0, gEnd, false};
+
+        if (ssp >= 0)
+        {
             juce::Graphics::ScopedSaveState gs(g);
-            g.reduceClipRegion(dr);
+            auto cr = r.withRight(ssp);
+            g.reduceClipRegion(cr);
 
-            g.setGradientFill(lTop);
-            g.fillPath(upperFill);
+            g.setGradientFill(gTop);
+            g.fillPath(upperFill[ch]);
 
-            g.setGradientFill(lBot);
-            g.fillPath(lowerFill);
+            g.setGradientFill(gBot);
+            g.fillPath(lowerFill[ch]);
+        }
+        if (esp <= getWidth())
+        {
+            juce::Graphics::ScopedSaveState gs(g);
+            auto cr = r.withTrimmedLeft(esp);
+            g.reduceClipRegion(cr);
+
+            g.setGradientFill(gTop);
+            g.fillPath(upperFill[ch]);
+
+            g.setGradientFill(gBot);
+            g.fillPath(lowerFill[ch]);
+        }
+
+        auto spC = std::clamp(ssp, 0, getWidth());
+        auto epC = std::clamp(esp, 0, getWidth());
+        {
+            juce::Graphics::ScopedSaveState gs(g);
+            auto cr = r.withLeft(spC).withRight(epC);
+            g.reduceClipRegion(cr);
+
+            g.setGradientFill(sTop);
+            g.fillPath(upperFill[ch]);
+
+            g.setGradientFill(sBot);
+            g.fillPath(lowerFill[ch]);
 
             g.setColour(a1a);
-            g.strokePath(upperStroke, juce::PathStrokeType(1));
-            g.strokePath(lowerStroke, juce::PathStrokeType(1));
+            g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
+            g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
+        }
+
+        if (v.loopActive)
+        {
+            auto ls = std::clamp(xPixelForSample(v.startLoop), 0, getWidth());
+            auto le = std::clamp(xPixelForSample(v.endLoop), 0, getWidth());
+
+            if (!((ls < 0 && le < 0) || (ls > getWidth() && le > getWidth())))
+            {
+                auto a2b = editor->themeColor(theme::ColorMap::accent_2b);
+                auto dr = r.withLeft(ls).withRight(le);
+                if (usedChannels == 2)
+                {
+                    if (ch == 0)
+                        dr = dr.withTrimmedBottom(getHeight() / 2);
+                    else
+                        dr = dr.withTrimmedTop(getHeight() / 2);
+                }
+                g.setColour(editor->themeColor(theme::ColorMap::bg_2));
+                g.fillRect(dr);
+                g.setColour(a2b.withAlpha(0.2f));
+                g.fillRect(dr);
+
+                juce::Graphics::ScopedSaveState gs(g);
+                g.reduceClipRegion(dr);
+
+                g.setGradientFill(lTop);
+                g.fillPath(upperFill[ch]);
+
+                g.setGradientFill(lBot);
+                g.fillPath(lowerFill[ch]);
+
+                g.setColour(a1a);
+                g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
+                g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
+            }
         }
     }
 
