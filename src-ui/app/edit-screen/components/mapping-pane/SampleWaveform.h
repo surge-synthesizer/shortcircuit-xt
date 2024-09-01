@@ -52,7 +52,7 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     {
         if (isVisible())
         {
-            rebuildLegacyPathForSample();
+            rebuildEnvelopePaths();
             repaint();
         }
     }
@@ -78,9 +78,8 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
 
     void rebuildPaths();
 
-    juce::Path legacyPath;
-    juce::Path upperEnvelope, lowerEnvelope;
-    void rebuildLegacyPathForSample();
+    juce::Path upperStroke, lowerStroke, upperFill, lowerFill;
+    void rebuildEnvelopePaths();
 
     int64_t sampleForXPixel(float xpos);
     int xPixelForSample(int64_t samplePos, bool doClamp = true);
