@@ -78,7 +78,8 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
 
     void rebuildPaths();
 
-    juce::Path upperStroke, lowerStroke, upperFill, lowerFill;
+    int usedChannels{1};
+    juce::Path upperStroke[2], lowerStroke[2], upperFill[2], lowerFill[2];
     void rebuildEnvelopePaths();
 
     int64_t sampleForXPixel(float xpos);
