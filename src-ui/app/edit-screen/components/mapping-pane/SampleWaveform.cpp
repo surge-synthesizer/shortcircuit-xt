@@ -412,7 +412,7 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto a2a = editor->themeColor(theme::ColorMap::accent_2a);
 
     auto gPos = [this, r](auto ch) {
-        auto gStart = 0.5f;
+        auto gStart = 0.0f;
         auto gCenter = 0.5f;
         auto gEnd = 1.f;
 
@@ -434,6 +434,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         gStart = (gStart - vStart) * vZoom * r.getHeight() + r.getY();
         gCenter = (gCenter - vStart) * vZoom * r.getHeight() + r.getY();
         gEnd = (gEnd - vStart) * vZoom * r.getHeight() + r.getY();
+
         return std::make_tuple(gStart, gCenter, gEnd);
     };
     for (int ch = 0; ch < usedChannels; ++ch)
