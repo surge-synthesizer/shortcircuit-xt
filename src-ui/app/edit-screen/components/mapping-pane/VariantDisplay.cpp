@@ -79,8 +79,8 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     addAndMakeVisible(*prevFileButton);
 
     auto ms = std::make_unique<sst::jucegui::components::ToggleButton>();
-    ms->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
     ms->setGlyph(sst::jucegui::components::GlyphPainter::GlyphType::SHOW_INFO);
+    ms->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
     addAndMakeVisible(*ms);
     auto ds = std::make_unique<boolToggle_t>(ms, fileInfoShowing);
     ds->onValueChanged = [w = juce::Component::SafePointer(this)](auto v) {
@@ -90,7 +90,7 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
 
     fileInfoButton = std::move(ds);
 
-    fileInfos = std::make_unique<FileInfos>();
+    fileInfos = std::make_unique<FileInfos>(this);
     addChildComponent(*fileInfos);
 
     rebuildForSelectedVariation(selectedVariation, true);
@@ -312,7 +312,7 @@ void VariantDisplay::resized()
 
     loopDirectionButton->setBounds(p);
 
-    auto hl = getLocalBounds().withHeight(20).reduced(1).withTrimmedLeft(200);
+    auto hl = getLocalBounds().withHeight(20).reduced(1).withTrimmedLeft(350);
     auto hP = [&hl, this](int w) {
         int margin{3};
         if (w < 0)
@@ -327,16 +327,17 @@ void VariantDisplay::resized()
     };
     variantPlayModeLabel->setBounds(hP(42));
     variantPlaymodeButton->setBounds(hP(100));
-    editAllButton->setBounds(hP(100));
+    editAllButton->setBounds(hP(50));
     fileInfoButton->widget->setBounds(hP(20));
-    fileLabel->setBounds(hP(40));
+    fileLabel->setBounds(hP(20));
     fileButton->setBounds(hP(-18));
 
     auto jogs = hP(18);
     prevFileButton->setBounds(jogs.withTrimmedBottom(jogs.getHeight() / 2));
     nextFileButton->setBounds(jogs.withTrimmedTop(jogs.getHeight() / 2));
 
-    fileInfos->setBounds({5, waveformsTabbedGroup->getY() + 20, getWidth(), 20});
+    // the fileInfos is self bounding
+    fileInfos->setBounds({0, waveformsTabbedGroup->getY() + 20, getWidth(), 70});
 }
 
 void VariantDisplay::rebuild()
@@ -402,12 +403,10 @@ void VariantDisplay::rebuild()
         }
 
         fileButton->setLabel(samp->displayName);
-        fileInfos->srVal->setText(std::to_string(samp->sample_rate));
-        fileInfos->bdVal->setText(samp->getBitDepthText());
-        auto duration = ((float)samp->sample_length) / samp->sample_rate;
-        auto duration_s{fmt::format("{:.3f} s", duration)};
-        fileInfos->lengthVal->setText(duration_s);
-        fileInfos->sizeVal->setText(std::to_string(samp->getDataSize()));
+        fileInfos->sampleRate = samp->sample_rate;
+        fileInfos->bd = samp->getBitDepthText();
+        fileInfos->sampleLength = samp->sample_length;
+        fileInfos->channels = samp->channels;
     }
 
     loopModeButton->setEnabled(variantView.variants[selectedVariation].loopActive);
@@ -733,6 +732,51 @@ int VariantDisplay::MyTabbedComponent::getTabIndexFromPosition(int x, int y)
     }
 
     return tabIndex;
+}
+
+namespace detail
+{
+class comma_numpunct : public std::numpunct<char>
+{
+  public:
+    comma_numpunct(char thousands_sep, const char *grouping)
+        : m_thousands_sep(thousands_sep), m_grouping(grouping)
+    {
+    }
+
+  protected:
+    char do_thousands_sep() const { return m_thousands_sep; }
+    std::string do_grouping() const { return m_grouping; }
+
+  private:
+    char m_thousands_sep;
+    std::string m_grouping;
+};
+} // namespace detail
+void VariantDisplay::FileInfos::paint(juce::Graphics &g)
+{
+    std::locale comma_locale(std::locale(), new detail::comma_numpunct(',', "\03"));
+
+    std::ostringstream oss;
+    oss.imbue(comma_locale);
+    oss << std::fixed << sampleLength;
+
+    auto msg = fmt::format("{:.1f}kHz {}-chan {}. {} samples ({:.3f}s)", sampleRate / 1000,
+                           channels, bd, oss.str(), sampleLength / sampleRate);
+    int margin{5};
+    auto ft = editor->themeApplier.interMediumFor(12);
+
+    auto w = ft.getStringWidthFloat(msg);
+    auto bx = getLocalBounds().withWidth(w + 2 * margin).withHeight(18);
+    g.setColour(editor->themeColor(theme::ColorMap::bg_3).withAlpha(0.5f));
+    g.fillRect(bx);
+    g.setColour(editor->themeColor(theme::ColorMap::bg_3));
+    g.drawHorizontalLine(bx.getBottom(), bx.getX(), bx.getRight());
+    g.drawVerticalLine(bx.getRight(), bx.getY(), bx.getBottom());
+
+    g.setFont(ft);
+    g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+    g.drawText(msg, bx.reduced(margin, 0), juce::Justification::centred);
 }
 
 } // namespace scxt::ui::app::edit_screen

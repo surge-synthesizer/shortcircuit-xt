@@ -48,6 +48,8 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
                   juce::Colours::black.withAlpha(0.f));
         setColour(juce::TabbedComponent::ColourIds::outlineColourId,
                   juce::Colours::black.withAlpha(0.f));
+        setColour(juce::TabbedButtonBar::ColourIds::tabOutlineColourId,
+                  juce::Colours::black.withAlpha(0.f));
     }
 
     juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(13); }

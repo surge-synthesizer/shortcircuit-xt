@@ -98,6 +98,8 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     bool supportsVerticalZoom() const override { return true; }
     bool supportsHorizontalZoom() const override { return true; }
 
+    juce::Rectangle<int> getInsetBounds() { return getLocalBounds().reduced(2); }
+
     float pctStart{0.f}, zoomFactor{1.f};
     void setHorizontalZoom(float ps, float zf) override
     {
