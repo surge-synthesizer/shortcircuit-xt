@@ -48,31 +48,39 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     }
 
     variantPlayModeLabel = std::make_unique<sst::jucegui::components::Label>();
-    variantPlayModeLabel->setText("Variant");
+    variantPlayModeLabel->setText("Variants");
     addAndMakeVisible(*variantPlayModeLabel);
 
-    variantPlaymodeButton = std::make_unique<sst::jucegui::components::TextPushButton>();
+    variantPlaymodeButton = std::make_unique<sst::jucegui::components::MenuButton>();
     variantPlaymodeButton->setOnCallback([this]() { showVariantPlaymodeMenu(); });
     addAndMakeVisible(*variantPlaymodeButton);
+
+    editAllButton = std::make_unique<sst::jucegui::components::TextPushButton>();
+    editAllButton->setLabel("EDIT ALL");
+    editAllButton->setOnCallback(editor->makeComingSoon("Edit All"));
+    addAndMakeVisible(*editAllButton);
 
     fileLabel = std::make_unique<sst::jucegui::components::Label>();
     fileLabel->setText("File");
     addAndMakeVisible(*fileLabel);
 
-    fileButton = std::make_unique<juce::TextButton>("file");
-    fileButton->onClick = [this]() { showFileBrowser(); };
+    fileButton = std::make_unique<sst::jucegui::components::MenuButton>();
+    fileButton->setOnCallback([this]() { showFileBrowser(); });
     addAndMakeVisible(*fileButton);
 
-    nextFileButton = std::make_unique<juce::TextButton>(">");
-    nextFileButton->onClick = [this]() { selectNextFile(true); };
+    nextFileButton = std::make_unique<sst::jucegui::components::GlyphButton>(
+        sst::jucegui::components::GlyphPainter::GlyphType::JOG_DOWN);
+    nextFileButton->setOnCallback([this]() { selectNextFile(true); });
     addAndMakeVisible(*nextFileButton);
 
-    prevFileButton = std::make_unique<juce::TextButton>("<");
-    prevFileButton->onClick = [this]() { selectNextFile(false); };
+    prevFileButton = std::make_unique<sst::jucegui::components::GlyphButton>(
+        sst::jucegui::components::GlyphPainter::GlyphType::JOG_UP);
+    prevFileButton->setOnCallback([this]() { selectNextFile(false); });
     addAndMakeVisible(*prevFileButton);
 
     auto ms = std::make_unique<sst::jucegui::components::ToggleButton>();
-    ms->setLabel("I");
+    ms->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
+    ms->setGlyph(sst::jucegui::components::GlyphPainter::GlyphType::SHOW_INFO);
     addAndMakeVisible(*ms);
     auto ds = std::make_unique<boolToggle_t>(ms, fileInfoShowing);
     ds->onValueChanged = [w = juce::Component::SafePointer(this)](auto v) {
@@ -304,21 +312,34 @@ void VariantDisplay::resized()
 
     loopDirectionButton->setBounds(p);
 
-    variantPlayModeLabel->setBounds({getWidth() / 2, 0, 40, p.getHeight()});
-    variantPlaymodeButton->setBounds({variantPlayModeLabel->getRight(), 0, 60, p.getHeight()});
+    auto hl = getLocalBounds().withHeight(20).reduced(1).withTrimmedLeft(200);
+    auto hP = [&hl, this](int w) {
+        int margin{3};
+        if (w < 0)
+        {
+            auto lbw = getLocalBounds().getWidth();
+            auto spc = lbw - hl.getX() + w - margin;
+            w = spc;
+        }
+        auto r = hl.withWidth(w);
+        hl = hl.translated(w + margin, 0);
+        return r;
+    };
+    variantPlayModeLabel->setBounds(hP(42));
+    variantPlaymodeButton->setBounds(hP(100));
+    editAllButton->setBounds(hP(100));
+    fileInfoButton->widget->setBounds(hP(20));
+    fileLabel->setBounds(hP(40));
+    fileButton->setBounds(hP(-18));
 
-    fileInfoButton->widget->setBounds(
-        {variantPlaymodeButton->getRight() + 5, 0, p.getHeight(), p.getHeight()});
-    fileLabel->setBounds({fileInfoButton->widget->getRight(), 0, 30, p.getHeight()});
-    fileButton->setBounds({fileLabel->getRight(), 0, 100, p.getHeight()});
-    prevFileButton->setBounds({fileButton->getRight(), 0, p.getHeight(), p.getHeight()});
-    nextFileButton->setBounds({prevFileButton->getRight(), 0, p.getHeight(), p.getHeight()});
+    auto jogs = hP(18);
+    prevFileButton->setBounds(jogs.withTrimmedBottom(jogs.getHeight() / 2));
+    nextFileButton->setBounds(jogs.withTrimmedTop(jogs.getHeight() / 2));
 
-    fileInfos->setBounds({5, 20, getWidth(), 20});
+    fileInfos->setBounds({5, waveformsTabbedGroup->getY() + 20, getWidth(), 20});
 }
 
 void VariantDisplay::rebuild()
-
 {
     switch (variantView.variants[selectedVariation].playMode)
     {
@@ -359,16 +380,16 @@ void VariantDisplay::rebuild()
     switch (variantView.variantPlaybackMode)
     {
     case engine::Zone::FORWARD_RR:
-        variantPlaymodeButton->setLabel("Round robin");
+        variantPlaymodeButton->setLabel("ROUND ROBIN");
         break;
     case engine::Zone::TRUE_RANDOM:
-        variantPlaymodeButton->setLabel("Random");
+        variantPlaymodeButton->setLabel("RANDOM");
         break;
     case engine::Zone::RANDOM_CYCLE:
-        variantPlaymodeButton->setLabel("Random per Cycle");
+        variantPlaymodeButton->setLabel("EXCL RAND");
         break;
     case engine::Zone::UNISON:
-        variantPlaymodeButton->setLabel("Unison");
+        variantPlaymodeButton->setLabel("UNISON");
         break;
     }
 
@@ -380,7 +401,7 @@ void VariantDisplay::rebuild()
             a->sampleCount = samp->sample_length;
         }
 
-        fileButton->setButtonText(samp->displayName);
+        fileButton->setLabel(samp->displayName);
         fileInfos->srVal->setText(std::to_string(samp->sample_rate));
         fileInfos->bdVal->setText(samp->getBitDepthText());
         auto duration = ((float)samp->sample_length) / samp->sample_rate;
@@ -576,7 +597,7 @@ void VariantDisplay::showVariantPlaymodeMenu()
     };
     add(engine::Zone::VariantPlaybackMode::FORWARD_RR, "Round Robin");
     add(engine::Zone::VariantPlaybackMode::TRUE_RANDOM, "Random");
-    add(engine::Zone::VariantPlaybackMode::RANDOM_CYCLE, "Random per Cycle");
+    add(engine::Zone::VariantPlaybackMode::RANDOM_CYCLE, "Random (exclusive)");
     add(engine::Zone::VariantPlaybackMode::UNISON, "Unison");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());

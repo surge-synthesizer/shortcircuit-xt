@@ -35,6 +35,8 @@
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/GlyphButton.h"
 
 #include "sst/jucegui/component-adapters/DiscreteToReference.h"
 #include "app/HasEditor.h"
@@ -129,7 +131,7 @@ struct VariantDisplay : juce::Component, HasEditor
 
     juce::Rectangle<int> sampleDisplayRegion()
     {
-        return getLocalBounds().withTrimmedRight(sidePanelWidth);
+        return getLocalBounds().withTrimmedRight(sidePanelWidth).withTrimmedTop(2);
     }
 
     void resized() override;
@@ -167,16 +169,20 @@ struct VariantDisplay : juce::Component, HasEditor
     void showVariantPlaymodeMenu();
     void showLoopDirectionMenu();
 
+    // Header section
     using boolToggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<
         sst::jucegui::components::ToggleButton, bool>;
     bool fileInfoShowing{false};
-
-    std::unique_ptr<sst::jucegui::components::Label> playModeLabel, variantPlayModeLabel, fileLabel;
+    std::unique_ptr<sst::jucegui::components::MenuButton> variantPlaymodeButton, fileButton;
+    std::unique_ptr<sst::jucegui::components::Label> variantPlayModeLabel, fileLabel;
     std::unique_ptr<boolToggle_t> fileInfoButton;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> editAllButton;
+    std::unique_ptr<sst::jucegui::components::GlyphButton> nextFileButton, prevFileButton;
 
-    std::unique_ptr<sst::jucegui::components::TextPushButton> variantPlaymodeButton;
-    std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton,
-        fileButton, nextFileButton, prevFileButton;
+    // sidebar section
+    std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
+
+    std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
 
     struct FileInfos : juce::Component
     {

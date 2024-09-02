@@ -393,7 +393,6 @@ void SampleWaveform::paint(juce::Graphics &g)
     }
     else
     {
-        g.setColour(juce::Colours::red);
         g.drawHorizontalLine((0.5 - vStart) * getHeight() * vZoom, 0, getWidth());
     }
 
