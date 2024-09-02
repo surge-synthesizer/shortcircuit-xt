@@ -501,7 +501,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.setColour(a2b.withAlpha(0.2f));
         g.fillRect(dr);
 
-        for (int ch = 0; ch < 2; ++ch)
+        for (int ch = 0; ch < usedChannels; ++ch)
         {
             auto [gStart, gCenter, gEnd] = gPos(ch);
 
