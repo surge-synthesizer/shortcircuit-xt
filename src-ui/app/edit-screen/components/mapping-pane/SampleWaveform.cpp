@@ -370,12 +370,12 @@ void SampleWaveform::mouseDoubleClick(const juce::MouseEvent &e)
 
 void SampleWaveform::paint(juce::Graphics &g)
 {
-    g.setColour(editor->themeColor(theme::ColorMap::bg_3));
+    g.setColour(editor->themeColor(theme::ColorMap::bg_2));
     g.fillRect(getLocalBounds());
+    g.setColour(editor->themeColor(theme::ColorMap::bg_3));
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(1), 3, 1);
 
     auto r = getInsetBounds();
-    g.setColour(editor->themeColor(theme::ColorMap::bg_2));
-    g.fillRect(r);
 
     if (!display->active)
     {

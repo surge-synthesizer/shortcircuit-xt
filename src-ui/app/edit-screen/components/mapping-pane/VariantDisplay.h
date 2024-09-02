@@ -131,7 +131,7 @@ struct VariantDisplay : juce::Component, HasEditor
 
     juce::Rectangle<int> sampleDisplayRegion()
     {
-        return getLocalBounds().withTrimmedRight(sidePanelWidth).withTrimmedTop(2);
+        return getLocalBounds().withTrimmedRight(sidePanelWidth).withTrimmedTop(5);
     }
 
     void resized() override;

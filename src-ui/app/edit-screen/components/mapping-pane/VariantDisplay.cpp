@@ -79,8 +79,8 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     addAndMakeVisible(*prevFileButton);
 
     auto ms = std::make_unique<sst::jucegui::components::ToggleButton>();
-    ms->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
     ms->setGlyph(sst::jucegui::components::GlyphPainter::GlyphType::SHOW_INFO);
+    ms->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
     addAndMakeVisible(*ms);
     auto ds = std::make_unique<boolToggle_t>(ms, fileInfoShowing);
     ds->onValueChanged = [w = juce::Component::SafePointer(this)](auto v) {
@@ -312,7 +312,7 @@ void VariantDisplay::resized()
 
     loopDirectionButton->setBounds(p);
 
-    auto hl = getLocalBounds().withHeight(20).reduced(1).withTrimmedLeft(200);
+    auto hl = getLocalBounds().withHeight(20).reduced(1).withTrimmedLeft(350);
     auto hP = [&hl, this](int w) {
         int margin{3};
         if (w < 0)
@@ -327,9 +327,9 @@ void VariantDisplay::resized()
     };
     variantPlayModeLabel->setBounds(hP(42));
     variantPlaymodeButton->setBounds(hP(100));
-    editAllButton->setBounds(hP(100));
+    editAllButton->setBounds(hP(50));
     fileInfoButton->widget->setBounds(hP(20));
-    fileLabel->setBounds(hP(40));
+    fileLabel->setBounds(hP(20));
     fileButton->setBounds(hP(-18));
 
     auto jogs = hP(18);
