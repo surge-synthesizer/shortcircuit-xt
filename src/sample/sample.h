@@ -133,9 +133,9 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         switch (bd)
         {
         case BD_I16:
-            return "INT 16";
+            return "I16";
         case BD_F32:
-            return "FLOAT 32";
+            return "F32";
         default:
             return "UNKWN";
         }

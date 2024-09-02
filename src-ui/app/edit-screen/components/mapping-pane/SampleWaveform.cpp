@@ -48,7 +48,7 @@ void SampleWaveform::rebuildHotZones()
     {
         return;
     }
-    auto r = getLocalBounds();
+    auto r = getInsetBounds();
 
     auto fade = xPixelForSampleDistance(v.loopFade);
     auto start = xPixelForSample(v.startSample);
@@ -56,21 +56,20 @@ void SampleWaveform::rebuildHotZones()
     auto ls = xPixelForSample(v.startLoop);
     auto le = xPixelForSample(v.endLoop);
 
-    startSampleHZ = juce::Rectangle<int>(start + r.getX(), r.getBottom() - hotZoneSize, hotZoneSize,
-                                         hotZoneSize);
-    endSampleHZ = juce::Rectangle<int>(end + r.getX() - hotZoneSize, r.getBottom() - hotZoneSize,
-                                       hotZoneSize, hotZoneSize);
-    startLoopHZ = juce::Rectangle<int>(ls + r.getX(), r.getY(), hotZoneSize, hotZoneSize);
-    endLoopHZ =
-        juce::Rectangle<int>(le + r.getX() - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
+    startSampleHZ =
+        juce::Rectangle<int>(start, r.getBottom() - hotZoneSize, hotZoneSize, hotZoneSize);
+    endSampleHZ = juce::Rectangle<int>(end - hotZoneSize, r.getBottom() - hotZoneSize, hotZoneSize,
+                                       hotZoneSize);
+    startLoopHZ = juce::Rectangle<int>(ls, r.getY(), hotZoneSize, hotZoneSize);
+    endLoopHZ = juce::Rectangle<int>(le - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
 
-    fadeLoopHz = juce::Rectangle<int>(r.getX() + ls - fade, r.getY(), fade, r.getHeight());
+    fadeLoopHz = juce::Rectangle<int>(ls - fade, r.getY(), fade, r.getHeight());
     repaint();
 }
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
 {
-    auto r = getLocalBounds();
+    auto r = getInsetBounds();
     auto &v = display->variantView.variants[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
@@ -82,13 +81,13 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
     // (px / (zf * width) + start) * l = sp
 
     auto l = samp->getSampleLength();
-    auto res = (xpos / (zoomFactor * getWidth()) + pctStart) * l;
+    auto res = ((xpos - r.getX()) / (zoomFactor * r.getWidth()) + pctStart) * l;
     return (int64_t)std::clamp(res, 0.f, l * 1.f);
 }
 
 int SampleWaveform::xPixelForSampleDistance(int64_t sampleDistance)
 {
-    auto r = getLocalBounds();
+    auto r = getInsetBounds();
     auto &v = display->variantView.variants[display->selectedVariation];
     auto sample = editor->sampleManager.getSample(v.sampleID);
     if (sample)
@@ -103,7 +102,7 @@ int SampleWaveform::xPixelForSampleDistance(int64_t sampleDistance)
 }
 int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
 {
-    auto r = getLocalBounds();
+    auto r = getInsetBounds();
     auto &v = display->variantView.variants[display->selectedVariation];
     auto sample = editor->sampleManager.getSample(v.sampleID);
     if (sample)
@@ -114,9 +113,9 @@ int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
         sPct *= zoomFactor;
 
         if (doClamp)
-            return std::clamp(static_cast<int>(r.getWidth() * sPct), 0, r.getWidth());
+            return std::clamp(static_cast<int>(r.getWidth() * sPct), 0, r.getWidth()) + r.getX();
         else
-            return static_cast<int>(r.getWidth() * sPct);
+            return static_cast<int>(r.getWidth() * sPct) + r.getX();
     }
     else
     {
@@ -143,7 +142,7 @@ void SampleWaveform::rebuildEnvelopePaths()
     if (display->selectedVariation < 0 || display->selectedVariation > scxt::maxVariantsPerZone)
         return;
 
-    auto r = getLocalBounds();
+    auto r = getInsetBounds();
     auto &v = display->variantView.variants[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
@@ -323,23 +322,21 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == MouseState::NONE)
         return;
 
+    auto xpos = e.position.x;
     switch (mouseState)
     {
     case MouseState::HZ_DRAG_SAMPSTART:
         display->variantView.variants[display->selectedVariation].startSample =
-            sampleForXPixel(e.position.x);
+            sampleForXPixel(xpos);
         break;
     case MouseState::HZ_DRAG_SAMPEND:
-        display->variantView.variants[display->selectedVariation].endSample =
-            sampleForXPixel(e.position.x);
+        display->variantView.variants[display->selectedVariation].endSample = sampleForXPixel(xpos);
         break;
     case MouseState::HZ_DRAG_LOOPSTART:
-        display->variantView.variants[display->selectedVariation].startLoop =
-            sampleForXPixel(e.position.x);
+        display->variantView.variants[display->selectedVariation].startLoop = sampleForXPixel(xpos);
         break;
     case MouseState::HZ_DRAG_LOOPEND:
-        display->variantView.variants[display->selectedVariation].endLoop =
-            sampleForXPixel(e.position.x);
+        display->variantView.variants[display->selectedVariation].endLoop = sampleForXPixel(xpos);
         break;
     default:
         break;
@@ -373,15 +370,24 @@ void SampleWaveform::mouseDoubleClick(const juce::MouseEvent &e)
 
 void SampleWaveform::paint(juce::Graphics &g)
 {
-    g.fillAll(editor->themeColor(theme::ColorMap::bg_2));
-    if (!display->active)
-        return;
+    g.setColour(editor->themeColor(theme::ColorMap::bg_3));
+    g.fillRect(getLocalBounds());
 
-    auto r = getLocalBounds();
+    auto r = getInsetBounds();
+    g.setColour(editor->themeColor(theme::ColorMap::bg_2));
+    g.fillRect(r);
+
+    if (!display->active)
+    {
+        return;
+    }
     auto &v = display->variantView.variants[display->selectedVariation];
     auto samp = editor->sampleManager.getSample(v.sampleID);
     if (!samp)
     {
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        g.setFont(editor->themeApplier.interMediumFor(11));
+        g.drawText("Drop sample here to activate variant", r, juce::Justification::centred);
         return;
     }
 
@@ -405,7 +411,7 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto a1b = editor->themeColor(theme::ColorMap::accent_1b);
     auto a2a = editor->themeColor(theme::ColorMap::accent_2a);
 
-    auto gPos = [this](auto ch) {
+    auto gPos = [this, r](auto ch) {
         auto gStart = 0.5f;
         auto gCenter = 0.5f;
         auto gEnd = 1.f;
@@ -425,9 +431,9 @@ void SampleWaveform::paint(juce::Graphics &g)
                 gEnd = 1.f;
             }
         }
-        gStart = (gStart - vStart) * vZoom * getHeight();
-        gCenter = (gCenter - vStart) * vZoom * getHeight();
-        gEnd = (gEnd - vStart) * vZoom * getHeight();
+        gStart = (gStart - vStart) * vZoom * r.getHeight() + r.getY();
+        gCenter = (gCenter - vStart) * vZoom * r.getHeight() + r.getY();
+        gEnd = (gEnd - vStart) * vZoom * r.getHeight() + r.getY();
         return std::make_tuple(gStart, gCenter, gEnd);
     };
     for (int ch = 0; ch < usedChannels; ++ch)
@@ -516,19 +522,38 @@ void SampleWaveform::paint(juce::Graphics &g)
                 g.setColour(a1a);
                 g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
                 g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
+
+                g.setColour(a2a.withAlpha(0.32f));
+                g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
+                g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
             }
         }
     }
 
     auto ss = xPixelForSample(v.startSample, false);
     auto se = xPixelForSample(v.endSample, false);
+    auto ls = xPixelForSample(v.startLoop, false);
+    auto fs = xPixelForSample(v.startLoop - v.loopFade, false);
+    auto fe = xPixelForSample(v.startLoop + v.loopFade, false);
+    auto le = xPixelForSample(v.endLoop, false);
+
     auto bg1 = editor->themeColor(theme::ColorMap::bg_1);
     auto imf = editor->themeApplier.interBoldFor(10);
+
+    // this order matters. We want the fade line below the hot zones
+    if (v.loopActive && v.loopFade > 0 &&
+        ((fe >= 0 && fe <= getWidth()) || (fs >= 0 && fs <= getWidth())))
+    {
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        g.drawLine(fs, r.getBottom(), ls, r.getY());
+        g.drawLine(ls, r.getY(), fe, r.getBottom());
+    }
+
     if (ss >= 0 && ss <= getWidth())
     {
         g.setColour(a1a);
         g.fillRect(startSampleHZ);
-        g.drawVerticalLine(startSampleHZ.getX(), 0, getHeight());
+        g.drawVerticalLine(ss, r.getY(), r.getBottom());
         g.setColour(bg1);
         g.setFont(imf);
         g.drawText("S", startSampleHZ, juce::Justification::centred);
@@ -537,25 +562,21 @@ void SampleWaveform::paint(juce::Graphics &g)
     {
         g.setColour(a1a);
         g.fillRect(endSampleHZ);
-        g.drawVerticalLine(endSampleHZ.getRight(), 0, getHeight());
+        // special case of full zoom full sample draws off by one so just bring it in
+        g.drawVerticalLine(std::clamp(se, 0, getWidth() - 1), r.getY(), r.getBottom());
         g.setColour(bg1);
         g.setFont(imf);
         g.drawText("E", endSampleHZ, juce::Justification::centred);
     }
     if (v.loopActive)
     {
-        auto ls = xPixelForSample(v.startLoop, false);
-        auto fs = xPixelForSample(v.startLoop - v.loopFade, false);
-        auto fe = xPixelForSample(v.startLoop + v.loopFade, false);
-        auto le = xPixelForSample(v.endLoop, false);
-
         g.setColour(juce::Colours::aliceblue);
         if (ls >= 0 && ls <= getWidth())
         {
             g.setColour(a2a);
 
             g.fillRect(startLoopHZ);
-            g.drawVerticalLine(startLoopHZ.getX(), 0, getHeight());
+            g.drawVerticalLine(ls, r.getY(), r.getBottom());
 
             g.setColour(bg1);
             g.setFont(imf);
@@ -566,17 +587,12 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.setColour(a2a);
 
             g.fillRect(endLoopHZ);
-            g.drawVerticalLine(endLoopHZ.getRight(), 0, getHeight());
+            // See above
+            g.drawVerticalLine(std::clamp(le, 0, getWidth() - 1), r.getY(), r.getBottom());
 
             g.setColour(bg1);
             g.setFont(imf);
             g.drawText("<", endLoopHZ, juce::Justification::centred);
-        }
-        if (v.loopFade > 0 && ((fe >= 0 && fe <= getWidth()) || (fs >= 0 && fs <= getWidth())))
-        {
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
-            g.drawLine(fs, getHeight(), ls, 0);
-            g.drawLine(ls, 0, fe, getHeight());
         }
     }
 
@@ -587,8 +603,8 @@ void SampleWaveform::paint(juce::Graphics &g)
         {
             auto sp = xPixelForSample(samp->meta.slice_start[i]);
             auto ep = xPixelForSample(samp->meta.slice_end[i]);
-            g.drawVerticalLine(sp, 0, getHeight());
-            g.drawVerticalLine(ep, 0, getHeight());
+            g.drawVerticalLine(sp, r.getY(), r.getBottom());
+            g.drawVerticalLine(ep, r.getY(), r.getBottom());
         }
     }
 }

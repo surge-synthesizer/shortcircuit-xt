@@ -42,6 +42,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/VUMeter.h"
 #include "sst/jucegui/components/ScrollBar.h"
+#include "sst/jucegui/components/TabbedComponent.h"
 
 #include "connectors/SCXTResources.h"
 
@@ -461,6 +462,26 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_1a));
     base->setColour(jcmp::HSliderFilled::Styles::styleClass,
                     jcmp::HSliderFilled::Styles::handle_hover, cols.getHover(ColorMap::accent_1a));
+
+    base->setColour(sst::jucegui::components::TabbedComponent::Styles::styleClass,
+                    sst::jucegui::components::TabbedComponent::Styles::tabSelectedFillColor,
+                    cols.get(ColorMap::bg_3));
+    base->setColour(sst::jucegui::components::TabbedComponent::Styles::styleClass,
+                    sst::jucegui::components::TabbedComponent::Styles::tabSelectedLabelColor,
+                    cols.get(ColorMap::accent_1a));
+    base->setColour(sst::jucegui::components::TabbedComponent::Styles::styleClass,
+                    sst::jucegui::components::TabbedComponent::Styles::tabSelectedFillColor_hover,
+                    cols.getHover(ColorMap::bg_3));
+    base->setColour(sst::jucegui::components::TabbedComponent::Styles::styleClass,
+                    sst::jucegui::components::TabbedComponent::Styles::tabUnselectedOutlineColor,
+                    cols.get(ColorMap::bg_3));
+    base->setColour(sst::jucegui::components::TabbedComponent::Styles::styleClass,
+                    sst::jucegui::components::TabbedComponent::Styles::tabUnselectedLabelColor,
+                    cols.get(ColorMap::generic_content_medium));
+    base->setColour(
+        sst::jucegui::components::TabbedComponent::Styles::styleClass,
+        sst::jucegui::components::TabbedComponent::Styles::tabUnselectedLabelColor_hover,
+        cols.get(ColorMap::generic_content_high));
 
     // auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     auto interReg = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");

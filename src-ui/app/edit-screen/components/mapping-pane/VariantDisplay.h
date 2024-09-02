@@ -184,53 +184,16 @@ struct VariantDisplay : juce::Component, HasEditor
 
     std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
 
-    struct FileInfos : juce::Component
+    struct FileInfos : juce::Component, HasEditor
     {
-        FileInfos()
-        {
-            auto createComp = [this](auto &comp, std::string text) {
-                comp = std::make_unique<sst::jucegui::components::Label>();
-                comp->setText(text);
-                addAndMakeVisible(*comp);
-            };
+        FileInfos(HasEditor *e) : HasEditor(e->editor) { setInterceptsMouseClicks(false, false); }
 
-            createComp(srLabel, "SR: ");
-            createComp(bdLabel, "BD: ");
-            createComp(sizeLabel, "SMP: ");
-            createComp(lengthLabel, "LEN: ");
+        void paint(juce::Graphics &g) override;
 
-            createComp(srVal, "Sample Rate Val");
-            createComp(bdVal, "Bit Depth Val");
-            createComp(sizeVal, "Size Val");
-            createComp(lengthVal, "Length Val");
-        }
-
-        void resized()
-        {
-            auto p{getLocalBounds().withWidth(40)};
-            srLabel->setBounds(p.withWidth(30));
-            p.translate(srLabel->getWidth(), 0);
-            srVal->setBounds(p.withWidth(60));
-            p.translate(srVal->getWidth(), 0);
-
-            bdLabel->setBounds(p.withWidth(30));
-            p.translate(bdLabel->getWidth(), 0);
-            bdVal->setBounds(p.withWidth(60));
-            p.translate(bdVal->getWidth(), 0);
-
-            sizeLabel->setBounds(p.withWidth(30));
-            p.translate(sizeLabel->getWidth(), 0);
-            sizeVal->setBounds(p.withWidth(60));
-            p.translate(sizeVal->getWidth(), 0);
-
-            lengthLabel->setBounds(p.withWidth(30));
-            p.translate(lengthLabel->getWidth(), 0);
-            lengthVal->setBounds(p.withWidth(60));
-            p.translate(lengthVal->getWidth(), 0);
-        }
-
-        std::unique_ptr<sst::jucegui::components::Label> srLabel, bdLabel, sizeLabel, lengthLabel;
-        std::unique_ptr<sst::jucegui::components::Label> srVal, bdVal, sizeVal, lengthVal;
+        double sampleRate{1};
+        std::string bd;
+        size_t sampleLength{0};
+        int channels{0};
     };
 
     std::unique_ptr<FileInfos> fileInfos;
