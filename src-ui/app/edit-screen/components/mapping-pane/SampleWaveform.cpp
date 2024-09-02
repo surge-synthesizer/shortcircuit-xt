@@ -553,18 +553,18 @@ void SampleWaveform::paint(juce::Graphics &g)
     if (ss >= 0 && ss <= getWidth())
     {
         g.setColour(a1a);
-        g.fillRect(startSampleHZ);
         g.drawVerticalLine(ss, r.getY(), r.getBottom());
+        g.fillRect(startSampleHZ);
         g.setColour(bg1);
         g.setFont(imf);
         g.drawText("S", startSampleHZ, juce::Justification::centred);
     }
-    if (se >= 0 && se <= getWidth())
+    if (se > 0 && se <= getWidth())
     {
+        // end points are up-to so bring back by one px
         g.setColour(a1a);
+        g.drawVerticalLine(se - 1, r.getY(), r.getBottom());
         g.fillRect(endSampleHZ);
-        // special case of full zoom full sample draws off by one so just bring it in
-        g.drawVerticalLine(std::clamp(se, 0, getWidth() - 1), r.getY(), r.getBottom());
         g.setColour(bg1);
         g.setFont(imf);
         g.drawText("E", endSampleHZ, juce::Justification::centred);
@@ -581,19 +581,24 @@ void SampleWaveform::paint(juce::Graphics &g)
 
             g.setColour(bg1);
             g.setFont(imf);
-            g.drawText(">", startLoopHZ, juce::Justification::centred);
+            auto bx = startLoopHZ.reduced(3, 3);
+            g.drawLine(bx.getX(), bx.getY(), bx.getRight(), bx.getCentreY());
+            g.drawLine(bx.getX(), bx.getBottom(), bx.getRight(), bx.getCentreY());
         }
-        if (le >= 0 && le <= getWidth())
+        if (le > 0 && le <= getWidth())
         {
             g.setColour(a2a);
 
             g.fillRect(endLoopHZ);
             // See above
-            g.drawVerticalLine(std::clamp(le, 0, getWidth() - 1), r.getY(), r.getBottom());
+            g.drawVerticalLine(le - 1, r.getY(), r.getBottom());
 
             g.setColour(bg1);
             g.setFont(imf);
-            g.drawText("<", endLoopHZ, juce::Justification::centred);
+
+            auto bx = endLoopHZ.reduced(3, 3);
+            g.drawLine(bx.getRight(), bx.getY(), bx.getX(), bx.getCentreY());
+            g.drawLine(bx.getRight(), bx.getBottom(), bx.getX(), bx.getCentreY());
         }
     }
 
