@@ -66,42 +66,45 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         }
     }
 
-    if (keyboardHotZones[0].contains(e.position))
+    if (!keyboardHotZones.empty() && keyboardHotZones[0].contains(e.position))
     {
         mouseState = DRAG_KEY;
         dragFrom[0] = FROM_START;
         return;
     }
-    if (keyboardHotZones[1].contains(e.position))
+    if (!keyboardHotZones.empty() && keyboardHotZones[1].contains(e.position))
     {
         mouseState = DRAG_KEY;
         dragFrom[0] = FROM_END;
         return;
     }
 
-    if (velocityHotZones[0].contains(e.position))
+    if (!velocityHotZones.empty() && velocityHotZones[0].contains(e.position))
     {
         mouseState = DRAG_VELOCITY;
         dragFrom[1] = FROM_END;
         return;
     }
-    if (velocityHotZones[1].contains(e.position))
+    if (!velocityHotZones.empty() && velocityHotZones[1].contains(e.position))
     {
         mouseState = DRAG_VELOCITY;
         dragFrom[1] = FROM_START;
         return;
     }
 
-    for (int idx = 0; idx < 4; ++idx)
+    if (!bothHotZones.empty())
     {
-        if (bothHotZones[idx].contains(e.position))
+        for (int idx = 0; idx < 4; ++idx)
         {
-            // 0 1
-            // 3 2
-            dragFrom[0] = (idx == 1 || idx == 2) ? FROM_END : FROM_START;
-            dragFrom[1] = (idx < 2) ? FROM_END : FROM_START;
-            mouseState = DRAG_KEY_AND_VEL;
-            return;
+            if (bothHotZones[idx].contains(e.position))
+            {
+                // 0 1
+                // 3 2
+                dragFrom[0] = (idx == 1 || idx == 2) ? FROM_END : FROM_START;
+                dragFrom[1] = (idx < 2) ? FROM_END : FROM_START;
+                mouseState = DRAG_KEY_AND_VEL;
+                return;
+            }
         }
     }
 
