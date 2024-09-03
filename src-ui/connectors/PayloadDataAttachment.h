@@ -564,6 +564,8 @@ struct DummyContinuous : sst::jucegui::data::Continuous
     virtual bool isBipolar() const override { return bip; }
     float getMin() const override { return isBipolar() ? -1 : 0; }
 
+    std::string getValueAsStringFor(float f) const override { return fmt::format("{:.2f}", f); }
+
     virtual std::string getLabel() const override
     {
         if (lab != "Unimpl")

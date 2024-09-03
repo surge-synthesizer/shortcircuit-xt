@@ -139,6 +139,19 @@ void init()
 }
 
 } // namespace group
+
+namespace variant
+{
+static constexpr sheet_t::Class ToggleButton{"variant.togglebutton"};
+static constexpr sheet_t::Class DraggableTextEditableValue{"variant.draggable"};
+void init()
+{
+    sheet_t::addClass(DraggableTextEditableValue)
+        .withBaseClass(jcmp::DraggableTextEditableValue::Styles::styleClass);
+    sheet_t::addClass(ToggleButton).withBaseClass(jcmp::ToggleButton::Styles::styleClass);
+}
+void applyColors(const sheet_t::ptr_t &, const ColorMap &);
+} // namespace variant
 } // namespace edit
 namespace header
 {
@@ -200,6 +213,7 @@ ThemeApplier::ThemeApplier()
         detail::edit::init();
         detail::edit::zone::init();
         detail::edit::group::init();
+        detail::edit::variant::init();
         detail::header::init();
         detail::util::init();
         detail::mix::channelstrip::init();
@@ -215,6 +229,7 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     detail::edit::applyColors(s, *colors);
     detail::edit::zone::applyColors(s, *colors);
     detail::edit::group::applyColors(s, *colors);
+    detail::edit::variant::applyColors(s, *colors);
     detail::header::applyColorsAndFonts(s, *colors, *this);
     detail::mix::channelstrip::applyColorsAndFonts(s, *colors, *this);
     detail::mix::auxchannelstrip::applyColorsAndFonts(s, *colors, *this);
@@ -277,6 +292,16 @@ void ThemeApplier::applyGroupMultiScreenTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::Knob>(detail::edit::group::Knob);
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::group::DraggableTextEditableValue);
+    map.applyMapTo(toThis);
+}
+
+void ThemeApplier::applyVariantLoopTheme(juce::Component *toThis)
+{
+    SCLOG_UNIMPL_ONCE("applyVariantLoopTheme - set this up to be blue!");
+    jstl::CustomTypeMap map;
+    map.addCustomClass<jcmp::DraggableTextEditableValue>(
+        detail::edit::variant::DraggableTextEditableValue);
+    map.addCustomClass<jcmp::ToggleButton>(detail::edit::variant::ToggleButton);
     map.applyMapTo(toThis);
 }
 
@@ -646,6 +671,28 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_2a_alpha_b));
 }
 } // namespace group
+namespace variant
+{
+void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
+{
+    base->setColour(DraggableTextEditableValue, jcmp::DraggableTextEditableValue::Styles::value,
+                    cols.get(ColorMap::accent_2a));
+    base->setColour(DraggableTextEditableValue,
+                    jcmp::DraggableTextEditableValue::Styles::value_hover,
+                    cols.getHover(ColorMap::accent_2a));
+
+    base->setColour(DraggableTextEditableValue,
+                    jcmp::DraggableTextEditableValue::Styles::background,
+                    cols.get(ColorMap::accent_2b).withAlpha(0.2f));
+    base->setColour(DraggableTextEditableValue,
+                    jcmp::DraggableTextEditableValue::Styles::background_hover,
+                    cols.get(ColorMap::accent_2b).withAlpha(0.32f));
+
+    base->setColour(ToggleButton, jcmp::ToggleButton::Styles::value, cols.get(ColorMap::accent_2a));
+    base->setColour(ToggleButton, jcmp::ToggleButton::Styles::value_hover,
+                    cols.getHover(ColorMap::accent_2a));
+}
+} // namespace variant
 } // namespace edit
 namespace header
 {
