@@ -33,6 +33,7 @@
 namespace scxt::ui::app::edit_screen
 {
 namespace cmsg = scxt::messaging::client;
+namespace jcmp = sst::jucegui::components;
 
 VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPane *p)
     : HasEditor(p->editor), variantView(p->sampleView), parentPane(p)
@@ -41,46 +42,44 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     addAndMakeVisible(*waveformsTabbedGroup);
     for (auto i = 0; i < maxVariantsPerZone; ++i)
     {
-        waveforms[i].waveformViewport = std::make_unique<sst::jucegui::components::ZoomContainer>(
-            std::make_unique<SampleWaveform>(this));
+        waveforms[i].waveformViewport =
+            std::make_unique<jcmp::ZoomContainer>(std::make_unique<SampleWaveform>(this));
         waveforms[i].waveform = static_cast<SampleWaveform *>(
             waveforms[i].waveformViewport->contents->associatedComponent());
     }
 
-    variantPlayModeLabel = std::make_unique<sst::jucegui::components::Label>();
+    variantPlayModeLabel = std::make_unique<jcmp::Label>();
     variantPlayModeLabel->setText("Variants");
     addAndMakeVisible(*variantPlayModeLabel);
 
-    variantPlaymodeButton = std::make_unique<sst::jucegui::components::MenuButton>();
+    variantPlaymodeButton = std::make_unique<jcmp::MenuButton>();
     variantPlaymodeButton->setOnCallback([this]() { showVariantPlaymodeMenu(); });
     addAndMakeVisible(*variantPlaymodeButton);
 
-    editAllButton = std::make_unique<sst::jucegui::components::TextPushButton>();
+    editAllButton = std::make_unique<jcmp::TextPushButton>();
     editAllButton->setLabel("EDIT ALL");
     editAllButton->setOnCallback(editor->makeComingSoon("Edit All"));
     addAndMakeVisible(*editAllButton);
 
-    fileLabel = std::make_unique<sst::jucegui::components::Label>();
+    fileLabel = std::make_unique<jcmp::Label>();
     fileLabel->setText("File");
     addAndMakeVisible(*fileLabel);
 
-    fileButton = std::make_unique<sst::jucegui::components::MenuButton>();
+    fileButton = std::make_unique<jcmp::MenuButton>();
     fileButton->setOnCallback([this]() { showFileBrowser(); });
     addAndMakeVisible(*fileButton);
 
-    nextFileButton = std::make_unique<sst::jucegui::components::GlyphButton>(
-        sst::jucegui::components::GlyphPainter::GlyphType::JOG_DOWN);
+    nextFileButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::JOG_DOWN);
     nextFileButton->setOnCallback([this]() { selectNextFile(true); });
     addAndMakeVisible(*nextFileButton);
 
-    prevFileButton = std::make_unique<sst::jucegui::components::GlyphButton>(
-        sst::jucegui::components::GlyphPainter::GlyphType::JOG_UP);
+    prevFileButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::JOG_UP);
     prevFileButton->setOnCallback([this]() { selectNextFile(false); });
     addAndMakeVisible(*prevFileButton);
 
-    auto ms = std::make_unique<sst::jucegui::components::ToggleButton>();
-    ms->setGlyph(sst::jucegui::components::GlyphPainter::GlyphType::SHOW_INFO);
-    ms->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
+    auto ms = std::make_unique<jcmp::ToggleButton>();
+    ms->setGlyph(jcmp::GlyphPainter::GlyphType::SHOW_INFO);
+    ms->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH_WITH_BG);
     addAndMakeVisible(*ms);
     auto ds = std::make_unique<boolToggle_t>(ms, fileInfoShowing);
     ds->onValueChanged = [w = juce::Component::SafePointer(this)](auto v) {
@@ -106,7 +105,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         playModeLabel.reset();
     }
 
-    playModeLabel = std::make_unique<sst::jucegui::components::Label>();
+    playModeLabel = std::make_unique<jcmp::Label>();
     playModeLabel->setText("Play");
     addAndMakeVisible(*playModeLabel);
 
@@ -115,8 +114,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         removeChildComponent(playModeButton.get());
         playModeButton.reset();
     }
-    playModeButton = std::make_unique<juce::TextButton>("mode");
-    playModeButton->onClick = [this]() { showPlayModeMenu(); };
+    playModeButton = std::make_unique<jcmp::MenuButton>();
+    playModeButton->setOnCallback([this]() { showPlayModeMenu(); });
     addAndMakeVisible(*playModeButton);
 
     if (loopModeButton)
@@ -124,23 +123,14 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         removeChildComponent(loopModeButton.get());
         loopModeButton.reset();
     }
-    loopModeButton = std::make_unique<juce::TextButton>("loopmode");
-    loopModeButton->onClick = [this]() { showLoopModeMenu(); };
+    loopModeButton = std::make_unique<jcmp::MenuButton>();
+    loopModeButton->setOnCallback([this]() { showLoopModeMenu(); });
     addAndMakeVisible(*loopModeButton);
-
-    if (loopDirectionButton)
-    {
-        removeChildComponent(loopDirectionButton.get());
-        loopDirectionButton.reset();
-    }
-    loopDirectionButton = std::make_unique<juce::TextButton>("loopdir");
-    loopDirectionButton->onClick = [this]() { showLoopDirectionMenu(); };
-    addAndMakeVisible(*loopDirectionButton);
 
     auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
         auto at = std::make_unique<connectors::SamplePointDataAttachment>(
             v, [this](const auto &) { onSamplePointChangedFromGUI(); });
-        auto sl = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
+        auto sl = std::make_unique<jcmp::DraggableTextEditableValue>();
         sl->setSource(at.get());
         if (sampleEditors[c])
         {
@@ -154,7 +144,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     };
 
     auto addLabel = [this](Ctrl c, const std::string &label) {
-        auto l = std::make_unique<sst::jucegui::components::Label>();
+        auto l = std::make_unique<jcmp::Label>();
+        l->setJustification(juce::Justification::centredRight);
         l->setText(label);
         if (sampleEditors[c])
         {
@@ -170,11 +161,11 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     attachSamplePoint(endP, "EndS", variantView.variants[selectedVariation].endSample);
     addLabel(endP, "End");
     attachSamplePoint(startL, "StartL", variantView.variants[selectedVariation].startLoop);
-    addLabel(startL, "Loop Start");
+    addLabel(startL, "Start");
     attachSamplePoint(endL, "EndL", variantView.variants[selectedVariation].endLoop);
-    addLabel(endL, "Loop End");
+    addLabel(endL, "End");
     attachSamplePoint(fadeL, "fadeL", variantView.variants[selectedVariation].loopFade);
-    addLabel(fadeL, "Loop Fade");
+    addLabel(fadeL, "XF");
 
     if (loopActive)
     {
@@ -194,8 +185,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
                 }
             },
             variantView.variants[selectedVariation].loopActive);
-    loopActive = std::make_unique<sst::jucegui::components::ToggleButton>();
-    loopActive->setLabel("On");
+    loopActive = std::make_unique<jcmp::ToggleButton>();
+    loopActive->setLabel(u8"\U0000221E");
     loopActive->setSource(loopAttachment.get());
     addAndMakeVisible(*loopActive);
 
@@ -217,8 +208,9 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
             },
             variantView.variants[selectedVariation].playReverse);
 
-    reverseActive = std::make_unique<sst::jucegui::components::ToggleButton>();
-    reverseActive->setLabel("<-");
+    reverseActive = std::make_unique<jcmp::ToggleButton>();
+    reverseActive->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH_WITH_BG);
+    reverseActive->setGlyph(jcmp::GlyphPainter::GlyphType::REVERSE);
     reverseActive->setSource(reverseAttachment.get());
     addAndMakeVisible(*reverseActive);
 
@@ -243,7 +235,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
             }
         },
         variantView.variants[selectedVariation].loopCountWhenCounted);
-    loopCnt = std::make_unique<sst::jucegui::components::DraggableTextEditableValue>();
+    loopCnt = std::make_unique<jcmp::DraggableTextEditableValue>();
     loopCnt->setSource(loopCntAttachment.get());
     addAndMakeVisible(*loopCnt);
 
@@ -268,49 +260,79 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         }
         waveformsTabbedGroup->setCurrentTabIndex(selectedTab, true);
     }
-    // needed to place all the children
-    resized();
 
+    divider = std::make_unique<jcmp::NamedPanelDivider>(false);
+    addAndMakeVisible(*divider);
     rebuild();
+    resized();
 }
 
 void VariantDisplay::resized()
 {
+    auto &v = variantView.variants[selectedVariation];
+
     auto viewArea = sampleDisplayRegion();
     waveformsTabbedGroup->setBounds(viewArea);
-    auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth).reduced(2);
+    auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth);
 
-    p = p.withHeight(18).translated(0, 20);
+    auto npw = 3;
+    auto npd = getLocalBounds()
+                   .withLeft(getLocalBounds().getWidth() - sidePanelWidth - sidePanelDividerPad)
+                   .withWidth(sidePanelDividerPad);
+    npd = npd.reduced((npd.getWidth() - npw) * 0.5, 4).withTrimmedTop(20);
+    divider->setBounds(npd);
 
-    playModeLabel->setBounds(p.withWidth(40));
+    p = p.withHeight(18).translated(0, 24);
+    auto row = p;
 
-    playModeButton->setBounds(p.withX(playModeLabel->getRight() + 1).withWidth(p.getWidth() - 60));
-    reverseActive->setBounds(p.withX(playModeButton->getRight() + 1).withWidth(18));
-    p = p.translated(0, 20);
+    int padding{4};
+    auto ofRow = [&row, padding](const auto &wid, auto w) {
+        wid->setBounds(row.withWidth(w));
+        row = row.translated(w + padding, 0);
+    };
+    auto newRow = [&row, &p, padding](auto &s) {
+        if (row.getX() != p.getRight() + padding)
+        {
+            SCLOG(s << " Mismatched p layout " << row.getX() << " " << p.getRight());
+        }
+        p = p.translated(0, 21);
+        row = p;
+    };
 
-    auto w = p.getWidth() / 2;
+    ofRow(playModeLabel, 27);
+    ofRow(playModeButton, 87);
+    ofRow(reverseActive, 14);
+    newRow("playMode");
+
     for (const auto m : {startP, endP})
     {
-        sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
-        labels[m]->setBounds(p.withWidth(w));
-        p = p.translated(0, 20);
+        ofRow(labels[m], p.getWidth() - 72 - padding);
+        ofRow(sampleEditors[m], 72);
+        newRow("ctrl");
     }
 
-    p = p.translated(0, 20);
-    p = p.translated(0, 20);
-    loopActive->setBounds(p.withWidth(18));
-    loopModeButton->setBounds(p.withX(loopActive->getRight() + 1).withWidth(p.getWidth() - 50));
-    loopCnt->setBounds(p.withX(loopModeButton->getRight() + 1).withWidth(28));
-    p = p.translated(0, 20);
+    if (v.loopMode == engine::Zone::LOOP_FOR_COUNT)
+    {
+        ofRow(loopModeButton, 84);
+        ofRow(loopCnt, 26);
+    }
+    else
+    {
+        ofRow(loopModeButton, 118);
+    }
+    ofRow(loopActive, 14);
+    newRow("loop");
 
     for (const auto m : {startL, endL, fadeL})
     {
-        sampleEditors[m]->setBounds(p.withLeft(p.getX() + w));
-        labels[m]->setBounds(p.withWidth(w));
-        p = p.translated(0, 20);
+        ofRow(labels[m], p.getWidth() - 72 - padding);
+        ofRow(sampleEditors[m], 72);
+        newRow("loopctrl");
     }
 
-    loopDirectionButton->setBounds(p);
+    /*
+     * This is the section avovce the waveform
+     */
 
     auto hl = getLocalBounds().withHeight(20).reduced(1).withTrimmedLeft(350);
     auto hP = [&hl, this](int w) {
@@ -325,10 +347,11 @@ void VariantDisplay::resized()
         hl = hl.translated(w + margin, 0);
         return r;
     };
+
     variantPlayModeLabel->setBounds(hP(42));
     variantPlaymodeButton->setBounds(hP(100));
-    editAllButton->setBounds(hP(50));
-    fileInfoButton->widget->setBounds(hP(20));
+    editAllButton->setBounds(hP(55));
+    fileInfoButton->widget->setBounds(hP(hl.getHeight()));
     fileLabel->setBounds(hP(20));
     fileButton->setBounds(hP(-18));
 
@@ -345,36 +368,32 @@ void VariantDisplay::rebuild()
     switch (variantView.variants[selectedVariation].playMode)
     {
     case engine::Zone::NORMAL:
-        playModeButton->setButtonText("Normal");
+        playModeButton->setLabel("NORMAL");
         break;
     case engine::Zone::ONE_SHOT:
-        playModeButton->setButtonText("Oneshot");
+        playModeButton->setLabel("ONE-SHOT");
         break;
     case engine::Zone::ON_RELEASE:
-        playModeButton->setButtonText("On Release (t/k)");
+        playModeButton->setLabel("ON RELEASE");
         break;
     }
 
+    std::string dirExtra = "";
+    if (variantView.variants[selectedVariation].loopDirection == engine::Zone::ALTERNATE_DIRECTIONS)
+    {
+        dirExtra += " ";
+        dirExtra += u8"\U00002194"; // left right arrow
+    }
     switch (variantView.variants[selectedVariation].loopMode)
     {
     case engine::Zone::LOOP_DURING_VOICE:
-        loopModeButton->setButtonText("Loop");
+        loopModeButton->setLabel("LOOP" + dirExtra);
         break;
     case engine::Zone::LOOP_WHILE_GATED:
-        loopModeButton->setButtonText("Loop While Gated");
+        loopModeButton->setLabel("LOOP UNTIL REL" + dirExtra);
         break;
     case engine::Zone::LOOP_FOR_COUNT:
-        loopModeButton->setButtonText("For Count (t/k)");
-        break;
-    }
-
-    switch (variantView.variants[selectedVariation].loopDirection)
-    {
-    case engine::Zone::FORWARD_ONLY:
-        loopDirectionButton->setButtonText("Loop Forward");
-        break;
-    case engine::Zone::ALTERNATE_DIRECTIONS:
-        loopDirectionButton->setButtonText("Loop Alternate");
+        loopModeButton->setLabel("COUNT");
         break;
     }
 
@@ -410,7 +429,6 @@ void VariantDisplay::rebuild()
     }
 
     loopModeButton->setEnabled(variantView.variants[selectedVariation].loopActive);
-    loopDirectionButton->setEnabled(variantView.variants[selectedVariation].loopActive);
     loopCnt->setEnabled(variantView.variants[selectedVariation].loopActive);
     sampleEditors[startL]->setVisible(variantView.variants[selectedVariation].loopActive);
     sampleEditors[endL]->setVisible(variantView.variants[selectedVariation].loopActive);
@@ -421,6 +439,7 @@ void VariantDisplay::rebuild()
 
     waveforms[selectedVariation].waveform->rebuildHotZones();
 
+    resized();
     repaint();
 }
 
@@ -495,8 +514,7 @@ void VariantDisplay::MyTabbedComponent::currentTabChanged(int newCurrentTabIndex
 
     // The way tabs work has sytlesheet implications which we
     // deal with in the parent class
-    sst::jucegui::components::TabbedComponent::currentTabChanged(newCurrentTabIndex,
-                                                                 newCurrentTabName);
+    jcmp::TabbedComponent::currentTabChanged(newCurrentTabIndex, newCurrentTabName);
 }
 
 void VariantDisplay::showFileBrowser()
@@ -566,18 +584,30 @@ void VariantDisplay::showLoopModeMenu()
     p.addSectionHeader("Loop Mode");
     p.addSeparator();
 
-    auto add = [&p, this](auto e, auto n) {
-        p.addItem(n, true, variantView.variants[selectedVariation].loopMode == e, [this, e]() {
-            variantView.variants[selectedVariation].loopMode = e;
-            onSamplePointChangedFromGUI();
-            rebuild();
-        });
+    auto add = [&p, this](auto e, bool alt, auto n) {
+        p.addItem(n, true,
+                  variantView.variants[selectedVariation].loopMode == e &&
+                      variantView.variants[selectedVariation].loopDirection ==
+                          (alt ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS
+                               : engine::Zone::LoopDirection::FORWARD_ONLY),
+                  [w = juce::Component::SafePointer(this), e, alt]() {
+                      if (!w)
+                          return;
+                      w->variantView.variants[w->selectedVariation].loopMode = e;
+                      w->variantView.variants[w->selectedVariation].loopDirection =
+                          (alt ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS
+                               : engine::Zone::LoopDirection::FORWARD_ONLY);
+                      w->onSamplePointChangedFromGUI();
+                      w->rebuild();
+                  });
     };
-    add(engine::Zone::LoopMode::LOOP_DURING_VOICE, "Loop");
-    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, "Loop While Gated");
-    add(engine::Zone::LoopMode::LOOP_FOR_COUNT, "For Count (t/k)");
+    add(engine::Zone::LoopMode::LOOP_DURING_VOICE, false, "Loop");
+    add(engine::Zone::LoopMode::LOOP_DURING_VOICE, true, "Loop Alternate");
+    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, false, "Loop Until Release");
+    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, true, "Loop Alternate Until Release");
+    add(engine::Zone::LoopMode::LOOP_FOR_COUNT, false, "Loop For Count (unimpl)");
 
-    p.showMenuAsync(editor->defaultPopupMenuOptions());
+    p.showMenuAsync(editor->defaultPopupMenuOptions(loopModeButton.get()));
 }
 
 void VariantDisplay::showVariantPlaymodeMenu()
@@ -601,26 +631,6 @@ void VariantDisplay::showVariantPlaymodeMenu()
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
-
-void VariantDisplay::showLoopDirectionMenu()
-{
-    juce::PopupMenu p;
-    p.addSectionHeader("Loop Direction");
-    p.addSeparator();
-
-    auto add = [&p, this](auto e, auto n) {
-        p.addItem(n, true, variantView.variants[selectedVariation].loopDirection == e, [this, e]() {
-            variantView.variants[selectedVariation].loopDirection = e;
-            onSamplePointChangedFromGUI();
-            rebuild();
-        });
-    };
-    add(engine::Zone::LoopDirection::FORWARD_ONLY, "Loop Forward");
-    add(engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS, "Loop Alternate");
-
-    p.showMenuAsync(editor->defaultPopupMenuOptions());
-}
-
 std::optional<std::string> VariantDisplay::MyTabbedComponent::sourceDetailsDragAndDropSample(
     const SourceDetails &dragSourceDetails)
 {

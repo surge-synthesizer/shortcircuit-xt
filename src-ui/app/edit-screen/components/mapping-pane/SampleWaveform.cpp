@@ -461,7 +461,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         if (esp <= getWidth())
         {
             juce::Graphics::ScopedSaveState gs(g);
-            auto cr = r.withTrimmedLeft(esp);
+            auto cr = r.withTrimmedLeft(esp - 2);
             g.reduceClipRegion(cr);
 
             g.setGradientFill(gTop);

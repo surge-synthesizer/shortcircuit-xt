@@ -483,6 +483,16 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
         sst::jucegui::components::TabbedComponent::Styles::tabUnselectedLabelColor_hover,
         cols.get(ColorMap::generic_content_high));
 
+    // These items have smaller fonts
+    base->setFont(jcmp::MenuButton::Styles::styleClass, jcmp::MenuButton::Styles::labelfont,
+                  juce::Font(juce::Font::plain).withPointHeight(10));
+    base->setFont(jcmp::TextPushButton::Styles::styleClass, jcmp::TextPushButton::Styles::labelfont,
+                  juce::Font(juce::Font::plain).withPointHeight(10));
+    base->setFont(jcmp::ToggleButton::Styles::styleClass, jcmp::ToggleButton::Styles::labelfont,
+                  juce::Font(juce::Font::plain).withPointHeight(10));
+    base->setFont(jcmp::MultiSwitch::Styles::styleClass, jcmp::MultiSwitch::Styles::labelfont,
+                  juce::Font(juce::Font::plain).withPointHeight(10));
+
     // auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     auto interReg = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");
     base->replaceFontsWithTypeface(interReg);
