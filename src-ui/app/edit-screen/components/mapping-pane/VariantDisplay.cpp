@@ -99,7 +99,9 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 {
     selectedVariation = sel;
 
-    // TODO: Why do we have this wierd remove pattern everywhere
+    // This wierd pattern is because for some reason we rebuild the components
+    // when we select a new variant but not the header.
+    // TODO - sort this out
     if (playModeLabel)
     {
         removeChildComponent(playModeLabel.get());
@@ -512,11 +514,19 @@ void VariantDisplay::rebuild()
         fileInfos->channels = samp->channels;
     }
 
-    loopModeButton->setEnabled(variantView.variants[selectedVariation].loopActive);
-    loopCnt->setEnabled(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[startL]->setVisible(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[endL]->setVisible(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[fadeL]->setVisible(variantView.variants[selectedVariation].loopActive);
+    bool hasLoop = variantView.variants[selectedVariation].loopActive;
+    loopModeButton->setEnabled(hasLoop);
+    loopCnt->setEnabled(hasLoop);
+    sampleEditors[startL]->setVisible(hasLoop);
+    sampleEditors[endL]->setVisible(hasLoop);
+
+    sampleEditors[fadeL]->setVisible(hasLoop);
+    sampleEditors[curve]->setVisible(hasLoop);
+    zoomButton->setVisible(hasLoop);
+    labels[startL]->setVisible(hasLoop);
+    labels[endL]->setVisible(hasLoop);
+    labels[fadeL]->setVisible(hasLoop);
+    glyphLabels[curve]->setVisible(hasLoop);
 
     loopCnt->setVisible(variantView.variants[selectedVariation].loopMode ==
                         engine::Zone::LoopMode::LOOP_FOR_COUNT);
