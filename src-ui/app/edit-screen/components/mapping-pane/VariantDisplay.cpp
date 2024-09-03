@@ -439,9 +439,9 @@ void VariantDisplay::resized()
     editAllButton->setBounds(hP(55));
     fileInfoButton->widget->setBounds(hP(hl.getHeight()));
     fileLabel->setBounds(hP(20));
-    fileButton->setBounds(hP(-18));
+    fileButton->setBounds(hP(-14));
 
-    auto jogs = hP(18);
+    auto jogs = hP(14);
     prevFileButton->setBounds(jogs.withTrimmedBottom(jogs.getHeight() / 2));
     nextFileButton->setBounds(jogs.withTrimmedTop(jogs.getHeight() / 2));
 

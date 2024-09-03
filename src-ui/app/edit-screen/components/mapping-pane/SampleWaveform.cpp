@@ -485,8 +485,8 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.fillPath(lowerFill[ch]);
 
             g.setColour(a1a);
-            g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
-            g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
+            g.strokePath(upperStroke[ch], juce::PathStrokeType(0.5));
+            g.strokePath(lowerStroke[ch], juce::PathStrokeType(0.5));
         }
     }
     if (v.loopActive)
@@ -521,12 +521,12 @@ void SampleWaveform::paint(juce::Graphics &g)
                 g.fillPath(lowerFill[ch]);
 
                 g.setColour(a1a);
-                g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
-                g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
+                g.strokePath(upperStroke[ch], juce::PathStrokeType(0.5));
+                g.strokePath(lowerStroke[ch], juce::PathStrokeType(0.5));
 
                 g.setColour(a2a.withAlpha(0.32f));
-                g.strokePath(upperStroke[ch], juce::PathStrokeType(1));
-                g.strokePath(lowerStroke[ch], juce::PathStrokeType(1));
+                g.strokePath(upperStroke[ch], juce::PathStrokeType(0.5));
+                g.strokePath(lowerStroke[ch], juce::PathStrokeType(0.5));
             }
         }
     }
