@@ -520,6 +520,13 @@ ZoneLayoutDisplay::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 
 juce::Rectangle<float> ZoneLayoutDisplay::rectangleForRange(int kL, int kH, int vL, int vH)
 {
+    if (kL > kH)
+        std::swap(kL, kH);
+
+    return rectangleForRangeSkipEnd(kL, kH + 1, vL, vH);
+}
+juce::Rectangle<float> ZoneLayoutDisplay::rectangleForRangeSkipEnd(int kL, int kH, int vL, int vH)
+{
     auto lb = getLocalBounds().toFloat().withTrimmedTop(2.f);
     auto displayRegion = lb;
 
@@ -677,172 +684,215 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
-            // TODO: Center only if
+            bool debugGradients = false;
 
-            // lower left corner
+            if (kb.fadeStart + kb.fadeEnd + vel.fadeStart + vel.fadeEnd == 0)
             {
-                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart, vel.velStart,
-                                         vel.velStart + vel.fadeStart)};
-
-                double scaleY{r.getHeight() / r.getWidth()};
-                double transY{(1 - scaleY) * r.getY()};
-
-                juce::ColourGradient grad{c2, r.getRight(), r.getY(), c1, r.getX(), r.getY(), true};
-
-                juce::FillType originalFill(grad);
-                juce::FillType newFill(originalFill.transformed(
-                    juce::AffineTransform::scale(1.f, scaleY).translated(0.f, transY)));
-                g.setFillType(newFill);
-                g.fillRect(r);
-            }
-
-            // top left
-            {
-                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart,
-                                         vel.velEnd - vel.fadeEnd, vel.velEnd)};
-
-                float xRange{r.getWidth()};
-                float yRange{r.getHeight()};
-                double scaleY{yRange / xRange};
-                double transY{(1 - scaleY) * r.getHeight()};
-                double transY2{(1 - scaleY) * r.getBottom()};
-
-                juce::ColourGradient grad{c2,       r.getRight(),  r.getBottom(), c1,
-                                          r.getX(), r.getBottom(), true};
-
-                juce::FillType originalFill(grad);
-                juce::FillType newFill(originalFill.transformed(
-                    juce::AffineTransform::scale(1, scaleY).translated(0, transY2)));
-                g.setFillType(newFill);
-                g.fillRect(r);
-            }
-
-            // left side
-            {
-                auto r{rectangleForRange(kb.keyStart, kb.keyStart + kb.fadeStart,
-                                         vel.velStart + vel.fadeStart, vel.velEnd - vel.fadeEnd)};
-                juce::ColourGradient grad{c1,           r.getX(), r.getY(), c2,
-                                          r.getRight(), r.getY(), false};
-                g.setGradientFill(grad);
+                auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd)};
+                g.setColour(c2);
 
                 g.fillRect(r);
             }
-
-            // gradient regions
-            {
-                // bottom
+            else
+            { // lower left corner
                 {
-                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
-                                             vel.velStart, vel.velStart + vel.fadeStart)};
-                    juce::ColourGradient grad{c1,       r.getX(), r.getBottom(), c2,
-                                              r.getX(), r.getY(), false};
+                    auto r{rectangleForRangeSkipEnd(kb.keyStart, kb.keyStart + kb.fadeStart,
+                                                    vel.velStart, vel.velStart + vel.fadeStart)};
+
+                    double scaleY{r.getHeight() / r.getWidth()};
+                    double transY{(1 - scaleY) * r.getY()};
+
+                    juce::ColourGradient grad{c2,       r.getRight(), r.getY(), c1,
+                                              r.getX(), r.getY(),     true};
+
+                    juce::FillType originalFill(grad);
+                    juce::FillType newFill(originalFill.transformed(
+                        juce::AffineTransform::scale(1.f, scaleY).translated(0.f, transY)));
+                    g.setFillType(newFill);
+                    if (debugGradients)
+                        g.setColour(juce::Colours::yellow);
+                    g.fillRect(r);
+                }
+
+                // top left
+                {
+                    auto r{rectangleForRangeSkipEnd(kb.keyStart, kb.keyStart + kb.fadeStart,
+                                                    vel.velEnd - vel.fadeEnd, vel.velEnd)};
+
+                    float xRange{r.getWidth()};
+                    float yRange{r.getHeight()};
+                    double scaleY{yRange / xRange};
+                    double transY{(1 - scaleY) * r.getHeight()};
+                    double transY2{(1 - scaleY) * r.getBottom()};
+
+                    juce::ColourGradient grad{c2,       r.getRight(),  r.getBottom(), c1,
+                                              r.getX(), r.getBottom(), true};
+
+                    juce::FillType originalFill(grad);
+                    juce::FillType newFill(originalFill.transformed(
+                        juce::AffineTransform::scale(1, scaleY).translated(0, transY2)));
+                    g.setFillType(newFill);
+
+                    if (debugGradients)
+                        g.setColour(juce::Colours::aliceblue);
+                    g.fillRect(r);
+                }
+
+                // left side
+                {
+                    auto r{rectangleForRangeSkipEnd(kb.keyStart, kb.keyStart + kb.fadeStart,
+                                                    vel.velStart + vel.fadeStart,
+                                                    vel.velEnd - vel.fadeEnd)};
+                    juce::ColourGradient grad{c1,           r.getX(), r.getY(), c2,
+                                              r.getRight(), r.getY(), false};
                     g.setGradientFill(grad);
 
+                    if (debugGradients)
+                        g.setColour(juce::Colours::green);
+
                     g.fillRect(r);
                 }
 
-                // top region
+                // gradient regions
                 {
-                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
-                                             vel.velEnd - vel.fadeEnd, vel.velEnd)};
-                    juce::ColourGradient grad{c1,       r.getX(),      r.getY(), c2,
-                                              r.getX(), r.getBottom(), false};
+                    // bottom
+                    {
+                        auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                                 vel.velStart, vel.velStart + vel.fadeStart)};
+                        juce::ColourGradient grad{c1,       r.getX(), r.getBottom(), c2,
+                                                  r.getX(), r.getY(), false};
+                        g.setGradientFill(grad);
+
+                        if (debugGradients)
+                            g.setColour(juce::Colours::bisque);
+
+                        g.fillRect(r);
+                    }
+
+                    // top region
+                    {
+                        auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                                 vel.velEnd - vel.fadeEnd, vel.velEnd)};
+                        juce::ColourGradient grad{c1,       r.getX(),      r.getY(), c2,
+                                                  r.getX(), r.getBottom(), false};
+                        g.setGradientFill(grad);
+
+                        if (debugGradients)
+                            g.setColour(juce::Colours::red);
+
+                        g.fillRect(r);
+                    }
+
+                    // no gradient for the center
+                    {
+                        auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                                 vel.velStart + vel.fadeStart,
+                                                 vel.velEnd - vel.fadeEnd)};
+                        g.setColour(c2);
+
+                        if (!debugGradients)
+                            g.fillRect(r);
+                    }
+                }
+
+                // Right side
+                {
+                    auto r{rectangleForRangeSkipEnd(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd + 1,
+                                                    vel.velStart + vel.fadeStart,
+                                                    vel.velEnd - vel.fadeEnd)};
+                    juce::ColourGradient grad{c2,           r.getX(), r.getY(), c1,
+                                              r.getRight(), r.getY(), false};
                     g.setGradientFill(grad);
 
-                    g.fillRect(r);
-                }
-
-                // no gradient for the center
-                {
-                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
-                                             vel.velStart + vel.fadeStart,
-                                             vel.velEnd - vel.fadeEnd)};
-                    g.setColour(c2);
+                    if (debugGradients)
+                        g.setColour(juce::Colours::beige);
 
                     g.fillRect(r);
                 }
-            }
 
-            // Right side
-            {
-                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd, kb.keyEnd,
-                                         vel.velStart + vel.fadeStart, vel.velEnd - vel.fadeEnd)};
-                juce::ColourGradient grad{c2,           r.getX(), r.getY(), c1,
-                                          r.getRight(), r.getY(), false};
-                g.setGradientFill(grad);
-
-                g.fillRect(r);
-            }
-
-            // bottom right corner
-            {
-                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd, kb.keyEnd, vel.velStart,
-                                         vel.velStart + vel.fadeStart)};
-
-                float xRange{r.getWidth()};
-                float yRange{r.getHeight()};
-                double scaleY{yRange / xRange};
-                double transY{(1 - scaleY) * r.getY()};
-
-                juce::ColourGradient grad{c2, r.getX(), r.getY(), c1, r.getRight(), r.getY(), true};
-
-                juce::FillType originalFill(grad);
-                juce::FillType newFill(originalFill.transformed(
-                    juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
-                g.setFillType(newFill);
-
-                g.fillRect(r);
-            }
-
-            // top left
-            {
-                auto r{rectangleForRange(kb.keyEnd - kb.fadeEnd, kb.keyEnd,
-                                         vel.velEnd - vel.fadeEnd, vel.velEnd)};
-
-                float xRange{r.getWidth()};
-                float yRange{r.getHeight()};
-                double scaleY{yRange / xRange};
-                double transY{(1 - scaleY) * r.getBottom()};
-
-                juce::ColourGradient grad{c2,           r.getX(),      r.getBottom(), c1,
-                                          r.getRight(), r.getBottom(), true};
-
-                juce::FillType originalFill(grad);
-                juce::FillType newFill(originalFill.transformed(
-                    juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
-                g.setFillType(newFill);
-
-                g.fillRect(r);
-            }
-
-            const float dashes[]{1.0f, 2.0f};
-            {
-                // vertical dashes
+                // bottom right corner
                 {
-                    auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
-                                             vel.velStart, vel.velEnd)};
+                    auto r{rectangleForRangeSkipEnd(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd + 1,
+                                                    vel.velStart, vel.velStart + vel.fadeStart)};
 
-                    g.setColour(c2);
-                    g.drawDashedLine({{r.getX(), r.getY()}, {r.getX(), r.getBottom()}}, dashes,
-                                     juce::numElementsInArray(dashes));
+                    float xRange{r.getWidth()};
+                    float yRange{r.getHeight()};
+                    double scaleY{yRange / xRange};
+                    double transY{(1 - scaleY) * r.getY()};
 
-                    g.drawDashedLine({{r.getRight(), r.getY()}, {r.getRight(), r.getBottom()}},
-                                     dashes, juce::numElementsInArray(dashes));
+                    juce::ColourGradient grad{c2,           r.getX(), r.getY(), c1,
+                                              r.getRight(), r.getY(), true};
+
+                    juce::FillType originalFill(grad);
+                    juce::FillType newFill(originalFill.transformed(
+                        juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
+                    g.setFillType(newFill);
+
+                    if (debugGradients)
+                        g.setColour(juce::Colours::orange);
+
+                    g.fillRect(r);
                 }
 
-                // horizontal dashes
+                // top right
                 {
-                    auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart + vel.fadeStart,
-                                             vel.velEnd - vel.fadeEnd)};
+                    auto r{rectangleForRangeSkipEnd(kb.keyEnd - kb.fadeEnd + 1, kb.keyEnd + 1,
+                                                    vel.velEnd - vel.fadeEnd, vel.velEnd)};
 
-                    g.setColour(c2);
-                    g.drawDashedLine({{r.getX(), r.getY()}, {r.getRight(), r.getY()}}, dashes,
-                                     juce::numElementsInArray(dashes));
-                    g.drawDashedLine({{r.getX(), r.getBottom()}, {r.getRight(), r.getBottom()}},
-                                     dashes, juce::numElementsInArray(dashes));
+                    float xRange{r.getWidth()};
+                    float yRange{r.getHeight()};
+                    double scaleY{yRange / xRange};
+                    double transY{(1 - scaleY) * r.getBottom()};
+
+                    juce::ColourGradient grad{c2,           r.getX(),      r.getBottom(), c1,
+                                              r.getRight(), r.getBottom(), true};
+
+                    juce::FillType originalFill(grad);
+                    juce::FillType newFill(originalFill.transformed(
+                        juce::AffineTransform::scale(1, scaleY).translated(0, transY)));
+                    g.setFillType(newFill);
+
+                    if (debugGradients)
+                        g.setColour(juce::Colours::blueviolet);
+
+                    g.fillRect(r);
+                }
+
+                const float dashes[]{1.0f, 2.0f};
+                {
+                    // vertical dashes
+                    {
+                        auto r{rectangleForRange(kb.keyStart + kb.fadeStart, kb.keyEnd - kb.fadeEnd,
+                                                 vel.velStart, vel.velEnd)};
+
+                        g.setColour(c2);
+                        if (kb.fadeStart > 0)
+                            g.drawDashedLine({{r.getX(), r.getY()}, {r.getX(), r.getBottom()}},
+                                             dashes, juce::numElementsInArray(dashes));
+
+                        if (kb.fadeEnd > 0)
+                            g.drawDashedLine(
+                                {{r.getRight(), r.getY()}, {r.getRight(), r.getBottom()}}, dashes,
+                                juce::numElementsInArray(dashes));
+                    }
+
+                    // horizontal dashes
+                    {
+                        auto r{rectangleForRange(kb.keyStart, kb.keyEnd,
+                                                 vel.velStart + vel.fadeStart,
+                                                 vel.velEnd - vel.fadeEnd)};
+
+                        g.setColour(c2);
+                        if (vel.fadeEnd > 0)
+                            g.drawDashedLine({{r.getX(), r.getY()}, {r.getRight(), r.getY()}},
+                                             dashes, juce::numElementsInArray(dashes));
+                        if (vel.fadeStart > 0)
+                            g.drawDashedLine(
+                                {{r.getX(), r.getBottom()}, {r.getRight(), r.getBottom()}}, dashes,
+                                juce::numElementsInArray(dashes));
+                    }
                 }
             }
-
             auto r = rectangleForZone(z.second);
             g.setColour(selZoneColor);
             g.drawRect(r, 3.f);
