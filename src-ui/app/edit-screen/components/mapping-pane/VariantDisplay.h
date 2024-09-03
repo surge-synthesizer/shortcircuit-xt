@@ -177,7 +177,7 @@ struct VariantDisplay : juce::Component, HasEditor
     void showPlayModeMenu();
     void showLoopModeMenu();
     void showVariantPlaymodeMenu();
-    
+
     // Header section
     using boolToggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<
         sst::jucegui::components::ToggleButton, bool>;
