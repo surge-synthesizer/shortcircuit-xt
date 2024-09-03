@@ -72,6 +72,7 @@ struct VariantDisplay : juce::Component, HasEditor
         sampleEditors;
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
+    std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphLabels;
 
     typedef connectors::PayloadDataAttachment<engine::Zone::Variants, int> sample_attachment_t;
 
@@ -191,6 +192,8 @@ struct VariantDisplay : juce::Component, HasEditor
     // sidebar section
     std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
     std::unique_ptr<sst::jucegui::components::MenuButton> playModeButton, loopModeButton;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> srcButton;
+    std::unique_ptr<sst::jucegui::components::GlyphButton> zoomButton;
 
     struct FileInfos : juce::Component, HasEditor
     {

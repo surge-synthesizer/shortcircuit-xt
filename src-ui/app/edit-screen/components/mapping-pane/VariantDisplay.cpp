@@ -99,6 +99,9 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 {
     selectedVariation = sel;
 
+    // This wierd pattern is because for some reason we rebuild the components
+    // when we select a new variant but not the header.
+    // TODO - sort this out
     if (playModeLabel)
     {
         removeChildComponent(playModeLabel.get());
@@ -127,6 +130,14 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     loopModeButton->setOnCallback([this]() { showLoopModeMenu(); });
     addAndMakeVisible(*loopModeButton);
 
+    if (zoomButton)
+    {
+        removeChildComponent(zoomButton.get());
+    }
+    zoomButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::SEARCH);
+    zoomButton->setOnCallback(editor->makeComingSoon("Sample Auto Zoom"));
+    addAndMakeVisible(*zoomButton);
+
     auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
         auto at = std::make_unique<connectors::SamplePointDataAttachment>(
             v, [this](const auto &) { onSamplePointChangedFromGUI(); });
@@ -143,11 +154,17 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         sampleAttachments[c] = std::move(at);
     };
 
+    auto attachToDummy = [this](Ctrl c, const std::string &aLabel, uint32_t idx) {
+        sampleEditors[c] = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
+            idx, aLabel, 0.f, false, editor->makeComingSoon(aLabel));
+        addAndMakeVisible(*sampleEditors[c]);
+    };
+
     auto addLabel = [this](Ctrl c, const std::string &label) {
         auto l = std::make_unique<jcmp::Label>();
         l->setJustification(juce::Justification::centredRight);
         l->setText(label);
-        if (sampleEditors[c])
+        if (labels[c])
         {
             removeChildComponent(labels[c].get());
             labels[c].reset();
@@ -156,16 +173,52 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         labels[c] = std::move(l);
     };
 
+    auto addGlyph = [this](Ctrl c, const jcmp::GlyphPainter::GlyphType g) {
+        auto l = std::make_unique<jcmp::GlyphPainter>(g);
+        if (glyphLabels[c])
+        {
+            removeChildComponent(glyphLabels[c].get());
+        }
+        addAndMakeVisible(*l);
+        glyphLabels[c] = std::move(l);
+    };
+
     attachSamplePoint(startP, "StartS", variantView.variants[selectedVariation].startSample);
     addLabel(startP, "Start");
     attachSamplePoint(endP, "EndS", variantView.variants[selectedVariation].endSample);
     addLabel(endP, "End");
     attachSamplePoint(startL, "StartL", variantView.variants[selectedVariation].startLoop);
+    editor->themeApplier.applyVariantLoopTheme(sampleEditors[startL].get());
     addLabel(startL, "Start");
     attachSamplePoint(endL, "EndL", variantView.variants[selectedVariation].endLoop);
+    editor->themeApplier.applyVariantLoopTheme(sampleEditors[endL].get());
     addLabel(endL, "End");
     attachSamplePoint(fadeL, "fadeL", variantView.variants[selectedVariation].loopFade);
+    editor->themeApplier.applyVariantLoopTheme(sampleEditors[fadeL].get());
     addLabel(fadeL, "XF");
+
+    attachToDummy(curve, "Curve", 'vcrv');
+    addGlyph(curve, jcmp::GlyphPainter::GlyphType::CURVE);
+    editor->themeApplier.applyVariantLoopTheme(sampleEditors[curve].get());
+
+    if (srcButton)
+    {
+        removeChildComponent(srcButton.get());
+    }
+    srcButton = std::make_unique<jcmp::TextPushButton>();
+    srcButton->setLabel("SINC");
+    srcButton->setOnCallback(editor->makeComingSoon("User-swappable interpolation"));
+    addAndMakeVisible(*srcButton);
+    addLabel(src, "SRC");
+
+    attachToDummy(volume, "Volume", 'vvol');
+    addGlyph(volume, jcmp::GlyphPainter::GlyphType::VOLUME);
+
+    attachToDummy(trak, "Tracking", 'vtrk');
+    addLabel(trak, "Trk");
+
+    attachToDummy(tune, "Tuning", 'vtun');
+    addGlyph(tune, jcmp::GlyphPainter::GlyphType::TUNING);
 
     if (loopActive)
     {
@@ -188,6 +241,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     loopActive = std::make_unique<jcmp::ToggleButton>();
     loopActive->setLabel(u8"\U0000221E");
     loopActive->setSource(loopAttachment.get());
+    editor->themeApplier.applyVariantLoopTheme(loopActive.get());
     addAndMakeVisible(*loopActive);
 
     if (reverseActive)
@@ -290,12 +344,17 @@ void VariantDisplay::resized()
         wid->setBounds(row.withWidth(w));
         row = row.translated(w + padding, 0);
     };
+    auto addPad = [&row](auto w) { row = row.translated(w, 0); };
+    auto addGap = [&row, &p](auto g) {
+        row = row.translated(0, g);
+        p = p.translated(0, g);
+    };
     auto newRow = [&row, &p, padding](auto &s) {
         if (row.getX() != p.getRight() + padding)
         {
             SCLOG(s << " Mismatched p layout " << row.getX() << " " << p.getRight());
         }
-        p = p.translated(0, 21);
+        p = p.translated(0, 23);
         row = p;
     };
 
@@ -311,6 +370,7 @@ void VariantDisplay::resized()
         newRow("ctrl");
     }
 
+    addGap(10);
     if (v.loopMode == engine::Zone::LOOP_FOR_COUNT)
     {
         ofRow(loopModeButton, 84);
@@ -323,12 +383,38 @@ void VariantDisplay::resized()
     ofRow(loopActive, 14);
     newRow("loop");
 
-    for (const auto m : {startL, endL, fadeL})
-    {
-        ofRow(labels[m], p.getWidth() - 72 - padding);
-        ofRow(sampleEditors[m], 72);
-        newRow("loopctrl");
-    }
+    ofRow(zoomButton, 16);
+    ofRow(labels[startL], p.getWidth() - 72 - 16 - 2 * padding);
+    ofRow(sampleEditors[startL], 72);
+    newRow("endL");
+
+    ofRow(labels[endL], p.getWidth() - 72 - padding);
+    ofRow(sampleEditors[endL], 72);
+    newRow("endL");
+
+    // 25 34 18 40
+    ofRow(labels[fadeL], 25);
+    ofRow(sampleEditors[fadeL], 34);
+    addPad(7);
+    ofRow(glyphLabels[curve], 18);
+    ofRow(sampleEditors[curve], 40);
+    newRow("fadecurve");
+
+    addGap(10);
+
+    ofRow(labels[src], 25);
+    ofRow(srcButton, 34);
+    addPad(7);
+    ofRow(glyphLabels[volume], 18);
+    ofRow(sampleEditors[volume], 40);
+    newRow("srcvol");
+
+    ofRow(labels[trak], 25);
+    ofRow(sampleEditors[trak], 34);
+    addPad(7);
+    ofRow(glyphLabels[tune], 18);
+    ofRow(sampleEditors[tune], 40);
+    newRow("traktune");
 
     /*
      * This is the section avovce the waveform
@@ -428,11 +514,19 @@ void VariantDisplay::rebuild()
         fileInfos->channels = samp->channels;
     }
 
-    loopModeButton->setEnabled(variantView.variants[selectedVariation].loopActive);
-    loopCnt->setEnabled(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[startL]->setVisible(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[endL]->setVisible(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[fadeL]->setVisible(variantView.variants[selectedVariation].loopActive);
+    bool hasLoop = variantView.variants[selectedVariation].loopActive;
+    loopModeButton->setEnabled(hasLoop);
+    loopCnt->setEnabled(hasLoop);
+    sampleEditors[startL]->setVisible(hasLoop);
+    sampleEditors[endL]->setVisible(hasLoop);
+
+    sampleEditors[fadeL]->setVisible(hasLoop);
+    sampleEditors[curve]->setVisible(hasLoop);
+    zoomButton->setVisible(hasLoop);
+    labels[startL]->setVisible(hasLoop);
+    labels[endL]->setVisible(hasLoop);
+    labels[fadeL]->setVisible(hasLoop);
+    glyphLabels[curve]->setVisible(hasLoop);
 
     loopCnt->setVisible(variantView.variants[selectedVariation].loopMode ==
                         engine::Zone::LoopMode::LOOP_FOR_COUNT);

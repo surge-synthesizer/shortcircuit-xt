@@ -57,6 +57,7 @@ struct ThemeApplier
     void applyZoneMultiScreenModulationTheme(juce::Component *toThis);
     void applyGroupMultiScreenTheme(juce::Component *toThis);
     void applyGroupMultiScreenModulationTheme(juce::Component *toThis);
+    void applyVariantLoopTheme(juce::Component *toThis);
     void applyMixerEffectTheme(juce::Component *toThis);
     void applyMixerChannelTheme(juce::Component *toThis);
     void applyHeaderTheme(juce::Component *toThis);
