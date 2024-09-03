@@ -98,40 +98,22 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
 void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 {
     selectedVariation = sel;
+    removeAllChildren();
+    addAndMakeVisible(*waveformsTabbedGroup);
 
     // TODO: Why do we have this wierd remove pattern everywhere
-    if (playModeLabel)
-    {
-        removeChildComponent(playModeLabel.get());
-        playModeLabel.reset();
-    }
-
     playModeLabel = std::make_unique<jcmp::Label>();
     playModeLabel->setText("Play");
     addAndMakeVisible(*playModeLabel);
 
-    if (playModeButton)
-    {
-        removeChildComponent(playModeButton.get());
-        playModeButton.reset();
-    }
     playModeButton = std::make_unique<jcmp::MenuButton>();
     playModeButton->setOnCallback([this]() { showPlayModeMenu(); });
     addAndMakeVisible(*playModeButton);
 
-    if (loopModeButton)
-    {
-        removeChildComponent(loopModeButton.get());
-        loopModeButton.reset();
-    }
     loopModeButton = std::make_unique<jcmp::MenuButton>();
     loopModeButton->setOnCallback([this]() { showLoopModeMenu(); });
     addAndMakeVisible(*loopModeButton);
 
-    if (zoomButton)
-    {
-        removeChildComponent(zoomButton.get());
-    }
     zoomButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::SEARCH);
     zoomButton->setOnCallback(editor->makeComingSoon("Sample Auto Zoom"));
     addAndMakeVisible(*zoomButton);
@@ -141,12 +123,6 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
             v, [this](const auto &) { onSamplePointChangedFromGUI(); });
         auto sl = std::make_unique<jcmp::DraggableTextEditableValue>();
         sl->setSource(at.get());
-        if (sampleEditors[c])
-        {
-            removeChildComponent(sampleEditors[c].get());
-            sampleEditors[c].reset();
-            sampleAttachments[c].reset();
-        }
         addAndMakeVisible(*sl);
         sampleEditors[c] = std::move(sl);
         sampleAttachments[c] = std::move(at);
@@ -162,21 +138,12 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         auto l = std::make_unique<jcmp::Label>();
         l->setJustification(juce::Justification::centredRight);
         l->setText(label);
-        if (labels[c])
-        {
-            removeChildComponent(labels[c].get());
-            labels[c].reset();
-        }
         addAndMakeVisible(*l);
         labels[c] = std::move(l);
     };
 
     auto addGlyph = [this](Ctrl c, const jcmp::GlyphPainter::GlyphType g) {
         auto l = std::make_unique<jcmp::GlyphPainter>(g);
-        if (glyphLabels[c])
-        {
-            removeChildComponent(glyphLabels[c].get());
-        }
         addAndMakeVisible(*l);
         glyphLabels[c] = std::move(l);
     };
@@ -199,10 +166,6 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     addGlyph(curve, jcmp::GlyphPainter::GlyphType::CURVE);
     editor->themeApplier.applyVariantLoopTheme(sampleEditors[curve].get());
 
-    if (srcButton)
-    {
-        removeChildComponent(srcButton.get());
-    }
     srcButton = std::make_unique<jcmp::TextPushButton>();
     srcButton->setLabel("SINC");
     srcButton->setOnCallback(editor->makeComingSoon("User-swappable interpolation"));
@@ -217,13 +180,6 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 
     attachToDummy(tune, "Tuning", 'vtun');
     addGlyph(tune, jcmp::GlyphPainter::GlyphType::TUNING);
-
-    if (loopActive)
-    {
-        removeChildComponent(loopActive.get());
-        loopActive.reset();
-        loopAttachment.reset();
-    }
 
     loopAttachment =
         std::make_unique<connectors::BooleanPayloadDataAttachment<engine::Zone::Variants>>(
@@ -242,13 +198,6 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     editor->themeApplier.applyVariantLoopTheme(loopActive.get());
     addAndMakeVisible(*loopActive);
 
-    if (reverseActive)
-    {
-        removeChildComponent(reverseActive.get());
-        reverseActive.reset();
-        reverseAttachment.reset();
-    }
-
     reverseAttachment =
         std::make_unique<connectors::BooleanPayloadDataAttachment<engine::Zone::Variants>>(
             "Reverse",
@@ -265,13 +214,6 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     reverseActive->setGlyph(jcmp::GlyphPainter::GlyphType::REVERSE);
     reverseActive->setSource(reverseAttachment.get());
     addAndMakeVisible(*reverseActive);
-
-    if (loopCnt)
-    {
-        removeChildComponent(loopCnt.get());
-        loopCnt.reset();
-        loopCntAttachment.reset();
-    }
 
     loopCntAttachment = std::make_unique<sample_attachment_t>(
         datamodel::pmd()
@@ -512,11 +454,19 @@ void VariantDisplay::rebuild()
         fileInfos->channels = samp->channels;
     }
 
-    loopModeButton->setEnabled(variantView.variants[selectedVariation].loopActive);
-    loopCnt->setEnabled(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[startL]->setVisible(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[endL]->setVisible(variantView.variants[selectedVariation].loopActive);
-    sampleEditors[fadeL]->setVisible(variantView.variants[selectedVariation].loopActive);
+    bool hasLoop = variantView.variants[selectedVariation].loopActive;
+    loopModeButton->setEnabled(hasLoop);
+    loopCnt->setEnabled(hasLoop);
+    sampleEditors[startL]->setVisible(hasLoop);
+    sampleEditors[endL]->setVisible(hasLoop);
+
+    sampleEditors[fadeL]->setVisible(hasLoop);
+    sampleEditors[curve]->setVisible(hasLoop);
+    zoomButton->setVisible(hasLoop);
+    labels[startL]->setVisible(hasLoop);
+    labels[endL]->setVisible(hasLoop);
+    labels[fadeL]->setVisible(hasLoop);
+    glyphLabels[curve]->setVisible(hasLoop);
 
     loopCnt->setVisible(variantView.variants[selectedVariation].loopMode ==
                         engine::Zone::LoopMode::LOOP_FOR_COUNT);
