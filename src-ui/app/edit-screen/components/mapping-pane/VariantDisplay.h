@@ -37,6 +37,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
+#include "sst/jucegui/components/NamedPanelDivider.h"
 
 #include "sst/jucegui/component-adapters/DiscreteToReference.h"
 #include "app/HasEditor.h"
@@ -49,14 +50,20 @@ struct SampleWaveform;
 
 struct VariantDisplay : juce::Component, HasEditor
 {
-    static constexpr int sidePanelWidth{150};
+    static constexpr int sidePanelWidth{136};
+    static constexpr int sidePanelDividerPad{10};
     enum Ctrl
     {
         startP,
         endP,
         startL,
         endL,
-        fadeL
+        fadeL,
+        curve,
+        src,
+        volume,
+        trak,
+        tune
     };
 
     std::unordered_map<Ctrl, std::unique_ptr<connectors::SamplePointDataAttachment>>
@@ -81,6 +88,8 @@ struct VariantDisplay : juce::Component, HasEditor
         SampleWaveform *waveform{nullptr};
     };
     std::array<ZoomableWaveform, maxVariantsPerZone> waveforms;
+
+    std::unique_ptr<sst::jucegui::components::NamedPanelDivider> divider;
 
     struct MyTabbedComponent : sst::jucegui::components::TabbedComponent,
                                HasEditor,
@@ -131,7 +140,9 @@ struct VariantDisplay : juce::Component, HasEditor
 
     juce::Rectangle<int> sampleDisplayRegion()
     {
-        return getLocalBounds().withTrimmedRight(sidePanelWidth).withTrimmedTop(5);
+        return getLocalBounds()
+            .withTrimmedRight(sidePanelWidth + sidePanelDividerPad)
+            .withTrimmedTop(5);
     }
 
     void resized() override;
@@ -144,7 +155,6 @@ struct VariantDisplay : juce::Component, HasEditor
         loopActive->setVisible(b);
         loopModeButton->setVisible(b);
         reverseActive->setVisible(b);
-        loopDirectionButton->setVisible(b);
         for (const auto &[k, p] : sampleEditors)
             p->setVisible(b);
         for (const auto &[k, l] : labels)
@@ -167,7 +177,6 @@ struct VariantDisplay : juce::Component, HasEditor
     void showPlayModeMenu();
     void showLoopModeMenu();
     void showVariantPlaymodeMenu();
-    void showLoopDirectionMenu();
 
     // Header section
     using boolToggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<
@@ -181,8 +190,7 @@ struct VariantDisplay : juce::Component, HasEditor
 
     // sidebar section
     std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
-
-    std::unique_ptr<juce::TextButton> playModeButton, loopModeButton, loopDirectionButton;
+    std::unique_ptr<sst::jucegui::components::MenuButton> playModeButton, loopModeButton;
 
     struct FileInfos : juce::Component, HasEditor
     {
