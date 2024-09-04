@@ -44,6 +44,8 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     {
         waveforms[i].waveformViewport =
             std::make_unique<jcmp::ZoomContainer>(std::make_unique<SampleWaveform>(this));
+        waveforms[i].waveformViewport->setVZoomFloor(1.0 / 16.0);
+
         waveforms[i].waveform = static_cast<SampleWaveform *>(
             waveforms[i].waveformViewport->contents->associatedComponent());
     }
