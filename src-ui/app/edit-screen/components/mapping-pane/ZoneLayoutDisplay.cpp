@@ -283,9 +283,9 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb;
 
-        auto kw = displayRegion.getWidth() /
+        auto kw = hZoom * displayRegion.getWidth() /
                   (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote + 1);
-        auto vh = displayRegion.getHeight() / 127.0;
+        auto vh = vZoom * displayRegion.getHeight() / 127.0;
 
         auto dx = e.position.x - lastMousePos.x;
         auto &kr = display->mappingView.keyboardRange;
@@ -328,18 +328,18 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb;
         auto kw =
-            displayRegion.getWidth() /
+            hZoom * displayRegion.getWidth() /
             (ZoneLayoutKeyboard::lastMidiNote -
              ZoneLayoutKeyboard::firstMidiNote); // this had a +1, which doesn't seem to be needed?
-        auto vh = displayRegion.getHeight() / 127.0;
+        auto vh = vZoom * displayRegion.getHeight() / 127.0;
 
-        auto newX = e.position.x / kw;
-        auto newXRounded = std::clamp((int)std::round(e.position.x / kw), 0, 128);
+        auto newX = e.position.x / kw + hPct * 128;
+        auto newXRounded = std::clamp((int)std::round(newX), 0, 128);
         // These previously had + Keyboard::firstMidiNote, and I don't know why? They don't seem to
         // need it.
 
-        auto newY = 127 - e.position.y / vh;
-        auto newYRounded = std::clamp(127 - (int)std::round(e.position.y / vh), 0, 128);
+        auto newY = 127 - e.position.y / vh - vPct * 128;
+        auto newYRounded = std::clamp((int)std::round(newY), 0, 128);
 
         // clamps to 128 on purpose, for reasons that'll get clear below
 
