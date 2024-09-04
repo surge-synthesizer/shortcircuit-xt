@@ -48,6 +48,9 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
     juce::Rectangle<float> rectangleForRangeSkipEnd(int kL, int kH, int vL, int vH);
 
+    void labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &, const std::string &,
+                            const juce::Colour &);
+
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
