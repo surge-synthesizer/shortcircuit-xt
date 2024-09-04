@@ -660,9 +660,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             g.fillRect(r);
             g.setColour(borderColor);
             g.drawRect(r, 1.f);
-            g.setColour(textColor);
-            g.setFont(editor->themeApplier.interRegularFor(11));
-            g.drawText(std::get<2>(z.second), r.reduced(5, 4), juce::Justification::topLeft);
+
+            labelZoneRectangle(g, r, std::get<2>(z.second), textColor);
 
             auto ct = display->voiceCountFor(z.first);
             drawVoiceMarkers(r, ct);
@@ -688,7 +687,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             if (kb.fadeStart + kb.fadeEnd + vel.fadeStart + vel.fadeEnd == 0)
             {
-                auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd)};
+                auto r{rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd + 1)};
                 g.setColour(c2);
 
                 g.fillRect(r);
@@ -897,12 +896,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             g.setColour(selZoneColor);
             g.drawRect(r, 3.f);
 
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_lowest));
-            auto f = editor->themeApplier.interRegularFor(11);
-            auto txt = std::get<2>(z.second);
-            auto rr = r.reduced(5, 4);
-            g.setFont(f);
-            g.drawText(std::get<2>(z.second), rr, juce::Justification::topLeft);
+            labelZoneRectangle(g, r, std::get<2>(z.second),
+                               editor->themeColor(theme::ColorMap::accent_1a));
 
             auto ct = display->voiceCountFor(z.first);
             drawVoiceMarkers(r, ct);
@@ -975,6 +970,106 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
     auto low = std::clamp(rootKey - span, 0.f, 127.f);
     auto high = std::clamp(rootKey + span, 0.f, 127.f);
     return {(int16_t)rootKey, (int16_t)low, (int16_t)high};
+}
+
+void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,
+                                           const std::string &txt, const juce::Colour &col)
+{
+    auto f = editor->themeApplier.interRegularFor(11);
+
+    juce::GlyphArrangement ga;
+    ga.addJustifiedText(f, txt, 0, 0, 1000, juce::Justification::topLeft);
+    auto bb = ga.getBoundingBox(0, -1, false);
+
+    auto zoomedAway = getLocalBounds().contains(rIn.toNearestInt());
+    auto rr = getLocalBounds().getIntersection(rIn.toNearestInt());
+
+    bool horiz{true};
+    auto vPad{8};
+    auto hPad{16};
+    if (rr.getWidth() < rr.getHeight() && bb.getWidth() > rr.getWidth() - hPad)
+    {
+        horiz = false;
+    }
+
+    if (horiz)
+    {
+        while (bb.getWidth() > rr.getWidth() - hPad && ga.getNumGlyphs() > 0)
+        {
+            ga.removeRangeOfGlyphs(ga.getNumGlyphs() - 1, -1);
+            bb = ga.getBoundingBox(0, -1, false);
+        }
+        if (ga.getNumGlyphs() <= 1)
+            return;
+
+        auto cx = (rr.getWidth() - bb.getWidth()) / 2 + rr.getX();
+        auto cy = (rr.getHeight() - bb.getHeight()) / 2 + rr.getY() - bb.getY();
+
+        // Stay in the box
+        if (rr.getBottom() < getHeight() / 2)
+        {
+            if (cy > rr.getBottom() - vPad)
+            {
+                cy = rr.getBottom() - vPad;
+            }
+        }
+        else
+        {
+            if (cy - bb.getHeight() < rr.getY() + vPad)
+            {
+                cy = rr.getY() + vPad + bb.getHeight();
+            }
+        }
+
+        auto gs = juce::Graphics::ScopedSaveState(g);
+        g.addTransform(juce::AffineTransform().translated(cx, cy));
+        g.setColour(editor->themeColor(theme::ColorMap::bg_2).withAlpha(0.7f));
+        auto bbb = bb.expanded(4, 2);
+        g.fillRoundedRectangle(bbb, 2);
+        g.setColour(col.withAlpha(0.1f));
+        g.drawRoundedRectangle(bbb, 2, 1);
+        g.setColour(col);
+        ga.draw(g);
+    }
+    else
+    {
+        while (bb.getWidth() > rr.getHeight() - hPad && ga.getNumGlyphs() > 0)
+        {
+            ga.removeRangeOfGlyphs(ga.getNumGlyphs() - 1, -1);
+            bb = ga.getBoundingBox(0, -1, false);
+        }
+
+        // the rotations make these signs a pita
+        auto cx = (rr.getWidth() + bb.getHeight() - vPad / 2) / 2 + rr.getX();
+        auto cy = (rr.getHeight() - bb.getWidth()) / 2 + rr.getY() + bb.getWidth();
+
+        // Stay in the box
+        /*
+        if (rr.getBottom() < getHeight() / 2)
+        {
+            if (cy > rr.getBottom() - vPad)
+            {
+                cy = rr.getBottom() - vPad;
+            }
+        }
+        else
+        {
+            if (cy - bb.getHeight() < rr.getY() + vPad)
+            {
+                cy = rr.getY() + vPad + bb.getHeight();
+            }
+        }*/
+
+        auto gs = juce::Graphics::ScopedSaveState(g);
+        g.addTransform(juce::AffineTransform().rotated(-M_PI_2).translated(cx, cy));
+        g.setColour(editor->themeColor(theme::ColorMap::bg_2).withAlpha(0.7f));
+        auto bbb = bb.expanded(4, 2);
+        g.fillRoundedRectangle(bbb, 2);
+        g.setColour(col.withAlpha(0.1f));
+        g.drawRoundedRectangle(bbb, 2, 1);
+        g.setColour(col);
+        ga.draw(g);
+    }
 }
 
 } // namespace scxt::ui::app::edit_screen
