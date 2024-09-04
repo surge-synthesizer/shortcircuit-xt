@@ -418,7 +418,7 @@ struct CurveLFOPane : juce::Component, HasEditor
             g.setColour(boxc);
             g.drawRect(getLocalBounds(), 1);
 
-            g.setFont(juce::Font("Comic Sans MS", 12, juce::Font::plain));
+            g.setFont(parent->editor->themeApplier.interBoldFor(30));
             g.drawText("Curve Viz Soon", getLocalBounds(), juce::Justification::centred);
         }
     };
@@ -686,9 +686,8 @@ struct MSEGLFOPane : juce::Component
 
     void paint(juce::Graphics &g) override
     {
-        g.setColour(juce::Colours::blue);
-        g.setFont(juce::Font("Comic Sans MS", 30, juce::Font::plain));
-        g.drawText("MSEG", getLocalBounds(), juce::Justification::centred);
+        g.fillAll(juce::Colours::red);
+        SCLOG_ONCE("Why are you paiting an MSEG");
     }
 };
 

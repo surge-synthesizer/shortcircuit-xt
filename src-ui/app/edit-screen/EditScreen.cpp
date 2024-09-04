@@ -42,31 +42,6 @@ namespace scxt::ui::app::edit_screen
 
 static_assert(engine::processorCount == EditScreen::numProcessorDisplays);
 
-struct DebugRect : public sst::jucegui::components::NamedPanel
-{
-    struct CL : juce::Component
-    {
-        juce::Colour color;
-        std::string label;
-        void paint(juce::Graphics &g) override
-        {
-            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-
-            g.setColour(color);
-            g.drawText(label, getLocalBounds(), juce::Justification::centred);
-        }
-    };
-    std::unique_ptr<CL> cl;
-    DebugRect(const juce::Colour &c, const std::string &s) : sst::jucegui::components::NamedPanel(s)
-    {
-        cl = std::make_unique<CL>();
-        cl->color = c;
-        cl->label = s;
-        addAndMakeVisible(*cl);
-    }
-    void resized() override { cl->setBounds(getContentArea()); }
-};
-
 EditScreen::EditScreen(SCXTEditor *e) : HasEditor(e)
 {
     partSidebar = std::make_unique<edit_screen::PartGroupSidebar>(editor);

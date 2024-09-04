@@ -52,7 +52,14 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
                   juce::Colours::black.withAlpha(0.f));
     }
 
-    juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(13); }
+    juce::Font getPopupMenuFont() override
+    {
+#if JUCE_VERSION >= 0x080000
+        return juce::Font(juce::FontOptions(interMedTF)).withHeight(13);
+#else
+        return juce::Font(interMedTF).withHeight(13);
+#endif
+    }
     void drawPopupMenuBackgroundWithOptions(juce::Graphics &g, int width, int height,
                                             const juce::PopupMenu::Options &o) override
     {

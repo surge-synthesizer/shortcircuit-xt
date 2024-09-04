@@ -75,7 +75,6 @@ struct AboutLink : juce::Component, HasEditor
 AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
 {
     icon = connectors::resources::loadImageDrawable("images/SCicon.svg");
-    auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     titleFont = editor->themeApplier.interMediumFor(70);
     subtitleFont = editor->themeApplier.interMediumFor(30);
     infoFont = editor->themeApplier.interMediumFor(12);
@@ -89,7 +88,10 @@ AboutScreen::~AboutScreen() {}
 void AboutScreen::resetInfo()
 {
     info.clear();
-    info.push_back({"Version", scxt::build::FullVersionStr, false});
+    std::string ver = scxt::build::FullVersionStr;
+    ver += " (JUCE " + std::to_string(JUCE_MAJOR_VERSION) + "." +
+           std::to_string(JUCE_MINOR_VERSION) + "." + std::to_string(JUCE_BUILDNUMBER) + ")";
+    info.push_back({"Version", ver, false});
 
     std::string platform = juce::SystemStats::getOperatingSystemName().toStdString();
 

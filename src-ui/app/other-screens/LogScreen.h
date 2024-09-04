@@ -40,7 +40,11 @@ struct LogScreen : juce::Component, HasEditor
     std::unique_ptr<juce::TextEditor> logDisplay;
     std::unique_ptr<juce::TextButton> copyButton, closeButton;
 
-    juce::Font displayFont;
+#if JUCE_VERSION >= 0x080000
+    juce::Font displayFont{juce::FontOptions(1)};
+#else
+    juce::Font displayFont{};
+#endif
 
     void visibilityChanged() override;
     void reshowLog();
