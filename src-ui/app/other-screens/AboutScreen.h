@@ -52,7 +52,14 @@ struct AboutScreen : juce::Component, HasEditor
     std::unique_ptr<juce::Drawable> icon;
     std::unique_ptr<sst::jucegui::components::TextPushButton> copyButton;
 
-    juce::Font titleFont, subtitleFont, infoFont, aboutFont;
+#if JUCE_VERSION >= 0x080000
+#define FT(x) x{juce::FontOptions(1)}
+#else
+#define FT(x)                                                                                      \
+    x {}
+#endif
+    juce::Font FT(titleFont), FT(subtitleFont), FT(infoFont), FT(aboutFont);
+#undef FT
 
     void resetInfo();
     void copyInfo();

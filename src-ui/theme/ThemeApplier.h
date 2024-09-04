@@ -72,6 +72,7 @@ struct ThemeApplier
     juce::Font interMediumFor(int ht) const;
     juce::Font interRegularFor(int ht) const;
     juce::Font interLightFor(int ht) const;
+    juce::Font anonmyousProRegularFor(int ht) const;
 
     friend scxt::ui::app::SCXTEditor;
 

@@ -344,28 +344,37 @@ void ThemeApplier::applyAuxChannelStripTheme(juce::Component *toThis)
 juce::Font ThemeApplier::interBoldFor(int ht) const
 {
     static auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Bold.ttf");
-    return juce::Font(interMed).withHeight(ht);
+    return SST_JUCE_FONT_CTOR(interMed).withHeight(ht);
 }
 
 juce::Font ThemeApplier::interMediumFor(int ht) const
 {
     static auto interMed =
         connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
-    return juce::Font(interMed).withHeight(ht);
+    return SST_JUCE_FONT_CTOR(interMed).withHeight(ht);
 }
 
 juce::Font ThemeApplier::interRegularFor(int ht) const
 {
     static auto interMed =
         connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");
-    return juce::Font(interMed).withHeight(ht);
+    return SST_JUCE_FONT_CTOR(interMed).withHeight(ht);
 }
 
 juce::Font ThemeApplier::interLightFor(int ht) const
 {
     static auto interMed =
         connectors::resources::loadTypeface("fonts/Inter/static/Inter-Light.ttf");
-    return juce::Font(interMed).withHeight(ht);
+    return SST_JUCE_FONT_CTOR(interMed).withHeight(ht);
+}
+
+juce::Font ThemeApplier::anonmyousProRegularFor(int ht) const
+{
+    auto fixedWidth =
+        connectors::resources::loadTypeface("fonts/Anonymous_Pro/AnonymousPro-Regular.ttf");
+
+    auto fw = SST_JUCE_FONT_CTOR(fixedWidth).withHeight(ht);
+    return fw;
 }
 
 namespace detail
@@ -382,7 +391,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(Base::styleClass, Base::background_hover, cols.getHover(ColorMap::bg_2));
 
     base->setFont(BaseLabel::styleClass, BaseLabel::labelfont,
-                  juce::Font(juce::Font::plain).withPointHeight(11));
+                  SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(11));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor,
                     cols.get(ColorMap::generic_content_medium));
     base->setColour(BaseLabel::styleClass, jcmp::NamedPanel::Styles::labelcolor_hover,
@@ -510,13 +519,13 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
 
     // These items have smaller fonts
     base->setFont(jcmp::MenuButton::Styles::styleClass, jcmp::MenuButton::Styles::labelfont,
-                  juce::Font(juce::Font::plain).withPointHeight(10));
+                  SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(10));
     base->setFont(jcmp::TextPushButton::Styles::styleClass, jcmp::TextPushButton::Styles::labelfont,
-                  juce::Font(juce::Font::plain).withPointHeight(10));
+                  SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(10));
     base->setFont(jcmp::ToggleButton::Styles::styleClass, jcmp::ToggleButton::Styles::labelfont,
-                  juce::Font(juce::Font::plain).withPointHeight(10));
+                  SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(10));
     base->setFont(jcmp::MultiSwitch::Styles::styleClass, jcmp::MultiSwitch::Styles::labelfont,
-                  juce::Font(juce::Font::plain).withPointHeight(10));
+                  SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(10));
 
     // auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     auto interReg = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");
@@ -525,7 +534,7 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     auto fixedWidth =
         connectors::resources::loadTypeface("fonts/Anonymous_Pro/AnonymousPro-Regular.ttf");
 
-    auto fw = juce::Font(fixedWidth).withHeight(11);
+    auto fw = SST_JUCE_FONT_CTOR(fixedWidth).withHeight(11);
     base->setFont(sst::jucegui::components::ToolTip::Styles::styleClass,
                   sst::jucegui::components::ToolTip::Styles::datafont, fw);
 }

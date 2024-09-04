@@ -39,8 +39,7 @@ LogScreen::LogScreen(SCXTEditor *e) : HasEditor(e)
     auto interMed =
         connectors::resources::loadTypeface("fonts/Anonymous_Pro/AnonymousPro-Regular.ttf");
 
-    displayFont = juce::Font(interMed);
-    displayFont.setHeight(12);
+    displayFont = editor->themeApplier.anonmyousProRegularFor(10);
 
     logDisplay = std::make_unique<juce::TextEditor>();
     logDisplay->setMultiLine(true);
