@@ -43,6 +43,8 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     mappingZones = tmpLOK->mappingZones.get();
     keyboard = tmpLOK->keyboard.get();
     zoneLayoutViewport = std::make_unique<jcmp::ZoomContainer>(std::move(tmpLOK));
+    zoneLayoutViewport->setHZoomFloor((36 + 2) * 1.f / 128.f);
+    zoneLayoutViewport->setVZoomFloor(32.f / 128.f);
     addAndMakeVisible(*zoneLayoutViewport);
 
     zoneHeader = std::make_unique<MappingZoneHeader>(editor);
