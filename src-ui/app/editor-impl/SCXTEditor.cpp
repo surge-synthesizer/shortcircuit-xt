@@ -54,6 +54,9 @@
 namespace scxt::ui::app
 {
 
+static std::weak_ptr<SCXTJuceLookAndFeel> scxtLookAndFeelWeakPointer;
+static std::mutex scxtLookAndFeelSetupMutex;
+
 SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                        const sample::SampleManager &s, const scxt::browser::Browser &b,
                        const engine::Engine::SharedUIMemoryState &st)
@@ -69,9 +72,20 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     resetColorsFromUserPreferences();
 
-    // TODO what happens with two windows open when I go away?
-    lnf = std::make_unique<SCXTJuceLookAndFeel>();
-    juce::LookAndFeel::setDefaultLookAndFeel(lnf.get());
+    {
+        std::lock_guard<std::mutex> grd(scxtLookAndFeelSetupMutex);
+        if (auto sp = scxtLookAndFeelWeakPointer.lock())
+        {
+            lnf = sp;
+        }
+        else
+        {
+            lnf = std::make_shared<SCXTJuceLookAndFeel>();
+            scxtLookAndFeelWeakPointer = lnf;
+
+            juce::LookAndFeel::setDefaultLookAndFeel(lnf.get());
+        }
+    }
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);

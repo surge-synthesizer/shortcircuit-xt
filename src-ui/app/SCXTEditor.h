@@ -125,7 +125,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     static constexpr int edWidth{1186}, edHeight{816};
 
-    std::unique_ptr<SCXTJuceLookAndFeel> lnf;
+    std::shared_ptr<SCXTJuceLookAndFeel> lnf;
 
     struct IdleTimer : juce::Timer
     {
