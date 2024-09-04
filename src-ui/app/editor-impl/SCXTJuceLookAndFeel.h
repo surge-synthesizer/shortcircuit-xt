@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "connectors/SCXTResources.h"
+#include "utils.h"
 
 namespace scxt::ui
 {
@@ -51,6 +52,8 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
         setColour(juce::TabbedButtonBar::ColourIds::tabOutlineColourId,
                   juce::Colours::black.withAlpha(0.f));
     }
+
+    ~SCXTJuceLookAndFeel() {}
 
     juce::Font getPopupMenuFont() override
     {
