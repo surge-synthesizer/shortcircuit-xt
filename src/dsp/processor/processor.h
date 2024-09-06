@@ -175,7 +175,7 @@ processorList_t getAllProcessorDescriptions();
  * If you choose to spawnProcessorOnto you need a block at least this size.
  * This should be a multiple of 16 if you enlarge it.
  */
-static constexpr size_t processorMemoryBufferSize{1028 * 16};
+static constexpr size_t processorMemoryBufferSize{1024 * 20};
 
 struct ProcessorStorage
 {
