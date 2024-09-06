@@ -207,9 +207,10 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     {
         removeChildComponent(srcButton.get());
     }
-    srcButton = std::make_unique<jcmp::TextPushButton>();
-    srcButton->setLabel("SINC");
-    srcButton->setOnCallback(editor->makeComingSoon("User-swappable interpolation"));
+    srcButton = std::make_unique<jcmp::MenuButton>();
+    srcButton->centerTextAndExcludeArrow = true;
+    srcButton->setLabel("SRC");
+    srcButton->setOnCallback([this]() { showSRCMenu(); });
     addAndMakeVisible(*srcButton);
     addLabel(src, "SRC");
 
@@ -501,6 +502,19 @@ void VariantDisplay::rebuild()
         break;
     }
 
+    switch (variantView.interpolationType)
+    {
+    case dsp::InterpolationTypes::Sinc:
+        srcButton->setLabel("SINC");
+        break;
+    case dsp::InterpolationTypes::Linear:
+        srcButton->setLabel("LIN");
+        break;
+    case dsp::InterpolationTypes::ZeroOrderHold:
+        srcButton->setLabel("ZOH");
+        break;
+    }
+
     auto samp = editor->sampleManager.getSample(variantView.variants[selectedVariation].sampleID);
     if (samp)
     {
@@ -706,6 +720,27 @@ void VariantDisplay::showLoopModeMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions(loopModeButton.get()));
 }
 
+void VariantDisplay::showSRCMenu()
+{
+    juce::PopupMenu p;
+    p.addSectionHeader("SRC (Interpolation Type)");
+    p.addSeparator();
+
+    auto add = [&p, this](auto e, auto n) {
+        p.addItem(n, true, variantView.interpolationType == e, [this, e]() {
+            variantView.interpolationType = e;
+            connectors::updateSingleValue<cmsg::UpdateZoneVariantsInt16TValue>(
+                variantView, variantView.interpolationType, this);
+            rebuild();
+        });
+    };
+    add(dsp::InterpolationTypes::Sinc, "Sinc");
+    add(dsp::InterpolationTypes::Linear, "Linear");
+    add(dsp::InterpolationTypes::ZeroOrderHold, "Zero-order Hold");
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
 void VariantDisplay::showVariantPlaymodeMenu()
 {
     juce::PopupMenu p;
@@ -727,6 +762,7 @@ void VariantDisplay::showVariantPlaymodeMenu()
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
+
 std::optional<std::string> VariantDisplay::MyTabbedComponent::sourceDetailsDragAndDropSample(
     const SourceDetails &dragSourceDetails)
 {

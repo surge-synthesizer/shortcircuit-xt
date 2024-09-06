@@ -524,8 +524,6 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
     }
 }
 
-#define INTERPOLATION_METHOD dsp::InterpolationTypes::Sinc
-
 void Voice::initializeGenerator()
 {
     if (sampleIndex < 0)
@@ -587,8 +585,6 @@ void Voice::initializeGenerator()
 
     calculateGeneratorRatio(calculateVoicePitch());
 
-    GD.interpolationType = INTERPOLATION_METHOD;
-
     // TODO: This constant came from SC. Wonder why it is this value. There was a comment
     // comparing with 167777216 so any speedup at all.
     useOversampling = std::abs(GD.ratio) > 18000000 || forceOversample;
@@ -601,6 +597,8 @@ void Voice::initializeGenerator()
                                             variantData.loopActive,
                                             variantData.loopDirection == engine::Zone::FORWARD_ONLY,
                                             variantData.loopMode == engine::Zone::LOOP_WHILE_GATED);
+
+    GD.interpolationType = zone->variantData.interpolationType;
 }
 
 float Voice::calculateVoicePitch()

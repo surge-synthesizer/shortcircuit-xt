@@ -300,6 +300,8 @@ STREAM_ENUM(engine::Group::ProcRoutingPath, engine::Group::toStringProcRoutingPa
             engine::Group::fromStringProcRoutingPath);
 STREAM_ENUM(engine::Zone::VariantPlaybackMode, engine::Zone::toStringVariantPlaybackMode,
             engine::Zone::fromStringVariantPlaybackMode);
+STREAM_ENUM(dsp::InterpolationTypes, dsp::toStringInterpolationTypes,
+            dsp::fromStringInterpolationTypes);
 
 SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                  auto &s = from;

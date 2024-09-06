@@ -178,6 +178,7 @@ struct VariantDisplay : juce::Component, HasEditor
     void showPlayModeMenu();
     void showLoopModeMenu();
     void showVariantPlaymodeMenu();
+    void showSRCMenu();
 
     // Header section
     using boolToggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<
@@ -192,7 +193,7 @@ struct VariantDisplay : juce::Component, HasEditor
     // sidebar section
     std::unique_ptr<sst::jucegui::components::Label> playModeLabel;
     std::unique_ptr<sst::jucegui::components::MenuButton> playModeButton, loopModeButton;
-    std::unique_ptr<sst::jucegui::components::TextPushButton> srcButton;
+    std::unique_ptr<sst::jucegui::components::MenuButton> srcButton;
     std::unique_ptr<sst::jucegui::components::GlyphButton> zoomButton;
 
     struct FileInfos : juce::Component, HasEditor
