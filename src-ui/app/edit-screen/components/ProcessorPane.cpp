@@ -291,6 +291,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsFromJSONOrDefault("processors/phasemod.json");
         break;
 
+    case dsp::processor::proct_shepard:
+        layoutControlsFromJSON("processors/shepard.json");
+        break;
+
     case dsp::processor::proct_fx_simple_delay:
         layoutControlsFromJSON("processors/simpledelay.json");
         break;
