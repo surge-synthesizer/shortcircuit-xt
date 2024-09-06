@@ -30,16 +30,43 @@
 #include <cstdint>
 #include <cstring>
 #include "configuration.h"
+#include "string"
+#include "utils.h"
 
 namespace scxt::dsp
 {
 
-enum class InterpolationTypes
+enum InterpolationTypes
 {
     Sinc,
     Linear,
     ZeroOrderHold
 };
+DECLARE_ENUM_STRING(InterpolationTypes);
+
+inline std::string toStringInterpolationTypes(const InterpolationTypes &p)
+{
+    switch (p)
+    {
+    case Sinc:
+        return "sinc";
+    case Linear:
+        return "lin";
+    case ZeroOrderHold:
+        return "zho";
+    }
+    return "sinc";
+}
+
+inline InterpolationTypes fromStringInterpolationTypes(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<InterpolationTypes, toStringInterpolationTypes>(
+        InterpolationTypes::Sinc, InterpolationTypes::ZeroOrderHold);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return Sinc;
+    return p->second;
+}
 
 struct GeneratorState
 {

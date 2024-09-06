@@ -132,6 +132,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     {
         std::array<SingleVariant, maxVariantsPerZone> variants;
         VariantPlaybackMode variantPlaybackMode{FORWARD_RR};
+        dsp::InterpolationTypes interpolationType{dsp::InterpolationTypes::Sinc};
     } variantData;
 
     std::array<std::shared_ptr<sample::Sample>, maxVariantsPerZone> samplePointers;
