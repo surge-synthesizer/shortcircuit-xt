@@ -999,7 +999,7 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
             ga.removeRangeOfGlyphs(ga.getNumGlyphs() - 1, -1);
             bb = ga.getBoundingBox(0, -1, false);
         }
-        if (ga.getNumGlyphs() <= 1)
+        if (ga.getNumGlyphs() < 1)
             return;
 
         auto cx = (rr.getWidth() - bb.getWidth()) / 2 + rr.getX();
