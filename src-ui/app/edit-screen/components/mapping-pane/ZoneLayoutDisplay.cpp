@@ -280,6 +280,10 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
 {
     if (mouseState == DRAG_SELECTED_ZONE)
     {
+        if (e.getDistanceFromDragStart() < 3)
+        {
+            return;
+        }
         auto lb = getLocalBounds().toFloat();
         auto displayRegion = lb;
 
