@@ -320,7 +320,10 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                           {"loopDirection", s.loopDirection},
                           {"loopCountWhenCounted", s.loopCountWhenCounted},
                           {"interpolationType", s.interpolationType},
-                          {"loopFade", s.loopFade}};
+                          {"loopFade", s.loopFade},
+                          {"normalizationAmplitude", s.normalizationAmplitude},
+                          {"pitchOffset", s.pitchOffset},
+                          {"amplitude", s.amplitude}};
                  }
                  else
                  {
@@ -348,6 +351,9 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                      findOrSet(v, "interpolationType", dsp::InterpolationTypes::Sinc,
                                s.interpolationType);
                      findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
+                     findOrSet(v, "normalizationAmplitude", 0.f, s.normalizationAmplitude);
+                     findOrSet(v, "pitchOffset", 0.f, s.pitchOffset);
+                     findOrSet(v, "amplitude", 0.f, s.amplitude);
                  }
                  else
                  {

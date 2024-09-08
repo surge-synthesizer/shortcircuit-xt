@@ -120,12 +120,18 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};
+        float normalizationAmplitude{0.f}; // db
+        // per-sample pitch and amplitude
+        float pitchOffset{0.f}; // semitones
+        float amplitude{0.f};   // db
 
         bool operator==(const SingleVariant &other) const
         {
             return active == other.active && sampleID == other.sampleID &&
                    startSample == other.startSample && endSample == other.endSample &&
-                   startLoop == other.startLoop && endLoop == other.endLoop;
+                   startLoop == other.startLoop && endLoop == other.endLoop &&
+                   normalizationAmplitude == other.normalizationAmplitude &&
+                   pitchOffset == other.pitchOffset && amplitude == other.amplitude;
         }
     };
 
@@ -196,6 +202,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
         return attachToSample(manager, variation);
     }
+
+    void setNormalizedSampleLevel(bool usePeak = false, int associatedSampleID = -1);
+    void clearNormalizedSampleLevel(int associatedSampleID = -1);
 
     struct ZoneMappingData
     {
