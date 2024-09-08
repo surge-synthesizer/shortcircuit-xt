@@ -537,7 +537,7 @@ void Voice::initializeGenerator()
         return;
     }
 
-    // but the default of course is to use the sapmle index
+    // but the default of course is to use the sample index
     auto &s = zone->samplePointers[sampleIndex];
     auto &variantData = zone->variantData.variants[sampleIndex];
     assert(s);
@@ -598,7 +598,7 @@ void Voice::initializeGenerator()
                                             variantData.loopDirection == engine::Zone::FORWARD_ONLY,
                                             variantData.loopMode == engine::Zone::LOOP_WHILE_GATED);
 
-    GD.interpolationType = zone->variantData.interpolationType;
+    GD.interpolationType = variantData.interpolationType;
 }
 
 float Voice::calculateVoicePitch()
