@@ -271,6 +271,14 @@ template <bool OS> bool Voice::processWithOS()
         {
             halfRate.process_block_D2(output[0], output[1], blockSize << 1);
         }
+
+        auto scale_db = zone->variantData.variants[sampleIndex].normalizationAmplitude;
+        // we are in dB so 0 change is 0 dB
+        if (scale_db != 0.f)
+        {
+            const float linear_scale = dsp::dbTable.dbToLinear(scale_db);
+            sst::basic_blocks::mechanics::scale_by<blockSize>(linear_scale, output[0], output[1]);
+        }
     }
     else
         memset(output, 0, sizeof(output));

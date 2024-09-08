@@ -113,6 +113,46 @@ CLIENT_TO_SERIAL(UpdateLeadZoneSingleVariant, c2s_update_lead_zone_single_varian
                  updateLeadZoneSingleVariantPayload_t,
                  doUpdateLeadZoneSingleVariant(payload, engine, cont));
 
+using normalizeVariantAmplitudePayload_t = std::tuple<size_t, bool>;
+inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t &payload,
+                                        const engine::Engine &engine, MessageController &cont)
+{
+    const auto &samples = payload;
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+            auto &[idx, use_peak] = sampv;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(use_peak,
+                                                                                          idx);
+        });
+    }
+}
+CLIENT_TO_SERIAL(NormalizeVariantAmplitude, c2s_normalize_variant_amplitude,
+                 normalizeVariantAmplitudePayload_t,
+                 doNormalizeVariantAmplitude(payload, engine, cont));
+
+using clearVariantAmplitudeNormalizationPayload_t = size_t;
+inline void
+doClearVariantAmplitudeNormalization(const clearVariantAmplitudeNormalizationPayload_t &payload,
+                                     const engine::Engine &engine, MessageController &cont)
+{
+    const auto &samples = payload;
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+            auto &idx = sampv;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->clearNormalizedSampleLevel(idx);
+        });
+    }
+}
+CLIENT_TO_SERIAL(ClearVariantAmplitudeNormalization, c2s_clear_variant_amplitude_normalization,
+                 clearVariantAmplitudeNormalizationPayload_t,
+                 doClearVariantAmplitudeNormalization(payload, engine, cont));
+
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneVariantsInt16TValue, c2s_update_zone_variants_int16_t,
                              detail::diffMsg_t<int16_t>, engine::Zone::Variants,
                              detail::updateZoneMemberValue(&engine::Zone::variantData, payload,
