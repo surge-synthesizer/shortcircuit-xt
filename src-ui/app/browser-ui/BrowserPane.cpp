@@ -66,8 +66,7 @@ struct DriveListBoxModel : juce::ListBoxModel
     {
         if (rowNumber >= 0 && rowNumber < browserPane->roots.size())
         {
-            g.setFont(browserPane->style()->getFont(jcmp::Label::Styles::styleClass,
-                                                    jcmp::Label::Styles::labelfont));
+            g.setFont(browserPane->editor->themeApplier.interMediumFor(12));
 
             // TODO: Style all of these
             auto textColor =
@@ -395,8 +394,7 @@ struct DriveFSListBoxRow : public juce::Component
             auto width = getWidth();
             auto height = getHeight();
 
-            g.setFont(browserPane->style()->getFont(jcmp::Label::Styles::styleClass,
-                                                    jcmp::Label::Styles::labelfont));
+            g.setFont(browserPane->editor->themeApplier.interMediumFor(12));
 
             // TODO: Style all of these
             auto textColor =

@@ -57,10 +57,13 @@ struct ThemeApplier
     void applyZoneMultiScreenModulationTheme(juce::Component *toThis);
     void applyGroupMultiScreenTheme(juce::Component *toThis);
     void applyGroupMultiScreenModulationTheme(juce::Component *toThis);
+    void applyVariantLoopTheme(juce::Component *toThis);
     void applyMixerEffectTheme(juce::Component *toThis);
     void applyMixerChannelTheme(juce::Component *toThis);
     void applyHeaderTheme(juce::Component *toThis);
     void applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *);
+    void applyChannelStripTheme(juce::Component *toThis);
+    void applyAuxChannelStripTheme(juce::Component *toThis);
 
     // Some utilities to move single items
     void setLabelToHighlight(sst::jucegui::style::StyleConsumer *);
@@ -69,6 +72,7 @@ struct ThemeApplier
     juce::Font interMediumFor(int ht) const;
     juce::Font interRegularFor(int ht) const;
     juce::Font interLightFor(int ht) const;
+    juce::Font anonmyousProRegularFor(int ht) const;
 
     friend scxt::ui::app::SCXTEditor;
 

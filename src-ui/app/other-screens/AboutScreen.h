@@ -28,11 +28,13 @@
 #ifndef SCXT_SRC_UI_APP_OTHER_SCREENS_ABOUTSCREEN_H
 #define SCXT_SRC_UI_APP_OTHER_SCREENS_ABOUTSCREEN_H
 
-#include "app/HasEditor.h"
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "sst/jucegui/components/TextPushButton.h"
+#include "app/HasEditor.h"
 
 namespace scxt::ui::app::other_screens
 {
+struct AboutLink;
 struct AboutScreen : juce::Component, HasEditor
 {
     struct AboutInfo
@@ -44,12 +46,20 @@ struct AboutScreen : juce::Component, HasEditor
     std::vector<AboutInfo> info;
 
     explicit AboutScreen(SCXTEditor *e);
+    ~AboutScreen();
     void paint(juce::Graphics &g) override;
 
     std::unique_ptr<juce::Drawable> icon;
-    std::unique_ptr<juce::TextButton> copyButton;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> copyButton;
 
-    juce::Font titleFont, subtitleFont, infoFont, aboutFont;
+#if JUCE_VERSION >= 0x080000
+#define FT(x) x{juce::FontOptions(1)}
+#else
+#define FT(x)                                                                                      \
+    x {}
+#endif
+    juce::Font FT(titleFont), FT(subtitleFont), FT(infoFont), FT(aboutFont);
+#undef FT
 
     void resetInfo();
     void copyInfo();
@@ -60,6 +70,11 @@ struct AboutScreen : juce::Component, HasEditor
     void mouseUp(const juce::MouseEvent &e) override { setVisible(false); }
 
     static constexpr int infoh = 23;
+
+    static constexpr int openSourceStartY{210}, openSourceX{25};
+    std::string openSourceText;
+    std::vector<std::pair<std::string, std::string>> openSourceInfo;
+    std::vector<std::unique_ptr<AboutLink>> openSourceLinkWidgets;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutScreen);
 };

@@ -53,6 +53,7 @@
 #include "sst/basic-blocks/dsp/RNG.h"
 
 #include "modulation/voice_matrix.h"
+#include "modulation/group_matrix.h"
 #include "transport.h"
 
 #define DEBUG_VOICE_LIFECYCLE 0
@@ -109,7 +110,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     Transport transport;
     void onTransportUpdated();
-    float transportPhasors[numTransportPhasors]{};
+    std::array<float, numTransportPhasors> transportPhasors{};
     void updateTransportPhasors();
 
     /**
@@ -129,11 +130,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         int16_t key{-1};
         int32_t noteid{-1};
     };
-    std::vector<pathToZone_t> findZone(int16_t channel, int16_t key, int32_t noteId,
-                                       int16_t velocity)
+    size_t findZone(int16_t channel, int16_t key, int32_t noteId, int16_t velocity,
+                    std::array<pathToZone_t, maxVoices> &res)
     {
-        // TODO: This allocates which is a bummer
-        std::vector<pathToZone_t> res;
+        size_t idx{0};
         for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
         {
             if (!part->configuration.mute &&
@@ -147,14 +147,15 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                         if (zone->mapping.keyboardRange.includes(key) &&
                             zone->mapping.velocityRange.includes(velocity))
                         {
-                            res.push_back(
-                                {(size_t)pidx, (size_t)gidx, (size_t)zidx, channel, key, noteId});
+                            res[idx] = {(size_t)pidx, (size_t)gidx, (size_t)zidx,
+                                        channel,      key,          noteId};
+                            idx++;
                         }
                     }
                 }
             }
         }
-        return res;
+        return idx;
     }
 
     tuning::MidikeyRetuner midikeyRetuner;
@@ -168,6 +169,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     struct VoiceManagerResponder
     {
         Engine &engine;
+        std::array<pathToZone_t, maxVoices> findZoneWorkingBuffer;
+
         VoiceManagerResponder(Engine &e) : engine(e) {}
 
         std::function<void(voice::Voice *)> voiceEndCallback{nullptr};

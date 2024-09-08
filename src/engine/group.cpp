@@ -96,7 +96,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     float *lOut = output[0];
     float *rOut = output[1];
 
-    bool gated{false};
+    bool gated{attackInThisBlock};
+    attackInThisBlock = false;
     for (const auto &z : zones)
     {
         gated = gated || (z->gatedVoiceCount > 0);
@@ -260,6 +261,22 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
     }
+    if (activeZones == 0)
+    {
+        auto hasR = updateRingout() && (ringoutMax > 0) && inRingout();
+        auto hasEG = hasActiveEGs();
+
+        if (hasR || hasEG)
+        {
+            ringoutTime += blockSize;
+        }
+        else
+        {
+            mUILag.instantlySnap();
+            parentPart->removeActiveGroup();
+            ringoutMax = 0;
+        }
+    }
 }
 
 void Group::addActiveZone()
@@ -269,7 +286,40 @@ void Group::addActiveZone()
         parentPart->addActiveGroup();
         attack();
     }
+    // Important we do this *after* the attack since it allows
+    // isActive to be accurate with processor ringout
     activeZones++;
+    ringoutTime = 0;
+}
+
+bool Group::updateRingout()
+{
+    auto res{false};
+    int32_t mx{0};
+    for (auto &p : processors)
+    {
+        if (!p)
+            continue;
+        auto tl = p->tail_length();
+        if (tl != 0)
+        {
+            if (tl == -1)
+            {
+                /*
+                 * Someone is infinite. So set ringout time to 0
+                 * then if someone drops away from infinite we start
+                 * counting at their max
+                 */
+                mx = std::numeric_limits<int32_t>::max();
+                ringoutTime = 0;
+            }
+            else
+                mx = std::max(mx, tl);
+            res = true;
+        }
+    }
+    ringoutMax = mx;
+    return res;
 }
 
 void Group::removeActiveZone()
@@ -278,8 +328,9 @@ void Group::removeActiveZone()
     activeZones--;
     if (activeZones == 0)
     {
-        mUILag.instantlySnap();
-        parentPart->removeActiveGroup();
+        ringoutMax = 0;
+        ringoutTime = 0;
+        updateRingout();
     }
 }
 
@@ -299,6 +350,7 @@ const engine::Engine *Group::getEngine() const
 
 void Group::setupOnUnstream(const engine::Engine &e)
 {
+    onRoutingChanged();
     rePrepareAndBindGroupMatrix();
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
@@ -365,6 +417,18 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 
 void Group::attack()
 {
+    attackInThisBlock = true;
+
+    if (isActive())
+    {
+        eg[0].attackFrom(eg[0].outBlock0);
+        eg[1].attackFrom(eg[1].outBlock0);
+
+        // I *thin* we need to do this
+        rePrepareAndBindGroupMatrix();
+        return;
+    }
+
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {
         const auto &ps = processorStorage[i];
@@ -379,7 +443,14 @@ void Group::attack()
 
     osDownFilter.reset();
     resetLFOs();
+    eg[0].attackFrom(0.f);
+    eg[1].attackFrom(0.f);
+
     rePrepareAndBindGroupMatrix();
+
+    for (auto p : processors)
+        if (p)
+            p->init();
 }
 
 void Group::resetLFOs(int whichLFO)
@@ -416,6 +487,16 @@ void Group::resetLFOs(int whichLFO)
         }
     }
 }
+
+bool Group::isActive() const
+{
+    auto haz = hasActiveZones();
+    auto hae = hasActiveEGs();
+    auto ir = inRingout();
+    return haz || hae || ir;
+}
+
+void Group::onRoutingChanged() { SCLOG_ONCE("Implement Group LFO modulator use optimization"); }
 
 template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine

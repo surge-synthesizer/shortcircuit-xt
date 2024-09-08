@@ -105,7 +105,7 @@ struct GroupMatrixEndpoints
               sst::cpputils::make_array_bind_last_index<ProcessorTarget,
                                                         scxt::processorsPerZoneAndGroup>(e)},
           outputTarget(e),
-          eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egPerGroup>(e)},
+          eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egsPerGroup>(e)},
           selfModulation(e), sources(e)
     {
         // If there are group endpoints, we can merge them here
@@ -130,7 +130,7 @@ struct GroupMatrixEndpoints
         }
         void bind(GroupMatrix &m, engine::Group &g);
     };
-    std::array<EGTarget, scxt::egPerGroup> eg;
+    std::array<EGTarget, scxt::egsPerGroup> eg;
 
     struct LFOTarget : shared::LFOTargetEndpointData<TG, 'glfo'>
     {
@@ -230,40 +230,10 @@ struct GroupMatrixEndpoints
             registerGroupModSource(e, egSource[0], "", "EG1");
             registerGroupModSource(e, egSource[1], "", "EG2");
         }
-        struct LFOSources
-        {
-            LFOSources(engine::Engine *e)
-            {
-                for (uint32_t i = 0; i < lfosPerZone; ++i)
-                {
-                    sources[i] = SR{'grlf', 'outp', i};
-                    registerGroupModSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
-                }
-            }
-            std::array<SR, scxt::lfosPerZone> sources;
-        } lfoSources;
 
+        LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource> lfoSources;
         SR egSource[2];
-
-        struct TransportSources
-        {
-            TransportSources(engine::Engine *e)
-            {
-                auto ctr = (scxt::numTransportPhasors - 1) / 2;
-                for (uint32_t i = 0; i < scxt::numTransportPhasors; ++i)
-                {
-                    std::string name = "Beat";
-                    if (i < ctr)
-                        name = std::string("Beat / ") + std::to_string(1 << (ctr - i));
-                    if (i > ctr)
-                        name = std::string("Beat x ") + std::to_string(1 << (i - ctr));
-
-                    phasors[i] = SR{'gtsp', 'phsr', i};
-                    registerGroupModSource(e, phasors[i], "Transport", name);
-                }
-            }
-            SR phasors[scxt::numTransportPhasors];
-        } transportSources;
+        TransportSourceBase<SR, 'gtsp', false, registerGroupModSource> transportSources;
 
         struct MacroSources
         {

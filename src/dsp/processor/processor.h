@@ -113,6 +113,7 @@ enum ProcessorType
     proct_SurgeFilters,
     proct_Tremolo,
     proct_Phaser,
+    proct_shepard,
     proct_Chorus,
     proct_volpan,
     proct_Compressor,
@@ -174,7 +175,7 @@ processorList_t getAllProcessorDescriptions();
  * If you choose to spawnProcessorOnto you need a block at least this size.
  * This should be a multiple of 16 if you enlarge it.
  */
-static constexpr size_t processorMemoryBufferSize{1028 * 16};
+static constexpr size_t processorMemoryBufferSize{1024 * 20};
 
 struct ProcessorStorage
 {
@@ -294,9 +295,11 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
         assert(false);
     }
 
-    // processors are required to be able to process stereo blocks if stereo is true in the
-    // constructor
     virtual void suspend() {}
+
+    /*
+     * Tail length in samples
+     */
     virtual int tail_length() { return 0; }
 
     float modulation_output; // processors can use this to output modulation data to the matrix

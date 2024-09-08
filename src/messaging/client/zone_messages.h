@@ -47,8 +47,8 @@ SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,
  * also have per-field updates for the UI elements below and associated
  * bound metadata
  */
-inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &payload,
-                                      const engine::Engine &engine, MessageController &cont)
+inline void doUpdateLeadZoneMapping(const engine::Zone::ZoneMappingData &payload,
+                                    const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &mapping = payload;
@@ -68,8 +68,8 @@ inline void mappingSelectedZoneUpdate(const engine::Zone::ZoneMappingData &paylo
             });
     }
 }
-CLIENT_TO_SERIAL(MappingSelectedZoneUpdateRequest, c2s_update_zone_mapping,
-                 engine::Zone::ZoneMappingData, mappingSelectedZoneUpdate(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateLeadZoneMapping, c2s_update_lead_zone_mapping, engine::Zone::ZoneMappingData,
+                 doUpdateLeadZoneMapping(payload, engine, cont));
 
 // Updating mapping rather than try and calculate the image client side just
 // resend the resulting mapped zones with selection state back to the UI
@@ -89,13 +89,13 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                 *(eng.getMessageController()));
         }));
 
-typedef std::tuple<bool, engine::Zone::AssociatedSampleSet> sampleSelectedZoneViewResposne_t;
+typedef std::tuple<bool, engine::Zone::Variants> sampleSelectedZoneViewResposne_t;
 SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
                  onSamplesUpdated);
 
-using associatedSampleVariationPayload_t = std::tuple<size_t, engine::Zone::AssociatedSample>;
-inline void samplesSelectedZoneUpdate(const associatedSampleVariationPayload_t &payload,
-                                      const engine::Engine &engine, MessageController &cont)
+using updateLeadZoneSingleVariantPayload_t = std::tuple<size_t, engine::Zone::SingleVariant>;
+inline void doUpdateLeadZoneSingleVariant(const updateLeadZoneSingleVariantPayload_t &payload,
+                                          const engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &samples = payload;
@@ -105,13 +105,13 @@ inline void samplesSelectedZoneUpdate(const associatedSampleVariationPayload_t &
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
             auto &[idx, smp] = sampv;
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->sampleData.samples[idx] = smp;
+            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->variantData.variants[idx] = smp;
         });
     }
 }
-CLIENT_TO_SERIAL(SamplesSelectedZoneUpdateRequest, c2s_update_zone_samples,
-                 associatedSampleVariationPayload_t,
-                 samplesSelectedZoneUpdate(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateLeadZoneSingleVariant, c2s_update_lead_zone_single_variant,
+                 updateLeadZoneSingleVariantPayload_t,
+                 doUpdateLeadZoneSingleVariant(payload, engine, cont));
 
 using associatedSampleZoneNormalizePayload_t = std::tuple<size_t, bool>;
 inline void doAssociatedSampleZoneNormalize(const associatedSampleZoneNormalizePayload_t &payload,
@@ -153,10 +153,9 @@ CLIENT_TO_SERIAL(AssociatedSampleZoneNomalizeClearRequest, c2s_clear_normalize_z
                  associatedSampleZoneNormalizeClearPayload_t,
                  doAssociatedSampleZoneNormalizeClear(payload, engine, cont));
 
-CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneAssociatedSampleSetInt16TValue,
-                             c2s_update_zone_sampleset_int16_t, detail::diffMsg_t<int16_t>,
-                             engine::Zone::AssociatedSampleSet,
-                             detail::updateZoneMemberValue(&engine::Zone::sampleData, payload,
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneVariantsInt16TValue, c2s_update_zone_variants_int16_t,
+                             detail::diffMsg_t<int16_t>, engine::Zone::Variants,
+                             detail::updateZoneMemberValue(&engine::Zone::variantData, payload,
                                                            engine, cont));
 
 using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
@@ -174,15 +173,15 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputInt16TValue, c2s_update_zone_output
                                                            engine, cont));
 
 using addBlankZonePayload_t = std::array<int, 6>;
-inline void addBlankZone(const addBlankZonePayload_t &payload, engine::Engine &engine,
-                         MessageController &cont)
+inline void doAddBlankZone(const addBlankZonePayload_t &payload, engine::Engine &engine,
+                           MessageController &cont)
 {
     auto [part, group, ks, ke, vs, ve] = payload;
     engine.createEmptyZone({ks, ke}, {vs, ve});
 }
 
 CLIENT_TO_SERIAL(AddBlankZone, c2s_add_blank_zone, addBlankZonePayload_t,
-                 addBlankZone(payload, engine, cont));
+                 doAddBlankZone(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 

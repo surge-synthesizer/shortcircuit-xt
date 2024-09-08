@@ -35,7 +35,7 @@ typedef std::tuple<bool, int, bool, modulation::modulators::AdsrStorage> adsrVie
 SERIAL_TO_CLIENT(AdsrGroupOrZoneUpdate, s2c_update_group_or_zone_adsr_view,
                  adsrViewResponsePayload_t, onGroupOrZoneEnvelopeUpdated);
 
-CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneGroupEGFloatValue, c2s_update_zone_or_group_adsr_value,
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGFloatValue, c2s_update_zone_or_group_eg_float_value,
                              detail::indexedZoneOrGroupDiffMsg_t<float>,
                              modulation::modulators::AdsrStorage,
                              detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
@@ -94,6 +94,30 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                 grp->rePrepareAndBindGroupMatrix();
             }
         }))
+
+using renameGroupZonePayload_t = std::tuple<selection::SelectionManager::ZoneAddress, std::string>;
+inline void doRenameGroup(const renameGroupZonePayload_t &payload, const engine::Engine &engine,
+                          MessageController &cont)
+{
+    const auto &[p, g, z] = std::get<0>(payload);
+    engine.getPatch()->getPart(p)->getGroup(g)->name = std::get<1>(payload);
+    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
+}
+CLIENT_TO_SERIAL(RenameGroup, c2s_rename_group, renameGroupZonePayload_t,
+                 doRenameGroup(payload, engine, cont));
+
+inline void doRenameZone(const renameGroupZonePayload_t &payload, const engine::Engine &engine,
+                         MessageController &cont)
+{
+    const auto &[p, g, z] = std::get<0>(payload);
+    engine.getPatch()->getPart(p)->getGroup(g)->getZone(z)->givenName = std::get<1>(payload);
+    serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
+    serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                              engine.getPatch()->getPart(p)->getZoneMappingSummary(),
+                              *(engine.getMessageController()));
+}
+CLIENT_TO_SERIAL(RenameZone, c2s_rename_zone, renameGroupZonePayload_t,
+                 doRenameZone(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_GROUP_OR_ZONE_MESSAGES_H

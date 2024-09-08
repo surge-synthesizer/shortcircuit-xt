@@ -68,6 +68,7 @@ const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".fla
                                                                    ".aiff"};
 
 const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz", ".multisample"};
+// ".exs"};
 const std::vector<std::string> Browser::LoadableFile::shortcircuitFormats{".scm", ".scp"};
 
 bool Browser::isLoadableFile(const fs::path &p)

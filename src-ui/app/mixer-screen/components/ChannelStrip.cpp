@@ -188,6 +188,15 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     addAndMakeVisible(*vuMeter);
 
     effectsChanged();
+
+    if (t == BusType::AUX)
+    {
+        editor->themeApplier.applyAuxChannelStripTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyChannelStripTheme(this);
+    }
 }
 
 ChannelStrip::~ChannelStrip() {}
@@ -258,8 +267,8 @@ void ChannelStrip::resized()
     vcaSlider->setBounds(s);
     auto vs = fx.withHeight(sliderVUHeight)
                   .withTrimmedLeft(fx.getWidth() * 2.5 / 4)
-                  .withWidth(fx.getWidth() / 4)
-                  .reduced(1);
+                  .withWidth(13)
+                  .reduced(1, 0);
     vuMeter->setBounds(vs);
 
     if (type != BusType::MAIN)

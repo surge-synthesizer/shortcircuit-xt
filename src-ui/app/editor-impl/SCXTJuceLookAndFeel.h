@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "connectors/SCXTResources.h"
+#include "utils.h"
 
 namespace scxt::ui
 {
@@ -44,9 +45,24 @@ struct SCXTJuceLookAndFeel : juce::LookAndFeel_V4
                   juce::Colour(0x35, 0x35, 0x45));
         setColour(juce::PopupMenu::ColourIds::highlightedTextColourId,
                   juce::Colour(0xFF, 0xFF, 0x80));
+        setColour(juce::TabbedComponent::ColourIds::backgroundColourId,
+                  juce::Colours::black.withAlpha(0.f));
+        setColour(juce::TabbedComponent::ColourIds::outlineColourId,
+                  juce::Colours::black.withAlpha(0.f));
+        setColour(juce::TabbedButtonBar::ColourIds::tabOutlineColourId,
+                  juce::Colours::black.withAlpha(0.f));
     }
 
-    juce::Font getPopupMenuFont() override { return juce::Font(interMedTF).withHeight(13); }
+    ~SCXTJuceLookAndFeel() {}
+
+    juce::Font getPopupMenuFont() override
+    {
+#if JUCE_VERSION >= 0x080000
+        return juce::Font(juce::FontOptions(interMedTF)).withHeight(13);
+#else
+        return juce::Font(interMedTF).withHeight(13);
+#endif
+    }
     void drawPopupMenuBackgroundWithOptions(juce::Graphics &g, int width, int height,
                                             const juce::PopupMenu::Options &o) override
     {

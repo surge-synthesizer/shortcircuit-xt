@@ -125,7 +125,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     static constexpr int edWidth{1186}, edHeight{816};
 
-    std::unique_ptr<SCXTJuceLookAndFeel> lnf;
+    std::shared_ptr<SCXTJuceLookAndFeel> lnf;
 
     struct IdleTimer : juce::Timer
     {
@@ -267,6 +267,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     void showTooltip(const juce::Component &relativeTo);
     void hideTooltip();
+    void setTooltipContents(const std::string &title,
+                            const std::vector<sst::jucegui::components::ToolTip::Row> &rows);
     void setTooltipContents(const std::string &title, const std::vector<std::string> &display);
     void setTooltipContents(const std::string &title, const std::string &display)
     {

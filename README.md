@@ -1,6 +1,6 @@
 # Shortcircuit XT
 
-[![CI Build Status](https://dev.azure.com/surge-synthesizer/surge/_apis/build/status/surge-synthesizer.shortcircuit-xt?branchName=main)](https://dev.azure.com/surge-synthesizer/shortcircuit-xt/_build/latest?definitionId=2&branchName=main)
+![Release Build Status](https://github.com/surge-synthesizer/shortcircuit-xt/actions/workflows/build-release.yml/badge.svg)
 
 Welcome to Shortcircuit XT!
 

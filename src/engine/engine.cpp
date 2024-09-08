@@ -37,6 +37,7 @@
 #include "messaging/audio/audio_messages.h"
 #include "selection/selection_manager.h"
 #include "sample/sfz_support/sfz_import.h"
+#include "sample/exs_support/exs_import.h"
 #include "sample/multisample_support/multisample_import.h"
 #include "infrastructure/user_defaults.h"
 #include "infrastructure/md5support.h"
@@ -385,7 +386,7 @@ bool Engine::processAudio()
     // auto pct = time_span.count / maxtime;
     //  or...
     auto pct = time_span.count() * sampleRate * blockSizeInv * 100.0;
-    sharedUIMemoryState.cpuLevel = pct;
+    sharedUIMemoryState.cpuLevel = std::max(sharedUIMemoryState.cpuLevel * 0.9995, pct);
     return true;
 }
 
@@ -465,7 +466,7 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
                                 VelocityRange vrange)
 {
     assert(messageController->threadingChecker.isSerialThread());
-    assert(sampleID < maxSamplesPerZone);
+    assert(sampleID < maxVariantsPerZone);
 
     // TODO: Deal with compound types more comprehensively
     // If you add a type here add it to Browser::isLoadableFile also
@@ -507,8 +508,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
         [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
             zone->terminateAllVoices();
-            zone->sampleData.samples[sID].sampleID = sample;
-            zone->sampleData.samples[sID].active = true;
+            zone->variantData.variants[sID].sampleID = sample;
+            zone->variantData.variants[sID].active = true;
             zone->attachToSample(*e.getSampleManager(), sID,
                                  (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
         },
@@ -542,6 +543,19 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             auto res = sfz_support::importSFZ(p, *this);
             if (!res)
                 messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+            messageController->restartAudioThreadFromSerial();
+            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                      getPartGroupZoneStructure(), *messageController);
+        });
+        return;
+    }
+    else if (extensionMatches(p, ".exs"))
+    {
+        // TODO ok this refresh and restart is a bit unsatisfactory
+        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+            auto res = exs_support::importEXS(p, *this);
+            if (!res)
+                messageController->reportErrorToClient("EXS Import Failed", "Dunno why");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -610,10 +624,12 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
 
     // 2. Create a zone object on this thread but don't add it
     auto zptr = std::make_unique<Zone>();
-    // TODO fixme
     zptr->mapping.keyboardRange = krange;
     zptr->mapping.velocityRange = vrange;
     zptr->mapping.rootKey = (krange.keyStart + krange.keyEnd) / 2;
+    zptr->givenName = "Empty Zone (" + std::to_string(zptr->id.id) + ")";
+
+    // give it a name
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
@@ -739,7 +755,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
                         SCLOG("ERROR: Can't attach to sample");
                         return;
                     }
-                    auto &znSD = zn->sampleData.samples[0];
+                    auto &znSD = zn->variantData.variants[0];
 
                     auto p = region->GetPan(presetRegion);
                     // pan in SF2 is -64 to 63 so hackety hack a bit

@@ -152,7 +152,12 @@ struct Group : MoveableOnly<Group>,
         return res;
     }
 
-    bool isActive() { return activeZones != 0; }
+    void swapZonesByIndex(size_t zoneIndex0, size_t zoneIndex1)
+    {
+        std::swap(zones[zoneIndex0], zones[zoneIndex1]);
+    }
+
+    bool isActive() const;
     void addActiveZone();
     void removeActiveZone();
 
@@ -172,7 +177,7 @@ struct Group : MoveableOnly<Group>,
     lipol outputAmp;
     lipolOS outputAmpOS;
 
-    std::array<modulation::modulators::AdsrStorage, egPerGroup> gegStorage{};
+    std::array<modulation::modulators::AdsrStorage, egsPerGroup> gegStorage{};
 
     std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
     std::array<modulation::modulators::StepLFO, lfosPerGroup> stepLfos;
@@ -182,6 +187,7 @@ struct Group : MoveableOnly<Group>,
     modulation::GroupMatrix modMatrix;
     modulation::GroupMatrixEndpoints endpoints;
     modulation::GroupMatrix::RoutingTable routingTable;
+    void onRoutingChanged();
     void rePrepareAndBindGroupMatrix();
 
     inline float envelope_rate_linear_nowrap(float f)
@@ -204,6 +210,24 @@ struct Group : MoveableOnly<Group>,
     void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t);
 
     uint32_t activeZones{0};
+    int32_t ringoutTime{0};
+    int32_t ringoutMax{0};
+
+    bool hasActiveZones() const { return activeZones != 0; }
+    bool inRingout() const { return ringoutTime < ringoutMax; }
+    bool hasActiveEGs() const
+    {
+        const auto eg0A = (int)eg[0].stage <= (int)ahdsrenv_t::s_release;
+        const auto eg1A = (int)eg[1].stage <= (int)ahdsrenv_t::s_release;
+        return eg0A || eg1A;
+    }
+
+    // Was attack on this group called in this block?
+    // In that case, your voices may still be initializing
+    // when you start EGs so assume gated for one block
+    bool attackInThisBlock{false};
+
+    bool updateRingout();
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
 

@@ -66,7 +66,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
         boolBaseAttachment_t;
     typedef connectors::BooleanPayloadDataAttachment<modulation::ModulatorStorage> boolAttachment_t;
 
-    typedef connectors::DiscretePayloadDataAttachment<modulation::ModulatorStorage, int16_t>
+    typedef connectors::PayloadDataAttachment<modulation::ModulatorStorage, int16_t>
         int16Attachment_t;
 
     LfoPane(SCXTEditor *, bool forZone);
@@ -92,7 +92,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     void repositionContentAreaComponents();
 
     std::unique_ptr<shapeAttachment_t> modulatorShapeA;
-    std::unique_ptr<sst::jucegui::components::JogUpDownButton> modulatorShape;
+    std::unique_ptr<sst::jucegui::components::MenuButtonDiscreteEditor> modulatorShape;
 
     std::unique_ptr<triggerAttachment_t> triggerModeA;
     std::unique_ptr<sst::jucegui::components::MultiSwitch> triggerMode;

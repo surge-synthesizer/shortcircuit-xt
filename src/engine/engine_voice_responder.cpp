@@ -35,9 +35,10 @@ int32_t Engine::VoiceManagerResponder::voiceCountForInitializationAction(
 {
     // TODO: We can optimize this so we don't have to find twice in the future
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
-    auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127));
+    auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127),
+                               findZoneWorkingBuffer);
 
-    return nts.size();
+    return nts;
 }
 
 int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
@@ -45,11 +46,12 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     uint16_t channel, uint16_t key, int32_t noteId, float velocity, float retune)
 {
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
-    auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127));
+    auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127),
+                               findZoneWorkingBuffer);
 
-    int idx{0};
-    for (const auto &path : nts)
+    for (auto idx = 0; idx < nts; ++idx)
     {
+        const auto &path = findZoneWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
 
@@ -64,9 +66,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->attack();
             }
             voiceInitWorkingBuffer[idx] = v;
-            idx++;
         }
-        else if (z->sampleData.variantPlaybackMode == Zone::UNISON)
+        else if (z->variantData.variantPlaybackMode == Zone::UNISON)
         {
             for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
             {
@@ -79,7 +80,6 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     v->attack();
                 }
                 voiceInitWorkingBuffer[idx] = v;
-                idx++;
             }
         }
         else
@@ -95,15 +95,15 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
             else
             {
-                if (z->sampleData.variantPlaybackMode == Zone::FORWARD_RR)
+                if (z->variantData.variantPlaybackMode == Zone::FORWARD_RR)
                 {
                     z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
                 }
-                else if (z->sampleData.variantPlaybackMode == Zone::TRUE_RANDOM)
+                else if (z->variantData.variantPlaybackMode == Zone::TRUE_RANDOM)
                 {
                     z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
                 }
-                else if (z->sampleData.variantPlaybackMode == Zone::RANDOM_CYCLE)
+                else if (z->variantData.variantPlaybackMode == Zone::RANDOM_CYCLE)
                 {
                     if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
                     {
@@ -152,12 +152,11 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     v->attack();
                 }
                 voiceInitWorkingBuffer[idx] = v;
-                idx++;
             }
         }
     }
     engine.midiNoteStateCounter++;
-    return idx;
+    return nts;
 }
 
 void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity) { v->release(); }

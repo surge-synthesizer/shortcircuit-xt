@@ -34,6 +34,7 @@ namespace scxt::ui::connectors::resources
 {
 juce::Typeface::Ptr loadTypeface(const std::string &path);
 std::unique_ptr<juce::Drawable> loadImageDrawable(const std::string &path);
+std::string loadTextFile(const std::string &path);
 } // namespace scxt::ui::connectors::resources
 
 #endif // SHORTCIRCUITXT_SCXTRESOURCES_H

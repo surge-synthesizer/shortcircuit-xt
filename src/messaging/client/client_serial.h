@@ -72,40 +72,40 @@ enum ClientToSerializationMessagesIds
     c2s_load_multi,
     c2s_load_part_into,
 
-    // Messages we haven't dealt with yet
-    c2s_do_select_action,
-    c2s_do_multi_select_action,
+    c2s_apply_select_action,
+    c2s_apply_multi_select_action,
     c2s_select_part,
 
     c2s_begin_edit, // not implemented yet
     c2s_end_edit,   // implemented as a hammer
 
-    c2s_update_zone_or_group_adsr_value,
-
+    c2s_update_zone_or_group_eg_float_value,
     c2s_update_zone_or_group_modstorage_float_value,
     c2s_update_zone_or_group_modstorage_bool_value,
     c2s_update_zone_or_group_modstorage_int16_t_value,
 
-    c2s_update_zone_mapping,
+    c2s_update_lead_zone_mapping,
     c2s_update_zone_mapping_float,
     c2s_update_zone_mapping_int16_t,
+    c2s_update_lead_zone_single_variant,
+    c2s_update_zone_variants_int16_t,
     c2s_update_zone_samples,
+    c2s_update_zone_sampleset_int16_t,
     c2s_normalize_zone_samples,
     c2s_clear_normalize_zone_samples,
-    c2s_update_zone_sampleset_int16_t,
-    c2s_update_zone_routing_row,
 
     c2s_update_zone_output_float_value,
     c2s_update_zone_output_int16_t_value,
+
+    c2s_update_zone_routing_row,
 
     c2s_update_group_routing_row,
     c2s_update_group_output_float_value,
     c2s_update_group_output_int16_t_value,
     c2s_update_group_output_bool_value,
 
-    c2s_update_group_or_zone_individual_modulator_storage,
-
-    c2s_request_pgz_structure,
+    // #1141 done up until here. Below this point the name rubric above isn't confirmed in place
+    c2s_request_pgz_structure, // ?
 
     c2s_update_single_processor_float_value,
     c2s_update_single_processor_bool_value,
@@ -125,6 +125,7 @@ enum ClientToSerializationMessagesIds
     c2s_delete_selected_zones,
     c2s_delete_group,
     c2s_clear_part,
+    c2s_rename_zone,
     c2s_rename_group,
 
     c2s_set_tuning_mode,
@@ -136,7 +137,7 @@ enum ClientToSerializationMessagesIds
     c2s_set_mixer_effect_storage,
     c2s_set_mixer_send_storage,
 
-    c2s_browser_add_device_location,
+    c2s_add_browser_device_location,
 
     c2s_request_debug_action,
 

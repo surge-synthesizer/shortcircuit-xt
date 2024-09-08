@@ -29,7 +29,7 @@
 #include "app/browser-ui/BrowserPane.h"
 #include "app/edit-screen/components/AdsrPane.h"
 #include "app/edit-screen/components/LFOPane.h"
-#include "app/edit-screen/components/MappingPane.h"
+#include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/edit-screen/components/ModPane.h"
 #include "app/edit-screen/components/OutputPane.h"
 #include "app/edit-screen/components/ProcessorPane.h"
@@ -42,31 +42,6 @@ namespace scxt::ui::app::edit_screen
 
 static_assert(engine::processorCount == EditScreen::numProcessorDisplays);
 
-struct DebugRect : public sst::jucegui::components::NamedPanel
-{
-    struct CL : juce::Component
-    {
-        juce::Colour color;
-        std::string label;
-        void paint(juce::Graphics &g) override
-        {
-            g.setFont(juce::Font("Comic Sans MS", 40, juce::Font::plain));
-
-            g.setColour(color);
-            g.drawText(label, getLocalBounds(), juce::Justification::centred);
-        }
-    };
-    std::unique_ptr<CL> cl;
-    DebugRect(const juce::Colour &c, const std::string &s) : sst::jucegui::components::NamedPanel(s)
-    {
-        cl = std::make_unique<CL>();
-        cl->color = c;
-        cl->label = s;
-        addAndMakeVisible(*cl);
-    }
-    void resized() override { cl->setBounds(getContentArea()); }
-};
-
 EditScreen::EditScreen(SCXTEditor *e) : HasEditor(e)
 {
     partSidebar = std::make_unique<edit_screen::PartGroupSidebar>(editor);
@@ -75,7 +50,7 @@ EditScreen::EditScreen(SCXTEditor *e) : HasEditor(e)
     auto br = std::make_unique<browser_ui::BrowserPane>(editor);
     browser = std::move(br);
     addAndMakeVisible(*browser);
-    mappingPane = std::make_unique<edit_screen::MappingPane>(editor);
+    mappingPane = std::make_unique<edit_screen::MacroMappingVariantPane>(editor);
     addAndMakeVisible(*mappingPane);
 
     zoneElements = std::make_unique<ZoneOrGroupElements<ZoneTraits>>(this);
@@ -159,7 +134,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     parent->addChildComponent(*modPane);
     parent->addChildComponent(*outPane);
 
-    for (int i = 0; i < scxt::egPerGroup; ++i)
+    for (int i = 0; i < scxt::egsPerGroup; ++i)
     {
         auto egt = std::make_unique<edit_screen::AdsrPane>(parent->editor, i, forZone);
         eg[i] = std::move(egt);
