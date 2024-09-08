@@ -158,17 +158,17 @@ void Zone::removeVoice(voice::Voice *v)
 void Zone::setNormalizedSampleLevel(const bool usePeak, const int associatedSampleID)
 {
     const auto startSample = (associatedSampleID < 0) ? 0 : associatedSampleID;
-    const auto endSample = (associatedSampleID < 0) ? maxSamplesPerZone : associatedSampleID;
+    const auto endSample = (associatedSampleID < 0) ? maxVariantsPerZone : associatedSampleID;
 
     for (auto i = startSample; i < endSample; ++i)
     {
-        if (sampleData.samples[i].active && samplePointers[i])
+        if (variantData.variants[i].active && samplePointers[i])
         {
             auto normVal = usePeak ? dsp::sample_analytics::computePeak(samplePointers[i])
                                    : dsp::sample_analytics::computeRMS(samplePointers[i]);
             // convert linear measure into db
             // To undo this, std::pow(amp / 10.f, 10.f)
-            sampleData.samples[i].normalizationAmplitude = 10.f * std::log10(1.f / normVal);
+            variantData.variants[i].normalizationAmplitude = 10.f * std::log10(1.f / normVal);
         }
     }
 }
@@ -176,13 +176,13 @@ void Zone::setNormalizedSampleLevel(const bool usePeak, const int associatedSamp
 void Zone::clearNormalizedSampleLevel(const int associatedSampleID)
 {
     const auto startSample = (associatedSampleID < 0) ? 0 : associatedSampleID;
-    const auto endSample = (associatedSampleID < 0) ? maxSamplesPerZone : associatedSampleID;
+    const auto endSample = (associatedSampleID < 0) ? maxVariantsPerZone : associatedSampleID;
 
     for (auto i = startSample; i < endSample; ++i)
     {
-        if (sampleData.samples[i].active && samplePointers[i])
+        if (variantData.variants[i].active && samplePointers[i])
         {
-            sampleData.samples[i].normalizationAmplitude = 0.f;
+            variantData.variants[i].normalizationAmplitude = 0.f;
         }
     }
 }
