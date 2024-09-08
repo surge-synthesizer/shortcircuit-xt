@@ -502,7 +502,7 @@ void VariantDisplay::rebuild()
         break;
     }
 
-    switch (variantView.interpolationType)
+    switch (variantView.variants[selectedVariation].interpolationType)
     {
     case dsp::InterpolationTypes::Sinc:
         srcButton->setLabel("SINC");
@@ -727,12 +727,13 @@ void VariantDisplay::showSRCMenu()
     p.addSeparator();
 
     auto add = [&p, this](auto e, auto n) {
-        p.addItem(n, true, variantView.interpolationType == e, [this, e]() {
-            variantView.interpolationType = e;
-            connectors::updateSingleValue<cmsg::UpdateZoneVariantsInt16TValue>(
-                variantView, variantView.interpolationType, this);
-            rebuild();
-        });
+        p.addItem(
+            n, true, variantView.variants[selectedVariation].interpolationType == e, [this, e]() {
+                variantView.variants[selectedVariation].interpolationType = e;
+                connectors::updateSingleValue<cmsg::UpdateZoneVariantsInt16TValue>(
+                    variantView, variantView.variants[selectedVariation].interpolationType, this);
+                rebuild();
+            });
     };
     add(dsp::InterpolationTypes::Sinc, "Sinc");
     add(dsp::InterpolationTypes::Linear, "Linear");

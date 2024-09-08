@@ -319,6 +319,7 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                           {"loopMode", s.loopMode},
                           {"loopDirection", s.loopDirection},
                           {"loopCountWhenCounted", s.loopCountWhenCounted},
+                          {"interpolationType", s.interpolationType},
                           {"loopFade", s.loopFade}};
                  }
                  else
@@ -344,6 +345,8 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                      findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY,
                                s.loopDirection);
                      findOrSet(v, "loopFade", 0, s.loopFade);
+                     findOrSet(v, "interpolationType", dsp::InterpolationTypes::Sinc,
+                               s.interpolationType);
                      findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
                  }
                  else
