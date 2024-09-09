@@ -89,7 +89,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             {
                 z->sampleIndex = 0;
             }
-            if (nbSampleLoadedInZone == 2)
+            if (nbSampleLoadedInZone == 2 &&
+                z->variantData.variantPlaybackMode != Zone::TRUE_RANDOM)
             {
                 z->sampleIndex = (z->sampleIndex + 1) % 2;
             }
