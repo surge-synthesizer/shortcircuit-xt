@@ -235,6 +235,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsEQNBandParm();
         break;
 
+    case dsp::processor::proct_eq_tilt:
+        layoutControlsFromJSON("processors/tilteq.json");
+        break;
+
     case dsp::processor::proct_eq_morph:
         layoutControlsEQMorph();
         break;
