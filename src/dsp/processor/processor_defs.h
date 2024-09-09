@@ -73,6 +73,7 @@
 #include "sst/voice-effects/eq/EqNBandParametric.h"
 #include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/voice-effects/eq/MorphEQ.h"
+#include "sst/voice-effects/eq/TiltEQ.h"
 
 #include "sst/voice-effects/filter/CytomicSVF.h"
 #include "sst/voice-effects/filter/SSTFilters.h"
@@ -138,19 +139,20 @@ using eq3impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 3
 } // namespace procimpl::detail
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
-            proct_eq_3band_parametric_A, "3 Band Parametric", "EQ & Utility", "eq-parm-3band");
+            proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
 DEFINE_PROC(EQGraphic6Band, sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<2>>, proct_eq_6band,
-            "6 Band Graphic", "EQ & Utility", "eq-grp-6");
-DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
-            sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",
-            "eq-morph");
+            "6 Band Graphic", "EQ", "eq-grp-6");
+
+DEFINE_PROC(TiltEQ, sst::voice_effects::eq::TiltEQ<SCXTVFXConfig<1>>,
+            sst::voice_effects::eq::TiltEQ<SCXTVFXConfig<2>>, proct_eq_tilt, "Tilt EQ", "EQ",
+            "eq-tilt");
 DEFINE_PROC(VolPan, sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<1>>,
             sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<2>>, proct_volpan,
-            "Volume & Pan", "EQ & Utility", "volume-pan");
+            "Volume & Pan", "Utility", "volume-pan");
 DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
-            "EQ & Utility", "fxstereo-fx", dsp::surgeSincTable);
+            "Utility", "fxstereo-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(GenVA, sst::voice_effects::generator::GenVA<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenVA<SCXTVFXConfig<2>>, proct_osc_VA, "VA Oscillator",
@@ -171,6 +173,9 @@ DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXC
             sst::voice_effects::delay::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
             "String Resonator", "Generators", "stringex-fx", dsp::surgeSincTable);
 
+DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
+            sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",
+            "eq-morph");
 DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
             "Filters", "filt-cytomic");
