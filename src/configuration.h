@@ -82,6 +82,7 @@ namespace log
 static constexpr bool selection{false};
 static constexpr bool uiStructure{false};
 static constexpr bool groupZoneMutation{false};
+static constexpr bool memoryPool{false};
 } // namespace log
 
 } // namespace scxt

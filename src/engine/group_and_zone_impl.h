@@ -132,15 +132,17 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
                                               dsp::processor::ProcessorType type, uint8_t *mem,
                                               float *pfp, int *ifp, bool initFromDefaults)
 {
-    dsp::processor::Processor *tmpProcessor{nullptr};
+    auto &tc = asT()->getEngine()->getMessageController()->threadingChecker;
 
-    auto &ps = processorStorage[whichProcessor];
-    tmpProcessor = dsp::processor::spawnProcessorInPlace(
-        type, asT()->getEngine()->getMemoryPool().get(), mem,
-        dsp::processor::processorMemoryBufferSize, ps, pfp, ifp, false, true);
+    dsp::processor::Processor *tmpProcessor{nullptr};
 
     if (type != dsp::processor::proct_none)
     {
+        auto &ps = processorStorage[whichProcessor];
+        tmpProcessor = dsp::processor::spawnProcessorInPlace(
+            type, asT()->getEngine()->getMemoryPool().get(), mem,
+            dsp::processor::processorMemoryBufferSize, ps, pfp, ifp, false, true);
+
         assert(tmpProcessor);
         assert(asT()->getEngine());
         if (asT()->getEngine()->isSampleRateSet())

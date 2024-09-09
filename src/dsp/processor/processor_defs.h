@@ -97,6 +97,11 @@
 #include "sst/voice-effects/dynamics/Compressor.h"
 #include "sst/voice-effects/dynamics/AutoWah.h"
 
+#include "sst/voice-effects/lifted_bus_effects/LiftedReverb1.h"
+#include "sst/voice-effects/lifted_bus_effects/LiftedReverb2.h"
+#include "sst/voice-effects/lifted_bus_effects/LiftedDelay.h"
+#include "sst/voice-effects/lifted_bus_effects/LiftedFlanger.h"
+
 namespace scxt::dsp::processor
 {
 // Just don't change the id or streaming name, basically
@@ -214,6 +219,29 @@ DEFINE_PROC(ShepardPhaser, sst::voice_effects::modulation::ShepardPhaser<SCXTVFX
 DEFINE_PROC(Chorus, sst::voice_effects::delay::Chorus<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
             "Modulation", "voice-chorus", dsp::surgeSincTable);
+
+DEFINE_PROC(LiftedReverb1, sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<1>>,
+            sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<2>>, proct_lifted_reverb1,
+            "Reverb1", "Reverb", "lifted-reverb1");
+PROC_FOR_GROUP_ONLY(proct_lifted_reverb1);
+PROC_DEFAULT_MIX(proct_lifted_reverb1, 0.333);
+
+DEFINE_PROC(LiftedReverb2, sst::voice_effects::liftbus::LiftedReverb2<SCXTVFXConfig<1>>,
+            sst::voice_effects::liftbus::LiftedReverb2<SCXTVFXConfig<2>>, proct_lifted_reverb2,
+            "Reverb2", "Reverb", "lifted-reverb2");
+PROC_FOR_GROUP_ONLY(proct_lifted_reverb2);
+PROC_DEFAULT_MIX(proct_lifted_reverb2, 0.333);
+
+DEFINE_PROC(LiftedDelay, sst::voice_effects::liftbus::LiftedDelay<SCXTVFXConfig<1>>,
+            sst::voice_effects::liftbus::LiftedDelay<SCXTVFXConfig<2>>, proct_lifted_delay,
+            "Dual Delay", "Delay", "lifted-delay");
+PROC_FOR_GROUP_ONLY(proct_lifted_delay);
+PROC_DEFAULT_MIX(proct_lifted_delay, 0.333);
+
+DEFINE_PROC(LiftedFlanger, sst::voice_effects::liftbus::LiftedFlanger<SCXTVFXConfig<1>>,
+            sst::voice_effects::liftbus::LiftedFlanger<SCXTVFXConfig<2>>, proct_lifted_flanger,
+            "Flanger", "Modulation", "lifted-flanger");
+PROC_FOR_GROUP_ONLY(proct_lifted_flanger);
 
 } // namespace scxt::dsp::processor
 
