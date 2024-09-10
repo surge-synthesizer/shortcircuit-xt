@@ -116,6 +116,7 @@ enum ProcessorType
     proct_shepard,
     proct_Chorus,
     proct_volpan,
+    proct_stereofieldmanip,
     proct_Compressor,
     proct_autowah,
 
