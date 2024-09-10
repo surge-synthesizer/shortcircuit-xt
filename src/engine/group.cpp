@@ -362,6 +362,11 @@ void Group::setupOnUnstream(const engine::Engine &e)
 
     for (int p = 0; p < processorCount; ++p)
     {
+        if (processors[p])
+        {
+            dsp::processor::unspawnProcessor(processors[p]);
+            processors[p] = nullptr;
+        }
         setupProcessorControlDescriptions(p, processorStorage[p].type);
         onProcessorTypeChanged(p, processorStorage[p].type);
     }
@@ -401,6 +406,8 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
         {
             processors[w]->setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
             processors[w]->setTempoPointer(&(getEngine()->transport.tempo));
+
+            endpoints.processorTarget[w].snapValues();
 
             processors[w]->init();
         }
@@ -448,9 +455,16 @@ void Group::attack()
 
     rePrepareAndBindGroupMatrix();
 
-    for (auto p : processors)
+    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+    {
+        auto *p = processors[i];
         if (p)
+        {
+            endpoints.processorTarget[i].snapValues();
+
             p->init();
+        }
+    }
 }
 
 void Group::resetLFOs(int whichLFO)

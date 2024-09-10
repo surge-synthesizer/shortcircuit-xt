@@ -45,6 +45,7 @@ struct MemoryPool : MoveableOnly<MemoryPool>
     ~MemoryPool();
 
     void preReservePool(size_t blockSize);
+    void preReserveSingleInstancePool(size_t blockSize);
 
     data_t *checkoutBlock(size_t blockSize);
     void returnBlock(data_t *block, size_t blockSize);
@@ -54,8 +55,14 @@ struct MemoryPool : MoveableOnly<MemoryPool>
     {
         return ((x >> N) + 1) * (1 << N);
     }
-    void growBlock(size_t blockSize, size_t byEntries);
-    using pool_t = std::queue<data_t *>;
+    void growBlock(size_t blockSize, bool initialize);
+    struct SinglePool : MoveableOnly<SinglePool>
+    {
+        size_t associatedSize;
+        size_t initialPoolSize, growSize;
+        std::queue<data_t *> data;
+    };
+    using pool_t = SinglePool;
     using cache_t = std::unordered_map<size_t, pool_t>;
     cache_t cache;
 

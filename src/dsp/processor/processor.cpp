@@ -121,6 +121,11 @@ template <size_t I> float implGetProcessorDefaultMix()
     return ProcessorDefaultMix<(ProcessorType)I>::defaultMix;
 }
 
+template <size_t I> bool implGetForGroupOnly()
+{
+    return ProcessorForGroupOnly<(ProcessorType)I>::isGroupOnly;
+}
+
 template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequence<Is...>)
 {
     constexpr constCharOp_t fnc[] = {detail::implGetProcessorDisplayGroup<Is>...};
@@ -132,6 +137,13 @@ template <size_t... Is> auto getProcessorDefaultMix(size_t ft, std::index_sequen
     constexpr floatOp_t fnc[] = {detail::implGetProcessorDefaultMix<Is>...};
     return fnc[ft]();
 }
+
+template <size_t... Is> auto getForGroupOnly(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr boolOp_t fnc[] = {detail::implGetForGroupOnly<Is>...};
+    return fnc[ft]();
+}
+
 template <size_t I>
 Processor *returnSpawnOnto(uint8_t *m, engine::MemoryPool *mp, const ProcessorStorage &ps, float *f,
                            int *i, bool needsMetadata)
@@ -222,6 +234,12 @@ float getProcessorDefaultMix(ProcessorType id)
         id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
+bool getProcessorGroupOnly(ProcessorType id)
+{
+    return detail::getForGroupOnly(
+        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s)
 {
     // A bit gross but hey
@@ -242,7 +260,7 @@ processorList_t getAllProcessorDescriptions()
         if (isProcessorImplemented(pt))
         {
             res.push_back({pt, getProcessorStreamingName(pt), getProcessorName(pt),
-                           getProcessorDisplayGroup(pt)});
+                           getProcessorDisplayGroup(pt), getProcessorGroupOnly(pt)});
         }
     }
     std::sort(res.begin(), res.end(), [](const auto &a, const auto &b) {

@@ -239,7 +239,7 @@ std::string logTimestamp();
     {                                                                                              \
         if constexpr (scxt::log::x)                                                                \
         {                                                                                          \
-            SCLOG(__VA_ARGS__);                                                                    \
+            SCLOG("[" << #x << "] " << __VA_ARGS__);                                               \
         }                                                                                          \
     }
 

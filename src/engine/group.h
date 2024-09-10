@@ -67,7 +67,6 @@ struct Group : MoveableOnly<Group>,
         {
             if (p)
             {
-                SCLOG("Group Destructor: Unspawning Processors");
                 dsp::processor::unspawnProcessor(p);
             }
         }
