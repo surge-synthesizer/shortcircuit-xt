@@ -76,4 +76,10 @@
         static constexpr float defaultMix{mix};                                                    \
     };
 
+#define PROC_FOR_GROUP_ONLY(proct)                                                                 \
+    template <> struct ProcessorForGroupOnly<proct>                                                \
+    {                                                                                              \
+        static constexpr bool isGroupOnly{true};                                                   \
+    };
+
 #endif // SHORTCIRCUITXT_DEFINITION_HELPERS_H

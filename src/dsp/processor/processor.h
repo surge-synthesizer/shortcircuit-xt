@@ -148,6 +148,11 @@ enum ProcessorType
     proct_noise_am,
     proct_osc_phasemod, // last part/fx
 
+    proct_lifted_reverb1,
+    proct_lifted_reverb2,
+    proct_lifted_delay,
+    proct_lifted_flanger,
+
     proct_fx_treemonster,
     proct_osc_VA,
     proct_osc_tiltnoise,
@@ -162,12 +167,14 @@ const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
 const char *getProcessorDisplayGroup(ProcessorType id);
 float getProcessorDefaultMix(ProcessorType id);
+bool getProcessorGroupOnly(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
 
 struct ProcessorDescription
 {
     ProcessorType id;
     std::string streamingName{"ERROR"}, displayName{"ERROR"}, displayGroup{"ERROR"};
+    bool groupOnly{false};
 };
 
 typedef std::vector<ProcessorDescription> processorList_t;
@@ -244,6 +251,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
   public:
     size_t preReserveSize[16]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    size_t preReserveSingleInstanceSize[16]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     ProcessorType getType() const { return myType; }
     std::string getName() const { return getProcessorName(getType()); }
@@ -349,6 +357,11 @@ template <ProcessorType ft> struct ProcessorImplementor
 template <ProcessorType ft> struct ProcessorDefaultMix
 {
     static constexpr float defaultMix{1.0};
+};
+
+template <ProcessorType ft> struct ProcessorForGroupOnly
+{
+    static constexpr bool isGroupOnly{false};
 };
 
 } // namespace scxt::dsp::processor

@@ -61,6 +61,25 @@ template <int OSFactor> struct SCXTVFXConfig
         }
     }
 
+    static void preReserveSingleInstancePool(BaseClass *b, size_t s)
+    {
+        if (b->memoryPool)
+        {
+            b->memoryPool->preReserveSingleInstancePool(s);
+        }
+        else
+        {
+            for (int i = 0; i < 16; ++i)
+            {
+                if (b->preReserveSingleInstanceSize[i] == 0)
+                {
+                    b->preReserveSingleInstanceSize[i] = s;
+                    break;
+                }
+            }
+        }
+    }
+
     static uint8_t *checkoutBlock(BaseClass *b, size_t s)
     {
         assert(b->memoryPool);
@@ -350,6 +369,11 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
         {
             assert(memoryPool);
             memoryPool->preReservePool(preReserveSize[i]);
+        }
+        if (preReserveSingleInstanceSize[i] > 0)
+        {
+            assert(memoryPool);
+            memoryPool->preReserveSingleInstancePool(preReserveSingleInstanceSize[i]);
         }
     }
 }

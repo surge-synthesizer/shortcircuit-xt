@@ -83,6 +83,9 @@ void ProcessorPane::showHamburgerMenu()
     std::string priorGroup = "none";
     for (const auto &pd : editor->allProcessors)
     {
+        if (pd.groupOnly && forZone)
+            continue;
+
         if (pd.displayGroup != priorGroup && priorGroup != "none")
         {
             p.addSubMenu(priorGroup, subMenu);

@@ -97,10 +97,9 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorDescription,
              SC_FROM({ // Streaming this type as an int is fine since the processor storage
                  // stringifies definitively. This is just for in-session communication
                  v = {
-                     {"id", (int32_t)t.id},
-                     {"streamingName", t.streamingName},
-                     {"displayName", t.displayName},
-                     {"displayGroup", t.displayGroup},
+                     {"id", (int32_t)t.id},          {"streamingName", t.streamingName},
+                     {"displayName", t.displayName}, {"displayGroup", t.displayGroup},
+                     {"groupOnly", t.groupOnly},
                  };
              }),
              SC_TO({
@@ -110,6 +109,7 @@ SC_STREAMDEF(scxt::dsp::processor::ProcessorDescription,
                  findIf(v, "streamingName", result.streamingName);
                  findIf(v, "displayName", result.displayName);
                  findIf(v, "displayGroup", result.displayGroup);
+                 findIf(v, "groupOnly", result.groupOnly);
              }))
 
 SC_STREAMDEF(

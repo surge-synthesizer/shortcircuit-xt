@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_MAPPING_PANE_SAMPLEDISPLAY_H
-#define SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_MAPPING_PANE_SAMPLEDISPLAY_H
+#ifndef SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_MAPPING_PANE_VARIANTDISPLAY_H
+#define SCXT_SRC_UI_APP_EDIT_SCREEN_COMPONENTS_MAPPING_PANE_VARIANTDISPLAY_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/ZoomContainer.h"
