@@ -695,12 +695,13 @@ void VariantDisplay::showLoopModeMenu()
     p.addSeparator();
 
     auto add = [&p, this](auto e, bool alt, auto n) {
+        auto that = this;
         p.addItem(n, true,
                   variantView.variants[selectedVariation].loopMode == e &&
                       variantView.variants[selectedVariation].loopDirection ==
                           (alt ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS
                                : engine::Zone::LoopDirection::FORWARD_ONLY),
-                  [w = juce::Component::SafePointer(this), e, alt]() {
+                  [w = juce::Component::SafePointer(that), e, alt]() {
                       if (!w)
                           return;
                       w->variantView.variants[w->selectedVariation].loopMode = e;
