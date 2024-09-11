@@ -55,7 +55,7 @@
 #include <mutex>
 #include "messaging/client/client_serial.h"
 
-namespace scxt::engine
+namespace scxt::enginer
 {
 
 Engine::Engine()
@@ -990,7 +990,6 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
     try
     {
         auto res = sst::plugininfra::paths::bestDocumentsFolderPathFor(productName);
-        res = fs::path("/usr/share/notw");
         if (!fs::is_directory(res))
             fs::create_directories(res);
         if (fs::is_directory(res))
