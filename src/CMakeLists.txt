@@ -91,5 +91,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         minimp3
         md5sum::md5
 
+        scxt-resources-core
+
         sc-compiler-options
         )

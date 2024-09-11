@@ -25,20 +25,39 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_PATCH_IO_PATCH_IO_H
-#define SCXT_SRC_PATCH_IO_PATCH_IO_H
+#include <fstream>
 
-#include "engine/patch.h"
-#include "engine/part.h"
+#include "engine/engine.h"
+#include "json/scxt_traits.h"
+#include "json/engine_traits.h"
 
-namespace scxt::patch_io
+#include "tao/json/msgpack/to_string.hpp"
+
+int main(int argc, char **argv)
 {
-bool saveMulti(const fs::path &toFile, const scxt::engine::Engine &);
-bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
-bool streamPart(const fs::path &toFile, const scxt::engine::Part &);
-bool unstreamPart(const fs::path &fromFile, scxt::engine::Part &);
+    if (argc != 2)
+    {
+        SCLOG("Usage: " << argv[0] << " out-path");
+        exit(1);
+    }
+    auto e = std::make_unique<scxt::engine::Engine>();
+    auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_MULTI);
+    auto msg = tao::json::msgpack::to_string(scxt::json::scxt_value(*e));
 
-bool initFromResourceBundle(scxt::engine::Engine &e);
-} // namespace scxt::patch_io
+    SCLOG("Message is of size " << msg.size());
 
-#endif // SHORTCIRCUITXT_PATCH_IO_H
+    auto p = fs::path(argv[1]);
+
+    SCLOG("Writing to file " << p.u8string());
+
+    std::ofstream f(p, std::ios::binary);
+    if (!f.is_open())
+    {
+        SCLOG("Unable to open file");
+        exit(2);
+    }
+
+    f.write(msg.c_str(), msg.size());
+
+    SCLOG("Output complete");
+}
