@@ -195,12 +195,12 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     bool attachToSample(const sample::SampleManager &manager, int index = 0,
                         SampleInformationRead sir = ALL);
     bool attachToSampleAtVariation(const sample::SampleManager &manager, const SampleID &sid,
-                                   int16_t variation)
+                                   int16_t variation, SampleInformationRead sir = ALL)
     {
         variantData.variants[variation].sampleID = sid;
         variantData.variants[variation].active = true;
 
-        return attachToSample(manager, variation);
+        return attachToSample(manager, variation, sir);
     }
 
     void setNormalizedSampleLevel(bool usePeak = false, int associatedSampleID = -1);
