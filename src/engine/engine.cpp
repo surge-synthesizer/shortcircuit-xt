@@ -77,24 +77,29 @@ Engine::Engine()
     patch->parentEngine = this;
 
     auto tdp = setupUserStorageDirectory();
+    fs::path useTDP;
+
     if (tdp.has_value())
     {
-        defaults = std::make_unique<infrastructure::DefaultsProvider>(
-            *tdp, "ShortcircuitXT",
-            [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
-            [](auto em, auto t) {
-                SCLOG("Defaults Parse Error :" << em << " " << t << std::endl);
-            });
-
-        browserDb = std::make_unique<browser::BrowserDB>(*tdp);
-        browser = std::make_unique<browser::Browser>(
-            *browserDb, *defaults, *tdp,
-            [this](const auto &a, const auto &b) { messageController->reportErrorToClient(a, b); });
+        useTDP = *tdp;
     }
     else
     {
-        messageController->reportErrorToClient("Unlikely to work", "No documents dir. Not tested.");
+        useTDP = fs::temp_directory_path();
+        messageController->reportErrorToClient("Cannot create documents dir",
+                                               "Unable to create documents directory. Using " +
+                                                   useTDP.u8string());
     }
+
+    defaults = std::make_unique<infrastructure::DefaultsProvider>(
+        useTDP, "ShortcircuitXT",
+        [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
+        [](auto em, auto t) { SCLOG("Defaults Parse Error :" << em << " " << t << std::endl); });
+
+    browserDb = std::make_unique<browser::BrowserDB>(*tdp);
+    browser = std::make_unique<browser::Browser>(
+        *browserDb, *defaults, useTDP,
+        [this](const auto &a, const auto &b) { messageController->reportErrorToClient(a, b); });
 
     for (auto &v : voices)
         v = nullptr;
@@ -956,18 +961,76 @@ void Engine::updateTransportPhasors()
 
 std::optional<fs::path> Engine::setupUserStorageDirectory()
 {
+    bool tryPortable{false};
+    auto installPath = sst::plugininfra::paths::sharedLibraryBinaryPath().parent_path();
+    const std::string productName = "Shortcircuit XT";
+    const std::string portableName = "ShortcircuitXTUserData";
+
     try
     {
-        auto res = sst::plugininfra::paths::bestDocumentsFolderPathFor("Shortcircuit XT");
-        if (!fs::is_directory(res))
-            fs::create_directories(res);
-        if (fs::is_directory(res))
-            return res;
+        auto cp = installPath;
+
+        while (cp.has_parent_path() && cp != cp.parent_path())
+        {
+            auto portable = cp / portableName;
+
+            if (fs::is_directory(portable))
+            {
+                SCLOG("Using portable user directory: " << portable.u8string());
+                return portable;
+            }
+
+            cp = cp.parent_path();
+        }
     }
     catch (const fs::filesystem_error &e)
     {
-        messageController->reportErrorToClient("FS Error creating user dir", e.what());
     }
+
+    try
+    {
+        auto res = sst::plugininfra::paths::bestDocumentsFolderPathFor(productName);
+        res = fs::path("/usr/share/notw");
+        if (!fs::is_directory(res))
+            fs::create_directories(res);
+        if (fs::is_directory(res))
+        {
+            SCLOG("Using system user directory: " << res.u8string());
+            return res;
+        }
+    }
+    catch (const fs::filesystem_error &e)
+    {
+    }
+
+    try
+    {
+        auto cp = installPath;
+
+        auto portable = installPath / portableName;
+        if (!fs::is_directory(portable))
+        {
+            SCLOG("Creating user portable directory :" << portable.u8string());
+            fs::create_directories(portable);
+        }
+        if (fs::is_directory(portable))
+        {
+            SCLOG("Using newly minted portable directory " << portable.u8string());
+            messageController->reportErrorToClient(
+                "Creating default portable directory",
+                "Unable to find a user dir, short circuit created a portable directory at " +
+                    portable.u8string());
+            return portable;
+        }
+    }
+    catch (fs::filesystem_error &e)
+    {
+    }
+
+    SCLOG("Unable to determine user directory");
+    messageController->reportErrorToClient(
+        "Unable to make user directory",
+        "Both regular and portable methods failed to make a user dir");
     return std::nullopt;
 }
 
