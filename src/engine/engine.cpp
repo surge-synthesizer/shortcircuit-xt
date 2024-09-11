@@ -55,7 +55,7 @@
 #include <mutex>
 #include "messaging/client/client_serial.h"
 
-namespace scxt::enginer
+namespace scxt::engine
 {
 
 Engine::Engine()
@@ -961,7 +961,6 @@ void Engine::updateTransportPhasors()
 
 std::optional<fs::path> Engine::setupUserStorageDirectory()
 {
-    bool tryPortable{false};
     auto installPath = sst::plugininfra::paths::sharedLibraryBinaryPath().parent_path();
     const std::string productName = "Shortcircuit XT";
     const std::string portableName = "ShortcircuitXTUserData";
