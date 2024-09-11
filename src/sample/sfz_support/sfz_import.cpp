@@ -222,7 +222,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         z->mapping.velocityRange.velEnd == ve)
                     {
                         int idx = roundRobinPosition - 1;
-                        z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx);
+                        z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx,
+                                                     engine::Zone::ENDPOINTS);
                         attached = true;
                         break;
                     }
@@ -304,7 +305,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                             }
                             else
                             {
-                                SCLOG("Unsupported loop_mode : " << oc.value);
+                                SCLOG("SFZ Unsupported loop_mode : " << oc.value);
                             }
                         }
 
@@ -326,7 +327,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         }
                     }
                 }
-                zn->attachToSample(*e.getSampleManager());
+                zn->attachToSample(*e.getSampleManager(), 0,
+                                   engine::Zone::SampleInformationRead::ENDPOINTS);
                 group->addZone(zn);
             }
             if (firstGroupWithZonesAdded == -1)
