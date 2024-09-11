@@ -91,7 +91,7 @@ inline void addSampleWithRange(const addSampleWithRange_t &payload, engine::Engi
                                MessageController &cont)
 {
     assert(cont.threadingChecker.isSerialThread());
-    auto p = fs::path{std::get<0>(payload)};
+    auto p = fs::path(fs::u8path(std::get<0>(payload)));
     auto rk = std::get<1>(payload);
     auto kr = engine::KeyboardRange(std::get<2>(payload), std::get<3>(payload));
     auto vr = engine::VelocityRange(std::get<4>(payload), std::get<5>(payload));

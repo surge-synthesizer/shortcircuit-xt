@@ -124,7 +124,7 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  findOrSet(v, "type", sample::Sample::WAV_FILE, to.type);
                  std::string p;
                  findIf(v, "path", p);
-                 to.path = fs::path{p};
+                 to.path = fs::path(fs::u8path(p));
                  findIf(v, "md5sum", to.md5sum);
                  findOrSet(v, "preset", 0, to.preset); // 0 here since we forgot to stream for a bit
                  findOrSet(v, "instrument", -1, to.instrument);

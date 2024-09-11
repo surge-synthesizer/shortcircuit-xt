@@ -314,9 +314,9 @@ struct DriveFSListBoxRow : public juce::Component
             if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
             {
                 const auto &data = browserPane->devicesPane->driveFSArea->contents;
-
-                getProperties().set("DragAndDropSample",
-                                    juce::String(data[rowNumber].path().u8string()));
+                getProperties().set(
+                    "DragAndDropSample",
+                    juce::String::fromUTF8(data[rowNumber].path().u8string().c_str()));
                 container->startDragging("FileSystem Row", this);
                 isDragging = true;
             }
