@@ -228,6 +228,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsMicroGate();
         break;
 
+    case dsp::processor::proct_stereotool:
+        layoutControlsStereoTool();
+        break;
+
     case dsp::processor::proct_CytomicSVF:
         layoutControlsFastSVF();
         break;
@@ -882,6 +886,24 @@ void ProcessorPane::layoutControlsPhaser()
 }
 
 void ProcessorPane::layoutControlsMicroGate()
+{
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
+    lo::knob<55>(*floatEditors[0], 25, 0);
+
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
+    lo::knob<55>(*floatEditors[1], 105, 0);
+
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
+    lo::knob<55>(*floatEditors[2], 25, 75);
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
+    lo::knob<55>(*floatEditors[3], 105, 75);
+}
+
+void ProcessorPane::layoutControlsStereoTool()
 {
     namespace lo = theme::layout;
     namespace locon = lo::constants;
