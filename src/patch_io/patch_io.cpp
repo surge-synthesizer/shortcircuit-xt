@@ -44,6 +44,10 @@
 
 #include "json/engine_traits.h"
 
+#include "cmrc/cmrc.hpp"
+
+CMRC_DECLARE(scxt_resources_core);
+
 namespace scxt::patch_io
 {
 void addSCManifest(const std::unique_ptr<RIFF::File> &f, const std::string &type)
@@ -104,6 +108,56 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
     catch (const RIFF::Exception &e)
     {
         SCLOG(e.Message);
+    }
+    return true;
+}
+
+bool initFromResourceBundle(scxt::engine::Engine &engine)
+{
+    SCLOG("Init From Resource Bundle");
+
+    std::string payload;
+
+    try
+    {
+        auto fs = cmrc::scxt_resources_core::get_filesystem();
+        auto fntf = fs.open("InitSettings.dat");
+        payload = std::string(fntf.begin(), fntf.end());
+    }
+    catch (std::exception &e)
+    {
+        SCLOG("Exception opening payload");
+        return false;
+    }
+    SCLOG("Init payload has size " << payload.size());
+    auto &cont = engine.getMessageController();
+    if (cont->isAudioRunning)
+    {
+        cont->stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
+            try
+            {
+                nonconste.stopAllSounds();
+                scxt::json::unstreamEngineState(nonconste, payload, true);
+                auto &cont = *e.getMessageController();
+                cont.restartAudioThreadFromSerial();
+            }
+            catch (std::exception &err)
+            {
+                SCLOG("Unable to load [" << err.what() << "]");
+            }
+        });
+    }
+    else
+    {
+        try
+        {
+            engine.stopAllSounds();
+            scxt::json::unstreamEngineState(engine, payload, true);
+        }
+        catch (std::exception &err)
+        {
+            SCLOG("Unable to load [" << err.what() << "]");
+        }
     }
     return true;
 }
