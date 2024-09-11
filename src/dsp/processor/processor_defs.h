@@ -94,7 +94,7 @@
 #include "sst/voice-effects/modulation/NoiseAM.h"
 #include "sst/voice-effects/delay/Chorus.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
-#include "sst/voice-effects/utilities/StereoFieldManipulator.h"
+#include "sst/voice-effects/utilities/StereoTool.h"
 #include "sst/voice-effects/dynamics/Compressor.h"
 #include "sst/voice-effects/dynamics/AutoWah.h"
 
@@ -156,10 +156,9 @@ DEFINE_PROC(TiltEQ, sst::voice_effects::eq::TiltEQ<SCXTVFXConfig<1>>,
 DEFINE_PROC(VolPan, sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<1>>,
             sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<2>>, proct_volpan,
             "Volume & Pan", "Utility", "volume-pan");
-DEFINE_PROC(StereoFieldManipulator,
-            sst::voice_effects::utilities::StereoFieldManipulator<SCXTVFXConfig<1>>,
-            sst::voice_effects::utilities::StereoFieldManipulator<SCXTVFXConfig<2>>,
-            proct_stereofieldmanip, "Stereo Field Manipulator", "Utility", "stereo-field-manip");
+DEFINE_PROC(StereoTool, sst::voice_effects::utilities::StereoTool<SCXTVFXConfig<1>>,
+            sst::voice_effects::utilities::StereoTool<SCXTVFXConfig<2>>, proct_stereotool,
+            "Stereo Tool", "Utility", "stereo-tool");
 DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
             "Utility", "fxstereo-fx", dsp::surgeSincTable);

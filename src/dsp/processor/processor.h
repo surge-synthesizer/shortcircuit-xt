@@ -116,7 +116,7 @@ enum ProcessorType
     proct_shepard,
     proct_Chorus,
     proct_volpan,
-    proct_stereofieldmanip,
+    proct_stereotool,
     proct_Compressor,
     proct_autowah,
 
@@ -134,7 +134,6 @@ enum ProcessorType
     proct_fx_distortion1,
     proct_fx_clipper,
     proct_fx_slewer,
-    proct_fx_stereotools,
     proct_fx_limiter,
     proct_fx_gate,
     proct_fx_microgate,
