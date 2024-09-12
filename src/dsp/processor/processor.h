@@ -117,6 +117,7 @@ enum ProcessorType
     proct_Chorus,
     proct_volpan,
     proct_stereotool,
+    proct_gainmatrix,
     proct_Compressor,
     proct_autowah,
 
