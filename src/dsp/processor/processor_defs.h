@@ -95,6 +95,7 @@
 #include "sst/voice-effects/delay/Chorus.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
 #include "sst/voice-effects/utilities/StereoTool.h"
+#include "sst/voice-effects/utilities/GainMatrix.h"
 #include "sst/voice-effects/dynamics/Compressor.h"
 #include "sst/voice-effects/dynamics/AutoWah.h"
 
@@ -159,6 +160,9 @@ DEFINE_PROC(VolPan, sst::voice_effects::utilities::VolumeAndPan<SCXTVFXConfig<1>
 DEFINE_PROC(StereoTool, sst::voice_effects::utilities::StereoTool<SCXTVFXConfig<1>>,
             sst::voice_effects::utilities::StereoTool<SCXTVFXConfig<2>>, proct_stereotool,
             "Stereo Tool", "Utility", "stereo-tool");
+DEFINE_PROC(GainMatrix, sst::voice_effects::utilities::GainMatrix<SCXTVFXConfig<1>>,
+            sst::voice_effects::utilities::GainMatrix<SCXTVFXConfig<2>>, proct_gainmatrix,
+            "Gain Matrix", "Utility", "gain-matrix");
 DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
             "Utility", "fxstereo-fx", dsp::surgeSincTable);
