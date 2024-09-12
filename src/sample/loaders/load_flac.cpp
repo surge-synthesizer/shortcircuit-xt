@@ -28,6 +28,9 @@
 
 #if SCXT_USE_FLAC
 #include "FLAC++/decoder.h"
+#include "FLAC++/metadata.h"
+#include "riff_wave.h" // this lets us unpack smpl chunks
+
 namespace scxt::sample
 {
 namespace detail
@@ -142,6 +145,10 @@ class SampleFLACDecoder : public FLAC::Decoder::File
                 SCLOG("Unsupported FLAC bit depth " << bps);
             }
         }
+        else
+        {
+            SCLOG("Ignoring decode-time FLAC metadata chunk " << (int)(metadata->type));
+        }
     }
     virtual void error_callback(::FLAC__StreamDecoderErrorStatus status) {}
 
@@ -165,7 +172,76 @@ bool Sample::parseFlac(const fs::path &p)
     instrument = 0;
     region = 0;
 
-    return res && dec.isValid;
+    res = res && dec.isValid;
+
+    if (res)
+    {
+        auto si = std::make_unique<FLAC::Metadata::SimpleIterator>();
+        res = res && si->is_valid();
+        res = res && si->init(p.u8string().c_str(), true, true);
+
+        while (!si->is_last())
+        {
+            if (si->get_block_type() != FLAC__METADATA_TYPE_APPLICATION)
+            {
+                si->next();
+                continue;
+            }
+
+            auto a = dynamic_cast<FLAC::Metadata::Application *>(si->get_block());
+            if (!a)
+            {
+                si->next();
+                continue;
+            }
+            auto fourB2 = [](const auto *b) {
+                std::string ids;
+                for (int i = 0; i < 4; ++i)
+                    ids += (char)b[i];
+                return ids;
+            };
+            if (fourB2(a->get_id()) != "riff")
+            {
+                si->next();
+                continue;
+            }
+
+            auto *d = a->get_data();
+            auto blockType = fourB2(d);
+            d += 4;
+            if (blockType == "smpl")
+            {
+                // strip off size.
+                d += 4;
+
+                loaders::SamplerChunk smpl_chunk;
+                loaders::SampleLoop smpl_loop;
+
+                memccpy(&smpl_chunk, d, 1, sizeof(loaders::SamplerChunk));
+                d += sizeof(loaders::SamplerChunk);
+
+                meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
+                meta.rootkey_present = true;
+
+                if (smpl_chunk.cSampleLoops > 0)
+                {
+                    meta.loop_present = true;
+                    memccpy(&smpl_loop, d, 1, sizeof(loaders::SampleLoop));
+                    d += sizeof(loaders::SampleLoop);
+
+                    meta.loop_start = smpl_loop.dwStart;
+                    meta.loop_end = smpl_loop.dwEnd + 1;
+                    if (smpl_loop.dwType == 1)
+                        meta.playmode = pm_forward_loop_bidirectional;
+                    else
+                        meta.playmode = pm_forward_loop;
+                }
+            }
+
+            si->next();
+        }
+    }
+    return res;
 }
 } // namespace scxt::sample
 #else
