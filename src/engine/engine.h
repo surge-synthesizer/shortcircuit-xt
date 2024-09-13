@@ -517,6 +517,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};
     std::unique_ptr<messaging::MessageController> messageController;
     std::unique_ptr<selection::SelectionManager> selectionManager;
+
+    static constexpr size_t cpuAverageObservation{64};
+    size_t cpuWP{0};
+    float cpuAvg{0.f};
+    float cpuAverages[cpuAverageObservation];
 };
 } // namespace scxt::engine
 #endif
