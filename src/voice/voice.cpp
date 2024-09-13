@@ -381,7 +381,51 @@ template <bool OS> bool Voice::processWithOS()
         }                                                                                          \
     }
 
-    if (processors[0] || processors[1] || processors[2] || processors[3])
+    /*
+     * This is all voice time type reset logic basically.
+     */
+    bool hasProcs{false};
+    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+    {
+        auto proct = processors[i] ? processors[i]->getType() : dsp::processor::proct_none;
+        if (zone->processorStorage[i].type != proct)
+        {
+            if (processors[i])
+                dsp::processor::unspawnProcessor(processors[i]);
+            processors[i] = nullptr;
+            proct = zone->processorStorage[i].type;
+        }
+
+        if (!processors[i] && zone->processorStorage[i].isActive &&
+            zone->processorStorage[i].type != dsp::processor::proct_none)
+        {
+            processorType[i] = proct;
+            // this is copied below in the init.
+            processors[i] = dsp::processor::spawnProcessorInPlace(
+                processorType[i], zone->getEngine()->getMemoryPool().get(),
+                processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
+                zone->processorStorage[i], endpoints->processorTarget[i].fp, processorIntParams[i],
+                forceOversample, false);
+
+            processors[i]->setSampleRate(sampleRate * (forceOversample ? 2 : 1));
+            processors[i]->setTempoPointer(&(zone->getEngine()->transport.tempo));
+
+            processors[i]->init();
+            processors[i]->setKeytrack(zone->processorStorage[i].isKeytracked);
+
+            processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
+        }
+        if (processors[i])
+        {
+            memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
+                   sizeof(processorIntParams[i]));
+            processors[i]->bypassAnyway = !zone->processorStorage[i].isActive;
+        }
+
+        hasProcs = hasProcs || processors[i];
+    }
+
+    if (hasProcs)
     {
         switch (zone->outputInfo.procRouting)
         {
@@ -689,6 +733,7 @@ void Voice::initializeProcessors()
         if ((processorIsActive[i] && processorType[i] != dsp::processor::proct_none) ||
             (processorType[i] == dsp::processor::proct_none && !processorIsActive[i]))
         {
+            // this init code is partly copied above in the voice state toggle
             processors[i] = dsp::processor::spawnProcessorInPlace(
                 processorType[i], zone->getEngine()->getMemoryPool().get(),
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,

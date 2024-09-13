@@ -172,6 +172,15 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     if (processors[0] || processors[1] || processors[2] || processors[3])
     {
+        for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+        {
+            if (processors[i])
+            {
+                memcpy(&processorIntParams[i][0], processorStorage[i].intParams.data(),
+                       sizeof(processorIntParams[i]));
+                processors[i]->bypassAnyway = !processorStorage[i].isActive;
+            }
+        }
 
 #define CALL_ROUTE(FNN)                                                                            \
     if constexpr (OS)                                                                              \
