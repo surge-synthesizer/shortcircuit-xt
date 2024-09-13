@@ -177,8 +177,18 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
                 if (dragOverState == DRAG_OVER)
                 {
-                    g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
-                    g.drawHorizontalLine(1, 0, getWidth());
+                    if (isZone())
+                    {
+                        g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
+                        g.drawHorizontalLine(1, 0, getWidth());
+                    }
+                    else
+                    {
+                        g.setColour(editor->themeColor(theme::ColorMap::accent_1b).withAlpha(0.1f));
+                        g.fillRect(getLocalBounds());
+                        g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
+                        g.drawRect(getLocalBounds(), 1);
+                    }
                 }
             }
             else
@@ -318,7 +328,6 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
         void itemDragEnter(const SourceDetails &dragSourceDetails) override
         {
-            SCLOG("Item Drag Enter");
             dragOverState = DRAG_OVER;
             repaint();
         }
