@@ -293,13 +293,20 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
         [s = src, t = tgt](auto &e) {
             if (s.group == t.group)
             {
-                // Its a zone swap
-                auto &group = e.getPatch()->getPart(s.part)->getGroup(s.group);
-                auto &zoneS = group->getZone(s.zone);
-                auto &zoneT = group->getZone(t.zone);
-                e.terminateVoicesForZone(*zoneS);
-                e.terminateVoicesForZone(*zoneT);
-                group->swapZonesByIndex(s.zone, t.zone);
+                if (t.zone == -1)
+                {
+                    // You've moved an item onto its own goroup. So that's a noop
+                }
+                else
+                {
+                    // Its a zone swap
+                    auto &group = e.getPatch()->getPart(s.part)->getGroup(s.group);
+                    auto &zoneS = group->getZone(s.zone);
+                    auto &zoneT = group->getZone(t.zone);
+                    e.terminateVoicesForZone(*zoneS);
+                    e.terminateVoicesForZone(*zoneT);
+                    group->swapZonesByIndex(s.zone, t.zone);
+                }
             }
             else
             {
