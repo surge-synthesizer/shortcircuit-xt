@@ -64,6 +64,8 @@ Engine::Engine()
     SCLOG("    Version   = " << scxt::build::FullVersionStr);
     SCLOG("    Stream V  = " << humanReadableVersion(scxt::currentStreamingVersion));
 
+    memset(cpuAverages, 0, sizeof(cpuAverages));
+
     id.id = rng.unifU32() % 1024;
 
     messageController = std::make_unique<messaging::MessageController>(*this);
@@ -391,7 +393,11 @@ bool Engine::processAudio()
     // auto pct = time_span.count / maxtime;
     //  or...
     auto pct = time_span.count() * sampleRate * blockSizeInv * 100.0;
-    sharedUIMemoryState.cpuLevel = std::max(sharedUIMemoryState.cpuLevel * 0.9995, pct);
+    auto ppct = cpuAverages[cpuWP];
+    cpuAverages[cpuWP] = pct;
+    cpuWP = (cpuWP + 1) & (cpuAverageObservation - 1);
+    cpuAvg += (pct - ppct) / cpuAverageObservation;
+    sharedUIMemoryState.cpuLevel = cpuAvg;
     return true;
 }
 
