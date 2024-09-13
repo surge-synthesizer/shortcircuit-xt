@@ -417,6 +417,7 @@ struct SamplePointDataAttachment : sst::jucegui::data::Continuous
     std::string label;
     int64_t sampleCount{0};
     std::function<void(const SamplePointDataAttachment &)> onGuiChanged{nullptr};
+    std::function<int64_t(int64_t)> precheckGuiAdjust{nullptr};
 
     SamplePointDataAttachment(int64_t &v,
                               std::function<void(const SamplePointDataAttachment &)> ogc)
@@ -431,8 +432,13 @@ struct SamplePointDataAttachment : sst::jucegui::data::Continuous
             return "";
         return fmt::format("{}", (int64_t)f);
     }
-    void setValueFromGUI(const float &f) override
+    void setValueFromGUI(const float &ff) override
     {
+        auto f = ff;
+        if (precheckGuiAdjust)
+        {
+            f = precheckGuiAdjust(ff);
+        }
         value = (int64_t)f;
         if (onGuiChanged)
             onGuiChanged(*this);

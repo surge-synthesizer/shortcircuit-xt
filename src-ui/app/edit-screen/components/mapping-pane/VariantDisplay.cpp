@@ -186,13 +186,26 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     };
 
     attachSamplePoint(startP, "StartS", variantView.variants[selectedVariation].startSample);
+    sampleAttachments[startP]->precheckGuiAdjust = [this](auto f) {
+        return std::min(f, this->variantView.variants[this->selectedVariation].endSample);
+    };
     addLabel(startP, "Start");
     attachSamplePoint(endP, "EndS", variantView.variants[selectedVariation].endSample);
+    sampleAttachments[endP]->precheckGuiAdjust = [this](auto f) {
+        return std::max(f, this->variantView.variants[this->selectedVariation].startSample);
+    };
     addLabel(endP, "End");
     attachSamplePoint(startL, "StartL", variantView.variants[selectedVariation].startLoop);
+    sampleAttachments[startL]->precheckGuiAdjust = [this](auto f) {
+        return std::min(f, this->variantView.variants[this->selectedVariation].endLoop);
+    };
+
     editor->themeApplier.applyVariantLoopTheme(sampleEditors[startL].get());
     addLabel(startL, "Start");
     attachSamplePoint(endL, "EndL", variantView.variants[selectedVariation].endLoop);
+    sampleAttachments[endL]->precheckGuiAdjust = [this](auto f) {
+        return std::max(f, this->variantView.variants[this->selectedVariation].startLoop);
+    };
     editor->themeApplier.applyVariantLoopTheme(sampleEditors[endL].get());
     addLabel(endL, "End");
     attachSamplePoint(fadeL, "fadeL", variantView.variants[selectedVariation].loopFade);
