@@ -327,16 +327,23 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
     {
     case MouseState::HZ_DRAG_SAMPSTART:
         display->variantView.variants[display->selectedVariation].startSample =
-            sampleForXPixel(xpos);
+            std::min(sampleForXPixel(xpos),
+                     display->variantView.variants[display->selectedVariation].endSample);
         break;
     case MouseState::HZ_DRAG_SAMPEND:
-        display->variantView.variants[display->selectedVariation].endSample = sampleForXPixel(xpos);
+        display->variantView.variants[display->selectedVariation].endSample =
+            std::max(sampleForXPixel(xpos),
+                     display->variantView.variants[display->selectedVariation].startSample);
         break;
     case MouseState::HZ_DRAG_LOOPSTART:
-        display->variantView.variants[display->selectedVariation].startLoop = sampleForXPixel(xpos);
+        display->variantView.variants[display->selectedVariation].startLoop =
+            std::min(sampleForXPixel(xpos),
+                     display->variantView.variants[display->selectedVariation].endLoop);
         break;
     case MouseState::HZ_DRAG_LOOPEND:
-        display->variantView.variants[display->selectedVariation].endLoop = sampleForXPixel(xpos);
+        display->variantView.variants[display->selectedVariation].endLoop =
+            std::max(sampleForXPixel(xpos),
+                     display->variantView.variants[display->selectedVariation].startLoop);
         break;
     default:
         break;
