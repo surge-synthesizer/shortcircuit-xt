@@ -250,6 +250,8 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
                         const ProcessorStorage &ps, float *fp, int *ip, bool needsMetadata);
 
   public:
+    bool bypassAnyway{false};
+
     size_t preReserveSize[16]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     size_t preReserveSingleInstanceSize[16]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 

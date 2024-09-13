@@ -41,6 +41,9 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
                                Mix &outLev, Endpoints *endpoints, bool &chainIsMono,
                                float input[2][N], float output[2][N])
 {
+    if (processors[i]->bypassAnyway)
+        return;
+
     namespace mech = sst::basic_blocks::mechanics;
 
     float tempbuf alignas(16)[2][N];
