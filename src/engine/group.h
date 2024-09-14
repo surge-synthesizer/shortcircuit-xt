@@ -105,6 +105,7 @@ struct Group : MoveableOnly<Group>,
         z->parentGroup = this;
         z->engine = getEngine();
         zones.push_back(std::move(z));
+        activeZoneWeakRefs.push_back(nullptr);
         return zones.size();
     }
 
@@ -113,10 +114,15 @@ struct Group : MoveableOnly<Group>,
         z->parentGroup = this;
         z->engine = getEngine();
         zones.push_back(std::move(z));
+        activeZoneWeakRefs.push_back(nullptr);
         return zones.size();
     }
 
-    void clearZones() { zones.clear(); }
+    void clearZones()
+    {
+        zones.clear();
+        activeZoneWeakRefs.clear();
+    }
 
     int getZoneIndex(const ZoneID &zid) const
     {
@@ -149,6 +155,7 @@ struct Group : MoveableOnly<Group>,
 
         auto res = std::move(zones[idx]);
         zones.erase(zones.begin() + idx);
+        // REPACK WEAK REFS TODO
         res->parentGroup = nullptr;
         return res;
     }
@@ -159,8 +166,8 @@ struct Group : MoveableOnly<Group>,
     }
 
     bool isActive() const;
-    void addActiveZone();
-    void removeActiveZone();
+    void addActiveZone(engine::Zone *zoneWP);
+    void removeActiveZone(engine::Zone *zoneWP);
 
     void onSampleRateChanged() override;
 
@@ -242,6 +249,7 @@ struct Group : MoveableOnly<Group>,
 
   private:
     zoneContainer_t zones;
+    std::vector<Zone *> activeZoneWeakRefs;
 };
 } // namespace scxt::engine
 

@@ -109,20 +109,13 @@ template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
 #endif
         toCleanUp[i]->cleanupVoice();
     }
-
-    for (int i = 0; i < osBlock; i += 4)
-    {
-        // SCLOG(i << " " << output[0][i] << " " << output[0][i + 1] << " " << output[0][i + 2] << "
-        // "
-        //         << output[0][i + 3])
-    }
 }
 
 void Zone::addVoice(voice::Voice *v)
 {
     if (activeVoices == 0)
     {
-        parentGroup->addActiveZone();
+        parentGroup->addActiveZone(this);
     }
 
     activeVoices++;
@@ -148,7 +141,7 @@ void Zone::removeVoice(voice::Voice *v)
             if (activeVoices == 0)
             {
                 mUILag.instantlySnap();
-                parentGroup->removeActiveZone();
+                parentGroup->removeActiveZone(this);
             }
             return;
         }
