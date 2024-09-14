@@ -184,46 +184,129 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     };
                 }
             }
+            auto zn = std::make_unique<engine::Zone>(sid);
+            // SFZ defaults
+            zn->mapping.rootKey = 60;
+            zn->mapping.keyboardRange.keyStart = 0;
+            zn->mapping.keyboardRange.keyEnd = 127;
+            zn->mapping.velocityRange.velStart = 0;
+            zn->mapping.velocityRange.velEnd = 127;
 
-            if (roundRobinPosition > 0)
+            auto loadInfo = engine::Zone::LOOP | engine::Zone::ENDPOINTS | engine::Zone::MAPPING;
+
+            int64_t loop_start{-1}, loop_end{-1};
+
+            for (const auto &[n, ls] :
+                 {std::make_pair(std::string("Group"), currentGroupOpcodes), {"Region", list}})
             {
-                int16_t rk{0}, ks{0}, ke{0}, vs{0}, ve{0};
-                for (auto &oc : list)
+                for (auto &oc : ls)
                 {
                     if (oc.name == "pitch_keycenter")
                     {
-                        rk = parseMidiNote(oc.value);
+                        zn->mapping.rootKey = parseMidiNote(oc.value);
+                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "lokey")
                     {
-                        ks = parseMidiNote(oc.value);
+                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
+                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "hikey")
                     {
-                        ke = parseMidiNote(oc.value);
+                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
+                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+                    }
+                    else if (oc.name == "key")
+                    {
+                        auto pmn = parseMidiNote(oc.value);
+                        zn->mapping.rootKey = pmn;
+                        zn->mapping.keyboardRange.keyStart = pmn;
+                        zn->mapping.keyboardRange.keyEnd = pmn;
+                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "lovel")
                     {
-                        vs = std::atol(oc.value.c_str());
+                        zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
+                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "hivel")
                     {
-                        ve = std::atol(oc.value.c_str());
+                        zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
+                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+                    }
+                    else if (oc.name == "loop_start")
+                    {
+                        loop_start = std::atol(oc.value.c_str());
+                        loadInfo = loadInfo & ~engine::Zone::LOOP;
+                    }
+                    else if (oc.name == "loop_end")
+                    {
+                        loop_end = std::atol(oc.value.c_str());
+                        loadInfo = loadInfo & ~engine::Zone::LOOP;
+                    }
+                    else if (oc.name == "sample" || oc.name == "seq_position")
+                    {
+                        // dealt with above
+                    }
+                    else if (oc.name == "ampeg_sustain")
+                    {
+                        zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
+                    }
+                    else if (oc.name == "volume")
+                    {
+                        zn->mapping.amplitude = std::atof(oc.value.c_str()); // decibels
+                    }
+                    else if (oc.name == "tune")
+                    {
+                        // Tune is supplied in cents. Our pitch offset is in semitones
+                        zn->mapping.pitchOffset = std::atof(oc.value.c_str()) * 0.01;
+                    }
+                    else if (oc.name == "loop_mode")
+                    {
+                        if (oc.value == "loop_continuous")
+                        {
+                            // FIXME: In round robin looping modes this is probably wrong
+                            zn->variantData.variants[0].loopActive = true;
+                            zn->variantData.variants[0].loopMode = engine::Zone::LOOP_DURING_VOICE;
+                        }
+                        else
+                        {
+                            SCLOG("SFZ Unsupported loop_mode : " << oc.value);
+                        }
+                    }
+
+#define APPLYEG(v, d, t)                                                                           \
+    else if (oc.name == v)                                                                         \
+    {                                                                                              \
+        zn->egStorage[d].t =                                                                       \
+            scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
+    }
+
+                    APPLYEG("ampeg_attack", 0, a)
+                    APPLYEG("ampeg_decay", 0, d)
+                    APPLYEG("ampeg_release", 0, r)
+                    else
+                    {
+                        if (n != "Group")
+                            SCLOG("    Skipped " << n << "-originated OpCode for region: "
+                                                 << oc.name << " -> " << oc.value);
                     }
                 }
-
+            }
+            int variantIndex{-1};
+            if (roundRobinPosition > 0)
+            {
                 bool attached{false};
 
                 for (const auto &z : *group)
                 {
-                    if (z->mapping.rootKey == rk && z->mapping.keyboardRange.keyStart == ks &&
-                        z->mapping.keyboardRange.keyEnd == ke &&
-                        z->mapping.velocityRange.velStart == vs &&
-                        z->mapping.velocityRange.velEnd == ve)
+                    if (z->mapping.rootKey == zn->mapping.rootKey &&
+                        z->mapping.keyboardRange == zn->mapping.keyboardRange &&
+                        z->mapping.velocityRange == zn->mapping.velocityRange)
                     {
                         int idx = roundRobinPosition - 1;
-                        z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx,
-                                                     engine::Zone::ENDPOINTS);
+                        variantIndex = idx;
+                        z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx, loadInfo);
                         attached = true;
                         break;
                     }
@@ -237,100 +320,26 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             }
             else
             {
-                auto zn = std::make_unique<engine::Zone>(sid);
-                // SFZ defaults
-                zn->mapping.rootKey = 60;
-                zn->mapping.keyboardRange.keyStart = 0;
-                zn->mapping.keyboardRange.keyEnd = 127;
-                zn->mapping.velocityRange.velStart = 0;
-                zn->mapping.velocityRange.velEnd = 127;
+                variantIndex = 0;
+                zn->attachToSample(*e.getSampleManager(), 0, loadInfo);
+            }
 
-                for (const auto &[n, ls] :
-                     {std::make_pair(std::string("Group"), currentGroupOpcodes), {"Region", list}})
+            if (variantIndex >= 0)
+            {
+                if (loop_start >= 0 || loop_end >= 0)
                 {
-                    for (auto &oc : ls)
-                    {
-                        if (oc.name == "pitch_keycenter")
-                        {
-                            zn->mapping.rootKey = parseMidiNote(oc.value);
-                        }
-                        else if (oc.name == "lokey")
-                        {
-                            zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
-                        }
-                        else if (oc.name == "hikey")
-                        {
-                            zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
-                        }
-                        else if (oc.name == "key")
-                        {
-                            auto pmn = parseMidiNote(oc.value);
-                            zn->mapping.rootKey = pmn;
-                            zn->mapping.keyboardRange.keyStart = pmn;
-                            zn->mapping.keyboardRange.keyEnd = pmn;
-                        }
-                        else if (oc.name == "lovel")
-                        {
-                            zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
-                        }
-                        else if (oc.name == "hivel")
-                        {
-                            zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
-                        }
-                        else if (oc.name == "sample" || oc.name == "seq_position")
-                        {
-                            // dealt with above
-                        }
-                        else if (oc.name == "ampeg_sustain")
-                        {
-                            zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
-                        }
-                        else if (oc.name == "volume")
-                        {
-                            zn->mapping.amplitude = std::atof(oc.value.c_str()); // decibels
-                        }
-                        else if (oc.name == "tune")
-                        {
-                            // Tune is supplied in cents. Our pitch offset is in semitones
-                            zn->mapping.pitchOffset = std::atof(oc.value.c_str()) * 0.01;
-                        }
-                        else if (oc.name == "loop_mode")
-                        {
-                            if (oc.value == "loop_continuous")
-                            {
-                                // FIXME: In round robin looping modes this is probably wrong
-                                zn->variantData.variants[0].loopActive = true;
-                                zn->variantData.variants[0].loopMode =
-                                    engine::Zone::LOOP_DURING_VOICE;
-                            }
-                            else
-                            {
-                                SCLOG("SFZ Unsupported loop_mode : " << oc.value);
-                            }
-                        }
-
-#define APPLYEG(v, d, t)                                                                           \
-    else if (oc.name == v)                                                                         \
-    {                                                                                              \
-        zn->egStorage[d].t =                                                                       \
-            scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
-    }
-
-                        APPLYEG("ampeg_attack", 0, a)
-                        APPLYEG("ampeg_decay", 0, d)
-                        APPLYEG("ampeg_release", 0, r)
-                        else
-                        {
-                            if (n != "Group")
-                                SCLOG("    Skipped " << n << "-originated OpCode for region: "
-                                                     << oc.name << " -> " << oc.value);
-                        }
-                    }
+                    zn->variantData.variants[variantIndex].startLoop =
+                        std::max((int64_t)0, loop_start);
+                    zn->variantData.variants[variantIndex].endLoop =
+                        std::max({(int64_t)0, loop_start + 1, loop_end});
                 }
-                zn->attachToSample(*e.getSampleManager(), 0,
-                                   engine::Zone::SampleInformationRead::ENDPOINTS);
+            }
+
+            if (roundRobinPosition <= 0)
+            {
                 group->addZone(zn);
             }
+
             if (firstGroupWithZonesAdded == -1)
             {
                 firstGroupWithZonesAdded = groupId;

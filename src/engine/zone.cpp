@@ -226,8 +226,7 @@ void Zone::setupOnUnstream(const engine::Engine &e)
     }
 }
 
-bool Zone::attachToSample(const sample::SampleManager &manager, int index,
-                          SampleInformationRead sir)
+bool Zone::attachToSample(const sample::SampleManager &manager, int index, int sir)
 {
     auto &s = variantData.variants[index];
     if (s.sampleID.isValid())
