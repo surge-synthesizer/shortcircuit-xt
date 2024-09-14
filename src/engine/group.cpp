@@ -136,31 +136,29 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     auto &eg2p = endpoints.eg[1];
     eg[1].processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
                        *eg2p.rsP, envGate);
-
     modMatrix.process();
 
-    for (const auto &z : zones)
+    for (int i = 0; i < activeZones; ++i)
     {
-        if (z->isActive())
+        auto z = activeZoneWeakRefs[i];
+        assert(z->isActive());
+        z->process(e);
+        /*
+         * This is just an optimization to not accumulate. The zone will
+         * have already routed to the approprite other bus and output will
+         * be empty.
+         */
+        if (z->outputInfo.routeTo == DEFAULT_BUS)
         {
-            z->process(e);
-            /*
-             * This is just an optimization to not accumulate. The zone will
-             * have already routed to the approprite other bus and output will
-             * be empty.
-             */
-            if (z->outputInfo.routeTo == DEFAULT_BUS)
+            if constexpr (OS)
             {
-                if constexpr (OS)
-                {
-                    blk::accumulate_from_to<blockSize << 1>(z->output[0], lOut);
-                    blk::accumulate_from_to<blockSize << 1>(z->output[1], rOut);
-                }
-                else
-                {
-                    blk::accumulate_from_to<blockSize>(z->output[0], lOut);
-                    blk::accumulate_from_to<blockSize>(z->output[1], rOut);
-                }
+                blk::accumulate_from_to<blockSize << 1>(z->output[0], lOut);
+                blk::accumulate_from_to<blockSize << 1>(z->output[1], rOut);
+            }
+            else
+            {
+                blk::accumulate_from_to<blockSize>(z->output[0], lOut);
+                blk::accumulate_from_to<blockSize>(z->output[1], rOut);
             }
         }
     }
@@ -288,19 +286,6 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
 }
 
-void Group::addActiveZone()
-{
-    if (activeZones == 0)
-    {
-        parentPart->addActiveGroup();
-        attack();
-    }
-    // Important we do this *after* the attack since it allows
-    // isActive to be accurate with processor ringout
-    activeZones++;
-    ringoutTime = 0;
-}
-
 bool Group::updateRingout()
 {
     auto res{false};
@@ -331,9 +316,49 @@ bool Group::updateRingout()
     return res;
 }
 
-void Group::removeActiveZone()
+void Group::addActiveZone(engine::Zone *zwp)
+{
+    // Add active zone to end
+    activeZoneWeakRefs[activeZones] = zwp;
+
+    if (activeZones == 0)
+    {
+        parentPart->addActiveGroup();
+        attack();
+    }
+    // Important we do this *after* the attack since it allows
+    // isActive to be accurate with processor ringout
+    activeZones++;
+    ringoutTime = 0;
+
+    /*
+    SCLOG("addZone " << SCD(activeZones));
+    for (int i = 0; i < activeZones; ++i)
+    {
+        SCLOG("addZone " << activeZoneWeakRefs[i] << " " << activeZoneWeakRefs[i]->getName());
+    }
+     */
+}
+
+void Group::removeActiveZone(engine::Zone *zwp)
 {
     assert(activeZones);
+
+    // Manage the weak refs
+    // First find the zone
+    int zidx{-1};
+    for (int idx = 0; idx < activeZones; ++idx)
+    {
+        if (activeZoneWeakRefs[idx] == zwp)
+        {
+            zidx = idx;
+            break;
+        }
+    }
+    assert(zidx >= 0);
+    // OK so now we want to swap the active zone from the end into my slot
+    activeZoneWeakRefs[zidx] = activeZoneWeakRefs[activeZones - 1];
+
     activeZones--;
     if (activeZones == 0)
     {
@@ -341,6 +366,14 @@ void Group::removeActiveZone()
         ringoutTime = 0;
         updateRingout();
     }
+
+    /*
+    SCLOG("removeZone " << SCD(activeZones));
+    for (int i = 0; i < activeZones; ++i)
+    {
+        SCLOG("removeZone " << activeZoneWeakRefs[i] << " " << activeZoneWeakRefs[i]->getName());
+    }
+     */
 }
 
 engine::Engine *Group::getEngine()
