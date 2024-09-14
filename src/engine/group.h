@@ -103,6 +103,7 @@ struct Group : MoveableOnly<Group>,
     size_t addZone(std::unique_ptr<Zone> &z)
     {
         z->parentGroup = this;
+        z->engine = getEngine();
         zones.push_back(std::move(z));
         return zones.size();
     }
@@ -110,6 +111,7 @@ struct Group : MoveableOnly<Group>,
     size_t addZone(std::unique_ptr<Zone> &&z)
     {
         z->parentGroup = this;
+        z->engine = getEngine();
         zones.push_back(std::move(z));
         return zones.size();
     }

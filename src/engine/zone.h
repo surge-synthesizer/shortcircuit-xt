@@ -249,8 +249,17 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void onProcessorTypeChanged(int, dsp::processor::ProcessorType) {}
 
     void setupOnUnstream(const engine::Engine &e);
-    engine::Engine *getEngine();
-    const engine::Engine *getEngine() const;
+    engine::Engine *engine{nullptr};
+    engine::Engine *getEngine()
+    {
+        assert(engine);
+        return engine;
+    }
+    const engine::Engine *getEngine() const
+    {
+        assert(engine);
+        return engine;
+    }
 
     sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
     void onSampleRateChanged() override;
