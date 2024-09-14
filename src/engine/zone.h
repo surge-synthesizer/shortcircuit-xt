@@ -182,7 +182,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     // TODO: Multi-output
     size_t getNumOutputs() const { return 1; }
 
-    enum SampleInformationRead
+    enum SampleInformationRead : int32_t
     {
         NONE = 0,
         MAPPING = 1 << 0,
@@ -192,10 +192,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         ALL = MAPPING | LOOP | ENDPOINTS
     };
 
-    bool attachToSample(const sample::SampleManager &manager, int index = 0,
-                        SampleInformationRead sir = ALL);
+    bool attachToSample(const sample::SampleManager &manager, int index = 0, int32_t sir = ALL);
     bool attachToSampleAtVariation(const sample::SampleManager &manager, const SampleID &sid,
-                                   int16_t variation, SampleInformationRead sir = ALL)
+                                   int16_t variation, int32_t sir = ALL)
     {
         variantData.variants[variation].sampleID = sid;
         variantData.variants[variation].active = true;
