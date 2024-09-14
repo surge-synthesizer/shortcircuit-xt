@@ -57,6 +57,38 @@ void Group::rePrepareAndBindGroupMatrix()
     modMatrix.prepare(routingTable);
     endpoints.bindTargetBaseValues(modMatrix, *this);
     modMatrix.process();
+
+    std::fill(lfosActive.begin(), lfosActive.end(), false);
+    egsActive[0] = false; // no AEG here
+    egsActive[1] = false;
+
+    auto updateInternalState = [this](const auto &source) {
+        if (source.gid == 'greg')
+        {
+            if (source.tid == 'eg1 ')
+            {
+                egsActive[0] = true;
+            }
+            else
+            {
+                egsActive[1] = true;
+            }
+        }
+        if (source.gid == 'grlf')
+        {
+            lfosActive[source.index] = true;
+        }
+    };
+    for (auto route : routingTable.routes)
+    {
+        // Inactive or target free routes can be ignored
+        if (!route.active || !route.target.has_value())
+            continue;
+        if (route.source.has_value())
+            updateInternalState(*route.source);
+        if (route.sourceVia.has_value())
+            updateInternalState(*route.sourceVia);
+    }
 }
 
 void Group::process(Engine &e)
@@ -105,6 +137,9 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
+        if (!lfosActive[i])
+            continue;
+
         if (lfoEvaluator[i] == STEP)
         {
             stepLfos[i].process(blockSize);
@@ -130,12 +165,18 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
 
     bool envGate = gated;
-    auto &aegp = endpoints.eg[0];
-    eg[0].processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
-                       *aegp.rsP, envGate);
-    auto &eg2p = endpoints.eg[1];
-    eg[1].processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
-                       *eg2p.rsP, envGate);
+    if (egsActive[0])
+    {
+        auto &aegp = endpoints.eg[0];
+        eg[0].processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
+                           *aegp.rsP, envGate);
+    }
+    if (egsActive[1])
+    {
+        auto &eg2p = endpoints.eg[1];
+        eg[1].processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
+                           *eg2p.rsP, envGate);
+    }
     modMatrix.process();
 
     for (int i = 0; i < activeZones; ++i)

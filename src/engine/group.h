@@ -189,7 +189,6 @@ struct Group : MoveableOnly<Group>,
 
     std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
     std::array<modulation::modulators::StepLFO, lfosPerGroup> stepLfos;
-    std::array<bool, lfosPerGroup> lfoUsed{};
     bool initializedLFOs{false};
 
     modulation::GroupMatrix modMatrix;
