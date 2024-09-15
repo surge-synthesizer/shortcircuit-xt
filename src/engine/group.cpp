@@ -415,7 +415,7 @@ void Group::postZoneTraversalRemoveHandler()
         }
     }
     assert(rescanWeakRefs == 0);
-    -if (activeZones == 0)
+    if (activeZones == 0)
     {
         ringoutMax = 0;
         ringoutTime = 0;
