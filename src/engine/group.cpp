@@ -179,11 +179,16 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
     modMatrix.process();
 
+    auto oAZ = activeZones;
+    rescanWeakRefs = 0;
     for (int i = 0; i < activeZones; ++i)
     {
         auto z = activeZoneWeakRefs[i];
         assert(z->isActive());
         z->process(e);
+        assert(z->isActive() || rescanWeakRefs > 0);
+        assert(oAZ == activeZones);
+
         /*
          * This is just an optimization to not accumulate. The zone will
          * have already routed to the approprite other bus and output will
@@ -202,6 +207,11 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 blk::accumulate_from_to<blockSize>(z->output[1], rOut);
             }
         }
+    }
+
+    if (rescanWeakRefs)
+    {
+        postZoneTraversalRemoveHandler();
     }
 
     // Groups are always unpitched and stereo
@@ -384,37 +394,33 @@ void Group::addActiveZone(engine::Zone *zwp)
 void Group::removeActiveZone(engine::Zone *zwp)
 {
     assert(activeZones);
+    rescanWeakRefs++;
+}
 
-    // Manage the weak refs
-    // First find the zone
-    int zidx{-1};
-    for (int idx = 0; idx < activeZones; ++idx)
+void Group::postZoneTraversalRemoveHandler()
+{
+    /*
+     * Go backwards down the weak refs removing inactive ones
+     */
+    assert(rescanWeakRefs);
+    assert(activeZones);
+    assert(activeZones >= rescanWeakRefs);
+    for (int i = activeZones - 1; i >= 0; --i)
     {
-        if (activeZoneWeakRefs[idx] == zwp)
+        if (!activeZoneWeakRefs[i]->isActive())
         {
-            zidx = idx;
-            break;
+            rescanWeakRefs--;
+            activeZoneWeakRefs[i] = activeZoneWeakRefs[activeZones - 1];
+            activeZones--;
         }
     }
-    assert(zidx >= 0);
-    // OK so now we want to swap the active zone from the end into my slot
-    activeZoneWeakRefs[zidx] = activeZoneWeakRefs[activeZones - 1];
-
-    activeZones--;
+    assert(rescanWeakRefs == 0);
     if (activeZones == 0)
     {
         ringoutMax = 0;
         ringoutTime = 0;
         updateRingout();
     }
-
-    /*
-    SCLOG("removeZone " << SCD(activeZones));
-    for (int i = 0; i < activeZones; ++i)
-    {
-        SCLOG("removeZone " << activeZoneWeakRefs[i] << " " << activeZoneWeakRefs[i]->getName());
-    }
-     */
 }
 
 engine::Engine *Group::getEngine()

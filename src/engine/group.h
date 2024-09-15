@@ -249,6 +249,8 @@ struct Group : MoveableOnly<Group>,
   private:
     zoneContainer_t zones;
     std::vector<Zone *> activeZoneWeakRefs;
+    uint32_t rescanWeakRefs{0};
+    void postZoneTraversalRemoveHandler();
 };
 } // namespace scxt::engine
 
