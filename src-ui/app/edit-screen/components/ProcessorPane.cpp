@@ -294,6 +294,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsRingMod();
         break;
 
+    case dsp::processor::proct_lifted_delay:
+        layoutControlsFromJSONOrDefault("processors/lifteddelay.json");
+        break;
+
     case dsp::processor::proct_fx_bitcrusher:
         layoutControlsFromJSONOrDefault("processors/bitcrusher.json");
         break;
@@ -548,20 +552,34 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
         auto ei = ictag("display-if", -1);
         if (ei >= 0)
         {
-            auto eiv = intAttachments[ei]->getValue();
-            if (!eiv)
+            if (!intAttachments[ei])
             {
-                continue;
+                SCLOG("display-if attached to unknown int param " << ei);
+            }
+            else
+            {
+                auto eiv = intAttachments[ei]->getValue();
+                if (!eiv)
+                {
+                    continue;
+                }
             }
         }
 
         ei = ictag("display-unless", -1);
         if (ei >= 0)
         {
-            auto eiv = intAttachments[ei]->getValue();
-            if (eiv)
+            if (!intAttachments[ei])
             {
-                continue;
+                SCLOG("display-unless attached to unknown int param " << ei);
+            }
+            else
+            {
+                auto eiv = intAttachments[ei]->getValue();
+                if (eiv)
+                {
+                    continue;
+                }
             }
         }
 
@@ -605,7 +623,14 @@ bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
             auto ei = ictag("enable-if", -1);
             if (ei >= 0)
             {
-                floatEditors[c.index]->item->setEnabled(intAttachments[ei]->getValue());
+                if (intAttachments[ei])
+                {
+                    floatEditors[c.index]->item->setEnabled(intAttachments[ei]->getValue());
+                }
+                else
+                {
+                    SCLOG("enable-if attached to unknown int param " << ei);
+                }
             }
         }
         else if (tp == "int" && c.index >= 0)
