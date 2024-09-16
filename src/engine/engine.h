@@ -352,7 +352,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         uint64_t pVer{0};
         explicit UnstreamGuard(uint64_t sv)
         {
-            SCLOG("Unstreaming engine::Engine. Version : " << scxt::humanReadableVersion(sv));
             pIs = engine::Engine::isFullEngineUnstream;
             pVer = engine::Engine::fullEngineUnstreamStreamingVersion;
             engine::Engine::isFullEngineUnstream = true;

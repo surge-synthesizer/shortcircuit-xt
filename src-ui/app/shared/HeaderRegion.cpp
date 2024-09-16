@@ -234,6 +234,15 @@ void HeaderRegion::setVULevel(float L, float R)
 
 void HeaderRegion::setCPULevel(float lev)
 {
+    if (lev < 1)
+    {
+        if (cpuLevValue != 0)
+        {
+            cpuLevValue = lev;
+            cpuLevel->setText(fmt::format("{:.0f} %", 0.0));
+        }
+        return;
+    }
     if (std::fabs(cpuLevValue - lev) > 1.5)
     {
         cpuLevValue = lev;
