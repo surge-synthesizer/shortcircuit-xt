@@ -136,14 +136,15 @@ void Voice::voiceStarted()
         }
     }
 
-    aeg.attackFrom(0.0); // TODO Envelope Legato Mode
+    auto &aegp = endpoints->aeg;
+    aeg.attackFrom(0.0, *(aegp.aP) == 0.0); // TODO Envelope Legato Mode
     if (egsActive[1])
     {
         eg2.attackFrom(0.0);
     }
     if (forceOversample)
     {
-        aegOS.attackFrom(0.0);
+        aegOS.attackFrom(0.0, *(aegp.aP) == 0.0);
     }
 
     zone->addVoice(this);
