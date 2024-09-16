@@ -223,12 +223,12 @@ template <bool OS> bool Voice::processWithOS()
     {
         // we need the aegOS for the curve in oversample space
         aegOS.processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
-                           *aegp.rsP, envGate);
+                           *aegp.rsP, envGate, true);
     }
 
     // But We need to run the undersample AEG no matter what since it is a modulatino source
     aeg.processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
-                     *aegp.rsP, envGate);
+                     *aegp.rsP, envGate, true);
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
@@ -236,7 +236,7 @@ template <bool OS> bool Voice::processWithOS()
     {
         auto &eg2p = endpoints->eg2;
         eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
-                         *eg2p.rsP, envGate);
+                         *eg2p.rsP, envGate, false);
     }
     updateTransportPhasors();
 
