@@ -297,7 +297,6 @@ void ThemeApplier::applyGroupMultiScreenTheme(juce::Component *toThis)
 
 void ThemeApplier::applyVariantLoopTheme(juce::Component *toThis)
 {
-    SCLOG_UNIMPL_ONCE("applyVariantLoopTheme - set this up to be blue!");
     jstl::CustomTypeMap map;
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::variant::DraggableTextEditableValue);

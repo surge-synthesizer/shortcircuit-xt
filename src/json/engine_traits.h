@@ -80,6 +80,9 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  assert(to.getMessageController()->threadingChecker.isSerialThread());
                  auto sv{0};
                  findIf(v, "streamingVersion", sv);
+                 SCLOG("Unstreaming engine state. Stream version : "
+                       << scxt::humanReadableVersion(sv));
+
                  engine::Engine::UnstreamGuard sg(sv);
 
                  // TODO: engine gets a SV? Guess maybe

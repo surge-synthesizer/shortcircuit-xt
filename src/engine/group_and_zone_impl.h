@@ -153,8 +153,6 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
 
             if (initFromDefaults)
             {
-                SCLOG("Processor init from defaults [" << dsp::processor::getProcessorName(type)
-                                                       << "]");
                 // This is a no-op if you don't support keytrack
                 ps.previousIsKeytracked = -1;
                 ps.isKeytracked = tmpProcessor->getDefaultKeytrack();
