@@ -83,6 +83,7 @@ static constexpr bool selection{false};
 static constexpr bool uiStructure{false};
 static constexpr bool groupZoneMutation{false};
 static constexpr bool memoryPool{false};
+static constexpr bool voiceResponder{false};
 } // namespace log
 
 } // namespace scxt
