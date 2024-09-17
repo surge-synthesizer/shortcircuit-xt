@@ -30,28 +30,65 @@
 
 namespace scxt::engine
 {
-int32_t Engine::VoiceManagerResponder::voiceCountForInitializationAction(
-    uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity)
+int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(uint16_t port,
+                                                                     uint16_t channel, uint16_t key,
+                                                                     int32_t noteId, float velocity)
 {
+    SCLOG_IF(voiceResponder, "begin voice transaction " << SCD(port) << SCD(channel) << SCD(key)
+                                                        << SCD(noteId) << SCD(velocity));
+    assert(!transactionValid);
     // TODO: We can optimize this so we don't have to find twice in the future
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127),
                                findZoneWorkingBuffer);
 
-    return nts;
+    auto voicesCreated{0};
+    for (auto idx = 0; idx < nts; ++idx)
+    {
+        const auto &path = findZoneWorkingBuffer[idx];
+        auto &z = engine.zoneByPath(path);
+        if (z->variantData.variantPlaybackMode == Zone::UNISON)
+        {
+            for (int i = 0; i < maxVariantsPerZone; ++i)
+            {
+                if (z->variantData.variants[i].active)
+                {
+                    voiceCreationWorkingBuffer[voicesCreated] = {path, i};
+                    SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part
+                                                              << "/" << path.group << "/"
+                                                              << path.zone << " variant=" << i);
+                    voicesCreated++;
+                }
+            }
+        }
+        else
+        {
+            voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
+            SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part << "/"
+                                                      << path.group << "/" << path.zone
+                                                      << "  zone handles variant");
+
+            voicesCreated++;
+        }
+    }
+    transactionValid = true;
+    transactionVoiceCount = voicesCreated;
+    SCLOG_IF(voiceResponder, "beginTransaction returns " << voicesCreated << " voices");
+    return voicesCreated;
 }
 
 int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     std::array<voice::Voice *, VMConfig::maxVoiceCount> &voiceInitWorkingBuffer, uint16_t port,
     uint16_t channel, uint16_t key, int32_t noteId, float velocity, float retune)
 {
+    assert(transactionValid);
+    assert(transactionVoiceCount > 0);
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
-    auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127),
-                               findZoneWorkingBuffer);
-
+    auto nts = transactionVoiceCount;
+    SCLOG_IF(voiceResponder, "voice initiation of " << nts << " voices");
     for (auto idx = 0; idx < nts; ++idx)
     {
-        const auto &path = findZoneWorkingBuffer[idx];
+        const auto &[path, variantIndex] = voiceCreationWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
 
@@ -66,24 +103,27 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->attack();
             }
             voiceInitWorkingBuffer[idx] = v;
+            SCLOG_IF(voiceResponder, "-- Created single voice for single zone");
         }
         else if (z->variantData.variantPlaybackMode == Zone::UNISON)
         {
-            for (int uv = 0; uv < nbSampleLoadedInZone; ++uv)
+            assert(variantIndex >= 0);
+            z->sampleIndex = variantIndex;
+            auto v = engine.initiateVoice(path);
+            if (v)
             {
-                z->sampleIndex = uv;
-                auto v = engine.initiateVoice(path);
-                if (v)
-                {
-                    v->velocity = velocity;
-                    v->originalMidiKey = key;
-                    v->attack();
-                }
-                voiceInitWorkingBuffer[idx] = v;
+                v->velocity = velocity;
+                v->originalMidiKey = key;
+                v->attack();
             }
+            voiceInitWorkingBuffer[idx] = v;
+            SCLOG_IF(voiceResponder,
+                     "-- Created one of variants for zone (" << variantIndex << ")");
         }
         else
         {
+            assert(variantIndex == -1);
+            SCLOG_IF(voiceResponder, "-- Launching zone and using its RR tactic");
             int nextAvail{0};
             if (nbSampleLoadedInZone == 1)
             {
@@ -157,7 +197,18 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         }
     }
     engine.midiNoteStateCounter++;
+    SCLOG_IF(voiceResponder, "Completed voice initiation");
     return nts;
+}
+
+void Engine::VoiceManagerResponder::endVoiceCreationTransaction(uint16_t port, uint16_t channel,
+                                                                uint16_t key, int32_t noteId,
+                                                                float velocity)
+{
+    SCLOG_IF(voiceResponder, "end voice transaction");
+    assert(transactionValid);
+    transactionValid = false;
+    transactionVoiceCount = 0;
 }
 
 void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity) { v->release(); }

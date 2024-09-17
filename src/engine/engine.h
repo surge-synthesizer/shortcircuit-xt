@@ -170,6 +170,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         Engine &engine;
         std::array<pathToZone_t, maxVoices> findZoneWorkingBuffer;
+        std::array<std::pair<pathToZone_t, int32_t>, maxVoices> voiceCreationWorkingBuffer;
 
         VoiceManagerResponder(Engine &e) : engine(e) {}
 
@@ -186,13 +187,16 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             }
         }
 
-        int32_t voiceCountForInitializationAction(uint16_t port, uint16_t channel, uint16_t key,
-                                                  int32_t noteId, float velocity);
+        int32_t beginVoiceCreationTransaction(uint16_t port, uint16_t channel, uint16_t key,
+                                              int32_t noteId, float velocity);
 
         int32_t initializeMultipleVoices(
             std::array<voice::Voice *, VMConfig::maxVoiceCount> &voiceInitWorkingBuffer,
             uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity,
             float retune);
+
+        void endVoiceCreationTransaction(uint16_t port, uint16_t channel, uint16_t key,
+                                         int32_t noteId, float velocity);
 
         void releaseVoice(voice::Voice *v, float velocity);
         void retriggerVoiceWithNewNoteID(voice::Voice *v, int32_t noteid, float velocity)
@@ -216,6 +220,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void allNotesOff() { engine.stopAllSounds(); }
         void setMIDI1CC(voice::Voice *v, int8_t cc, int8_t val);
 
+      private:
+        bool transactionValid{false};
+        int32_t transactionVoiceCount{0};
     } voiceManagerResponder{*this};
     using voiceManager_t = sst::voicemanager::VoiceManager<VMConfig, VoiceManagerResponder>;
     voiceManager_t voiceManager{voiceManagerResponder};
