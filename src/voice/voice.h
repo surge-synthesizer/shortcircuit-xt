@@ -71,6 +71,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         60}; // the actual physical key pressed not the one I resolved to after tuning
     float velocity{1.f};
     float velKeyFade{1.f};
+    float keytrackPerOct{0.f}; // resolvee key - pitch cnter / 12
 
     scxt::voice::modulation::Matrix modMatrix;
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;
