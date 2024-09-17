@@ -241,4 +241,9 @@ void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t e
     }
 }
 
+void Engine::VoiceManagerResponder::setPolyphonicAftertouch(voice::Voice *v, int8_t pat)
+{
+    v->polyAT = pat * 1.0 / 127.0;
+}
+
 } // namespace scxt::engine
