@@ -26,6 +26,7 @@
  */
 
 #include "voice.h"
+#include "voice.h"
 #include "tuning/equal.h"
 #include <cassert>
 #include <cmath>
@@ -82,6 +83,13 @@ void Voice::cleanupVoice()
 
 void Voice::voiceStarted()
 {
+    noteExpressions[(int)ExpressionIDs::VOLUME] = 1.0;
+    noteExpressions[(int)ExpressionIDs::PAN] = 0.5;
+    for (int i = (int)ExpressionIDs::TUNING; i <= (int)ExpressionIDs::PRESSURE; ++i)
+    {
+        noteExpressions[i] = 0.0;
+    }
+
     forceOversample = zone->parentGroup->outputInfo.oversample;
 
     lfosActive = zone->lfosActive;
@@ -467,7 +475,9 @@ template <bool OS> bool Voice::processWithOS()
     /*
      * Implement output pan
      */
-    auto pvo = *endpoints->outputTarget.panP;
+    auto pvo = std::clamp(*endpoints->outputTarget.panP +
+                              2.0 * (noteExpressions[(int)ExpressionIDs::PAN] - 0.5),
+                          -1., 1.);
     if (pvo != 0.f)
     {
         outputPan.set_target(pvo);
@@ -486,7 +496,7 @@ template <bool OS> bool Voice::processWithOS()
 
     if constexpr (OS)
     {
-        outputAmpOS.set_target(pao * pao * pao);
+        outputAmpOS.set_target(pao * pao * pao * noteExpressions[(int)ExpressionIDs::VOLUME]);
         if (chainIsMono)
         {
             outputAmpOS.multiply_block(output[0]);
@@ -498,7 +508,7 @@ template <bool OS> bool Voice::processWithOS()
     }
     else
     {
-        outputAmp.set_target(pao * pao * pao);
+        outputAmp.set_target(pao * pao * pao * noteExpressions[(int)ExpressionIDs::VOLUME]);
         if (chainIsMono)
         {
             outputAmp.multiply_block(output[0]);
@@ -665,6 +675,7 @@ float Voice::calculateVoicePitch()
         zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
 
     fpitch += retuner;
+    fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
 
     keytrackPerOct = (key + retuner - zone->mapping.rootKey) / 12.0;
 

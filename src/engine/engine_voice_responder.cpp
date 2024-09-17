@@ -226,4 +226,19 @@ void Engine::VoiceManagerResponder::setMIDI1CC(voice::Voice *v, int8_t controlle
     auto part = v->zone->parentGroup->parentPart;
     part->midiCCSmoothers[controller].setTarget(fv);
 }
+
+void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t expression,
+                                                      double value)
+{
+    if (expression >= 0 && expression < voice::Voice::noteExpressionCount)
+    {
+        // bitwig shows timbre/brightness as bipolar. Correctly?
+        if (expression == (int)voice::Voice::ExpressionIDs::BRIGHTNESS)
+        {
+            value = value * 2 - 1;
+        }
+        v->noteExpressions[expression] = value;
+    }
+}
+
 } // namespace scxt::engine

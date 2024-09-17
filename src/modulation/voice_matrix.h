@@ -223,7 +223,7 @@ struct MatrixEndpoints
     struct Sources
     {
         Sources(engine::Engine *e)
-            : lfoSources(e), midiSources(e), aegSource{'zneg', 'aeg ', 0},
+            : lfoSources(e), midiSources(e), noteExpressions(e), aegSource{'zneg', 'aeg ', 0},
               eg2Source{'zneg', 'eg2 ', 0}, transportSources(e), rngSources(e), macroSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
@@ -244,6 +244,24 @@ struct MatrixEndpoints
             }
             SR modWheelSource, velocitySource, keytrackSource;
         } midiSources;
+
+        struct NoteExpressionSources
+        {
+            NoteExpressionSources(engine::Engine *e)
+                : volume{'znte', 'volu'}, pan{'znte', 'pan '}, tuning{'znte', 'tuni'},
+                  vibrato{'znte', 'vibr'}, expression{'znte', 'expr'}, brightness{'znte', 'brit'},
+                  pressure{'znte', 'pres'}
+            {
+                registerVoiceModSource(e, volume, "Note Expressions", "Volume");
+                registerVoiceModSource(e, pan, "Note Expressions", "Pan");
+                registerVoiceModSource(e, tuning, "Note Expressions", "Tuning");
+                registerVoiceModSource(e, vibrato, "Note Expressions", "Vibrato");
+                registerVoiceModSource(e, expression, "Note Expressions", "Expression");
+                registerVoiceModSource(e, brightness, "Note Expressions", "Brightness");
+                registerVoiceModSource(e, pressure, "Note Expressions", "Pressure");
+            }
+            SR volume, pan, tuning, vibrato, expression, brightness, pressure;
+        } noteExpressions;
 
         TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
 

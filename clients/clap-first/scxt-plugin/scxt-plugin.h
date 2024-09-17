@@ -44,10 +44,22 @@
 
 #include "sst/clap_juce_shim/clap_juce_shim.h"
 
-#include <engine/engine.h>
+#include "engine/engine.h"
+#include "voice/voice.h"
 
 #include "clap-config.h"
 #include "utils.h"
+
+static_assert((int)scxt::voice::Voice::ExpressionIDs::VOLUME == (int)CLAP_NOTE_EXPRESSION_VOLUME);
+static_assert((int)scxt::voice::Voice::ExpressionIDs::PAN == (int)CLAP_NOTE_EXPRESSION_PAN);
+static_assert((int)scxt::voice::Voice::ExpressionIDs::TUNING == (int)CLAP_NOTE_EXPRESSION_TUNING);
+static_assert((int)scxt::voice::Voice::ExpressionIDs::VIBRATO == (int)CLAP_NOTE_EXPRESSION_VIBRATO);
+static_assert((int)scxt::voice::Voice::ExpressionIDs::EXPRESSION ==
+              (int)CLAP_NOTE_EXPRESSION_EXPRESSION);
+static_assert((int)scxt::voice::Voice::ExpressionIDs::BRIGHTNESS ==
+              (int)CLAP_NOTE_EXPRESSION_BRIGHTNESS);
+static_assert((int)scxt::voice::Voice::ExpressionIDs::PRESSURE ==
+              (int)CLAP_NOTE_EXPRESSION_PRESSURE);
 
 namespace scxt::clap_first::scxt_plugin
 {

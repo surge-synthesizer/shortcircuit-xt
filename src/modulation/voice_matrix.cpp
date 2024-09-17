@@ -137,6 +137,18 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(midiSources.velocitySource, v.velocity);
     m.bindSourceValue(midiSources.keytrackSource, v.keytrackPerOct);
 
+    m.bindSourceValue(noteExpressions.volume, v.noteExpressions[(int)Voice::ExpressionIDs::VOLUME]);
+    m.bindSourceValue(noteExpressions.pan, v.noteExpressions[(int)Voice::ExpressionIDs::PAN]);
+    m.bindSourceValue(noteExpressions.tuning, v.noteExpressions[(int)Voice::ExpressionIDs::TUNING]);
+    m.bindSourceValue(noteExpressions.vibrato,
+                      v.noteExpressions[(int)Voice::ExpressionIDs::VIBRATO]);
+    m.bindSourceValue(noteExpressions.expression,
+                      v.noteExpressions[(int)Voice::ExpressionIDs::EXPRESSION]);
+    m.bindSourceValue(noteExpressions.brightness,
+                      v.noteExpressions[(int)Voice::ExpressionIDs::BRIGHTNESS]);
+    m.bindSourceValue(noteExpressions.pressure,
+                      v.noteExpressions[(int)Voice::ExpressionIDs::PRESSURE]);
+
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {
         m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);
