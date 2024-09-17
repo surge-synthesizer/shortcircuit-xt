@@ -39,11 +39,19 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     : HasEditor(p->editor), variantView(p->sampleView), parentPane(p)
 {
     waveformsTabbedGroup = std::make_unique<MyTabbedComponent>(this);
+    waveformsTabbedGroup->onTabPopupMenu = [w = juce::Component::SafePointer(this)](auto id) {
+        if (w)
+            w->showVariantTabMenu(id);
+    };
     addAndMakeVisible(*waveformsTabbedGroup);
     for (auto i = 0; i < maxVariantsPerZone; ++i)
     {
-        waveforms[i].waveformViewport =
-            std::make_unique<jcmp::ZoomContainer>(std::make_unique<SampleWaveform>(this));
+        auto wf = std::make_unique<SampleWaveform>(this);
+        wf->onPopupMenu = [i, w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showVariantTabMenu(i);
+        };
+        waveforms[i].waveformViewport = std::make_unique<jcmp::ZoomContainer>(std::move(wf));
         waveforms[i].waveformViewport->setVZoomFloor(1.0 / 16.0);
 
         waveforms[i].waveform = static_cast<SampleWaveform *>(
@@ -936,4 +944,35 @@ void VariantDisplay::FileInfos::paint(juce::Graphics &g)
     g.drawText(msg, bx.reduced(margin, 0), juce::Justification::centred);
 }
 
+void VariantDisplay::showVariantTabMenu(int variantIdx)
+{
+    auto numVariants{0};
+    for (auto i = 0; i < maxVariantsPerZone; ++i)
+    {
+        if (variantView.variants[i].active)
+        {
+            numVariants++;
+        }
+    }
+    bool isPlus = variantIdx >= numVariants;
+
+    juce::PopupMenu p;
+    if (isPlus)
+    {
+        p.addSectionHeader("Add Variant");
+        p.addSeparator();
+        ;
+        p.addItem("Copy From", editor->makeComingSoon("Copy From"));
+        p.addItem("Sample", editor->makeComingSoon("Sample"));
+    }
+    else
+    {
+        p.addSectionHeader("Variant " + std::to_string(variantIdx + 1));
+        p.addSeparator();
+        ;
+        p.addItem("Copy", editor->makeComingSoon("Copy Variant"));
+        p.addItem("Delete", editor->makeComingSoon("Delete Variant"));
+    }
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
 } // namespace scxt::ui::app::edit_screen

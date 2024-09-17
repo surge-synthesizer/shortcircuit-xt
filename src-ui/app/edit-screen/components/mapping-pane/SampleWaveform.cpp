@@ -301,6 +301,11 @@ void SampleWaveform::rebuildEnvelopePaths()
 
 void SampleWaveform::mouseDown(const juce::MouseEvent &e)
 {
+    if (e.mods.isPopupMenu() && onPopupMenu)
+    {
+        onPopupMenu();
+        return;
+    }
     auto posi = e.position.roundToInt();
     if (startSampleHZ.contains(posi))
         mouseState = MouseState::HZ_DRAG_SAMPSTART;
@@ -353,6 +358,10 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
 
 void SampleWaveform::mouseUp(const juce::MouseEvent &e)
 {
+    if (e.mods.isPopupMenu() && onPopupMenu)
+    {
+        return;
+    }
     if (mouseState != MouseState::NONE)
         display->onSamplePointChangedFromGUI();
 }

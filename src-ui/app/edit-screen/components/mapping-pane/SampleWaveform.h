@@ -109,6 +109,8 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
         repaint();
     }
 
+    std::function<void()> onPopupMenu{nullptr};
+
     float vStart{0.f}, vZoom{1.f};
     void setVerticalZoom(float ps, float zf) override
     {
