@@ -72,6 +72,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float velocity{1.f};
     float velKeyFade{1.f};
     float keytrackPerOct{0.f}; // resolvee key - pitch cnter / 12
+    float polyAT{0.f};
     static constexpr size_t noteExpressionCount{7};
     float noteExpressions[noteExpressionCount]{};
     // These are the same as teh CLAP expression IDs but I dont want to include

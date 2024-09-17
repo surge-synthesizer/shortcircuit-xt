@@ -241,8 +241,9 @@ struct MatrixEndpoints
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
                 registerVoiceModSource(e, keytrackSource, "MIDI", "KeyTrack");
+                registerVoiceModSource(e, polyATSource, "MIDI", "Poly AT");
             }
-            SR modWheelSource, velocitySource, keytrackSource;
+            SR modWheelSource, velocitySource, keytrackSource, polyATSource;
         } midiSources;
 
         struct NoteExpressionSources
