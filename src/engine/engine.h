@@ -213,7 +213,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         {
         }
 
-        void setNoteExpression(voice::Voice *v, int32_t expression, double value) {}
+        void setNoteExpression(voice::Voice *v, int32_t expression, double value);
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat) {}
         void setChannelPressure(voice::Voice *v, int8_t pres) {}
         void allSoundsOff() { engine.releaseAllVoices(); }

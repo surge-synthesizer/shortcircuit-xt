@@ -72,6 +72,20 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float velocity{1.f};
     float velKeyFade{1.f};
     float keytrackPerOct{0.f}; // resolvee key - pitch cnter / 12
+    static constexpr size_t noteExpressionCount{7};
+    float noteExpressions[noteExpressionCount]{};
+    // These are the same as teh CLAP expression IDs but I dont want to include
+    // clap.h here
+    enum struct ExpressionIDs
+    {
+        VOLUME = 0,
+        PAN = 1,
+        TUNING = 2,
+        VIBRATO = 3,
+        EXPRESSION = 4,
+        BRIGHTNESS = 5,
+        PRESSURE = 6
+    };
 
     scxt::voice::modulation::Matrix modMatrix;
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;

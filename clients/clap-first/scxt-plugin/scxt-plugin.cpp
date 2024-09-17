@@ -439,6 +439,21 @@ bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
             handleParamValueEvent(pevt);
         }
         break;
+
+        case CLAP_EVENT_NOTE_EXPRESSION:
+        {
+            auto nevt = reinterpret_cast<const clap_event_note_expression *>(nextEvent);
+            engine->voiceManager.routeNoteExpression(nevt->port_index, nevt->channel, nevt->key,
+                                                     nevt->note_id, nevt->expression_id,
+                                                     nevt->value);
+        }
+        break;
+        default:
+        {
+            std::cout << __FILE__ << ":" << __LINE__ << " Unhandled event " << nextEvent->type
+                      << std::endl;
+        }
+        break;
         }
     }
     return true;
