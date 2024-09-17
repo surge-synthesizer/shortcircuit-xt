@@ -135,6 +135,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(midiSources.modWheelSource,
                       z.parentGroup->parentPart->midiCCSmoothers[1].output);
     m.bindSourceValue(midiSources.velocitySource, v.velocity);
+    m.bindSourceValue(midiSources.keytrackSource, v.keytrackPerOct);
 
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {

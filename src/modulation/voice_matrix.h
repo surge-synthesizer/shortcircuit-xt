@@ -235,12 +235,14 @@ struct MatrixEndpoints
         struct MIDISources
         {
             MIDISources(engine::Engine *e)
-                : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'}
+                : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'},
+                  keytrackSource{'zmid', 'ktrk'}
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
+                registerVoiceModSource(e, keytrackSource, "MIDI", "KeyTrack");
             }
-            SR modWheelSource, velocitySource;
+            SR modWheelSource, velocitySource, keytrackSource;
         } midiSources;
 
         TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
