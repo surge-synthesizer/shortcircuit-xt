@@ -186,6 +186,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
         return r;
     }
     void configureHasDiscreteMenuBuilder(sst::jucegui::components::HasDiscreteParamMenuBuilder *);
+    void popupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e);
 
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
@@ -328,7 +329,7 @@ template <typename T> inline void HasEditor::updateValueTooltip(const T &at)
 }
 
 template <typename W, typename A>
-inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
+inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
 {
     w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
         editor->showTooltip(slRef);
@@ -344,6 +345,14 @@ inline void HasEditor::setupWidgetForValueTooltip(const W &w, const A &a)
         updateValueTooltip(atRef);
     };
     w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
+    if constexpr (std::is_base_of_v<sst::jucegui::components::ContinuousParamEditor,
+                                    std::remove_pointer_t<W>>)
+    {
+        w->onPopupMenu = [this, q = juce::Component::SafePointer(w)](auto &mods) {
+            editor->hideTooltip();
+            editor->popupMenuForContinuous(q);
+        };
+    }
 }
 } // namespace scxt::ui::app
 

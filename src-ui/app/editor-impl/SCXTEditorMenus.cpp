@@ -327,4 +327,33 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
     }
 }
 
+void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e)
+{
+    auto data = e->continuous();
+    if (!data)
+    {
+        SCLOG("Continuous with no data - no popup to be had");
+        return;
+    }
+
+    if (!e->isEnabled())
+    {
+        SCLOG("No menu on non-enabled widget");
+        return;
+    }
+
+    auto p = juce::PopupMenu();
+    p.addSectionHeader(data->getLabel());
+    p.addSeparator();
+    p.addItem(data->getValueAsString(), []() {});
+    p.addSeparator();
+    p.addItem("Set to Default", [w = juce::Component::SafePointer(e)]() {
+        if (!w)
+            return;
+        w->continuous()->setValueFromGUI(w->continuous()->getDefaultValue());
+    });
+
+    p.showMenuAsync(defaultPopupMenuOptions());
+}
+
 } // namespace scxt::ui::app

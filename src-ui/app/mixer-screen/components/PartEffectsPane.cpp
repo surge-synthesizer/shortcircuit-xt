@@ -183,7 +183,7 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
         w->setEnabled(true);
     }
 
-    setupWidgetForValueTooltip(w, at);
+    setupWidgetForValueTooltip(w.get(), at);
     addAndMakeVisible(*w);
 
     if constexpr (std::is_same_v<T, jcmp::Knob>)

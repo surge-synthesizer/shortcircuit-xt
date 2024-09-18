@@ -119,7 +119,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
             sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>();
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
-        setupWidgetForValueTooltip(kn, at);
+        setupWidgetForValueTooltip(kn.get(), at);
         kn->setTitle(at->getLabel());
         kn->setDescription(at->getLabel());
         getContentAreaComponent()->addAndMakeVisible(*kn);
