@@ -217,14 +217,15 @@ void Engine::VoiceManagerResponder::setVoiceMIDIPitchBend(voice::Voice *v, uint1
 {
     auto fv = (pb14bit - 8192) / 8192.f;
     auto part = v->zone->parentGroup->parentPart;
-    part->pitchBendSmoother.setTarget(fv);
+    part->pitchBendValue = fv;
 }
 
 void Engine::VoiceManagerResponder::setMIDI1CC(voice::Voice *v, int8_t controller, int8_t val)
 {
+    assert(controller >= 0);
     auto fv = val / 127.0;
     auto part = v->zone->parentGroup->parentPart;
-    part->midiCCSmoothers[controller].setTarget(fv);
+    part->midiCCValues[controller] = fv;
 }
 
 void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t expression,
