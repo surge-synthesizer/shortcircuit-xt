@@ -114,7 +114,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
             axs->setSource(ava.get());
             addAndMakeVisible(*axs);
             auxAttachments[idx] = std::move(ava);
-            setupWidgetForValueTooltip(axs, auxAttachments[idx]);
+            setupWidgetForValueTooltip(axs.get(), auxAttachments[idx]);
             idx++;
         }
         idx = 0;
@@ -148,14 +148,14 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     panKnob = std::make_unique<jcmp::Knob>();
     panKnob->setSource(panAttachment.get());
     addAndMakeVisible(*panKnob);
-    setupWidgetForValueTooltip(panKnob, panAttachment);
+    setupWidgetForValueTooltip(panKnob.get(), panAttachment);
 
     vcaAttachment = std::make_unique<attachment_t>(
         datamodel::pmd().asCubicDecibelAttenuation().withName("Level").withDefault(1.0), onChange,
         mixer->busSendData[busIndex].level);
     vcaSlider = std::make_unique<jcmp::VSlider>();
     vcaSlider->setSource(vcaAttachment.get());
-    setupWidgetForValueTooltip(vcaSlider, vcaAttachment);
+    setupWidgetForValueTooltip(vcaSlider.get(), vcaAttachment);
     addAndMakeVisible(*vcaSlider);
 
     if (t != BusType::MAIN)
