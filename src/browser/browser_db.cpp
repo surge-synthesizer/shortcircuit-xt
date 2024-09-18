@@ -501,7 +501,8 @@ CREATE TABLE IF NOT EXISTS DeviceLocations (
                     {
                         std::ostringstream oss;
                         oss << le.what() << "\n"
-                            << "Patch database is locked for writing. Most likely, another Surge "
+                            << "Patch database is locked for writing. Most likely, another "
+                               "Shortcircuit "
                                "XT instance has exclusive write access. We will attempt to retry "
                                "writing up to 10 more times. "
                                "Please dismiss this error in the meantime!\n\n Attempt: "
