@@ -18,42 +18,49 @@ jobs:
             target: scxt-core
             cmakeConfig: -A x64
             runTests: false
+            clapValidate: false
 
           - name: "windows clang VST3"
             os: windows-latest
             target: scxt_clapfirst_VST3
             cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
+            clapValidate: false
 
           - name: "mac AU"
             os: macos-latest
             target: scxt_clapfirst_AU
             cmakeConfig: -GNinja
             runTests: true
+            clapValidate: false
 
           - name: "ubuntu Standalone"
             os: ubuntu-latest
             target: scxt_clapfirst_Standalone
             cmakeConfig: -GNinja
             runTests: false
+            clapValidate: false
 
           - name: "win unity"
             os: windows-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
+            clapValidate: true
 
           - name: "mac unity"
             os: macos-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
             runTests: false
+            clapValidate: true
 
           - name: "ubuntu unity"
             os: ubuntu-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
             runTests: false
+            clapValidate: true
 
     steps:
       - name: Checkout code
@@ -70,6 +77,12 @@ jobs:
         run: |
           cmake -S . -B ./build ${{ matrix.cmakeConfig }} -DCMAKE_BUILD_TYPE=Debug 
           cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 4
+
+      - name: Run Clap Validator
+        if: ${{ matrix.clapValidate }}
+        uses: jatinchowdhury18/clap-val-action@main
+        with:
+          plugin_path: "./build/shortcircuit-products/Shortcircuit XT.clap"
 
       - name: Run Tests
         if: ${{ matrix.runTests }}
