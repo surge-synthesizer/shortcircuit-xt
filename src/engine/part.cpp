@@ -41,11 +41,6 @@ void Part::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
 
-    for (auto &sm : midiCCSmoothers)
-        if (sm.active)
-            sm.step();
-    pitchBendSmoother.step();
-
     for (const auto &g : groups)
     {
         if (g->isActive())

@@ -667,7 +667,7 @@ void Voice::initializeGenerator()
 float Voice::calculateVoicePitch()
 {
     auto fpitch = key + *endpoints->mappingTarget.pitchOffsetP;
-    auto pitchWheel = zone->parentGroup->parentPart->pitchBendSmoother.output;
+    auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
     auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
     fpitch += pitchWheel * pitchMv;
 

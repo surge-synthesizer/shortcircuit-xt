@@ -35,7 +35,6 @@
 #include "selection/selection_manager.h"
 #include "utils.h"
 #include "group.h"
-#include "dsp/smoothers.h"
 
 #include "bus.h"
 #include "macros.h"
@@ -49,7 +48,6 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 {
     Part(int16_t c) : id(PartID::next()), partNumber(c)
     {
-        pitchBendSmoother.setTarget(0);
         int idx{0};
         for (auto &m : macros)
         {
@@ -157,13 +155,11 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         activeGroups--;
     }
 
-    std::array<dsp::Smoother, 128> midiCCSmoothers;
-    dsp::Smoother pitchBendSmoother;
+    std::array<float, 128> midiCCValues{}; // 0 .. 1 so the 128 taken out
+    float pitchBendValue{0.f};             // -1..1 so the 8192 taken out
+
     void onSampleRateChanged() override
     {
-        pitchBendSmoother.setSampleRate(samplerate);
-        for (auto &mcc : midiCCSmoothers)
-            mcc.setSampleRate(samplerate);
         for (auto &g : groups)
             g->setSampleRate(samplerate);
     }
