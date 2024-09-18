@@ -151,10 +151,15 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
         }
     }
     buffer[totalRd] = 0;
+    if (totalRd == 0)
+    {
+        SCLOG("Received stream size 0. Invalid state");
+        return false;
+    }
 
-    auto xml = std::string(buffer.data());
+    auto data = std::string(buffer.data());
 
-    synchronousEngineUnstream(engine, xml);
+    synchronousEngineUnstream(engine, data);
 
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::RequestHostCallback{(uint64_t)RESCAN_PARAM_IVT},
@@ -450,8 +455,6 @@ bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
         break;
         default:
         {
-            std::cout << __FILE__ << ":" << __LINE__ << " Unhandled event " << nextEvent->type
-                      << std::endl;
         }
         break;
         }
