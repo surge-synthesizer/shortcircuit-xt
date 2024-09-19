@@ -36,6 +36,7 @@ add_library(${PROJECT_NAME} STATIC
         app/play-screen/PlayScreen.cpp
 
         app/shared/HeaderRegion.cpp
+        app/shared/MenuValueTypein.cpp
         app/shared/PartSidebarCard.cpp
         app/shared/SingleMacroEditor.cpp
 
