@@ -35,6 +35,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/Viewport.h"
 #include "messaging/client/client_serial.h"
+#include "app/shared/MenuValueTypein.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -52,8 +53,12 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
     struct ReScaler : sst::jucegui::data::Continuous
     {
+        ModRow *parentRow{nullptr};
         sst::jucegui::data::Continuous *under{nullptr};
-        ReScaler(sst::jucegui::data::Continuous *u) : under(u) {}
+        ReScaler(ModRow *parentRow, sst::jucegui::data::Continuous *u)
+            : parentRow(parentRow), under(u)
+        {
+        }
 
         std::string getLabel() const override { return under->getLabel(); }
         float scaleFromUnder(float f) const
@@ -157,7 +162,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 }
             },
             row.depth);
-        depthRescaler = std::make_unique<ReScaler>(depthAttachment.get());
+        depthRescaler = std::make_unique<ReScaler>(this, depthAttachment.get());
         depth = std::make_unique<jcmp::HSliderFilled>();
         depth->verticalReduction = 3;
 
@@ -175,6 +180,12 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         };
         depth->onIdleHover = depth->onBeginEdit;
         depth->onIdleHoverEnd = depth->onEndEdit;
+        depth->onPopupMenu = [w = juce::Component::SafePointer(this)](auto mods) {
+            if (!w)
+                return;
+            w->editor->hideTooltip();
+            w->showDepthPopup();
+        };
 
         addAndMakeVisible(*depth);
 
@@ -417,7 +428,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 rDelta.rightAlignText = v->valUp;
             }
             rDepth.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::VOLUME;
-            rDepth.leftAlignText = fmt::format("{:.2f} %", at.value * 100);
+            // rDepth.leftAlignText = fmt::format("{} ({:.2f} %)", v->value, at.value * 100);
+            rDepth.leftAlignText = fmt::format("{}", v->value);
         }
         editor->setTooltipContents(lineOne, {rDepth, rDelta});
     }
@@ -690,6 +702,60 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         {
             p.addSubMenu(lastPath, subMenu, true, nullptr, checkPath);
         }
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    struct ModDepthTypein : shared::MenuValueTypeinBase
+    {
+        ModRow *row{nullptr};
+        ModDepthTypein(SCXTEditor *e, ModRow *r) : row(r), shared::MenuValueTypeinBase(e) {}
+
+        std::string getInitialText() const override
+        {
+            auto dv = row->depthAttachment->getValue();
+            auto ep = row->parent->routingTable.routes[row->index].extraPayload;
+            if (!ep.has_value())
+                return "Error";
+            auto md = ep->targetMetadata;
+
+            auto v = md.modulationNaturalToString(
+                ep->targetBaseValue, row->depthAttachment->value * (md.maxVal - md.minVal), false);
+
+            return v->value;
+        }
+        void setValueString(const std::string &s) override
+        {
+            auto dv = row->depthAttachment->getValue();
+            auto ep = row->parent->routingTable.routes[row->index].extraPayload;
+            if (!ep.has_value())
+                return;
+            auto md = ep->targetMetadata;
+
+            std::string emsg;
+            auto v = md.modulationNaturalFromString(s, ep->targetBaseValue, emsg);
+
+            if (!v.has_value())
+            {
+                SCLOG(emsg);
+            }
+
+            row->depthAttachment->setValueFromGUI(*v / (md.maxVal - md.minVal));
+            row->repaint();
+            return;
+        }
+        juce::Colour getValueColour() const override
+        {
+            return editor->themeColor(theme::ColorMap::accent_2b);
+        }
+    };
+    void showDepthPopup()
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader(target->getLabel());
+
+        p.addSeparator();
+        p.addCustomItem(-1, std::make_unique<ModDepthTypein>(editor, this));
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
