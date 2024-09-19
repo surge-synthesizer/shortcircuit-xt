@@ -40,6 +40,7 @@
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
+#include "app/shared/MenuValueTypein.h"
 
 #include <version.h>
 
@@ -345,7 +346,8 @@ void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousPara
     auto p = juce::PopupMenu();
     p.addSectionHeader(data->getLabel());
     p.addSeparator();
-    p.addItem(data->getValueAsString(), []() {});
+    p.addCustomItem(
+        -1, std::make_unique<shared::MenuValueTypein>(this, juce::Component::SafePointer(e)));
     p.addSeparator();
     p.addItem("Set to Default", [w = juce::Component::SafePointer(e)]() {
         if (!w)
