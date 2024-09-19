@@ -76,8 +76,6 @@ void MenuValueTypein::textEditorReturnKeyPressed(juce::TextEditor &ed)
     {
         if (s.empty())
         {
-            SCLOG("Empty value - setting to default of "
-                  << underComp->continuous()->getDefaultValue());
             underComp->continuous()->setValueFromGUI(underComp->continuous()->getDefaultValue());
         }
         else
