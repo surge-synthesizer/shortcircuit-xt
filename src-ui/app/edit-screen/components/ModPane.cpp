@@ -49,6 +49,50 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         powerAttachment;
     using attachment_t = connectors::PayloadDataAttachment<typename GZTrait::routing::Routing>;
     std::unique_ptr<attachment_t> depthAttachment;
+
+    struct ReScaler : sst::jucegui::data::Continuous
+    {
+        sst::jucegui::data::Continuous *under{nullptr};
+        ReScaler(sst::jucegui::data::Continuous *u) : under(u) {}
+
+        std::string getLabel() const override { return under->getLabel(); }
+        float scaleFromUnder(float f) const
+        {
+            auto v01 = (f - under->getMin()) / (under->getMax() - under->getMin());
+            auto res = v01 * 2 - 1;
+            res = std::cbrt(res);
+            return res;
+        }
+        float scaleToUnder(float f) const
+        {
+            // F is bipolar -1..1 so
+            auto uni = f * f * f * 0.5 + 0.5;
+            auto resc = uni * (under->getMax() - under->getMin()) + under->getMin();
+            return resc;
+        }
+
+        float getValue() const override { return scaleFromUnder(under->getValue()); }
+        float getValue01() override { return getValue() * 0.5 + 0.5; }
+        void setValueFromGUI(const float &f) override { under->setValueFromGUI(scaleToUnder(f)); }
+        void setValueFromGUIQuantized(const float &f) override
+        {
+            under->setValueFromGUIQuantized(scaleToUnder(f));
+        }
+        void setValueFromModel(const float &f) override
+        {
+            under->setValueFromModel(scaleToUnder(f));
+        }
+        float getDefaultValue() const override { return 0.f; }
+        std::string getValueAsStringFor(float f) const override
+        {
+            return under->getValueAsStringFor(scaleToUnder(f));
+        }
+        float getMin() const override { return -1.f; }
+        float getMax() const override { return 1.f; }
+        bool isBipolar() const override { return true; }
+    };
+
+    std::unique_ptr<ReScaler> depthRescaler;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
     std::unique_ptr<jcmp::GlyphPainter> x1, x2, a1, a2;
@@ -113,10 +157,11 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 }
             },
             row.depth);
+        depthRescaler = std::make_unique<ReScaler>(depthAttachment.get());
         depth = std::make_unique<jcmp::HSliderFilled>();
         depth->verticalReduction = 3;
 
-        depth->setSource(depthAttachment.get());
+        depth->setSource(depthRescaler.get());
         depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
@@ -369,7 +414,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             {
                 rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LEFT_RIGHT;
                 rDelta.leftAlignText = v->baseValue;
-                rDelta.centerAlignText = v->valUp;
+                rDelta.rightAlignText = v->valUp;
             }
             rDepth.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::VOLUME;
             rDepth.leftAlignText = fmt::format("{:.2f} %", at.value * 100);
