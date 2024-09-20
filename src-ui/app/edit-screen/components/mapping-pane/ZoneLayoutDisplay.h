@@ -116,6 +116,15 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         bothHotZones.push_back(corner.translated(0, r.getHeight() - 8));
     }
 
+    void clearLeadZoneBounds()
+    {
+        cacheLastZone = std::nullopt;
+        lastSelectedZone.clear();
+        keyboardHotZones.clear();
+        velocityHotZones.clear();
+        bothHotZones.clear();
+    }
+
     enum MouseState
     {
         NONE,

@@ -87,6 +87,7 @@ CLIENT_TO_SERIAL(RequestHostCallback, c2s_request_host_callback, uint64_t,
 inline void doResetEngine(bool pl, engine::Engine &e, MessageController &cont)
 {
     scxt::patch_io::initFromResourceBundle(e);
+    e.sendFullRefreshToClient();
 }
 CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, bool, doResetEngine(payload, engine, cont));
 

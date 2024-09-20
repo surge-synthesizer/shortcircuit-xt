@@ -184,6 +184,7 @@ struct SelectionManager
     int currentlySelectedPart(const engine::Engine &e) const { return selectedPart; }
 
     void sendSelectedZonesToClient();
+    void sendGroupZoneMappingForSelectedPart();
     void sendClientDataForLeadSelectionState();
     void sendDisplayDataForZonesBasedOnLead(int part, int group, int zone);
     void sendDisplayDataForNoZoneSelected();
