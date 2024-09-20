@@ -167,6 +167,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
             else if (e.mods.isAltDown())
             {
                 // alt click promotes it to lead
+                display->setLeadSelection(nextZone);
                 display->editor->doSelectionAction(nextZone, true, false, true);
                 lastMousePos = e.position;
                 mouseState = DRAG_SELECTED_ZONE;
@@ -174,6 +175,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
             else
             {
                 // single click makes it a single lead
+                display->setLeadSelection(nextZone);
                 display->editor->doSelectionAction(nextZone, true, true, true);
                 lastMousePos = e.position;
                 mouseState = DRAG_SELECTED_ZONE;
@@ -181,6 +183,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         }
         else
         {
+            display->setLeadSelection(nextZone);
             display->editor->doSelectionAction(
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
             lastMousePos = e.position;
@@ -280,7 +283,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
 {
     if (mouseState == DRAG_SELECTED_ZONE)
     {
-        if (e.getDistanceFromDragStart() < 3)
+        if (e.getDistanceFromDragStart() < 2)
         {
             return;
         }
