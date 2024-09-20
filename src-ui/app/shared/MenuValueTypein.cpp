@@ -31,28 +31,36 @@
 namespace scxt::ui::app::shared
 {
 
-MenuValueTypein::MenuValueTypein(
-    SCXTEditor *editor,
-    juce::Component::SafePointer<sst::jucegui::components::ContinuousParamEditor> under)
-    : HasEditor(editor), underComp(under), juce::PopupMenu::CustomComponent(false)
+MenuValueTypeinBase::MenuValueTypeinBase(SCXTEditor *editor)
+    : HasEditor(editor), juce::PopupMenu::CustomComponent(false)
 {
     textEditor = std::make_unique<juce::TextEditor>();
-    textEditor->setText(under->continuous()->getValueAsString(),
-                        juce::NotificationType::dontSendNotification);
     textEditor->setWantsKeyboardFocus(true);
     textEditor->addListener(this);
     textEditor->setIndents(2, 0);
 
+    addAndMakeVisible(*textEditor);
+}
+
+void MenuValueTypeinBase::textEditorReturnKeyPressed(juce::TextEditor &ed)
+{
+    auto s = ed.getText().toStdString();
+    setValueString(s);
+    triggerMenuItem();
+}
+
+juce::Colour MenuValueTypeinBase::getValueColour() const
+{
     auto valCol = editor->style()->getColour(
         sst::jucegui::components::ContinuousParamEditor::Styles::styleClass,
         sst::jucegui::components::ContinuousParamEditor::Styles::value);
 
-    if (auto styleCon =
-            dynamic_cast<sst::jucegui::style::StyleConsumer *>(underComp.getComponent()))
-    {
-        valCol =
-            styleCon->getColour(sst::jucegui::components::ContinuousParamEditor::Styles::value);
-    }
+    return valCol;
+}
+
+void MenuValueTypeinBase::setupTextEditorStyle()
+{
+    auto valCol = getValueColour();
 
     textEditor->setColour(juce::TextEditor::ColourIds::backgroundColourId, valCol.withAlpha(0.2f));
     textEditor->setColour(juce::TextEditor::ColourIds::highlightColourId, valCol.withAlpha(0.32f));
@@ -65,25 +73,18 @@ MenuValueTypein::MenuValueTypein(
     textEditor->applyColourToAllText(editor->themeColor(theme::ColorMap::generic_content_high),
                                      true);
     textEditor->applyFontToAllText(editor->themeApplier.interMediumFor(13), true);
-
-    addAndMakeVisible(*textEditor);
 }
 
-void MenuValueTypein::textEditorReturnKeyPressed(juce::TextEditor &ed)
+juce::Colour MenuValueTypein::getValueColour() const
 {
-    auto s = ed.getText().toStdString();
-    if (underComp && underComp->continuous())
+    auto valCol = MenuValueTypeinBase::getValueColour();
+    if (auto styleCon =
+            dynamic_cast<sst::jucegui::style::StyleConsumer *>(underComp.getComponent()))
     {
-        if (s.empty())
-        {
-            underComp->continuous()->setValueFromGUI(underComp->continuous()->getDefaultValue());
-        }
-        else
-        {
-            underComp->continuous()->setValueAsString(s);
-        }
+        valCol =
+            styleCon->getColour(sst::jucegui::components::ContinuousParamEditor::Styles::value);
     }
-    triggerMenuItem();
+    return valCol;
 }
 
 } // namespace scxt::ui::app::shared

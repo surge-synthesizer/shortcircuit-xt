@@ -35,13 +35,10 @@
 namespace scxt::ui::app::shared
 {
 
-struct MenuValueTypein : HasEditor, juce::PopupMenu::CustomComponent, juce::TextEditor::Listener
+struct MenuValueTypeinBase : HasEditor, juce::PopupMenu::CustomComponent, juce::TextEditor::Listener
 {
     std::unique_ptr<juce::TextEditor> textEditor;
-    juce::Component::SafePointer<sst::jucegui::components::ContinuousParamEditor> underComp;
-    MenuValueTypein(
-        SCXTEditor *editor,
-        juce::Component::SafePointer<sst::jucegui::components::ContinuousParamEditor> under);
+    MenuValueTypeinBase(SCXTEditor *editor);
 
     void getIdealSize(int &w, int &h) override
     {
@@ -55,15 +52,57 @@ struct MenuValueTypein : HasEditor, juce::PopupMenu::CustomComponent, juce::Text
         juce::Timer::callAfterDelay(2, [this]() {
             if (textEditor->isVisible())
             {
+                textEditor->setText(getInitialText(), juce::NotificationType::dontSendNotification);
+                setupTextEditorStyle();
                 textEditor->grabKeyboardFocus();
                 textEditor->selectAll();
             }
         });
     }
 
+    virtual std::string getInitialText() const = 0;
+    virtual void setValueString(const std::string &) = 0;
+    virtual juce::Colour getValueColour() const;
+
+    void setupTextEditorStyle();
+
     void textEditorReturnKeyPressed(juce::TextEditor &ed) override;
     void textEditorEscapeKeyPressed(juce::TextEditor &) override { triggerMenuItem(); }
 };
 
+struct MenuValueTypein : MenuValueTypeinBase
+{
+    juce::Component::SafePointer<sst::jucegui::components::ContinuousParamEditor> underComp;
+
+    MenuValueTypein(
+        SCXTEditor *editor,
+        juce::Component::SafePointer<sst::jucegui::components::ContinuousParamEditor> under)
+        : MenuValueTypeinBase(editor), underComp(under)
+    {
+    }
+
+    std::string getInitialText() const override
+    {
+        return underComp->continuous()->getValueAsString();
+    }
+
+    void setValueString(const std::string &s) override
+    {
+        if (underComp && underComp->continuous())
+        {
+            if (s.empty())
+            {
+                underComp->continuous()->setValueFromGUI(
+                    underComp->continuous()->getDefaultValue());
+            }
+            else
+            {
+                underComp->continuous()->setValueAsString(s);
+            }
+        }
+    }
+
+    juce::Colour getValueColour() const override;
+};
 } // namespace scxt::ui::app::shared
 #endif // MENUVALUETYPEIN_H
