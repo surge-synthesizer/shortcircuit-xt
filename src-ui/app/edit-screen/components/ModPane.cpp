@@ -507,6 +507,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             p.addSeparator();
 
         auto sub = juce::PopupMenu();
+        std::string sourceName{""};
         auto subTicked{false};
         std::string lastCat{};
         for (const auto &[si, sn] : srcs)
@@ -539,6 +540,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 }
             }
             sub.addItem(nm, true, selected, mkCallback(si));
+            if (selected)
+                sourceName = nm;
         }
 
         if (sub.getNumItems() > 0)
@@ -546,6 +549,83 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             p.addSubMenu(lastCat, sub, true, nullptr, subTicked);
         }
 
+        const auto &row = parent->routingTable.routes[index];
+
+        bool smoothingAvailable = true;
+        if (isVia)
+            smoothingAvailable = row.sourceVia.has_value();
+        else
+            smoothingAvailable = row.source.has_value();
+
+        if (smoothingAvailable)
+        {
+            p.addSeparator();
+            std::string lab = "Smoothing ";
+            auto st = row.sourceLagMS;
+            auto se = row.sourceLagExp;
+
+            if (isVia)
+            {
+                st = row.sourceViaLagMS;
+                se = row.sourceViaLagExp;
+            }
+
+            if (st == 0)
+            {
+                lab += "(Off)";
+            }
+            else
+            {
+                lab += "(" + std::to_string(st) + "ms, " + (se ? "Exp" : "Lin") + ")";
+            }
+
+            auto smoothSubMenu = juce::PopupMenu();
+            smoothSubMenu.addSectionHeader(sourceName + " Smoothing");
+            smoothSubMenu.addSeparator();
+            for (auto vals : {0, 10, 25, 50, 100, 250, 500})
+            {
+                smoothSubMenu.addItem(vals == 0 ? "No Smoothing" : (std::to_string(vals) + "ms"),
+                                      true, vals == st,
+                                      [isVia, w = juce::Component::SafePointer(this), vals]() {
+                                          if (!w)
+                                              return;
+                                          auto &row = w->parent->routingTable.routes[w->index];
+                                          if (isVia)
+                                              row.sourceViaLagMS = vals;
+                                          else
+                                              row.sourceLagMS = vals;
+                                          w->pushRowUpdate();
+                                          w->refreshRow();
+                                      });
+            }
+            smoothSubMenu.addSeparator();
+            smoothSubMenu.addItem("Exponential", true, se,
+                                  [isVia, w = juce::Component::SafePointer(this)]() {
+                                      if (!w)
+                                          return;
+                                      auto &row = w->parent->routingTable.routes[w->index];
+                                      if (isVia)
+                                          row.sourceViaLagExp = true;
+                                      else
+                                          row.sourceLagExp = true;
+                                      w->pushRowUpdate();
+                                      w->refreshRow();
+                                  });
+            smoothSubMenu.addItem("Linear", true, !se,
+                                  [isVia, w = juce::Component::SafePointer(this)]() {
+                                      if (!w)
+                                          return;
+                                      auto &row = w->parent->routingTable.routes[w->index];
+                                      if (isVia)
+                                          row.sourceViaLagExp = false;
+                                      else
+                                          row.sourceLagExp = false;
+                                      w->pushRowUpdate();
+                                      w->refreshRow();
+                                  });
+
+            p.addSubMenu(lab, smoothSubMenu);
+        }
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 

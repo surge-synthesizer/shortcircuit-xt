@@ -74,6 +74,12 @@ struct MatrixConfig
         return res;
     }
 
+    static bool supportsLag(const SourceIdentifier &s)
+    {
+        SCLOG_ONCE("Supports Lag says 'yes' for all voice matrix values currently");
+        return true;
+    }
+
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
 

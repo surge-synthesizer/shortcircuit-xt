@@ -106,7 +106,7 @@ void Voice::voiceStarted()
 
     // This order matters
     endpoints->sources.bind(modMatrix, *zone, *this);
-    modMatrix.prepare(zone->routingTable);
+    modMatrix.prepare(zone->routingTable, getSampleRate(), blockSize);
     endpoints->bindTargetBaseValues(modMatrix, *zone);
     modMatrix.process();
 
