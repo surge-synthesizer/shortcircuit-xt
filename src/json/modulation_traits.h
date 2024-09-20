@@ -193,7 +193,8 @@ SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
                           {"sourceVia", t.sourceVia}, {"target", t.target},
                           {"curve", t.curve},         {"depth", t.depth},
                           {"srcLMS", t.sourceLagMS},  {"srVLMS", t.sourceViaLagMS},
-                          {"srcLE", t.sourceLagExp},  {"srVLE", t.sourceViaLagExp}, {"appm", t.applicationMode}};
+                          {"srcLE", t.sourceLagExp},  {"srVLE", t.sourceViaLagExp},
+                          {"appm", t.applicationMode}};
                      if (SC_STREAMING_FOR_IN_PROCESS)
                          addToObject<val_t>(v, "extraPayload", t.extraPayload);
                  }
