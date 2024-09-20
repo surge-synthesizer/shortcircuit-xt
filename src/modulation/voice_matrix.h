@@ -63,6 +63,8 @@ struct MatrixConfig
     {
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
+
+    // FIX ME make this default named and in the base and accessible to the ui
     static std::unordered_set<TargetIdentifier> multiplicativeTargets;
     static void setIsMultiplicative(const TargetIdentifier &ti)
     {

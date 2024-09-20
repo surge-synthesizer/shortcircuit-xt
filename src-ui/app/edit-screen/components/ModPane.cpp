@@ -353,16 +353,13 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             }
         }
 
-        if (row.target.has_value())
+        if (row.applicationMode == sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
         {
-            if (GZTrait::isMultiplicative(*(row.target)))
-            {
-                a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE;
-            }
-            else
-            {
-                a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_ADDITIVE;
-            }
+            a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE;
+        }
+        else
+        {
+            a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_ADDITIVE;
         }
 
         repaint();
@@ -836,6 +833,31 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
         p.addSeparator();
         p.addCustomItem(-1, std::make_unique<ModDepthTypein>(editor, this));
+
+        p.addSeparator();
+        auto &route =parent->routingTable.routes[index];
+
+        p.addItem("Additive Application", true, route.applicationMode == sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE,
+            [w = juce::Component::SafePointer(this)]() {
+                if (!w)
+                    return;
+                auto &route =w->parent->routingTable.routes[w->index];
+                route.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
+
+                w->pushRowUpdate(true);
+                w->refreshRow();
+            } );
+        p.addItem("Multiplicative Application", true, route.applicationMode == sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE,
+        [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &route =w->parent->routingTable.routes[w->index];
+            route.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE ;
+
+            w->pushRowUpdate(true);
+            w->refreshRow();
+        } );
+
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
