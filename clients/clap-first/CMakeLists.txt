@@ -74,7 +74,7 @@ endif()
 set(SA_TARGET ${PROJECT_NAME}_Standalone)
 
 if (${SCXT_USE_CLAP_WRAPPER_STANDALONE})
-    message(STATUS "Standalone is CLap Wrapper")
+    message(STATUS "Standalone is provided by clap-wrapper")
     add_executable(${SA_TARGET} scxt-clap-entry.cpp)
     target_link_libraries(${SA_TARGET} PRIVATE ${IMPL_TARGET})
     target_add_standalone_wrapper(TARGET ${SA_TARGET}
@@ -82,7 +82,7 @@ if (${SCXT_USE_CLAP_WRAPPER_STANDALONE})
             STATICALLY_LINKED_CLAP_ENTRY True
             PLUGIN_ID "org.surge-synth-team.shortcircuit-xt")
 else()
-    message(STATUS "Standalone is BaconPaul's Bodged Juce Thing")
+    message(STATUS "Standalone is provided by BaconPaul's Bodged Juce Thing")
     add_executable(${SA_TARGET} MACOSX_BUNDLE WIN32)
     set_target_properties(${SA_TARGET} PROPERTIES
             OUTPUT_NAME ${name})

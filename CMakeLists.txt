@@ -66,8 +66,11 @@ option(SCXT_USE_FLAC "Include FLAC support" ON)
 option(SCXT_USE_MP3 "Include MP3 support" ON)
 
 option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
-option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" OFF)
-
+if (WIN32)
+    option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" ON)
+else()
+    option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" OFF)
+endif()
 
 # Calculate bitness
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
