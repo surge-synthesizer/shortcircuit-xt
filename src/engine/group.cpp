@@ -54,7 +54,7 @@ Group::Group()
 void Group::rePrepareAndBindGroupMatrix()
 {
     endpoints.sources.bind(modMatrix, *this);
-    modMatrix.prepare(routingTable);
+    modMatrix.prepare(routingTable, getSampleRate(), blockSize);
     endpoints.bindTargetBaseValues(modMatrix, *this);
     modMatrix.process();
 

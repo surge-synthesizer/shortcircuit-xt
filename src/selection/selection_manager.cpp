@@ -701,7 +701,7 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
     // routing table. Or maybe even make it a function on zone (that's probably better).
     scxt::voice::modulation::Matrix mat;
     mat.forUIMode = true;
-    mat.prepare(zp->routingTable);
+    mat.prepare(zp->routingTable, engine.getSampleRate(), blockSize);
     scxt::voice::modulation::MatrixEndpoints ep{nullptr};
     ep.bindTargetBaseValues(mat, *zp);
     for (auto &r : zp->routingTable.routes)
