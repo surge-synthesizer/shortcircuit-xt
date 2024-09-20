@@ -49,6 +49,15 @@ void MenuValueTypeinBase::textEditorReturnKeyPressed(juce::TextEditor &ed)
     triggerMenuItem();
 }
 
+juce::Colour MenuValueTypeinBase::getValueColour() const
+{
+    auto valCol = editor->style()->getColour(
+        sst::jucegui::components::ContinuousParamEditor::Styles::styleClass,
+        sst::jucegui::components::ContinuousParamEditor::Styles::value);
+
+    return valCol;
+}
+
 void MenuValueTypeinBase::setupTextEditorStyle()
 {
     auto valCol = getValueColour();

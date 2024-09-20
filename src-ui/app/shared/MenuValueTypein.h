@@ -62,14 +62,8 @@ struct MenuValueTypeinBase : HasEditor, juce::PopupMenu::CustomComponent, juce::
 
     virtual std::string getInitialText() const = 0;
     virtual void setValueString(const std::string &) = 0;
-    virtual juce::Colour getValueColour() const
-    {
-        auto valCol = editor->style()->getColour(
-            sst::jucegui::components::ContinuousParamEditor::Styles::styleClass,
-            sst::jucegui::components::ContinuousParamEditor::Styles::value);
+    virtual juce::Colour getValueColour() const;
 
-        return valCol;
-    }
     void setupTextEditorStyle();
 
     void textEditorReturnKeyPressed(juce::TextEditor &ed) override;
