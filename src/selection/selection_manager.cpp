@@ -76,7 +76,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
         }
     }
 
-    if (p >= 0 && g >= 0)
+    if (p >= 0)
     {
         serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
                                   engine.getPatch()->getPart(p)->getZoneMappingSummary(),
@@ -245,6 +245,16 @@ void SelectionManager::adjustInternalStateForAction(
         allSelectedGroups[selectedPart].insert(za);
         leadGroup[selectedPart] = za;
     }
+}
+
+void SelectionManager::sendGroupZoneMappingForSelectedPart()
+{
+    if (selectedPart < 0 || selectedPart >= numParts)
+        return;
+
+    serializationSendToClient(cms::s2c_send_selected_group_zone_mapping_summary,
+                              engine.getPatch()->getPart(selectedPart)->getZoneMappingSummary(),
+                              *(engine.getMessageController()));
 }
 
 void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &engine,

@@ -310,13 +310,20 @@ void MappingDisplay::setGroupZoneMappingSummary(const engine::Part::zoneMappingS
 void MappingDisplay::setLeadSelection(const selection::SelectionManager::ZoneAddress &za)
 {
     // but we need to call setLeadZoneBounds to make the hotspots so rename that too
+    bool foundZone{false};
     for (const auto &s : summary)
     {
         if (s.first == za)
         {
+            foundZone = true;
             if (mappingZones)
                 mappingZones->setLeadZoneBounds(s.second);
         }
+    }
+
+    if (mappingZones && !foundZone)
+    {
+        mappingZones->clearLeadZoneBounds();
     }
 }
 
