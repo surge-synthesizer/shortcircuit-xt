@@ -38,8 +38,6 @@
 namespace scxt::voice::modulation
 {
 
-std::unordered_set<MatrixConfig::TargetIdentifier> MatrixConfig::multiplicativeTargets;
-
 namespace shmo = scxt::modulation::shared;
 sst::basic_blocks::dsp::RNG rng;
 
@@ -172,12 +170,13 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
 void MatrixEndpoints::registerVoiceModTarget(
     engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> pathFn,
-    std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> nameFn)
+    std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> nameFn,
+    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> additiveFn)
 {
     if (!e)
         return;
 
-    e->registerVoiceModTarget(t, pathFn, nameFn);
+    e->registerVoiceModTarget(t, pathFn, nameFn, additiveFn);
 }
 
 void MatrixEndpoints::registerVoiceModSource(
@@ -200,10 +199,10 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
     namedCurveVector_t cr;
 
     auto identCmp = [](const auto &a, const auto &b) {
-        const auto &srca = a.first;
-        const auto &srcb = b.first;
-        const auto &ida = a.second;
-        const auto &idb = b.second;
+        const auto &srca = std::get<0>(a);
+        const auto &srcb = std::get<0>(b);
+        const auto &ida = std::get<1>(a);
+        const auto &idb = std::get<1>(b);
         if (srca.gid == srcb.gid && (srca.gid == 'zmac' || srca.gid == 'self'))
         {
             return srca.index < srcb.index;
@@ -213,8 +212,12 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
         {
             if (ida.second == idb.second)
             {
-                return std::hash<decltype(a.first)>{}(a.first) <
-                       std::hash<decltype(b.first)>{}(b.first);
+                return std::hash<
+                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(a))>>>{}(
+                           std::get<0>(a)) <
+                       std::hash<
+                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(b))>>>{}(
+                           std::get<0>(b));
             }
             else
             {
@@ -225,8 +228,8 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
     };
 
     auto tgtCmp = [identCmp](const auto &a, const auto &b) {
-        const auto &ta = a.first;
-        const auto &tb = b.first;
+        const auto &ta = std::get<0>(a);
+        const auto &tb = std::get<0>(b);
         if (ta.gid == 'proc' && tb.gid == ta.gid && tb.index == ta.index)
         {
             return ta.tid < tb.tid;
@@ -236,7 +239,8 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
 
     for (const auto &[t, fns] : e->voiceModTargets)
     {
-        tg.emplace_back(t, identifierDisplayName_t{fns.first(z, t), fns.second(z, t)});
+        tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(z, t), std::get<1>(fns)(z, t)},
+                        std::get<2>(fns)(z, t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 
@@ -281,9 +285,8 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
     };
 
     registerVoiceModTarget(e, mixT, ptFn, mixFn);
-    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn);
+    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn, true);
 
-    MatrixConfig::setIsMultiplicative(outputLevelDbT);
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
         auto elFn = [icopy = i](const engine::Zone &z,
@@ -293,7 +296,15 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
                 return "";
             return d.floatControlDescriptions[icopy].name;
         };
-        registerVoiceModTarget(e, fpT[i], ptFn, elFn);
+        auto adFn = [icopy = i](const engine::Zone &z,
+                                const MatrixConfig::TargetIdentifier &t) -> bool {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
+        };
+
+        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn);
     }
 }
 

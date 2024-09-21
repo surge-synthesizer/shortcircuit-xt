@@ -62,16 +62,6 @@ struct GroupMatrixConfig
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
-    static std::unordered_set<TargetIdentifier> multiplicativeTargets;
-    static void setIsMultiplicative(const TargetIdentifier &ti)
-    {
-        multiplicativeTargets.insert(ti);
-    }
-    static bool getIsMultiplicative(const TargetIdentifier &ti)
-    {
-        auto res = multiplicativeTargets.find(ti) != multiplicativeTargets.end();
-        return res;
-    }
     static bool supportsLag(const SourceIdentifier &s)
     {
         SCLOG_ONCE("Supports Lag says 'yes' for all voice matrix values currently");
@@ -165,7 +155,7 @@ struct GroupMatrixEndpoints
             if (e)
             {
                 registerGroupModTarget(e, panT, "Output", "Pan");
-                registerGroupModTarget(e, ampT, "Output", "Amplitude");
+                registerGroupModTarget(e, ampT, "Output", "Amplitude", true);
             }
         }
         TG panT, ampT;
@@ -192,21 +182,40 @@ struct GroupMatrixEndpoints
 
     static void registerGroupModTarget(engine::Engine *e,
                                        const GroupMatrixConfig::TargetIdentifier &t,
-                                       const std::string &path, const std::string &name)
+                                       const std::string &path, const std::string &name,
+                                       bool supportsMul = false)
     {
         registerGroupModTarget(
             e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
-            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+            [n = name](const auto &a, const auto &b) -> std::string { return n; },
+            [s = supportsMul](const auto &a, const auto &b) -> bool { return s; });
     }
 
     static void
-    registerGroupModTarget(engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &,
+    registerGroupModTarget(engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &t,
                            std::function<std::string(const engine::Group &,
                                                      const GroupMatrixConfig::TargetIdentifier &)>
                                pathFn,
                            std::function<std::string(const engine::Group &,
                                                      const GroupMatrixConfig::TargetIdentifier &)>
-                               nameFn);
+                               nameFn,
+                           bool supportsMul = false)
+    {
+        registerGroupModTarget(
+            e, t, pathFn, nameFn,
+            [s = supportsMul](const auto &a, const auto &b) -> bool { return s; });
+    }
+
+    static void registerGroupModTarget(
+        engine::Engine *e, const GroupMatrixConfig::TargetIdentifier &,
+        std::function<std::string(const engine::Group &,
+                                  const GroupMatrixConfig::TargetIdentifier &)>
+            pathFn,
+        std::function<std::string(const engine::Group &,
+                                  const GroupMatrixConfig::TargetIdentifier &)>
+            nameFn,
+        std::function<bool(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+            additiveFn);
 
     static void registerGroupModSource(engine::Engine *e,
                                        const GroupMatrixConfig::SourceIdentifier &t,
@@ -255,7 +264,9 @@ struct GroupMatrixEndpoints
 
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
-typedef std::pair<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t> namedTarget_t;
+// The last bool is "allows multiplicative"
+typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, bool>
+    namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
 typedef std::vector<namedSource_t> namedSourceVector_t;

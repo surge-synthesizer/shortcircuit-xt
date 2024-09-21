@@ -34,8 +34,6 @@
 namespace scxt::modulation
 {
 
-std::unordered_set<GroupMatrixConfig::TargetIdentifier> GroupMatrixConfig::multiplicativeTargets;
-
 namespace shmo = scxt::modulation::shared;
 
 GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
@@ -68,9 +66,7 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
         };
 
         registerGroupModTarget(e, mixT, ptFn, mixFn);
-        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn);
-
-        GroupMatrixConfig::setIsMultiplicative(outputLevelDbT);
+        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn, true);
 
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
@@ -81,7 +77,15 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                     return "";
                 return d.floatControlDescriptions[icopy].name;
             };
-            registerGroupModTarget(e, fpT[i], ptFn, elFn);
+
+            auto adFn = [icopy = i](const engine::Group &z,
+                                    const GroupMatrixConfig::TargetIdentifier &t) -> bool {
+                auto &d = z.processorDescription[t.index];
+                if (d.type == dsp::processor::proct_none)
+                    return "";
+                return d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
+            };
+            registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn);
         }
     }
 }
@@ -152,12 +156,14 @@ void GroupMatrixEndpoints::registerGroupModTarget(
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         pathFn,
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
-        nameFn)
+        nameFn,
+    std::function<bool(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        additiveFn)
 {
     if (!e)
         return;
 
-    e->registerGroupModTarget(t, pathFn, nameFn);
+    e->registerGroupModTarget(t, pathFn, nameFn, additiveFn);
 }
 
 void GroupMatrixEndpoints::registerGroupModSource(
@@ -183,10 +189,10 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
     namedCurveVector_t cr;
 
     auto identCmp = [](const auto &a, const auto &b) {
-        const auto &srca = a.first;
-        const auto &srcb = b.first;
-        const auto &ida = a.second;
-        const auto &idb = b.second;
+        const auto &srca = std::get<0>(a);
+        const auto &srcb = std::get<0>(b);
+        const auto &ida = std::get<1>(a);
+        const auto &idb = std::get<1>(b);
         if (srca.gid == 'gmac' && srcb.gid == 'gmac')
         {
             return srca.index < srcb.index;
@@ -195,8 +201,12 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
         {
             if (ida.second == idb.second)
             {
-                return std::hash<decltype(a.first)>{}(a.first) <
-                       std::hash<decltype(b.first)>{}(b.first);
+                return std::hash<
+                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(a))>>>{}(
+                           std::get<0>(a)) <
+                       std::hash<
+                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(b))>>>{}(
+                           std::get<0>(b));
             }
             else
             {
@@ -207,8 +217,8 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
     };
 
     auto tgtCmp = [identCmp](const auto &a, const auto &b) {
-        const auto &ta = a.first;
-        const auto &tb = b.first;
+        const auto &ta = std::get<0>(a);
+        const auto &tb = std::get<0>(b);
         if (ta.gid == 'gprc' && tb.gid == ta.gid && tb.index == ta.index)
         {
             return ta.tid < tb.tid;
@@ -218,7 +228,8 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
 
     for (const auto &[t, fns] : e->groupModTargets)
     {
-        tg.emplace_back(t, identifierDisplayName_t{fns.first(g, t), fns.second(g, t)});
+        tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(g, t), std::get<1>(fns)(g, t)},
+                        std::get<2>(fns)(g, t)); // GroupMatrixConfig::getIsMultiplicative(t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 

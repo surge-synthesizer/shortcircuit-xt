@@ -242,12 +242,29 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
         {
             tmd = *providedMetadata;
         }
+        bool nonAdditive = tmd.hasSupportsMultiplicativeModulation();
+
+        SCLOG("nonAdditive is " << nonAdditive << " for " << tmd.name);
         auto pt = m.getTargetValuePointer(tg);
         for (auto &r : m.routingValuePointers)
         {
             if (r.target == pt)
             {
                 r.depthScale = tmd.maxVal - tmd.minVal;
+                if (!nonAdditive)
+                {
+#if BUILD_IS_DEBUG
+                    if (r.applicationMode ==
+                        sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
+                    {
+                        // In theory this should never happen
+                        SCLOG("Somehow you set up multiplicative on an additive only param "
+                              << tmd.name);
+                        assert(false);
+                    }
+#endif
+                    r.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
+                }
             }
         }
     }
