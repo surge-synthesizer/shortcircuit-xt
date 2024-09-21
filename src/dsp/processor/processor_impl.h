@@ -175,6 +175,20 @@ template <typename T> struct SSTVoiceEffectShim : T
                             << " mono->stereo=" << HasMemFn_processMonoToStereo<T>::value
                             << " stereo->stereo=" << HasMemFn_processStereo<T>::value);
 #endif
+        static_assert(std::is_same_v<decltype(&T::processStereo),
+                                     void (T::*)(const float *const, const float *const, float *,
+                                                 float *, float)>);
+        if constexpr (HasMemFn_processMonoToMono<T>::value)
+        {
+            static_assert(std::is_same_v<decltype(&T::processMonoToMono),
+                                         void (T::*)(const float *const, float *, float)>);
+        }
+
+        if constexpr (HasMemFn_processMonoToStereo<T>::value)
+        {
+            static_assert(std::is_same_v<decltype(&T::processMonoToStereo),
+                                         void (T::*)(const float *const, float *, float *, float)>);
+        }
     }
 
     virtual ~SSTVoiceEffectShim() = default;
