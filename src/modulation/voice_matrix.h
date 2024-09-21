@@ -64,11 +64,7 @@ struct MatrixConfig
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
-    static bool supportsLag(const SourceIdentifier &s)
-    {
-        SCLOG_ONCE("Supports Lag says 'yes' for all voice matrix values currently");
-        return true;
-    }
+    static bool supportsLag(const SourceIdentifier &s) { return true; }
 
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
@@ -83,6 +79,18 @@ struct MatrixConfig
     {
         assert(isTargetModMatrixDepth(t));
         return (size_t)t.index;
+    }
+
+    static std::unordered_map<SourceIdentifier, int32_t> defaultLags;
+    static void setDefaultLagFor(const SourceIdentifier &s, int32_t v) { defaultLags[s] = v; }
+    static int32_t defaultLagFor(const SourceIdentifier &s)
+    {
+        auto r = defaultLags.find(s);
+        if (r != defaultLags.end())
+        {
+            return r->second;
+        }
+        return 0;
     }
 };
 } // namespace scxt::voice::modulation
@@ -231,9 +239,11 @@ struct MatrixEndpoints
                   keytrackSource{'zmid', 'ktrk'}
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
+                MatrixConfig::setDefaultLagFor(modWheelSource, 25);
                 registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
                 registerVoiceModSource(e, keytrackSource, "MIDI", "KeyTrack");
                 registerVoiceModSource(e, polyATSource, "MIDI", "Poly AT");
+                MatrixConfig::setDefaultLagFor(polyATSource, 100);
             }
             SR modWheelSource, velocitySource, keytrackSource, polyATSource;
         } midiSources;
@@ -252,6 +262,14 @@ struct MatrixEndpoints
                 registerVoiceModSource(e, expression, "Note Expressions", "Expression");
                 registerVoiceModSource(e, brightness, "Note Expressions", "Brightness");
                 registerVoiceModSource(e, pressure, "Note Expressions", "Pressure");
+
+                MatrixConfig::setDefaultLagFor(volume, 10);
+                MatrixConfig::setDefaultLagFor(pan, 10);
+                MatrixConfig::setDefaultLagFor(tuning, 10);
+                MatrixConfig::setDefaultLagFor(vibrato, 10);
+                MatrixConfig::setDefaultLagFor(expression, 10);
+                MatrixConfig::setDefaultLagFor(brightness, 10);
+                MatrixConfig::setDefaultLagFor(pressure, 10);
             }
             SR volume, pan, tuning, vibrato, expression, brightness, pressure;
         } noteExpressions;

@@ -34,6 +34,8 @@
 namespace scxt::modulation
 {
 
+std::unordered_map<GroupMatrixConfig::SourceIdentifier, int32_t> GroupMatrixConfig::defaultLags;
+
 namespace shmo = scxt::modulation::shared;
 
 GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
@@ -256,6 +258,7 @@ GroupMatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
         registerGroupModSource(
             e, macros[i], [](auto &a, auto &b) { return "Macro"; },
             [i](auto &grp, auto &s) { return grp.parentPart->macros[i].name; });
+        GroupMatrixConfig::setDefaultLagFor(macros[i], 25);
     }
 }
 } // namespace scxt::modulation

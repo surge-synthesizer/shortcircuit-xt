@@ -38,6 +38,8 @@
 namespace scxt::voice::modulation
 {
 
+std::unordered_map<MatrixConfig::SourceIdentifier, int32_t> MatrixConfig::defaultLags;
+
 namespace shmo = scxt::modulation::shared;
 sst::basic_blocks::dsp::RNG rng;
 
@@ -376,6 +378,7 @@ MatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
         registerVoiceModSource(
             e, macros[i], [](auto &a, auto &b) { return "Macro"; },
             [i](auto &zone, auto &s) { return zone.parentGroup->parentPart->macros[i].name; });
+        MatrixConfig::setDefaultLagFor(macros[i], 25);
     }
 }
 } // namespace scxt::voice::modulation

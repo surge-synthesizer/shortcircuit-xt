@@ -244,7 +244,6 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
         }
         bool nonAdditive = tmd.hasSupportsMultiplicativeModulation();
 
-        SCLOG("nonAdditive is " << nonAdditive << " for " << tmd.name);
         auto pt = m.getTargetValuePointer(tg);
         for (auto &r : m.routingValuePointers)
         {

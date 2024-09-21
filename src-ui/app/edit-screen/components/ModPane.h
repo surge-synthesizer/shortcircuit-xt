@@ -43,8 +43,12 @@ struct ModPaneZoneTraits
     using matrix = scxt::voice::modulation::Matrix;
     using routing = scxt::voice::modulation::Matrix::RoutingTable;
     static constexpr uint32_t rowCount{scxt::voice::modulation::MatrixConfig::FixedMatrixSize};
-    // using metadata = scxt::modulation::voiceModMatrixMetadata_t;
-    // using routing = scxt::modulation::VoiceModMatrix::routingTable_t;
+
+    static int32_t defaultSmoothingTimeFor(const matrix::TR::SourceIdentifier &s)
+    {
+        auto res = matrix::TR::defaultLagFor(s);
+        return res;
+    }
 };
 
 struct ModPaneGroupTraits
@@ -53,7 +57,12 @@ struct ModPaneGroupTraits
     using metadata = scxt::modulation::groupMatrixMetadata_t;
     using matrix = scxt::modulation::GroupMatrix;
     using routing = scxt::modulation::GroupMatrix::RoutingTable;
-    static constexpr uint32_t rowCount{12};
+    static constexpr uint32_t rowCount{scxt::modulation::GroupMatrixConfig::FixedMatrixSize};
+    static int32_t defaultSmoothingTimeFor(const matrix::TR::SourceIdentifier &s)
+    {
+        auto res = matrix::TR::defaultLagFor(s);
+        return res;
+    }
 };
 
 template <typename GZTrait> struct ModRow;
