@@ -45,12 +45,6 @@ struct ModPaneZoneTraits
     static constexpr uint32_t rowCount{scxt::voice::modulation::MatrixConfig::FixedMatrixSize};
     // using metadata = scxt::modulation::voiceModMatrixMetadata_t;
     // using routing = scxt::modulation::VoiceModMatrix::routingTable_t;
-
-    // We should probably stream this but for now short cut it this way
-    static bool isMultiplicative(const matrix::TR::TargetIdentifier &t)
-    {
-        return matrix::TR::getIsMultiplicative(t);
-    }
 };
 
 struct ModPaneGroupTraits
@@ -60,11 +54,6 @@ struct ModPaneGroupTraits
     using matrix = scxt::modulation::GroupMatrix;
     using routing = scxt::modulation::GroupMatrix::RoutingTable;
     static constexpr uint32_t rowCount{12};
-
-    static bool isMultiplicative(const matrix::TR::TargetIdentifier &t)
-    {
-        return matrix::TR::getIsMultiplicative(t);
-    }
 };
 
 template <typename GZTrait> struct ModRow;

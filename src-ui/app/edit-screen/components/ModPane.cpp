@@ -105,6 +105,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
     std::unique_ptr<jcmp::HSliderFilled> depth;
 
+    bool allowsMultiplicative{false};
+
     // std::unique_ptr<jcmp::HSlider> slider;
     ModRow(SCXTEditor *e, int i, ModPane<GZTrait> *p) : HasEditor(e), index(i), parent(p)
     {
@@ -286,7 +288,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                     c = cn.second;
             }
 
-            for (const auto &[di, dn] : dsts)
+            for (const auto &[di, dn, ca] : dsts)
             {
                 if (di == row.target)
                     d = dn.second;
@@ -337,11 +339,12 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             }
         }
 
-        for (const auto &[di, dn] : dsts)
+        for (const auto &[di, dn, ca] : dsts)
         {
             if (di == row.target)
             {
                 target->setLabel(dn.first + ": " + dn.second);
+                allowsMultiplicative = ca;
             }
         }
 
@@ -353,7 +356,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             }
         }
 
-        if (row.applicationMode == sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
+        if (allowsMultiplicative &&
+            row.applicationMode == sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
         {
             a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE;
         }
@@ -736,7 +740,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         bool checkPath{false};
         juce::PopupMenu subMenu;
 
-        for (const auto &[ti, tn] : tgts)
+        for (const auto &[ti, tn, canAdditive] : tgts)
         {
             if (tn.second.empty())
                 continue;
@@ -744,24 +748,19 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             const auto &row = parent->routingTable.routes[index];
             auto selected = (row.target == ti);
 
-            auto mop = [tidx = ti, w = juce::Component::SafePointer(this)]() {
+            auto mop = [tidx = ti, ca = canAdditive, w = juce::Component::SafePointer(this)]() {
                 if (!w)
                     return;
                 auto &row = w->parent->routingTable.routes[w->index];
 
                 row.target = tidx;
 
-                if (GZTrait::isMultiplicative(*(row.target)))
-                {
-                    row.applicationMode =
-                        sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE;
-                }
-                else
-                {
-                    row.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
-                }
+                w->allowsMultiplicative = ca;
+
+                row.applicationMode =
+                    ca ? sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE
+                       : sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
                 w->pushRowUpdate(true);
-                w->refreshRow();
             };
 
             if (tn.first.empty())
@@ -846,7 +845,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         p.addCustomItem(-1, std::make_unique<ModDepthTypein>(editor, this));
 
         auto &route = parent->routingTable.routes[index];
-        if (route.target.has_value() && GZTrait::isMultiplicative(*(route.target)))
+        if (route.target.has_value() && allowsMultiplicative)
         {
             p.addSeparator();
 

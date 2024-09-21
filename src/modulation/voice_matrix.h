@@ -64,18 +64,6 @@ struct MatrixConfig
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
-    // FIX ME make this default named and in the base and accessible to the ui
-    static std::unordered_set<TargetIdentifier> multiplicativeTargets;
-    static void setIsMultiplicative(const TargetIdentifier &ti)
-    {
-        multiplicativeTargets.insert(ti);
-    }
-    static bool getIsMultiplicative(const TargetIdentifier &ti)
-    {
-        auto res = multiplicativeTargets.find(ti) != multiplicativeTargets.end();
-        return res;
-    }
-
     static bool supportsLag(const SourceIdentifier &s)
     {
         SCLOG_ONCE("Supports Lag says 'yes' for all voice matrix values currently");
@@ -170,10 +158,8 @@ struct MatrixEndpoints
             {
                 registerVoiceModTarget(e, pitchOffsetT, "Mapping", "Pitch Offset");
                 registerVoiceModTarget(e, panT, "Mapping", "Pan");
-                registerVoiceModTarget(e, ampT, "Mapping", "Amplitude");
+                registerVoiceModTarget(e, ampT, "Mapping", "Amplitude", true);
                 registerVoiceModTarget(e, playbackRatioT, "Mapping", "Playback Ratio");
-
-                MatrixConfig::setIsMultiplicative(ampT);
             }
         }
         TG pitchOffsetT, panT, ampT, playbackRatioT;
@@ -193,9 +179,7 @@ struct MatrixEndpoints
             if (e)
             {
                 registerVoiceModTarget(e, panT, "Output", "Pan");
-                registerVoiceModTarget(e, ampT, "Output", "Amplitude");
-
-                MatrixConfig::setIsMultiplicative(ampT);
+                registerVoiceModTarget(e, ampT, "Output", "Amplitude", true);
             }
         }
         TG panT, ampT;
@@ -309,11 +293,26 @@ struct MatrixEndpoints
     void bindTargetBaseValues(Matrix &m, engine::Zone &z);
 
     static void registerVoiceModTarget(engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
-                                       const std::string &path, const std::string &name)
+                                       const std::string &path, const std::string &name,
+                                       bool supportsMultiplicative = false)
     {
         registerVoiceModTarget(
             e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
-            [n = name](const auto &a, const auto &b) -> std::string { return n; });
+            [n = name](const auto &a, const auto &b) -> std::string { return n; },
+            [s = supportsMultiplicative](const auto &a, const auto &b) -> bool { return s; });
+    }
+
+    static void registerVoiceModTarget(
+        engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            pathFn,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            nameFn,
+        bool supportsMultiplicative = false)
+    {
+        registerVoiceModTarget(
+            e, t, pathFn, nameFn,
+            [s = supportsMultiplicative](const auto &a, const auto &b) { return s; });
     }
 
     static void registerVoiceModTarget(
@@ -321,7 +320,9 @@ struct MatrixEndpoints
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             pathFn,
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
-            nameFn);
+            nameFn,
+        std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            additiveFn);
 
     static void registerVoiceModSource(
         engine::Engine *e, const MatrixConfig::SourceIdentifier &,
@@ -337,7 +338,8 @@ struct MatrixEndpoints
  */
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
-typedef std::pair<MatrixConfig::TargetIdentifier, identifierDisplayName_t> namedTarget_t;
+// The last bool is "allows multiplicative"
+typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, bool> namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
 typedef std::vector<namedSource_t> namedSourceVector_t;
