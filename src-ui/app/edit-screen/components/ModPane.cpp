@@ -480,10 +480,20 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 if (!w)
                     return;
                 auto &row = w->parent->routingTable.routes[w->index];
+
+                auto defaultLagForSource = GZTrait::defaultSmoothingTimeFor(sidx);
                 if (isVia)
+                {
                     row.sourceVia = sidx;
+                    row.sourceViaLagExp = true;
+                    row.sourceViaLagMS = defaultLagForSource;
+                }
                 else
+                {
                     row.source = sidx;
+                    row.sourceLagExp = true;
+                    row.sourceLagMS = defaultLagForSource;
+                }
                 w->pushRowUpdate();
                 w->refreshRow();
             };

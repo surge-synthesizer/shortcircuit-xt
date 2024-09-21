@@ -62,11 +62,7 @@ struct GroupMatrixConfig
         return scxt::modulation::ModulationCurves::getCurveOperator(id);
     }
 
-    static bool supportsLag(const SourceIdentifier &s)
-    {
-        SCLOG_ONCE("Supports Lag says 'yes' for all voice matrix values currently");
-        return true;
-    }
+    static bool supportsLag(const SourceIdentifier &s) { return true; }
 
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
@@ -79,6 +75,18 @@ struct GroupMatrixConfig
     {
         assert(isTargetModMatrixDepth(t));
         return (size_t)t.index;
+    }
+
+    static std::unordered_map<SourceIdentifier, int32_t> defaultLags;
+    static void setDefaultLagFor(const SourceIdentifier &s, int32_t v) { defaultLags[s] = v; }
+    static int32_t defaultLagFor(const SourceIdentifier &s)
+    {
+        auto r = defaultLags.find(s);
+        if (r != defaultLags.end())
+        {
+            return r->second;
+        }
+        return 0;
     }
 };
 
