@@ -147,6 +147,8 @@ std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool f
         return forMenu ? "TreeMonster" : "TREEMONSTER";
     case engine::bonsai:
         return forMenu ? "Bonsai" : "BONSAI";
+    case engine::rotaryspeaker:
+        return forMenu ? "Rotary Speaker" : "ROTARY";
     }
 
     return "GCC gives strictly correct, but not useful in this case, warnings";

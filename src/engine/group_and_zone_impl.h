@@ -65,9 +65,15 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
 
     if (tmpProcessor)
     {
+        ps.streamingVersion = tmpProcessor->getStreamingVersion();
         dsp::processor::unspawnProcessor(tmpProcessor);
     }
+    else
+    {
+        ps.streamingVersion = 0;
+    }
 
+    SCLOG("STREAMING VERSION IS " << ps.streamingVersion);
     asT()->onProcessorTypeChanged(whichProcessor, type);
 }
 

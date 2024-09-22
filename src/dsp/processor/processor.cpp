@@ -51,6 +51,8 @@ namespace detail
 using boolOp_t = bool (*)();
 using constCharOp_t = const char *(*)();
 using floatOp_t = float (*)();
+using int16Op_t = int16_t (*)();
+using reampFnOp_t = remapFn_t (*)();
 
 template <size_t I> bool implIsProcessorImplemented()
 {
@@ -126,6 +128,22 @@ template <size_t I> bool implGetForGroupOnly()
     return ProcessorForGroupOnly<(ProcessorType)I>::isGroupOnly;
 }
 
+template <size_t I> int16_t implGetStreamingVersion()
+{
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return 0;
+    else
+        return ProcessorImplementor<(ProcessorType)I>::T::streamingVersion;
+}
+
+template <size_t I> remapFn_t implGetRemapFn()
+{
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return nullptr;
+    else
+        return ProcessorImplementor<(ProcessorType)I>::T::remapParametersForStreamingVersion;
+}
+
 template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequence<Is...>)
 {
     constexpr constCharOp_t fnc[] = {detail::implGetProcessorDisplayGroup<Is>...};
@@ -135,6 +153,18 @@ template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequ
 template <size_t... Is> auto getProcessorDefaultMix(size_t ft, std::index_sequence<Is...>)
 {
     constexpr floatOp_t fnc[] = {detail::implGetProcessorDefaultMix<Is>...};
+    return fnc[ft]();
+}
+
+template <size_t... Is> auto getProcessorStreamingVersion(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr int16Op_t fnc[] = {detail::implGetStreamingVersion<Is>...};
+    return fnc[ft]();
+}
+
+template <size_t... Is> auto getProcessorRemapFn(size_t ft, std::index_sequence<Is...>)
+{
+    constexpr reampFnOp_t fnc[] = {detail::implGetRemapFn<Is>...};
     return fnc[ft]();
 }
 
@@ -222,6 +252,12 @@ const char *getProcessorStreamingName(ProcessorType id)
         id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
+remapFn_t getProcessorRemapParametersFromStreamingVersion(ProcessorType id)
+{
+    return detail::getProcessorRemapFn(
+        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
 const char *getProcessorDisplayGroup(ProcessorType id)
 {
     return detail::getProcessorDisplayGroup(
@@ -237,6 +273,12 @@ float getProcessorDefaultMix(ProcessorType id)
 bool getProcessorGroupOnly(ProcessorType id)
 {
     return detail::getForGroupOnly(
+        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
+int16_t getProcessorStreamingVersion(ProcessorType id)
+{
+    return detail::getProcessorStreamingVersion(
         id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
