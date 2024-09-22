@@ -28,6 +28,8 @@
 #ifndef SCXT_SRC_DSP_PROCESSOR_PROCESSOR_IMPL_H
 #define SCXT_SRC_DSP_PROCESSOR_PROCESSOR_IMPL_H
 
+#include <functional>
+
 #include "configuration.h"
 #include "processor.h"
 #include "engine/memory_pool.h"
@@ -158,7 +160,8 @@ HAS_MEMFN(enableKeytrack);
 HAS_MEMFN(getKeytrackDefault);
 HAS_MEMFN(getKeytrack);
 HAS_MEMFN(checkParameterConsistency);
-HAS_MEMFN(getMonoToStereoSetting)
+HAS_MEMFN(getMonoToStereoSetting);
+HAS_MEMFN(remapParametersForStreamingVersion);
 
 #undef HAS_MEMFN
 
@@ -175,6 +178,12 @@ template <typename T> struct SSTVoiceEffectShim : T
                             << " mono->stereo=" << HasMemFn_processMonoToStereo<T>::value
                             << " stereo->stereo=" << HasMemFn_processStereo<T>::value);
 #endif
+
+        static_assert(T::streamingVersion > 0,
+                      "All template processors need independent streaming version");
+        static_assert(HasMemFn_remapParametersForStreamingVersion<T>::value,
+                      "All template processors need a stream change handler");
+
         static_assert(std::is_same_v<decltype(&T::processStereo),
                                      void (T::*)(const float *const, const float *const, float *,
                                                  float *, float)>);
@@ -260,6 +269,7 @@ template <typename T> struct SSTVoiceEffectShim : T
         }
     }
 
+    int16_t getStreamingVersion() const override { return T::streamingVersion; }
     void onSampleRateChanged() override
     {
         if (mInitCalledOnce)

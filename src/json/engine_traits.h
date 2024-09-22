@@ -484,7 +484,8 @@ SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
                           {"isActive", from.isActive},
                           {"p", from.params},
                           {"deact", from.deact},
-                          {"temposync", from.isTemposync}};
+                          {"temposync", from.isTemposync},
+                          {"streamingVersion", from.streamingVersion}};
                  }
              }),
              SC_TO({
@@ -503,6 +504,24 @@ SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
                      findOrSet(v, "isActive", true, to.isActive);
                      findIf(v, "deact", to.deact);
                      findIf(v, "temposync", to.isTemposync);
+
+                     findOrSet(v, "streamingVersion", -1, result.streamingVersion);
+
+                     /*
+                      * If engine stream correct here
+                      */
+                     if (result.streamingVersion > 0)
+                     {
+                         auto [csv, fn] =
+                             scxt::engine::getBusEffectRemapStreamingFunction(result.type);
+                         if (csv != result.streamingVersion)
+                         {
+                             assert(fn);
+                             if (fn)
+                                 fn(result.streamingVersion, result.params.data());
+                             result.streamingVersion = csv;
+                         }
+                     }
                  }
              }));
 

@@ -92,6 +92,7 @@ enum AvailableBusEffects
     delay,
     treemonster,
     nimbus,
+    rotaryspeaker,
     bonsai // if you make bonsai not last, make sure to update the fromString range
 };
 
@@ -104,6 +105,7 @@ struct BusEffectStorage
     bool isTemposync{false};
     std::array<float, maxBusEffectParams> params{};
     std::array<bool, maxBusEffectParams> deact{};
+    int16_t streamingVersion;
 
     inline bool isDeactivated(int idx) { return deact[idx]; }
     inline bool isExtended(int idx) { return false; }
@@ -121,6 +123,8 @@ struct BusEffect
 };
 
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s);
+using busRemapFn_t = void (*)(int16_t, float *const);
+std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBusEffects);
 
 struct Bus : MoveableOnly<Bus>, SampleRateSupport
 {
@@ -248,6 +252,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "delay";
     case nimbus:
         return "nimbus";
+    case rotaryspeaker:
+        return "rotaryspeaker";
     case bonsai:
         return "bonsai";
     }

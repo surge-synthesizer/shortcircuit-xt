@@ -168,6 +168,9 @@ const char *getProcessorStreamingName(ProcessorType id);
 const char *getProcessorDisplayGroup(ProcessorType id);
 float getProcessorDefaultMix(ProcessorType id);
 bool getProcessorGroupOnly(ProcessorType id);
+int16_t getProcessorStreamingVersion(ProcessorType id);
+using remapFn_t = void (*)(int16_t, float *const, int *const);
+remapFn_t getProcessorRemapParametersFromStreamingVersion(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
 
 struct ProcessorDescription
@@ -206,6 +209,7 @@ struct ProcessorStorage
     bool isKeytracked{false};
     int previousIsKeytracked{-1}; // make this an int and -1 means don't know previous
     bool isTemposynced{false};
+    int16_t streamingVersion{-1};
 
     bool operator==(const ProcessorStorage &other) const
     {
@@ -282,6 +286,12 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     double *tempoPointer{nullptr};
     virtual void setTempoPointer(double *t) { tempoPointer = t; }
     virtual double *getTempoPointer() const { return tempoPointer; }
+
+    virtual int16_t getStreamingVersion() const
+    {
+        assert(false);
+        return -1;
+    }
 
     /*
      * The default behavior of a processor is stereo -> stereo and all

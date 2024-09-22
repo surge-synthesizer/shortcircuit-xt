@@ -39,59 +39,80 @@
 namespace scxt::json
 {
 
-SC_STREAMDEF(scxt::dsp::processor::ProcessorStorage, SC_FROM({
-                 auto &t = from;
-                 if (t.type == dsp::processor::proct_none)
-                 {
-                     v = tao::json::empty_object;
-                 }
-                 else
-                 {
-                     v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
-                          {"mix", t.mix},
-                          {"out", t.outputCubAmp},
-                          {"isKeytracked", t.isKeytracked},
-                          {"isTemposynced", t.isTemposynced},
-                          {"floatParams", t.floatParams},
-                          {"intParams", t.intParams},
-                          {"deactivated", t.deactivated},
-                          {"isActive", t.isActive}};
-                 }
-             }),
-             SC_TO({
-                 auto &result = to;
-                 const auto &object = v.get_object();
+SC_STREAMDEF(
+    scxt::dsp::processor::ProcessorStorage, SC_FROM({
+        auto &t = from;
+        if (t.type == dsp::processor::proct_none)
+        {
+            v = tao::json::empty_object;
+        }
+        else
+        {
+            v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
+                 {"mix", t.mix},
+                 {"out", t.outputCubAmp},
+                 {"isKeytracked", t.isKeytracked},
+                 {"isTemposynced", t.isTemposynced},
+                 {"floatParams", t.floatParams},
+                 {"intParams", t.intParams},
+                 {"deactivated", t.deactivated},
+                 {"isActive", t.isActive},
+                 {"streamingVersion", t.streamingVersion}};
+        }
+    }),
+    SC_TO({
+        auto &result = to;
+        const auto &object = v.get_object();
 
-                 std::string type;
-                 findOrSet(
-                     v, {"t", "type"},
-                     scxt::dsp::processor::getProcessorStreamingName(dsp::processor::proct_none),
-                     type);
+        std::string type;
+        findOrSet(v, {"t", "type"},
+                  scxt::dsp::processor::getProcessorStreamingName(dsp::processor::proct_none),
+                  type);
 
-                 auto optType = scxt::dsp::processor::fromProcessorStreamingName(type);
+        auto optType = scxt::dsp::processor::fromProcessorStreamingName(type);
 
-                 if (optType.has_value())
-                     result.type = *optType;
-                 else
-                     result.type = scxt::dsp::processor::proct_none;
+        if (optType.has_value())
+            result.type = *optType;
+        else
+            result.type = scxt::dsp::processor::proct_none;
 
-                 if (result.type == dsp::processor::proct_none)
-                 {
-                     result = scxt::dsp::processor::ProcessorStorage();
-                     result.type = dsp::processor::proct_none;
-                 }
-                 else
-                 {
-                     findIf(v, "mix", result.mix);
-                     findIf(v, "out", result.outputCubAmp);
-                     fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
-                     fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
-                     findIf(v, "deactivated", result.deactivated);
-                     findOrSet(v, "isActive", false, result.isActive);
-                     findOrSet(v, "isKeytracked", false, result.isKeytracked);
-                     findOrSet(v, "isTemposynced", false, result.isTemposynced);
-                 }
-             }))
+        if (result.type == dsp::processor::proct_none)
+        {
+            result = scxt::dsp::processor::ProcessorStorage();
+            result.type = dsp::processor::proct_none;
+        }
+        else
+        {
+            findIf(v, "mix", result.mix);
+            findIf(v, "out", result.outputCubAmp);
+            fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
+            fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
+            findIf(v, "deactivated", result.deactivated);
+            findOrSet(v, "isActive", false, result.isActive);
+            findOrSet(v, "isKeytracked", false, result.isKeytracked);
+            findOrSet(v, "isTemposynced", false, result.isTemposynced);
+            findOrSet(v, "streamingVersion", -1, result.streamingVersion);
+
+            /*
+             * If engine stream correct here
+             */
+            if (result.streamingVersion > 0)
+            {
+                auto csv = scxt::dsp::processor::getProcessorStreamingVersion(result.type);
+                if (csv != result.streamingVersion)
+                {
+                    auto remapFn =
+                        scxt::dsp::processor::getProcessorRemapParametersFromStreamingVersion(
+                            result.type);
+                    assert(remapFn);
+                    if (remapFn)
+                        remapFn(result.streamingVersion, result.floatParams.data(),
+                                result.intParams.data());
+                    result.streamingVersion = csv;
+                }
+            }
+        }
+    }))
 
 SC_STREAMDEF(scxt::dsp::processor::ProcessorDescription,
              SC_FROM({ // Streaming this type as an int is fine since the processor storage
