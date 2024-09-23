@@ -304,6 +304,42 @@ void HeaderRegion::doLoadMulti()
         });
 }
 
+void HeaderRegion::doSaveSelectedPart()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Save Selected Part", juce::File(editor->browser.patchIODirectory.u8string()), "*.scp");
+    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                 juce::FileBrowserComponent::saveMode |
+                                 juce::FileBrowserComponent::warnAboutOverwriting,
+                             [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 auto result = c.getResults();
+                                 if (result.isEmpty() || result.size() > 1)
+                                 {
+                                     return;
+                                 }
+                                 // send a 'save multi' message
+                                 w->sendToSerialization(cmsg::SaveSelectedPart(
+                                     result[0].getFullPathName().toStdString()));
+                             });
+}
+
+void HeaderRegion::doLoadIntoSelectedPart()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Load Part", juce::File(editor->browser.patchIODirectory.u8string()), "*.scp");
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            w->sendToSerialization(cmsg::LoadPartInto(
+                {result[0].getFullPathName().toStdString(), w->editor->selectedPart}));
+        });
+}
+
 void HeaderRegion::showSaveMenu()
 {
     auto p = juce::PopupMenu();
@@ -313,10 +349,22 @@ void HeaderRegion::showSaveMenu()
         if (w)
             w->doSaveMulti();
     });
+    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1),
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->doSaveSelectedPart();
+              });
+
+    p.addSeparator();
     p.addItem("Load Multi", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doLoadMulti();
     });
+    p.addItem("Load Part Into " + std::to_string(editor->selectedPart + 1),
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->doLoadIntoSelectedPart();
+              });
     p.addSeparator();
     p.addItem("Reset Engine To Blank", [w = juce::Component::SafePointer(this)]() {
         if (w)

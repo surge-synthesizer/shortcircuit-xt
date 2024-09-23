@@ -37,6 +37,7 @@ namespace scxt::json
 std::string streamPatch(const engine::Patch &p, bool pretty = false);
 std::string streamEngineState(const engine::Engine &e, bool pretty = false);
 void unstreamEngineState(engine::Engine &e, const std::string &jsonData, bool msgPack = false);
+void unstreamPartState(engine::Engine &e, int part, const std::string &jsonData, bool msgPack = false);
 } // namespace scxt::json
 
 #endif // SHORTCIRCUIT_STREAM_H

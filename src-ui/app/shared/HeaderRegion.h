@@ -109,6 +109,8 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void showSaveMenu();
     void doSaveMulti();
     void doLoadMulti();
+    void doSaveSelectedPart();
+    void doLoadIntoSelectedPart();
 
     void showMultiSelectionMenu();
 

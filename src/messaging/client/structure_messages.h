@@ -80,7 +80,7 @@ CLIENT_TO_SERIAL(RegisterClient, c2s_register_client, bool, doRegisterClient(eng
 inline void addSample(const std::string &payload, engine::Engine &engine, MessageController &cont)
 {
     assert(cont.threadingChecker.isSerialThread());
-    auto p = fs::path{payload};
+    auto p = fs::path(fs::u8path(payload));
     engine.loadSampleIntoSelectedPartAndGroup(p);
 }
 CLIENT_TO_SERIAL(AddSample, c2s_add_sample, std::string, addSample(payload, engine, cont);)
@@ -106,7 +106,7 @@ inline void addSampleInZone(const addSampleInZone_t &payload, engine::Engine &en
                             MessageController &cont)
 {
     assert(cont.threadingChecker.isSerialThread());
-    auto path = fs::path{std::get<0>(payload)};
+    auto path = fs::path(fs::u8path(std::get<0>(payload)));
     auto part{std::get<1>(payload)};
     auto group{std::get<2>(payload)};
     auto zone{std::get<3>(payload)};

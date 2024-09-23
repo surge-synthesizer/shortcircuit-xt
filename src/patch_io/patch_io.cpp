@@ -90,7 +90,7 @@ std::string readSCDataChunk(const std::unique_ptr<RIFF::File> &f)
 
 bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
 {
-    SCLOG("Made it to the patch code " << p.u8string());
+    SCLOG("Saving Multi to " << p.u8string());
 
     try
     {
@@ -100,6 +100,32 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
         auto f = std::make_unique<RIFF::File>('SCXT');
         f->SetByteOrder(RIFF::endian_little);
         addSCManifest(f, "multi");
+        addSCDataChunk(f, msg);
+
+        // TODO: If embeeding samples, add a list here with them
+        f->Save(p.u8string());
+    }
+    catch (const RIFF::Exception &e)
+    {
+        SCLOG(e.Message);
+    }
+    return true;
+}
+
+bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part)
+{
+    SCLOG("Saving part " << part << " to " << p.u8string());
+
+    try
+    {
+        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
+        // auto msg =
+        // tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
+        auto msg = tao::json::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
+
+        auto f = std::make_unique<RIFF::File>('SCXT');
+        f->SetByteOrder(RIFF::endian_little);
+        addSCManifest(f, "part");
         addSCDataChunk(f, msg);
 
         // TODO: If embeeding samples, add a list here with them
@@ -208,6 +234,56 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
             SCLOG("Unable to load [" << err.what() << "]");
         }
     }
+    return true;
+}
+
+bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
+{
+    SCLOG("loadPart " << p.u8string() << " " << part);
+
+    std::string payload;
+    try
+    {
+        auto f = std::make_unique<RIFF::File>(p.u8string());
+        auto manifest = readSCManifest(f);
+        payload = readSCDataChunk(f);
+    }
+    catch (const RIFF::Exception &e)
+    {
+        SCLOG("RIFF::Exception " << e.Message);
+        return false;
+    }
+
+    auto &cont = engine.getMessageController();
+    if (cont->isAudioRunning)
+    {
+        cont->stopAudioThreadThenRunOnSerial([payload, part, &nonconste = engine](auto &e) {
+            try
+            {
+                nonconste.stopAllSounds();
+                 scxt::json::unstreamPartState(nonconste, part, payload, false);
+                auto &cont = *e.getMessageController();
+                cont.restartAudioThreadFromSerial();
+            }
+            catch (std::exception &err)
+            {
+                SCLOG("Unable to load [" << err.what() << "]");
+            }
+        });
+    }
+    else
+    {
+        try
+        {
+            engine.stopAllSounds();
+            scxt::json::unstreamPartState(engine,part, payload, false);
+        }
+        catch (std::exception &err)
+        {
+            SCLOG("Unable to load [" << err.what() << "]");
+        }
+    }
+
     return true;
 }
 } // namespace scxt::patch_io

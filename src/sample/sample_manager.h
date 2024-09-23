@@ -114,6 +114,9 @@ struct SampleManager : MoveableOnly<SampleManager>
         }
         return res;
     }
+
+    sampleAddressesAndIds_t getSampleAddressesFor(const std::vector<SampleID> &) const;
+
     void restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &);
 
     void purgeUnreferencedSamples();

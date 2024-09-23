@@ -195,6 +195,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     groupContainer_t::iterator end() noexcept { return groups.end(); }
     groupContainer_t::const_iterator cend() const noexcept { return groups.cend(); }
 
+    std::vector<SampleID> getSamplesUsedByPart() const;
+
   private:
     groupContainer_t groups;
 };
