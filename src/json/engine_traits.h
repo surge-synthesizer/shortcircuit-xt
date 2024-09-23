@@ -182,7 +182,8 @@ SC_STREAMDEF(
 
             scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
             findIf(v, "samplesUsedByPart", samples);
-            to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(samples);
+            to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
+                samples);
 
             sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
         }

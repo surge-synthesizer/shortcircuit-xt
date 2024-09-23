@@ -102,7 +102,6 @@ void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPac
     e.sendFullRefreshToClient();
 }
 
-
 void unstreamPartState(engine::Engine &e, int part, const std::string &data, bool msgPack)
 {
     e.clearAll();

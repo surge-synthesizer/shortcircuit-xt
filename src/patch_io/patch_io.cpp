@@ -261,7 +261,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
             try
             {
                 nonconste.stopAllSounds();
-                 scxt::json::unstreamPartState(nonconste, part, payload, false);
+                scxt::json::unstreamPartState(nonconste, part, payload, false);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
             }
@@ -276,7 +276,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
         try
         {
             engine.stopAllSounds();
-            scxt::json::unstreamPartState(engine,part, payload, false);
+            scxt::json::unstreamPartState(engine, part, payload, false);
         }
         catch (std::exception &err)
         {
