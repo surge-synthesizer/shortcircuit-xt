@@ -34,14 +34,33 @@ namespace scxt::messaging::client
 {
 inline void doSaveMulti(const std::string &s, engine::Engine &engine, MessageController &cont)
 {
-    patch_io::saveMulti(fs::path{s}, engine);
+    patch_io::saveMulti(fs::path(fs::u8path(s)), engine);
 
     SCLOG("Remember to update the browser also");
     // engine.getBrowser()->doSomething;
 }
 CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, std::string, doSaveMulti(payload, engine, cont));
-
 CLIENT_TO_SERIAL(LoadMulti, c2s_load_multi, std::string,
-                 patch_io::loadMulti(fs::path{payload}, engine));
+                 patch_io::loadMulti(fs::path(fs::u8path(payload)), engine));
+
+inline void doSaveSelectedPart(const std::string &s, engine::Engine &engine,
+                               MessageController &cont)
+{
+    SCLOG("Saving part to " << s);
+    patch_io::savePart(fs::path(fs::u8path(s)), engine, engine.getSelectionManager()->selectedPart);
+    // engine.getBrowser()->doSomething;
+}
+CLIENT_TO_SERIAL(SaveSelectedPart, c2s_save_selected_part, std::string,
+                 doSaveSelectedPart(payload, engine, cont));
+
+using loadPartIntoPayload_t = std::tuple<std::string, int16_t>;
+inline void doLoadPartInto(const loadPartIntoPayload_t &payload, engine::Engine &engine,
+                           MessageController &cont)
+{
+    patch_io::loadPartInto(fs::path(fs::u8path(std::get<0>(payload))), engine,
+                           std::get<1>(payload));
+}
+CLIENT_TO_SERIAL(LoadPartInto, c2s_load_part_into, loadPartIntoPayload_t,
+                 doLoadPartInto(payload, engine, cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_PATCH_IO_MESSAGES_H

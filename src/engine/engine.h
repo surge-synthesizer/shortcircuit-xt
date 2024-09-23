@@ -350,6 +350,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         IN_PROCESS,
         FOR_MULTI,
+        FOR_PART,
         FOR_DAW
     };
     static thread_local StreamReason streamReason;

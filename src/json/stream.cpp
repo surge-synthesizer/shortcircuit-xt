@@ -101,4 +101,36 @@ void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPac
 
     e.sendFullRefreshToClient();
 }
+
+void unstreamPartState(engine::Engine &e, int part, const std::string &data, bool msgPack)
+{
+    e.clearAll();
+    if (msgPack)
+    {
+        tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
+        tao::json::msgpack::events::from_string(consumer, data);
+        auto jv = std::move(consumer.value);
+        jv.to(*(e.getPatch()->getPart(part)));
+    }
+    else
+    {
+        tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
+        tao::json::events::from_string(consumer, data);
+        auto jv = std::move(consumer.value);
+        jv.to(*(e.getPatch()->getPart(part)));
+    }
+
+    if (!e.getSampleManager()->missingList.empty())
+    {
+        std::ostringstream oss;
+        oss << "On load, sample manager could not locate the following files:\n";
+        for (const auto &p : e.getSampleManager()->missingList)
+        {
+            oss << "  " << p.u8string() << "\n";
+        }
+        e.getMessageController()->reportErrorToClient("Missing Samples", oss.str());
+    }
+
+    e.sendFullRefreshToClient();
+}
 } // namespace scxt::json

@@ -246,4 +246,24 @@ void SampleManager::updateSampleMemory()
     }
     sampleMemoryInBytes = res;
 }
+
+SampleManager::sampleAddressesAndIds_t
+SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
+{
+    SampleManager::sampleAddressesAndIds_t res;
+    for (const auto &sid : sids)
+    {
+        auto smp = getSample(sid);
+        if (!smp)
+        {
+            SCLOG("WARNING: Requested non-existant sample at " << sid.to_string());
+        }
+        else
+        {
+            res.emplace_back(sid, smp->getSampleFileAddress());
+        }
+    }
+    return res;
+}
+
 } // namespace scxt::sample

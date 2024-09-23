@@ -154,10 +154,39 @@ SC_STREAMDEF(
     scxt::engine::Part, SC_FROM({
         // TODO: Do a non-empty part stream with the If variant
         v = {{"config", from.configuration}, {"groups", from.getGroups()}, {"macros", from.macros}};
+        if (SC_STREAMING_FOR_PART)
+        {
+            addToObject<val_t>(v, "streamingVersion", currentStreamingVersion);
+            addToObject<val_t>(v, "streamedForPart", true);
+            assert(from.parentPatch->parentEngine);
+            addToObject<val_t>(
+                v, "samplesUsedByPart",
+                from.parentPatch->parentEngine->getSampleManager()->getSampleAddressesFor(
+                    from.getSamplesUsedByPart()));
+            SCLOG("ToDo - stream sample manager subset");
+        }
     }),
     SC_TO({
         auto &part = to;
         part.clearGroups();
+
+        std::unique_ptr<engine::Engine::UnstreamGuard> sg;
+        bool streamedForPart{false};
+        findOrSet(v, "streamedForPart", false, streamedForPart);
+        if (streamedForPart)
+        {
+            uint64_t partStreamingVersion{0};
+            findIf(v, "streamingVersion", partStreamingVersion);
+            SCLOG("Unstreaming part state. Stream version : "
+                  << scxt::humanReadableVersion(partStreamingVersion));
+
+            scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
+            findIf(v, "samplesUsedByPart", samples);
+            to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
+                samples);
+
+            sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
+        }
 
         if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
         {

@@ -84,4 +84,20 @@ Part::zoneMappingSummary_t Part::getZoneMappingSummary()
     }
     return res;
 }
+
+std::vector<SampleID> Part::getSamplesUsedByPart() const
+{
+    std::unordered_set<SampleID> resSet;
+    for (const auto &g : groups)
+    {
+        for (const auto &z : g->getZones())
+        {
+            for (const auto &var : z->variantData.variants)
+            {
+                resSet.insert(var.sampleID);
+            }
+        }
+    }
+    return std::vector<SampleID>(resSet.begin(), resSet.end());
+}
 } // namespace scxt::engine

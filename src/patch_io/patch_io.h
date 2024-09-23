@@ -35,8 +35,8 @@ namespace scxt::patch_io
 {
 bool saveMulti(const fs::path &toFile, const scxt::engine::Engine &);
 bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
-bool streamPart(const fs::path &toFile, const scxt::engine::Part &);
-bool unstreamPart(const fs::path &fromFile, scxt::engine::Part &);
+bool savePart(const fs::path &toFile, const scxt::engine::Engine &, int part);
+bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
 bool initFromResourceBundle(scxt::engine::Engine &e);
 } // namespace scxt::patch_io
