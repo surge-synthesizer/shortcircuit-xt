@@ -46,7 +46,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         MULTISAMPLE_FILE,
     } type{WAV_FILE};
 
-    Sample() : id(SampleID::next()) {}
+    Sample() {}
     Sample(const SampleID &sid) : displayName(sid.to_string()), id(sid) {}
     virtual ~Sample();
 

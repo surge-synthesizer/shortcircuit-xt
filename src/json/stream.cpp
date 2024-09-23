@@ -104,7 +104,7 @@ void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPac
 
 void unstreamPartState(engine::Engine &e, int part, const std::string &data, bool msgPack)
 {
-    e.clearAll();
+    e.getPatch()->getPart(part)->clearGroups();
     if (msgPack)
     {
         tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;

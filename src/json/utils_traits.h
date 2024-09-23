@@ -70,5 +70,30 @@ template <int idType> struct scxt_traits<ID<idType>>
         }
     }
 };
+
+SC_STREAMDEF(scxt::SampleID, SC_FROM(v = {{"m", from.md5}, {"a", from.multiAddress}});
+             , SC_TO(
+                   auto vs = v.find("m"); if (vs) {
+                       std::string m5;
+                       vs->to(m5);
+                       strncpy(to.md5, m5.c_str(), scxt::SampleID::md5len + 1);
+                       findIf(v, "a", to.multiAddress);
+                   } else {
+                       std::string legType{"t"}, legID{"i"};
+                       if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'06))
+                       {
+                           legType = "idType";
+                           legID = "id";
+                       }
+
+                       if (6 != v.at(legType).template as<int32_t>())
+                       {
+                           SCLOG("Unstreamed a non-6 type from legacy");
+                       }
+                       int32_t id;
+                       v.at(legID).to(id);
+                       to.setAsLegacy(id);
+                   }));
+
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_UTILS_TRAITS_H

@@ -35,6 +35,7 @@
 #include <functional>
 #include <filesystem>
 #include <thread>
+#include <array>
 
 #include <iostream>
 #include <map>
@@ -88,10 +89,60 @@ typedef ID<4> GroupID;
 template <> inline const std::string GroupID::display_name() const { return "Group"; }
 typedef ID<5> ZoneID;
 template <> inline const std::string ZoneID::display_name() const { return "Zone"; }
-typedef ID<6> SampleID;
-template <> inline const std::string SampleID::display_name() const { return "Sample"; }
 typedef ID<7> EngineID;
 template <> inline const std::string EngineID::display_name() const { return "Engine"; }
+
+struct SampleID
+{
+    static constexpr size_t md5len{32};
+    char md5[md5len + 1]{};
+    std::array<int, 3> multiAddress{-1, -1, -1};
+
+    SampleID() { setAsInvalid(); }
+
+    std::string to_string() const
+    {
+        if (multiAddress[0] == -1)
+            return fmt::format("SampleID:{}", std::string(md5));
+        else
+            return fmt::format("SampleID:{}@{}/{}/{}", std::string(md5), multiAddress[0],
+                               multiAddress[1], multiAddress[2]);
+    }
+
+    bool operator==(const SampleID &other) const
+    {
+        return strncmp(md5, other.md5, md5len) == 0 && multiAddress[0] == other.multiAddress[0] &&
+               multiAddress[1] == other.multiAddress[1] && multiAddress[2] == other.multiAddress[2];
+    }
+    bool operator!=(const SampleID &other) const { return !(other == *this); }
+
+    bool isValid() const { return md5[0] != 'x' && md5[1] != '\0'; }
+
+    void setAsInvalid()
+    {
+        memset(md5, 0, sizeof(md5));
+        std::fill(multiAddress.begin(), multiAddress.end(), -1);
+        md5[0] = '!';
+    }
+    void setAsMD5(const std::string &m)
+    {
+        strncpy(md5, m.c_str(), md5len + 1);
+        std::fill(multiAddress.begin(), multiAddress.end(), -1);
+    }
+    void setAsLegacy(int oldId)
+    {
+        auto ls = fmt::format("lgcy({})", oldId);
+        setAsMD5(ls);
+    }
+
+    void setAsMD5WithAddress(const std::string &m, int a0, int a1, int a2)
+    {
+        strncpy(md5, m.c_str(), md5len + 1);
+        multiAddress[0] = a0;
+        multiAddress[1] = a1;
+        multiAddress[2] = a2;
+    }
+};
 
 /**
  * A class which forces move semantics and optionally runs a naive leak detector
@@ -291,5 +342,21 @@ inline std::string humanReadableVersion(uint64_t v)
 template <int idType> struct std::hash<scxt::ID<idType>>
 {
     size_t operator()(const scxt::ID<idType> &v) const { return std::hash<int>()(v.id); }
+};
+
+template <> struct std::hash<scxt::SampleID>
+{
+    size_t operator()(const scxt::SampleID &v) const
+    {
+        auto mh = std::hash<std::string>()(v.md5);
+        for (int i = 0; i < 3; ++i)
+        {
+            if (v.multiAddress[i] >= 0)
+            {
+                mh = mh + ((v.multiAddress[i] + 1) << (i * 8));
+            }
+        }
+        return mh;
+    }
 };
 #endif
