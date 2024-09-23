@@ -42,6 +42,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
         }
         else
         {
+            std::optional<SampleID> nid;
             switch (addr.type)
             {
             case Sample::WAV_FILE:
@@ -49,20 +50,30 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
             case Sample::MP3_FILE:
             case Sample::AIFF_FILE:
             {
-                loadSampleByPathToID(addr.path, id);
+                nid = loadSampleByPath(addr.path);
             }
             break;
             case Sample::SF2_FILE:
             {
-                loadSampleFromSF2ToID(addr.path, nullptr, addr.preset, addr.instrument, addr.region,
-                                      id);
+                nid = loadSampleFromSF2(addr.path, nullptr, addr.preset, addr.instrument,
+                                        addr.region);
             }
             break;
             case Sample::MULTISAMPLE_FILE:
             {
-                loadSampleFromMultiSample(addr.path, addr.region, id);
+                nid = loadSampleFromMultiSample(addr.path, addr.region, id);
             }
             break;
+            }
+
+            if (nid.has_value())
+            {
+                if (*nid != id)
+                {
+                    SCLOG("Adding Alias ID [" << id.to_string() << "] -> [" << nid->to_string()
+                                              << "]");
+                    idAliases[id] = *nid;
+                }
             }
         }
     }
@@ -72,36 +83,17 @@ SampleManager::~SampleManager() { SCLOG("Destroying Sample Manager"); }
 
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {
-    for (const auto &[alreadyId, sm] : samples)
-    {
-        if (sm->getPath() == p)
-        {
-            return alreadyId;
-        }
-    }
-
-    return loadSampleByPathToID(p, SampleID::next());
-}
-
-std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, const SampleID &id)
-{
     assert(threadingChecker.isSerialThread());
-    SampleID::guaranteeNextAbove(id);
 
     for (const auto &[alreadyId, sm] : samples)
     {
         if (sm->getPath() == p)
         {
-            SCLOG("Potential concern: Asked to load '"
-                  << p.u8string() << "' into " << id.to_string() << " but it already exists at "
-                  << alreadyId.to_string());
             return alreadyId;
         }
     }
 
-    SCLOG("Loading [" << p.u8string() << "]  @ [" << id.to_string() << "]");
-
-    auto sp = std::make_shared<Sample>(id);
+    auto sp = std::make_shared<Sample>();
 
     if (!sp->load(p))
     {
@@ -110,19 +102,15 @@ std::optional<SampleID> SampleManager::loadSampleByPathToID(const fs::path &p, c
     }
 
     samples[sp->id] = sp;
+    SCLOG("Loading : " << p.u8string());
+    SCLOG("        : " << sp->id.to_string());
+
     updateSampleMemory();
     return sp->id;
 }
 
 std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2::File *f,
                                                          int preset, int instrument, int region)
-{
-    return loadSampleFromSF2ToID(p, f, preset, instrument, region, SampleID::next());
-}
-
-std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, sf2::File *f,
-                                                             int preset, int instrument, int region,
-                                                             const SampleID &sid)
 {
     if (!f)
     {
@@ -134,8 +122,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 auto sf = std::make_unique<sf2::File>(riff.get());
-                sf2FilesByPath[p.u8string()] = {std::move(riff), std::move(sf),
-                                                infrastructure::createMD5SumFromFile(p)};
+                sf2FilesByPath[p.u8string()] = {std::move(riff), std::move(sf)};
             }
             catch (RIFF::Exception e)
             {
@@ -144,6 +131,9 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
         }
         f = std::get<1>(sf2FilesByPath[p.u8string()]).get();
     }
+
+    if (sf2MD5ByPath.find(p.u8string()) == sf2MD5ByPath.end())
+        sf2MD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
 
     assert(f);
     for (const auto &[id, sm] : samples)
@@ -156,23 +146,29 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2ToID(const fs::path &p, 
         }
     }
 
-    auto sp = std::make_shared<Sample>(sid);
+    auto sp = std::make_shared<Sample>();
 
     if (!sp->loadFromSF2(p, f, preset, instrument, region))
         return {};
 
-    sp->md5Sum = std::get<2>(sf2FilesByPath[p.u8string()]);
+    sp->md5Sum = sf2MD5ByPath[p.u8string()];
+    assert(!sp->md5Sum.empty());
+    sp->id.setAsMD5WithAddress(sp->md5Sum, preset, instrument, region);
+
+    SCLOG("Loading : " << p.u8string());
+    SCLOG("        : " << sp->id.to_string());
 
     samples[sp->id] = sp;
     updateSampleMemory();
     return sp->id;
 }
 
-std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &p, int idx,
+std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &p,
+                                                                const std::string &md5, int idx,
                                                                 void *data, size_t dataSize)
 {
-    auto sid = SampleID::next();
-    auto sp = std::make_shared<Sample>(sid);
+    auto sp = std::make_shared<Sample>();
+    sp->id.setAsMD5WithAddress(md5, idx, -1, -1);
 
     sp->parse_riff_wave(data, dataSize);
     sp->type = Sample::MULTISAMPLE_FILE;
@@ -208,6 +204,9 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
 
     free(data);
 
+    SCLOG("Loading : " << p.u8string());
+    SCLOG("        : " << sp->id.to_string());
+
     return sp->id;
 }
 
@@ -220,8 +219,8 @@ void SampleManager::purgeUnreferencedSamples()
         auto ct = b->second.use_count();
         if (ct <= 1)
         {
-            SCLOG("Purging sample " << b->first.to_string() << " from "
-                                    << b->second->mFileName.u8string())
+            SCLOG("Purging : " << b->second->mFileName.u8string());
+            SCLOG("        : " << b->first.to_string());
             b = samples.erase(b);
         }
         else

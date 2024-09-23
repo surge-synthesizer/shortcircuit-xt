@@ -70,6 +70,9 @@ bool Sample::load(const fs::path &path)
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
         type = WAV_FILE;
+
+        id.setAsMD5(md5Sum);
+
         return true;
     }
     else if (extensionMatches(path, ".flac"))
@@ -80,6 +83,9 @@ bool Sample::load(const fs::path &path)
             type = FLAC_FILE;
             mFileName = path;
             displayName = fmt::format("{}", path.filename().u8string());
+
+            id.setAsMD5(md5Sum);
+
             return true;
         }
     }
@@ -91,6 +97,9 @@ bool Sample::load(const fs::path &path)
             type = MP3_FILE;
             mFileName = path;
             displayName = fmt::format("{}", path.filename().u8string());
+
+            id.setAsMD5(md5Sum);
+
             return true;
         }
     }
@@ -108,6 +117,9 @@ bool Sample::load(const fs::path &path)
         sample_loaded = true;
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
+
+        id.setAsMD5(md5Sum);
+
         return true;
     }
 

@@ -119,7 +119,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
                                                   &ssize, 0);
 
         auto lsid = engine.getSampleManager()->setupSampleFromMultifile(
-            p, fileToIndex[fc->Attribute("file")], data, ssize);
+            p, md5, fileToIndex[fc->Attribute("file")], data, ssize);
         free(data);
 
         if (!lsid.has_value())

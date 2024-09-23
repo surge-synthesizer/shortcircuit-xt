@@ -197,6 +197,15 @@ void Zone::setupOnUnstream(const engine::Engine &e)
     auto nbSampleLoaded{getNumSampleLoaded()};
     for (auto i = 0; i < nbSampleLoaded; ++i)
     {
+        auto oid = variantData.variants[i].sampleID;
+        auto nid = e.getSampleManager()->resolveAlias(oid);
+
+        if (nid != oid)
+        {
+            SCLOG("Relabeling zone on change : " << oid.to_string() << " -> " << nid.to_string());
+            variantData.variants[i].sampleID = nid;
+        }
+
         attachToSample(*(e.getSampleManager()), i, Zone::NONE);
     }
     for (int p = 0; p < processorCount; ++p)

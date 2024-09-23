@@ -81,18 +81,13 @@ struct SampleManager : MoveableOnly<SampleManager>
                                                         const SampleID &);
 
     std::optional<SampleID> loadSampleByPath(const fs::path &);
-    std::optional<SampleID> loadSampleByPathToID(const fs::path &, const SampleID &id);
 
     std::optional<SampleID> loadSampleFromSF2(const fs::path &,
                                               sf2::File *f, // if this is null I will re-open it
                                               int preset, int instrument, int region);
-    std::optional<SampleID> loadSampleFromSF2ToID(const fs::path &,
-                                                  sf2::File *f, // if this is null I will re-open it
-                                                  int preset, int instrument, int region,
-                                                  const SampleID &id);
 
-    std::optional<SampleID> setupSampleFromMultifile(const fs::path &, int idx, void *data,
-                                                     size_t dataSize);
+    std::optional<SampleID> setupSampleFromMultifile(const fs::path &, const std::string &md5,
+                                                     int idx, void *data, size_t dataSize);
     std::optional<SampleID> loadSampleFromMultiSample(const fs::path &, int idx,
                                                       const SampleID &id);
 
@@ -101,6 +96,12 @@ struct SampleManager : MoveableOnly<SampleManager>
         auto p = samples.find(id);
         if (p != samples.end())
             return p->second;
+
+        auto alias = idAliases.find(id);
+        if (alias != idAliases.end())
+        {
+            return getSample(alias->second);
+        }
         return {};
     }
 
@@ -136,13 +137,25 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     std::atomic<uint64_t> sampleMemoryInBytes{0};
 
+    void addIdAlias(const SampleID &from, const SampleID &to) { idAliases[from] = to; }
+
+    SampleID resolveAlias(const SampleID &a)
+    {
+        auto ap = idAliases.find(a);
+        if (ap == idAliases.end())
+            return a;
+        return resolveAlias(ap->second);
+    }
+
   private:
     void updateSampleMemory();
-
+    std::unordered_map<SampleID, SampleID> idAliases;
     std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
+
     std::unordered_map<std::string, std::tuple<std::unique_ptr<RIFF::File>,
-                                               std::unique_ptr<sf2::File>, std::string>>
+                                               std::unique_ptr<sf2::File>>>
         sf2FilesByPath; // last is the md5sum
+    std::unordered_map<std::string, std::string> sf2MD5ByPath;
 
     std::unordered_map<std::string, std::unique_ptr<ZipArchiveHolder>> zipArchives;
 };

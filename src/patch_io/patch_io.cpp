@@ -119,9 +119,7 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part)
     try
     {
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
-        // auto msg =
-        // tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
-        auto msg = tao::json::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
+        auto msg = tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
 
         auto f = std::make_unique<RIFF::File>('SCXT');
         f->SetByteOrder(RIFF::endian_little);
@@ -261,7 +259,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
             try
             {
                 nonconste.stopAllSounds();
-                scxt::json::unstreamPartState(nonconste, part, payload, false);
+                scxt::json::unstreamPartState(nonconste, part, payload, true);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
             }
@@ -276,7 +274,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
         try
         {
             engine.stopAllSounds();
-            scxt::json::unstreamPartState(engine, part, payload, false);
+            scxt::json::unstreamPartState(engine, part, payload, true);
         }
         catch (std::exception &err)
         {
