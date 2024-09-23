@@ -35,6 +35,7 @@
 #include <functional>
 #include <filesystem>
 #include <thread>
+#include <array>
 
 #include <iostream>
 #include <map>
