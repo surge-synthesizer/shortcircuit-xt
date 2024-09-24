@@ -104,6 +104,7 @@ void PartEffectsPane::rebuild()
         CS(nimbus);
         CS(phaser);
         CS(treemonster);
+        CS(floatydelay);
         CS(bonsai);
 
     case engine::AvailableBusEffects::none:

@@ -145,6 +145,8 @@ std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool f
         return forMenu ? "Nimbus" : "NIMBUS";
     case engine::treemonster:
         return forMenu ? "TreeMonster" : "TREEMONSTER";
+    case engine::floatydelay:
+        return forMenu ? "FloatyDelay" : "FLOATYDELAY";
     case engine::bonsai:
         return forMenu ? "Bonsai" : "BONSAI";
     }
@@ -180,6 +182,7 @@ void MixerScreen::showFXSelectionMenu(int bus, int slot)
     add(engine::AvailableBusEffects::phaser);
     add(engine::AvailableBusEffects::treemonster);
     add(engine::AvailableBusEffects::nimbus);
+    add(engine::AvailableBusEffects::floatydelay);
     add(engine::AvailableBusEffects::bonsai);
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

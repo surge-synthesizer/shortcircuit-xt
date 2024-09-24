@@ -75,10 +75,10 @@ struct Engine;
  *      - in createEffect
  * - src-ui/json-layout/bus-effects
  *      - add 'foo.json' as a blank ("{}") json file
- * - src-ui/componetns/MixerScreen.cpp
+ * - src-ui/app/mixer_screem/MixerScreen.cpp
  *      - the menu switch
  *      - the call to 'add'
- *  - src-ui/components/mixer/PartEffectsPane.cpop
+ *  - src-ui/app/mixer_screen/components/PartEffectsPane.cpp
  *      - in the rebuild switch with the name of the json (Look for CS(...))
  *
  */
@@ -92,6 +92,7 @@ enum AvailableBusEffects
     delay,
     treemonster,
     nimbus,
+    floatydelay,
     bonsai // if you make bonsai not last, make sure to update the fromString range
 };
 
@@ -248,6 +249,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "delay";
     case nimbus:
         return "nimbus";
+    case floatydelay:
+        return "floatydelay";
     case bonsai:
         return "bonsai";
     }

@@ -46,6 +46,7 @@
 #include "sst/effects/Bonsai.h"
 #include "sst/effects/TreeMonster.h"
 #include "sst/effects/NimbusImpl.h"
+#include "sst/effects/FloatyDelay.h"
 #include "sst/effects/EffectCoreDetails.h"
 
 #include "sst/basic-blocks/mechanics/block-ops.h"
@@ -189,6 +190,9 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     case nimbus:
         return std::make_unique<dtl::Impl<sfx::nimbus::Nimbus<dtl::Config>>>(e, s,
                                                                              s->params.data());
+    case floatydelay:
+        return std::make_unique<dtl::Impl<sfx::floatydelay::FloatyDelay<dtl::Config>>>(
+            e, s, s->params.data());
     case bonsai:
         return std::make_unique<dtl::Impl<sfx::bonsai::Bonsai<dtl::Config>>>(e, s,
                                                                              s->params.data());
