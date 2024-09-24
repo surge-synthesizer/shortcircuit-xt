@@ -137,7 +137,7 @@ std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool f
         return forMenu ? "Phaser" : "PHASER";
     case engine::delay:
         return forMenu ? "Delay" : "DELAY";
-    case engine::delay:
+    case engine::floatydelay:
         return forMenu ? "Floaty Delay" : "FLOATY DELAY";
     case engine::reverb1:
         return forMenu ? "Reverb 1" : "REVERB 1";
