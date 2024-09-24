@@ -255,6 +255,8 @@ std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBus
         return RETVAL(treemonster::TreeMonster);
     case delay:
         return RETVAL(delay::Delay);
+    case floatydelay:
+        return RETVAL(floatydelay::FloatyDelay);
     case nimbus:
         return RETVAL(nimbus::Nimbus);
     case rotaryspeaker:
