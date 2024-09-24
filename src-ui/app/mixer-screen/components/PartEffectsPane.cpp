@@ -101,6 +101,7 @@ void PartEffectsPane::rebuild()
         CS(reverb2)
         CS(flanger);
         CS(delay);
+        CS(floatydelay);
         CS(nimbus);
         CS(phaser);
         CS(treemonster);
