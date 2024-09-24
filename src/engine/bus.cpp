@@ -43,6 +43,7 @@
 #include "sst/effects/Flanger.h"
 #include "sst/effects/Phaser.h"
 #include "sst/effects/Delay.h"
+#include "sst/effects/FloatyDelay.h"
 #include "sst/effects/Bonsai.h"
 #include "sst/effects/TreeMonster.h"
 #include "sst/effects/NimbusImpl.h"
@@ -212,6 +213,10 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     case delay:
         return std::make_unique<dtl::Impl<sfx::delay::Delay<dtl::Config>>>(e, s, s->params.data());
 
+    case floatydelay:
+        return std::make_unique<dtl::Impl<sfx::floatydelay::FloatyDelay<dtl::Config>>>(
+            e, s, s->params.data());
+
     case nimbus:
         return std::make_unique<dtl::Impl<sfx::nimbus::Nimbus<dtl::Config>>>(e, s,
                                                                              s->params.data());
@@ -250,6 +255,8 @@ std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBus
         return RETVAL(treemonster::TreeMonster);
     case delay:
         return RETVAL(delay::Delay);
+    case floatydelay:
+        return RETVAL(floatydelay::FloatyDelay);
     case nimbus:
         return RETVAL(nimbus::Nimbus);
     case rotaryspeaker:

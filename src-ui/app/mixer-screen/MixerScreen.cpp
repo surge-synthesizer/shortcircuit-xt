@@ -137,6 +137,8 @@ std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool f
         return forMenu ? "Phaser" : "PHASER";
     case engine::delay:
         return forMenu ? "Delay" : "DELAY";
+    case engine::floatydelay:
+        return forMenu ? "Floaty Delay" : "FLOATY DELAY";
     case engine::reverb1:
         return forMenu ? "Reverb 1" : "REVERB 1";
     case engine::reverb2:
@@ -178,6 +180,7 @@ void MixerScreen::showFXSelectionMenu(int bus, int slot)
     add(engine::AvailableBusEffects::reverb1);
     add(engine::AvailableBusEffects::reverb2);
     add(engine::AvailableBusEffects::delay);
+    add(engine::AvailableBusEffects::floatydelay);
     add(engine::AvailableBusEffects::flanger);
     add(engine::AvailableBusEffects::phaser);
     add(engine::AvailableBusEffects::treemonster);
