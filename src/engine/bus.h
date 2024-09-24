@@ -251,6 +251,8 @@ inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
         return "phaser";
     case delay:
         return "delay";
+    case floatydelay:
+        return "floatydelay";
     case nimbus:
         return "nimbus";
     case rotaryspeaker:
