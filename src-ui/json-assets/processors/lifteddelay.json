@@ -1,119 +1,119 @@
 {
-  "defaults": {
-    "coordinate-system": "absolute",
-    "component": "knob",
-    "type": "float"
-  },
-  "components": [
-    {
-      "index": 0,
-      "coordinates": [
-        5,
-        2,
-        50,
-        50
-      ],
-      "label": "Left"
+    "defaults": {
+        "coordinate-system": "absolute",
+        "component": "knob",
+        "type": "float"
     },
-    {
-      "index": 1,
-      "coordinates": [
-        60,
-        2,
-        50,
-        50
-      ],
-      "label": "Right"
-    },
-    {
-      "index": 2,
-      "coordinates": [
-        5,
-        92,
-        40,
-        40
-      ],
-      "label": "F/B"
-    },
-    {
-      "index": 3,
-      "coordinates": [
-        45,
-        92,
-        40,
-        40
-      ],
-      "label": "Cross"
-    },
-    {
-      "component": "subheader",
-      "coordinates": [
-        7,
-        75,
-        86,
-        15
-      ],
-      "label": "Feedback"
-    },
-    {
-      "index": 4,
-      "coordinates": [
-        95,
-        92,
-        40,
-        40
-      ],
-      "label": "LoCut"
-    },
-    {
-      "index": 5,
-      "coordinates": [
-        140,
-        92,
-        40,
-        40
-      ],
-      "label": "HiCut"
-    },
-    {
-      "component": "subheader",
-      "coordinates": [
-        97,
-        75,
-        86,
-        15
-      ],
-      "label": "Filter"
-    },
-    {
-      "index": 6,
-      "coordinates": [
-        122,
-        20,
-        30,
-        30
-      ],
-      "label": "Rate"
-    },
-    {
-      "index": 7,
-      "coordinates": [
-        155,
-        20,
-        30,
-        30
-      ],
-      "label": "Amt"
-    },
-    {
-      "component": "subheader",
-      "coordinates": [
-        122,
-        4,
-        65,
-        15
-      ],
-      "label": "Mod"
-    }
-  ]
+    "components": [
+        {
+            "index": 0,
+            "coordinates": [
+                5,
+                2,
+                50,
+                50
+            ],
+            "label": "Left"
+        },
+        {
+            "index": 1,
+            "coordinates": [
+                60,
+                2,
+                50,
+                50
+            ],
+            "label": "Right"
+        },
+        {
+            "index": 2,
+            "coordinates": [
+                5,
+                92,
+                40,
+                40
+            ],
+            "label": "F/B"
+        },
+        {
+            "index": 3,
+            "coordinates": [
+                45,
+                92,
+                40,
+                40
+            ],
+            "label": "Cross"
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                7,
+                75,
+                86,
+                15
+            ],
+            "label": "Feedback"
+        },
+        {
+            "index": 4,
+            "coordinates": [
+                95,
+                92,
+                40,
+                40
+            ],
+            "label": "LoCut"
+        },
+        {
+            "index": 5,
+            "coordinates": [
+                140,
+                92,
+                40,
+                40
+            ],
+            "label": "HiCut"
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                97,
+                75,
+                86,
+                15
+            ],
+            "label": "Filter"
+        },
+        {
+            "index": 6,
+            "coordinates": [
+                122,
+                20,
+                30,
+                30
+            ],
+            "label": "Rate"
+        },
+        {
+            "index": 7,
+            "coordinates": [
+                155,
+                20,
+                30,
+                30
+            ],
+            "label": "Amt"
+        },
+        {
+            "component": "subheader",
+            "coordinates": [
+                122,
+                4,
+                65,
+                15
+            ],
+            "label": "Mod"
+        }
+    ]
 }

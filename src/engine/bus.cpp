@@ -212,10 +212,11 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
             e, s, s->params.data());
     case delay:
         return std::make_unique<dtl::Impl<sfx::delay::Delay<dtl::Config>>>(e, s, s->params.data());
-            
+
     case floatydelay:
-        return std::make_unique<dtl::Impl<sfx::floatydelay::FloatyDelay<dtl::Config>>>(e, s, s->params.data());
-            
+        return std::make_unique<dtl::Impl<sfx::floatydelay::FloatyDelay<dtl::Config>>>(
+            e, s, s->params.data());
+
     case nimbus:
         return std::make_unique<dtl::Impl<sfx::nimbus::Nimbus<dtl::Config>>>(e, s,
                                                                              s->params.data());
