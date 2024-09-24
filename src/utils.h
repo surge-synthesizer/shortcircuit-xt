@@ -96,16 +96,19 @@ struct SampleID
 {
     static constexpr size_t md5len{32};
     char md5[md5len + 1]{};
-    std::array<int, 3> multiAddress{-1, -1, -1};
+
+    static constexpr int unusedAddress{-1};
+    std::array<int, 3> multiAddress{unusedAddress, unusedAddress, unusedAddress};
 
     SampleID() { setAsInvalid(); }
 
     std::string to_string() const
     {
-        if (multiAddress[0] == -1)
-            return fmt::format("SampleID:{}", std::string(md5));
+        std::string hd{"SampleID"};
+        if (multiAddress[0] == unusedAddress)
+            return fmt::format("{}:{}", hd, std::string(md5));
         else
-            return fmt::format("SampleID:{}@{}/{}/{}", std::string(md5), multiAddress[0],
+            return fmt::format("{}:{}@{}/{}/{}", hd, std::string(md5), multiAddress[0],
                                multiAddress[1], multiAddress[2]);
     }
 
@@ -121,13 +124,13 @@ struct SampleID
     void setAsInvalid()
     {
         memset(md5, 0, sizeof(md5));
-        std::fill(multiAddress.begin(), multiAddress.end(), -1);
+        std::fill(multiAddress.begin(), multiAddress.end(), unusedAddress);
         md5[0] = '!';
     }
     void setAsMD5(const std::string &m)
     {
         strncpy(md5, m.c_str(), md5len + 1);
-        std::fill(multiAddress.begin(), multiAddress.end(), -1);
+        std::fill(multiAddress.begin(), multiAddress.end(), unusedAddress);
     }
     void setAsLegacy(int oldId)
     {

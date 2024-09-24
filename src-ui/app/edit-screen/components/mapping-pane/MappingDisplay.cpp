@@ -313,11 +313,11 @@ void MappingDisplay::setLeadSelection(const selection::SelectionManager::ZoneAdd
     bool foundZone{false};
     for (const auto &s : summary)
     {
-        if (s.first == za)
+        if (s.address == za)
         {
             foundZone = true;
             if (mappingZones)
-                mappingZones->setLeadZoneBounds(s.second);
+                mappingZones->setLeadZoneBounds(s);
         }
     }
 

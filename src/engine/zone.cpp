@@ -433,5 +433,24 @@ void Zone::onRoutingChanged()
     //                      << SCD(lfosActive[3]) << SCD(egsActive[0]) << SCD(egsActive[1]))
 }
 
+int16_t Zone::missingSampleCount() const
+{
+    int idx{0};
+    int ct{0};
+    for (auto &sv : variantData.variants)
+    {
+        if (sv.active)
+        {
+            auto smp = samplePointers[idx];
+            if (smp && smp->isMissingPlaceholder)
+            {
+                ct++;
+            }
+        }
+        idx++;
+    }
+    return ct;
+}
+
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine

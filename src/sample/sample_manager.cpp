@@ -39,6 +39,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
         if (!fs::exists(addr.path))
         {
             missingList.push_back(addr.path);
+            addSampleAsMissing(id, addr);
         }
         else
         {
@@ -263,6 +264,20 @@ SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
         }
     }
     return res;
+}
+
+void SampleManager::addSampleAsMissing(const SampleID &id, const Sample::SampleFileAddress &f)
+{
+    if (samples.find(id) == samples.end())
+    {
+        auto ms = Sample::createMissingPlaceholder(f);
+        ms->id = id;
+
+        SCLOG("Missing : " << f.path.u8string());
+        SCLOG("        : " << id.to_string());
+
+        samples[id] = ms;
+    }
 }
 
 } // namespace scxt::sample

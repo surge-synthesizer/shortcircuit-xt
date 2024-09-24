@@ -28,6 +28,7 @@
 #include "ZoneLayoutDisplay.h"
 #include "ZoneLayoutKeyboard.h"
 #include "MappingDisplay.h"
+#include "engine/feature_enums.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -47,16 +48,16 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
 
         for (auto &z : display->summary)
         {
-            auto r = rectangleForZone(z.second);
+            auto r = rectangleForZone(z);
             if (r.contains(e.position))
             {
-                gotOne = display->editor->isSelected(z.first);
+                gotOne = display->editor->isSelected(z.address);
                 if (!gotOne)
                 {
                     gotOne = true;
-                    display->editor->doSelectionAction(z.first, true, false, true);
+                    display->editor->doSelectionAction(z.address, true, false, true);
                 }
-                za = z.first;
+                za = z.address;
             }
         }
         if (gotOne)
@@ -121,10 +122,10 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     std::vector<selection::SelectionManager::ZoneAddress> potentialZones;
     for (auto &z : display->summary)
     {
-        auto r = rectangleForZone(z.second);
-        if (r.contains(e.position) && display->editor->isAnyZoneFromGroupSelected(z.first.group))
+        auto r = rectangleForZone(z);
+        if (r.contains(e.position) && display->editor->isAnyZoneFromGroupSelected(z.address.group))
         {
-            potentialZones.push_back(z.first);
+            potentialZones.push_back(z.address);
         }
     }
     selection::SelectionManager::ZoneAddress nextZone;
@@ -461,9 +462,9 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
             const auto &sel = *(display->editor->currentLeadZoneSelection);
             for (const auto &z : display->summary)
             {
-                if (!(z.first == sel))
+                if (!(z.address == sel))
                     continue;
-                if (rz.intersects(rectangleForZone(z.second)))
+                if (rz.intersects(rectangleForZone(z)))
                     selectedLead = true;
             }
         }
@@ -472,14 +473,14 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         bool first = true;
         for (const auto &z : display->summary)
         {
-            if (rz.intersects(rectangleForZone(z.second)))
+            if (rz.intersects(rectangleForZone(z)))
             {
-                display->editor->doSelectionAction(z.first, true, false, first && firstAsLead);
+                display->editor->doSelectionAction(z.address, true, false, first && firstAsLead);
                 first = false;
             }
             else if (!additiveSelect)
             {
-                display->editor->doSelectionAction(z.first, false, false, false);
+                display->editor->doSelectionAction(z.address, false, false, false);
             }
         }
     }
@@ -521,7 +522,8 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
 juce::Rectangle<float>
 ZoneLayoutDisplay::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 {
-    const auto &[kb, vel, name] = sum;
+    const auto &kb = sum.kr;
+    const auto &vel = sum.vr;
     return rectangleForRange(kb.keyStart, kb.keyEnd, vel.velStart, vel.velEnd + 1);
 }
 
@@ -641,26 +643,39 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
     {
         for (const auto &z : display->summary)
         {
-            if (!display->editor->isAnyZoneFromGroupSelected(z.first.group))
+            if (!display->editor->isAnyZoneFromGroupSelected(z.address.group))
                 continue;
 
-            if (display->editor->isSelected(z.first) != drawSelected)
+            if (display->editor->isSelected(z.address) != drawSelected)
                 continue;
 
-            if (z.first == display->editor->currentLeadZoneSelection)
+            if (z.address == display->editor->currentLeadZoneSelection)
                 continue;
 
-            auto r = rectangleForZone(z.second);
+            auto r = rectangleForZone(z);
 
             auto borderColor = editor->themeColor(theme::ColorMap::accent_2a);
             auto fillColor = editor->themeColor(theme::ColorMap::accent_2b).withAlpha(0.32f);
             auto textColor = editor->themeColor(theme::ColorMap::accent_2a);
 
+            if (z.features & engine::ZoneFeatures::MISSING_SAMPLE)
+            {
+                borderColor = editor->themeColor(theme::ColorMap::warning_1b);
+                fillColor = editor->themeColor(theme::ColorMap::warning_1b).withAlpha(0.32f);
+                textColor = editor->themeColor(theme::ColorMap::warning_1a);
+            }
             if (drawSelected)
             {
                 borderColor = editor->themeColor(theme::ColorMap::accent_1b);
                 fillColor = borderColor.withAlpha(0.32f);
                 textColor = editor->themeColor(theme::ColorMap::accent_1a);
+
+                if (z.features & engine::ZoneFeatures::MISSING_SAMPLE)
+                {
+                    borderColor = editor->themeColor(theme::ColorMap::warning_1a);
+                    fillColor = editor->themeColor(theme::ColorMap::warning_1a).withAlpha(0.32f);
+                    textColor = editor->themeColor(theme::ColorMap::warning_1a);
+                }
             }
 
             g.setColour(fillColor);
@@ -668,9 +683,9 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             g.setColour(borderColor);
             g.drawRect(r, 1.f);
 
-            labelZoneRectangle(g, r, std::get<2>(z.second), textColor);
+            labelZoneRectangle(g, r, z.name, textColor);
 
-            auto ct = display->voiceCountFor(z.first);
+            auto ct = display->voiceCountFor(z.address);
             drawVoiceMarkers(r, ct);
         }
     }
@@ -681,12 +696,20 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
         for (const auto &z : display->summary)
         {
-            if (!(z.first == sel))
+            if (!(z.address == sel))
                 continue;
 
-            const auto &[kb, vel, name] = z.second;
+            const auto &kb = z.kr;
+            const auto &vel = z.vr;
+            const auto &name = z.name;
 
             auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1a);
+            auto borderColor = selZoneColor;
+            if (z.features & engine::ZoneFeatures::MISSING_SAMPLE)
+            {
+                selZoneColor = editor->themeColor(theme::ColorMap::warning_1a);
+                borderColor = editor->themeColor(theme::ColorMap::accent_1a);
+            }
             auto c1{selZoneColor.withAlpha(0.f)};
             auto c2{selZoneColor.withAlpha(0.5f)};
 
@@ -899,14 +922,13 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                     }
                 }
             }
-            auto r = rectangleForZone(z.second);
-            g.setColour(selZoneColor);
+            auto r = rectangleForZone(z);
+            g.setColour(borderColor);
             g.drawRect(r, 3.f);
 
-            labelZoneRectangle(g, r, std::get<2>(z.second),
-                               editor->themeColor(theme::ColorMap::accent_1a));
+            labelZoneRectangle(g, r, z.name, editor->themeColor(theme::ColorMap::accent_1a));
 
-            auto ct = display->voiceCountFor(z.first);
+            auto ct = display->voiceCountFor(z.address);
             drawVoiceMarkers(r, ct);
         }
     }
@@ -929,7 +951,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             for (const auto &z : display->summary)
             {
-                auto rz = rectangleForZone(z.second);
+                auto rz = rectangleForZone(z);
                 if (rz.intersects(r))
                 {
                     g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));

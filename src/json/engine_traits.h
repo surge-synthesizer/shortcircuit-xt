@@ -56,7 +56,6 @@
 
 namespace scxt::json
 {
-
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  if (SC_STREAMING_FOR_IN_PROCESS)
                  {
@@ -121,6 +120,15 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
                  findIf(v, "busses", patch.busses);
              }))
 
+SC_STREAMDEF(scxt::engine::Engine::PGZStructureBundle, SC_FROM({
+                 v = {{"address", t.address}, {"name", t.name}, {"features", t.features}};
+             }),
+             SC_TO({
+                 findIf(v, "address", to.address);
+                 findIf(v, "name", to.name);
+                 findOrSet(v, "features", 0, to.features);
+             }));
+
 SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  v = {{"p", t.part}, {"i", t.index}, {"v", t.value}};
 
@@ -149,6 +157,20 @@ SC_STREAMDEF(
         findOrSet(v, "m", false, to.mute);
         findOrSet(v, "s", false, to.solo);
     }));
+
+SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,
+             SC_FROM(v = {{"a", from.address},
+                          {"kr", from.kr},
+                          {"vr", from.vr},
+                          {"name", from.name},
+                          {"features", from.features}};),
+             SC_TO({
+                 findIf(v, "a", to.address);
+                 findIf(v, "kr", to.kr);
+                 findIf(v, "vr", to.vr);
+                 findIf(v, "name", to.name);
+                 findIf(v, "features", to.features);
+             }))
 
 SC_STREAMDEF(
     scxt::engine::Part, SC_FROM({

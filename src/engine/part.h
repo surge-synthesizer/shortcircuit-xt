@@ -128,9 +128,16 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     /**
      * Utility data structures to allow rapid draws and displays of the structure in clients
      */
-    typedef std::tuple<KeyboardRange, VelocityRange, std::string> zoneMappingItem_t;
-    typedef std::vector<std::pair<selection::SelectionManager::ZoneAddress, zoneMappingItem_t>>
-        zoneMappingSummary_t;
+    struct ZoneMappingItem
+    {
+        selection::SelectionManager::ZoneAddress address;
+        KeyboardRange kr;
+        VelocityRange vr;
+        std::string name;
+        int32_t features{0};
+    };
+    using zoneMappingItem_t = ZoneMappingItem; // legacy name from when we were a tuple
+    typedef std::vector<ZoneMappingItem> zoneMappingSummary_t;
     zoneMappingSummary_t getZoneMappingSummary();
 
     // TODO GroupID -> index

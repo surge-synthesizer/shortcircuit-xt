@@ -33,6 +33,7 @@
 
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
+#include "engine/feature_enums.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -53,7 +54,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
         auto &pgz = sidebar->partGroupSidebar->pgzStructure;
         thisGroup.clear();
         for (const auto &el : pgz)
-            if (el.first.part == sidebar->editor->selectedPart && el.first.group >= 0)
+            if (el.address.part == sidebar->editor->selectedPart && el.address.group >= 0)
                 thisGroup.push_back(el);
     }
     int getNumRows() override { return thisGroup.size() + 1; /* for the plus */ }
@@ -74,7 +75,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
         auto &tgl = thisGroup;
         if (rowNumber < 0 || rowNumber >= tgl.size())
             return {};
-        auto &sad = tgl[rowNumber].first;
+        auto &sad = tgl[rowNumber].address;
         return sad;
     }
 
@@ -112,7 +113,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
             const auto &sg = tgl[rowNumber];
 
-            bool isLeadZone = isZone() && gsb->isLeadZone(sg.first);
+            bool isLeadZone = isZone() && gsb->isLeadZone(sg.address);
 
             auto editor = gsb->partGroupSidebar->editor;
 
@@ -159,7 +160,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 }
             }
 
-            if (sg.first.zone < 0)
+            if (sg.address.zone < 0)
             {
                 g.setColour(fillColor);
                 g.fillRect(getLocalBounds());
@@ -170,10 +171,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 auto bx = getLocalBounds().withWidth(grouplabelPad);
                 auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad);
                 g.setColour(lowTextColor);
-                g.drawText(std::to_string(sg.first.group + 1), bx,
+                g.drawText(std::to_string(sg.address.group + 1), bx,
                            juce::Justification::centredLeft);
                 g.setColour(textColor);
-                g.drawText(sg.second, nb, juce::Justification::centredLeft);
+                g.drawText(sg.name, nb, juce::Justification::centredLeft);
 
                 if (dragOverState == DRAG_OVER)
                 {
@@ -201,7 +202,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 g.drawLine(zonePad, getHeight(), getWidth(), getHeight());
 
                 g.setColour(textColor);
-                g.drawText(sg.second, getLocalBounds().translated(zonePad + 2, 0),
+                if (sg.features & engine::ZoneFeatures::MISSING_SAMPLE)
+                {
+                    g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
+                }
+
+                g.drawText(sg.name, getLocalBounds().translated(zonePad + 2, 0),
                            juce::Justification::centredLeft);
 
                 if (isLeadZone)
@@ -266,7 +272,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
                     const auto &sg = tgl[rowNumber];
 
-                    p.addSectionHeader(sg.second);
+                    p.addSectionHeader(sg.name);
                     p.addSeparator();
                     p.addItem("Rename", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
@@ -368,12 +374,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             const auto &tgl = lbm->thisGroup;
 
             const auto &sg = tgl[rowNumber];
-            assert(sg.first.zone < 0);
+            assert(sg.address.zone < 0);
             auto st = gsb->partGroupSidebar->style();
             auto groupFont = gsb->editor->themeApplier.interRegularFor(11);
             renameEditor->setFont(groupFont);
             renameEditor->applyFontToAllText(groupFont);
-            renameEditor->setText(sg.second);
+            renameEditor->setText(sg.name);
             renameEditor->setSelectAllWhenFocused(true);
             renameEditor->setIndents(2, 1);
             renameEditor->setVisible(true);
@@ -389,7 +395,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             auto zoneFont = gsb->editor->themeApplier.interLightFor(11);
             renameEditor->setFont(zoneFont);
             renameEditor->applyFontToAllText(zoneFont);
-            renameEditor->setText(sg.second);
+            renameEditor->setText(sg.name);
             renameEditor->setSelectAllWhenFocused(true);
             renameEditor->setIndents(2, 1);
             renameEditor->setVisible(true);

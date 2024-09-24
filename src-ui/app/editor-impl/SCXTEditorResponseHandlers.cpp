@@ -226,9 +226,9 @@ void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMapping
     if constexpr (scxt::log::uiStructure)
     {
         SCLOG("Updated zone mapping summary");
-        for (const auto &[addr, item] : d)
+        for (const auto &z : d)
         {
-            SCLOG("  " << addr << " " << std::get<2>(item));
+            SCLOG("  " << z.address << " " << z.name);
         }
     }
 }

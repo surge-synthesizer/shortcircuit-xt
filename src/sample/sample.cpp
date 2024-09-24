@@ -464,4 +464,19 @@ void Sample::dumpInformationToLog()
     }
 }
 
+std::shared_ptr<Sample> Sample::createMissingPlaceholder(const Sample::SampleFileAddress &a)
+{
+    auto res = std::make_shared<Sample>();
+    res->mFileName = a.path;
+    res->md5Sum = a.md5sum;
+    res->type = a.type;
+    res->preset = a.preset;
+    res->instrument = a.instrument;
+    res->region = a.region;
+    res->isMissingPlaceholder = true;
+    res->displayName = fmt::format("Missing {}", a.path.filename().u8string());
+
+    return res;
+}
+
 } // namespace scxt::sample
