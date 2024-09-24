@@ -54,6 +54,7 @@
 #include <filesystem>
 #include <mutex>
 #include "messaging/client/client_serial.h"
+#include "feature_enums.h"
 
 namespace scxt::engine
 {
@@ -452,7 +453,13 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
             int32_t zoneidx{0};
             for (const auto &zone : *group)
             {
-                res.push_back({{partidx, groupidx, zoneidx}, zone->getName()});
+                int32_t zoneFeatures{0};
+                if (zone->missingSampleCount() > 0)
+                {
+                    zoneFeatures |= ZoneFeatures::MISSING_SAMPLE;
+                }
+
+                res.push_back({{partidx, groupidx, zoneidx}, zone->getName(), zoneFeatures});
                 zoneidx++;
             }
 
@@ -466,7 +473,7 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
         SCLOG("Returning partgroup structure size " << res.size());
 
         for (const auto &pg : res)
-            SCLOG("   " << pg.first << " @ " << pg.second);
+            SCLOG("   " << pg.address << " @ " << pg.name);
     }
 
     return res;

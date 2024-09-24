@@ -76,6 +76,7 @@ struct SampleManager : MoveableOnly<SampleManager>
     SampleManager(const ThreadingChecker &t) : threadingChecker(t) {}
     ~SampleManager();
 
+    void addSampleAsMissing(const SampleID &id, const Sample::SampleFileAddress &f);
     std::optional<SampleID> loadSampleByFileAddress(const Sample::SampleFileAddress &);
     std::optional<SampleID> loadSampleByFileAddressToID(const Sample::SampleFileAddress &,
                                                         const SampleID &);
@@ -144,6 +145,7 @@ struct SampleManager : MoveableOnly<SampleManager>
         auto ap = idAliases.find(a);
         if (ap == idAliases.end())
             return a;
+        assert(ap->second != a);
         return resolveAlias(ap->second);
     }
 

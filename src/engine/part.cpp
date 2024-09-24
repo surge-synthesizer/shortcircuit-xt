@@ -29,6 +29,7 @@
 #include "bus.h"
 #include "patch.h"
 #include "engine.h"
+#include "feature_enums.h"
 
 #include "selection/selection_manager.h"
 
@@ -73,11 +74,16 @@ Part::zoneMappingSummary_t Part::getZoneMappingSummary()
         for (const auto &z : *g)
         {
             // get address for zone
-            auto data =
-                zoneMappingItem_t{z->mapping.keyboardRange, z->mapping.velocityRange, z->getName()};
             auto addr = selection::SelectionManager::ZoneAddress(pidx, gidx, zidx);
+            int32_t features{0};
+            if (z->missingSampleCount() > 0)
+            {
+                features |= ZoneFeatures::MISSING_SAMPLE;
+            }
+            auto data = zoneMappingItem_t{addr, z->mapping.keyboardRange, z->mapping.velocityRange,
+                                          z->getName(), features};
             // res[addr] = data;
-            res.emplace_back(addr, data);
+            res.emplace_back(data);
             zidx++;
         }
         gidx++;

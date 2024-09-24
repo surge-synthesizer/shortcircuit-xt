@@ -591,9 +591,6 @@ void Voice::initializeGenerator()
 {
     if (sampleIndex < 0)
     {
-        // For now we just null out the generator and deal but an alternate
-        // approach in the future would be to have a family of built in generators
-        // which we can run which just do DSP. Because honestly its a sampler.
         Generator = nullptr;
         GD.isFinished = false;
         monoGenerator = true;
@@ -602,8 +599,16 @@ void Voice::initializeGenerator()
 
     // but the default of course is to use the sample index
     auto &s = zone->samplePointers[sampleIndex];
-    auto &variantData = zone->variantData.variants[sampleIndex];
     assert(s);
+    if (s->isMissingPlaceholder)
+    {
+        Generator = nullptr;
+        GD.isFinished = false;
+        monoGenerator = true;
+        return;
+    }
+
+    auto &variantData = zone->variantData.variants[sampleIndex];
 
     GDIO.outputL = output[0];
     GDIO.outputR = output[1];

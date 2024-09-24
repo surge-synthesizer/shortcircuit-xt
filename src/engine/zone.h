@@ -205,6 +205,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void setNormalizedSampleLevel(bool usePeak = false, int associatedSampleID = -1);
     void clearNormalizedSampleLevel(int associatedSampleID = -1);
 
+    int16_t missingSampleCount() const;
+
     struct ZoneMappingData
     {
         int16_t rootKey{60};

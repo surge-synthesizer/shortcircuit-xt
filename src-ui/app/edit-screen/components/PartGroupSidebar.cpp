@@ -153,7 +153,7 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
             int selR = -1;
             for (const auto &[i, r] : sst::cpputils::enumerate(listBoxModel->thisGroup))
             {
-                if (r.first == a)
+                if (r.address == a)
                 {
                     rows.addRange({(int)i, (int)(i + 1)});
                 }

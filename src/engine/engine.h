@@ -448,8 +448,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     const std::optional<dsp::processor::ProcessorStorage>
     getProcessorStorage(const processorAddress_t &addr) const;
 
-    typedef std::vector<std::pair<selection::SelectionManager::ZoneAddress, std::string>>
-        pgzStructure_t;
+    struct PGZStructureBundle
+    {
+        selection::SelectionManager::ZoneAddress address;
+        std::string name;
+        int32_t features{0};
+    };
+    typedef std::vector<PGZStructureBundle> pgzStructure_t;
     /**
      * Get the Part/Group/Zone structure as a set o fzone addreses. A part with
      * no groups will be (p,-1,-1); a group with no zones will be (p,g,-1).

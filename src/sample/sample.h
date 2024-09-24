@@ -76,6 +76,9 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         int region{-1};
     };
 
+    bool isMissingPlaceholder{false};
+    static std::shared_ptr<Sample> createMissingPlaceholder(const SampleFileAddress &a);
+
     SampleFileAddress getSampleFileAddress() const
     {
 #if BUILD_IS_DEBUG
