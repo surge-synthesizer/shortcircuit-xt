@@ -423,15 +423,18 @@ void SCXTEditor::onMissingResolutionWorkItemList(
     for (const auto &wi : items)
     {
         SCLOG("Missing resolution work item");
-        SCLOG("   path  : " << wi.path.u8string());
-        SCLOG("   zone  : " << wi.address);
-        SCLOG("   var   : " << wi.variant);
-        SCLOG("   md5   : " << wi.md5sum);
+        SCLOG("   path : " << wi.path.u8string());
+        SCLOG("   id   : " << wi.missingID.to_string());
     }
 
-    if (!items.empty())
+    missingResolutionScreen->setWorkItemList(items);
+
+    if (items.empty())
     {
-        missingResolutionScreen->setWorkItemList(items);
+        missingResolutionScreen->setVisible(false);
+    }
+    else
+    {
         missingResolutionScreen->setBounds(getLocalBounds());
         missingResolutionScreen->setVisible(true);
         missingResolutionScreen->toFront(true);

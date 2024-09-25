@@ -40,15 +40,13 @@
 namespace scxt::json
 {
 SC_STREAMDEF(scxt::engine::MissingResolutionWorkItem, SC_FROM({
-                 v = {{"a", from.address},
-                      {"v", from.variant},
-                      {"p", from.path.u8string()},
-                      {"md5", from.md5sum}};
+                 v = {
+                     {"i", from.missingID},
+                     {"p", from.path.u8string()},
+                 };
              }),
              SC_TO({
-                 findIf(v, "a", to.address);
-                 findIf(v, "v", to.variant);
-                 findIf(v, "md5", to.md5sum);
+                 findIf(v, "i", to.missingID);
                  std::string fp;
                  findIf(v, "p", fp);
                  to.path = fs::path(fs::u8path(fp));

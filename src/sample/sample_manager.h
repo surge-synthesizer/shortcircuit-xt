@@ -141,15 +141,24 @@ struct SampleManager : MoveableOnly<SampleManager>
     {
         auto ap = idAliases.find(a);
         if (ap == idAliases.end())
+        {
             return a;
+        }
         assert(ap->second != a);
         return resolveAlias(ap->second);
     }
 
+    using sampleMap_t = std::unordered_map<SampleID, std::shared_ptr<Sample>>;
+
+    // You can do a const interation but not a non-const one
+    sampleMap_t::const_iterator samplesBegin() const { return samples.cbegin(); }
+    sampleMap_t::const_iterator samplesEnd() const { return samples.cend(); }
+
   private:
     void updateSampleMemory();
     std::unordered_map<SampleID, SampleID> idAliases;
-    std::unordered_map<SampleID, std::shared_ptr<Sample>> samples;
+
+    sampleMap_t samples;
 
     std::unordered_map<std::string, std::tuple<std::unique_ptr<RIFF::File>,
                                                std::unique_ptr<sf2::File>>>

@@ -98,6 +98,7 @@ struct SampleID
     char md5[md5len + 1]{};
 
     static constexpr int unusedAddress{-1};
+    size_t pathHash{0};
     std::array<int, 3> multiAddress{unusedAddress, unusedAddress, unusedAddress};
 
     SampleID() { setAsInvalid(); }
@@ -106,16 +107,17 @@ struct SampleID
     {
         std::string hd{"SampleID"};
         if (multiAddress[0] == unusedAddress)
-            return fmt::format("{}:{}", hd, std::string(md5));
+            return fmt::format("{}:{}-{:016x}", hd, std::string(md5), pathHash);
         else
-            return fmt::format("{}:{}@{}/{}/{}", hd, std::string(md5), multiAddress[0],
-                               multiAddress[1], multiAddress[2]);
+            return fmt::format("{}:{}-{:016x}@{}/{}/{}", hd, std::string(md5), pathHash,
+                               multiAddress[0], multiAddress[1], multiAddress[2]);
     }
 
     bool operator==(const SampleID &other) const
     {
         return strncmp(md5, other.md5, md5len) == 0 && multiAddress[0] == other.multiAddress[0] &&
-               multiAddress[1] == other.multiAddress[1] && multiAddress[2] == other.multiAddress[2];
+               pathHash == other.pathHash && multiAddress[1] == other.multiAddress[1] &&
+               multiAddress[2] == other.multiAddress[2];
     }
     bool operator!=(const SampleID &other) const { return !(other == *this); }
 
@@ -137,6 +139,7 @@ struct SampleID
         auto ls = fmt::format("lgcy({})", oldId);
         setAsMD5(ls);
     }
+    void setPathHash(const fs::path &p) { pathHash = std::hash<std::string>()(p.u8string()); }
 
     void setAsMD5WithAddress(const std::string &m, int a0, int a1, int a2)
     {
@@ -339,6 +342,7 @@ inline std::string humanReadableVersion(uint64_t v)
 {
     return fmt::format("{:04x}-{:02x}-{:02x}", (v >> 16) & 0xFFFF, (v >> 8) & 0xFF, v & 0xFF);
 }
+
 } // namespace scxt
 
 // Make the ID hashable so we can use it as a map key
@@ -352,6 +356,7 @@ template <> struct std::hash<scxt::SampleID>
     size_t operator()(const scxt::SampleID &v) const
     {
         auto mh = std::hash<std::string>()(v.md5);
+        mh ^= 0x9e3779b9 + (v.pathHash << 6) + (v.pathHash >> 2);
         for (int i = 0; i < 3; ++i)
         {
             if (v.multiAddress[i] >= 0)
