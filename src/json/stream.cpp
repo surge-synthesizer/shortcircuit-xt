@@ -88,17 +88,6 @@ void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPac
         jv.to(e);
     }
 
-    if (!e.getSampleManager()->missingList.empty())
-    {
-        std::ostringstream oss;
-        oss << "On load, sample manager could not locate the following files:\n";
-        for (const auto &p : e.getSampleManager()->missingList)
-        {
-            oss << "  " << p.u8string() << "\n";
-        }
-        e.getMessageController()->reportErrorToClient("Missing Samples", oss.str());
-    }
-
     e.sendFullRefreshToClient();
 }
 
@@ -118,17 +107,6 @@ void unstreamPartState(engine::Engine &e, int part, const std::string &data, boo
         tao::json::events::from_string(consumer, data);
         auto jv = std::move(consumer.value);
         jv.to(*(e.getPatch()->getPart(part)));
-    }
-
-    if (!e.getSampleManager()->missingList.empty())
-    {
-        std::ostringstream oss;
-        oss << "On load, sample manager could not locate the following files:\n";
-        for (const auto &p : e.getSampleManager()->missingList)
-        {
-            oss << "  " << p.u8string() << "\n";
-        }
-        e.getMessageController()->reportErrorToClient("Missing Samples", oss.str());
     }
 
     e.sendFullRefreshToClient();

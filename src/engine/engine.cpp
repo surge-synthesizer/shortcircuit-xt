@@ -55,6 +55,7 @@
 #include <mutex>
 #include "messaging/client/client_serial.h"
 #include "feature_enums.h"
+#include "missing_resolution.h"
 
 namespace scxt::engine
 {
@@ -1083,6 +1084,13 @@ void Engine::sendFullRefreshToClient() const
     getSelectionManager()->sendSelectedZonesToClient();
     getSelectionManager()->sendSelectedPartMacrosToClient();
     getSelectionManager()->sendOtherTabsSelectionToClient();
+
+    auto missing = collectMissingResolutionWorkItems(*this);
+    if (!missing.empty())
+    {
+        serializationSendToClient(messaging::client::s2c_send_missing_resolution_workitem_list,
+                                  missing, *(getMessageController()));
+    }
 }
 
 void Engine::clearAll()

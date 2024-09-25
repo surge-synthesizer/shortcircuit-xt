@@ -193,6 +193,8 @@ enum SerializationToClientMessageIds
     s2c_update_macro_full_state,
     s2c_update_macro_value,
 
+    s2c_send_missing_resolution_workitem_list,
+
     num_serializationToClientMessages
 };
 

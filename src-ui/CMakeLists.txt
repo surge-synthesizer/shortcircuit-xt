@@ -25,6 +25,8 @@ add_library(${PROJECT_NAME} STATIC
         app/edit-screen/components/mapping-pane/ZoneLayoutDisplay.cpp
         app/edit-screen/components/mapping-pane/ZoneLayoutKeyboard.cpp
 
+        app/missing-resolution/MissingResolutionScreen.cpp
+
         app/mixer-screen/MixerScreen.cpp
         app/mixer-screen/components/BusPane.cpp
         app/mixer-screen/components/ChannelStrip.cpp

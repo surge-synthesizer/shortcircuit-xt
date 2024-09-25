@@ -415,4 +415,25 @@ void SCXTEditor::onActivityNotification(
     // SCLOG((idx == 1 ? "Open" : (idx == 0 ? "Close" : "Update")) << " [" << msg << "]");
     SCLOG_ONCE("Update activity messages currently ignored");
 }
+
+void SCXTEditor::onMissingResolutionWorkItemList(
+    const std::vector<engine::MissingResolutionWorkItem> &items)
+{
+    for (const auto &wi : items)
+    {
+        SCLOG("Missing resolution work item");
+        SCLOG("   path  : " << wi.path.u8string());
+        SCLOG("   zone  : " << wi.address);
+        SCLOG("   var   : " << wi.variant);
+        SCLOG("   md5   : " << wi.md5sum);
+    }
+
+    if (!items.empty())
+    {
+        missingResolutionScreen->setWorkItemList(items);
+        missingResolutionScreen->setBounds(getLocalBounds());
+        missingResolutionScreen->setVisible(true);
+        missingResolutionScreen->toFront(true);
+    }
+}
 } // namespace scxt::ui::app

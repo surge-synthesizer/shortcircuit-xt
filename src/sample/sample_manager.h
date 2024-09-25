@@ -131,9 +131,6 @@ struct SampleManager : MoveableOnly<SampleManager>
         updateSampleMemory();
     }
 
-    std::vector<fs::path> missingList;
-    void resetMissingList() { missingList.clear(); }
-
     uint64_t streamingVersion{0x2112'01'01}; // see comment in patch.h
 
     std::atomic<uint64_t> sampleMemoryInBytes{0};
