@@ -26,6 +26,7 @@
  */
 
 #include "MissingResolutionScreen.h"
+#include "app/SCXTEditor.h"
 
 #include <sst/jucegui/components/NamedPanel.h>
 #include <sst/jucegui/components/TextPushButton.h>

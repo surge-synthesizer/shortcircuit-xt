@@ -39,6 +39,7 @@
 #include "app/other-screens/AboutScreen.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "app/play-screen/PlayScreen.h"
+#include "app/missing-resolution/MissingResolutionScreen.h"
 
 namespace scxt::ui::app
 {
