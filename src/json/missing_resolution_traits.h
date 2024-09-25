@@ -25,15 +25,34 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_ENGINE_FEATURE_ENUMS_H
-#define SCXT_SRC_ENGINE_FEATURE_ENUMS_H
+#ifndef SCXT_SRC_JSON_MISSING_RESOLUTION_TRAITS_H
+#define SCXT_SRC_JSON_MISSING_RESOLUTION_TRAITS_H
 
-namespace scxt::engine
-{
-enum ZoneFeatures
-{
-    MISSING_SAMPLE = 1 << 0,
-};
-}
+#include <tao/json/to_string.hpp>
+#include <tao/json/from_string.hpp>
+#include <tao/json/contrib/traits.hpp>
 
-#endif // FEATURE_ENUMS_H
+#include "stream.h"
+#include "extensions.h"
+
+#include "engine/missing_resolution.h"
+
+namespace scxt::json
+{
+SC_STREAMDEF(scxt::engine::MissingResolutionWorkItem, SC_FROM({
+                 v = {{"a", from.address},
+                      {"v", from.variant},
+                      {"p", from.path.u8string()},
+                      {"md5", from.md5sum}};
+             }),
+             SC_TO({
+                 findIf(v, "a", to.address);
+                 findIf(v, "v", to.variant);
+                 findIf(v, "md5", to.md5sum);
+                 std::string fp;
+                 findIf(v, "p", fp);
+                 to.path = fs::path(fs::u8path(fp));
+             }));
+} // namespace scxt::json
+
+#endif // MISSING_RESOLUTION_TRAITS_H

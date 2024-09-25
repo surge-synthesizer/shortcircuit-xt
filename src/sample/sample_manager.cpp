@@ -38,7 +38,6 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
     {
         if (!fs::exists(addr.path))
         {
-            missingList.push_back(addr.path);
             addSampleAsMissing(id, addr);
         }
         else

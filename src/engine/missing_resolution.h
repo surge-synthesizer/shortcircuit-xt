@@ -25,15 +25,24 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_ENGINE_FEATURE_ENUMS_H
-#define SCXT_SRC_ENGINE_FEATURE_ENUMS_H
+#ifndef SCXT_SRC_ENGINE_MISSING_RESOLUTION_H
+#define SCXT_SRC_ENGINE_MISSING_RESOLUTION_H
+
+#include "selection/selection_manager.h"
+#include "engine.h"
 
 namespace scxt::engine
 {
-enum ZoneFeatures
+struct MissingResolutionWorkItem
 {
-    MISSING_SAMPLE = 1 << 0,
+    selection::SelectionManager::ZoneAddress address;
+    int16_t variant;
+    fs::path path;
+    std::string md5sum;
 };
-}
 
-#endif // FEATURE_ENUMS_H
+std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const Engine &e);
+
+} // namespace scxt::engine
+
+#endif // MISSING_RESOLUTION_H

@@ -43,5 +43,6 @@
 #include "debug_messages.h"
 #include "patch_io_messages.h"
 #include "macro_messages.h"
+#include "missing_resolution_messages.h"
 
 #endif // SHORTCIRCUIT_CLIENT_MESSAGE_IMPLS_H

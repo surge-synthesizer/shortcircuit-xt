@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME} STATIC
         engine/part.cpp
         engine/patch.cpp
         engine/memory_pool.cpp
+        engine/missing_resolution.cpp
         engine/bus.cpp
         engine/macros.cpp
 

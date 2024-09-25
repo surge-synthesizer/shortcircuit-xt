@@ -51,6 +51,8 @@
 #include "modulation_traits.h"
 #include "datamodel_traits.h"
 #include "selection_traits.h"
+#include "missing_resolution_traits.h"
+
 #include "engine/bus.h"
 #include "messaging/messaging.h"
 
@@ -88,7 +90,6 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  // Order matters here. Samples need to be there before the patch and patch
                  // before selection
 
-                 to.getSampleManager()->resetMissingList();
                  findIf(v, "sampleManager", *(to.getSampleManager()));
                  findIf(v, "patch", *(to.getPatch()));
                  findIf(v, "selectionManager", *(to.getSelectionManager()));

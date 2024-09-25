@@ -77,6 +77,10 @@ namespace play_screen
 {
 struct PlayScreen;
 }
+namespace missing_resolution
+{
+struct MissingResolutionScreen;
+}
 namespace other_screens
 {
 struct WelcomeScreen;
@@ -142,6 +146,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::unique_ptr<other_screens::AboutScreen> aboutScreen;
     std::unique_ptr<other_screens::WelcomeScreen> welcomeScreen;
     std::unique_ptr<other_screens::LogScreen> logScreen;
+    std::unique_ptr<missing_resolution::MissingResolutionScreen> missingResolutionScreen;
 
     std::unique_ptr<sst::jucegui::components::ToolTip> toolTip;
 
@@ -242,6 +247,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
     void onMacroFullState(const scxt::messaging::client::macroFullState_t &);
     void onMacroValue(const scxt::messaging::client::macroValue_t &);
+
+    void onMissingResolutionWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &);
 
     // Originate client to serialization messages
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,

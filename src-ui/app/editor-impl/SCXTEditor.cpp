@@ -30,6 +30,8 @@
 #include "melatonin_inspector/melatonin_inspector.h"
 #endif
 
+#include "SCXTJuceLookAndFeel.h"
+
 #include "app/SCXTEditor.h"
 
 #include "app/play-screen/PlayScreen.h"
@@ -43,7 +45,7 @@
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/LogScreen.h"
 #include "app/other-screens/WelcomeScreen.h"
-#include "SCXTJuceLookAndFeel.h"
+#include "app/missing-resolution/MissingResolutionScreen.h"
 #include "sst/jucegui/components/ToolTip.h"
 #include <sst/jucegui/components/DiscreteParamMenuBuilder.h>
 
@@ -123,6 +125,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     logScreen = std::make_unique<other_screens::LogScreen>(this);
     addChildComponent(*logScreen);
+
+    missingResolutionScreen = std::make_unique<missing_resolution::MissingResolutionScreen>(this);
+    addChildComponent(*missingResolutionScreen);
 
     setStyle(style());
 

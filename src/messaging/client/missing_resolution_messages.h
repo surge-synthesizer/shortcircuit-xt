@@ -25,15 +25,20 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_ENGINE_FEATURE_ENUMS_H
-#define SCXT_SRC_ENGINE_FEATURE_ENUMS_H
+#ifndef SCXT_SRC_MESSAGING_CLIENT_MISSING_RESOLUTION_MESSAGES_H
+#define SCXT_SRC_MESSAGING_CLIENT_MISSING_RESOLUTION_MESSAGES_H
 
-namespace scxt::engine
+#include "messaging/client/client_serial.h"
+#include "messaging/client/detail/client_json_details.h"
+#include "json/engine_traits.h"
+#include "json/datamodel_traits.h"
+#include "selection/selection_manager.h"
+#include "engine/missing_resolution.h"
+#include "client_macros.h"
+
+namespace scxt::messaging::client
 {
-enum ZoneFeatures
-{
-    MISSING_SAMPLE = 1 << 0,
-};
+SERIAL_TO_CLIENT(SendMissingResolutionWorkItemList, s2c_send_missing_resolution_workitem_list,
+                 std::vector<engine::MissingResolutionWorkItem>, onMissingResolutionWorkItemList);
 }
-
-#endif // FEATURE_ENUMS_H
+#endif // MISSING_RESOLUTION_MESSAGES_H
