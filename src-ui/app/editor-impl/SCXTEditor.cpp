@@ -486,4 +486,6 @@ std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature) con
                                                f + " is not yet implemented", "OK");
     };
 }
+
+void SCXTEditor::showMissingResolutionScreen() { missingResolutionScreen->setVisible(true); }
 } // namespace scxt::ui::app

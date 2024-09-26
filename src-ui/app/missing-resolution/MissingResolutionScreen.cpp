@@ -31,13 +31,68 @@
 #include <sst/jucegui/components/NamedPanel.h>
 #include <sst/jucegui/components/TextPushButton.h>
 
+#include "sst/jucegui/components/GlyphButton.h"
+#include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/Viewport.h"
+
 namespace scxt::ui::app::missing_resolution
 {
+namespace jcmp = sst::jucegui::components;
+namespace cmsg = scxt::messaging::client;
+
+struct WorkItemLineItem : juce::Component, HasEditor
+{
+    static constexpr int height{40};
+    MissingResolutionScreen *parent{nullptr};
+    int index{0};
+    std::unique_ptr<sst::jucegui::components::TextPushButton> okButton;
+
+    WorkItemLineItem(MissingResolutionScreen *parent, int index)
+        : parent(parent), HasEditor(parent->editor), index(index)
+    {
+        okButton = std::make_unique<jcmp::TextPushButton>();
+        okButton->setLabel("Resolve");
+        okButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->doCallback();
+        });
+        addAndMakeVisible(*okButton);
+    }
+    void doCallback() { parent->resolveItem(index); }
+    void resized() override
+    {
+        auto b = getLocalBounds().reduced(2).withHeight(22).withTrimmedLeft(getWidth() - 100);
+        okButton->setBounds(b);
+    }
+    void paint(juce::Graphics &g) override
+    {
+        const auto &wi = parent->workItems[index];
+        g.setColour(editor->themeColor(theme::ColorMap::grid_primary));
+        g.drawHorizontalLine(getHeight() - 1, 5, getWidth() - 5);
+
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+        g.setFont(editor->themeApplier.interMediumFor(12));
+
+        auto bd = getLocalBounds().reduced(2);
+        g.drawText(wi.path.parent_path().u8string(), bd, juce::Justification::topLeft);
+
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
+        g.setFont(editor->themeApplier.interMediumFor(18));
+        g.drawText(wi.path.filename().u8string(), bd, juce::Justification::bottomLeft);
+    }
+};
 
 struct Contents : juce::Component, HasEditor
 {
     MissingResolutionScreen *parent{nullptr};
-    std::unique_ptr<sst::jucegui::components::TextPushButton> okButton, resolveZeroButton;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> okButton;
+
+    std::unique_ptr<jcmp::Viewport> viewport;
+    std::unique_ptr<juce::Component> viewportContents;
+
+    std::vector<std::unique_ptr<WorkItemLineItem>> workItemComps;
+
     Contents(MissingResolutionScreen *p, SCXTEditor *e) : parent(p), HasEditor(e)
     {
         okButton = std::make_unique<sst::jucegui::components::TextPushButton>();
@@ -49,15 +104,26 @@ struct Contents : juce::Component, HasEditor
         });
         addAndMakeVisible(*okButton);
 
-        resolveZeroButton = std::make_unique<sst::jucegui::components::TextPushButton>();
-        resolveZeroButton->setLabel("Resolve First");
-        resolveZeroButton->setOnCallback([w = juce::Component::SafePointer(parent)]() {
-            if (!w)
-                return;
+        viewport = std::make_unique<jcmp::Viewport>("Parts");
+        viewportContents = std::make_unique<juce::Component>();
 
-            w->resolveItem(0);
-        });
-        addAndMakeVisible(*resolveZeroButton);
+        viewport->setViewedComponent(viewportContents.get(), false);
+        addAndMakeVisible(*viewport);
+
+        rebuildContents();
+    }
+
+    void rebuildContents()
+    {
+        viewportContents->removeAllChildren();
+        workItemComps.clear();
+        for (int i = 0; i < parent->workItems.size(); ++i)
+        {
+            auto w = std::make_unique<WorkItemLineItem>(parent, i);
+            viewportContents->addAndMakeVisible(*w);
+            workItemComps.push_back(std::move(w));
+        }
+        resized();
     }
 
     void resized() override
@@ -66,27 +132,15 @@ struct Contents : juce::Component, HasEditor
         b = b.withTrimmedTop(b.getHeight() - 22).withTrimmedLeft(b.getWidth() - 100);
         okButton->setBounds(b);
 
-        resolveZeroButton->setBounds(b.translated(-110, 0));
-    }
-    void paint(juce::Graphics &g) override
-    {
-        int bxH = 40;
-        auto bx = getLocalBounds().reduced(2, 2).withHeight(bxH);
-        for (const auto &i : parent->workItems)
+        viewport->setBounds(getLocalBounds().withTrimmedBottom(25));
+        int vmargin{2};
+        viewportContents->setBounds(0, 0, viewport->getWidth() - 5,
+                                    workItemComps.size() * (WorkItemLineItem::height + vmargin));
+        auto wib = viewportContents->getBounds().withHeight(WorkItemLineItem::height);
+        for (auto &w : workItemComps)
         {
-            auto bd = bx.reduced(2, 2);
-            g.setFont(editor->themeApplier.interBoldFor(14));
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
-            g.drawText(i.path.u8string(), bd, juce::Justification::topLeft);
-
-            g.setFont(editor->themeApplier.interMediumFor(12));
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
-            g.drawText(i.missingID.md5, bd, juce::Justification::bottomLeft);
-
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_low));
-            g.drawRect(bx, 1);
-
-            bx = bx.translated(0, bxH + 4);
+            w->setBounds(wib);
+            wib = wib.translated(0, WorkItemLineItem::height + vmargin);
         }
     }
 };
@@ -99,6 +153,18 @@ MissingResolutionScreen::MissingResolutionScreen(SCXTEditor *e) : HasEditor(e)
     auto contents = std::make_unique<Contents>(this, e);
     ct->setContentAreaComponent(std::move(contents));
     contentsArea = std::move(ct);
+}
+
+MissingResolutionScreen::~MissingResolutionScreen() {}
+
+void MissingResolutionScreen::setWorkItemList(
+    const std::vector<engine::MissingResolutionWorkItem> &l)
+{
+    workItems = l;
+    auto cp = dynamic_cast<Contents *>(contentsArea->getContentAreaComponent().get());
+    if (cp)
+        cp->rebuildContents();
+    repaint();
 }
 
 void MissingResolutionScreen::resized()

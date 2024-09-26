@@ -431,10 +431,12 @@ void SCXTEditor::onMissingResolutionWorkItemList(
 
     if (items.empty())
     {
+        hasMissingSamples = false;
         missingResolutionScreen->setVisible(false);
     }
     else
     {
+        hasMissingSamples = true;
         missingResolutionScreen->setBounds(getLocalBounds());
         missingResolutionScreen->setVisible(true);
         missingResolutionScreen->toFront(true);
