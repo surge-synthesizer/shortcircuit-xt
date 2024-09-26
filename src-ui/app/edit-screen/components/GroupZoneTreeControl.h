@@ -295,6 +295,18 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
                               w->gsb->sendToSerialization(cmsg::ClearPart(za.part));
                           });
+
+                if (gsb->editor->hasMissingSamples)
+                {
+                    p.addSeparator();
+                    p.addItem("Resolve Missing Samples",
+                              [w = juce::Component::SafePointer(this)]() {
+                                  if (!w)
+                                      return;
+                                  w->gsb->editor->showMissingResolutionScreen();
+                              });
+                }
+
                 isPopup = true;
                 p.showMenuAsync(gsb->editor->defaultPopupMenuOptions());
             }

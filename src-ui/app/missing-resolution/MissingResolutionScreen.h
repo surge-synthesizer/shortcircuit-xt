@@ -32,14 +32,16 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <vector>
 #include "engine/missing_resolution.h"
+#include "sst/jucegui/components/NamedPanel.h"
 
 namespace scxt::ui::app::missing_resolution
 {
 
 struct MissingResolutionScreen : juce::Component, HasEditor
 {
-    std::unique_ptr<juce::Component> contentsArea;
+    std::unique_ptr<sst::jucegui::components::NamedPanel> contentsArea;
     MissingResolutionScreen(SCXTEditor *e);
+    ~MissingResolutionScreen();
 
     void paint(juce::Graphics &g) override
     {
@@ -49,11 +51,7 @@ struct MissingResolutionScreen : juce::Component, HasEditor
     void resized() override;
     void mouseUp(const juce::MouseEvent &) override { setVisible(false); }
 
-    void setWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &l)
-    {
-        workItems = l;
-        repaint();
-    }
+    void setWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &l);
 
     void resolveItem(int idx);
     void applyResolution(int idx, const fs::path &toThis);

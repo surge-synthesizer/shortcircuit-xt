@@ -407,6 +407,20 @@ void SampleWaveform::paint(juce::Graphics &g)
         return;
     }
 
+    if (samp->isMissingPlaceholder)
+    {
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+        g.setFont(editor->themeApplier.interMediumFor(14));
+        g.drawText("Missing Sample - Please Run Resolution", r.withTrimmedBottom(45),
+                   juce::Justification::centred);
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        g.setFont(editor->themeApplier.interMediumFor(11));
+        g.drawText("Right mouse on group zone part to launch for now", r,
+                   juce::Justification::centred);
+        g.drawText(samp->mFileName.u8string(), r.withTrimmedTop(30), juce::Justification::centred);
+        return;
+    }
+
     g.setColour(editor->themeColor(theme::ColorMap::grid_secondary));
     if (usedChannels == 2)
     {

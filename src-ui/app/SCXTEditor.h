@@ -147,6 +147,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::unique_ptr<other_screens::WelcomeScreen> welcomeScreen;
     std::unique_ptr<other_screens::LogScreen> logScreen;
     std::unique_ptr<missing_resolution::MissingResolutionScreen> missingResolutionScreen;
+    bool hasMissingSamples{false};
+    void showMissingResolutionScreen();
 
     std::unique_ptr<sst::jucegui::components::ToolTip> toolTip;
 
