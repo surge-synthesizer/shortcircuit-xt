@@ -26,13 +26,13 @@
  */
 
 #include "missing_resolution.h"
+#include "messaging/messaging.h"
 
 namespace scxt::engine
 {
 std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const Engine &e)
 {
     std::vector<MissingResolutionWorkItem> res;
-
     const auto &sm = e.getSampleManager();
     auto it = sm->samplesBegin();
     while (it != sm->samplesEnd())
@@ -40,11 +40,125 @@ std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const E
         const auto &[id, s] = *it;
         if (s->isMissingPlaceholder)
         {
-            res.push_back({id, s->mFileName});
+            res.push_back({id, s->mFileName, false});
         }
         it++;
     }
 
+    std::sort(res.begin(), res.end(),
+              [](const auto &a, const auto &b) { return a.path.u8string() < b.path.u8string(); });
+
+    auto rit = 0;
+    auto rnext = 1;
+    while (rnext < res.size())
+    {
+        if (res[rit].missingID.sameMD5As(res[rnext].missingID) && res[rit].path == res[rnext].path)
+        {
+            res[rit].isMultiUsed = true;
+            res.erase(res.begin() + rnext);
+        }
+        else
+        {
+            rnext++;
+            rit++;
+        }
+    }
+
     return res;
 }
+
+void resolveSingleFileMissingWorkItem(engine::Engine &e, const MissingResolutionWorkItem &mwi,
+                                      const fs::path &p)
+{
+
+    auto smp = e.getSampleManager()->loadSampleByPath(p);
+    SCLOG("Resolving : " << p.u8string());
+    SCLOG("      Was : " << mwi.missingID.to_string());
+    SCLOG("       To : " << smp->to_string());
+    if (smp.has_value())
+    {
+        for (auto &p : *(e.getPatch()))
+        {
+            for (auto &g : *p)
+            {
+                for (auto &z : *g)
+                {
+                    int vidx{0};
+                    for (auto &v : z->variantData.variants)
+                    {
+                        if (v.active && v.sampleID == mwi.missingID)
+                        {
+                            SCLOG("     Zone : " << z->getName());
+                            v.sampleID = *smp;
+                            z->attachToSampleAtVariation(
+                                *(e.getSampleManager()), *smp, vidx,
+                                engine::Zone::SampleInformationRead::ENDPOINTS);
+                        }
+                        vidx++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void resolveMultiFileMissingWorkItem(engine::Engine &e, const MissingResolutionWorkItem &mwi,
+                                     const fs::path &p)
+{
+    bool isSF2{false}, isMultiSample{false};
+    if (extensionMatches(p, ".sf2"))
+    {
+        isSF2 = true;
+    }
+
+    if (!isSF2 && !isMultiSample)
+    {
+        SCLOG("Cant deteremine multi style for " << p.u8string());
+        e.getMessageController()->reportErrorToClient(
+            "Unable to resolve missing with multifile",
+            "Can't determine the multifile type for path '" + p.u8string() + "''");
+        return;
+    }
+
+    for (auto &pt : *(e.getPatch()))
+    {
+        for (auto &g : *pt)
+        {
+            for (auto &z : *g)
+            {
+                int vidx{0};
+                for (auto &v : z->variantData.variants)
+                {
+                    if (v.active && v.sampleID.sameMD5As(mwi.missingID))
+                    {
+                        std::optional<SampleID> nid;
+                        if (isSF2)
+                        {
+                            nid = e.getSampleManager()->loadSampleFromSF2(
+                                p, nullptr, v.sampleID.multiAddress[0], v.sampleID.multiAddress[1],
+                                v.sampleID.multiAddress[2]);
+                        }
+                        if (isMultiSample)
+                        {
+                            nid = e.getSampleManager()->loadSampleFromMultiSample(
+                                p, v.sampleID.multiAddress[2], mwi.missingID);
+                        }
+                        if (nid.has_value())
+                        {
+                            SCLOG("Re-attaching to multi in " << z->getName());
+                            SCLOG("      Was : " << v.sampleID.to_string());
+                            SCLOG("       To : " << nid->to_string());
+                            v.sampleID = *nid;
+                            z->attachToSampleAtVariation(
+                                *(e.getSampleManager()), *nid, vidx,
+                                engine::Zone::SampleInformationRead::ENDPOINTS);
+                        }
+                    }
+                    vidx++;
+                }
+            }
+        }
+    }
+}
+
 } // namespace scxt::engine

@@ -123,6 +123,8 @@ struct SampleID
 
     bool isValid() const { return md5[0] != 'x' && md5[1] != '\0'; }
 
+    bool sameMD5As(const SampleID &other) const { return strncmp(md5, other.md5, md5len) == 0; }
+
     void setAsInvalid()
     {
         memset(md5, 0, sizeof(md5));

@@ -64,6 +64,8 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
                 nid = loadSampleFromMultiSample(addr.path, addr.region, id);
             }
             break;
+                // add something here? don't forget to add it in the multi resolver too in
+                // resolveSingleFileMissingWorkItem
             }
 
             if (nid.has_value())
