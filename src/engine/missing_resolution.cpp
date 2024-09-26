@@ -26,6 +26,7 @@
  */
 
 #include "missing_resolution.h"
+#include "messaging/messaging.h"
 
 namespace scxt::engine
 {
