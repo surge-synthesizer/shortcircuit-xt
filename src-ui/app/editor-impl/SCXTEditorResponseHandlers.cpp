@@ -422,7 +422,7 @@ void SCXTEditor::onMissingResolutionWorkItemList(
 {
     for (const auto &wi : items)
     {
-        SCLOG("Missing resolution work item");
+        SCLOG("Missing resolution " << (wi.isMultiUsed ? "multi-use " : "") << "work item");
         SCLOG("   path : " << wi.path.u8string());
         SCLOG("   id   : " << wi.missingID.to_string());
     }

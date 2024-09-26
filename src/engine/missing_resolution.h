@@ -37,10 +37,16 @@ struct MissingResolutionWorkItem
 {
     SampleID missingID;
     fs::path path;
+    bool isMultiUsed{false};
 };
 
 std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const Engine &e);
 
+void resolveSingleFileMissingWorkItem(engine::Engine &e, const MissingResolutionWorkItem &mwi,
+                                      const fs::path &p);
+
+void resolveMultiFileMissingWorkItem(engine::Engine &e, const MissingResolutionWorkItem &mwi,
+                                     const fs::path &p);
 } // namespace scxt::engine
 
 #endif // MISSING_RESOLUTION_H

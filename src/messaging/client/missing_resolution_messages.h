@@ -47,34 +47,14 @@ inline void doResolveSample(const resolveSamplePayload_t &payload, engine::Engin
 {
     auto mwi = std::get<0>(payload);
     auto p = fs::path(fs::u8path(std::get<1>(payload)));
-    auto smp = e.getSampleManager()->loadSampleByPath(p);
-    SCLOG("Resolving : " << p.u8string());
-    SCLOG("      Was : " << mwi.missingID.to_string());
-    SCLOG("       To : " << smp->to_string());
-    if (smp.has_value())
+
+    if (mwi.isMultiUsed)
     {
-        for (auto &p : *(e.getPatch()))
-        {
-            for (auto &g : *p)
-            {
-                for (auto &z : *g)
-                {
-                    int vidx{0};
-                    for (auto &v : z->variantData.variants)
-                    {
-                        if (v.active && v.sampleID == mwi.missingID)
-                        {
-                            SCLOG("     Zone : " << z->getName());
-                            v.sampleID = *smp;
-                            z->attachToSampleAtVariation(
-                                *(e.getSampleManager()), *smp, vidx,
-                                engine::Zone::SampleInformationRead::ENDPOINTS);
-                        }
-                        vidx++;
-                    }
-                }
-            }
-        }
+        engine::resolveMultiFileMissingWorkItem(e, mwi, p);
+    }
+    else
+    {
+        engine::resolveSingleFileMissingWorkItem(e, mwi, p);
     }
     e.getSampleManager()->purgeUnreferencedSamples();
     e.sendFullRefreshToClient();
