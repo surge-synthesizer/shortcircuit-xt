@@ -1086,11 +1086,9 @@ void Engine::sendFullRefreshToClient() const
     getSelectionManager()->sendOtherTabsSelectionToClient();
 
     auto missing = collectMissingResolutionWorkItems(*this);
-    if (!missing.empty())
-    {
-        serializationSendToClient(messaging::client::s2c_send_missing_resolution_workitem_list,
-                                  missing, *(getMessageController()));
-    }
+    // send missing even if empty. An empty missing flags dont show dialog
+    serializationSendToClient(messaging::client::s2c_send_missing_resolution_workitem_list, missing,
+                              *(getMessageController()));
 }
 
 void Engine::clearAll()

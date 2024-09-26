@@ -55,6 +55,11 @@ struct MissingResolutionScreen : juce::Component, HasEditor
         repaint();
     }
 
+    void resolveItem(int idx);
+    void applyResolution(int idx, const fs::path &toThis);
+
+    std::unique_ptr<juce::FileChooser> fileChooser;
+
     std::vector<engine::MissingResolutionWorkItem> workItems;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MissingResolutionScreen);
 };

@@ -33,35 +33,16 @@ std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const E
 {
     std::vector<MissingResolutionWorkItem> res;
 
-    int pidx{0};
-    for (const auto &p : *(e.getPatch()))
+    const auto &sm = e.getSampleManager();
+    auto it = sm->samplesBegin();
+    while (it != sm->samplesEnd())
     {
-        int gidx{0};
-        for (const auto &g : *p)
+        const auto &[id, s] = *it;
+        if (s->isMissingPlaceholder)
         {
-            int zidx{0};
-            for (const auto &z : *g)
-            {
-                int idx{0};
-                for (const auto &v : z->variantData.variants)
-                {
-                    if (v.active && z->samplePointers[idx]->isMissingPlaceholder)
-                    {
-                        auto &sm = z->samplePointers[idx];
-                        MissingResolutionWorkItem wf;
-                        wf.address = {pidx, gidx, zidx};
-                        wf.variant = idx;
-                        wf.path = sm->mFileName;
-                        wf.md5sum = sm->md5Sum;
-                        res.push_back(wf);
-                    }
-                    idx++;
-                }
-                zidx++;
-            }
-            gidx++;
+            res.push_back({id, s->mFileName});
         }
-        pidx++;
+        it++;
     }
 
     return res;

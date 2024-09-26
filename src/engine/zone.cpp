@@ -202,7 +202,8 @@ void Zone::setupOnUnstream(const engine::Engine &e)
 
         if (nid != oid)
         {
-            SCLOG("Relabeling zone on change : " << oid.to_string() << " -> " << nid.to_string());
+            SCLOG(getName() << " : Relabeling zone on change : " << oid.to_string() << " -> "
+                            << nid.to_string());
             variantData.variants[i].sampleID = nid;
         }
 
@@ -442,6 +443,8 @@ int16_t Zone::missingSampleCount() const
         if (sv.active)
         {
             auto smp = samplePointers[idx];
+            // SCLOG("Checking missing sample at " << sv.sampleID.to_string() << " " << smp.get());
+
             if (smp && smp->isMissingPlaceholder)
             {
                 ct++;

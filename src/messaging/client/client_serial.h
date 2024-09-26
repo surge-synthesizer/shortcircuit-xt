@@ -152,6 +152,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_send_full_part_config,
 
+    c2s_resolve_sample,
+
     num_clientToSerializationMessages
 };
 

@@ -35,10 +35,8 @@ namespace scxt::engine
 {
 struct MissingResolutionWorkItem
 {
-    selection::SelectionManager::ZoneAddress address;
-    int16_t variant;
+    SampleID missingID;
     fs::path path;
-    std::string md5sum;
 };
 
 std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const Engine &e);

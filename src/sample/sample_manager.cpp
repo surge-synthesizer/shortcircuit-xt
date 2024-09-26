@@ -70,9 +70,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
             {
                 if (*nid != id)
                 {
-                    SCLOG("Adding Alias ID [" << id.to_string() << "] -> [" << nid->to_string()
-                                              << "]");
-                    idAliases[id] = *nid;
+                    addIdAlias(id, *nid);
                 }
             }
         }
@@ -154,6 +152,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
     sp->md5Sum = sf2MD5ByPath[p.u8string()];
     assert(!sp->md5Sum.empty());
     sp->id.setAsMD5WithAddress(sp->md5Sum, preset, instrument, region);
+    sp->id.setPathHash(p);
 
     SCLOG("Loading : " << p.u8string());
     SCLOG("        : " << sp->id.to_string());
@@ -169,6 +168,7 @@ std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &
 {
     auto sp = std::make_shared<Sample>();
     sp->id.setAsMD5WithAddress(md5, idx, -1, -1);
+    sp->id.setPathHash(p);
 
     sp->parse_riff_wave(data, dataSize);
     sp->type = Sample::MULTISAMPLE_FILE;
@@ -221,6 +221,11 @@ void SampleManager::purgeUnreferencedSamples()
         {
             SCLOG("Purging : " << b->second->mFileName.u8string());
             SCLOG("        : " << b->first.to_string());
+            if (b->second->isMissingPlaceholder)
+            {
+                SCLOG("        : Missing Placeholder");
+            }
+
             b = samples.erase(b);
         }
         else
@@ -231,7 +236,8 @@ void SampleManager::purgeUnreferencedSamples()
 
     if (samples.size() != preSize)
     {
-        SCLOG_WFUNC("PostPurge : Purged " << (preSize - samples.size()));
+        SCLOG_WFUNC("PostPurge : Purged " << (preSize - samples.size()) << " Remaining "
+                                          << samples.size());
     }
     updateSampleMemory();
 }
@@ -271,11 +277,18 @@ void SampleManager::addSampleAsMissing(const SampleID &id, const Sample::SampleF
     {
         auto ms = Sample::createMissingPlaceholder(f);
         ms->id = id;
+        ms->id.setPathHash(f.path);
 
         SCLOG("Missing : " << f.path.u8string());
-        SCLOG("        : " << id.to_string());
+        SCLOG("        : " << ms->id.to_string());
 
-        samples[id] = ms;
+        samples[ms->id] = ms;
+
+        if (ms->id != id)
+        {
+            // Path change so
+            addIdAlias(id, ms->id);
+        }
     }
 }
 
