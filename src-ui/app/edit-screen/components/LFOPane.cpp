@@ -42,6 +42,7 @@
 // Included so we can have UI-thread exceution for curve rendering
 #include "modulation/modulators/steplfo.h"
 #include "app/edit-screen/EditScreen.h"
+#include "app/shared/MenuValueTypein.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -169,8 +170,59 @@ struct StepLFOPane : juce::Component, app::HasEditor
             recalcCurve();
             repaint();
         }
-        void mouseDown(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
-        void mouseDrag(const juce::MouseEvent &event) override { handleMouseAt(event.position); }
+
+        struct StepMenuTypein : shared::MenuValueTypeinBase
+        {
+            LfoPane *parent{nullptr};
+            int idx;
+            StepMenuTypein(SCXTEditor *e, int idx, LfoPane *r)
+                : parent(r), shared::MenuValueTypeinBase(e), idx(idx)
+            {
+            }
+            std::string getInitialText() const override
+            {
+                auto &ls = parent->modulatorStorageData[parent->selectedTab].stepLfoStorage;
+                auto v = ls.data[idx];
+                return fmt::format("{:7f}", v);
+            }
+            void setValueString(const std::string &s) override
+            {
+                auto lf = std::clamp(std::atof(s.c_str()), -1.0, 1.0);
+                parent->stepLfoPane->setStep(idx, lf);
+            }
+            juce::Colour getValueColour() const override
+            {
+                return editor->themeColor(theme::ColorMap::accent_2b);
+            }
+        };
+        void showTypeinPopup(const juce::Point<float> &f)
+        {
+            auto idx = indexForPosition(f);
+            if (idx < 0)
+                return;
+            juce::PopupMenu p;
+            p.addSectionHeader("LFO Step " + std::to_string(idx + 1));
+            p.addSeparator();
+            p.addCustomItem(-1, std::make_unique<StepMenuTypein>(parent->editor, idx, parent));
+            p.showMenuAsync(parent->editor->defaultPopupMenuOptions());
+        }
+        void mouseDown(const juce::MouseEvent &event) override
+        {
+            if (event.mods.isPopupMenu())
+            {
+                showTypeinPopup(event.position);
+                return;
+            }
+            handleMouseAt(event.position);
+        }
+        void mouseDrag(const juce::MouseEvent &event) override
+        {
+            if (event.mods.isPopupMenu())
+            {
+                return;
+            }
+            handleMouseAt(event.position);
+        }
         void mouseDoubleClick(const juce::MouseEvent &event) override
         {
             auto idx = indexForPosition(event.position);
@@ -306,6 +358,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
         ms.stepLfoStorage.data[idx] = v;
         connectors::updateSingleValue<cmsg::UpdateZoneOrGroupModStorageFloatValue>(
             ms, ms.stepLfoStorage.data[idx], parent, parent->forZone, parent->selectedTab);
+        repaint();
     }
 
     void rotate(int dir)
