@@ -74,9 +74,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         )
 
 if (NOT CMAKE_UNITY_BUILD)
-        message(STATUS "Includeing Melatonin")
-        target_link_libraries(${PROJECT_NAME} PUBLIC melatonin_inspector)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_MELATONIN_INSPECTOR=1)
+        #message(STATUS "Includeing Melatonin")
+        #target_link_libraries(${PROJECT_NAME} PUBLIC melatonin_inspector)
+        #target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_MELATONIN_INSPECTOR=1)
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
