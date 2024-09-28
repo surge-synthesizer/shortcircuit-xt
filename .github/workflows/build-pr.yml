@@ -107,5 +107,5 @@ jobs:
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
           cmakeArgs: -DCMAKE_BUILD_TYPE=Debug -GNinja
-          target: scxt_clapfirst_Standalone
+          target: shortcircuit-products
 
