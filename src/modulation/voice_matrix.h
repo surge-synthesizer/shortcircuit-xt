@@ -68,6 +68,7 @@ struct MatrixConfig
 
     static constexpr bool IsFixedMatrix{true};
     static constexpr size_t FixedMatrixSize{12};
+    static constexpr bool providesTargetRanges{true};
 
     using TI = TargetIdentifier;
     using SI = SourceIdentifier;

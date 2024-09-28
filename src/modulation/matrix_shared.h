@@ -250,6 +250,9 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
             if (r.target == pt)
             {
                 r.depthScale = tmd.maxVal - tmd.minVal;
+                r.maxVal = tmd.maxVal;
+                r.minVal = tmd.minVal;
+                r.minVal = tmd.minVal;
                 if (!nonAdditive)
                 {
 #if BUILD_IS_DEBUG
