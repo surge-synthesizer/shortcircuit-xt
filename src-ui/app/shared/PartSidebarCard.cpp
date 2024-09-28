@@ -110,7 +110,25 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
 
 void PartSidebarCard::mouseDown(const juce::MouseEvent &event)
 {
+    if (event.mods.isPopupMenu())
+    {
+        showPopup();
+        return;
+    }
     sendToSerialization(cmsg::SelectPart(part));
+}
+
+void PartSidebarCard::showPopup()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Part " + std::to_string(part + 1));
+    p.addSeparator();
+    p.addItem("Deactivate Part", [p = this->part, w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::DeactivatePart(p));
+    });
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 void PartSidebarCard::paint(juce::Graphics &g)
@@ -151,6 +169,13 @@ void PartSidebarCard::paint(juce::Graphics &g)
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::PAN, med);
     r = r.translated(0, rowHeight);
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::TUNING, med);
+
+    auto &cfg = editor->partConfigurations[part];
+    if (!cfg.active)
+    {
+        g.setColour(juce::Colour(255, 0, 0).withAlpha(0.1f));
+        g.fillRect(getLocalBounds());
+    }
 }
 
 void PartSidebarCard::resized()

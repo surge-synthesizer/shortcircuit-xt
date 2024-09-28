@@ -154,6 +154,10 @@ enum ClientToSerializationMessagesIds
 
     c2s_resolve_sample,
 
+    // part activation
+    c2s_activate_next_part,
+    c2s_deactivate_part,
+
     num_clientToSerializationMessages
 };
 

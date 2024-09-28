@@ -57,6 +57,10 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
             idx++;
         }
         configuration.channel = c;
+        if (c == 0)
+        {
+            configuration.active = true;
+        }
     }
     virtual ~Part() = default;
 
@@ -68,7 +72,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     {
         static constexpr int16_t omniChannel{-1};
 
-        bool active{true};
+        bool active{false};
         int16_t channel{omniChannel}; // a midi channel or a special value like omni
         bool mute{false};
         bool solo{false};
@@ -154,7 +158,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     }
 
     uint32_t activeGroups{0};
-    bool isActive() { return activeGroups != 0; }
+    bool isActive() { return activeGroups != 0 && configuration.active; }
     void addActiveGroup() { activeGroups++; }
     void removeActiveGroup()
     {

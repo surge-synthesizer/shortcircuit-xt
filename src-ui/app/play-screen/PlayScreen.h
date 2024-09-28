@@ -79,6 +79,8 @@ struct PlayScreen : juce::Component, HasEditor
     void rebuildPositionsAndVisibilites();
     void showMenu();
 
+    void partConfigurationChanged();
+
     bool tallMode{true};
     static constexpr size_t interPartMargin{3};
     juce::Rectangle<int> rectangleForPart(int part);

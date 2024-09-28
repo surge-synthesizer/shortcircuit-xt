@@ -42,8 +42,14 @@ struct ViewportComponent : juce::Component, HasEditor
 
     void paint(juce::Graphics &g)
     {
+        auto viz = [this](int i) { return editor->partConfigurations[i].active; };
+
+        int ct{0};
         for (int i = 0; i < scxt::numParts; ++i)
         {
+            if (!viz(i))
+                continue;
+
             auto col = editor->themeColor(theme::ColorMap::grid_secondary);
             if (i == editor->selectedPart)
             {
@@ -51,10 +57,11 @@ struct ViewportComponent : juce::Component, HasEditor
             }
             g.setColour(col);
             auto bx =
-                playScreen->rectangleForPart(i).withTrimmedBottom(PlayScreen::interPartMargin);
+                playScreen->rectangleForPart(ct).withTrimmedBottom(PlayScreen::interPartMargin);
             g.drawRoundedRectangle(bx.toFloat(), 2, 1);
             g.drawVerticalLine(bx.getX() + shared::PartSidebarCard::width, bx.getY(),
                                bx.getY() + bx.getHeight());
+            ++ct;
         }
     }
 };
@@ -79,11 +86,11 @@ PlayScreen::PlayScreen(SCXTEditor *e) : HasEditor(e)
     {
         partSidebars[i] = std::make_unique<shared::PartSidebarCard>(i, editor);
         partSidebars[i]->selfAccent = false;
-        viewportContents->addAndMakeVisible(*partSidebars[i]);
+        viewportContents->addChildComponent(*partSidebars[i]);
 
         skinnyPage[i] = 0;
         auto ms = std::make_unique<jcmp::MultiSwitch>();
-        viewportContents->addAndMakeVisible(*ms);
+        viewportContents->addChildComponent(*ms);
         auto ds = std::make_unique<skinnyPage_t>(ms, skinnyPage[i]);
         static_assert(scxt::macrosPerPart == 16); // assuming this here for now
         ds->valueToString = [](auto b) {
@@ -107,7 +114,7 @@ PlayScreen::PlayScreen(SCXTEditor *e) : HasEditor(e)
             sed = std::make_unique<shared::SingleMacroEditor>(editor, pt, id, true);
             sed->changePart(pt);
             id++;
-            viewportContents->addAndMakeVisible(*sed);
+            viewportContents->addChildComponent(*sed);
         }
         pt++;
     }
@@ -123,6 +130,7 @@ PlayScreen::~PlayScreen() {}
 
 void PlayScreen::rebuildPositionsAndVisibilites()
 {
+    auto viz = [this](int i) { return editor->partConfigurations[i].active; };
     if (tallMode)
     {
         for (int p = 0; p < scxt::numParts; ++p)
@@ -130,7 +138,7 @@ void PlayScreen::rebuildPositionsAndVisibilites()
             skinnyPageSwitches[p]->widget->setVisible(false);
             for (int i = 0; i < scxt::macrosPerPart; ++i)
             {
-                macroEditors[p][i]->setVisible(true);
+                macroEditors[p][i]->setVisible(true && viz(p));
             }
         }
     }
@@ -138,15 +146,21 @@ void PlayScreen::rebuildPositionsAndVisibilites()
     {
         for (int p = 0; p < scxt::numParts; ++p)
         {
-            skinnyPageSwitches[p]->widget->setVisible(true);
+            skinnyPageSwitches[p]->widget->setVisible(true && viz(p));
             static_assert(scxt::macrosPerPart == 16); // assuming this here too
             for (int i = 0; i < scxt::macrosPerPart; ++i)
             {
                 auto firstHalf = (i < scxt::macrosPerPart / 2);
-                macroEditors[p][i]->setVisible(firstHalf == !skinnyPage[p]);
+                macroEditors[p][i]->setVisible(viz(p) && firstHalf == !skinnyPage[p]);
             }
         }
     }
+
+    for (int p = 0; p < scxt::numParts; ++p)
+    {
+        partSidebars[p]->setVisible(viz(p));
+    }
+
     if (isVisible())
         resized();
 }
@@ -175,6 +189,13 @@ void PlayScreen::showMenu()
     });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
+
+void PlayScreen::partConfigurationChanged()
+{
+    rebuildPositionsAndVisibilites();
+    resized();
+}
+
 void PlayScreen::visibilityChanged()
 {
     if (isVisible())
@@ -201,8 +222,12 @@ void PlayScreen::resized()
 
     viewport->setBounds(playNamedPanel->getContentArea());
     auto w = viewport->getWidth() - viewport->getScrollBarThickness() - 2;
-    viewportContents->setBounds(
-        0, 0, w, shared::PartSidebarCard::height * scxt::numParts * (tallMode ? 2 : 1));
+    int npt{0};
+    for (int i = 0; i < scxt::numParts; ++i)
+        npt += editor->partConfigurations[i].active;
+
+    viewportContents->setBounds(0, 0, w,
+                                shared::PartSidebarCard::height * npt * (tallMode ? 2 : 1));
     for (int i = 0; i < scxt::numParts; ++i)
     {
         auto rb = rectangleForPart(i);

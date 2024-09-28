@@ -64,6 +64,8 @@ struct PartSidebarCard : juce::Component, HasEditor
     void mouseDown(const juce::MouseEvent &e) override;
     void resized() override;
 
+    void showPopup();
+
     void resetFromEditorCache();
 };
 } // namespace scxt::ui::app::shared

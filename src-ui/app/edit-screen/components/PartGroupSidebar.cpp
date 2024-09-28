@@ -48,6 +48,7 @@ struct PartSidebar : juce::Component, HasEditor
     std::unique_ptr<jcmp::Viewport> viewport;
     std::unique_ptr<juce::Component> viewportContents;
     std::array<std::unique_ptr<shared::PartSidebarCard>, scxt::numParts> parts;
+    std::unique_ptr<jcmp::TextPushButton> addPartButton;
 
     PartSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
     {
@@ -56,8 +57,14 @@ struct PartSidebar : juce::Component, HasEditor
         for (int i = 0; i < scxt::numParts; ++i)
         {
             parts[i] = std::make_unique<shared::PartSidebarCard>(i, editor);
-            viewportContents->addAndMakeVisible(*parts[i]);
+            viewportContents->addChildComponent(*parts[i]);
         }
+        addPartButton = std::make_unique<jcmp::TextPushButton>();
+        addPartButton->setLabel("Add Part");
+        addPartButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            w->sendToSerialization(cmsg::ActivateNextPart(true));
+        });
+        viewportContents->addChildComponent(*addPartButton);
         viewport->setViewedComponent(viewportContents.get(), false);
         addAndMakeVisible(*viewport);
     }
@@ -65,13 +72,51 @@ struct PartSidebar : juce::Component, HasEditor
     {
         auto w = shared::PartSidebarCard::width + viewport->getScrollBarThickness() + 2;
         viewport->setBounds(getLocalBounds().withWidth(w).translated(3, 0));
-        viewportContents->setBounds(0, 0, shared::PartSidebarCard::width,
-                                    shared::PartSidebarCard::height * scxt::numParts);
+        auto nDispParts{0};
         for (int i = 0; i < scxt::numParts; ++i)
         {
-            parts[i]->setBounds(0, i * shared::PartSidebarCard::height,
-                                shared::PartSidebarCard::width, shared::PartSidebarCard::height);
+            if (parts[i]->isVisible())
+            {
+                nDispParts++;
+            }
         }
+        int extraSpace{0};
+        if (nDispParts < scxt::numParts)
+            extraSpace = 30;
+        viewportContents->setBounds(0, 0, shared::PartSidebarCard::width,
+                                    shared::PartSidebarCard::height * nDispParts + extraSpace);
+        auto ct{0};
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            if (parts[i]->isVisible())
+            {
+                parts[i]->setBounds(0, ct * shared::PartSidebarCard::height,
+                                    shared::PartSidebarCard::width,
+                                    shared::PartSidebarCard::height);
+                ct++;
+            }
+        }
+
+        if (nDispParts < scxt::numParts)
+        {
+            addPartButton->setBounds(10, ct * shared::PartSidebarCard::height + 4,
+                                     shared::PartSidebarCard::width - 20, 22);
+        }
+    }
+
+    void restackForActive()
+    {
+        int nDispParts{0};
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            if (editor->partConfigurations[i].active)
+            {
+                nDispParts++;
+            }
+            parts[i]->setVisible(editor->partConfigurations[i].active);
+        }
+        addPartButton->setVisible(nDispParts < scxt::numParts);
+        resized();
     }
 };
 
@@ -120,10 +165,13 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
         p.addSeparator();
         for (int i = 0; i < scxt::numParts; ++i)
         {
-            p.addItem("Part " + std::to_string(i + 1), true, i == editor->selectedPart,
-                      [w = juce::Component::SafePointer(this), index = i]() {
-                          w->sendToSerialization(cmsg::SelectPart(index));
-                      });
+            if (editor->partConfigurations[i].active)
+            {
+                p.addItem("Part " + std::to_string(i + 1), true, i == editor->selectedPart,
+                          [w = juce::Component::SafePointer(this), index = i]() {
+                              w->sendToSerialization(cmsg::SelectPart(index));
+                          });
+            }
         }
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
@@ -471,5 +519,6 @@ void PartGroupSidebar::setSelectedTab(int t)
 void PartGroupSidebar::partConfigurationChanged(int i)
 {
     partSidebar->parts[i]->resetFromEditorCache();
+    partSidebar->restackForActive();
 }
 } // namespace scxt::ui::app::edit_screen
