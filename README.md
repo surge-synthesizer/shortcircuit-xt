@@ -29,7 +29,7 @@ are reflected in the code.
 
 If you are going to use the product now, though, many things will be incomplete or
 mysteriously not work. Really the best way to particpate is to join the [surge synth team
-discord](https://raw.githubusercontent.com/surge-synthesizer/surge-synthesizer.github.io/master/_includes/discord_invite_link)
+discord](https://discord.gg/RcHTt5M55M)
 and come say hi in the #sc-development channel.
 
 There's lots of ways you can help. Of course, developers are always welcome. But testers,
