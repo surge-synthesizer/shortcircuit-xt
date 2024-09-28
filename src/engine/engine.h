@@ -137,7 +137,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         size_t idx{0};
         for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
         {
-            if (!part->configuration.mute &&
+            if (!part->configuration.mute && part->configuration.active &&
                 (part->configuration.channel == channel ||
                  part->configuration.channel == Part::PartConfiguration::omniChannel))
             {

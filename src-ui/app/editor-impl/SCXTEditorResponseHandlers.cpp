@@ -405,6 +405,8 @@ void SCXTEditor::onPartConfiguration(
     // When I have active show/hide i will need to rewrite this i bet
     if (playScreen && playScreen->partSidebars[pt])
         playScreen->partSidebars[pt]->resetFromEditorCache();
+    playScreen->partConfigurationChanged();
+
     if (editScreen && editScreen->partSidebar)
         editScreen->partSidebar->partConfigurationChanged(pt);
 }

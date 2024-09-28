@@ -338,6 +338,62 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
 CLIENT_TO_SERIAL(MoveZoneFromTo, c2s_move_zone, zoneAddressFromTo_t,
                  moveZoneFromTo(payload, engine, cont));
 
+inline void doActivateNextPart(messaging::MessageController &cont)
+{
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [](auto &e) {
+            // We should really do this on audio thread but test it here quickly
+            for (auto &pt : *(e.getPatch()))
+            {
+                if (!pt->configuration.active)
+                {
+                    pt->clearGroups();
+                    pt->configuration.active = true;
+                    break;
+                }
+            }
+        },
+        [](const auto &e) { e.sendFullRefreshToClient(); });
+}
+CLIENT_TO_SERIAL(ActivateNextPart, c2s_activate_next_part, bool, doActivateNextPart(cont));
+
+inline void doDeactivatePart(int part, messaging::MessageController &cont)
+{
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [part](auto &e) {
+            e.getPatch()->getPart(part)->configuration.active = false;
+            bool anySel{false};
+            for (auto &pt : *(e.getPatch()))
+            {
+                if (pt->configuration.active)
+                    anySel = true;
+            }
+            if (!anySel)
+            {
+                e.getPatch()->getPart(0)->clearGroups();
+                e.getPatch()->getPart(0)->configuration.active = true;
+            }
+        },
+        [part](const auto &e) {
+            if (e.getSelectionManager()->selectedPart == part)
+            {
+                int tpt{0}, spt{-1};
+                for (auto &pt : *(e.getPatch()))
+                {
+                    if (pt->configuration.active && spt < 0)
+                        spt = tpt;
+                    tpt++;
+                }
+                if (spt >= 0)
+                {
+                    e.getSelectionManager()->selectPart(spt);
+                }
+            }
+            e.sendFullRefreshToClient();
+        });
+}
+CLIENT_TO_SERIAL(DeactivatePart, c2s_deactivate_part, int32_t, doDeactivatePart(payload, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_STRUCTURE_MESSAGES_H
