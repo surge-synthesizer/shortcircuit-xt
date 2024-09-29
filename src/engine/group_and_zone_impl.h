@@ -73,7 +73,6 @@ void HasGroupZoneProcessors<T>::setProcessorType(int whichProcessor,
         ps.streamingVersion = 0;
     }
 
-    SCLOG("STREAMING VERSION IS " << ps.streamingVersion);
     asT()->onProcessorTypeChanged(whichProcessor, type);
 }
 

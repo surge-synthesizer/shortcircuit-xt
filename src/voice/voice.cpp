@@ -549,10 +549,14 @@ template <bool OS> bool Voice::processWithOS()
     /*
      * Finally do voice state update
      */
-    if (isAEGRunning)
+    if (isAEGRunning && (hasProcs || isGeneratorRunning))
+    {
         isVoicePlaying = true;
+    }
     else
+    {
         isVoicePlaying = false;
+    }
 
     return true;
 }
