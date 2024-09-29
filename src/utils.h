@@ -218,7 +218,6 @@ struct SampleRateSupport
 
 struct ThreadingChecker
 {
-    // TODO: Remove this workaround once I have startup working
     std::atomic<bool> bypassThreadChecks{false};
 
     std::thread::id clientThreadId{}, serialThreadId{}, audioThreadId{};

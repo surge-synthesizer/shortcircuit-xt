@@ -263,7 +263,6 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     selection::SelectionManager::selectedZones_t allGroupSelections;
     int16_t selectedPart{0};
 
-    // TODO: Do we allow part multi-select? I think we don't
     std::set<int> groupsWithSelectedZones;
     bool isAnyZoneFromGroupSelected(int groupIdx)
     {
