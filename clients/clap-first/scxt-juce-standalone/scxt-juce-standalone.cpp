@@ -100,11 +100,12 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
         options.osxLibrarySubFolder = "Application Support";
         properties = std::make_unique<juce::PropertiesFile>(options);
 
-        auto streamedState = properties->getValue("engineState");
+        auto streamedState = properties->getValue("engineStateFile");
         if (!streamedState.isEmpty())
         {
-            scxt::clap_first::scxt_plugin::SCXTPlugin::synchronousEngineUnstream(
-                engine, streamedState.toStdString());
+            scxt::messaging::client::clientSendToSerialization(
+                scxt::messaging::client::LoadMulti(streamedState.toStdString()),
+                *(engine->getMessageController()));
         }
 
         setupAudio();
@@ -115,14 +116,15 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
         // save on exit
         auto xml = deviceManager.createStateXml();
         properties->setValue("audioSetup", xml.get());
-
         engine->getSampleManager()->purgeUnreferencedSamples();
         try
         {
-            auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_DAW);
-            auto engineXml = scxt::json::streamEngineState(*engine);
-            SCLOG("Streaming State Information: " << engineXml.size() << " bytes");
-            properties->setValue("engineState", juce::String(engineXml));
+            auto p =
+                fs::path(fs::u8path(
+                    properties->getFile().getParentDirectory().getFullPathName().toStdString())) /
+                "Standalone.scm";
+            scxt::patch_io::saveMulti(p, *engine);
+            properties->setValue("engineStateFile", juce::String(p.u8string()));
         }
         catch (const std::runtime_error &err)
         {
