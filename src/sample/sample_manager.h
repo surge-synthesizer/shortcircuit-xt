@@ -86,6 +86,7 @@ struct SampleManager : MoveableOnly<SampleManager>
     std::optional<SampleID> loadSampleFromSF2(const fs::path &,
                                               sf2::File *f, // if this is null I will re-open it
                                               int preset, int instrument, int region);
+    int findSF2SampleIndexFor(sf2::File *, int preset, int instrument, int region);
 
     std::optional<SampleID> setupSampleFromMultifile(const fs::path &, const std::string &md5,
                                                      int idx, void *data, size_t dataSize);

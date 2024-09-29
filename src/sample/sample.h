@@ -55,7 +55,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     std::string displayName{};
     std::string getDisplayName() const { return displayName; }
     bool load(const fs::path &path);
-    bool loadFromSF2(const fs::path &path, sf2::File *f, int preset, int inst, int region);
+    bool loadFromSF2(const fs::path &path, sf2::File *f, int sampleIndex);
 
     const fs::path &getPath() const { return mFileName; }
     std::string md5Sum{};

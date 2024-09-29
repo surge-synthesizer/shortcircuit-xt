@@ -118,7 +118,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
         {
             try
             {
-                SCLOG("Opening file " << p.u8string());
+                SCLOG("Opening SF2 : " << p.u8string());
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 auto sf = std::make_unique<sf2::File>(riff.get());
@@ -136,32 +136,73 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
         sf2MD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
 
     assert(f);
+
+    auto sidx = -1;
+    if (preset >= 0 && instrument >= 0)
+    {
+        sidx = findSF2SampleIndexFor(f, preset, instrument, region);
+    }
+    else
+    {
+        sidx = region;
+    }
+
+    if (sidx < 0 && sidx >= f->GetSampleCount())
+    {
+        return std::nullopt;
+    }
     for (const auto &[id, sm] : samples)
     {
         if (sm->type == Sample::SF2_FILE)
         {
-            const auto &[type, path, md5sum, pre, inst, reg] = sm->getSampleFileAddress();
-            if (path == p && pre == preset && instrument == inst && region == reg)
+            if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
                 return id;
         }
     }
 
     auto sp = std::make_shared<Sample>();
 
-    if (!sp->loadFromSF2(p, f, preset, instrument, region))
+    if (!sp->loadFromSF2(p, f, sidx))
         return {};
 
     sp->md5Sum = sf2MD5ByPath[p.u8string()];
     assert(!sp->md5Sum.empty());
-    sp->id.setAsMD5WithAddress(sp->md5Sum, preset, instrument, region);
+    sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
     sp->id.setPathHash(p);
 
     SCLOG("Loading : " << p.u8string());
+    SCLOG("        : " << sp->displayName);
     SCLOG("        : " << sp->id.to_string());
 
     samples[sp->id] = sp;
     updateSampleMemory();
     return sp->id;
+}
+
+int SampleManager::findSF2SampleIndexFor(sf2::File *f, int presetNum, int instrument, int region)
+{
+    auto *preset = f->GetPreset(presetNum);
+
+    auto *presetRegion = preset->GetRegion(instrument);
+    sf2::Instrument *instr = presetRegion->pInstrument;
+
+    if (instr->pGlobalRegion)
+    {
+        // TODO: Global Region
+    }
+
+    auto sfsample = instr->GetRegion(region)->GetSample();
+    if (!sfsample)
+        return false;
+
+    for (int i = 0; i < f->GetSampleCount(); ++i)
+    {
+        if (f->GetSample(i) == sfsample)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &p,

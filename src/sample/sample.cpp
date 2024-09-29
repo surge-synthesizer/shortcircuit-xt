@@ -127,30 +127,17 @@ bool Sample::load(const fs::path &path)
     return false;
 }
 
-bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int presetNum, int inst, int reg)
+bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
 {
     mFileName = p;
-    preset = presetNum;
-    instrument = inst;
-    region = reg;
+    preset = -1;
+    instrument = -1;
+    region = sampleIndex;
     type = SF2_FILE;
 
-    auto *preset = f->GetPreset(presetNum);
-
-    auto *presetRegion = preset->GetRegion(inst);
-    sf2::Instrument *instr = presetRegion->pInstrument;
-
-    if (instr->pGlobalRegion)
-    {
-        // TODO: Global Region
-    }
-
-    auto sfsample = instr->GetRegion(region)->GetSample();
+    auto sfsample = f->GetSample(sampleIndex);
     if (!sfsample)
         return false;
-
-    SCLOG("Loading individual sf2 sample '" << sfsample->Name << "' " << SCD(presetNum)
-                                            << SCD(instrument) << SCD(region) << SCD(p.u8string()));
 
     auto frameSize = sfsample->GetFrameSize();
     channels = sfsample->GetChannelCount();
@@ -160,8 +147,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int presetNum, int ins
     auto s = sfsample;
 
     auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
-    displayName = fmt::format("{} - {} ({} @ {}.{})", f->GetInstrument(inst)->GetName(), s->Name,
-                              fnp.filename().u8string(), inst, region);
+    displayName = fmt::format("{} - ({} @ {})", s->Name, fnp.filename().u8string(), sampleIndex);
 
     if (frameSize == 2 && channels == 1 && sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
     {

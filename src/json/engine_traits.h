@@ -86,7 +86,6 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
 
                  engine::Engine::UnstreamGuard sg(sv);
 
-                 // TODO: engine gets a SV? Guess maybe
                  // Order matters here. Samples need to be there before the patch and patch
                  // before selection
 
@@ -175,7 +174,6 @@ SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,
 
 SC_STREAMDEF(
     scxt::engine::Part, SC_FROM({
-        // TODO: Do a non-empty part stream with the If variant
         v = {{"config", from.configuration}, {"groups", from.getGroups()}, {"macros", from.macros}};
         if (SC_STREAMING_FOR_PART)
         {
@@ -273,7 +271,6 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                      if (group.parentPart && group.parentPart->parentPatch &&
                          group.parentPart->parentPatch->parentEngine)
                      {
-                         // TODO: MOve this somewhere more intelligent
                          group.getZone(idx)->setupOnUnstream(
                              *(group.parentPart->parentPatch->parentEngine));
                      }
