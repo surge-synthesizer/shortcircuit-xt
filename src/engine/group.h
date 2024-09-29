@@ -255,7 +255,8 @@ struct Group : MoveableOnly<Group>,
 } // namespace scxt::engine
 
 SC_DESCRIBE(scxt::engine::Group::GroupOutputInfo,
-            SC_FIELD(amplitude, pmd().asCubicDecibelAttenuation().withName("Amplitude"));
+            SC_FIELD(amplitude,
+                     pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
             SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));
             SC_FIELD(procRouting, pmd().asInt().withRange(0, 1));
             SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
