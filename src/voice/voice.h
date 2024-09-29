@@ -199,6 +199,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     }
     void release() { isGated = false; }
     void cleanupVoice();
+
+    void onSampleRateChanged() override;
 };
 } // namespace scxt::voice
 

@@ -45,7 +45,19 @@ static_assert(egsPerGroup == egsPerZone,
               "If this is false you need to template out the count below");
 template <typename T> struct HasModulators
 {
-    HasModulators(T *that) : eg{that, that}, egOS{that, that} {}
+    struct DoubleRate
+    {
+        double sampleRate, sampleRateInv;
+        T *that{nullptr};
+        DoubleRate(T *that) : that(that) { resetRates(); }
+        void resetRates()
+        {
+            sampleRate = that->sampleRate * 2;
+            sampleRateInv = that->sampleRateInv / 2;
+        }
+    } doubleRate;
+
+    HasModulators(T *that) : eg{that, that}, doubleRate{that}, egOS{&doubleRate, &doubleRate} {}
 
     static constexpr uint16_t lfosPerObject{lfosPerZone};
     static constexpr uint16_t egsPerObject{egsPerZone};
@@ -66,7 +78,7 @@ template <typename T> struct HasModulators
         ahdsrenv_t;
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        T, blockSize << 1, sst::basic_blocks::modulators::TwentyFiveSecondExp>
+        DoubleRate, (blockSize << 1), sst::basic_blocks::modulators::TwentyFiveSecondExp>
         ahdsrenvOS_t;
 
     ahdsrenv_t eg[egsPerObject];
@@ -74,6 +86,8 @@ template <typename T> struct HasModulators
 
     std::array<bool, lfosPerObject> lfosActive{};
     std::array<bool, egsPerObject> egsActive{};
+
+    void setHasModulatorsSampleRate(double sr, double sri) { doubleRate.resetRates(); }
 };
 } // namespace scxt::modulation::shared
 #endif // SHORTCIRCUITXT_HAS_MODULATORS_H

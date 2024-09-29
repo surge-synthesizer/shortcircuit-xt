@@ -474,6 +474,8 @@ void Group::onSampleRateChanged()
 
     for (auto &z : zones)
         z->setSampleRate(getSampleRate(), getSampleRateInv());
+
+    this->setHasModulatorsSampleRate(getSampleRate(), getSampleRateInv());
 }
 
 void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)

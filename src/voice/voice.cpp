@@ -794,4 +794,7 @@ void Voice::updateTransportPhasors()
         mul = mul / 2;
     }
 }
+
+void Voice::onSampleRateChanged() { setHasModulatorsSampleRate(samplerate, samplerate_inv); }
+
 } // namespace scxt::voice
