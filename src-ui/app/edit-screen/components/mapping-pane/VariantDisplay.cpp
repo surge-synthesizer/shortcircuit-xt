@@ -931,7 +931,7 @@ void VariantDisplay::FileInfos::paint(juce::Graphics &g)
     int margin{5};
     auto ft = editor->themeApplier.interMediumFor(12);
 
-    auto w = juce::GlyphArrangement::getStringWidth(ft, msg);
+    auto w = SST_STRING_WIDTH_FLOAT(ft, msg);
     auto bx = getLocalBounds().withWidth(w + 2 * margin).withHeight(18);
     g.setColour(editor->themeColor(theme::ColorMap::bg_3).withAlpha(0.5f));
     g.fillRect(bx);
