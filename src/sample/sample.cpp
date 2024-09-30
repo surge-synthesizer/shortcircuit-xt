@@ -146,7 +146,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
 
     auto s = sfsample;
 
-    auto fnp = fs::path{f->GetRiffFile()->GetFileName()};
+    auto fnp = fs::path(fs::u8path(f->GetRiffFile()->GetFileName()));
     displayName = fmt::format("{} - ({} @ {})", s->Name, fnp.filename().u8string(), sampleIndex);
 
     if (frameSize == 2 && channels == 1 && sfsample->SampleType == sf2::Sample::MONO_SAMPLE)

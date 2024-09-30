@@ -37,11 +37,23 @@ bool Sample::parseMP3(const fs::path &p)
 {
     mp3dec_t mp3d;
     mp3dec_file_info_t info;
+#if WIN32
+    int count =
+        MultiByteToWideChar(CP_UTF8, 0, p.u8string().c_str(), p.u8string().length(), NULL, 0);
+    std::wstring wstr(count, 0);
+    MultiByteToWideChar(CP_UTF8, 0, p.u8string().c_str(), p.u8string().length(), &wstr[0], count);
+    if (mp3dec_load_w(&mp3d, &wstr[0], &info, nullptr, nullptr))
+    {
+        SCLOG("Failed to parse MP3");
+        return false;
+    }
+#else
     if (mp3dec_load(&mp3d, p.u8string().c_str(), &info, nullptr, nullptr))
     {
         SCLOG("Failed to parse MP3");
         return false;
     }
+#endif
 
     if (info.channels < 1 || info.channels > 2)
         return false;
