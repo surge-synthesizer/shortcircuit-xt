@@ -78,11 +78,11 @@ jobs:
           cmake -S . -B ./build ${{ matrix.cmakeConfig }} -DCMAKE_BUILD_TYPE=Debug 
           cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 4
 
-      #- name: Run Clap Validator
-      #  if: ${{ matrix.clapValidate }}
-      #  uses: jatinchowdhury18/clap-val-action@main
-      #  with:
-      #    plugin_path: "./build/shortcircuit-products/Shortcircuit XT.clap"
+      - name: Run Clap Validator
+        if: ${{ matrix.clapValidate }}
+        uses: jatinchowdhury18/clap-val-action@main
+        with:
+          plugin_path: "\"./build/shortcircuit-products/Shortcircuit XT.clap\""
 
       - name: Run Tests
         if: ${{ matrix.runTests }}
