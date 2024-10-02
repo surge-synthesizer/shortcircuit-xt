@@ -32,8 +32,6 @@
 #include "version.h"
 #include "app/SCXTEditor.h"
 
-#include "sst/voicemanager/midi1_to_voicemanager.h"
-
 namespace scxt::clap_first::scxt_plugin
 {
 const clap_plugin_descriptor *getDescription()
@@ -418,24 +416,23 @@ bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
         case CLAP_EVENT_MIDI:
         {
             auto mevt = reinterpret_cast<const clap_event_midi *>(nextEvent);
-            sst::voicemanager::applyMidi1Message(engine->voiceManager, mevt->port_index,
-                                                 mevt->data);
+            engine->processMIDI1Event(mevt->port_index, mevt->data);
         }
         break;
 
         case CLAP_EVENT_NOTE_ON:
         {
             auto nevt = reinterpret_cast<const clap_event_note *>(nextEvent);
-            engine->voiceManager.processNoteOnEvent(nevt->port_index, nevt->channel, nevt->key,
-                                                    nevt->note_id, nevt->velocity, 0.f);
+            engine->processNoteOnEvent(nevt->port_index, nevt->channel, nevt->key, nevt->note_id,
+                                       nevt->velocity, 0.f);
         }
         break;
 
         case CLAP_EVENT_NOTE_OFF:
         {
             auto nevt = reinterpret_cast<const clap_event_note *>(nextEvent);
-            engine->voiceManager.processNoteOffEvent(nevt->port_index, nevt->channel, nevt->key,
-                                                     nevt->note_id, nevt->velocity);
+            engine->processNoteOffEvent(nevt->port_index, nevt->channel, nevt->key, nevt->note_id,
+                                        nevt->velocity);
         }
 
         case CLAP_EVENT_PARAM_VALUE:

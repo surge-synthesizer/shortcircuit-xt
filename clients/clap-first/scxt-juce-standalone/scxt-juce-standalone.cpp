@@ -255,8 +255,7 @@ struct SCXTApplicationWindow : juce::DocumentWindow, juce::Button::Listener
                         {
                             auto msg = (scope.blockSize1 == 1) ? midiBuffer[scope.startIndex1]
                                                                : midiBuffer[scope.startIndex2];
-                            sst::voicemanager::applyMidi1Message(window.engine->voiceManager, 0,
-                                                                 msg.getRawData());
+                            window.engine->processMIDI1Event(0, msg.getRawData());
                         }
                     }
                     // Drain thread safe midi queue

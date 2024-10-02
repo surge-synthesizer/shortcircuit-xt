@@ -68,6 +68,12 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     int16_t partNumber;
     Patch *parentPatch{nullptr};
 
+    bool respondsToMIDIChannel(int16_t channel) const
+    {
+        return channel < 0 || configuration.channel == PartConfiguration::omniChannel ||
+               channel == configuration.channel;
+    }
+
     struct PartConfiguration
     {
         static constexpr int16_t omniChannel{-1};

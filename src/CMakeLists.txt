@@ -19,6 +19,7 @@ add_library(${PROJECT_NAME} STATIC
         engine/missing_resolution.cpp
         engine/bus.cpp
         engine/macros.cpp
+        engine/group_triggers.cpp
 
         json/stream.cpp
 

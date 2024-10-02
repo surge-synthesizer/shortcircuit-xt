@@ -56,6 +56,7 @@
 #include "messaging/client/client_serial.h"
 #include "feature_enums.h"
 #include "missing_resolution.h"
+#include "sst/voicemanager/midi1_to_voicemanager.h"
 
 namespace scxt::engine
 {
@@ -1135,4 +1136,44 @@ void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
     getMessageController()->sendAudioToSerialization(a2s);
 }
 
+void Engine::processMIDI1Event(uint16_t idx, const uint8_t data[3])
+{
+    sst::voicemanager::applyMidi1Message(voiceManager, idx, data);
+}
+
+void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
+                                double velocity, float retune)
+{
+    voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, retune);
+}
+void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
+                                 double velocity)
+{
+    voiceManager.processNoteOffEvent(port, channel, key, note_id, velocity);
+}
+
+void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_t pb14bit)
+{
+    auto fv = (pb14bit - 8192) / 8192.f;
+    for (const auto &p : engine.getPatch()->getParts())
+    {
+        if (p->configuration.active && p->respondsToMIDIChannel(channel))
+        {
+            p->pitchBendValue = fv;
+        }
+    }
+}
+void Engine::MonoVoiceManagerResponder::setMIDI1CC(int16_t channel, int16_t cc, int16_t val)
+{
+    auto fv = val / 127.0;
+
+    for (const auto &p : engine.getPatch()->getParts())
+    {
+        if (p->configuration.active && p->respondsToMIDIChannel(channel))
+        {
+            p->midiCCValues[cc] = fv;
+        }
+    }
+}
+void Engine::MonoVoiceManagerResponder::setMIDIChannelPressure(int16_t channel, int16_t pres) {}
 } // namespace scxt::engine
