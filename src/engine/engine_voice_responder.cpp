@@ -212,21 +212,6 @@ void Engine::VoiceManagerResponder::endVoiceCreationTransaction(uint16_t port, u
 
 void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity) { v->release(); }
 
-void Engine::VoiceManagerResponder::setVoiceMIDIPitchBend(voice::Voice *v, uint16_t pb14bit)
-{
-    auto fv = (pb14bit - 8192) / 8192.f;
-    auto part = v->zone->parentGroup->parentPart;
-    part->pitchBendValue = fv;
-}
-
-void Engine::VoiceManagerResponder::setMIDI1CC(voice::Voice *v, int8_t controller, int8_t val)
-{
-    assert(controller >= 0);
-    auto fv = val / 127.0;
-    auto part = v->zone->parentGroup->parentPart;
-    part->midiCCValues[controller] = fv;
-}
-
 void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t expression,
                                                       double value)
 {

@@ -118,6 +118,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * Midi-style events. Each event is assumed to be at the top of the
      * blockSize sample block
      */
+    void processMIDI1Event(uint16_t midiPort, const uint8_t data[3]);
+    void processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
+                            double velocity, float retune);
+    void processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
+                             double velocity);
 
     // TODO: This is obviusly a pretty inefficient search method. We can definitel
     // pre-cache some of this lookup when the patch mutates
@@ -138,8 +143,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
         {
             if (!part->configuration.mute && part->configuration.active &&
-                (part->configuration.channel == channel ||
-                 part->configuration.channel == Part::PartConfiguration::omniChannel))
+                part->respondsToMIDIChannel(channel))
             {
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
@@ -205,8 +209,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             SCLOG("Retrigger Voice Unimplemented")
         }
 
-        void setVoiceMIDIPitchBend(voice::Voice *v, uint16_t pb14bit);
-
         void setVoiceMIDIMPEChannelPitchBend(voice::Voice *v, uint16_t pb14bit) {}
 
         void setVoicePolyphonicParameterModulation(voice::Voice *v, uint32_t parameter,
@@ -216,17 +218,27 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
         void setNoteExpression(voice::Voice *v, int32_t expression, double value);
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat);
-        void setChannelPressure(voice::Voice *v, int8_t pres) {}
         void allSoundsOff() { engine.releaseAllVoices(); }
         void allNotesOff() { engine.stopAllSounds(); }
-        void setMIDI1CC(voice::Voice *v, int8_t cc, int8_t val);
 
       private:
         bool transactionValid{false};
         int32_t transactionVoiceCount{0};
     } voiceManagerResponder{*this};
-    using voiceManager_t = sst::voicemanager::VoiceManager<VMConfig, VoiceManagerResponder>;
-    voiceManager_t voiceManager{voiceManagerResponder};
+
+    struct MonoVoiceManagerResponder
+    {
+        Engine &engine;
+
+        MonoVoiceManagerResponder(Engine &e) : engine(e) {}
+
+        void setMIDIPitchBend(int16_t channel, int16_t pb14bit);
+        void setMIDI1CC(int16_t channel, int16_t cc, int16_t val);
+        void setMIDIChannelPressure(int16_t channel, int16_t pres);
+    } monoVoiceManagerResponder{*this};
+    using voiceManager_t =
+        sst::voicemanager::VoiceManager<VMConfig, VoiceManagerResponder, MonoVoiceManagerResponder>;
+    voiceManager_t voiceManager{voiceManagerResponder, monoVoiceManagerResponder};
 
     void onSampleRateChanged() override;
 
