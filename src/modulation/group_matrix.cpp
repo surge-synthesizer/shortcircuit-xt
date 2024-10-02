@@ -134,6 +134,7 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
 void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
     lfoSources.bind(m, g, zeroSource);
+    midiCCSources.bind(m, *(g.parentPart));
 
     int idx{0};
 
