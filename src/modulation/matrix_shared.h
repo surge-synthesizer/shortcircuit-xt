@@ -409,4 +409,30 @@ struct LFOSourceBase
     }
 };
 
+template <typename CF, typename SR, uint32_t gid,
+          void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
+                                 const std::string &)>
+struct MIDICCBase
+{
+    static constexpr int numMidiCC{128};
+    MIDICCBase(scxt::engine::Engine *e)
+    {
+        for (uint32_t i = 0; i < numMidiCC; ++i)
+        {
+            sources[i] = SR{gid, 'm1cc', i};
+            registerSource(e, sources[i], "MIDI CCs", fmt::format("CC {:03}", i));
+        }
+    }
+    std::array<SR, 128> sources;
+
+    template <typename M, typename P> void bind(M &m, P &p)
+    {
+        for (int i = 0; i < numMidiCC; ++i)
+        {
+            m.bindSourceValue(sources[i], p.midiCCValues[i]);
+            CF::setDefaultLagFor(sources[i], 50);
+        }
+    }
+};
+
 #endif // SHORTCIRCUITXT_MATRIX_SHARED_H

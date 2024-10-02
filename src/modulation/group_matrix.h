@@ -247,7 +247,7 @@ struct GroupMatrixEndpoints
     struct Sources
     {
         Sources(engine::Engine *e)
-            : lfoSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}},
+            : lfoSources(e), midiCCSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}},
               transportSources(e), macroSources(e)
         {
             registerGroupModSource(e, egSource[0], "", "EG1");
@@ -255,6 +255,8 @@ struct GroupMatrixEndpoints
         }
 
         LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource> lfoSources;
+        MIDICCBase<GroupMatrixConfig, SR, 'zncc', registerGroupModSource> midiCCSources;
+
         SR egSource[2];
         TransportSourceBase<SR, 'gtsp', false, registerGroupModSource> transportSources;
 

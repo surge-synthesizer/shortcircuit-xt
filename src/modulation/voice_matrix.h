@@ -224,14 +224,16 @@ struct MatrixEndpoints
     struct Sources
     {
         Sources(engine::Engine *e)
-            : lfoSources(e), midiSources(e), noteExpressions(e), aegSource{'zneg', 'aeg ', 0},
-              eg2Source{'zneg', 'eg2 ', 0}, transportSources(e), rngSources(e), macroSources(e)
+            : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
+              aegSource{'zneg', 'aeg ', 0}, eg2Source{'zneg', 'eg2 ', 0}, transportSources(e),
+              rngSources(e), macroSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
         }
 
         LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource> lfoSources;
+        MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource> midiCCSources;
 
         struct MIDISources
         {
