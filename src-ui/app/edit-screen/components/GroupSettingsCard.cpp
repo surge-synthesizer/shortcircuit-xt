@@ -27,6 +27,7 @@
 
 #include "GroupSettingsCard.h"
 #include "app/SCXTEditor.h"
+#include "connectors/PayloadDataAttachment.h"
 
 namespace scxt::ui::app::edit_screen
 {
