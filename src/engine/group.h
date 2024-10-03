@@ -47,6 +47,7 @@
 #include "modulation/modulators/steplfo.h"
 #include "modulation/group_matrix.h"
 #include "modulation/has_modulators.h"
+#include "group_triggers.h"
 
 namespace scxt::engine
 {
@@ -84,6 +85,8 @@ struct Group : MoveableOnly<Group>,
         ProcRoutingPath procRouting{procRoute_linear};
         BusAddress routeTo{DEFAULT_BUS};
     } outputInfo;
+
+    GroupTriggerConditions triggerConditions;
 
     Engine *getEngine();
     const Engine *getEngine() const;

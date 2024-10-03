@@ -29,6 +29,8 @@
 #define SCXT_SRC_ENGINE_GROUP_TRIGGERS_H
 
 #include <memory>
+#include <array>
+#include "configuration.h"
 
 #include "datamodel/metadata.h"
 
@@ -60,6 +62,18 @@ struct GroupTrigger
 
 std::unique_ptr<GroupTrigger> makeMacroGroupTrigger(GroupTriggerInstrumentState &);
 std::unique_ptr<GroupTrigger> makeMIDI1CCGroupTrigger(GroupTriggerInstrumentState &);
+
+struct GroupTriggerConditions
+{
+    std::array<std::unique_ptr<GroupTrigger>, scxt::triggerConditionsPerGroup> conditions;
+    std::array<bool, scxt::triggerConditionsPerGroup> active;
+    enum Conjunction
+    {
+        AND,
+        OR
+    };
+    std::array<Conjunction, scxt::triggerConditionsPerGroup - 1> conjunctions;
+};
 
 } // namespace scxt::engine
 #endif // GROUP_TRIGGERS_H

@@ -17,6 +17,8 @@ add_library(${PROJECT_NAME} STATIC
         app/edit-screen/components/PartGroupSidebar.cpp
         app/edit-screen/components/ProcessorPane.cpp
         app/edit-screen/components/ProcessorPaneEQsFilters.cpp
+        app/edit-screen/components/GroupSettingsCard.cpp
+        app/edit-screen/components/GroupTriggersCard.cpp
 
         app/edit-screen/components/mapping-pane/MappingDisplay.cpp
         app/edit-screen/components/mapping-pane/MacroDisplay.cpp
