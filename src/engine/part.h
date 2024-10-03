@@ -38,6 +38,7 @@
 
 #include "bus.h"
 #include "macros.h"
+#include "group_triggers.h"
 
 namespace scxt::engine
 {
@@ -134,6 +135,11 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         while (groups.size() < count)
             addGroup();
     }
+
+    /**
+     *The state of this part for group trigger caches and so on
+     */
+    GroupTriggerInstrumentState groupTriggerInstrumentState;
 
     /**
      * Utility data structures to allow rapid draws and displays of the structure in clients

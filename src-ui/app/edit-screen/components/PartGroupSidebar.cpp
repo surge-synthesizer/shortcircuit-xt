@@ -31,10 +31,13 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Viewport.h"
+#include "sst/jucegui/components/NamedPanelDivider.h"
 #include "messaging/messaging.h"
 #include "app/edit-screen/EditScreen.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "GroupZoneTreeControl.h"
+#include "GroupSettingsCard.h"
+#include "GroupTriggersCard.h"
 #include "app/shared/PartSidebarCard.h"
 
 namespace scxt::ui::app::edit_screen
@@ -219,34 +222,21 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
     }
 };
 
-struct GroupControls : juce::Component, HasEditor
-{
-    GroupControls(HasEditor *p) : HasEditor(p->editor) {}
-    void paint(juce::Graphics &g) override
-    {
-        auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::labelfont);
-        g.setFont(ft.withHeight(20));
-        g.setColour(juce::Colours::white);
-        g.drawText("Group Controls", getLocalBounds().withTrimmedBottom(20),
-                   juce::Justification::centred);
-
-        g.setFont(ft.withHeight(14));
-        g.setColour(juce::Colours::white);
-        g.drawText("Coming Soon", getLocalBounds().withTrimmedTop(20),
-                   juce::Justification::centred);
-
-        g.drawRect(getLocalBounds().reduced(1));
-    }
-};
-
 struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
 {
 
     GroupSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<GroupSidebar, false>(p)
     {
-        groupControls = std::make_unique<GroupControls>(this);
-        addAndMakeVisible(*groupControls);
+        groupSettings = std::make_unique<GroupSettingsCard>(this->editor);
+        addAndMakeVisible(*groupSettings);
+
+        groupTriggers = std::make_unique<GroupTriggersCard>(this->editor);
+        addAndMakeVisible(*groupTriggers);
+
+        settingsDivider = std::make_unique<jcmp::NamedPanelDivider>();
+        addAndMakeVisible(*settingsDivider);
+        triggersDivider = std::make_unique<jcmp::NamedPanelDivider>();
+        addAndMakeVisible(*triggersDivider);
     }
     ~GroupSidebar() = default;
 
@@ -255,11 +245,19 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
     void resized() override
     {
         auto b = baseResize();
-        auto ht = 200;
-        auto lb = b.withTrimmedBottom(ht);
-        auto cb = b.withY(lb.getBottom()).withHeight(ht);
-        listBox->setBounds(lb);
-        groupControls->setBounds(cb);
+        auto trigHeight = 116;
+        auto settingsHeight = 146;
+        auto dividerHeight = 8;
+
+        auto lb = b.withTrimmedBottom(trigHeight + settingsHeight + 2 * dividerHeight);
+        auto tb = b.withY(lb.getBottom()).withHeight(dividerHeight);
+        triggersDivider->setBounds(tb);
+        tb = tb.translated(0, dividerHeight).withHeight(trigHeight);
+        groupTriggers->setBounds(tb.reduced(4, 2));
+        tb = tb.translated(0, trigHeight).withHeight(dividerHeight);
+        settingsDivider->setBounds(tb);
+        tb = tb.translated(0, dividerHeight).withHeight(settingsHeight);
+        groupSettings->setBounds(tb.reduced(4, 2));
     }
 
     void processRowsChanged()
@@ -293,7 +291,9 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
             editor->doMultiSelectionAction({se});
         }
     }
-    std::unique_ptr<GroupControls> groupControls;
+    std::unique_ptr<GroupSettingsCard> groupSettings;
+    std::unique_ptr<GroupTriggersCard> groupTriggers;
+    std::unique_ptr<jcmp::NamedPanelDivider> settingsDivider, triggersDivider;
 };
 
 struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>

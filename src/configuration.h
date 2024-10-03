@@ -74,6 +74,8 @@ static constexpr uint16_t lfosPerGroup{4};
 static constexpr uint16_t egsPerGroup{2};
 static constexpr uint16_t processorsPerZoneAndGroup{4};
 
+static constexpr uint16_t triggerConditionsPerGroup{4};
+
 /*
  * This namespace guards some very useful debugging guards and logs in the code.
  */
