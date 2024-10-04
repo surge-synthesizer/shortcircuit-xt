@@ -30,13 +30,18 @@
 
 #include <memory>
 #include <array>
+#include <variant>
+
 #include "configuration.h"
+#include "utils.h"
 
 #include "datamodel/metadata.h"
 
 namespace scxt::engine
 {
 
+struct Engine;
+struct Part;
 struct Group;
 
 /**
@@ -46,33 +51,76 @@ struct GroupTriggerInstrumentState
 {
 };
 
+enum struct GroupTriggerID : int32_t
+{
+    NONE,
+
+    MACRO,
+    MIDICC // if MIDICC is no longer last, adjust fromStringGfroupTRiggerID iteration
+};
+
+std::string toStringGroupTriggerID(const GroupTriggerID &p);
+GroupTriggerID fromStringGroupTriggerID(const std::string &p);
+
+struct GroupTriggerStorage
+{
+    GroupTriggerID id{GroupTriggerID::NONE};
+    using argInterface_t = int32_t; // for now and just use ms for miliseconds and scale
+
+    static constexpr int32_t numArgs{2};
+    std::array<argInterface_t, numArgs> args{0, 0};
+};
 /**
  * Calculate if a group is triggered
  */
 struct GroupTrigger
 {
     GroupTriggerInstrumentState &state;
-    GroupTrigger(GroupTriggerInstrumentState &onState) : state(onState) {}
+    GroupTriggerStorage &storage;
+    GroupTrigger(GroupTriggerInstrumentState &onState, GroupTriggerStorage &onStorage)
+        : state(onState), storage(onStorage)
+    {
+    }
     virtual ~GroupTrigger() = default;
-    virtual bool value(const std::unique_ptr<Group> &) const = 0;
-
-    datamodel::pmd argMetadata(int argNo) const;
-    std::string displayName;
+    virtual bool value(const std::unique_ptr<Engine> &, const std::unique_ptr<Group> &) const = 0;
+    virtual datamodel::pmd argMetadata(int argNo) const = 0;
 };
 
-std::unique_ptr<GroupTrigger> makeMacroGroupTrigger(GroupTriggerInstrumentState &);
-std::unique_ptr<GroupTrigger> makeMIDI1CCGroupTrigger(GroupTriggerInstrumentState &);
+// FIXME - make this sized more intelligently
+using GroupTriggerBuffer = uint8_t[2048];
+
+GroupTrigger *makeGroupTrigger(GroupTriggerID, GroupTriggerInstrumentState &, GroupTriggerStorage &,
+                               GroupTriggerBuffer &);
+std::string getGroupTriggerDisplayName(GroupTriggerID);
 
 struct GroupTriggerConditions
 {
-    std::array<std::unique_ptr<GroupTrigger>, scxt::triggerConditionsPerGroup> conditions;
-    std::array<bool, scxt::triggerConditionsPerGroup> active;
-    enum Conjunction
+    GroupTriggerConditions()
+    {
+        std::fill(conditions.begin(), conditions.end(), nullptr);
+        std::fill(active.begin(), active.end(), false);
+    }
+    std::array<GroupTriggerStorage, scxt::triggerConditionsPerGroup> storage{};
+    std::array<bool, scxt::triggerConditionsPerGroup> active{};
+
+    enum struct Conjunction : int32_t
     {
         AND,
-        OR
+        OR,
+        AND_NOT,
+        OR_NOT // add one to end or change position update the from in fromString
     };
+
+    static std::string toStringGroupConditionsConjunction(const Conjunction &p);
+    static Conjunction fromStringConditionsConjunction(const std::string &p);
+
     std::array<Conjunction, scxt::triggerConditionsPerGroup - 1> conjunctions;
+
+    void setupOnUnstream(GroupTriggerInstrumentState &);
+
+  protected:
+    std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;
+    std::array<GroupTrigger *, scxt::triggerConditionsPerGroup> conditions{};
 };
 
 } // namespace scxt::engine

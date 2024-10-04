@@ -464,6 +464,8 @@ void Group::setupOnUnstream(const engine::Engine &e)
     {
         lfo.UpdatePhaseIncrement();
     }
+
+    triggerConditions.setupOnUnstream(parentPart->groupTriggerInstrumentState);
 }
 void Group::onSampleRateChanged()
 {
