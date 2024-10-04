@@ -26,3 +26,84 @@
  */
 
 #include "group_triggers.h"
+#include "utils.h"
+
+namespace scxt::engine
+{
+
+std::string toStringGroupTriggerID(const GroupTriggerID &p)
+{
+    switch (p)
+    {
+        // lesson learned earlier was long names are not that handy debugging now the infra works
+        // and just make big files so use compact ones here
+    case GroupTriggerID::NONE:
+        return "n";
+    case GroupTriggerID::MACRO:
+        return "mcr";
+    case GroupTriggerID::MIDICC:
+        return "mcc";
+    }
+}
+GroupTriggerID fromStringGroupTriggerID(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<GroupTriggerID, toStringGroupTriggerID>(
+        GroupTriggerID::NONE, GroupTriggerID::MIDICC);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return GroupTriggerID::NONE;
+    return p->second;
+}
+
+std::string GroupTriggerConditions::toStringGroupConditionsConjunction(const Conjunction &p)
+{
+    switch (p)
+    {
+    case Conjunction::AND:
+        return "a";
+    case Conjunction::OR:
+        return "o";
+    case Conjunction::AND_NOT:
+        return "a!";
+    case Conjunction::OR_NOT:
+        return "o!";
+    }
+    return "";
+}
+GroupTriggerConditions::Conjunction fromStringConditionsConjunction(const std::string &s)
+{
+    static auto inverse =
+        makeEnumInverse<GroupTriggerConditions::Conjunction,
+                        GroupTriggerConditions::toStringGroupConditionsConjunction>(
+            GroupTriggerConditions::Conjunction::AND, GroupTriggerConditions::Conjunction::OR_NOT);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return GroupTriggerConditions::Conjunction::AND;
+    return p->second;
+}
+
+std::unique_ptr<GroupTrigger> makeGroupTrigger(GroupTriggerID, GroupTriggerInstrumentState &,
+                                               GroupTriggerStorage &)
+{
+    return {};
+}
+
+// THIS NEEDS ARGUMENTS of the state and so on
+void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
+{
+    SCLOG("Setup on Unstream");
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        auto &s = storage[i];
+        if (s.id == GroupTriggerID::NONE)
+        {
+            conditions[i].reset();
+        }
+        else
+        {
+            conditions[i] = makeGroupTrigger(s.id, gis, s);
+        }
+    }
+}
+
+} // namespace scxt::engine

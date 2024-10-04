@@ -42,6 +42,7 @@
 #include "engine/keyboard.h"
 #include "engine/macros.h"
 #include "engine/engine.h"
+#include "engine/group_triggers.h"
 
 #include "scxt_traits.h"
 
@@ -226,6 +227,30 @@ SC_STREAMDEF(
         }
     }))
 
+STREAM_ENUM(engine::GroupTriggerID, engine::toStringGroupTriggerID,
+            engine::fromStringGroupTriggerID);
+
+SC_STREAMDEF(scxt::engine::GroupTriggerStorage, SC_FROM({
+                 v = {{"id", from.id}, {"args", from.args}};
+             }),
+             SC_TO({
+                 findIf(v, "id", to.id);
+                 findIf(v, "args", to.args);
+             }));
+
+STREAM_ENUM(engine::GroupTriggerConditions::Conjunction,
+            engine::GroupTriggerConditions::toStringGroupConditionsConjunction,
+            engine::GroupTriggerConditions::fromStringConditionsConjunction);
+
+SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
+                 v = {{"st", from.storage}, {"ac", from.active}, {"conj", from.conjunctions}};
+             }),
+             SC_TO({
+                 findIf(v, "st", to.storage);
+                 findIf(v, "ac", to.active);
+                 findIf(v, "conj", to.conjunctions);
+             }));
+
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},   {"pan", t.pan},
                       {"oversample", t.oversample}, {"velocitySensitivity", t.velocitySensitivity},
@@ -251,7 +276,8 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                       {"routingTable", t.routingTable},
                       {"gegStorage", t.gegStorage},
                       {"modulatorStorage", t.modulatorStorage},
-                      {"processorStorage", t.processorStorage}};
+                      {"processorStorage", t.processorStorage},
+                      {"triggerConditions", t.triggerConditions}};
              }),
              SC_TO({
                  auto &group = to;
