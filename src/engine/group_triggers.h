@@ -33,7 +33,7 @@
 #include <variant>
 
 #include "configuration.h"
-#include "util.h"
+#include "utils.h"
 
 #include "datamodel/metadata.h"
 
