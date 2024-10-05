@@ -627,6 +627,9 @@ void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
                               modulation::getGroupMatrixMetadata(*g),
                               *(engine.getMessageController()));
     serializationSendToClient(cms::s2c_update_group_matrix, rt, *(engine.getMessageController()));
+
+    serializationSendToClient(cms::s2c_send_group_trigger_conditions, g->triggerConditions,
+                              *(engine.getMessageController()));
 }
 
 void SelectionManager::sendDisplayDataForNoGroupSelected()

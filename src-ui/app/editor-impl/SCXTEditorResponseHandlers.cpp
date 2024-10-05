@@ -444,4 +444,9 @@ void SCXTEditor::onMissingResolutionWorkItemList(
         missingResolutionScreen->toFront(true);
     }
 }
+
+void SCXTEditor::onGroupTriggerConditions(scxt::engine::GroupTriggerConditions const &g)
+{
+    SCLOG_ONCE("Implement: On Group Trigger Conditions");
+}
 } // namespace scxt::ui::app
