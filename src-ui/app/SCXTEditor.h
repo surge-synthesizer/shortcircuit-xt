@@ -213,6 +213,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &);
     void onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &);
 
+    void onGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &);
+
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &);
     void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p);

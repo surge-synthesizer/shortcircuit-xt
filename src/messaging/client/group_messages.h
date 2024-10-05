@@ -40,6 +40,9 @@ using groupOutputInfoUpdate_t = std::pair<bool, engine::Group::GroupOutputInfo>;
 SERIAL_TO_CLIENT(GroupOutputInfoUpdated, s2c_update_group_output_info, groupOutputInfoUpdate_t,
                  onGroupOutputInfoUpdated);
 
+SERIAL_TO_CLIENT(SendGroupTriggerConditions, s2c_send_group_trigger_conditions,
+                 scxt::engine::GroupTriggerConditions, onGroupTriggerConditions)
+
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputFloatValue, c2s_update_group_output_float_value,
                              detail::diffMsg_t<float>, engine::Group::GroupOutputInfo,
                              detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,

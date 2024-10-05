@@ -71,7 +71,8 @@ std::string GroupTriggerConditions::toStringGroupConditionsConjunction(const Con
     }
     return "a";
 }
-GroupTriggerConditions::Conjunction fromStringConditionsConjunction(const std::string &s)
+GroupTriggerConditions::Conjunction
+GroupTriggerConditions::fromStringConditionsConjunction(const std::string &s)
 {
     static auto inverse =
         makeEnumInverse<GroupTriggerConditions::Conjunction,
@@ -85,7 +86,6 @@ GroupTriggerConditions::Conjunction fromStringConditionsConjunction(const std::s
 
 struct GTMacro : GroupTrigger
 {
-
     GTMacro(GroupTriggerInstrumentState &onState, GroupTriggerStorage &onStorage)
         : GroupTrigger(onState, onStorage)
     {

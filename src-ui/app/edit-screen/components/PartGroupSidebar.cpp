@@ -250,6 +250,7 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
         auto dividerHeight = 8;
 
         auto lb = b.withTrimmedBottom(trigHeight + settingsHeight + 2 * dividerHeight);
+        listBox->setBounds(lb);
         auto tb = b.withY(lb.getBottom()).withHeight(dividerHeight);
         triggersDivider->setBounds(tb);
         tb = tb.translated(0, dividerHeight).withHeight(trigHeight);
