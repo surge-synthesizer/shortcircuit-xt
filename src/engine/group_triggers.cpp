@@ -44,6 +44,7 @@ std::string toStringGroupTriggerID(const GroupTriggerID &p)
     case GroupTriggerID::MIDICC:
         return "mcc";
     }
+    return "n";
 }
 GroupTriggerID fromStringGroupTriggerID(const std::string &s)
 {
@@ -68,7 +69,7 @@ std::string GroupTriggerConditions::toStringGroupConditionsConjunction(const Con
     case Conjunction::OR_NOT:
         return "o!";
     }
-    return "";
+    return "a";
 }
 GroupTriggerConditions::Conjunction fromStringConditionsConjunction(const std::string &s)
 {
