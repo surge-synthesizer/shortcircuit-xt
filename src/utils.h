@@ -314,7 +314,7 @@ template <typename E, std::string (*F)(const E &)>
 inline std::unordered_map<std::string, E> makeEnumInverse(const E &from, const E &to)
 {
     std::unordered_map<std::string, E> res;
-    for (auto i = (int32_t)from; i <= to; ++i)
+    for (auto i = (int32_t)from; i <= (int32_t)to; ++i)
     {
         res[F((E)i)] = (E)i;
     }
