@@ -46,6 +46,10 @@ struct GroupTriggersCard : juce::Component, HasEditor
     ~GroupTriggersCard();
     void paint(juce::Graphics &g) override;
     void resized() override;
+
+    void setGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &);
+    void pushUpdate();
+    scxt::engine::GroupTriggerConditions cond;
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPTRIGGERSCARD_H

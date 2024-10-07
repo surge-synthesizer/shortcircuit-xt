@@ -447,6 +447,6 @@ void SCXTEditor::onMissingResolutionWorkItemList(
 
 void SCXTEditor::onGroupTriggerConditions(scxt::engine::GroupTriggerConditions const &g)
 {
-    SCLOG_ONCE("Implement: On Group Trigger Conditions");
+    editScreen->partSidebar->groupTriggerConditionChanged(g);
 }
 } // namespace scxt::ui::app

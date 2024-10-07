@@ -298,6 +298,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                  findIf(v, "outputInfo", group.outputInfo);
                  findIf(v, "processorStorage", group.processorStorage);
                  findIf(v, "routingTable", group.routingTable);
+                 findIf(v, "triggerConditions", group.triggerConditions);
                  findIfArray(v, "modulatorStorage", group.modulatorStorage);
                  group.clearZones();
 

@@ -147,6 +147,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             {
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
+                    if (!group->triggerConditions.value(*this, *group))
+                        continue;
+
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
                         if (zone->mapping.keyboardRange.includes(key) &&

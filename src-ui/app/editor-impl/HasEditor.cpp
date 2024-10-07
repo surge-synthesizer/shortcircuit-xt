@@ -31,4 +31,5 @@
 namespace scxt::ui::app
 {
 HasEditor::HasEditor(SCXTEditor *e) : editor(e) {}
+HasEditor::HasEditor(HasEditor *e) : editor(e->editor) {}
 } // namespace scxt::ui::app
