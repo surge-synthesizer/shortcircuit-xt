@@ -186,6 +186,10 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     bool isVoicePlaying{false};
     bool isVoiceAssigned{false};
 
+    int16_t terminationSequence{-1};
+    // how many blocks is the early-terminate/steal fade
+    static constexpr int blocksToTerminate{8};
+
     void attack()
     {
         isGated = true;
@@ -198,6 +202,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         voiceStarted();
     }
     void release() { isGated = false; }
+    void beginTerminationSequence() { terminationSequence = blocksToTerminate; }
     void cleanupVoice();
 
     void onSampleRateChanged() override;

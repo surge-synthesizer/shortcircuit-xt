@@ -85,6 +85,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = transactionVoiceCount;
     SCLOG_IF(voiceResponder, "voice initiation of " << nts << " voices");
+    int32_t actualCreated{0};
     for (auto idx = 0; idx < nts; ++idx)
     {
         const auto &[path, variantIndex] = voiceCreationWorkingBuffer[idx];
@@ -100,9 +101,11 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->velocity = velocity;
                 v->originalMidiKey = key;
                 v->attack();
+                actualCreated++;
             }
             voiceInitWorkingBuffer[idx] = v;
-            SCLOG_IF(voiceResponder, "-- Created single voice for single zone");
+            SCLOG_IF(voiceResponder, "-- Created single voice for single zone ("
+                                         << std::hex << v << std::dec << ")");
         }
         else if (z->variantData.variantPlaybackMode == Zone::UNISON)
         {
@@ -114,6 +117,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->velocity = velocity;
                 v->originalMidiKey = key;
                 v->attack();
+                actualCreated++;
             }
             voiceInitWorkingBuffer[idx] = v;
             SCLOG_IF(voiceResponder,
@@ -190,14 +194,15 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
 
                     v->originalMidiKey = key;
                     v->attack();
+                    actualCreated++;
                 }
                 voiceInitWorkingBuffer[idx] = v;
             }
         }
     }
     engine.midiNoteStateCounter++;
-    SCLOG_IF(voiceResponder, "Completed voice initiation");
-    return nts;
+    SCLOG_IF(voiceResponder, "Completed voice initiation " << actualCreated << " of " << nts);
+    return actualCreated;
 }
 
 void Engine::VoiceManagerResponder::endVoiceCreationTransaction(uint16_t port, uint16_t channel,
@@ -229,6 +234,15 @@ void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t e
 void Engine::VoiceManagerResponder::setPolyphonicAftertouch(voice::Voice *v, int8_t pat)
 {
     v->polyAT = pat * 1.0 / 127.0;
+}
+
+void Engine::VoiceManagerResponder::terminateVoice(voice::Voice *v)
+{
+    if (!v->isVoicePlaying)
+        return;
+    if (v->isGated)
+        v->release();
+    v->beginTerminationSequence();
 }
 
 } // namespace scxt::engine
