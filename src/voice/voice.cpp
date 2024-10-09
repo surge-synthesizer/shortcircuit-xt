@@ -494,6 +494,12 @@ template <bool OS> bool Voice::processWithOS()
 
     pao *= velKeyFade;
 
+    if (terminationSequence > 0)
+    {
+        terminationSequence--;
+        pao *= terminationSequence / blocksToTerminate;
+    }
+
     if constexpr (OS)
     {
         outputAmpOS.set_target(pao * pao * pao * noteExpressions[(int)ExpressionIDs::VOLUME]);
@@ -558,6 +564,10 @@ template <bool OS> bool Voice::processWithOS()
         isVoicePlaying = false;
     }
 
+    if (terminationSequence == 0)
+    {
+        isVoicePlaying = false;
+    }
     return true;
 }
 

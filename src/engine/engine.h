@@ -207,6 +207,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                          int32_t noteId, float velocity);
 
         void releaseVoice(voice::Voice *v, float velocity);
+        void terminateVoice(voice::Voice *v);
         void retriggerVoiceWithNewNoteID(voice::Voice *v, int32_t noteid, float velocity)
         {
             SCLOG("Retrigger Voice Unimplemented")

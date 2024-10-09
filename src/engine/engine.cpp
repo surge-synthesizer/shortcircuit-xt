@@ -166,9 +166,7 @@ thread_local uint64_t Engine::fullEngineUnstreamStreamingVersion{0};
 
 voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
 {
-#if DEBUG_VOICE_LIFECYCLE
-    SCLOG("Initializing Voice at " << SCD((int)path.key));
-#endif
+    SCLOG_IF(voiceResponder, "Initializing Voice at " << SCD((int)path.key));
 
     assert(zoneByPath(path));
     for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
@@ -198,6 +196,31 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             return voices[idx];
         }
     }
+
+    SCLOG_IF(voiceResponder, "Fallthrough - looking for early termination voices");
+    for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
+    {
+        if (v && v->terminationSequence > 0)
+        {
+            voices[idx]->cleanupVoice();
+            std::unique_ptr<voice::modulation::MatrixEndpoints> mp;
+            mp = std::move(voices[idx]->endpoints);
+            voices[idx]->~Voice();
+
+            auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
+            const auto &z = zoneByPath(path);
+            voices[idx] = new (dp) voice::Voice(this, z.get());
+            voices[idx]->zonePath = path;
+            voices[idx]->channel = path.channel;
+            voices[idx]->key = path.key;
+            voices[idx]->noteId = path.noteid;
+            voices[idx]->setSampleRate(sampleRate, sampleRateInv);
+            voices[idx]->endpoints = std::move(mp);
+            activeVoices++;
+            return voices[idx];
+        }
+    }
+
     return nullptr;
 }
 void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t releaseVelocity)
@@ -230,7 +253,7 @@ void Engine::releaseAllVoices()
 {
     for (auto &v : voices)
     {
-        if (v && v->isVoiceAssigned)
+        if (v && v->isVoiceAssigned && v->isGated)
             v->release();
     }
 }
@@ -238,19 +261,10 @@ void Engine::releaseAllVoices()
 void Engine::stopAllSounds()
 {
     std::array<voice::Voice *, maxVoices> toCleanUp{};
-    size_t cleanupIdx{0};
     for (auto &v : voices)
     {
-        if (v && v->isVoiceAssigned)
-        {
-            v->release(); // dont call cleanup here since it will break the weak pointers and the
-                          // voices array
-            toCleanUp[cleanupIdx++] = v;
-        }
-    }
-    for (int i = 0; i < cleanupIdx; ++i)
-    {
-        toCleanUp[i]->cleanupVoice();
+        if (v && v->isVoiceAssigned && v->isVoicePlaying)
+            v->beginTerminationSequence();
     }
 }
 

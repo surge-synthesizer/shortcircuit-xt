@@ -53,7 +53,7 @@ static constexpr uint16_t numPluginOutputs{numNonMainPluginOutputs + 1};
 
 static constexpr size_t numTransportPhasors{7}; // double whole -> 32
 
-static constexpr uint16_t maxVoices{256};
+static constexpr uint16_t maxVoices{512};
 
 // some battles are not worth it
 static constexpr uint16_t BLOCK_SIZE{blockSize};
