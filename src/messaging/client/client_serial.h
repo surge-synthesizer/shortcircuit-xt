@@ -103,6 +103,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_group_output_int16_t_value,
     c2s_update_group_output_bool_value,
 
+    c2s_update_group_trigger_conditions,
+
     // #1141 done up until here. Below this point the name rubric above isn't confirmed in place
     c2s_request_pgz_structure, // ?
 

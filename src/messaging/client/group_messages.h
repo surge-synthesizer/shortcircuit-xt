@@ -58,5 +58,24 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputBoolValue, c2s_update_group_output
                              detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
                                                             engine, cont));
 
+inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions &payload,
+                                           const engine::Engine &engine, MessageController &cont)
+{
+    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
+    if (ga.has_value())
+    {
+        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
+            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
+            grp->triggerConditions = p;
+            grp->triggerConditions.setupOnUnstream(
+                eng.getPatch()->getPart(g.part)->groupTriggerInstrumentState);
+        });
+    }
+}
+
+CLIENT_TO_SERIAL(UpdateGroupTriggerConditions, c2s_update_group_trigger_conditions,
+                 scxt::engine::GroupTriggerConditions,
+                 doUpdateGroupTriggerConditions(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H

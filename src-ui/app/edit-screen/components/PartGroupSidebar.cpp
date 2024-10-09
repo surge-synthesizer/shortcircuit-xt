@@ -240,7 +240,13 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
     }
     ~GroupSidebar() = default;
 
-    void updateSelection() { updateSelectionFrom(partGroupSidebar->editor->allGroupSelections); }
+    void updateSelection()
+    {
+        bool anySel = !partGroupSidebar->editor->allGroupSelections.empty();
+        updateSelectionFrom(partGroupSidebar->editor->allGroupSelections);
+        groupSettings->setVisible(anySel);
+        groupTriggers->setVisible(anySel);
+    }
 
     void resized() override
     {
@@ -522,4 +528,10 @@ void PartGroupSidebar::partConfigurationChanged(int i)
     partSidebar->parts[i]->resetFromEditorCache();
     partSidebar->restackForActive();
 }
+
+void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &c)
+{
+    groupSidebar->groupTriggers->setGroupTriggerConditions(c);
+}
+
 } // namespace scxt::ui::app::edit_screen

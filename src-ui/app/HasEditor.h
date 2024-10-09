@@ -40,6 +40,7 @@ struct HasEditor
 {
     SCXTEditor *editor{nullptr};
     HasEditor(SCXTEditor *e);
+    HasEditor(HasEditor *e);
     virtual ~HasEditor() = default;
 
     template <typename T> void sendToSerialization(const T &msg);

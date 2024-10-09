@@ -26,6 +26,9 @@
  */
 
 #include "group_triggers.h"
+
+#include "group.h"
+#include "part.h"
 #include "utils.h"
 
 namespace scxt::engine
@@ -33,6 +36,14 @@ namespace scxt::engine
 
 std::string toStringGroupTriggerID(const GroupTriggerID &p)
 {
+    if (p >= GroupTriggerID::MACRO && (int)p <= (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
+    {
+        return fmt::format("macro{}", (int)p - (int)GroupTriggerID::MACRO);
+    }
+    if (p >= GroupTriggerID::MIDICC && p <= GroupTriggerID::LAST_MIDICC)
+    {
+        return fmt::format("midcc{}", (int)p - (int)GroupTriggerID::MIDICC);
+    }
     switch (p)
     {
         // lesson learned earlier was long names are not that handy debugging now the infra works
@@ -40,19 +51,24 @@ std::string toStringGroupTriggerID(const GroupTriggerID &p)
     case GroupTriggerID::NONE:
         return "n";
     case GroupTriggerID::MACRO:
-        return "mcr";
     case GroupTriggerID::MIDICC:
-        return "mcc";
+    case GroupTriggerID::LAST_MIDICC:
+    {
+        assert(false);
+    }
+    break;
     }
     return "n";
 }
 GroupTriggerID fromStringGroupTriggerID(const std::string &s)
 {
     static auto inverse = makeEnumInverse<GroupTriggerID, toStringGroupTriggerID>(
-        GroupTriggerID::NONE, GroupTriggerID::MIDICC);
+        GroupTriggerID::NONE, GroupTriggerID::LAST_MIDICC);
     auto p = inverse.find(s);
     if (p == inverse.end())
+    {
         return GroupTriggerID::NONE;
+    }
     return p->second;
 }
 
@@ -86,51 +102,107 @@ GroupTriggerConditions::fromStringConditionsConjunction(const std::string &s)
 
 struct GTMacro : GroupTrigger
 {
-    GTMacro(GroupTriggerInstrumentState &onState, GroupTriggerStorage &onStorage)
-        : GroupTrigger(onState, onStorage)
+    int macro{0};
+    float lb{0}, ub{1};
+    GTMacro(GroupTriggerID id, GroupTriggerInstrumentState &onState, GroupTriggerStorage &onStorage,
+            int macro)
+        : macro(macro), GroupTrigger(id, onState, onStorage)
     {
     }
 
-    bool value(const std::unique_ptr<Engine> &, const std::unique_ptr<Group> &) const override
+    bool value(const Engine &, const Group &g) const override
     {
-        return true;
+        auto mv = g.parentPart->macros[macro].value;
+        return mv >= lb && mv <= ub;
     }
-    datamodel::pmd argMetadata(int argNo) const override { return {}; }
+
+    void storageAdjusted() override
+    {
+        lb = storage.args[0];
+        ub = storage.args[1];
+        if (lb > ub)
+            std::swap(lb, ub);
+    }
 };
+
 struct GTMIDI1CC : GroupTrigger
 {
-    GTMIDI1CC(GroupTriggerInstrumentState &onState, GroupTriggerStorage &onStorage)
-        : GroupTrigger(onState, onStorage)
+    int cc;
+    float lb{0}, ub{1};
+    GTMIDI1CC(GroupTriggerID id, GroupTriggerInstrumentState &onState,
+              GroupTriggerStorage &onStorage, int cc)
+        : cc(cc), GroupTrigger(id, onState, onStorage)
     {
     }
 
-    bool value(const std::unique_ptr<Engine> &, const std::unique_ptr<Group> &) const override
+    bool value(const Engine &, const Group &g) const override
     {
-        return true;
+        assert(g.parentPart);
+        auto ccv = g.parentPart->midiCCValues[cc];
+        return ccv >= lb && ccv <= ub;
     }
-    datamodel::pmd argMetadata(int argNo) const override { return {}; }
+
+    void storageAdjusted() override
+    {
+        auto flb = storage.args[0];
+        auto fub = storage.args[1];
+        if (flb > fub)
+            std::swap(flb, fub);
+        lb = std::floor(flb) / 127.0;
+        ub = std::ceil(fub) / 127.0;
+    }
 };
 
 GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &gis,
                                GroupTriggerStorage &st, GroupTriggerBuffer &bf)
 {
+    if (id >= GroupTriggerID::MACRO && (int)id <= (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
+    {
+        static_assert(sizeof(GTMacro) < sizeof(GroupTriggerBuffer));
+        return new (bf) GTMacro(id, gis, st, (int)id - (int)GroupTriggerID::MACRO);
+    }
+    if (id >= GroupTriggerID::MIDICC && id <= GroupTriggerID::LAST_MIDICC)
+    {
+        static_assert(sizeof(GTMIDI1CC) < sizeof(GroupTriggerBuffer));
+        return new (bf) GTMIDI1CC(id, gis, st, (int)id - (int)GroupTriggerID::MIDICC);
+    }
+
 #define CS(id, tp)                                                                                 \
     static_assert(sizeof(tp) < sizeof(GroupTriggerBuffer));                                        \
     case id:                                                                                       \
-        return new (bf) tp(gis, st);
+        return new (bf) tp(id, gis, st);
     switch (id)
     {
-        CS(GroupTriggerID::MIDICC, GTMIDI1CC);
-        CS(GroupTriggerID::MACRO, GTMacro);
-    case GroupTriggerID::NONE:
+    default:
         return nullptr;
     }
     return nullptr;
 }
 
-// THIS NEEDS ARGUMENTS of the state and so on
+std::string getGroupTriggerDisplayName(GroupTriggerID id)
+{
+    if (id >= GroupTriggerID::MACRO && (int)id <= (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
+    {
+        return fmt::format("MACRO {}", (int)id - (int)GroupTriggerID::MACRO + 1);
+    }
+    if (id >= GroupTriggerID::MIDICC && id <= GroupTriggerID::LAST_MIDICC)
+    {
+        return fmt::format("MIDICC {}", (int)id - (int)GroupTriggerID::MIDICC);
+    }
+
+    switch (id)
+    {
+    case GroupTriggerID::NONE:
+        return "NONE";
+    default:
+        return "ERROR";
+    }
+    return "ERROR";
+}
+
 void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
 {
+    bool allNone{true};
     for (int i = 0; i < triggerConditionsPerGroup; ++i)
     {
         auto &s = storage[i];
@@ -142,9 +214,32 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
         }
         else
         {
-            conditions[i] = makeGroupTrigger(s.id, gis, s, conditionBuffers[i]);
+            allNone = false;
+
+            if (!conditions[i] || conditions[i]->getID() != s.id)
+            {
+                conditions[i] = makeGroupTrigger(s.id, gis, s, conditionBuffers[i]);
+            }
         }
+        if (conditions[i])
+            conditions[i]->storageAdjusted();
     }
+    alwaysReturnsTrue = allNone;
+}
+
+bool GroupTriggerConditions::value(const Engine &e, const Group &g) const
+{
+    if (alwaysReturnsTrue)
+        return true;
+
+    auto v = true;
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        // FIXME - conjunctions
+        if (active[i] && conditions[i])
+            v = v & conditions[i]->value(e, g);
+    }
+    return v;
 }
 
 } // namespace scxt::engine
