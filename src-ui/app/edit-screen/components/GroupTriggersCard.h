@@ -33,6 +33,8 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "engine/group_triggers.h"
+
 #include "configuration.h"
 #include "app/HasEditor.h"
 

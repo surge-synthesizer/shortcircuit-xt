@@ -27,6 +27,7 @@
 
 #include "GroupTriggersCard.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 
