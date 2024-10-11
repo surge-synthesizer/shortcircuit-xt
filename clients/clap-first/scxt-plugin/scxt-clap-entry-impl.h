@@ -25,19 +25,15 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef CLIENTS_CLAP_FIRST_CLAP_CONFIG_H
-#define CLIENTS_CLAP_FIRST_CLAP_CONFIG_H
-
-#include <clap/helpers/plugin.hh>
+#ifndef CLIENTS_CLAP_FIRST_SCXT_PLUGIN_SCXT_CLAP_ENTRY_IMPL_H
+#define CLIENTS_CLAP_FIRST_SCXT_PLUGIN_SCXT_CLAP_ENTRY_IMPL_H
 
 namespace scxt::clap_first
 {
 
-static constexpr clap::helpers::MisbehaviourHandler misLevel =
-    clap::helpers::MisbehaviourHandler::Ignore;
-static constexpr clap::helpers::CheckingLevel checkLevel = clap::helpers::CheckingLevel::Maximal;
-
-using plugHelper_t = clap::helpers::Plugin<misLevel, checkLevel>;
+const void *get_factory(const char *factory_id);
+bool clap_init(const char *p);
+void clap_deinit();
 
 } // namespace scxt::clap_first
-#endif // SHORTCIRCUITXT_CLAP_CONFIG_H
+#endif // SCXT_PLUGIN_ENTRY_IMPL_H

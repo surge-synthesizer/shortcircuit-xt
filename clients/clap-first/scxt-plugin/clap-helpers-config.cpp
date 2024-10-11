@@ -25,26 +25,14 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include <clap/clap.h>
-#include "scxt-plugin/scxt-clap-entry-impl.h"
+#include "clap-helpers-config.h"
 
-extern "C"
-{
+#include <clap/helpers/plugin.hxx>
+#include <clap/helpers/host-proxy.hxx>
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes" // other peoples errors are outside my scope
-#endif
+namespace sxcf = scxt::clap_first;
+namespace chlp = clap::helpers;
 
-    // clang-format off
-    const CLAP_EXPORT struct clap_plugin_entry clap_entry = {
-        CLAP_VERSION,
-        scxt::clap_first::clap_init,
-        scxt::clap_first::clap_deinit,
-        scxt::clap_first::get_factory
-    };
-    // clang-format on
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-}
+template class chlp::Plugin<sxcf::misLevel, sxcf::checkLevel>;
+template class chlp::HostProxy<sxcf::misLevel, sxcf::checkLevel>;
+static_assert(std::is_same_v<sxcf::plugHelper_t, chlp::Plugin<sxcf::misLevel, sxcf::checkLevel>>);
