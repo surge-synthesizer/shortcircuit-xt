@@ -25,13 +25,19 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "clap-config.h"
-#include "clap/helpers/plugin.hxx"
-#include "clap/helpers/host-proxy.hxx"
+#ifndef CLIENTS_CLAP_FIRST_SCXT_PLUGIN_CLAP_HELPERS_CONFIG_H
+#define CLIENTS_CLAP_FIRST_SCXT_PLUGIN_CLAP_HELPERS_CONFIG_H
 
-namespace sxcf = scxt::clap_first;
-namespace chlp = clap::helpers;
+#include <clap/helpers/plugin.hh>
 
-template class chlp::Plugin<sxcf::misLevel, sxcf::checkLevel>;
-template class chlp::HostProxy<sxcf::misLevel, sxcf::checkLevel>;
-static_assert(std::is_same_v<sxcf::plugHelper_t, chlp::Plugin<sxcf::misLevel, sxcf::checkLevel>>);
+namespace scxt::clap_first
+{
+
+static constexpr clap::helpers::MisbehaviourHandler misLevel =
+    clap::helpers::MisbehaviourHandler::Ignore;
+static constexpr clap::helpers::CheckingLevel checkLevel = clap::helpers::CheckingLevel::Maximal;
+
+using plugHelper_t = clap::helpers::Plugin<misLevel, checkLevel>;
+
+} // namespace scxt::clap_first
+#endif // SHORTCIRCUITXT_CLAP_CONFIG_H

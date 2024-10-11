@@ -47,7 +47,7 @@
 #include "engine/engine.h"
 #include "voice/voice.h"
 
-#include "clap-config.h"
+#include "clap-helpers-config.h"
 #include "utils.h"
 
 static_assert((int)scxt::voice::Voice::ExpressionIDs::VOLUME == (int)CLAP_NOTE_EXPRESSION_VOLUME);
