@@ -61,8 +61,7 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 {
     engine = std::make_unique<scxt::engine::Engine>();
     engine->getMessageController()->passWrapperEventsToWrapperQueue = true;
-    engine->runningEnvironment =
-        "Clap-First " + std::string(h->name) + " " + std::string(h->version);
+    engine->runningEnvironment = std::string(h->name) + " " + std::string(h->version);
     engine->getMessageController()->requestHostCallback = [this, h](uint64_t flag) {
         if (h)
         {
