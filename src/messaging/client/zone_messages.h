@@ -183,6 +183,30 @@ inline void doAddBlankZone(const addBlankZonePayload_t &payload, engine::Engine 
 CLIENT_TO_SERIAL(AddBlankZone, c2s_add_blank_zone, addBlankZonePayload_t,
                  doAddBlankZone(payload, engine, cont));
 
+using deleteVariantPayload_t = int;
+inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engine &engine,
+                            MessageController &cont)
+{
+    const auto &samples = payload;
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback(
+            [p = ps, g = gs, z = zs, var = payload](auto &eng) {
+                const auto &zone = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+                zone->deleteVariant(var);
+                eng.getSampleManager()->purgeUnreferencedSamples();
+            },
+            [p = ps, g = gs, z = zs](auto &e) {
+                SCLOG_ONCE("Delete variant could be optimized to not sending so much back");
+                e.sendFullRefreshToClient();
+            });
+    }
+}
+CLIENT_TO_SERIAL(DeleteVariant, c2s_delete_variant, deleteVariantPayload_t,
+                 doDeleteVariant(payload, engine, cont))
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H

@@ -969,9 +969,13 @@ void VariantDisplay::showVariantTabMenu(int variantIdx)
     {
         p.addSectionHeader("Variant " + std::to_string(variantIdx + 1));
         p.addSeparator();
-        ;
+
         p.addItem("Copy", editor->makeComingSoon("Copy Variant"));
-        p.addItem("Delete", editor->makeComingSoon("Delete Variant"));
+        p.addItem("Delete", [variantIdx, w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->sendToSerialization(cmsg::DeleteVariant(variantIdx));
+        });
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
