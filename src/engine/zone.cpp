@@ -455,5 +455,20 @@ int16_t Zone::missingSampleCount() const
     return ct;
 }
 
+void Zone::deleteVariant(int idx)
+{
+    assert(idx >= 0 && idx < maxVariantsPerZone);
+    for (int nv = idx + 1; nv < maxVariantsPerZone; ++nv)
+    {
+        variantData.variants[nv - 1] = variantData.variants[nv];
+        samplePointers[nv - 1] = samplePointers[nv];
+    }
+    if (idx < maxVariantsPerZone - 1)
+    {
+        variantData.variants[maxVariantsPerZone - 1] = {};
+        samplePointers[maxVariantsPerZone - 1] = {};
+    }
+}
+
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine

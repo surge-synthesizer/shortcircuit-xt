@@ -156,6 +156,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
                                           [](const auto &s) { return s.active == false; }));
     }
 
+    void deleteVariant(int idx);
+
     struct ZoneOutputInfo
     {
         float amplitude{1.f}, pan{0.f};
