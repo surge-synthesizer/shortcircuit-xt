@@ -46,29 +46,13 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(uint16_t po
     {
         const auto &path = findZoneWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
-        if (z->variantData.variantPlaybackMode == Zone::UNISON)
-        {
-            for (int i = 0; i < maxVariantsPerZone; ++i)
-            {
-                if (z->variantData.variants[i].active)
-                {
-                    voiceCreationWorkingBuffer[voicesCreated] = {path, i};
-                    SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part
-                                                              << "/" << path.group << "/"
-                                                              << path.zone << " variant=" << i);
-                    voicesCreated++;
-                }
-            }
-        }
-        else
-        {
-            voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
-            SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part << "/"
-                                                      << path.group << "/" << path.zone
-                                                      << "  zone handles variant");
 
-            voicesCreated++;
-        }
+        voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
+        SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part << "/"
+                                                  << path.group << "/" << path.zone
+                                                  << "  zone handles variant");
+
+        voicesCreated++;
     }
     transactionValid = true;
     transactionVoiceCount = voicesCreated;
@@ -107,33 +91,17 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             SCLOG_IF(voiceResponder, "-- Created single voice for single zone ("
                                          << std::hex << v << std::dec << ")");
         }
-        else if (z->variantData.variantPlaybackMode == Zone::UNISON)
-        {
-            assert(variantIndex >= 0);
-            z->sampleIndex = variantIndex;
-            auto v = engine.initiateVoice(path);
-            if (v)
-            {
-                v->velocity = velocity;
-                v->originalMidiKey = key;
-                v->attack();
-                actualCreated++;
-            }
-            voiceInitWorkingBuffer[idx] = v;
-            SCLOG_IF(voiceResponder,
-                     "-- Created one of variants for zone (" << variantIndex << ")");
-        }
         else
         {
             assert(variantIndex == -1);
             SCLOG_IF(voiceResponder, "-- Launching zone and using its RR tactic");
             int nextAvail{0};
-            if (nbSampleLoadedInZone == 1)
+            if (nbSampleLoadedInZone == 1 || z->variantData.variantPlaybackMode == Zone::UNISON)
             {
                 z->sampleIndex = 0;
             }
-            if (nbSampleLoadedInZone == 2 &&
-                z->variantData.variantPlaybackMode != Zone::TRUE_RANDOM)
+            else if (nbSampleLoadedInZone == 2 &&
+                     z->variantData.variantPlaybackMode != Zone::TRUE_RANDOM)
             {
                 z->sampleIndex = (z->sampleIndex + 1) % 2;
             }
