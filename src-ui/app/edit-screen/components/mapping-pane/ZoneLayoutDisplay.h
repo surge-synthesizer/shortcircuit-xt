@@ -140,6 +140,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         FROM_START,
         FROM_END
     } dragFrom[2]; // key and velocity
+    bool tooltipActive{false};
 
     std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones,
         lastSelectedZone;
@@ -163,6 +164,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         resetLeadZoneBounds();
         repaint();
     }
+    void updateTooltipContents(bool andShow, const juce::Point<int> &pos);
 };
 
 } // namespace scxt::ui::app::edit_screen
