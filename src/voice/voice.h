@@ -57,10 +57,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     bool forceOversample{true};
 
-    dsp::GeneratorState GD;
-    dsp::GeneratorIO GDIO;
-    dsp::GeneratorFPtr Generator;
-    bool monoGenerator{false};
+    std::array<dsp::GeneratorState, maxGeneratorsPerVoice> GD;
+    std::array<dsp::GeneratorIO, maxGeneratorsPerVoice> GDIO;
+    std::array<dsp::GeneratorFPtr, maxGeneratorsPerVoice> Generator;
+    std::array<bool, maxGeneratorsPerVoice> monoGenerator{};
+    bool allGeneratorsMono{};
+    int16_t numGeneratorsActive{0};
+
+    std::pair<int16_t, int16_t> sampleIndexRange() const;
 
     sst::filters::HalfRate::HalfRateFilter halfRate;
 
@@ -141,7 +145,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     /**
      * Calculates and updates the generator playback speed.
      */
-    void calculateGeneratorRatio(float pitch);
+    void calculateGeneratorRatio(float pitch, int cSampleIndex, int generatorIndex);
 
     /**
      * Processors: Storage, memory blocks, types, and more
@@ -180,7 +184,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
      * Voice Playback State Model.
      */
     bool isGated{false};
-    bool isGeneratorRunning{false};
+    std::array<bool, maxGeneratorsPerVoice> isGeneratorRunning{};
+    bool isAnyGeneratorRunning{};
     bool isAEGRunning{false};
 
     bool isVoicePlaying{false};
@@ -193,7 +198,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     void attack()
     {
         isGated = true;
-        isGeneratorRunning = true;
         isAEGRunning = true;
 
         isVoicePlaying = true;

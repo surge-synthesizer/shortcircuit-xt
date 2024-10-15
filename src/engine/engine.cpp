@@ -386,7 +386,7 @@ bool Engine::processAudio()
                 itm.group = v->zonePath.group;
                 itm.zone = v->zonePath.zone;
                 itm.sample = v->sampleIndex;
-                itm.samplePos = v->GD.samplePos;
+                itm.samplePos = v->GD[0].samplePos;
                 itm.midiNote = v->originalMidiKey;
                 itm.midiChannel = v->channel;
                 itm.gated = v->isGated;

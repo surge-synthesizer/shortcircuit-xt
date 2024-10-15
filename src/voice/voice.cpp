@@ -219,8 +219,8 @@ template <bool OS> bool Voice::processWithOS()
         auto &vdata = zone->variantData.variants[sampleIndex];
 
         envGate = (vdata.playMode == engine::Zone::NORMAL && isGated) ||
-                  (vdata.playMode == engine::Zone::ONE_SHOT && isGeneratorRunning) ||
-                  (vdata.playMode == engine::Zone::ON_RELEASE && isGeneratorRunning);
+                  (vdata.playMode == engine::Zone::ONE_SHOT && isAnyGeneratorRunning) ||
+                  (vdata.playMode == engine::Zone::ON_RELEASE && isAnyGeneratorRunning);
     }
 
     /*
@@ -253,28 +253,81 @@ template <bool OS> bool Voice::processWithOS()
     modMatrix.process();
 
     auto fpitch = calculateVoicePitch();
-    calculateGeneratorRatio(fpitch);
+
+    auto [firstIndex, lastIndex] = sampleIndexRange();
+    for (auto i = firstIndex; i < lastIndex; ++i)
+        if (zone->samplePointers[i])
+            calculateGeneratorRatio(fpitch, i, i - firstIndex);
+
     if (useOversampling)
-        GD.ratio = GD.ratio >> 1;
+        for (auto i = 0; i < numGeneratorsActive; ++i)
+            GD[i].ratio = GD[i].ratio >> 1;
     fpitch -= 69;
 
-    // TODO : Start and End Points
-    if (sampleIndex >= 0)
+    memset(output, 0, sizeof(output));
+    if (numGeneratorsActive > 0)
     {
-        auto &s = zone->samplePointers[sampleIndex];
-        assert(s);
+        isAnyGeneratorRunning = false;
+        float loutput alignas(16)[2][blockSize << 2];
 
-        GD.sampleStart = 0;
-        GD.sampleStop = s->sample_length;
+        for (auto idx = firstIndex; idx < lastIndex; ++idx)
+        {
+            auto gidx = idx - firstIndex;
+            if (isGeneratorRunning[gidx])
+            {
+                auto &s = zone->samplePointers[idx];
+                assert(s);
 
-        GD.gated = isGated;
-        GD.loopInvertedBounds = 1.f / std::max(1, GD.loopUpperBound - GD.loopLowerBound);
-        GD.playbackInvertedBounds =
-            1.f / std::max(1, GD.playbackUpperBound - GD.playbackLowerBound);
-    }
-    if (!GD.isFinished && Generator)
-    {
-        Generator(&GD, &GDIO);
+                if (gidx == 0)
+                {
+                    GDIO[gidx].outputL = output[0];
+                    GDIO[gidx].outputR = output[1];
+                }
+                else
+                {
+                    GDIO[gidx].outputL = loutput[0];
+                    GDIO[gidx].outputR = loutput[1];
+                }
+                GD[gidx].sampleStart = 0;
+                GD[gidx].sampleStop = s->sample_length;
+
+                GD[gidx].gated = isGated;
+                GD[gidx].loopInvertedBounds =
+                    1.f / std::max(1, GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
+                GD[gidx].playbackInvertedBounds =
+                    1.f / std::max(1, GD[gidx].playbackUpperBound - GD[gidx].playbackLowerBound);
+
+                if (!GD[gidx].isFinished && Generator[gidx])
+                {
+                    Generator[gidx](&GD[gidx], &GDIO[gidx]);
+                }
+
+                isGeneratorRunning[gidx] = !GD[gidx].isFinished;
+                isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
+                if (gidx == 0)
+                {
+                    if (monoGenerator[gidx] && !allGeneratorsMono)
+                    {
+                        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], output[1]);
+                    }
+                }
+                else
+                {
+                    mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
+                                                                              output[0]);
+                    if (!monoGenerator[gidx])
+                    {
+                        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[1],
+                                                                                  output[1]);
+                    }
+                    else if (!allGeneratorsMono)
+                    {
+                        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
+                                                                                  output[1]);
+                    }
+                }
+            }
+        }
 
         if (useOversampling && !OS)
         {
@@ -288,14 +341,6 @@ template <bool OS> bool Voice::processWithOS()
             const float linear_scale = dsp::dbTable.dbToLinear(scale_db);
             sst::basic_blocks::mechanics::scale_by<blockSize>(linear_scale, output[0], output[1]);
         }
-    }
-    else
-        memset(output, 0, sizeof(output));
-
-    // TODO Ringout - this is obvioulsy wrong
-    if (GD.isFinished)
-    {
-        isGeneratorRunning = false;
     }
 
     float tempbuf alignas(16)[2][BLOCK_SIZE << 1], postfader_buf alignas(16)[2][BLOCK_SIZE << 1];
@@ -312,7 +357,7 @@ template <bool OS> bool Voice::processWithOS()
      * toggle
      *    if the processor cannot consume mono, copy and proceed and toggle chainIsMon
      */
-    bool chainIsMono{monoGenerator};
+    bool chainIsMono{allGeneratorsMono};
 
     /*
      * Implement Sample Pan
@@ -422,7 +467,7 @@ template <bool OS> bool Voice::processWithOS()
             processors[i]->init();
             processors[i]->setKeytrack(zone->processorStorage[i].isKeytracked);
 
-            processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
+            processorConsumesMono[i] = allGeneratorsMono && processors[i]->canProcessMono();
         }
         if (processors[i])
         {
@@ -555,7 +600,7 @@ template <bool OS> bool Voice::processWithOS()
     /*
      * Finally do voice state update
      */
-    if (isAEGRunning && (hasProcs || isGeneratorRunning))
+    if (isAEGRunning && (hasProcs || isAnyGeneratorRunning))
     {
         isVoicePlaying = true;
     }
@@ -603,84 +648,103 @@ void Voice::panOutputsBy(bool chainIsMono, const lipol &plip)
 
 void Voice::initializeGenerator()
 {
+    numGeneratorsActive = 0;
+    allGeneratorsMono = true;
+    isAnyGeneratorRunning = false;
+
     if (sampleIndex < 0)
     {
-        Generator = nullptr;
-        GD.isFinished = false;
-        monoGenerator = true;
         return;
     }
 
     // but the default of course is to use the sample index
-    auto &s = zone->samplePointers[sampleIndex];
-    assert(s);
-    if (s->isMissingPlaceholder)
+    auto [firstIndex, lastIndex] = sampleIndexRange();
+
+    for (auto i = firstIndex; i < lastIndex; ++i)
     {
-        Generator = nullptr;
-        GD.isFinished = false;
-        monoGenerator = true;
-        return;
+        if (zone->samplePointers[i]->isMissingPlaceholder)
+        {
+            return;
+        }
     }
+    numGeneratorsActive = lastIndex - firstIndex;
 
-    auto &variantData = zone->variantData.variants[sampleIndex];
-
-    GDIO.outputL = output[0];
-    GDIO.outputR = output[1];
-    if (s->bitDepth == sample::Sample::BD_I16)
+    int currGen{0};
+    allGeneratorsMono = true;
+    for (auto currIndex = firstIndex; currIndex < lastIndex; currIndex++)
     {
-        GDIO.sampleDataL = s->GetSamplePtrI16(0);
-        GDIO.sampleDataR = s->GetSamplePtrI16(1);
+        auto &s = zone->samplePointers[currIndex];
+
+        auto &variantData = zone->variantData.variants[currIndex];
+
+        GDIO[currGen].outputL = output[0];
+        GDIO[currGen].outputR = output[1];
+        if (s->bitDepth == sample::Sample::BD_I16)
+        {
+            GDIO[currGen].sampleDataL = s->GetSamplePtrI16(0);
+            GDIO[currGen].sampleDataR = s->GetSamplePtrI16(1);
+        }
+        else if (s->bitDepth == sample::Sample::BD_F32)
+        {
+            GDIO[currGen].sampleDataL = s->GetSamplePtrF32(0);
+            GDIO[currGen].sampleDataR = s->GetSamplePtrF32(1);
+        }
+        else
+        {
+            assert(false);
+        }
+        GDIO[currGen].waveSize = s->sample_length;
+
+        GD[currGen].samplePos = variantData.startSample;
+        GD[currGen].sampleSubPos = 0;
+        GD[currGen].loopLowerBound = variantData.startSample;
+        GD[currGen].loopUpperBound = variantData.endSample;
+        GD[currGen].loopFade = variantData.loopFade;
+        GD[currGen].playbackLowerBound = variantData.startSample;
+        GD[currGen].playbackUpperBound = variantData.endSample;
+        GD[currGen].direction = 1;
+        GD[currGen].isFinished = false;
+
+        if (variantData.loopActive)
+        {
+            GD[currGen].loopLowerBound = variantData.startLoop;
+            GD[currGen].loopUpperBound = variantData.endLoop;
+        }
+
+        if (variantData.playReverse)
+        {
+            GD[currGen].samplePos = GD[currGen].playbackUpperBound;
+            GD[currGen].direction = -1;
+        }
+        GD[currGen].directionAtOutset = GD[currGen].direction;
+
+        calculateGeneratorRatio(calculateVoicePitch(), currIndex, currGen);
+
+        // TODO: This constant came from SC. Wonder why it is this value. There was a comment
+        // comparing with 167777216 so any speedup at all.
+        useOversampling = std::abs(GD[currGen].ratio) > 18000000 || forceOversample;
+        GD[currGen].blockSize = blockSize * (useOversampling ? 2 : 1);
+
+        Generator[currGen] = nullptr;
+
+        monoGenerator[currGen] = s->channels == 1;
+        allGeneratorsMono = allGeneratorsMono && monoGenerator[currGen];
+        Generator[currGen] = dsp::GetFPtrGeneratorSample(
+            !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, variantData.loopActive,
+            variantData.loopDirection == engine::Zone::FORWARD_ONLY,
+            variantData.loopMode == engine::Zone::LOOP_WHILE_GATED);
+        SCLOG_IF(generatorInitialization,
+                 "Generator : " << SCD(currGen) << SCD((size_t)Generator[currGen]));
+        SCLOG_IF(generatorInitialization, "     SMP  : " << SCD(GDIO[currGen].sampleDataL)
+                                                         << SCD(GDIO[currGen].sampleDataR));
+        SCLOG_IF(generatorInitialization, "     SLE  : " << SCD(GDIO[currGen].waveSize));
+
+        GD[currGen].interpolationType = variantData.interpolationType;
+        isGeneratorRunning[currGen] = true;
+        isAnyGeneratorRunning = true;
+
+        currGen++;
     }
-    else if (s->bitDepth == sample::Sample::BD_F32)
-    {
-        GDIO.sampleDataL = s->GetSamplePtrF32(0);
-        GDIO.sampleDataR = s->GetSamplePtrF32(1);
-    }
-    else
-    {
-        assert(false);
-    }
-    GDIO.waveSize = s->sample_length;
-
-    GD.samplePos = variantData.startSample;
-    GD.sampleSubPos = 0;
-    GD.loopLowerBound = variantData.startSample;
-    GD.loopUpperBound = variantData.endSample;
-    GD.loopFade = variantData.loopFade;
-    GD.playbackLowerBound = variantData.startSample;
-    GD.playbackUpperBound = variantData.endSample;
-    GD.direction = 1;
-    GD.isFinished = false;
-
-    if (variantData.loopActive)
-    {
-        GD.loopLowerBound = variantData.startLoop;
-        GD.loopUpperBound = variantData.endLoop;
-    }
-
-    if (variantData.playReverse)
-    {
-        GD.samplePos = GD.playbackUpperBound;
-        GD.direction = -1;
-    }
-    GD.directionAtOutset = GD.direction;
-
-    calculateGeneratorRatio(calculateVoicePitch());
-
-    // TODO: This constant came from SC. Wonder why it is this value. There was a comment
-    // comparing with 167777216 so any speedup at all.
-    useOversampling = std::abs(GD.ratio) > 18000000 || forceOversample;
-    GD.blockSize = blockSize * (useOversampling ? 2 : 1);
-
-    Generator = nullptr;
-
-    monoGenerator = s->channels == 1;
-    Generator = dsp::GetFPtrGeneratorSample(!monoGenerator, s->bitDepth == sample::Sample::BD_F32,
-                                            variantData.loopActive,
-                                            variantData.loopDirection == engine::Zone::FORWARD_ONLY,
-                                            variantData.loopMode == engine::Zone::LOOP_WHILE_GATED);
-
-    GD.interpolationType = variantData.interpolationType;
 }
 
 float Voice::calculateVoicePitch()
@@ -701,7 +765,7 @@ float Voice::calculateVoicePitch()
     return fpitch;
 }
 
-void Voice::calculateGeneratorRatio(float pitch)
+void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generatorIndex)
 {
 #if 0
     keytrack = (fkey + zone->pitch_bend_depth * ctrl[c_pitch_bend] - 60.0f) *
@@ -727,16 +791,12 @@ void Voice::calculateGeneratorRatio(float pitch)
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate * sampleRateInv *
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
+    float ndiff = pitch - zone->mapping.rootKey;
+    auto fac = tuning::equalTuning.note_to_pitch(ndiff);
 
-    if (sampleIndex >= 0)
-    {
-        // TODO gross for now - correct
-        float ndiff = pitch - zone->mapping.rootKey;
-        auto fac = tuning::equalTuning.note_to_pitch(ndiff);
-        // TODO round robin
-        GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate *
-                             sampleRateInv * (1.0 + *endpoints->mappingTarget.playbackRatioP));
-    }
+    GD[generatorIndex].ratio =
+        (int32_t)((1 << 24) * fac * zone->samplePointers[cSampleIndex]->sample_rate *
+                  sampleRateInv * (1.0 + *endpoints->mappingTarget.playbackRatioP));
 }
 
 void Voice::initializeProcessors()
@@ -788,7 +848,7 @@ void Voice::initializeProcessors()
             processors[i]->init();
             processors[i]->setKeytrack(zone->processorStorage[i].isKeytracked);
 
-            processorConsumesMono[i] = monoGenerator && processors[i]->canProcessMono();
+            processorConsumesMono[i] = allGeneratorsMono && processors[i]->canProcessMono();
         }
     }
 }
@@ -807,4 +867,29 @@ void Voice::updateTransportPhasors()
 
 void Voice::onSampleRateChanged() { setHasModulatorsSampleRate(samplerate, samplerate_inv); }
 
+std::pair<int16_t, int16_t> Voice::sampleIndexRange() const
+{
+    int16_t firstIndex{-1}, lastIndex{-1};
+
+    if (zone->variantData.variantPlaybackMode == engine::Zone::UNISON)
+    {
+        firstIndex = 0;
+        lastIndex = 0;
+
+        for (int i = 0; i < maxVariantsPerZone; ++i)
+        {
+            if (zone->variantData.variants[i].active)
+            {
+                lastIndex++;
+            }
+        }
+    }
+    else
+    {
+        firstIndex = sampleIndex;
+        lastIndex = sampleIndex + 1;
+    }
+
+    return {firstIndex, lastIndex};
+}
 } // namespace scxt::voice

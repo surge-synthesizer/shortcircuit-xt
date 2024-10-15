@@ -76,6 +76,8 @@ static constexpr uint16_t processorsPerZoneAndGroup{4};
 
 static constexpr uint16_t triggerConditionsPerGroup{4};
 
+static constexpr uint16_t maxGeneratorsPerVoice{64};
+
 /*
  * This namespace guards some very useful debugging guards and logs in the code.
  */
@@ -86,6 +88,7 @@ static constexpr bool uiStructure{false};
 static constexpr bool groupZoneMutation{false};
 static constexpr bool memoryPool{false};
 static constexpr bool voiceResponder{false};
+static constexpr bool generatorInitialization{false};
 } // namespace log
 
 } // namespace scxt
