@@ -373,6 +373,24 @@ void SCXTEditor::showTooltip(const juce::Component &relativeTo)
                        toolTip->getHeight());
 }
 
+void SCXTEditor::showTooltip(const juce::Component &relativeTo, const juce::Point<int> &p)
+{
+    auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
+    toolTip->resetSizeFromData();
+    toolTip->setVisible(true);
+    toolTip->toFront(false);
+    toolTip->setBounds(fb.getX() + p.getX(), fb.getY() + p.getY(), toolTip->getWidth(),
+                       toolTip->getHeight());
+}
+
+void SCXTEditor::repositionTooltip(const juce::Component &relativeTo, const juce::Point<int> &p)
+{
+    auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
+    toolTip->resetSizeFromData();
+    toolTip->setBounds(fb.getX() + p.getX(), fb.getY() + p.getY(), toolTip->getWidth(),
+                       toolTip->getHeight());
+}
+
 void SCXTEditor::hideTooltip() { toolTip->setVisible(false); }
 
 void SCXTEditor::setTooltipContents(const std::string &title, const std::vector<std::string> &data)

@@ -277,6 +277,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     }
 
     void showTooltip(const juce::Component &relativeTo);
+    void showTooltip(const juce::Component &relativeTo, const juce::Point<int> &internalPosition);
+    void repositionTooltip(const juce::Component &relativeTo,
+                           const juce::Point<int> &internalPosition);
     void hideTooltip();
     void setTooltipContents(const std::string &title,
                             const std::vector<sst::jucegui::components::ToolTip::Row> &rows);
