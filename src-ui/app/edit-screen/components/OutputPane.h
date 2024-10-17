@@ -47,6 +47,8 @@ struct OutPaneZoneTraits
 
     using floatMsg_t = scxt::messaging::client::UpdateZoneOutputFloatValue;
     using int16Msg_t = scxt::messaging::client::UpdateZoneOutputInt16TValue;
+
+    static engine::Zone::ZoneOutputInfo &outputInfo(SCXTEditor *e);
 };
 
 struct OutPaneGroupTraits
@@ -58,6 +60,8 @@ struct OutPaneGroupTraits
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
     using int16Msg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
+
+    static engine::Group::GroupOutputInfo &outputInfo(SCXTEditor *e);
 };
 template <typename OTTraits> struct OutputTab;
 template <typename OTTraits> struct ProcTab;
@@ -69,7 +73,8 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
 
     void resized() override;
     void setActive(bool);
-    void setOutputData(const typename OTTraits::info_t &);
+
+    void updateFromOutputInfo();
 
     std::unique_ptr<OutputTab<OTTraits>> output;
     std::unique_ptr<ProcTab<OTTraits>> proc;

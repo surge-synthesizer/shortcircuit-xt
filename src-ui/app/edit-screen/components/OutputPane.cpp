@@ -44,12 +44,23 @@ namespace scxt::ui::app::edit_screen
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
+engine::Zone::ZoneOutputInfo &OutPaneZoneTraits::outputInfo(SCXTEditor *e)
+{
+    return e->editorDataCache.zoneOutputInfo;
+}
+
+engine::Group::GroupOutputInfo &OutPaneGroupTraits::outputInfo(SCXTEditor *e)
+{
+    return e->editorDataCache.groupOutputInfo;
+}
+
 template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
 {
     OutputPane<OTTraits> *outputPane{nullptr};
     std::unique_ptr<jcmp::MenuButton> procRouting;
 
-    ProcTab(SCXTEditor *e, OutputPane<OTTraits> *pane) : HasEditor(e), outputPane(pane)
+    ProcTab(SCXTEditor *e, OutputPane<OTTraits> *pane)
+        : HasEditor(e), outputPane(pane), info(OTTraits::outputInfo(e))
     {
         procRouting = std::make_unique<jcmp::MenuButton>();
         procRouting->setLabel(OTTraits::defaultRoutingLocationName);
@@ -148,7 +159,7 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         }
     }
 
-    typename OTTraits::info_t info;
+    typename OTTraits::info_t &info;
 };
 
 template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
@@ -165,7 +176,8 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     std::unique_ptr<bool_attachment_t> oversampleAttachment;
     std::unique_ptr<jcmp::ToggleButton> oversampleButton;
 
-    OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p) : HasEditor(e), parent(p)
+    OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p)
+        : HasEditor(e), parent(p), info(OTTraits::outputInfo(e))
     {
         using fac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
 
@@ -272,7 +284,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         }
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
-    typename OTTraits::info_t info;
+    typename OTTraits::info_t &info;
 };
 
 template <typename OTTraits>
@@ -333,14 +345,11 @@ template <typename OTTraits> void OutputPane<OTTraits>::setActive(bool b)
     onTabSelected(selectedTab);
 }
 
-template <typename OTTraits>
-void OutputPane<OTTraits>::setOutputData(const typename OTTraits::info_t &d)
+template <typename OTTraits> void OutputPane<OTTraits>::updateFromOutputInfo()
 {
-    output->info = d;
     output->updateRoutingLabel();
     output->repaint();
 
-    proc->info = d;
     proc->updateProcRoutingLabel();
     proc->repaint();
 }

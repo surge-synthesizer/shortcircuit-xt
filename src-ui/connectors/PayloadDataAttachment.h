@@ -231,6 +231,9 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     {
         prevValue = value;
         value = (ValueType)f;
+
+        for (auto *l : guilisteners)
+            l->dataChanged();
     }
 
     float getMin() const override { return description.minVal; }
@@ -309,6 +312,9 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     {
         prevValue = value;
         value = (ValueType)f;
+
+        for (auto *l : guilisteners)
+            l->dataChanged();
     }
 
     int getMin() const override { return (int)description.minVal; }
@@ -403,7 +409,12 @@ struct DirectBooleanPayloadDataAttachment : sst::jucegui::data::Discrete
         value = f;
         callback(f);
     }
-    void setValueFromModel(const int &f) override { value = f; }
+    void setValueFromModel(const int &f) override
+    {
+        value = f;
+        for (auto *l : guilisteners)
+            l->dataChanged();
+    }
 
     int getMin() const override { return (int)0; }
     int getMax() const override { return (int)1; }
@@ -448,7 +459,12 @@ struct SamplePointDataAttachment : sst::jucegui::data::Continuous
     float getMin() const override { return -1; }
     float getMax() const override { return sampleCount; }
     float getDefaultValue() const override { return 0; }
-    void setValueFromModel(const float &f) override { value = (int64_t)f; }
+    void setValueFromModel(const float &f) override
+    {
+        value = (int64_t)f;
+        for (auto *l : guilisteners)
+            l->dataChanged();
+    }
 };
 
 template <typename A, typename Msg, typename ABase = A> struct SingleValueFactory
@@ -470,6 +486,7 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         {
             e->setupWidgetForValueTooltip(wid.get(), att.get());
         }
+        e->addSubscription(val, att);
         return {std::move(att), std::move(wid)};
     }
 

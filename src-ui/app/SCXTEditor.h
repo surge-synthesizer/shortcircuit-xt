@@ -34,7 +34,6 @@
 
 #include "app/editor-impl/SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"
-#include "engine/patch.h"
 #include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
 #include "selection/selection_manager.h"
@@ -46,9 +45,12 @@
 #include "messaging/client/zone_messages.h"
 #include "browser/browser.h"
 
+#include "SCXTEditorDataCache.h"
 #include "HasEditor.h"
 
 #include "theme/ThemeApplier.h"
+
+#include "connectors/PayloadDataAttachment.h"
 
 namespace melatonin
 {
@@ -124,6 +126,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     theme::ThemeApplier themeApplier;
     juce::Colour themeColor(scxt::ui::theme::ColorMap::Colors, float alpha = 1.f) const;
     void resetColorsFromUserPreferences();
+
+    /*
+     * See the comment in SCXTEditorDataCache for more on this class. Shared space to
+     * cache the UI data types
+     */
+    SCXTEditorDataCache editorDataCache;
 
     sst::basic_blocks::dsp::RNG rng;
 
@@ -365,6 +373,22 @@ inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
             editor->hideTooltip();
             editor->popupMenuForContinuous(q);
         };
+    }
+}
+
+template <typename P, typename A> void HasEditor::addSubscription(const P &p, A &a)
+{
+    auto *dc = &editor->editorDataCache;
+    auto dce = dc + sizeof(SCXTEditorDataCache);
+    if ((size_t)&p >= (size_t)dc && (size_t)&p < (size_t)dce)
+    {
+        auto *edCopy = editor;
+        auto *vp = (void *)&p;
+
+        connectors::addGuiStep(*a, [edCopy, vp, f = a.get()](auto &) {
+            edCopy->editorDataCache.fireSubscription(vp, f);
+        });
+        editor->editorDataCache.addSubscription(vp, a.get());
     }
 }
 } // namespace scxt::ui::app

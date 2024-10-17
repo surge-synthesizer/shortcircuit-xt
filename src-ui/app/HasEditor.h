@@ -57,6 +57,8 @@ struct HasEditor
     template <typename T> void updateValueTooltip(const T &attachment);
     template <typename W, typename A>
     void setupWidgetForValueTooltip(W *widget, const A &attachment);
+
+    template <typename P, typename A> void addSubscription(const P &, A &);
 };
 } // namespace scxt::ui::app
 #endif // SHORTCIRCUIT_HASEDITOR_H
