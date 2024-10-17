@@ -273,7 +273,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
             SC_FIELD(amplitude,
                      pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
-            SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));
+            SC_FIELD(pan, pmd().asPan().withName("Pan"));
             SC_FIELD(procRouting, pmd().asInt().withRange(0, 1));)
 
 SC_DESCRIBE(
@@ -290,7 +290,7 @@ SC_DESCRIBE(
     SC_FIELD(pbDown, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Down"));
     SC_FIELD(pbUp, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Up"));
     SC_FIELD(amplitude, pmd().asDecibelWithRange(-36, 36).withName("Amplitude").withDefault(0.f));
-    SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan").withDefault(0.0));
+    SC_FIELD(pan, pmd().asPan().withName("Pan"));
     SC_FIELD(pitchOffset, pmd().asSemitoneRange().withName("Pitch").withDefault(0.0)););
 
 #endif
