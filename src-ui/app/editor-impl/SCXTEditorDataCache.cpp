@@ -76,18 +76,9 @@ void SCXTEditorDataCache::CListener::sourceVanished(sst::jucegui::data::Continuo
 {
     for (auto &cs : cache.csubs)
     {
-        auto sb = cs.second.begin();
-        while (sb != cs.second.end())
-        {
-            if (*sb == c)
-            {
-                sb = cs.second.erase(sb);
-            }
-            else
-            {
-                ++sb;
-            }
-        }
+        auto p = cs.second.find(c);
+        if (p != cs.second.end())
+            cs.second.erase(p);
     }
 }
 
@@ -95,18 +86,9 @@ void SCXTEditorDataCache::DListener::sourceVanished(sst::jucegui::data::Discrete
 {
     for (auto &cs : cache.dsubs)
     {
-        auto sb = cs.second.begin();
-        while (sb != cs.second.end())
-        {
-            if (*sb == c)
-            {
-                sb = cs.second.erase(sb);
-            }
-            else
-            {
-                ++sb;
-            }
-        }
+        auto p = cs.second.find(c);
+        if (p != cs.second.end())
+            cs.second.erase(p);
     }
 }
 
