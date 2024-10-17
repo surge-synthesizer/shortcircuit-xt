@@ -27,14 +27,16 @@
 
 #include "GroupSettingsCard.h"
 #include "app/SCXTEditor.h"
-#include "connectors/PayloadDataAttachment.h"
 
 namespace scxt::ui::app::edit_screen
 {
 namespace jcmp = sst::jucegui::components;
 
-GroupSettingsCard::GroupSettingsCard(SCXTEditor *e) : HasEditor(e)
+GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
+    : HasEditor(e), info(e->editorDataCache.groupOutputInfo)
 {
+    using fac = connectors::SingleValueFactory<attachment_t, floatMsg_t>;
+
     auto mkg = [this](auto gl) {
         auto res = std::make_unique<jcmp::GlyphPainter>(gl);
         addAndMakeVisible(*res);
@@ -67,9 +69,10 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e) : HasEditor(e)
     glideDrag = mkd('gdrg', "Glide");
 
     volGlyph = mkg(jcmp::GlyphPainter::GlyphType::VOLUME);
-    volDrag = mkd('grvl', "Volume");
+    fac::attachAndAdd(info, info.amplitude, this, volAttachment, volDrag);
     panGlyph = mkg(jcmp::GlyphPainter::GlyphType::PAN);
-    panDrag = mkd('grpn', "Pan");
+    fac::attachAndAdd(info, info.pan, this, panAttachment, panDrag);
+
     tuneGlyph = mkg(jcmp::GlyphPainter::GlyphType::TUNING);
     tuneDrag = mkd('grtn', "Tune");
 }

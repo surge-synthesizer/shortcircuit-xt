@@ -203,20 +203,22 @@ void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
+    editorDataCache.zoneOutputInfo = inf;
     editScreen->getZoneElements()->outPane->setActive(active);
     if (active)
     {
-        editScreen->getZoneElements()->outPane->setOutputData(inf);
+        editScreen->getZoneElements()->outPane->updateFromOutputInfo();
     }
 }
 
 void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
+    editorDataCache.groupOutputInfo = inf;
     editScreen->getGroupElements()->outPane->setActive(active);
     if (active)
     {
-        editScreen->getGroupElements()->outPane->setOutputData(inf);
+        editScreen->getGroupElements()->outPane->updateFromOutputInfo();
     }
 }
 

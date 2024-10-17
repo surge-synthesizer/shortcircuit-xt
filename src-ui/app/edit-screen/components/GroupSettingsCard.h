@@ -35,6 +35,9 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphButton.h"
 
+#include "messaging/messaging.h"
+#include "connectors/PayloadDataAttachment.h"
+
 #include "app/HasEditor.h"
 
 namespace scxt::ui::app::edit_screen
@@ -52,6 +55,13 @@ struct GroupSettingsCard : juce::Component, HasEditor
         glideMenu, srcMenu;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpDrag,
         glideDrag, volDrag, panDrag, tuneDrag;
+
+    using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
+    typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo> attachment_t;
+
+    std::unique_ptr<attachment_t> volAttachment, panAttachment;
+
+    engine::Group::GroupOutputInfo &info;
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPSETTINGSCARD_H

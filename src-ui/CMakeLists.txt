@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME} STATIC
         app/editor-impl/SCXTEditor.cpp
         app/editor-impl/SCXTEditorMenus.cpp
         app/editor-impl/SCXTEditorResponseHandlers.cpp
+        app/editor-impl/SCXTEditorDataCache.cpp
 
         app/edit-screen/EditScreen.cpp
         app/edit-screen/components/AdsrPane.cpp
