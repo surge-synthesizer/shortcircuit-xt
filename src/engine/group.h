@@ -82,8 +82,15 @@ struct Group : MoveableOnly<Group>,
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f};
         bool muted{false};
         bool oversample{true};
+
         ProcRoutingPath procRouting{procRoute_linear};
         BusAddress routeTo{DEFAULT_BUS};
+
+        bool hasIndependentPolyLimit{false};
+        bool polyLimitIsVoices{true};
+        int32_t polyLimit{0};
+
+        bool isMonoLegato{false};
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;

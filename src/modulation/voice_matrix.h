@@ -226,7 +226,7 @@ struct MatrixEndpoints
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
               aegSource{'zneg', 'aeg ', 0}, eg2Source{'zneg', 'eg2 ', 0}, transportSources(e),
-              rngSources(e), macroSources(e)
+              rngSources(e), macroSources(e), mpeSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
@@ -239,17 +239,32 @@ struct MatrixEndpoints
         {
             MIDISources(engine::Engine *e)
                 : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'},
-                  keytrackSource{'zmid', 'ktrk'}
+                  releaseVelocitySource{'zmid', 'rvel'}, keytrackSource{'zmid', 'ktrk'}
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 MatrixConfig::setDefaultLagFor(modWheelSource, 25);
                 registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
+                registerVoiceModSource(e, releaseVelocitySource, "MIDI", "Release Vel");
                 registerVoiceModSource(e, keytrackSource, "MIDI", "KeyTrack");
                 registerVoiceModSource(e, polyATSource, "MIDI", "Poly AT");
                 MatrixConfig::setDefaultLagFor(polyATSource, 100);
             }
-            SR modWheelSource, velocitySource, keytrackSource, polyATSource;
+            SR modWheelSource, velocitySource, releaseVelocitySource, keytrackSource, polyATSource;
         } midiSources;
+
+        struct MPESources
+        {
+            MPESources(engine::Engine *e)
+                : mpeBend{'zmpe', 'bend'}, mpeTimbre{'zmpe', 'timb'}, mpePressure{'zmpe', 'pres'}
+            {
+                registerVoiceModSource(e, mpeBend, "MPE", "Voice Pitch Bend");
+                registerVoiceModSource(e, mpeTimbre, "MPE", "Timbre");
+                MatrixConfig::setDefaultLagFor(mpeTimbre, 50);
+                registerVoiceModSource(e, mpePressure, "MPE", "Pressure");
+                MatrixConfig::setDefaultLagFor(mpePressure, 50);
+            }
+            SR mpeBend, mpeTimbre, mpePressure;
+        } mpeSources;
 
         struct NoteExpressionSources
         {

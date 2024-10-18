@@ -1166,28 +1166,13 @@ void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int
     voiceManager.processNoteOffEvent(port, channel, key, note_id, velocity);
 }
 
-void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_t pb14bit)
+void Engine::onPartConfigurationUpdated()
 {
-    auto fv = (pb14bit - 8192) / 8192.f;
-    for (const auto &p : engine.getPatch()->getParts())
-    {
-        if (p->configuration.active && p->respondsToMIDIChannel(channel))
-        {
-            p->pitchBendValue = fv;
-        }
-    }
-}
-void Engine::MonoVoiceManagerResponder::setMIDI1CC(int16_t channel, int16_t cc, int16_t val)
-{
-    auto fv = val / 127.0;
+    auto midiM = voiceManager_t::MIDI1Dialect::MIDI1;
+    for (auto &p : *getPatch())
+        if (p->configuration.channel == Part::PartConfiguration::mpeChannel)
+            midiM = voiceManager_t::MIDI1Dialect::MIDI1_MPE;
 
-    for (const auto &p : engine.getPatch()->getParts())
-    {
-        if (p->configuration.active && p->respondsToMIDIChannel(channel))
-        {
-            p->midiCCValues[cc] = fv;
-        }
-    }
+    voiceManager.dialect = midiM;
 }
-void Engine::MonoVoiceManagerResponder::setMIDIChannelPressure(int16_t channel, int16_t pres) {}
 } // namespace scxt::engine

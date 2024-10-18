@@ -166,6 +166,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         return idx;
     }
 
+    void onPartConfigurationUpdated();
+
     tuning::MidikeyRetuner midikeyRetuner;
 
     // new voice manager style
@@ -213,7 +215,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             SCLOG("Retrigger Voice Unimplemented")
         }
 
-        void setVoiceMIDIMPEChannelPitchBend(voice::Voice *v, uint16_t pb14bit) {}
+        void setVoiceMIDIMPEChannelPitchBend(voice::Voice *v, uint16_t pb14bit);
+        void setVoiceMIDIMPEChannelPressure(voice::Voice *v, int8_t val);
+        void setVoiceMIDIMPETimbre(voice::Voice *v, int8_t val);
 
         void setVoicePolyphonicParameterModulation(voice::Voice *v, uint32_t parameter,
                                                    double value)

@@ -97,6 +97,8 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  // Now we need to restore the bus effects
                  to.getPatch()->setupBussesOnUnstream(to);
 
+                 to.onPartConfigurationUpdated();
+
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
              }))
@@ -149,15 +151,21 @@ SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  findOrSet(v, "nm", scxt::engine::Macro::defaultNameFor(result.index), result.name);
              }));
 
-SC_STREAMDEF(
-    scxt::engine::Part::PartConfiguration,
-    SC_FROM(v = {{"a", from.active}, {"c", from.channel}, {"m", from.mute}, {"s", from.solo}};),
-    SC_TO({
-        findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
-        findOrSet(v, "a", true, to.active);
-        findOrSet(v, "m", false, to.mute);
-        findOrSet(v, "s", false, to.solo);
-    }));
+SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
+             SC_FROM(v = {{"a", from.active},
+                          {"c", from.channel},
+                          {"m", from.mute},
+                          {"s", from.solo},
+                          {"pl", from.polyLimitVoices},
+                          {"mbr", from.mpePitchBendRange}};),
+             SC_TO({
+                 findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
+                 findOrSet(v, "a", true, to.active);
+                 findOrSet(v, "m", false, to.mute);
+                 findOrSet(v, "s", false, to.solo);
+                 findOrSet(v, "pl", 0, to.polyLimitVoices);
+                 findOrSet(v, "mbr", 24, to.mpePitchBendRange);
+             }));
 
 SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,
              SC_FROM(v = {{"a", from.address},
@@ -207,6 +215,7 @@ SC_STREAMDEF(
             to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
                 samples);
 
+            to.parentPatch->parentEngine->onPartConfigurationUpdated();
             sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
         }
 
@@ -267,7 +276,9 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},   {"pan", t.pan},
                       {"oversample", t.oversample}, {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},           {"procRouting", t.procRouting},
-                      {"routeTo", (int)t.routeTo}};
+                      {"routeTo", (int)t.routeTo},  {"hip", t.hasIndependentPolyLimit},
+                      {"piv", t.polyLimitIsVoices}, {"pl", t.polyLimit},
+                      {"iml", t.isMonoLegato}};
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
@@ -278,6 +289,10 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "oversample", result.oversample);
                  int rt{engine::BusAddress::DEFAULT_BUS};
                  findIf(v, "routeTo", rt);
+                 findIf(v, "hip", result.hasIndependentPolyLimit);
+                 findIf(v, "piv", result.polyLimitIsVoices);
+                 findIf(v, "pl", result.polyLimit);
+                 findIf(v, "iml", result.isMonoLegato);
                  result.routeTo = (engine::BusAddress)(rt);
              }));
 

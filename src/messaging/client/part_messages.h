@@ -48,6 +48,7 @@ inline void updatePartFullConfig(const partConfigurationPayload_t &p, const engi
     auto [pt, conf] = p;
     cont.scheduleAudioThreadCallback([part = pt, configuration = conf](auto &eng) {
         eng.getPatch()->getPart(part)->configuration = configuration;
+        eng.onPartConfigurationUpdated();
     });
 }
 CLIENT_TO_SERIAL(UpdatePartFullConfig, c2s_send_full_part_config, partConfigurationPayload_t,

@@ -183,7 +183,11 @@ void Engine::VoiceManagerResponder::endVoiceCreationTransaction(uint16_t port, u
     transactionVoiceCount = 0;
 }
 
-void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity) { v->release(); }
+void Engine::VoiceManagerResponder::releaseVoice(voice::Voice *v, float velocity)
+{
+    v->releaseVelocity = velocity;
+    v->release();
+}
 
 void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t expression,
                                                       double value)
@@ -212,5 +216,56 @@ void Engine::VoiceManagerResponder::terminateVoice(voice::Voice *v)
         v->release();
     v->beginTerminationSequence();
 }
+
+void Engine::VoiceManagerResponder::setVoiceMIDIMPEChannelPitchBend(voice::Voice *v,
+                                                                    uint16_t pb14bit)
+{
+    assert(v);
+    assert(v->zone->parentGroup->parentPart);
+    assert(v->isVoiceAssigned);
+    v->mpePitchBend = 1.f * (pb14bit - 8192) / 8192 *
+                      v->zone->parentGroup->parentPart->configuration.mpePitchBendRange;
+}
+
+void Engine::VoiceManagerResponder::setVoiceMIDIMPEChannelPressure(voice::Voice *v, int8_t val)
+{
+    assert(v);
+    assert(v->zone->parentGroup->parentPart);
+    assert(v->isVoiceAssigned);
+    v->mpePressure = val / 127.0;
+}
+
+void Engine::VoiceManagerResponder::setVoiceMIDIMPETimbre(voice::Voice *v, int8_t val)
+{
+    assert(v);
+    assert(v->zone->parentGroup->parentPart);
+    assert(v->isVoiceAssigned);
+    v->mpeTimbre = val / 127.0;
+}
+
+void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_t pb14bit)
+{
+    auto fv = (pb14bit - 8192) / 8192.f;
+    for (const auto &p : engine.getPatch()->getParts())
+    {
+        if (p->configuration.active && p->respondsToMIDIChannel(channel))
+        {
+            p->pitchBendValue = fv;
+        }
+    }
+}
+void Engine::MonoVoiceManagerResponder::setMIDI1CC(int16_t channel, int16_t cc, int16_t val)
+{
+    auto fv = val / 127.0;
+
+    for (const auto &p : engine.getPatch()->getParts())
+    {
+        if (p->configuration.active && p->respondsToMIDIChannel(channel))
+        {
+            p->midiCCValues[cc] = fv;
+        }
+    }
+}
+void Engine::MonoVoiceManagerResponder::setMIDIChannelPressure(int16_t channel, int16_t pres) {}
 
 } // namespace scxt::engine

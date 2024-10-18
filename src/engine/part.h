@@ -72,17 +72,29 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     bool respondsToMIDIChannel(int16_t channel) const
     {
         return channel < 0 || configuration.channel == PartConfiguration::omniChannel ||
+               configuration.channel == PartConfiguration::mpeChannel ||
                channel == configuration.channel;
+    }
+    bool isMPEVoiceChannel(int16_t channel) const
+    {
+        return configuration.channel == PartConfiguration::mpeChannel &&
+               channel != configuration.mpeGlobalChannel;
     }
 
     struct PartConfiguration
     {
         static constexpr int16_t omniChannel{-1};
+        static constexpr int16_t mpeChannel{-2};
+
+        int mpePitchBendRange{24};
+        int mpeGlobalChannel{0};
 
         bool active{false};
         int16_t channel{omniChannel}; // a midi channel or a special value like omni
         bool mute{false};
         bool solo{false};
+
+        bool polyLimitVoices{0}; // poly limit. 0 means unlimited.
 
         BusAddress routeTo{DEFAULT_BUS};
     } configuration;
