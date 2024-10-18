@@ -74,9 +74,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     uint8_t originalMidiKey{
         60}; // the actual physical key pressed not the one I resolved to after tuning
     float velocity{1.f};
+    float releaseVelocity{0.f};
     float velKeyFade{1.f};
     float keytrackPerOct{0.f}; // resolvee key - pitch cnter / 12
     float polyAT{0.f};
+    float mpePitchBend{0.f}; // in semis
+    float mpeTimbre{0.f};    // 0..1 normalized
+    float mpePressure{0.f};  // 0..1 normalized
+
     static constexpr size_t noteExpressionCount{7};
     float noteExpressions[noteExpressionCount]{};
     // These are the same as teh CLAP expression IDs but I dont want to include
@@ -202,6 +207,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
         isVoicePlaying = true;
         isVoiceAssigned = true;
+
+        releaseVelocity = 0.f;
 
         voiceStarted();
     }

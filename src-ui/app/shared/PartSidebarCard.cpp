@@ -52,7 +52,7 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     addAndMakeVisible(*outBus);
 
     polyCount = std::make_unique<jcmp::TextPushButton>();
-    polyCount->setLabel("256");
+    polyCount->setLabel("512");
     polyCount->setOnCallback(editor->makeComingSoon("Polyphony Limit/Monophony"));
     addAndMakeVisible(*polyCount);
 
@@ -225,10 +225,31 @@ void PartSidebarCard::showMidiModeMenu()
     p.addSeparator();
     p.addItem("OMNI", true, ch == engine::Part::PartConfiguration::omniChannel,
               makeMenuCallback(engine::Part::PartConfiguration::omniChannel));
+    p.addItem("MPE", true, ch == engine::Part::PartConfiguration::mpeChannel,
+              makeMenuCallback(engine::Part::PartConfiguration::mpeChannel));
+    p.addSeparator();
     for (int i = 0; i < 16; ++i)
     {
         p.addItem("Ch. " + std::to_string(i + 1), true, ch == i, makeMenuCallback(i));
     }
+    p.addSeparator();
+    auto msm = juce::PopupMenu();
+    msm.addSectionHeader("MPE Settings");
+    msm.addSeparator();
+    for (auto d : {12, 24, 48, 96})
+    {
+        msm.addItem(std::to_string(d) + " semi bend range", true,
+                    d == editor->partConfigurations[part].mpePitchBendRange,
+                    [d, w = juce::Component::SafePointer(this)] {
+                        if (!w)
+                            return;
+                        w->editor->partConfigurations[w->part].mpePitchBendRange = d;
+                        w->resetFromEditorCache();
+                        w->sendToSerialization(cmsg::UpdatePartFullConfig(
+                            {w->part, w->editor->partConfigurations[w->part]}));
+                    });
+    }
+    p.addSubMenu("MPE Settings", msm);
     p.showMenuAsync(editor->defaultPopupMenuOptions(midiMode.get()));
 }
 
@@ -239,6 +260,10 @@ void PartSidebarCard::resetFromEditorCache()
     if (mc == engine::Part::PartConfiguration::omniChannel)
     {
         midiMode->setLabel("OMNI");
+    }
+    else if (mc == engine::Part::PartConfiguration::mpeChannel)
+    {
+        midiMode->setLabel("MPE");
     }
     else
     {
