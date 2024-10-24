@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphButton.h"
+#include "sst/jucegui/components/TextPushButton.h"
 
 #include "messaging/messaging.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -47,12 +48,14 @@ struct GroupSettingsCard : juce::Component, HasEditor
     GroupSettingsCard(SCXTEditor *e);
     void paint(juce::Graphics &g) override;
     void resized() override;
+    void rebuildFromInfo();
 
     std::unique_ptr<sst::jucegui::components::GlyphPainter> midiGlyph, outputGlyph, polyGlygh,
         prioGlyph, glideGlpyh, volGlyph, panGlyph, tuneGlyph;
     std::unique_ptr<sst::jucegui::components::Label> pbLabel, SRCLabel;
-    std::unique_ptr<sst::jucegui::components::MenuButton> midiMenu, outputMenu, polyMenu, prioMenu,
-        glideMenu, srcMenu;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> polyMenu;
+    std::unique_ptr<sst::jucegui::components::MenuButton> midiMenu, outputMenu, prioMenu, glideMenu,
+        srcMenu;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpDrag,
         glideDrag, volDrag, panDrag, tuneDrag;
 

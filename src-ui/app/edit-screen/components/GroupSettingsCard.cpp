@@ -36,6 +36,11 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     : HasEditor(e), info(e->editorDataCache.groupOutputInfo)
 {
     using fac = connectors::SingleValueFactory<attachment_t, floatMsg_t>;
+    editor->editorDataCache.addNotificationCallback(&info,
+                                                    [w = juce::Component::SafePointer(this)]() {
+                                                        if (w)
+                                                            w->rebuildFromInfo();
+                                                    });
 
     auto mkg = [this](auto gl) {
         auto res = std::make_unique<jcmp::GlyphPainter>(gl);
@@ -61,7 +66,11 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     outputGlyph = mkg(jcmp::GlyphPainter::GlyphType::SPEAKER);
     outputMenu = mkm("PART", "Output");
     polyGlygh = mkg(jcmp::GlyphPainter::GlyphType::POLYPHONY);
-    polyMenu = mkm("PART", "Polyphony");
+    polyMenu = std::make_unique<jcmp::TextPushButton>();
+    polyMenu->setLabel("PART");
+    polyMenu->setOnCallback([w = juce::Component::SafePointer(this)]() { SCLOG("POLY MENU"); });
+    addAndMakeVisible(*polyMenu);
+
     prioGlyph = mkg(jcmp::GlyphPainter::GlyphType::NOTE_PRIORITY);
     prioMenu = mkm("LAST", "Priority");
     glideGlpyh = mkg(jcmp::GlyphPainter::GlyphType::CURVE);
@@ -122,5 +131,7 @@ void GroupSettingsCard::resized()
     osr = osr.translated(0, rowHeight);
     ospair(tuneGlyph, tuneDrag);
 }
+
+void GroupSettingsCard::rebuildFromInfo() { SCLOG("Rebuild from Info"); }
 
 } // namespace scxt::ui::app::edit_screen
