@@ -30,9 +30,9 @@
 
 namespace scxt::engine
 {
-int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(uint16_t port,
-                                                                     uint16_t channel, uint16_t key,
-                                                                     int32_t noteId, float velocity)
+int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
+    sst::voicemanager::VoiceBeginBufferEntry<VMConfig>::buffer_t &buffer, uint16_t port,
+    uint16_t channel, uint16_t key, int32_t noteId, float velocity)
 {
     SCLOG_IF(voiceResponder, "begin voice transaction " << SCD(port) << SCD(channel) << SCD(key)
                                                         << SCD(noteId) << SCD(velocity));
@@ -48,6 +48,7 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(uint16_t po
         auto &z = engine.zoneByPath(path);
 
         voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
+        buffer[idx].polyphonyGroup = 0;
         SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part << "/"
                                                   << path.group << "/" << path.zone
                                                   << "  zone handles variant");
@@ -61,8 +62,8 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(uint16_t po
 }
 
 int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
-    std::array<voice::Voice *, VMConfig::maxVoiceCount> &voiceInitWorkingBuffer, uint16_t port,
-    uint16_t channel, uint16_t key, int32_t noteId, float velocity, float retune)
+    sst::voicemanager::VoiceInitBufferEntry<VMConfig>::buffer_t &voiceInitWorkingBuffer,
+    uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity, float retune)
 {
     assert(transactionValid);
     assert(transactionVoiceCount > 0);
@@ -87,7 +88,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->attack();
                 actualCreated++;
             }
-            voiceInitWorkingBuffer[idx] = v;
+            voiceInitWorkingBuffer[idx].voice = v;
             SCLOG_IF(voiceResponder, "-- Created single voice for single zone ("
                                          << std::hex << v << std::dec << ")");
         }
@@ -164,7 +165,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     v->attack();
                     actualCreated++;
                 }
-                voiceInitWorkingBuffer[idx] = v;
+                voiceInitWorkingBuffer[idx].voice = v;
             }
         }
     }
@@ -254,7 +255,7 @@ void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_
         }
     }
 }
-void Engine::MonoVoiceManagerResponder::setMIDI1CC(int16_t channel, int16_t cc, int16_t val)
+void Engine::MonoVoiceManagerResponder::setMIDI1CC(int16_t channel, int16_t cc, int8_t val)
 {
     auto fv = val / 127.0;
 
