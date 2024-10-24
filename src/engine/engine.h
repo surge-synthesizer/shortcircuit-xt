@@ -197,11 +197,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             }
         }
 
-        int32_t beginVoiceCreationTransaction(uint16_t port, uint16_t channel, uint16_t key,
-                                              int32_t noteId, float velocity);
+        int32_t beginVoiceCreationTransaction(
+            sst::voicemanager::VoiceBeginBufferEntry<VMConfig>::buffer_t &, uint16_t port,
+            uint16_t channel, uint16_t key, int32_t noteId, float velocity);
 
         int32_t initializeMultipleVoices(
-            std::array<voice::Voice *, VMConfig::maxVoiceCount> &voiceInitWorkingBuffer,
+            sst::voicemanager::VoiceInitBufferEntry<VMConfig>::buffer_t &voiceInitWorkingBuffer,
             uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity,
             float retune);
 
@@ -226,8 +227,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
         void setNoteExpression(voice::Voice *v, int32_t expression, double value);
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat);
-        void allSoundsOff() { engine.releaseAllVoices(); }
-        void allNotesOff() { engine.stopAllSounds(); }
 
       private:
         bool transactionValid{false};
@@ -241,7 +240,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         MonoVoiceManagerResponder(Engine &e) : engine(e) {}
 
         void setMIDIPitchBend(int16_t channel, int16_t pb14bit);
-        void setMIDI1CC(int16_t channel, int16_t cc, int16_t val);
+        void setMIDI1CC(int16_t channel, int16_t cc, int8_t val);
         void setMIDIChannelPressure(int16_t channel, int16_t pres);
     } monoVoiceManagerResponder{*this};
     using voiceManager_t =
