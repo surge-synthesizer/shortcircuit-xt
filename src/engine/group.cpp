@@ -437,7 +437,7 @@ const engine::Engine *Group::getEngine() const
     return nullptr;
 }
 
-void Group::setupOnUnstream(const engine::Engine &e)
+void Group::setupOnUnstream(engine::Engine &e)
 {
     onRoutingChanged();
     rePrepareAndBindGroupMatrix();
@@ -466,6 +466,7 @@ void Group::setupOnUnstream(const engine::Engine &e)
     }
 
     triggerConditions.setupOnUnstream(parentPart->groupTriggerInstrumentState);
+    resetPolyAndPlaymode(e);
 }
 void Group::onSampleRateChanged()
 {
@@ -604,6 +605,18 @@ bool Group::isActive() const
 }
 
 void Group::onRoutingChanged() { SCLOG_ONCE("Implement Group LFO modulator use optimization"); }
+
+void Group::resetPolyAndPlaymode(engine::Engine &e)
+{
+    if (!outputInfo.hasIndependentPolyLimit)
+    {
+        // TODO we really want a 'clear'
+    }
+    else
+    {
+        e.voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)this, outputInfo.polyLimit);
+    }
+}
 
 template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine

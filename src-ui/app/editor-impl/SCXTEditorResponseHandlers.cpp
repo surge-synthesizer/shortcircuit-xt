@@ -204,6 +204,7 @@ void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutp
 {
     auto [active, inf] = p;
     editorDataCache.zoneOutputInfo = inf;
+    editorDataCache.fireAllNotificationsFor(editorDataCache.zoneOutputInfo);
     editScreen->getZoneElements()->outPane->setActive(active);
     if (active)
     {
@@ -215,6 +216,7 @@ void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOu
 {
     auto [active, inf] = p;
     editorDataCache.groupOutputInfo = inf;
+    editorDataCache.fireAllNotificationsFor(editorDataCache.groupOutputInfo);
     editScreen->getGroupElements()->outPane->setActive(active);
     if (active)
     {

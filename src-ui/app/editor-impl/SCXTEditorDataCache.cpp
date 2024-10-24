@@ -92,4 +92,45 @@ void SCXTEditorDataCache::DListener::sourceVanished(sst::jucegui::data::Discrete
     }
 }
 
+void SCXTEditorDataCache::addNotificationCallback(void *el, std::function<void()> f)
+{
+    fsubs[el].push_back(f);
+}
+
+void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
+{
+    for (auto &[da, ds] : fsubs)
+    {
+        if (da >= st && da <= end)
+        {
+            for (auto &d : ds)
+            {
+                d();
+            }
+        }
+    }
+
+    for (auto &[da, ds] : dsubs)
+    {
+        if (da >= st && da <= end)
+        {
+            for (auto &d : ds)
+            {
+                d->setValueFromModel(*((int *)da));
+            }
+        }
+    }
+
+    for (auto &[da, ds] : csubs)
+    {
+        if (da >= st && da <= end)
+        {
+            for (auto &d : ds)
+            {
+                d->setValueFromModel(*((float *)da));
+            }
+        }
+    }
+}
+
 } // namespace scxt::ui::app

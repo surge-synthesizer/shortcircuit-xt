@@ -30,6 +30,8 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
+#include <functional>
 
 #include "engine/bus.h"
 #include "engine/part.h"
@@ -64,9 +66,19 @@ struct SCXTEditorDataCache
     void fireSubscription(void *el, sst::jucegui::data::Continuous *);
     void fireSubscription(void *el, sst::jucegui::data::Discrete *);
 
+    void addNotificationCallback(void *el, std::function<void()>);
+    template <typename P> void fireAllNotificationsFor(const P &p)
+    {
+        auto st = &p;
+        auto end = &p + sizeof(P);
+        fireAllNotificationsBetween((void *)st, (void *)end);
+    }
+
   private:
+    void fireAllNotificationsBetween(void *st, void *end);
     std::unordered_map<void *, std::unordered_set<sst::jucegui::data::Continuous *>> csubs;
     std::unordered_map<void *, std::unordered_set<sst::jucegui::data::Discrete *>> dsubs;
+    std::unordered_map<void *, std::vector<std::function<void()>>> fsubs;
 
     struct CListener : sst::jucegui::data::Continuous::DataListener
     {
