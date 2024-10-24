@@ -26,6 +26,7 @@
  */
 
 #include "GroupSettingsCard.h"
+#include "messaging/messaging.h"
 #include "app/SCXTEditor.h"
 
 namespace scxt::ui::app::edit_screen
@@ -36,11 +37,6 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     : HasEditor(e), info(e->editorDataCache.groupOutputInfo)
 {
     using fac = connectors::SingleValueFactory<attachment_t, floatMsg_t>;
-    editor->editorDataCache.addNotificationCallback(&info,
-                                                    [w = juce::Component::SafePointer(this)]() {
-                                                        if (w)
-                                                            w->rebuildFromInfo();
-                                                    });
 
     auto mkg = [this](auto gl) {
         auto res = std::make_unique<jcmp::GlyphPainter>(gl);
@@ -68,7 +64,10 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     polyGlygh = mkg(jcmp::GlyphPainter::GlyphType::POLYPHONY);
     polyMenu = std::make_unique<jcmp::TextPushButton>();
     polyMenu->setLabel("PART");
-    polyMenu->setOnCallback([w = juce::Component::SafePointer(this)]() { SCLOG("POLY MENU"); });
+    polyMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showPolyMenu();
+    });
     addAndMakeVisible(*polyMenu);
 
     prioGlyph = mkg(jcmp::GlyphPainter::GlyphType::NOTE_PRIORITY);
@@ -84,6 +83,12 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
 
     tuneGlyph = mkg(jcmp::GlyphPainter::GlyphType::TUNING);
     tuneDrag = mkd('grtn', "Tune");
+
+    editor->editorDataCache.addNotificationCallback(&info,
+                                                    [w = juce::Component::SafePointer(this)]() {
+                                                        if (w)
+                                                            w->rebuildFromInfo();
+                                                    });
 }
 
 void GroupSettingsCard::paint(juce::Graphics &g)
@@ -132,6 +137,48 @@ void GroupSettingsCard::resized()
     ospair(tuneGlyph, tuneDrag);
 }
 
-void GroupSettingsCard::rebuildFromInfo() { SCLOG("Rebuild from Info"); }
+void GroupSettingsCard::rebuildFromInfo()
+{
+    if (info.hasIndependentPolyLimit)
+    {
+        polyMenu->setLabel(std::to_string(info.polyLimit));
+    }
+    else
+    {
+        polyMenu->setLabel("PART");
+    }
+}
+
+void GroupSettingsCard::showPolyMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Group Voice Polyphony");
+    p.addSeparator();
+    p.addItem(
+        "Part", true, !info.hasIndependentPolyLimit, [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.hasIndependentPolyLimit = false;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
+    p.addSeparator();
+    for (auto pol : {1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 48, 64})
+    {
+        p.addItem(std::to_string(pol), true, info.hasIndependentPolyLimit && info.polyLimit == pol,
+                  [pol, w = juce::Component::SafePointer(this)]() {
+                      if (!w)
+                          return;
+                      w->info.hasIndependentPolyLimit = true;
+                      w->info.polyLimit = pol;
+
+                      w->rebuildFromInfo();
+                      w->sendToSerialization(
+                          messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  });
+    }
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
 
 } // namespace scxt::ui::app::edit_screen

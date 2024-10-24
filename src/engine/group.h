@@ -87,10 +87,7 @@ struct Group : MoveableOnly<Group>,
         BusAddress routeTo{DEFAULT_BUS};
 
         bool hasIndependentPolyLimit{false};
-        bool polyLimitIsVoices{true};
         int32_t polyLimit{0};
-
-        bool isMonoLegato{false};
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;
@@ -105,7 +102,7 @@ struct Group : MoveableOnly<Group>,
     template <bool OS> void processWithOS(Engine &onto);
     bool lastOversample{true};
 
-    void setupOnUnstream(const engine::Engine &e);
+    void setupOnUnstream(engine::Engine &e);
 
     // ToDo editable name
     std::string getName() const { return name; }
@@ -180,6 +177,8 @@ struct Group : MoveableOnly<Group>,
     void removeActiveZone(engine::Zone *zoneWP);
 
     void onSampleRateChanged() override;
+
+    void resetPolyAndPlaymode(engine::Engine &);
 
     sst::filters::HalfRate::HalfRateFilter osDownFilter;
 

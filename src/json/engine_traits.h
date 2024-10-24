@@ -277,8 +277,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"oversample", t.oversample}, {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},           {"procRouting", t.procRouting},
                       {"routeTo", (int)t.routeTo},  {"hip", t.hasIndependentPolyLimit},
-                      {"piv", t.polyLimitIsVoices}, {"pl", t.polyLimit},
-                      {"iml", t.isMonoLegato}};
+                      {"pl", t.polyLimit}};
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
@@ -290,9 +289,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  int rt{engine::BusAddress::DEFAULT_BUS};
                  findIf(v, "routeTo", rt);
                  findIf(v, "hip", result.hasIndependentPolyLimit);
-                 findIf(v, "piv", result.polyLimitIsVoices);
                  findIf(v, "pl", result.polyLimit);
-                 findIf(v, "iml", result.isMonoLegato);
                  result.routeTo = (engine::BusAddress)(rt);
              }));
 

@@ -48,7 +48,14 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
         auto &z = engine.zoneByPath(path);
 
         voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
-        buffer[idx].polyphonyGroup = 0;
+        if (z->parentGroup->outputInfo.hasIndependentPolyLimit)
+        {
+            buffer[idx].polyphonyGroup = (uint64_t)z->parentGroup;
+        }
+        else
+        {
+            buffer[idx].polyphonyGroup = 0;
+        }
         SCLOG_IF(voiceResponder, "-- Created at " << voicesCreated << " - " << path.part << "/"
                                                   << path.group << "/" << path.zone
                                                   << "  zone handles variant");

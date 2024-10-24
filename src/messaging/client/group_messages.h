@@ -77,5 +77,23 @@ CLIENT_TO_SERIAL(UpdateGroupTriggerConditions, c2s_update_group_trigger_conditio
                  scxt::engine::GroupTriggerConditions,
                  doUpdateGroupTriggerConditions(payload, engine, cont));
 
+inline void doUpdateGroupOutputInfoPolyphony(const scxt::engine::Group::GroupOutputInfo payload,
+                                             const engine::Engine &engine,
+                                             messaging::MessageController &cont)
+{
+    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
+    if (ga.has_value())
+    {
+        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
+            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
+            grp->outputInfo = p;
+            grp->resetPolyAndPlaymode(eng);
+        });
+    }
+}
+CLIENT_TO_SERIAL(UpdateGroupOutputInfoPolyphony, c2s_update_group_output_info_polyphony,
+                 scxt::engine::Group::GroupOutputInfo,
+                 doUpdateGroupOutputInfoPolyphony(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_GROUP_MESSAGES_H

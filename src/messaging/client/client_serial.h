@@ -104,6 +104,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_group_output_float_value,
     c2s_update_group_output_int16_t_value,
     c2s_update_group_output_bool_value,
+    c2s_update_group_output_info_polyphony,
 
     c2s_update_group_trigger_conditions,
 

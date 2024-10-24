@@ -65,6 +65,8 @@ struct GroupSettingsCard : juce::Component, HasEditor
     std::unique_ptr<attachment_t> volAttachment, panAttachment;
 
     engine::Group::GroupOutputInfo &info;
+
+    void showPolyMenu();
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPSETTINGSCARD_H
