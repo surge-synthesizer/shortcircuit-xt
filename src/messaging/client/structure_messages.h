@@ -71,6 +71,8 @@ inline void doRegisterClient(engine::Engine &engine, MessageController &cont)
         engine.getSelectionManager()->selectAction(sac);
     }
     engine.getSelectionManager()->sendSelectedPartMacrosToClient();
+
+    engine.sendFullRefreshToClient();
 }
 CLIENT_TO_SERIAL(RegisterClient, c2s_register_client, bool, doRegisterClient(engine, cont));
 
