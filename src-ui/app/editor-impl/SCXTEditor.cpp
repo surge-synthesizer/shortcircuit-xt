@@ -95,16 +95,6 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     toolTip = std::make_unique<sst::jucegui::components::ToolTip>();
     addChildComponent(*toolTip);
 
-    namespace cmsg = scxt::messaging::client;
-    msgCont.registerClient("SCXTEditor", [this](auto &s) {
-        {
-            // Remember this runs on the serialization thread so needs to be thread safe
-            std::lock_guard<std::mutex> g(callbackMutex);
-            callbackQueue.push(s);
-        }
-        juce::MessageManager::callAsync([this]() { drainCallbackQueue(); });
-    });
-
     headerRegion = std::make_unique<shared::HeaderRegion>(this);
     addAndMakeVisible(*headerRegion);
 
@@ -139,6 +129,16 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     focusDebugger = std::make_unique<sst::jucegui::accessibility::FocusDebugger>(*this);
     focusDebugger->setDoFocusDebug(false);
+
+    namespace cmsg = scxt::messaging::client;
+    msgCont.registerClient("SCXTEditor", [this](auto &s) {
+        {
+            // Remember this runs on the serialization thread so needs to be thread safe
+            std::lock_guard<std::mutex> g(callbackMutex);
+            callbackQueue.push(s);
+        }
+        juce::MessageManager::callAsync([this]() { drainCallbackQueue(); });
+    });
 }
 
 SCXTEditor::~SCXTEditor() noexcept
