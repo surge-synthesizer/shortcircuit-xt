@@ -62,7 +62,7 @@ option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" OFF)
 option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
-if (${CMAKE_GENERATOR_PLATFORM} STREQUAL "arm64ec")
+if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
     message(STATUS "Default skipping FLAC and MP3 on arm64ec for now")
     option(SCXT_USE_FLAC "Include FLAC support" OFF)
     option(SCXT_USE_MP3 "Include MP3 support" OFF)
