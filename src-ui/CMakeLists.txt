@@ -66,14 +66,15 @@ cmrc_add_resource_library(scxtui_json_layouts
 set_target_properties(scxtui_json_layouts PROPERTIES UNITY_BUILD FALSE)
 
 
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        fmt
+        sst-plugininfra::strnatcmp
+        scxt-resources
+        scxtui_json_layouts
+)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-core
-        scxt-resources
         sst-jucegui
-
-        sst-plugininfra::strnatcmp
-
-        scxtui_json_layouts
         )
 
 if (NOT CMAKE_UNITY_BUILD)
