@@ -24,7 +24,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # TODO Remove This before we ship non beta version. Remember
 # the AU rescans only when versions change even if binaries are
 # different.
-message(STATUS "Using date-driven version while in alpha")
+message(STATUS "ShortcircuitXT: Using date-driven version while in alpha")
 string(TIMESTAMP DAY_OF_YEAR "%j")
 string(TIMESTAMP YEAR "%Y")
 math(EXPR PART0 "${YEAR}-2023 + 6")
@@ -62,8 +62,14 @@ option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" OFF)
 option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
-option(SCXT_USE_FLAC "Include FLAC support" ON)
-option(SCXT_USE_MP3 "Include MP3 support" ON)
+if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
+    message(STATUS "Default skipping FLAC and MP3 on arm64ec for now")
+    option(SCXT_USE_FLAC "Include FLAC support" OFF)
+    option(SCXT_USE_MP3 "Include MP3 support" OFF)
+else()
+    option(SCXT_USE_FLAC "Include FLAC support" ON)
+    option(SCXT_USE_MP3 "Include MP3 support" ON)
+endif()
 
 option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
 if (WIN32)
@@ -81,6 +87,9 @@ endif ()
 # Share some information about the  build
 message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
+if (MSVC)
+    message(STATUS "Windows Architecture is ${CMAKE_GENERATOR_PLATFORM}")
+endif()
 
 # Everything here is C++ 17 now
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)

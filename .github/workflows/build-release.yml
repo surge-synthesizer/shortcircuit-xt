@@ -12,15 +12,21 @@ defaults:
 
 jobs:
   build_plugin:
-    name: Release Build - ${{ matrix.os }}
+    name: Release Build ${{matrix.name }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-latest
+            name: windows-x86
             cmakeArgs: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
 
+          - os: windows-latest
+            name: windows-arm64ec
+            cmakeArgs: -G"Visual Studio 17 2022" -A arm64ec -DCMAKE_SYSTEM_VERSION=10
+
           - os: macos-latest
+            name: macos
             cmakeArgs: -GNinja -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
     steps:
       - name: Checkout code
@@ -61,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: build/installer
-          name: build-${{ matrix.os }}
+          name: build-${{ matrix.name }}
 
   build_plugin_docker:
     name: Docker Build Ubuntu20 ${{ matrix.name }}

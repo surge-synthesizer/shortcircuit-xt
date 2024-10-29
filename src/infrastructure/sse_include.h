@@ -28,9 +28,11 @@
 #ifndef SCXT_SRC_INFRASTRUCTURE_SSE_INCLUDE_H
 #define SCXT_SRC_INFRASTRUCTURE_SSE_INCLUDE_H
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDE_ENABLE_NATIVE_ALIASES
 #include "simde/x86/sse4.2.h"
+#elif defined(_M_ARM64EC)
+#include <intrin.h>
 #else
 #include <xmmintrin.h>
 #include <immintrin.h>
