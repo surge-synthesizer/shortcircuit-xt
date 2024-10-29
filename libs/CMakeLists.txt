@@ -27,7 +27,9 @@ add_subdirectory(fmt)
 # Modify this basedon the outcome of https://github.com/taocpp/PEGTL/issues/347
 set(PEGTL_NO_STD_FILESYSTEM ON CACHE BOOL "Skip PEGTL FileSystem")
 add_subdirectory(taocpp_json)
-target_compile_definitions(taocpp-json INTERFACE -DRYU_ONLY_64_BIT_OPS)
+if (${CMAKE_GENERATOR_PLATFORM} STREQUAL "arm64ec")
+    target_compile_definitions(taocpp-json INTERFACE -DRYU_ONLY_64_BIT_OPS)
+endif()
 add_subdirectory(sqlite3-3.42.0)
 
 add_subdirectory(xiph)

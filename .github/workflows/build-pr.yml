@@ -30,7 +30,7 @@ jobs:
           - name: "windows arm64ec"
             os: windows-latest
             target: shortcircuit-products
-            cmakeConfig: -G"Visual Studio 17 2022" -A arm64ec -DCMAKE_SYSTEM_VERSION=10 -DSCXT_USE_FLAC=FALSE -DSCXT_USE_MP3=FALSE
+            cmakeConfig: -G"Visual Studio 17 2022" -A arm64ec -DCMAKE_SYSTEM_VERSION=10
             runTests: false
             clapValidate: false
 
