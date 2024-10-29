@@ -228,7 +228,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
     if (pd.supportsKeytrack)
     {
         auto &ps = asT()->processorStorage[whichProcessor];
-        if (ps.previousIsKeytracked < 0 || ps.isKeytracked != ps.previousIsKeytracked)
+        if (ps.previousIsKeytracked < 0 || ((int)ps.isKeytracked) != ps.previousIsKeytracked)
         {
             ps.previousIsKeytracked = ps.isKeytracked ? 1 : 0;
             asT()->setupProcessorControlDescriptions(whichProcessor, ps.type, nullptr, true);

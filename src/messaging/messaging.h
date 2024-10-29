@@ -394,7 +394,7 @@ struct MessageController : MoveableOnly<MessageController>
     std::unique_ptr<std::thread> serializationThread;
 
     int64_t localCopyOfEngineProcessRuns{engineProcessRuns};
-    int64_t localCopyOfIsAudioRunning{isAudioRunning};
+    bool localCopyOfIsAudioRunning{isAudioRunning};
     static constexpr int32_t engineOffCountdownInit{4};
     int32_t engineOffCountdown{engineOffCountdownInit};
 };

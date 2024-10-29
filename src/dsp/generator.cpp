@@ -436,7 +436,7 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     // int16
     // SSE2 path
     __m128i lipol0, tmp, sL8A, sR8A, tmp2, sL8B, sR8B;
-    __m128 fL, fR;
+    __m128 fL = _mm_setzero_ps(), fR = _mm_setzero_ps();
     lipol0 = _mm_set1_epi16(ks.SampleSubPos & 0xffff);
 
     tmp = _mm_add_epi16(_mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0]), lipol0),
