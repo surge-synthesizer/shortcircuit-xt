@@ -158,13 +158,17 @@ elseif (WIN32)
             COMMAND ${CMAKE_COMMAND} -E echo "ZIP Installer in: installer/${SCXT_ZIP}")
     find_program(SHORTCIRCUIT_NUGET_EXE nuget.exe PATHS ENV "PATH")
     if(SHORTCIRCUIT_NUGET_EXE)
-        message(STATUS "NuGet found at ${SHORTCIRCUIT_NUGET_EXE}")
-        add_custom_command(
-            TARGET shortcircuit-installer
-            POST_BUILD
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.1
-            COMMAND Tools.InnoSetup.6.2.1/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
+        if (${CMAKE_GENERATOR_PLATFORM} STREQUAL "arm64ec")
+            message(STATUS "Zip only for now on arm64ec")
+        else()
+            message(STATUS "NuGet found at ${SHORTCIRCUIT_NUGET_EXE}")
+            add_custom_command(
+                TARGET shortcircuit-installer
+                POST_BUILD
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                COMMAND ${SHORTCIRCUIT_NUGET_EXE} install Tools.InnoSetup -version 6.2.1
+                COMMAND Tools.InnoSetup.6.2.1/tools/iscc.exe /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
+            endif()
     else()
         message(STATUS "NuGet not found!")
     endif()
