@@ -28,11 +28,11 @@
 #ifndef SCXT_SRC_INFRASTRUCTURE_SSE_INCLUDE_H
 #define SCXT_SRC_INFRASTRUCTURE_SSE_INCLUDE_H
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(_M_ARM64EC) || defined(_M_ARM64)
+// You could make a case on ARM64EC to iunclude intrin below but
+// lets use simde to get us to neon
 #define SIMDE_ENABLE_NATIVE_ALIASES
 #include "simde/x86/sse4.2.h"
-#elif defined(_M_ARM64EC)
-#include <intrin.h>
 #else
 #include <xmmintrin.h>
 #include <immintrin.h>
