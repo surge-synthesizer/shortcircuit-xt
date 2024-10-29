@@ -131,12 +131,15 @@ endif ()
 
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
 if (WIN32)
-    set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${BITS}bit.zip)
+    if (${CMAKE_GENERATOR_PLATFORM} STREQUAL "arm64ec")
+        set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${CMAKE_GENERATOR_PLATFORM}.zip)
+    else()
+        set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${BITS}bit.zip)
+    endif()
 else ()
     set(SCXT_ZIP ShortcircuitXT-${SCXT_EXTRA_INSTALLER_NAME}${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
-    message(STATUS "Installer ZIP is ${SCXT_ZIP}")
 endif ()
-
+message(STATUS "Installer ZIP is ${SCXT_ZIP}")
 
 if (APPLE)
     message(STATUS "Configuring for Mac installer.")
