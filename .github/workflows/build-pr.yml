@@ -13,10 +13,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: "windows msvc (core subset)"
+          - name: "windows msvc"
             os: windows-latest
-            target: scxt-core
-            cmakeConfig: -A x64
+            target: shortcircuit-products
+            cmakeConfig: -G"Visual Studio 17 2022" -A x64
             runTests: false
             clapValidate: false
 
