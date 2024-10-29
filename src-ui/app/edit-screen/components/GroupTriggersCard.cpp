@@ -180,7 +180,8 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         p.addSeparator();
 
         auto mkv = [this](auto v) {
-            return [w = juce::Component::SafePointer(this), v]() {
+            auto that = this; // darn you MSVC
+            return [w = juce::Component::SafePointer(that), v]() {
                 if (!w)
                     return;
                 w->parent->cond.storage[w->index].id = (engine::GroupTriggerID)v;

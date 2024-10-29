@@ -24,7 +24,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # TODO Remove This before we ship non beta version. Remember
 # the AU rescans only when versions change even if binaries are
 # different.
-message(STATUS "Using date-driven version while in alpha")
+message(STATUS "ShortcircuitXT: Using date-driven version while in alpha")
 string(TIMESTAMP DAY_OF_YEAR "%j")
 string(TIMESTAMP YEAR "%Y")
 math(EXPR PART0 "${YEAR}-2023 + 6")
@@ -81,6 +81,9 @@ endif ()
 # Share some information about the  build
 message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
+if (MSVC)
+    message(STATUS "Windows Architecture is ${CMAKE_GENERATOR_PLATFORM}}")
+endif()
 
 # Everything here is C++ 17 now
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
