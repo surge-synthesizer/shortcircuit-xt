@@ -6,6 +6,7 @@ add_executable(scxt-test
 		sample_analytics.cpp)
 
 target_link_libraries(scxt-test
+		fmt
         scxt-core
         shortcircuit::catch2
         )
