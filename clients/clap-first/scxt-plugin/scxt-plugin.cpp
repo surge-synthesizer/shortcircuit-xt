@@ -37,7 +37,8 @@ namespace scxt::clap_first::scxt_plugin
 const clap_plugin_descriptor *getDescription()
 {
     static const char *features[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SAMPLER,
-                                     CLAP_PLUGIN_FEATURE_SYNTHESIZER, nullptr};
+                                     CLAP_PLUGIN_FEATURE_SYNTHESIZER, "Free and Open Source",
+                                     nullptr};
     static clap_plugin_descriptor desc = {CLAP_VERSION,
                                           "org.surge-synth-team.shortcircuit-xt",
                                           "Shortcircuit XT",
