@@ -255,9 +255,18 @@ template <bool OS> bool Voice::processWithOS()
     auto fpitch = calculateVoicePitch();
 
     auto [firstIndex, lastIndex] = sampleIndexRange();
-    for (auto i = firstIndex; i < lastIndex; ++i)
-        if (zone->samplePointers[i])
-            calculateGeneratorRatio(fpitch, i, i - firstIndex);
+    if (firstIndex >= 0)
+    {
+        for (auto i = firstIndex; i < lastIndex; ++i)
+        {
+            assert(i >= 0);
+            assert(i < zone->samplePointers.size());
+            if (zone->samplePointers[i])
+            {
+                calculateGeneratorRatio(fpitch, i, i - firstIndex);
+            }
+        }
+    }
 
     if (useOversampling)
         for (auto i = 0; i < numGeneratorsActive; ++i)
@@ -874,13 +883,13 @@ std::pair<int16_t, int16_t> Voice::sampleIndexRange() const
 
     if (zone->variantData.variantPlaybackMode == engine::Zone::UNISON)
     {
-        firstIndex = 0;
         lastIndex = 0;
 
         for (int i = 0; i < maxVariantsPerZone; ++i)
         {
             if (zone->variantData.variants[i].active)
             {
+                firstIndex = 0;
                 lastIndex++;
             }
         }
