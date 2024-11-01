@@ -26,7 +26,8 @@
  */
 
 #include "generator.h"
-#include "infrastructure/sse_include.h"
+
+#include "sst/basic-blocks/simd/setup.h"
 
 #include "resampling.h"
 #include "data_tables.h"
@@ -99,7 +100,7 @@ namespace scxt::dsp
 {
 constexpr float I16InvScale = (1.f / (16384.f * 32768.f));
 constexpr float I16InvScale2 = (1.f / (32768.f));
-const __m128 I16InvScale_m128 = _mm_set1_ps(I16InvScale);
+const auto I16InvScale_m128 = SIMD_MM(set1_ps)(I16InvScale);
 
 inline float getFadeGainToAmp(float g)
 {
@@ -327,42 +328,48 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
 #endif
 
     // float32 path (SSE)
-    __m128 lipol0, tmp[4], sL4, sR4;
-    lipol0 = _mm_setzero_ps();
-    lipol0 = _mm_cvtsi32_ss(lipol0, ks.SampleSubPos & 0xffff);
-    lipol0 = _mm_shuffle_ps(lipol0, lipol0, _MM_SHUFFLE(0, 0, 0, 0));
-    tmp[0] = _mm_add_ps(_mm_mul_ps(*((__m128 *)&sincTable.SincOffsetF32[m0]), lipol0),
-                        *((__m128 *)&sincTable.SincTableF32[m0]));
-    tmp[1] = _mm_add_ps(_mm_mul_ps(*((__m128 *)&sincTable.SincOffsetF32[m0 + 4]), lipol0),
-                        *((__m128 *)&sincTable.SincTableF32[m0 + 4]));
-    tmp[2] = _mm_add_ps(_mm_mul_ps(*((__m128 *)&sincTable.SincOffsetF32[m0 + 8]), lipol0),
-                        *((__m128 *)&sincTable.SincTableF32[m0 + 8]));
-    tmp[3] = _mm_add_ps(_mm_mul_ps(*((__m128 *)&sincTable.SincOffsetF32[m0 + 12]), lipol0),
-                        *((__m128 *)&sincTable.SincTableF32[m0 + 12]));
-    sL4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readSampleL));
-    sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readSampleL + 4)));
-    sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readSampleL + 8)));
-    sL4 = _mm_add_ps(sL4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readSampleL + 12)));
+    SIMD_M128 lipol0, tmp[4], sL4, sR4;
+    lipol0 = SIMD_MM(setzero_ps)();
+    lipol0 = SIMD_MM(cvtsi32_ss)(lipol0, ks.SampleSubPos & 0xffff);
+    lipol0 = SIMD_MM(shuffle_ps)(lipol0, lipol0, SIMD_MM_SHUFFLE(0, 0, 0, 0));
+    tmp[0] = SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0]), lipol0),
+                             *((SIMD_M128 *)&sincTable.SincTableF32[m0]));
+    tmp[1] =
+        SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 4]), lipol0),
+                        *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 4]));
+    tmp[2] =
+        SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 8]), lipol0),
+                        *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 8]));
+    tmp[3] =
+        SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 12]), lipol0),
+                        *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 12]));
+    sL4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readSampleL));
+    sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readSampleL + 4)));
+    sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readSampleL + 8)));
+    sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readSampleL + 12)));
     // sL4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sL4);
-    sL4 = _mm_hadd_ps(sL4, sL4);
-    sL4 = _mm_hadd_ps(sL4, sL4);
+    sL4 = SIMD_MM(hadd_ps)(sL4, sL4);
+    sL4 = SIMD_MM(hadd_ps)(sL4, sL4);
 
-    _mm_store_ss(&OutputL[i], sL4);
+    SIMD_MM(store_ss)(&OutputL[i], sL4);
 
     if constexpr (LOOP_ACTIVE)
     {
         if (ks.fadeActive)
         {
-            sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readFadeSampleL));
-            sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readFadeSampleL + 4)));
-            sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readFadeSampleL + 8)));
-            sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readFadeSampleL + 12)));
+            sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readFadeSampleL));
+            sR4 = SIMD_MM(add_ps)(sR4,
+                                  SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readFadeSampleL + 4)));
+            sR4 = SIMD_MM(add_ps)(sR4,
+                                  SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readFadeSampleL + 8)));
+            sR4 = SIMD_MM(add_ps)(sR4,
+                                  SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readFadeSampleL + 12)));
             // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
-            sR4 = _mm_hadd_ps(sR4, sR4);
-            sR4 = _mm_hadd_ps(sR4, sR4);
+            sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+            sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
 
             float fadeVal{0.f};
-            _mm_store_ss(&fadeVal, sR4);
+            SIMD_MM(store_ss)(&fadeVal, sR4);
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
             auto aOut = getFadeGainToAmp(1.f - fadeGain);
@@ -378,30 +385,33 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
         auto readFadeSampleR{ks.ReadFadeSample[1]};
         auto OutputR{ks.Output[1]};
 
-        sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readSampleR));
-        sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readSampleR + 4)));
-        sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readSampleR + 8)));
-        sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readSampleR + 12)));
+        sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readSampleR));
+        sR4 = SIMD_MM(add_ps)(sR4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readSampleR + 4)));
+        sR4 = SIMD_MM(add_ps)(sR4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readSampleR + 8)));
+        sR4 = SIMD_MM(add_ps)(sR4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readSampleR + 12)));
         // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
-        sR4 = _mm_hadd_ps(sR4, sR4);
-        sR4 = _mm_hadd_ps(sR4, sR4);
+        sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+        sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
 
-        _mm_store_ss(&OutputR[i], sR4);
+        SIMD_MM(store_ss)(&OutputR[i], sR4);
 
         if constexpr (LOOP_ACTIVE)
         {
             if (ks.fadeActive)
             {
-                sR4 = _mm_mul_ps(tmp[0], _mm_loadu_ps(readFadeSampleR));
-                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[1], _mm_loadu_ps(readFadeSampleR + 4)));
-                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[2], _mm_loadu_ps(readFadeSampleR + 8)));
-                sR4 = _mm_add_ps(sR4, _mm_mul_ps(tmp[3], _mm_loadu_ps(readFadeSampleR + 12)));
+                sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readFadeSampleR));
+                sR4 = SIMD_MM(add_ps)(
+                    sR4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readFadeSampleR + 4)));
+                sR4 = SIMD_MM(add_ps)(
+                    sR4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readFadeSampleR + 8)));
+                sR4 = SIMD_MM(add_ps)(
+                    sR4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readFadeSampleR + 12)));
                 // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
-                sR4 = _mm_hadd_ps(sR4, sR4);
-                sR4 = _mm_hadd_ps(sR4, sR4);
+                sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+                sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
 
                 float fadeVal{0.f};
-                _mm_store_ss(&fadeVal, sR4);
+                SIMD_MM(store_ss)(&fadeVal, sR4);
                 auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
                                           GD->loopUpperBound));
                 auto aOut = getFadeGainToAmp(1.f - fadeGain);
@@ -435,41 +445,43 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
 
     // int16
     // SSE2 path
-    __m128i lipol0, tmp, sL8A, sR8A, tmp2, sL8B, sR8B;
-    __m128 fL = _mm_setzero_ps(), fR = _mm_setzero_ps();
-    lipol0 = _mm_set1_epi16(ks.SampleSubPos & 0xffff);
+    SIMD_M128I lipol0, tmp, sL8A, sR8A, tmp2, sL8B, sR8B;
+    auto fL = SIMD_MM(setzero_ps)(), fR = SIMD_MM(setzero_ps)();
+    lipol0 = SIMD_MM(set1_epi16)(ks.SampleSubPos & 0xffff);
 
-    tmp = _mm_add_epi16(_mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0]), lipol0),
-                        *((__m128i *)&sincTable.SincTableI16[m0]));
-    sL8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readSampleL));
+    tmp = SIMD_MM(add_epi16)(
+        SIMD_MM(mulhi_epi16)(*((SIMD_M128I *)&sincTable.SincOffsetI16[m0]), lipol0),
+        *((SIMD_M128I *)&sincTable.SincTableI16[m0]));
+    sL8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readSampleL));
     if constexpr (stereo)
-        sR8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readSampleR));
+        sR8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readSampleR));
 
-    tmp2 = _mm_add_epi16(_mm_mulhi_epi16(*((__m128i *)&sincTable.SincOffsetI16[m0 + 8]), lipol0),
-                         *((__m128i *)&sincTable.SincTableI16[m0 + 8]));
-    sL8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readSampleL + 8)));
+    tmp2 = SIMD_MM(add_epi16)(
+        SIMD_MM(mulhi_epi16)(*((SIMD_M128I *)&sincTable.SincOffsetI16[m0 + 8]), lipol0),
+        *((SIMD_M128I *)&sincTable.SincTableI16[m0 + 8]));
+    sL8B = SIMD_MM(madd_epi16)(tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readSampleL + 8)));
     if constexpr (stereo)
-        sR8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readSampleR + 8)));
+        sR8B = SIMD_MM(madd_epi16)(tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readSampleR + 8)));
 
-    sL8A = _mm_add_epi32(sL8A, sL8B);
+    sL8A = SIMD_MM(add_epi32)(sL8A, sL8B);
     if constexpr (stereo)
-        sR8A = _mm_add_epi32(sR8A, sR8B);
+        sR8A = SIMD_MM(add_epi32)(sR8A, sR8B);
 
     int l alignas(16)[4], r alignas(16)[4];
-    _mm_store_si128((__m128i *)&l, sL8A);
+    SIMD_MM(store_si128)((SIMD_M128I *)&l, sL8A);
     if constexpr (stereo)
-        _mm_store_si128((__m128i *)&r, sR8A);
+        SIMD_MM(store_si128)((SIMD_M128I *)&r, sR8A);
     l[0] = (l[0] + l[1]) + (l[2] + l[3]);
     if constexpr (stereo)
         r[0] = (r[0] + r[1]) + (r[2] + r[3]);
 
-    fL = _mm_mul_ss(_mm_cvtsi32_ss(fL, l[0]), I16InvScale_m128);
+    fL = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fL, l[0]), I16InvScale_m128);
     if constexpr (stereo)
-        fR = _mm_mul_ss(_mm_cvtsi32_ss(fR, r[0]), I16InvScale_m128);
+        fR = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fR, r[0]), I16InvScale_m128);
 
-    _mm_store_ss(&OutputL[i], fL);
+    SIMD_MM(store_ss)(&OutputL[i], fL);
     if constexpr (stereo)
-        _mm_store_ss(&OutputR[i], fR);
+        SIMD_MM(store_ss)(&OutputR[i], fR);
 
     if constexpr (LOOP_ACTIVE)
     {
@@ -481,34 +493,37 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
                 readFadeSampleR = ks.ReadFadeSample[1];
             }
 
-            sL8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readFadeSampleL));
+            sL8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleL));
             if constexpr (stereo)
-                sR8A = _mm_madd_epi16(tmp, _mm_loadu_si128((__m128i *)readFadeSampleR));
-            sL8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readFadeSampleL + 8)));
+                sR8A =
+                    SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleR));
+            sL8B = SIMD_MM(madd_epi16)(tmp2,
+                                       SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleL + 8)));
             if constexpr (stereo)
-                sR8B = _mm_madd_epi16(tmp2, _mm_loadu_si128((__m128i *)(readFadeSampleR + 8)));
+                sR8B = SIMD_MM(madd_epi16)(
+                    tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleR + 8)));
 
-            sL8A = _mm_add_epi32(sL8A, sL8B);
+            sL8A = SIMD_MM(add_epi32)(sL8A, sL8B);
             if constexpr (stereo)
-                sR8A = _mm_add_epi32(sR8A, sR8B);
+                sR8A = SIMD_MM(add_epi32)(sR8A, sR8B);
 
             int l alignas(16)[4], r alignas(16)[4];
-            _mm_store_si128((__m128i *)&l, sL8A);
+            SIMD_MM(store_si128)((SIMD_M128I *)&l, sL8A);
             if constexpr (stereo)
-                _mm_store_si128((__m128i *)&r, sR8A);
+                SIMD_MM(store_si128)((SIMD_M128I *)&r, sR8A);
             l[0] = (l[0] + l[1]) + (l[2] + l[3]);
             if constexpr (stereo)
                 r[0] = (r[0] + r[1]) + (r[2] + r[3]);
 
-            fL = _mm_mul_ss(_mm_cvtsi32_ss(fL, l[0]), I16InvScale_m128);
+            fL = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fL, l[0]), I16InvScale_m128);
             if constexpr (stereo)
-                fR = _mm_mul_ss(_mm_cvtsi32_ss(fR, r[0]), I16InvScale_m128);
+                fR = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fR, r[0]), I16InvScale_m128);
 
             float fadeValL{0.f};
             float fadeValR{0.f};
-            _mm_store_ss(&fadeValL, fL);
+            SIMD_MM(store_ss)(&fadeValL, fL);
             if constexpr (stereo)
-                _mm_store_ss(&fadeValR, fR);
+                SIMD_MM(store_ss)(&fadeValR, fR);
 
             auto fadeGain(
                 getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));

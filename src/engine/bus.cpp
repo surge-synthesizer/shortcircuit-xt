@@ -27,12 +27,12 @@
 
 #include "bus.h"
 
+#include "sst/basic-blocks/simd/setup.h"
+
 #include "configuration.h"
 
 #include "dsp/data_tables.h"
 #include "engine.h"
-
-#include "infrastructure/sse_include.h"
 
 #include "dsp/data_tables.h"
 #include "tuning/equal.h"

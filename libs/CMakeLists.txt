@@ -44,6 +44,8 @@ add_subdirectory(sst/sst-cpputils)
 # set(SST_PLUGININFRA_FILESYSTEM_FORCE_PLATFORM ON CACHE BOOL "Force platform filesystem")
 set(SST_PLUGININFRA_PROVIDE_TINYXML ON CACHE BOOL "Get TinyXML")  # need this for UserDefaults
 set(SST_PLUGININFRA_PROVIDE_MINIZ ON CACHE BOOL "Get MiniZ")  # need this for UserDefaults
+set(SST_BASIC_BLOCKS_SIMD_OMIT_NATIVE_ALIASES ON CACHE BOOL "No Native Aliases for SCXT") # Makes ARM64EC use neon basically
+
 add_subdirectory(sst/sst-basic-blocks)
 add_subdirectory(sst/sst-plugininfra)
 add_subdirectory(sst/sst-filters)

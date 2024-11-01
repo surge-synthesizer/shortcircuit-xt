@@ -30,7 +30,8 @@
 
 #include "processor.h"
 #include "datamodel/metadata.h"
-#include "infrastructure/sse_include.h"
+
+#include "sst/basic-blocks/simd/setup.h"
 
 #include <sst/filters/HalfRateFilter.h>
 #include "sst/basic-blocks/dsp/BlockInterpolators.h"

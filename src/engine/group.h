@@ -27,8 +27,6 @@
 #ifndef SCXT_SRC_ENGINE_GROUP_H
 #define SCXT_SRC_ENGINE_GROUP_H
 
-#include <infrastructure/sse_include.h>
-
 #include <memory>
 #include <vector>
 #include <cassert>
