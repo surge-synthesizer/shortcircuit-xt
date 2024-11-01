@@ -76,6 +76,7 @@
 #include <optional>
 #include <vector>
 #include <utility>
+#include <cmath>
 
 #include "sst/basic-blocks/simd/setup.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
