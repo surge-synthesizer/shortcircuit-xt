@@ -28,8 +28,8 @@
 #ifndef SCXT_SRC_CONFIGURATION_H
 #define SCXT_SRC_CONFIGURATION_H
 
-#include <cstdint>
-#include "infrastructure/sse_include.h"
+#include <stddef.h> // for size_t
+#include <cstdint>  // for uint16_t etc...
 
 namespace scxt
 {

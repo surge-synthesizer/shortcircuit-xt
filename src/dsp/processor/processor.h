@@ -77,7 +77,7 @@
 #include <vector>
 #include <utility>
 
-#include "infrastructure/sse_include.h"
+#include "sst/basic-blocks/simd/setup.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 
 #include "datamodel/metadata.h"
