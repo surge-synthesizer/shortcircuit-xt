@@ -70,6 +70,14 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     });
     addAndMakeVisible(*polyMenu);
 
+    polyModeMenu = std::make_unique<jcmp::TextPushButton>();
+    polyModeMenu->setLabel("POLY");
+    polyModeMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showPolyModeMenu();
+    });
+    addAndMakeVisible(*polyModeMenu);
+
     prioGlyph = mkg(jcmp::GlyphPainter::GlyphType::NOTE_PRIORITY);
     prioMenu = mkm("LAST", "Priority");
     glideGlpyh = mkg(jcmp::GlyphPainter::GlyphType::CURVE);
@@ -119,6 +127,7 @@ void GroupSettingsCard::resized()
     spair(outputGlyph, outputMenu);
     r = r.translated(0, rowHeight);
     spair(polyGlygh, polyMenu);
+    polyModeMenu->setBounds(polyMenu->getBounds().translated(polyMenu->getWidth() + 2, 0));
     r = r.translated(0, rowHeight);
     spair(prioGlyph, prioMenu);
     r = r.translated(0, rowHeight);
@@ -139,13 +148,25 @@ void GroupSettingsCard::resized()
 
 void GroupSettingsCard::rebuildFromInfo()
 {
-    if (info.hasIndependentPolyLimit)
+    if (info.vmPlayModeInt == (int32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES)
     {
-        polyMenu->setLabel(std::to_string(info.polyLimit));
+        polyMenu->setEnabled(false);
+        polyModeMenu->setLabel("MONO");
+        repaint();
     }
     else
     {
-        polyMenu->setLabel("PART");
+        polyMenu->setEnabled(true);
+        polyModeMenu->setLabel("POLY");
+        if (info.hasIndependentPolyLimit)
+        {
+            polyMenu->setLabel(std::to_string(info.polyLimit));
+        }
+        else
+        {
+            polyMenu->setLabel("PART");
+        }
+        repaint();
     }
 }
 
@@ -178,6 +199,103 @@ void GroupSettingsCard::showPolyMenu()
                           messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
                   });
     }
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void GroupSettingsCard::showPolyModeMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Group Voice/Note Mode");
+    p.addSeparator();
+
+    p.addItem(
+        "Poly", true,
+        info.vmPlayModeInt == (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES,
+        [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
+    p.addItem(
+        "Mono", true,
+        info.vmPlayModeInt == (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES,
+        [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+            w->info.vmPlayModeFeaturesInt =
+                (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_MONO;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
+    p.addItem("Legato", false, false, [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+    });
+    p.addSeparator();
+    p.addSectionHeader("Mono Release Priority");
+    // I could ovciously structure this better
+    p.addItem(
+        "Latest", false,
+        info.vmPlayModeFeaturesInt &
+            (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST,
+        [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+            w->info.vmPlayModeFeaturesInt &=
+                ~(uint64_t)
+                    engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST;
+            w->info.vmPlayModeFeaturesInt &= ~(
+                uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST;
+            w->info.vmPlayModeFeaturesInt |= (uint64_t)
+                engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
+    p.addItem(
+        "Highest", false,
+        info.vmPlayModeFeaturesInt &
+            (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST,
+        [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+            w->info.vmPlayModeFeaturesInt |= (uint64_t)
+                engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST;
+            w->info.vmPlayModeFeaturesInt &= ~(
+                uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST;
+            w->info.vmPlayModeFeaturesInt &= ~(
+                uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
+    p.addItem(
+        "Lowest", false,
+        info.vmPlayModeFeaturesInt &
+            (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST,
+        [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+            w->info.vmPlayModeFeaturesInt |= (uint64_t)
+                engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST;
+            w->info.vmPlayModeFeaturesInt &= ~(
+                uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST;
+            w->info.vmPlayModeFeaturesInt &=
+                ~(uint64_t)
+                    engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
+
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 

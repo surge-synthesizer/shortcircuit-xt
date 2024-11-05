@@ -88,6 +88,7 @@ static constexpr bool uiStructure{false};
 static constexpr bool groupZoneMutation{false};
 static constexpr bool memoryPool{false};
 static constexpr bool voiceResponder{false};
+static constexpr bool voiceLifecycle{false};
 static constexpr bool generatorInitialization{false};
 } // namespace log
 

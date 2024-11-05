@@ -53,7 +53,7 @@ struct GroupSettingsCard : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::GlyphPainter> midiGlyph, outputGlyph, polyGlygh,
         prioGlyph, glideGlpyh, volGlyph, panGlyph, tuneGlyph;
     std::unique_ptr<sst::jucegui::components::Label> pbLabel, SRCLabel;
-    std::unique_ptr<sst::jucegui::components::TextPushButton> polyMenu;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> polyMenu, polyModeMenu;
     std::unique_ptr<sst::jucegui::components::MenuButton> midiMenu, outputMenu, prioMenu, glideMenu,
         srcMenu;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpDrag,
@@ -67,6 +67,7 @@ struct GroupSettingsCard : juce::Component, HasEditor
     engine::Group::GroupOutputInfo &info;
 
     void showPolyMenu();
+    void showPolyModeMenu();
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPSETTINGSCARD_H

@@ -104,9 +104,7 @@ template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
 
     for (int i = 0; i < cleanupIdx; ++i)
     {
-#if DEBUG_VOICE_LIFECYCLE
-        SCLOG("Cleanup Voice at " << SCDBGV((int)toCleanUp[i]->key));
-#endif
+        SCLOG_IF(voiceLifecycle, "Cleanup Voice at " << SCD((int)toCleanUp[i]->key));
         toCleanUp[i]->cleanupVoice();
     }
 }
