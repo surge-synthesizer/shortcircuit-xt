@@ -272,12 +272,72 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  findIf(v, "conj", to.conjunctions);
              }));
 
+/*
+ * PlayMode uses engine vm typedefs so is a bit of a special case
+ */
+inline std::string groupInfoPlayModeTo(uint32_t p)
+{
+    if (p == (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES)
+        return "p";
+    if (p == (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES)
+        return "m";
+    return "p";
+}
+inline uint32_t groupInfoPlayModeFrom(const std::string &s)
+{
+    if (s == "m")
+        return (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+    return (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES;
+}
+
+// this is kinda gross, but its nov 6 2024 and i just want something we can make stable
+#define PMTS(pm, s)                                                                                \
+    if (x & (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::pm)                    \
+        oss << "|" << s "|";
+inline std::string groupInfoPlayModeFeatureTo(uint64_t x)
+{
+    std::ostringstream oss;
+    PMTS(MONO_RETRIGGER, "mr");
+    PMTS(MONO_LEGATO, "ml");
+    PMTS(ON_RELEASE_TO_LATEST, "rl");
+    PMTS(ON_RELEASE_TO_HIGHEST, "rh");
+    PMTS(ON_RELEASE_TO_LOWEST, "rh");
+    return oss.str();
+}
+#undef PMTS
+#define PMTS(pm, s)                                                                                \
+    {                                                                                              \
+        std::string q = std::string("|") + s + "|";                                                \
+        if (x.find(q) != std::string::npos)                                                        \
+        {                                                                                          \
+            res |= (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::pm;             \
+        }                                                                                          \
+    }
+
+inline uint64_t groupInfoPlayModeFeatureFrom(const std::string &x)
+{
+    uint64_t res{0};
+    PMTS(MONO_RETRIGGER, "mr");
+    PMTS(MONO_LEGATO, "ml");
+    PMTS(ON_RELEASE_TO_LATEST, "rl");
+    PMTS(ON_RELEASE_TO_HIGHEST, "rh");
+    PMTS(ON_RELEASE_TO_LOWEST, "rh");
+    return res;
+}
+#undef PMTS
+
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
-                 v = {{"amplitude", t.amplitude},   {"pan", t.pan},
-                      {"oversample", t.oversample}, {"velocitySensitivity", t.velocitySensitivity},
-                      {"muted", t.muted},           {"procRouting", t.procRouting},
-                      {"routeTo", (int)t.routeTo},  {"hip", t.hasIndependentPolyLimit},
-                      {"pl", t.polyLimit}};
+                 v = {{"amplitude", t.amplitude},
+                      {"pan", t.pan},
+                      {"oversample", t.oversample},
+                      {"velocitySensitivity", t.velocitySensitivity},
+                      {"muted", t.muted},
+                      {"procRouting", t.procRouting},
+                      {"routeTo", (int)t.routeTo},
+                      {"hip", t.hasIndependentPolyLimit},
+                      {"pl", t.polyLimit},
+                      {"vpm", groupInfoPlayModeTo(t.vmPlayModeInt)},
+                      {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)}};
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
@@ -291,6 +351,12 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "hip", result.hasIndependentPolyLimit);
                  findIf(v, "pl", result.polyLimit);
                  result.routeTo = (engine::BusAddress)(rt);
+
+                 std::string tmp;
+                 findIf(v, "vpm", tmp);
+                 result.vmPlayModeInt = groupInfoPlayModeFrom(tmp);
+                 findIf(v, "vpf", tmp);
+                 result.vmPlayModeFeaturesInt = groupInfoPlayModeFeatureFrom(tmp);
              }));
 
 SC_STREAMDEF(scxt::engine::Group, SC_FROM({

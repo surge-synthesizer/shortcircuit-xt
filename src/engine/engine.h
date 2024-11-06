@@ -202,6 +202,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             uint16_t channel, uint16_t key, int32_t noteId, float velocity);
 
         int32_t initializeMultipleVoices(
+            int32_t voiceCount,
+            const sst::voicemanager::VoiceInitInstructionsEntry<VMConfig>::buffer_t &,
             sst::voicemanager::VoiceInitBufferEntry<VMConfig>::buffer_t &voiceInitWorkingBuffer,
             uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity,
             float retune);

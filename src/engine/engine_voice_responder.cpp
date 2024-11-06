@@ -48,8 +48,11 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
         auto &z = engine.zoneByPath(path);
 
         voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
-        if (z->parentGroup->outputInfo.hasIndependentPolyLimit)
+        if (z->parentGroup->outputInfo.hasIndependentPolyLimit ||
+            z->parentGroup->outputInfo.vmPlayModeInt !=
+                (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES)
         {
+            SCLOG_IF(voiceResponder, "-- Setting polyphony group to " << (uint64_t)z->parentGroup);
             buffer[idx].polyphonyGroup = (uint64_t)z->parentGroup;
         }
         else
@@ -69,6 +72,8 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
 }
 
 int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
+    int32_t voiceCount,
+    const sst::voicemanager::VoiceInitInstructionsEntry<VMConfig>::buffer_t &voiceInstructionBuffer,
     sst::voicemanager::VoiceInitBufferEntry<VMConfig>::buffer_t &voiceInitWorkingBuffer,
     uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity, float retune)
 {
@@ -76,10 +81,21 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     assert(transactionVoiceCount > 0);
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = transactionVoiceCount;
+    assert(nts == voiceCount);
     SCLOG_IF(voiceResponder, "voice initiation of " << nts << " voices");
     int32_t actualCreated{0};
+    int outIdx{0};
     for (auto idx = 0; idx < nts; ++idx)
     {
+        if (voiceInstructionBuffer[idx].instruction ==
+            sst::voicemanager::VoiceInitInstructionsEntry<
+                scxt::engine::Engine::VMConfig>::Instruction::SKIP)
+        {
+            SCLOG_IF(voiceResponder, "Skipping voice at index " << idx);
+            voiceInitWorkingBuffer[outIdx].voice = nullptr;
+            outIdx++;
+            continue;
+        }
         const auto &[path, variantIndex] = voiceCreationWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
@@ -95,7 +111,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->attack();
                 actualCreated++;
             }
-            voiceInitWorkingBuffer[idx].voice = v;
+            voiceInitWorkingBuffer[outIdx].voice = v;
+            outIdx++;
             SCLOG_IF(voiceResponder, "-- Created single voice for single zone ("
                                          << std::hex << v << std::dec << ")");
         }
@@ -172,7 +189,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     v->attack();
                     actualCreated++;
                 }
-                voiceInitWorkingBuffer[idx].voice = v;
+                voiceInitWorkingBuffer[outIdx].voice = v;
+                outIdx++;
             }
         }
     }

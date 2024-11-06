@@ -86,6 +86,12 @@ struct Group : MoveableOnly<Group>,
 
         bool hasIndependentPolyLimit{false};
         int32_t polyLimit{0};
+
+        // I wish I could define these as the enum
+        // but this includes before engine and template blah
+        // makes it not quite worth it
+        uint32_t vmPlayModeInt{0};
+        uint64_t vmPlayModeFeaturesInt{0};
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;

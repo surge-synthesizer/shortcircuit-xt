@@ -615,11 +615,15 @@ template <bool OS> bool Voice::processWithOS()
     }
     else
     {
+        SCLOG_IF(voiceLifecycle, "Voice terminating due to AEG at " << SCD(key));
+
         isVoicePlaying = false;
     }
 
     if (terminationSequence == 0)
     {
+        SCLOG_IF(voiceLifecycle, "Voice terminating due to termiantion sequence " << SCD(key));
+
         isVoicePlaying = false;
     }
     return true;

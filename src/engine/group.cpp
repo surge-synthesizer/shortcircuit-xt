@@ -608,13 +608,30 @@ void Group::onRoutingChanged() { SCLOG_ONCE("Implement Group LFO modulator use o
 
 void Group::resetPolyAndPlaymode(engine::Engine &e)
 {
-    if (!outputInfo.hasIndependentPolyLimit)
+    if (outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::MONO_NOTES)
     {
-        // TODO we really want a 'clear'
+        if (outputInfo.vmPlayModeFeaturesInt == 0)
+        {
+            outputInfo.vmPlayModeFeaturesInt =
+                (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_MONO;
+        }
+        auto pgrp = (uint64_t)this;
+        SCLOG_IF(voiceResponder, "Setting up mono group " << pgrp);
+        e.voiceManager.guaranteeGroup(pgrp);
+        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES,
+                                   outputInfo.vmPlayModeFeaturesInt);
     }
     else
     {
-        e.voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)this, outputInfo.polyLimit);
+        assert(outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES);
+        if (!outputInfo.hasIndependentPolyLimit)
+        {
+            // TODO we really want a 'clear'
+        }
+        else
+        {
+            e.voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)this, outputInfo.polyLimit);
+        }
     }
 }
 
