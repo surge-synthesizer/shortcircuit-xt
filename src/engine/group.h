@@ -166,8 +166,9 @@ struct Group : MoveableOnly<Group>,
 
         auto res = std::move(zones[idx]);
         zones.erase(zones.begin() + idx);
-        // REPACK WEAK REFS TODO
         res->parentGroup = nullptr;
+
+        postZoneTraversalRemoveHandler();
         return res;
     }
 
