@@ -269,6 +269,34 @@ void Engine::VoiceManagerResponder::setVoiceMIDIMPETimbre(voice::Voice *v, int8_
     v->mpeTimbre = val / 127.0;
 }
 
+void Engine::VoiceManagerResponder::moveVoice(VMConfig::voice_t *v, uint16_t port, uint16_t channel,
+                                              uint16_t key, float vel)
+{
+    auto dkey = v->key - v->originalMidiKey;
+    v->key = key;
+    v->originalMidiKey = key - dkey;
+    v->calculateVoicePitch();
+}
+
+void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, uint16_t port,
+                                                          uint16_t channel, uint16_t key, float vel)
+{
+    auto dkey = v->key - v->originalMidiKey;
+    v->key = key;
+    v->originalMidiKey = key - dkey;
+    v->calculateVoicePitch();
+    v->isGated = true;
+    for (auto &eg : v->eg)
+    {
+        eg.attackFrom(eg.outBlock0);
+    }
+    for (auto &eg : v->egOS)
+    {
+        eg.attackFrom(eg.outBlock0);
+    }
+    SCLOG("TODO - Gate voice and Retrigger AEG and EG2");
+}
+
 void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_t pb14bit)
 {
     auto fv = (pb14bit - 8192) / 8192.f;

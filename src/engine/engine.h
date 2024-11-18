@@ -215,8 +215,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void terminateVoice(voice::Voice *v);
         void retriggerVoiceWithNewNoteID(voice::Voice *v, int32_t noteid, float velocity)
         {
-            SCLOG("Retrigger Voice Unimplemented")
+            SCLOG("Retrigger Voice Unimplemented");
+            assert(false);
         }
+        void moveVoice(typename VMConfig::voice_t *, uint16_t, uint16_t, uint16_t, float);
+        void moveAndRetriggerVoice(typename VMConfig::voice_t *, uint16_t, uint16_t, uint16_t,
+                                   float);
 
         void setVoiceMIDIMPEChannelPitchBend(voice::Voice *v, uint16_t pb14bit);
         void setVoiceMIDIMPEChannelPressure(voice::Voice *v, int8_t val);

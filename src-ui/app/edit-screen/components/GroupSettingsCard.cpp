@@ -151,7 +151,15 @@ void GroupSettingsCard::rebuildFromInfo()
     if (info.vmPlayModeInt == (int32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES)
     {
         polyMenu->setEnabled(false);
-        polyModeMenu->setLabel("MONO");
+        if (info.vmPlayModeFeaturesInt &
+            (int32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::MONO_LEGATO)
+        {
+            polyModeMenu->setLabel("LEG");
+        }
+        else
+        {
+            polyModeMenu->setLabel("MONO");
+        }
         repaint();
     }
     else
@@ -232,9 +240,15 @@ void GroupSettingsCard::showPolyModeMenu()
             w->rebuildFromInfo();
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
-    p.addItem("Legato", false, false, [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Legato", true, false, [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
+        w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+        w->info.vmPlayModeFeaturesInt =
+            (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_LEGATO;
+
+        w->rebuildFromInfo();
+        w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
     });
     p.addSeparator();
     p.addSectionHeader("Mono Release Priority");
