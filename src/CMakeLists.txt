@@ -52,6 +52,7 @@ add_library(${PROJECT_NAME} STATIC
         selection/selection_manager.cpp
 
         voice/voice.cpp
+        voice/preview_voice.cpp
 
         patch_io/patch_io.cpp
 

@@ -57,6 +57,7 @@
 #include "feature_enums.h"
 #include "missing_resolution.h"
 #include "sst/voicemanager/midi1_to_voicemanager.h"
+#include "voice/preview_voice.h"
 
 namespace scxt::engine
 {
@@ -133,6 +134,8 @@ Engine::Engine()
     {
         ep = std::make_unique<voice::modulation::MatrixEndpoints>(nullptr);
     }
+
+    previewVoice = std::make_unique<voice::PreviewVoice>();
 }
 
 Engine::~Engine()
@@ -341,6 +344,15 @@ bool Engine::processAudio()
     updateTransportPhasors();
 
     getPatch()->process(*this);
+
+    if (previewVoice->isActive)
+    {
+        previewVoice->processBlock();
+
+        auto &main = getPatch()->busses.mainBus.output;
+        mech::accumulate_from_to<blockSize>(previewVoice->output[0], main[0]);
+        mech::accumulate_from_to<blockSize>(previewVoice->output[1], main[1]);
+    }
 
     auto &bl = sharedUIMemoryState.busVULevels;
     const auto &bs = getPatch()->busses;
@@ -928,6 +940,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 void Engine::onSampleRateChanged()
 {
     patch->setSampleRate(sampleRate);
+    previewVoice->setSampleRate(sampleRate);
 
     messageController->forceStatusUpdate = true;
 }

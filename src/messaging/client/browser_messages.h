@@ -35,6 +35,7 @@
 #include "client_macros.h"
 #include "filesystem/import.h"
 #include "browser/browser.h"
+#include "voice/preview_voice.h"
 
 namespace scxt::messaging::client
 {
@@ -47,6 +48,38 @@ inline void doAddBrowserDeviceLocation(const fs::path &p, const engine::Engine &
 }
 CLIENT_TO_SERIAL(AddBrowserDeviceLocation, c2s_add_browser_device_location, std::string,
                  doAddBrowserDeviceLocation(fs::path(fs::u8path(payload)), engine, cont));
+
+using previewBrowserSamplePayload_t = std::tuple<bool, std::string>;
+inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
+                                   const engine::Engine &engine, MessageController &cont)
+{
+    auto [startstop, pathString] = p;
+    auto path = fs::path(fs::u8path(pathString));
+    if (startstop)
+    {
+        SCLOG("Starting preview " << path.u8string());
+        auto sid = engine.getSampleManager()->loadSampleByPath(path);
+        if (sid.has_value())
+        {
+            auto smp = engine.getSampleManager()->getSample(*sid);
+            cont.scheduleAudioThreadCallback(
+                [smp](auto &eng) { eng.previewVoice->attachAndStart(smp); });
+        }
+        else
+        {
+            cont.reportErrorToClient("Unable to launch preview",
+                                     "Sample file preview load failed for " + path.u8string());
+        }
+    }
+    else
+    {
+        cont.scheduleAudioThreadCallback(
+            [](auto &eng) { eng.previewVoice->detatchAndStop(); },
+            [](const auto &e) { e.getSampleManager()->purgeUnreferencedSamples(); });
+    }
+}
+CLIENT_TO_SERIAL(PreviewBrowserSample, c2s_preview_browser_sample, previewBrowserSamplePayload_t,
+                 doPreviewBrowserSample(payload, engine, cont));
 
 SERIAL_TO_CLIENT(RefreshBrowser, s2c_refresh_browser, bool, onBrowserRefresh)
 

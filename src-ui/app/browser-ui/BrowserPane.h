@@ -42,6 +42,7 @@ namespace scxt::ui::app::browser_ui // a bit clumsy to distinguis from scxt::bro
 struct DevicesPane;
 struct FavoritesPane;
 struct SearchPane;
+struct BrowserPaneFooter;
 struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
 {
     std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedFunction;
@@ -57,9 +58,12 @@ struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
     std::unique_ptr<DevicesPane> devicesPane;
     std::unique_ptr<FavoritesPane> favoritesPane;
     std::unique_ptr<SearchPane> searchPane;
+    std::unique_ptr<BrowserPaneFooter> footerArea;
 
     void selectPane(int);
     int selectedPane{0};
+
+    bool autoPreviewEnabled{true};
 };
 } // namespace scxt::ui::app::browser_ui
 

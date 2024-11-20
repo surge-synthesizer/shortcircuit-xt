@@ -141,7 +141,9 @@ enum ClientToSerializationMessagesIds
     c2s_set_mixer_effect_storage,
     c2s_set_mixer_send_storage,
 
+    // Browser functions
     c2s_add_browser_device_location,
+    c2s_preview_browser_sample,
 
     c2s_request_debug_action,
 

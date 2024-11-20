@@ -62,7 +62,8 @@
 namespace scxt::voice
 {
 struct Voice;
-}
+struct PreviewVoice;
+} // namespace scxt::voice
 namespace scxt::messaging
 {
 struct MessageController;
@@ -251,6 +252,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     } monoVoiceManagerResponder{*this};
     using voiceManager_t =
         sst::voicemanager::VoiceManager<VMConfig, VoiceManagerResponder, MonoVoiceManagerResponder>;
+    static_assert(sst::voicemanager::constraints::ConstraintsChecker<
+                  VMConfig, VoiceManagerResponder, MonoVoiceManagerResponder>::satisfies());
     voiceManager_t voiceManager{voiceManagerResponder, monoVoiceManagerResponder};
 
     void onSampleRateChanged() override;
@@ -269,6 +272,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // TODO: All this gets ripped out when voice management is fixed
     void assertActiveVoiceCount();
     std::atomic<uint32_t> activeVoices{0};
+
+    std::unique_ptr<voice::PreviewVoice> previewVoice;
 
     const std::unique_ptr<messaging::MessageController> &getMessageController() const
     {
