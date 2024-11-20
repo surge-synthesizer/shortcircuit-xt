@@ -402,16 +402,17 @@ void Group::postZoneTraversalRemoveHandler()
     /*
      * Go backwards down the weak refs removing inactive ones
      */
-    assert(rescanWeakRefs);
-    assert(activeZones);
     assert(activeZones >= rescanWeakRefs);
-    for (int i = activeZones - 1; i >= 0; --i)
+    if (activeZones != 0)
     {
-        if (!activeZoneWeakRefs[i]->isActive())
+        for (int i = activeZones - 1; i >= 0; --i)
         {
-            rescanWeakRefs--;
-            activeZoneWeakRefs[i] = activeZoneWeakRefs[activeZones - 1];
-            activeZones--;
+            if (!activeZoneWeakRefs[i]->isActive())
+            {
+                rescanWeakRefs--;
+                activeZoneWeakRefs[i] = activeZoneWeakRefs[activeZones - 1];
+                activeZones--;
+            }
         }
     }
     assert(rescanWeakRefs == 0);
