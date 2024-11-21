@@ -34,6 +34,8 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/plugininfra/strnatcmp.h"
 
+#include <infrastructure/user_defaults.h>
+
 namespace scxt::ui::app::browser_ui
 {
 namespace jcmp = sst::jucegui::components;
@@ -300,24 +302,24 @@ struct DriveFSListBoxRow : public juce::Component
         isMouseDownWithoutDrag = true;
         if (browserPane->autoPreviewEnabled && isFile())
         {
-            juce::Timer::callAfterDelay(500, [w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                if (!w->isMouseDownWithoutDrag)
-                    return;
-
-                const auto &data = w->browserPane->devicesPane->driveFSArea->contents;
-                const auto &entry = data[w->rowNumber];
+            if (hasStartedPreview)
+            {
+                stopPreview();
+            }
+            else
+            {
+                const auto &data = browserPane->devicesPane->driveFSArea->contents;
+                const auto &entry = data[rowNumber];
                 if (browser::Browser::isLoadableSingleSample(entry.path()))
                 {
-                    w->hasStartedPreview = true;
+                    hasStartedPreview = true;
                     namespace cmsg = scxt::messaging::client;
                     scxt::messaging::client::clientSendToSerialization(
-                        cmsg::PreviewBrowserSample({true, data[w->rowNumber].path().u8string()}),
-                        w->browserPane->editor->msgCont);
-                    w->repaint();
+                        cmsg::PreviewBrowserSample({true, data[rowNumber].path().u8string()}),
+                        browserPane->editor->msgCont);
+                    repaint();
                 }
-            });
+            }
         }
 
         enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, false);
@@ -338,9 +340,9 @@ struct DriveFSListBoxRow : public juce::Component
 
         isMouseDownWithoutDrag = false;
 
-        stopPreview();
         if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
         {
+            stopPreview();
             if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
             {
                 const auto &data = browserPane->devicesPane->driveFSArea->contents;
@@ -356,7 +358,6 @@ struct DriveFSListBoxRow : public juce::Component
     void mouseUp(const juce::MouseEvent &event) override
     {
         isMouseDownWithoutDrag = false;
-        stopPreview();
         if (isDragging)
         {
             isDragging = false;
@@ -383,6 +384,7 @@ struct DriveFSListBoxRow : public juce::Component
     void mouseDoubleClick(const juce::MouseEvent &event) override
     {
         isMouseDownWithoutDrag = false;
+        stopPreview();
         const auto &data = browserPane->devicesPane->driveFSArea->contents;
         if (rowNumber >= 0 && rowNumber < data.size())
         {
@@ -472,9 +474,9 @@ struct DriveFSListBoxRow : public juce::Component
 
             if (hasStartedPreview)
             {
-                auto q = r.translated(getWidth() - r.getHeight() - 2, 0);
-                jcmp::GlyphPainter::paintGlyph(g, q, jcmp::GlyphPainter::SPEAKER,
-                                               textColor.withAlpha(0.5f));
+                // auto q = r.translated(getWidth() - r.getHeight() - 2, 0);
+                // jcmp::GlyphPainter::paintGlyph(g, q, jcmp::GlyphPainter::SPEAKER,
+                //                                textColor.withAlpha(0.5f));
             }
             g.setColour(textColor);
             g.drawText(entry.path().filename().u8string(), 14, 1, width - 16, height - 2,
@@ -544,7 +546,15 @@ struct BrowserPaneFooter : HasEditor, juce::Component
         autoPreview->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
         autoPreview->setGlyph(sst::jucegui::components::GlyphPainter::SPEAKER);
         autoPreviewAtt = std::make_unique<connectors::DirectBooleanPayloadDataAttachment>(
-            [](auto) {}, parent->autoPreviewEnabled);
+            [w = juce::Component::SafePointer(this)](auto v) {
+                if (!w)
+                    return;
+                auto *ed = w->editor;
+
+                ed->defaultsProvider.updateUserDefaultValue(
+                    infrastructure::DefaultKeys::browserAutoPreviewEnabled, v);
+            },
+            parent->autoPreviewEnabled);
         autoPreview->setSource(autoPreviewAtt.get());
         addAndMakeVisible(*autoPreview);
     }
@@ -599,6 +609,8 @@ BrowserPane::BrowserPane(SCXTEditor *e)
     : HasEditor(e), sst::jucegui::components::NamedPanel("Browser")
 {
     hasHamburger = true;
+    autoPreviewEnabled = editor->defaultsProvider.getUserDefaultValue(
+        infrastructure::DefaultKeys::browserAutoPreviewEnabled, true);
 
     selectedFunction = std::make_unique<sst::jucegui::components::ToggleButtonRadioGroup>();
     selectedFunctionData = std::make_unique<sfData>(this);
