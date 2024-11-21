@@ -42,6 +42,7 @@ enum DefaultKeys
     colormapPathIfFile,
     welcomeScreenSeen,
     playModeExpanded,
+    browserAutoPreviewEnabled,
 
     nKeys // must be last K?
 };
@@ -67,6 +68,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "welcomeScreenSeen";
     case playModeExpanded:
         return "playModeExpanded";
+    case browserAutoPreviewEnabled:
+        return "browserAutoPreviewEnabled";
     default:
         std::terminate(); // for now
     }
