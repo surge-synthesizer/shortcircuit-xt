@@ -298,7 +298,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
 {
     if (mouseState == DRAG_SELECTED_ZONE)
     {
-        if (e.getDistanceFromDragStart() < 2)
+        if (e.getDistanceFromDragStart() <= 2)
         {
             return;
         }

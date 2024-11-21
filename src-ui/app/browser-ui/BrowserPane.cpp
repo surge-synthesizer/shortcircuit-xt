@@ -340,7 +340,7 @@ struct DriveFSListBoxRow : public juce::Component
 
         isMouseDownWithoutDrag = false;
 
-        if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
+        if (!isDragging && e.getDistanceFromDragStart() > 2)
         {
             stopPreview();
             if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))

@@ -1196,7 +1196,7 @@ void ProcessorPane::itemDropped(const juce::DragAndDropTarget::SourceDetails &dr
 
 void ProcessorPane::mouseDrag(const juce::MouseEvent &e)
 {
-    if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
+    if (!isDragging && e.getDistanceFromDragStart() > 2)
     {
         if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
         {

@@ -318,7 +318,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             if (!isZone())
                 return;
 
-            if (!isDragging && e.getDistanceFromDragStart() > 1.5f)
+            if (!isDragging && e.getDistanceFromDragStart() > 2)
             {
                 if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
                 {
