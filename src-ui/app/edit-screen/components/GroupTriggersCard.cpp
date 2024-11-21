@@ -106,7 +106,7 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
                 a2M.reset();
             }
             else if ((int)sr.id >= (int)engine::GroupTriggerID::MACRO &&
-                     (int)sr.id <= (int)engine::GroupTriggerID::MACRO + scxt::macrosPerPart)
+                     (int)sr.id < (int)engine::GroupTriggerID::MACRO + scxt::macrosPerPart)
             {
                 auto dm = datamodel::pmd()
                               .asFloat()
