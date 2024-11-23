@@ -53,15 +53,18 @@ Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp, cons
     themeDirectory = create("Themes");
 }
 
-std::vector<std::pair<fs::path, std::string>> Browser::getRootPathsForDeviceView() const
+std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() const
 {
     // TODO - append local favorites
     auto osdef = getOSDefaultRootPathsForDeviceView();
+    std::vector<Browser::indexedRootPath_t> res;
+    for (const auto &[p, s] : osdef)
+        res.emplace_back(p, s, false);
     auto fav = browserDb.getDeviceLocations();
     for (const auto &p : fav)
-        osdef.push_back({p, p.filename().u8string()});
+        res.emplace_back(p.first, p.first.filename().u8string(), p.second);
 
-    return osdef;
+    return res;
 }
 
 const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".flac", ".mp3", ".aif",
@@ -97,9 +100,15 @@ bool Browser::isShortCircuitFormatFile(const fs::path &p)
                        [p](auto e) { return extensionMatches(p, e); });
 }
 
-void Browser::addRootPathForDeviceView(const fs::path &p)
+void Browser::addRootPathForDeviceView(const fs::path &p, bool indexed)
 {
-    browserDb.addDeviceLocation(p);
+    browserDb.addRemoveDeviceLocation(p, true);
+    browserDb.waitForJobsOutstandingComplete(100);
+}
+
+void Browser::removeRootPathForDeviceView(const fs::path &p)
+{
+    browserDb.addRemoveDeviceLocation(p, false);
     browserDb.waitForJobsOutstandingComplete(100);
 }
 } // namespace scxt::browser

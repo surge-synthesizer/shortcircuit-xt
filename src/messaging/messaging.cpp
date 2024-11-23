@@ -89,6 +89,11 @@ void MessageController::parseAudioMessageOnSerializationThread(
         }
     }
     break;
+    case audio::a2s_schedule_sample_purge:
+    {
+        engine.getSampleManager()->purgeUnreferencedSamples();
+    }
+    break;
     case audio::a2s_none:
         break;
     }

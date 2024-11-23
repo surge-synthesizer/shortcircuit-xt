@@ -143,6 +143,7 @@ enum ClientToSerializationMessagesIds
 
     // Browser functions
     c2s_add_browser_device_location,
+    c2s_remove_browser_device_location,
     c2s_preview_browser_sample,
 
     c2s_request_debug_action,

@@ -43,11 +43,20 @@ namespace scxt::messaging::client
 inline void doAddBrowserDeviceLocation(const fs::path &p, const engine::Engine &engine,
                                        MessageController &cont)
 {
-    engine.getBrowser()->addRootPathForDeviceView(p);
+    engine.getBrowser()->addRootPathForDeviceView(p, false);
     serializationSendToClient(s2c_refresh_browser, true, cont);
 }
 CLIENT_TO_SERIAL(AddBrowserDeviceLocation, c2s_add_browser_device_location, std::string,
                  doAddBrowserDeviceLocation(fs::path(fs::u8path(payload)), engine, cont));
+
+inline void doRemoveBrowserDeviceLocation(const fs::path &p, const engine::Engine &engine,
+                                          MessageController &cont)
+{
+    engine.getBrowser()->removeRootPathForDeviceView(p);
+    serializationSendToClient(s2c_refresh_browser, true, cont);
+}
+CLIENT_TO_SERIAL(RemoveBrowserDeviceLocation, c2s_remove_browser_device_location, std::string,
+                 doRemoveBrowserDeviceLocation(fs::path(fs::u8path(payload)), engine, cont));
 
 using previewBrowserSamplePayload_t = std::tuple<bool, std::string>;
 inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
@@ -57,13 +66,13 @@ inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
     auto path = fs::path(fs::u8path(pathString));
     if (startstop)
     {
-        SCLOG("Starting preview " << path.u8string());
         auto sid = engine.getSampleManager()->loadSampleByPath(path);
         if (sid.has_value())
         {
             auto smp = engine.getSampleManager()->getSample(*sid);
             cont.scheduleAudioThreadCallback(
-                [smp](auto &eng) { eng.previewVoice->attachAndStart(smp); });
+                [smp](auto &eng) { eng.previewVoice->attachAndStartUnlessPlaying(smp); },
+                [](const auto &e) { e.getSampleManager()->purgeUnreferencedSamples(); });
         }
         else
         {
@@ -77,6 +86,7 @@ inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
             [](auto &eng) { eng.previewVoice->detatchAndStop(); },
             [](const auto &e) { e.getSampleManager()->purgeUnreferencedSamples(); });
     }
+    engine.getSampleManager()->purgeUnreferencedSamples();
 }
 CLIENT_TO_SERIAL(PreviewBrowserSample, c2s_preview_browser_sample, previewBrowserSamplePayload_t,
                  doPreviewBrowserSample(payload, engine, cont));

@@ -36,7 +36,7 @@
 
 namespace scxt::voice
 {
-struct PreviewVoice : SampleRateSupport
+struct alignas(16) PreviewVoice : SampleRateSupport
 {
     float output alignas(16)[2][blockSize];
 
@@ -44,11 +44,24 @@ struct PreviewVoice : SampleRateSupport
     PreviewVoice();
     ~PreviewVoice();
 
-    bool attachAndStart(const std::shared_ptr<sample::Sample> &);
-    void processBlock();
+    /***
+     * Given this sample, play it with this voice unless this vice is already playing
+     * exactly this sample, in which case, stop and release the reference
+     */
+    bool attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sample> &);
+
+    /***
+     * Stop playing the sample and release the reference to the sample
+     */
     bool detatchAndStop();
 
+    /***
+     * Populate the output field with the sample data
+     */
+    void processBlock();
+
     bool isActive{false};
+    bool schedulePurge{false};
     std::unique_ptr<Details> details;
 };
 } // namespace scxt::voice

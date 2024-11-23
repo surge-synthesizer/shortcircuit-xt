@@ -31,6 +31,8 @@
 #include "filesystem/import.h"
 #include <memory>
 #include <vector>
+#include <string>
+#include <utility>
 
 namespace scxt::browser
 {
@@ -41,9 +43,9 @@ struct BrowserDB
     ~BrowserDB();
 
     void writeDebugMessage(const std::string &);
-    void addDeviceLocation(const fs::path &);
+    void addRemoveDeviceLocation(const fs::path &, bool);
 
-    std::vector<fs::path> getDeviceLocations();
+    std::vector<std::pair<fs::path, bool>> getDeviceLocations();
 
     int numberOfJobsOutstanding() const;
     int waitForJobsOutstandingComplete(int maxWaitInMS) const;

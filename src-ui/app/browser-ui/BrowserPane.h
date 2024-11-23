@@ -34,6 +34,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/NamedPanel.h>
 #include "app/HasEditor.h"
+#include "browser/browser.h"
 
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 
@@ -53,7 +54,7 @@ struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
     void resized() override;
 
     void resetRoots();
-    std::vector<std::pair<fs::path, std::string>> roots;
+    std::vector<scxt::browser::Browser::indexedRootPath_t> roots;
 
     std::unique_ptr<DevicesPane> devicesPane;
     std::unique_ptr<FavoritesPane> favoritesPane;

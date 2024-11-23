@@ -72,11 +72,13 @@ struct Browser
      * Filesystem Views: Very simple. The Browser gives you a set of
      * filesystem roots and allows you to add your own roots to the
      * browser (which will be persisted system wide). This is safe to call
-     * from any thread other than the sql thread but is really intended
-     * to be called from the UI thread.
+     * from any non realtime thread other than the sql thread but is really intended
+     * to be called from the serialization thread.
      */
-    std::vector<std::pair<fs::path, std::string>> getRootPathsForDeviceView() const;
-    void addRootPathForDeviceView(const fs::path &);
+    using indexedRootPath_t = std::tuple<fs::path, std::string, bool>;
+    std::vector<indexedRootPath_t> getRootPathsForDeviceView() const;
+    void addRootPathForDeviceView(const fs::path &, bool indexed);
+    void removeRootPathForDeviceView(const fs::path &);
 
     static bool isLoadableFile(const fs::path &);
     static bool isLoadableSample(const fs::path &);
