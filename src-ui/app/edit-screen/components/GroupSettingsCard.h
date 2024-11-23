@@ -54,8 +54,8 @@ struct GroupSettingsCard : juce::Component, HasEditor
         prioGlyph, glideGlpyh, volGlyph, panGlyph, tuneGlyph;
     std::unique_ptr<sst::jucegui::components::Label> pbLabel, SRCLabel;
     std::unique_ptr<sst::jucegui::components::TextPushButton> polyMenu, polyModeMenu;
-    std::unique_ptr<sst::jucegui::components::MenuButton> midiMenu, outputMenu, prioMenu, glideMenu,
-        srcMenu;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> midiMenu, outputMenu, prioMenu,
+        glideMenu, srcMenu;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpDrag,
         glideDrag, volDrag, panDrag, tuneDrag;
 

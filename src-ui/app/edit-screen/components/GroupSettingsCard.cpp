@@ -44,7 +44,7 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
         return res;
     };
     auto mkm = [this](auto tx, auto cs) {
-        auto res = std::make_unique<jcmp::MenuButton>();
+        auto res = std::make_unique<jcmp::TextPushButton>();
         res->setLabel(tx);
         res->setOnCallback(editor->makeComingSoon(std::string() + "Group Setting Pane " + cs));
         addAndMakeVisible(*res);
@@ -216,45 +216,48 @@ void GroupSettingsCard::showPolyModeMenu()
     p.addSectionHeader("Group Voice/Note Mode");
     p.addSeparator();
 
-    p.addItem(
-        "Poly", true,
-        info.vmPlayModeInt == (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES,
-        [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES;
+    bool isAnyMono =
+        info.vmPlayModeInt == (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+    bool isMonoRetrig =
+        info.vmPlayModeFeaturesInt &
+        (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::MONO_RETRIGGER;
+    bool isMonoLegato = info.vmPlayModeFeaturesInt &
+                        (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::MONO_LEGATO;
 
-            w->rebuildFromInfo();
-            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
-        });
-    p.addItem(
-        "Mono", true,
-        info.vmPlayModeInt == (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES,
-        [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
-            w->info.vmPlayModeFeaturesInt =
-                (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_MONO;
-
-            w->rebuildFromInfo();
-            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
-        });
-    p.addItem("Legato", true, false, [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Poly", true, !isAnyMono, [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
-        w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
-        w->info.vmPlayModeFeaturesInt =
-            (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_LEGATO;
+        w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES;
 
         w->rebuildFromInfo();
         w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
     });
+    p.addItem("Mono", true, isAnyMono && isMonoRetrig, [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+        w->info.vmPlayModeFeaturesInt =
+            (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_MONO;
+
+        w->rebuildFromInfo();
+        w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+    });
+    p.addItem(
+        "Legato", true, isAnyMono && isMonoLegato, [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.vmPlayModeInt = (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
+            w->info.vmPlayModeFeaturesInt =
+                (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_LEGATO;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+        });
     p.addSeparator();
     p.addSectionHeader("Mono Release Priority");
     // I could ovciously structure this better
     p.addItem(
-        "Latest", false,
+        "Latest", isAnyMono,
         info.vmPlayModeFeaturesInt &
             (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST,
         [w = juce::Component::SafePointer(this)]() {
@@ -273,7 +276,7 @@ void GroupSettingsCard::showPolyModeMenu()
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
     p.addItem(
-        "Highest", false,
+        "Highest", isAnyMono,
         info.vmPlayModeFeaturesInt &
             (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST,
         [w = juce::Component::SafePointer(this)]() {
@@ -291,7 +294,7 @@ void GroupSettingsCard::showPolyModeMenu()
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
     p.addItem(
-        "Lowest", false,
+        "Lowest", isAnyMono,
         info.vmPlayModeFeaturesInt &
             (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST,
         [w = juce::Component::SafePointer(this)]() {
