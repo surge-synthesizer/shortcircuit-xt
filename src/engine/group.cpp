@@ -624,10 +624,16 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
     }
     else
     {
+        auto pgrp = (uint64_t)this;
+        SCLOG_IF(voiceResponder, "Setting up poly group " << pgrp);
+
+        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::POLY_VOICES,
+                                   outputInfo.vmPlayModeFeaturesInt);
         assert(outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES);
         if (!outputInfo.hasIndependentPolyLimit)
         {
             // TODO we really want a 'clear'
+            e.voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)this, maxVoices);
         }
         else
         {
