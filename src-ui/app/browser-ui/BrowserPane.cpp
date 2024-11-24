@@ -32,6 +32,7 @@
 #include "sst/jucegui/components/NamedPanelDivider.h"
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
+#include "sst/jucegui/components/ListView.h"
 #include "sst/plugininfra/strnatcmp.h"
 
 #include <infrastructure/user_defaults.h>
@@ -59,57 +60,121 @@ struct TempPane : HasEditor, juce::Component
     }
 };
 
-struct DriveListBoxModel : juce::ListBoxModel
-{
-    BrowserPane *browserPane{nullptr};
-    DriveListBoxModel(BrowserPane *b) : browserPane(b) {}
-    int getNumRows() override { return browserPane->roots.size(); }
-    void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height,
-                          bool rowIsSelected) override
-    {
-        if (rowNumber >= 0 && rowNumber < browserPane->roots.size())
-        {
-            g.setFont(browserPane->editor->themeApplier.interMediumFor(12));
-
-            // TODO: Style all of these
-            auto textColor =
-                browserPane->editor->themeColor(theme::ColorMap::generic_content_medium);
-            auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
-
-            if (rowIsSelected)
-            {
-                fillColor = browserPane->editor->themeColor(theme::ColorMap::bg_3);
-                textColor = browserPane->editor->themeColor(theme::ColorMap::generic_content_high);
-            }
-            g.setColour(fillColor);
-            g.fillRect(0, 0, width, height);
-            g.setColour(textColor);
-            g.drawText(browserPane->roots[rowNumber].second, 1, 1, width - 2, height - 2,
-                       juce::Justification::centredLeft);
-        }
-    }
-    void selectedRowsChanged(int lastRowSelected) override;
-};
-
 struct DriveArea : juce::Component, HasEditor
 {
-    BrowserPane *browserPane{nullptr};
-    std::unique_ptr<DriveListBoxModel> model;
-    std::unique_ptr<juce::ListBox> lbox;
-    DriveArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
+    struct DriveAreaRow : juce::Component
     {
-        model = std::make_unique<DriveListBoxModel>(browserPane);
-        lbox = std::make_unique<juce::ListBox>("Root Devices", model.get());
-        lbox->setClickingTogglesRowSelection(true);
-        lbox->setMultipleSelectionEnabled(false);
-        lbox->setRowHeight(18);
-        lbox->setColour(juce::ListBox::ColourIds::backgroundColourId,
-                        juce::Colour(0.f, 0.f, 0.f, 0.f));
+        DriveArea *driveArea{nullptr};
+        uint32_t rowNumber{0};
+        bool selected{false};
+        bool hovered{false};
 
-        addAndMakeVisible(*lbox);
+        DriveAreaRow(DriveArea *p) : driveArea(p) {}
+        void paint(juce::Graphics &g) override
+        {
+            auto *ed = driveArea->browserPane->editor;
+            auto *bp = driveArea->browserPane;
+
+            if (rowNumber >= 0 && rowNumber < bp->roots.size())
+            {
+                g.setFont(ed->themeApplier.interMediumFor(12));
+
+                // TODO: Style all of these
+                auto textColor = ed->themeColor(theme::ColorMap::generic_content_medium);
+                auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
+
+                if (selected)
+                {
+                    fillColor = ed->themeColor(theme::ColorMap::bg_3);
+                    textColor = ed->themeColor(theme::ColorMap::generic_content_high);
+                }
+                else if (hovered)
+                {
+                    fillColor = ed->themeColor(theme::ColorMap::bg_3);
+                }
+                g.setColour(fillColor);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                g.setColour(textColor);
+                g.drawText(std::get<1>(bp->roots[rowNumber]), 1, 1, getWidth() - 2, getHeight() - 2,
+                           juce::Justification::centredLeft);
+            }
+        }
+        void mouseEnter(const juce::MouseEvent &event) override
+        {
+            hovered = true;
+            repaint();
+        }
+        void mouseExit(const juce::MouseEvent &event) override
+        {
+            hovered = false;
+            repaint();
+        }
+
+        void mouseDown(const juce::MouseEvent &e) override;
+
+        void showPopup()
+        {
+            auto *bp = driveArea->browserPane;
+            auto pth = std::get<0>(bp->roots[rowNumber]);
+            auto nm = std::get<1>(bp->roots[rowNumber]);
+
+            auto p = juce::PopupMenu();
+            p.addSectionHeader(nm);
+            p.addSeparator();
+
+            p.addItem("Remove '" + nm + "' from Locations", [w = juce::Component::SafePointer(
+                                                                 driveArea->browserPane),
+                                                             removeThis = pth]() {
+                if (!w)
+                    return;
+                namespace cmsg = scxt::messaging::client;
+                w->sendToSerialization(cmsg::RemoveBrowserDeviceLocation(removeThis.u8string()));
+            });
+            // TODO: If Indexed
+            p.addItem("Add '" + nm + "' to Search Index", false, false, []() {});
+
+            if (!fs::is_directory(pth))
+            {
+                pth = pth.parent_path();
+            }
+            p.addItem("Reveal '" + nm + "'...",
+                      [pth]() { juce::File(pth.u8string()).revealToUser(); });
+            p.addSeparator();
+            p.addItem("Add Location...", [w = juce::Component::SafePointer(this)]() {
+                if (!w)
+                    return;
+                auto ed = w->driveArea->browserPane->editor;
+                ed->fileChooser = std::make_unique<juce::FileChooser>("Add Location");
+                ed->fileChooser->launchAsync(
+                    juce::FileBrowserComponent::canSelectDirectories, [w, ed](const auto &c) {
+                        auto result = c.getResults();
+                        namespace cmsg = scxt::messaging::client;
+                        w->driveArea->browserPane->sendToSerialization(
+                            cmsg::AddBrowserDeviceLocation(
+                                result[0].getFullPathName().toStdString()));
+                    });
+            });
+            p.showMenuAsync(driveArea->browserPane->editor->defaultPopupMenuOptions());
+        }
     };
 
-    ~DriveArea() { lbox->setModel(nullptr); }
+    BrowserPane *browserPane{nullptr};
+    std::unique_ptr<sst::jucegui::components::ListView> listView;
+    DriveArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
+    {
+        listView = std::make_unique<sst::jucegui::components::ListView>();
+        listView->getRowCount = [this]() { return browserPane->roots.size(); };
+        listView->getRowHeight = [this]() { return 18; };
+        listView->makeRowComponent = [this]() { return makeComponent(); };
+        listView->assignComponentToRow = [this](const auto &c, auto r) {
+            return assignComponentToRow(c, r);
+        };
+        listView->setRowSelection = [this](const auto &c, auto r) { return setRowSelection(c, r); };
+        listView->refresh();
+        addAndMakeVisible(*listView);
+    };
+
+    ~DriveArea() {}
 
     void paint(juce::Graphics &g) override
     {
@@ -119,7 +184,29 @@ struct DriveArea : juce::Component, HasEditor
         g.drawRoundedRectangle(getLocalBounds().toFloat(), 2, 1);
     }
 
-    void resized() override { lbox->setBounds(getLocalBounds().reduced(1)); }
+    void resized() override { listView->setBounds(getLocalBounds().reduced(1)); }
+    std::unique_ptr<juce::Component> makeComponent()
+    {
+        return std::make_unique<DriveAreaRow>(this);
+    }
+    void assignComponentToRow(const std::unique_ptr<juce::Component> &c, int r)
+    {
+        auto *dar = dynamic_cast<DriveAreaRow *>(c.get());
+        if (dar)
+        {
+            dar->rowNumber = r;
+            dar->repaint();
+        }
+    }
+    void setRowSelection(const std::unique_ptr<juce::Component> &c, bool r)
+    {
+        auto *dar = dynamic_cast<DriveAreaRow *>(c.get());
+        if (dar)
+        {
+            dar->selected = r;
+            dar->repaint();
+        }
+    }
 };
 
 struct DriveFSListBoxModel : juce::ListBoxModel
@@ -272,9 +359,21 @@ struct DevicesPane : HasEditor, juce::Component
     }
 };
 
-void DriveListBoxModel::selectedRowsChanged(int lastRowSelected)
+void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
 {
-    browserPane->devicesPane->driveFSArea->setRootRow(browserPane->roots[lastRowSelected].first);
+    if (rowNumber >= 0 && rowNumber < driveArea->browserPane->roots.size())
+    {
+        if (e.mods.isPopupMenu())
+        {
+            showPopup();
+        }
+        else
+        {
+            driveArea->browserPane->devicesPane->driveFSArea->setRootRow(
+                std::get<0>(driveArea->browserPane->roots[rowNumber]));
+            driveArea->listView->rowSelected(rowNumber, true);
+        }
+    }
 }
 
 int DriveFSListBoxModel::getNumRows()
@@ -302,23 +401,16 @@ struct DriveFSListBoxRow : public juce::Component
         isMouseDownWithoutDrag = true;
         if (browserPane->autoPreviewEnabled && isFile())
         {
-            if (hasStartedPreview)
+            const auto &data = browserPane->devicesPane->driveFSArea->contents;
+            const auto &entry = data[rowNumber];
+            if (browser::Browser::isLoadableSingleSample(entry.path()))
             {
-                stopPreview();
-            }
-            else
-            {
-                const auto &data = browserPane->devicesPane->driveFSArea->contents;
-                const auto &entry = data[rowNumber];
-                if (browser::Browser::isLoadableSingleSample(entry.path()))
-                {
-                    hasStartedPreview = true;
-                    namespace cmsg = scxt::messaging::client;
-                    scxt::messaging::client::clientSendToSerialization(
-                        cmsg::PreviewBrowserSample({true, data[rowNumber].path().u8string()}),
-                        browserPane->editor->msgCont);
-                    repaint();
-                }
+                hasStartedPreview = true;
+                namespace cmsg = scxt::messaging::client;
+                scxt::messaging::client::clientSendToSerialization(
+                    cmsg::PreviewBrowserSample({true, data[rowNumber].path().u8string()}),
+                    browserPane->editor->msgCont);
+                repaint();
             }
         }
 
@@ -652,8 +744,8 @@ void BrowserPane::resized()
 void BrowserPane::resetRoots()
 {
     roots = editor->browser.getRootPathsForDeviceView();
-    if (devicesPane && devicesPane->driveArea && devicesPane->driveArea->lbox)
-        devicesPane->driveArea->lbox->updateContent();
+    if (devicesPane && devicesPane->driveArea && devicesPane->driveArea->listView)
+        devicesPane->driveArea->listView->refresh();
     repaint();
 }
 

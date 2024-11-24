@@ -86,9 +86,20 @@ struct PreviewVoice::Details
 PreviewVoice::PreviewVoice() { details = std::make_unique<Details>(this); }
 PreviewVoice::~PreviewVoice() {}
 
-bool PreviewVoice::attachAndStart(const std::shared_ptr<sample::Sample> &s)
+bool PreviewVoice::attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sample> &s)
 {
-    SCLOG("Starting Preview : " << s->mFileName.u8string());
+    if (isActive)
+    {
+        schedulePurge = true;
+        if (s->id == details->sample->id)
+        {
+            // You are re-starting the same playing one. This means you want
+            // it stopped with our UI interaction.
+            detatchAndStop();
+            return true;
+        }
+    }
+
     details->sample = s;
     details->initiateGD();
     isActive = true;
@@ -99,6 +110,7 @@ bool PreviewVoice::detatchAndStop()
     details->sample = nullptr;
     // TODO : Fade
     isActive = false;
+    schedulePurge = true;
     return true;
 }
 

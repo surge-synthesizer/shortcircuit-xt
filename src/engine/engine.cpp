@@ -354,6 +354,16 @@ bool Engine::processAudio()
         mech::accumulate_from_to<blockSize>(previewVoice->output[1], main[1]);
     }
 
+    if (previewVoice->schedulePurge)
+    {
+        previewVoice->schedulePurge = false;
+
+        scxt::messaging::audio::AudioToSerialization a2s;
+        a2s.id = messaging::audio::a2s_schedule_sample_purge;
+        a2s.payloadType = scxt::messaging::audio::AudioToSerialization::NONE;
+        getMessageController()->sendAudioToSerialization(a2s);
+    }
+
     auto &bl = sharedUIMemoryState.busVULevels;
     const auto &bs = getPatch()->busses;
     for (int c = 0; c < 2; ++c)

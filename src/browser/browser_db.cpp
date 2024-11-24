@@ -239,7 +239,7 @@ struct TxnGuard
 struct WriterWorker
 {
     static constexpr const char *schema_version =
-        "1003"; // I will rebuild if this is not my version
+        "1004"; // I will rebuild if this is not my version
 
     static constexpr const char *setup_sql = R"SQL(
 DROP TABLE IF EXISTS "DebugJunk";
@@ -258,6 +258,10 @@ CREATE TABLE IF NOT EXISTS DeviceLocations (
     id integer primary key,
     path varchar(2048)
 );
+CREATE TABLE IF NOT EXISTS IndexedDeviceLocations (
+    id integer primary key,
+    device_id integer
+)
     )SQL";
     struct EnQAble
     {
@@ -275,8 +279,9 @@ CREATE TABLE IF NOT EXISTS DeviceLocations (
     struct EnQDeviceLocation : public EnQAble
     {
         fs::path path;
-        EnQDeviceLocation(const fs::path &msg) : path(msg) {}
-        void go(WriterWorker &w) override { w.addDeviceLocation(path); }
+        bool add;
+        EnQDeviceLocation(const fs::path &msg, bool add) : path(msg), add(add) {}
+        void go(WriterWorker &w) override { w.addDeviceLocation(path, add); }
     };
 
     void openDb()
@@ -575,17 +580,31 @@ CREATE TABLE IF NOT EXISTS DeviceLocations (
         }
     }
 
-    void addDeviceLocation(const fs::path &m)
+    void addDeviceLocation(const fs::path &m, bool add)
     {
         try
         {
-            auto there = SQL::Statement(dbh, "INSERT INTO DeviceLocations  (\"path\") VALUES (?1)");
+            if (add)
+            {
+                auto there =
+                    SQL::Statement(dbh, "INSERT INTO DeviceLocations  (\"path\") VALUES (?1)");
 
-            std::string res = m.u8string();
-            there.bind(1, res);
+                std::string res = m.u8string();
+                there.bind(1, res);
 
-            there.step();
-            there.finalize();
+                there.step();
+                there.finalize();
+            }
+            else
+            {
+                auto there = SQL::Statement(dbh, "DELETE FROM DeviceLocations WHERE path==?1");
+
+                std::string res = m.u8string();
+                there.bind(1, res);
+
+                there.step();
+                there.finalize();
+            }
         }
         catch (const SQL::Exception &e)
         {
@@ -661,15 +680,15 @@ void BrowserDB::writeDebugMessage(const std::string &s)
     writerWorker->enqueueWorkItem(new WriterWorker::EnQDebugMsg(s));
 }
 
-void BrowserDB::addDeviceLocation(const fs::path &p)
+void BrowserDB::addRemoveDeviceLocation(const fs::path &p, bool add)
 {
-    writerWorker->enqueueWorkItem(new WriterWorker::EnQDeviceLocation(p));
+    writerWorker->enqueueWorkItem(new WriterWorker::EnQDeviceLocation(p, add));
 }
 
-std::vector<fs::path> BrowserDB::getDeviceLocations()
+std::vector<std::pair<fs::path, bool>> BrowserDB::getDeviceLocations()
 {
     auto conn = writerWorker->getReadOnlyConn();
-    std::vector<fs::path> res;
+    std::vector<std::pair<fs::path, bool>> res;
 
     // language=SQL
     std::string query = "SELECT path FROM DeviceLocations;";
@@ -678,7 +697,7 @@ std::vector<fs::path> BrowserDB::getDeviceLocations()
         auto q = SQL::Statement(conn, query);
         while (q.step())
         {
-            res.emplace_back(fs::path{q.col_str(0)});
+            res.emplace_back(fs::path{q.col_str(0)}, false);
         }
         q.finalize();
     }
