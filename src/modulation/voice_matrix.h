@@ -226,7 +226,7 @@ struct MatrixEndpoints
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
               aegSource{'zneg', 'aeg ', 0}, eg2Source{'zneg', 'eg2 ', 0}, transportSources(e),
-              rngSources(e), macroSources(e), mpeSources(e)
+              rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
         {
             registerVoiceModSource(e, aegSource, "", "AEG");
             registerVoiceModSource(e, eg2Source, "", "EG2");
@@ -291,6 +291,16 @@ struct MatrixEndpoints
             }
             SR volume, pan, tuning, vibrato, expression, brightness, pressure;
         } noteExpressions;
+
+        struct VoiceSources
+        {
+            VoiceSources(engine::Engine *e) : isGated{'zvsr', 'gate'}, isReleased{'zvsr', 'reld'}
+            {
+                registerVoiceModSource(e, isGated, "Voice", "Is Gated");
+                registerVoiceModSource(e, isReleased, "Voice", "Is Released");
+            }
+            SR isGated, isReleased;
+        } voiceSources;
 
         TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
 

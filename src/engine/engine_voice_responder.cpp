@@ -287,7 +287,7 @@ void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, 
     v->key = key;
     v->originalMidiKey = key - dkey;
     v->calculateVoicePitch();
-    v->isGated = true;
+    v->setIsGated(true);
     for (auto &eg : v->eg)
     {
         eg.attackFrom(eg.outBlock0);
@@ -296,7 +296,6 @@ void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, 
     {
         eg.attackFrom(eg.outBlock0);
     }
-    SCLOG("TODO - Gate voice and Retrigger AEG and EG2");
 }
 
 void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_t pb14bit)

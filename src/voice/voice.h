@@ -189,6 +189,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
      * Voice Playback State Model.
      */
     bool isGated{false};
+    float isGatedF{0.f}, isReleasedF{0.f};
+    void setIsGated(bool g)
+    {
+        isGated = g;
+        isGatedF = g ? 1.f : 0.f;
+        isReleasedF = g ? 0.f : 1.f;
+    };
+
     std::array<bool, maxGeneratorsPerVoice> isGeneratorRunning{};
     bool isAnyGeneratorRunning{};
     bool isAEGRunning{false};
@@ -202,7 +210,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     void attack()
     {
-        isGated = true;
+        setIsGated(true);
         isAEGRunning = true;
 
         isVoicePlaying = true;
@@ -212,7 +220,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
         voiceStarted();
     }
-    void release() { isGated = false; }
+    void release() { setIsGated(false); }
     void beginTerminationSequence() { terminationSequence = blocksToTerminate; }
     void cleanupVoice();
 
