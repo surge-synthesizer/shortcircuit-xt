@@ -209,48 +209,16 @@ struct DriveArea : juce::Component, HasEditor
     }
 };
 
-struct DriveFSListBoxModel : juce::ListBoxModel
-{
-    BrowserPane *browserPane{nullptr};
-    DriveFSListBoxModel(BrowserPane *b) : browserPane(b) {}
-    int getNumRows() override;
-    void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height,
-                          bool rowIsSelected) override
-    {
-    }
-    juce::Component *refreshComponentForRow(int rowNumber, bool isRowSelected,
-                                            juce::Component *existingComponentToUpdate) override;
-
-    void selectedRowsChanged(int lastRowSelected) override {}
-};
-
 struct DriveFSArea : juce::Component, HasEditor
 {
     BrowserPane *browserPane{nullptr};
-    std::unique_ptr<DriveFSListBoxModel> model;
-    std::unique_ptr<juce::ListBox> lbox;
-    std::unique_ptr<jcmp::TextPushButton> dotDot;
+    std::unique_ptr<jcmp::ListView> listView;
 
     DriveFSArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
-        model = std::make_unique<DriveFSListBoxModel>(browserPane);
-        lbox = std::make_unique<juce::ListBox>("Current Data", model.get());
-        lbox->setClickingTogglesRowSelection(true);
-        lbox->setMultipleSelectionEnabled(false);
-        lbox->setRowHeight(18);
-        lbox->setColour(juce::ListBox::ColourIds::backgroundColourId,
-                        juce::Colour(0.f, 0.f, 0.f, 0.f));
-
-        addAndMakeVisible(*lbox);
-
-        dotDot = std::make_unique<jcmp::TextPushButton>();
-        dotDot->setLabel("up one dir");
-        dotDot->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->upOneLevel();
-        });
-        dotDot->setEnabled(false);
-        addAndMakeVisible(*dotDot);
+        listView = std::make_unique<jcmp::ListView>();
+        setupListView();
+        addAndMakeVisible(*listView);
     }
 
     void paint(juce::Graphics &g) override
@@ -266,14 +234,12 @@ struct DriveFSArea : juce::Component, HasEditor
     {
         rootPath = p;
         currentPath = p;
-        dotDot->setEnabled(false);
         recalcContents();
     }
 
     void setCurrentPath(const fs::path &p)
     {
         currentPath = p;
-        dotDot->setEnabled(currentPath > rootPath);
         recalcContents();
     }
 
@@ -290,6 +256,7 @@ struct DriveFSArea : juce::Component, HasEditor
     {
         // Make a copy for now. this sucks and we should be smarter
         contents.clear();
+        auto lcontents = contents;
         try
         {
             for (auto const &dir_entry : fs::directory_iterator{currentPath})
@@ -307,7 +274,7 @@ struct DriveFSArea : juce::Component, HasEditor
 
                 if (include)
                 {
-                    contents.push_back(dir_entry);
+                    lcontents.push_back(dir_entry);
                 }
             }
         }
@@ -315,18 +282,23 @@ struct DriveFSArea : juce::Component, HasEditor
         {
             SCLOG(e.what());
         }
-        std::sort(contents.begin(), contents.end(), [](auto &a, auto &b) {
+        std::sort(lcontents.begin(), lcontents.end(), [](auto &a, auto &b) {
             return strnatcasecmp(a.path().u8string().c_str(), b.path().u8string().c_str()) < 0;
         });
-        lbox->updateContent();
+        if (currentPath > rootPath)
+            contents.emplace_back("..");
+        for (auto &c : lcontents)
+            contents.emplace_back(c);
+        listView->refresh();
     }
 
     void resized() override
     {
         auto bd = getLocalBounds().reduced(1);
-        dotDot->setBounds(bd.withHeight(20));
-        lbox->setBounds(bd.withTrimmedTop(22));
+        listView->setBounds(bd);
     }
+
+    void setupListView();
 };
 
 struct DevicesPane : HasEditor, juce::Component
@@ -376,22 +348,15 @@ void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
     }
 }
 
-int DriveFSListBoxModel::getNumRows()
-{
-    if (!browserPane || !browserPane->devicesPane || !browserPane->devicesPane->driveFSArea)
-        return 0;
-
-    return browserPane->devicesPane->driveFSArea->contents.size();
-}
-
-struct DriveFSListBoxRow : public juce::Component
+struct DriveFSRowComponent : public juce::Component
 {
     bool isSelected;
     int rowNumber;
     BrowserPane *browserPane{nullptr};
-    DriveFSListBoxModel *model{nullptr};
+    jcmp::ListView *listView{nullptr};
 
-    juce::ListBox *enclosingBox() { return browserPane->devicesPane->driveFSArea->lbox.get(); }
+    DriveFSRowComponent(BrowserPane *p, jcmp::ListView *v) : browserPane(p), listView(v) {}
+
     bool isDragging{false};
     bool isMouseDownWithoutDrag{false};
     bool hasStartedPreview{false};
@@ -414,7 +379,7 @@ struct DriveFSListBoxRow : public juce::Component
             }
         }
 
-        enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, false);
+        listView->rowSelected(rowNumber, true);
 
         if (event.mods.isPopupMenu())
         {
@@ -454,10 +419,18 @@ struct DriveFSListBoxRow : public juce::Component
         {
             isDragging = false;
         }
-        else
-        {
-            enclosingBox()->selectRowsBasedOnModifierKeys(rowNumber, event.mods, true);
-        }
+    }
+
+    bool isHovered;
+    void mouseEnter(const juce::MouseEvent &) override
+    {
+        isHovered = true;
+        repaint();
+    }
+    void mouseExit(const juce::MouseEvent &) override
+    {
+        isHovered = false;
+        repaint();
     }
 
     void stopPreview()
@@ -480,7 +453,11 @@ struct DriveFSListBoxRow : public juce::Component
         const auto &data = browserPane->devicesPane->driveFSArea->contents;
         if (rowNumber >= 0 && rowNumber < data.size())
         {
-            if (data[rowNumber].is_directory())
+            if (data[rowNumber] == fs::path(".."))
+            {
+                browserPane->devicesPane->driveFSArea->upOneLevel();
+            }
+            else if (data[rowNumber].is_directory())
             {
                 browserPane->devicesPane->driveFSArea->setCurrentPath(data[rowNumber].path());
             }
@@ -547,21 +524,22 @@ struct DriveFSListBoxRow : public juce::Component
                 fillColor = browserPane->editor->themeColor(theme::ColorMap::bg_3);
                 textColor = browserPane->editor->themeColor(theme::ColorMap::generic_content_high);
             }
+            else if (isHovered)
+            {
+                fillColor = browserPane->editor->themeColor(theme::ColorMap::bg_3);
+            }
             g.setColour(fillColor);
             g.fillRect(0, 0, width, height);
-            // TODO: Replace with glyph painter fo course
-            auto r = juce::Rectangle<int>(1, (height - 10) / 2, 10, 10);
+            auto r = juce::Rectangle<int>(1, (height - 14) / 2, 14, 14);
             if (entry.is_directory())
             {
-                g.setColour(textColor.withAlpha(0.5f));
-                g.fillRect(r);
-                g.setColour(textColor.brighter(0.4f));
-                g.drawRect(r);
+                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::FOLDER,
+                                               textColor.withAlpha(isSelected ? 1.f : 0.5f));
             }
             else
             {
-                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::TUNING,
-                                               textColor.withAlpha(0.5f));
+                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::FILE_MUSIC,
+                                               textColor.withAlpha(isSelected ? 1.f : 0.5f));
             }
 
             if (hasStartedPreview)
@@ -571,47 +549,40 @@ struct DriveFSListBoxRow : public juce::Component
                 //                                textColor.withAlpha(0.5f));
             }
             g.setColour(textColor);
-            g.drawText(entry.path().filename().u8string(), 14, 1, width - 16, height - 2,
+            g.drawText(entry.path().filename().u8string(), 16, 1, width - 16, height - 2,
                        juce::Justification::centredLeft);
         }
     }
 };
 
-juce::Component *
-DriveFSListBoxModel::refreshComponentForRow(int rowNumber, bool isRowSelected,
-                                            juce::Component *existingComponentToUpdate)
+void DriveFSArea::setupListView()
 {
-    if (!browserPane || !browserPane->devicesPane || !browserPane->devicesPane->driveFSArea)
-        return nullptr;
+    listView->getRowCount = [this]() -> uint32_t {
+        if (!browserPane || !browserPane->devicesPane || !browserPane->devicesPane->driveFSArea)
+            return 0;
 
-    const auto &data = browserPane->devicesPane->driveFSArea->contents;
-    if (rowNumber >= 0 && rowNumber < data.size())
-    {
-        auto rc = dynamic_cast<DriveFSListBoxRow *>(existingComponentToUpdate);
-
-        if (!rc)
+        return browserPane->devicesPane->driveFSArea->contents.size();
+    };
+    listView->getRowHeight = [this]() { return 18; };
+    listView->makeRowComponent = [this]() {
+        return std::make_unique<DriveFSRowComponent>(browserPane, listView.get());
+    };
+    listView->assignComponentToRow = [this](const auto &c, auto r) {
+        auto dfs = dynamic_cast<DriveFSRowComponent *>(c.get());
+        if (dfs)
         {
-            // Should never happen but
-            if (existingComponentToUpdate)
-            {
-                delete existingComponentToUpdate;
-                existingComponentToUpdate = nullptr;
-            }
-
-            rc = new DriveFSListBoxRow();
+            dfs->rowNumber = r;
+            dfs->repaint();
         }
-
-        rc->isSelected = isRowSelected;
-        rc->rowNumber = rowNumber;
-        rc->browserPane = browserPane;
-        rc->model = this;
-        rc->repaint();
-        return rc;
-    }
-
-    if (existingComponentToUpdate)
-        delete existingComponentToUpdate;
-    return nullptr;
+    };
+    listView->setRowSelection = [this](const auto &c, auto r) {
+        auto dfs = dynamic_cast<DriveFSRowComponent *>(c.get());
+        if (dfs)
+        {
+            dfs->isSelected = r;
+            dfs->repaint();
+        }
+    };
 }
 
 struct FavoritesPane : TempPane
