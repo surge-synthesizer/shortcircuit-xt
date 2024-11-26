@@ -136,6 +136,8 @@ SC_STREAMDEF(scxt::modulation::ModulatorStorage, SC_FROM({
                       {"curveLfoStorage", t.curveLfoStorage},
                       {"stepLfoStorage", t.stepLfoStorage},
                       {"envLfoStorage", t.envLfoStorage}};
+
+                 addUnlessDefault<val_t>(v, "cn", true, t.modulatorConsistent);
              }),
              SC_TO({
                  const auto &object = v.get_object();
@@ -147,6 +149,7 @@ SC_STREAMDEF(scxt::modulation::ModulatorStorage, SC_FROM({
                  findIf(v, "curveLfoStorage", result.curveLfoStorage);
                  findIf(v, "stepLfoStorage", result.stepLfoStorage);
                  findIf(v, "envLfoStorage", result.envLfoStorage);
+                 findOrSet(v, "cn", true, result.modulatorConsistent);
 
                  result.configureCalculatedState();
              }))

@@ -126,6 +126,8 @@ struct ModulatorStorage
     inline bool isMSEG() const { return modulatorShape == MSEG; }
     inline bool isEnv() const { return modulatorShape == LFO_ENV; }
     inline bool isCurve() const { return !isStep() && !isEnv() && !isMSEG(); }
+
+    bool modulatorConsistent{true};
 };
 
 inline double secondsToNormalizedEnvTime(double s)

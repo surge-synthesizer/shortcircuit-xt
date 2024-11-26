@@ -43,6 +43,7 @@
 #include "modulation/modulators/steplfo.h"
 #include "app/edit-screen/EditScreen.h"
 #include "app/shared/MenuValueTypein.h"
+#include "sst/jucegui/components/TextPushButton.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -744,7 +745,45 @@ struct MSEGLFOPane : juce::Component
     }
 };
 
-// TODO: A Million things of course
+struct ConsistencyLFOPane : juce::Component
+{
+    LfoPane *parent{nullptr};
+    std::unique_ptr<jcmp::Label> conLabel;
+    std::unique_ptr<jcmp::TextPushButton> conButton;
+    ConsistencyLFOPane(LfoPane *p) : parent(p)
+    {
+        conLabel = std::make_unique<jcmp::Label>();
+        conLabel->setText("LFO Type is Inconsistent across zone selection");
+        addAndMakeVisible(*conLabel);
+
+        conButton = std::make_unique<jcmp::TextPushButton>();
+        conButton->setLabel("Label This");
+        conButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->parent->modulatorShapeA->setValueFromGUI(w->parent->modulatorShapeA->getValue());
+        });
+        addAndMakeVisible(*conButton);
+    }
+
+    void resized() override
+    {
+        auto b = getLocalBounds().reduced(10).withTrimmedTop(20).withHeight(24);
+        conLabel->setBounds(b);
+        b = b.translated(0, 30);
+        conButton->setBounds(b);
+    }
+
+    void visibilityChanged() override
+    {
+        auto &ms = parent->modulatorStorageData[parent->selectedTab];
+        if (isVisible())
+        {
+            conButton->setLabel("Set all LFO shapes to " +
+                                parent->modulatorShapeA->getValueAsString());
+        }
+    }
+};
 
 LfoPane::LfoPane(SCXTEditor *e, bool fz)
     : sst::jucegui::components::NamedPanel(""), HasEditor(e), forZone(fz)
@@ -839,6 +878,9 @@ void LfoPane::rebuildPanelComponents()
     curveLfoPane = std::make_unique<CurveLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*curveLfoPane);
 
+    consistencyLfoPane = std::make_unique<ConsistencyLFOPane>(this);
+    getContentAreaComponent()->addChildComponent(*consistencyLfoPane);
+
     sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
                  selectedTab);
     connectors::addGuiStep(*modulatorShapeA,
@@ -896,20 +938,25 @@ void LfoPane::repositionContentAreaComponents()
     envLfoPane->setBounds(paneArea);
     msegLfoPane->setBounds(paneArea);
     curveLfoPane->setBounds(paneArea);
+    consistencyLfoPane->setBounds(paneArea);
     modulatorShape->setBounds(mg, 0, paneArea.getWidth() / 4, ht);
 }
 
 void LfoPane::setSubPaneVisibility()
 {
-    if (!stepLfoPane || !msegLfoPane || !curveLfoPane)
+    if (!stepLfoPane || !msegLfoPane || !curveLfoPane || !consistencyLfoPane || !envLfoPane)
         return;
 
     auto &ms = modulatorStorageData[selectedTab];
 
-    stepLfoPane->setVisible(ms.isStep());
-    msegLfoPane->setVisible(ms.isMSEG());
-    curveLfoPane->setVisible(ms.isCurve());
-    envLfoPane->setVisible(ms.isEnv());
+    auto con = ms.modulatorConsistent;
+
+    stepLfoPane->setVisible(ms.isStep() && con);
+    msegLfoPane->setVisible(ms.isMSEG() && con);
+    curveLfoPane->setVisible(ms.isCurve() && con);
+    envLfoPane->setVisible(ms.isEnv() && con);
+    consistencyLfoPane->setVisible(!con);
+    modulatorShape->setVisible(con);
 }
 
 void LfoPane::pickPresets()

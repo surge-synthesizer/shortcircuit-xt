@@ -415,6 +415,19 @@ inline void doDeactivatePart(int part, messaging::MessageController &cont)
 }
 CLIENT_TO_SERIAL(DeactivatePart, c2s_deactivate_part, int32_t, doDeactivatePart(payload, cont));
 
+inline void doRequestZoneDataRefresh(const engine::Engine &eng, messaging::MessageController &cont)
+{
+    auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+    if (lz.has_value())
+    {
+        eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(lz->part, lz->group,
+                                                                      lz->zone);
+    }
+}
+
+CLIENT_TO_SERIAL(RequestZoneDataRefresh, c2s_request_zone_data_refresh, bool,
+                 doRequestZoneDataRefresh(engine, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_STRUCTURE_MESSAGES_H

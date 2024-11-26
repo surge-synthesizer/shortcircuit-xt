@@ -47,6 +47,7 @@ struct OutPaneZoneTraits
 
     using floatMsg_t = scxt::messaging::client::UpdateZoneOutputFloatValue;
     using int16Msg_t = scxt::messaging::client::UpdateZoneOutputInt16TValue;
+    using int16RefreshMsg_t = scxt::messaging::client::UpdateZoneOutputInt16TValueThenRefresh;
 
     static engine::Zone::ZoneOutputInfo &outputInfo(SCXTEditor *e);
 };
@@ -60,6 +61,7 @@ struct OutPaneGroupTraits
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
     using int16Msg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
+    using int16RefreshMsg_t = int16Msg_t; // for now.
 
     static engine::Group::GroupOutputInfo &outputInfo(SCXTEditor *e);
 };

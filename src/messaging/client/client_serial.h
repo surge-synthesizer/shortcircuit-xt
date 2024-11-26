@@ -97,6 +97,7 @@ enum ClientToSerializationMessagesIds
 
     c2s_update_zone_output_float_value,
     c2s_update_zone_output_int16_t_value,
+    c2s_update_zone_output_int16_t_value_then_refresh,
 
     c2s_update_zone_routing_row,
 
@@ -107,6 +108,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_group_output_info_polyphony,
 
     c2s_update_group_trigger_conditions,
+
+    c2s_request_zone_data_refresh,
 
     // #1141 done up until here. Below this point the name rubric above isn't confirmed in place
     c2s_request_pgz_structure, // ?

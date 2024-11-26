@@ -513,6 +513,27 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
+        auto rsh = zp->modulatorStorage[i].modulatorShape;
+        auto con = true;
+        if (allSelectedZones[selectedPart].size() > 1)
+        {
+            for (const auto &sz : allSelectedZones[selectedPart])
+            {
+                const auto &zsh = engine.getPatch()
+                                      ->getPart(sz.part)
+                                      ->getGroup(sz.group)
+                                      ->getZone(sz.zone)
+                                      ->modulatorStorage[i]
+                                      .modulatorShape;
+                if (zsh != rsh)
+                {
+                    con = false;
+                    break;
+                }
+            }
+        }
+
+        zp->modulatorStorage[i].modulatorConsistent = con;
         serializationSendToClient(
             cms::s2c_update_group_or_zone_individual_modulator_storage,
             cms::indexedModulatorStorageUpdate_t{true, true, i, zp->modulatorStorage[i]},
@@ -549,9 +570,27 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     configureAndSendZoneModMatrixMetadata(p, g, z);
 
-    serializationSendToClient(cms::s2c_update_zone_output_info,
-                              cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
-                              *(engine.getMessageController()));
+    // Update across selections here to see if the routing is consistent
+    auto rt = zp->outputInfo.procRouting;
+    auto con = true;
+    if (allSelectedZones[selectedPart].size() > 1)
+    {
+        for (const auto &sz : allSelectedZones[selectedPart])
+        {
+            const auto &zpr = engine.getPatch()
+                                  ->getPart(sz.part)
+                                  ->getGroup(sz.group)
+                                  ->getZone(sz.zone)
+                                  ->outputInfo.procRouting;
+
+            if (zpr != rt)
+            {
+                con = false;
+                break;
+            }
+        }
+    }
+    zp->outputInfo.procRoutingConsistent = con;
 
     serializationSendToClient(cms::s2c_update_zone_output_info,
                               cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},

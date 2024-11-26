@@ -172,6 +172,19 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputInt16TValue, c2s_update_zone_output
                              detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
                                                            engine, cont));
 
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOutputInt16TValueThenRefresh, c2s_update_zone_output_int16_t_value_then_refresh,
+    detail::diffMsg_t<int16_t>, engine::Zone::ZoneOutputInfo,
+    detail::updateZoneMemberValue(
+        &engine::Zone::outputInfo, payload, engine, cont, [](auto const &eng) {
+            auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+            if (lz.has_value())
+            {
+                eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(lz->part, lz->group,
+                                                                              lz->zone);
+            }
+        }));
+
 using addBlankZonePayload_t = std::array<int, 6>;
 inline void doAddBlankZone(const addBlankZonePayload_t &payload, engine::Engine &engine,
                            MessageController &cont)
