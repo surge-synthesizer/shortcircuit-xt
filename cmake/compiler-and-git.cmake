@@ -67,6 +67,7 @@ else ()
                 /wd4018   # signed unsigned compare
                 /wd4996   # don't warn on stricmp vs _stricmp and other posix names
                 /wd4267   # converting size_t <-> int
+                /wd4005   # macro redefinition for nominmax
                 /utf-8
                 )
     endif ()
