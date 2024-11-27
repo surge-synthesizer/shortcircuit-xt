@@ -51,6 +51,7 @@ struct StepLFOPane;
 struct CurveLFOPane;
 struct ENVLFOPane;
 struct MSEGLFOPane;
+struct ConsistencyLFOPane;
 
 struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
 {
@@ -76,6 +77,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     std::unique_ptr<CurveLFOPane> curveLfoPane;
     std::unique_ptr<ENVLFOPane> envLfoPane;
     std::unique_ptr<MSEGLFOPane> msegLfoPane;
+    std::unique_ptr<ConsistencyLFOPane> consistencyLfoPane;
 
     bool forZone{true};
 

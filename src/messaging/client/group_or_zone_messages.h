@@ -66,15 +66,13 @@ CLIENT_TO_SERIAL_CONSTRAINED(
             auto forZone = std::get<0>(payload);
             if (forZone)
             {
-                // ToDo: Have to do the group side of this later
+                // ToDo: This is a wee bit heavy handed. Refactor so we can just send lfo
+                // and mod matrix (look at the git history before this for matrix).
                 auto lz = eng.getSelectionManager()->currentLeadZone(eng);
                 if (lz.has_value())
                 {
-                    auto &z =
-                        eng.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
-                    serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
-                                              voice::modulation::getVoiceMatrixMetadata(*z),
-                                              *(eng.getMessageController()));
+                    eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
+                        lz->part, lz->group, lz->zone);
                 }
             }
             else

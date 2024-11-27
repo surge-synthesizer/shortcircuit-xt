@@ -397,6 +397,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
 
 SC_STREAMDEF(scxt::engine::Zone::ZoneOutputInfo, SC_FROM({
                  v = {{"amp", t.amplitude}, {"pan", t.pan}, {"to", (int)t.routeTo}};
+                 addUnlessDefault<val_t>(v, "prc", true, t.procRoutingConsistent);
                  addUnlessDefault<val_t>(v, "prt", engine::Zone::ProcRoutingPath::procRoute_linear,
                                          t.procRouting);
                  addUnlessDefault<val_t>(v, "muted", false, t.muted);
@@ -406,6 +407,7 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneOutputInfo, SC_FROM({
                  findIf(v, {"amp", "amplitude"}, zo.amplitude);
                  findIf(v, "pan", zo.pan);
                  findOrSet(v, "muted", false, zo.muted);
+                 findOrSet(v, "prc", true, zo.procRoutingConsistent);
                  findOrSet(v, {"prt", "procRouting"},
                            engine::Zone::ProcRoutingPath::procRoute_linear, zo.procRouting);
                  int rt{engine::BusAddress::DEFAULT_BUS};

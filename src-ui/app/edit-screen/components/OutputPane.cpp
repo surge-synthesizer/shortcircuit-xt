@@ -58,6 +58,8 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
 {
     OutputPane<OTTraits> *outputPane{nullptr};
     std::unique_ptr<jcmp::MenuButton> procRouting;
+    std::unique_ptr<jcmp::TextPushButton> consistentButton;
+    std::unique_ptr<jcmp::Label> consistentLabel;
 
     ProcTab(SCXTEditor *e, OutputPane<OTTraits> *pane)
         : HasEditor(e), outputPane(pane), info(OTTraits::outputInfo(e))
@@ -70,17 +72,28 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
                 w->selectNewProcRouting();
         });
         addAndMakeVisible(*procRouting);
-    }
-    void paint(juce::Graphics &g)
-    {
-        auto ft = editor->style()->getFont(jcmp::Label::Styles::styleClass,
-                                           jcmp::Label::Styles::labelfont);
-        g.setFont(ft.withHeight(14));
-        g.setColour(juce::Colours::white);
-        g.drawText("Proc Routing", getLocalBounds().withHeight(30), juce::Justification::centred);
+
+        consistentLabel = std::make_unique<jcmp::Label>();
+        consistentLabel->setText("Routing inconsistent across selection");
+        addChildComponent(*consistentLabel);
+        consistentButton = std::make_unique<jcmp::TextPushButton>();
+        consistentButton->setLabel("Make Consistent");
+        consistentButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+            {
+                w->template sendSingleToSerialization<typename OTTraits::int16RefreshMsg_t>(
+                    w->info, w->info.procRouting);
+            }
+        });
+        addChildComponent(*consistentButton);
     }
 
-    void resized() { procRouting->setBounds(getLocalBounds().reduced(3, 5).withHeight(24)); }
+    void resized()
+    {
+        procRouting->setBounds(getLocalBounds().reduced(3, 5).withHeight(24));
+        consistentLabel->setBounds(procRouting->getBounds());
+        consistentButton->setBounds(procRouting->getBounds().translated(0, 30));
+    }
 
     std::string getRoutingName(typename OTTraits::route_t r)
     {
@@ -90,6 +103,24 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         else
             zn = scxt::engine::Group::getProcRoutingPathDisplayName(r);
         return zn;
+    }
+    void updateProcRoutingFromInfo()
+    {
+        updateProcRoutingLabel();
+        if constexpr (OTTraits::forZone)
+        {
+            auto c = info.procRoutingConsistent;
+            procRouting->setVisible(c);
+            for (int i = 0; i < nOuts; ++i)
+                levelK[i]->setVisible(c);
+            consistentButton->setVisible(!c);
+            consistentLabel->setVisible(!c);
+
+            if (!c)
+            {
+                consistentButton->setLabel("Set to " + getRoutingName(info.procRouting));
+            }
+        }
     }
     void updateProcRoutingLabel()
     {
@@ -350,7 +381,7 @@ template <typename OTTraits> void OutputPane<OTTraits>::updateFromOutputInfo()
     output->updateRoutingLabel();
     output->repaint();
 
-    proc->updateProcRoutingLabel();
+    proc->updateProcRoutingFromInfo();
     proc->repaint();
 }
 
