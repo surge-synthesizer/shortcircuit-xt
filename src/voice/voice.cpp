@@ -131,6 +131,7 @@ void Voice::voiceStarted()
         else if (lfoEvaluator[i] == CURVE)
         {
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
+            curveLfos[i].assign(&zone->modulatorStorage[i], &engine->transport);
             curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
         }
         else if (lfoEvaluator[i] == ENV)
