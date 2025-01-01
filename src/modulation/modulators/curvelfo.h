@@ -49,6 +49,17 @@ struct CurveLFO : SampleRateSupport
 
     slfo_t::Shape curveShape{slfo_t::SINE};
 
+  private:
+    modulation::ModulatorStorage *settings{nullptr};
+    engine::Transport *td{nullptr};
+
+  public:
+    void assign(modulation::ModulatorStorage *s, engine::Transport *t)
+    {
+        settings = s;
+        td = t;
+    }
+
     float envelope_rate_linear_nowrap(float f)
     {
         return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
@@ -56,6 +67,7 @@ struct CurveLFO : SampleRateSupport
 
     void attack(float initPhase, ModulatorStorage::ModulatorShape shape)
     {
+        assert(settings && td);
         switch (shape)
         {
         case ModulatorStorage::LFO_RAMP:
@@ -85,10 +97,18 @@ struct CurveLFO : SampleRateSupport
     }
 
     uint32_t smp{0};
+    datamodel::pmd tsConverter{datamodel::pmd().asLfoRate()};
     void process(const float rate, const float deform, const float delay, const float attack,
                  const float release, bool useEnv, bool unipolar, bool isGated)
     {
-        simpleLfo.process_block(rate, deform, curveShape);
+        float tsRatio{1.0};
+        float rt = rate;
+        if (settings && td && settings->temposync)
+        {
+            rt = -tsConverter.snapToTemposync(-rt);
+            tsRatio = td->tempo / 120.0;
+        }
+        simpleLfo.process_block(rt, deform, curveShape, false, tsRatio);
         auto lfov = simpleLfo.lastTarget;
         if (unipolar)
             lfov = (lfov + 1) * 0.5;
