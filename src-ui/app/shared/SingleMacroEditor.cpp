@@ -141,6 +141,10 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
             return;
         w->editor->hideTooltip();
     };
+    knob->onPopupMenu = [this, q = juce::Component::SafePointer(knob.get())](auto &mods) {
+        editor->hideTooltip();
+        editor->popupMenuForContinuous(q);
+    };
 
     valueAttachment = std::make_unique<MacroValueAttachment>(editor, part, index);
     knob->setSource(valueAttachment.get());
