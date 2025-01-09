@@ -71,6 +71,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         sst-plugininfra::strnatcmp
         scxt-resources
         scxtui_json_layouts
+        clap_juce_shim
+        clap_juce_shim_headers
+        clap
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
         scxt-core

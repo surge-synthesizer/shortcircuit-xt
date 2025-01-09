@@ -98,6 +98,7 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
         return true;
     };
     ed->setSize(scxt::ui::app::SCXTEditor::edWidth, scxt::ui::app::SCXTEditor::edHeight);
+    ed->clapHost = _host.host();
     return ed;
 }
 
