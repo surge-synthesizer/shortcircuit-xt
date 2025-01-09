@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_UI_APP_SCXTEDITOR_H
 #define SCXT_SRC_UI_APP_SCXTEDITOR_H
 
+#include <clap/clap.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
 #include <type_traits>
@@ -337,6 +338,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
   public:
     std::unique_ptr<juce::FileChooser> fileChooser;
+
+    const clap_host_t *clapHost{nullptr};
 };
 
 template <typename T> inline void HasEditor::sendToSerialization(const T &msg)

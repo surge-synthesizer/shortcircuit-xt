@@ -30,6 +30,9 @@
 #endif
 
 #include "infrastructure/user_defaults.h"
+#include "sst/jucegui/component-adapters/ComponentTags.h"
+#include "sst/clap_juce_shim/menu_helper.h"
+
 #include "app/SCXTEditor.h"
 #include "app/edit-screen/EditScreen.h"
 #include "app/edit-screen/components/AdsrPane.h"
@@ -354,6 +357,12 @@ void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousPara
             return;
         w->continuous()->setValueFromGUI(w->continuous()->getDefaultValue());
     });
+
+    auto pid = sst::jucegui::component_adapters::getClapParamId(e);
+    if (pid.has_value())
+    {
+        sst::clap_juce_shim::populateMenuForClapParam(p, *pid, clapHost);
+    }
 
     p.showMenuAsync(defaultPopupMenuOptions());
 }

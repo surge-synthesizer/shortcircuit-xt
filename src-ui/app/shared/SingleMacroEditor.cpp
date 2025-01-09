@@ -30,6 +30,7 @@
 #include "connectors/PayloadDataAttachment.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/NamedPanel.h"
+#include "sst/jucegui/component-adapters/ComponentTags.h"
 #include "messaging/client/client_messages.h"
 
 namespace scxt::ui::app::shared
@@ -145,6 +146,9 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
         editor->hideTooltip();
         editor->popupMenuForContinuous(q);
     };
+
+    sst::jucegui::component_adapters::setClapParamId(knob.get(),
+                                                     engine::Macro::partIndexToMacroID(p, i));
 
     valueAttachment = std::make_unique<MacroValueAttachment>(editor, part, index);
     knob->setSource(valueAttachment.get());
