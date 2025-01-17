@@ -15,7 +15,7 @@ rebuild a sampler in the spirit of the first two versions of Shortcircuit using
 modern C++ and JUCE. This project, which you are looking at here, is called
 Shortcircuit XT (SCXT) and is underway.
 
-Right now, you can download our pre-alpha version of the
+Right now, you can download our alpha version of the
 instrument [here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)
 or you can build it using the instructions below.
 
