@@ -81,6 +81,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         sst-plugininfra
         sst-plugininfra::tinyxml
         sst-plugininfra::miniz
+        sst-plugininfra::version_information
         sst-voicemanager
 
         libgig libakai

@@ -26,6 +26,9 @@
  */
 
 #include "engine.h"
+
+#include "sst/plugininfra/version_information.h"
+
 #include "configuration.h"
 #include "messaging/audio/audio_serial.h"
 #include "part.h"
@@ -50,7 +53,6 @@
 #include "gig.h"
 #include "SF.h"
 
-#include <version.h>
 #include <filesystem>
 #include <mutex>
 #include "messaging/client/client_serial.h"
@@ -65,7 +67,9 @@ namespace scxt::engine
 Engine::Engine()
 {
     SCLOG("Shortcircuit XT : Constructing Engine");
-    SCLOG("    Version   = " << scxt::build::FullVersionStr);
+    SCLOG("    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
+                             << " / "
+                             << sst::plugininfra::VersionInformation::project_version_and_hash);
     SCLOG("    Stream V  = " << humanReadableVersion(scxt::currentStreamingVersion));
 
     memset(cpuAverages, 0, sizeof(cpuAverages));
@@ -121,7 +125,8 @@ Engine::Engine()
 
     messageController->start();
 
-    browserDb->writeDebugMessage(std::string("SCXT Startup ") + build::FullVersionStr);
+    browserDb->writeDebugMessage(std::string("SCXT Startup ") +
+                                 sst::plugininfra::VersionInformation::project_version_and_hash);
 
     // This forces metadata init of the mod matrix
     modulation::ModulationCurves::initializeCurves();

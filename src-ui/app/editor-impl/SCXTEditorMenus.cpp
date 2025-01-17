@@ -30,6 +30,7 @@
 #endif
 
 #include "infrastructure/user_defaults.h"
+#include "sst/plugininfra/version_information.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
 #include "sst/clap_juce_shim/menu_helper.h"
 
@@ -44,8 +45,6 @@
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/shared/MenuValueTypein.h"
-
-#include <version.h>
 
 namespace scxt::ui::app
 {
@@ -75,7 +74,8 @@ void SCXTEditor::showMainMenu()
     m.addSubMenu("UI Behavior", skin);
 
     m.addSeparator();
-    m.addItem(juce::String("Copy ") + scxt::build::FullVersionStr,
+    m.addItem(juce::String("Copy ") +
+                  sst::plugininfra::VersionInformation::project_version_and_hash,
               [w = juce::Component::SafePointer(this)] {
                   if (w)
                       w->aboutScreen->copyInfo();

@@ -35,8 +35,6 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "utils.h"
 
-#include "version.h"
-
 #include "engine/engine.h"
 #include "app/SCXTEditor.h"
 #include "sst/voicemanager/midi1_to_voicemanager.h"

@@ -36,6 +36,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include "sst/plugininfra/version_information.h"
+
 #if MAC || LINUX
 #include <execinfo.h>
 #include <stdio.h>
@@ -70,11 +72,11 @@ void postToLog(const std::string &s)
 {
     // TODO this sucks also
     auto q = s;
-    auto sp = q.find(SCXT_ROOT_BUILD_DIR);
+    auto sp = q.find(sst::plugininfra::VersionInformation::cmake_source_dir);
 
     if (sp == 0)
     {
-        q = q.substr(sp + strlen(SCXT_ROOT_BUILD_DIR) + 1);
+        q = q.substr(sp + strlen(sst::plugininfra::VersionInformation::cmake_source_dir) + 1);
     }
     std::cout << q << std::flush;
     std::lock_guard<std::mutex> g(logMutex);
