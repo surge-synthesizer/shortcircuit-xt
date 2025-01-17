@@ -24,7 +24,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # TODO Remove This before we ship non beta version. Remember
 # the AU rescans only when versions change even if binaries are
 # different.
-message(STATUS "ShortcircuitXT: Using date-driven version while in alpha")
 string(TIMESTAMP DAY_OF_YEAR "%j")
 string(TIMESTAMP YEAR "%Y")
 math(EXPR PART0 "${YEAR}-2023 + 6")
@@ -32,25 +31,10 @@ math(EXPR PART1 "${DAY_OF_YEAR} + 1")
 
 project(ShortcircuitXT VERSION 0.${PART0}.${PART1}.0 LANGUAGES C CXX ASM)
 set(ShortcircuitXT_VERSION ${PROJECT_VERSION})
+message(STATUS "ShortcircuitXT: Using date-driven version while in alpha - ${PROJECT_VERSION}")
 
-if (APPLE)
-    enable_language(OBJC)
-    enable_language(OBJCXX)
-    set(CMAKE_OBJC_VISIBILITY_PRESET hidden)
-    set(CMAKE_OBJCXX_VISIBILITY_PRESET hidden)
-    if( ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "15.0.0" AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "15.1")
-        add_link_options(-Wl,-ld_classic)
-        add_compile_definitions(JUCE_SILENCE_XCODE_15_LINKER_WARNING=1)
-    endif()
-endif ()
-
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Never want shared if not specified")
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-
+include(libs/sst/sst-plugininfra/cmake/git-version-functions.cmake)
+version_from_versionfile_or_git()
 
 # Build Time Options
 option(SCXT_BUILD_VST3 "Build a VST3 plugin" ON)
@@ -78,12 +62,6 @@ else()
     option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" OFF)
 endif()
 
-# Calculate bitness
-math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
-if (NOT ${BITS} EQUAL 64)
-    message(WARNING "${PROJECT_NAME} has only been tested on 64 bits. This may not work")
-endif ()
-
 # Share some information about the  build
 message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
 message(STATUS "Compiler Version is ${CMAKE_CXX_COMPILER_VERSION}")
@@ -91,35 +69,13 @@ if (MSVC)
     message(STATUS "Windows Architecture is ${CMAKE_GENERATOR_PLATFORM}")
 endif()
 
-# Everything here is C++ 17 now
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
-    message(STATUS "Setting -no-pie on EXE flags; use SCXT_SKIP_PIE_CHANGE=TRUE to avoid")
-    set(CMAKE_EXE_LINKER_FLAGS "-no-pie")
-endif ()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    if (${SCXT_SANITIZE})
-        message(STATUS "Sanitizer is ON")
-    endif ()
-
-    # BP note: If you want to turn on llvm/gcc sanitize, remove this and the link options below
-    add_compile_options(
-            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
-            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
-    )
-
-    add_link_options(
-            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
-            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
-    )
-endif ()
-
-add_compile_definitions(SCXT_ROOT_BUILD_DIR="${CMAKE_SOURCE_DIR}")
-
-include(cmake/compiler-and-git.cmake)
+include(cmake/compiler-options.cmake)
 include(cmake/CmakeRC.cmake)
 
+# Setup libraries
 add_subdirectory(libs)
+
 
 # Next for now
 add_subdirectory(src)
@@ -128,24 +84,6 @@ add_subdirectory(src-ui)
 add_subdirectory(tests)
 add_subdirectory(clients)
 
+
 include(cmake/basic-installer.cmake)
 
-
-add_custom_target(scxt-code-checks)
-
-# Clang Format checks
-find_program(CLANG_FORMAT_EXE NAMES clang-format-12 clang-format)
-set(CLANG_FORMAT_DIRS src src-ui tests clients)
-set(CLANG_FORMAT_EXTS cpp h)
-foreach (dir ${CLANG_FORMAT_DIRS})
-    foreach (ext ${CLANG_FORMAT_EXTS})
-        list(APPEND CLANG_FORMAT_GLOBS "':(glob)${dir}/**/*.${ext}'")
-    endforeach ()
-endforeach ()
-add_custom_command(TARGET scxt-code-checks
-        POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E echo About to check clang-format using ${CLANG_FORMAT_EXE}
-        COMMAND git ls-files -- ${CLANG_FORMAT_GLOBS} | xargs ${CLANG_FORMAT_EXE} --dry-run --Werror
-        )
-# }}}

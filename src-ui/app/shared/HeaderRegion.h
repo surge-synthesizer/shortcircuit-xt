@@ -37,8 +37,6 @@
 #include <sst/jucegui/components/VUMeter.h>
 #include <fmt/core.h>
 
-#include <version.h>
-
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
 #include "app/HasEditor.h"

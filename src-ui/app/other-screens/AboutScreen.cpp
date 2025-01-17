@@ -27,11 +27,10 @@
 
 #include "AboutScreen.h"
 #include "utils.h"
+#include "sst/plugininfra/version_information.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "app/SCXTEditor.h"
 #include "connectors/SCXTResources.h"
-
-#include <version.h>
 
 namespace scxt::ui::app::other_screens
 {
@@ -88,7 +87,9 @@ AboutScreen::~AboutScreen() {}
 void AboutScreen::resetInfo()
 {
     info.clear();
-    std::string ver = scxt::build::FullVersionStr;
+    std::string ver = sst::plugininfra::VersionInformation::git_implied_display_version;
+    ver += " / ";
+    ver += sst::plugininfra::VersionInformation::project_version_and_hash;
     ver += " (JUCE " + std::to_string(JUCE_MAJOR_VERSION) + "." +
            std::to_string(JUCE_MINOR_VERSION) + "." + std::to_string(JUCE_BUILDNUMBER) + ")";
     info.push_back({"Version", ver, false});
@@ -103,8 +104,9 @@ void AboutScreen::resetInfo()
     platform += " on " + sst::plugininfra::cpufeatures::brand();
     info.push_back({"System", platform, false});
     info.push_back({"Build",
-                    std::string() + scxt::build::BuildDate + " " + scxt::build::BuildTime +
-                        " with " + scxt::build::BuildCompiler,
+                    std::string() + sst::plugininfra::VersionInformation::build_date + " " +
+                        sst::plugininfra::VersionInformation::build_time + " with " +
+                        sst::plugininfra::VersionInformation::cmake_compiler,
                     false});
     info.push_back({"Env",
                     fmt::format("{} at {} Hz", editor->engineStatus.runningEnvironment,

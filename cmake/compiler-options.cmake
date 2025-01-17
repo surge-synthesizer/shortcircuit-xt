@@ -1,38 +1,60 @@
-# Set up version information using the same approach as surge, namely
-# with an external cmake run, a git-info target, and a generated
-# ${bld}/geninclude/version.cpp
 
-add_custom_target(version-info BYPRODUCTS ${CMAKE_BINARY_DIR}/geninclude/version.cpp
-        DEPENDS ${CMAKE_SOURCE_DIR}/cmake/version.h
-        ${CMAKE_SOURCE_DIR}/cmake/version.cpp.in
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${CMAKE_COMMAND}
-        -D PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        -D PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        -D SHORTCSRC=${CMAKE_SOURCE_DIR}
-        -D SHORTCBLD=${CMAKE_BINARY_DIR}
-        -D AZURE_PIPELINE=${AZURE_PIPELINE}
-        -D WIN32=${WIN32}
-        -D CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
-        -D CMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
-        -P ${CMAKE_SOURCE_DIR}/cmake/versiontools.cmake
-)
+# Calculate bitness
+math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
+if (NOT ${BITS} EQUAL 64)
+    message(WARNING "${PROJECT_NAME} has only been tested on 64 bits. This may not work")
+endif ()
+
+
+# Everything here is C++ 17 now
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND UNIX AND NOT APPLE AND NOT SCXT_SKIP_PIE_CHANGE)
+    message(STATUS "Setting -no-pie on EXE flags; use SCXT_SKIP_PIE_CHANGE=TRUE to avoid")
+    set(CMAKE_EXE_LINKER_FLAGS "-no-pie")
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    if (${SCXT_SANITIZE})
+        message(STATUS "Sanitizer is ON")
+    endif ()
+
+    # BP note: If you want to turn on llvm/gcc sanitize, remove this and the link options below
+    add_compile_options(
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+    )
+
+    add_link_options(
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
+            $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+    )
+endif ()
+
 
 # Platform Specific Compile Settings
-add_library(sc-compiler-options)
+add_library(sc-compiler-options INTERFACE)
 
-target_sources(sc-compiler-options PRIVATE ${CMAKE_BINARY_DIR}/geninclude/version.cpp)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Never want shared if not specified")
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
-target_include_directories(sc-compiler-options PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+if (${BUILD_SHARED_LIBS})
+    message(FATAL_ERROR "You have overriden BUILD_SHARED_LIBS to be ON. This is an unsupported configuration")
+endif()
 
-# visibility needs to be consistent across the whole project
-add_compile_options(
-        # PE/COFF doesn't support visibility
-        $<$<NOT:$<BOOL:${WIN32}>>:-fvisibility=hidden>
+if (APPLE)
+    enable_language(OBJC)
+    enable_language(OBJCXX)
+    set(CMAKE_OBJC_VISIBILITY_PRESET hidden)
+    set(CMAKE_OBJCXX_VISIBILITY_PRESET hidden)
+    if( ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "15.0.0" AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "15.1")
+        add_link_options(-Wl,-ld_classic)
+        add_compile_definitions(JUCE_SILENCE_XCODE_15_LINKER_WARNING=1)
+    endif()
+endif ()
 
-        # Inlines visibility is only relevant with C++
-        $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>
-)
 
 if (APPLE)
     set(OS_COMPILE_OPTIONS

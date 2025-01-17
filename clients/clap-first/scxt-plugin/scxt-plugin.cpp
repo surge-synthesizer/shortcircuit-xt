@@ -29,7 +29,7 @@
 #include <chrono>
 
 #include "scxt-plugin.h"
-#include "version.h"
+#include "sst/plugininfra/version_information.h"
 #include "app/SCXTEditor.h"
 
 namespace scxt::clap_first::scxt_plugin
@@ -39,16 +39,17 @@ const clap_plugin_descriptor *getDescription()
     static const char *features[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SAMPLER,
                                      CLAP_PLUGIN_FEATURE_SYNTHESIZER, "Free and Open Source",
                                      nullptr};
-    static clap_plugin_descriptor desc = {CLAP_VERSION,
-                                          "org.surge-synth-team.shortcircuit-xt",
-                                          "Shortcircuit XT",
-                                          "Surge Synth Team",
-                                          "https://surge-synth-team.org",
-                                          "",
-                                          "",
-                                          scxt::build::FullVersionStr,
-                                          "The Flagship Creative Sampler from the Surge Synth Team",
-                                          &features[0]};
+    static clap_plugin_descriptor desc = {
+        CLAP_VERSION,
+        "org.surge-synth-team.shortcircuit-xt",
+        "Shortcircuit XT",
+        "Surge Synth Team",
+        "https://surge-synth-team.org",
+        "",
+        "",
+        sst::plugininfra::VersionInformation::project_version_and_hash,
+        "The Flagship Creative Sampler from the Surge Synth Team",
+        &features[0]};
     return &desc;
 }
 
