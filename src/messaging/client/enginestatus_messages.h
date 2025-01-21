@@ -49,7 +49,7 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
         cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
             try
             {
-                nonconste.stopAllSounds();
+                nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamEngineState(nonconste, payload);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
@@ -65,7 +65,7 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
     {
         try
         {
-            engine.stopAllSounds();
+            engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamEngineState(engine, payload);
             cont.sendStreamCompleteNotification();
         }
@@ -83,9 +83,9 @@ inline void stopSoundsMessage(const stopSounds_t &payload, messaging::MessageCon
 {
     cont.scheduleAudioThreadCallback([p = payload](scxt::engine::Engine &e) {
         if (p)
-            e.stopAllSounds();
+            e.voiceManager.allSoundsOff();
         else
-            e.releaseAllVoices();
+            e.voiceManager.allNotesOff();
     });
 }
 CLIENT_TO_SERIAL(StopSounds, c2s_silence_engine, stopSounds_t, stopSoundsMessage(payload, cont));

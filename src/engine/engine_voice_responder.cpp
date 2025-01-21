@@ -237,7 +237,7 @@ void Engine::VoiceManagerResponder::setPolyphonicAftertouch(voice::Voice *v, int
 void Engine::VoiceManagerResponder::terminateVoice(voice::Voice *v)
 {
     SCLOG_IF(voiceResponder, "terminateVoice " << v << " " << (int)v->key);
-    ;
+
     if (!v->isVoicePlaying)
         return;
     if (v->isGated)

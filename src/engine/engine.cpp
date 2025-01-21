@@ -257,23 +257,24 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
 #endif
 }
 
-void Engine::releaseAllVoices()
-{
-    for (auto &v : voices)
-    {
-        if (v && v->isVoiceAssigned && v->isGated)
-            v->release();
-    }
-}
-
-void Engine::stopAllSounds()
+void Engine::immediatelyTerminateAllVoices()
 {
     std::array<voice::Voice *, maxVoices> toCleanUp{};
+    int idx{0};
     for (auto &v : voices)
     {
         if (v && v->isVoiceAssigned && v->isVoicePlaying)
-            v->beginTerminationSequence();
+            toCleanUp[idx++] = v;
     }
+
+    for (auto tc : toCleanUp)
+    {
+        if (tc)
+        {
+            tc->cleanupVoice();
+        }
+    }
+    forceVoiceUpdate = true;
 }
 
 bool Engine::processAudio()
@@ -388,16 +389,17 @@ bool Engine::processAudio()
 #endif
 
     bool doUpdate = messageController->isClientConnected &&
-                    (
-                        // voice count changed
-                        (pav != av) ||
-                        // voices are playing and timer ticked by
-                        ((pav != 0) && sendSamplePosition &&
-                         (lastUpdateVoiceDisplayState >= updateVoiceDisplayStateEvery)) ||
-                        // Midi has arrived
-                        (midiNoteStateCounter != lastMidiNoteStateCounter));
+                    (forceVoiceUpdate ||
+                     // voice count changed
+                     (pav != av) ||
+                     // voices are playing and timer ticked by
+                     ((pav != 0) && sendSamplePosition &&
+                      (lastUpdateVoiceDisplayState >= updateVoiceDisplayStateEvery)) ||
+                     // Midi has arrived
+                     (midiNoteStateCounter != lastMidiNoteStateCounter));
     if (doUpdate)
     {
+        forceVoiceUpdate = false;
         lastUpdateVoiceDisplayState = 0;
         lastMidiNoteStateCounter = midiNoteStateCounter;
 
