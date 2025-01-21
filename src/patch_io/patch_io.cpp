@@ -160,7 +160,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine)
         cont->stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
             try
             {
-                nonconste.stopAllSounds();
+                nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamEngineState(nonconste, payload, true);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
@@ -175,7 +175,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine)
     {
         try
         {
-            engine.stopAllSounds();
+            engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamEngineState(engine, payload, true);
         }
         catch (std::exception &err)
@@ -209,7 +209,7 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
         cont->stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
             try
             {
-                nonconste.stopAllSounds();
+                nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamEngineState(nonconste, payload, true);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
@@ -224,7 +224,7 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
     {
         try
         {
-            engine.stopAllSounds();
+            engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamEngineState(engine, payload, true);
         }
         catch (std::exception &err)
@@ -258,7 +258,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
         cont->stopAudioThreadThenRunOnSerial([payload, part, &nonconste = engine](auto &e) {
             try
             {
-                nonconste.stopAllSounds();
+                nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamPartState(nonconste, part, payload, true);
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();
@@ -273,7 +273,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
     {
         try
         {
-            engine.stopAllSounds();
+            engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamPartState(engine, part, payload, true);
         }
         catch (std::exception &err)

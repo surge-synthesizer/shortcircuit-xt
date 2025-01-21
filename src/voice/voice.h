@@ -221,7 +221,11 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         voiceStarted();
     }
     void release() { setIsGated(false); }
-    void beginTerminationSequence() { terminationSequence = blocksToTerminate; }
+    void beginTerminationSequence()
+    {
+        SCLOG("beginTerminationSequence on " << std::hex << this << std::dec);
+        terminationSequence = blocksToTerminate;
+    }
     void cleanupVoice();
 
     void onSampleRateChanged() override;

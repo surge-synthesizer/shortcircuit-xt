@@ -65,6 +65,8 @@ Voice::~Voice()
 
 void Voice::cleanupVoice()
 {
+    SCLOG("cleanupVoice on " << std::hex << this << std::dec);
+
     zone->removeVoice(this);
     zone = nullptr;
     isVoiceAssigned = false;

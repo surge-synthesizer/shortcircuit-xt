@@ -266,8 +266,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     voice::Voice *initiateVoice(const pathToZone_t &path);
     void releaseVoice(int16_t channel, int16_t key, int32_t noteid, int32_t releaseVelocity);
 
-    void releaseAllVoices();
-    void stopAllSounds();
+    // This is an immediate termination like if we are about to tear down the
+    // engine on an unstream. No fade, no nothing.
+    void immediatelyTerminateAllVoices();
 
     // TODO: All this gets ripped out when voice management is fixed
     void assertActiveVoiceCount();
@@ -422,6 +423,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     int32_t updateVoiceDisplayStateEvery{10000000};
     int32_t lastUpdateVoiceDisplayState{0};
     int64_t midiNoteStateCounter{0}, lastMidiNoteStateCounter{0};
+    bool forceVoiceUpdate{false};
     bool sendSamplePosition{true};
 
     /*
