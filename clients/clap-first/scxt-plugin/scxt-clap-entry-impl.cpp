@@ -37,6 +37,7 @@
 
 #include "clapwrapper/vst3.h"
 #include "clapwrapper/auv2.h"
+#include "sst/plugininfra/misc_platform.h"
 
 namespace scxt::clap_first
 {
@@ -106,7 +107,10 @@ const void *get_factory(const char *factory_id)
 }
 
 // clap_init and clap_deinit are required to be fast, but we have nothing we need to do here
-bool clap_init(const char *p) { return true; }
+bool clap_init(const char *p) {
+    // sst::plugininfra::misc_platform::allocateConsole();
+    return true;
+}
 void clap_deinit() {}
 
 } // namespace scxt::clap_first
