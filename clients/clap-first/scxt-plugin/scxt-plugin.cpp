@@ -88,17 +88,20 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
     ed->onZoomChanged = [this](auto f) {
         if (_host.canUseGui() && clapJuceShim->isEditorAttached())
         {
-            // SCLOG("On Zoom Changed with " << f << " - requesting resize of " <<
-            // scxt::ui::SCXTEditor::edWidth * f << "x" << scxt::ui::SCXTEditor::edHeight * f)
             _host.guiRequestResize(scxt::ui::app::SCXTEditor::edWidth * f,
                                    scxt::ui::app::SCXTEditor::edHeight * f);
+        }
+        else
+        {
+            SCLOG("On Zoom Changed - not yet attached");
         }
     };
     onShow = [e = ed.get()]() {
         e->setZoomFactor(e->zoomFactor);
         return true;
     };
-    ed->setSize(scxt::ui::app::SCXTEditor::edWidth, scxt::ui::app::SCXTEditor::edHeight);
+    ed->setSize(scxt::ui::app::SCXTEditor::edWidth * ed->zoomFactor, scxt::ui::app::SCXTEditor::edHeight * ed->zoomFactor);
+
     ed->clapHost = _host.host();
     return ed;
 }

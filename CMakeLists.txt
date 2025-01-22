@@ -56,11 +56,7 @@ else()
 endif()
 
 option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
-if (WIN32)
-    option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" ON)
-else()
-    option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" OFF)
-endif()
+option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" ON)
 
 # Share some information about the  build
 message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")
