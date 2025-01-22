@@ -214,20 +214,20 @@ void SCXTEditor::showWelcomeOverlay()
 void SCXTEditor::resized()
 {
     static constexpr int32_t headerHeight{40};
-    headerRegion->setBounds(0, 0, getWidth(), headerHeight);
+    headerRegion->setBounds(0, 0, edWidth, headerHeight);
 
     if (editScreen->isVisible())
-        editScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+        editScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (mixerScreen->isVisible())
-        mixerScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+        mixerScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (playScreen->isVisible())
-        playScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+        playScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (aboutScreen->isVisible())
-        aboutScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+        aboutScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (logScreen->isVisible())
-        logScreen->setBounds(0, headerHeight, getWidth(), getHeight() - headerHeight);
+        logScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (welcomeScreen->isVisible())
-        welcomeScreen->setBounds(0, 0, getWidth(), getHeight());
+        welcomeScreen->setBounds(0, 0, edWidth, edHeight);
 }
 
 void SCXTEditor::idle()
@@ -421,6 +421,8 @@ void SCXTEditor::setZoomFactor(float zf)
                                             zoomFactor * 100);
     if (onZoomChanged)
         onZoomChanged(zoomFactor);
+    else
+        SCLOG("Null onZoomChanged");
 }
 
 void SCXTEditor::configureHasDiscreteMenuBuilder(
