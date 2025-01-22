@@ -100,7 +100,8 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
         e->setZoomFactor(e->zoomFactor);
         return true;
     };
-    ed->setSize(scxt::ui::app::SCXTEditor::edWidth * ed->zoomFactor, scxt::ui::app::SCXTEditor::edHeight * ed->zoomFactor);
+    ed->setSize(scxt::ui::app::SCXTEditor::edWidth * ed->zoomFactor,
+                scxt::ui::app::SCXTEditor::edHeight * ed->zoomFactor);
 
     ed->clapHost = _host.host();
     return ed;
