@@ -107,7 +107,8 @@ const void *get_factory(const char *factory_id)
 }
 
 // clap_init and clap_deinit are required to be fast, but we have nothing we need to do here
-bool clap_init(const char *p) {
+bool clap_init(const char *p)
+{
     // sst::plugininfra::misc_platform::allocateConsole();
     return true;
 }
