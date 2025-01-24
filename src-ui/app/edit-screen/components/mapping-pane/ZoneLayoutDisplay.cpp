@@ -1019,6 +1019,9 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
         (float)ZoneLayoutKeyboard::firstMidiNote, (float)ZoneLayoutKeyboard::lastMidiNote);
 
     auto fromTop = std::clamp((p.getY() - bip.getY()), 0, getHeight()) * 1.f / getHeight();
+    // have the top 10% cover the entire zone since the sqrt is a bit sensitive
+    static constexpr float zoneTrim{0.15f};
+    fromTop = std::clamp((fromTop - zoneTrim) / (1.f - zoneTrim), 0.f, 1.f);
     auto span = (1.0f - sqrt(fromTop)) * 80;
     auto low = std::clamp(rootKey - span, 0.f, 127.f);
     auto high = std::clamp(rootKey + span, 0.f, 127.f);
