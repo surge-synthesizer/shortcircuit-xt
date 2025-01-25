@@ -715,6 +715,87 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
         });
 }
 
+void Engine::copyZone(const selection::SelectionManager::ZoneAddress &s)
+{
+    auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+    auto v = json::scxt_value(*zoneO);
+    zoneClipboard = tao::json::msgpack::to_string(v);
+}
+
+void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
+{
+    if (zoneClipboard.empty())
+        return;
+    tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
+    tao::json::msgpack::events::from_string(consumer, zoneClipboard);
+    auto v = std::move(consumer.value);
+    auto zptr = std::make_unique<Zone>();
+    v.to(*zptr);
+
+    zptr->setupOnUnstream(*this);
+
+    auto sp = a.part;
+    ;
+    auto sg = a.group;
+    ;
+
+    // 3. Send a message to the audio thread saying to add that zone and
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+
+            // 4. have the audio thread message back here to refresh the ui
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+        });
+}
+
+void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    // 2. Create a zone object on this thread but don't add it
+    auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+    auto v = json::scxt_value(*zoneO);
+    auto zptr = std::make_unique<Zone>();
+    v.to(*zptr);
+
+    zptr->setupOnUnstream(*this);
+
+    // give it a name
+    zptr->givenName = zoneO->getName() + " (copy)";
+
+    // Drop into selected group logic goes here
+    auto sp = s.part;
+    ;
+    auto sg = s.group;
+    ;
+
+    // 3. Send a message to the audio thread saying to add that zone and
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+
+            // 4. have the audio thread message back here to refresh the ui
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+        });
+}
+
 void Engine::sendMetadataToClient() const
 {
     // On register send metadata

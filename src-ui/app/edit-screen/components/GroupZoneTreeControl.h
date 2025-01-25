@@ -250,12 +250,34 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                             return;
                         w->doZoneRename();
                     });
+
+                    p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::CopyZone(za));
+                    });
+
+                    p.addItem("Paste", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::PasteZone(za));
+                    });
+
+                    p.addItem("Duplicate", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::DuplicateZone(za));
+                    });
                     p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
                             return;
                         auto za = w->getZoneAddress();
                         w->gsb->sendToSerialization(cmsg::DeleteZone(za));
                     });
+                    p.addSeparator();
                     p.addItem("Delete All Selected Zones",
                               [w = juce::Component::SafePointer(this)]() {
                                   if (!w)
@@ -278,6 +300,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                         if (!w)
                             return;
                         w->doGroupRename();
+                    });
+                    p.addItem("Paste Zone", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::PasteZone(za));
                     });
                     p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
