@@ -446,6 +446,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                             VelocityRange vrange = {0, 127});
 
     void createEmptyZone(KeyboardRange krange = {48, 72}, VelocityRange vrange = {0, 127});
+    void duplicateZone(const selection::SelectionManager::ZoneAddress &);
+    void copyZone(const selection::SelectionManager::ZoneAddress &);
+    void pasteZone(const selection::SelectionManager::ZoneAddress &);
+    std::string zoneClipboard;
 
     void loadSf2MultiSampleIntoSelectedPart(const fs::path &);
 

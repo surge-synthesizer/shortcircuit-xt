@@ -177,6 +177,13 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
 CLIENT_TO_SERIAL(DeleteZone, c2s_delete_zone, selection::SelectionManager::ZoneAddress,
                  removeZone(payload, engine, cont));
 
+CLIENT_TO_SERIAL(DuplicateZone, c2s_duplicate_zone, selection::SelectionManager::ZoneAddress,
+                 engine.duplicateZone(payload));
+CLIENT_TO_SERIAL(CopyZone, c2s_copy_zone, selection::SelectionManager::ZoneAddress,
+                 engine.copyZone(payload));
+CLIENT_TO_SERIAL(PasteZone, c2s_paste_zone, selection::SelectionManager::ZoneAddress,
+                 engine.pasteZone(payload));
+
 inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageController &cont)
 {
     auto part = engine.getSelectionManager()->selectedPart;
