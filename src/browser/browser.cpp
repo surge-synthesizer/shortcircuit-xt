@@ -28,6 +28,7 @@
 #include "browser.h"
 #include "browser_db.h"
 #include "utils.h"
+#include "sample/compound_file.h"
 
 namespace scxt::browser
 {
@@ -110,5 +111,18 @@ void Browser::removeRootPathForDeviceView(const fs::path &p)
 {
     browserDb.addRemoveDeviceLocation(p, false);
     browserDb.waitForJobsOutstandingComplete(100);
+}
+
+std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const fs::path &p)
+{
+    if (extensionMatches(p, ".sf2"))
+    {
+        auto inst = sample::compound::getSF2InstrumentAddresses(p);
+        auto smp = sample::compound::getSF2SampleAddresses(p);
+        inst.insert(inst.end(), smp.begin(), smp.end());
+
+        return inst;
+    }
+    return {};
 }
 } // namespace scxt::browser

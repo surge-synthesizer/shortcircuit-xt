@@ -125,6 +125,8 @@ enum ClientToSerializationMessagesIds
     c2s_add_sample,
     c2s_add_sample_with_range,
     c2s_add_sample_in_zone,
+    c2s_add_compound_element_with_range,
+    c2s_add_compound_element_in_zone,
     c2s_create_group,
     c2s_move_zone,
     c2s_delete_zone,

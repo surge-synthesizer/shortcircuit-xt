@@ -38,6 +38,7 @@
 #include "engine/group.h"
 #include "engine/zone.h"
 #include "engine/patch.h"
+#include "sample/compound_file.h"
 
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/data/Discrete.h"
@@ -98,6 +99,7 @@ struct SCXTEditorDataCache
         void sourceVanished(sst::jucegui::data::Discrete *c) override;
     } dlistener{*this};
 };
+
 } // namespace scxt::ui::app
 
 #endif // SCXTEDITORDATACACHE_H

@@ -102,6 +102,21 @@ inline void addSampleWithRange(const addSampleWithRange_t &payload, engine::Engi
 CLIENT_TO_SERIAL(AddSampleWithRange, c2s_add_sample_with_range, addSampleWithRange_t,
                  addSampleWithRange(payload, engine, cont);)
 
+using addCompoundElementWithRange_t =
+    std::tuple<sample::compound::CompoundElement, int, int, int, int, int>;
+inline void addCompoundElementWithRange(const addCompoundElementWithRange_t &payload,
+                                        engine::Engine &engine, MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    auto el = std::get<0>(payload);
+    auto rk = std::get<1>(payload);
+    auto kr = engine::KeyboardRange(std::get<2>(payload), std::get<3>(payload));
+    auto vr = engine::VelocityRange(std::get<4>(payload), std::get<5>(payload));
+    engine.loadCompoundElementIntoSelectedPartAndGroup(el, rk, kr, vr);
+}
+CLIENT_TO_SERIAL(AddCompoundElementWithRange, c2s_add_compound_element_with_range,
+                 addCompoundElementWithRange_t, addCompoundElementWithRange(payload, engine, cont);)
+
 // sample, part, group, wone, sampleid
 using addSampleInZone_t = std::tuple<std::string, int, int, int, int>;
 inline void addSampleInZone(const addSampleInZone_t &payload, engine::Engine &engine,
@@ -118,6 +133,24 @@ inline void addSampleInZone(const addSampleInZone_t &payload, engine::Engine &en
 }
 CLIENT_TO_SERIAL(AddSampleInZone, c2s_add_sample_in_zone, addSampleInZone_t,
                  addSampleInZone(payload, engine, cont);)
+
+// sample, part, group, wone, sampleid
+using addCompoundElementInZone_t =
+    std::tuple<sample::compound::CompoundElement, int, int, int, int>;
+inline void addCompoundElementInZone(const addCompoundElementInZone_t &payload,
+                                     engine::Engine &engine, MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    auto el = std::get<0>(payload);
+    auto part{std::get<1>(payload)};
+    auto group{std::get<2>(payload)};
+    auto zone{std::get<3>(payload)};
+    auto sampleID{std::get<4>(payload)};
+
+    engine.loadCompoundElementIntoZone(el, part, group, zone, sampleID);
+}
+CLIENT_TO_SERIAL(AddCompoundElementInZone, c2s_add_compound_element_in_zone,
+                 addCompoundElementInZone_t, addCompoundElementInZone(payload, engine, cont);)
 
 inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
 {

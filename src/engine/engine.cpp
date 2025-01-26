@@ -524,12 +524,56 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
     return res;
 }
 
-void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t groupID, int16_t zoneID,
-                                int sampleID, int16_t rootKey, KeyboardRange krange,
-                                VelocityRange vrange)
+void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement &p, int16_t partID,
+                                         int16_t groupID, int16_t zoneID, int variantID)
 {
     assert(messageController->threadingChecker.isSerialThread());
-    assert(sampleID < maxVariantsPerZone);
+    assert(variantID < maxVariantsPerZone);
+
+    auto sz = getSelectionManager()->currentLeadZone(*this);
+
+    if (!sz.has_value())
+    {
+        messageController->reportErrorToClient("Unable to load Sample",
+                                               "There is no currentLeadZone");
+        return;
+    }
+
+    assert((*sz).part == partID);
+    assert((*sz).group == groupID);
+    assert((*sz).zone == zoneID);
+
+    auto osid = SampleID();
+    auto sid = sampleManager->loadSampleByFileAddress(p.sampleAddress, osid);
+
+    if (!sid.has_value())
+    {
+        messageController->reportErrorToClient(
+            "Unable to load Compoint Sample",
+            "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
+                "More information may be available in the log file (menu/log)");
+        return;
+    }
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [p = partID, g = groupID, z = zoneID, sID = variantID, sample = *sid](auto &e) {
+            auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+            zone->terminateAllVoices();
+            zone->variantData.variants[sID].sampleID = sample;
+            zone->variantData.variants[sID].active = true;
+            zone->attachToSample(*e.getSampleManager(), sID,
+                                 (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
+        },
+        [p = partID, g = groupID, z = zoneID](auto &e) {
+            e.getSelectionManager()->selectAction({p, g, z, true, true, true});
+        });
+}
+
+void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t groupID, int16_t zoneID,
+                                int variantID)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+    assert(variantID < maxVariantsPerZone);
 
     // TODO: Deal with compound types more comprehensively
     // If you add a type here add it to Browser::isLoadableFile also
@@ -568,7 +612,7 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
     }
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [p = partID, g = groupID, z = zoneID, sID = sampleID, sample = *sid](auto &e) {
+        [p = partID, g = groupID, z = zoneID, sID = variantID, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
             zone->terminateAllVoices();
             zone->variantData.variants[sID].sampleID = sample;
@@ -578,6 +622,57 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
         },
         [p = partID, g = groupID, z = zoneID](auto &e) {
             e.getSelectionManager()->selectAction({p, g, z, true, true, true});
+        });
+}
+
+void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound::CompoundElement &p,
+                                                         int16_t rootKey, KeyboardRange krange,
+                                                         VelocityRange vrange)
+{
+    SCLOG("Wahey");
+    if (p.type == sample::compound::CompoundElement::INSTRUMENT)
+    {
+        return;
+    }
+
+    auto osid = SampleID();
+    auto sid = sampleManager->loadSampleByFileAddress(p.sampleAddress, osid);
+
+    if (!sid.has_value())
+    {
+        messageController->reportErrorToClient(
+            "Unable to load Compound Sample Element",
+            "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
+                "More information may be available in the log file (menu/log)");
+        return;
+    }
+
+    // 2. Create a zone object on this thread but don't add it
+    auto zptr = std::make_unique<Zone>(*sid);
+    // TODO fixme
+    zptr->mapping.keyboardRange = krange;
+    zptr->mapping.velocityRange = vrange;
+    zptr->mapping.rootKey = rootKey;
+    zptr->attachToSample(*sampleManager);
+
+    // Drop into selected group logic goes here
+    auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
+
+    // 3. Send a message to the audio thread saying to add that zone and
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+
+            // 4. have the audio thread message back here to refresh the ui
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
         });
 }
 

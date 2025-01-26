@@ -36,6 +36,7 @@
 #include "sst/plugininfra/strnatcmp.h"
 
 #include <infrastructure/user_defaults.h>
+#include "BrowserPaneInterfaces.h"
 
 namespace scxt::ui::app::browser_ui
 {
@@ -251,7 +252,13 @@ struct DriveFSArea : juce::Component, HasEditor
         }
     }
 
-    std::vector<fs::directory_entry> contents;
+    struct RowContents
+    {
+        fs::directory_entry dirent;
+        bool isExpanded{false};
+        std::optional<sample::compound::CompoundElement> expandableAddress{std::nullopt};
+    };
+    std::vector<RowContents> contents;
     void recalcContents()
     {
         // Make a copy for now. this sucks and we should be smarter
@@ -274,7 +281,7 @@ struct DriveFSArea : juce::Component, HasEditor
 
                 if (include)
                 {
-                    lcontents.push_back(dir_entry);
+                    lcontents.push_back({dir_entry});
                 }
             }
         }
@@ -283,10 +290,11 @@ struct DriveFSArea : juce::Component, HasEditor
             SCLOG(e.what());
         }
         std::sort(lcontents.begin(), lcontents.end(), [](auto &a, auto &b) {
-            return strnatcasecmp(a.path().u8string().c_str(), b.path().u8string().c_str()) < 0;
+            return strnatcasecmp(a.dirent.path().u8string().c_str(),
+                                 b.dirent.path().u8string().c_str()) < 0;
         });
         if (currentPath > rootPath)
-            contents.emplace_back("..");
+            contents.push_back({fs::directory_entry("..")});
         for (auto &c : lcontents)
             contents.emplace_back(c);
         listView->refresh();
@@ -299,6 +307,40 @@ struct DriveFSArea : juce::Component, HasEditor
     }
 
     void setupListView();
+
+    void expandMultifile(int row)
+    {
+        auto &ent = contents[row];
+        assert(!ent.isExpanded);
+        auto ct = browser::Browser::expandForBrowser(ent.dirent.path());
+        if (!ct.empty())
+        {
+            auto after = contents.begin() + row + 1;
+            for (auto c : ct)
+            {
+                after = contents.insert(after, {contents[row].dirent, false, c});
+                after++;
+            }
+
+            listView->rowSelected(row + 1, true);
+        }
+        ent.isExpanded = true;
+        listView->refresh();
+    }
+    void collapsMultifile(int row)
+    {
+        auto &ent = contents[row];
+        assert(ent.isExpanded);
+        auto after = contents.begin() + row + 1;
+        while (after != contents.end() && after->expandableAddress.has_value() &&
+               after->dirent.path() == ent.dirent.path())
+        {
+            after = contents.erase(after);
+        }
+        ent.isExpanded = false;
+        listView->rowSelected(row, true);
+        listView->refresh();
+    }
 };
 
 struct DevicesPane : HasEditor, juce::Component
@@ -348,12 +390,13 @@ void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
     }
 }
 
-struct DriveFSRowComponent : public juce::Component
+struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 {
     bool isSelected;
     int rowNumber;
     BrowserPane *browserPane{nullptr};
     jcmp::ListView *listView{nullptr};
+    static constexpr int32_t glyphSize{14};
 
     DriveFSRowComponent(BrowserPane *p, jcmp::ListView *v) : browserPane(p), listView(v) {}
 
@@ -361,19 +404,51 @@ struct DriveFSRowComponent : public juce::Component
     bool isMouseDownWithoutDrag{false};
     bool hasStartedPreview{false};
 
+    std::optional<fs::directory_entry> getDirEnt() const override
+    {
+        auto &data = browserPane->devicesPane->driveFSArea->contents;
+        auto &entry = data[rowNumber];
+        return entry.dirent;
+        ;
+    }
+    std::optional<sample::compound::CompoundElement> getCompoundElement() const override
+    {
+        auto &data = browserPane->devicesPane->driveFSArea->contents;
+        auto &entry = data[rowNumber];
+        return entry.expandableAddress;
+        ;
+    }
+
     void mouseDown(const juce::MouseEvent &event) override
     {
+        auto &data = browserPane->devicesPane->driveFSArea->contents;
+        auto &entry = data[rowNumber];
+
         isMouseDownWithoutDrag = true;
+        if (browser::Browser::isExpandableInBrowser(entry.dirent.path()))
+        {
+            if (event.x < glyphSize + 2)
+            {
+                if (entry.isExpanded)
+                {
+                    browserPane->devicesPane->driveFSArea->collapsMultifile(rowNumber);
+                }
+                else
+                {
+                    browserPane->devicesPane->driveFSArea->expandMultifile(rowNumber);
+                }
+                repaint();
+                return;
+            }
+        }
         if (browserPane->autoPreviewEnabled && isFile())
         {
-            const auto &data = browserPane->devicesPane->driveFSArea->contents;
-            const auto &entry = data[rowNumber];
-            if (browser::Browser::isLoadableSingleSample(entry.path()))
+            if (browser::Browser::isLoadableSingleSample(entry.dirent.path()))
             {
                 hasStartedPreview = true;
                 namespace cmsg = scxt::messaging::client;
                 scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample({true, data[rowNumber].path().u8string()}),
+                    cmsg::PreviewBrowserSample({true, data[rowNumber].dirent.path().u8string()}),
                     browserPane->editor->msgCont);
                 repaint();
             }
@@ -405,7 +480,7 @@ struct DriveFSRowComponent : public juce::Component
                 const auto &data = browserPane->devicesPane->driveFSArea->contents;
                 getProperties().set(
                     "DragAndDropSample",
-                    juce::String::fromUTF8(data[rowNumber].path().u8string().c_str()));
+                    juce::String::fromUTF8(data[rowNumber].dirent.path().u8string().c_str()));
                 container->startDragging("FileSystem Row", this);
                 isDragging = true;
             }
@@ -453,20 +528,21 @@ struct DriveFSRowComponent : public juce::Component
         const auto &data = browserPane->devicesPane->driveFSArea->contents;
         if (rowNumber >= 0 && rowNumber < data.size())
         {
-            if (data[rowNumber] == fs::path(".."))
+            if (data[rowNumber].dirent == fs::path(".."))
             {
                 browserPane->devicesPane->driveFSArea->upOneLevel();
             }
-            else if (data[rowNumber].is_directory())
+            else if (data[rowNumber].dirent.is_directory())
             {
-                browserPane->devicesPane->driveFSArea->setCurrentPath(data[rowNumber].path());
+                browserPane->devicesPane->driveFSArea->setCurrentPath(
+                    data[rowNumber].dirent.path());
             }
             else
             {
                 // This is a hack and should be a drag and drop gesture really I guess
                 namespace cmsg = scxt::messaging::client;
                 scxt::messaging::client::clientSendToSerialization(
-                    cmsg::AddSample(data[rowNumber].path().u8string()),
+                    cmsg::AddSample(data[rowNumber].dirent.path().u8string()),
                     browserPane->editor->msgCont);
             }
         }
@@ -486,7 +562,7 @@ struct DriveFSRowComponent : public juce::Component
                 if (!w)
                     return;
                 namespace cmsg = scxt::messaging::client;
-                w->sendToSerialization(cmsg::AddBrowserDeviceLocation(d.path().u8string()));
+                w->sendToSerialization(cmsg::AddBrowserDeviceLocation(d.dirent.path().u8string()));
             });
             p.showMenuAsync(browserPane->editor->defaultPopupMenuOptions());
         }
@@ -499,7 +575,7 @@ struct DriveFSRowComponent : public juce::Component
         if (rowNumber >= 0 && rowNumber < data.size())
         {
             const auto &entry = data[rowNumber];
-            return !entry.is_directory();
+            return !entry.dirent.is_directory();
         }
         return false;
     }
@@ -530,16 +606,50 @@ struct DriveFSRowComponent : public juce::Component
             }
             g.setColour(fillColor);
             g.fillRect(0, 0, width, height);
-            auto r = juce::Rectangle<int>(1, (height - 14) / 2, 14, 14);
-            if (entry.is_directory())
+            auto r = juce::Rectangle<int>(1, (height - glyphSize) / 2, glyphSize, glyphSize);
+            if (entry.expandableAddress.has_value())
+            {
+                auto b = getLocalBounds().withTrimmedLeft(2 * glyphSize + 2);
+                auto gr = r.translated(glyphSize + 2, 0);
+                if (entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
+                {
+                    jcmp::GlyphPainter::paintGlyph(g, gr, jcmp::GlyphPainter::SPEAKER,
+                                                   textColor.withAlpha(isSelected ? 1.f : 0.5f));
+                }
+                else
+                {
+                    jcmp::GlyphPainter::paintGlyph(g, gr, jcmp::GlyphPainter::FILE_MUSIC,
+                                                   textColor.withAlpha(isSelected ? 1.f : 0.5f));
+                }
+                g.setColour(textColor);
+                g.drawText(entry.expandableAddress->name, b.reduced(2, 0),
+                           juce::Justification::centredLeft);
+            }
+            else if (entry.dirent.is_directory())
             {
                 jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::FOLDER,
                                                textColor.withAlpha(isSelected ? 1.f : 0.5f));
+                g.setColour(textColor);
+                g.drawText(entry.dirent.path().filename().u8string(), 16, 1, width - 16, height - 2,
+                           juce::Justification::centredLeft);
             }
             else
             {
-                jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::FILE_MUSIC,
-                                               textColor.withAlpha(isSelected ? 1.f : 0.5f));
+                if (browser::Browser::isExpandableInBrowser(entry.dirent.path()))
+                {
+                    jcmp::GlyphPainter::paintGlyph(g, r,
+                                                   entry.isExpanded ? jcmp::GlyphPainter::JOG_DOWN
+                                                                    : jcmp::GlyphPainter::PLUS,
+                                                   textColor.withAlpha(isSelected ? 1.f : 0.5f));
+                }
+                else
+                {
+                    jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::FILE_MUSIC,
+                                                   textColor.withAlpha(isSelected ? 1.f : 0.5f));
+                }
+                g.setColour(textColor);
+                g.drawText(entry.dirent.path().filename().u8string(), 16, 1, width - 16, height - 2,
+                           juce::Justification::centredLeft);
             }
 
             if (hasStartedPreview)
@@ -548,9 +658,6 @@ struct DriveFSRowComponent : public juce::Component
                 // jcmp::GlyphPainter::paintGlyph(g, q, jcmp::GlyphPainter::SPEAKER,
                 //                                textColor.withAlpha(0.5f));
             }
-            g.setColour(textColor);
-            g.drawText(entry.path().filename().u8string(), 16, 1, width - 16, height - 2,
-                       juce::Justification::centredLeft);
         }
     }
 };
