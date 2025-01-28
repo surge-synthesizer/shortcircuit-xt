@@ -105,9 +105,6 @@ struct VariantDisplay : juce::Component, HasEditor
         void currentTabChanged(int newCurrentTabIndex,
                                const juce::String &newCurrentTabName) override;
 
-        std::optional<std::string>
-        sourceDetailsDragAndDropSample(const SourceDetails &dragSourceDetails);
-
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
 
         bool isInterestedInFileDrag(const juce::StringArray &files) override;

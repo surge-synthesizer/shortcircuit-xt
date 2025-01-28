@@ -77,9 +77,8 @@ struct SampleManager : MoveableOnly<SampleManager>
     ~SampleManager();
 
     void addSampleAsMissing(const SampleID &id, const Sample::SampleFileAddress &f);
-    std::optional<SampleID> loadSampleByFileAddress(const Sample::SampleFileAddress &);
-    std::optional<SampleID> loadSampleByFileAddressToID(const Sample::SampleFileAddress &,
-                                                        const SampleID &);
+    std::optional<SampleID> loadSampleByFileAddress(const Sample::SampleFileAddress &,
+                                                    const SampleID &);
 
     std::optional<SampleID> loadSampleByPath(const fs::path &);
 

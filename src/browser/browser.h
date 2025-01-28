@@ -33,6 +33,7 @@
 #include <utility>
 #include <functional>
 #include "filesystem/import.h"
+#include "sample/compound_file.h"
 
 namespace scxt::infrastructure
 {
@@ -85,6 +86,9 @@ struct Browser
     static bool isLoadableSingleSample(const fs::path &);
     static bool isLoadableMultiSample(const fs::path &);
     static bool isShortCircuitFormatFile(const fs::path &);
+
+    static bool isExpandableInBrowser(const fs::path &p) { return isLoadableMultiSample(p); }
+    static std::vector<sample::compound::CompoundElement> expandForBrowser(const fs::path &p);
 
     struct LoadableFile
     {

@@ -42,31 +42,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
         }
         else
         {
-            std::optional<SampleID> nid;
-            switch (addr.type)
-            {
-            case Sample::WAV_FILE:
-            case Sample::FLAC_FILE:
-            case Sample::MP3_FILE:
-            case Sample::AIFF_FILE:
-            {
-                nid = loadSampleByPath(addr.path);
-            }
-            break;
-            case Sample::SF2_FILE:
-            {
-                nid = loadSampleFromSF2(addr.path, nullptr, addr.preset, addr.instrument,
-                                        addr.region);
-            }
-            break;
-            case Sample::MULTISAMPLE_FILE:
-            {
-                nid = loadSampleFromMultiSample(addr.path, addr.region, id);
-            }
-            break;
-                // add something here? don't forget to add it in the multi resolver too in
-                // resolveSingleFileMissingWorkItem
-            }
+            auto nid = loadSampleByFileAddress(addr, id);
 
             if (nid.has_value())
             {
@@ -80,6 +56,37 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
 }
 
 SampleManager::~SampleManager() { SCLOG("Destroying Sample Manager"); }
+
+std::optional<SampleID>
+SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, const SampleID &id)
+{
+    std::optional<SampleID> nid;
+    switch (addr.type)
+    {
+    case Sample::WAV_FILE:
+    case Sample::FLAC_FILE:
+    case Sample::MP3_FILE:
+    case Sample::AIFF_FILE:
+    {
+        nid = loadSampleByPath(addr.path);
+    }
+    break;
+    case Sample::SF2_FILE:
+    {
+        nid = loadSampleFromSF2(addr.path, nullptr, addr.preset, addr.instrument, addr.region);
+    }
+    break;
+    case Sample::MULTISAMPLE_FILE:
+    {
+        nid = loadSampleFromMultiSample(addr.path, addr.region, id);
+    }
+    break;
+        // add something here? don't forget to add it in the multi resolver too in
+        // resolveSingleFileMissingWorkItem
+    }
+
+    return nid;
+}
 
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {

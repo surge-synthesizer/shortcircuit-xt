@@ -164,9 +164,6 @@ struct MappingDisplay : juce::Component,
 
     int voiceCountFor(const selection::SelectionManager::ZoneAddress &z);
 
-    std::optional<std::string>
-    sourceDetailsDragAndDropSample(const SourceDetails &dragSourceDetails);
-
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
     bool isUndertakingDrop{false};

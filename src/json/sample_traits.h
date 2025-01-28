@@ -35,6 +35,7 @@
 #include "stream.h"
 
 #include "sample/sample_manager.h"
+#include "sample/compound_file.h"
 #include "browser/browser.h"
 #include "scxt_traits.h"
 
@@ -140,5 +141,17 @@ SC_STREAMDEF(scxt::sample::SampleManager, SC_FROM({
                  findIf(v, "sampleAddresses", res);
                  to.restoreFromSampleAddressesAndIDs(res);
              }));
+
+SC_STREAMDEF(
+    scxt::sample::compound::CompoundElement, SC_FROM({
+        v = {{"type", (int32_t)from.type}, {"name", from.name}, {"addr", from.sampleAddress}};
+    }),
+    SC_TO({
+        int t;
+        findOrSet(v, "type", 0, t);
+        to.type = (scxt::sample::compound::CompoundElement::Type)t;
+        findIf(v, "name", to.name);
+        findIf(v, "addr", to.sampleAddress);
+    }));
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SAMPLE_TRAITS_H

@@ -39,6 +39,7 @@
 #include "configuration.h"
 
 #include "sample/sample.h"
+#include "sample/compound_file.h"
 #include "sample/sample_manager.h"
 
 #include <filesystem>
@@ -438,12 +439,18 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                             KeyboardRange krange = {48, 72},
                                             VelocityRange vrange = {0, 127});
 
+    void loadCompoundElementIntoSelectedPartAndGroup(
+        const scxt::sample::compound::CompoundElement &, int16_t rootKey = 60,
+        KeyboardRange krange = {48, 72}, VelocityRange vrange = {0, 127});
+
     /*
      * Serialization thread originated mutation apis
      */
     void loadSampleIntoZone(const fs::path &, int16_t part, int16_t group, int16_t zone,
-                            int sampleID, int16_t rootKey = 60, KeyboardRange krange = {48, 72},
-                            VelocityRange vrange = {0, 127});
+                            int variantID);
+
+    void loadCompoundElementIntoZone(const sample::compound::CompoundElement &, int16_t part,
+                                     int16_t group, int16_t zone, int variantID);
 
     void createEmptyZone(KeyboardRange krange = {48, 72}, VelocityRange vrange = {0, 127});
     void duplicateZone(const selection::SelectionManager::ZoneAddress &);

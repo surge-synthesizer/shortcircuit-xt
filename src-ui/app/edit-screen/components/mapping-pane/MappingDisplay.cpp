@@ -27,7 +27,7 @@
 
 #include "MappingDisplay.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
-
+#include "app/browser-ui/BrowserPaneInterfaces.h"
 #include "ZoneLayoutDisplay.h"
 #include "ZoneLayoutKeyboard.h"
 
@@ -340,35 +340,28 @@ int MappingDisplay::voiceCountFor(const selection::SelectionManager::ZoneAddress
     return res;
 }
 
-std::optional<std::string> MappingDisplay::sourceDetailsDragAndDropSample(
-    const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
-{
-    auto w = dragSourceDetails.sourceComponent;
-    if (w)
-    {
-        auto p = w->getProperties().getVarPointer("DragAndDropSample");
-        if (p && p->isString())
-        {
-            return p->toString().toStdString();
-        }
-    }
-    return std::nullopt;
-}
-
 bool MappingDisplay::isInterestedInDragSource(
     const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
-    auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
-    return os.has_value();
+    return browser_ui::hasSampleInfo(dragSourceDetails.sourceComponent);
 }
 void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
-    auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
-    if (os.has_value())
+    auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+    if (wsi)
     {
         namespace cmsg = scxt::messaging::client;
         auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition);
-        sendToSerialization(cmsg::AddSampleWithRange({*os, r[0], r[1], r[2], 0, 127}));
+        if (wsi->getCompoundElement().has_value())
+        {
+            sendToSerialization(cmsg::AddCompoundElementWithRange(
+                {*wsi->getCompoundElement(), r[0], r[1], r[2], 0, 127}));
+        }
+        else if (wsi->getDirEnt().has_value())
+        {
+            sendToSerialization(cmsg::AddSampleWithRange(
+                {wsi->getDirEnt()->path().u8string(), r[0], r[1], r[2], 0, 127}));
+        }
     }
     isUndertakingDrop = false;
     repaint();

@@ -29,6 +29,7 @@
 #include "app/SCXTEditor.h"
 #include "messaging/client/client_serial.h"
 #include "SampleWaveform.h"
+#include "app/browser-ui/BrowserPaneInterfaces.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -786,26 +787,15 @@ void VariantDisplay::showVariantPlaymodeMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
-std::optional<std::string> VariantDisplay::MyTabbedComponent::sourceDetailsDragAndDropSample(
-    const SourceDetails &dragSourceDetails)
-{
-    auto w = dragSourceDetails.sourceComponent;
-    if (w)
-    {
-        auto p = w->getProperties().getVarPointer("DragAndDropSample");
-        if (p && p->isString())
-        {
-            return p->toString().toStdString();
-        }
-    }
-    return std::nullopt;
-}
-
 bool VariantDisplay::MyTabbedComponent::isInterestedInDragSource(
     const SourceDetails &dragSourceDetails)
 {
-    auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
-    return os.has_value();
+    auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+    if (!wsi)
+        return false;
+    if (wsi->getCompoundElement().has_value())
+        return wsi->getCompoundElement()->type == sample::compound::CompoundElement::SAMPLE;
+    return wsi->getDirEnt().has_value();
 }
 
 bool VariantDisplay::MyTabbedComponent::isInterestedInFileDrag(const juce::StringArray &files)
@@ -853,14 +843,24 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
     const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 
 {
-    auto os = sourceDetailsDragAndDropSample(dragSourceDetails);
-    if (os.has_value())
+    auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+
+    if (wsi)
     {
         namespace cmsg = scxt::messaging::client;
         auto za{editor->currentLeadZoneSelection};
         auto sampleID{getTabIndexFromPosition(dragSourceDetails.localPosition.x,
                                               dragSourceDetails.localPosition.y)};
-        sendToSerialization(cmsg::AddSampleInZone({*os, za->part, za->group, za->zone, sampleID}));
+        if (wsi->getCompoundElement().has_value())
+        {
+            sendToSerialization(cmsg::AddCompoundElementInZone(
+                {*wsi->getCompoundElement(), za->part, za->group, za->zone, sampleID}));
+        }
+        else if (wsi->getDirEnt().has_value())
+        {
+            sendToSerialization(cmsg::AddSampleInZone(
+                {wsi->getDirEnt()->path().u8string(), za->part, za->group, za->zone, sampleID}));
+        }
     }
 }
 
