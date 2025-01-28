@@ -29,6 +29,7 @@
 #include "app/SCXTEditor.h"
 #include "messaging/client/client_serial.h"
 #include "SampleWaveform.h"
+#include "app/browser-ui/BrowserPaneInterfaces.h"
 
 namespace scxt::ui::app::edit_screen
 {
