@@ -30,8 +30,6 @@
 #include "melatonin_inspector/melatonin_inspector.h"
 #endif
 
-#include "SCXTJuceLookAndFeel.h"
-
 #include "app/SCXTEditor.h"
 
 #include "app/play-screen/PlayScreen.h"
@@ -56,9 +54,6 @@
 namespace scxt::ui::app
 {
 
-static std::weak_ptr<SCXTJuceLookAndFeel> scxtLookAndFeelWeakPointer;
-static std::mutex scxtLookAndFeelSetupMutex;
-
 SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                        const sample::SampleManager &s, const scxt::browser::Browser &b,
                        const engine::Engine::SharedUIMemoryState &st)
@@ -74,20 +69,8 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     resetColorsFromUserPreferences();
 
-    {
-        std::lock_guard<std::mutex> grd(scxtLookAndFeelSetupMutex);
-        if (auto sp = scxtLookAndFeelWeakPointer.lock())
-        {
-            lnf = sp;
-        }
-        else
-        {
-            lnf = std::make_shared<SCXTJuceLookAndFeel>();
-            scxtLookAndFeelWeakPointer = lnf;
-
-            juce::LookAndFeel::setDefaultLookAndFeel(lnf.get());
-        }
-    }
+    lnf = std::make_unique<sst::jucegui::style::LookAndFeelManager>(this);
+    lnf->setStyle(style());
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
@@ -508,4 +491,11 @@ std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature) con
 }
 
 void SCXTEditor::showMissingResolutionScreen() { missingResolutionScreen->setVisible(true); }
+
+void SCXTEditor::onStyleChanged()
+{
+    sst::jucegui::components::WindowPanel::onStyleChanged();
+    if (lnf)
+        lnf->setStyle(style());
+}
 } // namespace scxt::ui::app

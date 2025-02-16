@@ -526,6 +526,17 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setFont(jcmp::MultiSwitch::Styles::styleClass, jcmp::MultiSwitch::Styles::labelfont,
                   SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(10));
 
+    // Setup the popup menu
+    base->setFont(sst::jucegui::components::base_styles::PopupMenu::styleClass,
+                  sst::jucegui::components::base_styles::PopupMenu::menufont,
+                  SST_JUCE_FONT_CTOR(juce::Font::plain).withPointHeight(12));
+    base->setColour(sst::jucegui::components::base_styles::PopupMenu::styleClass,
+                    sst::jucegui::components::base_styles::PopupMenu::hightlightbackground,
+                    cols.get(ColorMap::bg_3));
+    base->setColour(sst::jucegui::components::base_styles::PopupMenu::styleClass,
+                    sst::jucegui::components::base_styles::PopupMenu::hightlighttextcolor,
+                    cols.get(ColorMap::accent_1a));
+
     // auto interMed = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Medium.ttf");
     auto interReg = connectors::resources::loadTypeface("fonts/Inter/static/Inter-Regular.ttf");
     base->replaceFontsWithTypeface(interReg);

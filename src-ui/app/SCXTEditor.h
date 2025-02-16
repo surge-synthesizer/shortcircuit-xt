@@ -33,7 +33,6 @@
 #include <memory>
 #include <type_traits>
 
-#include "app/editor-impl/SCXTJuceLookAndFeel.h"
 #include "engine/engine.h"
 #include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
@@ -42,6 +41,7 @@
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/accessibility/FocusDebugger.h"
 #include "sst/jucegui/components/WindowPanel.h"
+#include "sst/jucegui/style/JUCELookAndFeelAdapter.h"
 #include "sst/basic-blocks/dsp/RNG.h"
 #include "messaging/client/zone_messages.h"
 #include "browser/browser.h"
@@ -138,7 +138,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     static constexpr int edWidth{1186}, edHeight{816};
 
-    std::shared_ptr<SCXTJuceLookAndFeel> lnf;
+    std::unique_ptr<sst::jucegui::style::LookAndFeelManager> lnf;
+    void onStyleChanged() override;
 
     struct IdleTimer : juce::Timer
     {
