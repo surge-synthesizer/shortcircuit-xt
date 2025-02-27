@@ -182,6 +182,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         };
         depth->onIdleHover = depth->onBeginEdit;
         depth->onIdleHoverEnd = depth->onEndEdit;
+        depth->onWheelEditOccurred = [w = juce::Component::SafePointer(depth.get())]() {
+            if (w)
+                w->immediatelyInitiateIdleAction(1000);
+        };
         depth->onPopupMenu = [w = juce::Component::SafePointer(this)](auto mods) {
             if (!w)
                 return;
