@@ -128,6 +128,7 @@ SCXTEditor::~SCXTEditor() noexcept
 {
     idleTimer->stopTimer();
     msgCont.unregisterClient();
+    setLookAndFeel(nullptr);
 }
 
 void SCXTEditor::setActiveScreen(ActiveScreen s)

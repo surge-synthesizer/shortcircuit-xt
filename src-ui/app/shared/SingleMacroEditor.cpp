@@ -142,6 +142,11 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
             return;
         w->editor->hideTooltip();
     };
+
+    knob->onWheelEditOccurred = [w = juce::Component::SafePointer(knob.get())]() {
+        if (w)
+            w->immediatelyInitiateIdleAction(1000);
+    };
     knob->onPopupMenu = [this, q = juce::Component::SafePointer(knob.get())](auto &mods) {
         editor->hideTooltip();
         editor->popupMenuForContinuous(q);

@@ -370,6 +370,7 @@ inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
         updateValueTooltip(atRef);
     };
     w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
+    w->onWheelEditOccurred = [this, &slRef = *w] { slRef.immediatelyInitiateIdleAction(1000); };
     if constexpr (std::is_base_of_v<sst::jucegui::components::ContinuousParamEditor,
                                     std::remove_pointer_t<W>>)
     {
