@@ -86,11 +86,16 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
         *(engine->getMessageController()), *(engine->defaults), *(engine->getSampleManager()),
         *(engine->getBrowser()), engine->sharedUIMemoryState);
     ed->onZoomChanged = [this](auto f) {
-        if (_host.canUseGui() && clapJuceShim->isEditorAttached())
+        if (clapJuceShim->isEditorAttached())
         {
             auto s = f * clapJuceShim->getGuiScale();
-            _host.guiRequestResize(scxt::ui::app::SCXTEditor::edWidth * s,
-                                   scxt::ui::app::SCXTEditor::edHeight * s);
+            guiSetSize(scxt::ui::app::SCXTEditor::edWidth * s,
+                   scxt::ui::app::SCXTEditor::edHeight * s);
+            if (_host.canUseGui())
+            {
+                _host.guiRequestResize(scxt::ui::app::SCXTEditor::edWidth * s,
+                                       scxt::ui::app::SCXTEditor::edHeight * s);
+            }
         }
         else
         {
