@@ -215,6 +215,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
         void releaseVoice(voice::Voice *v, float velocity);
         void terminateVoice(voice::Voice *v);
+        void discardHostVoice(int32_t voiceId) {}
         void retriggerVoiceWithNewNoteID(voice::Voice *v, int32_t noteid, float velocity)
         {
             SCLOG("Retrigger Voice Unimplemented");
@@ -229,6 +230,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void setVoiceMIDIMPETimbre(voice::Voice *v, int8_t val);
 
         void setVoicePolyphonicParameterModulation(voice::Voice *v, uint32_t parameter,
+                                                   double value)
+        {
+        }
+        void setVoiceMonophonicParameterModulation(voice::Voice *v, uint32_t parameter,
                                                    double value)
         {
         }
