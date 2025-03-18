@@ -90,7 +90,7 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
         {
             auto s = f * clapJuceShim->getGuiScale();
             guiSetSize(scxt::ui::app::SCXTEditor::edWidth * s,
-                   scxt::ui::app::SCXTEditor::edHeight * s);
+                       scxt::ui::app::SCXTEditor::edHeight * s);
             if (_host.canUseGui())
             {
                 _host.guiRequestResize(scxt::ui::app::SCXTEditor::edWidth * s,
