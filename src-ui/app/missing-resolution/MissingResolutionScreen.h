@@ -55,6 +55,8 @@ struct MissingResolutionScreen : juce::Component, HasEditor
 
     void resolveItem(int idx);
     void applyResolution(int idx, const fs::path &toThis);
+    void applyDirectoryResolution(std::vector<engine::MissingResolutionWorkItem> indexes,
+                                  const fs::path &newParent);
 
     std::unique_ptr<juce::FileChooser> fileChooser;
 

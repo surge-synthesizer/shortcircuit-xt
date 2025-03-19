@@ -499,4 +499,22 @@ void SCXTEditor::onStyleChanged()
     if (lnf)
         lnf->setStyle(style());
 }
+
+void SCXTEditor::promptOKCancel(const std::string &title, const std::string &message,
+                                std::function<void()> onOK, std::function<void()> onCancel)
+{
+    juce::AlertWindow::showAsync(juce::MessageBoxOptions()
+                                     .withIconType(juce::MessageBoxIconType::QuestionIcon)
+                                     .withTitle(title)
+                                     .withMessage(message)
+                                     .withButton("OK")
+                                     .withButton("Cancel"),
+                                 [onOK, onCancel](auto x) {
+                                     if (x == 1)
+                                         onOK();
+                                     if (x == 0 && onCancel)
+                                         onCancel();
+                                 });
+}
+
 } // namespace scxt::ui::app

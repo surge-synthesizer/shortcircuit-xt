@@ -197,8 +197,54 @@ void MissingResolutionScreen::resolveItem(int idx)
 void MissingResolutionScreen::applyResolution(int idx, const fs::path &toThis)
 {
     SCLOG("Resolving item " << idx << " with " << toThis.u8string());
+    auto pp = toThis.parent_path();
+    auto op = workItems[idx].path.parent_path();
+
+    SCLOG("Implicit change of " << pp << " to " << op);
+    // need to keep a copy since the first resolution will mess up array
+    std::vector<engine::MissingResolutionWorkItem> othersToMove{};
+    for (auto wi : workItems)
+    {
+        if (wi.path != workItems[idx].path && wi.path.parent_path() == op)
+        {
+            auto np = pp / wi.path.filename();
+            if (fs::exists(np))
+            {
+                SCLOG("Candidate to also move " << wi.path << " to " << np);
+                othersToMove.push_back(wi);
+            }
+        }
+        // SCLOG(SCD(wi.path) << SCD(wi.missingID.to_string()) <<
+        // SCD(wi.path.lexically_relative(toThis)));
+    }
+
+    if (!othersToMove.empty())
+    {
+        std::ostringstream ss;
+        ss << "There are " << othersToMove.size() << " unresolved files which share the "
+           << " same parent directory as '" << workItems[idx].path.filename() << " and are also "
+           << "in " << pp.u8string() << ". Resolve them all with that directory also?";
+        editor->promptOKCancel(
+            "Resolve Files in Same Directory", ss.str(),
+            [this, othersToMove, pp]() { applyDirectoryResolution(othersToMove, pp); });
+    }
+    // std::terminate();
     sendToSerialization(
         scxt::messaging::client::ResolveSample({workItems[idx], toThis.u8string()}));
+}
+
+void MissingResolutionScreen::applyDirectoryResolution(
+    std::vector<engine::MissingResolutionWorkItem> indexes, const fs::path &newParent)
+{
+    SCLOG("Resolving into " << newParent.u8string() << " with " << indexes.size() << " items");
+
+    for (auto &wi : indexes)
+    {
+        auto toThis = newParent / wi.path.filename();
+
+        SCLOG("Resolving " << wi.path << " to " << toThis.u8string());
+        sendToSerialization(scxt::messaging::client::ResolveSample({wi, toThis.u8string()}));
+    }
 }
 
 } // namespace scxt::ui::app::missing_resolution
