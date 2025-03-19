@@ -394,7 +394,23 @@ void SCXTEditor::setTooltipContents(const std::string &title,
     toolTip->setTooltipTitleAndData(title, data);
 }
 
-void SCXTEditor::parentHierarchyChanged() { setZoomFactor(zoomFactor); }
+void SCXTEditor::parentHierarchyChanged()
+{
+    setZoomFactor(zoomFactor);
+
+#if JUCE_WINDOWS
+    auto swr = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::useSoftwareRenderer, false);
+
+    if (swr)
+    {
+        if (auto peer = getPeer())
+        {
+            SCLOG("Enabling software rendering engine");
+            peer->setCurrentRenderingEngine(0); // 0 for software mode, 1 for Direct2D mode
+        }
+    }
+#endif
+}
 
 void SCXTEditor::setZoomFactor(float zf)
 {

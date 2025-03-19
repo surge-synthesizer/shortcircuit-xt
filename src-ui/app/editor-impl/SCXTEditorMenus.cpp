@@ -329,6 +329,23 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                       }
                   });
     }
+
+#if JUCE_WINDOWS
+    p.addSeparator();
+    auto swr = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::useSoftwareRenderer, false);
+
+    p.addItem(
+        "Use Software Renderer", true, swr,
+        [w = juce::Component::SafePointer(this), swr]()
+        {
+            if (!w)
+                return;
+            w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::useSoftwareRenderer, !swr);
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::AlertWindow::WarningIcon, "Software Renderer Change",
+                "A software renderer change is only active once you restart/reload the plugin.");
+        });
+#endif
 }
 
 void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e)
