@@ -310,6 +310,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     std::function<void()> makeComingSoon(const std::string &feature = "This feature") const;
 
+    void promptOKCancel(
+        const std::string &title, const std::string &message, std::function<void()> onOK,
+        std::function<void()> onCancel = []() {});
+
     /*
      * Items to deal with the shared memory reads
      */
