@@ -43,6 +43,7 @@ enum DefaultKeys
     welcomeScreenSeen,
     playModeExpanded,
     browserAutoPreviewEnabled,
+    useSoftwareRenderer,
 
     nKeys // must be last K?
 };
@@ -70,6 +71,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "playModeExpanded";
     case browserAutoPreviewEnabled:
         return "browserAutoPreviewEnabled";
+    case useSoftwareRenderer:
+        return "useSoftwareRenderer";
     default:
         std::terminate(); // for now
     }
