@@ -60,3 +60,9 @@ The clap standalone wrapper uses rtaudio and rtmidi for audio and midi
 
 https://github.com/surge-synthesizer/
 A large amount of ShortcircuitXT is available as separate opensource libraries with the sst- prefix
+including open source or donated code we repurposed from the VCV
+Rack MixMaster project (PanLaws), Bog Compressor (compressor), and
+code which was shared for a Hilbert Filter by Sean Costello.
+
+https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf
+The SVF Filter is based on this paper by Cytomic
