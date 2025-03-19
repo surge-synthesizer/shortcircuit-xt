@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Viewport.h"
+#include "sst/jucegui/component-adapters/DiscreteToReference.h"
 
 namespace scxt::ui::app::missing_resolution
 {
@@ -91,6 +92,12 @@ struct Contents : juce::Component, HasEditor
     std::unique_ptr<jcmp::Viewport> viewport;
     std::unique_ptr<juce::Component> viewportContents;
 
+    std::unique_ptr<jcmp::Label> doAllLabel;
+    std::unique_ptr<
+        sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>>
+        doAllToggle;
+    bool resolveSiblings{true};
+
     std::vector<std::unique_ptr<WorkItemLineItem>> workItemComps;
 
     Contents(MissingResolutionScreen *p, SCXTEditor *e) : parent(p), HasEditor(e)
@@ -103,6 +110,16 @@ struct Contents : juce::Component, HasEditor
             w->setVisible(false);
         });
         addAndMakeVisible(*okButton);
+
+        doAllLabel = std::make_unique<jcmp::Label>();
+        doAllLabel->setText("Auto-Resolve Siblings");
+        addAndMakeVisible(*doAllLabel);
+
+        doAllToggle = std::make_unique<
+            sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>>(
+            resolveSiblings);
+        doAllToggle->widget->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::FILLED);
+        addAndMakeVisible(*(doAllToggle->widget));
 
         viewport = std::make_unique<jcmp::Viewport>("Parts");
         viewportContents = std::make_unique<juce::Component>();
@@ -129,8 +146,14 @@ struct Contents : juce::Component, HasEditor
     void resized() override
     {
         auto b = getLocalBounds();
-        b = b.withTrimmedTop(b.getHeight() - 22).withTrimmedLeft(b.getWidth() - 100);
-        okButton->setBounds(b);
+        b = b.withTrimmedTop(b.getHeight() - 22);
+        auto okb = b.withTrimmedLeft(b.getWidth() - 100);
+        okButton->setBounds(okb);
+
+        auto dal = b.withWidth(125);
+        doAllLabel->setBounds(dal);
+        dal = dal.translated(dal.getWidth() + 2, 0).withWidth(dal.getHeight()).reduced(2);
+        doAllToggle->widget->setBounds(dal);
 
         viewport->setBounds(getLocalBounds().withTrimmedBottom(25));
         int vmargin{2};
@@ -174,7 +197,6 @@ void MissingResolutionScreen::resized()
 
 void MissingResolutionScreen::resolveItem(int idx)
 {
-    SCLOG("Resoving item " << idx);
     const auto &wi = workItems[idx];
 
     fileChooser =
@@ -196,12 +218,11 @@ void MissingResolutionScreen::resolveItem(int idx)
 
 void MissingResolutionScreen::applyResolution(int idx, const fs::path &toThis)
 {
-    SCLOG("Resolving item " << idx << " with " << toThis.u8string());
+    auto cp = dynamic_cast<Contents *>(contentsArea->getContentAreaComponent().get());
+
     auto pp = toThis.parent_path();
     auto op = workItems[idx].path.parent_path();
 
-    SCLOG("Implicit change of " << pp << " to " << op);
-    // need to keep a copy since the first resolution will mess up array
     std::vector<engine::MissingResolutionWorkItem> othersToMove{};
     for (auto wi : workItems)
     {
@@ -210,27 +231,17 @@ void MissingResolutionScreen::applyResolution(int idx, const fs::path &toThis)
             auto np = pp / wi.path.filename();
             if (fs::exists(np))
             {
-                SCLOG("Candidate to also move " << wi.path << " to " << np);
                 othersToMove.push_back(wi);
             }
         }
-        // SCLOG(SCD(wi.path) << SCD(wi.missingID.to_string()) <<
-        // SCD(wi.path.lexically_relative(toThis)));
     }
 
-    if (!othersToMove.empty())
-    {
-        std::ostringstream ss;
-        ss << "There are " << othersToMove.size() << " unresolved files which share the "
-           << " same parent directory as '" << workItems[idx].path.filename() << " and are also "
-           << "in " << pp.u8string() << ". Resolve them all with that directory also?";
-        editor->promptOKCancel(
-            "Resolve Files in Same Directory", ss.str(),
-            [this, othersToMove, pp]() { applyDirectoryResolution(othersToMove, pp); });
-    }
-    // std::terminate();
     sendToSerialization(
         scxt::messaging::client::ResolveSample({workItems[idx], toThis.u8string()}));
+    if (!othersToMove.empty() && cp->resolveSiblings)
+    {
+        applyDirectoryResolution(othersToMove, pp);
+    }
 }
 
 void MissingResolutionScreen::applyDirectoryResolution(
