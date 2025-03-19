@@ -28,6 +28,7 @@
 #include <fstream>
 
 #include "engine/engine.h"
+#include "patch_io/patch_io.h"
 #include "json/scxt_traits.h"
 #include "json/engine_traits.h"
 
@@ -35,29 +36,64 @@
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc == 3)
     {
-        SCLOG("Usage: " << argv[0] << " out-path");
+        auto e = std::make_unique<scxt::engine::Engine>();
+        e->getMessageController()->threadingChecker.bypassThreadChecks = true;
+
+        auto outp = fs::path(argv[2]);
+        auto inp = fs::path(argv[1]);
+
+        SCLOG("Loading multi " << inp.u8string());
+
+        scxt::patch_io::loadMulti(inp, *e);
+
+        auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_MULTI);
+        auto msg = tao::json::msgpack::to_string(scxt::json::scxt_value(*e));
+
+        SCLOG("Message is of size " << msg.size());
+
+        SCLOG("Writing to file " << outp.u8string());
+
+        std::ofstream f(outp, std::ios::binary);
+        if (!f.is_open())
+        {
+            SCLOG("Unable to open file");
+            exit(2);
+        }
+
+        f.write(msg.c_str(), msg.size());
+
+        SCLOG("Output complete");
+    }
+    else if (argc == 2)
+    {
+        auto e = std::make_unique<scxt::engine::Engine>();
+        auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_MULTI);
+        auto msg = tao::json::msgpack::to_string(scxt::json::scxt_value(*e));
+
+        SCLOG("Message is of size " << msg.size());
+
+        auto p = fs::path(argv[1]);
+
+        SCLOG("Writing to file " << p.u8string());
+
+        std::ofstream f(p, std::ios::binary);
+        if (!f.is_open())
+        {
+            SCLOG("Unable to open file");
+            exit(2);
+        }
+
+        f.write(msg.c_str(), msg.size());
+
+        SCLOG("Output complete");
+    }
+    else
+    {
+        SCLOG("Usage: init-maker <output-file> for default or");
+        SCLOG("Usage: init-maker <input-scm> <output-file> for scm conversion");
         exit(1);
     }
-    auto e = std::make_unique<scxt::engine::Engine>();
-    auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_MULTI);
-    auto msg = tao::json::msgpack::to_string(scxt::json::scxt_value(*e));
-
-    SCLOG("Message is of size " << msg.size());
-
-    auto p = fs::path(argv[1]);
-
-    SCLOG("Writing to file " << p.u8string());
-
-    std::ofstream f(p, std::ios::binary);
-    if (!f.is_open())
-    {
-        SCLOG("Unable to open file");
-        exit(2);
-    }
-
-    f.write(msg.c_str(), msg.size());
-
-    SCLOG("Output complete");
+    exit(0);
 }

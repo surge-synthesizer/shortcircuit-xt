@@ -136,7 +136,7 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part)
     return true;
 }
 
-bool initFromResourceBundle(scxt::engine::Engine &engine)
+bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &file)
 {
     SCLOG("Init From Resource Bundle");
 
@@ -145,7 +145,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine)
     try
     {
         auto fs = cmrc::scxt_resources_core::get_filesystem();
-        auto fntf = fs.open("InitSettings.dat");
+        auto fntf = fs.open("init_states/" + file);
         payload = std::string(fntf.begin(), fntf.end());
     }
     catch (std::exception &e)
