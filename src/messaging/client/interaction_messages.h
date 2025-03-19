@@ -84,12 +84,12 @@ inline void doHostCallback(uint64_t pl, MessageController &cont)
 CLIENT_TO_SERIAL(RequestHostCallback, c2s_request_host_callback, uint64_t,
                  doHostCallback(payload, cont));
 
-inline void doResetEngine(bool pl, engine::Engine &e, MessageController &cont)
+inline void doResetEngine(const std::string &fl, engine::Engine &e, MessageController &cont)
 {
-    scxt::patch_io::initFromResourceBundle(e);
+    scxt::patch_io::initFromResourceBundle(e, fl);
     e.sendFullRefreshToClient();
 }
-CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, bool, doResetEngine(payload, engine, cont));
+CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, std::string, doResetEngine(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H

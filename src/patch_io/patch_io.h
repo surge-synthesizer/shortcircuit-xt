@@ -38,7 +38,7 @@ bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
 bool savePart(const fs::path &toFile, const scxt::engine::Engine &, int part);
 bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
-bool initFromResourceBundle(scxt::engine::Engine &e);
+bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);
 } // namespace scxt::patch_io
 
 #endif // SHORTCIRCUITXT_PATCH_IO_H

@@ -366,12 +366,9 @@ void HeaderRegion::showSaveMenu()
                       w->doLoadIntoSelectedPart();
               });
     p.addSeparator();
-    p.addItem("Reset Engine To Blank", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-        {
-            w->sendToSerialization(cmsg::ResetEngine(true));
-        }
-    });
+
+    addResetMenuItems(p);
+
     p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
 }
 
@@ -380,13 +377,43 @@ void HeaderRegion::showMultiSelectionMenu()
     auto p = juce::PopupMenu();
     p.addSectionHeader("Multis - Coming Soon");
     p.addSeparator();
-    p.addItem("Reset Engine To Blank", [w = juce::Component::SafePointer(this)]() {
+    addResetMenuItems(p);
+    p.showMenuAsync(editor->defaultPopupMenuOptions(multiMenuButton.get()));
+}
+
+void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
+{
+    /*
+     * If you want to add an item here then
+     *
+     * 1. Make the SCM you want
+     * 2. Build the init-maker
+     * 3. Run it to convert the init-maker to resources/init_states/foo.dat
+     * 4. Edit resources/CmakeLists.txt to add init_states/foo.dat
+     * 5. Add a menu item here saying 'Reset engine to Foo' which passes 'foo.dat'
+     *
+     * More or less
+     */
+    auto p = juce::PopupMenu();
+    p.addItem("Empty Part", [w = juce::Component::SafePointer(this)]() {
         if (w)
         {
-            w->sendToSerialization(cmsg::ResetEngine(true));
+            w->sendToSerialization(cmsg::ResetEngine("InitSampler.dat"));
         }
     });
-    p.showMenuAsync(editor->defaultPopupMenuOptions(multiMenuButton.get()));
+    p.addItem("16 Empty Parts", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->sendToSerialization(cmsg::ResetEngine("InitSamplerMulti.dat"));
+        }
+    });
+    p.addItem("Basic Synth", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->sendToSerialization(cmsg::ResetEngine("InitSynth.dat"));
+        }
+    });
+    menu.addSubMenu("Reset Engine To", p);
 }
 
 } // namespace scxt::ui::app::shared
