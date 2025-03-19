@@ -399,7 +399,8 @@ void SCXTEditor::parentHierarchyChanged()
     setZoomFactor(zoomFactor);
 
 #if JUCE_WINDOWS
-    auto swr = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::useSoftwareRenderer, false);
+    auto swr = defaultsProvider.getUserDefaultValue(
+        infrastructure::DefaultKeys::useSoftwareRenderer, false);
 
     if (swr)
     {
