@@ -392,8 +392,10 @@ void Zone::onRoutingChanged()
 {
     voice::modulation::MatrixEndpoints::Sources usedForScanning(nullptr);
     std::fill(lfosActive.begin(), lfosActive.end(), false);
+
+    for (int i = 0; i < egsPerZone; ++i)
+        egsActive[i] = false;
     egsActive[0] = true; // the AEG always runs
-    egsActive[1] = false;
     auto doCheck = [this, &usedForScanning](const voice::modulation::MatrixEndpoints::SR &src) {
         for (int i = 0; i < lfosPerZone; ++i)
         {
@@ -402,14 +404,13 @@ void Zone::onRoutingChanged()
                 lfosActive[i] = true;
             }
         }
-        if (src == usedForScanning.aegSource)
-        {
-            egsActive[0] = true;
-        }
 
-        if (src == usedForScanning.eg2Source)
+        for (int i = 0; i < egsPerZone; ++i)
         {
-            egsActive[1] = true;
+            if (src == usedForScanning.egSources[i])
+            {
+                egsActive[i] = true;
+            }
         }
     };
     for (auto &r : routingTable.routes)

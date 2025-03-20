@@ -47,8 +47,8 @@ void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, e
 {
     for (auto &l : lfo)
         l.bind(m, z);
-    aeg.bind(m, z);
-    eg2.bind(m, z);
+    for (auto &eg : egTarget)
+        eg.bind(m, z);
 
     mappingTarget.bind(m, z);
     outputTarget.bind(m, z);
@@ -130,8 +130,8 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     lfoSources.bind(m, v, zeroSource);
     midiCCSources.bind(m, *(z.parentGroup->parentPart));
 
-    m.bindSourceValue(aegSource, v.aeg.outBlock0);
-    m.bindSourceValue(eg2Source, v.eg2.outBlock0);
+    for (int i = 0; i < egsPerZone; ++i)
+        m.bindSourceValue(egSources[i], v.eg[i].outBlock0);
 
     m.bindSourceValue(midiSources.modWheelSource, z.parentGroup->parentPart->midiCCValues[1]);
     m.bindSourceValue(midiSources.velocitySource, v.velocity);

@@ -111,7 +111,7 @@ struct MatrixEndpoints
     using SR = MatrixConfig::SourceIdentifier;
 
     MatrixEndpoints(engine::Engine *e)
-        : aeg(e, 0), eg2(e, 1),
+        : egTarget{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egsPerZone>(e)},
           lfo{sst::cpputils::make_array_bind_last_index<LFOTarget, scxt::lfosPerZone>(e)},
           selfModulation(e),
           processorTarget{
@@ -143,7 +143,7 @@ struct MatrixEndpoints
         EGTarget(engine::Engine *e, uint32_t p)
             : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>(p)
         {
-            std::string group = (index == 0 ? "AEG" : "EG2");
+            std::string group = (index == 0 ? "AEG" : std::string("EG") + std::to_string(p + 1));
             registerVoiceModTarget(e, aT, group, "Attack");
             registerVoiceModTarget(e, hT, group, "Hold");
             registerVoiceModTarget(e, dT, group, "Decay");
@@ -155,7 +155,8 @@ struct MatrixEndpoints
         }
 
         void bind(Matrix &m, engine::Zone &z);
-    } aeg, eg2;
+    };
+    std::array<EGTarget, scxt::egsPerZone> egTarget;
 
     struct MappingTarget
     {
@@ -225,11 +226,15 @@ struct MatrixEndpoints
     {
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
-              aegSource{'zneg', 'aeg ', 0}, eg2Source{'zneg', 'eg2 ', 0}, transportSources(e),
-              rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
+              egSources{{{'zneg', 'aeg ', 0},
+                         {'zneg', 'eg2 ', 0},
+                         {'zneg', 'eg3 ', 0},
+                         {'zneg', 'eg4 ', 0}}},
+              transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
         {
-            registerVoiceModSource(e, aegSource, "", "AEG");
-            registerVoiceModSource(e, eg2Source, "", "EG2");
+            registerVoiceModSource(e, egSources[0], "", "AEG");
+            for (int i = 1; i < egsPerZone; ++i)
+                registerVoiceModSource(e, egSources[i], "", "EG" + std::to_string(i + 1));
         }
 
         LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource> lfoSources;
@@ -329,7 +334,7 @@ struct MatrixEndpoints
             SR macros[macrosPerPart];
         } macroSources;
 
-        SR aegSource, eg2Source;
+        std::array<SR, egsPerZone> egSources;
 
         void bind(Matrix &m, engine::Zone &z, voice::Voice &v);
 

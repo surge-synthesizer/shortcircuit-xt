@@ -553,10 +553,13 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  }
                  // but just that bit
 
-                 v = {{"variantData", t.variantData},   {"mappingData", t.mapping},
-                      {"outputInfo", t.outputInfo},     {"processorStorage", t.processorStorage},
-                      {"routingTable", t.routingTable}, {"modulatorStorage", t.modulatorStorage},
-                      {"aegStorage", t.egStorage[0]},   {"eg2Storage", t.egStorage[1]},
+                 v = {{"variantData", t.variantData},
+                      {"mappingData", t.mapping},
+                      {"outputInfo", t.outputInfo},
+                      {"processorStorage", t.processorStorage},
+                      {"routingTable", t.routingTable},
+                      {"modulatorStorage", t.modulatorStorage},
+                      {"egs", t.egStorage},
                       {"givenName", useGivenName}};
              }),
              SC_TO({
@@ -569,8 +572,19 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
 
                  findIf(v, "routingTable", zone.routingTable);
                  findIfArray(v, "modulatorStorage", zone.modulatorStorage);
-                 findOrDefault(v, "aegStorage", zone.egStorage[0]);
-                 findOrDefault(v, "eg2Storage", zone.egStorage[1]);
+                 if (v.find("aegStorage"))
+                 {
+                     findOrDefault(v, "aegStorage", zone.egStorage[0]);
+                     findOrDefault(v, "eg2Storage", zone.egStorage[1]);
+                 }
+                 else if (v.find("egs"))
+                 {
+                     fromArrayWithSizeDifference<Traits>(v.at("egs"), zone.egStorage);
+                 }
+                 else
+                 {
+                     SCLOG("Warning: No EG storage in zone");
+                 }
                  findOrSet(v, "givenName", "", zone.givenName);
                  zone.onRoutingChanged();
              }));

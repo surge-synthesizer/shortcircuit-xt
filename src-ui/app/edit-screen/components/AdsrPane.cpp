@@ -38,48 +38,49 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
     : HasEditor(e), sst::jucegui::components::NamedPanel(idx == 0 ? "AMP EG" : "EG 2"), index(idx),
       forZone(fz)
 {
+    setContentAreaComponent(std::make_unique<juce::Component>());
+
     hasHamburger = true;
 
-    using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneOrGroupEGFloatValue>;
-
-    // c++ partial application is a bummer
-    auto attc = [&](auto &t, auto &a, auto &w) {
-        fac::attachAndAdd(adsrView, t, this, a, w, forZone, index);
-    };
-    attc(adsrView.a, attachments.A, sliders.A);
-    attc(adsrView.h, attachments.H, sliders.H);
-    attc(adsrView.d, attachments.D, sliders.D);
-    attc(adsrView.s, attachments.S, sliders.S);
-    attc(adsrView.r, attachments.R, sliders.R);
-
-    attc(adsrView.aShape, attachments.Ash, knobs.Ash);
-    attc(adsrView.dShape, attachments.Dsh, knobs.Dsh);
-    attc(adsrView.rShape, attachments.Rsh, knobs.Rsh);
-
-    auto makeLabel = [this](auto &lb, const std::string &l) {
-        lb = std::make_unique<sst::jucegui::components::Label>();
-        lb->setText(l);
-        addAndMakeVisible(*lb);
-    };
-    makeLabel(labels.A, "A");
-    makeLabel(labels.H, "H");
-    makeLabel(labels.D, "D");
-    makeLabel(labels.S, "S");
-    makeLabel(labels.R, "R");
+    rebuildPanelComponents(idx);
 
     if (forZone)
     {
-        editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
-    }
-    else
-    {
-        editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+        if (idx == 1)
+        {
+            isTabbed = true;
+            tabNames = {"EG2", "EG3", "EG4"};
+            onTabSelected = [w = juce::Component::SafePointer(this)](int nt) {
+                if (!w)
+                    return;
+                w->tabChanged(nt);
+            };
+            tabChanged(0);
+        }
     }
 }
 
 void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d)
 {
     adsrView = d;
+    for (const auto &sl : sliders.members)
+        if (sl)
+            sl->setEnabled(true);
+
+    for (const auto &sl : knobs.members)
+        if (sl)
+            sl->setEnabled(true);
+
+    repaint();
+}
+
+void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d, int cacheIdx)
+{
+    zoneAdsrCache[cacheIdx - 1] = d;
+    if (cacheIdx - 1 == selectedTab)
+    {
+        adsrView = d;
+    }
     for (const auto &sl : sliders.members)
         if (sl)
             sl->setEnabled(true);
@@ -104,14 +105,75 @@ void AdsrPane::adsrDeactivated()
     repaint();
 }
 
+void AdsrPane::tabChanged(int newIndex)
+{
+    assert(newIndex < zoneAdsrCache.size());
+    assert(forZone);
+
+    // We need to preserve our local cache
+    zoneAdsrCache[displayedTabIndex] = adsrView;
+    displayedTabIndex = newIndex;
+    ;
+    adsrView = zoneAdsrCache[newIndex];
+
+    getContentAreaComponent()->removeAllChildren();
+    rebuildPanelComponents(newIndex + 1);
+
+    repaint();
+}
+
+void AdsrPane::rebuildPanelComponents(int useIdx)
+{
+    using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneOrGroupEGFloatValue>;
+
+    // c++ partial application is a bummer
+    auto attc = [&](auto &t, auto &a, auto &w) {
+        fac::attach(adsrView, t, this, a, w, forZone, useIdx);
+        getContentAreaComponent()->addAndMakeVisible(*w);
+    };
+    attc(adsrView.a, attachments.A, sliders.A);
+    attc(adsrView.h, attachments.H, sliders.H);
+    attc(adsrView.d, attachments.D, sliders.D);
+    attc(adsrView.s, attachments.S, sliders.S);
+    attc(adsrView.r, attachments.R, sliders.R);
+
+    attc(adsrView.aShape, attachments.Ash, knobs.Ash);
+    attc(adsrView.dShape, attachments.Dsh, knobs.Dsh);
+    attc(adsrView.rShape, attachments.Rsh, knobs.Rsh);
+
+    auto makeLabel = [this](auto &lb, const std::string &l) {
+        lb = std::make_unique<sst::jucegui::components::Label>();
+        lb->setText(l);
+        getContentAreaComponent()->addAndMakeVisible(*lb);
+    };
+    makeLabel(labels.A, "A");
+    makeLabel(labels.H, "H");
+    makeLabel(labels.D, "D");
+    makeLabel(labels.S, "S");
+    makeLabel(labels.R, "R");
+
+    if (forZone)
+    {
+        editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
+    }
+    else
+    {
+        editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+    }
+
+    resized();
+}
+
 void AdsrPane::resized()
 {
     auto r = getContentArea();
+    getContentAreaComponent()->setBounds(r);
+
     auto lh = 16.f;
     auto kh = 20.f;
     auto h = r.getHeight() - lh - kh;
-    auto x = r.getX() * 1.f;
-    auto y = r.getY() + kh;
+    auto x = 0;  // r.getX() * 1.f;
+    auto y = kh; // r.getY() + kh;
     auto w = 34.f;
     x = x + (r.getWidth() - w * 5) * 0.5;
 

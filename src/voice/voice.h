@@ -100,7 +100,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     scxt::voice::modulation::Matrix modMatrix;
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;
 
-    ahdsrenv_t &aeg{eg[0]}, &eg2{eg[1]};
+    ahdsrenv_t &aeg{eg[0]};
     ahdsrenvOS_t &aegOS{egOS[0]};
 
     inline float envelope_rate_linear_nowrap(float f)

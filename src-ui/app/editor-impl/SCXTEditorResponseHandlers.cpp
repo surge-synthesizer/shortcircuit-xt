@@ -49,14 +49,27 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
     const auto &[forZone, which, active, env] = payload;
     if (forZone)
     {
-        if (active)
+        if (which == 0)
         {
-            // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            editScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
+            if (active)
+            {
+                editScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
+            }
+            else
+            {
+                editScreen->getZoneElements()->eg[which]->adsrDeactivated();
+            }
         }
         else
         {
-            editScreen->getZoneElements()->eg[which]->adsrDeactivated();
+            if (active)
+            {
+                editScreen->getZoneElements()->eg[1]->adsrChangedFromModel(env, which);
+            }
+            else
+            {
+                editScreen->getZoneElements()->eg[1]->adsrDeactivated();
+            }
         }
     }
     else
