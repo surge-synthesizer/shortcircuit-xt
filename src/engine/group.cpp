@@ -148,8 +148,9 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         {
             auto &lp = endpoints.lfo[i];
 
-            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.delayP, *lp.curve.attackP,
-                                 *lp.curve.releaseP, modulatorStorage[i].curveLfoStorage.useenv,
+            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
+                                 *lp.curve.attackP, *lp.curve.releaseP,
+                                 modulatorStorage[i].curveLfoStorage.useenv,
                                  modulatorStorage[i].curveLfoStorage.unipolar, gated);
         }
         else if (lfoEvaluator[i] == ENV)

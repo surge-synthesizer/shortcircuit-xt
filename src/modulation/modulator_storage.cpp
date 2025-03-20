@@ -48,6 +48,8 @@ std::string ModulatorStorage::toStringModulatorShape(
         return "lpulse";
     case LFO_SMOOTH_NOISE:
         return "lnoise";
+    case LFO_SAW_TRI_RAMP:
+        return "lstriramp";
     case LFO_SH_NOISE:
         return "lshn";
     case LFO_ENV:

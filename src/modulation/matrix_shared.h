@@ -140,12 +140,13 @@ template <typename TG, uint32_t gn> struct LFOTargetEndpointData
     struct Curve
     {
         Curve(uint32_t p)
-            : deformT{gn, 'cdfn', p}, attackT{gn, 'catk', p}, delayT{gn, 'cdel', p},
-              releaseT{gn, 'crel', p}
+            : deformT{gn, 'cdfn', p}, angleT{gn, 'cang', p}, attackT{gn, 'catk', p},
+              delayT{gn, 'cdel', p}, releaseT{gn, 'crel', p}
         {
         }
-        TG deformT, delayT, attackT, releaseT;
-        const float *deformP{nullptr}, *delayP{nullptr}, *attackP{nullptr}, *releaseP{nullptr};
+        TG deformT, angleT, delayT, attackT, releaseT;
+        const float *deformP{nullptr}, *angleP{nullptr}, *delayP{nullptr}, *attackP{nullptr},
+            *releaseP{nullptr};
     } curve;
     struct Step
     {
@@ -295,6 +296,7 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     bindEl(m, ms, rateT, ms.rate, rateP);
 
     bindEl(m, ms, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
+    bindEl(m, ms, curve.angleT, ms.curveLfoStorage.angle, curve.angleP);
     bindEl(m, ms, curve.delayT, ms.curveLfoStorage.delay, curve.delayP);
     bindEl(m, ms, curve.attackT, ms.curveLfoStorage.attack, curve.attackP);
     bindEl(m, ms, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP);
