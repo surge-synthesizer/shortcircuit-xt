@@ -145,14 +145,18 @@ void Voice::voiceStarted()
         }
     }
 
-    auto &aegp = endpoints->aeg;
+    auto &aegp = endpoints->egTarget[0];
     aeg.attackFrom(0.0, *(aegp.aP) == 0.0); // TODO Envelope Legato Mode
-    if (egsActive[1])
+    for (int i = 1; i < egsPerZone; ++i)
     {
-        eg2.attackFrom(0.0);
+        if (egsActive[i])
+        {
+            eg[i].attackFrom(0.0);
+        }
     }
     if (forceOversample)
     {
+        // only the AEG needs oversampling since EG2 3 4 is only used at endpoint
         aegOS.attackFrom(0.0, *(aegp.aP) == 0.0);
     }
 
@@ -228,7 +232,7 @@ template <bool OS> bool Voice::processWithOS()
      * Voice always runs the AEG which is default routed, so ignore
      * the egsActive[0] flag
      */
-    auto &aegp = endpoints->aeg;
+    auto &aegp = endpoints->egTarget[0];
     if constexpr (OS)
     {
         // we need the aegOS for the curve in oversample space
@@ -242,11 +246,14 @@ template <bool OS> bool Voice::processWithOS()
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
-    if (egsActive[1])
+    for (int i = 1; i < egsPerZone; ++i)
     {
-        auto &eg2p = endpoints->eg2;
-        eg2.processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
-                         *eg2p.rsP, envGate, false);
+        if (egsActive[i])
+        {
+            auto &eg2p = endpoints->egTarget[i];
+            eg[i].processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP,
+                               *eg2p.dsP, *eg2p.rsP, envGate, false);
+        }
     }
     updateTransportPhasors();
 

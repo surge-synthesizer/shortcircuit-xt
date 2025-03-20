@@ -502,14 +502,14 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     serializationSendToClient(cms::s2c_respond_zone_samples,
                               cms::SampleSelectedZoneView::s2c_payload_t{true, zp->variantData},
                               *(engine.getMessageController()));
-    serializationSendToClient(
-        cms::s2c_update_group_or_zone_adsr_view,
-        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 0, true, zp->egStorage[0]},
-        *(engine.getMessageController()));
-    serializationSendToClient(
-        cms::s2c_update_group_or_zone_adsr_view,
-        cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, true, zp->egStorage[1]},
-        *(engine.getMessageController()));
+
+    for (auto i = 0U; i < scxt::egsPerZone; ++i)
+    {
+        serializationSendToClient(
+            cms::s2c_update_group_or_zone_adsr_view,
+            cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, i, true, zp->egStorage[i]},
+            *(engine.getMessageController()));
+    }
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {

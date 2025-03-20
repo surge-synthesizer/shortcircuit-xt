@@ -59,6 +59,8 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     UIStore<sst::jucegui::components::Knob> knobs;
 
     modulation::modulators::AdsrStorage adsrView;
+    std::array<modulation::modulators::AdsrStorage, scxt::egsPerZone - 1> zoneAdsrCache;
+    size_t displayedTabIndex{0};
     size_t index{0};
     bool forZone{true};
     AdsrPane(SCXTEditor *, int index, bool forZone);
@@ -66,7 +68,11 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void resized() override;
 
     void adsrChangedFromModel(const modulation::modulators::AdsrStorage &);
+    void adsrChangedFromModel(const modulation::modulators::AdsrStorage &, int index);
     void adsrDeactivated();
+    void tabChanged(int newIndex);
+
+    void rebuildPanelComponents(int newIndex);
 
     void showHamburgerMenu();
 };
