@@ -58,6 +58,7 @@ SC_STREAMDEF(scxt::modulation::modulators::CurveLFOStorage, SC_FROM({
                  v = tao::json::empty_object;
                  addUnlessDefault<val_t>(v, "attack", 0.f, from.attack);
                  addUnlessDefault<val_t>(v, "deform", 0.f, from.deform);
+                 addUnlessDefault<val_t>(v, "angle", 0.f, from.angle);
                  addUnlessDefault<val_t>(v, "delay", 0.f, from.delay);
                  addUnlessDefault<val_t>(v, "release", 0.f, from.release);
                  addUnlessDefault<val_t>(v, "unipolar", false, from.unipolar);
@@ -66,6 +67,7 @@ SC_STREAMDEF(scxt::modulation::modulators::CurveLFOStorage, SC_FROM({
              SC_TO({
                  const auto &object = v.get_object();
                  findOrSet(v, "deform", 0.f, result.deform);
+                 findOrSet(v, "angle", 0.f, result.angle);
                  findOrSet(v, "delay", 0.f, result.delay);
                  findOrSet(v, "attack", 0.f, result.attack);
                  findOrSet(v, "release", 0.f, result.release);
