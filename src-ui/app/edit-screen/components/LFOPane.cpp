@@ -491,8 +491,8 @@ struct CurveLFOPane : juce::Component, HasEditor
                 for (int i = 0; i < pts; ++i)
                 {
                     curveLfo.process(msCopy.rate, msCopy.curveLfoStorage.deform,
-                                     msCopy.curveLfoStorage.delay, msCopy.curveLfoStorage.attack,
-                                     msCopy.curveLfoStorage.release,
+                                     msCopy.curveLfoStorage.angle, msCopy.curveLfoStorage.delay,
+                                     msCopy.curveLfoStorage.attack, msCopy.curveLfoStorage.release,
                                      false /*msCopy.curveLfoStorage.useenv*/,
                                      msCopy.curveLfoStorage.unipolar, true);
                     auto yp = ch - sc * curveLfo.output;

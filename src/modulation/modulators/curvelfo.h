@@ -76,6 +76,9 @@ struct CurveLFO : SampleRateSupport
         case ModulatorStorage::LFO_TRI:
             curveShape = slfo_t::TRI;
             break;
+        case ModulatorStorage::LFO_SAW_TRI_RAMP:
+            curveShape = slfo_t::SAW_TRI_RAMP;
+            break;
         case ModulatorStorage::LFO_PULSE:
             curveShape = slfo_t::PULSE;
             break;
@@ -98,8 +101,8 @@ struct CurveLFO : SampleRateSupport
 
     uint32_t smp{0};
     datamodel::pmd tsConverter{datamodel::pmd().asLfoRate()};
-    void process(const float rate, const float deform, const float delay, const float attack,
-                 const float release, bool useEnv, bool unipolar, bool isGated)
+    void process(const float rate, const float deform, const float angle, const float delay,
+                 const float attack, const float release, bool useEnv, bool unipolar, bool isGated)
     {
         float tsRatio{1.0};
         float rt = rate;
@@ -108,7 +111,7 @@ struct CurveLFO : SampleRateSupport
             rt = -tsConverter.snapToTemposync(-rt);
             tsRatio = td->tempo / 120.0;
         }
-        simpleLfo.process_block(rt, deform, curveShape, false, tsRatio);
+        simpleLfo.process_block(rt, deform, curveShape, false, tsRatio, angle);
         auto lfov = simpleLfo.lastTarget;
         if (unipolar)
             lfov = (lfov + 1) * 0.5;

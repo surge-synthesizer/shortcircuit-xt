@@ -89,6 +89,7 @@ struct ModulatorStorage
         LFO_SINE,
         LFO_RAMP,
         LFO_TRI,
+        LFO_SAW_TRI_RAMP,
         LFO_PULSE,
         LFO_SMOOTH_NOISE,
         LFO_SH_NOISE,
@@ -175,23 +176,25 @@ SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
 // We describe modulator storage as a compound since we address
 // it that way. Maybe revisit this in the future and split it out
 SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
-    SC_FIELD(modulatorShape, pmd()
-                                 .asInt()
-                                 .withName("Modulator Shape")
-                                 .withRange(modulation::ModulatorStorage::STEP,
-                                            modulation::ModulatorStorage::MSEG -
-                                                1) /* This -1 turns off MSEG in the menu */
-                                 .withUnorderedMapFormatting({
-                                     {modulation::ModulatorStorage::STEP, "STEP"},
-                                     {modulation::ModulatorStorage::MSEG, "MSEG"},
-                                     {modulation::ModulatorStorage::LFO_SINE, "SINE"},
-                                     {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
-                                     {modulation::ModulatorStorage::LFO_TRI, "TRI"},
-                                     {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
-                                     {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
-                                     {modulation::ModulatorStorage::LFO_ENV, "ENV"},
-                                     {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
-                                 }));
+    SC_FIELD(modulatorShape,
+             pmd()
+                 .asInt()
+                 .withName("Modulator Shape")
+                 .withRange(modulation::ModulatorStorage::STEP,
+                            modulation::ModulatorStorage::MSEG -
+                                1) /* This -1 turns off MSEG in the menu */
+                 .withUnorderedMapFormatting({
+                     {modulation::ModulatorStorage::STEP, "STEP"},
+                     {modulation::ModulatorStorage::MSEG, "MSEG"},
+                     {modulation::ModulatorStorage::LFO_SINE, "SINE"},
+                     {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
+                     {modulation::ModulatorStorage::LFO_TRI, "TRI"},
+                     {modulation::ModulatorStorage::LFO_SAW_TRI_RAMP, "SAW-TRI-RMP"},
+                     {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
+                     {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
+                     {modulation::ModulatorStorage::LFO_ENV, "ENV"},
+                     {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
+                 }));
     SC_FIELD(triggerMode, pmd()
                               .asInt()
                               .withName("Trigger")

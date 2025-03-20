@@ -197,8 +197,8 @@ template <bool OS> bool Voice::processWithOS()
             auto &lp = endpoints->lfo[i];
 
             // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
-            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.delayP, *lp.curve.attackP,
-                                 *lp.curve.releaseP,
+            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
+                                 *lp.curve.attackP, *lp.curve.releaseP,
                                  zone->modulatorStorage[i].curveLfoStorage.useenv,
                                  zone->modulatorStorage[i].curveLfoStorage.unipolar, isGated);
         }
