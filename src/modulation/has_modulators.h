@@ -35,15 +35,15 @@
 #include "modulation/modulators/steplfo.h"
 #include "modulation/modulators/curvelfo.h"
 #include "modulation/modulators/envlfo.h"
+#include "sst/cpputils/constructors.h"
 
 namespace scxt::modulation::shared
 {
 
 static_assert(lfosPerGroup == lfosPerZone,
               "If this is false you need to template out the count below");
-static_assert(egsPerGroup == egsPerZone,
-              "If this is false you need to template out the count below");
-template <typename T> struct HasModulators
+
+template <typename T, size_t egsPerObject> struct HasModulators
 {
     struct DoubleRate
     {
@@ -57,10 +57,14 @@ template <typename T> struct HasModulators
         }
     } doubleRate;
 
-    HasModulators(T *that) : eg{that, that}, doubleRate{that}, egOS{&doubleRate, &doubleRate} {}
+    HasModulators(T *that)
+        : eg{sst::cpputils::make_array<ahdsrenv_t, egsPerObject>(that)}, doubleRate{that},
+          egOS{sst::cpputils::make_array<ahdsrenvOS_t, egsPerObject>(&doubleRate)}
+    {
+    }
 
     static constexpr uint16_t lfosPerObject{lfosPerZone};
-    static constexpr uint16_t egsPerObject{egsPerZone};
+    static_assert(egsPerObject != 0);
 
     enum LFOEvaluator
     {
@@ -81,8 +85,8 @@ template <typename T> struct HasModulators
         DoubleRate, (blockSize << 1), sst::basic_blocks::modulators::TwentyFiveSecondExp>
         ahdsrenvOS_t;
 
-    ahdsrenv_t eg[egsPerObject];
-    ahdsrenvOS_t egOS[egsPerObject];
+    std::array<ahdsrenv_t, egsPerObject> eg;
+    std::array<ahdsrenvOS_t, egsPerObject> egOS;
 
     std::array<bool, lfosPerObject> lfosActive{};
     std::array<bool, egsPerObject> egsActive{};

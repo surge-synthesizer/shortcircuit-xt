@@ -46,7 +46,7 @@ namespace scxt::voice
 {
 struct alignas(16) Voice : MoveableOnly<Voice>,
                            SampleRateSupport,
-                           scxt::modulation::shared::HasModulators<Voice>
+                           scxt::modulation::shared::HasModulators<Voice, egsPerZone>
 {
     float output alignas(16)[2][blockSize << 2];
     // I do *not* own these. The engine guarantees it outlives the voice

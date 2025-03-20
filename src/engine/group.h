@@ -56,7 +56,7 @@ constexpr int lfosPerGroup{scxt::lfosPerGroup};
 
 struct Group : MoveableOnly<Group>,
                HasGroupZoneProcessors<Group>,
-               modulation::shared::HasModulators<Group>,
+               modulation::shared::HasModulators<Group, egsPerGroup>,
                SampleRateSupport
 {
     Group();

@@ -249,7 +249,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     std::array<bool, egsPerZone> egsActive{};
 
     // 0 is the AEG, 1 is EG2
-    std::array<modulation::modulators::AdsrStorage, 2> egStorage;
+    std::array<modulation::modulators::AdsrStorage, egsPerZone> egStorage;
 
     void onProcessorTypeChanged(int, dsp::processor::ProcessorType) {}
 
