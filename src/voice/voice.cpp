@@ -40,7 +40,7 @@ namespace scxt::voice
 {
 
 Voice::Voice(engine::Engine *e, engine::Zone *z)
-    : scxt::modulation::shared::HasModulators<Voice>(this), engine(e), zone(z),
+    : scxt::modulation::shared::HasModulators<Voice, egsPerZone>(this), engine(e), zone(z),
       sampleIndex(zone->sampleIndex), halfRate(6, true), endpoints(nullptr) // see comment
 {
     assert(zone);

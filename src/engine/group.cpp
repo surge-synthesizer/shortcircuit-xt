@@ -47,7 +47,7 @@ namespace scxt::engine
 
 Group::Group()
     : id(GroupID::next()), name(id.to_string()), endpoints{nullptr},
-      modulation::shared::HasModulators<Group>(this), osDownFilter(6, true)
+      modulation::shared::HasModulators<Group, egsPerGroup>(this), osDownFilter(6, true)
 {
 }
 
