@@ -460,9 +460,51 @@ struct CurveLFOPane : juce::Component, HasEditor
     struct CurveDraw : public juce::Component
     {
         LfoPane *parent{nullptr};
-        CurveDraw(LfoPane *p) : parent(p) {}
+        engine::Transport dummyTransport;
+        CurveDraw(LfoPane *p) : parent(p)
+        {
+            dummyTransport.tempo = 120;
+            dummyTransport.signature = {4, 4};
+        }
+        modulation::ModulatorStorage ms;
+        juce::Path curvePath{};
         void paint(juce::Graphics &g) override
         {
+            auto msCopy = parent->modulatorStorageData[parent->selectedTab];
+            if (curvePath.isEmpty() ||
+                memcmp(&ms, &msCopy, sizeof(modulation::ModulatorStorage)) != 0)
+            {
+                // msCopy.rate = 1.;
+                auto sr{48000};
+                auto ds{10};
+                modulation::modulators::CurveLFO curveLfo;
+                curveLfo.simpleLfo.objrngRef.reseed(2112);
+                curveLfo.assign(&msCopy, &dummyTransport);
+                curveLfo.setSampleRate(sr);
+                curveLfo.attack(msCopy.start_phase, msCopy.modulatorShape);
+                auto ch = getHeight() / 2;
+                auto sc = getHeight() * 0.9 / 2;
+                auto p = juce::Path();
+                // OK so we want to run for one second
+                auto pts = sr / blockSize;
+
+                for (int i = 0; i < pts; ++i)
+                {
+                    curveLfo.process(msCopy.rate, msCopy.curveLfoStorage.deform,
+                                     msCopy.curveLfoStorage.delay, msCopy.curveLfoStorage.attack,
+                                     msCopy.curveLfoStorage.release,
+                                     false /*msCopy.curveLfoStorage.useenv*/,
+                                     msCopy.curveLfoStorage.unipolar, true);
+                    auto yp = ch - sc * curveLfo.output;
+                    if (i == 0)
+                        p.startNewSubPath(0, yp);
+                    else if (i % ds)
+                        p.lineTo(i * 1.0 * getWidth() / pts, yp);
+                }
+                ms = msCopy;
+                curvePath = p;
+            }
+
             auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
                                                  jcmp::NamedPanel::Styles::background);
             auto boxc = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
@@ -472,8 +514,8 @@ struct CurveLFOPane : juce::Component, HasEditor
             g.setColour(boxc);
             g.drawRect(getLocalBounds(), 1);
 
-            g.setFont(parent->editor->themeApplier.interBoldFor(30));
-            g.drawText("Curve Viz Soon", getLocalBounds(), juce::Justification::centred);
+            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::accent_2a));
+            g.strokePath(curvePath, juce::PathStrokeType(1));
         }
     };
 
@@ -493,32 +535,31 @@ struct CurveLFOPane : juce::Component, HasEditor
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
-        auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L) {
+        auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L, std::string lab = "") {
             fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
             if (A->description.canTemposync)
             {
                 parent->setAttachmentAsTemposync(*A);
             }
-            makeLabel(L, A->getLabel());
+            if (lab.empty())
+            {
+                makeLabel(L, A->getLabel());
+            }
+            else
+            {
+                makeLabel(L, lab);
+            }
         };
 
         aux(ms.rate, rateA, rateK, rateL);
         aux(ms.curveLfoStorage.deform, deformA, deformK, deformL);
         aux(ms.start_phase, phaseA, phaseK, phaseL);
+        aux(ms.curveLfoStorage.angle, angleA, angleK, angleL);
 
-        // fac::attachAndAdd(ms, ms.start_phase, this, angleA, angleK, parent->forZone,
-        //                   parent->selectedTab);
-        // angleK = std::make_unique<jcmp::Knob>();
-        // angleK->setSource(fakeModel->getDummySourceFor('knb2'));
-        angleK = connectors::makeConnectedToDummy<jcmp::Knob>('angl', "Angle", 0, true,
-                                                              editor->makeComingSoon("Angle"));
-        addAndMakeVisible(*angleK);
-        makeLabel(angleL, "Angle");
-
-        aux(ms.curveLfoStorage.delay, envA[0], envS[0], envL[0]);
-        aux(ms.curveLfoStorage.attack, envA[1], envS[1], envL[1]);
-        aux(ms.curveLfoStorage.release, envA[2], envS[2], envL[2]);
+        aux(ms.curveLfoStorage.delay, envA[0], envS[0], envL[0], "D");
+        aux(ms.curveLfoStorage.attack, envA[1], envS[1], envL[1], "A");
+        aux(ms.curveLfoStorage.release, envA[2], envS[2], envL[2], "R");
 
         bfac::attachAndAdd(ms, ms.curveLfoStorage.unipolar, this, unipolarA, unipolarB,
                            parent->forZone, parent->selectedTab);
@@ -594,8 +635,8 @@ struct CurveLFOPane : juce::Component, HasEditor
         curveDraw->setBounds(curveBox);
 
         auto buttonH = BUTTON_H;
-        unipolarB->setBounds(0, bh / 2 - MG - buttonH, b.getWidth() / 4, buttonH);
-        useenvB->setBounds(0, bh / 2, b.getWidth() / 4, buttonH);
+        unipolarB->setBounds(0, bh / 2 - MG - 2 * buttonH, b.getWidth() / 4, buttonH);
+        useenvB->setBounds(0, bh / 2 - buttonH, b.getWidth() / 4, buttonH);
     }
 
     std::unique_ptr<LfoPane::attachment_t> rateA, deformA, phaseA, angleA;

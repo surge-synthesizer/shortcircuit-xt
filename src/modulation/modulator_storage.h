@@ -66,7 +66,7 @@ struct StepLFOStorage
 
 struct CurveLFOStorage
 {
-    float deform{0.f};
+    float deform{0.f}, angle{0.f};
 
     float delay{0.f}, attack{0.f}, release{0.f};
     bool unipolar{false};
@@ -228,6 +228,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                                      .withCustomMaxDisplay("RATE: STEP"));
 
     SC_FIELD(curveLfoStorage.deform, pmd().asPercentBipolar().withName("Deform"));
+    SC_FIELD(curveLfoStorage.angle, pmd().asPercentBipolar().withName("Angle"));
     SC_FIELD(curveLfoStorage.delay, envTime().withDefault(0).withName("Delay"));
     SC_FIELD(curveLfoStorage.attack, envTime().withDefault(0).withName("Attack"));
     SC_FIELD(curveLfoStorage.release, envTime().withDefault(1).withName("Release"));
