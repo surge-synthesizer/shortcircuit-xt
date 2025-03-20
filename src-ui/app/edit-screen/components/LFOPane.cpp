@@ -70,6 +70,9 @@ struct StepLFOPane : juce::Component, app::HasEditor
         LfoPane *parent{nullptr};
         StepRender(LfoPane *p) : parent{p} { recalcCurve(); }
 
+        modulation::ModulatorStorage ms;
+        juce::Path curvePath{};
+
         void paint(juce::Graphics &g) override
         {
             if (!parent)
@@ -119,27 +122,55 @@ struct StepLFOPane : juce::Component, app::HasEditor
                 bx = bx.translated(w, 0);
             }
 
-            /*
-            g.setColour(hanc);
-            auto yscal = 1;
-            auto p = juce::Path();
-            bool first{true};
-            for (auto &[xf, yf] : cycleCurve)
+            if (curvePath.isEmpty() ||
+                memcmp(&ms, &parent->modulatorStorageData[parent->selectedTab],
+                       sizeof(modulation::ModulatorStorage)) != 0)
             {
-                auto yn = yf * yscal - yscal;
-                auto xn = xf * getWidth();
-                if (first)
+                curvePath.clear();
+
+                // retain for compare
+                ms = parent->modulatorStorageData[parent->selectedTab];
+                // make a local copy for modification
+
+                auto msCopy = ms;
+                msCopy.stepLfoStorage.rateIsForSingleStep = true; // rate specifies one step
+                msCopy.temposync = false;
+
+                // Figure out how many steps. By forcing to rate for single the calculation
+                // is pretty easy
+                auto renderSR{48000};
+                float rate{3.f}; // 8 steps a second
+                float stepSamples{renderSR * msCopy.stepLfoStorage.repeat / std::pow(2.0f, rate) /
+                                  blockSize}; // how many samples in a step
+                int sampleEvery = std::min((int)(stepSamples / (getWidth() * 3)), 1);
+
+                scxt::engine::Transport td{};
+                sst::basic_blocks::dsp::RNG gen;
+
+                auto so = std::make_unique<scxt::modulation::modulators::StepLFO>();
+                so->setSampleRate(renderSR);
+                gen.reseed(8675309);
+                so->assign(&msCopy, &rate, &td, gen);
+                so->UpdatePhaseIncrement();
+                so->phase = msCopy.start_phase;
+
+                for (int i = 0; i < stepSamples; ++i)
                 {
-                    p.startNewSubPath(xn, yn);
+                    so->process(blockSize);
+                    auto outy = getHeight() / 2.f - so->output * getHeight() / 2.f;
+                    if (i == 0)
+                    {
+                        curvePath.startNewSubPath(0, outy);
+                    }
+                    else if (i % sampleEvery == 0)
+                    {
+                        curvePath.lineTo(i * 1.0 * getWidth() / (stepSamples), outy);
+                    }
                 }
-                else
-                {
-                    p.lineTo(xn, yn);
-                }
-                first = false;
             }
-            g.strokePath(p, juce::PathStrokeType(1.0));
-            */
+
+            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::generic_content_high));
+            g.strokePath(curvePath, juce::PathStrokeType(1));
 
             g.setColour(boxc);
             g.drawRect(getLocalBounds());
@@ -514,7 +545,7 @@ struct CurveLFOPane : juce::Component, HasEditor
             g.setColour(boxc);
             g.drawRect(getLocalBounds(), 1);
 
-            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::accent_2a));
+            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::generic_content_high));
             g.strokePath(curvePath, juce::PathStrokeType(1));
         }
     };
