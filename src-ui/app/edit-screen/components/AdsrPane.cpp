@@ -49,7 +49,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
         if (idx == 1)
         {
             isTabbed = true;
-            tabNames = {"EG2", "EG3", "EG4"};
+            tabNames = {"EG2", "EG3", "EG4", "EG5"};
             onTabSelected = [w = juce::Component::SafePointer(this)](int nt) {
                 if (!w)
                     return;
