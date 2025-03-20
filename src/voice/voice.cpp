@@ -127,6 +127,7 @@ void Voice::voiceStarted()
 
             stepLfos[i].assign(&zone->modulatorStorage[i], endpoints->lfo[i].rateP,
                                &engine->transport, engine->rng);
+            stepLfos[i].phase = ms.start_phase;
         }
         else if (lfoEvaluator[i] == CURVE)
         {
