@@ -67,7 +67,7 @@ static constexpr size_t maxProcessorFloatParams{9};
 static constexpr size_t maxProcessorIntParams{5};
 
 static constexpr uint16_t lfosPerZone{4};
-static constexpr uint16_t egsPerZone{4};
+static constexpr uint16_t egsPerZone{5};
 static constexpr uint16_t maxVariantsPerZone{16};
 
 static constexpr uint16_t lfosPerGroup{4};

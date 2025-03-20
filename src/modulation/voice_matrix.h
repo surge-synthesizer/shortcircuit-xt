@@ -224,12 +224,14 @@ struct MatrixEndpoints
 
     struct Sources
     {
+        static_assert(scxt::egsPerZone == 5, "Clean up the egSources constructor if this fails");
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
               egSources{{{'zneg', 'aeg ', 0},
                          {'zneg', 'eg2 ', 0},
                          {'zneg', 'eg3 ', 0},
-                         {'zneg', 'eg4 ', 0}}},
+                         {'zneg', 'eg4 ', 0},
+                         {'zneg', 'eg5 ', 0}}},
               transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
         {
             registerVoiceModSource(e, egSources[0], "", "AEG");
