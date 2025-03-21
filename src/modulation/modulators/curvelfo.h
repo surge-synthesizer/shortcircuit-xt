@@ -30,6 +30,7 @@
 
 #include "sst/basic-blocks/modulators/SimpleLFO.h"
 #include "sst/basic-blocks/modulators/DAREnvelope.h"
+#include "sst/basic-blocks/modulators/Transport.h"
 
 #include "utils.h"
 #include "modulation/modulator_storage.h"
@@ -51,10 +52,10 @@ struct CurveLFO : SampleRateSupport
 
   private:
     modulation::ModulatorStorage *settings{nullptr};
-    engine::Transport *td{nullptr};
+    sst::basic_blocks::modulators::Transport *td{nullptr};
 
   public:
-    void assign(modulation::ModulatorStorage *s, engine::Transport *t)
+    void assign(modulation::ModulatorStorage *s, sst::basic_blocks::modulators::Transport *t)
     {
         settings = s;
         td = t;

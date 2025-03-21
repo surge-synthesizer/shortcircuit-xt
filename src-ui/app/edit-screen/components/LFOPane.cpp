@@ -245,7 +245,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
                               blockSize}; // how many samples in a step
             int sampleEvery = std::min((int)(stepSamples / (getWidth() * 3)), 1);
 
-            scxt::engine::Transport td{};
+            sst::basic_blocks::modulators::Transport td{};
             sst::basic_blocks::dsp::RNG gen;
 
             auto so = std::make_unique<scxt::modulation::modulators::StepLFO>();
@@ -462,7 +462,7 @@ struct CurveLFOPane : juce::Component, HasEditor
     struct CurveDraw : public juce::Component
     {
         LfoPane *parent{nullptr};
-        engine::Transport dummyTransport;
+        sst::basic_blocks::modulators::Transport dummyTransport;
         CurveDraw(LfoPane *p) : parent(p)
         {
             dummyTransport.tempo = 120;
