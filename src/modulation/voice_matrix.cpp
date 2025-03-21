@@ -366,6 +366,7 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
 
         registerVoiceModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
         registerVoiceModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
+        registerVoiceModTarget(e, curve.angleT, ptFn, curveLabel(nm(ms.curveLfoStorage.angle)));
         registerVoiceModTarget(e, curve.delayT, ptFn, curveLabel(nm(ms.curveLfoStorage.delay)));
         registerVoiceModTarget(e, curve.attackT, ptFn, curveLabel(nm(ms.curveLfoStorage.attack)));
         registerVoiceModTarget(e, curve.releaseT, ptFn, curveLabel(nm(ms.curveLfoStorage.release)));
