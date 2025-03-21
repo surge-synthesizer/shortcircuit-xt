@@ -98,6 +98,7 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
 
 SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  v = tao::json::empty_object;
+                 addUnlessDefault<val_t>(v, "dl", 0.f, from.dly);
                  addUnlessDefault<val_t>(v, "a", 0.f, from.a);
                  addUnlessDefault<val_t>(v, "d", 0.f, from.d);
                  addUnlessDefault<val_t>(v, "h", 0.f, from.h);
@@ -106,15 +107,14 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "aShape", 0.f, from.aShape);
                  addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
                  addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
-                 addUnlessDefault<val_t>(v, "isDigital", true, from.isDigital);
              }),
              SC_TO({
+                 findOrSet(v, "dl", 0.f, result.dly);
                  findOrSet(v, "a", 0.f, result.a);
                  findOrSet(v, "h", 0.f, result.h);
                  findOrSet(v, "d", 0.f, result.d);
                  findOrSet(v, "s", 1.f, result.s);
                  findOrSet(v, "r", 0.5f, result.r);
-                 findOrSet(v, "isDigital", true, result.isDigital);
                  findOrSet(v, "aShape", 0.f, result.aShape);
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);

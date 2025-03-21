@@ -48,9 +48,9 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 
     template <typename T> struct UIStore
     {
-        std::array<std::unique_ptr<T>, 8> members;
+        std::array<std::unique_ptr<T>, 9> members;
         std::unique_ptr<T> &A{members[0]}, &H{members[1]}, &D{members[2]}, &S{members[3]},
-            &R{members[4]}, &Ash{members[5]}, &Dsh{members[6]}, &Rsh{members[7]};
+            &R{members[4]}, &Ash{members[5]}, &Dsh{members[6]}, &Rsh{members[7]}, &dly{members[8]};
     };
 
     UIStore<attachment_t> attachments;

@@ -144,6 +144,7 @@ struct MatrixEndpoints
             : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>(p)
         {
             std::string group = (index == 0 ? "AEG" : std::string("EG") + std::to_string(p + 1));
+            registerVoiceModTarget(e, dlyT, group, "Delay");
             registerVoiceModTarget(e, aT, group, "Attack");
             registerVoiceModTarget(e, hT, group, "Hold");
             registerVoiceModTarget(e, dT, group, "Decay");

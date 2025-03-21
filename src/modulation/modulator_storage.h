@@ -48,8 +48,7 @@ struct AdsrStorage
     /*
      * Each of the ADR are 0..1 and scaled to time by the envelope. S is a 0..1 pct
      */
-    float a{0.0}, h{0.0}, d{0.0}, s{1.0}, r{0.5};
-    bool isDigital{true};
+    float dly{0.0}, a{0.0}, h{0.0}, d{0.0}, s{1.0}, r{0.5};
 
     // TODO: What are these going to be when they grow up?
     float aShape{0}, dShape{0}, rShape{0};
@@ -156,6 +155,7 @@ inline scxt::datamodel::pmd envelopeThirtyTwo()
 inline scxt::datamodel::pmd envTime() { return scxt::datamodel::pmd().as25SecondExpTime(); }
 
 SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
+    SC_FIELD(dly, envTime().withDefault(0.f).withName("Delay"));
     SC_FIELD(a, envTime().withName("Attack"));
     SC_FIELD(h, envTime().withDefault(0.f).withName("Hold"));
     SC_FIELD(d, envTime().withName("Decay"));

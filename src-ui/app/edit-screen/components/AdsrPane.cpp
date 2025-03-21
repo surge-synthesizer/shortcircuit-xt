@@ -131,6 +131,7 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
         fac::attach(adsrView, t, this, a, w, forZone, useIdx);
         getContentAreaComponent()->addAndMakeVisible(*w);
     };
+    attc(adsrView.dly, attachments.dly, sliders.dly);
     attc(adsrView.a, attachments.A, sliders.A);
     attc(adsrView.h, attachments.H, sliders.H);
     attc(adsrView.d, attachments.D, sliders.D);
@@ -146,6 +147,7 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
         lb->setText(l);
         getContentAreaComponent()->addAndMakeVisible(*lb);
     };
+    makeLabel(labels.dly, "Dly");
     makeLabel(labels.A, "A");
     makeLabel(labels.H, "H");
     makeLabel(labels.D, "D");
@@ -174,8 +176,12 @@ void AdsrPane::resized()
     auto h = r.getHeight() - lh - kh;
     auto x = 0;  // r.getX() * 1.f;
     auto y = kh; // r.getY() + kh;
-    auto w = 34.f;
-    x = x + (r.getWidth() - w * 5) * 0.5;
+    auto w = 31.f;
+    x = x + (r.getWidth() - w * 6) * 0.5;
+
+    sliders.dly->setBounds(x, y, w, h);
+    labels.dly->setBounds(x, y + h, w, lh);
+    x += w;
 
     sliders.A->setBounds(x, y, w, h);
     labels.A->setBounds(x, y + h, w, lh);

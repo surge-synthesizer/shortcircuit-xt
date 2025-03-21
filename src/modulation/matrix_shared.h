@@ -118,14 +118,16 @@ template <typename TG, uint32_t gn> struct EGTargetEndpointData
 {
     uint32_t index{0};
     EGTargetEndpointData(uint32_t p)
-        : index(p), aT{gn, 'atck', p}, hT{gn, 'hld ', p}, dT{gn, 'dcay', p}, sT{gn, 'sust', p},
-          rT{gn, 'rels', p}, asT{gn, 'atSH', p}, dsT{gn, 'dcSH', p}, rsT{gn, 'rlSH', p}
+        : index(p), dlyT{gn, 'dlay', p}, aT{gn, 'atck', p}, hT{gn, 'hld ', p}, dT{gn, 'dcay', p},
+          sT{gn, 'sust', p}, rT{gn, 'rels', p}, asT{gn, 'atSH', p}, dsT{gn, 'dcSH', p},
+          rsT{gn, 'rlSH', p}
 
     {
     }
 
-    TG aT, hT, dT, sT, rT, asT, dsT, rsT;
-    const float *aP{nullptr}, *hP{nullptr}, *dP{nullptr}, *sP{nullptr}, *rP{nullptr};
+    TG dlyT, aT, hT, dT, sT, rT, asT, dsT, rsT;
+    const float *dlyP{nullptr}, *aP{nullptr}, *hP{nullptr}, *dP{nullptr}, *sP{nullptr},
+        *rP{nullptr};
     const float *asP{nullptr}, *dsP{nullptr}, *rsP{nullptr};
 
     template <typename M, typename Z> void baseBind(M &m, Z &z);
@@ -277,6 +279,7 @@ template <typename TG, uint32_t gn>
 template <typename M, typename EG>
 inline void EGTargetEndpointData<TG, gn>::baseBind(M &m, EG &eg)
 {
+    bindEl(m, eg, dlyT, eg.dly, dlyP);
     bindEl(m, eg, aT, eg.a, aP);
     bindEl(m, eg, hT, eg.h, hP);
     bindEl(m, eg, dT, eg.d, dP);
