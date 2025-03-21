@@ -28,6 +28,7 @@
 #define SCXT_SRC_ENGINE_ENGINE_H
 
 #include "sst/voicemanager/voicemanager.h"
+#include "sst/basic-blocks/modulators/Transport.h"
 
 #include "engine/bus.h"
 #include "utils.h"
@@ -56,7 +57,6 @@
 
 #include "modulation/voice_matrix.h"
 #include "modulation/group_matrix.h"
-#include "transport.h"
 
 #define DEBUG_VOICE_LIFECYCLE 0
 
@@ -111,7 +111,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     bool processAudio();
 
-    Transport transport;
+    sst::basic_blocks::modulators::Transport transport;
     void onTransportUpdated();
     std::array<float, numTransportPhasors> transportPhasors{};
     void updateTransportPhasors();

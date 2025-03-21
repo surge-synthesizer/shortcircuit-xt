@@ -28,13 +28,13 @@
 #ifndef SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
 #define SCXT_SRC_MODULATION_MODULATORS_STEPLFO_H
 
-#include "engine/transport.h"
 #include "utils.h"
 #include <array>
 #include <vector>
 #include <utility>
 #include <modulation/modulator_storage.h>
 #include "sst/basic-blocks/dsp/RNG.h"
+#include "sst/basic-blocks/modulators/Transport.h"
 
 #include "modulation/modulator_storage.h"
 
@@ -103,7 +103,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     StepLFO();
     ~StepLFO();
     void assign(modulation::ModulatorStorage *settings, const float *rate,
-                scxt::engine::Transport *td, sst::basic_blocks::dsp::RNG &);
+                sst::basic_blocks::modulators::Transport *td, sst::basic_blocks::dsp::RNG &);
     void sync();
     void process(int samples);
     float output{0.f};
@@ -120,7 +120,7 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
     float ratemult;
     int shuffle_id;
     const float *rate{nullptr};
-    engine::Transport *td{nullptr};
+    sst::basic_blocks::modulators::Transport *td{nullptr};
     modulation::ModulatorStorage *settings{nullptr};
 };
 } // namespace scxt::modulation::modulators

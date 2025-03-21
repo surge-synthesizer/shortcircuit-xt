@@ -185,7 +185,7 @@ float QuadraticBSpline(float y0, float y1, float y2, float mu)
 StepLFO::StepLFO() {}
 
 void StepLFO::assign(modulation::ModulatorStorage *settings, const float *rate,
-                     scxt::engine::Transport *td, sst::basic_blocks::dsp::RNG &rng)
+                     sst::basic_blocks::modulators::Transport *td, sst::basic_blocks::dsp::RNG &rng)
 {
     this->settings = settings;
     this->td = td;

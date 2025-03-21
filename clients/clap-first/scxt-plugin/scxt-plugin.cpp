@@ -28,9 +28,12 @@
 #include <cassert>
 #include <chrono>
 
+#include "sst/basic-blocks/modulators/Transport.h"
+
 #include "scxt-plugin.h"
 #include "sst/plugininfra/version_information.h"
 #include "app/SCXTEditor.h"
+#include "sst/basic-blocks/modulators/TransportClapAdapter.h"
 
 namespace scxt::clap_first::scxt_plugin
 {
@@ -246,38 +249,8 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
         return CLAP_PROCESS_SLEEP;
     }
 
-    if (process->transport)
-    {
-        auto &t = process->transport;
-        engine->transport.tempo = t->tempo;
-
-        // isRecording should always imply isPlaying but better safe than sorry
-        if (t->flags & CLAP_TRANSPORT_IS_PLAYING || t->flags & CLAP_TRANSPORT_IS_RECORDING)
-        {
-            engine->transport.hostTimeInBeats = 1.0 * t->song_pos_beats / CLAP_BEATTIME_FACTOR;
-            engine->transport.lastBarStartInBeats = 1.0 * t->bar_start / CLAP_BEATTIME_FACTOR;
-            engine->transport.timeInBeats = engine->transport.hostTimeInBeats;
-        }
-
-        engine->transport.status = scxt::engine::Transport::Status::STOPPED;
-        if (t->flags & CLAP_TRANSPORT_IS_PLAYING)
-            engine->transport.status &= scxt::engine::Transport::Status::PLAYING;
-        if (t->flags & CLAP_TRANSPORT_IS_RECORDING)
-            engine->transport.status &= scxt::engine::Transport::Status::RECORDING;
-        if (t->flags & CLAP_TRANSPORT_IS_LOOP_ACTIVE)
-            engine->transport.status &= scxt::engine::Transport::Status::LOOPING;
-
-        engine->transport.signature.numerator = t->tsig_num;
-        engine->transport.signature.denominator = t->tsig_denom;
-        engine->onTransportUpdated();
-    }
-    else
-    {
-        engine->transport.tempo = 120;
-        engine->transport.signature.numerator = 4;
-        engine->transport.signature.denominator = 4;
-        engine->onTransportUpdated();
-    }
+    sst::basic_blocks::modulators::fromClapTransport(engine->transport, process->transport);
+    engine->onTransportUpdated();
 
     auto &ptch = engine->getPatch();
     auto &main = ptch->busses.mainBus.output;
