@@ -68,7 +68,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
     struct StepRender : juce::Component
     {
         LfoPane *parent{nullptr};
-        StepRender(LfoPane *p) : parent{p} { recalcCurve(); }
+        StepRender(LfoPane *p) : parent{p} { setWantsKeyboardFocus(true); }
 
         modulation::ModulatorStorage ms;
         juce::Path curvePath{};
@@ -126,47 +126,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
                 memcmp(&ms, &parent->modulatorStorageData[parent->selectedTab],
                        sizeof(modulation::ModulatorStorage)) != 0)
             {
-                curvePath.clear();
-
-                // retain for compare
-                ms = parent->modulatorStorageData[parent->selectedTab];
-                // make a local copy for modification
-
-                auto msCopy = ms;
-                msCopy.stepLfoStorage.rateIsForSingleStep = true; // rate specifies one step
-                msCopy.temposync = false;
-
-                // Figure out how many steps. By forcing to rate for single the calculation
-                // is pretty easy
-                auto renderSR{48000};
-                float rate{3.f}; // 8 steps a second
-                float stepSamples{renderSR * msCopy.stepLfoStorage.repeat / std::pow(2.0f, rate) /
-                                  blockSize}; // how many samples in a step
-                int sampleEvery = std::min((int)(stepSamples / (getWidth() * 3)), 1);
-
-                scxt::engine::Transport td{};
-                sst::basic_blocks::dsp::RNG gen;
-
-                auto so = std::make_unique<scxt::modulation::modulators::StepLFO>();
-                so->setSampleRate(renderSR);
-                gen.reseed(8675309);
-                so->assign(&msCopy, &rate, &td, gen);
-                so->UpdatePhaseIncrement();
-                so->phase = msCopy.start_phase;
-
-                for (int i = 0; i < stepSamples; ++i)
-                {
-                    so->process(blockSize);
-                    auto outy = getHeight() / 2.f - so->output * getHeight() / 2.f;
-                    if (i == 0)
-                    {
-                        curvePath.startNewSubPath(0, outy);
-                    }
-                    else if (i % sampleEvery == 0)
-                    {
-                        curvePath.lineTo(i * 1.0 * getWidth() / (stepSamples), outy);
-                    }
-                }
+                recalcCurve();
             }
 
             g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::generic_content_high));
@@ -265,38 +225,49 @@ struct StepLFOPane : juce::Component, app::HasEditor
             repaint();
         }
 
-        std::vector<std::pair<float, float>> cycleCurve;
         void recalcCurve()
         {
-            cycleCurve.clear();
+            curvePath.clear();
 
-            // explicitly make a copy here so we can screw with it
-            auto ms = parent->modulatorStorageData[parent->selectedTab];
-            ms.stepLfoStorage.rateIsForSingleStep = true; // rate specifies one step
+            // retain for compare
+            ms = parent->modulatorStorageData[parent->selectedTab];
+            // make a local copy for modification
 
-            auto so = std::make_unique<scxt::modulation::modulators::StepLFO>();
-            // always render display at 48k so we can reason about output density
-            float renderSR{48000};
-            so->setSampleRate(renderSR);
+            auto msCopy = ms;
+            msCopy.stepLfoStorage.rateIsForSingleStep = true; // rate specifies one step
+            msCopy.temposync = false;
+
+            // Figure out how many steps. By forcing to rate for single the calculation
+            // is pretty easy
+            auto renderSR{48000};
             float rate{3.f}; // 8 steps a second
-            float stepSamples{renderSR / std::pow(2.0f, rate) /
-                              blockSize}; // how manu samples in a step
-            int captureEvery{(int)(stepSamples / (ms.stepLfoStorage.repeat * 10))};
+            float stepSamples{renderSR * msCopy.stepLfoStorage.repeat / std::pow(2.0f, rate) /
+                              blockSize}; // how many samples in a step
+            int sampleEvery = std::min((int)(stepSamples / (getWidth() * 3)), 1);
+
             scxt::engine::Transport td{};
             sst::basic_blocks::dsp::RNG gen;
-            so->assign(&ms, &rate, &td, gen);
 
+            auto so = std::make_unique<scxt::modulation::modulators::StepLFO>();
+            so->setSampleRate(renderSR);
+            gen.reseed(8675309);
+            so->assign(&msCopy, &rate, &td, gen);
             so->UpdatePhaseIncrement();
-            for (int i = 0; i < stepSamples * ms.stepLfoStorage.repeat; ++i)
+            so->phase = msCopy.start_phase;
+
+            for (int i = 0; i < stepSamples; ++i)
             {
-                if (i % captureEvery == 0)
-                {
-                    cycleCurve.emplace_back((float)i / (stepSamples * ms.stepLfoStorage.repeat),
-                                            so->output);
-                }
                 so->process(blockSize);
+                auto outy = getHeight() / 2.f - so->output * getHeight() / 2.f;
+                if (i == 0)
+                {
+                    curvePath.startNewSubPath(0, outy);
+                }
+                else if (i % sampleEvery == 0)
+                {
+                    curvePath.lineTo(i * 1.0 * getWidth() / (stepSamples), outy);
+                }
             }
-            auto bk = cycleCurve.back();
         }
     }; // namespace juce::Component
 
