@@ -464,11 +464,6 @@ void Group::setupOnUnstream(engine::Engine &e)
         onProcessorTypeChanged(p, processorStorage[p].type);
     }
 
-    for (auto &lfo : stepLfos)
-    {
-        lfo.UpdatePhaseIncrement();
-    }
-
     triggerConditions.setupOnUnstream(parentPart->groupTriggerInstrumentState);
     resetPolyAndPlaymode(e);
 }

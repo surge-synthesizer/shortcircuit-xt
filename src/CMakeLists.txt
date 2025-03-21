@@ -48,7 +48,6 @@ add_library(${PROJECT_NAME} STATIC
         modulation/voice_matrix.cpp
         modulation/mod_curves.cpp
         modulation/modulator_storage.cpp
-        modulation/modulators/steplfo.cpp
 
         selection/selection_manager.cpp
 

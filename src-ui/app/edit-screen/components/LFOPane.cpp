@@ -252,8 +252,6 @@ struct StepLFOPane : juce::Component, app::HasEditor
             so->setSampleRate(renderSR);
             gen.reseed(8675309);
             so->assign(&msCopy, &rate, &td, gen);
-            so->UpdatePhaseIncrement();
-            so->phase = msCopy.start_phase;
 
             for (int i = 0; i < stepSamples; ++i)
             {

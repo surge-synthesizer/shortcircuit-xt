@@ -183,11 +183,6 @@ void Zone::initialize()
 {
     for (auto &v : voiceWeakPointers)
         v = nullptr;
-
-    for (auto &l : modulatorStorage)
-    {
-        modulation::modulators::clear_lfo(l);
-    }
 }
 
 void Zone::setupOnUnstream(const engine::Engine &e)
