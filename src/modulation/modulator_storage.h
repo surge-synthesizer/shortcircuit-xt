@@ -31,7 +31,10 @@
 #include <array>
 #include <cstdint>
 
+#include "sst/basic-blocks/modulators/StepLFO.h"
+
 #include "utils.h"
+#include "configuration.h"
 #include "datamodel/metadata.h"
 
 namespace scxt::modulation
@@ -52,17 +55,7 @@ struct AdsrStorage
     float aShape{0}, dShape{0}, rShape{0};
 };
 
-struct StepLFOStorage
-{
-    static constexpr int stepLfoSteps{32};
-
-    StepLFOStorage() { std::fill(data.begin(), data.end(), 0.f); }
-    std::array<float, stepLfoSteps> data;
-    int16_t repeat{16};
-
-    float smooth{0.f};
-    bool rateIsForSingleStep{false};
-};
+using StepLFOStorage = sst::basic_blocks::modulators::StepLFO<scxt::blockSize>::Storage;
 
 struct CurveLFOStorage
 {

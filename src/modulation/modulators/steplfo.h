@@ -37,91 +37,44 @@
 #include "sst/basic-blocks/modulators/Transport.h"
 
 #include "modulation/modulator_storage.h"
+#include "tuning/equal.h"
 
 namespace scxt::modulation::modulators
 {
 
-enum LFOPresets
-{
-    lp_custom = 0,
-    lp_clear,
-    lp_sine,
-    lp_tri,
-    lp_square,
-    lp_ramp_up,
-    lp_ramp_down,
-    lp_noise,
-    lp_noise_mean3,
-    lp_noise_mean5,
-    lp_tremolo_tri,
-    lp_tremolo_sin,
-    n_lfopresets,
-};
-
-inline std::string getLfoPresetName(LFOPresets p)
-{
-    switch (p)
-    {
-    case lp_custom:
-        return "custom";
-    case lp_clear:
-        return "clear";
-    case lp_sine:
-        return "sine";
-    case lp_tri:
-        return "tri";
-    case lp_square:
-        return "square";
-    case lp_ramp_up:
-        return "ramp_up";
-    case lp_ramp_down:
-        return "ramp_down";
-    case lp_noise:
-        return "noise";
-    case lp_noise_mean3:
-        return "noise_mean3";
-    case lp_noise_mean5:
-        return "noise_mean5";
-    case lp_tremolo_tri:
-        return "tremolo_tri";
-    case lp_tremolo_sin:
-        return "tremolo_sin";
-    case n_lfopresets:
-        throw std::logic_error("Called with n_lfopresets");
-        return "ERROR";
-    }
-    throw std::logic_error("Called with non-switchable preset");
-}
-
-void clear_lfo(modulation::ModulatorStorage &settings);
-void load_lfo_preset(LFOPresets preset, StepLFOStorage &settings, sst::basic_blocks::dsp::RNG &);
-float lfo_ipol(float *step_history, float phase, float smooth, int odd);
-
 struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
 {
   public:
-    StepLFO();
-    ~StepLFO();
+    StepLFO() : underlyingLfo(tuning::equalTuning) {}
+    ~StepLFO() = default;
+
+    void onSampleRateChanged() override { underlyingLfo.setSampleRate(sampleRate, sampleRateInv); }
     void assign(modulation::ModulatorStorage *settings, const float *rate,
-                sst::basic_blocks::modulators::Transport *td, sst::basic_blocks::dsp::RNG &);
-    void sync();
-    void process(int samples);
+                sst::basic_blocks::modulators::Transport *td, sst::basic_blocks::dsp::RNG &rng)
+    {
+        this->settings = settings;
+        this->td = td;
+        this->rate = rate;
+        underlyingLfo.setSampleRate(sampleRate, sampleRateInv);
+        underlyingLfo.assign(&settings->stepLfoStorage, *rate, td, rng, settings->temposync);
+        underlyingLfo.phase = settings->start_phase;
+    }
+    // void sync();
+    void process(int samples)
+    {
+        underlyingLfo.process(*rate, settings->triggerMode, settings->temposync,
+                              settings->triggerMode == ModulatorStorage::ONESHOT, samples);
+        output = underlyingLfo.output;
+    }
+
     float output{0.f};
 
-    void UpdatePhaseIncrement();
-
-    float phase{0};
-
-    // protected:
-    long state;
-    long state_tminus1;
-    float phaseInc;
-    float wf_history[4];
-    float ratemult;
-    int shuffle_id;
+  private:
     const float *rate{nullptr};
     sst::basic_blocks::modulators::Transport *td{nullptr};
     modulation::ModulatorStorage *settings{nullptr};
+
+    sst::basic_blocks::modulators::StepLFO<scxt::blockSize> underlyingLfo;
 };
 } // namespace scxt::modulation::modulators
 
