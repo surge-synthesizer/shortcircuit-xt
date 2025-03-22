@@ -30,6 +30,7 @@
 
 #include <initializer_list>
 #include "tao/json/traits.hpp"
+#include "filesystem/import.h"
 
 namespace scxt::json
 {
@@ -214,6 +215,49 @@ void addUnlessDefault(V &v, const std::string &key, const R &defVal, const R &va
     (engine::Engine::streamReason == engine::Engine::StreamReason::FOR_PART)
 
 #define SC_STREAMING_FOR_DAW_OR_MULTI (SC_STREAMING_FOR_DAW || SC_STREAMING_FOR_MULTI)
+
+inline fs::path unstreamPathFromString(const std::string &s)
+{
+#if WINDOWS
+    return fs::path(fs::u8path(s));
+#else
+    // A windows path with a drive letter needs adjusting
+    // on a posix system, alas. We handle this at unstream
+    // to keep the same-store-os case working properly.
+    //
+    // Also handle the \\server\foo case here
+    if (s.length() > 2 && (s[1] == ':' && (s[2] == '\\') || (s[2] == '/')) ||
+        (s[0] == s[1] && (s[0] == '\\' || s[0] == '/')))
+    {
+        // We know at this point we are a windows path, so
+        // any \ in the string are a separator, unlike posix
+        // where \ can be part of a filename
+        std::string r, mnt;
+
+        if (s[1] == ':')
+        {
+            // c:\foo\bar
+            auto drv = s.substr(0, 1);
+            r = s.substr(2);
+            mnt = std::string("/mnt/") + drv;
+        }
+        else
+        {
+            // //server/foo/bar
+            r = r.substr(1);
+            mnt = "";
+        }
+
+        std::replace(r.begin(), r.end(), '\\', '/');
+        auto res = fs::path(fs::u8path(mnt + r));
+        return res;
+    }
+    else
+    {
+        return fs::path(fs::u8path(s));
+    }
+#endif
+}
 
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SCXT_TRAITS_H
