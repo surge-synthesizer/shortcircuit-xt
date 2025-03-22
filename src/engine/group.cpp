@@ -166,18 +166,16 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
 
     bool envGate = gated;
-    if (egsActive[0])
+    for (int i = 0; i < egsPerGroup; ++i)
     {
-        auto &aegp = endpoints.eg[0];
-        eg[0].processBlock(*aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
-                           *aegp.rsP, envGate, false);
+        if (egsActive[i])
+        {
+            auto &aegp = endpoints.eg[i];
+            eg[i].processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
+                                        *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, envGate, false);
+        }
     }
-    if (egsActive[1])
-    {
-        auto &eg2p = endpoints.eg[1];
-        eg[1].processBlock(*eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP, *eg2p.rP, *eg2p.asP, *eg2p.dsP,
-                           *eg2p.rsP, envGate, false);
-    }
+
     modMatrix.process();
 
     auto oAZ = activeZones;
@@ -521,8 +519,11 @@ void Group::attack()
 
     if (isActive())
     {
-        eg[0].attackFrom(eg[0].outBlock0);
-        eg[1].attackFrom(eg[1].outBlock0);
+        for (int i = 0; i < egsPerGroup; ++i)
+        {
+            eg[i].attackFromWithDelay(eg[i].outBlock0, *(endpoints.eg[i].dlyP),
+                                      *(endpoints.eg[i].aP));
+        }
 
         // I *thin* we need to do this
         rePrepareAndBindGroupMatrix();
@@ -543,11 +544,20 @@ void Group::attack()
 
     osDownFilter.reset();
     resetLFOs();
-    eg[0].attackFrom(0.f);
-    eg[1].attackFrom(0.f);
+    for (int i = 0; i < egsPerGroup; ++i)
+    {
+        eg[i].attackFrom(0.f);
+    }
 
     rePrepareAndBindGroupMatrix();
 
+    // We need to re-attack with delay here since the above
+    // attack set our envs to zero but now we have bound
+    // enough matrix to get the delay set up.
+    for (int i = 0; i < egsPerGroup; ++i)
+    {
+        eg[i].attackFromWithDelay(0.f, *(endpoints.eg[i].dlyP), *(endpoints.eg[i].aP));
+    }
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {
         auto *p = processors[i];

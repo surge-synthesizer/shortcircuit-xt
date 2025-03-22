@@ -122,6 +122,7 @@ struct GroupMatrixEndpoints
             if (e)
             {
                 std::string envnm = (p == 0 ? "EG1" : "EG2");
+                registerGroupModTarget(e, dlyT, envnm, "Delay");
                 registerGroupModTarget(e, aT, envnm, "Attack");
                 registerGroupModTarget(e, hT, envnm, "Hold");
                 registerGroupModTarget(e, dT, envnm, "Decay");
