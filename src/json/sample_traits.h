@@ -112,7 +112,12 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
              }));
 
 SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
-                 v = {{"type", from.type}, {"path", from.path.u8string()}, {"md5sum", from.md5sum}};
+                 auto ppref = from.path;
+                 // When you come back to this code for relative paths and stuff
+                 // seriously consider streaming as preferred for windows \ to /
+                 // but then go test all the libgig and xml code and stuff
+                 // ppref = ppref.make_preferred();
+                 v = {{"type", from.type}, {"path", ppref.u8string()}, {"md5sum", from.md5sum}};
                  if (from.type == sample::Sample::SF2_FILE ||
                      from.type == sample::Sample::MULTISAMPLE_FILE)
                  {
@@ -125,7 +130,8 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  findOrSet(v, "type", sample::Sample::WAV_FILE, to.type);
                  std::string p;
                  findIf(v, "path", p);
-                 to.path = fs::path(fs::u8path(p));
+
+                 to.path = unstreamPathFromString(p);
                  findIf(v, "md5sum", to.md5sum);
                  findOrSet(v, "preset", 0, to.preset); // 0 here since we forgot to stream for a bit
                  findOrSet(v, "instrument", -1, to.instrument);
