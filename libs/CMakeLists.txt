@@ -17,10 +17,8 @@ endif()
 add_subdirectory(clap/clap-wrapper)
 
 add_subdirectory(sst/sst-clap-helpers)
-if (NOT DEFINED JUCE_PATH)
-    set(JUCE_PATH "${CMAKE_SOURCE_DIR}/libs/JUCE")
-endif()
-add_clap_juce_shim(JUCE_PATH ${JUCE_PATH})
+message("Including JUCE from ${SCXT_JUCE_PATH}")
+add_clap_juce_shim(JUCE_PATH ${SCXT_JUCE_PATH})
 
 
 add_subdirectory(fmt)
