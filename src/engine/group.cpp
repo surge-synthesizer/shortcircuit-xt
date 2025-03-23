@@ -158,7 +158,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             auto &lp = endpoints.lfo[i].env;
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
-                               *lp.releaseP, gated);
+                               *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
+                               gated);
         }
         else
         {
@@ -597,7 +598,7 @@ void Group::resetLFOs(int whichLFO)
         else if (lfoEvaluator[i] == ENV)
         {
             envLfos[i].setSampleRate(sampleRate, sampleRateInv);
-            envLfos[i].attack(*endpoints.lfo[i].env.delayP);
+            envLfos[i].attack(*endpoints.lfo[i].env.delayP, *endpoints.lfo[i].env.attackP);
         }
         else
         {

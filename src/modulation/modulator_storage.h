@@ -67,8 +67,9 @@ struct CurveLFOStorage
 
 struct EnvLFOStorage
 {
-    float deform{0.f};
     float delay{0.f}, attack{0.f}, hold{0.f}, decay{0.f}, sustain{1.f}, release{0.f};
+    float aShape{0.f}, dShape{0.f}, rShape{0.f};
+    float rateMul{0.f};
 };
 } // namespace modulators
 
@@ -237,6 +238,20 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
     SC_FIELD(envLfoStorage.decay, envTime().withDefault(0).withName("Decay"));
     SC_FIELD(envLfoStorage.sustain, pmd().asPercent().withDefault(1.f).withName("Sustain"));
     SC_FIELD(envLfoStorage.release, envTime().withDefault(1).withName("Release"));
+    SC_FIELD(envLfoStorage.aShape,
+             pmd().asPercentBipolar().withDefault(0).withName("Attack Shape"));
+    SC_FIELD(envLfoStorage.dShape, pmd().asPercentBipolar().withDefault(0).withName("Decay Shape"));
+    SC_FIELD(envLfoStorage.rShape,
+             pmd().asPercentBipolar().withDefault(0).withName("Release Shape"));
+    SC_FIELD(envLfoStorage.rateMul, pmd()
+                                        .asFloat()
+                                        .withRange(-5, 5)
+                                        .withATwoToTheBFormatting(1, 1, "x")
+                                        .withDecimalPlaces(4)
+                                        .withDefault(0.0)
+                                        .withFeature(pmd::Features::BELOW_ONE_IS_INVERSE_FRACTION)
+                                        .withFeature(pmd::Features::ALLOW_FRACTIONAL_TYPEINS)
+                                        .withName("Rate Multiplier"));
 })
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

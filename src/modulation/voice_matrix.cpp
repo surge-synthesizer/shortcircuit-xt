@@ -377,6 +377,10 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
         registerVoiceModTarget(e, env.decayT, ptFn, envLabel(nm(ms.envLfoStorage.decay)));
         registerVoiceModTarget(e, env.sustainT, ptFn, envLabel(nm(ms.envLfoStorage.sustain)));
         registerVoiceModTarget(e, env.releaseT, ptFn, envLabel(nm(ms.envLfoStorage.release)));
+        registerVoiceModTarget(e, env.aShapeT, ptFn, envLabel(nm(ms.envLfoStorage.aShape)));
+        registerVoiceModTarget(e, env.dShapeT, ptFn, envLabel(nm(ms.envLfoStorage.dShape)));
+        registerVoiceModTarget(e, env.rShapeT, ptFn, envLabel(nm(ms.envLfoStorage.rShape)));
+        registerVoiceModTarget(e, env.rateMulT, ptFn, envLabel(nm(ms.envLfoStorage.rateMul)));
     }
 }
 

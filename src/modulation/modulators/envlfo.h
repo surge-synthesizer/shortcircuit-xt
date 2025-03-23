@@ -36,7 +36,8 @@ namespace scxt::modulation::modulators
 {
 struct EnvLFO : SampleRateSupport
 {
-    using env_t = sst::basic_blocks::modulators::DAHDSREnvelope<EnvLFO, blockSize>;
+    using env_t = sst::basic_blocks::modulators::AHDSRShapedSC<
+        EnvLFO, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>;
 
     float envelope_rate_linear_nowrap(float f)
     {
@@ -45,13 +46,22 @@ struct EnvLFO : SampleRateSupport
 
     env_t envelope{this};
     float output{0.f};
-    void attack(float delay) { envelope.attack(delay); }
+    void attack(float delay, float attack) { envelope.attackFromWithDelay(0.f, delay, attack); }
 
     void process(float delay, float attack, float hold, float decay, float sustain, float release,
-                 bool isGated)
+                 float aShape, float dShape, float rShape, float rateMul, bool isGated)
     {
-        envelope.processBlock01AD(delay, attack, hold, decay, sustain, release, isGated);
+        auto rm = scxt::dsp::twoToTheXTable.twoToThe(rateMul);
+        envelope.processBlockWithDelayAndRateMul(delay, attack, hold, decay, sustain, release,
+                                                 aShape, dShape, rShape, rm, isGated, false);
         output = envelope.outBlock0;
+    }
+
+    float timeTakenBy(float stage) { return envelope.timeInSecondsFromParam(stage); }
+    float timeTakenBy(float delay, float attack, float hold, float decay, float release)
+    {
+        return timeTakenBy(delay) + timeTakenBy(attack) + timeTakenBy(hold) + timeTakenBy(decay) +
+               timeTakenBy(release);
     }
 };
 };     // namespace scxt::modulation::modulators

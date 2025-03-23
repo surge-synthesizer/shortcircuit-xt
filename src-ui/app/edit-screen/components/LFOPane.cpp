@@ -657,9 +657,97 @@ struct CurveLFOPane : juce::Component, HasEditor
 struct ENVLFOPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
+    struct ENVRender : juce::Component
+    {
+        LfoPane *parent{nullptr};
+        sst::basic_blocks::modulators::Transport dummyTransport;
+
+        ENVRender(LfoPane *p) : parent(p)
+        {
+            dummyTransport.tempo = 120;
+            dummyTransport.signature = {4, 4};
+        }
+
+        modulation::ModulatorStorage ms;
+        juce::Path curvePath{};
+        void paint(juce::Graphics &g) override
+        {
+            auto msCopy = parent->modulatorStorageData[parent->selectedTab];
+            if (curvePath.isEmpty() ||
+                memcmp(&ms, &msCopy, sizeof(modulation::ModulatorStorage)) != 0)
+            {
+                ms = msCopy;
+                // msCopy.rate = 1.;
+                auto sr{48000};
+
+                modulation::modulators::EnvLFO envLfo;
+                envLfo.setSampleRate(sr);
+
+                auto &es = ms.envLfoStorage;
+
+                auto tt = envLfo.timeTakenBy(es.delay, es.attack, es.hold, es.decay, es.release);
+                auto rt = envLfo.timeTakenBy(es.release);
+                auto dahd = tt - rt;
+
+                // So how long to 'gate' it for. Its just a choice really
+                auto sustainTime = std::max(0.1f, dahd / 3);
+                auto gateTime = dahd + sustainTime;
+                auto totalTime = tt + sustainTime;
+                // Add a bit of post release
+                totalTime *= 1.02;
+
+                // Now we want to run the whole thing in a second so
+                auto rateMulLin = totalTime; // think "1s / (1/totaltime) s" - rate!
+                auto rateMul = std::log2(rateMulLin);
+
+                auto obs = 1.0 * sr / blockSize;
+                auto ds = (int)(obs / (getWidth() * 5));
+                auto relAfter = (int)std::floor(obs * gateTime / totalTime);
+
+                // SCLOG(SCD(totalTime) << SCD(gateTime) << SCD(dahd) << SCD(sustainTime));
+                // SCLOG("rateMuls " << rateMulLin << " " << rateMul);
+                // SCLOG("OBS are " << obs << " ds is " << ds << SCD(es.delay) << SCD(es.attack));
+
+                envLfo.attack(es.delay, es.attack);
+                auto p = juce::Path();
+                p.startNewSubPath(0, getHeight() * (1 - envLfo.output));
+                for (int i = 1; i < obs; ++i)
+                {
+                    bool isGated = i < relAfter;
+                    envLfo.process(es.delay, es.attack, es.hold, es.decay, es.sustain, es.release,
+                                   es.aShape, es.dShape, es.rShape, rateMul, isGated);
+                    if (i % ds == 0)
+                    {
+                        p.lineTo(i * 1.0 * getWidth() / obs,
+                                 getHeight() * (0.99 - 0.98 * envLfo.output));
+                    }
+                }
+
+                curvePath = p;
+            }
+
+            auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
+                                                 jcmp::NamedPanel::Styles::background);
+            auto boxc = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
+                                                   jcmp::NamedPanel::Styles::brightoutline);
+
+            g.fillAll(bg);
+            g.setColour(boxc);
+            g.drawRect(getLocalBounds(), 1);
+
+            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::generic_content_high));
+            g.strokePath(curvePath, juce::PathStrokeType(1));
+        }
+    };
+
+    std::unique_ptr<ENVRender> envRender;
+
     ENVLFOPane(LfoPane *p) : parent(p), HasEditor(p->editor)
     {
         assert(parent);
+        envRender = std::make_unique<ENVRender>(parent);
+        addAndMakeVisible(*envRender);
+
         using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
                                                    cmsg::UpdateZoneOrGroupModStorageFloatValue>;
 
@@ -671,35 +759,26 @@ struct ENVLFOPane : juce::Component, HasEditor
             addAndMakeVisible(*lb);
         };
 
-        auto makeO = [&, this](auto &mem, auto &A, auto &S, auto &L) {
+        auto makeO = [&, this](auto &mem, auto &A, auto &S, auto &L, const std::string &ln = "") {
             fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
-            makeLabel(L, A->getLabel());
+            if (ln.empty())
+                makeLabel(L, A->getLabel());
+            else
+                makeLabel(L, ln);
         };
 
-        makeO(ms.envLfoStorage.delay, delayA, delayS, delayL);
-        makeO(ms.envLfoStorage.attack, attackA, attackS, attackL);
-        makeO(ms.envLfoStorage.hold, holdA, holdS, holdL);
-        makeO(ms.envLfoStorage.decay, decayA, decayS, decayL);
-        makeO(ms.envLfoStorage.sustain, sustainA, sustainS, sustainL);
-        makeO(ms.envLfoStorage.release, releaseA, releaseS, releaseL);
+        makeO(ms.envLfoStorage.delay, delayA, delayS, delayL, "Dly");
+        makeO(ms.envLfoStorage.attack, attackA, attackS, attackL, "A");
+        makeO(ms.envLfoStorage.hold, holdA, holdS, holdL, "H");
+        makeO(ms.envLfoStorage.decay, decayA, decayS, decayL, "D");
+        makeO(ms.envLfoStorage.sustain, sustainA, sustainS, sustainL, "S");
+        makeO(ms.envLfoStorage.release, releaseA, releaseS, releaseL, "R");
 
-        factorK = connectors::makeConnectedToDummy<jcmp::Knob>('fact', "Factor", 0.5, false,
-                                                               editor->makeComingSoon("Factor"));
-        addAndMakeVisible(*factorK);
-        makeLabel(factorL, "Factor");
-        curveA = connectors::makeConnectedToDummy<jcmp::Knob>(
-            'crva', "Curve A", 0.5, false, editor->makeComingSoon("Curve Attack"));
-        addAndMakeVisible(*curveA);
-        makeLabel(curveAL, "Curve A");
-        curveD = connectors::makeConnectedToDummy<jcmp::Knob>(
-            'crvd', "Curve D", 0.5, false, editor->makeComingSoon("Curve Decay"));
-        addAndMakeVisible(*curveD);
-        makeLabel(curveDL, "Curve D");
-        curveR = connectors::makeConnectedToDummy<jcmp::Knob>(
-            'crvr', "Curve R", 0.5, false, editor->makeComingSoon("Curve Release"));
-        addAndMakeVisible(*curveR);
-        makeLabel(curveRL, "Curve R");
+        makeO(ms.envLfoStorage.aShape, curveAA, curveAK, curveAL, "Curve A");
+        makeO(ms.envLfoStorage.dShape, curveDA, curveDK, curveDL, "Curve D");
+        makeO(ms.envLfoStorage.rShape, curveRA, curveRK, curveRL, "Curve R");
+        makeO(ms.envLfoStorage.rateMul, rateMulA, rateMulK, rateMulL, "Rate");
     }
 
     void resized() override
@@ -707,6 +786,10 @@ struct ENVLFOPane : juce::Component, HasEditor
         auto lbHt = 15;
 
         auto b = getLocalBounds();
+
+        auto bh = b.getHeight();
+        auto curveBox = b.withY(bh / 2).withWidth(getWidth() / 3).withHeight(bh / 2);
+        envRender->setBounds(curveBox);
 
         // Knobs
         auto nKnobs = 4;
@@ -730,10 +813,10 @@ struct ENVLFOPane : juce::Component, HasEditor
             label->setBounds(knobBounds.withTrimmedTop(knobHeight - lbHt));
             knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
         };
-        makeKnobBounds(factorK, factorL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
-        makeKnobBounds(curveA, curveAL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
-        makeKnobBounds(curveD, curveDL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
-        makeKnobBounds(curveR, curveRL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(rateMulK, rateMulL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(curveAK, curveAL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(curveDK, curveDL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+        makeKnobBounds(curveRK, curveRL, knobBounds, lbHt, knobWidth, knobHeight, knobMg);
         // Knobs (END)
 
         // Sliders
@@ -770,8 +853,9 @@ struct ENVLFOPane : juce::Component, HasEditor
 
     std::unique_ptr<LfoPane::attachment_t> delayA, attackA, holdA, decayA, sustainA, releaseA;
     std::unique_ptr<jcmp::VSlider> delayS, attackS, holdS, decayS, sustainS, releaseS;
-    std::unique_ptr<jcmp::Knob> factorK, curveA, curveD, curveR;
-    std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL, factorL,
+    std::unique_ptr<jcmp::Knob> rateMulK, curveAK, curveDK, curveRK;
+    std::unique_ptr<LfoPane::attachment_t> rateMulA, curveAA, curveDA, curveRA;
+    std::unique_ptr<jcmp::Label> delayL, attackL, holdL, decayL, sustainL, releaseL, rateMulL,
         curveAL, curveDL, curveRL;
 };
 
