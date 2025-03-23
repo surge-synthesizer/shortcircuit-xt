@@ -161,12 +161,15 @@ template <typename TG, uint32_t gn> struct LFOTargetEndpointData
     {
         Env(uint32_t p)
             : delayT{gn, 'edly', p}, attackT{gn, 'eatk', p}, holdT{gn, 'ehld', p},
-              decayT{gn, 'edcy', p}, sustainT{gn, 'esus', p}, releaseT{gn, 'erel', p}
+              decayT{gn, 'edcy', p}, sustainT{gn, 'esus', p}, releaseT{gn, 'erel', p},
+              aShapeT{gn, 'eash', p}, dShapeT{gn, 'edsh', p}, rShapeT{gn, 'ersh', p},
+              rateMulT{gn, 'erml', p}
         {
         }
-        TG delayT, attackT, holdT, decayT, sustainT, releaseT;
+        TG delayT, attackT, holdT, decayT, sustainT, releaseT, aShapeT, dShapeT, rShapeT, rateMulT;
         const float *delayP{nullptr}, *attackP{nullptr}, *holdP{nullptr}, *decayP{nullptr},
-            *sustainP{nullptr}, *releaseP{nullptr};
+            *sustainP{nullptr}, *releaseP{nullptr}, *aShapeP{nullptr}, *dShapeP{nullptr},
+            *rShapeP{nullptr}, *rateMulP{nullptr};
     } env;
 
     template <typename M, typename Z> void baseBind(M &m, Z &z);
@@ -312,6 +315,10 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     bindEl(m, ms, env.decayT, ms.envLfoStorage.decay, env.decayP);
     bindEl(m, ms, env.sustainT, ms.envLfoStorage.sustain, env.sustainP);
     bindEl(m, ms, env.releaseT, ms.envLfoStorage.release, env.releaseP);
+    bindEl(m, ms, env.aShapeT, ms.envLfoStorage.aShape, env.aShapeP);
+    bindEl(m, ms, env.dShapeT, ms.envLfoStorage.dShape, env.dShapeP);
+    bindEl(m, ms, env.rShapeT, ms.envLfoStorage.rShape, env.rShapeP);
+    bindEl(m, ms, env.rateMulT, ms.envLfoStorage.rateMul, env.rateMulP);
 }
 } // namespace scxt::modulation::shared
 

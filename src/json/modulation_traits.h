@@ -79,21 +79,29 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  v = tao::json::empty_object;
                  addUnlessDefault<val_t>(v, "attack", 0.f, from.attack);
                  addUnlessDefault<val_t>(v, "decay", 0.f, from.decay);
-                 addUnlessDefault<val_t>(v, "deform", 0.f, from.deform);
                  addUnlessDefault<val_t>(v, "delay", 0.f, from.delay);
                  addUnlessDefault<val_t>(v, "hold", 0.f, from.hold);
                  addUnlessDefault<val_t>(v, "release", 0.f, from.release);
                  addUnlessDefault<val_t>(v, "sustain", 1.f, from.sustain);
+
+                 addUnlessDefault<val_t>(v, "aShape", 0.f, from.aShape);
+                 addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
+                 addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
+                 addUnlessDefault<val_t>(v, "rateMul", 1.f, from.rateMul);
              }),
              SC_TO({
                  const auto &object = v.get_object();
-                 findOrSet(v, "deform", 0.f, result.deform);
                  findOrSet(v, "delay", 0.f, result.delay);
                  findOrSet(v, "attack", 0.f, result.attack);
                  findOrSet(v, "hold", 0.f, result.hold);
                  findOrSet(v, "decay", 0.f, result.decay);
                  findOrSet(v, "sustain", 1.f, result.sustain);
                  findOrSet(v, "release", 0.f, result.release);
+
+                 findOrSet(v, "aShape", 0.f, result.aShape);
+                 findOrSet(v, "dShape", 0.f, result.dShape);
+                 findOrSet(v, "rShape", 0.f, result.rShape);
+                 findOrSet(v, "rateMul", 0.f, result.rateMul);
              }))
 
 SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({

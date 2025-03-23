@@ -114,9 +114,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         return dsp::twoToTheXTable;
     }
 
-    template <typename ET, int EB, typename ER>
-    friend struct sst::basic_blocks::modulators::ADSREnvelope;
-
     float transportPhasors[scxt::numTransportPhasors];
     double startBeat{0.f};
     void updateTransportPhasors();

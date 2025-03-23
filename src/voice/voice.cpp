@@ -137,7 +137,7 @@ void Voice::voiceStarted()
         else if (lfoEvaluator[i] == ENV)
         {
             envLfos[i].setSampleRate(sampleRate, sampleRateInv);
-            envLfos[i].attack(*endpoints->lfo[i].env.delayP);
+            envLfos[i].attack(*endpoints->lfo[i].env.delayP, *endpoints->lfo[i].env.attackP);
         }
         else
         {
@@ -227,7 +227,8 @@ template <bool OS> bool Voice::processWithOS()
             auto &lp = endpoints->lfo[i].env;
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
-                               *lp.releaseP, isGated);
+                               *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
+                               isGated);
         }
         else
         {
