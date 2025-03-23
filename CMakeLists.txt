@@ -37,6 +37,10 @@ include(libs/sst/sst-plugininfra/cmake/git-version-functions.cmake)
 version_from_versionfile_or_git()
 
 # Build Time Options
+if (NOT DEFINED SCXT_JUCE_PATH)
+    set(SCXT_JUCE_PATH ${CMAKE_SOURCE_DIR}/libs/JUCE)
+endif()
+
 option(SCXT_BUILD_VST3 "Build a VST3 plugin" ON)
 option(SCXT_BUILD_AU "Build an AU plugin" ON)
 option(SCXT_BUILD_CLAP "Build a CLAP" ON)
