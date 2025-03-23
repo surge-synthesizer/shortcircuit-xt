@@ -22,7 +22,7 @@ jobs:
 
           - name: "windows clang VST3"
             os: windows-latest
-            target: scxt_clapfirst_VST3
+            target: scxt_clapfirst_vst3
             cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             runTests: false
             clapValidate: false
@@ -36,14 +36,14 @@ jobs:
 
           - name: "mac AU"
             os: macos-latest
-            target: scxt_clapfirst_AU
+            target: scxt_clapfirst_auv2
             cmakeConfig: -GNinja
             runTests: true
             clapValidate: false
 
           - name: "ubuntu Standalone"
             os: ubuntu-latest
-            target: scxt_clapfirst_Standalone
+            target: scxt_clapfirst_standalone
             cmakeConfig: -GNinja
             runTests: false
             clapValidate: false
