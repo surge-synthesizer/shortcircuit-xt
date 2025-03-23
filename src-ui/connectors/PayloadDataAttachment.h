@@ -208,6 +208,15 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     {
         if (description.supportsStringConversion)
         {
+            if (isTemposynced && isTemposynced(*this))
+            {
+                auto f = description.valueFromTemposyncNotation(s);
+                if (f.has_value())
+                {
+                    setValueFromGUI(*f);
+                    return;
+                }
+            }
             std::string em;
             auto res = description.valueFromString(s, em);
             if (res.has_value())
