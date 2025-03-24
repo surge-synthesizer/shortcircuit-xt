@@ -351,6 +351,13 @@ void SCXTEditor::onBrowserRefresh(const bool)
     playScreen->browser->resetRoots();
 }
 
+void SCXTEditor::onBrowserQueueLengthRefresh(const std::pair<int32_t, int32_t> v)
+{
+    editScreen->browser->setIndexWorkload(v);
+    mixerScreen->browser->setIndexWorkload(v);
+    playScreen->browser->setIndexWorkload(v);
+}
+
 void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &resp)
 {
     for (const auto &[k, s] : resp)

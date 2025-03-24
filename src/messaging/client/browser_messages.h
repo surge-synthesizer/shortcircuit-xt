@@ -40,23 +40,55 @@
 namespace scxt::messaging::client
 {
 
-inline void doAddBrowserDeviceLocation(const fs::path &p, const engine::Engine &engine,
+using addBrowserLocation_t = std::tuple<std::string, bool>;
+inline void doAddBrowserDeviceLocation(const addBrowserLocation_t &pl, const engine::Engine &engine,
                                        MessageController &cont)
 {
-    engine.getBrowser()->addRootPathForDeviceView(p, false);
+    auto p = fs::path(fs::u8path(std::get<0>(pl)));
+    auto idx = std::get<1>(pl);
+    engine.getBrowser()->addRootPathForDeviceView(p, idx, cont);
+}
+CLIENT_TO_SERIAL(AddBrowserDeviceLocation, c2s_add_browser_device_location, addBrowserLocation_t,
+                 doAddBrowserDeviceLocation(payload, engine, cont));
+
+inline void doReindexBrowserLocation(const std::string &p, const engine::Engine &engine)
+{
+    auto path = fs::path(fs::u8path(p));
+    engine.getBrowser()->reindexLocation(path);
+}
+CLIENT_TO_SERIAL(ReindexBrowserLocation, c2s_reindex_browser_location, std::string,
+                 doReindexBrowserLocation(payload, engine))
+
+inline void doRequestBrowserUpdate(MessageController &cont)
+{
     serializationSendToClient(s2c_refresh_browser, true, cont);
 }
-CLIENT_TO_SERIAL(AddBrowserDeviceLocation, c2s_add_browser_device_location, std::string,
-                 doAddBrowserDeviceLocation(fs::path(fs::u8path(payload)), engine, cont));
+CLIENT_TO_SERIAL(RequestBrowserUpdate, c2s_request_browser_update, bool,
+                 doRequestBrowserUpdate(cont));
 
 inline void doRemoveBrowserDeviceLocation(const fs::path &p, const engine::Engine &engine,
                                           MessageController &cont)
 {
-    engine.getBrowser()->removeRootPathForDeviceView(p);
-    serializationSendToClient(s2c_refresh_browser, true, cont);
+    engine.getBrowser()->removeRootPathForDeviceView(p, cont);
 }
 CLIENT_TO_SERIAL(RemoveBrowserDeviceLocation, c2s_remove_browser_device_location, std::string,
                  doRemoveBrowserDeviceLocation(fs::path(fs::u8path(payload)), engine, cont));
+
+using browserQueueRefreshPayload_t = std::pair<int32_t, int32_t>;
+inline void doBrowserQueueRefresh(browserQueueRefreshPayload_t payload,
+                                  const engine::Engine &engine)
+{
+    if (payload.first >= 0 || payload.second >= 0)
+    {
+        serializationSendToClient(s2c_send_browser_queuelength, payload,
+                                  *engine.getMessageController());
+    }
+}
+CLIENT_TO_SERIAL(BrowserQueueRefresh, c2s_browser_queue_refresh, browserQueueRefreshPayload_t,
+                 doBrowserQueueRefresh(payload, engine));
+
+SERIAL_TO_CLIENT(SendBrowserQueueLength, s2c_send_browser_queuelength, browserQueueRefreshPayload_t,
+                 onBrowserQueueLengthRefresh)
 
 using previewBrowserSamplePayload_t = std::tuple<bool, std::string>;
 inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,

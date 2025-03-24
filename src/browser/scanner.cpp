@@ -1,0 +1,213 @@
+/*
+ * Shortcircuit XT - a Surge Synth Team product
+ *
+ * A fully featured creative sampler, available as a standalone
+ * and plugin for multiple platforms.
+ *
+ * Copyright 2019 - 2024, Various authors, as described in the github
+ * transaction log.
+ *
+ * ShortcircuitXT is released under the Gnu General Public Licence
+ * V3 or later (GPL-3.0-or-later). The license is found in the file
+ * "LICENSE" in the root of this repository or at
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * Individual sections of code which comprises ShortcircuitXT in this
+ * repository may also be used under an MIT license. Please see the
+ * section  "Licensing" in "README.md" for details.
+ *
+ * ShortcircuitXT is inspired by, and shares code with, the
+ * commercial product Shortcircuit 1 and 2, released by VemberTech
+ * in the mid 2000s. The code for Shortcircuit 2 was opensourced in
+ * 2020 at the outset of this project.
+ *
+ * All source for ShortcircuitXT is available at
+ * https://github.com/surge-synthesizer/shortcircuit-xt
+ */
+
+#include <chrono>
+#include "scanner.h"
+#include "utils.h"
+#include "writer_worker.h"
+#include "browser.h"
+#include "infrastructure/md5support.h"
+#include "writer_worker.h"
+#include "messaging/messaging.h"
+#include "messaging/client/client_messages.h"
+
+namespace scxt::browser
+{
+
+static uint64_t writeTimeInMinutes(const fs::path &p)
+{
+    auto tse = fs::last_write_time(p).time_since_epoch();
+    auto mse = std::chrono::duration_cast<std::chrono::minutes>(tse).count();
+    return mse;
+}
+
+struct ScanWorker
+{
+    Scanner &scanner;
+    ScanWorker(Scanner &s) : scanner(s)
+    {
+        qThread = std::thread([this]() { this->processQueue(); });
+        scanner.mc.threadingChecker.addAsAClientThread(qThread.get_id());
+    }
+
+    ~ScanWorker()
+    {
+        keepRunning = false;
+        qCV.notify_all();
+        qThread.join();
+        for (auto *q : pathQLow)
+            delete q;
+        for (auto *q : pathQ)
+            delete q;
+    }
+
+    void processQueue()
+    {
+        int lastCount{0}, nextCount{0};
+        while (keepRunning)
+        {
+            EnQAble *p = nullptr;
+            {
+                std::unique_lock<std::mutex> g(qLock);
+                if (pathQ.empty() && pathQLow.empty())
+                    qCV.wait(g);
+                if (keepRunning)
+                {
+                    if (!pathQ.empty())
+                    {
+                        p = pathQ.front();
+                        pathQ.pop_front();
+                    }
+                    else if (!pathQLow.empty())
+                    {
+                        p = pathQLow.front();
+                        pathQLow.pop_front();
+                    }
+                    nextCount = pathQ.size() + pathQLow.size();
+                }
+            }
+            if (p && keepRunning)
+            {
+                p->go(*this);
+                delete p;
+
+                if (lastCount != nextCount)
+                {
+                    if (nextCount == 0 || lastCount == 0 || abs(lastCount - nextCount) > 20)
+                    {
+                        auto msg =
+                            scxt::messaging::client::BrowserQueueRefresh({(int32_t)nextCount, -1});
+                        messaging::client::clientSendToSerialization(msg, scanner.mc);
+                        lastCount = nextCount;
+                    }
+                }
+            }
+        }
+    }
+
+    struct EnQAble
+    {
+        virtual ~EnQAble() = default;
+        virtual void go(ScanWorker &w) = 0;
+    };
+
+    struct ScanFile : ScanWorker::EnQAble
+    {
+        fs::path path;
+        ScanFile(const fs::path &p) : path(p) {}
+        void go(ScanWorker &w) override
+        {
+            if (fs::exists(path))
+            {
+                auto sc = infrastructure::createMD5SumFromFile(path);
+                auto sz = fs::file_size(path);
+                auto mt = writeTimeInMinutes(path);
+                w.scanner.writer.enqueueWorkItem(
+                    new WriterWorker::EnQAddSampleInfo(path, sc, mt, sz));
+            }
+        }
+    };
+    struct ScanDir : EnQAble
+    {
+        fs::path path;
+        uint64_t afterMtime;
+
+        ScanDir(const fs::path &p, uint64_t mtime) : path(p), afterMtime(mtime) {}
+
+        void go(ScanWorker &w) override
+        {
+            // SCLOG("Scanning path: " << path.string());
+
+            auto files = fs::directory_iterator(path);
+            std::vector<fs::path> toScan;
+            for (auto &dirent : files)
+            {
+                if (dirent.is_regular_file())
+                {
+                    if (browser::Browser::isLoadableFile(dirent.path()))
+                    {
+                        auto mse = writeTimeInMinutes(dirent.path());
+                        if (mse > afterMtime)
+                        {
+                            toScan.push_back(dirent.path());
+                        }
+                    }
+                }
+                else if (dirent.is_directory())
+                {
+                    w.enqueueWorkItem(new ScanDir{dirent.path(), (uint64_t)afterMtime});
+                }
+            }
+
+            for (const auto &s : toScan)
+            {
+                w.enqueueWorkLowPri(new ScanFile{s});
+            }
+        }
+    };
+
+    std::thread qThread;
+    std::mutex qLock;
+    std::condition_variable qCV;
+    std::deque<EnQAble *> pathQ, pathQLow;
+    std::atomic<bool> keepRunning{true};
+
+    void enqueueWorkItem(EnQAble *p)
+    {
+        {
+            std::lock_guard<std::mutex> g(qLock);
+
+            pathQ.push_back(p);
+        }
+        qCV.notify_all();
+    }
+
+    void enqueueWorkLowPri(EnQAble *p)
+    {
+        {
+            std::lock_guard<std::mutex> g(qLock);
+
+            pathQLow.push_back(p);
+        }
+        qCV.notify_all();
+    }
+};
+
+Scanner::Scanner(WriterWorker &w, messaging::MessageController &m) : writer(w), mc(m)
+{
+    SCLOG("Creating browser scanner");
+    scanWorker = std::make_unique<ScanWorker>(*this);
+}
+
+Scanner::~Scanner() {}
+
+void Scanner::scanPath(const fs::path &path, uint64_t afterMtime)
+{
+    scanWorker->enqueueWorkItem(new ScanWorker::ScanDir{path, afterMtime});
+}
+
+} // namespace scxt::browser

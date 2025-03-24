@@ -306,7 +306,7 @@ void MessageController::registerClient(const std::string &nm, clientCallback_t &
         clientCallback = std::move(f);
     }
 
-    threadingChecker.registerAsClientThread();
+    threadingChecker.addAsAClientThread();
     client::clientSendToSerialization(client::RegisterClient(true), *this);
 
     for (const auto &pcc : preClientConnectionCache)
@@ -321,6 +321,8 @@ void MessageController::unregisterClient()
 {
     std::lock_guard<std::mutex> g(clientToSerializationMutex);
 
+    threadingChecker.removeAsAClientThread();
+
     assert(clientCallback);
     clientCallback = nullptr;
     isClientConnected = false;
@@ -330,6 +332,17 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
     {
         std::lock_guard<std::mutex> g(clientToSerializationMutex);
         clientToSerializationQueue.push(s);
+
+#if BUILD_IS_DEBUG
+        c2sMessageCount++;
+        c2sMessageBytes += s.size();
+        if (c2sMessageCount % 100 == 0)
+        {
+            SCLOG("Client -> Serial Message Count : " << c2sMessageCount << " size "
+                                                      << c2sMessageBytes << " avgmsg: "
+                                                      << 1.f * c2sMessageBytes / c2sMessageCount);
+        }
+#endif
     }
     clientToSerializationConditionVar.notify_one();
 }

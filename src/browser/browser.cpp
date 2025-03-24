@@ -30,6 +30,8 @@
 #include "utils.h"
 #include "sample/compound_file.h"
 
+#include "browser_db_impl.h"
+
 namespace scxt::browser
 {
 Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp, const fs::path &ud,
@@ -61,7 +63,7 @@ std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() con
     std::vector<Browser::indexedRootPath_t> res;
     for (const auto &[p, s] : osdef)
         res.emplace_back(p, s, false);
-    auto fav = browserDb.getDeviceLocations();
+    auto fav = browserDb.getBrowserLocations();
     for (const auto &p : fav)
         res.emplace_back(p.first, p.first.filename().u8string(), p.second);
 
@@ -101,17 +103,20 @@ bool Browser::isShortCircuitFormatFile(const fs::path &p)
                        [p](auto e) { return extensionMatches(p, e); });
 }
 
-void Browser::addRootPathForDeviceView(const fs::path &p, bool indexed)
+void Browser::addRootPathForDeviceView(const fs::path &p, bool indexed,
+                                       messaging::MessageController &mc)
 {
-    browserDb.addRemoveDeviceLocation(p, true);
-    browserDb.waitForJobsOutstandingComplete(100);
+    browserDb.addRemoveBrowserLocation(p, indexed, true);
+    browserDb.addClientToSerialCallback(messaging::client::RequestBrowserUpdate{true});
 }
 
-void Browser::removeRootPathForDeviceView(const fs::path &p)
+void Browser::removeRootPathForDeviceView(const fs::path &p, messaging::MessageController &mc)
 {
-    browserDb.addRemoveDeviceLocation(p, false);
-    browserDb.waitForJobsOutstandingComplete(100);
+    browserDb.addRemoveBrowserLocation(p, false, false);
+    browserDb.addClientToSerialCallback(messaging::client::RequestBrowserUpdate{true});
 }
+
+void Browser::reindexLocation(const fs::path &p) { browserDb.reindexLocation(p); }
 
 std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const fs::path &p)
 {

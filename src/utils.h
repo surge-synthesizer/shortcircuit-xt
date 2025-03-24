@@ -36,6 +36,7 @@
 #include <filesystem>
 #include <thread>
 #include <array>
+#include <set>
 
 #include <iostream>
 #include <map>
@@ -220,13 +221,28 @@ struct ThreadingChecker
 {
     std::atomic<bool> bypassThreadChecks{false};
 
-    std::thread::id clientThreadId{}, serialThreadId{}, audioThreadId{};
-    void registerAsClientThread() { clientThreadId = std::this_thread::get_id(); }
+    std::thread::id serialThreadId{}, audioThreadId{};
+    std::set<std::thread::id> clientThreadIds{};
+    void addAsAClientThread()
+    {
+        std::cout << "Add " << std::endl;
+        clientThreadIds.insert(std::this_thread::get_id());
+    }
+    void addAsAClientThread(std::thread::id tid)
+    {
+        std::cout << "Add2 " << std::endl;
+        clientThreadIds.insert(tid);
+    }
+    void removeAsAClientThread()
+    {
+        std::cout << "Rem " << std::endl;
+        clientThreadIds.erase(std::this_thread::get_id());
+    }
     inline bool isClientThread() const
     {
 #if BUILD_IS_DEBUG
-        return (bypassThreadChecks || clientThreadId == std::thread::id() ||
-                clientThreadId == std::this_thread::get_id());
+        return (bypassThreadChecks ||
+                (clientThreadIds.find(std::this_thread::get_id()) != clientThreadIds.end()));
 #else
         return true;
 #endif
@@ -235,8 +251,7 @@ struct ThreadingChecker
     inline bool isSerialThread() const
     {
 #if BUILD_IS_DEBUG
-        return (bypassThreadChecks || serialThreadId == std::thread::id() ||
-                serialThreadId == std::this_thread::get_id());
+        return (bypassThreadChecks || serialThreadId == std::this_thread::get_id());
 #else
         return true;
 #endif
@@ -260,7 +275,7 @@ struct ThreadingChecker
             return "audio";
         if (tid == serialThreadId)
             return "serial";
-        if (tid == clientThreadId)
+        if (clientThreadIds.find(tid) != clientThreadIds.end())
             return "client";
         return "unknown";
 #else

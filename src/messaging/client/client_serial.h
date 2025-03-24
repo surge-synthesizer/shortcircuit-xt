@@ -151,8 +151,11 @@ enum ClientToSerializationMessagesIds
 
     // Browser functions
     c2s_add_browser_device_location,
+    c2s_reindex_browser_location,
+    c2s_request_browser_update, // client asks us to push browser info
     c2s_remove_browser_device_location,
     c2s_preview_browser_sample,
+    c2s_browser_queue_refresh, // this is a "special" message see browser_messages
 
     c2s_request_debug_action,
 
@@ -213,6 +216,7 @@ enum SerializationToClientMessageIds
     s2c_bus_send_data,
 
     s2c_refresh_browser,
+    s2c_send_browser_queuelength,
 
     s2c_update_macro_full_state,
     s2c_update_macro_value,
