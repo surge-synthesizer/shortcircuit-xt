@@ -14,22 +14,6 @@ add_custom_target(shortcircuit-products ALL)
 add_custom_target(shortcircuit-installer)
 
 function(shortcircuit_package format suffix)
-    if (TARGET scxt_plugin)
-        get_target_property(output_dir scxt_plugin RUNTIME_OUTPUT_DIRECTORY)
-
-        if (TARGET scxt_plugin_${format})
-            message(STATUS "Adding scxt_plugin_${format} to installer")
-            add_dependencies(shortcircuit-products scxt_plugin_${format})
-            add_custom_command(
-                    TARGET shortcircuit-products
-                    POST_BUILD
-                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                    COMMAND echo "Installing ${output_dir}/${format} to ${SCXT_PRODUCT_DIR}"
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${output_dir}/${format}/ ${SCXT_PRODUCT_DIR}/
-            )
-        endif ()
-    endif()
-
     if (TARGET scxt_clapfirst_all)
         get_target_property(output_dir scxt_clapfirst_all ARTEFACT_DIRECTORY)
 
@@ -60,7 +44,7 @@ function(shortcircuit_package format suffix)
                         POST_BUILD
                         USES_TERMINAL
                         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                        COMMAND echo "Installing directory '${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
+                        COMMAND echo "Installing directory '${output_dir}/${output_name}${suffix}' to ${SCXT_PRODUCT_DIR}"
                         COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_FILE_DIR:scxt_clapfirst_${format}>/${target_to_root}/${output_name}${suffix}" "${SCXT_PRODUCT_DIR}/${output_name}${suffix}"
                 )
             else()
@@ -78,32 +62,16 @@ function(shortcircuit_package format suffix)
     endif()
 endfunction()
 
-shortcircuit_package(VST3 ".vst3")
-shortcircuit_package(AU ".component")
-shortcircuit_package(CLAP ".clap")
+shortcircuit_package(vst3 ".vst3")
+shortcircuit_package(auv2 ".component")
+shortcircuit_package(clap ".clap")
 if (APPLE)
-    shortcircuit_package(Standalone ".app")
+    shortcircuit_package(standalone ".app")
 elseif (UNIX)
-    shortcircuit_package(Standalone "")
+    shortcircuit_package(standalone "")
 else()
-    shortcircuit_package(Standalone ".exe")
+    shortcircuit_package(standalone ".exe")
 endif()
-
-if (WIN32)
-    if (TARGET scxt_plugin)
-
-        message(STATUS "Including special Windows cleanup installer stage")
-        add_custom_command(TARGET shortcircuit-products
-            POST_BUILD
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            COMMAND ${CMAKE_COMMAND} -E echo "Cleaning up Windows goobits"
-            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.exp"
-            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.ilk"
-            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.lib"
-            COMMAND ${CMAKE_COMMAND} -E rm -f "${SCXT_PRODUCT_DIR}/Shortcircuit XT.pdb"
-            )
-    endif()
-endif ()
 
 add_dependencies(shortcircuit-installer shortcircuit-products)
 
