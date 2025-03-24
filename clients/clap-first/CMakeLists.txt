@@ -40,6 +40,8 @@ make_clapfirst_plugins(
 
         PLUGIN_FORMATS CLAP VST3 AUV2
 
+        WINDOWS_FOLDER_VST3 TRUE
+
         ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_assets
 
         # You can add a target-per-standalone you want. Syntax here is
