@@ -995,6 +995,8 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                     if (firstGroup < 0)
                         firstGroup = grpnum;
                     auto zn = std::make_unique<engine::Zone>(*sid);
+                    zn->engine = this;
+
                     if (region->overridingRootKey >= 0)
                         zn->mapping.rootKey = region->overridingRootKey;
                     zn->mapping.rootKey += sfsamp->OriginalPitch - 60;
@@ -1018,8 +1020,8 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                     zn->mapping.velocityRange = {lv, hv};
 
                     // SF2 pitch correction is a *signed* char in cents.
-                    auto pc = static_cast<int>(static_cast<int8_t>(sfsamp->PitchCorrection));
-                    zn->mapping.pitchOffset = 1.0 * pc / 100.0;
+                    auto pcv = static_cast<int>(static_cast<int8_t>(sfsamp->PitchCorrection));
+                    zn->mapping.pitchOffset = 1.0 * pcv / 100.0;
                     if (!zn->attachToSample(*sampleManager))
                     {
                         SCLOG("ERROR: Can't attach to sample");
@@ -1027,12 +1029,12 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                     }
                     auto &znSD = zn->variantData.variants[0];
 
-                    auto p = region->GetPan(presetRegion);
+                    auto pn = region->GetPan(presetRegion);
                     // pan in SF2 is -64 to 63 so hackety hack a bit
-                    if (p < 0)
-                        zn->mapping.pan = p / 64.f;
+                    if (pn < 0)
+                        zn->mapping.pan = pn / 64.f;
                     else
-                        zn->mapping.pan = p / 63.f;
+                        zn->mapping.pan = pn / 63.f;
 
                     using namespace std;
                     auto s = sfsamp;
@@ -1041,26 +1043,14 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                     zn->mapping.pitchOffset +=
                         reg->GetCoarseTune(presetRegion) + reg->GetFineTune(presetRegion) * 0.01;
 
-                    if (reg->GetEG1PreAttackDelay(presetRegion) > 0.001)
-                    {
-                        SCLOG("ERROR: PreAttach Delay which we don't support");
-                    }
-                    // auto s2a_thirtytwo_2tox = [](double s) {
-                    //     auto l2s = log2(s);
-                    //     auto scs = l2s -
-                    //     sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin; auto ncs =
-                    //         scs / (sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMax -
-                    //                sst::basic_blocks::modulators::ThirtyTwoSecondRange::etMin);
-                    //     return std::clamp(ncs, 0., 1.);
-                    // };
-
                     auto s2a = scxt::modulation::secondsToNormalizedEnvTime;
 
-                    auto sus2l = [](double s) {
-                        auto db = -s / 10;
+                    auto sus2l = [](double sus) {
+                        auto db = -sus / 10;
                         return pow(10.0, db * 0.05);
                     };
 
+                    zn->egStorage[0].dly = s2a(reg->GetEG1PreAttackDelay(presetRegion));
                     zn->egStorage[0].a = s2a(reg->GetEG1Attack(presetRegion));
                     zn->egStorage[0].h = s2a(reg->GetEG1Hold(presetRegion));
                     zn->egStorage[0].d = s2a(reg->GetEG1Decay(presetRegion));
@@ -1092,6 +1082,22 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                         znSD.endLoop = presetRegion->LoopEnd;
                     }
 
+                    /*
+                     * The SF2 spec says anything above 20khz is a flat response
+                     * and that the filter cutoff is specified in cents (so really
+                     * 100 * midi key in 12TET). That's a midi key between 135 and 136,
+                     * so lets be safe a shave a touch
+                     */
+                    if (reg->initialFilterFc >= 0 && reg->initialFilterFc < 134 * 100)
+                    {
+                        // This only runs with audio thread stopped
+                        getMessageController()->threadingChecker.bypassThreadChecks = true;
+                        zn->setProcessorType(0, dsp::processor::ProcessorType::proct_CytomicSVF);
+                        zn->processorStorage[0].floatParams[0] = (reg->initialFilterFc / 100.0) - 69.0;
+                        zn->processorStorage[0].floatParams[2] = std::clamp((reg->initialFilterQ / 100.0), 0., 1.);
+                        getMessageController()->threadingChecker.bypassThreadChecks = false;
+                    }
+
 #if 0
                     SCLOG("Unimplemented SF2 Features Follow:")
                     SCLOG("\tModulation Envelope Generator Pitch="
@@ -1112,27 +1118,9 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
 
                     SCLOG("\tModulators Ignored. Count =(" << reg->modulators.size() << ")");
 
-                    for (int i = 0; i < reg->modulators.size(); i++)
+                    for (int mi = 0; mi < reg->modulators.size(); mi++)
                     {
                         // PrintModulatorItem(&reg->modulators[i]);
-                    }
-
-                    if (reg->initialFilterFc == ::sf2::NONE)
-                    {
-                        SCLOG("\tFilter Cutoff: None");
-                    }
-                    else
-                    {
-                        SCLOG("\tFilter Cutoff " << reg->initialFilterFc << "cents");
-                    }
-
-                    if (reg->initialFilterQ == ::sf2::NONE)
-                    {
-                        SCLOG("\tFilter Q: None");
-                    }
-                    else
-                    {
-                        SCLOG("\tFilter Q " << reg->initialFilterQ / 10.0 << "dB");
                     }
 
                     SCLOG("\tExclusive Class : " << reg->exclusiveClass);
