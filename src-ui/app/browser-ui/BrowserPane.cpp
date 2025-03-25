@@ -564,9 +564,20 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             {
                 // This is a hack and should be a drag and drop gesture really I guess
                 namespace cmsg = scxt::messaging::client;
-                scxt::messaging::client::clientSendToSerialization(
-                    cmsg::AddSample(data[rowNumber].dirent.path().u8string()),
-                    browserPane->editor->msgCont);
+                auto &d = data[rowNumber];
+                if (d.expandableAddress.has_value())
+                {
+                    cmsg::clientSendToSerialization(
+                        cmsg::AddCompoundElementWithRange(
+                            {*(d.expandableAddress), 60, 48, 72, 0, 127}),
+                        browserPane->editor->msgCont);
+                }
+                else
+                {
+                    scxt::messaging::client::clientSendToSerialization(
+                        cmsg::AddSample(data[rowNumber].dirent.path().u8string()),
+                        browserPane->editor->msgCont);
+                }
             }
         }
     }
@@ -652,6 +663,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 }
                 else
                 {
+                    auto &sa = entry.expandableAddress->sampleAddress;
                     jcmp::GlyphPainter::paintGlyph(g, gr, jcmp::GlyphPainter::FILE_MUSIC,
                                                    textColor.withAlpha(isSelected ? 1.f : 0.5f));
                 }
