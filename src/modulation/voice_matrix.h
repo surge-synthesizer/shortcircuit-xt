@@ -161,8 +161,10 @@ struct MatrixEndpoints
 
     struct MappingTarget
     {
+        // so we can reach them from external multisamples
+        static constexpr TG pitchOffsetA{'zmap', 'ptof', 0};
         MappingTarget(engine::Engine *e)
-            : pitchOffsetT{'zmap', 'ptof', 0}, panT{'zmap', 'pan ', 0}, ampT{'zmap', 'ampl', 0},
+            : pitchOffsetT(pitchOffsetA), panT{'zmap', 'pan ', 0}, ampT{'zmap', 'ampl', 0},
               playbackRatioT{'zmap', 'pbrt', 0}
         {
             if (e)
@@ -226,10 +228,12 @@ struct MatrixEndpoints
     struct Sources
     {
         static_assert(scxt::egsPerZone == 5, "Clean up the egSources constructor if this fails");
+        // so we can reach them from external multisamples
+        static constexpr SR eg2A{'zneg', 'eg2 ', 0};
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
               egSources{{{'zneg', 'aeg ', 0},
-                         {'zneg', 'eg2 ', 0},
+                         eg2A,
                          {'zneg', 'eg3 ', 0},
                          {'zneg', 'eg4 ', 0},
                          {'zneg', 'eg5 ', 0}}},

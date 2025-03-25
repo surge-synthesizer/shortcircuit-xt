@@ -1063,6 +1063,7 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                         return ToString(val);
                     };
 
+                    zn->egStorage[1].dly = s2a(reg->GetEG2PreAttackDelay(presetRegion));
                     zn->egStorage[1].a = s2a(reg->GetEG2Attack(presetRegion));
                     zn->egStorage[1].h = s2a(reg->GetEG2Hold(presetRegion));
                     zn->egStorage[1].d = s2a(reg->GetEG2Decay(presetRegion));
@@ -1100,33 +1101,83 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                         getMessageController()->threadingChecker.bypassThreadChecks = false;
                     }
 
-#if 0
-                    SCLOG("Unimplemented SF2 Features Follow:")
-                    SCLOG("\tModulation Envelope Generator Pitch="
-                          << GetValue(reg->modEnvToPitch)
-                          << "cents, Cutoff=" << GetValue(reg->modEnvToFilterFc) << "cents");
-
-                    SCLOG("\tModulation LFO: Delay="
-                          << ::sf2::ToSeconds(reg->delayModLfo)
-                          << "s, Frequency=" << ::sf2::ToHz(reg->freqModLfo)
-                          << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB"
-                          << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc
-                          << ", LFO to Pitch=" << reg->modLfoToPitch);
-
-                    SCLOG("\tVibrato LFO:    Delay=" << ::sf2::ToSeconds(reg->delayVibLfo)
-                                                     << "s, Frequency="
-                                                     << ::sf2::ToHz(reg->freqVibLfo)
-                                                     << "Hz, LFO to Pitch=" << reg->vibLfoToPitch);
-
-                    SCLOG("\tModulators Ignored. Count =(" << reg->modulators.size() << ")");
-
-                    for (int mi = 0; mi < reg->modulators.size(); mi++)
+                    int currentModRow{0};
+                    // SCLOG("Unimplemented SF2 Features Follow: " )
+                    if (reg->modEnvToPitch != 0)
                     {
-                        // PrintModulatorItem(&reg->modulators[i]);
+                        zn->routingTable.routes[currentModRow].source =
+                            voice::modulation::MatrixEndpoints::Sources::eg2A;
+                        zn->routingTable.routes[currentModRow].target =
+                            voice::modulation::MatrixEndpoints::MappingTarget::pitchOffsetA;
+                        zn->routingTable.routes[currentModRow].depth =
+                            1.0 * reg->modEnvToPitch / 19200;
+                        zn->onRoutingChanged();
+                        currentModRow++;
+                    }
+                    if (reg->modEnvToFilterFc != 0)
+                    {
+                        SCLOG("\tModulation Envelope Generator Cutoff="
+                              << GetValue(reg->modEnvToFilterFc) << "cents");
                     }
 
-                    SCLOG("\tExclusive Class : " << reg->exclusiveClass);
-#endif
+                    if (reg->vibLfoToPitch > 0)
+                    {
+                        // Use LFO1 as the vibrato LFO
+                        zn->modulatorStorage[0].modulatorShape =
+                            modulation::ModulatorStorage::LFO_SINE;
+                        zn->modulatorStorage[0].rate =
+                            (reg->freqVibLfo + 3637.63165623) * 0.01 / 12.0;
+
+                        if (reg->delayVibLfo > -11999)
+                        {
+                            SCLOG("Unimplemented: Curve Delay");
+                            // zn->modulatorStorage[0].curveLfoStorage.useenv = true;
+                            // zn->modulatorStorage[0].curveLfoStorage.delay = something;
+                            // zn->modulatorStorage[0].curveLfoStorage.attack = 0.0;
+                            // zn->modulatorStorage[0].curveLfoStorage.release = 1.0;
+                        }
+
+                        // TODO: Fix this with a constant
+                        zn->routingTable.routes[currentModRow].source = {'znlf', 'outp', 0};
+                        zn->routingTable.routes[currentModRow].target =
+                            voice::modulation::MatrixEndpoints::MappingTarget::pitchOffsetA;
+                        zn->routingTable.routes[currentModRow].depth =
+                            1.0 * reg->vibLfoToPitch / 19200;
+                        zn->onRoutingChanged();
+                        currentModRow++;
+                    }
+
+                    if (reg->modulators.size() > 0)
+                    {
+                        SCLOG("Unsupported Modulators present in : " << instr->GetName()
+                                                                     << " region " << i);
+                        SCLOG("\tCount =" << reg->modulators.size() << "");
+
+                        for (int mi = 0; mi < reg->modulators.size(); mi++)
+                        {
+                            auto m = reg->modulators[mi];
+                            SCLOG("\tsrc=" << m.ModSrcOper.Type << " target=" << m.ModDestOper
+                                           << " depth=" << m.ModAmount << " trans="
+                                           << m.ModTransOper << " srcamt=" << m.ModAmtSrcOper.Type);
+                            // PrintModulatorItem(&reg->modulators[i]);
+                        }
+                    }
+
+                    if (reg->modLfoToFilterFc != 0 || reg->modLfoToPitch != 0)
+                    {
+                        SCLOG("Unsupported: Modulation LFO: Delay="
+                              << ::sf2::ToSeconds(reg->delayModLfo)
+                              << "s, Frequency=" << ::sf2::ToHz(reg->freqModLfo)
+                              << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB"
+                              << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc
+                              << ", LFO to Pitch=" << reg->modLfoToPitch);
+                    }
+
+                    if (reg->exclusiveClass)
+                        SCLOG("Unsupported: Exclusive Class : " << reg->exclusiveClass << " in "
+                                                                << instr->GetName() << " region "
+                                                                << i);
+                    ;
 
                     grp->addZone(zn);
                 }
