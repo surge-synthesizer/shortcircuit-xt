@@ -853,6 +853,7 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
                                               dragSourceDetails.localPosition.y)};
         if (wsi->getCompoundElement().has_value())
         {
+            auto ce = *wsi->getCompoundElement();
             sendToSerialization(cmsg::AddCompoundElementInZone(
                 {*wsi->getCompoundElement(), za->part, za->group, za->zone, sampleID}));
         }

@@ -463,7 +463,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void pasteZone(const selection::SelectionManager::ZoneAddress &);
     std::string zoneClipboard;
 
-    void loadSf2MultiSampleIntoSelectedPart(const fs::path &);
+    void loadSf2MultiSampleIntoSelectedPart(const fs::path &, int instrument = -1);
 
     /*
      * OnRegister generate and send all the metdata the client needs

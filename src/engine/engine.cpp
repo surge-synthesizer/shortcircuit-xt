@@ -629,9 +629,21 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
                                                          int16_t rootKey, KeyboardRange krange,
                                                          VelocityRange vrange)
 {
-    SCLOG("Wahey");
     if (p.type == sample::compound::CompoundElement::INSTRUMENT)
     {
+        if (extensionMatches(p.sampleAddress.path, ".sf2"))
+        {
+            // TODO ok this refresh and restart is a bit unsatisfactory
+            messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+                loadSf2MultiSampleIntoSelectedPart(p.sampleAddress.path,
+                                                   p.sampleAddress.instrument);
+                messageController->restartAudioThreadFromSerial();
+                serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                          getPartGroupZoneStructure(), *messageController);
+            });
+            return;
+        }
+        SCLOG("Skipping instrument load '" << p.sampleAddress.path.u8string() << "'");
         return;
     }
 
@@ -912,7 +924,7 @@ void Engine::sendEngineStatusToClient() const
     messaging::client::serializationSendToClient(messaging::client::s2c_engine_status, ec,
                                                  *messageController);
 }
-void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
+void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int instrument)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
@@ -929,20 +941,40 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p)
 
         auto &part = getPatch()->getPart(pt);
         int firstGroup = -1;
+
+        sf2::Instrument *instrumentFilter{nullptr};
+        if (instrument >= 0 && instrument < sf->GetInstrumentCount())
+        {
+            instrumentFilter = sf->GetInstrument(instrument);
+        }
         for (int pc = 0; pc < sf->GetPresetCount(); ++pc)
         {
             auto *preset = sf->GetPreset(pc);
             auto pnm = std::string(preset->GetName());
 
-            auto grpnum = part->addGroup() - 1;
-            auto &grp = part->getGroup(grpnum);
-
-            grp->name = pnm;
+            size_t grpnum{0};
+            bool needGroup = true;
 
             for (int i = 0; i < preset->GetRegionCount(); ++i)
             {
                 auto *presetRegion = preset->GetRegion(i);
                 sf2::Instrument *instr = presetRegion->pInstrument;
+
+                if (instrumentFilter && instr != instrumentFilter)
+                {
+                    continue;
+                }
+
+                if (needGroup)
+                {
+                    grpnum = part->addGroup() - 1;
+                    auto &grpt = part->getGroup(grpnum);
+
+                    grpt->name = pnm;
+                    needGroup = false;
+                }
+
+                auto &grp = part->getGroup(grpnum);
 
                 if (instr->pGlobalRegion)
                 {
