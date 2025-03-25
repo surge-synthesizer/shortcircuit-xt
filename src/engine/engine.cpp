@@ -635,8 +635,7 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
         {
             // TODO ok this refresh and restart is a bit unsatisfactory
             messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
-                loadSf2MultiSampleIntoSelectedPart(p.sampleAddress.path,
-                                                   p.sampleAddress.instrument);
+                loadSf2MultiSampleIntoSelectedPart(p.sampleAddress.path, p.sampleAddress.preset);
                 messageController->restartAudioThreadFromSerial();
                 serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                           getPartGroupZoneStructure(), *messageController);
@@ -924,9 +923,11 @@ void Engine::sendEngineStatusToClient() const
     messaging::client::serializationSendToClient(messaging::client::s2c_engine_status, ec,
                                                  *messageController);
 }
-void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int instrument)
+void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
 {
     assert(messageController->threadingChecker.isSerialThread());
+
+    SCLOG("Loading " << p.u8string() << " ps=" << preset);
 
     auto cng = messaging::MessageController::ClientActivityNotificationGuard(
         "Loading SF2", *(getMessageController()));
@@ -942,38 +943,35 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int instrumen
         auto &part = getPatch()->getPart(pt);
         int firstGroup = -1;
 
-        sf2::Instrument *instrumentFilter{nullptr};
-        if (instrument >= 0 && instrument < sf->GetInstrumentCount())
+        auto spc = 0;
+        auto epc = sf->GetPresetCount();
+
+        if (preset >= 0)
         {
-            instrumentFilter = sf->GetInstrument(instrument);
+            spc = preset;
+            epc = preset + 1;
         }
-        for (int pc = 0; pc < sf->GetPresetCount(); ++pc)
+
+        std::map<sf2::Instrument *, int> instToGroup;
+
+        for (int pc = spc; pc < epc; ++pc)
         {
             auto *preset = sf->GetPreset(pc);
             auto pnm = std::string(preset->GetName());
-
-            size_t grpnum{0};
-            bool needGroup = true;
 
             for (int i = 0; i < preset->GetRegionCount(); ++i)
             {
                 auto *presetRegion = preset->GetRegion(i);
                 sf2::Instrument *instr = presetRegion->pInstrument;
 
-                if (instrumentFilter && instr != instrumentFilter)
+                if (instToGroup.find(instr) == instToGroup.end())
                 {
-                    continue;
+                    auto gnum = part->addGroup() - 1;
+                    auto &group = part->getGroup(gnum);
+                    group->name = std::string(instr->GetName()) + " / " + pnm;
+                    instToGroup[instr] = gnum;
                 }
-
-                if (needGroup)
-                {
-                    grpnum = part->addGroup() - 1;
-                    auto &grpt = part->getGroup(grpnum);
-
-                    grpt->name = pnm;
-                    needGroup = false;
-                }
-
+                auto grpnum = instToGroup[instr];
                 auto &grp = part->getGroup(grpnum);
 
                 if (instr->pGlobalRegion)
