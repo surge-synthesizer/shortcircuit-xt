@@ -1093,8 +1093,10 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                         // This only runs with audio thread stopped
                         getMessageController()->threadingChecker.bypassThreadChecks = true;
                         zn->setProcessorType(0, dsp::processor::ProcessorType::proct_CytomicSVF);
-                        zn->processorStorage[0].floatParams[0] = (reg->initialFilterFc / 100.0) - 69.0;
-                        zn->processorStorage[0].floatParams[2] = std::clamp((reg->initialFilterQ / 100.0), 0., 1.);
+                        zn->processorStorage[0].floatParams[0] =
+                            (reg->initialFilterFc / 100.0) - 69.0;
+                        zn->processorStorage[0].floatParams[2] =
+                            std::clamp((reg->initialFilterQ / 100.0), 0., 1.);
                         getMessageController()->threadingChecker.bypassThreadChecks = false;
                     }
 
