@@ -1017,8 +1017,9 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                     auto hv = noneOr(region->maxVel, presetRegion->maxVel, 127);
                     zn->mapping.velocityRange = {lv, hv};
 
-                    // TODO check this 256
-                    zn->mapping.pitchOffset = 1.0 * sfsamp->PitchCorrection / 256;
+                    // SF2 pitch correction is a *signed* char in cents.
+                    auto pc = static_cast<int>(static_cast<int8_t>(sfsamp->PitchCorrection));
+                    zn->mapping.pitchOffset = 1.0 * pc / 100.0;
                     if (!zn->attachToSample(*sampleManager))
                     {
                         SCLOG("ERROR: Can't attach to sample");
