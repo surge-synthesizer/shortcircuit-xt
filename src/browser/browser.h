@@ -40,6 +40,11 @@ namespace scxt::infrastructure
 struct DefaultsProvider;
 }
 
+namespace scxt::messaging
+{
+struct MessageController;
+}
+
 namespace scxt::browser
 {
 struct BrowserDB;
@@ -78,8 +83,9 @@ struct Browser
      */
     using indexedRootPath_t = std::tuple<fs::path, std::string, bool>;
     std::vector<indexedRootPath_t> getRootPathsForDeviceView() const;
-    void addRootPathForDeviceView(const fs::path &, bool indexed);
-    void removeRootPathForDeviceView(const fs::path &);
+    void addRootPathForDeviceView(const fs::path &, bool indexed, messaging::MessageController &);
+    void removeRootPathForDeviceView(const fs::path &, messaging::MessageController &);
+    void reindexLocation(const fs::path &);
 
     static bool isLoadableFile(const fs::path &);
     static bool isLoadableSample(const fs::path &);

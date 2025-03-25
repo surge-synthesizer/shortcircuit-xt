@@ -25,46 +25,29 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_BROWSER_BROWSER_DB_H
-#define SCXT_SRC_BROWSER_BROWSER_DB_H
+#ifndef SCXT_SRC_BROWSER_SCANNER_H
+#define SCXT_SRC_BROWSER_SCANNER_H
 
 #include "filesystem/import.h"
-#include <memory>
-#include <vector>
-#include <string>
-#include <utility>
 
 namespace scxt::messaging
 {
 struct MessageController;
 }
-
 namespace scxt::browser
 {
 struct WriterWorker;
-struct Scanner;
-struct BrowserDB
+struct ScanWorker;
+struct Scanner
 {
-    BrowserDB(const fs::path &, messaging::MessageController &);
-    ~BrowserDB();
+    Scanner(WriterWorker &w, messaging::MessageController &mc);
+    ~Scanner();
 
-    void writeDebugMessage(const std::string &);
-    void addRemoveBrowserLocation(const fs::path &, bool index, bool add);
-    void reindexLocation(const fs::path &);
+    void scanPath(const fs::path &path, uint64_t afterMtime);
 
-    template <typename T> void addClientToSerialCallback(const T &);
-
-    std::vector<std::pair<fs::path, bool>> getBrowserLocations();
-
-    int numberOfJobsOutstanding() const;
-    int waitForJobsOutstandingComplete(int maxWaitInMS) const;
-
-    void scanToUpdateSamples();
-
-  private:
+    WriterWorker &writer;
     messaging::MessageController &mc;
-    std::unique_ptr<WriterWorker> writerWorker;
-    std::unique_ptr<Scanner> scanner;
+    std::unique_ptr<ScanWorker> scanWorker;
 };
-} // namespace scxt::browser
-#endif // SHORTCIRCUITXT_BROWSER_DB_H
+};     // namespace scxt::browser
+#endif // BROWSER_SCANNER_H

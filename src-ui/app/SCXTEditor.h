@@ -247,6 +247,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void onMixerBusSendData(const scxt::messaging::client::busSendData_t &);
 
     void onBrowserRefresh(const bool);
+    void onBrowserQueueLengthRefresh(const std::pair<int32_t, int32_t>);
 
     void onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &);
 

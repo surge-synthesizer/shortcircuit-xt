@@ -3,6 +3,7 @@ project(scxt-core LANGUAGES CXX)
 add_library(${PROJECT_NAME} STATIC
         browser/browser.cpp
         browser/browser_db.cpp
+        browser/scanner.cpp
 
         dsp/generator.cpp
         dsp/data_tables.cpp

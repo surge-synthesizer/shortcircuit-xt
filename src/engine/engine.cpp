@@ -106,7 +106,7 @@ Engine::Engine()
         [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
         [](auto em, auto t) { SCLOG("Defaults Parse Error :" << em << " " << t << std::endl); });
 
-    browserDb = std::make_unique<browser::BrowserDB>(*tdp);
+    browserDb = std::make_unique<browser::BrowserDB>(*tdp, *messageController);
     browser = std::make_unique<browser::Browser>(
         *browserDb, *defaults, useTDP,
         [this](const auto &a, const auto &b) { messageController->reportErrorToClient(a, b); });

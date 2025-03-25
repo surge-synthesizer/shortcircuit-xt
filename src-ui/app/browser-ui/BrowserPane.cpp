@@ -38,6 +38,8 @@
 #include <infrastructure/user_defaults.h>
 #include "BrowserPaneInterfaces.h"
 
+#define SHOW_INDEX_MENUS 0
+
 namespace scxt::ui::app::browser_ui
 {
 namespace jcmp = sst::jucegui::components;
@@ -131,9 +133,17 @@ struct DriveArea : juce::Component, HasEditor
                 namespace cmsg = scxt::messaging::client;
                 w->sendToSerialization(cmsg::RemoveBrowserDeviceLocation(removeThis.u8string()));
             });
+#if SHOW_INDEX_MENUS
             // TODO: If Indexed
-            p.addItem("Add '" + nm + "' to Search Index", false, false, []() {});
+            p.addItem("Add '" + nm + "' to Search Index", false, false, [](){});
 
+            p.addItem("Reindex '" + nm + "'", true, false,
+                      [pth, w = juce::Component::SafePointer(this)]() {
+                          namespace cmsg = scxt::messaging::client;
+                          w->driveArea->browserPane->sendToSerialization(
+                              cmsg::ReindexBrowserLocation{pth.u8string()});
+                      });
+#endif
             if (!fs::is_directory(pth))
             {
                 pth = pth.parent_path();
@@ -141,20 +151,33 @@ struct DriveArea : juce::Component, HasEditor
             p.addItem("Reveal '" + nm + "'...",
                       [pth]() { juce::File(pth.u8string()).revealToUser(); });
             p.addSeparator();
-            p.addItem("Add Location...", [w = juce::Component::SafePointer(this)]() {
-                if (!w)
-                    return;
-                auto ed = w->driveArea->browserPane->editor;
-                ed->fileChooser = std::make_unique<juce::FileChooser>("Add Location");
-                ed->fileChooser->launchAsync(
-                    juce::FileBrowserComponent::canSelectDirectories, [w, ed](const auto &c) {
-                        auto result = c.getResults();
-                        namespace cmsg = scxt::messaging::client;
-                        w->driveArea->browserPane->sendToSerialization(
-                            cmsg::AddBrowserDeviceLocation(
-                                result[0].getFullPathName().toStdString()));
-                    });
-            });
+            for (auto &idx :
+#if SHOW_INDEX_MENUS
+                 {false, true}
+#else
+                 {false}
+#endif
+            )
+            {
+                std::string lab = "Add Location...";
+                if (idx)
+                    lab = "Add and Index Location...";
+                p.addItem(lab, [idxx = idx, w = juce::Component::SafePointer(this)]() {
+                    if (!w)
+                        return;
+                    auto ed = w->driveArea->browserPane->editor;
+                    ed->fileChooser = std::make_unique<juce::FileChooser>("Add Location");
+                    ed->fileChooser->launchAsync(
+                        juce::FileBrowserComponent::canSelectDirectories,
+                        [idxxx = idxx, w, ed](const auto &c) {
+                            auto result = c.getResults();
+                            namespace cmsg = scxt::messaging::client;
+                            w->driveArea->browserPane->sendToSerialization(
+                                cmsg::AddBrowserDeviceLocation(
+                                    {result[0].getFullPathName().toStdString(), idxxx}));
+                        });
+                });
+            }
             p.showMenuAsync(driveArea->browserPane->editor->defaultPopupMenuOptions());
         }
     };
@@ -557,13 +580,24 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
             p.addSectionHeader("Directory");
             p.addSeparator();
-            p.addItem("Add to Locations", [w = juce::Component::SafePointer(browserPane),
-                                           d = data[rowNumber]]() {
-                if (!w)
-                    return;
-                namespace cmsg = scxt::messaging::client;
-                w->sendToSerialization(cmsg::AddBrowserDeviceLocation(d.dirent.path().u8string()));
-            });
+            p.addItem("Add to Locations",
+                      [w = juce::Component::SafePointer(browserPane), d = data[rowNumber]]() {
+                          if (!w)
+                              return;
+                          namespace cmsg = scxt::messaging::client;
+                          w->sendToSerialization(
+                              cmsg::AddBrowserDeviceLocation({d.dirent.path().u8string(), false}));
+                      });
+#if SHOW_INDEX_MENUS
+            p.addItem("Add to Index and Locations",
+                      [w = juce::Component::SafePointer(browserPane), d = data[rowNumber]]() {
+                          if (!w)
+                              return;
+                          namespace cmsg = scxt::messaging::client;
+                          w->sendToSerialization(
+                              cmsg::AddBrowserDeviceLocation({d.dirent.path().u8string(), true}));
+                      });
+#endif
             p.showMenuAsync(browserPane->editor->defaultPopupMenuOptions());
         }
     }
@@ -838,4 +872,24 @@ void BrowserPane::selectPane(int i)
     searchPane->setVisible(selectedPane == 1);
     repaint();
 }
+
+void BrowserPane::setIndexWorkload(std::pair<int32_t, int32_t> v)
+{
+    if (v.first != -1)
+        fJobs = v.first;
+    ;
+    if (v.second != -1)
+        dbJobs = v.second;
+
+    if (fJobs == 0 && dbJobs == 0)
+    {
+        setName("Browser");
+    }
+    else
+    {
+        setName("Browser (" + std::to_string(fJobs) + "; " + std::to_string(dbJobs) + ")");
+    }
+    repaint();
+}
+
 } // namespace scxt::ui::app::browser_ui

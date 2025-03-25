@@ -166,16 +166,7 @@ inline void clientSendToSerialization(const T &msg, messaging::MessageController
     auto mw = detail::MessageWrapper(msg);
     detail::client_message_value v = mw;
     auto res = encoder::to_string(v);
-#if BUILD_IS_DEBUG
-    mc.c2sMessageCount++;
-    mc.c2sMessageBytes += res.size();
-    if (mc.c2sMessageCount % 100 == 0)
-    {
-        SCLOG("Client -> Serial Message Count : " << mc.c2sMessageCount << " size "
-                                                  << mc.c2sMessageBytes << " avgmsg: "
-                                                  << 1.f * mc.c2sMessageBytes / mc.c2sMessageCount);
-    }
-#endif
+
     mc.sendRawFromClient(res);
 }
 

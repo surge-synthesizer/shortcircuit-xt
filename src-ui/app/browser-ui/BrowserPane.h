@@ -54,6 +54,9 @@ struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
     void resized() override;
 
     void resetRoots();
+    void setIndexWorkload(std::pair<int32_t, int32_t> idx);
+    int32_t fJobs{0}, dbJobs{0};
+
     std::vector<scxt::browser::Browser::indexedRootPath_t> roots;
 
     std::unique_ptr<DevicesPane> devicesPane;

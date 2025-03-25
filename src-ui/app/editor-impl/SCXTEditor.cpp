@@ -59,6 +59,8 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
                        const engine::Engine::SharedUIMemoryState &st)
     : msgCont(e), sampleManager(s), defaultsProvider(d), browser(b), sharedUiMemoryState(st)
 {
+    msgCont.threadingChecker.addAsAClientThread();
+
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
 
     sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset =
