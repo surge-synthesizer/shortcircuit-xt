@@ -998,8 +998,13 @@ void Engine::loadSf2MultiSampleIntoSelectedPart(const fs::path &p, int preset)
                     zn->engine = this;
 
                     if (region->overridingRootKey >= 0)
+                    {
                         zn->mapping.rootKey = region->overridingRootKey;
-                    zn->mapping.rootKey += sfsamp->OriginalPitch - 60;
+                    }
+                    else
+                    {
+                        zn->mapping.rootKey += sfsamp->OriginalPitch - 60;
+                    }
 
                     auto noneOr = [](auto a, auto b, auto c) {
                         if (a != sf2::NONE)
