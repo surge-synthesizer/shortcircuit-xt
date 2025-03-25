@@ -55,17 +55,33 @@ std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &p)
     auto riff = std::make_unique<RIFF::File>(p.u8string());
     auto sf = std::make_unique<sf2::File>(riff.get());
 
-    auto ic = sf->GetInstrumentCount();
+    auto ic = sf->GetPresetCount();
     std::vector<CompoundElement> result;
     result.reserve(ic);
+
+    std::vector<std::pair<sf2::Preset *, int>> presets;
+
     for (int i = 0; i < ic; ++i)
     {
-        auto in = sf->GetInstrument(i);
+        presets.push_back({sf->GetPreset(i), i});
+    }
 
+    std::sort(presets.begin(), presets.end(), [](const auto &aa, const auto &bb) {
+        auto a = aa.first;
+        auto b = bb.first;
+        if (a->Bank != b->Bank)
+            return a->Bank < b->Bank;
+        return a->PresetNum < b->PresetNum;
+    });
+
+    for (auto pr : presets)
+    {
+        auto in = pr.first;
+        auto i = pr.second;
         CompoundElement res;
         res.type = CompoundElement::Type::INSTRUMENT;
         res.name = in->GetName();
-        res.sampleAddress = {Sample::SF2_FILE, p, "", -1, i, -1};
+        res.sampleAddress = {Sample::SF2_FILE, p, "", i, -1, -1};
         result.push_back(res);
     }
 
