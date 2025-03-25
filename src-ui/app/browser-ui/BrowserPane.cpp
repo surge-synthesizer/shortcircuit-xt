@@ -563,6 +563,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             else
             {
                 // This is a hack and should be a drag and drop gesture really I guess
+                auto &entry = data[rowNumber];
+
                 namespace cmsg = scxt::messaging::client;
                 auto &d = data[rowNumber];
                 if (d.expandableAddress.has_value())
@@ -571,6 +573,18 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                         cmsg::AddCompoundElementWithRange(
                             {*(d.expandableAddress), 60, 48, 72, 0, 127}),
                         browserPane->editor->msgCont);
+                }
+                else if (browser::Browser::isExpandableInBrowser(entry.dirent.path()))
+                {
+                    if (entry.isExpanded)
+                    {
+                        browserPane->devicesPane->driveFSArea->collapsMultifile(rowNumber);
+                    }
+                    else
+                    {
+                        browserPane->devicesPane->driveFSArea->expandMultifile(rowNumber);
+                    }
+                    repaint();
                 }
                 else
                 {
