@@ -306,12 +306,17 @@ struct MatrixEndpoints
 
         struct VoiceSources
         {
-            VoiceSources(engine::Engine *e) : isGated{'zvsr', 'gate'}, isReleased{'zvsr', 'reld'}
+            VoiceSources(engine::Engine *e)
+                : isGated{'zvsr', 'gate'}, isReleased{'zvsr', 'reld'},
+                  variantCount{'zvsr', 'vcnt', 0}, variantCountFraction{'zvsr', 'vcfr', 0}
             {
                 registerVoiceModSource(e, isGated, "Voice", "Is Gated");
                 registerVoiceModSource(e, isReleased, "Voice", "Is Released");
+                registerVoiceModSource(e, variantCount, "Voice", "Variant Idx");
+                registerVoiceModSource(e, variantCountFraction, "Voice", "Variant %");
             }
             SR isGated, isReleased;
+            SR variantCount, variantCountFraction;
         } voiceSources;
 
         TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
