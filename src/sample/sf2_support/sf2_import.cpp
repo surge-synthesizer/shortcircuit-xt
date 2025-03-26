@@ -30,6 +30,10 @@
 #include "gig.h"
 #include "SF.h"
 
+#include "engine/engine.h"
+#include "messaging/messaging.h"
+#include "infrastructure/md5support.h"
+
 namespace scxt::sf2_support
 {
 bool importSF2(const fs::path &p, engine::Engine &e, int preset)
