@@ -35,6 +35,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/multisample_support/multisample_import.cpp
         sample/sf2_support/sf2_compound_file_impl.cpp
         sample/sf2_support/sf2_import.cpp
+        sample/sfz_support/sfz_compound_file_impl.cpp
         sample/sfz_support/sfz_parse.cpp
         sample/sfz_support/sfz_import.cpp
 

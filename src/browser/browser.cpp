@@ -128,6 +128,10 @@ std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const f
 
         return inst;
     }
+    if (extensionMatches(p, ".sfz"))
+    {
+        return sample::compound::getSFZCompoundList(p);
+    }
     return {};
 }
 } // namespace scxt::browser

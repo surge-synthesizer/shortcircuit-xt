@@ -413,6 +413,9 @@ void Sample::dumpInformationToLog()
         SCLOG("SF2 File : " << getPath().u8string() << " Instrument=" << getCompoundInstrument()
                             << " Region=" << getCompoundRegion());
         break;
+    case SFZ_FILE:
+        SCLOG("SFZ File : " << getPath().u8string());
+        break;
     case MULTISAMPLE_FILE:
         SCLOG("Multisample File : " << getPath().u8string() << " at " << getCompoundRegion());
         break;

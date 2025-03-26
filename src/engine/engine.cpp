@@ -636,14 +636,26 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
         {
             // TODO ok this refresh and restart is a bit unsatisfactory
             messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
-                sf2_support::importSF2(p.sampleAddress.path, *this, p.sampleAddress.preset);
+                auto res =
+                    sf2_support::importSF2(p.sampleAddress.path, *this, p.sampleAddress.preset);
                 messageController->restartAudioThreadFromSerial();
                 serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                           getPartGroupZoneStructure(), *messageController);
             });
             return;
         }
-        SCLOG("Skipping instrument load '" << p.sampleAddress.path.u8string() << "'");
+        if (extensionMatches(p.sampleAddress.path, ".sfz"))
+        {
+            messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+                auto res = sfz_support::importSFZ(p.sampleAddress.path, *this);
+                if (!res)
+                    messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+                messageController->restartAudioThreadFromSerial();
+                serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                          getPartGroupZoneStructure(), *messageController);
+            });
+            return;
+        }
         return;
     }
 
