@@ -231,7 +231,7 @@ struct MatrixEndpoints
         // so we can reach them from external multisamples
         static constexpr SR eg2A{'zneg', 'eg2 ', 0};
         Sources(engine::Engine *e)
-            : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e), sampleSources(e),
+            : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
               egSources{{{'zneg', 'aeg ', 0},
                          eg2A,
                          {'zneg', 'eg3 ', 0},
@@ -306,24 +306,18 @@ struct MatrixEndpoints
 
         struct VoiceSources
         {
-            VoiceSources(engine::Engine *e) : isGated{'zvsr', 'gate'}, isReleased{'zvsr', 'reld'}
+            VoiceSources(engine::Engine *e)
+                : isGated{'zvsr', 'gate'}, isReleased{'zvsr', 'reld'},
+                  variantCount{'zvsr', 'vcnt', 0}, variantCountFraction{'zvsr', 'vcfr', 0}
             {
                 registerVoiceModSource(e, isGated, "Voice", "Is Gated");
                 registerVoiceModSource(e, isReleased, "Voice", "Is Released");
+                registerVoiceModSource(e, variantCount, "Voice", "Variant Idx");
+                registerVoiceModSource(e, variantCountFraction, "Voice", "Variant %");
             }
             SR isGated, isReleased;
-        } voiceSources;
-
-        struct SampleSources
-        {
-            SampleSources(engine::Engine *e)
-                : variantCount{'zsmp', 'vcnt', 0}, variantCountFraction{'zsmp', 'vcfr', 0}
-            {
-                registerVoiceModSource(e, variantCount, "Sample", "Variant Idx");
-                registerVoiceModSource(e, variantCountFraction, "Sample", "Variant %");
-            }
             SR variantCount, variantCountFraction;
-        } sampleSources;
+        } voiceSources;
 
         TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
 
