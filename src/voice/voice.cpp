@@ -54,6 +54,11 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
     {
         sampleIndexFraction = sampleIndexF / (zone->getNumSampleLoaded() - 1);
     }
+
+    inLoopF = 0.f;
+    currentLoopPercentageF = 0.f;
+    currentSamplePercentageF = 0.f;
+
     memset(output, 0, 2 * blockSize * sizeof(float));
     memset(processorIntParams, 0, sizeof(processorIntParams));
 }
@@ -318,6 +323,9 @@ template <bool OS> bool Voice::processWithOS()
         isAnyGeneratorRunning = false;
         float loutput alignas(16)[2][blockSize << 2];
 
+        bool inloop = false;
+        currentLoopPercentageF = 0.f;
+
         for (auto idx = firstIndex; idx < lastIndex; ++idx)
         {
             auto gidx = idx - firstIndex;
@@ -350,6 +358,17 @@ template <bool OS> bool Voice::processWithOS()
                     Generator[gidx](&GD[gidx], &GDIO[gidx]);
                 }
 
+                inloop = inloop || GD[gidx].isInLoop;
+
+                if (GD[gidx].isInLoop)
+                {
+                    currentLoopPercentageF = 1.0 * (GD[gidx].samplePos - GD[gidx].loopLowerBound) /
+                                             (GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
+                }
+                currentSamplePercentageF =
+                    1.0 * (GD[gidx].samplePos - GD[gidx].playbackLowerBound) /
+                    (GD[gidx].playbackUpperBound - GD[gidx].playbackLowerBound);
+
                 isGeneratorRunning[gidx] = !GD[gidx].isFinished;
                 isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
                 if (gidx == 0)
@@ -376,6 +395,8 @@ template <bool OS> bool Voice::processWithOS()
                 }
             }
         }
+
+        inLoopF = (inloop ? 1.f : 0.f);
 
         if (useOversampling && !OS)
         {
