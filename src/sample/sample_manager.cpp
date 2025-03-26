@@ -81,6 +81,11 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
         nid = loadSampleFromMultiSample(addr.path, addr.region, id);
     }
     break;
+    case Sample::SFZ_FILE:
+    {
+        SCLOG("How did this happen?");
+    }
+    break;
         // add something here? don't forget to add it in the multi resolver too in
         // resolveSingleFileMissingWorkItem
     }

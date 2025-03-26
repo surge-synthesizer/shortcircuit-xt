@@ -40,6 +40,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     {
         WAV_FILE,
         SF2_FILE,
+        SFZ_FILE,
         FLAC_FILE,
         MP3_FILE,
         AIFF_FILE,

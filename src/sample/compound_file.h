@@ -52,5 +52,7 @@ struct CompoundElement
 std::vector<CompoundElement> getSF2SampleAddresses(const fs::path &);
 std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &);
 
+std::vector<CompoundElement> getSFZCompoundList(const fs::path &);
+
 } // namespace scxt::sample::compound
 #endif // COMPOUND_FILE_H

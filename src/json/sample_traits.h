@@ -59,6 +59,9 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                  case sample::Sample::SF2_FILE:
                      v = "sf2";
                      break;
+                 case sample::Sample::SFZ_FILE:
+                     v = "sfz";
+                     break;
                  case sample::Sample::AIFF_FILE:
                      v = "aiff";
                      break;
