@@ -158,6 +158,9 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(voiceSources.isGated, v.isGatedF);
     m.bindSourceValue(voiceSources.isReleased, v.isReleasedF);
 
+    m.bindSourceValue(sampleSources.variantCount, v.sampleIndexF);
+    m.bindSourceValue(sampleSources.variantCountFraction, v.sampleIndexFraction);
+
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {
         m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);

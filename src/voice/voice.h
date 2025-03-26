@@ -54,6 +54,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     engine::Engine *engine{nullptr};
     engine::Engine::pathToZone_t zonePath{};
     int8_t sampleIndex{0}; // int since - == no sample
+    float sampleIndexF{0.f};
+    float sampleIndexFraction{0};
 
     bool forceOversample{true};
 

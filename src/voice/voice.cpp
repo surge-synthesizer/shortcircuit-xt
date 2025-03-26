@@ -44,6 +44,16 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
       sampleIndex(zone->sampleIndex), halfRate(6, true), endpoints(nullptr) // see comment
 {
     assert(zone);
+
+    sampleIndexF = sampleIndex;
+    if (zone->getNumSampleLoaded() <= 1)
+    {
+        sampleIndexFraction = 0;
+    }
+    else
+    {
+        sampleIndexFraction = sampleIndexF / (zone->getNumSampleLoaded() - 1);
+    }
     memset(output, 0, 2 * blockSize * sizeof(float));
     memset(processorIntParams, 0, sizeof(processorIntParams));
 }
