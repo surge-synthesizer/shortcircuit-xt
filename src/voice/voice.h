@@ -57,6 +57,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float sampleIndexF{0.f};
     float sampleIndexFraction{0};
 
+    float inLoopF{0.f}, currentLoopPercentageF{0.f}, currentSamplePercentageF{0.f};
+
     bool forceOversample{true};
 
     std::array<dsp::GeneratorState, maxGeneratorsPerVoice> GD;

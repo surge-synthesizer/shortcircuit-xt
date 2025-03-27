@@ -159,6 +159,9 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(voiceSources.isReleased, v.isReleasedF);
     m.bindSourceValue(voiceSources.variantCount, v.sampleIndexF);
     m.bindSourceValue(voiceSources.variantCountFraction, v.sampleIndexFraction);
+    m.bindSourceValue(voiceSources.isLooping, v.inLoopF);
+    m.bindSourceValue(voiceSources.samplePercentage, v.currentSamplePercentageF);
+    m.bindSourceValue(voiceSources.loopPercentage, v.currentLoopPercentageF);
 
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {
