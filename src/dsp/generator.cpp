@@ -856,13 +856,17 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 if (offset > GD->loopUpperBound)
                 {
                     offset -= LoopOffset;
+                    GD->loopCount++;
                 }
             }
             else
             {
                 // Lower
                 if (offset < GD->loopLowerBound)
+                {
                     offset += LoopOffset;
+                    GD->loopCount++;
+                }
             }
 
             if (offset > WaveSize || offset < 0)
@@ -875,10 +879,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             // bidirectional
             if (SamplePos >= GD->loopUpperBound)
             {
+                if (GD->directionAtOutset == -1 && Direction == 1)
+                    GD->loopCount++;
                 Direction = -1;
             }
             else if (SamplePos <= GD->loopLowerBound)
             {
+                if (GD->directionAtOutset == 1 && Direction == -1)
+                    GD->loopCount++;
                 Direction = 1;
             }
 
@@ -894,12 +902,18 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 if (Direction > 0)
                 {
                     if (offset > GD->loopUpperBound)
+                    {
                         offset -= LoopOffset;
+                        GD->loopCount++;
+                    }
                 }
                 else
                 {
                     if (offset < GD->loopLowerBound)
+                    {
                         offset += LoopOffset;
+                        GD->loopCount++;
+                    }
                 }
 
                 if (offset > WaveSize || offset < 0)
@@ -932,10 +946,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 if (SamplePos >= GD->loopUpperBound)
                 {
+                    if (GD->directionAtOutset == -1 && Direction == 1)
+                        GD->loopCount++;
                     Direction = -1;
                 }
                 else if (SamplePos <= GD->loopLowerBound)
                 {
+                    if (GD->directionAtOutset == 1 && Direction == -1)
+                        GD->loopCount++;
                     Direction = 1;
                 }
 
@@ -1074,6 +1092,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
             }
         }
+        if (GD->isInLoop && GD->loopCount < 0)
+            GD->loopCount = 0;
     }
 }
 } // namespace scxt::dsp
