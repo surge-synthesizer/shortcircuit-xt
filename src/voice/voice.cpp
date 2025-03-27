@@ -328,6 +328,8 @@ template <bool OS> bool Voice::processWithOS()
 
         for (auto idx = firstIndex; idx < lastIndex; ++idx)
         {
+            auto &variantData = zone->variantData.variants[idx];
+
             auto gidx = idx - firstIndex;
             if (isGeneratorRunning[gidx])
             {
@@ -347,7 +349,18 @@ template <bool OS> bool Voice::processWithOS()
                 GD[gidx].sampleStart = 0;
                 GD[gidx].sampleStop = s->sample_length;
 
-                GD[gidx].gated = isGated;
+                /*
+                 * We implement loop for count by gating on loop count
+                 */
+                if (variantData.loopMode == engine::Zone::LOOP_FOR_COUNT)
+                {
+                    // first loop is zero so don't skip -1
+                    GD[gidx].gated = GD[gidx].loopCount < variantData.loopCountWhenCounted - 1;
+                }
+                else
+                {
+                    GD[gidx].gated = isGated;
+                }
                 GD[gidx].loopInvertedBounds =
                     1.f / std::max(1, GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
                 GD[gidx].playbackInvertedBounds =
@@ -805,7 +818,10 @@ void Voice::initializeGenerator()
         Generator[currGen] = dsp::GetFPtrGeneratorSample(
             !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, variantData.loopActive,
             variantData.loopDirection == engine::Zone::FORWARD_ONLY,
-            variantData.loopMode == engine::Zone::LOOP_WHILE_GATED);
+
+            // We doo loop count by gating on loopCount < maxLoopCount
+            variantData.loopMode == engine::Zone::LOOP_WHILE_GATED ||
+                variantData.loopMode == engine::Zone::LOOP_FOR_COUNT);
         SCLOG_IF(generatorInitialization,
                  "Generator : " << SCD(currGen) << SCD((size_t)Generator[currGen]));
         SCLOG_IF(generatorInitialization, "     SMP  : " << SCD(GDIO[currGen].sampleDataL)

@@ -736,9 +736,9 @@ void VariantDisplay::showLoopModeMenu()
     };
     add(engine::Zone::LoopMode::LOOP_DURING_VOICE, false, "Loop");
     add(engine::Zone::LoopMode::LOOP_DURING_VOICE, true, "Loop Alternate");
-    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, false, "Loop Until Release");
+    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, false, "Loop Untiqgitql Release");
     add(engine::Zone::LoopMode::LOOP_WHILE_GATED, true, "Loop Alternate Until Release");
-    add(engine::Zone::LoopMode::LOOP_FOR_COUNT, false, "Loop For Count (unimpl)");
+    add(engine::Zone::LoopMode::LOOP_FOR_COUNT, false, "Loop For Count");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions(loopModeButton.get()));
 }
