@@ -40,10 +40,15 @@ class SampleFLACDecoder : public FLAC::Decoder::File
   public:
     Sample *sample{nullptr};
     SampleFLACDecoder(Sample *s) : FLAC::Decoder::File(), sample(s) {}
+    SampleFLACDecoder(Sample *s, size_t cs) : FLAC::Decoder::File(), collectedSize{cs}, sample(s) {}
 
     bool isValid{false};
+    bool needsSecondPass{false};
+    size_t collectedSize{0};
 
   protected:
+    bool collectSizeOnly{false};
+
     FILE *f;
 
     int64_t streamPos{0};
@@ -51,6 +56,11 @@ class SampleFLACDecoder : public FLAC::Decoder::File
     virtual ::FLAC__StreamDecoderWriteStatus write_callback(const ::FLAC__Frame *frame,
                                                             const FLAC__int32 *const buffer[])
     {
+        if (collectSizeOnly)
+        {
+            collectedSize += frame->header.blocksize;
+            return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+        }
         if (bitDepth == 16 && sample->bitDepth == Sample::BD_I16)
         {
             for (int c = 0; c < sample->channels; ++c)
@@ -110,9 +120,21 @@ class SampleFLACDecoder : public FLAC::Decoder::File
             sample->sample_rate = sample_rate;
             sample->channels = channels;
             sample->bitDepth = (bps <= 16 ? Sample::BD_I16 : Sample::BD_F32);
+            if (collectedSize > 0)
+            {
+                total_samples = collectedSize;
+                collectSizeOnly = false;
+            }
+
             sample->sample_length = total_samples;
 
-            if (bps == 16)
+            if (total_samples == 0)
+            {
+                collectedSize = 0;
+                collectSizeOnly = true;
+                needsSecondPass = true;
+            }
+            else if (bps == 16)
             {
                 if (channels == 1)
                 {
@@ -163,84 +185,120 @@ bool Sample::parseFlac(const fs::path &p)
     auto dec = detail::SampleFLACDecoder(this);
     auto status = dec.init(p.u8string());
     if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+    {
         return false;
+    }
 
     auto res = dec.process_until_end_of_stream();
+
+    if (dec.needsSecondPass)
+    {
+        auto dec2 = detail::SampleFLACDecoder(this, dec.collectedSize);
+        auto status = dec2.init(p.u8string());
+        if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+        {
+            return false;
+        }
+
+        res = dec2.process_until_end_of_stream();
+        res = res && dec2.isValid;
+    }
+    else
+    {
+
+        res = res && dec.isValid;
+    }
 
     mFileName = p;
     type = Sample::FLAC_FILE;
     instrument = 0;
     region = 0;
 
-    res = res && dec.isValid;
-
     if (res)
     {
         auto si = std::make_unique<FLAC::Metadata::SimpleIterator>();
-        res = res && si->is_valid();
         res = res && si->init(p.u8string().c_str(), true, true);
 
-        while (!si->is_last())
+        bool go = si->is_valid();
+        while (go)
         {
-            if (si->get_block_type() != FLAC__METADATA_TYPE_APPLICATION)
+            if (si->get_block_type() == FLAC__METADATA_TYPE_APPLICATION)
             {
-                si->next();
-                continue;
-            }
-
-            auto a = dynamic_cast<FLAC::Metadata::Application *>(si->get_block());
-            if (!a)
-            {
-                si->next();
-                continue;
-            }
-            auto fourB2 = [](const auto *b) {
-                std::string ids;
-                for (int i = 0; i < 4; ++i)
-                    ids += (char)b[i];
-                return ids;
-            };
-            if (fourB2(a->get_id()) != "riff")
-            {
-                si->next();
-                continue;
-            }
-
-            auto *d = a->get_data();
-            auto blockType = fourB2(d);
-            d += 4;
-            if (blockType == "smpl")
-            {
-                // strip off size.
-                d += 4;
-
-                loaders::SamplerChunk smpl_chunk;
-                loaders::SampleLoop smpl_loop;
-
-                memccpy(&smpl_chunk, d, 1, sizeof(loaders::SamplerChunk));
-                d += sizeof(loaders::SamplerChunk);
-
-                meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
-                meta.rootkey_present = true;
-
-                if (smpl_chunk.cSampleLoops > 0)
+                auto a = dynamic_cast<FLAC::Metadata::Application *>(si->get_block());
+                if (!a)
                 {
-                    meta.loop_present = true;
-                    memccpy(&smpl_loop, d, 1, sizeof(loaders::SampleLoop));
-                    d += sizeof(loaders::SampleLoop);
+                    continue;
+                }
+                auto fourB2 = [](const auto *b) {
+                    std::string ids;
+                    for (int i = 0; i < 4; ++i)
+                        ids += (char)b[i];
+                    return ids;
+                };
+                if (fourB2(a->get_id()) != "riff")
+                {
+                    continue;
+                }
 
-                    meta.loop_start = smpl_loop.dwStart;
-                    meta.loop_end = smpl_loop.dwEnd + 1;
-                    if (smpl_loop.dwType == 1)
-                        meta.playmode = pm_forward_loop_bidirectional;
-                    else
-                        meta.playmode = pm_forward_loop;
+                auto *d = a->get_data();
+                auto blockType = fourB2(d);
+                d += 4;
+                if (blockType == "smpl")
+                {
+                    // strip off size.
+                    d += 4;
+
+                    loaders::SamplerChunk smpl_chunk;
+                    loaders::SampleLoop smpl_loop;
+
+                    memccpy(&smpl_chunk, d, 1, sizeof(loaders::SamplerChunk));
+                    d += sizeof(loaders::SamplerChunk);
+
+                    meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
+                    meta.rootkey_present = true;
+
+                    if (smpl_chunk.cSampleLoops > 0)
+                    {
+                        meta.loop_present = true;
+                        memccpy(&smpl_loop, d, 1, sizeof(loaders::SampleLoop));
+                        d += sizeof(loaders::SampleLoop);
+
+                        meta.loop_start = smpl_loop.dwStart;
+                        meta.loop_end = smpl_loop.dwEnd + 1;
+                        if (smpl_loop.dwType == 1)
+                            meta.playmode = pm_forward_loop_bidirectional;
+                        else
+                            meta.playmode = pm_forward_loop;
+                    }
                 }
             }
+            else if (si->get_block_type() == FLAC__METADATA_TYPE_STREAMINFO)
+            {
+            }
+            else if (si->get_block_type() == FLAC__METADATA_TYPE_VORBIS_COMMENT)
+            {
+                auto a = dynamic_cast<FLAC::Metadata::VorbisComment *>(si->get_block());
+                if (!a)
+                {
+                    continue;
+                }
+                // SCLOG("Vendor String: " << a->get_vendor_string());
 
-            si->next();
+                for (int q = 0; q < a->get_num_comments(); ++q)
+                {
+                    auto c = a->get_comment(q);
+                    // SCLOG("Field: " << c.get_field_name());
+                }
+            }
+            else
+            {
+                SCLOG("Ignored metadata block type " << si->get_block_type());
+            }
+
+            go = si->next();
         }
     }
+    SCLOG("Returning " << res);
     return res;
 }
 } // namespace scxt::sample
