@@ -299,7 +299,10 @@ void PartSidebarCard::resetFromEditorCache()
 
 void PartSidebarCard::textEditorTextChanged(juce::TextEditor &e)
 {
-    editor->partConfigurations[part].blurb = e.getText().toStdString();
+    memset(editor->partConfigurations[part].blurb, 0,
+           engine::Part::PartConfiguration::maxDescription);
+    strncpy(editor->partConfigurations[part].blurb, e.getText().toStdString().c_str(),
+            engine::Part::PartConfiguration::maxDescription - 1);
     sendToSerialization(cmsg::UpdatePartFullConfig({part, editor->partConfigurations[part]}));
 }
 
@@ -307,7 +310,7 @@ void PartSidebarCard::showPartBlurbTooltip()
 {
     if (!tallMode)
     {
-        auto b = editor->partConfigurations[part].blurb;
+        std::string b = editor->partConfigurations[part].blurb;
 
         if (!b.empty())
         {

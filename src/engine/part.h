@@ -98,7 +98,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
         BusAddress routeTo{DEFAULT_BUS};
 
-        std::string blurb;
+        static constexpr int maxDescription{2048};
+        char blurb[maxDescription];
     } configuration;
     void process(Engine &onto);
 

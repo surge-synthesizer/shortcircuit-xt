@@ -70,7 +70,7 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
     engine->getMessageController()->requestHostCallback = [this, h](uint64_t flag) {
         if (h)
         {
-            SCLOG("Request Host CallbacK");
+            SCLOG("Request Host CallbacK " << flag);
             // FIXME - atomics better here
             this->nextMainThreadAction |= flag;
             h->request_callback(h);
