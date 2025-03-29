@@ -289,6 +289,8 @@ void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddr
     {
         if (s.address == za)
         {
+            namespace cmsg = scxt::messaging::client;
+
             added = true;
             p.addSectionHeader(s.name);
             p.addItem("Rename", [w = juce::Component::SafePointer(this), s]() {
