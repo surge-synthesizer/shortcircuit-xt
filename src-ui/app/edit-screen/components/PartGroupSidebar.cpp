@@ -32,7 +32,9 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Viewport.h"
 #include "sst/jucegui/components/NamedPanelDivider.h"
+#include "sst/jucegui/util/VisibilityParentWatcher.h"
 #include "messaging/messaging.h"
+#include "infrastructure/user_defaults.h"
 #include "app/edit-screen/EditScreen.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "GroupZoneTreeControl.h"
@@ -52,14 +54,21 @@ struct PartSidebar : juce::Component, HasEditor
     std::unique_ptr<juce::Component> viewportContents;
     std::array<std::unique_ptr<shared::PartSidebarCard>, scxt::numParts> parts;
     std::unique_ptr<jcmp::TextPushButton> addPartButton;
+    bool tallMode{false};
+
+    std::unique_ptr<sst::jucegui::util::VisibilityParentWatcher> psbw;
 
     PartSidebar(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
     {
+        psbw = std::make_unique<sst::jucegui::util::VisibilityParentWatcher>(this);
         viewport = std::make_unique<jcmp::Viewport>("Parts");
+        tallMode = (bool)editor->defaultsProvider.getUserDefaultValue(
+            infrastructure::DefaultKeys::partSidebarPartExpanded, false);
         viewportContents = std::make_unique<juce::Component>();
         for (int i = 0; i < scxt::numParts; ++i)
         {
             parts[i] = std::make_unique<shared::PartSidebarCard>(i, editor);
+            parts[i]->setTallMode(tallMode);
             viewportContents->addChildComponent(*parts[i]);
         }
         addPartButton = std::make_unique<jcmp::TextPushButton>();
@@ -70,6 +79,26 @@ struct PartSidebar : juce::Component, HasEditor
         viewportContents->addChildComponent(*addPartButton);
         viewport->setViewedComponent(viewportContents.get(), false);
         addAndMakeVisible(*viewport);
+    }
+    void resetParts()
+    {
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            parts[i]->setTallMode(tallMode);
+            parts[i]->resetFromEditorCache();
+        }
+        resized();
+    }
+
+    void visibilityChanged() override
+    {
+        if (isVisible())
+        {
+            tallMode = (bool)editor->defaultsProvider.getUserDefaultValue(
+                infrastructure::DefaultKeys::partSidebarPartExpanded, false);
+
+            resetParts();
+        }
     }
     void resized() override
     {
@@ -86,24 +115,25 @@ struct PartSidebar : juce::Component, HasEditor
         int extraSpace{0};
         if (nDispParts < scxt::numParts)
             extraSpace = 30;
+        auto partHeight = shared::PartSidebarCard::height;
+        if (tallMode)
+            partHeight = shared::PartSidebarCard::tallHeight;
         viewportContents->setBounds(0, 0, shared::PartSidebarCard::width,
-                                    shared::PartSidebarCard::height * nDispParts + extraSpace);
+                                    partHeight * nDispParts + extraSpace);
         auto ct{0};
         for (int i = 0; i < scxt::numParts; ++i)
         {
             if (parts[i]->isVisible())
             {
-                parts[i]->setBounds(0, ct * shared::PartSidebarCard::height,
-                                    shared::PartSidebarCard::width,
-                                    shared::PartSidebarCard::height);
+                parts[i]->setBounds(0, ct * partHeight, shared::PartSidebarCard::width, partHeight);
                 ct++;
             }
         }
 
         if (nDispParts < scxt::numParts)
         {
-            addPartButton->setBounds(10, ct * shared::PartSidebarCard::height + 4,
-                                     shared::PartSidebarCard::width - 20, 22);
+            addPartButton->setBounds(10, ct * partHeight + 4, shared::PartSidebarCard::width - 20,
+                                     22);
         }
     }
 
@@ -414,6 +444,10 @@ PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     hasHamburger = true;
     tabNames = {"PARTS", "GROUPS", "ZONES"};
     selectedTab = 2;
+    onHamburger = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showHamburgerMenu();
+    };
     onTabSelected = [w = juce::Component::SafePointer(this)](int t) {
         if (!w)
             return;
@@ -532,6 +566,41 @@ void PartGroupSidebar::partConfigurationChanged(int i)
 void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &c)
 {
     groupSidebar->groupTriggers->setGroupTriggerConditions(c);
+}
+
+void PartGroupSidebar::showHamburgerMenu()
+{
+    if (selectedTab == 0)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Part Options");
+        p.addSeparator();
+        p.addItem("Expanded Display", true, partSidebar->tallMode,
+                  [w = juce::Component::SafePointer(this)]() {
+                      if (w)
+                      {
+                          w->editor->defaultsProvider.updateUserDefaultValue(
+                              infrastructure::DefaultKeys::partSidebarPartExpanded, true);
+                          w->partSidebar->tallMode = true;
+                          w->partSidebar->resetParts();
+                      }
+                  });
+        p.addItem("Compressed Display", true, !partSidebar->tallMode,
+                  [w = juce::Component::SafePointer(this)]() {
+                      if (w)
+                      {
+                          w->editor->defaultsProvider.updateUserDefaultValue(
+                              infrastructure::DefaultKeys::partSidebarPartExpanded, false);
+                          w->partSidebar->tallMode = false;
+                          w->partSidebar->resetParts();
+                      }
+                  });
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+    else
+    {
+        SCLOG("Skipping PGZ Hamburger for tab " << selectedTab);
+    }
 }
 
 } // namespace scxt::ui::app::edit_screen

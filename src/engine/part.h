@@ -97,6 +97,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         bool polyLimitVoices{0}; // poly limit. 0 means unlimited.
 
         BusAddress routeTo{DEFAULT_BUS};
+
+        std::string blurb;
     } configuration;
     void process(Engine &onto);
 

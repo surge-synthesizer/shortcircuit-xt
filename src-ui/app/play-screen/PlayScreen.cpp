@@ -68,6 +68,7 @@ struct ViewportComponent : juce::Component, HasEditor
 
 PlayScreen::PlayScreen(SCXTEditor *e) : HasEditor(e)
 {
+    visibilityWatcher = std::make_unique<sst::jucegui::util::VisibilityParentWatcher>(this);
     browser = std::make_unique<browser_ui::BrowserPane>(editor);
     addAndMakeVisible(*browser);
 
@@ -158,7 +159,9 @@ void PlayScreen::rebuildPositionsAndVisibilites()
 
     for (int p = 0; p < scxt::numParts; ++p)
     {
+        partSidebars[p]->resetFromEditorCache();
         partSidebars[p]->setVisible(viz(p));
+        partSidebars[p]->setTallMode(tallMode);
     }
 
     if (isVisible())
@@ -208,6 +211,10 @@ void PlayScreen::visibilityChanged()
             }
         }
 
+        tallMode = (bool)editor->defaultsProvider.getUserDefaultValue(
+            infrastructure::DefaultKeys::playModeExpanded, true);
+        rebuildPositionsAndVisibilites();
+
         repaint();
     }
 }
@@ -233,7 +240,8 @@ void PlayScreen::resized()
         auto rb = rectangleForPart(i);
 
         partSidebars[i]->setBounds(rb.withWidth(shared::PartSidebarCard::width)
-                                       .withHeight(shared::PartSidebarCard::height));
+                                       .withHeight(tallMode ? shared::PartSidebarCard::tallHeight
+                                                            : shared::PartSidebarCard::height));
     }
 
     int pt{0};

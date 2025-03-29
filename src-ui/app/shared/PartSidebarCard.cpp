@@ -106,6 +106,21 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     tuning = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
         'pttn', "Tuning", 0.0, true, editor->makeComingSoon("Editing the part Tuning"));
     addAndMakeVisible(*tuning);
+
+    partBlurb = std::make_unique<jcmp::TextEditor>();
+    partBlurb->setAllText("I am the very model of a modern major general, i'm information etc");
+    partBlurb->setMultiLine(true);
+    partBlurb->addListener(this);
+    addChildComponent(*partBlurb);
+
+    onIdleHover = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showPartBlurbTooltip();
+    };
+    onIdleHoverEnd = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->hidePartBlurbTooltip();
+    };
 }
 
 void PartSidebarCard::mouseDown(const juce::MouseEvent &event)
@@ -205,6 +220,14 @@ void PartSidebarCard::resized()
     pan->setBounds(slR);
     slR = slR.translated(0, rowHeight);
     tuning->setBounds(slR);
+
+    if (tallMode)
+    {
+        partBlurb->setBounds(getLocalBounds()
+                                 .withTrimmedTop(slR.getBottom() + 2 * rowMargin)
+                                 .withTrimmedBottom(2 * rowMargin)
+                                 .reduced(5, 0));
+    }
 }
 
 void PartSidebarCard::showMidiModeMenu()
@@ -269,6 +292,50 @@ void PartSidebarCard::resetFromEditorCache()
     {
         midiMode->setLabel(std::to_string(mc + 1));
     }
+
+    partBlurb->setAllText(conf.blurb);
     repaint();
 }
+
+void PartSidebarCard::textEditorTextChanged(juce::TextEditor &e)
+{
+    editor->partConfigurations[part].blurb = e.getText().toStdString();
+    sendToSerialization(cmsg::UpdatePartFullConfig({part, editor->partConfigurations[part]}));
+}
+
+void PartSidebarCard::showPartBlurbTooltip()
+{
+    if (!tallMode)
+    {
+        auto b = editor->partConfigurations[part].blurb;
+
+        if (!b.empty())
+        {
+            // We should probably build this in but
+            std::vector<std::string> lines;
+            auto splitOver{30};
+            std::string currentLine;
+            for (auto c : b)
+            {
+                if ((c == ' ' || c == '\n') && currentLine.size() > splitOver)
+                {
+                    lines.push_back(currentLine);
+                    currentLine.clear();
+                }
+                else
+                {
+                    currentLine += c;
+                }
+            }
+            if (!currentLine.empty())
+                lines.push_back(currentLine);
+
+            editor->setTooltipContents("Description", lines);
+            editor->showTooltip(*this, {getWidth() + 3, 0});
+        }
+    }
+}
+
+void PartSidebarCard::hidePartBlurbTooltip() { editor->hideTooltip(); }
+
 } // namespace scxt::ui::app::shared

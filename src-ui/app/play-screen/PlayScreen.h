@@ -38,6 +38,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/component-adapters/DiscreteToReference.h"
+#include "sst/jucegui/util/VisibilityParentWatcher.h"
 #include "app/shared/PartSidebarCard.h"
 #include "app/shared/SingleMacroEditor.h"
 
@@ -68,6 +69,7 @@ struct PlayScreen : juce::Component, HasEditor
 
     std::unique_ptr<sst::jucegui::components::NamedPanel> playNamedPanel;
     std::unique_ptr<browser_ui::BrowserPane> browser;
+    std::unique_ptr<sst::jucegui::util::VisibilityParentWatcher> visibilityWatcher;
 
     PlayScreen(SCXTEditor *e);
     ~PlayScreen();
