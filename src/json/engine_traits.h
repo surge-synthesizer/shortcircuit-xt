@@ -157,7 +157,8 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"m", from.mute},
                           {"s", from.solo},
                           {"pl", from.polyLimitVoices},
-                          {"mbr", from.mpePitchBendRange}};),
+                          {"mbr", from.mpePitchBendRange},
+                          {"bl", std::string(from.blurb)}};),
              SC_TO({
                  findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
                  findOrSet(v, "a", true, to.active);
@@ -165,6 +166,10 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "s", false, to.solo);
                  findOrSet(v, "pl", 0, to.polyLimitVoices);
                  findOrSet(v, "mbr", 24, to.mpePitchBendRange);
+                 std::string bStr;
+                 findOrSet(v, "bl", "", bStr);
+                 memset(to.blurb, 0, sizeof(to.blurb));
+                 strncpy(to.blurb, bStr.c_str(), sizeof(to.blurb) - 1);
              }));
 
 SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,

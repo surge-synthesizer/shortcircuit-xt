@@ -32,6 +32,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/components/TextEditor.h"
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -39,7 +40,10 @@
 
 namespace scxt::ui::app::shared
 {
-struct PartSidebarCard : juce::Component, HasEditor
+struct PartSidebarCard : juce::Component,
+                         HasEditor,
+                         sst::jucegui::components::WithIdleTimer,
+                         juce::TextEditor::Listener
 {
     int part;
 
@@ -48,21 +52,38 @@ struct PartSidebarCard : juce::Component, HasEditor
 
     static constexpr int row0{2}, rowHeight{20}, rowMargin{2};
 
-    static constexpr int height{88}, width{172};
+    static constexpr int height{88}, tallHeight{176}, width{172};
 
     std::unique_ptr<sst::jucegui::components::ToggleButton> solo, mute;
     std::unique_ptr<boolattachment_t> muteAtt, soloAtt;
     std::unique_ptr<sst::jucegui::components::MenuButton> patchName;
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMode, outBus, polyCount;
     std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan, tuning;
+    std::unique_ptr<sst::jucegui::components::TextEditor> partBlurb;
+
     bool selfAccent{true};
     PartSidebarCard(int p, SCXTEditor *e);
     void paint(juce::Graphics &g) override;
 
     void showMidiModeMenu();
 
+    bool tallMode{false};
+    void setTallMode(bool b)
+    {
+        tallMode = b;
+        partBlurb->setVisible(tallMode);
+    }
+
+    void showPartBlurbTooltip();
+    void hidePartBlurbTooltip();
+
     void mouseDown(const juce::MouseEvent &e) override;
+    void mouseEnter(const juce::MouseEvent &event) override { beginTimer(); }
+    void mouseExit(const juce::MouseEvent &event) override { endTimer(); }
+
     void resized() override;
+
+    void textEditorTextChanged(juce::TextEditor &) override;
 
     void showPopup();
 

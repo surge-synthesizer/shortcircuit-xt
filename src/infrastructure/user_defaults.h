@@ -42,6 +42,7 @@ enum DefaultKeys
     colormapPathIfFile,
     welcomeScreenSeen,
     playModeExpanded,
+    partSidebarPartExpanded,
     browserAutoPreviewEnabled,
     useSoftwareRenderer,
 
@@ -69,6 +70,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "welcomeScreenSeen";
     case playModeExpanded:
         return "playModeExpanded";
+    case partSidebarPartExpanded:
+        return "partSidebarPartExpanded";
     case browserAutoPreviewEnabled:
         return "browserAutoPreviewEnabled";
     case useSoftwareRenderer:

@@ -97,6 +97,11 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         bool polyLimitVoices{0}; // poly limit. 0 means unlimited.
 
         BusAddress routeTo{DEFAULT_BUS};
+
+        // This needs to be a standard object, and windows msvc doesn't like
+        // std::strings in those objects, so use a char*
+        static constexpr int maxDescription{2048};
+        char blurb[maxDescription]{0};
     } configuration;
     void process(Engine &onto);
 
