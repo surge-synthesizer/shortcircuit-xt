@@ -109,7 +109,7 @@ struct GroupMatrixEndpoints
               sst::cpputils::make_array_bind_last_index<ProcessorTarget,
                                                         scxt::processorsPerZoneAndGroup>(e)},
           outputTarget(e),
-          eg{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egsPerGroup>(e)},
+          egTarget{sst::cpputils::make_array_bind_last_index<EGTarget, scxt::egsPerGroup>(e)},
           selfModulation(e), sources(e)
     {
         // If there are group endpoints, we can merge them here
@@ -135,15 +135,11 @@ struct GroupMatrixEndpoints
         }
         void bind(GroupMatrix &m, engine::Group &g);
     };
-    std::array<EGTarget, scxt::egsPerGroup> eg;
+    std::array<EGTarget, scxt::egsPerGroup> egTarget;
 
     struct LFOTarget : shared::LFOTargetEndpointData<TG, 'glfo'>
     {
-        LFOTarget(engine::Engine *e, uint32_t p) : shared::LFOTargetEndpointData<TG, 'glfo'>(p)
-        {
-            if (e)
-                SCLOG_UNIMPL_ONCE("Engine Attach Group LFO");
-        }
+        LFOTarget(engine::Engine *e, uint32_t p);
         void bind(GroupMatrix &m, engine::Group &g);
     };
     std::array<LFOTarget, scxt::lfosPerGroup> lfo;

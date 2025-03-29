@@ -120,25 +120,32 @@ template <typename TG, uint32_t gn> struct EGTargetEndpointData
     EGTargetEndpointData(uint32_t p)
         : index(p), dlyT{gn, 'dlay', p}, aT{gn, 'atck', p}, hT{gn, 'hld ', p}, dT{gn, 'dcay', p},
           sT{gn, 'sust', p}, rT{gn, 'rels', p}, asT{gn, 'atSH', p}, dsT{gn, 'dcSH', p},
-          rsT{gn, 'rlSH', p}
-
+          rsT{gn, 'rlSH', p}, retriggerT{gn, 'rtrg', p}
     {
     }
 
-    TG dlyT, aT, hT, dT, sT, rT, asT, dsT, rsT;
+    TG dlyT, aT, hT, dT, sT, rT, asT, dsT, rsT, retriggerT;
     const float *dlyP{nullptr}, *aP{nullptr}, *hP{nullptr}, *dP{nullptr}, *sP{nullptr},
         *rP{nullptr};
     const float *asP{nullptr}, *dsP{nullptr}, *rsP{nullptr};
+    const float *retriggerP{nullptr};
+
+    float zeroBase{0.f};
 
     template <typename M, typename Z> void baseBind(M &m, Z &z);
 };
 template <typename TG, uint32_t gn> struct LFOTargetEndpointData
 {
-    LFOTargetEndpointData(uint32_t p) : index(p), rateT{gn, 'rate', p}, curve(p), step(p), env(p) {}
+    LFOTargetEndpointData(uint32_t p)
+        : index(p), rateT{gn, 'rate', p}, retriggerT{gn, 'rtrg', p}, curve(p), step(p), env(p)
+    {
+    }
     uint32_t index{0};
 
-    TG rateT;
+    TG rateT, retriggerT;
     const float *rateP{nullptr};
+    const float *retriggerP{nullptr};
+    float zeroBase{0.f};
     struct Curve
     {
         Curve(uint32_t p)
@@ -291,6 +298,8 @@ inline void EGTargetEndpointData<TG, gn>::baseBind(M &m, EG &eg)
     bindEl(m, eg, asT, eg.aShape, asP);
     bindEl(m, eg, dsT, eg.dShape, dsP);
     bindEl(m, eg, rsT, eg.rShape, rsP);
+    bindEl(m, eg, retriggerT, zeroBase, retriggerP,
+           datamodel::pmd().withName("Retrigger").asPercent());
 }
 
 template <typename TG, uint32_t gn>
@@ -300,6 +309,8 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     auto &ms = z.modulatorStorage[index];
 
     bindEl(m, ms, rateT, ms.rate, rateP);
+    bindEl(m, ms, retriggerT, zeroBase, retriggerP,
+           datamodel::pmd().withName("Retrigger").asPercent());
 
     bindEl(m, ms, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
     bindEl(m, ms, curve.angleT, ms.curveLfoStorage.angle, curve.angleP);

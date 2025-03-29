@@ -216,6 +216,8 @@ template <bool OS> bool Voice::processWithOS()
         return true;
     }
 
+    updateRetriggers(endpoints.get());
+
     // Run Modulators - these run at base rate never oversampled
     for (auto i = 0; i < engine::lfosPerZone; ++i)
     {
@@ -223,12 +225,24 @@ template <bool OS> bool Voice::processWithOS()
         {
             continue;
         }
+        bool rt = doLFORetrigger[i];
+        doLFORetrigger[i] = false;
+
         if (lfoEvaluator[i] == STEP)
         {
+            if (rt)
+            {
+                stepLfos[i].retrigger();
+            }
             stepLfos[i].process(blockSize);
         }
         else if (lfoEvaluator[i] == CURVE)
         {
+            if (rt)
+            {
+                curveLfos[i].attack(0, zone->modulatorStorage[i].modulatorShape);
+            }
+
             auto &lp = endpoints->lfo[i];
 
             // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
@@ -240,6 +254,11 @@ template <bool OS> bool Voice::processWithOS()
         else if (lfoEvaluator[i] == ENV)
         {
             auto &lp = endpoints->lfo[i].env;
+
+            if (rt)
+            {
+                envLfos[i].attackFrom(envLfos[i].output, *lp.delayP, *lp.attackP);
+            }
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
@@ -269,14 +288,24 @@ template <bool OS> bool Voice::processWithOS()
      * the egsActive[0] flag
      */
     auto &aegp = endpoints->egTarget[0];
+    auto rtaeg = doEGRetrigger[0];
+    doEGRetrigger[0] = false;
     if constexpr (OS)
     {
+        if (rtaeg)
+        {
+            aegOS.attackFromWithDelay(aegOS.outBlock0, *aegp.dlyP, *aegp.aP);
+        }
         // we need the aegOS for the curve in oversample space
         aegOS.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
                                     *aegp.asP, *aegp.dsP, *aegp.rsP, envGate, true);
     }
 
     // But We need to run the undersample AEG no matter what since it is a modulatino source
+    if (rtaeg)
+    {
+        aeg.attackFromWithDelay(aeg.outBlock0, *aegp.dlyP, *aegp.aP);
+    }
     aeg.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
                               *aegp.asP, *aegp.dsP, *aegp.rsP, envGate, true);
     // TODO: And output is non zero once we are past attack
@@ -286,6 +315,12 @@ template <bool OS> bool Voice::processWithOS()
     {
         if (egsActive[i])
         {
+            if (doEGRetrigger[i])
+            {
+                doEGRetrigger[i] = false;
+                eg[i].attackFromWithDelay(eg[i].outBlock0, *aegp.dlyP, *aegp.aP);
+            }
+
             auto &eg2p = endpoints->egTarget[i];
             eg[i].processBlockWithDelay(*eg2p.dlyP, *eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP,
                                         *eg2p.rP, *eg2p.asP, *eg2p.dsP, *eg2p.rsP, envGate, false);

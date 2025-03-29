@@ -47,6 +47,10 @@ struct EnvLFO : SampleRateSupport
     env_t envelope{this};
     float output{0.f};
     void attack(float delay, float attack) { envelope.attackFromWithDelay(0.f, delay, attack); }
+    void attackFrom(float level, float delay, float attack)
+    {
+        envelope.attackFromWithDelay(0.f, delay, attack);
+    }
 
     void process(float delay, float attack, float hold, float decay, float sustain, float release,
                  float aShape, float dShape, float rShape, float rateMul, bool isGated)
