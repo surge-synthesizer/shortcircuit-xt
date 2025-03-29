@@ -223,21 +223,9 @@ struct ThreadingChecker
 
     std::thread::id serialThreadId{}, audioThreadId{};
     std::set<std::thread::id> clientThreadIds{};
-    void addAsAClientThread()
-    {
-        std::cout << "Add " << std::endl;
-        clientThreadIds.insert(std::this_thread::get_id());
-    }
-    void addAsAClientThread(std::thread::id tid)
-    {
-        std::cout << "Add2 " << std::endl;
-        clientThreadIds.insert(tid);
-    }
-    void removeAsAClientThread()
-    {
-        std::cout << "Rem " << std::endl;
-        clientThreadIds.erase(std::this_thread::get_id());
-    }
+    void addAsAClientThread() { clientThreadIds.insert(std::this_thread::get_id()); }
+    void addAsAClientThread(std::thread::id tid) { clientThreadIds.insert(tid); }
+    void removeAsAClientThread() { clientThreadIds.erase(std::this_thread::get_id()); }
     inline bool isClientThread() const
     {
 #if BUILD_IS_DEBUG

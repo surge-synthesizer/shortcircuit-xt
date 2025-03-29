@@ -101,7 +101,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         // This needs to be a standard object, and windows msvc doesn't like
         // std::strings in those objects, so use a char*
         static constexpr int maxDescription{2048};
-        char blurb[maxDescription];
+        char blurb[maxDescription]{0};
     } configuration;
     void process(Engine &onto);
 
