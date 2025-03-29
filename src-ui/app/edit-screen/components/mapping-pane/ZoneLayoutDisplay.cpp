@@ -44,25 +44,66 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (e.mods.isPopupMenu())
     {
         bool gotOne = false;
-        selection::SelectionManager::ZoneAddress za;
+        selection::SelectionManager::ZoneAddress zaLead, zaPrefSel, za;
 
-        for (auto &z : display->summary)
+        /*
+         * Logic we want here is:
+         * use selected zone if that's where you clicked
+         * If not, do a select and click
+         */
+
+        bool youClickedLead{false};
+        bool youClickedAnySelected{false};
+        if (display->editor->currentLeadZoneSelection.has_value())
         {
-            auto r = rectangleForZone(z);
-            if (r.contains(e.position))
+            auto cla = *display->editor->currentLeadZoneSelection;
+            for (const auto &z : display->summary)
             {
-                gotOne = display->editor->isSelected(z.address);
-                if (!gotOne)
+                auto r = rectangleForZone(z);
+                if (z.address == cla && rectangleForZone(z).contains(e.position))
+                {
+                    youClickedLead = true;
+                    zaLead = z.address;
+                }
+                else if (display->editor->isSelected(z.address) &&
+                         rectangleForZone(z).contains(e.position))
+                {
+                    youClickedAnySelected = true;
+                    zaPrefSel = z.address;
+                }
+            }
+        }
+        if (youClickedLead)
+        {
+            za = zaLead;
+            gotOne = true;
+        }
+        else if (youClickedAnySelected)
+        {
+            za = zaPrefSel;
+            gotOne = true;
+        }
+        else
+        {
+            // You clicked some random blue area. Lead select it and rmb
+            for (const auto &z : display->summary)
+            {
+                auto r = rectangleForZone(z);
+                if (r.contains(e.position))
                 {
                     gotOne = true;
-                    display->editor->doSelectionAction(z.address, true, false, true);
+                    za = z.address;
                 }
-                za = z.address;
             }
         }
         if (gotOne)
         {
             showZoneMenu(za);
+            return;
+        }
+        else
+        {
+            showMappingNonZoneMenu();
             return;
         }
     }
@@ -228,10 +269,62 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
     }
 }
 
+void ZoneLayoutDisplay::showMappingNonZoneMenu()
+{
+    auto p = juce::PopupMenu();
+
+    p.addSectionHeader("Mapping");
+    p.addSeparator();
+    p.addItem("Coming Soon", []() {});
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
 void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddress &za)
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Zones");
+
+    bool added{false};
+    for (auto &s : display->summary)
+    {
+        if (s.address == za)
+        {
+            namespace cmsg = scxt::messaging::client;
+
+            added = true;
+            p.addSectionHeader(s.name);
+            p.addItem("Rename", [w = juce::Component::SafePointer(this), s]() {
+                if (!w)
+                    return;
+                w->editor->showComingSoon("Rename from Mapping Pane");
+            });
+            p.addItem("Copy", [w = juce::Component::SafePointer(this), s]() {
+                if (!w)
+                    return;
+                w->display->sendToSerialization(cmsg::CopyZone(s.address));
+            });
+            p.addItem("Paste", [w = juce::Component::SafePointer(this), s]() {
+                if (!w)
+                    return;
+                w->display->sendToSerialization(cmsg::PasteZone(s.address));
+            });
+            p.addItem("Duplicate", [w = juce::Component::SafePointer(this), s]() {
+                if (!w)
+                    return;
+                w->display->sendToSerialization(cmsg::DuplicateZone(s.address));
+            });
+            p.addItem("Delete", [w = juce::Component::SafePointer(this), s]() {
+                if (!w)
+                    return;
+                w->display->sendToSerialization(cmsg::DeleteZone(s.address));
+            });
+        }
+    }
+
+    if (added)
+        p.addSeparator();
+
+    p.addSectionHeader("All Selected Zones");
     p.addSeparator();
     p.addItem("Coming Soon", []() {});
 

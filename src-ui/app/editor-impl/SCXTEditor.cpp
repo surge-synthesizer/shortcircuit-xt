@@ -502,6 +502,11 @@ void SCXTEditor::setTabSelection(const std::string &k, const std::string &t)
     sendToSerialization(messaging::client::UpdateOtherTabSelection({k, t}));
 }
 
+void SCXTEditor::showComingSoon(const std::string &feature) const
+{
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
+                                           feature + " is not yet implemented", "OK");
+}
 std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature) const
 {
     return [f = feature]() {
