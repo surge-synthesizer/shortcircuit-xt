@@ -207,6 +207,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                     g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
                 }
 
+                size_t voiceCount{0};
+                auto p = editor->editScreen->voiceCountByZoneAddress.find(sg.address);
+                if (p != editor->editScreen->voiceCountByZoneAddress.end())
+                {
+                    voiceCount = p->second;
+                }
+
                 g.drawText(sg.name, getLocalBounds().translated(zonePad + 2, 0),
                            juce::Justification::centredLeft);
 
@@ -217,6 +224,15 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                     b = b.withTrimmedTop(q / 2).withTrimmedBottom(q / 2);
                     jcmp::GlyphPainter::paintGlyph(g, b, jcmp::GlyphPainter::JOG_RIGHT,
                                                    textColor.withAlpha(0.5f));
+                }
+
+                if (voiceCount > 0)
+                {
+                    auto b = getLocalBounds()
+                                 .withWidth(zonePad)
+                                 .translated(getWidth() - zonePad, 0)
+                                 .reduced(2);
+                    jcmp::GlyphPainter::paintGlyph(g, b, jcmp::GlyphPainter::SPEAKER, textColor);
                 }
 
                 if (dragOverState == DRAG_OVER)

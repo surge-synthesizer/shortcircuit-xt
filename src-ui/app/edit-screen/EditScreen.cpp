@@ -77,7 +77,23 @@ void EditScreen::layout()
     groupElements->layoutInto(mainRect);
 }
 
-void EditScreen::onVoiceInfoChanged() { mappingPane->repaint(); }
+void EditScreen::onVoiceInfoChanged()
+{
+    voiceCountByZoneAddress.clear();
+    for (const auto &v : editor->sharedUiMemoryState.voiceDisplayItems)
+    {
+        if (v.active)
+        {
+            auto sa = selection::SelectionManager::ZoneAddress(v.part, v.group, v.zone);
+            if (voiceCountByZoneAddress.find(sa) == voiceCountByZoneAddress.end())
+                voiceCountByZoneAddress[sa] = 0;
+            voiceCountByZoneAddress[sa]++;
+        }
+    }
+
+    mappingPane->repaint();
+    partSidebar->repaint();
+}
 
 void EditScreen::updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
 {
