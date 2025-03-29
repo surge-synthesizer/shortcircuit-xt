@@ -31,6 +31,8 @@
 #include "ZoneLayoutDisplay.h"
 #include "ZoneLayoutKeyboard.h"
 
+#include <app/edit-screen/EditScreen.h>
+
 namespace scxt::ui::app::edit_screen
 {
 namespace cmsg = scxt::messaging::client;
@@ -329,15 +331,11 @@ void MappingDisplay::setLeadSelection(const selection::SelectionManager::ZoneAdd
 
 int MappingDisplay::voiceCountFor(const selection::SelectionManager::ZoneAddress &z)
 {
-    int res{0};
-    for (const auto &v : editor->sharedUiMemoryState.voiceDisplayItems)
-    {
-        if (v.active && v.part == z.part && v.group == z.group && v.zone == z.zone)
-        {
-            res++;
-        }
-    }
-    return res;
+    auto p = editor->editScreen->voiceCountByZoneAddress.find(z);
+    if (p != editor->editScreen->voiceCountByZoneAddress.end())
+        return p->second;
+
+    return 0;
 }
 
 bool MappingDisplay::isInterestedInDragSource(

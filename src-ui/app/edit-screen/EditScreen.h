@@ -34,6 +34,7 @@
 #include "app/HasEditor.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "sst/jucegui/components/NamedPanel.h"
+#include "selection/selection_manager.h"
 
 namespace scxt::ui::app
 {
@@ -118,6 +119,7 @@ struct EditScreen : juce::Component, HasEditor
     void resized() override { layout(); }
 
     void layout();
+    std::map<selection::SelectionManager::ZoneAddress, size_t> voiceCountByZoneAddress;
     void onVoiceInfoChanged();
     void updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
 
