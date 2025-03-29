@@ -120,6 +120,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     namespace blk = sst::basic_blocks::mechanics;
 
     mUILag.process();
+    updateRetriggers(&endpoints);
 
     // TODO these memsets are probably gratuitous
     memset(output, 0, sizeof(output));
@@ -140,13 +141,25 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         if (!lfosActive[i])
             continue;
 
+        bool rt = doLFORetrigger[i];
+        doLFORetrigger[i] = false;
+
         if (lfoEvaluator[i] == STEP)
         {
+            if (rt)
+            {
+                stepLfos[i].retrigger();
+            }
             stepLfos[i].process(blockSize);
         }
         else if (lfoEvaluator[i] == CURVE)
         {
             auto &lp = endpoints.lfo[i];
+
+            if (rt)
+            {
+                curveLfos[i].attack(0, modulatorStorage[i].modulatorShape);
+            }
 
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
                                  *lp.curve.attackP, *lp.curve.releaseP,
@@ -156,6 +169,11 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         else if (lfoEvaluator[i] == ENV)
         {
             auto &lp = endpoints.lfo[i].env;
+
+            if (rt)
+            {
+                envLfos[i].attackFrom(envLfos[i].output, *lp.delayP, *lp.attackP);
+            }
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
@@ -171,7 +189,12 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         if (egsActive[i])
         {
-            auto &aegp = endpoints.eg[i];
+            auto &aegp = endpoints.egTarget[i];
+            if (doEGRetrigger[i])
+            {
+                doEGRetrigger[i] = false;
+                eg[i].attackFromWithDelay(eg[i].outBlock0, *aegp.dlyP, *aegp.aP);
+            }
             eg[i].processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
                                         *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, envGate, false);
         }
@@ -522,8 +545,8 @@ void Group::attack()
     {
         for (int i = 0; i < egsPerGroup; ++i)
         {
-            eg[i].attackFromWithDelay(eg[i].outBlock0, *(endpoints.eg[i].dlyP),
-                                      *(endpoints.eg[i].aP));
+            eg[i].attackFromWithDelay(eg[i].outBlock0, *(endpoints.egTarget[i].dlyP),
+                                      *(endpoints.egTarget[i].aP));
         }
 
         // I *thin* we need to do this
@@ -557,7 +580,7 @@ void Group::attack()
     // enough matrix to get the delay set up.
     for (int i = 0; i < egsPerGroup; ++i)
     {
-        eg[i].attackFromWithDelay(0.f, *(endpoints.eg[i].dlyP), *(endpoints.eg[i].aP));
+        eg[i].attackFromWithDelay(0.f, *(endpoints.egTarget[i].dlyP), *(endpoints.egTarget[i].aP));
     }
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {

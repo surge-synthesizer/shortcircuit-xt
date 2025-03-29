@@ -59,6 +59,8 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
         underlyingLfo.assign(&settings->stepLfoStorage, *rate, td, rng, settings->temposync);
         underlyingLfo.phase = settings->start_phase;
     }
+
+    void retrigger() { underlyingLfo.retrigger(); }
     // void sync();
     void process(int samples)
     {

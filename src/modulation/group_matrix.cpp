@@ -99,7 +99,7 @@ void GroupMatrixEndpoints::bindTargetBaseValues(scxt::modulation::GroupMatrix &m
         p.bind(m, g);
     for (auto &l : lfo)
         l.bind(m, g);
-    for (auto &e : eg)
+    for (auto &e : egTarget)
         e.bind(m, g);
 }
 
@@ -120,6 +120,71 @@ void GroupMatrixEndpoints::ProcessorTarget::bind(scxt::modulation::GroupMatrix &
         shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
     }
 }
+
+GroupMatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
+    : shared::LFOTargetEndpointData<TG, 'glfo'>(p)
+{
+    if (e)
+    {
+        auto ptFn = [](const engine::Group &g, const auto &t) -> std::string {
+            return "GLFO " + std::to_string(t.index + 1);
+        };
+
+        auto conditionLabel =
+            [](const std::string &lab,
+               std::function<bool(const scxt::modulation::ModulatorStorage &)> op) {
+                return [o = op, l = lab](const engine::Group &g, const auto &t) -> std::string {
+                    auto &ms = g.modulatorStorage[t.index];
+                    if (o(ms))
+                        return l;
+                    return "";
+                };
+            };
+
+        auto stepLabel = [conditionLabel](auto labl) {
+            return conditionLabel(labl, [](auto &ms) { return ms.isStep(); });
+        };
+
+        auto curveLabel = [conditionLabel](auto labl) {
+            return conditionLabel(labl, [](auto &ms) { return ms.isCurve(); });
+        };
+
+        auto envLabel = [conditionLabel](auto labl) {
+            return conditionLabel(labl, [](auto &ms) { return ms.isEnv(); });
+        };
+
+        auto notEnvLabel = [conditionLabel](auto labl) {
+            return conditionLabel(labl, [](auto &ms) { return !ms.isEnv(); });
+        };
+
+        auto allLabel = [conditionLabel](auto labl) {
+            return conditionLabel(labl, [](auto &ms) { return true; });
+        };
+
+        auto ms = scxt::modulation::ModulatorStorage();
+        auto nm = [&ms](auto &v) { return datamodel::describeValue(ms, v).name; };
+
+        registerGroupModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
+        registerGroupModTarget(e, retriggerT, ptFn, allLabel("Retrigger"));
+        registerGroupModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
+        registerGroupModTarget(e, curve.angleT, ptFn, curveLabel(nm(ms.curveLfoStorage.angle)));
+        registerGroupModTarget(e, curve.delayT, ptFn, curveLabel(nm(ms.curveLfoStorage.delay)));
+        registerGroupModTarget(e, curve.attackT, ptFn, curveLabel(nm(ms.curveLfoStorage.attack)));
+        registerGroupModTarget(e, curve.releaseT, ptFn, curveLabel(nm(ms.curveLfoStorage.release)));
+        registerGroupModTarget(e, step.smoothT, ptFn, stepLabel(nm(ms.stepLfoStorage.smooth)));
+        registerGroupModTarget(e, env.delayT, ptFn, envLabel(nm(ms.envLfoStorage.delay)));
+        registerGroupModTarget(e, env.attackT, ptFn, envLabel(nm(ms.envLfoStorage.attack)));
+        registerGroupModTarget(e, env.holdT, ptFn, envLabel(nm(ms.envLfoStorage.hold)));
+        registerGroupModTarget(e, env.decayT, ptFn, envLabel(nm(ms.envLfoStorage.decay)));
+        registerGroupModTarget(e, env.sustainT, ptFn, envLabel(nm(ms.envLfoStorage.sustain)));
+        registerGroupModTarget(e, env.releaseT, ptFn, envLabel(nm(ms.envLfoStorage.release)));
+        registerGroupModTarget(e, env.aShapeT, ptFn, envLabel(nm(ms.envLfoStorage.aShape)));
+        registerGroupModTarget(e, env.dShapeT, ptFn, envLabel(nm(ms.envLfoStorage.dShape)));
+        registerGroupModTarget(e, env.rShapeT, ptFn, envLabel(nm(ms.envLfoStorage.rShape)));
+        registerGroupModTarget(e, env.rateMulT, ptFn, envLabel(nm(ms.envLfoStorage.rateMul)));
+    }
+}
+
 void GroupMatrixEndpoints::LFOTarget::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
     baseBind(m, g);

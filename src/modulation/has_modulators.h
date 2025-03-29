@@ -92,6 +92,34 @@ template <typename T, size_t egsPerObject> struct HasModulators
     std::array<bool, egsPerObject> egsActive{};
 
     void setHasModulatorsSampleRate(double sr, double sri) { doubleRate.resetRates(); }
+
+    std::array<bool, egsPerObject> doEGRetrigger{};
+    std::array<float, egsPerObject> lastEGRetrigger{};
+    std::array<bool, lfosPerObject> doLFORetrigger{};
+    std::array<float, lfosPerObject> lastLFORetrigger{};
+    template <typename Endpoints> void updateRetriggers(Endpoints *endpoints)
+    {
+        for (int i = 0; i < egsPerObject; ++i)
+        {
+            auto nrt = *(endpoints->egTarget[i].retriggerP);
+            doEGRetrigger[i] = false;
+            if (lastEGRetrigger[i] < 0.5 && nrt > 0.5)
+            {
+                doEGRetrigger[i] = true;
+            }
+            lastEGRetrigger[i] = nrt;
+        }
+        for (int i = 0; i < lfosPerObject; ++i)
+        {
+            auto nrt = *(endpoints->lfo[i].retriggerP);
+            doLFORetrigger[i] = false;
+            if (lastLFORetrigger[i] < 0.5 && nrt > 0.5)
+            {
+                doLFORetrigger[i] = true;
+            }
+            lastLFORetrigger[i] = nrt;
+        }
+    }
 };
 } // namespace scxt::modulation::shared
 #endif // SHORTCIRCUITXT_HAS_MODULATORS_H
