@@ -532,6 +532,9 @@ void VariantDisplay::rebuild()
     case dsp::InterpolationTypes::Linear:
         srcButton->setLabel("LIN");
         break;
+    case dsp::InterpolationTypes::ZeroOrderHoldAA:
+        srcButton->setLabel("ZAA");
+        break;
     case dsp::InterpolationTypes::ZeroOrderHold:
         srcButton->setLabel("ZOH");
         break;
@@ -760,6 +763,7 @@ void VariantDisplay::showSRCMenu()
     };
     add(dsp::InterpolationTypes::Sinc, "Sinc");
     add(dsp::InterpolationTypes::Linear, "Linear");
+    add(dsp::InterpolationTypes::ZeroOrderHoldAA, "Zero-order Hold with antialiasing");
     add(dsp::InterpolationTypes::ZeroOrderHold, "Zero-order Hold");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());

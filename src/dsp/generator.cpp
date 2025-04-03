@@ -130,6 +130,22 @@ template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
             KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
+template <> struct KernelOp<InterpolationTypes::ZeroOrderHoldAA, float>
+{
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+};
+
+template <> struct KernelOp<InterpolationTypes::ZeroOrderHoldAA, int16_t>
+{
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+};
+
 template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
@@ -231,6 +247,261 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
         }
     }
 }
+
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+void KernelOp<InterpolationTypes::ZeroOrderHoldAA, float>::Process(
+    GeneratorState *__restrict GD,
+    KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, float, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+{
+    auto readSampleL{ks.ReadSample[0]};
+    auto readFadeSampleL{ks.ReadFadeSample[0]};
+    auto OutputL{ks.Output[0]};
+    auto m0{ks.m0};
+    auto i{ks.i};
+
+#if DEBUG_CODE_I_WANT_TO_RETAIN
+    /* This code only works if theres no loop etc but please leave it here
+     * since it is useful when debugging in the future
+     */
+    {
+        ptrdiff_t space = (float *)readSampleL - (float *)ks.IO->sampleDataL;
+        float above = space - ks.IO->waveSize + FIRipol_N;
+
+        if (space < -(int64_t)FIRoffset || above > FIRoffset)
+            SCLOG(SCD(ks.IO->sampleDataL)
+                  << SCD(readSampleL) << SCD(space) << SCD(above) << SCD(ks.IO->waveSize));
+
+        assert(space >= -(int64_t)FIRoffset && above <= FIRoffset);
+    }
+#endif
+
+    auto finalSubPos = ks.SampleSubPos;
+    auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
+    auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
+    if (subRatio <= 0.5f)
+        subSubPos = std::pow(subSubPos, std::pow(2.0f / subRatio, 1.0f));
+        finalSubPos = (int)(subSubPos * (1 << 24));
+        m0 = ((finalSubPos >> 12) & 0xff0);
+
+    // float32 path (SSE)
+    SIMD_M128 lipol0, tmp[4], sL4, sR4;
+    lipol0 = SIMD_MM(setzero_ps)();
+    lipol0 = SIMD_MM(cvtsi32_ss)(lipol0, finalSubPos & 0xffff);
+    lipol0 = SIMD_MM(shuffle_ps)(lipol0, lipol0, SIMD_MM_SHUFFLE(0, 0, 0, 0));
+    tmp[0] = SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0]), lipol0),
+                             *((SIMD_M128 *)&sincTable.SincTableF32[m0]));
+    tmp[1] =
+        SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 4]), lipol0),
+                        *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 4]));
+    tmp[2] =
+        SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 8]), lipol0),
+                        *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 8]));
+    tmp[3] =
+        SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 12]), lipol0),
+                        *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 12]));
+    sL4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readSampleL));
+    sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readSampleL + 4)));
+    sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readSampleL + 8)));
+    sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readSampleL + 12)));
+    // sL4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sL4);
+    sL4 = SIMD_MM(hadd_ps)(sL4, sL4);
+    sL4 = SIMD_MM(hadd_ps)(sL4, sL4);
+
+    SIMD_MM(store_ss)(&OutputL[i], sL4);
+
+    if constexpr (LOOP_ACTIVE)
+    {
+        if (ks.fadeActive)
+        {
+            sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readFadeSampleL));
+            sR4 = SIMD_MM(add_ps)(sR4,
+                                  SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readFadeSampleL + 4)));
+            sR4 = SIMD_MM(add_ps)(sR4,
+                                  SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readFadeSampleL + 8)));
+            sR4 = SIMD_MM(add_ps)(sR4,
+                                  SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readFadeSampleL + 12)));
+            // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
+            sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+            sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+
+            float fadeVal{0.f};
+            SIMD_MM(store_ss)(&fadeVal, sR4);
+            auto fadeGain(
+                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
+        }
+    }
+
+    if constexpr (NUM_CHANNELS == 2)
+    {
+        auto readSampleR{ks.ReadSample[1]};
+        auto readFadeSampleR{ks.ReadFadeSample[1]};
+        auto OutputR{ks.Output[1]};
+
+        sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readSampleR));
+        sR4 = SIMD_MM(add_ps)(sR4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readSampleR + 4)));
+        sR4 = SIMD_MM(add_ps)(sR4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readSampleR + 8)));
+        sR4 = SIMD_MM(add_ps)(sR4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readSampleR + 12)));
+        // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
+        sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+        sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+
+        SIMD_MM(store_ss)(&OutputR[i], sR4);
+
+        if constexpr (LOOP_ACTIVE)
+        {
+            if (ks.fadeActive)
+            {
+                sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readFadeSampleR));
+                sR4 = SIMD_MM(add_ps)(
+                    sR4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readFadeSampleR + 4)));
+                sR4 = SIMD_MM(add_ps)(
+                    sR4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readFadeSampleR + 8)));
+                sR4 = SIMD_MM(add_ps)(
+                    sR4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readFadeSampleR + 12)));
+                // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
+                sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+                sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
+
+                float fadeVal{0.f};
+                SIMD_MM(store_ss)(&fadeVal, sR4);
+                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
+                                          GD->loopUpperBound));
+                auto aOut = getFadeGainToAmp(1.f - fadeGain);
+                fadeGain = getFadeGainToAmp(fadeGain);
+
+                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
+            }
+        }
+    }
+}
+
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+void KernelOp<InterpolationTypes::ZeroOrderHoldAA, int16_t>::Process(
+    GeneratorState *__restrict GD,
+    KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+{
+    auto readSampleL{ks.ReadSample[0]};
+    auto readFadeSampleL{ks.ReadFadeSample[0]};
+    auto OutputL{ks.Output[0]};
+    auto m0{ks.m0};
+    auto i{ks.i};
+    constexpr auto stereo = NUM_CHANNELS == 2;
+
+    int16_t *readSampleR{nullptr};
+    float *OutputR{nullptr};
+    if constexpr (stereo)
+    {
+        readSampleR = ks.ReadSample[1];
+        OutputR = ks.Output[1];
+    }
+
+    auto finalSubPos = ks.SampleSubPos;
+    auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
+    auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
+    if (subRatio <= 0.5f)
+        subSubPos = std::pow(subSubPos, std::pow(0.5f / subRatio, 1.0f));
+        finalSubPos = (int)(subSubPos * (1 << 24));
+        m0 = ((finalSubPos >> 12) & 0xff0);
+
+    // int16
+    // SSE2 path
+    SIMD_M128I lipol0, tmp, sL8A, sR8A, tmp2, sL8B, sR8B;
+    auto fL = SIMD_MM(setzero_ps)(), fR = SIMD_MM(setzero_ps)();
+    lipol0 = SIMD_MM(set1_epi16)(finalSubPos & 0xffff);
+
+    tmp = SIMD_MM(add_epi16)(
+        SIMD_MM(mulhi_epi16)(*((SIMD_M128I *)&sincTable.SincOffsetI16[m0]), lipol0),
+        *((SIMD_M128I *)&sincTable.SincTableI16[m0]));
+    sL8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readSampleL));
+    if constexpr (stereo)
+        sR8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readSampleR));
+
+    tmp2 = SIMD_MM(add_epi16)(
+        SIMD_MM(mulhi_epi16)(*((SIMD_M128I *)&sincTable.SincOffsetI16[m0 + 8]), lipol0),
+        *((SIMD_M128I *)&sincTable.SincTableI16[m0 + 8]));
+    sL8B = SIMD_MM(madd_epi16)(tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readSampleL + 8)));
+    if constexpr (stereo)
+        sR8B = SIMD_MM(madd_epi16)(tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readSampleR + 8)));
+
+    sL8A = SIMD_MM(add_epi32)(sL8A, sL8B);
+    if constexpr (stereo)
+        sR8A = SIMD_MM(add_epi32)(sR8A, sR8B);
+
+    int l alignas(16)[4], r alignas(16)[4];
+    SIMD_MM(store_si128)((SIMD_M128I *)&l, sL8A);
+    if constexpr (stereo)
+        SIMD_MM(store_si128)((SIMD_M128I *)&r, sR8A);
+    l[0] = (l[0] + l[1]) + (l[2] + l[3]);
+    if constexpr (stereo)
+        r[0] = (r[0] + r[1]) + (r[2] + r[3]);
+
+    fL = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fL, l[0]), I16InvScale_m128);
+    if constexpr (stereo)
+        fR = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fR, r[0]), I16InvScale_m128);
+
+    SIMD_MM(store_ss)(&OutputL[i], fL);
+    if constexpr (stereo)
+        SIMD_MM(store_ss)(&OutputR[i], fR);
+
+    if constexpr (LOOP_ACTIVE)
+    {
+        if (ks.fadeActive)
+        {
+            int16_t *readFadeSampleR{nullptr};
+            if constexpr (stereo)
+            {
+                readFadeSampleR = ks.ReadFadeSample[1];
+            }
+
+            sL8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleL));
+            if constexpr (stereo)
+                sR8A =
+                    SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleR));
+            sL8B = SIMD_MM(madd_epi16)(tmp2,
+                                       SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleL + 8)));
+            if constexpr (stereo)
+                sR8B = SIMD_MM(madd_epi16)(
+                    tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleR + 8)));
+
+            sL8A = SIMD_MM(add_epi32)(sL8A, sL8B);
+            if constexpr (stereo)
+                sR8A = SIMD_MM(add_epi32)(sR8A, sR8B);
+
+            int l alignas(16)[4], r alignas(16)[4];
+            SIMD_MM(store_si128)((SIMD_M128I *)&l, sL8A);
+            if constexpr (stereo)
+                SIMD_MM(store_si128)((SIMD_M128I *)&r, sR8A);
+            l[0] = (l[0] + l[1]) + (l[2] + l[3]);
+            if constexpr (stereo)
+                r[0] = (r[0] + r[1]) + (r[2] + r[3]);
+
+            fL = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fL, l[0]), I16InvScale_m128);
+            if constexpr (stereo)
+                fR = SIMD_MM(mul_ss)(SIMD_MM(cvtsi32_ss)(fR, r[0]), I16InvScale_m128);
+
+            float fadeValL{0.f};
+            float fadeValR{0.f};
+            SIMD_MM(store_ss)(&fadeValL, fL);
+            if constexpr (stereo)
+                SIMD_MM(store_ss)(&fadeValR, fR);
+
+            auto fadeGain(
+                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
+
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeValL * fadeGain;
+            if constexpr (stereo)
+                OutputR[i] = OutputR[i] * aOut + fadeValR * fadeGain;
+        }
+    }
+}
+
 
 template <typename T>
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>
@@ -758,6 +1029,12 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                          readFadeR);
                 break;
             }
+            case InterpolationTypes::ZeroOrderHoldAA:
+            {
+                KPStereo(InterpolationTypes::ZeroOrderHoldAA, type_from_cond, 2, readL, readR,
+                         readFadeL, readFadeR);
+                break;
+            }
             case InterpolationTypes::ZeroOrderHold:
             {
                 KPStereo(InterpolationTypes::ZeroOrderHold, type_from_cond, 2, readL, readR,
@@ -778,6 +1055,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             case InterpolationTypes::Linear:
             {
                 KPMono(InterpolationTypes::Linear, type_from_cond, 1, readL, readFadeL);
+                break;
+            }
+            case InterpolationTypes::ZeroOrderHoldAA:
+            {
+                KPMono(InterpolationTypes::ZeroOrderHoldAA, type_from_cond, 1, readL, readFadeL);
                 break;
             }
             case InterpolationTypes::ZeroOrderHold:
