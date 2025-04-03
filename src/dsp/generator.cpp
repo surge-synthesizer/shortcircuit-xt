@@ -133,17 +133,17 @@ template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
 template <> struct KernelOp<InterpolationTypes::ZeroOrderHoldAA, float>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-    static void
-    Process(GeneratorState *__restrict GD,
-            KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+    static void Process(
+        GeneratorState *__restrict GD,
+        KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
 template <> struct KernelOp<InterpolationTypes::ZeroOrderHoldAA, int16_t>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-    static void
-    Process(GeneratorState *__restrict GD,
-            KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+    static void Process(GeneratorState *__restrict GD,
+                        KernelProcessor<InterpolationTypes::ZeroOrderHoldAA, int16_t, NUM_CHANNELS,
+                                        LOOP_ACTIVE> &ks);
 };
 
 template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
@@ -279,9 +279,11 @@ void KernelOp<InterpolationTypes::ZeroOrderHoldAA, float>::Process(
     auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
     auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
     if (subRatio <= 0.5f)
-        subSubPos = std::pow(subSubPos, std::pow(2.0f / subRatio, 1.0f));
+    {
+        subSubPos = std::pow(subSubPos, 1.0f / subRatio);
         finalSubPos = (int)(subSubPos * (1 << 24));
         m0 = ((finalSubPos >> 12) & 0xff0);
+    }
 
     // float32 path (SSE)
     SIMD_M128 lipol0, tmp[4], sL4, sR4;
@@ -403,9 +405,11 @@ void KernelOp<InterpolationTypes::ZeroOrderHoldAA, int16_t>::Process(
     auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
     auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
     if (subRatio <= 0.5f)
-        subSubPos = std::pow(subSubPos, std::pow(0.5f / subRatio, 1.0f));
+    {
+        subSubPos = std::pow(subSubPos, 1.0f / subRatio);
         finalSubPos = (int)(subSubPos * (1 << 24));
         m0 = ((finalSubPos >> 12) & 0xff0);
+    }
 
     // int16
     // SSE2 path
@@ -501,7 +505,6 @@ void KernelOp<InterpolationTypes::ZeroOrderHoldAA, int16_t>::Process(
         }
     }
 }
-
 
 template <typename T>
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>

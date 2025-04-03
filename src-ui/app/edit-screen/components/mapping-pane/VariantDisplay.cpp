@@ -763,7 +763,7 @@ void VariantDisplay::showSRCMenu()
     };
     add(dsp::InterpolationTypes::Sinc, "Sinc");
     add(dsp::InterpolationTypes::Linear, "Linear");
-    add(dsp::InterpolationTypes::ZeroOrderHoldAA, "Zero-order Hold with antialiasing");
+    add(dsp::InterpolationTypes::ZeroOrderHoldAA, "Zero-Order Hold (Anti-Aliased)");
     add(dsp::InterpolationTypes::ZeroOrderHold, "Zero-order Hold");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
