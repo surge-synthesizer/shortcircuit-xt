@@ -59,18 +59,6 @@ SERIAL_TO_CLIENT(SendAllProcessorDescriptions, s2c_send_all_processor_descriptio
 inline void doRegisterClient(engine::Engine &engine, MessageController &cont)
 {
     assert(cont.threadingChecker.isSerialThread());
-    engine.sendMetadataToClient();
-    PartGroupZoneStructure::executeOnSerialization(-1, engine, cont);
-    if (engine.getSelectionManager()->currentLeadZone(engine).has_value())
-    {
-        // We want to re-send the action as if a lead was selected.
-        // TODO - make this API less gross
-        selection::SelectionManager::SelectActionContents sac{
-            *(engine.getSelectionManager()->currentLeadZone(engine))};
-        sac.distinct = false;
-        engine.getSelectionManager()->selectAction(sac);
-    }
-    engine.getSelectionManager()->sendSelectedPartMacrosToClient();
 
     engine.sendFullRefreshToClient();
 }

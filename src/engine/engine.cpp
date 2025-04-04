@@ -1101,7 +1101,6 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
 
 void Engine::sendFullRefreshToClient() const
 {
-    SCLOG("Sending full refresh");
     auto &cont = getMessageController();
     assert(cont->threadingChecker.isSerialThread());
     sendMetadataToClient();
@@ -1130,6 +1129,7 @@ void Engine::sendFullRefreshToClient() const
                 *(getMessageController()));
         }
     }
+
     getSelectionManager()->sendGroupZoneMappingForSelectedPart();
     getSelectionManager()->sendClientDataForLeadSelectionState();
     getSelectionManager()->sendSelectedZonesToClient();

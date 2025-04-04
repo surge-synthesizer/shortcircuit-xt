@@ -309,6 +309,50 @@ std::string logTimestamp();
 #define SCLOG_UNIMPL_ONCE(...) SCLOG_ONCE("Unimpl [" << __func__ << "] " << __VA_ARGS__);
 #define SCD(x) #x << "=" << (x) << " "
 
+struct DebugTimeGuard
+{
+    std::string msg, file;
+    size_t line;
+
+    std::chrono::time_point<std::chrono::steady_clock> start;
+
+    DebugTimeGuard(const std::string &s, const std::string fl, size_t ln)
+        : msg(s), file(fl), line(ln)
+    {
+        start = std::chrono::high_resolution_clock::now();
+        print(-1, "Debug Timer - ");
+    }
+    ~DebugTimeGuard()
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto dur = end - start;
+        auto ms = std::chrono::duration_cast<std::chrono::microseconds>(dur);
+
+        print(ms.count());
+    }
+
+    void stamp(const std::string &m)
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto dur = end - start;
+        auto ms = std::chrono::duration_cast<std::chrono::microseconds>(dur);
+
+        print(ms.count(), m);
+    }
+
+    void print(int64_t t, const std::string &extraMsg = "")
+    {
+        std::ostringstream oss_macr;
+        oss_macr << file << ":" << line << " [" << scxt::logTimestamp() << "] ";
+        if (t > 0)
+            oss_macr << "time=" << t << " us; ";
+        oss_macr << extraMsg << msg << "\n";
+        scxt::postToLog(oss_macr.str());
+    }
+};
+
+#define SCLOG_TIME(objn, msg) DebugTimeGuard objn(msg, __FILE__, __LINE__);
+
 #define DECLARE_ENUM_STRING(E)                                                                     \
     static std::string toString##E(const E &);                                                     \
     static E fromString##E(const std::string &);
