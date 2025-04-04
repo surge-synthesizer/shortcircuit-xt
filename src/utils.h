@@ -314,7 +314,7 @@ struct DebugTimeGuard
     std::string msg, file;
     size_t line;
 
-    std::chrono::time_point<std::chrono::steady_clock> start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
 
     DebugTimeGuard(const std::string &s, const std::string fl, size_t ln)
         : msg(s), file(fl), line(ln)
