@@ -54,5 +54,7 @@ std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &);
 
 std::vector<CompoundElement> getSFZCompoundList(const fs::path &);
 
+std::vector<CompoundElement> getGIGCompoundList(const fs::path &);
+
 } // namespace scxt::sample::compound
 #endif // COMPOUND_FILE_H

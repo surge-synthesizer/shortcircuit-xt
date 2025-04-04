@@ -30,12 +30,14 @@
 #include "utils.h"
 #include "infrastructure/filesystem_import.h"
 #include "SF.h"
+#include "gig.h"
 
 namespace scxt::sample
 {
 
 struct alignas(16) Sample : MoveableOnly<Sample>
 {
+    // add a new compound type here, add its address stream in sample_traits
     enum SourceType
     {
         WAV_FILE,
@@ -45,6 +47,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         MP3_FILE,
         AIFF_FILE,
         MULTISAMPLE_FILE,
+        GIG_FILE,
     } type{WAV_FILE};
 
     Sample() {}
@@ -57,6 +60,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     std::string getDisplayName() const { return displayName; }
     bool load(const fs::path &path);
     bool loadFromSF2(const fs::path &path, sf2::File *f, int sampleIndex);
+    bool loadFromGIG(const fs::path &path, gig::File *f, int sampleIndex);
 
     const fs::path &getPath() const { return mFileName; }
     std::string md5Sum{};
