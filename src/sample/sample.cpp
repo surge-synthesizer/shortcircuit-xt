@@ -194,6 +194,60 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
     return false;
 }
 
+bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
+{
+    mFileName = p;
+    preset = -1;
+    instrument = -1;
+    region = sampleIndex;
+    type = GIG_FILE;
+
+    auto sfsample = f->GetSample(sampleIndex);
+    if (!sfsample)
+        return false;
+
+    SCLOG("Got this far in gig load");
+
+    auto frameSize = sfsample->FrameSize;
+    channels = sfsample->Channels;
+    sample_length = sfsample->SamplesTotal;
+    sample_rate = sfsample->SamplesPerSecond;
+
+    auto s = sfsample;
+
+    auto fnp = fs::path(fs::u8path(f->GetRiffFile()->GetFileName()));
+    std::string name = "Gig Sample";
+    if (s->pInfo)
+        name = s->pInfo->Name;
+    displayName = fmt::format("{} - ({} @ {})", name, fnp.filename().u8string(), sampleIndex);
+
+    SCLOG("GIG " << SCD((int)channels) << SCD(sample_length) << SCD(sample_rate) << SCD(frameSize)
+                 << " " << displayName);
+    if (frameSize == 2 && channels == 1)
+    {
+        bitDepth = BD_I16;
+        auto buf = sfsample->LoadSampleData();
+        // >> 1 here because void* -> int16_t is byte to two bytes
+        load_data_i16(0, buf.pStart, buf.Size >> 1, sfsample->FrameSize);
+        sfsample->ReleaseSampleData();
+        return true;
+    }
+    else if (frameSize == 4 && channels == 2)
+    {
+        bitDepth = BD_I16;
+        auto buf = sfsample->LoadSampleData();
+        // >> 2 here because void* -> int16_t is byte to two bytes, plus two channels with a
+        // stride
+        load_data_i16(0, (int16_t *)(buf.pStart), buf.Size >> 2, frameSize);
+        load_data_i16(1, (int16_t *)(buf.pStart) + 1, buf.Size >> 2, frameSize);
+
+        sfsample->ReleaseSampleData();
+        return true;
+    }
+
+    return false;
+}
+
 // TODO: Rename these
 short *Sample::GetSamplePtrI16(int Channel)
 {
@@ -418,6 +472,9 @@ void Sample::dumpInformationToLog()
         break;
     case MULTISAMPLE_FILE:
         SCLOG("Multisample File : " << getPath().u8string() << " at " << getCompoundRegion());
+        break;
+    case GIG_FILE:
+        SCLOG("GIG File : " << getPath().u8string());
         break;
     }
 

@@ -656,6 +656,11 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
             });
             return;
         }
+        if (extensionMatches(p.sampleAddress.path, ".gig"))
+        {
+            messageController->reportErrorToClient("GIG Support Incomplete",
+                                                   "GIG Instrument Support coming soon");
+        }
         return;
     }
 

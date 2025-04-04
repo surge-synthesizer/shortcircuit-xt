@@ -574,7 +574,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 auto &entry = data[rowNumber];
 
                 namespace cmsg = scxt::messaging::client;
-                auto &d = data[rowNumber];
+                const auto &d = data[rowNumber];
                 if (d.expandableAddress.has_value())
                 {
                     cmsg::clientSendToSerialization(

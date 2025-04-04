@@ -39,6 +39,7 @@
 #include <vector>
 #include <utility>
 #include "SF.h"
+#include "gig.h"
 #include <miniz.h>
 
 namespace scxt::sample
@@ -86,6 +87,10 @@ struct SampleManager : MoveableOnly<SampleManager>
                                               sf2::File *f, // if this is null I will re-open it
                                               int preset, int instrument, int region);
     int findSF2SampleIndexFor(sf2::File *, int preset, int instrument, int region);
+
+    std::optional<SampleID> loadSampleFromGIG(const fs::path &,
+                                              gig::File *f, // if this is null I will re-open it
+                                              int preset, int instrument, int region);
 
     std::optional<SampleID> setupSampleFromMultifile(const fs::path &, const std::string &md5,
                                                      int idx, void *data, size_t dataSize);
@@ -164,6 +169,10 @@ struct SampleManager : MoveableOnly<SampleManager>
                                                std::unique_ptr<sf2::File>>>
         sf2FilesByPath; // last is the md5sum
     std::unordered_map<std::string, std::string> sf2MD5ByPath;
+    std::unordered_map<std::string, std::tuple<std::unique_ptr<RIFF::File>,
+                                               std::unique_ptr<gig::File>>>
+        gigFilesByPath; // last is the md5sum
+    std::unordered_map<std::string, std::string> gigMD5ByPath;
 
     std::unordered_map<std::string, std::unique_ptr<ZipArchiveHolder>> zipArchives;
 };
