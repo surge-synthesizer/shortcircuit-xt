@@ -42,6 +42,7 @@
 #include "sample/sfz_support/sfz_import.h"
 #include "sample/exs_support/exs_import.h"
 #include "sample/sf2_support/sf2_import.h"
+#include "sample/gig_support/gig_import.h"
 #include "sample/multisample_support/multisample_import.h"
 #include "infrastructure/user_defaults.h"
 #include "infrastructure/md5support.h"
@@ -658,8 +659,14 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
         }
         if (extensionMatches(p.sampleAddress.path, ".gig"))
         {
-            messageController->reportErrorToClient("GIG Support Incomplete",
-                                                   "GIG Instrument Support coming soon");
+            messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+                auto res =
+                    gig_support::importGIG(p.sampleAddress.path, *this, p.sampleAddress.preset);
+                messageController->restartAudioThreadFromSerial();
+                serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                          getPartGroupZoneStructure(), *messageController);
+            });
+            return;
         }
         return;
     }
@@ -755,6 +762,17 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             auto res = multisample_support::importMultisample(p, *this);
             if (!res)
                 messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+            messageController->restartAudioThreadFromSerial();
+            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                      getPartGroupZoneStructure(), *messageController);
+        });
+        return;
+    }
+    if (extensionMatches(p, ".sf2"))
+    {
+        // TODO ok this refresh and restart is a bit unsatisfactory
+        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+            gig_support::importGIG(p, *this, -1);
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
