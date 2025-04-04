@@ -36,6 +36,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/multisample_support/multisample_import.cpp
 
         sample/gig_support/gig_compound_file_impl.cpp
+        sample/gig_support/gig_import.cpp
 
         sample/sf2_support/sf2_compound_file_impl.cpp
         sample/sf2_support/sf2_import.cpp
