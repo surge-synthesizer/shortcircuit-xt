@@ -35,6 +35,8 @@
 #include "sst/jucegui/components/Label.h"
 #include "engine/feature_enums.h"
 
+#include "app/shared/ZoneRightMouseMenu.h"
+
 namespace scxt::ui::app::edit_screen
 {
 
@@ -259,48 +261,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 juce::PopupMenu p;
                 if (isZone())
                 {
-                    p.addSectionHeader("Zone");
+                    auto za = getZoneAddress();
+                    const auto &tgl = lbm->thisGroup;
+                    const auto &sg = tgl[rowNumber];
+
+                    shared::populateZoneRightMouseMenuForZone(gsb, this, p, za, sg.name);
                     p.addSeparator();
-                    p.addItem("Rename", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        w->doZoneRename();
-                    });
-
-                    p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::CopyZone(za));
-                    });
-
-                    p.addItem("Paste", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::PasteZone(za));
-                    });
-
-                    p.addItem("Duplicate", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::DuplicateZone(za));
-                    });
-                    p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::DeleteZone(za));
-                    });
-                    p.addSeparator();
-                    p.addItem("Delete All Selected Zones",
-                              [w = juce::Component::SafePointer(this)]() {
-                                  if (!w)
-                                      return;
-                                  auto za = w->getZoneAddress();
-                                  w->gsb->sendToSerialization(cmsg::DeleteAllSelectedZones(true));
-                              });
+                    shared::populateZoneRightMouseMenuForSelectedZones(gsb, p, za.part);
                 }
                 else if (isGroup())
                 {
@@ -329,26 +296,11 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                         auto za = w->getZoneAddress();
                         w->gsb->sendToSerialization(cmsg::DeleteGroup(za));
                     });
-                }
 
-                p.addItem("Delete All Zones and Groups",
-                          [w = juce::Component::SafePointer(this)]() {
-                              if (!w)
-                                  return;
-                              auto za = w->getZoneAddress();
+                    auto za = getZoneAddress();
 
-                              w->gsb->sendToSerialization(cmsg::ClearPart(za.part));
-                          });
-
-                if (gsb->editor->hasMissingSamples)
-                {
                     p.addSeparator();
-                    p.addItem("Resolve Missing Samples",
-                              [w = juce::Component::SafePointer(this)]() {
-                                  if (!w)
-                                      return;
-                                  w->gsb->editor->showMissingResolutionScreen();
-                              });
+                    shared::populateZoneRightMouseMenuForSelectedZones(gsb, p, za.part);
                 }
 
                 isPopup = true;
@@ -442,7 +394,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             renameEditor->grabKeyboardFocus();
         }
 
-        void doZoneRename()
+        void doZoneRename(const selection::SelectionManager::ZoneAddress &za)
         {
             const auto &tgl = lbm->thisGroup;
 
