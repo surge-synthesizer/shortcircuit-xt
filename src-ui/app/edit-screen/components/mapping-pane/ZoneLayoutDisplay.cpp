@@ -29,6 +29,7 @@
 #include "ZoneLayoutKeyboard.h"
 #include "MappingDisplay.h"
 #include "engine/feature_enums.h"
+#include "app/shared/ZoneRightMouseMenu.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -285,48 +286,21 @@ void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddr
     auto p = juce::PopupMenu();
 
     bool added{false};
+    int part{-1};
     for (auto &s : display->summary)
     {
+        part = s.address.part;
         if (s.address == za)
         {
-            namespace cmsg = scxt::messaging::client;
-
+            app::shared::populateZoneRightMouseMenuForZone(display, display, p, za, s.name);
             added = true;
-            p.addSectionHeader(s.name);
-            p.addItem("Rename", [w = juce::Component::SafePointer(this), s]() {
-                if (!w)
-                    return;
-                w->editor->showComingSoon("Rename from Mapping Pane");
-            });
-            p.addItem("Copy", [w = juce::Component::SafePointer(this), s]() {
-                if (!w)
-                    return;
-                w->display->sendToSerialization(cmsg::CopyZone(s.address));
-            });
-            p.addItem("Paste", [w = juce::Component::SafePointer(this), s]() {
-                if (!w)
-                    return;
-                w->display->sendToSerialization(cmsg::PasteZone(s.address));
-            });
-            p.addItem("Duplicate", [w = juce::Component::SafePointer(this), s]() {
-                if (!w)
-                    return;
-                w->display->sendToSerialization(cmsg::DuplicateZone(s.address));
-            });
-            p.addItem("Delete", [w = juce::Component::SafePointer(this), s]() {
-                if (!w)
-                    return;
-                w->display->sendToSerialization(cmsg::DeleteZone(s.address));
-            });
         }
     }
 
     if (added)
         p.addSeparator();
 
-    p.addSectionHeader("All Selected Zones");
-    p.addSeparator();
-    p.addItem("Coming Soon", []() {});
+    app::shared::populateZoneRightMouseMenuForSelectedZones(display, p, part);
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

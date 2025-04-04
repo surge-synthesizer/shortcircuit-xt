@@ -179,6 +179,8 @@ struct MappingDisplay : juce::Component,
     void fileDragExit(const juce::StringArray &files) override;
     void filesDropped(const juce::StringArray &files, int x, int y) override;
 
+    void doZoneRename(const selection::SelectionManager::ZoneAddress &z);
+
     engine::Part::zoneMappingSummary_t summary{};
 };
 
