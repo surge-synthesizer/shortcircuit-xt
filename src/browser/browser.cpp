@@ -73,7 +73,8 @@ std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() con
 const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".flac", ".mp3", ".aif",
                                                                    ".aiff"};
 
-const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz", ".multisample"};
+const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz", ".multisample",
+                                                                  ".gig"};
 // ".exs"};
 const std::vector<std::string> Browser::LoadableFile::shortcircuitFormats{".scm", ".scp"};
 
@@ -131,6 +132,10 @@ std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const f
     if (extensionMatches(p, ".sfz"))
     {
         return sample::compound::getSFZCompoundList(p);
+    }
+    if (extensionMatches(p, ".gig"))
+    {
+        return sample::compound::getGIGCompoundList(p);
     }
     return {};
 }

@@ -313,6 +313,15 @@ struct DriveFSArea : juce::Component, HasEditor
             SCLOG(e.what());
         }
         std::sort(lcontents.begin(), lcontents.end(), [](auto &a, auto &b) {
+            auto ida = fs::is_directory(a.dirent.path());
+            auto idb = fs::is_directory(b.dirent.path());
+            if (ida != idb)
+            {
+                if (ida)
+                    return true;
+                else
+                    return false;
+            }
             return strnatcasecmp(a.dirent.path().u8string().c_str(),
                                  b.dirent.path().u8string().c_str()) < 0;
         });
@@ -415,7 +424,7 @@ void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
 
 struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 {
-    bool isSelected;
+    bool isSelected{false};
     int rowNumber;
     BrowserPane *browserPane{nullptr};
     jcmp::ListView *listView{nullptr};
@@ -432,7 +441,6 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         auto &data = browserPane->devicesPane->driveFSArea->contents;
         auto &entry = data[rowNumber];
         return entry.dirent;
-        ;
     }
     std::optional<sample::compound::CompoundElement> getCompoundElement() const override
     {
@@ -519,7 +527,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         }
     }
 
-    bool isHovered;
+    bool isHovered{false};
     void mouseEnter(const juce::MouseEvent &) override
     {
         isHovered = true;
@@ -566,7 +574,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 auto &entry = data[rowNumber];
 
                 namespace cmsg = scxt::messaging::client;
-                auto &d = data[rowNumber];
+                const auto &d = data[rowNumber];
                 if (d.expandableAddress.has_value())
                 {
                     cmsg::clientSendToSerialization(

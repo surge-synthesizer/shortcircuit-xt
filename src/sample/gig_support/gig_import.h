@@ -25,36 +25,15 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SAMPLE_COMPOUND_FILE_H
-#define SCXT_SRC_SAMPLE_COMPOUND_FILE_H
+#ifndef SCXT_SRC_SAMPLE_GIG_SUPPORT_SF2_IMPORT_H
+#define SCXT_SRC_SAMPLE_GIG_SUPPORT_SF2_IMPORT_H
 
-#include "sample/sample.h"
+#include "filesystem/import.h"
+#include <engine/engine.h>
 
-namespace scxt::engine
+namespace scxt::gig_support
 {
-struct Engine;
+bool importGIG(const fs::path &, engine::Engine &, int preset);
 }
 
-namespace scxt::sample::compound
-{
-struct CompoundElement
-{
-    enum Type : int32_t
-    {
-        SAMPLE,
-        INSTRUMENT
-    } type{SAMPLE};
-
-    std::string name;
-    Sample::SampleFileAddress sampleAddress;
-};
-
-std::vector<CompoundElement> getSF2SampleAddresses(const fs::path &);
-std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &);
-
-std::vector<CompoundElement> getSFZCompoundList(const fs::path &);
-
-std::vector<CompoundElement> getGIGCompoundList(const fs::path &);
-
-} // namespace scxt::sample::compound
-#endif // COMPOUND_FILE_H
+#endif // SF2_IMPORT_H

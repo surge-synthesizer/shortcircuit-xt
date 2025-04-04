@@ -45,6 +45,7 @@ namespace scxt::json
 // break streaming at the ALPHA point which is why it is a bit odd.
 SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                  static constexpr const char *key = "sourceType";
+                 /* Remember this is a bit funky - hand unstream below too */
                  switch (from)
                  {
                  case sample::Sample::WAV_FILE:
@@ -67,6 +68,9 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                      break;
                  case sample::Sample::MULTISAMPLE_FILE:
                      v = "multisample";
+                     break;
+                 case sample::Sample::GIG_FILE:
+                     v = "gig";
                      break;
                  }
              }),
@@ -109,6 +113,10 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                          to = sample::Sample::AIFF_FILE;
                      if (k == "multisample")
                          to = sample::Sample::MULTISAMPLE_FILE;
+                     if (k == "gig")
+                         to = sample::Sample::GIG_FILE;
+
+                     // SCLOG("Unknown unstream type for format : " << k);
                  }
 
                  return;
@@ -122,7 +130,8 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  // ppref = ppref.make_preferred();
                  v = {{"type", from.type}, {"path", ppref.u8string()}, {"md5sum", from.md5sum}};
                  if (from.type == sample::Sample::SF2_FILE ||
-                     from.type == sample::Sample::MULTISAMPLE_FILE)
+                     from.type == sample::Sample::MULTISAMPLE_FILE ||
+                     from.type == sample::Sample::GIG_FILE)
                  {
                      addToObject<val_t>(v, "preset", from.preset);
                      addToObject<val_t>(v, "instrument", from.instrument);

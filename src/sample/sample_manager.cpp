@@ -81,6 +81,11 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
         nid = loadSampleFromMultiSample(addr.path, addr.region, id);
     }
     break;
+    case Sample::GIG_FILE:
+    {
+        nid = loadSampleFromGIG(addr.path, nullptr, addr.preset, addr.instrument, addr.region);
+    }
+    break;
     case Sample::SFZ_FILE:
     {
         SCLOG("How did this happen?");
@@ -215,6 +220,69 @@ int SampleManager::findSF2SampleIndexFor(sf2::File *f, int presetNum, int instru
         }
     }
     return -1;
+}
+
+std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig::File *f,
+                                                         int preset, int instrument, int region)
+{
+    SCLOG("Load Sample from GIG " << p.u8string() << " " << region);
+    if (!f)
+    {
+        if (gigFilesByPath.find(p.u8string()) == gigFilesByPath.end())
+        {
+            try
+            {
+                SCLOG("Opening gig : " << p.u8string());
+
+                auto riff = std::make_unique<RIFF::File>(p.u8string());
+                auto sf = std::make_unique<gig::File>(riff.get());
+                gigFilesByPath[p.u8string()] = {std::move(riff), std::move(sf)};
+            }
+            catch (RIFF::Exception e)
+            {
+                return {};
+            }
+        }
+        f = std::get<1>(gigFilesByPath[p.u8string()]).get();
+    }
+
+    if (gigMD5ByPath.find(p.u8string()) == gigMD5ByPath.end())
+        gigMD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
+
+    assert(f);
+
+    auto sidx = region;
+
+    if (sidx < 0 && sidx >= f->CountSamples())
+    {
+        return std::nullopt;
+    }
+    for (const auto &[id, sm] : samples)
+    {
+        if (sm->type == Sample::GIG_FILE)
+        {
+            if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+                return id;
+        }
+    }
+
+    auto sp = std::make_shared<Sample>();
+
+    if (!sp->loadFromGIG(p, f, sidx))
+        return {};
+
+    sp->md5Sum = gigMD5ByPath[p.u8string()];
+    assert(!sp->md5Sum.empty());
+    sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
+    sp->id.setPathHash(p);
+
+    SCLOG("Loading : " << p.u8string());
+    SCLOG("        : " << sp->displayName);
+    SCLOG("        : " << sp->id.to_string());
+
+    samples[sp->id] = sp;
+    updateSampleMemory();
+    return sp->id;
 }
 
 std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &p,
