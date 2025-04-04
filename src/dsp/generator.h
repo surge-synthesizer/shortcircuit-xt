@@ -40,6 +40,7 @@ enum InterpolationTypes
 {
     Sinc,
     Linear,
+    ZeroOrderHoldAA,
     ZeroOrderHold
 };
 DECLARE_ENUM_STRING(InterpolationTypes);
@@ -52,6 +53,8 @@ inline std::string toStringInterpolationTypes(const InterpolationTypes &p)
         return "sinc";
     case Linear:
         return "lin";
+    case ZeroOrderHoldAA:
+        return "zaa";
     case ZeroOrderHold:
         return "zho";
     }
