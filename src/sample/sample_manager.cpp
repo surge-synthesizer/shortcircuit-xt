@@ -35,8 +35,23 @@ namespace scxt::sample
 
 void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &r)
 {
-    for (const auto &[id, addr] : r)
+    fs::path relativeMarker{relativeSentinel};
+    for (const auto &[id, origAddr] : r)
     {
+        Sample::SampleFileAddress addr = origAddr;
+        if (!addr.path.empty())
+        {
+            auto top = addr.path.begin();
+            if (*top == relativeMarker && !relativeRoot.empty())
+            {
+                auto pt = relativeRoot;
+                ++top;
+                while (top != addr.path.end())
+                    pt /= *top++;
+                addr.path = pt;
+            }
+        }
+
         if (!fs::exists(addr.path))
         {
             addSampleAsMissing(id, addr);
@@ -85,6 +100,11 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     case Sample::GIG_FILE:
     {
         nid = loadSampleFromGIG(addr.path, nullptr, addr.preset, addr.instrument, addr.region);
+    }
+    break;
+    case Sample::SCXT_FILE:
+    {
+        throw std::runtime_error("SCXT files are not supported");
     }
     break;
     case Sample::SFZ_FILE:

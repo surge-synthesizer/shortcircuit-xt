@@ -26,6 +26,7 @@
  */
 
 #include <fstream>
+#include <set>
 
 #include "tao/json/msgpack/consume_string.hpp"
 #include "tao/json/msgpack/from_binary.hpp"
@@ -88,12 +89,109 @@ std::string readSCDataChunk(const std::unique_ptr<RIFF::File> &f)
     return std::string((char *)cp->LoadChunkData(), cp->GetSize());
 }
 
-bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
+std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &path)
 {
-    SCLOG("Saving Multi to " << p.u8string());
+    auto collectDir = path;
+    collectDir.replace_extension("");
+    auto riffPath = collectDir / path.filename();
+    collectDir /= "samples";
+    try
+    {
+        fs::create_directories(collectDir);
+    }
+    catch (const fs::filesystem_error &fse)
+    {
+        return {{},
+                {},
+                std::string("Unable to create collect directory: " + collectDir.u8string() + " " +
+                            fse.what())};
+    }
+    return {riffPath, collectDir, ""};
+}
+
+void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
+{
+    std::set<fs::path> toCollect;
+    e.getSampleManager()->purgeUnreferencedSamples();
+
+    if (part < 0)
+    {
+        SCLOG("Collecting all samples into " << collectDir.u8string());
+        for (auto sit = e.getSampleManager()->samplesBegin();
+             sit != e.getSampleManager()->samplesEnd(); ++sit)
+        {
+            toCollect.insert(sit->second->getPath());
+        }
+    }
+    else
+    {
+        SCLOG("Collecting part " << part << " samples into " << collectDir.u8string());
+
+        const auto &pt = e.getPatch()->getPart(part);
+        auto smp = pt->getSamplesUsedByPart();
+        for (const auto &sid : smp)
+        {
+            auto sp = e.getSampleManager()->getSample(sid);
+            if (sp)
+            {
+                toCollect.insert(sp->getPath());
+            }
+            else
+            {
+                SCLOG("Unable to find sample " << sid.to_string());
+            }
+        }
+    }
+
+    for (auto &c : toCollect)
+    {
+        SCLOG("   - " << c.u8string());
+        try
+        {
+            fs::copy_file(c, collectDir / c.filename());
+        }
+        catch (fs::filesystem_error &fse)
+        {
+            SCLOG("Unable to copy " << c.u8string() << " " << fse.what());
+            e.getMessageController()->reportErrorToClient("Unable to copy sample", fse.what());
+            return;
+        }
+    }
+}
+
+bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles style)
+{
+    fs::path riffPath = p;
+    fs::path collectDir;
+
+    if (style == SaveStyles::AS_MONOLITH)
+    {
+        e.getMessageController()->reportErrorToClient("Monolith not yet implemented",
+                                                      "Coming Soon");
+        return false;
+    }
+
+    if (style == SaveStyles::COLLECT_SAMPLES)
+    {
+        auto [r, c, emsg] = setupForCollection(p);
+        if (emsg.empty())
+        {
+            riffPath = r;
+            collectDir = c;
+        }
+        else
+        {
+            e.getMessageController()->reportErrorToClient("Unable to create collect dir", emsg);
+        }
+    }
 
     try
     {
+        if (style == SaveStyles::COLLECT_SAMPLES)
+        {
+            collectSamplesInto(collectDir, e, -1);
+            e.getSampleManager()->reparentSamplesOnStreamToRelative("samples/");
+        }
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_MULTI);
         auto msg = tao::json::msgpack::to_string(json::scxt_value(e));
 
@@ -102,8 +200,12 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
         addSCManifest(f, "multi");
         addSCDataChunk(f, msg);
 
-        // TODO: If embeeding samples, add a list here with them
-        f->Save(p.u8string());
+        f->Save(riffPath.u8string());
+
+        if (style == SaveStyles::COLLECT_SAMPLES)
+        {
+            e.getSampleManager()->clearReparenting();
+        }
     }
     catch (const RIFF::Exception &e)
     {
@@ -112,12 +214,40 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e)
     return true;
 }
 
-bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part)
+bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
+              patch_io::SaveStyles style)
 {
-    SCLOG("Saving part " << part << " to " << p.u8string());
+    fs::path riffPath = p;
+    fs::path collectDir;
+
+    if (style == SaveStyles::AS_MONOLITH)
+    {
+        e.getMessageController()->reportErrorToClient("Monolith not yet implemented",
+                                                      "Coming Soon");
+        return false;
+    }
+
+    if (style == SaveStyles::COLLECT_SAMPLES)
+    {
+        auto [r, c, emsg] = setupForCollection(p);
+        if (emsg.empty())
+        {
+            riffPath = r;
+            collectDir = c;
+        }
+        else
+        {
+            e.getMessageController()->reportErrorToClient("Unable to create collect dir", emsg);
+        }
+    }
 
     try
     {
+        if (style == SaveStyles::COLLECT_SAMPLES)
+        {
+            collectSamplesInto(collectDir, e, part);
+            e.getSampleManager()->reparentSamplesOnStreamToRelative("samples/");
+        }
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
         auto msg = tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
 
@@ -126,8 +256,12 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part)
         addSCManifest(f, "part");
         addSCDataChunk(f, msg);
 
-        // TODO: If embeeding samples, add a list here with them
-        f->Save(p.u8string());
+        f->Save(riffPath.u8string());
+
+        if (style == SaveStyles::COLLECT_SAMPLES)
+        {
+            e.getSampleManager()->clearReparenting();
+        }
     }
     catch (const RIFF::Exception &e)
     {
@@ -138,8 +272,6 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part)
 
 bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &file)
 {
-    SCLOG("Init From Resource Bundle");
-
     std::string payload;
 
     try
@@ -153,7 +285,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
         SCLOG("Exception opening payload");
         return false;
     }
-    SCLOG("Init payload has size " << payload.size());
+
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
@@ -188,8 +320,6 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
 
 bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
 {
-    SCLOG("loadMulti " << p.u8string());
-
     std::string payload;
     try
     {
@@ -206,19 +336,22 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
-        cont->stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
-            try
-            {
-                nonconste.immediatelyTerminateAllVoices();
-                scxt::json::unstreamEngineState(nonconste, payload, true);
-                auto &cont = *e.getMessageController();
-                cont.restartAudioThreadFromSerial();
-            }
-            catch (std::exception &err)
-            {
-                SCLOG("Unable to load [" << err.what() << "]");
-            }
-        });
+        cont->stopAudioThreadThenRunOnSerial(
+            [payload, relP = p.parent_path(), &nonconste = engine](auto &e) {
+                try
+                {
+                    nonconste.getSampleManager()->setRelativeRoot(relP);
+                    nonconste.immediatelyTerminateAllVoices();
+                    scxt::json::unstreamEngineState(nonconste, payload, true);
+                    nonconste.getSampleManager()->clearReparenting();
+                    auto &cont = *e.getMessageController();
+                    cont.restartAudioThreadFromSerial();
+                }
+                catch (std::exception &err)
+                {
+                    SCLOG("Unable to load [" << err.what() << "]");
+                }
+            });
     }
     else
     {
@@ -237,8 +370,6 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
 
 bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
 {
-    SCLOG("loadPart " << p.u8string() << " " << part);
-
     std::string payload;
     try
     {
@@ -255,19 +386,22 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
-        cont->stopAudioThreadThenRunOnSerial([payload, part, &nonconste = engine](auto &e) {
-            try
-            {
-                nonconste.immediatelyTerminateAllVoices();
-                scxt::json::unstreamPartState(nonconste, part, payload, true);
-                auto &cont = *e.getMessageController();
-                cont.restartAudioThreadFromSerial();
-            }
-            catch (std::exception &err)
-            {
-                SCLOG("Unable to load [" << err.what() << "]");
-            }
-        });
+        cont->stopAudioThreadThenRunOnSerial(
+            [payload, relP = p.parent_path(), part, &nonconste = engine](auto &e) {
+                try
+                {
+                    nonconste.getSampleManager()->setRelativeRoot(relP);
+                    nonconste.immediatelyTerminateAllVoices();
+                    scxt::json::unstreamPartState(nonconste, part, payload, true);
+                    nonconste.getSampleManager()->clearReparenting();
+                    auto &cont = *e.getMessageController();
+                    cont.restartAudioThreadFromSerial();
+                }
+                catch (std::exception &err)
+                {
+                    SCLOG("Unable to load [" << err.what() << "]");
+                }
+            });
     }
     else
     {

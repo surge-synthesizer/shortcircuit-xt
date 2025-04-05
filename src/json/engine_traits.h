@@ -198,7 +198,6 @@ SC_STREAMDEF(
                 v, "samplesUsedByPart",
                 from.parentPatch->parentEngine->getSampleManager()->getSampleAddressesFor(
                     from.getSamplesUsedByPart()));
-            SCLOG("ToDo - stream sample manager subset");
         }
     }),
     SC_TO({

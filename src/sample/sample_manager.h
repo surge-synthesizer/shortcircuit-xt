@@ -111,13 +111,33 @@ struct SampleManager : MoveableOnly<SampleManager>
         return {};
     }
 
+    fs::path reparentPath;
+    static constexpr const char *relativeSentinel = "SCXT_RELATIVE_PATH_MARKER";
+    void reparentSamplesOnStreamToRelative(const fs::path &newParent)
+    {
+        reparentPath = fs::path{relativeSentinel} / newParent;
+    }
+    void clearReparenting() { reparentPath = fs::path{}; }
+
+    fs::path relativeRoot;
+    void setRelativeRoot(const fs::path &p) { relativeRoot = p; }
+    void clearRelativeRoot() { relativeRoot = fs::path{}; }
+
     typedef std::vector<std::pair<SampleID, Sample::SampleFileAddress>> sampleAddressesAndIds_t;
     sampleAddressesAndIds_t getSampleAddressesAndIDs() const
     {
         sampleAddressesAndIds_t res;
         for (const auto &[k, v] : samples)
         {
-            res.emplace_back(k, v->getSampleFileAddress());
+            auto sfa = v->getSampleFileAddress();
+            if (!reparentPath.empty())
+            {
+                auto prior = sfa.path;
+                sfa.path = reparentPath / sfa.path.filename();
+                SCLOG("SampleManager::getSampleAddressesAndIDs: reparenting " << prior << " to "
+                                                                              << sfa.path);
+            }
+            res.emplace_back(k, sfa);
         }
         return res;
     }

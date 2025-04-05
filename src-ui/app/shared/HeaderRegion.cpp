@@ -270,21 +270,22 @@ void HeaderRegion::filesDropped(const juce::StringArray &files, int x, int y)
     SCLOG("Got a file drop of " << files[0]);
 }
 
-void HeaderRegion::doSaveMulti()
+void HeaderRegion::doSaveMulti(patch_io::SaveStyles style)
 {
     fileChooser = std::make_unique<juce::FileChooser>(
         "Save Multi", juce::File(editor->browser.patchIODirectory.u8string()), "*.scm");
     fileChooser->launchAsync(
         juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
             juce::FileBrowserComponent::warnAboutOverwriting,
-        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+        [style, w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
             {
                 return;
             }
             // send a 'save multi' message
-            w->sendToSerialization(cmsg::SaveMulti(result[0].getFullPathName().toStdString()));
+            w->sendToSerialization(
+                cmsg::SaveMulti({result[0].getFullPathName().toStdString(), (int)style}));
         });
 }
 
@@ -304,23 +305,23 @@ void HeaderRegion::doLoadMulti()
         });
 }
 
-void HeaderRegion::doSaveSelectedPart()
+void HeaderRegion::doSaveSelectedPart(patch_io::SaveStyles styles)
 {
     fileChooser = std::make_unique<juce::FileChooser>(
         "Save Selected Part", juce::File(editor->browser.patchIODirectory.u8string()), "*.scp");
-    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
-                                 juce::FileBrowserComponent::saveMode |
-                                 juce::FileBrowserComponent::warnAboutOverwriting,
-                             [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
-                                 auto result = c.getResults();
-                                 if (result.isEmpty() || result.size() > 1)
-                                 {
-                                     return;
-                                 }
-                                 // send a 'save multi' message
-                                 w->sendToSerialization(cmsg::SaveSelectedPart(
-                                     result[0].getFullPathName().toStdString()));
-                             });
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+            juce::FileBrowserComponent::warnAboutOverwriting,
+        [styles, w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            // send a 'save multi' message
+            w->sendToSerialization(
+                cmsg::SaveSelectedPart({result[0].getFullPathName().toStdString(), (int)styles}));
+        });
 }
 
 void HeaderRegion::doLoadIntoSelectedPart()
@@ -345,14 +346,34 @@ void HeaderRegion::showSaveMenu()
     auto p = juce::PopupMenu();
     p.addSectionHeader("Save");
     p.addSeparator();
-    p.addItem("Save Multi", [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Save Multi Only", [w = juce::Component::SafePointer(this)]() {
         if (w)
-            w->doSaveMulti();
+            w->doSaveMulti(patch_io::SaveStyles::NO_SAMPLES);
     });
-    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1),
+    p.addItem("Save Multi as Monolith", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveMulti(patch_io::SaveStyles::AS_MONOLITH);
+    });
+    p.addItem("Save Multi with Collected Samples", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveMulti(patch_io::SaveStyles::COLLECT_SAMPLES);
+    });
+    p.addSeparator();
+    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " Only",
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
-                      w->doSaveSelectedPart();
+                      w->doSaveSelectedPart(patch_io::SaveStyles::NO_SAMPLES);
+              });
+
+    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " as Monolith",
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->doSaveSelectedPart(patch_io::SaveStyles::AS_MONOLITH);
+              });
+    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " with Collected Samples",
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->doSaveSelectedPart(patch_io::SaveStyles::COLLECT_SAMPLES);
               });
 
     p.addSeparator();

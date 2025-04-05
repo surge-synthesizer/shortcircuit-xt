@@ -48,6 +48,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         AIFF_FILE,
         MULTISAMPLE_FILE,
         GIG_FILE,
+        SCXT_FILE, // Part or Multi have embedded samples
     } type{WAV_FILE};
 
     static SourceType sourceTypeFromPath(const fs::path &path);
@@ -118,14 +119,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     float *GetSamplePtrF32(int Channel);
     char *GetName();
 
-  private:
-    bool parse_sf2_sample(void *data, size_t filesize, unsigned int sampleid);
-    bool parse_dls_sample(void *data, size_t filesize, unsigned int sampleid);
-
   public:
-    size_t SaveWaveChunk(void *data);
-    bool save_wave_file(const fs::path &filename);
-
     // TODO: Consistent Names here for goodness sake
     // public data
     enum BitDepth

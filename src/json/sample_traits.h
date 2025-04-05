@@ -72,6 +72,9 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                  case sample::Sample::GIG_FILE:
                      v = "gig";
                      break;
+                 case sample::Sample::SCXT_FILE:
+                     v = "scxt";
+                     break;
                  }
              }),
              SC_TO({
@@ -115,6 +118,8 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                          to = sample::Sample::MULTISAMPLE_FILE;
                      if (k == "gig")
                          to = sample::Sample::GIG_FILE;
+                     if (k == "scxt")
+                         to = sample::Sample::SCXT_FILE;
 
                      // SCLOG("Unknown unstream type for format : " << k);
                  }
@@ -131,7 +136,8 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  v = {{"type", from.type}, {"path", ppref.u8string()}, {"md5sum", from.md5sum}};
                  if (from.type == sample::Sample::SF2_FILE ||
                      from.type == sample::Sample::MULTISAMPLE_FILE ||
-                     from.type == sample::Sample::GIG_FILE)
+                     from.type == sample::Sample::GIG_FILE ||
+                     from.type == sample::Sample::SCXT_FILE)
                  {
                      addToObject<val_t>(v, "preset", from.preset);
                      addToObject<val_t>(v, "instrument", from.instrument);

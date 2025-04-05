@@ -195,8 +195,8 @@ void Zone::setupOnUnstream(const engine::Engine &e)
 
         if (nid != oid)
         {
-            SCLOG(getName() << " : Relabeling zone on change : " << oid.to_string() << " -> "
-                            << nid.to_string());
+            SCLOG_IF(sampleLoadAndPurge, getName() << " : Relabeling zone on change : "
+                                                   << oid.to_string() << " -> " << nid.to_string());
             variantData.variants[i].sampleID = nid;
         }
 
