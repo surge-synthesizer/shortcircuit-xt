@@ -387,7 +387,7 @@ template <bool OS> bool Voice::processWithOS()
                 /*
                  * We implement loop for count by gating on loop count
                  */
-                if (variantData.loopMode == engine::Zone::LOOP_FOR_COUNT)
+                if (variantData.loopMode == engine::Zone::LOOP_COUNT)
                 {
                     // first loop is zero so don't skip -1
                     GD[gidx].gated = GD[gidx].loopCount < variantData.loopCountWhenCounted - 1;
@@ -856,7 +856,7 @@ void Voice::initializeGenerator()
 
             // We doo loop count by gating on loopCount < maxLoopCount
             variantData.loopMode == engine::Zone::LOOP_WHILE_GATED ||
-                variantData.loopMode == engine::Zone::LOOP_FOR_COUNT);
+                variantData.loopMode == engine::Zone::LOOP_COUNT);
         SCLOG_IF(generatorInitialization,
                  "Generator : " << SCD(currGen) << SCD((size_t)Generator[currGen]));
         SCLOG_IF(generatorInitialization, "     SMP  : " << SCD(GDIO[currGen].sampleDataL)

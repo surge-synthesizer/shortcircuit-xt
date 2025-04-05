@@ -396,7 +396,7 @@ void VariantDisplay::resized()
     }
 
     addGap(10);
-    if (v.loopMode == engine::Zone::LOOP_FOR_COUNT)
+    if (v.loopMode == engine::Zone::LOOP_COUNT)
     {
         ofRow(loopModeButton, 84);
         ofRow(loopCnt, 26);
@@ -503,7 +503,7 @@ void VariantDisplay::rebuild()
     case engine::Zone::LOOP_WHILE_GATED:
         loopModeButton->setLabel("LOOP UNTIL REL" + dirExtra);
         break;
-    case engine::Zone::LOOP_FOR_COUNT:
+    case engine::Zone::LOOP_COUNT:
         loopModeButton->setLabel("COUNT");
         break;
     }
@@ -532,7 +532,7 @@ void VariantDisplay::rebuild()
     case dsp::InterpolationTypes::Linear:
         srcButton->setLabel("LIN");
         break;
-    case dsp::InterpolationTypes::ZeroOrderHoldAA:
+    case dsp::InterpolationTypes::ZOHAA:
         srcButton->setLabel("ZAA");
         break;
     case dsp::InterpolationTypes::ZeroOrderHold:
@@ -570,7 +570,7 @@ void VariantDisplay::rebuild()
     glyphLabels[curve]->setVisible(hasLoop);
 
     loopCnt->setVisible(variantView.variants[selectedVariation].loopMode ==
-                        engine::Zone::LoopMode::LOOP_FOR_COUNT);
+                        engine::Zone::LoopMode::LOOP_COUNT);
 
     waveforms[selectedVariation].waveform->rebuildHotZones();
 
@@ -739,9 +739,9 @@ void VariantDisplay::showLoopModeMenu()
     };
     add(engine::Zone::LoopMode::LOOP_DURING_VOICE, false, "Loop");
     add(engine::Zone::LoopMode::LOOP_DURING_VOICE, true, "Loop Alternate");
-    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, false, "Loop Untiqgitql Release");
+    add(engine::Zone::LoopMode::LOOP_WHILE_GATED, false, "Loop Until Release");
     add(engine::Zone::LoopMode::LOOP_WHILE_GATED, true, "Loop Alternate Until Release");
-    add(engine::Zone::LoopMode::LOOP_FOR_COUNT, false, "Loop For Count");
+    add(engine::Zone::LoopMode::LOOP_COUNT, false, "Loop For Count");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions(loopModeButton.get()));
 }
@@ -763,8 +763,8 @@ void VariantDisplay::showSRCMenu()
     };
     add(dsp::InterpolationTypes::Sinc, "Sinc");
     add(dsp::InterpolationTypes::Linear, "Linear");
-    add(dsp::InterpolationTypes::ZeroOrderHoldAA, "Zero-Order Hold (Anti-Aliased)");
-    add(dsp::InterpolationTypes::ZeroOrderHold, "Zero-order Hold");
+    add(dsp::InterpolationTypes::ZOHAA, "Zero-Order Hold (Anti-Aliased)");
+    add(dsp::InterpolationTypes::ZeroOrderHold, "Zero Order Hold");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
