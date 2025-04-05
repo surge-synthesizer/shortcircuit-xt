@@ -199,7 +199,6 @@ struct ScanWorker
 
 Scanner::Scanner(WriterWorker &w, messaging::MessageController &m) : writer(w), mc(m)
 {
-    SCLOG("Creating browser scanner");
     scanWorker = std::make_unique<ScanWorker>(*this);
 }
 

@@ -41,7 +41,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
     auto &messageController = e.getMessageController();
     assert(messageController->threadingChecker.isSerialThread());
 
-    SCLOG("Loading " << p.u8string() << " ps=" << preset);
+    SCLOG_IF(sampleLoadAndPurge, "Loading SF2 Preset: " << p.u8string() << " preset=" << preset);
 
     auto cng = messaging::MessageController::ClientActivityNotificationGuard("Loading SF2",
                                                                              *(messageController));

@@ -26,6 +26,7 @@
  */
 
 #include <cassert>
+#include "configuration.h"
 #include "sample_manager.h"
 #include "infrastructure/md5support.h"
 
@@ -55,7 +56,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
     }
 }
 
-SampleManager::~SampleManager() { SCLOG("Destroying Sample Manager"); }
+SampleManager::~SampleManager() {}
 
 std::optional<SampleID>
 SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, const SampleID &id)
@@ -119,8 +120,8 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
     }
 
     samples[sp->id] = sp;
-    SCLOG("Loading : " << p.u8string());
-    SCLOG("        : " << sp->id.to_string());
+    SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
     updateSampleMemory();
     return sp->id;
@@ -135,7 +136,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
         {
             try
             {
-                SCLOG("Opening SF2 : " << p.u8string());
+                SCLOG_IF(sampleLoadAndPurge, "Opening SF2 : " << p.u8string());
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 auto sf = std::make_unique<sf2::File>(riff.get());
@@ -187,9 +188,9 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
     sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
     sp->id.setPathHash(p);
 
-    SCLOG("Loading : " << p.u8string());
-    SCLOG("        : " << sp->displayName);
-    SCLOG("        : " << sp->id.to_string());
+    SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->displayName);
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
     samples[sp->id] = sp;
     updateSampleMemory();
@@ -225,14 +226,13 @@ int SampleManager::findSF2SampleIndexFor(sf2::File *f, int presetNum, int instru
 std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig::File *f,
                                                          int preset, int instrument, int region)
 {
-    SCLOG("Load Sample from GIG " << p.u8string() << " " << region);
     if (!f)
     {
         if (gigFilesByPath.find(p.u8string()) == gigFilesByPath.end())
         {
             try
             {
-                SCLOG("Opening gig : " << p.u8string());
+                SCLOG_IF(sampleLoadAndPurge, "Opening gig : " << p.u8string());
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 auto sf = std::make_unique<gig::File>(riff.get());
@@ -276,9 +276,9 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig:
     sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
     sp->id.setPathHash(p);
 
-    SCLOG("Loading : " << p.u8string());
-    SCLOG("        : " << sp->displayName);
-    SCLOG("        : " << sp->id.to_string());
+    SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->displayName);
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
     samples[sp->id] = sp;
     updateSampleMemory();
@@ -327,8 +327,8 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
 
     free(data);
 
-    SCLOG("Loading : " << p.u8string());
-    SCLOG("        : " << sp->id.to_string());
+    SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
     return sp->id;
 }
@@ -342,11 +342,11 @@ void SampleManager::purgeUnreferencedSamples()
         auto ct = b->second.use_count();
         if (ct <= 1)
         {
-            SCLOG("Purging : " << b->second->mFileName.u8string());
-            SCLOG("        : " << b->first.to_string());
+            SCLOG_IF(sampleLoadAndPurge, "Purging : " << b->second->mFileName.u8string());
+            SCLOG_IF(sampleLoadAndPurge, "        : " << b->first.to_string());
             if (b->second->isMissingPlaceholder)
             {
-                SCLOG("        : Missing Placeholder");
+                SCLOG_IF(sampleLoadAndPurge, "        : Missing Placeholder");
             }
 
             b = samples.erase(b);
@@ -359,8 +359,8 @@ void SampleManager::purgeUnreferencedSamples()
 
     if (samples.size() != preSize)
     {
-        SCLOG_WFUNC("PostPurge : Purged " << (preSize - samples.size()) << " Remaining "
-                                          << samples.size());
+        SCLOG_IF(sampleLoadAndPurge, "PostPurge : Purged " << (preSize - samples.size())
+                                                           << " Remaining " << samples.size());
     }
     updateSampleMemory();
 }
@@ -402,8 +402,8 @@ void SampleManager::addSampleAsMissing(const SampleID &id, const Sample::SampleF
         ms->id = id;
         ms->id.setPathHash(f.path);
 
-        SCLOG("Missing : " << f.path.u8string());
-        SCLOG("        : " << ms->id.to_string());
+        SCLOG_IF(missingResolution, "Missing : " << f.path.u8string());
+        SCLOG_IF(missingResolution, "        : " << ms->id.to_string());
 
         samples[ms->id] = ms;
 

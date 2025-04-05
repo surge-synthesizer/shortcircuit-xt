@@ -70,7 +70,6 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
     engine->getMessageController()->requestHostCallback = [this, h](uint64_t flag) {
         if (h)
         {
-            SCLOG("Request Host CallbacK " << flag);
             // FIXME - atomics better here
             this->nextMainThreadAction |= flag;
             h->request_callback(h);
@@ -99,10 +98,6 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
                 _host.guiRequestResize(scxt::ui::app::SCXTEditor::edWidth * s,
                                        scxt::ui::app::SCXTEditor::edHeight * s);
             }
-        }
-        else
-        {
-            SCLOG("On Zoom Changed - not yet attached");
         }
     };
     onShow = [e = ed.get()]() {
@@ -564,7 +559,6 @@ bool SCXTPlugin::synchronousEngineUnstream(const std::unique_ptr<scxt::engine::E
     std::unique_lock<std::mutex> guard(cont->streamNotificationMutex);
     auto originalStreamCount{cont->streamNotificationCount};
 
-    SCLOG("About to load state with size " << payload.size());
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::UnstreamEngineState{payload}, *engine->getMessageController());
 

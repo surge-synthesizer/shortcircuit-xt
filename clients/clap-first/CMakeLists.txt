@@ -55,3 +55,5 @@ make_clapfirst_plugins(
 
 # Our installer uses this
 set_target_properties(${PROJECT_NAME}_all PROPERTIES ARTEFACT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_assets)
+
+target_compile_definitions(clap-wrapper-compile-options-public INTERFACE CLAP_WRAPPER_LOGLEVEL=0)

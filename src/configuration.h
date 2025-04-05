@@ -90,6 +90,8 @@ static constexpr bool memoryPool{false};
 static constexpr bool voiceResponder{false};
 static constexpr bool voiceLifecycle{false};
 static constexpr bool generatorInitialization{false};
+static constexpr bool sampleLoadAndPurge{false};
+static constexpr bool missingResolution{false};
 } // namespace log
 
 } // namespace scxt
