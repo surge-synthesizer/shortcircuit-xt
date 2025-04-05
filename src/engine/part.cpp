@@ -100,7 +100,10 @@ std::vector<SampleID> Part::getSamplesUsedByPart() const
         {
             for (const auto &var : z->variantData.variants)
             {
-                resSet.insert(var.sampleID);
+                if (var.sampleID.isValid())
+                {
+                    resSet.insert(var.sampleID);
+                }
             }
         }
     }

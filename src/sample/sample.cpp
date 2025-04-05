@@ -476,6 +476,9 @@ void Sample::dumpInformationToLog()
     case GIG_FILE:
         SCLOG("GIG File : " << getPath().u8string());
         break;
+    case SCXT_FILE:
+        SCLOG("SCXT File : " << getPath().u8string());
+        break;
     }
 
     SCLOG("BitDepth=" << bitDepthByteSize(bitDepth) * 8 << " Channels=" << (int)channels);

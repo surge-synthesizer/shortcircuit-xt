@@ -32,25 +32,32 @@
 
 namespace scxt::messaging::client
 {
-inline void doSaveMulti(const std::string &s, engine::Engine &engine, MessageController &cont)
+using saveMultiPartPayload_t = std::tuple<std::string, int>; // path, style
+inline void doSaveMulti(const saveMultiPartPayload_t &pl, engine::Engine &engine,
+                        MessageController &cont)
 {
-    patch_io::saveMulti(fs::path(fs::u8path(s)), engine);
+    auto [s, styleInt] = pl;
+    auto style = (patch_io::SaveStyles)styleInt;
+    patch_io::saveMulti(fs::path(fs::u8path(s)), engine, style);
 
-    SCLOG("Remember to update the browser also");
     // engine.getBrowser()->doSomething;
 }
-CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, std::string, doSaveMulti(payload, engine, cont));
+CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, saveMultiPartPayload_t,
+                 doSaveMulti(payload, engine, cont));
 CLIENT_TO_SERIAL(LoadMulti, c2s_load_multi, std::string,
                  patch_io::loadMulti(fs::path(fs::u8path(payload)), engine));
 
-inline void doSaveSelectedPart(const std::string &s, engine::Engine &engine,
+inline void doSaveSelectedPart(const saveMultiPartPayload_t &pl, engine::Engine &engine,
                                MessageController &cont)
 {
-    SCLOG("Saving part to " << s);
-    patch_io::savePart(fs::path(fs::u8path(s)), engine, engine.getSelectionManager()->selectedPart);
+    auto [s, styleInt] = pl;
+    auto style = (patch_io::SaveStyles)styleInt;
+
+    patch_io::savePart(fs::path(fs::u8path(s)), engine, engine.getSelectionManager()->selectedPart,
+                       style);
     // engine.getBrowser()->doSomething;
 }
-CLIENT_TO_SERIAL(SaveSelectedPart, c2s_save_selected_part, std::string,
+CLIENT_TO_SERIAL(SaveSelectedPart, c2s_save_selected_part, saveMultiPartPayload_t,
                  doSaveSelectedPart(payload, engine, cont));
 
 using loadPartIntoPayload_t = std::tuple<std::string, int16_t>;

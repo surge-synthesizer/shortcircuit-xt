@@ -33,9 +33,16 @@
 
 namespace scxt::patch_io
 {
-bool saveMulti(const fs::path &toFile, const scxt::engine::Engine &);
+enum SaveStyles
+{
+    NO_SAMPLES = 0,
+    COLLECT_SAMPLES,
+    AS_MONOLITH
+};
+bool saveMulti(const fs::path &toFile, const scxt::engine::Engine &, SaveStyles saveStyle);
 bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
-bool savePart(const fs::path &toFile, const scxt::engine::Engine &, int part);
+bool savePart(const fs::path &toFile, const scxt::engine::Engine &, int part,
+              SaveStyles saveStyles);
 bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);

@@ -39,6 +39,7 @@
 
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
+#include "patch_io/patch_io.h"
 #include "app/HasEditor.h"
 #include "utils.h"
 
@@ -105,9 +106,9 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void setCPULevel(float);
 
     void showSaveMenu();
-    void doSaveMulti();
+    void doSaveMulti(patch_io::SaveStyles style);
     void doLoadMulti();
-    void doSaveSelectedPart();
+    void doSaveSelectedPart(patch_io::SaveStyles style);
     void doLoadIntoSelectedPart();
 
     void showMultiSelectionMenu();
