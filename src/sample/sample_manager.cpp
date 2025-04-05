@@ -26,6 +26,7 @@
  */
 
 #include <cassert>
+#include "configuration.h"
 #include "sample_manager.h"
 #include "infrastructure/md5support.h"
 
