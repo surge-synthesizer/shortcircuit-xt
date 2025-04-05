@@ -424,8 +424,6 @@ void SCXTEditor::setZoomFactor(float zf)
                                             zoomFactor * 100);
     if (onZoomChanged)
         onZoomChanged(zoomFactor);
-    else
-        SCLOG("Null onZoomChanged");
 }
 
 void SCXTEditor::configureHasDiscreteMenuBuilder(
