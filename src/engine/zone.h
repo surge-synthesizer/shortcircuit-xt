@@ -93,7 +93,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     {
         LOOP_DURING_VOICE, // If a loop begins, stay in it for the life of teh voice
         LOOP_WHILE_GATED,  // If a loop begins, loop while gated
-        LOOP_FOR_COUNT     // Loop exactly (n) times
+        LOOP_COUNT         // Loop exactly (n) times
     };
     DECLARE_ENUM_STRING(LoopMode);
 

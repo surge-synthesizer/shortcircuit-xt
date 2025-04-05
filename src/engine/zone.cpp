@@ -323,7 +323,7 @@ std::string Zone::toStringLoopMode(const LoopMode &p)
         return "during_voice";
     case LOOP_WHILE_GATED:
         return "while_gated";
-    case LOOP_FOR_COUNT:
+    case LOOP_COUNT:
         return "for_count";
     }
     return "during_voice";
@@ -332,7 +332,7 @@ std::string Zone::toStringLoopMode(const LoopMode &p)
 Zone::LoopMode Zone::fromStringLoopMode(const std::string &s)
 {
     static auto inverse = makeEnumInverse<Zone::LoopMode, Zone::toStringLoopMode>(
-        Zone::LoopMode::LOOP_DURING_VOICE, Zone::LoopMode::LOOP_FOR_COUNT);
+        Zone::LoopMode::LOOP_DURING_VOICE, Zone::LoopMode::LOOP_COUNT);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return LOOP_DURING_VOICE;

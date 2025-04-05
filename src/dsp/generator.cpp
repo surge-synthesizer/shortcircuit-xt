@@ -119,12 +119,18 @@ template <InterpolationTypes KT, typename T> struct KernelOp
 {
 };
 
-template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
+/* These all have that defaulted bool argument
+ so that we can avoid duplicating the whole sinc code another two times for the anti-aliased
+ zero-order hold version. Nothing ever actually sets it except for the KernelProcessor.
+ See comment in the definition below.
+ */
+
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
 struct KernelProcessor;
 
 template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
     static void
     Process(GeneratorState *__restrict GD,
             KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
@@ -132,7 +138,7 @@ template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
 
 template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
     static void
     Process(GeneratorState *__restrict GD,
             KernelProcessor<InterpolationTypes::Linear, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
@@ -140,21 +146,21 @@ template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
 
 template <> struct KernelOp<InterpolationTypes::Sinc, float>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
     static void
     Process(GeneratorState *__restrict GD,
-            KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+            KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks);
 };
 
 template <> struct KernelOp<InterpolationTypes::Sinc, int16_t>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
     static void
     Process(GeneratorState *__restrict GD,
-            KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+            KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks);
 };
 
-template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
 struct KernelProcessor
 {
     int32_t SamplePos, SampleSubPos;
@@ -172,7 +178,41 @@ struct KernelProcessor
 
     void ProcessKernel(GeneratorState *__restrict GD)
     {
-        return KernelOp<KT, T>::Process(GD, *this);
+        if constexpr (KT == InterpolationTypes::ZOHAA)
+        {
+            // Declare another KernelProcessor with sinc specialization and the
+            // aforementioned bool argument set to true
+            // Return the new objects process function, which will call the sinc method with
+            // ZOH=true
+            if constexpr (NUM_CHANNELS == 2)
+            {
+                KernelProcessor<InterpolationTypes::Sinc, T, NUM_CHANNELS, LOOP_ACTIVE, true>
+                    SincWithZoh{SamplePos,
+                                SampleSubPos,
+                                m0,
+                                i,
+                                {ReadSample[0], ReadSample[1]},
+                                {ReadFadeSample[0], ReadFadeSample[1]},
+                                fadeActive,
+                                loopFade,
+                                {Output[0], Output[1]},
+                                IO};
+
+                return SincWithZoh.ProcessKernel(GD);
+            }
+            else
+            {
+                KernelProcessor<InterpolationTypes::Sinc, T, NUM_CHANNELS, LOOP_ACTIVE, true>
+                    SincWithZoh{SamplePos,         SampleSubPos, m0,       i,         ReadSample[0],
+                                ReadFadeSample[0], fadeActive,   loopFade, Output[0], IO};
+
+                return SincWithZoh.ProcessKernel(GD);
+            }
+        }
+        else
+        {
+            return KernelOp<KT, T>::Process(GD, *this);
+        }
     }
 };
 
@@ -181,7 +221,7 @@ float NormalizeSampleToF32(float val) { return val; }
 float NormalizeSampleToF32(int16_t val) { return val * I16InvScale2; }
 
 template <typename T>
-template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
 void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
     GeneratorState *__restrict GD,
     KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
@@ -233,7 +273,7 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
 }
 
 template <typename T>
-template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
 void KernelOp<InterpolationTypes::Linear, T>::Process(
     GeneratorState *__restrict GD,
     KernelProcessor<InterpolationTypes::Linear, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
@@ -300,10 +340,10 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
     }
 }
 
-template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
 void KernelOp<InterpolationTypes::Sinc, float>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+    KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -311,7 +351,7 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
     auto m0{ks.m0};
     auto i{ks.i};
 
-#if DEBUG_CODE_I_WANT_TO_RETAIN
+#if DEBUG_GENERATOR
     /* This code only works if theres no loop etc but please leave it here
      * since it is useful when debugging in the future
      */
@@ -326,6 +366,16 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
         assert(space >= -(int64_t)FIRoffset && above <= FIRoffset);
     }
 #endif
+
+    if constexpr (ZOH) // ZOH-AA
+    {
+        auto finalSubPos = ks.SampleSubPos;
+        auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
+        auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
+        subSubPos = std::pow(subSubPos, 1.0f / subRatio);
+        finalSubPos = (int)(subSubPos * (1 << 24));
+        m0 = ((finalSubPos >> 12) & 0xff0);
+    }
 
     // float32 path (SSE)
     SIMD_M128 lipol0, tmp[4], sL4, sR4;
@@ -423,10 +473,10 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
     }
 }
 
-template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
 void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+    KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -441,6 +491,16 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     {
         readSampleR = ks.ReadSample[1];
         OutputR = ks.Output[1];
+    }
+
+    if constexpr (ZOH) // ZOH-AA
+    {
+        auto finalSubPos = ks.SampleSubPos;
+        auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
+        auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
+        subSubPos = std::pow(subSubPos, 1.0f / subRatio);
+        finalSubPos = (int)(subSubPos * (1 << 24));
+        m0 = ((finalSubPos >> 12) & 0xff0);
     }
 
     // int16
@@ -758,6 +818,12 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                          readFadeR);
                 break;
             }
+            case InterpolationTypes::ZOHAA:
+            {
+                KPStereo(InterpolationTypes::ZOHAA, type_from_cond, 2, readL, readR, readFadeL,
+                         readFadeR);
+                break;
+            }
             case InterpolationTypes::ZeroOrderHold:
             {
                 KPStereo(InterpolationTypes::ZeroOrderHold, type_from_cond, 2, readL, readR,
@@ -778,6 +844,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             case InterpolationTypes::Linear:
             {
                 KPMono(InterpolationTypes::Linear, type_from_cond, 1, readL, readFadeL);
+                break;
+            }
+            case InterpolationTypes::ZOHAA:
+            {
+                KPMono(InterpolationTypes::ZOHAA, type_from_cond, 1, readL, readFadeL);
                 break;
             }
             case InterpolationTypes::ZeroOrderHold:
