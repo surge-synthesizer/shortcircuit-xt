@@ -109,24 +109,18 @@ std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &p
     return {riffPath, collectDir, ""};
 }
 
-void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
+sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine &e, int part)
 {
-    std::set<fs::path> toCollect;
+    sample::SampleManager::sampleMap_t toCollect;
+
     e.getSampleManager()->purgeUnreferencedSamples();
 
     if (part < 0)
     {
-        SCLOG("Collecting all samples into " << collectDir.u8string());
-        for (auto sit = e.getSampleManager()->samplesBegin();
-             sit != e.getSampleManager()->samplesEnd(); ++sit)
-        {
-            toCollect.insert(sit->second->getPath());
-        }
+        toCollect.insert(e.getSampleManager()->samplesBegin(), e.getSampleManager()->samplesEnd());
     }
     else
     {
-        SCLOG("Collecting part " << part << " samples into " << collectDir.u8string());
-
         const auto &pt = e.getPatch()->getPart(part);
         auto smp = pt->getSamplesUsedByPart();
         for (const auto &sid : smp)
@@ -134,7 +128,7 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
             auto sp = e.getSampleManager()->getSample(sid);
             if (sp)
             {
-                toCollect.insert(sp->getPath());
+                toCollect.insert({sid, sp});
             }
             else
             {
@@ -142,13 +136,45 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
             }
         }
     }
+    return toCollect;
+}
 
-    for (auto &c : toCollect)
+void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
+{
+    auto toCollect = getSamplePathsFor(e, part);
+    if (part < 0)
+    {
+        SCLOG("Collecting all samples for multi to '" << collectDir.u8string() << "'");
+    }
+    else
+    {
+        SCLOG("Collecting samples for part " << part << " to '" << collectDir.u8string() << "'");
+    }
+
+    std::set<fs::path> uniquePaths;
+    for (const auto &[_, sample] : toCollect)
+    {
+        uniquePaths.insert(sample->getPath());
+    }
+
+    std::set<fs::path> collectedFilenames;
+    for (const auto &c : uniquePaths)
     {
         SCLOG("   - " << c.u8string());
+        if (collectedFilenames.find(c.filename()) != collectedFilenames.end())
+        {
+            SCLOG("Duplicate Sample Name " << c.filename());
+            e.getMessageController()->reportErrorToClient(
+                "Unable to copy sample", "Your patch has two samples with the same filename ('" +
+                                             c.filename().u8string() + "' with " +
+                                             "different paths. This is currently unsupported for "
+                                             "collect mode and needs fixing soonish!");
+            return;
+        }
+        collectedFilenames.insert(c.filename());
         try
         {
-            fs::copy_file(c, collectDir / c.filename());
+            fs::copy_file(c, collectDir / c.filename(), fs::copy_options::overwrite_existing);
         }
         catch (fs::filesystem_error &fse)
         {
