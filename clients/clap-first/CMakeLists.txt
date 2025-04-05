@@ -24,7 +24,6 @@ target_link_libraries(${IMPL_TARGET} PUBLIC
 
 target_include_directories(${IMPL_TARGET} PUBLIC .)
 
-
 make_clapfirst_plugins(
         TARGET_NAME ${PROJECT_NAME}
         IMPL_TARGET ${IMPL_TARGET}
@@ -36,7 +35,7 @@ make_clapfirst_plugins(
         BUNDLE_IDENTIFER "org.surge-synth-team.shortcircuit-xt"
         BUNDLE_VERSION ${PROJECT_VERSION}
 
-        COPY_AFTER_BUILD ${COPY_AFTER_BUILD}
+        COPY_AFTER_BUILD ${SCXT_COPY_PLUGIN_AFTER_BUILD}
 
         PLUGIN_FORMATS CLAP VST3 AUV2
 
