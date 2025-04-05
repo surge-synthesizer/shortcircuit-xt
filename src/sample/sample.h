@@ -50,6 +50,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         GIG_FILE,
     } type{WAV_FILE};
 
+    static SourceType sourceTypeFromPath(const fs::path &path);
+
     Sample() {}
     Sample(const SampleID &sid) : displayName(sid.to_string()), id(sid) {}
     virtual ~Sample();
