@@ -417,7 +417,7 @@ void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
         {
             driveArea->browserPane->devicesPane->driveFSArea->setRootRow(
                 std::get<0>(driveArea->browserPane->roots[rowNumber]));
-            driveArea->listView->rowSelected(rowNumber, true);
+            driveArea->listView->rowSelected(rowNumber, true, e.mods);
         }
     }
 }
@@ -472,20 +472,33 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 return;
             }
         }
-        if (browserPane->autoPreviewEnabled && isFile())
+        if (browserPane->autoPreviewEnabled)
         {
-            if (browser::Browser::isLoadableSingleSample(entry.dirent.path()))
+            auto &entry = data[rowNumber];
+
+            if (entry.expandableAddress.has_value() &&
+                entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
             {
                 hasStartedPreview = true;
                 namespace cmsg = scxt::messaging::client;
                 scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample({true, data[rowNumber].dirent.path().u8string()}),
+                    cmsg::PreviewBrowserSample({true, entry.expandableAddress->sampleAddress}),
+                    browserPane->editor->msgCont);
+                repaint();
+            }
+            else if (isFile() && browser::Browser::isLoadableSingleSample(entry.dirent.path()))
+            {
+                hasStartedPreview = true;
+                namespace cmsg = scxt::messaging::client;
+                scxt::messaging::client::clientSendToSerialization(
+                    cmsg::PreviewBrowserSample(
+                        {true,
+                         {sample::Sample::sourceTypeFromPath(data[rowNumber].dirent.path()),
+                          data[rowNumber].dirent.path().u8string(), "", -1, -1, -1}}),
                     browserPane->editor->msgCont);
                 repaint();
             }
         }
-
-        listView->rowSelected(rowNumber, true);
 
         if (event.mods.isPopupMenu())
         {
@@ -501,11 +514,15 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         if (!isFile())
             return;
 
+        if (!isSelected)
+            listView->rowSelected(rowNumber, true, e.mods);
+
         isMouseDownWithoutDrag = false;
 
         if (!isDragging && e.getDistanceFromDragStart() > 2)
         {
             stopPreview();
+
             if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
             {
                 const auto &data = browserPane->devicesPane->driveFSArea->contents;
@@ -520,12 +537,16 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
     void mouseUp(const juce::MouseEvent &event) override
     {
+        listView->rowSelected(rowNumber, true, event.mods);
+
         isMouseDownWithoutDrag = false;
         if (isDragging)
         {
             isDragging = false;
         }
     }
+
+    void mouseUp() {}
 
     bool isHovered{false};
     void mouseEnter(const juce::MouseEvent &) override
@@ -548,7 +569,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             namespace cmsg = scxt::messaging::client;
 
             scxt::messaging::client::clientSendToSerialization(
-                cmsg::PreviewBrowserSample({false, ""}), browserPane->editor->msgCont);
+                cmsg::PreviewBrowserSample({false, {}}), browserPane->editor->msgCont);
         }
     }
 
@@ -732,6 +753,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
 void DriveFSArea::setupListView()
 {
+    listView->selectionMode = jcmp::ListView::MULTI_SELECTION;
+
     listView->getRowCount = [this]() -> uint32_t {
         if (!browserPane || !browserPane->devicesPane || !browserPane->devicesPane->driveFSArea)
             return 0;

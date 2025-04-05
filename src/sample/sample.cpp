@@ -526,4 +526,28 @@ std::shared_ptr<Sample> Sample::createMissingPlaceholder(const Sample::SampleFil
     return res;
 }
 
+Sample::SourceType Sample::sourceTypeFromPath(const fs::path &path)
+{
+    if (extensionMatches(path, ".wav"))
+        return SourceType::WAV_FILE;
+    if (extensionMatches(path, ".sf2"))
+        return SourceType::SF2_FILE;
+    if (extensionMatches(path, ".sfz"))
+        return SourceType::SFZ_FILE;
+    if (extensionMatches(path, ".flac"))
+        return SourceType::FLAC_FILE;
+    if (extensionMatches(path, ".mp3"))
+        return SourceType::MP3_FILE;
+    if (extensionMatches(path, ".aif") || extensionMatches(path, ".aiff"))
+        return SourceType::AIFF_FILE;
+    if (extensionMatches(path, ".multisample"))
+        return SourceType::MULTISAMPLE_FILE;
+    if (extensionMatches(path, ".gig"))
+        return SourceType::GIG_FILE;
+
+    SCLOG("Unmatched extension : " << path.u8string());
+    return WAV_FILE;
+    ;
+}
+
 } // namespace scxt::sample

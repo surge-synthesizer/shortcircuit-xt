@@ -90,15 +90,16 @@ CLIENT_TO_SERIAL(BrowserQueueRefresh, c2s_browser_queue_refresh, browserQueueRef
 SERIAL_TO_CLIENT(SendBrowserQueueLength, s2c_send_browser_queuelength, browserQueueRefreshPayload_t,
                  onBrowserQueueLengthRefresh)
 
-using previewBrowserSamplePayload_t = std::tuple<bool, std::string>;
+using previewBrowserSamplePayload_t = std::tuple<bool, sample::Sample::SampleFileAddress>;
 inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
                                    const engine::Engine &engine, MessageController &cont)
 {
-    auto [startstop, pathString] = p;
-    auto path = fs::path(fs::u8path(pathString));
+    auto [startstop, sampleAddress] = p;
+
     if (startstop)
     {
-        auto sid = engine.getSampleManager()->loadSampleByPath(path);
+        auto sid = engine.getSampleManager()->loadSampleByFileAddress(sampleAddress, {});
+
         if (sid.has_value())
         {
             auto smp = engine.getSampleManager()->getSample(*sid);
@@ -109,7 +110,8 @@ inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
         else
         {
             cont.reportErrorToClient("Unable to launch preview",
-                                     "Sample file preview load failed for " + path.u8string());
+                                     "Sample file preview load failed for " +
+                                         sampleAddress.path.u8string());
         }
     }
     else
