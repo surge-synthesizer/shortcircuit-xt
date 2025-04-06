@@ -39,6 +39,7 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
     for (const auto &[id, origAddr] : r)
     {
         Sample::SampleFileAddress addr = origAddr;
+        // Handle relative paths
         if (!addr.path.empty())
         {
             auto top = addr.path.begin();
@@ -50,6 +51,15 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
                     pt /= *top++;
                 addr.path = pt;
             }
+        }
+
+        // handle monolith redirects
+        auto mit = monolithIndex.find(addr.path);
+        if (mit != monolithIndex.end())
+        {
+            assert(!monolithPath.empty());
+            SCLOG_IF(sampleLoadAndPurge, "Restoring monolith at " << addr.path.u8string());
+            addr = {Sample::SourceType::SCXT_FILE, monolithPath, "", -1, -1, mit->second};
         }
 
         if (!fs::exists(addr.path))
@@ -104,7 +114,8 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     break;
     case Sample::SCXT_FILE:
     {
-        throw std::runtime_error("SCXT files are not supported");
+        nid = loadSampleFromSCXTMonolith(addr.path, nullptr, addr.preset, addr.instrument,
+                                         addr.region);
     }
     break;
     case Sample::SFZ_FILE:
@@ -292,6 +303,64 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig:
         return {};
 
     sp->md5Sum = gigMD5ByPath[p.u8string()];
+    assert(!sp->md5Sum.empty());
+    sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
+    sp->id.setPathHash(p);
+
+    SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->displayName);
+    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
+
+    samples[sp->id] = sp;
+    updateSampleMemory();
+    return sp->id;
+}
+
+std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path &p, RIFF::File *f,
+                                                                  int preset, int instrument,
+                                                                  int region)
+{
+    if (!f)
+    {
+        if (scxtMonolithFilesByPath.find(p.u8string()) == scxtMonolithFilesByPath.end())
+        {
+            try
+            {
+                SCLOG_IF(sampleLoadAndPurge, "Opening gig : " << p.u8string());
+
+                auto riff = std::make_unique<RIFF::File>(p.u8string());
+                scxtMonolithFilesByPath[p.u8string()] = std::move(riff);
+            }
+            catch (RIFF::Exception e)
+            {
+                return {};
+            }
+        }
+        f = scxtMonolithFilesByPath[p.u8string()].get();
+    }
+
+    if (scxtMonolithMD5ByPath.find(p.u8string()) == scxtMonolithMD5ByPath.end())
+        scxtMonolithMD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
+
+    assert(f);
+
+    auto sidx = region;
+
+    for (const auto &[id, sm] : samples)
+    {
+        if (sm->type == Sample::SCXT_FILE)
+        {
+            if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+                return id;
+        }
+    }
+
+    auto sp = std::make_shared<Sample>();
+
+    if (!sp->loadFromSCXTMonolith(p, f, sidx))
+        return {};
+
+    sp->md5Sum = scxtMonolithMD5ByPath[p.u8string()];
     assert(!sp->md5Sum.empty());
     sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
     sp->id.setPathHash(p);

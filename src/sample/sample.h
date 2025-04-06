@@ -64,6 +64,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     bool load(const fs::path &path);
     bool loadFromSF2(const fs::path &path, sf2::File *f, int sampleIndex);
     bool loadFromGIG(const fs::path &path, gig::File *f, int sampleIndex);
+    bool loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampleIndex);
 
     const fs::path &getPath() const { return mFileName; }
     std::string md5Sum{};

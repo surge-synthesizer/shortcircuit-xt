@@ -92,6 +92,7 @@ static constexpr bool voiceLifecycle{false};
 static constexpr bool generatorInitialization{false};
 static constexpr bool sampleLoadAndPurge{false};
 static constexpr bool missingResolution{false};
+static constexpr bool patchIO{false};
 } // namespace log
 
 } // namespace scxt

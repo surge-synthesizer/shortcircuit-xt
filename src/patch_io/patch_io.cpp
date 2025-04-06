@@ -46,25 +46,35 @@
 #include "json/engine_traits.h"
 
 #include "cmrc/cmrc.hpp"
+#include "browser/browser.h"
 
 CMRC_DECLARE(scxt_resources_core);
 
 namespace scxt::patch_io
 {
+static constexpr uint32_t scxtRIFFHeader{'SCXT'};
+static constexpr uint32_t manifestChunk{'scmf'};
+static constexpr uint32_t dataChunk{'scdt'};
+static constexpr uint32_t sampleChunk{'scsm'};
+static constexpr uint32_t samplePathsChunk{'scsp'};
+static constexpr uint32_t sampleListChunk{'scsl'};
+static constexpr uint32_t sampleFilenameChunk{'scsf'};
+static constexpr uint32_t sampleDatChunk{'scsm'};
+
 void addSCManifest(const std::unique_ptr<RIFF::File> &f, const std::string &type)
 {
     std::map<std::string, std::string> manifest;
     manifest["version"] = "1";
     manifest["type"] = type;
     auto mmsg = tao::json::to_string(json::scxt_value(manifest));
-    auto c = f->AddSubChunk('scmf', mmsg.size());
+    auto c = f->AddSubChunk(manifestChunk, mmsg.size());
     auto d = (uint8_t *)c->LoadChunkData();
     memcpy(d, mmsg.data(), mmsg.size());
 }
 
-std::unordered_map<std::string, std::string> readSCManifest(const std::unique_ptr<RIFF::File> &f)
+std::unordered_map<std::string, std::string> readSCManifest(RIFF::File *f)
 {
-    auto c1 = f->GetSubChunk('scmf');
+    auto c1 = f->GetSubChunk(manifestChunk);
     std::string s((char *)c1->LoadChunkData(), c1->GetSize());
 
     tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
@@ -75,18 +85,134 @@ std::unordered_map<std::string, std::string> readSCManifest(const std::unique_pt
 
     return manifest;
 }
+std::unordered_map<std::string, std::string> readSCManifest(const std::unique_ptr<RIFF::File> &f)
+{
+    return readSCManifest(f.get());
+}
 
 void addSCDataChunk(const std::unique_ptr<RIFF::File> &f, const std::string &msg)
 {
-    auto c = f->AddSubChunk('scdt', msg.size());
+    auto c = f->AddSubChunk(dataChunk, msg.size());
     auto d = (uint8_t *)c->LoadChunkData();
     memcpy(d, msg.data(), msg.size());
 }
 
 std::string readSCDataChunk(const std::unique_ptr<RIFF::File> &f)
 {
-    auto cp = f->GetSubChunk('scdt');
+    auto cp = f->GetSubChunk(dataChunk);
     return std::string((char *)cp->LoadChunkData(), cp->GetSize());
+}
+
+bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Engine &e,
+                         const sample::SampleManager::sampleMap_t &addThese)
+{
+    SCLOG("Adding " << addThese.size() << " samples to monolith");
+    auto lst = f->AddSubList(sampleChunk);
+
+    std::set<fs::path> paths;
+    for (const auto &[sid, sample] : addThese)
+    {
+        if (!browser::Browser::isLoadableSingleSample(sample->getPath()))
+        {
+            e.getMessageController()->reportErrorToClient(
+                "Unable to add multifile to monolith",
+                "Monoliths currently only support single file (wav, flac, aiff, etc...)");
+            return false;
+        }
+        paths.insert(sample->getPath());
+    }
+    std::vector<fs::path> sortedPaths(paths.begin(), paths.end());
+    std::vector<std::string> sortedPathsStr;
+    for (auto &p : sortedPaths)
+        sortedPathsStr.push_back(p.u8string());
+
+    auto mpaths = tao::json::to_string(json::scxt_value(sortedPathsStr));
+    auto c = lst->AddSubChunk(samplePathsChunk, mpaths.size());
+    auto d = (uint8_t *)c->LoadChunkData();
+    memcpy(d, mpaths.data(), mpaths.size());
+
+    auto smplst = lst->AddSubList(sampleListChunk);
+    for (const auto &path : sortedPaths)
+    {
+        try
+        {
+            auto fsz = fs::file_size(path);
+            std::string fn = path.filename().u8string();
+            auto cex = smplst->AddSubChunk(sampleFilenameChunk, fn.size() + 1);
+            auto dex = (uint8_t *)cex->LoadChunkData();
+            strncpy((char *)dex, fn.c_str(), fn.size());
+            dex[fn.size() + 1] = 0;
+
+            auto c = smplst->AddSubChunk(sampleDatChunk, fsz);
+            auto d = (uint8_t *)c->LoadChunkData();
+
+            std::ifstream file(path, std::ios::binary);
+            if (!file)
+            {
+                return false;
+            }
+
+            // Check the file size
+            file.seekg(0, std::ios::end);
+            std::size_t fstreamSz = file.tellg();
+            file.seekg(0, std::ios::beg);
+
+            if (fstreamSz != fsz)
+            {
+                SCLOG("Mismatched sizes " << fsz << " " << fstreamSz);
+                return false;
+            };
+
+            file.read((char *)d, fsz);
+            if (!file)
+            {
+                return false;
+            }
+
+            SCLOG("   - " << path.u8string() << " bytes=" << fsz);
+            file.close();
+        }
+        catch (const fs::filesystem_error &fse)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool hasMonolithBinaries(const std::unique_ptr<RIFF::File> &f)
+{
+    auto lst = f->GetSubList(sampleChunk);
+    return lst != nullptr;
+}
+
+std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> &f,
+                                              engine::Engine &e)
+{
+    auto lst = f->GetSubList(sampleChunk);
+    if (lst == nullptr)
+    {
+        return {};
+    }
+    auto c = lst->GetSubChunk(samplePathsChunk);
+    std::string s((char *)c->LoadChunkData(), c->GetSize());
+
+    tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
+    tao::json::events::from_string(consumer, s);
+    auto jv = std::move(consumer.value);
+    std::vector<std::string> paths;
+    jv.to(paths);
+
+    SCLOG_IF(patchIO, "Monolith contains " << paths.size() << " paths");
+    std::vector<fs::path> res;
+    for (const auto &p : paths)
+    {
+        SCLOG_IF(patchIO, "  - " << p);
+        res.push_back(fs::path(fs::u8path(p)));
+    }
+
+    return res;
 }
 
 std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &path)
@@ -144,11 +270,12 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
     auto toCollect = getSamplePathsFor(e, part);
     if (part < 0)
     {
-        SCLOG("Collecting all samples for multi to '" << collectDir.u8string() << "'");
+        SCLOG_IF(patchIO, "Collecting all samples for multi to '" << collectDir.u8string() << "'");
     }
     else
     {
-        SCLOG("Collecting samples for part " << part << " to '" << collectDir.u8string() << "'");
+        SCLOG_IF(patchIO,
+                 "Collecting samples for part " << part << " to '" << collectDir.u8string() << "'");
     }
 
     std::set<fs::path> uniquePaths;
@@ -160,10 +287,10 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
     std::set<fs::path> collectedFilenames;
     for (const auto &c : uniquePaths)
     {
-        SCLOG("   - " << c.u8string());
+        SCLOG_IF(patchIO, "   - " << c.u8string());
         if (collectedFilenames.find(c.filename()) != collectedFilenames.end())
         {
-            SCLOG("Duplicate Sample Name " << c.filename());
+            SCLOG_IF(patchIO, "Duplicate Sample Name " << c.filename());
             e.getMessageController()->reportErrorToClient(
                 "Unable to copy sample", "Your patch has two samples with the same filename ('" +
                                              c.filename().u8string() + "' with " +
@@ -190,13 +317,6 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
     fs::path riffPath = p;
     fs::path collectDir;
 
-    if (style == SaveStyles::AS_MONOLITH)
-    {
-        e.getMessageController()->reportErrorToClient("Monolith not yet implemented",
-                                                      "Coming Soon");
-        return false;
-    }
-
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
         auto [r, c, emsg] = setupForCollection(p);
@@ -221,9 +341,18 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_MULTI);
         auto msg = tao::json::msgpack::to_string(json::scxt_value(e));
 
-        auto f = std::make_unique<RIFF::File>('SCXT');
+        auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
         f->SetByteOrder(RIFF::endian_little);
         addSCManifest(f, "multi");
+
+        if (style == SaveStyles::AS_MONOLITH)
+        {
+            auto smp = getSamplePathsFor(e, -1);
+            if (!addMonolithBinaries(f, e, smp))
+            {
+                return false;
+            }
+        }
         addSCDataChunk(f, msg);
 
         f->Save(riffPath.u8string());
@@ -277,7 +406,7 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
         auto msg = tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
 
-        auto f = std::make_unique<RIFF::File>('SCXT');
+        auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
         f->SetByteOrder(RIFF::endian_little);
         addSCManifest(f, "part");
         addSCDataChunk(f, msg);
@@ -347,11 +476,18 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
 bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
 {
     std::string payload;
+    std::vector<fs::path> monolithBinaryIndex;
     try
     {
         auto f = std::make_unique<RIFF::File>(p.u8string());
         auto manifest = readSCManifest(f);
         payload = readSCDataChunk(f);
+
+        if (hasMonolithBinaries(f))
+        {
+            SCLOG_IF(patchIO, "Loading a multi with monolithic binaries");
+            monolithBinaryIndex = readMonolithBinaryIndex(f, engine);
+        }
     }
     catch (const RIFF::Exception &e)
     {
@@ -363,13 +499,18 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
     if (cont->isAudioRunning)
     {
         cont->stopAudioThreadThenRunOnSerial(
-            [payload, relP = p.parent_path(), &nonconste = engine](auto &e) {
+            [payload, multiPath = p, monolithBinaryIndex, &nonconste = engine](auto &e) {
                 try
                 {
-                    nonconste.getSampleManager()->setRelativeRoot(relP);
+                    nonconste.getSampleManager()->setRelativeRoot(multiPath.parent_path());
+                    nonconste.getSampleManager()->setMonolithBinaryIndex(multiPath,
+                                                                         monolithBinaryIndex);
                     nonconste.immediatelyTerminateAllVoices();
                     scxt::json::unstreamEngineState(nonconste, payload, true);
                     nonconste.getSampleManager()->clearReparenting();
+                    nonconste.getSampleManager()->clearMonolithBinaryIndex();
+                    nonconste.getSampleManager()->purgeUnreferencedSamples();
+
                     auto &cont = *e.getMessageController();
                     cont.restartAudioThreadFromSerial();
                 }
@@ -420,6 +561,8 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
                     nonconste.immediatelyTerminateAllVoices();
                     scxt::json::unstreamPartState(nonconste, part, payload, true);
                     nonconste.getSampleManager()->clearReparenting();
+                    nonconste.getSampleManager()->purgeUnreferencedSamples();
+
                     auto &cont = *e.getMessageController();
                     cont.restartAudioThreadFromSerial();
                 }
@@ -444,4 +587,89 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
 
     return true;
 }
+
+SCMonolithSampleReader::SCMonolithSampleReader(RIFF::File *f) : file(f)
+{
+    auto mani = readSCManifest(f);
+    version = std::stoi(mani["version"]);
+}
+
+SCMonolithSampleReader::~SCMonolithSampleReader() {}
+
+size_t SCMonolithSampleReader::getSampleCount()
+{
+    if (cacheSampleCountDone)
+        return cacheSampleCount;
+    cacheSampleCountDone = true;
+    auto lst = file->GetSubList(sampleChunk);
+    if (!lst)
+    {
+        cacheSampleCount = 0;
+        return 0;
+    }
+    auto slst = lst->GetSubList(sampleListChunk);
+    if (!slst)
+    {
+        cacheSampleCount = 0;
+        return 0;
+    }
+    auto ck = slst->GetFirstSubChunk();
+    auto ckCount{0};
+    while (ck)
+    {
+        ck = slst->GetNextSubChunk();
+        ckCount++;
+    }
+    cacheSampleCount = ckCount / 2;
+    return cacheSampleCount;
+}
+
+bool SCMonolithSampleReader::getSampleData(size_t index, SampleData &data)
+{
+    auto lst = file->GetSubList(sampleChunk);
+    if (!lst)
+    {
+        return false;
+    }
+    auto slst = lst->GetSubList(sampleListChunk);
+    if (!slst)
+    {
+        return false;
+    }
+
+    auto ck = slst->GetFirstSubChunk();
+    if (!ck)
+        return false;
+    for (int i = 0; i < index * 2; i++)
+    {
+        if (ck)
+            ck = slst->GetNextSubChunk();
+        if (!ck)
+            return false;
+    }
+
+    if (ck->GetChunkID() != sampleFilenameChunk)
+    {
+        SCLOG("didn't count forward to filename chunk");
+        return false;
+    }
+
+    data.filename = std::string((char *)ck->LoadChunkData());
+    ck->ReleaseChunkData();
+
+    ck = slst->GetNextSubChunk();
+    if (!ck)
+        return false;
+    if (ck->GetChunkID() != sampleDatChunk)
+    {
+        SCLOG("didn't get data chunk id");
+        return false;
+    }
+    auto sd = ck->LoadChunkData();
+    data.data.assign((uint8_t *)sd, (uint8_t *)sd + ck->GetSize());
+    ck->ReleaseChunkData();
+
+    return true;
+}
+
 } // namespace scxt::patch_io

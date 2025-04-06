@@ -370,9 +370,8 @@ inline std::unordered_map<std::string, E> makeEnumInverse(const E &from, const E
 
 void printStackTrace(int frameDepth = -1);
 
-inline bool extensionMatches(const fs::path &p, const std::string &s)
+inline bool extensionStringMatches(const std::string &pes, const std::string &s)
 {
-    auto pes = p.extension().u8string();
     if (pes.size() != s.size())
         return false;
 
@@ -384,6 +383,12 @@ inline bool extensionMatches(const fs::path &p, const std::string &s)
         return false;
     };
     return std::equal(pes.begin(), pes.end(), s.begin(), cic);
+}
+
+inline bool extensionMatches(const fs::path &p, const std::string &s)
+{
+    auto pes = p.extension().u8string();
+    return extensionStringMatches(pes, s);
 }
 
 inline std::string humanReadableVersion(uint64_t v)
