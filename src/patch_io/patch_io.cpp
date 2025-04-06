@@ -76,6 +76,7 @@ std::unordered_map<std::string, std::string> readSCManifest(RIFF::File *f)
 {
     auto c1 = f->GetSubChunk(manifestChunk);
     std::string s((char *)c1->LoadChunkData(), c1->GetSize());
+    c1->ReleaseChunkData();
 
     tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
     tao::json::events::from_string(consumer, s);
@@ -100,13 +101,15 @@ void addSCDataChunk(const std::unique_ptr<RIFF::File> &f, const std::string &msg
 std::string readSCDataChunk(const std::unique_ptr<RIFF::File> &f)
 {
     auto cp = f->GetSubChunk(dataChunk);
-    return std::string((char *)cp->LoadChunkData(), cp->GetSize());
+    auto res = std::string((char *)cp->LoadChunkData(), cp->GetSize());
+    cp->ReleaseChunkData();
+    return res;
 }
 
 bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Engine &e,
                          const sample::SampleManager::sampleMap_t &addThese)
 {
-    SCLOG("Adding " << addThese.size() << " samples to monolith");
+    SCLOG_IF(patchIO, "Adding " << addThese.size() << " samples to monolith");
     auto lst = f->AddSubList(sampleChunk);
 
     std::set<fs::path> paths;
@@ -169,7 +172,7 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
                 return false;
             }
 
-            SCLOG("   - " << path.u8string() << " bytes=" << fsz);
+            SCLOG_IF(patchIO, "   - " << path.u8string() << " bytes=" << fsz);
             file.close();
         }
         catch (const fs::filesystem_error &fse)
@@ -197,6 +200,7 @@ std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> 
     }
     auto c = lst->GetSubChunk(samplePathsChunk);
     std::string s((char *)c->LoadChunkData(), c->GetSize());
+    c->ReleaseChunkData();
 
     tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
     tao::json::events::from_string(consumer, s);

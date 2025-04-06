@@ -26,6 +26,8 @@
  */
 #include "sample/sample.h"
 
+#include <memory>
+
 #if SCXT_USE_FLAC
 #include <fstream>
 #include "FLAC++/decoder.h"
@@ -316,6 +318,7 @@ bool Sample::parseFlac(const fs::path &p)
                             meta.playmode = pm_forward_loop;
                     }
                 }
+                delete a;
             }
             else if (si->get_block_type() == FLAC__METADATA_TYPE_STREAMINFO)
             {
@@ -334,6 +337,7 @@ bool Sample::parseFlac(const fs::path &p)
                     auto c = a->get_comment(q);
                     // SCLOG("Field: " << c.get_field_name());
                 }
+                delete a;
             }
             else
             {
