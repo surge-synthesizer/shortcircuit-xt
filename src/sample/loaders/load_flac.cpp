@@ -350,5 +350,6 @@ bool Sample::parseFlac(const fs::path &p)
 namespace scxt::sample
 {
 bool Sample::parseFlac(const fs::path &p) { return false; }
+bool Sample::parseFlac(const uint8_t *data, size_t len) { return false; }
 } // namespace scxt::sample
 #endif
