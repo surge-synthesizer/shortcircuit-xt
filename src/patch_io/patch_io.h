@@ -46,6 +46,28 @@ bool savePart(const fs::path &toFile, const scxt::engine::Engine &, int part,
 bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);
+
+struct SCMonolithSampleReader
+{
+    SCMonolithSampleReader(RIFF::File *f);
+    ~SCMonolithSampleReader();
+
+    size_t getSampleCount();
+
+    struct SampleData
+    {
+        std::string filename;
+        std::vector<uint8_t> data;
+    };
+    // Lets avoid copying around that data vector; return bool and populate the ref
+    bool getSampleData(size_t index, SampleData &data);
+
+  private:
+    RIFF::File *file;
+    int version;
+    size_t cacheSampleCount{0};
+    bool cacheSampleCountDone{false};
+};
 } // namespace scxt::patch_io
 
 #endif // SHORTCIRCUITXT_PATCH_IO_H

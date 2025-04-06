@@ -31,6 +31,7 @@
 #include "infrastructure/md5support.h"
 #include "dsp/resampling.h"
 #include "sample.h"
+#include "patch_io/patch_io.h"
 
 namespace scxt::sample
 {
@@ -206,8 +207,6 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
     if (!sfsample)
         return false;
 
-    SCLOG("Got this far in gig load");
-
     auto frameSize = sfsample->FrameSize;
     channels = sfsample->Channels;
     sample_length = sfsample->SamplesTotal;
@@ -221,8 +220,9 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
         name = s->pInfo->Name;
     displayName = fmt::format("{} - ({} @ {})", name, fnp.filename().u8string(), sampleIndex);
 
-    SCLOG("GIG " << SCD((int)channels) << SCD(sample_length) << SCD(sample_rate) << SCD(frameSize)
-                 << " " << displayName);
+    // SCLOG("GIG " << SCD((int)channels) << SCD(sample_length) << SCD(sample_rate) <<
+    // SCD(frameSize)
+    //              << " " << displayName);
     if (frameSize == 2 && channels == 1)
     {
         bitDepth = BD_I16;
@@ -243,6 +243,47 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
 
         sfsample->ReleaseSampleData();
         return true;
+    }
+
+    return false;
+}
+
+bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampleIndex)
+{
+    mFileName = path;
+    preset = -1;
+    instrument = -1;
+    region = sampleIndex;
+    type = SCXT_FILE;
+
+    SCLOG_IF(sampleLoadAndPurge, "Load from SCXT: " << SCD(path) << SCD(sampleIndex));
+    auto reader = patch_io::SCMonolithSampleReader(f);
+
+    patch_io::SCMonolithSampleReader::SampleData dat;
+    if (!reader.getSampleData(sampleIndex, dat))
+    {
+        return false;
+    }
+
+    displayName =
+        fmt::format("{} - ({} @ {})", dat.filename, path.filename().u8string(), sampleIndex);
+
+    auto fnP = fs::path(fs::u8path(dat.filename));
+
+    if (extensionMatches(fnP, ".wav"))
+    {
+        auto res = parse_riff_wave(dat.data.data(), dat.data.size());
+        return res;
+    }
+    else if (extensionMatches(fnP, ".aif") || extensionMatches(fnP, ".aiff"))
+    {
+        auto res = parse_aiff(dat.data.data(), dat.data.size());
+        return res;
+    }
+    // flac, mp3, aiff etc
+    else
+    {
+        return false;
     }
 
     return false;
@@ -550,7 +591,6 @@ Sample::SourceType Sample::sourceTypeFromPath(const fs::path &path)
 
     SCLOG("Unmatched extension : " << path.u8string());
     return WAV_FILE;
-    ;
 }
 
 } // namespace scxt::sample

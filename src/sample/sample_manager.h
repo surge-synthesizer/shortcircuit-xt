@@ -92,6 +92,11 @@ struct SampleManager : MoveableOnly<SampleManager>
                                               gig::File *f, // if this is null I will re-open it
                                               int preset, int instrument, int region);
 
+    std::optional<SampleID>
+    loadSampleFromSCXTMonolith(const fs::path &,
+                               RIFF::File *f, // if this is null I will re-open it
+                               int preset, int instrument, int region);
+
     std::optional<SampleID> setupSampleFromMultifile(const fs::path &, const std::string &md5,
                                                      int idx, void *data, size_t dataSize);
     std::optional<SampleID> loadSampleFromMultiSample(const fs::path &, int idx,
@@ -122,6 +127,26 @@ struct SampleManager : MoveableOnly<SampleManager>
     fs::path relativeRoot;
     void setRelativeRoot(const fs::path &p) { relativeRoot = p; }
     void clearRelativeRoot() { relativeRoot = fs::path{}; }
+
+    std::map<fs::path, int> monolithIndex;
+    fs::path monolithPath;
+
+    void setMonolithBinaryIndex(const fs::path &p, const std::vector<fs::path> &idx)
+    {
+        monolithPath = p;
+        monolithIndex.clear();
+        int fi{0};
+        for (auto &p : idx)
+        {
+            monolithIndex[p] = fi;
+            fi++;
+        }
+    }
+    void clearMonolithBinaryIndex()
+    {
+        monolithPath = fs::path{};
+        monolithIndex.clear();
+    }
 
     typedef std::vector<std::pair<SampleID, Sample::SampleFileAddress>> sampleAddressesAndIds_t;
     sampleAddressesAndIds_t getSampleAddressesAndIDs() const
@@ -193,6 +218,10 @@ struct SampleManager : MoveableOnly<SampleManager>
                                                std::unique_ptr<gig::File>>>
         gigFilesByPath; // last is the md5sum
     std::unordered_map<std::string, std::string> gigMD5ByPath;
+
+    std::unordered_map<std::string, std::unique_ptr<RIFF::File>>
+        scxtMonolithFilesByPath; // last is the md5sum
+    std::unordered_map<std::string, std::string> scxtMonolithMD5ByPath;
 
     std::unordered_map<std::string, std::unique_ptr<ZipArchiveHolder>> zipArchives;
 };
