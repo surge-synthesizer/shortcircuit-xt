@@ -25,7 +25,6 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-
 #include "sample/sample.h"
 
 #if SCXT_USE_MP3
