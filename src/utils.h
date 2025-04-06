@@ -314,12 +314,13 @@ struct DebugTimeGuard
     std::string msg, file;
     size_t line;
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, laststamp;
 
     DebugTimeGuard(const std::string &s, const std::string fl, size_t ln)
         : msg(s), file(fl), line(ln)
     {
         start = std::chrono::high_resolution_clock::now();
+        laststamp = start;
         print(-1, "Debug Timer - ");
     }
     ~DebugTimeGuard()
@@ -337,15 +338,21 @@ struct DebugTimeGuard
         auto dur = end - start;
         auto ms = std::chrono::duration_cast<std::chrono::microseconds>(dur);
 
-        print(ms.count(), m);
+        auto durS = end - laststamp;
+        auto msS = std::chrono::duration_cast<std::chrono::microseconds>(durS);
+
+        laststamp = end;
+        print(ms.count(), m, msS.count());
     }
 
-    void print(int64_t t, const std::string &extraMsg = "")
+    void print(int64_t t, const std::string &extraMsg = "", int64_t t2 = -1)
     {
         std::ostringstream oss_macr;
         oss_macr << file << ":" << line << " [" << scxt::logTimestamp() << "] ";
         if (t > 0)
             oss_macr << "time=" << t << " us; ";
+        if (t2 > 0)
+            oss_macr << " dt=" << t2 << " us; ";
         oss_macr << extraMsg << msg << "\n";
         scxt::postToLog(oss_macr.str());
     }

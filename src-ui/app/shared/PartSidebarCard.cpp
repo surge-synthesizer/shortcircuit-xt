@@ -108,7 +108,7 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     addAndMakeVisible(*tuning);
 
     partBlurb = std::make_unique<jcmp::TextEditor>();
-    partBlurb->setAllText("I am the very model of a modern major general, i'm information etc");
+    partBlurb->setAllText("");
     partBlurb->setMultiLine(true);
     partBlurb->addListener(this);
     addChildComponent(*partBlurb);
