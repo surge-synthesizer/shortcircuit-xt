@@ -27,6 +27,7 @@
 #include "sample/sample.h"
 
 #if SCXT_USE_FLAC
+#include <fstream>
 #include "FLAC++/decoder.h"
 #include "FLAC++/metadata.h"
 #include "riff_wave.h" // this lets us unpack smpl chunks
