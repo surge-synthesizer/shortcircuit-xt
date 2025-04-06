@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/TextEditor.h"
 #include "sst/jucegui/components/HSliderFilled.h"
+#include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/part.h"
@@ -49,6 +50,8 @@ struct PartSidebarCard : juce::Component,
 
     using boolattachment_t =
         scxt::ui::connectors::BooleanPayloadDataAttachment<engine::Part::PartConfiguration>;
+    using attachment_t =
+        scxt::ui::connectors::PayloadDataAttachment<engine::Part::PartConfiguration>;
 
     static constexpr int row0{2}, rowHeight{20}, rowMargin{2};
 
@@ -56,9 +59,11 @@ struct PartSidebarCard : juce::Component,
 
     std::unique_ptr<sst::jucegui::components::ToggleButton> solo, mute;
     std::unique_ptr<boolattachment_t> muteAtt, soloAtt;
+    std::unique_ptr<attachment_t> levelAtt, panAtt;
     std::unique_ptr<sst::jucegui::components::MenuButton> patchName;
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMode, outBus, polyCount;
-    std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan, tuning;
+    std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> tuning, transpose;
     std::unique_ptr<sst::jucegui::components::TextEditor> partBlurb;
 
     bool selfAccent{true};

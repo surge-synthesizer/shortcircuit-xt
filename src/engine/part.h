@@ -98,6 +98,11 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
         BusAddress routeTo{DEFAULT_BUS};
 
+        float level{1.f};
+        float pan{0.f};
+        int32_t transpose{0};
+        float tuning{0.f};
+
         // This needs to be a standard object, and windows msvc doesn't like
         // std::strings in those objects, so use a char*
         static constexpr int maxDescription{2048};
@@ -243,6 +248,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 } // namespace scxt::engine
 
 SC_DESCRIBE(scxt::engine::Part::PartConfiguration,
-            SC_FIELD(channel, pmd().asInt().withRange(-1, 15)););
+            SC_FIELD(channel, pmd().asInt().withRange(-1, 15));
+            SC_FIELD(level, pmd().asCubicDecibelAttenuation().withName("Level"));
+            SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan")););
 
 #endif
