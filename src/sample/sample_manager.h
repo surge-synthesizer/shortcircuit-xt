@@ -159,8 +159,8 @@ struct SampleManager : MoveableOnly<SampleManager>
             {
                 auto prior = sfa.path;
                 sfa.path = reparentPath / sfa.path.filename();
-                SCLOG("SampleManager::getSampleAddressesAndIDs: reparenting " << prior << " to "
-                                                                              << sfa.path);
+                SCLOG_IF(sampleLoadAndPurge, "SampleManager::getSampleAddressesAndIDs: reparenting "
+                                                 << prior << " to " << sfa.path);
             }
             res.emplace_back(k, sfa);
         }
