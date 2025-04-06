@@ -33,6 +33,40 @@
 #include "minimp3_ex.h"
 namespace scxt::sample
 {
+bool Sample::parseMP3(const uint8_t *data, size_t len)
+{
+    try
+    {
+        fs::path tf = fs::temp_directory_path();
+        auto rf = rand() % 1000000;
+        auto ff = tf / (std::string("scxt_mp3_temp_") + std::to_string(rf) + ".mp3");
+
+        while (fs::exists(ff))
+        {
+            rf = rand() % 1000000;
+            ff = tf / (std::string("scxt_mp3_temp_") + std::to_string(rf) + ".mpe");
+        }
+
+        std::ofstream outFile(ff, std::ios::binary);
+        if (!outFile)
+        {
+            return false;
+        }
+        outFile.write((const char *)data, len);
+        outFile.close();
+
+        auto res = parseMP3(ff);
+
+        fs::remove(ff);
+        return res;
+    }
+    catch (fs::filesystem_error &e)
+    {
+        SCLOG("mp3 temp blew up " << e.what());
+        return false;
+    }
+}
+
 bool Sample::parseMP3(const fs::path &p)
 {
     mp3dec_t mp3d;

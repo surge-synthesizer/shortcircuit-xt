@@ -280,7 +280,30 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
         auto res = parse_aiff(dat.data.data(), dat.data.size());
         return res;
     }
-    // flac, mp3, aiff etc
+    else if (extensionMatches(fnP, ".flac"))
+    {
+        auto res = parseFlac(dat.data.data(), dat.data.size());
+
+        mFileName = path;
+        preset = -1;
+        instrument = -1;
+        region = sampleIndex;
+        type = SCXT_FILE;
+
+        return res;
+    }
+    else if (extensionMatches(fnP, ".mp3"))
+    {
+        auto res = parseMP3(dat.data.data(), dat.data.size());
+
+        mFileName = path;
+        preset = -1;
+        instrument = -1;
+        region = sampleIndex;
+        type = SCXT_FILE;
+
+        return res;
+    }
     else
     {
         return false;

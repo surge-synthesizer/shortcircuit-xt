@@ -109,7 +109,9 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     std::string getBitDepthText() const { return bitDepthName(bitDepth); }
 
     bool parseFlac(const fs::path &p);
+    bool parseFlac(const uint8_t *data, size_t size);
     bool parseMP3(const fs::path &p);
+    bool parseMP3(const uint8_t *data, size_t size);
 
     void *__restrict sampleData[2]{nullptr, nullptr};
 
