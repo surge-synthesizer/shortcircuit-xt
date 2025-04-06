@@ -25,10 +25,13 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+
 #include "sample/sample.h"
 
 #if SCXT_USE_MP3
 #define MINIMP3_IMPLEMENTATION
+
+#include <fstream>
 #include "minimp3.h"
 #include "minimp3_ex.h"
 namespace scxt::sample
