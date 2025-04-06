@@ -27,6 +27,7 @@
 #include "sample/sample.h"
 
 #if SCXT_USE_FLAC
+#include <fstream>
 #include "FLAC++/decoder.h"
 #include "FLAC++/metadata.h"
 #include "riff_wave.h" // this lets us unpack smpl chunks
@@ -35,12 +36,15 @@ namespace scxt::sample
 {
 namespace detail
 {
-class SampleFLACDecoder : public FLAC::Decoder::File
+template <class T> class SampleFLACDecoderBase : public T
 {
   public:
     Sample *sample{nullptr};
-    SampleFLACDecoder(Sample *s) : FLAC::Decoder::File(), sample(s) {}
-    SampleFLACDecoder(Sample *s, size_t cs) : FLAC::Decoder::File(), collectedSize{cs}, sample(s) {}
+    SampleFLACDecoderBase(Sample *s) : FLAC::Decoder::File(), sample(s) {}
+    SampleFLACDecoderBase(Sample *s, size_t cs)
+        : FLAC::Decoder::File(), collectedSize{cs}, sample(s)
+    {
+    }
 
     bool isValid{false};
     bool needsSecondPass{false};
@@ -176,10 +180,51 @@ class SampleFLACDecoder : public FLAC::Decoder::File
 
   private:
     int bitDepth{-1};
-    SampleFLACDecoder(const SampleFLACDecoder &);
-    SampleFLACDecoder &operator=(const SampleFLACDecoder &);
+    SampleFLACDecoderBase(const SampleFLACDecoderBase &);
+    SampleFLACDecoderBase &operator=(const SampleFLACDecoderBase &);
+};
+
+struct SampleFLACDecoder : public SampleFLACDecoderBase<FLAC::Decoder::File>
+{
+    SampleFLACDecoder(Sample *s) : SampleFLACDecoderBase(s) {}
+    SampleFLACDecoder(Sample *s, size_t cs) : SampleFLACDecoderBase(s, cs) {}
 };
 } // namespace detail
+
+bool Sample::parseFlac(const uint8_t *data, size_t len)
+{
+    try
+    {
+        fs::path tf = fs::temp_directory_path();
+        auto rf = rand() % 1000000;
+        auto ff = tf / (std::string("scxt_flac_temp_") + std::to_string(rf) + ".flac");
+
+        while (fs::exists(ff))
+        {
+            rf = rand() % 1000000;
+            ff = tf / (std::string("scxt_flac_temp_") + std::to_string(rf) + ".flac");
+        }
+
+        std::ofstream outFile(ff, std::ios::binary);
+        if (!outFile)
+        {
+            return false;
+        }
+        outFile.write((const char *)data, len);
+        outFile.close();
+
+        auto res = parseFlac(ff);
+
+        fs::remove(ff);
+        return res;
+    }
+    catch (fs::filesystem_error &e)
+    {
+        SCLOG("flac temp blew up " << e.what());
+        return false;
+    }
+}
+
 bool Sample::parseFlac(const fs::path &p)
 {
     auto dec = detail::SampleFLACDecoder(this);
@@ -292,13 +337,12 @@ bool Sample::parseFlac(const fs::path &p)
             }
             else
             {
-                SCLOG("Ignored metadata block type " << si->get_block_type());
+                // SCLOG("Ignored metadata block type " << si->get_block_type());
             }
 
             go = si->next();
         }
     }
-    SCLOG("Returning " << res);
     return res;
 }
 } // namespace scxt::sample
@@ -306,5 +350,6 @@ bool Sample::parseFlac(const fs::path &p)
 namespace scxt::sample
 {
 bool Sample::parseFlac(const fs::path &p) { return false; }
+bool Sample::parseFlac(const uint8_t *data, size_t len) { return false; }
 } // namespace scxt::sample
 #endif
