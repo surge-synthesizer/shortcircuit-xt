@@ -65,7 +65,10 @@ void Part::process(Engine &e)
             if (bi == DEFAULT_BUS)
             {
                 // this should be the route to point
-                bi = (BusAddress)(PART_0 + partNumber);
+                if (configuration.routeTo == DEFAULT_BUS)
+                    bi = (BusAddress)(PART_0 + partNumber);
+                else
+                    bi = configuration.routeTo;
 
                 blk::mul_block<blockSize>(g->output[0], lev, lcp[0]);
                 blk::mul_block<blockSize>(g->output[1], lev, lcp[1]);

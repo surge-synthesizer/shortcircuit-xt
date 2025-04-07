@@ -63,6 +63,8 @@ enum BusAddress : int16_t
     PART_0,
     AUX_0 = PART_0 + numParts
 };
+std::string getBusAddressLabel(BusAddress b, const std::string &defaultName = "Default",
+                               bool shortName = false);
 
 struct Engine;
 

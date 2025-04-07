@@ -48,7 +48,10 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
 
     outBus = std::make_unique<jcmp::TextPushButton>();
     outBus->setLabel("OUT");
-    outBus->setOnCallback(editor->makeComingSoon("Editing the output bus from here"));
+    outBus->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showRoutingMenu();
+    });
     addAndMakeVisible(*outBus);
 
     polyCount = std::make_unique<jcmp::TextPushButton>();
@@ -252,6 +255,32 @@ void PartSidebarCard::resized()
     }
 }
 
+void PartSidebarCard::showRoutingMenu()
+{
+    auto makeMenuCallback = [w = juce::Component::SafePointer(this)](int ch) {
+        return [w, ch]() {
+            if (!w)
+                return;
+            w->editor->partConfigurations[w->part].routeTo = (engine::BusAddress)ch;
+            w->resetFromEditorCache();
+            w->sendToSerialization(
+                cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
+        };
+    };
+
+    auto p = juce::PopupMenu();
+    auto ch = editor->partConfigurations[part].routeTo;
+    p.addSectionHeader("Part Routing");
+    p.addSeparator();
+
+    for (int i = engine::BusAddress::DEFAULT_BUS; i <= engine::AUX_0 + numAux; ++i)
+    {
+        p.addItem(engine::getBusAddressLabel((engine::BusAddress)i, "Part Default"), true, i == ch,
+                  makeMenuCallback(i));
+    }
+    p.showMenuAsync(editor->defaultPopupMenuOptions(outBus.get()));
+}
+
 void PartSidebarCard::showMidiModeMenu()
 {
     auto makeMenuCallback = [w = juce::Component::SafePointer(this)](int ch) {
@@ -314,6 +343,10 @@ void PartSidebarCard::resetFromEditorCache()
     {
         midiMode->setLabel(std::to_string(mc + 1));
     }
+
+    auto rt = conf.routeTo;
+    std::string st = engine::getBusAddressLabel(rt, "PART", true);
+    outBus->setLabel(st);
 
     partBlurb->setAllText(conf.blurb);
     repaint();

@@ -265,26 +265,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 
     std::string getRoutingLabel(scxt::engine::BusAddress rt)
     {
-        if (rt == scxt::engine::BusAddress::ERROR_BUS)
-        {
-            return "Error";
-        }
-        else if (rt == scxt::engine::BusAddress::DEFAULT_BUS)
-        {
-            return OTTraits::defaultRoutingLocationName;
-        }
-        else if (rt == scxt::engine::BusAddress::MAIN_0)
-        {
-            return "Main";
-        }
-        else if (rt < scxt::engine::BusAddress::AUX_0)
-        {
-            return "Part " + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
-        }
-        else
-        {
-            return "Aux " + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
-        }
+        return engine::getBusAddressLabel(rt, OTTraits::defaultRoutingLocationName);
     }
 
     void updateRoutingLabel()

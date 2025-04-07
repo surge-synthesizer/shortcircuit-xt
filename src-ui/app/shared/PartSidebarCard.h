@@ -71,6 +71,7 @@ struct PartSidebarCard : juce::Component,
     void paint(juce::Graphics &g) override;
 
     void showMidiModeMenu();
+    void showRoutingMenu();
 
     bool tallMode{false};
     void setTallMode(bool b)

@@ -162,6 +162,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"pan", from.pan},
                           {"tun", from.tuning},
                           {"xps", from.transpose},
+                          {"rt", (int)from.routeTo},
 
                           {"bl", std::string(from.blurb)}};),
              SC_TO({
@@ -171,6 +172,9 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "s", false, to.solo);
                  findOrSet(v, "pl", 0, to.polyLimitVoices);
                  findOrSet(v, "mbr", 24, to.mpePitchBendRange);
+                 int rtv;
+                 findOrSet(v, "rt", scxt::engine::BusAddress::DEFAULT_BUS, rtv);
+                 to.routeTo = (scxt::engine::BusAddress)rtv;
 
                  findOrSet(v, "lv", 1, to.level);
                  findOrSet(v, "pan", 0, to.pan);
