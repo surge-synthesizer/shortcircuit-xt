@@ -118,7 +118,8 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     };
     auto att = [this, oGVC](auto &a, auto &wid, auto &att) {
         auto pmd = scxt::datamodel::describeValue(editor->partConfigurations[part], a);
-        att = std::make_unique<attachment_t>(pmd, oGVC, a);
+        att = std::make_unique<typename std::remove_reference_t<decltype(att)>::element_type>(
+            pmd, oGVC, a);
 
         wid = std::make_unique<typename std::remove_reference_t<decltype(wid)>::element_type>();
         wid->setSource(att.get());
@@ -128,10 +129,7 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     att(editor->partConfigurations[part].level, level, levelAtt);
     att(editor->partConfigurations[part].pan, pan, panAtt);
     att(editor->partConfigurations[part].tuning, tuning, tuningAtt);
-
-    transpose = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
-        'pttx', "Transpose", 0.0, true, editor->makeComingSoon("Editing the part Transpose"));
-    addAndMakeVisible(*transpose);
+    att(editor->partConfigurations[part].transpose, transpose, transposeAtt);
 
     partBlurb = std::make_unique<jcmp::TextEditor>();
     partBlurb->setAllText("");

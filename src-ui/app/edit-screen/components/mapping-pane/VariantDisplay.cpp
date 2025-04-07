@@ -196,7 +196,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 
     attachSamplePoint(startP, "StartS", variantView.variants[selectedVariation].startSample);
     sampleAttachments[startP]->precheckGuiAdjust = [this](auto f) {
-        return std::min(f, this->variantView.variants[this->selectedVariation].endSample);
+        return std::max(std::min(f, this->variantView.variants[this->selectedVariation].endSample),
+                        (int64_t)0);
     };
     addLabel(startP, "Start");
     attachSamplePoint(endP, "EndS", variantView.variants[selectedVariation].endSample);

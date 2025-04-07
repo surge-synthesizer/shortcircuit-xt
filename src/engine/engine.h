@@ -147,6 +147,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             if (!part->configuration.mute && part->configuration.active &&
                 part->respondsToMIDIChannel(channel))
             {
+                auto kt = part->configuration.transpose;
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
                     if (!group->triggerConditions.value(*this, *group))
@@ -154,11 +155,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
-                        if (zone->mapping.keyboardRange.includes(key) &&
+                        if (zone->mapping.keyboardRange.includes(key + kt) &&
                             zone->mapping.velocityRange.includes(velocity))
                         {
-                            res[idx] = {(size_t)pidx, (size_t)gidx, (size_t)zidx,
-                                        channel,      key,          noteId};
+                            res[idx] = {(size_t)pidx, (size_t)gidx,        (size_t)zidx,
+                                        channel,      (int16_t)(key + kt), noteId};
                             idx++;
                         }
                     }
