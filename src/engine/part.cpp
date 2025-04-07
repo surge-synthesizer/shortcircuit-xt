@@ -35,12 +35,25 @@
 
 #include "sst/basic-blocks/simd/setup.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "sst/basic-blocks/dsp/PanLaws.h"
 
 namespace scxt::engine
 {
 void Part::process(Engine &e)
 {
     namespace blk = sst::basic_blocks::mechanics;
+
+    float lcp alignas(16)[2][blockSize];
+
+    auto lev = configuration.level;
+    ;
+    lev = lev * lev * lev;
+
+    namespace pl = sst::basic_blocks::dsp::pan_laws;
+    auto pan = configuration.pan;
+    pl::panmatrix_t pmat{1, 1, 0, 0};
+    if (pan != 0)
+        pl::stereoEqualPower(0.5 * (pan + 1), pmat);
 
     for (const auto &g : groups)
     {
@@ -53,11 +66,34 @@ void Part::process(Engine &e)
             {
                 // this should be the route to point
                 bi = (BusAddress)(PART_0 + partNumber);
-            }
-            auto &obus = e.getPatch()->busses.busByAddress(bi);
 
-            blk::accumulate_from_to<blockSize>(g->output[0], obus.output[0]);
-            blk::accumulate_from_to<blockSize>(g->output[1], obus.output[1]);
+                blk::mul_block<blockSize>(g->output[0], lev, lcp[0]);
+                blk::mul_block<blockSize>(g->output[1], lev, lcp[1]);
+
+                if (pan != 0.0)
+                {
+                    for (int i = 0; i < blockSize; ++i)
+                    {
+                        auto il = lcp[0][i];
+                        auto ir = lcp[1][i];
+                        lcp[0][i] = pmat[0] * il + pmat[2] * ir;
+                        lcp[1][i] = pmat[1] * ir + pmat[3] * il;
+                    }
+                }
+
+                auto &obus = e.getPatch()->busses.busByAddress(bi);
+
+                blk::accumulate_from_to<blockSize>(lcp[0], obus.output[0]);
+                blk::accumulate_from_to<blockSize>(lcp[1], obus.output[1]);
+            }
+            else
+            {
+
+                auto &obus = e.getPatch()->busses.busByAddress(bi);
+
+                blk::accumulate_from_to<blockSize>(g->output[0], obus.output[0]);
+                blk::accumulate_from_to<blockSize>(g->output[1], obus.output[1]);
+            }
         }
     }
 }

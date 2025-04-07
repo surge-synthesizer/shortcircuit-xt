@@ -97,15 +97,35 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     solo->setLabel("S");
     addAndMakeVisible(*solo);
 
-    level = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
-        'ptlv', "Level", 1.0, false, editor->makeComingSoon("Editing the Part Level Control"));
-    addAndMakeVisible(*level);
-    pan = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
-        'ptpn', "Pan", 0.0, true, editor->makeComingSoon("Editing the Part Pan Control"));
-    addAndMakeVisible(*pan);
-    tuning = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
+    using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdatePartFullConfig>;
+
+    auto oGVC = [w = juce::Component::SafePointer(this)](const auto &a) {
+        if (w)
+        {
+            w->resetFromEditorCache();
+            w->sendToSerialization(
+                cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
+            w->updateValueTooltip(a);
+        }
+    };
+    auto att = [this, oGVC](auto &a, auto &wid, auto &att) {
+        auto pmd = scxt::datamodel::describeValue(editor->partConfigurations[part], a);
+        att = std::make_unique<attachment_t>(pmd, oGVC, a);
+
+        wid = std::make_unique<jcmp::HSliderFilled>();
+        wid->setSource(att.get());
+        setupWidgetForValueTooltip(wid.get(), att.get());
+        addAndMakeVisible(*wid);
+    };
+    att(editor->partConfigurations[part].level, level, levelAtt);
+    att(editor->partConfigurations[part].pan, pan, panAtt);
+
+    tuning = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
         'pttn', "Tuning", 0.0, true, editor->makeComingSoon("Editing the part Tuning"));
     addAndMakeVisible(*tuning);
+    transpose = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
+        'pttx', "Transpose", 0.0, true, editor->makeComingSoon("Editing the part Transpose"));
+    addAndMakeVisible(*transpose);
 
     partBlurb = std::make_unique<jcmp::TextEditor>();
     partBlurb->setAllText("");
@@ -184,6 +204,8 @@ void PartSidebarCard::paint(juce::Graphics &g)
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::PAN, med);
     r = r.translated(0, rowHeight);
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::TUNING, med);
+    auto q = r.translated(35 + r.getHeight() + rowMargin, 0);
+    jcmp::GlyphPainter::paintGlyph(g, q, jcmp::GlyphPainter::GlyphType::PLUS_MINUS, med);
 
     auto &cfg = editor->partConfigurations[part];
     if (!cfg.active)
@@ -219,7 +241,8 @@ void PartSidebarCard::resized()
     slR = slR.translated(0, rowHeight);
     pan->setBounds(slR);
     slR = slR.translated(0, rowHeight);
-    tuning->setBounds(slR);
+    tuning->setBounds(slR.withWidth(35));
+    transpose->setBounds(slR.withTrimmedLeft(35 + slR.getHeight() + 2 * rowMargin));
 
     if (tallMode)
     {

@@ -158,6 +158,11 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"s", from.solo},
                           {"pl", from.polyLimitVoices},
                           {"mbr", from.mpePitchBendRange},
+                          {"lv", from.level},
+                          {"pan", from.pan},
+                          {"tun", from.tuning},
+                          {"xps", from.transpose},
+
                           {"bl", std::string(from.blurb)}};),
              SC_TO({
                  findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
@@ -166,6 +171,11 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "s", false, to.solo);
                  findOrSet(v, "pl", 0, to.polyLimitVoices);
                  findOrSet(v, "mbr", 24, to.mpePitchBendRange);
+
+                 findOrSet(v, "lv", 1, to.level);
+                 findOrSet(v, "pan", 0, to.pan);
+                 findOrSet(v, "tun", 0, to.tuning);
+                 findOrSet(v, "xps", 0, to.transpose);
                  std::string bStr;
                  findOrSet(v, "bl", "", bStr);
                  memset(to.blurb, 0, sizeof(to.blurb));
