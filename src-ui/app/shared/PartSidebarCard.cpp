@@ -30,6 +30,7 @@
 #include "messaging/messaging.h"
 #include "app/SCXTEditor.h"
 #include "app/shared/PatchMultiIO.h"
+#include "app/shared/MenuValueTypein.h"
 
 namespace scxt::ui::app::shared
 {
