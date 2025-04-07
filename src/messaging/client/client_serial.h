@@ -67,7 +67,7 @@ enum ClientToSerializationMessagesIds
     // Stream and IO Messages
     c2s_unstream_engine_state,
     c2s_save_multi,
-    c2s_save_selected_part,
+    c2s_save_part,
 
     c2s_load_multi,
     c2s_load_part_into,

@@ -62,6 +62,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         {
             configuration.active = true;
         }
+
+        snprintf(configuration.name, sizeof(configuration.name), "Part %d", partNumber + 1);
     }
     virtual ~Part() = default;
 
@@ -83,9 +85,11 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
     struct PartConfiguration
     {
+        static constexpr size_t maxName{256};
         static constexpr int16_t omniChannel{-1};
         static constexpr int16_t mpeChannel{-2};
 
+        char name[maxName]{0};
         int mpePitchBendRange{24};
         int mpeGlobalChannel{0};
 

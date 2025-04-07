@@ -32,8 +32,8 @@
 
 namespace scxt::messaging::client
 {
-using saveMultiPartPayload_t = std::tuple<std::string, int>; // path, style
-inline void doSaveMulti(const saveMultiPartPayload_t &pl, engine::Engine &engine,
+using saveMultiPayload_t = std::tuple<std::string, int>; // path, style
+inline void doSaveMulti(const saveMultiPayload_t &pl, engine::Engine &engine,
                         MessageController &cont)
 {
     auto [s, styleInt] = pl;
@@ -42,23 +42,24 @@ inline void doSaveMulti(const saveMultiPartPayload_t &pl, engine::Engine &engine
 
     // engine.getBrowser()->doSomething;
 }
-CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, saveMultiPartPayload_t,
-                 doSaveMulti(payload, engine, cont));
+CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, saveMultiPayload_t, doSaveMulti(payload, engine, cont));
 CLIENT_TO_SERIAL(LoadMulti, c2s_load_multi, std::string,
                  patch_io::loadMulti(fs::path(fs::u8path(payload)), engine));
 
-inline void doSaveSelectedPart(const saveMultiPartPayload_t &pl, engine::Engine &engine,
-                               MessageController &cont)
+using savePartPayload_t = std::tuple<std::string, int, int>; // path, part (-1 for sel), style
+
+inline void doSavePart(const savePartPayload_t &pl, engine::Engine &engine, MessageController &cont)
 {
-    auto [s, styleInt] = pl;
+    auto [s, part, styleInt] = pl;
     auto style = (patch_io::SaveStyles)styleInt;
 
-    patch_io::savePart(fs::path(fs::u8path(s)), engine, engine.getSelectionManager()->selectedPart,
-                       style);
+    if (part < 0)
+        part = engine.getSelectionManager()->selectedPart;
+
+    patch_io::savePart(fs::path(fs::u8path(s)), engine, part, style);
     // engine.getBrowser()->doSomething;
 }
-CLIENT_TO_SERIAL(SaveSelectedPart, c2s_save_selected_part, saveMultiPartPayload_t,
-                 doSaveSelectedPart(payload, engine, cont));
+CLIENT_TO_SERIAL(SavePart, c2s_save_part, savePartPayload_t, doSavePart(payload, engine, cont));
 
 using loadPartIntoPayload_t = std::tuple<std::string, int16_t>;
 inline void doLoadPartInto(const loadPartIntoPayload_t &payload, engine::Engine &engine,

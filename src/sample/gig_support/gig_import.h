@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SAMPLE_GIG_SUPPORT_SF2_IMPORT_H
-#define SCXT_SRC_SAMPLE_GIG_SUPPORT_SF2_IMPORT_H
+#ifndef SCXT_SRC_SAMPLE_GIG_SUPPORT_GIG_IMPORT_H
+#define SCXT_SRC_SAMPLE_GIG_SUPPORT_GIG_IMPORT_H
 
 #include "filesystem/import.h"
 #include <engine/engine.h>
