@@ -59,6 +59,39 @@ namespace mech = sst::basic_blocks::mechanics;
 
 namespace scxt::engine
 {
+std::string getBusAddressLabel(BusAddress rt, const std::string &defaultName, bool shortName)
+{
+    if (rt == scxt::engine::BusAddress::ERROR_BUS)
+    {
+        if (shortName)
+            return "ERR";
+        return "Error";
+    }
+    else if (rt == scxt::engine::BusAddress::DEFAULT_BUS)
+    {
+        return defaultName;
+    }
+    else if (rt == scxt::engine::BusAddress::MAIN_0)
+    {
+        if (shortName)
+            return "MAIN";
+
+        return "Main";
+    }
+    else if (rt < scxt::engine::BusAddress::AUX_0)
+    {
+        if (shortName)
+            return "PT" + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
+        return "Part " + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
+    }
+    else
+    {
+        if (shortName)
+            return "AX" + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
+        return "Aux " + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
+    }
+}
+
 namespace dtl
 {
 struct EngineBiquadAdapter
