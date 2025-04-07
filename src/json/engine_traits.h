@@ -164,6 +164,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"xps", from.transpose},
                           {"rt", (int)from.routeTo},
 
+                          {"nm", std::string(from.name)},
                           {"bl", std::string(from.blurb)}};),
              SC_TO({
                  findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
@@ -184,6 +185,14 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "bl", "", bStr);
                  memset(to.blurb, 0, sizeof(to.blurb));
                  strncpy(to.blurb, bStr.c_str(), sizeof(to.blurb) - 1);
+
+                 std::string nStr;
+                 findOrSet(v, "nm", "", nStr);
+                 if (!nStr.empty())
+                 {
+                     memset(to.name, 0, sizeof(to.name));
+                     strncpy(to.name, nStr.c_str(), sizeof(to.name) - 1);
+                 }
              }));
 
 SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,

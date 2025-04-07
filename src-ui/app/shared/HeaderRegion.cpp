@@ -27,6 +27,7 @@
 
 #include "HeaderRegion.h"
 #include "app/SCXTEditor.h"
+#include "app/shared/PatchMultiIO.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
 #include "sst/jucegui/data/Discrete.h"
@@ -272,73 +273,19 @@ void HeaderRegion::filesDropped(const juce::StringArray &files, int x, int y)
 
 void HeaderRegion::doSaveMulti(patch_io::SaveStyles style)
 {
-    fileChooser = std::make_unique<juce::FileChooser>(
-        "Save Multi", juce::File(editor->browser.patchIODirectory.u8string()), "*.scm");
-    fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
-            juce::FileBrowserComponent::warnAboutOverwriting,
-        [style, w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
-            auto result = c.getResults();
-            if (result.isEmpty() || result.size() > 1)
-            {
-                return;
-            }
-            // send a 'save multi' message
-            w->sendToSerialization(
-                cmsg::SaveMulti({result[0].getFullPathName().toStdString(), (int)style}));
-        });
+    shared::doSaveMulti(this, fileChooser, style);
 }
 
-void HeaderRegion::doLoadMulti()
-{
-    fileChooser = std::make_unique<juce::FileChooser>(
-        "Load Multi", juce::File(editor->browser.patchIODirectory.u8string()), "*.scm");
-    fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
-        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
-            auto result = c.getResults();
-            if (result.isEmpty() || result.size() > 1)
-            {
-                return;
-            }
-            w->sendToSerialization(cmsg::LoadMulti(result[0].getFullPathName().toStdString()));
-        });
-}
+void HeaderRegion::doLoadMulti() { shared::doLoadMulti(this, fileChooser); }
 
 void HeaderRegion::doSaveSelectedPart(patch_io::SaveStyles styles)
 {
-    fileChooser = std::make_unique<juce::FileChooser>(
-        "Save Selected Part", juce::File(editor->browser.patchIODirectory.u8string()), "*.scp");
-    fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
-            juce::FileBrowserComponent::warnAboutOverwriting,
-        [styles, w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
-            auto result = c.getResults();
-            if (result.isEmpty() || result.size() > 1)
-            {
-                return;
-            }
-            // send a 'save multi' message
-            w->sendToSerialization(
-                cmsg::SaveSelectedPart({result[0].getFullPathName().toStdString(), (int)styles}));
-        });
+    shared::doSavePart(this, fileChooser, editor->selectedPart, styles);
 }
 
 void HeaderRegion::doLoadIntoSelectedPart()
 {
-    fileChooser = std::make_unique<juce::FileChooser>(
-        "Load Part", juce::File(editor->browser.patchIODirectory.u8string()), "*.scp");
-    fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
-        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
-            auto result = c.getResults();
-            if (result.isEmpty() || result.size() > 1)
-            {
-                return;
-            }
-            w->sendToSerialization(cmsg::LoadPartInto(
-                {result[0].getFullPathName().toStdString(), w->editor->selectedPart}));
-        });
+    shared::doLoadPartInto(this, fileChooser, editor->selectedPart);
 }
 
 void HeaderRegion::showSaveMenu()

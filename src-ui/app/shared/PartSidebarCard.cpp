@@ -29,6 +29,8 @@
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "messaging/messaging.h"
 #include "app/SCXTEditor.h"
+#include "app/shared/PatchMultiIO.h"
+#include "app/shared/MenuValueTypein.h"
 
 namespace scxt::ui::app::shared
 {
@@ -61,7 +63,10 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
 
     patchName = std::make_unique<jcmp::MenuButton>();
     patchName->setLabel("Instrument Name");
-    patchName->setOnCallback(editor->makeComingSoon("Instrument save/load"));
+    patchName->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showPartIOMenu();
+    });
     addAndMakeVisible(*patchName);
 
     auto onChange = [w = juce::Component::SafePointer(this)](const auto &a) {
@@ -148,23 +153,10 @@ void PartSidebarCard::mouseDown(const juce::MouseEvent &event)
 {
     if (event.mods.isPopupMenu())
     {
-        showPopup();
+        showPartIOMenu();
         return;
     }
     sendToSerialization(cmsg::SelectPart(part));
-}
-
-void PartSidebarCard::showPopup()
-{
-    auto p = juce::PopupMenu();
-    p.addSectionHeader("Part " + std::to_string(part + 1));
-    p.addSeparator();
-    p.addItem("Deactivate Part", [p = this->part, w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->sendToSerialization(cmsg::DeactivatePart(p));
-    });
-    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 void PartSidebarCard::paint(juce::Graphics &g)
@@ -327,6 +319,76 @@ void PartSidebarCard::showMidiModeMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions(midiMode.get()));
 }
 
+struct PartNameMenuTypein : scxt::ui::app::shared::MenuValueTypeinBase
+{
+    juce::Component::SafePointer<PartSidebarCard> sideBar{nullptr};
+    PartNameMenuTypein(SCXTEditor *e, juce::Component::SafePointer<PartSidebarCard> p)
+        : MenuValueTypeinBase(e), sideBar(p)
+    {
+    }
+    std::string getInitialText() const override
+    {
+        if (!sideBar)
+            return "";
+        return editor->partConfigurations[sideBar->part].name;
+    }
+    void setValueString(const std::string &s) override
+    {
+        if (!sideBar)
+            return;
+        auto w = sideBar;
+
+        memset(w->editor->partConfigurations[w->part].name, 0,
+               engine::Part::PartConfiguration::maxName);
+        strncpy(w->editor->partConfigurations[w->part].name, s.c_str(),
+                engine::Part::PartConfiguration::maxName - 1);
+        w->resetFromEditorCache();
+        w->sendToSerialization(
+            cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
+    }
+};
+
+void PartSidebarCard::showPartIOMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Part I/O");
+    p.addSeparator();
+    p.addCustomItem(-1, std::make_unique<PartNameMenuTypein>(editor, this));
+    p.addSeparator();
+    p.addItem("Save Part", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
+                           patch_io::SaveStyles::NO_SAMPLES);
+    });
+    p.addItem("Save Part as Monolith", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
+                           patch_io::SaveStyles::AS_MONOLITH);
+    });
+    p.addItem("Save Part with Collected Samples", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
+                           patch_io::SaveStyles::COLLECT_SAMPLES);
+    });
+    p.addSeparator();
+    p.addItem("Load Part", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        shared::doLoadPartInto(w.getComponent(), w->fileChooser, w->part);
+    });
+    p.addSeparator();
+    p.addItem("Deactivate Part", [p = this->part, w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::DeactivatePart(p));
+    });
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions(patchName.get()));
+}
+
 void PartSidebarCard::resetFromEditorCache()
 {
     const auto &conf = editor->partConfigurations[part];
@@ -341,12 +403,14 @@ void PartSidebarCard::resetFromEditorCache()
     }
     else
     {
-        midiMode->setLabel(std::to_string(mc + 1));
+        midiMode->setLabel("CH " + std::to_string(mc + 1));
     }
 
     auto rt = conf.routeTo;
     std::string st = engine::getBusAddressLabel(rt, "PART", true);
     outBus->setLabel(st);
+
+    patchName->setLabel(conf.name);
 
     partBlurb->setAllText(conf.blurb);
     repaint();

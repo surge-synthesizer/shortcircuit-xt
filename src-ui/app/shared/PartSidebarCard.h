@@ -66,12 +66,15 @@ struct PartSidebarCard : juce::Component,
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> tuning, transpose;
     std::unique_ptr<sst::jucegui::components::TextEditor> partBlurb;
 
+    std::unique_ptr<juce::FileChooser> fileChooser;
+
     bool selfAccent{true};
     PartSidebarCard(int p, SCXTEditor *e);
     void paint(juce::Graphics &g) override;
 
     void showMidiModeMenu();
     void showRoutingMenu();
+    void showPartIOMenu();
 
     bool tallMode{false};
     void setTallMode(bool b)
@@ -90,8 +93,6 @@ struct PartSidebarCard : juce::Component,
     void resized() override;
 
     void textEditorTextChanged(juce::TextEditor &) override;
-
-    void showPopup();
 
     void resetFromEditorCache();
 };
