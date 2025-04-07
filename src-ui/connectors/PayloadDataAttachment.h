@@ -203,6 +203,20 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
             return valueToString(f);
         return Continuous::getValueAsStringFor(f);
     }
+
+    std::string getValueAsStringWithoutUnitsFor(float f) const override
+    {
+        if (description.supportsStringConversion)
+        {
+            auto res = description.valueToString(f, getFeatureState().withNoUnits(true));
+            if (res.has_value())
+                return *res;
+        }
+        if (valueToString)
+            return valueToString(f);
+        return Continuous::getValueAsStringWithoutUnitsFor(f);
+    }
+
     std::function<std::optional<float>(const std::string &)> stringToValue{nullptr};
     void setValueAsString(const std::string &s) override
     {
