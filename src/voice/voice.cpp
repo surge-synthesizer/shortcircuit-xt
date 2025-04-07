@@ -916,7 +916,8 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate * sampleRateInv *
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
-    float ndiff = pitch - zone->mapping.rootKey;
+    float ndiff =
+        pitch - zone->mapping.rootKey + zone->parentGroup->parentPart->configuration.tuning;
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
 
     GD[generatorIndex].ratio =

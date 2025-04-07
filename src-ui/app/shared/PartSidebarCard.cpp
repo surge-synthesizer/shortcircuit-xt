@@ -112,17 +112,15 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
         auto pmd = scxt::datamodel::describeValue(editor->partConfigurations[part], a);
         att = std::make_unique<attachment_t>(pmd, oGVC, a);
 
-        wid = std::make_unique<jcmp::HSliderFilled>();
+        wid = std::make_unique<typename std::remove_reference_t<decltype(wid)>::element_type>();
         wid->setSource(att.get());
         setupWidgetForValueTooltip(wid.get(), att.get());
         addAndMakeVisible(*wid);
     };
     att(editor->partConfigurations[part].level, level, levelAtt);
     att(editor->partConfigurations[part].pan, pan, panAtt);
+    att(editor->partConfigurations[part].tuning, tuning, tuningAtt);
 
-    tuning = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
-        'pttn', "Tuning", 0.0, true, editor->makeComingSoon("Editing the part Tuning"));
-    addAndMakeVisible(*tuning);
     transpose = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
         'pttx', "Transpose", 0.0, true, editor->makeComingSoon("Editing the part Transpose"));
     addAndMakeVisible(*transpose);
@@ -204,7 +202,7 @@ void PartSidebarCard::paint(juce::Graphics &g)
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::PAN, med);
     r = r.translated(0, rowHeight);
     jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::GlyphType::TUNING, med);
-    auto q = r.translated(35 + r.getHeight() + rowMargin, 0);
+    auto q = r.translated(tuningTransposeSplit + r.getHeight() + 2 * rowMargin, 0);
     jcmp::GlyphPainter::paintGlyph(g, q, jcmp::GlyphPainter::GlyphType::PLUS_MINUS, med);
 
     auto &cfg = editor->partConfigurations[part];
@@ -241,8 +239,9 @@ void PartSidebarCard::resized()
     slR = slR.translated(0, rowHeight);
     pan->setBounds(slR);
     slR = slR.translated(0, rowHeight);
-    tuning->setBounds(slR.withWidth(35));
-    transpose->setBounds(slR.withTrimmedLeft(35 + slR.getHeight() + 2 * rowMargin));
+    tuning->setBounds(slR.withWidth(tuningTransposeSplit));
+    transpose->setBounds(
+        slR.withTrimmedLeft(tuningTransposeSplit + slR.getHeight() + 2 * rowMargin));
 
     if (tallMode)
     {
