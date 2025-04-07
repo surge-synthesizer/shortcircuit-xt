@@ -318,14 +318,16 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
 
     p.addSeparator();
     p.addSectionHeader("MIDI Octave");
+    auto cv = defaultsProvider.getUserDefaultValue(infrastructure::octave0, 0);
     for (int i = -1; i <= 1; ++i)
     {
-        p.addItem(fmt::format("C{} is MIDI 60", 4 + i),
+        p.addItem(fmt::format("C{} is MIDI 60", 4 + i), true, i == cv,
                   [w = juce::Component::SafePointer(this), i]() {
                       if (w)
                       {
                           w->defaultsProvider.updateUserDefaultValue(infrastructure::octave0, i);
                           sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset = i;
+                          w->repaint();
                       }
                   });
     }
