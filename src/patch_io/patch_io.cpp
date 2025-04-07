@@ -379,13 +379,6 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
     fs::path riffPath = p;
     fs::path collectDir;
 
-    if (style == SaveStyles::AS_MONOLITH)
-    {
-        e.getMessageController()->reportErrorToClient("Monolith not yet implemented",
-                                                      "Coming Soon");
-        return false;
-    }
-
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
         auto [r, c, emsg] = setupForCollection(p);
@@ -413,6 +406,16 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
         auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
         f->SetByteOrder(RIFF::endian_little);
         addSCManifest(f, "part");
+
+        if (style == SaveStyles::AS_MONOLITH)
+        {
+            auto smp = getSamplePathsFor(e, part);
+            if (!addMonolithBinaries(f, e, smp))
+            {
+                return false;
+            }
+        }
+
         addSCDataChunk(f, msg);
 
         f->Save(riffPath.u8string());
@@ -542,11 +545,19 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
 bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
 {
     std::string payload;
+    std::vector<fs::path> monolithBinaryIndex;
+
     try
     {
         auto f = std::make_unique<RIFF::File>(p.u8string());
         auto manifest = readSCManifest(f);
         payload = readSCDataChunk(f);
+
+        if (hasMonolithBinaries(f))
+        {
+            SCLOG_IF(patchIO, "Loading a multi with monolithic binaries");
+            monolithBinaryIndex = readMonolithBinaryIndex(f, engine);
+        }
     }
     catch (const RIFF::Exception &e)
     {
@@ -557,24 +568,33 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
-        cont->stopAudioThreadThenRunOnSerial(
-            [payload, relP = p.parent_path(), part, &nonconste = engine](auto &e) {
-                try
-                {
-                    nonconste.getSampleManager()->setRelativeRoot(relP);
-                    nonconste.immediatelyTerminateAllVoices();
-                    scxt::json::unstreamPartState(nonconste, part, payload, true);
-                    nonconste.getSampleManager()->clearReparenting();
-                    nonconste.getSampleManager()->purgeUnreferencedSamples();
+        cont->stopAudioThreadThenRunOnSerial([payload, multiPath = p, relP = p.parent_path(),
+                                              monolithBinaryIndex, part,
+                                              &nonconste = engine](auto &e) {
+            try
+            {
+                nonconste.getSampleManager()->setRelativeRoot(relP);
+                nonconste.getSampleManager()->setMonolithBinaryIndex(multiPath,
+                                                                     monolithBinaryIndex);
+                nonconste.immediatelyTerminateAllVoices();
+                scxt::json::unstreamPartState(nonconste, part, payload, true);
+                nonconste.getSampleManager()->clearReparenting();
+                nonconste.getSampleManager()->purgeUnreferencedSamples();
+                nonconste.getSampleManager()->clearMonolithBinaryIndex();
 
-                    auto &cont = *e.getMessageController();
-                    cont.restartAudioThreadFromSerial();
-                }
-                catch (std::exception &err)
+                auto &pt = nonconste.getPatch()->getPart(part);
+                if (!pt->getGroups().empty())
                 {
-                    SCLOG("Unable to load [" << err.what() << "]");
+                    nonconste.getSelectionManager()->selectAction({part, 0, -1});
                 }
-            });
+                auto &cont = *e.getMessageController();
+                cont.restartAudioThreadFromSerial();
+            }
+            catch (std::exception &err)
+            {
+                SCLOG("Unable to load [" << err.what() << "]");
+            }
+        });
     }
     else
     {
