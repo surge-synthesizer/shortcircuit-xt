@@ -35,6 +35,7 @@
 
 #include "sst/basic-blocks/simd/setup.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "sst/basic-blocks/dsp/PanLaws.h"
 
 namespace scxt::engine
 {
