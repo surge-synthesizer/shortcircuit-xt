@@ -75,11 +75,10 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     int32_t voiceCount,
     const sst::voicemanager::VoiceInitInstructionsEntry<VMConfig>::buffer_t &voiceInstructionBuffer,
     sst::voicemanager::VoiceInitBufferEntry<VMConfig>::buffer_t &voiceInitWorkingBuffer,
-    uint16_t port, uint16_t channel, uint16_t key, int32_t noteId, float velocity, float retune)
+    uint16_t port, uint16_t channel, uint16_t inkey, int32_t noteId, float velocity, float retune)
 {
     assert(transactionValid);
     assert(transactionVoiceCount > 0);
-    auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = transactionVoiceCount;
     assert(nts == voiceCount);
     SCLOG_IF(voiceResponder, "voice initiation of " << nts << " voices");
@@ -98,6 +97,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         }
         const auto &[path, variantIndex] = voiceCreationWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
+        auto key = inkey + z->parentGroup->parentPart->configuration.transpose;
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
 
         if (nbSampleLoadedInZone == 0)

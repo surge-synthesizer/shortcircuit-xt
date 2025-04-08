@@ -52,6 +52,8 @@ struct PartSidebarCard : juce::Component,
         scxt::ui::connectors::BooleanPayloadDataAttachment<engine::Part::PartConfiguration>;
     using attachment_t =
         scxt::ui::connectors::PayloadDataAttachment<engine::Part::PartConfiguration>;
+    using tsposeattachment_t =
+        scxt::ui::connectors::PayloadDataAttachment<engine::Part::PartConfiguration, int32_t>;
 
     static constexpr int row0{2}, rowHeight{20}, rowMargin{2}, tuningTransposeSplit{38};
 
@@ -60,6 +62,7 @@ struct PartSidebarCard : juce::Component,
     std::unique_ptr<sst::jucegui::components::ToggleButton> solo, mute;
     std::unique_ptr<boolattachment_t> muteAtt, soloAtt;
     std::unique_ptr<attachment_t> levelAtt, panAtt, tuningAtt;
+    std::unique_ptr<tsposeattachment_t> transposeAtt;
     std::unique_ptr<sst::jucegui::components::MenuButton> patchName;
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMode, outBus, polyCount;
     std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan;
