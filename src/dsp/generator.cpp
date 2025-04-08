@@ -372,7 +372,7 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
         auto finalSubPos = ks.SampleSubPos;
         auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
         auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-        subSubPos = std::pow(subSubPos, 1.0f / subRatio);
+        subSubPos = std::pow(subSubPos, std::max(1.0f, 0.5f / subRatio));
         finalSubPos = (int)(subSubPos * (1 << 24));
         m0 = ((finalSubPos >> 12) & 0xff0);
     }
@@ -498,7 +498,7 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
         auto finalSubPos = ks.SampleSubPos;
         auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
         auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-        subSubPos = std::pow(subSubPos, 1.0f / subRatio);
+        subSubPos = std::pow(subSubPos, std::max(1.0f, 0.5f / subRatio));
         finalSubPos = (int)(subSubPos * (1 << 24));
         m0 = ((finalSubPos >> 12) & 0xff0);
     }
