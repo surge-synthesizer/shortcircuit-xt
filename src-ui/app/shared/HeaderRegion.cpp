@@ -268,7 +268,30 @@ bool HeaderRegion::isInterestedInFileDrag(const juce::StringArray &files)
 
 void HeaderRegion::filesDropped(const juce::StringArray &files, int x, int y)
 {
-    SCLOG("Got a file drop of " << files[0]);
+    if (files.size() != 1)
+        return;
+    auto pt = fs::path{(const char *)(files[0].toUTF8())};
+    std::string what = "Part into Selected Part";
+    std::string ws = "Part";
+    auto isPt = true;
+    if (extensionMatches(pt, ".scm"))
+    {
+        what = "Multi into Engine";
+        ws = "Engine";
+        isPt = false;
+    }
+    editor->promptOKCancel("Load " + what,
+                           "By loading " + what + " you will clear the " + ws +
+                               " and replace it with the contents of the file. Continue?",
+                           [w = juce::Component::SafePointer(this), pt, isPt]() {
+                               if (!w)
+                                   return;
+                               if (isPt)
+                                   w->sendToSerialization(cmsg::LoadPartInto(
+                                       {pt.u8string(), w->editor->selectedPart}));
+                               else
+                                   w->sendToSerialization(cmsg::LoadMulti(pt.u8string()));
+                           });
 }
 
 void HeaderRegion::doSaveMulti(patch_io::SaveStyles style)

@@ -583,7 +583,8 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
                 nonconste.getSampleManager()->clearMonolithBinaryIndex();
 
                 auto &pt = nonconste.getPatch()->getPart(part);
-                if (!pt->getGroups().empty())
+                if (!pt->getGroups().empty() &&
+                    part == nonconste.getSelectionManager()->selectedPart)
                 {
                     nonconste.getSelectionManager()->selectAction({part, 0, -1});
                 }
