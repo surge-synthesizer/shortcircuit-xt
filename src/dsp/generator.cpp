@@ -314,8 +314,6 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
     }
 }
 
-
-
 template <typename T>
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>
 void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
@@ -373,7 +371,7 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
         auto a = ((3.f * (y5 - y6)) - y4 + y7) * 0.5f;
         auto b = y6 + y6 + y4 - (5.f * y5 + y7) * 0.5f;
         auto c = (y6 - y4) * 0.5f;
-        
+
         OutputR[i] = ((a * f_subPos + b) * f_subPos + c) * f_subPos + y5;
 
         if constexpr (LOOP_ACTIVE)
