@@ -329,7 +329,7 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
 
     auto f_subPos = (float)(ks.SampleSubPos) / (float)(1 << 24);
     auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-    f_subPos = std::pow(f_subPos, 1.0f / subRatio));
+    f_subPos = std::pow(f_subPos, 1.0f / subRatio);
 
     auto readPos = FIRoffset - 2;
     auto y0{NormalizeSampleToF32(readSampleL[readPos])};
