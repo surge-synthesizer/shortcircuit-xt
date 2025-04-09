@@ -125,20 +125,28 @@ template <InterpolationTypes KT, typename T> struct KernelOp
  See comment in the definition below.
  */
 
-template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
 struct KernelProcessor;
 
 template <typename T> struct KernelOp<InterpolationTypes::ZeroOrderHold, T>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
     static void
     Process(GeneratorState *__restrict GD,
             KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
+template <typename T> struct KernelOp<InterpolationTypes::ZOHAA, T>
+{
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::ZOHAA, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+};
+
 template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
     static void
     Process(GeneratorState *__restrict GD,
             KernelProcessor<InterpolationTypes::Linear, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
@@ -146,21 +154,21 @@ template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
 
 template <> struct KernelOp<InterpolationTypes::Sinc, float>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
     static void
     Process(GeneratorState *__restrict GD,
-            KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks);
+            KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
 template <> struct KernelOp<InterpolationTypes::Sinc, int16_t>
 {
-    template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH = false>
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
     static void
     Process(GeneratorState *__restrict GD,
-            KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks);
+            KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
-template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
 struct KernelProcessor
 {
     int32_t SamplePos, SampleSubPos;
@@ -178,41 +186,7 @@ struct KernelProcessor
 
     void ProcessKernel(GeneratorState *__restrict GD)
     {
-        if constexpr (KT == InterpolationTypes::ZOHAA)
-        {
-            // Declare another KernelProcessor with sinc specialization and the
-            // aforementioned bool argument set to true
-            // Return the new objects process function, which will call the sinc method with
-            // ZOH=true
-            if constexpr (NUM_CHANNELS == 2)
-            {
-                KernelProcessor<InterpolationTypes::Sinc, T, NUM_CHANNELS, LOOP_ACTIVE, true>
-                    SincWithZoh{SamplePos,
-                                SampleSubPos,
-                                m0,
-                                i,
-                                {ReadSample[0], ReadSample[1]},
-                                {ReadFadeSample[0], ReadFadeSample[1]},
-                                fadeActive,
-                                loopFade,
-                                {Output[0], Output[1]},
-                                IO};
-
-                return SincWithZoh.ProcessKernel(GD);
-            }
-            else
-            {
-                KernelProcessor<InterpolationTypes::Sinc, T, NUM_CHANNELS, LOOP_ACTIVE, true>
-                    SincWithZoh{SamplePos,         SampleSubPos, m0,       i,         ReadSample[0],
-                                ReadFadeSample[0], fadeActive,   loopFade, Output[0], IO};
-
-                return SincWithZoh.ProcessKernel(GD);
-            }
-        }
-        else
-        {
-            return KernelOp<KT, T>::Process(GD, *this);
-        }
+        return KernelOp<KT, T>::Process(GD, *this);
     }
 };
 
@@ -221,7 +195,7 @@ float NormalizeSampleToF32(float val) { return val; }
 float NormalizeSampleToF32(int16_t val) { return val * I16InvScale2; }
 
 template <typename T>
-template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
 void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
     GeneratorState *__restrict GD,
     KernelProcessor<InterpolationTypes::ZeroOrderHold, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
@@ -273,7 +247,7 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
 }
 
 template <typename T>
-template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
 void KernelOp<InterpolationTypes::Linear, T>::Process(
     GeneratorState *__restrict GD,
     KernelProcessor<InterpolationTypes::Linear, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
@@ -340,10 +314,91 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
     }
 }
 
-template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
+
+
+template <typename T>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
+    GeneratorState *__restrict GD,
+    KernelProcessor<InterpolationTypes::ZOHAA, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+{
+    auto readSampleL{ks.ReadSample[0]};
+    auto readFadeSampleL{ks.ReadFadeSample[0]};
+    auto OutputL{ks.Output[0]};
+    auto SamplePos{ks.SamplePos};
+    auto m0{ks.m0};
+    auto i{ks.i};
+
+    auto f_subPos = (float)(ks.SampleSubPos) / (float)(1 << 24);
+    auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
+    f_subPos = std::pow(f_subPos, 1.0f / subRatio));
+
+    auto readPos = FIRoffset - 2;
+    auto y0{NormalizeSampleToF32(readSampleL[readPos])};
+    auto y1{NormalizeSampleToF32(readSampleL[readPos + 1])};
+    auto y2{NormalizeSampleToF32(readSampleL[readPos + 2])};
+    auto y3{NormalizeSampleToF32(readSampleL[readPos + 3])};
+    auto a = ((3.f * (y1 - y2)) - y0 + y3) * 0.5f;
+    auto b = y2 + y2 + y0 - (5.f * y1 + y3) * 0.5f;
+    auto c = (y2 - y0) * 0.5f;
+
+    OutputL[i] = ((a * f_subPos + b) * f_subPos + c) * f_subPos + y1;
+
+    if constexpr (LOOP_ACTIVE)
+    {
+        if (ks.fadeActive)
+        {
+            auto fadeVal0{NormalizeSampleToF32(readFadeSampleL[readPos])};
+            auto fadeVal1{NormalizeSampleToF32(readFadeSampleL[readPos + 1])};
+            auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
+            auto fadeGain(
+                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
+            auto aOut = getFadeGainToAmp(1.f - fadeGain);
+            fadeGain = getFadeGainToAmp(fadeGain);
+
+            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
+        }
+    }
+
+    if constexpr (NUM_CHANNELS == 2)
+    {
+        auto readSampleR{ks.ReadSample[1]};
+        auto readFadeSampleR{ks.ReadFadeSample[1]};
+        auto OutputR{ks.Output[1]};
+
+        auto y4{NormalizeSampleToF32(readSampleR[readPos])};
+        auto y5{NormalizeSampleToF32(readSampleR[readPos + 1])};
+        auto y6{NormalizeSampleToF32(readSampleR[readPos + 2])};
+        auto y7{NormalizeSampleToF32(readSampleR[readPos + 3])};
+        auto a = ((3.f * (y5 - y6)) - y4 + y7) * 0.5f;
+        auto b = y6 + y6 + y4 - (5.f * y5 + y7) * 0.5f;
+        auto c = (y6 - y4) * 0.5f;
+        
+        OutputR[i] = ((a * f_subPos + b) * f_subPos + c) * f_subPos + y5;
+
+        if constexpr (LOOP_ACTIVE)
+        {
+            if (ks.fadeActive)
+            {
+                float fadeVal0{NormalizeSampleToF32(readFadeSampleR[readPos])};
+                float fadeVal1{NormalizeSampleToF32(readFadeSampleR[readPos + 1])};
+                auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
+
+                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
+                                          GD->loopUpperBound));
+                auto aOut = getFadeGainToAmp(1.f - fadeGain);
+                fadeGain = getFadeGainToAmp(fadeGain);
+
+                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
+            }
+        }
+    }
+}
+
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
 void KernelOp<InterpolationTypes::Sinc, float>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks)
+    KernelProcessor<InterpolationTypes::Sinc, float, NUM_CHANNELS, LOOP_ACTIVE> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -366,16 +421,6 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
         assert(space >= -(int64_t)FIRoffset && above <= FIRoffset);
     }
 #endif
-
-    if constexpr (ZOH) // ZOH-AA
-    {
-        auto finalSubPos = ks.SampleSubPos;
-        auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
-        auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-        subSubPos = std::pow(subSubPos, std::max(1.0f, 0.5f / subRatio));
-        finalSubPos = (int)(subSubPos * (1 << 24));
-        m0 = ((finalSubPos >> 12) & 0xff0);
-    }
 
     // float32 path (SSE)
     SIMD_M128 lipol0, tmp[4], sL4, sR4;
@@ -473,10 +518,10 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
     }
 }
 
-template <int NUM_CHANNELS, bool LOOP_ACTIVE, bool ZOH>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
 void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     GeneratorState *__restrict GD,
-    KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE, ZOH> &ks)
+    KernelProcessor<InterpolationTypes::Sinc, int16_t, NUM_CHANNELS, LOOP_ACTIVE> &ks)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
@@ -491,16 +536,6 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     {
         readSampleR = ks.ReadSample[1];
         OutputR = ks.Output[1];
-    }
-
-    if constexpr (ZOH) // ZOH-AA
-    {
-        auto finalSubPos = ks.SampleSubPos;
-        auto subSubPos = (float)(finalSubPos) / (float)(1 << 24);
-        auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-        subSubPos = std::pow(subSubPos, std::max(1.0f, 0.5f / subRatio));
-        finalSubPos = (int)(subSubPos * (1 << 24));
-        m0 = ((finalSubPos >> 12) & 0xff0);
     }
 
     // int16
