@@ -44,8 +44,7 @@ namespace scxt::ui::app::shared
 struct PartSidebarCard : juce::Component,
                          HasEditor,
                          sst::jucegui::components::WithIdleTimer,
-                         juce::TextEditor::Listener,
-                         juce::FileDragAndDropTarget
+                         juce::TextEditor::Listener
 {
     int part;
 
@@ -99,9 +98,6 @@ struct PartSidebarCard : juce::Component,
     void textEditorTextChanged(juce::TextEditor &) override;
 
     void resetFromEditorCache();
-
-    bool isInterestedInFileDrag(const juce::StringArray &files) override;
-    void filesDropped(const juce::StringArray &files, int x, int y) override;
 };
 } // namespace scxt::ui::app::shared
 #endif // SHORTCIRCUITXT_PARTSIDEBARCARD_H

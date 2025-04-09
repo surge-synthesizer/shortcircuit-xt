@@ -458,29 +458,4 @@ void PartSidebarCard::showPartBlurbTooltip()
 
 void PartSidebarCard::hidePartBlurbTooltip() { editor->hideTooltip(); }
 
-bool PartSidebarCard::isInterestedInFileDrag(const juce::StringArray &files)
-{
-    return files.size() == 1 && files[0].endsWithIgnoreCase(".scp");
-}
-
-void PartSidebarCard::filesDropped(const juce::StringArray &files, int x, int y)
-{
-    if (files.size() == 1)
-    {
-        auto f = files[0];
-        if (f.endsWithIgnoreCase(".scp"))
-        {
-            editor->promptOKCancel(
-                "Load into Part " + std::to_string(part + 1),
-                "By loading the file you will clear the part and replace it with the contents of "
-                "the file. Continue?",
-                [w = juce::Component::SafePointer(this), f]() {
-                    if (!w)
-                        return;
-
-                    w->sendToSerialization(cmsg::LoadPartInto({std::string(f.toUTF8()), w->part}));
-                });
-        }
-    }
-}
 } // namespace scxt::ui::app::shared
