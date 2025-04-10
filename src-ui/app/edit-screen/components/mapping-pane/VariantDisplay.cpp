@@ -36,9 +36,25 @@ namespace scxt::ui::app::edit_screen
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
 
+struct NoSelection : juce::Component, HasEditor
+{
+    NoSelection(SCXTEditor *e) : HasEditor(e) {}
+    void paint(juce::Graphics &g) override
+    {
+        g.fillAll(editor->themeColor(theme::ColorMap::bg_2));
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        g.setFont(editor->themeApplier.interMediumFor(11));
+        g.drawText("Select a zone to use Sample tab", getLocalBounds(),
+                   juce::Justification::centred);
+    }
+};
+
 VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPane *p)
     : HasEditor(p->editor), variantView(p->sampleView), parentPane(p)
 {
+    noSelectionOverlay = std::make_unique<NoSelection>(editor);
+    addChildComponent(*noSelectionOverlay);
+
     waveformsTabbedGroup = std::make_unique<MyTabbedComponent>(this);
     waveformsTabbedGroup->onTabPopupMenu = [w = juce::Component::SafePointer(this)](auto id) {
         if (w)
@@ -109,6 +125,16 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
 void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 {
     selectedVariation = sel;
+    size_t emptySlot = 0;
+    for (int i = 0; i < maxVariantsPerZone; ++i)
+    {
+        if (!variantView.variants[i].active)
+        {
+            emptySlot = i;
+            break;
+        }
+    }
+    selectedVariation = std::min(emptySlot, sel);
 
     // This wierd pattern is because for some reason we rebuild the components
     // when we select a new variant but not the header.
@@ -344,6 +370,15 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     divider = std::make_unique<jcmp::NamedPanelDivider>(false);
     addAndMakeVisible(*divider);
     rebuild();
+
+    auto hasSelZone = editor->currentLeadZoneSelection.has_value() &&
+                      editor->currentLeadZoneSelection->zone >= 0 &&
+                      editor->currentLeadZoneSelection->group >= 0 &&
+                      editor->currentLeadZoneSelection->part >= 0;
+
+    noSelectionOverlay->setVisible(!hasSelZone);
+    if (noSelectionOverlay->isVisible())
+        noSelectionOverlay->toFront(true);
     resized();
 }
 
@@ -473,6 +508,8 @@ void VariantDisplay::resized()
 
     // the fileInfos is self bounding
     fileInfos->setBounds({0, waveformsTabbedGroup->getY() + 20, getWidth(), 70});
+
+    noSelectionOverlay->setBounds(getLocalBounds());
 }
 
 void VariantDisplay::rebuild()
@@ -873,7 +910,8 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
 int VariantDisplay::MyTabbedComponent::getTabIndexFromPosition(int x, int y)
 {
     auto tabIndex{-1};
-    auto isOnWaveform{getCurrentContentComponent()->getBounds().contains(juce::Point<int>{x, y})};
+    auto isOnWaveform{getCurrentContentComponent() &&
+                      getCurrentContentComponent()->getBounds().contains(juce::Point<int>{x, y})};
     if (isOnWaveform)
     {
         tabIndex = display->selectedVariation;
