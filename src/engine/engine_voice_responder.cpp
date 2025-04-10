@@ -52,8 +52,15 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
             z->parentGroup->outputInfo.vmPlayModeInt !=
                 (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES)
         {
-            SCLOG_IF(voiceResponder, "-- Setting polyphony group to " << (uint64_t)z->parentGroup);
+            SCLOG_IF(voiceResponder,
+                     "-- Setting polyphony group to group basd " << (uint64_t)z->parentGroup);
             buffer[idx].polyphonyGroup = (uint64_t)z->parentGroup;
+        }
+        else if (z->parentGroup->parentPart->configuration.polyLimitVoices)
+        {
+            SCLOG_IF(voiceResponder,
+                     "-- Setting polyphony group to part based " << z->parentGroup->parentPart)
+            buffer[idx].polyphonyGroup = (uint64_t)z->parentGroup->parentPart;
         }
         else
         {

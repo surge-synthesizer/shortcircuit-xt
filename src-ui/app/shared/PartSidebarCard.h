@@ -79,6 +79,7 @@ struct PartSidebarCard : juce::Component,
     void showMidiModeMenu();
     void showRoutingMenu();
     void showPartIOMenu();
+    void showPolyMenu();
 
     bool tallMode{false};
     void setTallMode(bool b)

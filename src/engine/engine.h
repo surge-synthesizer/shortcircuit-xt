@@ -144,8 +144,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         size_t idx{0};
         for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
         {
-            if (!part->configuration.mute && part->configuration.active &&
-                part->respondsToMIDIChannel(channel))
+            if (!part->configuration.mute && !part->configuration.muteDueToSolo &&
+                part->configuration.active && part->respondsToMIDIChannel(channel))
             {
                 auto kt = part->configuration.transpose;
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))

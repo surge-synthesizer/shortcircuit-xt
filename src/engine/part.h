@@ -97,8 +97,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         int16_t channel{omniChannel}; // a midi channel or a special value like omni
         bool mute{false};
         bool solo{false};
+        bool muteDueToSolo{false}; // this is unstreamed and calcs in onPartConfigurationUpdated
 
-        bool polyLimitVoices{0}; // poly limit. 0 means unlimited.
+        int32_t polyLimitVoices{0}; // poly limit. 0 means unlimited.
 
         BusAddress routeTo{DEFAULT_BUS};
 
