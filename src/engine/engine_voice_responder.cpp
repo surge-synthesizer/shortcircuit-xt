@@ -58,8 +58,8 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
         }
         else if (z->parentGroup->parentPart->configuration.polyLimitVoices)
         {
-            SCLOG(voiceResponder,
-                  "-- Setting polyphony group to part based " << z->parentGroup->parentPart)
+            SCLOG_IF(voiceResponder,
+                     "-- Setting polyphony group to part based " << z->parentGroup->parentPart)
             buffer[idx].polyphonyGroup = (uint64_t)z->parentGroup->parentPart;
         }
         else
