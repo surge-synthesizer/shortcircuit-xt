@@ -143,6 +143,8 @@ Engine::Engine()
     }
 
     previewVoice = std::make_unique<voice::PreviewVoice>();
+
+    onPartConfigurationUpdated();
 }
 
 Engine::~Engine()
@@ -1205,10 +1207,27 @@ void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int
 void Engine::onPartConfigurationUpdated()
 {
     auto midiM = voiceManager_t::MIDI1Dialect::MIDI1;
+    auto anySolo = false;
     for (auto &p : *getPatch())
+    {
         if (p->configuration.channel == Part::PartConfiguration::mpeChannel)
             midiM = voiceManager_t::MIDI1Dialect::MIDI1_MPE;
+        if (p->configuration.solo)
+            anySolo = true;
+        p->configuration.muteDueToSolo = false;
+
+        voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)p.get(),
+                                                 p->configuration.polyLimitVoices);
+    }
 
     voiceManager.dialect = midiM;
+
+    if (anySolo)
+    {
+        for (auto &p : *getPatch())
+        {
+            p->configuration.muteDueToSolo = !p->configuration.solo;
+        }
+    }
 }
 } // namespace scxt::engine

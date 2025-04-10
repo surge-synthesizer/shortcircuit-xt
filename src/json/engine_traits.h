@@ -156,7 +156,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"c", from.channel},
                           {"m", from.mute},
                           {"s", from.solo},
-                          {"pl", from.polyLimitVoices},
+                          {"pv", from.polyLimitVoices},
                           {"mbr", from.mpePitchBendRange},
                           {"lv", from.level},
                           {"pan", from.pan},
@@ -171,7 +171,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "a", true, to.active);
                  findOrSet(v, "m", false, to.mute);
                  findOrSet(v, "s", false, to.solo);
-                 findOrSet(v, "pl", 0, to.polyLimitVoices);
+                 findOrSet(v, "pv", 0, to.polyLimitVoices);
                  findOrSet(v, "mbr", 24, to.mpePitchBendRange);
                  int rtv;
                  findOrSet(v, "rt", scxt::engine::BusAddress::DEFAULT_BUS, rtv);
