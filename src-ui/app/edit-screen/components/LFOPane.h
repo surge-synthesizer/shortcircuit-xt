@@ -88,13 +88,16 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     void resized() override;
     void rebuildPanelComponents(); // entirely new components
 
+    void showModulatorShapeMenu();
+    std::string getShapeMenuLabel();
+
     void setActive(int index, bool active);
     void setModulatorStorage(int index, const modulation::ModulatorStorage &mod);
 
     void repositionContentAreaComponents();
 
     std::unique_ptr<shapeAttachment_t> modulatorShapeA;
-    std::unique_ptr<sst::jucegui::components::MenuButtonDiscreteEditor> modulatorShape;
+    std::unique_ptr<sst::jucegui::components::MenuButton> modulatorShape;
 
     std::unique_ptr<triggerAttachment_t> triggerModeA;
     std::unique_ptr<sst::jucegui::components::MultiSwitch> triggerMode;
@@ -103,9 +106,14 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     std::unique_ptr<boolAttachment_t> tempoSyncA;
     template <typename T> void setAttachmentAsTemposync(T &t);
 
-    std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
+    void doSavePreset();
+    void doLoadPreset();
 
-    void pickPresets();
+    std::string streamToJSON() const;
+    void unstreamFromJSON(const std::string &);
+
+    std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
+    std::unique_ptr<juce::FileChooser> fileChooser;
 };
 } // namespace scxt::ui::app::edit_screen
 
