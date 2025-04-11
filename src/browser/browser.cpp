@@ -54,6 +54,7 @@ Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp, cons
     };
     patchIODirectory = create("Patches");
     themeDirectory = create("Themes");
+    modulatorPresetDirectory = create("Modulator Presets");
 }
 
 std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() const
@@ -63,6 +64,7 @@ std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() con
     std::vector<Browser::indexedRootPath_t> res;
     for (const auto &[p, s] : osdef)
         res.emplace_back(p, s, false);
+    res.emplace_back(patchIODirectory, "User Patches", true);
     auto fav = browserDb.getBrowserLocations();
     for (const auto &p : fav)
         res.emplace_back(p.first, p.first.filename().u8string(), p.second);

@@ -84,6 +84,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_or_group_modstorage_bool_value,
     c2s_update_zone_or_group_modstorage_int16_t_value,
 
+    c2s_update_full_modstorage_for_groups_or_zones,
+
     c2s_update_lead_zone_mapping,
     c2s_update_zone_mapping_float,
     c2s_update_zone_mapping_int16_t,

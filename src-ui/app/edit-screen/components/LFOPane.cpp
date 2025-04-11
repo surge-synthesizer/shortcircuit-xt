@@ -45,6 +45,13 @@
 #include "app/shared/MenuValueTypein.h"
 #include "sst/jucegui/components/TextPushButton.h"
 
+#include <tao/json/to_string.hpp>
+#include <tao/json/from_string.hpp>
+#include <tao/json/contrib/traits.hpp>
+#include <tao/json/events/from_string.hpp>
+
+#include "json/scxt_traits.h"
+
 namespace scxt::ui::app::edit_screen
 {
 
@@ -485,8 +492,8 @@ struct CurveLFOPane : juce::Component, HasEditor
                 auto ch = getHeight() / 2;
                 auto sc = getHeight() * 0.9 / 2;
                 auto p = juce::Path();
-                // OK so we want to run for one second
-                auto pts = sr / blockSize;
+                // OK so we want to run for two seconds
+                auto pts = 2 * sr / blockSize;
 
                 for (int i = 0; i < pts; ++i)
                 {
@@ -915,7 +922,6 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
     // setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
-    hasHamburger = true;
     isTabbed = true;
     tabNames = {"LFO 1", "LFO 2", "LFO 3", "LFO 4"};
 
@@ -924,10 +930,6 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
     onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
         if (wt)
             wt->tabChanged(i);
-    };
-    onHamburger = [wt = juce::Component::SafePointer(this)] {
-        if (wt)
-            wt->pickPresets();
     };
     setEnabled(false);
 }
@@ -1006,16 +1008,17 @@ void LfoPane::rebuildPanelComponents()
     consistencyLfoPane = std::make_unique<ConsistencyLFOPane>(this);
     getContentAreaComponent()->addChildComponent(*consistencyLfoPane);
 
-    sfac::attach(ms, ms.modulatorShape, this, modulatorShapeA, modulatorShape, forZone,
-                 selectedTab);
-    connectors::addGuiStep(*modulatorShapeA,
-                           [w = juce::Component::SafePointer(this)](const auto &x) {
-                               if (w)
-                                   w->setSubPaneVisibility();
-                           });
-    modulatorShapeA->setJogWrapsAtEnd(false);
-
+    modulatorShapeA = sfac::attachOnly(ms, ms.modulatorShape, this, forZone, selectedTab);
+    modulatorShape = std::make_unique<jcmp::MenuButton>();
+    modulatorShape->setLabel(getShapeMenuLabel());
+    modulatorShape->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->showModulatorShapeMenu();
+    });
     getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
+
+    // getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
     repositionContentAreaComponents();
     setSubPaneVisibility();
@@ -1084,28 +1087,129 @@ void LfoPane::setSubPaneVisibility()
     modulatorShape->setVisible(con);
 }
 
-void LfoPane::pickPresets()
+void LfoPane::showModulatorShapeMenu()
 {
-#if 0
-    // TODO: it is safe to get this data in the UI thread but I should
-    // really send it across as metadata soon!
-    auto m = juce::PopupMenu();
-    m.addSectionHeader("Presets (SUPER ROUGH)");
-    m.addSeparator();
-    for (int p = modulation::modulators::LFOPresets::lp_clear;
-         p < modulation::modulators::LFOPresets::n_lfopresets; ++p)
-    {
-        auto lp = (modulation::modulators::LFOPresets)p;
-        auto nm = modulation::modulators::getLfoPresetName(lp);
-        m.addItem(nm, [wt = juce::Component::SafePointer(this), lp]() {
-            if (!wt)
+    auto &ms = modulatorStorageData[selectedTab];
+    auto pmd = scxt::datamodel::describeValue(modulatorStorageData[selectedTab],
+                                              modulatorStorageData[selectedTab].modulatorShape);
+
+    auto makeInit = [that = this](auto v, float angle = 0.f) {
+        return [w = juce::Component::SafePointer(that), v, angle]() {
+            if (!w)
                 return;
-            auto &ld = wt->lfoData[wt->selectedTab];
-            modulation::modulators::load_lfo_preset(lp, ld, wt->editor->rng);
-            wt->pushCurrentLfoUpdate();
-        });
-    }
-    m.showMenuAsync(editor->defaultPopupMenuOptions());
-#endif
+
+            w->modulatorStorageData[w->selectedTab] = {};
+            w->modulatorStorageData[w->selectedTab].curveLfoStorage.angle = angle;
+            w->modulatorStorageData[w->selectedTab].modulatorShape = v;
+            w->sendToSerialization(cmsg::UpdateFullModStorageForGroupsOrZones(
+                {w->forZone, w->selectedTab, w->modulatorStorageData[w->selectedTab]}));
+        };
+    };
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Modulator Shapes");
+    p.addSeparator();
+    p.addItem("Init Step Sequencer", makeInit(modulation::ModulatorStorage::ModulatorShape::STEP));
+    p.addItem("Init Envelope", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_ENV));
+    auto c = juce::PopupMenu();
+    c.addItem("Sine", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SINE));
+    c.addItem("Saw", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SAW_TRI_RAMP, 1.0));
+    c.addItem("Ramp",
+              makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SAW_TRI_RAMP, -1.0));
+    c.addItem("Pulse", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_PULSE));
+    c.addItem("Tri", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_PULSE, 1.0));
+    c.addItem("Smooth Noise",
+              makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SMOOTH_NOISE));
+    c.addItem("S&H Noise", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SH_NOISE));
+    p.addSubMenu("Init Curves", c);
+    p.addSeparator();
+    p.addItem("Factory Presets", editor->makeComingSoon("Factory LFO Presets"));
+    p.addItem("User Presets", editor->makeComingSoon("Factory LFO Presets"));
+    p.addSeparator();
+    p.addItem("Save User Preset", [this]() { doSavePreset(); });
+    p.addItem("Load User Preset", [this]() { doLoadPreset(); });
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
+
+std::string LfoPane::getShapeMenuLabel()
+{
+    auto &ms = modulatorStorageData[selectedTab];
+    return *modulatorShapeA->description.valueToString((float)ms.modulatorShape);
+}
+
+void LfoPane::doLoadPreset()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Load Modulator Preset", juce::File(editor->browser.modulatorPresetDirectory.u8string()),
+        "*.scmod");
+    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                 juce::FileBrowserComponent::openMode,
+                             [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 auto result = c.getResults();
+                                 if (result.isEmpty() || result.size() > 1)
+                                 {
+                                     return;
+                                 }
+                                 auto f = result.getFirst();
+                                 auto content = f.loadFileAsString().toStdString();
+                                 if (!content.empty())
+                                 {
+                                     w->unstreamFromJSON(content);
+                                 }
+                             });
+}
+void LfoPane::doSavePreset()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Save Modulator Preset", juce::File(editor->browser.modulatorPresetDirectory.u8string()),
+        "*.scmod");
+    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                 juce::FileBrowserComponent::saveMode |
+                                 juce::FileBrowserComponent::warnAboutOverwriting,
+                             [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 auto result = c.getResults();
+                                 if (result.isEmpty() || result.size() > 1)
+                                 {
+                                     return;
+                                 }
+                                 auto f = result.getFirst();
+                                 if (f.existsAsFile() || f.create())
+                                 {
+                                     f.replaceWithText(w->streamToJSON());
+                                 }
+                             });
+}
+
+using ssmap_t = std::map<std::string, uint64_t>;
+using streamLfo_t = std::tuple<ssmap_t, modulation::ModulatorStorage>;
+std::string LfoPane::streamToJSON() const
+{
+    using ssmap_t = std::map<std::string, uint64_t>;
+    ssmap_t ssmap;
+    ssmap["modulatorStreamVersion"] = 1;
+    ssmap["engineStreamVersion"] = scxt::currentStreamingVersion;
+    streamLfo_t versionedStorage{ssmap, modulatorStorageData[selectedTab]};
+
+    auto jsonv = json::scxt_value(versionedStorage);
+    std::ostringstream oss;
+    tao::json::events::transformer<tao::json::events::to_pretty_stream> consumer(oss, 3);
+    tao::json::events::from_value(consumer, jsonv);
+    return oss.str();
+}
+
+void LfoPane::unstreamFromJSON(const std::string &json)
+{
+    streamLfo_t versionedStorage;
+    tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
+    tao::json::events::from_string(consumer, json);
+    auto jv = std::move(consumer.value);
+    jv.to(versionedStorage);
+
+    auto &config = std::get<0>(versionedStorage);
+    auto &ms = std::get<1>(versionedStorage);
+
+    modulatorStorageData[selectedTab] = ms;
+    sendToSerialization(cmsg::UpdateFullModStorageForGroupsOrZones({forZone, selectedTab, ms}));
+}
+
 } // namespace scxt::ui::app::edit_screen

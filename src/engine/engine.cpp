@@ -781,6 +781,16 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         });
         return;
     }
+    if (extensionMatches(p, ".scm"))
+    {
+        patch_io::loadMulti(p, *this);
+        return;
+    }
+    if (extensionMatches(p, ".scp"))
+    {
+        patch_io::loadPartInto(p, *this, getSelectionManager()->selectedPart);
+        return;
+    }
 
     // OK so what we want to do now is
     // 1. Load this sample on this thread
