@@ -251,11 +251,14 @@ struct GroupMatrixEndpoints
             registerGroupModSource(e, egSource[1], "", "EG2");
         }
 
-        LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource> lfoSources;
-        MIDICCBase<GroupMatrixConfig, SR, 'zncc', registerGroupModSource> midiCCSources;
+        scxt::modulation::shared::LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource>
+            lfoSources;
+        scxt::modulation::shared::MIDICCBase<GroupMatrixConfig, SR, 'zncc', registerGroupModSource>
+            midiCCSources;
 
         SR egSource[2];
-        TransportSourceBase<SR, 'gtsp', false, registerGroupModSource> transportSources;
+        scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', false, registerGroupModSource>
+            transportSources;
 
         struct MacroSources
         {
