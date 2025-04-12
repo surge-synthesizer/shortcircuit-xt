@@ -297,6 +297,7 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
     for (const auto &[t, fns] : e->groupModTargets)
     {
         tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(g, t), std::get<1>(fns)(g, t)},
+                        std::get<2>(fns)(g, t),
                         std::get<2>(fns)(g, t)); // GroupMatrixConfig::getIsMultiplicative(t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);

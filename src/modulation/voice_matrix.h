@@ -392,7 +392,10 @@ struct MatrixEndpoints
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             nameFn,
         std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
-            additiveFn);
+            additiveFn,
+        std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            enabledFn =
+                [](const engine::Zone &, const MatrixConfig::TargetIdentifier &) { return true; });
 
     static void registerVoiceModSource(
         engine::Engine *e, const MatrixConfig::SourceIdentifier &,
@@ -409,7 +412,8 @@ struct MatrixEndpoints
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
 // The last bool is "allows multiplicative"
-typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, bool> namedTarget_t;
+typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, bool, bool>
+    namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
 typedef std::vector<namedSource_t> namedSourceVector_t;

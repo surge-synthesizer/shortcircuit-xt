@@ -273,7 +273,7 @@ struct GroupMatrixEndpoints
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
 // The last bool is "allows multiplicative"
-typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, bool>
+typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, bool, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;

@@ -187,6 +187,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
     if (pd.requiresConsistencyCheck)
     {
         auto &ps = asT()->processorStorage[whichProcessor];
+        auto &pc = asT()->processorDescription[whichProcessor];
         uint8_t memory[dsp::processor::processorMemoryBufferSize];
         float pfp[dsp::processor::maxProcessorFloatParams];
         int ifp[dsp::processor::maxProcessorIntParams];
@@ -214,6 +215,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
         asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
 
         dsp::processor::unspawnProcessor(tmpProcessor);
+
         return true;
     }
 

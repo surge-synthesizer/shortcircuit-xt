@@ -187,12 +187,13 @@ void MatrixEndpoints::registerVoiceModTarget(
     engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> pathFn,
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> nameFn,
-    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> additiveFn)
+    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> additiveFn,
+    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> enabledFn)
 {
     if (!e)
         return;
 
-    e->registerVoiceModTarget(t, pathFn, nameFn, additiveFn);
+    e->registerVoiceModTarget(t, pathFn, nameFn, additiveFn, enabledFn);
 }
 
 void MatrixEndpoints::registerVoiceModSource(
@@ -256,7 +257,7 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
     for (const auto &[t, fns] : e->voiceModTargets)
     {
         tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(z, t), std::get<1>(fns)(z, t)},
-                        std::get<2>(fns)(z, t));
+                        std::get<2>(fns)(z, t), std::get<3>(fns)(z, t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 
@@ -319,8 +320,15 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
                 return "";
             return d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
         };
+        auto enFn = [icopy = i](const engine::Zone &z,
+                                const MatrixConfig::TargetIdentifier &t) -> bool {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return false;
+            return d.floatControlDescriptions[icopy].isEnabled();
+        };
 
-        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn);
+        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn, enFn);
     }
 }
 
