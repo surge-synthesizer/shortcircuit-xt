@@ -292,7 +292,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                     c = cn.second;
             }
 
-            for (const auto &[di, dn, ca] : dsts)
+            for (const auto &[di, dn, ca, isen] : dsts)
             {
                 if (di == row.target)
                     d = dn.second;
@@ -343,11 +343,12 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             }
         }
 
-        for (const auto &[di, dn, ca] : dsts)
+        for (const auto &[di, dn, ca, en] : dsts)
         {
             if (di == row.target)
             {
                 target->setLabel(dn.first + ": " + dn.second);
+                target->paintLabelNonEnabled = !en;
                 allowsMultiplicative = ca;
             }
         }
@@ -754,7 +755,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         bool checkPath{false};
         juce::PopupMenu subMenu;
 
-        for (const auto &[ti, tn, canAdditive] : tgts)
+        for (const auto &[ti, tn, canAdditive, isEnabled] : tgts)
         {
             if (tn.second.empty())
                 continue;
@@ -779,7 +780,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
             if (tn.first.empty())
             {
-                p.addItem(tn.first + ": " + tn.second, true, selected, mop);
+                p.addItem(tn.first + ": " + tn.second, isEnabled, selected, mop);
             }
             else
             {
@@ -795,7 +796,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                     subMenu.addSectionHeader(tn.first);
                     subMenu.addSeparator();
                 }
-                subMenu.addItem(tn.first + ": " + tn.second, true, selected, mop);
+                subMenu.addItem(tn.first + ": " + tn.second, isEnabled, selected, mop);
                 checkPath = checkPath || selected;
             }
         }

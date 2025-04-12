@@ -982,9 +982,9 @@ void Engine::onSampleRateChanged()
 
 void Engine::registerVoiceModTarget(const voice::modulation::MatrixConfig::TargetIdentifier &t,
                                     vmodTgtStrFn_t pathFn, vmodTgtStrFn_t nameFn,
-                                    vmodTgtBoolFn_t additiveFn)
+                                    vmodTgtBoolFn_t additiveFn, vmodTgtBoolFn_t enabledFn)
 {
-    voiceModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn));
+    voiceModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn, enabledFn));
 }
 
 void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &t,
@@ -995,9 +995,9 @@ void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::Sourc
 
 void Engine::registerGroupModTarget(const modulation::GroupMatrixConfig::TargetIdentifier &t,
                                     gmodTgtStrFn_t pathFn, gmodTgtStrFn_t nameFn,
-                                    gmodTgtBoolFn_t additiveFn)
+                                    gmodTgtBoolFn_t additiveFn, gmodTgtBoolFn_t enabledFn)
 {
-    groupModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn));
+    groupModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn, enabledFn));
 }
 
 void Engine::registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &t,
