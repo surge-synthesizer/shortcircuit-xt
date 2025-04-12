@@ -331,37 +331,6 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     bindEl(m, ms, env.rShapeT, ms.envLfoStorage.rShape, env.rShapeP);
     bindEl(m, ms, env.rateMulT, ms.envLfoStorage.rateMul, env.rateMulP);
 }
-} // namespace scxt::modulation::shared
-
-template <> struct std::hash<scxt::modulation::shared::TargetIdentifier>
-{
-    std::size_t operator()(const scxt::modulation::shared::TargetIdentifier &s) const noexcept
-    {
-        return scxt::modulation::shared::identifierToHash(s);
-    }
-};
-
-template <> struct std::hash<scxt::modulation::shared::SourceIdentifier>
-{
-    std::size_t operator()(const scxt::modulation::shared::SourceIdentifier &s) const noexcept
-    {
-        return scxt::modulation::shared::identifierToHash(s);
-    }
-};
-
-inline std::ostream &operator<<(std::ostream &os,
-                                const scxt::modulation::shared::TargetIdentifier &tg)
-{
-    scxt::modulation::shared::identifierToStream(os, tg, "Target");
-    return os;
-}
-
-inline std::ostream &operator<<(std::ostream &os,
-                                const scxt::modulation::shared::SourceIdentifier &tg)
-{
-    scxt::modulation::shared::identifierToStream(os, tg, "Source");
-    return os;
-}
 
 template <typename SR, uint32_t gid, bool includeVoice,
           void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
@@ -457,5 +426,36 @@ struct MIDICCBase
         }
     }
 };
+} // namespace scxt::modulation::shared
+
+template <> struct std::hash<scxt::modulation::shared::TargetIdentifier>
+{
+    std::size_t operator()(const scxt::modulation::shared::TargetIdentifier &s) const noexcept
+    {
+        return scxt::modulation::shared::identifierToHash(s);
+    }
+};
+
+template <> struct std::hash<scxt::modulation::shared::SourceIdentifier>
+{
+    std::size_t operator()(const scxt::modulation::shared::SourceIdentifier &s) const noexcept
+    {
+        return scxt::modulation::shared::identifierToHash(s);
+    }
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const scxt::modulation::shared::TargetIdentifier &tg)
+{
+    scxt::modulation::shared::identifierToStream(os, tg, "Target");
+    return os;
+}
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const scxt::modulation::shared::SourceIdentifier &tg)
+{
+    scxt::modulation::shared::identifierToStream(os, tg, "Source");
+    return os;
+}
 
 #endif // SHORTCIRCUITXT_MATRIX_SHARED_H

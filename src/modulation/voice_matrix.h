@@ -245,8 +245,10 @@ struct MatrixEndpoints
                 registerVoiceModSource(e, egSources[i], "", "EG" + std::to_string(i + 1));
         }
 
-        LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource> lfoSources;
-        MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource> midiCCSources;
+        scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource>
+            lfoSources;
+        scxt::modulation::shared::MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource>
+            midiCCSources;
 
         struct MIDISources
         {
@@ -326,7 +328,8 @@ struct MatrixEndpoints
             SR isLooping, loopPercentage, samplePercentage;
         } voiceSources;
 
-        TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
+        scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource>
+            transportSources;
 
         struct RNGSources
         {
