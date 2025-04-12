@@ -72,6 +72,38 @@ struct EnvLFOStorage
     float rateMul{0.f};
     bool loop{false};
 };
+
+struct PhasorStorage
+{
+    enum SyncMode
+    {
+        SONGPOS,
+        VOICEPOS
+    } syncMode{VOICEPOS};
+    DECLARE_ENUM_STRING(SyncMode);
+
+    enum Division
+    {
+        NOTE,
+        TRIPLET,
+        DOTTED
+    } division{NOTE};
+    DECLARE_ENUM_STRING(Division);
+
+    int32_t numerator{1}, denominator{4};
+};
+
+struct RandomStorage
+{
+    enum Style
+    {
+        UNIFORM_01,
+        UNIFORM_BIPOLAR,
+        NORMAL,
+        HALF_NORMAL
+    } style{UNIFORM_01};
+    DECLARE_ENUM_STRING(Style);
+};
 } // namespace modulators
 
 struct ModulatorStorage
@@ -123,6 +155,12 @@ struct ModulatorStorage
     inline bool isCurve() const { return !isStep() && !isEnv() && !isMSEG(); }
 
     bool modulatorConsistent{true};
+};
+
+struct MiscSourceStorage
+{
+    std::array<modulators::PhasorStorage, scxt::phasorsPerGroupOrZone> phasors;
+    std::array<modulators::RandomStorage, scxt::randomsPerGroupOrZone> randoms;
 };
 
 inline double secondsToNormalizedEnvTime(double s)
@@ -253,6 +291,20 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                         .withFeature(pmd::Features::ALLOW_FRACTIONAL_TYPEINS)
                                         .withName("Rate Multiplier"));
     SC_FIELD(envLfoStorage.loop, pmd().asBool().withDefault(0.0).withName("Loop"));
-})
+});
+
+SC_DESCRIBE(scxt::modulation::modulators::PhasorStorage,
+            SC_FIELD(numerator, pmd()
+                                    .asInt()
+                                    .withLinearScaleFormatting("")
+                                    .withDefault(1)
+                                    .withName("Numerator")
+                                    .withRange(1, 64));
+            SC_FIELD(denominator, pmd()
+                                      .asInt()
+                                      .withLinearScaleFormatting("")
+                                      .withDefault(4)
+                                      .withName("Denominator")
+                                      .withRange(1, 64));)
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

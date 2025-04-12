@@ -195,6 +195,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         {
         }
     }
+    phasorEvaluator.step(e.transport, miscSourceStorage);
 
     bool envGate = gated;
     for (int i = 0; i < egsPerGroup; ++i)
@@ -640,6 +641,9 @@ void Group::resetLFOs(int whichLFO)
             SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
         }
     }
+
+    randomEvaluator.evaluate(getEngine()->rng, miscSourceStorage);
+    phasorEvaluator.attack(getEngine()->transport, miscSourceStorage);
 }
 
 bool Group::isActive() const

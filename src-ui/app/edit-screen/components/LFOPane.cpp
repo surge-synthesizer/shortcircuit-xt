@@ -37,7 +37,10 @@
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
+#include "sst/jucegui/components/NamedPanelDivider.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+
+#include "sst/jucegui/layouts/ListLayout.h"
 
 // Included so we can have UI-thread exceution for curve rendering
 #include "modulation/modulators/steplfo.h"
@@ -893,6 +896,288 @@ struct MSEGLFOPane : juce::Component
     }
 };
 
+struct MiscPanel : juce::Component, HasEditor
+{
+    modulation::MiscSourceStorage &ms;
+    bool forZone{true};
+    MiscPanel(bool forZone, HasEditor *pe, modulation::MiscSourceStorage &s)
+        : forZone(forZone), ms(s), HasEditor(pe->editor)
+    {
+        buildComponents();
+    }
+
+    using intatt_t = connectors::PayloadDataAttachment<modulation::MiscSourceStorage, int32_t>;
+
+    std::unique_ptr<jcmp::Label> phasorTitle, randomTitle;
+    std::array<std::unique_ptr<jcmp::Label>, scxt::phasorsPerGroupOrZone> phasorABCs;
+    std::array<std::unique_ptr<jcmp::Label>, scxt::phasorsPerGroupOrZone> phasorSlashes;
+    std::array<std::unique_ptr<jcmp::MenuButton>, scxt::phasorsPerGroupOrZone> syncButtons;
+    std::array<std::unique_ptr<jcmp::MenuButton>, scxt::phasorsPerGroupOrZone> divButtons;
+
+    std::array<std::unique_ptr<jcmp::DraggableTextEditableValue>, scxt::phasorsPerGroupOrZone>
+        numText, denText;
+    std::array<std::unique_ptr<intatt_t>, scxt::phasorsPerGroupOrZone> numTextA, denTextA;
+
+    std::unique_ptr<jcmp::NamedPanelDivider> phasorRandDiv;
+
+    std::array<std::unique_ptr<jcmp::Label>, scxt::randomsPerGroupOrZone> randomABCs;
+    std::array<std::unique_ptr<jcmp::MenuButton>, scxt::randomsPerGroupOrZone> randomModeButtons;
+
+    void buildComponents()
+    {
+        phasorTitle = std::make_unique<jcmp::Label>();
+        phasorTitle->setText("PHASORS");
+        phasorTitle->setJustification(juce::Justification::centred);
+        addAndMakeVisible(*phasorTitle);
+        randomTitle = std::make_unique<jcmp::Label>();
+        randomTitle->setText("RANDOM");
+        randomTitle->setJustification(juce::Justification::centred);
+        addAndMakeVisible(*randomTitle);
+
+        phasorRandDiv = std::make_unique<jcmp::NamedPanelDivider>();
+        phasorRandDiv->isHorizontal = false;
+        addAndMakeVisible(*phasorRandDiv);
+
+        auto onChange = [w = juce::Component::SafePointer(this)](const auto &a) {
+            if (!w)
+                return;
+            w->repushData();
+            w->updateFromValues();
+        };
+        for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
+        {
+            phasorABCs[i] = std::make_unique<jcmp::Label>();
+            std::string lab = "A";
+            lab[0] += i;
+            phasorABCs[i]->setText(lab);
+            addAndMakeVisible(*phasorABCs[i]);
+
+            syncButtons[i] = std::make_unique<jcmp::MenuButton>();
+            syncButtons[i]->setLabel("SELECT MODE");
+            syncButtons[i]->setOnCallback([i, w = juce::Component::SafePointer(this)]() {
+                if (w)
+                    w->showSyncMenu(i);
+            });
+            addAndMakeVisible(*syncButtons[i]);
+
+            divButtons[i] = std::make_unique<jcmp::MenuButton>();
+            divButtons[i]->setLabel("DIV");
+            divButtons[i]->setOnCallback([i, w = juce::Component::SafePointer(this)]() {
+                if (w)
+                    w->showDivisionMenu(i);
+            });
+            addAndMakeVisible(*divButtons[i]);
+
+            const auto &nd = scxt::datamodel::describeValue(ms.phasors[i], ms.phasors[i].numerator);
+            const auto &dd =
+                scxt::datamodel::describeValue(ms.phasors[i], ms.phasors[i].denominator);
+            numTextA[i] = std::make_unique<intatt_t>(nd, onChange, ms.phasors[i].numerator);
+            numText[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+            numText[i]->setSource(numTextA[i].get());
+            addAndMakeVisible(*numText[i]);
+
+            denTextA[i] = std::make_unique<intatt_t>(dd, onChange, ms.phasors[i].denominator);
+            denText[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+            denText[i]->setSource(denTextA[i].get());
+            addAndMakeVisible(*denText[i]);
+
+            phasorSlashes[i] = std::make_unique<jcmp::Label>();
+            phasorSlashes[i]->setText("/");
+            addAndMakeVisible(*phasorSlashes[i]);
+        }
+
+        for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
+        {
+            randomABCs[i] = std::make_unique<jcmp::Label>();
+            std::string lab = "A";
+            lab[0] += i;
+            randomABCs[i]->setText(lab);
+            addAndMakeVisible(*randomABCs[i]);
+
+            randomModeButtons[i] = std::make_unique<jcmp::MenuButton>();
+            randomModeButtons[i]->setLabel("MODE");
+            randomModeButtons[i]->setOnCallback([i, w = juce::Component::SafePointer(this)]() {
+                if (w)
+                    w->showRandomModeMenu(i);
+            });
+
+            addAndMakeVisible(*randomModeButtons[i]);
+        }
+
+        updateFromValues();
+        resized();
+    }
+    void resized()
+    {
+        int margin{3}, vmargin{5}, divw{3};
+        float split{0.65f};
+        float rowHeight = (getHeight() - 4 * vmargin) / (scxt::phasorsPerGroupOrZone + 1);
+        static_assert(scxt::phasorsPerGroupOrZone == scxt::randomsPerGroupOrZone,
+                      "Must be same for this layout to work");
+        namespace jlo = sst::jucegui::layouts;
+        auto lo = jlo::HList().at(0, 0).withAutoGap(margin);
+
+        auto plo =
+            jlo::VList().withWidth(getWidth() * split - 2 * margin - divw).withAutoGap(vmargin);
+        plo.add(jlo::Component(*phasorTitle).withHeight(rowHeight));
+        for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
+        {
+            auto prlo = jlo::HList().withAutoGap(margin).withHeight(rowHeight);
+            prlo.add(jlo::Component(*phasorABCs[i]).withWidth(20));
+            prlo.add(jlo::Component(*syncButtons[i]).expandToFill());
+            prlo.addGap(5);
+            prlo.add(jlo::Component(*numText[i]).withWidth(20));
+            prlo.add(jlo::Component(*phasorSlashes[i]).withWidth(15));
+            prlo.add(jlo::Component(*denText[i]).withWidth(20));
+            prlo.add(jlo::Component(*divButtons[i]).withWidth(60));
+
+            plo.add(prlo);
+        }
+        lo.add(plo);
+
+        lo.add(jlo::Component(*phasorRandDiv).withWidth(divw).withHeight(getHeight()));
+
+        auto rlo = jlo::VList()
+                       .withWidth(getWidth() * (1 - split) - 2 * margin - divw)
+                       .withAutoGap(vmargin);
+        rlo.add(jlo::Component(*randomTitle).withHeight(20));
+        for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
+        {
+            auto rrlo = jlo::HList().withAutoGap(margin).withHeight(rowHeight);
+            rrlo.add(jlo::Component(*randomABCs[i]).withWidth(20));
+            rrlo.add(jlo::Component(*randomModeButtons[i]).expandToFill());
+
+            rlo.add(rrlo);
+        }
+        lo.add(rlo);
+
+        lo.doLayout();
+    }
+    void repushData()
+    {
+        sendToSerialization(cmsg::UpdateMiscmodStorageForSelectedGroupOrZone({forZone, ms}));
+    }
+
+    void showSyncMenu(int i)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Phasor Synch Mode");
+        p.addSeparator();
+        auto gen = [&p, i, this](auto v, auto l) {
+            p.addItem(l, true, v == ms.phasors[i].syncMode,
+                      [i, w = juce::Component::SafePointer(this), v] {
+                          if (!w)
+                              return;
+                          w->ms.phasors[i].syncMode = v;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+
+        gen(modulation::modulators::PhasorStorage::SyncMode::SONGPOS, "Song Position");
+        gen(modulation::modulators::PhasorStorage::SyncMode::VOICEPOS,
+            forZone ? "Voice Position" : "Group Position");
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+    void showDivisionMenu(int i)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Phasor Division");
+        p.addSeparator();
+        auto gen = [&p, i, this](auto v, auto l) {
+            p.addItem(l, true, v == ms.phasors[i].division,
+                      [i, w = juce::Component::SafePointer(this), v] {
+                          if (!w)
+                              return;
+                          w->ms.phasors[i].division = v;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+
+        gen(modulation::modulators::PhasorStorage::Division::NOTE, "Note");
+        gen(modulation::modulators::PhasorStorage::Division::DOTTED, "Dotted");
+        gen(modulation::modulators::PhasorStorage::Division::TRIPLET, "Triplet");
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+    void showRandomModeMenu(int i)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Random Distribution");
+        p.addSeparator();
+        auto gen = [&p, i, this](auto v, auto l) {
+            p.addItem(l, true, v == ms.randoms[i].style,
+                      [i, w = juce::Component::SafePointer(this), v] {
+                          if (!w)
+                              return;
+                          w->ms.randoms[i].style = v;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+
+        gen(modulation::modulators::RandomStorage::Style::UNIFORM_01, "Uniform 0-1");
+        gen(modulation::modulators::RandomStorage::Style::UNIFORM_BIPOLAR, "Uniform Bipolar");
+        gen(modulation::modulators::RandomStorage::Style::NORMAL, "Normal");
+        gen(modulation::modulators::RandomStorage::Style::HALF_NORMAL, "Half Normal");
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void updateFromValues()
+    {
+        assert(phasorTitle);
+        for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
+        {
+            const auto &ps = ms.phasors[i];
+            switch (ps.syncMode)
+            {
+            case modulation::modulators::PhasorStorage::VOICEPOS:
+                syncButtons[i]->setLabel(forZone ? "VOICE" : "GROUP");
+                break;
+            case modulation::modulators::PhasorStorage::SONGPOS:
+                syncButtons[i]->setLabel("SONG");
+                break;
+            }
+
+            switch (ps.division)
+            {
+            case modulation::modulators::PhasorStorage::NOTE:
+                divButtons[i]->setLabel("NOTE");
+                break;
+            case modulation::modulators::PhasorStorage::TRIPLET:
+                divButtons[i]->setLabel("TRIP");
+                break;
+            case modulation::modulators::PhasorStorage::DOTTED:
+                divButtons[i]->setLabel("DOT");
+                break;
+            }
+        }
+
+        for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
+        {
+            auto rs = ms.randoms[i];
+            switch (rs.style)
+            {
+            case modulation::modulators::RandomStorage::UNIFORM_01:
+                randomModeButtons[i]->setLabel("UNIFORM 0-1");
+                break;
+            case modulation::modulators::RandomStorage::UNIFORM_BIPOLAR:
+                randomModeButtons[i]->setLabel(std::string("UNIFORM ") + u8"\U000000B1" + "1");
+                break;
+            case modulation::modulators::RandomStorage::NORMAL:
+                randomModeButtons[i]->setLabel("NORMAL");
+                break;
+            case modulation::modulators::RandomStorage::HALF_NORMAL:
+                randomModeButtons[i]->setLabel(std::string() + u8"\U000000BD" + " NORMAL");
+                break;
+            }
+        }
+    }
+};
+
 struct ConsistencyLFOPane : juce::Component
 {
     LfoPane *parent{nullptr};
@@ -939,7 +1224,7 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
     setContentAreaComponent(std::make_unique<juce::Component>());
     // setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
     isTabbed = true;
-    tabNames = {"LFO 1", "LFO 2", "LFO 3", "LFO 4"};
+    tabNames = {"LFO 1", "LFO 2", "LFO 3", "LFO 4", "MISC"};
 
     resetTabState();
 
@@ -951,6 +1236,12 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
 }
 
 LfoPane::~LfoPane() { getContentAreaComponent()->removeAllChildren(); }
+
+void LfoPane::setTabsForGLFO()
+{
+    tabNames = {"GLFO 1", "GLFO 2", "GLFO 3", "GLFO 4", "MISC"};
+    resetTabState();
+}
 
 void LfoPane::resized()
 {
@@ -990,10 +1281,44 @@ void LfoPane::setModulatorStorage(int index, const modulation::ModulatorStorage 
     }
 }
 
+void LfoPane::setMiscModStorage(const modulation::MiscSourceStorage &mod)
+{
+    miscStorageData = mod;
+
+    if (selectedTab != 4)
+        return;
+
+    getContentAreaComponent()->removeAllChildren();
+
+    if (isEnabled())
+    {
+        rebuildPanelComponents();
+    }
+}
+
 void LfoPane::rebuildPanelComponents()
 {
     if (!isEnabled())
         return;
+
+    if (selectedTab == 4)
+    {
+        clearAdditionalHamburgerComponents();
+
+        miscPanel = std::make_unique<MiscPanel>(forZone, this, miscStorageData);
+        getContentAreaComponent()->addAndMakeVisible(*miscPanel);
+        resized();
+
+        if (forZone)
+        {
+            editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
+        }
+        else
+        {
+            editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+        }
+        return;
+    }
 
     auto &ms = modulatorStorageData[selectedTab];
 
@@ -1061,6 +1386,11 @@ void LfoPane::rebuildPanelComponents()
 
 void LfoPane::repositionContentAreaComponents()
 {
+    if (miscPanel && selectedTab == 4)
+    {
+        miscPanel->setBounds(0, 0, getContentArea().getWidth(), getContentArea().getHeight());
+        return;
+    }
     if (!modulatorShape) // these are all created at once so single check is fine
         return;
 

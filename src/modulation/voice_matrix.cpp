@@ -163,17 +163,14 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(voiceSources.samplePercentage, v.currentSamplePercentageF);
     m.bindSourceValue(voiceSources.loopPercentage, v.currentLoopPercentageF);
 
-    for (int i = 0; i < scxt::numTransportPhasors; ++i)
+    for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
     {
-        m.bindSourceValue(transportSources.phasors[i], z.getEngine()->transportPhasors[i]);
-        m.bindSourceValue(transportSources.voicePhasors[i], v.transportPhasors[i]);
+        m.bindSourceValue(transportSources.phasors[i], v.phasorEvaluator.outputs[i]);
     }
 
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
     {
-        bool bip = (i % 4 > 1) ? false : true;
-        int dist = (i < 4) ? 0 : 1;
-        m.bindSourceConstantValue(rngSources.randoms[i], randomRoll(bip, dist));
+        m.bindSourceValue(rngSources.randoms[i], v.randomEvaluator.outputs[i]);
     }
 
     auto *part = z.parentGroup->parentPart;

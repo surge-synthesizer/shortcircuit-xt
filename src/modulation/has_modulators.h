@@ -35,6 +35,8 @@
 #include "modulation/modulators/steplfo.h"
 #include "modulation/modulators/curvelfo.h"
 #include "modulation/modulators/envlfo.h"
+#include "modulation/modulators/random_evaluator.h"
+#include "modulation/modulators/phasor_evaluator.h"
 #include "sst/cpputils/constructors.h"
 
 namespace scxt::modulation::shared
@@ -76,6 +78,8 @@ template <typename T, size_t egsPerObject> struct HasModulators
     scxt::modulation::modulators::StepLFO stepLfos[lfosPerObject];
     scxt::modulation::modulators::CurveLFO curveLfos[lfosPerObject];
     scxt::modulation::modulators::EnvLFO envLfos[lfosPerObject];
+    scxt::modulation::modulators::RandomEvaluator randomEvaluator;
+    scxt::modulation::modulators::PhasorEvaluator phasorEvaluator;
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         T, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>
@@ -90,6 +94,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
 
     std::array<bool, lfosPerObject> lfosActive{};
     std::array<bool, egsPerObject> egsActive{};
+    bool phasorsActive;
 
     void setHasModulatorsSampleRate(double sr, double sri) { doubleRate.resetRates(); }
 

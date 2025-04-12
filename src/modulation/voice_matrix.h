@@ -328,26 +328,9 @@ struct MatrixEndpoints
             SR isLooping, loopPercentage, samplePercentage;
         } voiceSources;
 
-        scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource>
+        scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', registerVoiceModSource>
             transportSources;
-
-        struct RNGSources
-        {
-            RNGSources(engine::Engine *e)
-            {
-                for (uint32_t i = 0; i < 8; ++i)
-                {
-                    std::string name = "";
-                    name = (i % 4 > 1) ? "Unipolar " : "Bipolar ";
-                    name += (i < 4) ? "Even " : "Gaussian ";
-                    name += std::to_string(i % 2 + 1);
-
-                    randoms[i] = SR{'zrng', 'rnds', i};
-                    registerVoiceModSource(e, randoms[i], "Random", name);
-                }
-            }
-            SR randoms[8];
-        } rngSources;
+        scxt::modulation::shared::RNGSourceBase<SR, 'zrng', registerVoiceModSource> rngSources;
 
         struct MacroSources
         {

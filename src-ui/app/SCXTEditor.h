@@ -227,6 +227,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &);
+    void onGroupOrZoneMiscModStorageUpdated(const scxt::messaging::client::gzMiscStorageUpdate_t &);
     void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p);
     void onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p);
 

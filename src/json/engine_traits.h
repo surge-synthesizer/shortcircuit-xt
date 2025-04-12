@@ -101,6 +101,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
 
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
+                 SCLOG("Unstream and Setup Complete");
              }))
 
 SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
@@ -393,6 +394,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                       {"routingTable", t.routingTable},
                       {"gegStorage", t.gegStorage},
                       {"modulatorStorage", t.modulatorStorage},
+                      {"miscSourceStorage", t.miscSourceStorage},
                       {"processorStorage", t.processorStorage},
                       {"triggerConditions", t.triggerConditions}};
              }),
@@ -405,6 +407,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                  findIf(v, "routingTable", group.routingTable);
                  findIf(v, "triggerConditions", group.triggerConditions);
                  findIfArray(v, "modulatorStorage", group.modulatorStorage);
+                 findIf(v, "miscSourceStorage", group.miscSourceStorage);
                  group.clearZones();
 
                  auto vzones = v.at("zones").get_array();
@@ -586,6 +589,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                       {"processorStorage", t.processorStorage},
                       {"routingTable", t.routingTable},
                       {"modulatorStorage", t.modulatorStorage},
+                      {"miscSourceStorage", t.miscSourceStorage},
                       {"egs", t.egStorage},
                       {"givenName", useGivenName}};
              }),
@@ -599,6 +603,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
 
                  findIf(v, "routingTable", zone.routingTable);
                  findIfArray(v, "modulatorStorage", zone.modulatorStorage);
+                 findIf(v, "miscSourceStorage", zone.miscSourceStorage);
                  if (v.find("aegStorage"))
                  {
                      findOrDefault(v, "aegStorage", zone.egStorage[0]);

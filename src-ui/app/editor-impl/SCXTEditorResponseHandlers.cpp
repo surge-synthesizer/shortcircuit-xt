@@ -213,6 +213,20 @@ void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
     }
 }
 
+void SCXTEditor::onGroupOrZoneMiscModStorageUpdated(
+    const scxt::messaging::client::gzMiscStorageUpdate_t &payload)
+{
+    const auto &[forZone, mm] = payload;
+    if (forZone)
+    {
+        editScreen->getZoneElements()->lfo->setMiscModStorage(mm);
+    }
+    else
+    {
+        editScreen->getGroupElements()->lfo->setMiscModStorage(mm);
+    }
+}
+
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
