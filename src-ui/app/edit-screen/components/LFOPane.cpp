@@ -698,6 +698,8 @@ struct ENVLFOPane : juce::Component, HasEditor
 
                 // So how long to 'gate' it for. Its just a choice really
                 auto sustainTime = std::max(0.1f, dahd / 3);
+                if (ms.envLfoStorage.loop)
+                    sustainTime = 0;
                 auto gateTime = dahd + sustainTime;
                 auto totalTime = tt + sustainTime;
                 // Add a bit of post release
@@ -758,6 +760,10 @@ struct ENVLFOPane : juce::Component, HasEditor
         using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
                                                    cmsg::UpdateZoneOrGroupModStorageFloatValue>;
 
+        using bfac =
+            connectors::BooleanSingleValueFactory<LfoPane::boolAttachment_t,
+                                                  cmsg::UpdateZoneOrGroupModStorageBoolValue>;
+
         auto &ms = parent->modulatorStorageData[parent->selectedTab];
 
         auto makeLabel = [this](auto &lb, const std::string &l) {
@@ -786,6 +792,10 @@ struct ENVLFOPane : juce::Component, HasEditor
         makeO(ms.envLfoStorage.dShape, curveDA, curveDK, curveDL, "Curve D");
         makeO(ms.envLfoStorage.rShape, curveRA, curveRK, curveRL, "Curve R");
         makeO(ms.envLfoStorage.rateMul, rateMulA, rateMulK, rateMulL, "Rate");
+
+        bfac::attachAndAdd(ms, ms.envLfoStorage.loop, this, loopA, loopB, parent->forZone,
+                           parent->selectedTab);
+        loopB->setLabel("LOOP");
     }
 
     void resized() override
@@ -856,7 +866,13 @@ struct ENVLFOPane : juce::Component, HasEditor
         makeSliderBounds(releaseS, releaseL, sliderBounds, lbHt, sliderWidth, sliderHeight,
                          sliderMg);
         // Sliders (END)
+
+        auto buttonH = BUTTON_H;
+        loopB->setBounds(0, bh / 2 - MG - 2 * buttonH, b.getWidth() / 4, buttonH);
     }
+
+    std::unique_ptr<LfoPane::boolAttachment_t> loopA;
+    std::unique_ptr<jcmp::ToggleButton> loopB;
 
     std::unique_ptr<LfoPane::attachment_t> delayA, attackA, holdA, decayA, sustainA, releaseA;
     std::unique_ptr<jcmp::VSlider> delayS, attackS, holdS, decayS, sustainS, releaseS;

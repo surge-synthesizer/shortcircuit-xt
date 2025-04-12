@@ -170,14 +170,26 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         {
             auto &lp = endpoints.lfo[i].env;
 
+            auto eloop = modulatorStorage[i].envLfoStorage.loop;
+            auto useGate = gated;
+            if (envLfos[i].envelope.stage > scxt::modulation::modulators::EnvLFO::env_t::s_release)
+            {
+                rt = true;
+            }
+            if (eloop)
+            {
+                useGate = envLfos[i].envelope.stage <
+                          scxt::modulation::modulators::EnvLFO::env_t::s_sustain;
+            }
             if (rt)
             {
                 envLfos[i].attackFrom(envLfos[i].output, *lp.delayP, *lp.attackP);
+                useGate = true;
             }
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
-                               gated);
+                               useGate);
         }
         else
         {
