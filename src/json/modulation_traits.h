@@ -88,6 +88,7 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
                  addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
                  addUnlessDefault<val_t>(v, "rateMul", 1.f, from.rateMul);
+                 addUnlessDefault<val_t>(v, "loop", false, from.loop);
              }),
              SC_TO({
                  const auto &object = v.get_object();
@@ -102,6 +103,7 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
                  findOrSet(v, "rateMul", 0.f, result.rateMul);
+                 findOrSet(v, "loop", false, result.loop);
              }))
 
 SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({

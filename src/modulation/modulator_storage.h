@@ -70,6 +70,7 @@ struct EnvLFOStorage
     float delay{0.f}, attack{0.f}, hold{0.f}, decay{0.f}, sustain{1.f}, release{0.f};
     float aShape{0.f}, dShape{0.f}, rShape{0.f};
     float rateMul{0.f};
+    bool loop{false};
 };
 } // namespace modulators
 
@@ -251,6 +252,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                         .withFeature(pmd::Features::BELOW_ONE_IS_INVERSE_FRACTION)
                                         .withFeature(pmd::Features::ALLOW_FRACTIONAL_TYPEINS)
                                         .withName("Rate Multiplier"));
+    SC_FIELD(envLfoStorage.loop, pmd().asBool().withDefault(0.0).withName("Loop"));
 })
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H
