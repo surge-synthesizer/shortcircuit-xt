@@ -315,6 +315,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     void promptOKCancel(
         const std::string &title, const std::string &message, std::function<void()> onOK,
         std::function<void()> onCancel = []() {});
+    void displayError(const std::string &title, const std::string &message);
 
     /*
      * Items to deal with the shared memory reads
