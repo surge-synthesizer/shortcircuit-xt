@@ -1114,9 +1114,9 @@ void LfoPane::showModulatorShapeMenu()
             if (!w)
                 return;
 
-            w->modulatorStorageData[w->selectedTab] = {};
-            w->modulatorStorageData[w->selectedTab].curveLfoStorage.angle = angle;
-            w->modulatorStorageData[w->selectedTab].modulatorShape = v;
+            auto &ms = w->modulatorStorageData[w->selectedTab];
+            ms.modulatorShape = v;
+            ms.curveLfoStorage.angle = angle;
             w->sendToSerialization(cmsg::UpdateFullModStorageForGroupsOrZones(
                 {w->forZone, w->selectedTab, w->modulatorStorageData[w->selectedTab]}));
         };
@@ -1124,8 +1124,8 @@ void LfoPane::showModulatorShapeMenu()
     auto p = juce::PopupMenu();
     p.addSectionHeader("Modulator Shapes");
     p.addSeparator();
-    p.addItem("Init Step Sequencer", makeInit(modulation::ModulatorStorage::ModulatorShape::STEP));
-    p.addItem("Init Envelope", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_ENV));
+    p.addItem("Step Sequencer", makeInit(modulation::ModulatorStorage::ModulatorShape::STEP));
+    p.addItem("Envelope", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_ENV));
     auto c = juce::PopupMenu();
     c.addItem("Sine", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SINE));
     c.addItem("Saw", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SAW_TRI_RAMP, 1.0));
@@ -1136,7 +1136,7 @@ void LfoPane::showModulatorShapeMenu()
     c.addItem("Smooth Noise",
               makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SMOOTH_NOISE));
     c.addItem("S&H Noise", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SH_NOISE));
-    p.addSubMenu("Init Curves", c);
+    p.addSubMenu("Curves", c);
     p.addSeparator();
     p.addItem("Factory Presets", editor->makeComingSoon("Factory LFO Presets"));
     p.addItem("User Presets", editor->makeComingSoon("Factory LFO Presets"));
@@ -1191,14 +1191,16 @@ void LfoPane::doSavePreset()
                                  auto f = result.getFirst();
                                  if (f.existsAsFile() || f.create())
                                  {
-                                     f.replaceWithText(w->streamToJSON());
+                                     auto s = w->streamToJSON();
+                                     if (s.has_value())
+                                         f.replaceWithText(*s);
                                  }
                              });
 }
 
 using ssmap_t = std::map<std::string, uint64_t>;
 using streamLfo_t = std::tuple<ssmap_t, modulation::ModulatorStorage>;
-std::string LfoPane::streamToJSON() const
+std::optional<std::string> LfoPane::streamToJSON() const
 {
     using ssmap_t = std::map<std::string, uint64_t>;
     ssmap_t ssmap;
@@ -1206,26 +1208,45 @@ std::string LfoPane::streamToJSON() const
     ssmap["engineStreamVersion"] = scxt::currentStreamingVersion;
     streamLfo_t versionedStorage{ssmap, modulatorStorageData[selectedTab]};
 
-    auto jsonv = json::scxt_value(versionedStorage);
-    std::ostringstream oss;
-    tao::json::events::transformer<tao::json::events::to_pretty_stream> consumer(oss, 3);
-    tao::json::events::from_value(consumer, jsonv);
-    return oss.str();
+    try
+    {
+        auto jsonv = json::scxt_value(versionedStorage);
+        std::ostringstream oss;
+        tao::json::events::transformer<tao::json::events::to_pretty_stream> consumer(oss, 3);
+        tao::json::events::from_value(consumer, jsonv);
+        return oss.str();
+    }
+    catch (const std::exception &e)
+    {
+        SCLOG("LFO Preset Streaming Error " << e.what());
+
+        editor->displayError("LFO Preset Stream Error", e.what());
+    }
+    return std::nullopt;
 }
 
 void LfoPane::unstreamFromJSON(const std::string &json)
 {
-    streamLfo_t versionedStorage;
-    tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
-    tao::json::events::from_string(consumer, json);
-    auto jv = std::move(consumer.value);
-    jv.to(versionedStorage);
+    try
+    {
+        streamLfo_t versionedStorage;
+        tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>>
+            consumer;
+        tao::json::events::from_string(consumer, json);
+        auto jv = std::move(consumer.value);
+        jv.to(versionedStorage);
 
-    auto &config = std::get<0>(versionedStorage);
-    auto &ms = std::get<1>(versionedStorage);
+        auto &config = std::get<0>(versionedStorage);
+        auto &ms = std::get<1>(versionedStorage);
 
-    modulatorStorageData[selectedTab] = ms;
-    sendToSerialization(cmsg::UpdateFullModStorageForGroupsOrZones({forZone, selectedTab, ms}));
+        modulatorStorageData[selectedTab] = ms;
+        sendToSerialization(cmsg::UpdateFullModStorageForGroupsOrZones({forZone, selectedTab, ms}));
+    }
+    catch (const std::exception &e)
+    {
+        SCLOG("LFO Preset Streaming Error " << e.what());
+        editor->displayError("LFO Preset Unstream Error", e.what());
+    }
 }
 
 } // namespace scxt::ui::app::edit_screen

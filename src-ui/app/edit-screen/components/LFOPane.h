@@ -41,6 +41,7 @@
 #include "modulation/modulators/steplfo.h"
 #include "engine/zone.h"
 #include <memory>
+#include <optional>
 
 namespace scxt::ui::app::edit_screen
 {
@@ -109,7 +110,7 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     void doSavePreset();
     void doLoadPreset();
 
-    std::string streamToJSON() const;
+    std::optional<std::string> streamToJSON() const;
     void unstreamFromJSON(const std::string &);
 
     std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
