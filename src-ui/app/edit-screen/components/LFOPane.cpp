@@ -1064,8 +1064,9 @@ struct MiscPanel : juce::Component, HasEditor
         p.addSectionHeader("Phasor Synch Mode");
         p.addSeparator();
         auto gen = [&p, i, this](auto v, auto l) {
+            auto that = this; // grrrr msvc
             p.addItem(l, true, v == ms.phasors[i].syncMode,
-                      [i, w = juce::Component::SafePointer(this), v] {
+                      [i, w = juce::Component::SafePointer(that), v] {
                           if (!w)
                               return;
                           w->ms.phasors[i].syncMode = v;
@@ -1086,8 +1087,9 @@ struct MiscPanel : juce::Component, HasEditor
         p.addSectionHeader("Phasor Division");
         p.addSeparator();
         auto gen = [&p, i, this](auto v, auto l) {
+            auto that = this;
             p.addItem(l, true, v == ms.phasors[i].division,
-                      [i, w = juce::Component::SafePointer(this), v] {
+                      [i, w = juce::Component::SafePointer(that), v] {
                           if (!w)
                               return;
                           w->ms.phasors[i].division = v;
@@ -1108,8 +1110,9 @@ struct MiscPanel : juce::Component, HasEditor
         p.addSectionHeader("Random Distribution");
         p.addSeparator();
         auto gen = [&p, i, this](auto v, auto l) {
+            auto that = this;
             p.addItem(l, true, v == ms.randoms[i].style,
-                      [i, w = juce::Component::SafePointer(this), v] {
+                      [i, w = juce::Component::SafePointer(that), v] {
                           if (!w)
                               return;
                           w->ms.randoms[i].style = v;
