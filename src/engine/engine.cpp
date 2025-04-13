@@ -1029,6 +1029,7 @@ void Engine::onTransportUpdated()
 
 void Engine::updateTransportPhasors()
 {
+#if 0
     float mul = 1 << ((numTransportPhasors - 1) / 2);
     for (int i = 0; i < numTransportPhasors; ++i)
     {
@@ -1036,6 +1037,7 @@ void Engine::updateTransportPhasors()
         transportPhasors[i] = std::modf((float)(transport.timeInBeats) * mul, &rawBeat);
         mul = mul / 2;
     }
+#endif
 }
 
 std::optional<fs::path> Engine::setupUserStorageDirectory()

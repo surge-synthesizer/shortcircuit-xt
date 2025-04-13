@@ -245,7 +245,7 @@ struct GroupMatrixEndpoints
     {
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}},
-              transportSources(e), macroSources(e)
+              transportSources(e), rngSources(e), macroSources(e)
         {
             registerGroupModSource(e, egSource[0], "", "EG1");
             registerGroupModSource(e, egSource[1], "", "EG2");
@@ -257,8 +257,9 @@ struct GroupMatrixEndpoints
             midiCCSources;
 
         SR egSource[2];
-        scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', false, registerGroupModSource>
+        scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
             transportSources;
+        scxt::modulation::shared::RNGSourceBase<SR, 'grng', registerGroupModSource> rngSources;
 
         struct MacroSources
         {

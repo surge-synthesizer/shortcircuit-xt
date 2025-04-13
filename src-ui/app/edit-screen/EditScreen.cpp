@@ -172,9 +172,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     }
     else
     {
-        lfo->tabNames = {"GLFO 1", "GLFO 2", "GLFO 3", "GLFO 4"};
-        assert(lfo->tabNames.size() == scxt::lfosPerGroup);
-        lfo->resetTabState();
+        lfo->setTabsForGLFO();
         eg[0]->setName("GRP EG1");
         eg[1]->setName("GRP EG2");
 
@@ -248,14 +246,14 @@ void EditScreen::onOtherTabSelection()
     if (!gts.empty())
     {
         auto gt = std::atoi(gts.c_str());
-        if (gt >= 0 && gt < lfosPerGroup)
+        if (gt >= 0 && gt < lfosPerGroup + 1) // for misc
             groupElements->lfo->selectTab(gt);
     }
     auto zts = editor->queryTabSelection(tabKey("multi.zone.lfo"));
     if (!zts.empty())
     {
         auto zt = std::atoi(zts.c_str());
-        if (zt >= 0 && zt < lfosPerZone)
+        if (zt >= 0 && zt < lfosPerZone + 1) // for misc
             zoneElements->lfo->selectTab(zt);
     }
 
@@ -263,14 +261,14 @@ void EditScreen::onOtherTabSelection()
     if (!gts.empty())
     {
         auto gt = std::atoi(gts.c_str());
-        if (gt >= 0 && gt < lfosPerGroup)
+        if (gt >= 0 && gt < 2)
             groupElements->outPane->selectTab(gt);
     }
     zts = editor->queryTabSelection(tabKey("multi.zone.output"));
     if (!zts.empty())
     {
         auto zt = std::atoi(zts.c_str());
-        if (zt >= 0 && zt < lfosPerZone)
+        if (zt >= 0 && zt < 2)
             zoneElements->outPane->selectTab(zt);
     }
     auto mts = editor->queryTabSelection(tabKey("multi.mapping"));

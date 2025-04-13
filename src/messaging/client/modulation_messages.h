@@ -132,8 +132,52 @@ CLIENT_TO_SERIAL(UpdateGroupRoutingRow, c2s_update_group_routing_row,
 
 // forzone, active, which, data
 typedef std::tuple<bool, bool, int, modulation::ModulatorStorage> indexedModulatorStorageUpdate_t;
-SERIAL_TO_CLIENT(UpdateZoneLfo, s2c_update_group_or_zone_individual_modulator_storage,
+SERIAL_TO_CLIENT(UpdateGroupOrZoneLfo, s2c_update_group_or_zone_individual_modulator_storage,
                  indexedModulatorStorageUpdate_t, onGroupOrZoneModulatorStorageUpdated);
+
+// forzone, data
+typedef std::tuple<bool, modulation::MiscSourceStorage> gzMiscStorageUpdate_t;
+SERIAL_TO_CLIENT(UpdateMiscModStorage, s2c_update_group_or_zone_miscmod_storage,
+                 gzMiscStorageUpdate_t, onGroupOrZoneMiscModStorageUpdated);
+
+inline void doMiscmodUpdate(const gzMiscStorageUpdate_t &payload, const engine::Engine &e,
+                            messaging::MessageController &cont)
+{
+    auto [forzone, storage] = payload;
+    if (forzone)
+    {
+        auto sz = e.getSelectionManager()->currentlySelectedZones();
+        if (!sz.empty())
+        {
+            cont.scheduleAudioThreadCallback([index = 0, storage = storage, zs = sz](auto &eng) {
+                for (const auto &z : zs)
+                {
+                    auto &zone =
+                        eng.getPatch()->getPart(z.part)->getGroup(z.group)->getZone(z.zone);
+                    zone->miscSourceStorage = storage;
+                }
+            });
+        }
+    }
+    else
+    {
+        auto sg = e.getSelectionManager()->currentlySelectedGroups();
+        if (!sg.empty())
+        {
+            cont.scheduleAudioThreadCallback([index = 0, storage = storage, gs = sg](auto &eng) {
+                for (const auto &z : gs)
+                {
+                    auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
+                    grp->miscSourceStorage = storage;
+                    SCLOG("Probably need to restart something here");
+                }
+            });
+        }
+    }
+}
+CLIENT_TO_SERIAL(UpdateMiscmodStorageForSelectedGroupOrZone,
+                 c2s_update_miscmod_storage_for_groups_or_zones, gzMiscStorageUpdate_t,
+                 doMiscmodUpdate(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H

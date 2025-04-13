@@ -29,6 +29,83 @@
 
 namespace scxt::modulation
 {
+namespace modulators
+{
+
+std::string PhasorStorage::toStringDivision(const Division &s)
+{
+    switch (s)
+    {
+    case Division::NOTE:
+        return "n";
+    case Division::TRIPLET:
+        return "t";
+    case Division::DOTTED:
+        return "d";
+    }
+    return "ERR";
+}
+
+PhasorStorage::Division PhasorStorage::fromStringDivision(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<PhasorStorage::Division, PhasorStorage::toStringDivision>(
+        PhasorStorage::Division::NOTE, PhasorStorage::Division::DOTTED);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return PhasorStorage::Division::NOTE;
+    return p->second;
+}
+
+std::string PhasorStorage::toStringSyncMode(const SyncMode &s)
+{
+    switch (s)
+    {
+    case SyncMode::SONGPOS:
+        return "sp";
+    case SyncMode::VOICEPOS:
+        return "vp";
+    }
+    return "ERR";
+}
+
+PhasorStorage::SyncMode PhasorStorage::fromStringSyncMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<PhasorStorage::SyncMode, PhasorStorage::toStringSyncMode>(
+        PhasorStorage::SyncMode::SONGPOS, PhasorStorage::SyncMode::VOICEPOS);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return PhasorStorage::SyncMode::VOICEPOS;
+    return p->second;
+}
+
+std::string RandomStorage::toStringStyle(const Style &s)
+{
+    switch (s)
+    {
+    case RandomStorage::Style::UNIFORM_01:
+        return "u01";
+    case RandomStorage::Style::HALF_NORMAL:
+        return "hfn";
+    case RandomStorage::Style::NORMAL:
+        return "nm";
+    case RandomStorage::Style::UNIFORM_BIPOLAR:
+        return "ubp";
+    }
+    return "ERR";
+}
+
+RandomStorage::Style RandomStorage::fromStringStyle(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<RandomStorage::Style, RandomStorage::toStringStyle>(
+        RandomStorage::Style::UNIFORM_01, RandomStorage::Style::HALF_NORMAL);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return RandomStorage::Style::UNIFORM_01;
+    return p->second;
+}
+
+} // namespace modulators
+
 std::string ModulatorStorage::toStringModulatorShape(
     const scxt::modulation::ModulatorStorage::ModulatorShape &ms)
 {

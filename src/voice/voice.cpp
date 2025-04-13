@@ -109,6 +109,7 @@ void Voice::voiceStarted()
 
     lfosActive = zone->lfosActive;
     egsActive = zone->egsActive;
+    phasorsActive = zone->phasorsActive;
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
@@ -159,6 +160,9 @@ void Voice::voiceStarted()
             SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
         }
     }
+
+    randomEvaluator.evaluate(engine->rng, zone->miscSourceStorage);
+    phasorEvaluator.attack(engine->transport, zone->miscSourceStorage);
 
     auto &aegp = endpoints->egTarget[0];
     if (*aegp.dlyP < 1e-5)
@@ -281,10 +285,11 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
 
-    // TODO probably want to process LFO modulations at this point so the AEG and EG2
-    // are modulatable
+    if (phasorsActive)
+    {
+        phasorEvaluator.step(engine->transport, zone->miscSourceStorage);
+    }
 
-    // TODO SHape Fixes
     bool envGate{isGated};
     if (sampleIndex >= 0)
     {
@@ -994,6 +999,7 @@ void Voice::initializeProcessors()
 void Voice::updateTransportPhasors()
 {
     auto bt = engine->transport.timeInBeats - startBeat;
+#if 0
     float mul = 1 << ((numTransportPhasors - 1) / 2);
     for (int i = 0; i < numTransportPhasors; ++i)
     {
@@ -1001,6 +1007,7 @@ void Voice::updateTransportPhasors()
         transportPhasors[i] = std::modf((float)(bt)*mul, &rawBeat);
         mul = mul / 2;
     }
+#endif
 }
 
 void Voice::onSampleRateChanged() { setHasModulatorsSampleRate(samplerate, samplerate_inv); }

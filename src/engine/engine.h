@@ -113,7 +113,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     sst::basic_blocks::modulators::Transport transport;
     void onTransportUpdated();
-    std::array<float, numTransportPhasors> transportPhasors{};
     void updateTransportPhasors();
 
     /**

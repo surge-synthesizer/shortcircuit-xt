@@ -118,7 +118,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         return dsp::twoToTheXTable;
     }
 
-    float transportPhasors[scxt::numTransportPhasors];
     double startBeat{0.f};
     void updateTransportPhasors();
 

@@ -332,35 +332,42 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     bindEl(m, ms, env.rateMulT, ms.envLfoStorage.rateMul, env.rateMulP);
 }
 
-template <typename SR, uint32_t gid, bool includeVoice,
+template <typename SR, uint32_t gid,
           void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
                                  const std::string &)>
 struct TransportSourceBase
 {
     TransportSourceBase(scxt::engine::Engine *e)
     {
-        auto ctr = (scxt::numTransportPhasors - 1) / 2;
-        for (uint32_t i = 0; i < scxt::numTransportPhasors; ++i)
+        for (uint32_t i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
         {
-            std::string name = "Beat";
-            if (i < ctr)
-                name = std::string("Beat / ") + std::to_string(1 << (ctr - i));
-            if (i > ctr)
-                name = std::string("Beat x ") + std::to_string(1 << (i - ctr));
-
             phasors[i] = SR{gid, 'phsr', i};
-            registerSource(e, phasors[i], "Transport", name);
-
-            if constexpr (includeVoice)
-            {
-                voicePhasors[i] = SR{gid, 'vphr', i};
-                registerSource(e, voicePhasors[i], "Transport", "Voice " + name);
-            }
+            std::string lab = "A";
+            lab[0] += i;
+            registerSource(e, phasors[i], "Phasors", "Phasor " + lab);
         }
     }
 
-    std::array<SR, scxt::numTransportPhasors> phasors;
-    std::conditional_t<includeVoice, std::array<SR, scxt::numTransportPhasors>, char> voicePhasors;
+    std::array<SR, scxt::phasorsPerGroupOrZone> phasors;
+};
+
+template <typename SR, uint32_t gid,
+          void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
+                                 const std::string &)>
+struct RNGSourceBase
+{
+    RNGSourceBase(scxt::engine::Engine *e)
+    {
+        for (uint32_t i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
+        {
+            randoms[i] = SR{gid, 'rnds', i};
+            std::string lab = "A";
+            lab[0] += i;
+            registerSource(e, randoms[i], "Random", "Random " + lab);
+        }
+    }
+
+    std::array<SR, scxt::randomsPerGroupOrZone> randoms;
 };
 
 template <typename SR, uint32_t gid, size_t numLfo,

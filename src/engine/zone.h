@@ -244,9 +244,11 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void onRoutingChanged();
 
     std::array<modulation::ModulatorStorage, lfosPerZone> modulatorStorage;
+    modulation::MiscSourceStorage miscSourceStorage;
 
     std::array<bool, lfosPerZone> lfosActive{};
     std::array<bool, egsPerZone> egsActive{};
+    bool phasorsActive{};
 
     // 0 is the AEG, 1 is EG2
     std::array<modulation::modulators::AdsrStorage, egsPerZone> egStorage;
