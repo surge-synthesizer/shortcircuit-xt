@@ -40,7 +40,7 @@ determine if we are right!
 
 ## I would love to build it myself. What do I do?
 
-To build, first configure your machine. Basically set up your machien the same way you would
+To build, first configure your machine. Basically set up your machine the same way you would
 [to build Surge XT](https://github.com/surge-synthesizer/surge#setting-up-for-your-os) then
 fork this repo and:
 
