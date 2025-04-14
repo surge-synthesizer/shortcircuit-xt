@@ -51,8 +51,6 @@ static constexpr size_t macrosPerPart{16};
 static constexpr uint16_t numNonMainPluginOutputs{20};
 static constexpr uint16_t numPluginOutputs{numNonMainPluginOutputs + 1};
 
-static constexpr size_t numTransportPhasors{7}; // double whole -> 32
-
 static constexpr uint16_t maxVoices{512};
 
 // some battles are not worth it
@@ -73,6 +71,9 @@ static constexpr uint16_t maxVariantsPerZone{16};
 static constexpr uint16_t lfosPerGroup{4};
 static constexpr uint16_t egsPerGroup{2};
 static constexpr uint16_t processorsPerZoneAndGroup{4};
+
+static constexpr uint16_t phasorsPerGroupOrZone{4};
+static constexpr uint16_t randomsPerGroupOrZone{4};
 
 static constexpr uint16_t triggerConditionsPerGroup{4};
 

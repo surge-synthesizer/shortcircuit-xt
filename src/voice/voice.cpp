@@ -109,6 +109,7 @@ void Voice::voiceStarted()
 
     lfosActive = zone->lfosActive;
     egsActive = zone->egsActive;
+    phasorsActive = zone->phasorsActive;
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
@@ -159,6 +160,9 @@ void Voice::voiceStarted()
             SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
         }
     }
+
+    randomEvaluator.evaluate(engine->rng, zone->miscSourceStorage);
+    phasorEvaluator.attack(engine->transport, zone->miscSourceStorage);
 
     auto &aegp = endpoints->egTarget[0];
     if (*aegp.dlyP < 1e-5)
@@ -216,6 +220,7 @@ template <bool OS> bool Voice::processWithOS()
         return true;
     }
 
+    noteExpressionLags.processAll();
     updateRetriggers(endpoints.get());
 
     // Run Modulators - these run at base rate never oversampled
@@ -255,24 +260,37 @@ template <bool OS> bool Voice::processWithOS()
         {
             auto &lp = endpoints->lfo[i].env;
 
+            auto eloop = zone->modulatorStorage[i].envLfoStorage.loop;
+            auto useGate = isGated;
+            if (envLfos[i].envelope.stage > scxt::modulation::modulators::EnvLFO::env_t::s_release)
+            {
+                rt = true;
+            }
+            if (eloop)
+            {
+                useGate = envLfos[i].envelope.stage <
+                          scxt::modulation::modulators::EnvLFO::env_t::s_sustain;
+            }
             if (rt)
             {
                 envLfos[i].attackFrom(envLfos[i].output, *lp.delayP, *lp.attackP);
+                useGate = true;
             }
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
-                               isGated);
+                               useGate);
         }
         else
         {
         }
     }
 
-    // TODO probably want to process LFO modulations at this point so the AEG and EG2
-    // are modulatable
+    if (phasorsActive)
+    {
+        phasorEvaluator.step(engine->transport, zone->miscSourceStorage);
+    }
 
-    // TODO SHape Fixes
     bool envGate{isGated};
     if (sampleIndex >= 0)
     {
@@ -982,6 +1000,7 @@ void Voice::initializeProcessors()
 void Voice::updateTransportPhasors()
 {
     auto bt = engine->transport.timeInBeats - startBeat;
+#if 0
     float mul = 1 << ((numTransportPhasors - 1) / 2);
     for (int i = 0; i < numTransportPhasors; ++i)
     {
@@ -989,9 +1008,15 @@ void Voice::updateTransportPhasors()
         transportPhasors[i] = std::modf((float)(bt)*mul, &rawBeat);
         mul = mul / 2;
     }
+#endif
 }
 
-void Voice::onSampleRateChanged() { setHasModulatorsSampleRate(samplerate, samplerate_inv); }
+void Voice::onSampleRateChanged()
+{
+    setHasModulatorsSampleRate(samplerate, samplerate_inv);
+    noteExpressionLags.setRateInMilliseconds(1000 * 64 / 48000, samplerate, blockSizeInv);
+    noteExpressionLags.snapAllActiveToTarget();
+}
 
 std::pair<int16_t, int16_t> Voice::sampleIndexRange() const
 {

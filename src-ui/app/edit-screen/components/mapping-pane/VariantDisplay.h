@@ -195,6 +195,8 @@ struct VariantDisplay : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::MenuButton> srcButton;
     std::unique_ptr<sst::jucegui::components::GlyphButton> zoomButton;
 
+    std::unique_ptr<juce::Component> noSelectionOverlay;
+
     struct FileInfos : juce::Component, HasEditor
     {
         FileInfos(HasEditor *e) : HasEditor(e->editor) { setInterceptsMouseClicks(false, false); }

@@ -88,6 +88,7 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
                  addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
                  addUnlessDefault<val_t>(v, "rateMul", 1.f, from.rateMul);
+                 addUnlessDefault<val_t>(v, "loop", false, from.loop);
              }),
              SC_TO({
                  const auto &object = v.get_object();
@@ -102,6 +103,7 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
                  findOrSet(v, "rateMul", 0.f, result.rateMul);
+                 findOrSet(v, "loop", false, result.loop);
              }))
 
 SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
@@ -127,6 +129,52 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
              }))
+
+STREAM_ENUM(modulation::modulators::PhasorStorage::Division,
+            modulation::modulators::PhasorStorage::toStringDivision,
+            modulation::modulators::PhasorStorage::fromStringDivision);
+
+STREAM_ENUM(modulation::modulators::PhasorStorage::SyncMode,
+            modulation::modulators::PhasorStorage::toStringSyncMode,
+            modulation::modulators::PhasorStorage::fromStringSyncMode);
+
+SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
+                 v = tao::json::empty_object;
+                 using ps = modulation::modulators::PhasorStorage;
+                 addUnlessDefault<val_t>(v, "di", ps::Division::NOTE, from.division);
+                 addUnlessDefault<val_t>(v, "sy", ps::SyncMode::VOICEPOS, from.syncMode);
+                 addUnlessDefault<val_t>(v, "nu", 1, from.numerator);
+                 addUnlessDefault<val_t>(v, "de", 4, from.denominator);
+             }),
+             SC_TO({
+                 using ps = modulation::modulators::PhasorStorage;
+                 findOrSet(v, "di", ps::Division::NOTE, to.division);
+                 findOrSet(v, "sy", ps::SyncMode::VOICEPOS, to.syncMode);
+                 findOrSet(v, "nu", 1, to.numerator);
+                 findOrSet(v, "de", 4, to.denominator);
+             }));
+
+STREAM_ENUM(modulation::modulators::RandomStorage::Style,
+            modulation::modulators::RandomStorage::toStringStyle,
+            modulation::modulators::RandomStorage::fromStringStyle);
+
+SC_STREAMDEF(modulation::modulators::RandomStorage, SC_FROM({
+                 v = tao::json::empty_object;
+                 addUnlessDefault<val_t>(
+                     v, "st", modulation::modulators::RandomStorage::Style::UNIFORM_01, from.style);
+             }),
+             SC_TO({
+                 findOrSet(v, "st", modulation::modulators::RandomStorage::Style::UNIFORM_01,
+                           to.style);
+             }));
+
+SC_STREAMDEF(modulation::MiscSourceStorage, SC_FROM({
+                 v = {{"rs", t.randoms}, {"ps", t.phasors}};
+             }),
+             SC_TO({
+                 findIfArray(v, "rs", to.randoms);
+                 findIfArray(v, "ps", to.phasors);
+             }));
 
 STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
             modulation::ModulatorStorage::toStringModulatorShape,

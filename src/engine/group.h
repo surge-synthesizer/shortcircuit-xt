@@ -202,7 +202,7 @@ struct Group : MoveableOnly<Group>,
     std::array<modulation::modulators::AdsrStorage, egsPerGroup> gegStorage{};
 
     std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
-    std::array<modulation::modulators::StepLFO, lfosPerGroup> stepLfos;
+    modulation::MiscSourceStorage miscSourceStorage;
     bool initializedLFOs{false};
 
     modulation::GroupMatrix modMatrix;

@@ -245,17 +245,21 @@ struct GroupMatrixEndpoints
     {
         Sources(engine::Engine *e)
             : lfoSources(e), midiCCSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}},
-              transportSources(e), macroSources(e)
+              transportSources(e), rngSources(e), macroSources(e)
         {
             registerGroupModSource(e, egSource[0], "", "EG1");
             registerGroupModSource(e, egSource[1], "", "EG2");
         }
 
-        LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource> lfoSources;
-        MIDICCBase<GroupMatrixConfig, SR, 'zncc', registerGroupModSource> midiCCSources;
+        scxt::modulation::shared::LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource>
+            lfoSources;
+        scxt::modulation::shared::MIDICCBase<GroupMatrixConfig, SR, 'zncc', registerGroupModSource>
+            midiCCSources;
 
         SR egSource[2];
-        TransportSourceBase<SR, 'gtsp', false, registerGroupModSource> transportSources;
+        scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
+            transportSources;
+        scxt::modulation::shared::RNGSourceBase<SR, 'grng', registerGroupModSource> rngSources;
 
         struct MacroSources
         {
@@ -273,7 +277,7 @@ struct GroupMatrixEndpoints
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
 // The last bool is "allows multiplicative"
-typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, bool>
+typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, bool, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;

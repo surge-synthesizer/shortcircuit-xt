@@ -245,24 +245,29 @@ struct MatrixEndpoints
                 registerVoiceModSource(e, egSources[i], "", "EG" + std::to_string(i + 1));
         }
 
-        LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource> lfoSources;
-        MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource> midiCCSources;
+        scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource>
+            lfoSources;
+        scxt::modulation::shared::MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource>
+            midiCCSources;
 
         struct MIDISources
         {
             MIDISources(engine::Engine *e)
                 : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'},
-                  releaseVelocitySource{'zmid', 'rvel'}, keytrackSource{'zmid', 'ktrk'}
+                  releaseVelocitySource{'zmid', 'rvel'}, keytrackSource{'zmid', 'ktrk'},
+                  chanATSource{'zmid', 'chat'}
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 MatrixConfig::setDefaultLagFor(modWheelSource, 25);
                 registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
                 registerVoiceModSource(e, releaseVelocitySource, "MIDI", "Release Vel");
                 registerVoiceModSource(e, keytrackSource, "MIDI", "KeyTrack");
+                registerVoiceModSource(e, chanATSource, "MIDI", "Channel AT");
                 registerVoiceModSource(e, polyATSource, "MIDI", "Poly AT");
                 MatrixConfig::setDefaultLagFor(polyATSource, 100);
             }
-            SR modWheelSource, velocitySource, releaseVelocitySource, keytrackSource, polyATSource;
+            SR modWheelSource, velocitySource, releaseVelocitySource, keytrackSource, polyATSource,
+                chanATSource;
         } midiSources;
 
         struct MPESources
@@ -326,25 +331,9 @@ struct MatrixEndpoints
             SR isLooping, loopPercentage, samplePercentage;
         } voiceSources;
 
-        TransportSourceBase<SR, 'ztsp', true, registerVoiceModSource> transportSources;
-
-        struct RNGSources
-        {
-            RNGSources(engine::Engine *e)
-            {
-                for (uint32_t i = 0; i < 8; ++i)
-                {
-                    std::string name = "";
-                    name = (i % 4 > 1) ? "Unipolar " : "Bipolar ";
-                    name += (i < 4) ? "Even " : "Gaussian ";
-                    name += std::to_string(i % 2 + 1);
-
-                    randoms[i] = SR{'zrng', 'rnds', i};
-                    registerVoiceModSource(e, randoms[i], "Random", name);
-                }
-            }
-            SR randoms[8];
-        } rngSources;
+        scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', registerVoiceModSource>
+            transportSources;
+        scxt::modulation::shared::RNGSourceBase<SR, 'zrng', registerVoiceModSource> rngSources;
 
         struct MacroSources
         {
@@ -392,7 +381,10 @@ struct MatrixEndpoints
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             nameFn,
         std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
-            additiveFn);
+            additiveFn,
+        std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            enabledFn =
+                [](const engine::Zone &, const MatrixConfig::TargetIdentifier &) { return true; });
 
     static void registerVoiceModSource(
         engine::Engine *e, const MatrixConfig::SourceIdentifier &,
@@ -409,7 +401,8 @@ struct MatrixEndpoints
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
 // The last bool is "allows multiplicative"
-typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, bool> namedTarget_t;
+typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, bool, bool>
+    namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
 typedef std::vector<namedSource_t> namedSourceVector_t;

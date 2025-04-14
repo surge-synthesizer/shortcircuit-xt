@@ -539,4 +539,9 @@ void SCXTEditor::promptOKCancel(const std::string &title, const std::string &mes
                                  });
 }
 
+void SCXTEditor::displayError(const std::string &title, const std::string &message)
+{
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, title, message, "OK");
+}
+
 } // namespace scxt::ui::app

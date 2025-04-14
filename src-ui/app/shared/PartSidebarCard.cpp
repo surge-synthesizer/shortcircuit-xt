@@ -57,8 +57,11 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     addAndMakeVisible(*outBus);
 
     polyCount = std::make_unique<jcmp::TextPushButton>();
-    polyCount->setLabel("512");
-    polyCount->setOnCallback(editor->makeComingSoon("Polyphony Limit/Monophony"));
+    polyCount->setLabel("UNL");
+    polyCount->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showPolyMenu();
+    });
     addAndMakeVisible(*polyCount);
 
     patchName = std::make_unique<jcmp::MenuButton>();
@@ -84,22 +87,8 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     mute->setLabel("M");
     addAndMakeVisible(*mute);
 
-    auto soloOnChange = [w = juce::Component::SafePointer(this)](const auto &a) {
-        if (w)
-        {
-            static bool everWarned{false};
-            if (!everWarned)
-            {
-                w->editor->makeComingSoon("Solo on Parts")();
-                everWarned = true;
-            }
-            w->resetFromEditorCache();
-            w->sendToSerialization(
-                cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
-        }
-    };
-    soloAtt = std::make_unique<boolattachment_t>("Solo", soloOnChange,
-                                                 editor->partConfigurations[part].solo);
+    soloAtt =
+        std::make_unique<boolattachment_t>("Solo", onChange, editor->partConfigurations[part].solo);
     solo = std::make_unique<jcmp::ToggleButton>();
     solo->setSource(soloAtt.get());
     solo->setLabel("S");
@@ -271,6 +260,34 @@ void PartSidebarCard::showRoutingMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions(outBus.get()));
 }
 
+void PartSidebarCard::showPolyMenu()
+{
+    auto makeMenuCallback = [w = juce::Component::SafePointer(this)](int le) {
+        return [w, le]() {
+            if (!w)
+                return;
+            w->editor->partConfigurations[w->part].polyLimitVoices = le;
+            w->resetFromEditorCache();
+            w->sendToSerialization(
+                cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
+        };
+    };
+
+    auto p = juce::PopupMenu();
+    auto vc = editor->partConfigurations[part].polyLimitVoices;
+    p.addSectionHeader("Part Voice Limit");
+    p.addSeparator();
+
+    p.addItem("Unlimited", true, vc == 0, makeMenuCallback(0));
+    for (int i = 4; i <= 16; i += 4)
+        p.addItem(std::to_string(i), true, vc == i, makeMenuCallback(i));
+    for (int i = 32; i <= 128; i += 32)
+        p.addItem(std::to_string(i), true, vc == i, makeMenuCallback(i));
+    for (int i = 256; i <= 512; i += 256)
+        p.addItem(std::to_string(i), true, vc == i, makeMenuCallback(i));
+    p.showMenuAsync(editor->defaultPopupMenuOptions(outBus.get()));
+}
+
 void PartSidebarCard::showMidiModeMenu()
 {
     auto makeMenuCallback = [w = juce::Component::SafePointer(this)](int ch) {
@@ -407,6 +424,12 @@ void PartSidebarCard::resetFromEditorCache()
     auto rt = conf.routeTo;
     std::string st = engine::getBusAddressLabel(rt, "PART", true);
     outBus->setLabel(st);
+
+    auto pv = conf.polyLimitVoices;
+    if (pv == 0)
+        polyCount->setLabel("UNL");
+    else
+        polyCount->setLabel(std::to_string(pv));
 
     patchName->setLabel(conf.name);
 

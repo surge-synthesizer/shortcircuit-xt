@@ -513,6 +513,19 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         return {std::move(att), std::move(wid)};
     }
 
+    template <typename... Args>
+    static std::unique_ptr<A> attachOnly(const typename A::payload_t &p, typename A::value_t &val,
+                                         app::HasEditor *e, Args... args)
+    {
+        auto md = scxt::datamodel::describeValue(p, val);
+
+        auto att = std::make_unique<A>(md, val);
+        configureUpdater<Msg, A, ABase>(*att, p, e, std::forward<Args>(args)...);
+
+        e->addSubscription(val, att);
+        return std::move(att);
+    }
+
     template <typename W, typename... Args>
     static void attach(const typename A::payload_t &p, typename A::value_t &val, app::HasEditor *e,
                        std::unique_ptr<A> &aRes, std::unique_ptr<W> &wRes, Args... args)

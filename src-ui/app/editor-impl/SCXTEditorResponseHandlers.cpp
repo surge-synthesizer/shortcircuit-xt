@@ -213,6 +213,20 @@ void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
     }
 }
 
+void SCXTEditor::onGroupOrZoneMiscModStorageUpdated(
+    const scxt::messaging::client::gzMiscStorageUpdate_t &payload)
+{
+    const auto &[forZone, mm] = payload;
+    if (forZone)
+    {
+        editScreen->getZoneElements()->lfo->setMiscModStorage(mm);
+    }
+    else
+    {
+        editScreen->getGroupElements()->lfo->setMiscModStorage(mm);
+    }
+}
+
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
@@ -254,7 +268,7 @@ void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMapping
 void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
 {
     auto &[title, msg] = e;
-    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, title, msg, "OK");
+    displayError(title, msg);
 }
 
 void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)

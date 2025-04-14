@@ -79,6 +79,7 @@ CLIENT_TO_SERIAL_CONSTRAINED(
             {
                 // ToDo: Have to do the group side of this later
                 auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+                SCLOG("Zone Update needed");
             }
         },
         nullptr, // no need to do a voice update
@@ -92,6 +93,68 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                 grp->rePrepareAndBindGroupMatrix();
             }
         }))
+
+using fullModStoragePayload_t = std::tuple<bool, int, modulation::ModulatorStorage>;
+inline void doFullModStorageUpdateForGroupsOrZones(const fullModStoragePayload_t &payload,
+                                                   const engine::Engine &engine,
+                                                   messaging::MessageController &cont)
+{
+    auto [fz, mod, ms] = payload;
+    if (fz)
+    {
+        auto zn = engine.getSelectionManager()->currentlySelectedZones();
+        if (!zn.empty())
+        {
+            cont.scheduleAudioThreadCallback(
+                [zns = zn, which = mod, storage = ms](auto &engine) {
+                    for (auto &z : zns)
+                    {
+                        engine.getPatch()
+                            ->getPart(z.part)
+                            ->getGroup(z.group)
+                            ->getZone(z.zone)
+                            ->modulatorStorage[which] = storage;
+                    }
+                },
+                [storage = ms](auto &eng) {
+                    auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                    if (lz.has_value())
+                    {
+                        eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
+                            lz->part, lz->group, lz->zone);
+                    }
+                });
+        }
+    }
+    else
+    {
+        auto gs = engine.getSelectionManager()->currentlySelectedGroups();
+        if (!gs.empty())
+        {
+            cont.scheduleAudioThreadCallback(
+                [gsss = gs, which = mod, storage = ms](auto &engine) {
+                    for (auto &g : gsss)
+                    {
+                        auto &grp = engine.getPatch()->getPart(g.part)->getGroup(g.group);
+                        grp->modulatorStorage[which] = storage;
+                        grp->resetLFOs(which);
+                        grp->rePrepareAndBindGroupMatrix();
+                    }
+                },
+                [storage = ms](auto &eng) {
+                    auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+                    if (lg.has_value())
+                    {
+                        eng.getSelectionManager()->sendDisplayDataForSingleGroup(lg->part,
+                                                                                 lg->group);
+                    }
+                });
+        }
+    }
+}
+CLIENT_TO_SERIAL(UpdateFullModStorageForGroupsOrZones,
+                 c2s_update_full_modstorage_for_groups_or_zones, fullModStoragePayload_t,
+                 doFullModStorageUpdateForGroupsOrZones(payload, engine, cont));
 
 using renameGroupZonePayload_t = std::tuple<selection::SelectionManager::ZoneAddress, std::string>;
 inline void doRenameGroup(const renameGroupZonePayload_t &payload, const engine::Engine &engine,

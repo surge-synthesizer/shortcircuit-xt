@@ -70,6 +70,39 @@ struct EnvLFOStorage
     float delay{0.f}, attack{0.f}, hold{0.f}, decay{0.f}, sustain{1.f}, release{0.f};
     float aShape{0.f}, dShape{0.f}, rShape{0.f};
     float rateMul{0.f};
+    bool loop{false};
+};
+
+struct PhasorStorage
+{
+    enum SyncMode
+    {
+        SONGPOS,
+        VOICEPOS
+    } syncMode{VOICEPOS};
+    DECLARE_ENUM_STRING(SyncMode);
+
+    enum Division
+    {
+        NOTE,
+        TRIPLET,
+        DOTTED
+    } division{NOTE};
+    DECLARE_ENUM_STRING(Division);
+
+    int32_t numerator{1}, denominator{4};
+};
+
+struct RandomStorage
+{
+    enum Style
+    {
+        UNIFORM_01,
+        UNIFORM_BIPOLAR,
+        NORMAL,
+        HALF_NORMAL
+    } style{UNIFORM_01};
+    DECLARE_ENUM_STRING(Style);
 };
 } // namespace modulators
 
@@ -124,6 +157,12 @@ struct ModulatorStorage
     bool modulatorConsistent{true};
 };
 
+struct MiscSourceStorage
+{
+    std::array<modulators::PhasorStorage, scxt::phasorsPerGroupOrZone> phasors;
+    std::array<modulators::RandomStorage, scxt::randomsPerGroupOrZone> randoms;
+};
+
 inline double secondsToNormalizedEnvTime(double s)
 {
     using rp = sst::basic_blocks::modulators::TwentyFiveSecondExp;
@@ -170,25 +209,24 @@ SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
 // We describe modulator storage as a compound since we address
 // it that way. Maybe revisit this in the future and split it out
 SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
-    SC_FIELD(modulatorShape,
-             pmd()
-                 .asInt()
-                 .withName("Modulator Shape")
-                 .withRange(modulation::ModulatorStorage::STEP,
-                            modulation::ModulatorStorage::MSEG -
-                                1) /* This -1 turns off MSEG in the menu */
-                 .withUnorderedMapFormatting({
-                     {modulation::ModulatorStorage::STEP, "STEP"},
-                     {modulation::ModulatorStorage::MSEG, "MSEG"},
-                     {modulation::ModulatorStorage::LFO_SINE, "SINE"},
-                     {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
-                     {modulation::ModulatorStorage::LFO_TRI, "TRI"},
-                     {modulation::ModulatorStorage::LFO_SAW_TRI_RAMP, "SAW-TRI-RMP"},
-                     {modulation::ModulatorStorage::LFO_PULSE, "PULSE"},
-                     {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
-                     {modulation::ModulatorStorage::LFO_ENV, "ENV"},
-                     {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
-                 }));
+    SC_FIELD(modulatorShape, pmd()
+                                 .asInt()
+                                 .withName("Modulator Shape")
+                                 .withRange(modulation::ModulatorStorage::STEP,
+                                            modulation::ModulatorStorage::MSEG -
+                                                1) /* This -1 turns off MSEG in the menu */
+                                 .withUnorderedMapFormatting({
+                                     {modulation::ModulatorStorage::STEP, "STEP"},
+                                     {modulation::ModulatorStorage::MSEG, "MSEG"},
+                                     {modulation::ModulatorStorage::LFO_SINE, "SINE"},
+                                     {modulation::ModulatorStorage::LFO_RAMP, "RAMP"},
+                                     {modulation::ModulatorStorage::LFO_TRI, "TRI"},
+                                     {modulation::ModulatorStorage::LFO_SAW_TRI_RAMP, "SAW-RMP"},
+                                     {modulation::ModulatorStorage::LFO_PULSE, "SQR-TRI"},
+                                     {modulation::ModulatorStorage::LFO_SMOOTH_NOISE, "NOISE"},
+                                     {modulation::ModulatorStorage::LFO_ENV, "ENV"},
+                                     {modulation::ModulatorStorage::LFO_SH_NOISE, "S&H"},
+                                 }));
     SC_FIELD(triggerMode, pmd()
                               .asInt()
                               .withName("Trigger")
@@ -252,6 +290,21 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                         .withFeature(pmd::Features::BELOW_ONE_IS_INVERSE_FRACTION)
                                         .withFeature(pmd::Features::ALLOW_FRACTIONAL_TYPEINS)
                                         .withName("Rate Multiplier"));
-})
+    SC_FIELD(envLfoStorage.loop, pmd().asBool().withDefault(0.0).withName("Loop"));
+});
+
+SC_DESCRIBE(scxt::modulation::modulators::PhasorStorage,
+            SC_FIELD(numerator, pmd()
+                                    .asInt()
+                                    .withLinearScaleFormatting("")
+                                    .withDefault(1)
+                                    .withName("Numerator")
+                                    .withRange(1, 64));
+            SC_FIELD(denominator, pmd()
+                                      .asInt()
+                                      .withLinearScaleFormatting("")
+                                      .withDefault(4)
+                                      .withName("Denominator")
+                                      .withRange(1, 64));)
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

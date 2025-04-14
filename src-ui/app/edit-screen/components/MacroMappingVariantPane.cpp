@@ -140,6 +140,8 @@ void MacroMappingVariantPane::editorSelectionChanged()
 {
     if (editor->currentLeadZoneSelection.has_value())
         mappingDisplay->setLeadSelection(*(editor->currentLeadZoneSelection));
+
+    sampleDisplay->rebuildForSelectedVariation(sampleDisplay->selectedVariation, true);
     repaint();
 }
 

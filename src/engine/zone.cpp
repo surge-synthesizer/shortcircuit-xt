@@ -391,6 +391,7 @@ void Zone::onRoutingChanged()
     for (int i = 0; i < egsPerZone; ++i)
         egsActive[i] = false;
     egsActive[0] = true; // the AEG always runs
+    phasorsActive = false;
     auto doCheck = [this, &usedForScanning](const voice::modulation::MatrixEndpoints::SR &src) {
         for (int i = 0; i < lfosPerZone; ++i)
         {
@@ -405,6 +406,14 @@ void Zone::onRoutingChanged()
             if (src == usedForScanning.egSources[i])
             {
                 egsActive[i] = true;
+            }
+        }
+
+        for (int i = 0; i < phasorsPerGroupOrZone; ++i)
+        {
+            if (src == usedForScanning.transportSources.phasors[i])
+            {
+                phasorsActive = true;
             }
         }
     };

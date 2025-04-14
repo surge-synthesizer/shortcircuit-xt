@@ -143,6 +143,8 @@ Engine::Engine()
     }
 
     previewVoice = std::make_unique<voice::PreviewVoice>();
+
+    onPartConfigurationUpdated();
 }
 
 Engine::~Engine()
@@ -779,6 +781,16 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         });
         return;
     }
+    if (extensionMatches(p, ".scm"))
+    {
+        patch_io::loadMulti(p, *this);
+        return;
+    }
+    if (extensionMatches(p, ".scp"))
+    {
+        patch_io::loadPartInto(p, *this, getSelectionManager()->selectedPart);
+        return;
+    }
 
     // OK so what we want to do now is
     // 1. Load this sample on this thread
@@ -970,9 +982,9 @@ void Engine::onSampleRateChanged()
 
 void Engine::registerVoiceModTarget(const voice::modulation::MatrixConfig::TargetIdentifier &t,
                                     vmodTgtStrFn_t pathFn, vmodTgtStrFn_t nameFn,
-                                    vmodTgtBoolFn_t additiveFn)
+                                    vmodTgtBoolFn_t additiveFn, vmodTgtBoolFn_t enabledFn)
 {
-    voiceModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn));
+    voiceModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn, enabledFn));
 }
 
 void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &t,
@@ -983,9 +995,9 @@ void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::Sourc
 
 void Engine::registerGroupModTarget(const modulation::GroupMatrixConfig::TargetIdentifier &t,
                                     gmodTgtStrFn_t pathFn, gmodTgtStrFn_t nameFn,
-                                    gmodTgtBoolFn_t additiveFn)
+                                    gmodTgtBoolFn_t additiveFn, gmodTgtBoolFn_t enabledFn)
 {
-    groupModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn));
+    groupModTargets.emplace(t, std::make_tuple(pathFn, nameFn, additiveFn, enabledFn));
 }
 
 void Engine::registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &t,
@@ -1017,6 +1029,7 @@ void Engine::onTransportUpdated()
 
 void Engine::updateTransportPhasors()
 {
+#if 0
     float mul = 1 << ((numTransportPhasors - 1) / 2);
     for (int i = 0; i < numTransportPhasors; ++i)
     {
@@ -1024,6 +1037,7 @@ void Engine::updateTransportPhasors()
         transportPhasors[i] = std::modf((float)(transport.timeInBeats) * mul, &rawBeat);
         mul = mul / 2;
     }
+#endif
 }
 
 std::optional<fs::path> Engine::setupUserStorageDirectory()
@@ -1205,10 +1219,27 @@ void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int
 void Engine::onPartConfigurationUpdated()
 {
     auto midiM = voiceManager_t::MIDI1Dialect::MIDI1;
+    auto anySolo = false;
     for (auto &p : *getPatch())
+    {
         if (p->configuration.channel == Part::PartConfiguration::mpeChannel)
             midiM = voiceManager_t::MIDI1Dialect::MIDI1_MPE;
+        if (p->configuration.solo)
+            anySolo = true;
+        p->configuration.muteDueToSolo = false;
+
+        voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)p.get(),
+                                                 p->configuration.polyLimitVoices);
+    }
 
     voiceManager.dialect = midiM;
+
+    if (anySolo)
+    {
+        for (auto &p : *getPatch())
+        {
+            p->configuration.muteDueToSolo = !p->configuration.solo;
+        }
+    }
 }
 } // namespace scxt::engine

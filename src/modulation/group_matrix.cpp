@@ -203,11 +203,13 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
 
     int idx{0};
 
+#if 0
     for (int i = 0; i < scxt::numTransportPhasors; ++i)
     {
         assert(g.getEngine());
         m.bindSourceValue(transportSources.phasors[i], g.getEngine()->transportPhasors[i]);
     }
+#endif
 
     auto *part = g.parentPart;
     for (int i = 0; i < macrosPerPart; ++i)
@@ -217,6 +219,16 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
 
     m.bindSourceValue(egSource[0], g.eg[0].outBlock0);
     m.bindSourceValue(egSource[1], g.eg[1].outBlock0);
+
+    for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
+    {
+        m.bindSourceValue(rngSources.randoms[i], g.randomEvaluator.outputs[i]);
+    }
+
+    for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
+    {
+        m.bindSourceValue(transportSources.phasors[i], g.phasorEvaluator.outputs[i]);
+    }
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(
@@ -297,7 +309,8 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
     for (const auto &[t, fns] : e->groupModTargets)
     {
         tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(g, t), std::get<1>(fns)(g, t)},
-                        std::get<2>(fns)(g, t)); // GroupMatrixConfig::getIsMultiplicative(t));
+                        std::get<2>(fns)(g, t),
+                        std::get<3>(fns)(g, t)); // GroupMatrixConfig::getIsMultiplicative(t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 
