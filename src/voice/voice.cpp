@@ -56,6 +56,7 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
     }
 
     inLoopF = 0.f;
+    loopCountF = 0.f;
     currentLoopPercentageF = 0.f;
     currentSamplePercentageF = 0.f;
 
@@ -463,6 +464,13 @@ template <bool OS> bool Voice::processWithOS()
         }
 
         inLoopF = (inloop ? 1.f : 0.f);
+        loopCountF =
+            (inloop &&
+                     zone->variantData.variants[sampleIndex].loopMode == engine::Zone::LOOP_COUNT &&
+                     zone->variantData.variants[sampleIndex].loopCountWhenCounted > 0
+                 ? ((float)GD[0].loopCount /
+                    zone->variantData.variants[sampleIndex].loopCountWhenCounted)
+                 : 0.f);
 
         if (useOversampling && !OS)
         {

@@ -58,7 +58,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float sampleIndexF{0.f};
     float sampleIndexFraction{0};
 
-    float inLoopF{0.f}, currentLoopPercentageF{0.f}, currentSamplePercentageF{0.f};
+    float inLoopF{0.f}, currentLoopPercentageF{0.f}, currentSamplePercentageF{0.f}, loopCountF{0.0};
 
     bool forceOversample{true};
 

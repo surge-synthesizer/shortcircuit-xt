@@ -434,7 +434,7 @@ void VariantDisplay::resized()
     addGap(10);
     if (v.loopMode == engine::Zone::LOOP_COUNT)
     {
-        ofRow(loopModeButton, 84);
+        ofRow(loopModeButton, 88);
         ofRow(loopCnt, 26);
     }
     else
