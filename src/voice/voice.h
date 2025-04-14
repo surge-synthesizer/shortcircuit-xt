@@ -41,6 +41,7 @@
 
 #include "sst/filters/HalfRateFilter.h"
 #include "sst/basic-blocks/dsp/BlockInterpolators.h"
+#include "sst/basic-blocks/dsp/LagCollection.h"
 
 namespace scxt::voice
 {
@@ -88,6 +89,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     static constexpr size_t noteExpressionCount{7};
     float noteExpressions[noteExpressionCount]{};
+    sst::basic_blocks::dsp::LagCollection<noteExpressionCount> noteExpressionLags;
+
     // These are the same as teh CLAP expression IDs but I dont want to include
     // clap.h here
     enum struct ExpressionIDs

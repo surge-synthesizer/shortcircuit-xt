@@ -220,6 +220,7 @@ template <bool OS> bool Voice::processWithOS()
         return true;
     }
 
+    noteExpressionLags.processAll();
     updateRetriggers(endpoints.get());
 
     // Run Modulators - these run at base rate never oversampled
@@ -1010,7 +1011,12 @@ void Voice::updateTransportPhasors()
 #endif
 }
 
-void Voice::onSampleRateChanged() { setHasModulatorsSampleRate(samplerate, samplerate_inv); }
+void Voice::onSampleRateChanged()
+{
+    setHasModulatorsSampleRate(samplerate, samplerate_inv);
+    noteExpressionLags.setRateInMilliseconds(1000 * 64 / 48000, samplerate, blockSizeInv);
+    noteExpressionLags.snapAllActiveToTarget();
+}
 
 std::pair<int16_t, int16_t> Voice::sampleIndexRange() const
 {

@@ -232,7 +232,7 @@ void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t e
         {
             value = value * 2 - 1;
         }
-        v->noteExpressions[expression] = value;
+        v->noteExpressionLags.setTarget(expression, value, &v->noteExpressions[expression]);
     }
 }
 
@@ -312,7 +312,7 @@ void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_
     {
         if (p->configuration.active && p->respondsToMIDIChannel(channel))
         {
-            p->pitchBendValue = fv;
+            p->externalSignalLag.setTarget(Part::LagIndexes::pitchBend, fv, &p->pitchBendValue);
         }
     }
 }
@@ -328,6 +328,17 @@ void Engine::MonoVoiceManagerResponder::setMIDI1CC(int16_t channel, int16_t cc, 
         }
     }
 }
-void Engine::MonoVoiceManagerResponder::setMIDIChannelPressure(int16_t channel, int16_t pres) {}
+void Engine::MonoVoiceManagerResponder::setMIDIChannelPressure(int16_t channel, int16_t pres)
+{
+    auto fv = pres / 127.0;
+
+    for (const auto &p : engine.getPatch()->getParts())
+    {
+        if (p->configuration.active && p->respondsToMIDIChannel(channel))
+        {
+            p->channelAT = fv;
+        }
+    }
+}
 
 } // namespace scxt::engine

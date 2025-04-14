@@ -45,8 +45,9 @@ void Part::process(Engine &e)
 
     float lcp alignas(16)[2][blockSize];
 
+    externalSignalLag.processAll();
+
     auto lev = configuration.level;
-    ;
     lev = lev * lev * lev;
 
     namespace pl = sst::basic_blocks::dsp::pan_laws;
