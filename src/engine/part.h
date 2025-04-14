@@ -32,6 +32,8 @@
 #include <optional>
 #include <cassert>
 
+#include "sst/basic-blocks/dsp/LagCollection.h"
+
 #include "selection/selection_manager.h"
 #include "utils.h"
 #include "group.h"
@@ -206,12 +208,23 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     }
 
     std::array<float, 128> midiCCValues{}; // 0 .. 1 so the 128 taken out
-    float pitchBendValue{0.f};             // -1..1 so the 8192 taken out
+    float channelAT{0.f};
+    float pitchBendValue{0.f}; // -1..1 so the 8192 taken out
+
+    enum LagIndexes
+    {
+        pitchBend,
+        numLags
+    };
+    sst::basic_blocks::dsp::LagCollection<numLags> externalSignalLag;
 
     void onSampleRateChanged() override
     {
         for (auto &g : groups)
             g->setSampleRate(samplerate);
+        externalSignalLag.setRateInMilliseconds(1000.0 * 3 * blockSize / 48000, samplerate,
+                                                blockSizeInv);
+        externalSignalLag.snapAllActiveToTarget();
     }
 
     std::array<Macro, macrosPerPart> macros;
