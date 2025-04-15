@@ -157,30 +157,18 @@ template <typename T, bool forZone>
 struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropContainer
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
-    std::unique_ptr<juce::ListBox> listBox;
-    std::unique_ptr<GroupZoneListBoxModel<T, forZone>> listBoxModel;
+    std::unique_ptr<GroupZoneSidebarWidget<T, forZone>> gzTreeControl;
     std::unique_ptr<jcmp::MenuButton> partSelector;
 
     T *asT() { return static_cast<T *>(this); }
 
     GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
-    ~GroupZoneSidebarBase()
-    {
-        // Make sure the listbox destroys before its model
-        listBox.reset();
-        listBoxModel.reset();
-    }
+    ~GroupZoneSidebarBase() {}
 
     void postInit()
     {
-        listBoxModel = std::make_unique<GroupZoneListBoxModel<T, forZone>>(asT());
-        listBoxModel->rebuild();
-        listBox = std::make_unique<juce::ListBox>();
-        listBox->setModel(listBoxModel.get());
-        listBox->setRowHeight(18);
-        listBox->setColour(juce::ListBox::backgroundColourId, juce::Colour(0, 0, 0).withAlpha(0.f));
-
-        addAndMakeVisible(*listBox);
+        gzTreeControl = std::make_unique<GroupZoneSidebarWidget<T, forZone>>(asT());
+        addAndMakeVisible(*gzTreeControl);
 
         partSelector = std::make_unique<jcmp::MenuButton>();
         partSelector->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -227,22 +215,10 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
     }
     void updateSelectionFrom(const selection::SelectionManager::selectedZones_t &sel)
     {
-        juce::SparseSet<int> rows;
-
-        for (const auto &a : sel)
-        {
-            int selR = -1;
-            for (const auto &[i, r] : sst::cpputils::enumerate(listBoxModel->thisGroup))
-            {
-                if (r.address == a)
-                {
-                    rows.addRange({(int)i, (int)(i + 1)});
-                }
-            }
-        }
-        listBoxModel->selectionFromServer = true;
-        listBox->setSelectedRows(rows);
-        listBoxModel->selectionFromServer = false;
+        gzTreeControl->selectedZones =
+            std::set<selection::SelectionManager::ZoneAddress>(sel.begin(), sel.end());
+        ;
+        gzTreeControl->reassignAllComponents();
     }
 
     bool isLeadZone(const selection::SelectionManager::ZoneAddress &za)
@@ -254,7 +230,6 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
 
 struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
 {
-
     GroupSidebar(PartGroupSidebar *p) : GroupZoneSidebarBase<GroupSidebar, false>(p)
     {
         groupSettings = std::make_unique<GroupSettingsCard>(this->editor);
@@ -286,7 +261,7 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
         auto dividerHeight = 8;
 
         auto lb = b.withTrimmedBottom(trigHeight + settingsHeight + 2 * dividerHeight);
-        listBox->setBounds(lb);
+        gzTreeControl->setBounds(lb);
         auto tb = b.withY(lb.getBottom()).withHeight(dividerHeight);
         triggersDivider->setBounds(tb);
         tb = tb.translated(0, dividerHeight).withHeight(trigHeight);
@@ -297,14 +272,6 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
         groupSettings->setBounds(tb.reduced(4, 2));
     }
 
-    void processRowsChanged()
-    {
-        const auto &r = listBox->getSelectedRows();
-
-        SCLOG("GroupSidebar::processRowsChanged Called - Keyboard Event");
-        SCLOG("Selected Row Size is " << r.size());
-    }
-
     void onRowClicked(const selection::SelectionManager::ZoneAddress &rowZone, bool isSelected,
                       const juce::ModifierKeys &mods)
     {
@@ -313,8 +280,8 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
 
         if (rowZone.zone >= 0)
         {
-            se.selecting = true;
-            se.distinct = false;
+            se.selecting = !isSelected;
+            se.distinct = !mods.isCommandDown();
             se.selectingAsLead = true;
             se.forZone = true;
             editor->doMultiSelectionAction({se});
@@ -344,36 +311,7 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         if (partGroupSidebar->editor->currentLeadZoneSelection.has_value())
             lastZoneClicked = *(partGroupSidebar->editor->currentLeadZoneSelection);
     }
-    void resized() override { listBox->setBounds(baseResize()); }
-
-    void processRowsChanged()
-    {
-        SCLOG("ZoneSidebar::processRowsChanged Called. Surprising!!!");
-        // We want a modified verion of the old PGZ::selectedRowsChanged
-        const auto &r = listBox->getSelectedRows();
-        if (r.size() == 1)
-        {
-            auto rg = r.getRange(0);
-            auto rs = rg.getStart();
-            auto re = rg.getEnd();
-            if (re != rs + 1)
-            {
-                SCLOG("TODO: Multi-ui driven sidevar selection");
-                return;
-            }
-            auto se =
-                selection::SelectionManager::SelectActionContents(listBoxModel->getZoneAddress(rs));
-            se.selecting = true;
-            se.distinct = true;
-            se.selectingAsLead = true;
-            editor->doMultiSelectionAction({se});
-        }
-        else
-        {
-            SCLOG_UNIMPL("TODO: Multi-ui driven sidebar selection");
-            return;
-        }
-    }
+    void resized() override { gzTreeControl->setBounds(baseResize()); }
 
     selection::SelectionManager::ZoneAddress lastZoneClicked{0, 0, 0};
     void onRowClicked(const selection::SelectionManager::ZoneAddress &rowZone, bool isSelected,
@@ -501,10 +439,12 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
         }
     }
 #endif
-    groupSidebar->listBoxModel->rebuild();
-    groupSidebar->listBox->updateContent();
-    zoneSidebar->listBoxModel->rebuild();
-    zoneSidebar->listBox->updateContent();
+
+    groupSidebar->gzTreeControl->rebuild();
+    groupSidebar->gzTreeControl->refresh();
+    zoneSidebar->gzTreeControl->rebuild();
+    zoneSidebar->gzTreeControl->refresh();
+
     editorSelectionChanged();
     repaint();
 }
@@ -512,12 +452,12 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 void PartGroupSidebar::selectedPartChanged()
 {
     groupSidebar->showSelectedPart(editor->selectedPart);
-    groupSidebar->listBoxModel->rebuild();
-    groupSidebar->listBox->updateContent();
+    groupSidebar->gzTreeControl->rebuild();
+    groupSidebar->gzTreeControl->refresh();
 
     zoneSidebar->showSelectedPart(editor->selectedPart);
-    zoneSidebar->listBoxModel->rebuild();
-    zoneSidebar->listBox->updateContent();
+    zoneSidebar->gzTreeControl->rebuild();
+    zoneSidebar->gzTreeControl->refresh();
 
     editorSelectionChanged();
     repaint();
