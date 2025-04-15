@@ -25,31 +25,26 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SAMPLE_EXS_SUPPORT_EXS_IMPORT_H
-#define SCXT_SRC_SAMPLE_EXS_SUPPORT_EXS_IMPORT_H
+#include <iostream>
+#include "sst/plugininfra/version_information.h"
 
-#include "filesystem/import.h"
-#include <engine/engine.h>
+#include "utils.h"
 
-namespace scxt::exs_support
+#include "sample/exs_support/exs_import.h"
+
+int main(int argc, char **argv)
 {
-/*
- * The EXS import ability is based almost entirely on the java
- * implementation from mossgraber's ConvertWithMoss available
- *
- * https://github.com/git-moss/ConvertWithMoss/
- *
- * which is released under Gnu GPL3. None of the code is copied
- * here but without the reference to that code, this implementation
- * would have been impossible.
- *
- * The implementation here is very incomplete, and may be removed
- * before our 1.0 release if it turns out to not be tenable.
- */
-bool importEXS(const fs::path &, engine::Engine &);
+    SCLOG("EXS-DUMP");
+    SCLOG("    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
+                             << " / "
+                             << sst::plugininfra::VersionInformation::project_version_and_hash);
+    if (argc < 2)
+    {
+        SCLOG("Usage: " << argv[0] << " <exs-file>");
+        return 1;
+    }
+    SCLOG("Opening " << argv[1]);
 
-void dumpEXSToLog(const fs::path &);
-
-} // namespace scxt::exs_support
-
-#endif // SHORTCIRCUITXT_EXS_IMPORT_H
+    scxt::exs_support::dumpEXSToLog(fs::path(argv[1]));
+    return 0;
+}
