@@ -52,6 +52,10 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     } type{WAV_FILE};
 
     static SourceType sourceTypeFromPath(const fs::path &path);
+    static bool isSourceTypeSubSampleFromMonolith(SourceType st)
+    {
+        return st == SF2_FILE || st == GIG_FILE || st == MULTISAMPLE_FILE || st == SCXT_FILE;
+    }
 
     Sample() {}
     Sample(const SampleID &sid) : displayName(sid.to_string()), id(sid) {}
