@@ -504,8 +504,17 @@ struct EXSSample : EXSObject
         fileName = (position < within.size) ? readStringNullTerm(256) : within.name;
     }
 };
-bool importEXS(const fs::path &p, engine::Engine &e)
+
+struct EXSInfo
 {
+    std::vector<EXSZone> zones;
+    std::vector<EXSGroup> groups;
+    std::vector<EXSSample> samples;
+};
+
+EXSInfo parseEXS(const fs::path &p)
+{
+
     SCLOG("Importing EXS from " << p.u8string());
     std::ifstream inputFile(p, std::ios_base::binary);
 
@@ -541,16 +550,29 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         case EXSBlock::TYPE_PARAMS:
         {
             SCLOG("EXS Parameter Parsing not yet implemented");
+            SCLOG("Fix this with "
+                  "https://github.com/git-moss/ConvertWithMoss/blob/main/src/main/java/de/"
+                  "mossgrabers/convertwithmoss/format/exs/EXS24Parameters.java");
         }
         break;
         default:
         {
-            SCLOG("Un-parsed EXS block type " << block.type);
+            // SCLOG("Un-parsed EXS block type " << block.type);
             break;
         }
         }
     }
 
+    auto res = EXSInfo();
+    res.zones = zones;
+    res.groups = groups;
+    res.samples = samples;
+    return res;
+}
+
+bool importEXS(const fs::path &p, engine::Engine &e)
+{
+    auto info = parseEXS(p);
     auto pt = std::clamp(e.getSelectionManager()->selectedPart, (int16_t)0, (int16_t)numParts);
     auto &part = e.getPatch()->getPart(pt);
 
@@ -559,7 +581,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     std::unordered_map<int, SampleID> exsIndexToSampleId;
     std::vector<SampleID> sampleIDByOrder;
 
-    for (auto &s : samples)
+    for (auto &s : info.samples)
     {
         auto p = fs::path{s.filePath} / s.fileName;
         auto lsid = e.getSampleManager()->loadSampleByPath(p);
@@ -570,7 +592,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         }
     }
 
-    for (auto &g : groups)
+    for (auto &g : info.groups)
     {
         auto groupId = part->addGroup() - 1;
         auto &group = part->getGroup(groupId);
@@ -579,7 +601,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         groupIndexByOrder.push_back(groupId);
     }
 
-    for (auto &z : zones)
+    for (auto &z : info.zones)
     {
         auto exsgi = z.groupIndex;
         auto exssi = z.sampleIndex;
@@ -610,5 +632,27 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     }
 
     return true;
+}
+
+void dumpEXSToLog(const fs::path &p)
+{
+    auto info = parseEXS(p);
+
+    for (auto &z : info.zones)
+    {
+        SCLOG("Zone '" << z.within.name << "'");
+        SCLOG("  KeyRange " << z.keyLow << "-" << z.key << "-" << z.keyHigh);
+        SCLOG("  VelRange " << z.velocityLow << "-" << z.velocityHigh);
+        SCLOG("  Group");
+        SCLOG("    gidx=" << z.groupIndex);
+        const auto &grp = info.groups[z.groupIndex];
+        SCLOG("    gname='" << grp.within.name << "'");
+        SCLOG("  Sample");
+        SCLOG("    sidx=" << z.sampleIndex);
+        const auto &smp = info.samples[z.sampleIndex];
+        SCLOG("    sname=" << smp.within.name);
+        SCLOG("    spath=" << smp.filePath);
+        SCLOG("    sname=" << smp.fileName);
+    }
 }
 } // namespace scxt::exs_support
