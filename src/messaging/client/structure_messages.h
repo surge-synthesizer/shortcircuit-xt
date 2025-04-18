@@ -331,16 +331,14 @@ using zoneAddressFromTo_t = std::pair<std::set<selection::SelectionManager::Zone
 inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &engine,
                             MessageController &cont)
 {
-    auto &src = payload.first;
+    auto src = payload.first;
     auto &tgt = payload.second;
 
     if (src.empty())
     {
-        cont.reportErrorToClient(
-            "Software Error: Emtpy set moved",
-            "Somehow MoveSoneFromTo had an empty source set. Please report this error condition "
-            "to the develoeprs along with an idea of what you did to get here (if possible).");
-        return;
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        src = std::set<selection::SelectionManager::ZoneAddress>(sz.begin(), sz.end());
+        SCLOG("Empty src so we populated it with " << src.size() << " zones");
     }
     assert(src.begin()->part == tgt.part);
 
@@ -410,7 +408,7 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
             {
                 // they've all been added at the end
                 auto zc = engine.getPatch()->getPart(t.part)->getGroup(t.group)->getZones().size() -
-                          1 - ss.size();
+                          -ss.size();
                 for (int i = 0; i < ss.size(); i++)
                 {
                     // retain the selection set
