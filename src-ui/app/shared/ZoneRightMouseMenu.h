@@ -33,6 +33,8 @@
 #include "messaging/client/client_messages.h"
 
 #include <app/edit-screen/components/PartGroupSidebar.h>
+#include <app/edit-screen/EditScreen.h>
+
 
 namespace scxt::ui::app::shared
 {
