@@ -34,6 +34,9 @@
 
 namespace scxt::ui::app::shared
 {
+inline void findOtherGroups(SCXTEditor *e, const selection::SelectionManager::ZoneAddress &forZone)
+{
+}
 template <typename SendingComp, typename RenamingComp> // COMP is a HasEditor and a few other things
 void populateZoneRightMouseMenuForZone(SendingComp *that, RenamingComp *rnThat, juce::PopupMenu &p,
                                        const selection::SelectionManager::ZoneAddress &forZone,
@@ -67,6 +70,17 @@ void populateZoneRightMouseMenuForZone(SendingComp *that, RenamingComp *rnThat, 
             return;
         w->sendToSerialization(cmsg::DeleteZone(forZone));
     });
+
+    auto moveMenu = juce::PopupMenu();
+    moveMenu.addItem("New Group", [w = juce::Component::SafePointer(that), forZone]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::MoveZonesFromTo(
+            {{forZone},
+             selection::SelectionManager::ZoneAddress{w->editor->selectedPart, -1, -1}}));
+    });
+    moveMenu.addItem("New Duplicate Group", false, false, []() {});
+    p.addSubMenu("Move to", moveMenu);
 }
 
 template <typename SendingComp>
@@ -86,6 +100,16 @@ void populateZoneRightMouseMenuForSelectedZones(SendingComp *that, juce::PopupMe
 
         w->sendToSerialization(cmsg::DeleteAllSelectedZones(true));
     });
+
+    auto moveMenu = juce::PopupMenu();
+    moveMenu.addItem("New Group", [w = juce::Component::SafePointer(that)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::MoveZonesFromTo(
+            {{}, selection::SelectionManager::ZoneAddress{w->editor->selectedPart, -1, -1}}));
+    });
+    moveMenu.addItem("New Duplicate Group", false, false, []() {});
+    p.addSubMenu("Move All to", moveMenu);
 
     p.addSeparator();
     p.addSectionHeader("Current Part");
