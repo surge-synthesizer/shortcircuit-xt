@@ -33,6 +33,7 @@
 
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/ListView.h"
 #include "engine/feature_enums.h"
 
 #include "app/shared/ZoneRightMouseMenu.h"
@@ -43,38 +44,67 @@ namespace scxt::ui::app::edit_screen
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::ListBoxModel
+template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp::ListView
 {
     static constexpr bool forZone{fz};
     SidebarParent *sidebar{nullptr};
-    engine::Engine::pgzStructure_t thisGroup;
-    GroupZoneListBoxModel(SidebarParent *sb) : sidebar(sb) { rebuild(); }
+    engine::Engine::pgzStructure_t gzData;
+    std::set<selection::SelectionManager::ZoneAddress> selectedZones;
+
+    GroupZoneSidebarWidget(SidebarParent *sb) : sidebar(sb)
+    {
+        rebuild();
+        setSelectionMode(jcmp::ListView::SelectionMode::MULTI_SELECTION);
+        getRowCount = [this]() { return gzData.size() + 1; };
+        getRowHeight = [this]() { return 18; };
+        makeRowComponent = [this]() { return std::make_unique<rowTopComponent>(); };
+        assignComponentToRow = [this](const std::unique_ptr<juce::Component> &c, uint32_t row) {
+            auto rc = dynamic_cast<rowTopComponent *>(c.get());
+            if (rc)
+            {
+                if (row == gzData.size())
+                {
+                    rc->enableAdd();
+                    rc->addRow->gsb = sidebar;
+                    rc->addRow->lbm = this;
+                }
+                else
+                {
+                    rc->enableGZ();
+                    rc->gzRow->rowNumber = row;
+                    rc->gzRow->lbm = this;
+                    rc->gzRow->gsb = sidebar;
+                    rc->gzRow->isSelected =
+                        selectedZones.find(gzData[row].address) != selectedZones.end();
+                }
+
+                rc->repaint();
+            }
+        };
+        setRowSelection = [this](auto &c, bool isSel) {
+            auto rc = dynamic_cast<rowTopComponent *>(c.get());
+            if (rc && rc->gzRow)
+            {
+                SCLOG("SELECTION STATE CHANGED " << rc->gzRow->rowNumber << " to " << isSel);
+                rc->gzRow->isSelected = isSel;
+                repaint();
+            }
+        };
+    }
     void rebuild()
     {
         auto &sbo = sidebar->editor->currentLeadZoneSelection;
 
         auto &pgz = sidebar->partGroupSidebar->pgzStructure;
-        thisGroup.clear();
+        gzData.clear();
         for (const auto &el : pgz)
             if (el.address.part == sidebar->editor->selectedPart && el.address.group >= 0)
-                thisGroup.push_back(el);
-    }
-    int getNumRows() override { return thisGroup.size() + 1; /* for the plus */ }
-
-    // Selection can come from server update or from juce keypress etc
-    // for keypress etc... we need to push back to the server
-    bool selectionFromServer{false};
-    void selectedRowsChanged(int lastRowSelected) override
-    {
-        if (!selectionFromServer)
-        {
-            sidebar->processRowsChanged();
-        }
+                gzData.push_back(el);
     }
 
     selection::SelectionManager::ZoneAddress getZoneAddress(int rowNumber)
     {
-        auto &tgl = thisGroup;
+        auto &tgl = gzData;
         if (rowNumber < 0 || rowNumber >= tgl.size())
             return {};
         auto &sad = tgl[rowNumber].address;
@@ -85,7 +115,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
     {
         int rowNumber{-1};
         bool isSelected{false};
-        GroupZoneListBoxModel<SidebarParent, forZone> *lbm{nullptr};
+        GroupZoneSidebarWidget<SidebarParent, forZone> *lbm{nullptr};
         SidebarParent *gsb{nullptr};
 
         std::unique_ptr<juce::TextEditor> renameEditor;
@@ -109,7 +139,9 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
         {
             if (!gsb)
                 return;
-            const auto &tgl = lbm->thisGroup;
+
+            // SCLOG("paint " << this << " " << isDragging << " " << rowNumber);
+            const auto &tgl = lbm->gzData;
             if (rowNumber < 0 || rowNumber >= tgl.size())
                 return;
 
@@ -142,7 +174,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                     fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.2);
                     textColor = editor->themeColor(theme::ColorMap::generic_content_high);
                 }
-                if (isLeadZone && isZone())
+                if ((isLeadZone || (isPaintSnapshot && isDragMulti)) && isZone())
                 {
                     fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.3);
                     textColor = editor->themeColor(theme::ColorMap::generic_content_highest);
@@ -216,6 +248,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                     voiceCount = p->second;
                 }
 
+                if (isPaintSnapshot && isDragMulti)
+                {
+                    g.drawText(std::to_string(lbm->selectedZones.size()) + " Selected Zones",
+                               getLocalBounds().translated(zonePad + 2, 0),
+                               juce::Justification::centredLeft);
+                    return;
+                }
                 g.drawText(sg.name, getLocalBounds().translated(zonePad + 2, 0),
                            juce::Justification::centredLeft);
 
@@ -262,7 +301,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 if (isZone())
                 {
                     auto za = getZoneAddress();
-                    const auto &tgl = lbm->thisGroup;
+                    const auto &tgl = lbm->gzData;
                     const auto &sg = tgl[rowNumber];
 
                     shared::populateZoneRightMouseMenuForZone(gsb, this, p, za, sg.name);
@@ -271,7 +310,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 }
                 else if (isGroup())
                 {
-                    const auto &tgl = lbm->thisGroup;
+                    const auto &tgl = lbm->gzData;
                     if (rowNumber < 0 || rowNumber >= tgl.size())
                         return;
 
@@ -308,6 +347,9 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             }
         }
 
+        bool isPaintSnapshot{false};
+        bool isDragMulti{false};
+
         // big thanks to https://forum.juce.com/t/listbox-drag-to-reorder-solved/28477
         void mouseDrag(const juce::MouseEvent &e) override
         {
@@ -318,7 +360,17 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             {
                 if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
                 {
+                    if (lbm->selectedZones.size() > 1 && !e.mods.isShiftDown())
+                    {
+                        isDragMulti = true;
+                    }
+                    else
+                    {
+                        isDragMulti = false;
+                    }
+                    isPaintSnapshot = true;
                     container->startDragging("ZoneRow", this);
+                    isPaintSnapshot = false;
                     isDragging = true;
                 }
             }
@@ -332,7 +384,9 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
                 isPopup = false;
                 return;
             }
-            gsb->onRowClicked(getZoneAddress(), isSelected, event.mods);
+
+            auto za = getZoneAddress();
+            gsb->onRowClicked(za, isSelected, event.mods);
         }
 
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
@@ -367,9 +421,17 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             if (rd)
             {
                 auto tgt = getZoneAddress();
-                auto src = rd->getZoneAddress();
 
-                gsb->sendToSerialization(cmsg::MoveZoneFromTo({src, tgt}));
+                if (rd->isDragMulti)
+                {
+                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
+                }
+                else
+                {
+                    auto src = rd->getZoneAddress();
+
+                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
+                }
             }
         }
         void resized() override
@@ -379,7 +441,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
         void doGroupRename()
         {
-            const auto &tgl = lbm->thisGroup;
+            const auto &tgl = lbm->gzData;
 
             const auto &sg = tgl[rowNumber];
             assert(sg.address.zone < 0);
@@ -396,7 +458,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
         void doZoneRename(const selection::SelectionManager::ZoneAddress &za)
         {
-            const auto &tgl = lbm->thisGroup;
+            const auto &tgl = lbm->gzData;
 
             const auto &sg = tgl[rowNumber];
             auto st = gsb->partGroupSidebar->style();
@@ -433,9 +495,11 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(rowComponent);
     };
-    struct rowAddComponent : juce::Component
+    struct rowAddComponent : juce::Component, juce::DragAndDropTarget
     {
         SidebarParent *gsb{nullptr};
+        GroupZoneSidebarWidget<SidebarParent, forZone> *lbm{nullptr};
+
         std::unique_ptr<jcmp::GlyphButton> gBut;
         rowAddComponent()
         {
@@ -445,64 +509,108 @@ template <typename SidebarParent, bool fz> struct GroupZoneListBoxModel : juce::
             gBut->setOnCallback([this]() { gsb->addGroup(); });
         }
 
-        void resized()
+        void resized() override
         {
             auto b = getLocalBounds().withSizeKeepingCentre(getHeight(), getHeight()).reduced(1);
             gBut->setBounds(b);
         }
 
+        bool isDroppingOn{false};
+        void paint(juce::Graphics &g) override
+        {
+            if (isDroppingOn)
+                g.fillAll(
+                    gsb->editor->themeColor(theme::ColorMap::generic_content_low).withAlpha(0.5f));
+        }
+
+        bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+        {
+            return true; // !isZone();
+        }
+
+        void itemDragEnter(const SourceDetails &dragSourceDetails) override
+        {
+            isDroppingOn = true;
+            repaint();
+        }
+        void itemDragMove(const SourceDetails &dragSourceDetails) override
+        {
+            // SCLOG("Item Drag Move");
+        }
+        void itemDragExit(const SourceDetails &dragSourceDetails) override
+        {
+            isDroppingOn = false;
+            repaint();
+        }
+
+        void itemDropped(const SourceDetails &dragSourceDetails) override
+        {
+            isDroppingOn = false;
+            repaint();
+            auto sc = dragSourceDetails.sourceComponent;
+            if (!sc) // weak component
+                return;
+
+            auto rd = dynamic_cast<rowComponent *>(sc.get());
+            if (rd)
+            {
+                auto tgt =
+                    selection::SelectionManager::ZoneAddress{gsb->editor->selectedPart, -1, -1};
+
+                if (rd->isDragMulti)
+                {
+                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
+                }
+                else
+                {
+                    auto src = rd->getZoneAddress();
+
+                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
+                }
+            }
+        }
+
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(rowAddComponent);
     };
 
-    juce::Component *refreshComponentForRow(int rowNumber, bool isRowSelected,
-                                            juce::Component *existingComponentToUpdate) override
+    struct rowTopComponent : juce::Component
     {
-        if (rowNumber < thisGroup.size())
+        std::unique_ptr<rowComponent> gzRow;
+        std::unique_ptr<rowAddComponent> addRow;
+        rowTopComponent() {}
+
+        void enableAdd()
         {
-            auto rc = dynamic_cast<rowComponent *>(existingComponentToUpdate);
-
-            if (!rc)
+            if (!addRow)
             {
-                // Should never happen but
-                if (existingComponentToUpdate)
-                {
-                    delete existingComponentToUpdate;
-                    existingComponentToUpdate = nullptr;
-                }
-
-                rc = new rowComponent();
-                rc->lbm = this;
-                rc->gsb = sidebar;
+                removeAllChildren();
+                gzRow.reset();
+                addRow = std::make_unique<rowAddComponent>();
+                addAndMakeVisible(*addRow);
+                resized();
             }
-
-            rc->isSelected = isRowSelected;
-            rc->rowNumber = rowNumber;
-            return rc;
         }
-        else
+        void enableGZ()
         {
-            auto rc = dynamic_cast<rowAddComponent *>(existingComponentToUpdate);
-
-            if (!rc)
+            if (!gzRow)
             {
-                // Should never happen but
-                if (existingComponentToUpdate)
-                {
-                    delete existingComponentToUpdate;
-                    existingComponentToUpdate = nullptr;
-                }
-
-                rc = new rowAddComponent();
-                rc->gsb = sidebar;
+                removeAllChildren();
+                addRow.reset();
+                gzRow = std::make_unique<rowComponent>();
+                addAndMakeVisible(*gzRow);
+                resized();
             }
-
-            return rc;
         }
-    }
-    void paintListBoxItem(int rowNumber, juce::Graphics &g, int width, int height,
-                          bool rowIsSelected) override
-    {
-    }
+
+        void resized()
+        {
+            assert(!(addRow && gzRow));
+            if (addRow)
+                addRow->setBounds(getLocalBounds());
+            if (gzRow)
+                gzRow->setBounds(getLocalBounds());
+        }
+    };
 };
 
 } // namespace scxt::ui::app::edit_screen

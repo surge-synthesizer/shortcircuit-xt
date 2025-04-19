@@ -239,7 +239,8 @@ std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &p
     return {riffPath, collectDir, ""};
 }
 
-sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine &e, int part)
+sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine &e, int part,
+                                                     const fs::path &writableDirectory)
 {
     sample::SampleManager::sampleMap_t toCollect;
 
@@ -247,7 +248,28 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
 
     if (part < 0)
     {
-        toCollect.insert(e.getSampleManager()->samplesBegin(), e.getSampleManager()->samplesEnd());
+        for (auto curr = e.getSampleManager()->samplesBegin();
+             curr != e.getSampleManager()->samplesEnd(); ++curr)
+        {
+            auto sp = curr->second;
+            if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
+            {
+                SCLOG("Sample Collection from MultiThingy");
+                fs::create_directories(writableDirectory);
+                // So stream the thing to a wav with an appropriate name
+
+                // add an alias to the sample manager to the sample id
+
+                // and cache the temp path with the id
+                e.getMessageController()->reportErrorToClient(
+                    "Error streaming", "Unable to collect/re-monolith monoliths");
+                return {};
+            }
+            else
+            {
+                toCollect.insert(*curr);
+            }
+        }
     }
     else
     {
@@ -258,7 +280,23 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
             auto sp = e.getSampleManager()->getSample(sid);
             if (sp)
             {
-                toCollect.insert({sid, sp});
+                if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
+                {
+                    SCLOG("Sample Collection from MultiThingy");
+                    fs::create_directories(writableDirectory);
+                    // So stream the thing to a wav with an appropriate name
+
+                    // add an alias to the sample manager to the sample id
+
+                    // and cache the temp path with the id
+                    e.getMessageController()->reportErrorToClient(
+                        "Error streaming", "Unable to collect/re-monolith monoliths");
+                    return {};
+                }
+                else
+                {
+                    toCollect.insert({sid, sp});
+                }
             }
             else
             {
@@ -271,7 +309,7 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
 
 void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
 {
-    auto toCollect = getSamplePathsFor(e, part);
+    auto toCollect = getSamplePathsFor(e, part, collectDir);
     if (part < 0)
     {
         SCLOG_IF(patchIO, "Collecting all samples for multi to '" << collectDir.u8string() << "'");
@@ -351,7 +389,7 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
 
         if (style == SaveStyles::AS_MONOLITH)
         {
-            auto smp = getSamplePathsFor(e, -1);
+            auto smp = getSamplePathsFor(e, -1, fs::temp_directory_path() / "scxt_multi_samples");
             if (!addMonolithBinaries(f, e, smp))
             {
                 return false;
@@ -409,7 +447,7 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
 
         if (style == SaveStyles::AS_MONOLITH)
         {
-            auto smp = getSamplePathsFor(e, part);
+            auto smp = getSamplePathsFor(e, part, fs::temp_directory_path() / "scxt_multi_samples");
             if (!addMonolithBinaries(f, e, smp))
             {
                 return false;

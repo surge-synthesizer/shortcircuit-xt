@@ -137,14 +137,14 @@ struct EXSObject
     void skip(int S)
     {
         position += S;
-        assert(position < within.size);
+        assert(position <= within.size);
     }
 
     int32_t readByteToInt()
     {
         char c = within.content[position];
         position++;
-        assert(position < within.size);
+        assert(position <= within.size);
         return (int32_t)c;
     }
 
@@ -152,8 +152,32 @@ struct EXSObject
     {
         char c = within.content[position];
         position++;
-        assert(position < within.size);
+        assert(position <= within.size);
         return (uint8_t)c;
+    }
+
+    int16_t readS16()
+    {
+        int16_t res = 0;
+        if (within.isBigEndian)
+        {
+            for (auto i = position; i < position + 2; ++i)
+            {
+                res = res << 8;
+                res += (uint8_t)within.content[i];
+            }
+        }
+        else
+        {
+            for (auto i = (int)position + 1; i >= (int)position; --i)
+            {
+                res = res << 8;
+                res += (uint8_t)within.content[i];
+            }
+        }
+        position += 2;
+        assert(position <= within.size);
+        return res;
     }
 
     uint16_t readU16()
@@ -176,7 +200,7 @@ struct EXSObject
             }
         }
         position += 2;
-        assert(position < within.size);
+        assert(position <= within.size);
         return res;
     }
     uint32_t readU32()
@@ -200,7 +224,7 @@ struct EXSObject
             }
         }
         position += 4;
-        assert(position < within.size);
+        assert(position <= within.size);
         return res;
     }
     std::string readStringNoTerm(size_t chars)
@@ -504,7 +528,65 @@ struct EXSSample : EXSObject
         fileName = (position < within.size) ? readStringNullTerm(256) : within.name;
     }
 };
-bool importEXS(const fs::path &p, engine::Engine &e)
+
+struct EXSParameters : EXSObject
+{
+    // For vals see
+    // https://github.com/git-moss/ConvertWithMoss/blob/main/src/main/java/de/mossgrabers/convertwithmoss/format/exs/EXS24Parameters.java
+    std::map<uint16_t, int16_t> params;
+    EXSParameters(EXSBlock in) : EXSObject(in)
+    {
+        assert(in.type == EXSBlock::TYPE_PARAMS);
+        assert(in.size);
+        parse();
+    }
+    void parse()
+    {
+        int paramCount = (int)readU32();
+        int paramBlockLength = paramCount * 3;
+
+        for (int i = 0; i < paramCount; i++)
+        {
+            int paramId = within.content[i] & 0xFF;
+            if (paramId != 0)
+            {
+                auto offset = paramCount + 2 * i;
+                int16_t value = within.content[offset] | (within.content[offset + 1] << 8);
+                params[paramId] = value;
+            }
+        }
+
+        position += paramBlockLength;
+        if (position < within.size)
+        {
+            paramCount = (int)readU32();
+            if (paramCount > 0)
+            {
+                paramBlockLength = paramCount * 4;
+                while (position < within.size)
+                {
+                    auto id = readU16();
+                    auto val = readS16();
+                    if (id != 0)
+                    {
+                        params[id] = val;
+                    }
+                }
+            }
+        }
+    }
+};
+;
+
+struct EXSInfo
+{
+    std::vector<EXSZone> zones;
+    std::vector<EXSGroup> groups;
+    std::vector<EXSSample> samples;
+    std::optional<EXSParameters> parameters;
+};
+
+EXSInfo parseEXS(const fs::path &p)
 {
     SCLOG("Importing EXS from " << p.u8string());
     std::ifstream inputFile(p, std::ios_base::binary);
@@ -513,6 +595,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     std::vector<EXSZone> zones;
     std::vector<EXSGroup> groups;
     std::vector<EXSSample> samples;
+    std::optional<EXSParameters> parameters;
 
     while (block.read(inputFile))
     {
@@ -540,51 +623,60 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         break;
         case EXSBlock::TYPE_PARAMS:
         {
-            SCLOG("EXS Parameter Parsing not yet implemented");
+            parameters = EXSParameters(block);
         }
         break;
         default:
         {
-            SCLOG("Un-parsed EXS block type " << block.type);
+            // SCLOG("Un-parsed EXS block type " << block.type);
             break;
         }
         }
     }
 
+    auto res = EXSInfo();
+    res.zones = zones;
+    res.groups = groups;
+    res.samples = samples;
+    res.parameters = parameters;
+    return res;
+}
+
+bool importEXS(const fs::path &p, engine::Engine &e)
+{
+    auto info = parseEXS(p);
     auto pt = std::clamp(e.getSelectionManager()->selectedPart, (int16_t)0, (int16_t)numParts);
     auto &part = e.getPatch()->getPart(pt);
 
-    std::unordered_map<int, int> exsIndexToGroupIndex;
     std::vector<int> groupIndexByOrder;
-    std::unordered_map<int, SampleID> exsIndexToSampleId;
     std::vector<SampleID> sampleIDByOrder;
 
-    for (auto &s : samples)
+    for (auto &s : info.samples)
     {
         auto p = fs::path{s.filePath} / s.fileName;
         auto lsid = e.getSampleManager()->loadSampleByPath(p);
         if (lsid.has_value())
         {
             sampleIDByOrder.push_back(*lsid);
-            exsIndexToSampleId[s.within.index] = *lsid;
         }
     }
 
-    for (auto &g : groups)
+    int gidx{0};
+    for (auto &g : info.groups)
     {
         auto groupId = part->addGroup() - 1;
         auto &group = part->getGroup(groupId);
         group->name = g.within.name;
-        exsIndexToGroupIndex[g.within.index] = groupId;
         groupIndexByOrder.push_back(groupId);
+        ++gidx;
     }
 
-    for (auto &z : zones)
+    for (auto &z : info.zones)
     {
         auto exsgi = z.groupIndex;
         auto exssi = z.sampleIndex;
 
-        if (exsIndexToGroupIndex.find(exsgi) == exsIndexToGroupIndex.end())
+        if (exsgi < 0 || exsgi >= groupIndexByOrder.size())
         {
             SCLOG("Out-of-bounds group index : " << SCD(exsgi));
             continue;
@@ -594,7 +686,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
             SCLOG("Out-of-bounds sample index " << SCD(exsgi) << SCD(exssi));
             continue;
         }
-        auto gi = exsIndexToGroupIndex[exsgi];
+        auto gi = groupIndexByOrder[exsgi];
         auto si = sampleIDByOrder[exssi];
         auto &group = part->getGroup(gi);
         auto zone = std::make_unique<engine::Zone>(si);
@@ -610,5 +702,35 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     }
 
     return true;
+}
+
+void dumpEXSToLog(const fs::path &p)
+{
+    auto info = parseEXS(p);
+
+    if (info.parameters.has_value())
+    {
+        SCLOG("Parameters block found with " << info.parameters->params.size() << " parameters");
+    }
+    else
+    {
+        SCLOG("NO parameters block found");
+    }
+    for (auto &z : info.zones)
+    {
+        SCLOG("Zone '" << z.within.name << "'");
+        SCLOG("  KeyRange " << z.keyLow << "-" << z.key << "-" << z.keyHigh);
+        SCLOG("  VelRange " << z.velocityLow << "-" << z.velocityHigh);
+        SCLOG("  Group");
+        SCLOG("    gidx=" << z.groupIndex);
+        const auto &grp = info.groups[z.groupIndex];
+        SCLOG("    gname='" << grp.within.name << "'");
+        SCLOG("  Sample");
+        SCLOG("    sidx=" << z.sampleIndex);
+        const auto &smp = info.samples[z.sampleIndex];
+        SCLOG("    sname=" << smp.within.name);
+        SCLOG("    spath=" << smp.filePath);
+        SCLOG("    sname=" << smp.fileName);
+    }
 }
 } // namespace scxt::exs_support

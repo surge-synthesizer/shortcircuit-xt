@@ -326,57 +326,100 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
 }
 CLIENT_TO_SERIAL(ClearPart, c2s_clear_part, int, clearPart(payload, engine, cont));
 
-using zoneAddressFromTo_t =
-    std::pair<selection::SelectionManager::ZoneAddress, selection::SelectionManager::ZoneAddress>;
-inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &engine,
-                           MessageController &cont)
+using zoneAddressFromTo_t = std::pair<std::set<selection::SelectionManager::ZoneAddress>,
+                                      selection::SelectionManager::ZoneAddress>;
+inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &engine,
+                            MessageController &cont)
 {
-    auto &src = payload.first;
+    auto src = payload.first;
     auto &tgt = payload.second;
 
-    assert(src.part == tgt.part);
-
-    auto nad = engine.getPatch()->getPart(tgt.part)->getGroup(tgt.group)->getZones().size();
+    if (src.empty())
+    {
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        src = std::set<selection::SelectionManager::ZoneAddress>(sz.begin(), sz.end());
+        SCLOG("Empty src so we populated it with " << src.size() << " zones");
+    }
+    assert(src.begin()->part == tgt.part);
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = src, t = tgt](auto &e) {
-            if (s.group == t.group)
+        [ss = src, t = tgt](auto &e) {
+            // This is a little hairy byt I know the zones will not be deleted during this function
+            std::vector<engine::Zone *> sourceZones;
+            std::vector<engine::Group *> sourceGroups;
+
+            auto gid = t.group;
+            if (gid < 0)
             {
-                if (t.zone == -1)
+                gid = e.getPatch()->getPart(t.part)->addGroup() - 1;
+            }
+
+            const std::unique_ptr<engine::Group> &targetGroup =
+                e.getPatch()->getPart(t.part)->getGroup(gid);
+
+            for (const auto &addr : ss)
+            {
+                sourceZones.push_back(e.getPatch()
+                                          ->getPart(addr.part)
+                                          ->getGroup(addr.group)
+                                          ->getZone(addr.zone)
+                                          .get());
+                sourceGroups.push_back(
+                    e.getPatch()->getPart(addr.part)->getGroup(addr.group).get());
+            }
+
+            for (size_t i = 0; i < sourceZones.size(); i++)
+            {
+                if (sourceGroups.at(i) == targetGroup.get())
                 {
-                    // You've moved an item onto its own goroup. So that's a noop
+                    if (t.zone >= 0)
+                    {
+                        e.terminateVoicesForZone(*sourceZones.at(i));
+                        e.terminateVoicesForZone(*targetGroup->getZone(t.zone));
+                        targetGroup->swapZonesByIndex(
+                            targetGroup->getZoneIndex(sourceZones.at(i)->id), t.zone);
+                    }
                 }
                 else
                 {
-                    // Its a zone swap
-                    auto &group = e.getPatch()->getPart(s.part)->getGroup(s.group);
-                    auto &zoneS = group->getZone(s.zone);
-                    auto &zoneT = group->getZone(t.zone);
-                    e.terminateVoicesForZone(*zoneS);
-                    e.terminateVoicesForZone(*zoneT);
-                    group->swapZonesByIndex(s.zone, t.zone);
+                    e.terminateVoicesForZone(*sourceZones.at(i));
+
+                    auto zid = sourceZones.at(i)->id;
+                    auto z = sourceZones.at(i)->parentGroup->removeZone(zid);
+                    if (z)
+                        targetGroup->addZone(z);
                 }
             }
-            else
-            {
-                auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
-                e.terminateVoicesForZone(*zoneO);
-
-                auto zid = zoneO->id;
-                auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
-                if (z)
-                    e.getPatch()->getPart(t.part)->getGroup(t.group)->addZone(z);
-            }
         },
-        [nad, s = src, t = tgt](auto &engine) {
-            if (s.group != t.group)
+        [ss = src, tt = tgt](auto &engine) {
+            bool needsReselect = false;
+            auto t = tt;
+            if (t.group < 0)
+                t.group = engine.getPatch()->getPart(t.part)->getGroups().size() - 1;
+
+            for (const auto &s : ss)
             {
-                // Swapped groups. We almost definitely need to select in the new group
-                auto tc = t;
-                tc.zone = nad;
-                auto act = selection::SelectionManager::SelectActionContents(tc, true, true, true);
-                engine.getSelectionManager()->selectAction(act);
+                if (s.group != t.group)
+                {
+                    needsReselect = true;
+                }
             }
+            if (needsReselect)
+            {
+                // they've all been added at the end
+                auto zc = engine.getPatch()->getPart(t.part)->getGroup(t.group)->getZones().size() -
+                          -ss.size();
+                for (int i = 0; i < ss.size(); i++)
+                {
+                    // retain the selection set
+                    auto tc = t;
+                    tc.zone = zc + i;
+                    auto act =
+                        selection::SelectionManager::SelectActionContents(tc, true, i == 0, i == 0);
+                    engine.getSelectionManager()->selectAction(act);
+                }
+            }
+
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
@@ -384,8 +427,8 @@ inline void moveZoneFromTo(const zoneAddressFromTo_t &payload, engine::Engine &e
                                       *(engine.getMessageController()));
         });
 }
-CLIENT_TO_SERIAL(MoveZoneFromTo, c2s_move_zone, zoneAddressFromTo_t,
-                 moveZoneFromTo(payload, engine, cont));
+CLIENT_TO_SERIAL(MoveZonesFromTo, c2s_move_zone, zoneAddressFromTo_t,
+                 moveZonesFromTo(payload, engine, cont));
 
 inline void doActivateNextPart(messaging::MessageController &cont)
 {
