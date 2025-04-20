@@ -35,9 +35,10 @@
 
 #include "RIFF.h"
 
-
-void dumpList(RIFF::List *l, const std::string &pfx = "+-- ") {
-    SCLOG(pfx << "LIST: " << l->GetListTypeString() << " " << l->CountSubLists() << " " << l->CountSubChunks());
+void dumpList(RIFF::List *l, const std::string &pfx = "+-- ")
+{
+    SCLOG(pfx << "LIST: " << l->GetListTypeString() << " " << l->CountSubLists() << " "
+              << l->CountSubChunks());
     if (l->CountSubLists())
     {
         auto sl = l->GetFirstSubList();
