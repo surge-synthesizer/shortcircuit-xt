@@ -166,6 +166,7 @@ struct SampleManager : MoveableOnly<SampleManager>
             }
             if (remapIds.find(k) != remapIds.end())
             {
+                SCLOG("Remapping id " << k.to_string() << " to " << remapIds.at(k).path)
                 res.emplace_back(k, remapIds.at(k));
             }
             else
