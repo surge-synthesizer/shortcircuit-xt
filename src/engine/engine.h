@@ -564,6 +564,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &,
                                 gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn);
 
+    void remapZonesToNewSample(const SampleID &oldId, const SampleID &newId, int forPart);
+
     /*
      * Accelerated voice termination
      */
