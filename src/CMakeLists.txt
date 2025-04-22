@@ -32,15 +32,12 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_mp3.cpp
 
         sample/exs_support/exs_import.cpp
-
+        sample/akai_support/akai_import.cpp
         sample/multisample_support/multisample_import.cpp
-
         sample/gig_support/gig_compound_file_impl.cpp
         sample/gig_support/gig_import.cpp
-
         sample/sf2_support/sf2_compound_file_impl.cpp
         sample/sf2_support/sf2_import.cpp
-
         sample/sfz_support/sfz_compound_file_impl.cpp
         sample/sfz_support/sfz_parse.cpp
         sample/sfz_support/sfz_import.cpp
