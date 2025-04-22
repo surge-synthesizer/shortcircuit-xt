@@ -38,6 +38,8 @@
 
 #include "RIFF.h" // from libgig
 
+#include "RIFFWavWriter.hpp"
+
 #include "utils.h"
 #include "patch_io.h"
 #include "engine/engine.h"
@@ -239,8 +241,127 @@ std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &p
     return {riffPath, collectDir, ""};
 }
 
+fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap_t &toCollect,
+                       const SampleID &id, const std::shared_ptr<sample::Sample> &sp)
+{
+    SCLOG("Sample Collection from MultiThingy");
+    auto writableDirectory = fs::temp_directory_path() / "scxt_multi_samples";
+
+    fs::create_directories(writableDirectory);
+    // So stream the thing to a wav with an appropriate name
+    auto nm = sp->getPath().filename().replace_extension("").u8string();
+    nm += " subsamp ";
+    std::string pfx = "";
+    for (int i = 0; i < 3; ++i)
+    {
+        if (id.multiAddress[i] >= 0)
+        {
+            nm += pfx + std::to_string(id.multiAddress[i]);
+            pfx = "_";
+        }
+    }
+
+    auto nf = writableDirectory / (nm + ".wav");
+
+    SCLOG("Writing to " << nf.u8string());
+    auto ch = sp->channels;
+    if (sp->bitDepth == sample::Sample::BD_F32)
+    {
+        riffwav::RIFFWavWriter writer(nf, ch, riffwav::RIFFWavWriter::F32);
+        if (!writer.openFile())
+        {
+            return {};
+        }
+        writer.writeRIFFHeader();
+        writer.writeFMTChunk(sp->sample_rate);
+        writer.startDataChunk();
+        float d[2];
+        if (ch == 1)
+        {
+            auto fd = sp->GetSamplePtrF32(0);
+            for (int i = 0; i < sp->sample_length; ++i)
+            {
+                d[0] = fd[i];
+                writer.pushSamplesF32(d);
+            }
+        }
+        else if (ch == 2)
+        {
+            auto fl = sp->GetSamplePtrF32(0);
+            auto fr = sp->GetSamplePtrF32(1);
+            for (int i = 0; i < sp->sample_length; ++i)
+            {
+                d[0] = fl[i];
+                d[1] = fr[i];
+                writer.pushSamplesF32(d);
+            }
+        }
+        if (!writer.closeFile())
+        {
+            return {};
+        }
+    }
+    else if (sp->bitDepth == sample::Sample::BD_I16)
+    {
+        riffwav::RIFFWavWriter writer(nf, ch, riffwav::RIFFWavWriter::PCM16);
+        if (!writer.openFile())
+        {
+            return {};
+        }
+
+        writer.writeRIFFHeader();
+        writer.writeFMTChunk(sp->sample_rate);
+        writer.startDataChunk();
+        int16_t d[2];
+        if (ch == 1)
+        {
+            auto fd = sp->GetSamplePtrI16(0);
+            for (int i = 0; i < sp->sample_length; ++i)
+            {
+                d[0] = fd[i];
+                writer.pushSamplesI16(d);
+            }
+        }
+        else if (ch == 2)
+        {
+            auto fl = sp->GetSamplePtrI16(0);
+            auto fr = sp->GetSamplePtrI16(1);
+            for (int i = 0; i < sp->sample_length; ++i)
+            {
+                d[0] = fl[i];
+                d[1] = fr[i];
+                writer.pushSamplesI16(d);
+            }
+        }
+        if (!writer.closeFile())
+        {
+            return {};
+        }
+    }
+    else
+    {
+        SCLOG("Unsupported bit depth " << sp->bitDepth);
+        return {};
+    }
+
+    auto sid = e.getSampleManager()->loadSampleByPath(nf);
+    if (sid.has_value())
+    {
+        auto smp = e.getSampleManager()->getSample(*sid);
+        toCollect.insert({*sid, smp});
+        SCLOG("Re-pointing " << id.to_string() << " to "
+                             << smp->getSampleFileAddress().path.u8string())
+        e.getSampleManager()->remapIds[id] = {*sid, smp->getSampleFileAddress()};
+    }
+    else
+    {
+        SCLOG("Unable to load sample by path " << nf.u8string());
+    }
+    return nf;
+}
+
 sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine &e, int part,
-                                                     const fs::path &writableDirectory)
+                                                     std::vector<fs::path> &tempFilesCreated)
 {
     sample::SampleManager::sampleMap_t toCollect;
 
@@ -251,19 +372,11 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
         for (auto curr = e.getSampleManager()->samplesBegin();
              curr != e.getSampleManager()->samplesEnd(); ++curr)
         {
+            auto id = curr->first;
             auto sp = curr->second;
             if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
             {
-                SCLOG("Sample Collection from MultiThingy");
-                fs::create_directories(writableDirectory);
-                // So stream the thing to a wav with an appropriate name
-
-                // add an alias to the sample manager to the sample id
-
-                // and cache the temp path with the id
-                e.getMessageController()->reportErrorToClient(
-                    "Error streaming", "Unable to collect/re-monolith monoliths");
-                return {};
+                tempFilesCreated.push_back(saveSubSample(e, toCollect, id, sp));
             }
             else
             {
@@ -282,16 +395,7 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
             {
                 if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
                 {
-                    SCLOG("Sample Collection from MultiThingy");
-                    fs::create_directories(writableDirectory);
-                    // So stream the thing to a wav with an appropriate name
-
-                    // add an alias to the sample manager to the sample id
-
-                    // and cache the temp path with the id
-                    e.getMessageController()->reportErrorToClient(
-                        "Error streaming", "Unable to collect/re-monolith monoliths");
-                    return {};
+                    tempFilesCreated.push_back(saveSubSample(e, toCollect, sid, sp));
                 }
                 else
                 {
@@ -309,7 +413,8 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
 
 void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
 {
-    auto toCollect = getSamplePathsFor(e, part, collectDir);
+    std::vector<fs::path> tempFilesCreated;
+    auto toCollect = getSamplePathsFor(e, part, tempFilesCreated);
     if (part < 0)
     {
         SCLOG_IF(patchIO, "Collecting all samples for multi to '" << collectDir.u8string() << "'");
@@ -352,12 +457,25 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
             return;
         }
     }
+    for (auto &f : tempFilesCreated)
+    {
+        try
+        {
+            fs::remove(f);
+        }
+        catch (fs::filesystem_error &fse)
+        {
+            SCLOG("Unable to remove " << f.u8string() << " " << fse.what());
+        }
+    }
 }
 
 bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles style)
 {
     fs::path riffPath = p;
     fs::path collectDir;
+
+    e.getSampleManager()->remapIds.clear();
 
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
@@ -380,8 +498,6 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
             collectSamplesInto(collectDir, e, -1);
             e.getSampleManager()->reparentSamplesOnStreamToRelative("samples/");
         }
-        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_MULTI);
-        auto msg = tao::json::msgpack::to_string(json::scxt_value(e));
 
         auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
         f->SetByteOrder(RIFF::endian_little);
@@ -389,12 +505,29 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
 
         if (style == SaveStyles::AS_MONOLITH)
         {
-            auto smp = getSamplePathsFor(e, -1, fs::temp_directory_path() / "scxt_multi_samples");
-            if (!addMonolithBinaries(f, e, smp))
+            std::vector<fs::path> tmpf;
+            auto smp = getSamplePathsFor(e, -1, tmpf);
+            auto res = addMonolithBinaries(f, e, smp);
+            for (auto &f : tmpf)
+            {
+                try
+                {
+                    fs::remove(f);
+                }
+                catch (fs::filesystem_error &fse)
+                {
+                    SCLOG("Unable to remove " << f.u8string() << " " << fse.what());
+                }
+            }
+            if (!res)
             {
                 return false;
             }
         }
+
+        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_MULTI);
+        auto msg = tao::json::msgpack::to_string(json::scxt_value(e));
+
         addSCDataChunk(f, msg);
 
         f->Save(riffPath.u8string());
@@ -403,6 +536,7 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
         {
             e.getSampleManager()->clearReparenting();
         }
+        e.getSampleManager()->remapIds.clear();
     }
     catch (const RIFF::Exception &e)
     {
@@ -417,6 +551,7 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
     fs::path riffPath = p;
     fs::path collectDir;
 
+    e.getSampleManager()->remapIds.clear();
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
         auto [r, c, emsg] = setupForCollection(p);
@@ -438,8 +573,6 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
             collectSamplesInto(collectDir, e, part);
             e.getSampleManager()->reparentSamplesOnStreamToRelative("samples/");
         }
-        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
-        auto msg = tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
 
         auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
         f->SetByteOrder(RIFF::endian_little);
@@ -447,13 +580,67 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
 
         if (style == SaveStyles::AS_MONOLITH)
         {
-            auto smp = getSamplePathsFor(e, part, fs::temp_directory_path() / "scxt_multi_samples");
-            if (!addMonolithBinaries(f, e, smp))
+            std::vector<fs::path> tmpf;
+            auto smp = getSamplePathsFor(e, part, tmpf);
+            auto res = addMonolithBinaries(f, e, smp);
+            for (auto &f : tmpf)
+            {
+                try
+                {
+                    fs::remove(f);
+                }
+                catch (fs::filesystem_error &fse)
+                {
+                    SCLOG("Unable to remove " << f.u8string() << " " << fse.what());
+                }
+            }
+            if (!res)
             {
                 return false;
             }
         }
 
+        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
+        auto &pt = e.getPatch()->getPart(part);
+        auto &rid = e.getSampleManager()->remapIds;
+        std::map<engine::Zone::SingleVariant *, SampleID> origIds;
+        for (auto &g : *pt)
+        {
+            for (auto &z : *g)
+            {
+                for (auto &v : z->variantData.variants)
+                {
+                    if (v.active)
+                    {
+                        auto it = rid.find(v.sampleID);
+                        if (it != rid.end())
+                        {
+                            origIds[&v] = v.sampleID;
+                            v.sampleID = it->second.first;
+                        }
+                    }
+                }
+            }
+        }
+        auto msg = tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
+
+        for (auto &g : *pt)
+        {
+            for (auto &z : *g)
+            {
+                for (auto &v : z->variantData.variants)
+                {
+                    if (v.active)
+                    {
+                        auto it = origIds.find(&v);
+                        if (it != origIds.end())
+                        {
+                            v.sampleID = it->second;
+                        }
+                    }
+                }
+            }
+        }
         addSCDataChunk(f, msg);
 
         f->Save(riffPath.u8string());
@@ -462,6 +649,7 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
         {
             e.getSampleManager()->clearReparenting();
         }
+        e.getSampleManager()->remapIds.clear();
     }
     catch (const RIFF::Exception &e)
     {
@@ -593,7 +781,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
 
         if (hasMonolithBinaries(f))
         {
-            SCLOG_IF(patchIO, "Loading a multi with monolithic binaries");
+            SCLOG_IF(patchIO, "Loading a part with monolithic binaries");
             monolithBinaryIndex = readMonolithBinaryIndex(f, engine);
         }
     }

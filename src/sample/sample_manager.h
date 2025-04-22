@@ -124,6 +124,8 @@ struct SampleManager : MoveableOnly<SampleManager>
     }
     void clearReparenting() { reparentPath = fs::path{}; }
 
+    std::unordered_map<SampleID, std::pair<SampleID, Sample::SampleFileAddress>> remapIds;
+
     fs::path relativeRoot;
     void setRelativeRoot(const fs::path &p) { relativeRoot = p; }
     void clearRelativeRoot() { relativeRoot = fs::path{}; }
@@ -162,7 +164,15 @@ struct SampleManager : MoveableOnly<SampleManager>
                 SCLOG_IF(sampleLoadAndPurge, "SampleManager::getSampleAddressesAndIDs: reparenting "
                                                  << prior << " to " << sfa.path);
             }
-            res.emplace_back(k, sfa);
+            if (remapIds.find(k) != remapIds.end())
+            {
+                SCLOG("Remapping id " << k.to_string() << " to " << remapIds.at(k).second.path)
+                res.emplace_back(k, remapIds.at(k).second);
+            }
+            else
+            {
+                res.emplace_back(k, sfa);
+            }
         }
         return res;
     }
@@ -187,7 +197,7 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     void addIdAlias(const SampleID &from, const SampleID &to) { idAliases[from] = to; }
 
-    SampleID resolveAlias(const SampleID &a)
+    SampleID resolveAlias(const SampleID &a) const
     {
         auto ap = idAliases.find(a);
         if (ap == idAliases.end())
