@@ -124,7 +124,7 @@ struct SampleManager : MoveableOnly<SampleManager>
     }
     void clearReparenting() { reparentPath = fs::path{}; }
 
-    std::unordered_map<SampleID, Sample::SampleFileAddress> remapIds;
+    std::unordered_map<SampleID, std::pair<SampleID, Sample::SampleFileAddress>> remapIds;
 
     fs::path relativeRoot;
     void setRelativeRoot(const fs::path &p) { relativeRoot = p; }
@@ -166,8 +166,8 @@ struct SampleManager : MoveableOnly<SampleManager>
             }
             if (remapIds.find(k) != remapIds.end())
             {
-                SCLOG("Remapping id " << k.to_string() << " to " << remapIds.at(k).path)
-                res.emplace_back(k, remapIds.at(k));
+                SCLOG("Remapping id " << k.to_string() << " to " << remapIds.at(k).second.path)
+                res.emplace_back(k, remapIds.at(k).second);
             }
             else
             {

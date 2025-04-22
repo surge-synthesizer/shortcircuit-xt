@@ -351,7 +351,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
         toCollect.insert({*sid, smp});
         SCLOG("Re-pointing " << id.to_string() << " to "
                              << smp->getSampleFileAddress().path.u8string())
-        e.getSampleManager()->remapIds[id] = smp->getSampleFileAddress();
+        e.getSampleManager()->remapIds[id] = {*sid, smp->getSampleFileAddress()};
     }
     else
     {
@@ -601,8 +601,46 @@ bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
         }
 
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
+        auto &pt = e.getPatch()->getPart(part);
+        auto &rid = e.getSampleManager()->remapIds;
+        std::map<engine::Zone::SingleVariant *, SampleID> origIds;
+        for (auto &g : *pt)
+        {
+            for (auto &z : *g)
+            {
+                for (auto &v : z->variantData.variants)
+                {
+                    if (v.active)
+                    {
+                        auto it = rid.find(v.sampleID);
+                        if (it != rid.end())
+                        {
+                            origIds[&v] = v.sampleID;
+                            v.sampleID = it->second.first;
+                        }
+                    }
+                }
+            }
+        }
         auto msg = tao::json::msgpack::to_string(json::scxt_value(*(e.getPatch()->getPart(part))));
 
+        for (auto &g : *pt)
+        {
+            for (auto &z : *g)
+            {
+                for (auto &v : z->variantData.variants)
+                {
+                    if (v.active)
+                    {
+                        auto it = origIds.find(&v);
+                        if (it != origIds.end())
+                        {
+                            v.sampleID = it->second;
+                        }
+                    }
+                }
+            }
+        }
         addSCDataChunk(f, msg);
 
         f->Save(riffPath.u8string());
@@ -743,7 +781,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
 
         if (hasMonolithBinaries(f))
         {
-            SCLOG_IF(patchIO, "Loading a multi with monolithic binaries");
+            SCLOG_IF(patchIO, "Loading a part with monolithic binaries");
             monolithBinaryIndex = readMonolithBinaryIndex(f, engine);
         }
     }
