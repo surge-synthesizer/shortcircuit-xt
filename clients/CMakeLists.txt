@@ -1,8 +1,4 @@
 project(scxt-clients LANGUAGES CXX)
 
 add_subdirectory(clap-first)
-add_subdirectory(sfz-token-dump)
-add_subdirectory(exs-dump)
-add_subdirectory(akai-dump)
-add_subdirectory(riff-dump)
-add_subdirectory(init-maker)
+add_subdirectory(cli-tools)
