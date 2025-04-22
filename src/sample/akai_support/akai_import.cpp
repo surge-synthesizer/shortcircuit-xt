@@ -26,6 +26,7 @@
  */
 
 #include "akai_import.h"
+#include <fstream>
 
 namespace scxt::akai_support
 {
