@@ -35,35 +35,38 @@
 
 #include "RIFF.h"
 
-void dumpList(RIFF::List *l, const std::string &pfx = "+-- ")
+void dumpList(RIFF::List *list, const std::string &pfx = "+-- ")
 {
-    SCLOG(pfx << "LIST: " << l->GetListTypeString() << " " << l->CountSubLists() << " "
-              << l->CountSubChunks());
-    if (l->CountSubLists())
+    RIFF::Chunk *ck = list->GetFirstSubChunk();
+    while (ck != NULL)
     {
-        auto sl = l->GetFirstSubList();
-        while (sl)
+        RIFF::Chunk *ckParent = ck;
+        std::ostringstream oss;
+        while (ckParent->GetParent() != NULL)
         {
-            dumpList(sl, "  " + pfx);
-            sl = l->GetNextSubList();
+            oss << "  "; // e.g. 'LIST(INFO)->'
+            ckParent = ckParent->GetParent();
         }
-    }
-    if (l->CountSubChunks())
-    {
-        auto sc = l->GetFirstSubChunk();
-
-        while (sc)
+        oss << ck->GetChunkIDString();
+        switch (ck->GetChunkID())
         {
-            if (dynamic_cast<RIFF::List *>(sc))
-            {
-                dumpList(dynamic_cast<RIFF::List *>(sc), "  " + pfx);
-            }
-            else
-            {
-                SCLOG("  " << pfx << "CHUNK : " << sc->GetChunkIDString() << " " << sc->GetSize());
-            }
-            sc = l->GetNextSubChunk();
+        case CHUNK_ID_LIST:
+        case CHUNK_ID_RIFF:
+        {
+            RIFF::List *l = (RIFF::List *)ck;
+            oss << "(" << l->GetListTypeString() << ")->";
+            oss << " (" << l->GetSize() << " Bytes)";
+            SCLOG(oss.str());
+            dumpList(l);
+            break;
         }
+        default:
+            oss << ";";
+            oss << " (" << ck->GetSize() << " Bytes)";
+            SCLOG(oss.str());
+            break;
+        }
+        ck = list->GetNextSubChunk();
     }
 };
 
@@ -84,6 +87,7 @@ int main(int argc, char **argv)
     {
         auto rf = std::make_unique<RIFF::File>(argv[1]);
 
+        SCLOG("RIFF : " << rf->GetChunkIDString() << " " << rf->GetListTypeString());
         dumpList(rf.get());
     }
     catch (const RIFF::Exception &e)
