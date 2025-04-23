@@ -240,9 +240,9 @@ struct MatrixEndpoints
                          {'zneg', 'eg5 ', 0}}},
               transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
         {
-            registerVoiceModSource(e, egSources[0], "", "AEG");
+            registerVoiceModSource(e, egSources[0], "EG", "AEG");
             for (int i = 1; i < egsPerZone; ++i)
-                registerVoiceModSource(e, egSources[i], "", "EG" + std::to_string(i + 1));
+                registerVoiceModSource(e, egSources[i], "EG", "EG" + std::to_string(i + 1));
         }
 
         scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource>
