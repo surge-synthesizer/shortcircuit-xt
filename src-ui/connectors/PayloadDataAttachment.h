@@ -509,6 +509,10 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         {
             e->setupWidgetForValueTooltip(wid.get(), att.get());
         }
+        else
+        {
+            e->setupIntAttachedWidgetForValueMenu(wid.get(), att.get());
+        }
         e->addSubscription(val, att);
         return {std::move(att), std::move(wid)};
     }
