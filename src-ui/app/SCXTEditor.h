@@ -389,6 +389,16 @@ inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
     }
 }
 
+template <typename W, typename A>
+inline void HasEditor::setupIntAttachedWidgetForValueMenu(W *w, const A &a)
+{
+    w->onPopupMenu = [this, q = juce::Component::SafePointer(w)](auto &mods) {
+        auto qc = dynamic_cast<sst::jucegui::components::ContinuousParamEditor *>(q.getComponent());
+        if (qc)
+            editor->popupMenuForContinuous(qc);
+    };
+}
+
 template <typename P, typename A> void HasEditor::addSubscription(const P &p, A &a)
 {
     auto *dc = &editor->editorDataCache;
