@@ -380,7 +380,7 @@ struct LFOSourceBase
         for (uint32_t i = 0; i < numLfo; ++i)
         {
             sources[i] = SR{gid, 'outp', i};
-            registerSource(e, sources[i], "", "LFO " + std::to_string(i + 1));
+            registerSource(e, sources[i], "LFO", "LFO " + std::to_string(i + 1));
         }
     }
     std::array<SR, numLfo> sources;
