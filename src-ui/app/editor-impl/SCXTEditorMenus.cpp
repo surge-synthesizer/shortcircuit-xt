@@ -32,6 +32,7 @@
 #include "infrastructure/user_defaults.h"
 #include "sst/plugininfra/version_information.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
+#include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/clap_juce_shim/menu_helper.h"
 
 #include "app/SCXTEditor.h"
