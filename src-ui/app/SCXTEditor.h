@@ -204,6 +204,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     }
     void configureHasDiscreteMenuBuilder(sst::jucegui::components::HasDiscreteParamMenuBuilder *);
     void popupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e);
+    // Sometimes we don't want a popup. Se #1669
+    bool supressPopupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e) const;
 
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);

@@ -32,6 +32,7 @@
 #include "infrastructure/user_defaults.h"
 #include "sst/plugininfra/version_information.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
+#include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/clap_juce_shim/menu_helper.h"
 
 #include "app/SCXTEditor.h"
@@ -349,8 +350,25 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
 #endif
 }
 
+bool SCXTEditor::supressPopupMenuForContinuous(
+    sst::jucegui::components::ContinuousParamEditor *e) const
+{
+    // Make this a standalone function so we could add a user pref or ally hook in the future
+    // This basically supresses the popup on any draggable text edit now.
+    if (!e)
+        return true;
+
+    if (dynamic_cast<sst::jucegui::components::DraggableTextEditableValue *>(e))
+        return true;
+
+    return false;
+}
+
 void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e)
 {
+    if (supressPopupMenuForContinuous(e))
+        return;
+
     auto data = e->continuous();
     if (!data)
     {
