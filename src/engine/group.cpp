@@ -53,7 +53,7 @@ Group::Group()
 
 void Group::rePrepareAndBindGroupMatrix()
 {
-    for (int i=0; i<lfosPerGroup; ++i)
+    for (int i = 0; i < lfosPerGroup; ++i)
     {
         const auto &ms = modulatorStorage[i];
         lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
@@ -667,7 +667,7 @@ bool Group::isActive() const
     return haz || hae || ir;
 }
 
-void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix();}
+void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix(); }
 
 void Group::resetPolyAndPlaymode(engine::Engine &e)
 {
