@@ -53,6 +53,12 @@ Group::Group()
 
 void Group::rePrepareAndBindGroupMatrix()
 {
+    for (int i = 0; i < lfosPerGroup; ++i)
+    {
+        const auto &ms = modulatorStorage[i];
+        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
+    }
+
     endpoints.sources.bind(modMatrix, *this);
     modMatrix.prepare(routingTable, getSampleRate(), blockSize);
     endpoints.bindTargetBaseValues(modMatrix, *this);
@@ -88,6 +94,13 @@ void Group::rePrepareAndBindGroupMatrix()
             updateInternalState(*route.source);
         if (route.sourceVia.has_value())
             updateInternalState(*route.sourceVia);
+    }
+    for (auto &z : zones)
+    {
+        for (int i = 0; i < lfosPerGroup; ++i)
+        {
+            lfosActive[i] = lfosActive[i] || z->glfosActive[i];
+        }
     }
 }
 
@@ -136,7 +149,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         gated = gated || (z->gatedVoiceCount > 0);
     }
 
-    for (auto i = 0; i < engine::lfosPerZone; ++i)
+    for (auto i = 0; i < engine::lfosPerGroup; ++i)
     {
         if (!lfosActive[i])
             continue;
@@ -579,8 +592,8 @@ void Group::attack()
         processorLevelOS[i].set_target_instant(ol);
     }
 
-    osDownFilter.reset();
     resetLFOs();
+    osDownFilter.reset();
     for (int i = 0; i < egsPerGroup; ++i)
     {
         eg[i].attackFrom(0.f);
@@ -654,7 +667,7 @@ bool Group::isActive() const
     return haz || hae || ir;
 }
 
-void Group::onRoutingChanged() { SCLOG_ONCE("Implement Group LFO modulator use optimization"); }
+void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix(); }
 
 void Group::resetPolyAndPlaymode(engine::Engine &e)
 {

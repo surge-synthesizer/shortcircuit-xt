@@ -387,6 +387,8 @@ void Zone::onRoutingChanged()
 {
     voice::modulation::MatrixEndpoints::Sources usedForScanning(nullptr);
     std::fill(lfosActive.begin(), lfosActive.end(), false);
+    auto pglfo = glfosActive;
+    std::fill(glfosActive.begin(), glfosActive.end(), false);
 
     for (int i = 0; i < egsPerZone; ++i)
         egsActive[i] = false;
@@ -398,6 +400,14 @@ void Zone::onRoutingChanged()
             if (src == usedForScanning.lfoSources.sources[i])
             {
                 lfosActive[i] = true;
+            }
+        }
+
+        for (int i = 0; i < lfosPerGroup; ++i)
+        {
+            if (src == usedForScanning.glfoSources.sources[i])
+            {
+                glfosActive[i] = true;
             }
         }
 
@@ -433,8 +443,11 @@ void Zone::onRoutingChanged()
         if (r.sourceVia.has_value())
             doCheck(*r.sourceVia);
     }
-    // SCLOG("Post check: " << SCD(lfosActive[0]) << SCD(lfosActive[1]) << SCD(lfosActive[2])
-    //                      << SCD(lfosActive[3]) << SCD(egsActive[0]) << SCD(egsActive[1]))
+
+    if (pglfo != glfosActive)
+    {
+        parentGroup->rePrepareAndBindGroupMatrix();
+    }
 }
 
 int16_t Zone::missingSampleCount() const

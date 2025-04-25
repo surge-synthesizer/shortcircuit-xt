@@ -247,6 +247,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     modulation::MiscSourceStorage miscSourceStorage;
 
     std::array<bool, lfosPerZone> lfosActive{};
+    std::array<bool, lfosPerGroup> glfosActive{};
     std::array<bool, egsPerZone> egsActive{};
     bool phasorsActive{};
 
