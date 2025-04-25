@@ -171,7 +171,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
             if (rt)
             {
-                curveLfos[i].attack(0,*lp.curve.delayP, modulatorStorage[i].modulatorShape);
+                curveLfos[i].attack(0, *lp.curve.delayP, modulatorStorage[i].modulatorShape);
             }
 
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
