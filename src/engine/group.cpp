@@ -53,6 +53,12 @@ Group::Group()
 
 void Group::rePrepareAndBindGroupMatrix()
 {
+    for (int i=0; i<lfosPerGroup; ++i)
+    {
+        const auto &ms = modulatorStorage[i];
+        lfoEvaluator[i] = ms.isStep() ? STEP : (ms.isEnv() ? ENV : (ms.isMSEG() ? MSEG : CURVE));
+    }
+
     endpoints.sources.bind(modMatrix, *this);
     modMatrix.prepare(routingTable, getSampleRate(), blockSize);
     endpoints.bindTargetBaseValues(modMatrix, *this);
@@ -586,8 +592,8 @@ void Group::attack()
         processorLevelOS[i].set_target_instant(ol);
     }
 
-    osDownFilter.reset();
     resetLFOs();
+    osDownFilter.reset();
     for (int i = 0; i < egsPerGroup; ++i)
     {
         eg[i].attackFrom(0.f);
@@ -661,7 +667,7 @@ bool Group::isActive() const
     return haz || hae || ir;
 }
 
-void Group::onRoutingChanged() { SCLOG_ONCE("Implement Group LFO modulator use optimization"); }
+void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix();}
 
 void Group::resetPolyAndPlaymode(engine::Engine &e)
 {

@@ -387,6 +387,7 @@ void Zone::onRoutingChanged()
 {
     voice::modulation::MatrixEndpoints::Sources usedForScanning(nullptr);
     std::fill(lfosActive.begin(), lfosActive.end(), false);
+    auto pglfo = glfosActive;
     std::fill(glfosActive.begin(), glfosActive.end(), false);
 
     for (int i = 0; i < egsPerZone; ++i)
@@ -441,6 +442,11 @@ void Zone::onRoutingChanged()
 
         if (r.sourceVia.has_value())
             doCheck(*r.sourceVia);
+    }
+
+    if (pglfo != glfosActive)
+    {
+        parentGroup->rePrepareAndBindGroupMatrix();
     }
     // SCLOG("Post check: " << SCD(lfosActive[0]) << SCD(lfosActive[1]) << SCD(lfosActive[2])
     //                      << SCD(lfosActive[3]) << SCD(egsActive[0]) << SCD(egsActive[1]))
