@@ -448,8 +448,6 @@ void Zone::onRoutingChanged()
     {
         parentGroup->rePrepareAndBindGroupMatrix();
     }
-    // SCLOG("Post check: " << SCD(lfosActive[0]) << SCD(lfosActive[1]) << SCD(lfosActive[2])
-    //                      << SCD(lfosActive[3]) << SCD(egsActive[0]) << SCD(egsActive[1]))
 }
 
 int16_t Zone::missingSampleCount() const
