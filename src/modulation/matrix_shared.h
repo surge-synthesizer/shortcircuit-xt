@@ -375,12 +375,13 @@ template <typename SR, uint32_t gid, size_t numLfo,
                                  const std::string &)>
 struct LFOSourceBase
 {
-    LFOSourceBase(scxt::engine::Engine *e)
+    LFOSourceBase(scxt::engine::Engine *e, const std::string &cat = "LFO",
+                  const std::string &lfon = "LFO")
     {
         for (uint32_t i = 0; i < numLfo; ++i)
         {
             sources[i] = SR{gid, 'outp', i};
-            registerSource(e, sources[i], "LFO", "LFO " + std::to_string(i + 1));
+            registerSource(e, sources[i], cat, lfon + " " + std::to_string(i + 1));
         }
     }
     std::array<SR, numLfo> sources;

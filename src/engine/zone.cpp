@@ -387,6 +387,7 @@ void Zone::onRoutingChanged()
 {
     voice::modulation::MatrixEndpoints::Sources usedForScanning(nullptr);
     std::fill(lfosActive.begin(), lfosActive.end(), false);
+    std::fill(glfosActive.begin(), glfosActive.end(), false);
 
     for (int i = 0; i < egsPerZone; ++i)
         egsActive[i] = false;
@@ -398,6 +399,14 @@ void Zone::onRoutingChanged()
             if (src == usedForScanning.lfoSources.sources[i])
             {
                 lfosActive[i] = true;
+            }
+        }
+
+        for (int i = 0; i < lfosPerGroup; ++i)
+        {
+            if (src == usedForScanning.glfoSources.sources[i])
+            {
+                glfosActive[i] = true;
             }
         }
 

@@ -232,12 +232,12 @@ struct MatrixEndpoints
         // so we can reach them from external multisamples
         static constexpr SR eg2A{'zneg', 'eg2 ', 0};
         Sources(engine::Engine *e)
-            : lfoSources(e), midiCCSources(e), midiSources(e), noteExpressions(e),
-              egSources{{{'zneg', 'aeg ', 0},
-                         eg2A,
-                         {'zneg', 'eg3 ', 0},
-                         {'zneg', 'eg4 ', 0},
-                         {'zneg', 'eg5 ', 0}}},
+            : lfoSources(e), glfoSources(e, "LFO (Group)", "GLFO"), midiCCSources(e),
+              midiSources(e), noteExpressions(e), egSources{{{'zneg', 'aeg ', 0},
+                                                             eg2A,
+                                                             {'zneg', 'eg3 ', 0},
+                                                             {'zneg', 'eg4 ', 0},
+                                                             {'zneg', 'eg5 ', 0}}},
               transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
         {
             registerVoiceModSource(e, egSources[0], "EG", "AEG");
@@ -247,6 +247,8 @@ struct MatrixEndpoints
 
         scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource>
             lfoSources;
+        scxt::modulation::shared::LFOSourceBase<SR, 'zglf', lfosPerGroup, registerVoiceModSource>
+            glfoSources;
         scxt::modulation::shared::MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource>
             midiCCSources;
 

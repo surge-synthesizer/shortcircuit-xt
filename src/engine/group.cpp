@@ -89,6 +89,13 @@ void Group::rePrepareAndBindGroupMatrix()
         if (route.sourceVia.has_value())
             updateInternalState(*route.sourceVia);
     }
+    for (auto &z : zones)
+    {
+        for (int i = 0; i < lfosPerGroup; ++i)
+        {
+            lfosActive[i] = lfosActive[i] || z->glfosActive[i];
+        }
+    }
 }
 
 void Group::process(Engine &e)
@@ -136,7 +143,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         gated = gated || (z->gatedVoiceCount > 0);
     }
 
-    for (auto i = 0; i < engine::lfosPerZone; ++i)
+    for (auto i = 0; i < engine::lfosPerGroup; ++i)
     {
         if (!lfosActive[i])
             continue;

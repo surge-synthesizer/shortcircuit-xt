@@ -128,6 +128,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
                                     voice::Voice &v)
 {
     lfoSources.bind(m, v, zeroSource);
+    glfoSources.bind(m, *(z.parentGroup), zeroSource);
     midiCCSources.bind(m, *(z.parentGroup->parentPart));
 
     for (int i = 0; i < egsPerZone; ++i)
