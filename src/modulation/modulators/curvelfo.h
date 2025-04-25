@@ -66,7 +66,7 @@ struct CurveLFO : SampleRateSupport
         return blockSize * sampleRateInv * dsp::twoToTheXTable.twoToThe(-f);
     }
 
-    void attack(float initPhase, ModulatorStorage::ModulatorShape shape)
+    void attack(float initPhase, float delay, ModulatorStorage::ModulatorShape shape)
     {
         assert(settings && td);
         switch (shape)
@@ -97,7 +97,7 @@ struct CurveLFO : SampleRateSupport
 
         simpleLfo.attack(curveShape);
         simpleLfo.applyPhaseOffset(initPhase);
-        simpleEnv.attack(0.4);
+        simpleEnv.attack(delay);
     }
 
     uint32_t smp{0};
