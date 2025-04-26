@@ -491,7 +491,8 @@ struct CurveLFOPane : juce::Component, HasEditor
                 curveLfo.simpleLfo.objrngRef.reseed(2112);
                 curveLfo.assign(&msCopy, &dummyTransport);
                 curveLfo.setSampleRate(sr);
-                curveLfo.attack(msCopy.start_phase, msCopy.modulatorShape);
+                curveLfo.attack(msCopy.start_phase, msCopy.curveLfoStorage.delay,
+                                msCopy.modulatorShape);
                 auto ch = getHeight() / 2;
                 auto sc = getHeight() * 0.9 / 2;
                 auto p = juce::Path();

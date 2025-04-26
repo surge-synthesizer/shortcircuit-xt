@@ -149,7 +149,7 @@ void Voice::voiceStarted()
         {
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
             curveLfos[i].assign(&zone->modulatorStorage[i], &engine->transport);
-            curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
+            curveLfos[i].attack(ms.start_phase, *endpoints->lfo[i].curve.delayP, ms.modulatorShape);
         }
         else if (lfoEvaluator[i] == ENV)
         {
@@ -244,12 +244,12 @@ template <bool OS> bool Voice::processWithOS()
         }
         else if (lfoEvaluator[i] == CURVE)
         {
+            auto &lp = endpoints->lfo[i];
+
             if (rt)
             {
-                curveLfos[i].attack(0, zone->modulatorStorage[i].modulatorShape);
+                curveLfos[i].attack(0, *lp.curve.delayP, zone->modulatorStorage[i].modulatorShape);
             }
-
-            auto &lp = endpoints->lfo[i];
 
             // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,

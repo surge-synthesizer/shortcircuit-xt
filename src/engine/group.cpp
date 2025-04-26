@@ -171,7 +171,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
             if (rt)
             {
-                curveLfos[i].attack(0, modulatorStorage[i].modulatorShape);
+                curveLfos[i].attack(0, *lp.curve.delayP, modulatorStorage[i].modulatorShape);
             }
 
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
@@ -642,7 +642,7 @@ void Group::resetLFOs(int whichLFO)
         else if (lfoEvaluator[i] == CURVE)
         {
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
-            curveLfos[i].attack(ms.start_phase, ms.modulatorShape);
+            curveLfos[i].attack(ms.start_phase, *endpoints.lfo[i].curve.delayP, ms.modulatorShape);
         }
         else if (lfoEvaluator[i] == ENV)
         {
