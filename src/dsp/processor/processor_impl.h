@@ -301,6 +301,12 @@ template <typename T> struct SSTVoiceEffectShim : T
         {
             res.supportsTemposync =
                 res.supportsTemposync || res.floatControlDescriptions[i].canTemposync;
+            if (!res.floatControlDescriptions[i].supportsStringConversion)
+            {
+                SCLOG("Warning: processor param " << i << " "
+                                                  << res.floatControlDescriptions[i].name
+                                                  << " does not support string conversion");
+            }
         }
 
         if constexpr (HasMemFn_checkParameterConsistency<T>::value)
