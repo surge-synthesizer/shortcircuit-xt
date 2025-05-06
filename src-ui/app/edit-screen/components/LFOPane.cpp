@@ -467,7 +467,7 @@ struct CurveLFOPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
 
-    struct CurveDraw : public juce::Component
+    struct CurveDraw : public jcmp::CompactPlot
     {
         LfoPane *parent{nullptr};
         sst::basic_blocks::modulators::Transport dummyTransport;
@@ -477,56 +477,43 @@ struct CurveLFOPane : juce::Component, HasEditor
             dummyTransport.signature = {4, 4};
         }
         modulation::ModulatorStorage ms;
-        juce::Path curvePath{};
-        void paint(juce::Graphics &g) override
+
+        bool curvePathIsValid() const override
         {
             auto msCopy = parent->modulatorStorageData[parent->selectedTab];
-            if (curvePath.isEmpty() ||
-                memcmp(&ms, &msCopy, sizeof(modulation::ModulatorStorage)) != 0)
+            return memcmp(&ms, &msCopy, sizeof(modulation::ModulatorStorage)) == 0;
+        }
+
+        void recalculateCurvePath(plotData_t &into) override
+        {
+            auto msCopy = parent->modulatorStorageData[parent->selectedTab];
+
+            // msCopy.rate = 1.;
+            auto sr{48000};
+            auto ds{10};
+            modulation::modulators::CurveLFO curveLfo;
+            curveLfo.simpleLfo.objrngRef.reseed(2112);
+            curveLfo.assign(&msCopy, &dummyTransport);
+            curveLfo.setSampleRate(sr);
+            curveLfo.attack(msCopy.start_phase, msCopy.curveLfoStorage.delay,
+                            msCopy.modulatorShape);
+            auto sc = getHeight() * 0.9 / 2;
+            auto p = juce::Path();
+            // OK so we want to run for two seconds
+            auto pts = 2 * sr / blockSize;
+
+            for (int i = 0; i < pts; ++i)
             {
-                // msCopy.rate = 1.;
-                auto sr{48000};
-                auto ds{10};
-                modulation::modulators::CurveLFO curveLfo;
-                curveLfo.simpleLfo.objrngRef.reseed(2112);
-                curveLfo.assign(&msCopy, &dummyTransport);
-                curveLfo.setSampleRate(sr);
-                curveLfo.attack(msCopy.start_phase, msCopy.curveLfoStorage.delay,
-                                msCopy.modulatorShape);
-                auto ch = getHeight() / 2;
-                auto sc = getHeight() * 0.9 / 2;
-                auto p = juce::Path();
-                // OK so we want to run for two seconds
-                auto pts = 2 * sr / blockSize;
+                curveLfo.process(msCopy.rate, msCopy.curveLfoStorage.deform,
+                                 msCopy.curveLfoStorage.angle, msCopy.curveLfoStorage.delay,
+                                 msCopy.curveLfoStorage.attack, msCopy.curveLfoStorage.release,
+                                 false /*msCopy.curveLfoStorage.useenv*/,
+                                 msCopy.curveLfoStorage.unipolar, true);
+                auto yp = -0.9 * curveLfo.output * 0.5 + 0.5;
 
-                for (int i = 0; i < pts; ++i)
-                {
-                    curveLfo.process(msCopy.rate, msCopy.curveLfoStorage.deform,
-                                     msCopy.curveLfoStorage.angle, msCopy.curveLfoStorage.delay,
-                                     msCopy.curveLfoStorage.attack, msCopy.curveLfoStorage.release,
-                                     false /*msCopy.curveLfoStorage.useenv*/,
-                                     msCopy.curveLfoStorage.unipolar, true);
-                    auto yp = ch - sc * curveLfo.output;
-                    if (i == 0)
-                        p.startNewSubPath(0, yp);
-                    else if (i % ds)
-                        p.lineTo(i * 1.0 * getWidth() / pts, yp);
-                }
-                ms = msCopy;
-                curvePath = p;
+                into.emplace_back(i * 1.0 / pts, yp);
             }
-
-            auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                 jcmp::NamedPanel::Styles::background);
-            auto boxc = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                   jcmp::NamedPanel::Styles::brightoutline);
-
-            g.fillAll(bg);
-            g.setColour(boxc);
-            g.drawRect(getLocalBounds(), 1);
-
-            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::generic_content_high));
-            g.strokePath(curvePath, juce::PathStrokeType(1));
+            ms = msCopy;
         }
     };
 
