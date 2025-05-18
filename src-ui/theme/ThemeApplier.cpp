@@ -43,6 +43,7 @@
 #include "sst/jucegui/components/VUMeter.h"
 #include "sst/jucegui/components/ScrollBar.h"
 #include "sst/jucegui/components/TabbedComponent.h"
+#include "sst/jucegui/components/CompactPlot.h"
 
 #include "connectors/SCXTResources.h"
 
@@ -68,6 +69,7 @@ namespace edit
 static constexpr sheet_t::Class ModulationJogButon{"multi.modulation.jogbutton"};
 static constexpr sheet_t::Class ModulationToggle{"multi.modulation.toggle"};
 static constexpr sheet_t::Class ModulationMenu{"multi.modulation.menu"};
+static constexpr sheet_t::Class ModulationCompactPlot{"multi.modulation.compactplot"};
 
 void applyColors(const sheet_t::ptr_t &, const ColorMap &);
 void init()
@@ -75,6 +77,7 @@ void init()
     sheet_t::addClass(ModulationJogButon).withBaseClass(jcmp::JogUpDownButton::Styles::styleClass);
     sheet_t::addClass(ModulationToggle).withBaseClass(jcmp::ToggleButton::Styles::styleClass);
     sheet_t::addClass(ModulationMenu).withBaseClass(jcmp::MenuButton::Styles::styleClass);
+    sheet_t::addClass(ModulationCompactPlot).withBaseClass(jcmp::CompactPlot::Styles::styleClass);
 }
 
 namespace zone
@@ -248,6 +251,7 @@ void populateSharedGroupZoneMultiModulation(jstl::CustomTypeMap &map)
     map.addCustomClass<jcmp::ToggleButton>(detail::edit::ModulationToggle);
     map.addCustomClass<jcmp::MenuButton>(detail::edit::ModulationMenu);
     map.addCustomClass<jcmp::MenuButtonDiscreteEditor>(detail::edit::ModulationMenu);
+    map.addCustomClass<jcmp::CompactPlot>(detail::edit::ModulationCompactPlot);
 }
 void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
 {
@@ -496,6 +500,15 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(jcmp::HSliderFilled::Styles::styleClass,
                     jcmp::HSliderFilled::Styles::handle_hover, cols.getHover(ColorMap::accent_1a));
 
+    base->setColour(jcmp::CompactPlot::Styles::styleClass, jcmp::CompactPlot::Styles::plotAxis,
+                    cols.get(ColorMap::generic_content_low));
+    base->setColour(jcmp::CompactPlot::Styles::styleClass, jcmp::CompactPlot::Styles::plotLine,
+                    cols.get(ColorMap::generic_content_high));
+    base->setColour(jcmp::CompactPlot::Styles::styleClass, jcmp::CompactPlot::Styles::plotGradStart,
+                    cols.get(ColorMap::accent_1a).withAlpha(0.7f));
+    base->setColour(jcmp::CompactPlot::Styles::styleClass, jcmp::CompactPlot::Styles::plotGradEnd,
+                    cols.get(ColorMap::accent_1a).withAlpha(0.2f));
+
     base->setColour(sst::jucegui::components::TabbedComponent::Styles::styleClass,
                     sst::jucegui::components::TabbedComponent::Styles::tabSelectedFillColor,
                     cols.get(ColorMap::bg_3));
@@ -563,6 +576,11 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::accent_2a));
     base->setColour(ModulationToggle, jcmp::ToggleButton::Styles::value_hover,
                     cols.getHover(ColorMap::accent_2a));
+
+    base->setColour(ModulationCompactPlot, jcmp::CompactPlot::Styles::plotGradStart,
+                    cols.get(ColorMap::accent_2a).withAlpha(0.7f));
+    base->setColour(ModulationCompactPlot, jcmp::CompactPlot::Styles::plotGradEnd,
+                    cols.get(ColorMap::accent_2a).withAlpha(0.2f));
 }
 namespace zone
 {

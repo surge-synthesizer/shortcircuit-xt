@@ -33,6 +33,7 @@
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
+#include "sst/jucegui/components/CompactPlot.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 
