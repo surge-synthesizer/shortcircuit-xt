@@ -467,11 +467,11 @@ struct CurveLFOPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
 
-    struct CurveDraw : public jcmp::CompactPlot
+    struct CurveDataSource : public sst::jucegui::data::CompactPlotSource
     {
         LfoPane *parent{nullptr};
         sst::basic_blocks::modulators::Transport dummyTransport;
-        CurveDraw(LfoPane *p) : parent(p)
+        CurveDataSource(LfoPane *p) : parent(p)
         {
             dummyTransport.tempo = 120;
             dummyTransport.signature = {4, 4};
@@ -497,8 +497,6 @@ struct CurveLFOPane : juce::Component, HasEditor
             curveLfo.setSampleRate(sr);
             curveLfo.attack(msCopy.start_phase, msCopy.curveLfoStorage.delay,
                             msCopy.modulatorShape);
-            auto sc = getHeight() * 0.9 / 2;
-            auto p = juce::Path();
             // OK so we want to run for two seconds
             auto pts = 2 * sr / blockSize;
 
@@ -567,7 +565,9 @@ struct CurveLFOPane : juce::Component, HasEditor
                            parent->selectedTab);
         useenvB->setLabel("ENV");
 
-        curveDraw = std::make_unique<CurveDraw>(parent);
+        curveDraw = std::make_unique<jcmp::CompactPlot>();
+        curveData = std::make_unique<CurveDataSource>(parent);
+        curveDraw->setSource(curveData.get());
         addAndMakeVisible(*curveDraw);
         curveDraw->toBack();
     }
@@ -649,104 +649,92 @@ struct CurveLFOPane : juce::Component, HasEditor
     std::array<std::unique_ptr<jcmp::VSlider>, envSlots> envS;
     std::array<std::unique_ptr<jcmp::Label>, envSlots> envL;
 
-    std::unique_ptr<CurveDraw> curveDraw;
+    std::unique_ptr<CurveDataSource> curveData;
+    std::unique_ptr<jcmp::CompactPlot> curveDraw;
 };
 
 struct ENVLFOPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
-    struct ENVRender : juce::Component
+    struct ENVPlotData : sst::jucegui::data::CompactPlotSource
     {
         LfoPane *parent{nullptr};
         sst::basic_blocks::modulators::Transport dummyTransport;
 
-        ENVRender(LfoPane *p) : parent(p)
+        ENVPlotData(LfoPane *p) : parent(p)
         {
             dummyTransport.tempo = 120;
             dummyTransport.signature = {4, 4};
         }
 
         modulation::ModulatorStorage ms;
-        juce::Path curvePath{};
-        void paint(juce::Graphics &g) override
+        axisBounds_t getYAxisBounds() const override { return {0, 1}; }
+        bool curvePathIsValid() const override
         {
-            auto msCopy = parent->modulatorStorageData[parent->selectedTab];
-            if (curvePath.isEmpty() ||
-                memcmp(&ms, &msCopy, sizeof(modulation::ModulatorStorage)) != 0)
+            const auto &msCopy = parent->modulatorStorageData[parent->selectedTab];
+
+            auto res = memcmp(&ms, &msCopy, sizeof(modulation::ModulatorStorage)) == 0;
+            return res;
+        }
+        void recalculateCurvePath(plotData_t &into) override
+        {
+            ms = parent->modulatorStorageData[parent->selectedTab];
+            auto sr{48000};
+
+            modulation::modulators::EnvLFO envLfo;
+            envLfo.setSampleRate(sr);
+
+            auto &es = ms.envLfoStorage;
+
+            auto tt = envLfo.timeTakenBy(es.delay, es.attack, es.hold, es.decay, es.release);
+            auto rt = envLfo.timeTakenBy(es.release);
+            auto dahd = tt - rt;
+
+            // So how long to 'gate' it for. Its just a choice really
+            auto sustainTime = std::max(0.1f, dahd / 3);
+            if (ms.envLfoStorage.loop)
+                sustainTime = 0;
+            auto gateTime = dahd + sustainTime;
+            auto totalTime = tt + sustainTime;
+            // Add a bit of post release
+            totalTime *= 1.02;
+
+            // Now we want to run the whole thing in a second so
+            auto rateMulLin = totalTime; // think "1s / (1/totaltime) s" - rate!
+            auto rateMul = std::log2(rateMulLin);
+
+            auto obs = 1.0 * sr / blockSize;
+            auto ds = (int)(obs / (500));
+            auto relAfter = (int)std::floor(obs * gateTime / totalTime);
+
+            // SCLOG(SCD(totalTime) << SCD(gateTime) << SCD(dahd) << SCD(sustainTime));
+            // SCLOG("rateMuls " << rateMulLin << " " << rateMul);
+            // SCLOG("OBS are " << obs << " ds is " << ds << SCD(es.delay) << SCD(es.attack));
+
+            envLfo.attack(es.delay, es.attack);
+            for (int i = 1; i < obs; ++i)
             {
-                ms = msCopy;
-                // msCopy.rate = 1.;
-                auto sr{48000};
-
-                modulation::modulators::EnvLFO envLfo;
-                envLfo.setSampleRate(sr);
-
-                auto &es = ms.envLfoStorage;
-
-                auto tt = envLfo.timeTakenBy(es.delay, es.attack, es.hold, es.decay, es.release);
-                auto rt = envLfo.timeTakenBy(es.release);
-                auto dahd = tt - rt;
-
-                // So how long to 'gate' it for. Its just a choice really
-                auto sustainTime = std::max(0.1f, dahd / 3);
-                if (ms.envLfoStorage.loop)
-                    sustainTime = 0;
-                auto gateTime = dahd + sustainTime;
-                auto totalTime = tt + sustainTime;
-                // Add a bit of post release
-                totalTime *= 1.02;
-
-                // Now we want to run the whole thing in a second so
-                auto rateMulLin = totalTime; // think "1s / (1/totaltime) s" - rate!
-                auto rateMul = std::log2(rateMulLin);
-
-                auto obs = 1.0 * sr / blockSize;
-                auto ds = (int)(obs / (getWidth() * 5));
-                auto relAfter = (int)std::floor(obs * gateTime / totalTime);
-
-                // SCLOG(SCD(totalTime) << SCD(gateTime) << SCD(dahd) << SCD(sustainTime));
-                // SCLOG("rateMuls " << rateMulLin << " " << rateMul);
-                // SCLOG("OBS are " << obs << " ds is " << ds << SCD(es.delay) << SCD(es.attack));
-
-                envLfo.attack(es.delay, es.attack);
-                auto p = juce::Path();
-                p.startNewSubPath(0, getHeight() * (1 - envLfo.output));
-                for (int i = 1; i < obs; ++i)
+                bool isGated = i < relAfter;
+                envLfo.process(es.delay, es.attack, es.hold, es.decay, es.sustain, es.release,
+                               es.aShape, es.dShape, es.rShape, rateMul, isGated);
+                if (i % ds == 0)
                 {
-                    bool isGated = i < relAfter;
-                    envLfo.process(es.delay, es.attack, es.hold, es.decay, es.sustain, es.release,
-                                   es.aShape, es.dShape, es.rShape, rateMul, isGated);
-                    if (i % ds == 0)
-                    {
-                        p.lineTo(i * 1.0 * getWidth() / obs,
-                                 getHeight() * (0.99 - 0.98 * envLfo.output));
-                    }
+                    into.emplace_back(i * 1.0 / obs, 1.0 - 0.98 * envLfo.output);
                 }
-
-                curvePath = p;
             }
-
-            auto bg = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                 jcmp::NamedPanel::Styles::background);
-            auto boxc = parent->style()->getColour(jcmp::NamedPanel::Styles::styleClass,
-                                                   jcmp::NamedPanel::Styles::brightoutline);
-
-            g.fillAll(bg);
-            g.setColour(boxc);
-            g.drawRect(getLocalBounds(), 1);
-
-            g.setColour(parent->editor->themeColor(theme::ColorMap::Colors::generic_content_high));
-            g.strokePath(curvePath, juce::PathStrokeType(1));
         }
     };
 
-    std::unique_ptr<ENVRender> envRender;
+    std::unique_ptr<ENVPlotData> envData;
+    std::unique_ptr<jcmp::CompactPlot> envDraw;
 
     ENVLFOPane(LfoPane *p) : parent(p), HasEditor(p->editor)
     {
         assert(parent);
-        envRender = std::make_unique<ENVRender>(parent);
-        addAndMakeVisible(*envRender);
+        envDraw = std::make_unique<jcmp::CompactPlot>();
+        envData = std::make_unique<ENVPlotData>(parent);
+        envDraw->setSource(envData.get());
+        addAndMakeVisible(*envDraw);
 
         using fac = connectors::SingleValueFactory<LfoPane::attachment_t,
                                                    cmsg::UpdateZoneOrGroupModStorageFloatValue>;
@@ -797,7 +785,7 @@ struct ENVLFOPane : juce::Component, HasEditor
 
         auto bh = b.getHeight();
         auto curveBox = b.withY(bh / 2).withWidth(getWidth() / 3).withHeight(bh / 2);
-        envRender->setBounds(curveBox);
+        envDraw->setBounds(curveBox);
 
         // Knobs
         auto nKnobs = 4;
