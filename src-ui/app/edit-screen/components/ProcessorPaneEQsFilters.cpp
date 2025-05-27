@@ -168,6 +168,13 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             c.clear();
 
         auto nr = -1000000;
+        auto fStart = 3.0;
+        auto fRange = 11.5;
+        if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<EqAdapter>>::value)
+        {
+            fStart = 5.0;
+            fRange = 9.3;
+        }
         for (int band = 0; band < nSub + 1; ++band)
         {
             if (band > 0 && mPrepareBand)
@@ -175,7 +182,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             for (int i = 0; i < np; ++i)
             {
                 float norm = 1.0 * i / (np - 1);
-                auto freq = pow(2.f, 3 + norm * 11.5);
+                auto freq = pow(2.f, fStart + norm * fRange);
                 auto freqarg = freq * EqAdapter::getSampleRateInv(nullptr);
                 auto res = 0.f;
 
