@@ -360,7 +360,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             {
                 if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
                 {
-                    if (lbm->selectedZones.size() > 1 && !e.mods.isShiftDown())
+                    if (isSelected && lbm->selectedZones.size() > 1 && !e.mods.isShiftDown())
                     {
                         isDragMulti = true;
                     }
