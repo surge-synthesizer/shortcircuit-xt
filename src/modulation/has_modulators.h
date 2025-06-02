@@ -30,7 +30,6 @@
 
 #include "configuration.h"
 
-#include "sst/basic-blocks/modulators/ADSREnvelope.h"
 #include "sst/basic-blocks/modulators/AHDSRShapedSC.h"
 #include "modulation/modulators/steplfo.h"
 #include "modulation/modulators/curvelfo.h"
@@ -49,9 +48,9 @@ template <typename T, size_t egsPerObject> struct HasModulators
 {
     struct DoubleRate
     {
-        double sampleRate, sampleRateInv;
+        double sampleRate{1}, sampleRateInv{1};
         T *that{nullptr};
-        DoubleRate(T *that) : that(that) { resetRates(); }
+        explicit DoubleRate(T *that) : that(that) { resetRates(); }
         void resetRates()
         {
             sampleRate = that->sampleRate * 2;
@@ -75,11 +74,11 @@ template <typename T, size_t egsPerObject> struct HasModulators
         ENV,
         MSEG
     } lfoEvaluator[lfosPerObject]{};
-    scxt::modulation::modulators::StepLFO stepLfos[lfosPerObject];
-    scxt::modulation::modulators::CurveLFO curveLfos[lfosPerObject];
-    scxt::modulation::modulators::EnvLFO envLfos[lfosPerObject];
-    scxt::modulation::modulators::RandomEvaluator randomEvaluator;
-    scxt::modulation::modulators::PhasorEvaluator phasorEvaluator;
+    std::array<scxt::modulation::modulators::StepLFO, lfosPerObject> stepLfos{};
+    std::array<scxt::modulation::modulators::CurveLFO, lfosPerObject> curveLfos{};
+    std::array<scxt::modulation::modulators::EnvLFO, lfosPerObject> envLfos{};
+    scxt::modulation::modulators::RandomEvaluator randomEvaluator{};
+    scxt::modulation::modulators::PhasorEvaluator phasorEvaluator{};
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         T, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>
@@ -94,7 +93,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
 
     std::array<bool, lfosPerObject> lfosActive{};
     std::array<bool, egsPerObject> egsActive{};
-    bool phasorsActive;
+    bool phasorsActive{false};
 
     void setHasModulatorsSampleRate(double sr, double sri) { doubleRate.resetRates(); }
 
