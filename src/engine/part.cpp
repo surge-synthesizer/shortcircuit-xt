@@ -149,4 +149,37 @@ std::vector<SampleID> Part::getSamplesUsedByPart() const
     }
     return std::vector<SampleID>(resSet.begin(), resSet.end());
 }
+
+void Part::moveGroupToAfter(size_t whichGroup, size_t toAfter)
+{
+    if (whichGroup < 0 || whichGroup >= groups.size() || toAfter < 0 || toAfter >= groups.size() ||
+        whichGroup == toAfter)
+    {
+        return;
+    }
+    if (whichGroup < toAfter)
+    {
+        auto og = std::move(groups[whichGroup]);
+        for (int i = whichGroup; i < toAfter; ++i)
+        {
+            groups[i] = std::move(groups[i + 1]);
+        }
+        groups[toAfter] = std::move(og);
+    }
+    else
+    {
+        // so move whichgroup=4 to after toAfter=1
+        // 1 2 3 4 becomes 1 4 2 3
+        // so grab 4 (1 2 3 x)
+        // 3-> 4, 2-> 3 (1 x 2 3)
+        // position
+        auto og = std::move(groups[whichGroup]);
+        for (int i = whichGroup - 1; i > toAfter; --i)
+        {
+            groups[i + 1] = std::move(groups[i]);
+        }
+        groups[toAfter + 1] = std::move(og);
+    }
+}
+
 } // namespace scxt::engine
