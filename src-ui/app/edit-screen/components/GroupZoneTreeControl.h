@@ -353,10 +353,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         // big thanks to https://forum.juce.com/t/listbox-drag-to-reorder-solved/28477
         void mouseDrag(const juce::MouseEvent &e) override
         {
-            if (!isZone())
-                return;
-
-            if (!isDragging && e.getDistanceFromDragStart() > 2)
+            if (isZone() && !isDragging && e.getDistanceFromDragStart() > 2)
             {
                 if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
                 {
@@ -371,6 +368,16 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     isPaintSnapshot = true;
                     container->startDragging("ZoneRow", this);
                     isPaintSnapshot = false;
+                    isDragging = true;
+                }
+            }
+
+            if (isGroup() && !isDragging && e.getDistanceFromDragStart() > 2)
+            {
+                if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+                {
+                    container->startDragging("GroupRow", this);
+
                     isDragging = true;
                 }
             }
@@ -418,7 +425,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 return;
 
             auto rd = dynamic_cast<rowComponent *>(sc.get());
-            if (rd)
+            if (rd && rd->isZone())
             {
                 auto tgt = getZoneAddress();
 
@@ -432,6 +439,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                     gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
                 }
+            }
+            else if (rd && rd->isGroup())
+            {
+                auto src = rd->getZoneAddress();
+                auto tgt = getZoneAddress();
+                gsb->sendToSerialization(cmsg::MoveGroupToAfter({src, tgt}));
             }
         }
         void resized() override

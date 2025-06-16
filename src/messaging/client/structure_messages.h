@@ -430,6 +430,43 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
 CLIENT_TO_SERIAL(MoveZonesFromTo, c2s_move_zone, zoneAddressFromTo_t,
                  moveZonesFromTo(payload, engine, cont));
 
+using moveGroupAddress_t =
+    std::pair<selection::SelectionManager::ZoneAddress, selection::SelectionManager::ZoneAddress>;
+inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engine,
+                        MessageController &cont)
+{
+    auto &src = payload.first;
+    auto &tgt = payload.second;
+
+    assert(src.part == tgt.part);
+    if (src.part < 0 || src.part >= scxt::numParts)
+        return;
+    if (src.group < 0 || tgt.group < 0)
+        return;
+    if (src.part != tgt.part)
+        return;
+    if (src.group == tgt.group)
+        return;
+
+    cont.scheduleAudioThreadCallbackUnderStructureLock(
+        [ss = src, tt = tgt](auto &e) {
+            // This is a little hairy byt I know the zones will not be deleted during this function
+            auto &pt = e.getPatch()->getPart(ss.part);
+
+            e.voiceManager.allSoundsOff();
+            pt->moveGroupToAfter(ss.group, tt.group);
+        },
+        [ss = src, tt = tgt](auto &engine) {
+            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
+                                      *(engine.getMessageController()));
+            serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
+                                      engine.getPatch()->getPart(tt.part)->getZoneMappingSummary(),
+                                      *(engine.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(MoveGroupToAfter, c2s_move_group, moveGroupAddress_t,
+                 moveGroupTo(payload, engine, cont));
+
 inline void doActivateNextPart(messaging::MessageController &cont)
 {
     cont.scheduleAudioThreadCallbackUnderStructureLock(
