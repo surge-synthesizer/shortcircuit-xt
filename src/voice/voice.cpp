@@ -872,6 +872,10 @@ void Voice::initializeGenerator()
         useOversampling = std::abs(GD[currGen].ratio) > 18000000 || forceOversample;
         GD[currGen].blockSize = blockSize * (useOversampling ? 2 : 1);
 
+        if (!forceOversample && (variantData.interpolationType == dsp::ZeroOrderHold ||
+                                 variantData.interpolationType == dsp::ZOHAA))
+            useOversampling = false;
+
         Generator[currGen] = nullptr;
 
         monoGenerator[currGen] = s->channels == 1;
