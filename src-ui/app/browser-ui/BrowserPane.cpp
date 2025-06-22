@@ -353,11 +353,13 @@ struct DriveFSArea : juce::Component, HasEditor
                 after = contents.insert(after, {contents[row].dirent, false, c});
                 after++;
             }
-
-            listView->rowSelected(row + 1, true);
         }
         ent.isExpanded = true;
         listView->refresh();
+        if (!ct.empty())
+        {
+            listView->rowSelected(row + 1, true);
+        }
     }
     void collapsMultifile(int row)
     {
