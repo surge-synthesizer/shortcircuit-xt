@@ -87,6 +87,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float mpeTimbre{0.f};    // 0..1 normalized
     float mpePressure{0.f};  // 0..1 normalized
 
+    float normalizationAmplitudeLinear; // in multiples not db
+
     static constexpr size_t noteExpressionCount{7};
     float noteExpressions[noteExpressionCount]{};
     sst::basic_blocks::dsp::LagCollection<noteExpressionCount> noteExpressionLags;

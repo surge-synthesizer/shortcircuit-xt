@@ -122,11 +122,16 @@ inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t
     if (sz.has_value())
     {
         auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
-            auto &[idx, use_peak] = sampv;
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(use_peak,
-                                                                                          idx);
-        });
+        cont.scheduleAudioThreadCallback(
+            [p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+                auto &[idx, use_peak] = sampv;
+                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(
+                    use_peak, idx);
+            },
+            [p = ps, g = gs, z = zs](auto &e) {
+                SCLOG_ONCE("Normalize variant could be optimized to not sending so much back");
+                e.sendFullRefreshToClient();
+            });
     }
 }
 CLIENT_TO_SERIAL(NormalizeVariantAmplitude, c2s_normalize_variant_amplitude,
@@ -143,10 +148,16 @@ doClearVariantAmplitudeNormalization(const clearVariantAmplitudeNormalizationPay
     if (sz.has_value())
     {
         auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
-            auto &idx = sampv;
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->clearNormalizedSampleLevel(idx);
-        });
+        cont.scheduleAudioThreadCallback(
+            [p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
+                auto &idx = sampv;
+                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->clearNormalizedSampleLevel(
+                    idx);
+            },
+            [p = ps, g = gs, z = zs](auto &e) {
+                SCLOG_ONCE("Clear variant norm could be optimized to not sending so much back");
+                e.sendFullRefreshToClient();
+            });
     }
 }
 CLIENT_TO_SERIAL(ClearVariantAmplitudeNormalization, c2s_clear_variant_amplitude_normalization,

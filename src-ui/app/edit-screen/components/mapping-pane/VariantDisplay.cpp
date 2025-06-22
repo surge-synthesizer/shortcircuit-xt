@@ -1011,6 +1011,7 @@ void VariantDisplay::showVariantTabMenu(int variantIdx)
     }
     else
     {
+        const auto &var = variantView.variants[variantIdx];
         p.addSectionHeader("Variant " + std::to_string(variantIdx + 1));
         p.addSeparator();
 
@@ -1020,6 +1021,32 @@ void VariantDisplay::showVariantTabMenu(int variantIdx)
                 return;
             w->sendToSerialization(cmsg::DeleteVariant(variantIdx));
         });
+        p.addSeparator();
+        p.addItem("Normalize Variant " + std::to_string(variantIdx + 1),
+                  [variantIdx, w = juce::Component::SafePointer(this)]() {
+                      if (!w)
+                          return;
+                      w->sendToSerialization(cmsg::NormalizeVariantAmplitude({variantIdx, true}));
+                  });
+        p.addItem("Normalize All Variants", [variantIdx, w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->sendToSerialization(cmsg::NormalizeVariantAmplitude({-1, true}));
+        });
+
+        p.addItem("Clear Variant " + std::to_string(variantIdx + 1) + " Normalization",
+                  var.normalizationAmplitude != 1.0, false,
+                  [variantIdx, w = juce::Component::SafePointer(this)]() {
+                      if (!w)
+                          return;
+                      w->sendToSerialization(cmsg::ClearVariantAmplitudeNormalization(variantIdx));
+                  });
+        p.addItem("Clear All Variant Normalization",
+                  [variantIdx, w = juce::Component::SafePointer(this)]() {
+                      if (!w)
+                          return;
+                      w->sendToSerialization(cmsg::ClearVariantAmplitudeNormalization(-1));
+                  });
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

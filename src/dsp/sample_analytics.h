@@ -32,8 +32,28 @@
 
 namespace scxt::dsp::sample_analytics
 {
+/**
+ *
+ * @param s the sample to analyze
+ * @return Peak of the entire sample
+ */
 float computePeak(const std::shared_ptr<sample::Sample> &s);
+
+/**
+ *
+ * @param s the sample to analyze
+ * @return The RMS of the entire sample. Be careful though since
+ * silence and a blip will have a very low RMS even though it
+ * has a very high sort of 'small block peak' RMS
+ */
 float computeRMS(const std::shared_ptr<sample::Sample> &s);
+
+/**
+ *
+ * @param s
+ * @return The largest RMS in a 64 sample block
+ */
+float computeMaxRMSInBlock(const std::shared_ptr<sample::Sample> &s);
 }; // namespace scxt::dsp::sample_analytics
 
 #endif // SCXT_SRC_DSP_SAMPLE_ANALYTICS_H
