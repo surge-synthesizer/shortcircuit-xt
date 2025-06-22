@@ -225,7 +225,10 @@ void SampleWaveform::rebuildEnvelopePaths()
         lowerFill[ch] = juce::Path();
         lowerStroke[ch] = juce::Path();
 
-        auto sVToPx = [this, ch](float val) {
+        auto dba = v.normalizationAmplitude;
+
+        auto sVToPx = [this, dba, ch](float val) {
+            val = val * dba;
             if (usedChannels == 2)
             {
                 if (ch == 0)
@@ -467,6 +470,7 @@ void SampleWaveform::paint(juce::Graphics &g)
 
         return std::make_tuple(gStart, gCenter, gEnd);
     };
+
     for (int ch = 0; ch < usedChannels; ++ch)
     {
         auto [gStart, gCenter, gEnd] = gPos(ch);
@@ -642,6 +646,15 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.drawVerticalLine(sp, r.getY(), r.getBottom());
             g.drawVerticalLine(ep, r.getY(), r.getBottom());
         }
+    }
+
+    if (fabs(v.normalizationAmplitude - 1) > 1e-5)
+    {
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        g.setFont(editor->themeApplier.interMediumFor(11));
+        auto db = 10 * std::log10(v.normalizationAmplitude);
+        g.drawText(fmt::format("Norm: {} dB", db), 10, 2, getWidth(), 40,
+                   juce::Justification::topLeft);
     }
 }
 

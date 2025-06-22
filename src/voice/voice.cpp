@@ -438,6 +438,24 @@ template <bool OS> bool Voice::processWithOS()
 
                 isGeneratorRunning[gidx] = !GD[gidx].isFinished;
                 isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
+
+                if (variantData.normalizationAmplitude != 1.0)
+                {
+                    auto *sl = (gidx == 0 ? output[0] : loutput[0]);
+                    auto *sr = (gidx == 0 ? output[1] : loutput[1]);
+                    if (monoGenerator[gidx])
+                    {
+                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(
+                            variantData.normalizationAmplitude, sl);
+                        ;
+                    }
+                    else
+                    {
+                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(
+                            variantData.normalizationAmplitude, sl, sr);
+                    }
+                }
+
                 if (gidx == 0)
                 {
                     if (monoGenerator[gidx] && !allGeneratorsMono)
@@ -475,14 +493,6 @@ template <bool OS> bool Voice::processWithOS()
         if (useOversampling && !OS)
         {
             halfRate.process_block_D2(output[0], output[1], blockSize << 1);
-        }
-
-        auto scale_db = zone->variantData.variants[sampleIndex].normalizationAmplitude;
-        // we are in dB so 0 change is 0 dB
-        if (scale_db != 0.f)
-        {
-            const float linear_scale = dsp::dbTable.dbToLinear(scale_db);
-            sst::basic_blocks::mechanics::scale_by<blockSize>(linear_scale, output[0], output[1]);
         }
     }
 

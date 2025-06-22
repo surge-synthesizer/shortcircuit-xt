@@ -28,6 +28,7 @@
 #include "sample_analytics.h"
 #include <limits>
 #include <cmath>
+#include <cstring>
 
 namespace scxt::dsp::sample_analytics
 {
@@ -53,6 +54,41 @@ float computePeak(const std::shared_ptr<sample::Sample> &s)
         }
     }
     return peak;
+}
+
+float computeMaxRMSInBlock(const std::shared_ptr<sample::Sample> &s)
+{
+    static constexpr size_t rmsb{64};
+    size_t idx{0};
+    float buf[rmsb];
+    memset(buf, 0, sizeof(buf));
+
+    float maxv{0};
+    for (size_t i = 0; i < s->getSampleLength(); i++)
+    {
+        auto pv = buf[idx];
+        buf[idx] = 0.f;
+        for (int chan = 0; chan < s->channels; chan++)
+        {
+            float sample = 0.0;
+            switch (s->bitDepth)
+            {
+            case sample::Sample::BD_I16:
+                sample = static_cast<float>(s->GetSamplePtrI16(chan)[i]) /
+                         std::numeric_limits<int16_t>::max();
+                break;
+            case sample::Sample::BD_F32:
+                sample = s->GetSamplePtrF32(chan)[i];
+                break;
+            }
+            buf[idx] += sample * sample;
+        }
+
+        maxv = std::max(maxv, maxv - pv + buf[idx]);
+        idx = (idx + 1) & (rmsb - 1);
+    }
+
+    return std::sqrt(maxv) / rmsb / s->channels;
 }
 
 float computeRMS(const std::shared_ptr<sample::Sample> &s)

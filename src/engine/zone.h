@@ -120,7 +120,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};
-        float normalizationAmplitude{0.f}; // db
+        float normalizationAmplitude{1.f}; // linear scale
         // per-sample pitch and amplitude
         float pitchOffset{0.f}; // semitones
         float amplitude{0.f};   // db
