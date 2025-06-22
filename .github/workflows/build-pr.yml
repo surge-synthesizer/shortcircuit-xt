@@ -20,14 +20,14 @@ jobs:
             runTests: false
             clapValidate: false
 
-          - name: "windows clang VST3"
-            os: windows-latest
-            target: scxt_clapfirst_vst3
+            #- name: "windows clang VST3"
+            #  os: windows-latest
+            #  target: scxt_clapfirst_vst3
             # LLVM
             # cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
-            cmakeConfig: -G"Visual Studio 17 2022" -A x64 -TClangCL
-            runTests: false
-            clapValidate: false
+          #  cmakeConfig: -G"Visual Studio 17 2022" -A x64 -TClangCL
+          #  runTests: false
+          #  clapValidate: false
 
           - name: "windows arm64ec"
             os: windows-latest
@@ -55,7 +55,10 @@ jobs:
             target: shortcircuit-products
             # LLVM
             # cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
-            cmakeConfig: -G"Visual Studio 17 2022" -A x64 -TClangCL -DCMAKE_UNITY_BUILD=TRUE
+            # CLang CL
+            # cmakeConfig: -G"Visual Studio 17 2022" -A x64 -TClangCL -DCMAKE_UNITY_BUILD=TRUE
+            # MSVC
+            cmakeConfig: -G"Visual Studio 17 2022" -A x64 -DCMAKE_UNITY_BUILD=TRUE
             runTests: false
             clapValidate: true
 
