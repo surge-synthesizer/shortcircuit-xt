@@ -65,6 +65,13 @@ void SampleWaveform::rebuildHotZones()
 
     fadeLoopHz = juce::Rectangle<int>(ls - fade, r.getY(), fade, r.getHeight());
     repaint();
+
+    slicePixelAndSamplePositions.clear();
+    for (int i = 0; i < samp->meta.n_slices; ++i)
+    {
+        auto sp = xPixelForSample(samp->meta.slice_start[i]);
+        slicePixelAndSamplePositions.emplace_back(sp, samp->meta.slice_start[i]);
+    }
 }
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
@@ -331,27 +338,34 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
         return;
 
     auto xpos = e.position.x;
+    auto samplePos = sampleForXPixel(xpos);
+    int sliceDistance{getWidth() * 2};
+    for (const auto &[pix, smp] : slicePixelAndSamplePositions)
+    {
+        auto d = std::abs(pix - xpos);
+        if (d <= sliceSnapZoneInPixels && d < sliceDistance)
+        {
+            sliceDistance = d;
+            samplePos = smp;
+        }
+    }
     switch (mouseState)
     {
     case MouseState::HZ_DRAG_SAMPSTART:
-        display->variantView.variants[display->selectedVariation].startSample =
-            std::min(sampleForXPixel(xpos),
-                     display->variantView.variants[display->selectedVariation].endSample);
+        display->variantView.variants[display->selectedVariation].startSample = std::min(
+            samplePos, display->variantView.variants[display->selectedVariation].endSample);
         break;
     case MouseState::HZ_DRAG_SAMPEND:
-        display->variantView.variants[display->selectedVariation].endSample =
-            std::max(sampleForXPixel(xpos),
-                     display->variantView.variants[display->selectedVariation].startSample);
+        display->variantView.variants[display->selectedVariation].endSample = std::max(
+            samplePos, display->variantView.variants[display->selectedVariation].startSample);
         break;
     case MouseState::HZ_DRAG_LOOPSTART:
         display->variantView.variants[display->selectedVariation].startLoop =
-            std::min(sampleForXPixel(xpos),
-                     display->variantView.variants[display->selectedVariation].endLoop);
+            std::min(samplePos, display->variantView.variants[display->selectedVariation].endLoop);
         break;
     case MouseState::HZ_DRAG_LOOPEND:
-        display->variantView.variants[display->selectedVariation].endLoop =
-            std::max(sampleForXPixel(xpos),
-                     display->variantView.variants[display->selectedVariation].startLoop);
+        display->variantView.variants[display->selectedVariation].endLoop = std::max(
+            samplePos, display->variantView.variants[display->selectedVariation].startLoop);
         break;
     default:
         break;
@@ -584,6 +598,19 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.drawLine(ls, r.getY(), fe, r.getBottom());
     }
 
+    // Draw slices before markers so they don't occlude on overdrat
+    if (samp->meta.n_slices > 0)
+    {
+        g.setColour(editor->themeColor(theme::ColorMap::grid_primary));
+        for (int i = 0; i < samp->meta.n_slices; ++i)
+        {
+            auto sp = xPixelForSample(samp->meta.slice_start[i]);
+            auto ep = xPixelForSample(samp->meta.slice_end[i]);
+            g.drawVerticalLine(sp, r.getY(), r.getBottom());
+            g.drawVerticalLine(ep, r.getY(), r.getBottom());
+        }
+    }
+
     if (ss >= 0 && ss <= getWidth())
     {
         g.setColour(a1a);
@@ -633,18 +660,6 @@ void SampleWaveform::paint(juce::Graphics &g)
             auto bx = endLoopHZ.reduced(3, 3);
             g.drawLine(bx.getRight(), bx.getY(), bx.getX(), bx.getCentreY());
             g.drawLine(bx.getRight(), bx.getBottom(), bx.getX(), bx.getCentreY());
-        }
-    }
-
-    if (samp->meta.n_slices > 0)
-    {
-        g.setColour(editor->themeColor(theme::ColorMap::grid_primary));
-        for (int i = 0; i < samp->meta.n_slices; ++i)
-        {
-            auto sp = xPixelForSample(samp->meta.slice_start[i]);
-            auto ep = xPixelForSample(samp->meta.slice_end[i]);
-            g.drawVerticalLine(sp, r.getY(), r.getBottom());
-            g.drawVerticalLine(ep, r.getY(), r.getBottom());
         }
     }
 
