@@ -58,6 +58,8 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     }
 
     juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ, fadeLoopHz;
+    std::vector<std::pair<int, int>> slicePixelAndSamplePositions;
+    static constexpr int sliceSnapZoneInPixels{4};
     void rebuildHotZones();
 
     // Anticipating future drag and so forth gestures
