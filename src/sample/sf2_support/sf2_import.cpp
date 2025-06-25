@@ -99,8 +99,6 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     if (sfsamp == nullptr)
                         continue;
 
-                    messageController->updateClientActivityNotification("Loading sample " +
-                                                                        std::to_string(j));
                     auto sid = e.getSampleManager()->loadSampleFromSF2(p, sf.get(), pc, i, j);
                     if (!sid.has_value())
                         continue;

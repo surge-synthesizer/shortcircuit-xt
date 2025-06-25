@@ -65,7 +65,11 @@ int parseMidiNote(const std::string &s)
 
 bool importSFZ(const fs::path &f, engine::Engine &e)
 {
-    assert(e.getMessageController()->threadingChecker.isSerialThread());
+    auto &messageController = e.getMessageController();
+    assert(messageController->threadingChecker.isSerialThread());
+
+    auto cng = messaging::MessageController::ClientActivityNotificationGuard(
+        "Loading SFZ '" + f.filename().u8string() + "'", *(messageController));
 
     SFZParser parser;
 

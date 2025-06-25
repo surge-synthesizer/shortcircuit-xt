@@ -46,6 +46,8 @@
 namespace scxt::ui::app::shared
 {
 
+struct ActivityDisplay;
+
 struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
 {
     std::unique_ptr<sst::jucegui::components::ToggleButtonRadioGroup> selectedPage;
@@ -58,6 +60,7 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
 
     std::unique_ptr<sst::jucegui::components::GlyphButton> chipButton, saveAsButton, scMenu;
     std::unique_ptr<sst::jucegui::components::MenuButton> multiMenuButton;
+    std::unique_ptr<ActivityDisplay> activityDisplay;
 
     HeaderRegion(SCXTEditor *);
     ~HeaderRegion();
@@ -114,6 +117,8 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void showMultiSelectionMenu();
 
     void addResetMenuItems(juce::PopupMenu &menu);
+
+    void onActivityNotification(int idx, const std::string &msg);
 
     std::unique_ptr<juce::FileChooser> fileChooser;
 };

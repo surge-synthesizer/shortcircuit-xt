@@ -42,8 +42,8 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
 
     SCLOG("Loading " << p.u8string() << " ps=" << preset);
 
-    auto cng = messaging::MessageController::ClientActivityNotificationGuard("Loading GIG",
-                                                                             *(messageController));
+    auto cng = messaging::MessageController::ClientActivityNotificationGuard(
+        "Loading GIG '" + p.filename().u8string() + "'", *(messageController));
 
     try
     {
@@ -122,10 +122,10 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
                 if (sampleToIndex.find(sfsamp) == sampleToIndex.end())
                     continue;
                 auto sidx = sampleToIndex[sfsamp];
-                ;
 
-                messageController->updateClientActivityNotification("Loading sample " +
-                                                                    std::to_string(j));
+                // messageController->updateClientActivityNotification("Loading " +
+                // p.filename().u8string()+ " sample " +
+                //                                                                     std::to_string(j));
                 auto sid = e.getSampleManager()->loadSampleFromGIG(p, gig.get(), -1, -1, sidx);
                 if (!sid.has_value())
                     continue;

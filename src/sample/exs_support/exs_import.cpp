@@ -32,6 +32,8 @@
 #include "utils.h"
 #include "exs_import.h"
 
+#include <messaging/messaging.h>
+
 namespace scxt::exs_support
 {
 using byteData_t = std::vector<uint8_t>;
@@ -644,6 +646,12 @@ EXSInfo parseEXS(const fs::path &p)
 
 bool importEXS(const fs::path &p, engine::Engine &e)
 {
+    auto &messageController = e.getMessageController();
+    assert(messageController->threadingChecker.isSerialThread());
+
+    auto cng = messaging::MessageController::ClientActivityNotificationGuard(
+        "Loading EXS '" + p.filename().u8string() + "'", *(messageController));
+
     auto info = parseEXS(p);
     auto pt = std::clamp(e.getSelectionManager()->selectedPart, (int16_t)0, (int16_t)numParts);
     auto &part = e.getPatch()->getPart(pt);
