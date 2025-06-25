@@ -162,6 +162,7 @@ enum ClientToSerializationMessagesIds
     c2s_browser_queue_refresh, // this is a "special" message see browser_messages
 
     c2s_request_debug_action,
+    c2s_raise_debug_error,
 
     c2s_silence_engine,
 

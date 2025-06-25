@@ -40,6 +40,12 @@ namespace scxt::messaging::client
 typedef std::pair<std::string, std::string> s2cError_t;
 SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
+inline void raiseDebugError(MessageController &c)
+{
+    c.reportErrorToClient("A Dummy Error", "This is a dummy error");
+}
+CLIENT_TO_SERIAL(RaiseDebugError, c2s_raise_debug_error, bool, raiseDebugError(cont))
+
 CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, int32_t,
                  engine.midikeyRetuner.setTuningMode((tuning::MidikeyRetuner::TuningMode)payload));
 
