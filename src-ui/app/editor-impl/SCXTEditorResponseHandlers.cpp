@@ -453,8 +453,8 @@ void SCXTEditor::onActivityNotification(
     const scxt::messaging::client::activityNotificationPayload_t &payload)
 {
     auto [idx, msg] = payload;
-    // SCLOG((idx == 1 ? "Open" : (idx == 0 ? "Close" : "Update")) << " [" << msg << "]");
-    SCLOG_ONCE("Update activity messages currently ignored");
+    if (headerRegion)
+        headerRegion->onActivityNotification(idx, msg);
 }
 
 void SCXTEditor::onMissingResolutionWorkItemList(

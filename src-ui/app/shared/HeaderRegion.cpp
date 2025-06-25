@@ -38,6 +38,32 @@ namespace scxt::ui::app::shared
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
 
+struct ActivityDisplay : juce::Component, HasEditor
+{
+    ActivityDisplay(SCXTEditor *e) : HasEditor(e) {}
+
+    void setMessage(const std::string &m)
+    {
+        msg = m;
+        repaint();
+    }
+    void paint(juce::Graphics &g)
+    {
+        float rectCorner = 1.5;
+
+        auto b = getLocalBounds().reduced(1).toFloat();
+
+        auto bg = editor->themeColor(theme::ColorMap::bg_2);
+        g.setColour(bg);
+        g.fillRoundedRectangle(b, rectCorner);
+
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+        g.setFont(editor->themeApplier.interMediumFor(14));
+        g.drawText(msg, getLocalBounds(), juce::Justification::centred);
+    }
+    std::string msg{};
+};
+
 struct spData : sst::jucegui::data::Discrete
 {
     HeaderRegion *headerRegion{nullptr};
@@ -155,6 +181,9 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*multiMenuButton);
 
+    activityDisplay = std::make_unique<ActivityDisplay>(editor);
+    addChildComponent(*activityDisplay);
+
     cpuLabel = std::make_unique<jcmp::Label>();
     cpuLabel->setText("CPU");
     cpuLabel->setJustification(juce::Justification::centredLeft);
@@ -202,6 +231,7 @@ void HeaderRegion::resized()
     saveAsButton->setBounds(b.withTrimmedLeft(755).withWidth(24));
 
     multiMenuButton->setBounds(b.withTrimmedLeft(421).withWidth(330));
+    activityDisplay->setBounds(multiMenuButton->getBounds());
 
     scMenu->setBounds(b.withTrimmedLeft(1148).withWidth(24));
 
@@ -405,6 +435,23 @@ void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
         }
     });
     menu.addSubMenu("Reset Engine To", p);
+}
+
+void HeaderRegion::onActivityNotification(int idx, const std::string &msg)
+{
+    if (idx == 0)
+    {
+        activityDisplay->setVisible(false);
+        editor->setMouseCursor(juce::MouseCursor::NormalCursor);
+        return;
+    }
+    if (idx == 1)
+    {
+        activityDisplay->setVisible(true);
+        activityDisplay->toFront(false);
+        editor->setMouseCursor(juce::MouseCursor::WaitCursor);
+    }
+    activityDisplay->setMessage(msg);
 }
 
 } // namespace scxt::ui::app::shared

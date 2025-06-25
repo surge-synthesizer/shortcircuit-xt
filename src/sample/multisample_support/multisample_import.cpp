@@ -39,6 +39,12 @@ namespace scxt::multisample_support
 
 bool importMultisample(const fs::path &p, engine::Engine &engine)
 {
+    auto &messageController = engine.getMessageController();
+    assert(messageController->threadingChecker.isSerialThread());
+
+    auto cng = messaging::MessageController::ClientActivityNotificationGuard(
+        "Loading Multisample '" + p.filename().u8string() + "'", *(messageController));
+
     mz_zip_archive zip_archive;
     memset(&zip_archive, 0, sizeof(zip_archive));
 
