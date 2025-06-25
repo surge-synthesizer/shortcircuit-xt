@@ -439,20 +439,19 @@ template <bool OS> bool Voice::processWithOS()
                 isGeneratorRunning[gidx] = !GD[gidx].isFinished;
                 isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
 
-                if (variantData.normalizationAmplitude != 1.0)
+                if (variantData.normalizationAmplitude != 1.0 || variantData.amplitude != 1.0)
                 {
+                    auto normBy = variantData.normalizationAmplitude * variantData.amplitude *
+                                  variantData.amplitude * variantData.amplitude;
                     auto *sl = (gidx == 0 ? output[0] : loutput[0]);
                     auto *sr = (gidx == 0 ? output[1] : loutput[1]);
                     if (monoGenerator[gidx])
                     {
-                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(
-                            variantData.normalizationAmplitude, sl);
-                        ;
+                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl);
                     }
                     else
                     {
-                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(
-                            variantData.normalizationAmplitude, sl, sr);
+                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl, sr);
                     }
                 }
 
@@ -956,8 +955,11 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate * sampleRateInv *
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
-    float ndiff =
-        pitch - zone->mapping.rootKey + zone->parentGroup->parentPart->configuration.tuning;
+    auto &var = zone->variantData.variants[sampleIndex];
+    auto kd = (pitch - zone->mapping.rootKey) * var.tracking;
+
+    float ndiff = kd + zone->parentGroup->parentPart->configuration.tuning + var.pitchOffset;
+
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
 
     GD[generatorIndex].ratio =

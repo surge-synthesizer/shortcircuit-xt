@@ -66,10 +66,14 @@ struct VariantDisplay : juce::Component, HasEditor
         tune
     };
 
+    using floatAttachment_t =
+        scxt::ui::connectors::PayloadDataAttachment<engine::Zone::SingleVariant>;
+
     std::unordered_map<Ctrl, std::unique_ptr<connectors::SamplePointDataAttachment>>
         sampleAttachments;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         sampleEditors;
+    std::unordered_map<Ctrl, std::unique_ptr<floatAttachment_t>> sampleFloatAttachments;
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphLabels;

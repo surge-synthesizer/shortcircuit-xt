@@ -44,6 +44,7 @@ template <typename P, typename V> ptrdiff_t offV(const P &p, const V &l)
 }
 template <typename P> sst::basic_blocks::params::ParamMetaData descFor(const P &, ptrdiff_t pd)
 {
+    // If you hit this assert you need an SC_DESCRIBE for a w.r.t b
     assert(false);
     return sst::basic_blocks::params::ParamMetaData()
         .withType(sst::basic_blocks::params::ParamMetaData::NONE)

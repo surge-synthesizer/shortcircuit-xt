@@ -191,6 +191,24 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         sampleAttachments[c] = std::move(at);
     };
 
+    auto attachFloatSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
+        auto pmd = scxt::datamodel::describeValue(variantView.variants[selectedVariation], v);
+
+        auto at = std::make_unique<floatAttachment_t>(
+            pmd, [this](const auto &) { onSamplePointChangedFromGUI(); }, v);
+        auto sl = std::make_unique<jcmp::DraggableTextEditableValue>();
+        sl->setSource(at.get());
+        if (sampleEditors[c])
+        {
+            removeChildComponent(sampleEditors[c].get());
+            sampleEditors[c].reset();
+            sampleAttachments[c].reset();
+        }
+        addAndMakeVisible(*sl);
+        sampleEditors[c] = std::move(sl);
+        sampleFloatAttachments[c] = std::move(at);
+    };
+
     auto attachToDummy = [this](Ctrl c, const std::string &aLabel, uint32_t idx) {
         sampleEditors[c] = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
             idx, aLabel, 0.f, false, editor->makeComingSoon(aLabel));
@@ -263,13 +281,13 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     addAndMakeVisible(*srcButton);
     addLabel(src, "SRC");
 
-    attachToDummy(volume, "Volume", 'vvol');
+    attachFloatSamplePoint(volume, "Volume", variantView.variants[selectedVariation].amplitude);
     addGlyph(volume, jcmp::GlyphPainter::GlyphType::VOLUME);
 
-    attachToDummy(trak, "Tracking", 'vtrk');
+    attachFloatSamplePoint(trak, "Tracking", variantView.variants[selectedVariation].tracking);
     addLabel(trak, "Trk");
 
-    attachToDummy(tune, "Tuning", 'vtun');
+    attachFloatSamplePoint(tune, "Tuning", variantView.variants[selectedVariation].pitchOffset);
     addGlyph(tune, jcmp::GlyphPainter::GlyphType::TUNING);
 
     if (loopActive)
@@ -583,7 +601,10 @@ void VariantDisplay::rebuild()
     {
         for (auto &[k, a] : sampleAttachments)
         {
-            a->sampleCount = samp->sample_length;
+            if (a)
+            {
+                a->sampleCount = samp->sample_length;
+            }
         }
 
         fileButton->setLabel(samp->displayName);
