@@ -126,6 +126,19 @@ void SCXTEditor::showMainMenu()
     dp.addSeparator();
     dp.addItem("Dump Colormap JSON", [this]() { SCLOG(themeApplier.colors->toJson()); });
     dp.addSeparator();
+    dp.addItem("Raise Dummy Error", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::RaiseDebugError{true});
+    });
+    dp.addItem("Raise Dummy OK Cancel", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->promptOKCancel(
+            "Dummy OK Cancel", "This is the dummy OK Cancel Message", []() { SCLOG("OK Pressed"); },
+            []() { SCLOG("Cancel Pressed"); });
+    });
+    dp.addSeparator();
 
 #if HAS_MELATONIN_INSPECTOR
     if (melatoninInspector)
