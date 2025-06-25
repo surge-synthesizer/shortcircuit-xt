@@ -524,7 +524,8 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                           {"loopFade", s.loopFade},
                           {"normalizationAmplitude", s.normalizationAmplitude},
                           {"pitchOffset", s.pitchOffset},
-                          {"amplitude", s.amplitude}};
+                          {"amplitude", s.amplitude},
+                          {"tracking", s.tracking}};
                  }
                  else
                  {
@@ -555,6 +556,7 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                      findOrSet(v, "normalizationAmplitude", 0.f, s.normalizationAmplitude);
                      findOrSet(v, "pitchOffset", 0.f, s.pitchOffset);
                      findOrSet(v, "amplitude", 0.f, s.amplitude);
+                     findOrSet(v, "tracking", 1.f, s.tracking);
                  }
                  else
                  {

@@ -123,7 +123,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         float normalizationAmplitude{1.f}; // linear scale
         // per-sample pitch and amplitude
         float pitchOffset{0.f}; // semitones
-        float amplitude{0.f};   // db
+        float amplitude{1.f};   // cube to apply
+        float tracking{1.f};
 
         bool operator==(const SingleVariant &other) const
         {
@@ -279,6 +280,17 @@ SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
                      pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
             SC_FIELD(pan, pmd().asPan().withName("Pan"));
             SC_FIELD(procRouting, pmd().asInt().withRange(0, 1));)
+
+SC_DESCRIBE(scxt::engine::Zone::SingleVariant,
+            SC_FIELD(amplitude,
+                     pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
+            SC_FIELD(pitchOffset, pmd().asSemitoneRange(-36, 36).withName("Pitch Offset}"));
+            SC_FIELD(tracking, pmd()
+                                   .asFloat()
+                                   .withRange(-2, 2)
+                                   .withName("Tracking")
+                                   .withLinearScaleFormatting("x")
+                                   .withDecimalPlaces(2));)
 
 SC_DESCRIBE(
     scxt::engine::Zone::ZoneMappingData, SC_FIELD(rootKey, pmd().asMIDINote().withName("Root Key"));
