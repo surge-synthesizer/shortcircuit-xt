@@ -41,6 +41,7 @@
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/accessibility/FocusDebugger.h"
 #include "sst/jucegui/components/WindowPanel.h"
+#include "sst/jucegui/screens/ScreenHolder.h"
 #include "sst/jucegui/style/JUCELookAndFeelAdapter.h"
 #include "sst/basic-blocks/dsp/RNG.h"
 #include "messaging/client/zone_messages.h"
@@ -91,7 +92,9 @@ struct AboutScreen;
 struct LogScreen;
 } // namespace other_screens
 
-struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropContainer
+struct SCXTEditor : sst::jucegui::components::WindowPanel,
+                    juce::DragAndDropContainer,
+                    sst::jucegui::screens::ScreenHolder<SCXTEditor>
 {
     // The message controller is needed to communicate
     messaging::MessageController &msgCont;
@@ -312,8 +315,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel, juce::DragAndDropCont
     std::queue<std::string> callbackQueue;
     engine::Engine::EngineStatusMessage engineStatus;
 
-    std::function<void()> makeComingSoon(const std::string &feature = "This feature") const;
-    void showComingSoon(const std::string &feature = "This feature") const;
+    std::function<void()> makeComingSoon(const std::string &feature = "This feature");
 
     void promptOKCancel(
         const std::string &title, const std::string &message, std::function<void()> onOK,

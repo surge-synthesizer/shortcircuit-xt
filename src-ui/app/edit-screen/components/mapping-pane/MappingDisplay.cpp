@@ -439,7 +439,7 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
 
 void MappingDisplay::doZoneRename(const selection::SelectionManager::ZoneAddress &z)
 {
-    editor->showComingSoon("Rename from Mapping Pane");
+    editor->makeComingSoon("Rename from Mapping Pane")();
 }
 
 } // namespace scxt::ui::app::edit_screen

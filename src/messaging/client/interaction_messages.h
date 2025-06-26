@@ -42,7 +42,11 @@ SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
 inline void raiseDebugError(MessageController &c)
 {
-    c.reportErrorToClient("A Dummy Error", "This is a dummy error");
+    c.reportErrorToClient("A Dummy Error",
+                          "This is a dummy error. I chose to have it have "
+                          "a very long message like this one so I can test multiline "
+                          "string rendering in the error box. So this one has details like "
+                          "this and that");
 }
 CLIENT_TO_SERIAL(RaiseDebugError, c2s_raise_debug_error, bool, raiseDebugError(cont))
 

@@ -45,6 +45,7 @@
 #include "app/other-screens/WelcomeScreen.h"
 #include "app/missing-resolution/MissingResolutionScreen.h"
 #include "sst/jucegui/components/ToolTip.h"
+#include "sst/jucegui/screens/AlertOrPrompt.h"
 #include <sst/jucegui/components/DiscreteParamMenuBuilder.h>
 
 #if MAC
@@ -500,16 +501,12 @@ void SCXTEditor::setTabSelection(const std::string &k, const std::string &t)
     sendToSerialization(messaging::client::UpdateOtherTabSelection({k, t}));
 }
 
-void SCXTEditor::showComingSoon(const std::string &feature) const
+std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature)
 {
-    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
-                                           feature + " is not yet implemented", "OK");
-}
-std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature) const
-{
-    return [f = feature]() {
-        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Coming Soon",
-                                               f + " is not yet implemented", "OK");
+    return [w = juce::Component::SafePointer(this), f = feature]() {
+        if (w)
+            w->displayModalOverlay(sst::jucegui::screens::AlertOrPrompt::Alert(
+                "Coming Soon", f + " is not yet implemented"));
     };
 }
 
@@ -525,23 +522,14 @@ void SCXTEditor::onStyleChanged()
 void SCXTEditor::promptOKCancel(const std::string &title, const std::string &message,
                                 std::function<void()> onOK, std::function<void()> onCancel)
 {
-    juce::AlertWindow::showAsync(juce::MessageBoxOptions()
-                                     .withIconType(juce::MessageBoxIconType::QuestionIcon)
-                                     .withTitle(title)
-                                     .withMessage(message)
-                                     .withButton("OK")
-                                     .withButton("Cancel"),
-                                 [onOK, onCancel](auto x) {
-                                     if (x == 1)
-                                         onOK();
-                                     if (x == 0 && onCancel)
-                                         onCancel();
-                                 });
+    displayModalOverlay(
+        std::move(sst::jucegui::screens::AlertOrPrompt::OKCancel(title, message, onOK, onCancel)));
 }
 
 void SCXTEditor::displayError(const std::string &title, const std::string &message)
 {
-    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, title, message, "OK");
+
+    displayModalOverlay(sst::jucegui::screens::AlertOrPrompt::Alert(title, message));
 }
 
 } // namespace scxt::ui::app
