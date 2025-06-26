@@ -124,7 +124,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         // per-sample pitch and amplitude
         float pitchOffset{0.f}; // semitones
         float amplitude{1.f};   // cube to apply
-        float tracking{1.f};
+        float pan{0.f};
 
         bool operator==(const SingleVariant &other) const
         {
@@ -132,7 +132,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
                    startSample == other.startSample && endSample == other.endSample &&
                    startLoop == other.startLoop && endLoop == other.endLoop &&
                    normalizationAmplitude == other.normalizationAmplitude &&
-                   pitchOffset == other.pitchOffset && amplitude == other.amplitude;
+                   pitchOffset == other.pitchOffset && amplitude == other.amplitude &&
+                   pan == other.pan;
         }
     };
 
@@ -225,6 +226,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         float amplitude{0.0};   // decibels
         float pan{0.0};         // -1..1
         float pitchOffset{0.0}; // semitones/keys
+        float tracking{1.0};    // straight multiplier
 
     } mapping;
 
@@ -285,12 +287,7 @@ SC_DESCRIBE(scxt::engine::Zone::SingleVariant,
             SC_FIELD(amplitude,
                      pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
             SC_FIELD(pitchOffset, pmd().asSemitoneRange(-36, 36).withName("Pitch Offset}"));
-            SC_FIELD(tracking, pmd()
-                                   .asFloat()
-                                   .withRange(-2, 2)
-                                   .withName("Tracking")
-                                   .withLinearScaleFormatting("x")
-                                   .withDecimalPlaces(2));)
+            SC_FIELD(pan, pmd().asPan().withName("Pan"));)
 
 SC_DESCRIBE(
     scxt::engine::Zone::ZoneMappingData, SC_FIELD(rootKey, pmd().asMIDINote().withName("Root Key"));
@@ -307,6 +304,12 @@ SC_DESCRIBE(
     SC_FIELD(pbUp, pmd().asMIDIPitch().withUnit("").withDefault(2).withName("Pitch Bend Up"));
     SC_FIELD(amplitude, pmd().asDecibelWithRange(-36, 36).withName("Amplitude").withDefault(0.f));
     SC_FIELD(pan, pmd().asPan().withName("Pan"));
-    SC_FIELD(pitchOffset, pmd().asSemitoneRange().withName("Pitch").withDefault(0.0)););
+    SC_FIELD(pitchOffset, pmd().asSemitoneRange().withName("Pitch").withDefault(0.0));
+    SC_FIELD(tracking, pmd()
+                           .asFloat()
+                           .withRange(-2, 2)
+                           .withName("Tracking")
+                           .withLinearScaleFormatting("x")
+                           .withDecimalPlaces(2)););
 
 #endif

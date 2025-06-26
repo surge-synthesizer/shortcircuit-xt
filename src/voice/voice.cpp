@@ -455,9 +455,43 @@ template <bool OS> bool Voice::processWithOS()
                     }
                 }
 
+                bool panOverridesMono{false};
+                if (variantData.pan > 0.001f || variantData.pan < -0.001f)
+                {
+                    namespace pl = sst::basic_blocks::dsp::pan_laws;
+
+                    panOverridesMono = true;
+                    auto pv = std::clamp(variantData.pan, -1.f, 1.f) * 0.5 + 0.5;
+                    pl::panmatrix_t pmat{1, 1, 0, 0};
+
+                    auto *sl = (gidx == 0 ? output[0] : loutput[0]);
+                    auto *sr = (gidx == 0 ? output[1] : loutput[1]);
+                    if (monoGenerator[gidx])
+                    {
+                        pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
+                        for (int i = 0; i < blockSize << (OS ? 1 : 0); ++i)
+                        {
+                            sr[i] = sl[i] * pmat[3];
+                            sl[i] = sl[i] * pmat[0];
+                        }
+                    }
+                    else
+                    {
+                        pl::stereoEqualPower(pv, pmat);
+
+                        for (int i = 0; i < blockSize << (forceOversample ? 1 : 0); ++i)
+                        {
+                            auto il = sl[i];
+                            auto ir = sr[i];
+                            sl[i] = pmat[0] * il + pmat[2] * ir;
+                            sr[i] = pmat[1] * ir + pmat[3] * il;
+                        }
+                    }
+                }
+
                 if (gidx == 0)
                 {
-                    if (monoGenerator[gidx] && !allGeneratorsMono)
+                    if (monoGenerator[gidx] && !allGeneratorsMono && !panOverridesMono)
                     {
                         mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], output[1]);
                     }
@@ -466,12 +500,12 @@ template <bool OS> bool Voice::processWithOS()
                 {
                     mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
                                                                               output[0]);
-                    if (!monoGenerator[gidx])
+                    if (!monoGenerator[gidx] && !panOverridesMono)
                     {
                         mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[1],
                                                                                   output[1]);
                     }
-                    else if (!allGeneratorsMono)
+                    else if (!allGeneratorsMono || panOverridesMono)
                     {
                         mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
                                                                                   output[1]);
@@ -888,7 +922,8 @@ void Voice::initializeGenerator()
         Generator[currGen] = nullptr;
 
         monoGenerator[currGen] = s->channels == 1;
-        allGeneratorsMono = allGeneratorsMono && monoGenerator[currGen];
+        allGeneratorsMono = allGeneratorsMono && monoGenerator[currGen] &&
+                            (variantData.pan < 0.01f && variantData.pan > -0.01f);
         Generator[currGen] = dsp::GetFPtrGeneratorSample(
             !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, variantData.loopActive,
             variantData.loopDirection == engine::Zone::FORWARD_ONLY,
@@ -956,7 +991,7 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
     auto &var = zone->variantData.variants[sampleIndex];
-    auto kd = (pitch - zone->mapping.rootKey) * var.tracking;
+    auto kd = (pitch - zone->mapping.rootKey) * zone->mapping.tracking;
 
     float ndiff = kd + zone->parentGroup->parentPart->configuration.tuning + var.pitchOffset;
 

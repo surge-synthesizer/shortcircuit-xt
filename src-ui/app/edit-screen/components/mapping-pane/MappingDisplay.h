@@ -138,7 +138,7 @@ struct MappingDisplay : juce::Component,
     template <typename T> struct MapEls
     {
         T RootKey, KeyStart, KeyEnd, FadeStart, FadeEnd, VelStart, VelEnd, VelFadeStart, VelFadeEnd,
-            PBDown, PBUp, VelocitySens, Level, Pan, Pitch;
+            PBDown, PBUp, VelocitySens, Level, Pan, Pitch, Tracking;
     };
 
     MapEls<std::unique_ptr<int16Attachment_t>> intAttachments;
