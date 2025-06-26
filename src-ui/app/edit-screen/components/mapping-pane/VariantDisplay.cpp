@@ -284,8 +284,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     attachFloatSamplePoint(volume, "Volume", variantView.variants[selectedVariation].amplitude);
     addGlyph(volume, jcmp::GlyphPainter::GlyphType::VOLUME);
 
-    attachFloatSamplePoint(trak, "Tracking", variantView.variants[selectedVariation].tracking);
-    addLabel(trak, "Trk");
+    attachFloatSamplePoint(pan, "Pan", variantView.variants[selectedVariation].pan);
+    addGlyph(pan, jcmp::GlyphPainter::GlyphType::PAN);
 
     attachFloatSamplePoint(tune, "Tuning", variantView.variants[selectedVariation].pitchOffset);
     addGlyph(tune, jcmp::GlyphPainter::GlyphType::TUNING);
@@ -488,8 +488,8 @@ void VariantDisplay::resized()
     ofRow(sampleEditors[volume], 40);
     newRow("srcvol");
 
-    ofRow(labels[trak], 25);
-    ofRow(sampleEditors[trak], 34);
+    ofRow(glyphLabels[pan], 25);
+    ofRow(sampleEditors[pan], 34);
     addPad(7);
     ofRow(glyphLabels[tune], 18);
     ofRow(sampleEditors[tune], 40);

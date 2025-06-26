@@ -62,7 +62,7 @@ struct VariantDisplay : juce::Component, HasEditor
         curve,
         src,
         volume,
-        trak,
+        pan,
         tune
     };
 

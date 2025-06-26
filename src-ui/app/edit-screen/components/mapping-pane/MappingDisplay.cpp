@@ -168,6 +168,10 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
 
     fAdd(mappingView.pitchOffset, floatAttachments.Pitch, textEds.Pitch);
     makeGlyph(glyphs.Pitch, sst::jucegui::components::GlyphPainter::TUNING);
+
+    fAdd(mappingView.tracking, floatAttachments.Tracking, textEds.Tracking);
+    makeLabel(labels.Tracking, "KT");
+    labels.Tracking->setJustification(juce::Justification::centredLeft);
 }
 
 MappingDisplay::~MappingDisplay() = default;
@@ -292,6 +296,11 @@ void MappingDisplay::resized()
     cr = cr.translated(0, rowHeight + rowMargin);
     glyphs.Pitch->setBounds(cQ(2));
     textEds.Pitch->setBounds(cQ(3));
+
+    // FIXME - make this match wireframe better
+    cr = cr.translated(0, rowHeight + rowMargin);
+    labels.Tracking->setBounds(cQ(2));
+    textEds.Tracking->setBounds(cQ(3));
 }
 
 void MappingDisplay::mappingChangedFromGUI()

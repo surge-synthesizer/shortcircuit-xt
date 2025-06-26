@@ -464,7 +464,8 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
                       {"velocitySens", t.velocitySens},
                       {"amplitude", t.amplitude},
                       {"pan", t.pan},
-                      {"pitchOffset", t.pitchOffset}};
+                      {"pitchOffset", t.pitchOffset},
+                      {"tracking", t.tracking}};
              }),
              SC_TO({
                  auto &zmd = to;
@@ -525,7 +526,7 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                           {"normalizationAmplitude", s.normalizationAmplitude},
                           {"pitchOffset", s.pitchOffset},
                           {"amplitude", s.amplitude},
-                          {"tracking", s.tracking}};
+                          {"pan", s.pan}};
                  }
                  else
                  {
@@ -556,7 +557,7 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                      findOrSet(v, "normalizationAmplitude", 0.f, s.normalizationAmplitude);
                      findOrSet(v, "pitchOffset", 0.f, s.pitchOffset);
                      findOrSet(v, "amplitude", 0.f, s.amplitude);
-                     findOrSet(v, "tracking", 1.f, s.tracking);
+                     findOrSet(v, "pan", 0.f, s.pan);
                  }
                  else
                  {
