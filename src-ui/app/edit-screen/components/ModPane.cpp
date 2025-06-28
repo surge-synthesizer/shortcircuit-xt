@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/Viewport.h"
+#include "sst/jucegui/component-adapters/ThrowRescaler.h"
 #include "messaging/client/client_serial.h"
 #include "app/shared/MenuValueTypein.h"
 
@@ -41,6 +42,7 @@ namespace scxt::ui::app::edit_screen
 {
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
+namespace jcad = sst::jucegui::component_adapters;
 
 template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 {
@@ -51,53 +53,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     using attachment_t = connectors::PayloadDataAttachment<typename GZTrait::routing::Routing>;
     std::unique_ptr<attachment_t> depthAttachment;
 
-    struct ReScaler : sst::jucegui::data::Continuous
-    {
-        ModRow *parentRow{nullptr};
-        sst::jucegui::data::Continuous *under{nullptr};
-        ReScaler(ModRow *parentRow, sst::jucegui::data::Continuous *u)
-            : parentRow(parentRow), under(u)
-        {
-        }
-
-        std::string getLabel() const override { return under->getLabel(); }
-        float scaleFromUnder(float f) const
-        {
-            auto v01 = (f - under->getMin()) / (under->getMax() - under->getMin());
-            auto res = v01 * 2 - 1;
-            res = std::cbrt(res);
-            return res;
-        }
-        float scaleToUnder(float f) const
-        {
-            // F is bipolar -1..1 so
-            auto uni = f * f * f * 0.5 + 0.5;
-            auto resc = uni * (under->getMax() - under->getMin()) + under->getMin();
-            return resc;
-        }
-
-        float getValue() const override { return scaleFromUnder(under->getValue()); }
-        float getValue01() override { return getValue() * 0.5 + 0.5; }
-        void setValueFromGUI(const float &f) override { under->setValueFromGUI(scaleToUnder(f)); }
-        void setValueFromGUIQuantized(const float &f) override
-        {
-            under->setValueFromGUIQuantized(scaleToUnder(f));
-        }
-        void setValueFromModel(const float &f) override
-        {
-            under->setValueFromModel(scaleToUnder(f));
-        }
-        float getDefaultValue() const override { return 0.f; }
-        std::string getValueAsStringFor(float f) const override
-        {
-            return under->getValueAsStringFor(scaleToUnder(f));
-        }
-        float getMin() const override { return -1.f; }
-        float getMax() const override { return 1.f; }
-        bool isBipolar() const override { return true; }
-    };
-
-    std::unique_ptr<ReScaler> depthRescaler;
+    std::unique_ptr<jcad::CubicThrowRescaler<attachment_t>> depthRescaler;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
     std::unique_ptr<jcmp::GlyphPainter> x1, x2, a1, a2;
@@ -164,7 +120,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 }
             },
             row.depth);
-        depthRescaler = std::make_unique<ReScaler>(this, depthAttachment.get());
+        depthRescaler =
+            std::make_unique<jcad::CubicThrowRescaler<attachment_t>>(depthAttachment.get());
         depth = std::make_unique<jcmp::HSliderFilled>();
         depth->verticalReduction = 3;
 
