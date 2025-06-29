@@ -17,6 +17,7 @@ static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,
 #endif
     "Project only works on little-endian architecture.");
 
+/*
 #if defined(__clang__) || defined(__GNUC__)
 #define MD5_EXPORT __attribute__ ((visibility ("default")))
 #elif defined(_MSC_VER)
@@ -24,6 +25,9 @@ static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,
 #else
 #define MD5_EXPORT
 #endif
+*/
+// We are only building static in short circuit
+#define MD5_EXPORT
 
 #include "impl/value.inl"
 #include "impl/constexpr.inl"
