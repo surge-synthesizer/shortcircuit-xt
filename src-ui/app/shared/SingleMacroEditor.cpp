@@ -179,6 +179,8 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
         macroNameEditor->addListener(this);
         addAndMakeVisible(*macroNameEditor);
     }
+
+    visibilityWatcher = std::make_unique<sst::jucegui::util::VisibilityParentWatcher>(this);
 }
 
 SingleMacroEditor::~SingleMacroEditor() {}

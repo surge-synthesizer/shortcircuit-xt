@@ -15,6 +15,7 @@ add_library(${PROJECT_NAME} STATIC
         app/edit-screen/components/MacroMappingVariantPane.cpp
         app/edit-screen/components/ModPane.cpp
         app/edit-screen/components/OutputPane.cpp
+        app/edit-screen/components/PartEditScreen.cpp
         app/edit-screen/components/PartGroupSidebar.cpp
         app/edit-screen/components/ProcessorPane.cpp
         app/edit-screen/components/ProcessorPaneEQsFilters.cpp
@@ -33,7 +34,6 @@ add_library(${PROJECT_NAME} STATIC
         app/mixer-screen/MixerScreen.cpp
         app/mixer-screen/components/BusPane.cpp
         app/mixer-screen/components/ChannelStrip.cpp
-        app/mixer-screen/components/PartEffectsPane.cpp
 
         app/other-screens/AboutScreen.cpp
         app/other-screens/LogScreen.cpp
@@ -44,6 +44,7 @@ add_library(${PROJECT_NAME} STATIC
         app/shared/MenuValueTypein.cpp
         app/shared/PartSidebarCard.cpp
         app/shared/SingleMacroEditor.cpp
+        app/shared/PartEffectsPane.cpp
 
         connectors/SCXTResources.cpp
         connectors/JSONAssetSupport.cpp

@@ -36,46 +36,66 @@ namespace scxt::messaging::client
 {
 
 using busEffectFullData_t =
-    std::tuple<int, int,
+    std::tuple<int, int, int,
                std::pair<std::array<sst::basic_blocks::params::ParamMetaData,
                                     engine::BusEffectStorage::maxBusEffectParams>,
                          engine::BusEffectStorage>>;
+// thats bus or -1, part or -1, slot, data
 
 SERIAL_TO_CLIENT(SendBusEffectFullData, s2c_bus_effect_full_data, busEffectFullData_t,
-                 onMixerBusEffectFullData);
+                 onBusOrPartEffectFullData);
 
-using busSendData_t = std::tuple<int, engine::Bus::BusSendStorage>;
-SERIAL_TO_CLIENT(SendBusSendData, s2c_bus_send_data, busSendData_t, onMixerBusSendData);
+using busSendData_t = std::tuple<int, int, engine::Bus::BusSendStorage>; // bus/-1, part/-1, dat
+SERIAL_TO_CLIENT(SendBusSendData, s2c_bus_send_data, busSendData_t, onBusOrPartSendData);
 
-using setBusEffectToType_t = std::tuple<int, int, int>; // bus, fx, type
+using setBusEffectToType_t = std::tuple<int, int, int, int>; // bus or -1, part of -1, fx, type
 inline void setBusEffectToType(const setBusEffectToType_t &payload,
                                messaging::MessageController &cont)
 {
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [p = payload](auto &e) {
-            auto [bus, fxslot, type] = p;
-            e.getPatch()
-                ->busses.busByAddress((engine::BusAddress)bus)
-                .setBusEffectType(e, fxslot, (engine::AvailableBusEffects)type);
+            auto [bus, part, fxslot, type] = p;
+            if (bus >= 0)
+            {
+                e.getPatch()
+                    ->busses.busByAddress((engine::BusAddress)bus)
+                    .setBusEffectType(e, fxslot, (engine::AvailableBusEffects)type);
+            }
+            else
+            {
+                e.getPatch()->getPart(part)->setBusEffectType(e, fxslot,
+                                                              (engine::AvailableBusEffects)type);
+            }
         },
         [p = payload, &cont](auto &e) {
-            auto [bus, fxslot, type] = p;
-            // ToDo: Send Metadata Blast back
-            e.getPatch()
-                ->busses.busByAddress((engine::BusAddress)bus)
-                .sendBusEffectInfoToClient(e, fxslot);
+            auto [bus, part, fxslot, type] = p;
+            if (bus >= 0)
+            {
+                e.getPatch()
+                    ->busses.busByAddress((engine::BusAddress)bus)
+                    .sendBusEffectInfoToClient(e, fxslot);
+            }
+            else
+            {
+                e.getPatch()->getPart(part)->sendBusEffectInfoToClient(e, fxslot);
+            }
         });
 }
 CLIENT_TO_SERIAL(SetBusEffectToType, c2s_set_mixer_effect, setBusEffectToType_t,
                  setBusEffectToType(payload, cont));
 
-using setBusEffectStorage_t = std::tuple<int, int, engine::BusEffectStorage>; // bus, fx, type
+using setBusEffectStorage_t =
+    std::tuple<int, int, int, engine::BusEffectStorage>; // bus/-1, part/-1, fx, type
 inline void setBusEffectStorage(const setBusEffectStorage_t &payload,
                                 messaging::MessageController &cont)
 {
     cont.scheduleAudioThreadCallback([p = payload](auto &e) {
-        const auto &[bus, fxslot, bes] = p;
-        e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busEffectStorage[fxslot] = bes;
+        const auto &[bus, part, fxslot, bes] = p;
+        if (bus >= 0)
+            e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busEffectStorage[fxslot] =
+                bes;
+        else
+            e.getPatch()->getPart(part)->partEffectStorage[fxslot] = bes;
     });
 }
 CLIENT_TO_SERIAL(SetBusEffectStorage, c2s_set_mixer_effect_storage, setBusEffectStorage_t,

@@ -19,6 +19,7 @@ add_library(${PROJECT_NAME} STATIC
         engine/memory_pool.cpp
         engine/missing_resolution.cpp
         engine/bus.cpp
+        engine/bus_effect.cpp
         engine/macros.cpp
         engine/group_triggers.cpp
 

@@ -25,31 +25,45 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_APP_MIXER_SCREEN_COMPONENTS_PARTEFFECTSPANE_H
-#define SCXT_SRC_UI_APP_MIXER_SCREEN_COMPONENTS_PARTEFFECTSPANE_H
+#ifndef SCXT_SRC_UI_APP_SHARED_PARTEFFECTSPANE_H
+#define SCXT_SRC_UI_APP_SHARED_PARTEFFECTSPANE_H
+
+#include <unordered_set>
+#include <type_traits>
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <sst/jucegui/components/NamedPanel.h>
 #include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/GlyphPainter.h>
 #include <sst/jucegui/layouts/ExplicitLayout.h>
-#include <unordered_set>
 
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/bus.h"
 
-namespace scxt::ui::app::mixer_screen
+namespace scxt::ui::app
+{
+namespace mixer_screen
 {
 struct MixerScreen;
+}
 
+namespace edit_screen
+{
+struct PartEditScreen;
+}
+namespace shared
+{
+template <bool forBus>
 struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
 {
+    static constexpr int width{198}, height{290};
 
-    int fxSlot{0}, busAddress{0};
-    MixerScreen *mixer{nullptr};
-    PartEffectsPane(SCXTEditor *e, MixerScreen *ms, int i)
-        : HasEditor(e), mixer(ms), fxSlot(i), sst::jucegui::components::NamedPanel("FX")
+    int fxSlot{0}, busAddressOrPart{0};
+    using parent_t = std::conditional_t<forBus, mixer_screen::MixerScreen, edit_screen::PartEditScreen>;
+    parent_t *parent{nullptr};
+    PartEffectsPane(SCXTEditor *e, parent_t *ms, int i)
+        : HasEditor(e), parent(ms), fxSlot(i), sst::jucegui::components::NamedPanel("FX")
     {
         hasHamburger = true;
         onHamburger = [w = juce::Component::SafePointer(this)] {
@@ -61,16 +75,30 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     }
     ~PartEffectsPane();
 
+    using partFXMD_t = std::array<datamodel::pmd, engine::BusEffectStorage::maxBusEffectParams>;
+    using partFXStorage_t = std::pair<partFXMD_t, engine::BusEffectStorage>;
+    partFXStorage_t &getPartFXStorage();
+
     void setBusAddress(int ba)
     {
-        busAddress = ba;
+        assert(forBus);
+        busAddressOrPart = ba;
         if (isVisible())
             rebuild();
     }
+    void setSelectedPart(int pt)
+    {
+        assert(!forBus);
+        busAddressOrPart = pt;
+        if (isVisible())
+            rebuild();
+    }
+
     void resized() override { rebuild(); }
 
     void rebuild();
-    void showHamburger();
+    void showHamburger() { showFXSelectionMenu(parent, busAddressOrPart, fxSlot);};
+    static void showFXSelectionMenu(parent_t *p, int b, int s);
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);
 
@@ -117,9 +145,16 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
 
     template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
 
+
+public:
+    // The effects have names like 'flanger' and 'delay' internally but we
+    // want alternate display names here.
+    static std::string effectDisplayName(engine::AvailableBusEffects, bool forMenu);
+
     // Specific
     // void rebuildDelayLayout();
 };
-} // namespace scxt::ui::app::mixer_screen
+} // namespace shared
+} // namespace scxt::ui::app
 
 #endif // SHORTCIRCUITXT_PARTEFFECTSPANEL_H

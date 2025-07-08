@@ -32,7 +32,9 @@
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/style/StyleAndSettingsConsumer.h"
+#include "sst/jucegui/util/VisibilityParentWatcher.h"
 #include "app/HasEditor.h"
+#include "utils.h"
 
 namespace scxt::ui::app::shared
 {
@@ -61,9 +63,12 @@ struct SingleMacroEditor : HasEditor,
 
     void onStyleChanged() override;
 
+    void visibilityChanged() override { updateFromEditorData(); }
+
   private:
     int16_t part{-1}, index{-1};
     bool valueOnly{false};
+    std::unique_ptr<sst::jucegui::util::VisibilityParentWatcher> visibilityWatcher;
 };
 } // namespace scxt::ui::app::shared
 #endif // SHORTCIRCUITXT_SINGLEMACROEDITOR_H

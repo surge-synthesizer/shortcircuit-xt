@@ -28,6 +28,7 @@
 #include "PartEffectsPane.h"
 #include "app/SCXTEditor.h"
 #include "app/mixer-screen/MixerScreen.h"
+#include "app/edit-screen/components/PartEditScreen.h"
 
 #include "connectors/JSONAssetSupport.h"
 
@@ -38,13 +39,40 @@
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/jucegui/layouts/ExplicitLayout.h"
 
-namespace scxt::ui::app::mixer_screen
+namespace scxt::ui::app::shared
 {
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
-void PartEffectsPane::showHamburger() { mixer->showFXSelectionMenu(busAddress, fxSlot); }
 
-PartEffectsPane::~PartEffectsPane()
+template <bool forBus> void PartEffectsPane<forBus>::showFXSelectionMenu(parent_t *parent,
+    int ba, int sl)
+{
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Effects");
+        p.addSeparator();
+        auto go = [w = juce::Component::SafePointer(parent), ba, sl](auto q) {
+            return [w, q, ba, sl]() {
+                if (w)
+                {
+                    w->setFXSlotToType(ba, sl, q);
+                }
+            };
+        };
+        auto add = [&go, &p](auto q) { p.addItem(shared::PartEffectsPane<true>::effectDisplayName(q, true), go(q)); };
+        add(engine::AvailableBusEffects::none);
+        add(engine::AvailableBusEffects::reverb1);
+        add(engine::AvailableBusEffects::reverb2);
+        add(engine::AvailableBusEffects::delay);
+        add(engine::AvailableBusEffects::floatydelay);
+        add(engine::AvailableBusEffects::flanger);
+        add(engine::AvailableBusEffects::phaser);
+        add(engine::AvailableBusEffects::treemonster);
+        add(engine::AvailableBusEffects::nimbus);
+        add(engine::AvailableBusEffects::bonsai);
+        p.showMenuAsync(parent->editor->defaultPopupMenuOptions());
+}
+
+template <bool forBus> PartEffectsPane<forBus>::~PartEffectsPane()
 {
     removeAllChildren();
     // order matters here
@@ -52,9 +80,10 @@ PartEffectsPane::~PartEffectsPane()
     floatAttachments.clear();
 }
 
-void PartEffectsPane::paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into)
+template <bool forBus>
+void PartEffectsPane<forBus>::paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into)
 {
-    auto &b = mixer->busEffectsData[busAddress][fxSlot];
+    auto &b = getPartFXStorage();
 
     auto r = into.withHeight(20);
     int idx{0};
@@ -74,13 +103,26 @@ void PartEffectsPane::paintMetadata(juce::Graphics &g, const juce::Rectangle<int
     }
 }
 
-void PartEffectsPane::rebuild()
+template <bool forBus>
+typename PartEffectsPane<forBus>::partFXStorage_t &PartEffectsPane<forBus>::getPartFXStorage()
 {
-    auto &b = mixer->busEffectsData[busAddress][fxSlot];
+    if constexpr (forBus)
+    {
+        return parent->busEffectsData[busAddressOrPart][fxSlot];
+    }
+    else
+    {
+        return parent->partsEffectsData[busAddressOrPart][fxSlot];
+    }
+}
+
+template <bool forBus> void PartEffectsPane<forBus>::rebuild()
+{
+    auto &b = getPartFXStorage();
     auto &params = b.first;
     auto &data = b.second;
     auto t = data.type;
-    name = mixer->effectDisplayName(t, false);
+    name = effectDisplayName(t, false);
 
     removeAllChildren();
     components.clear();
@@ -126,7 +168,7 @@ void PartEffectsPane::rebuild()
         res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
         res->setGlyph(jcmp::GlyphPainter::GlyphType::METRONOME);
 
-        auto &data = mixer->busEffectsData[busAddress][fxSlot];
+        auto &data = getPartFXStorage();
         auto onGuiChange = [w = juce::Component::SafePointer(this)](auto &a) {
             if (w)
             {
@@ -142,7 +184,7 @@ void PartEffectsPane::rebuild()
         };
 
         auto at = std::make_unique<boolAttachment_t>(
-            "Active", onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.isTemposync);
+            "Active", onGuiChange, getPartFXStorage().second.isTemposync);
         res->setSource(at.get());
         addAndMakeVisible(*res);
 
@@ -153,9 +195,11 @@ void PartEffectsPane::rebuild()
     repaint();
 }
 
-template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
+template <bool forBus>
+template <typename T>
+T *PartEffectsPane<forBus>::attachWidgetToFloat(int pidx)
 {
-    auto &data = mixer->busEffectsData[busAddress][fxSlot];
+    auto &data = getPartFXStorage();
     auto &pmd = data.first[pidx];
     auto onGuiChange = [w = juce::Component::SafePointer(this), pidx](auto &a) {
         if (w)
@@ -163,13 +207,13 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
     };
 
     auto at = std::make_unique<attachment_t>(
-        pmd, onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.params[pidx]);
+        pmd, onGuiChange, getPartFXStorage().second.params[pidx]);
 
     if (pmd.canTemposync)
     {
         at->setTemposyncFunction([w = juce::Component::SafePointer(this)](const auto &a) {
             if (w)
-                return w->mixer->busEffectsData[w->busAddress][w->fxSlot].second.isTemposync;
+                return w->getPartFXStorage().second.isTemposync;
             return false;
         });
     }
@@ -200,16 +244,18 @@ template <typename T> T *PartEffectsPane::attachWidgetToFloat(int pidx)
     return retVal;
 }
 
-template <typename T> juce::Component *PartEffectsPane::attachWidgetToInt(int pidx)
+template <bool forBus>
+template <typename T>
+juce::Component *PartEffectsPane<forBus>::attachWidgetToInt(int pidx)
 {
     return nullptr;
 }
 
-juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
+template <bool forBus> juce::Component *PartEffectsPane<forBus>::attachMenuButtonToInt(int index)
 {
     // TODO - this really needs some contemplation. I bet it wil lbe a pretty
     // common pattern. Where to put it?
-    auto &b = mixer->busEffectsData[busAddress][fxSlot];
+    auto &b = getPartFXStorage();
     auto &pmd = b.first;
     auto &bes = b.second;
 
@@ -221,7 +267,7 @@ juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
                       w = juce::Component::SafePointer(this), index]() {
         if (!w)
             return;
-        auto &b = w->mixer->busEffectsData[w->busAddress][w->fxSlot];
+        auto &b = w->getPartFXStorage();
         auto &pmd = b.first[index];
         auto &bes = b.second;
 
@@ -235,7 +281,7 @@ juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
                 p.addItem(*sv, [w, r, sv, i, index]() {
                     if (w)
                     {
-                        auto &bes = w->mixer->busEffectsData[w->busAddress][w->fxSlot].second;
+                        auto &bes = w->getPartFXStorage().second;
                         bes.params[index] = i;
                         if (r)
                         {
@@ -243,8 +289,17 @@ juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
                             r->repaint();
                         }
 
-                        w->sendToSerialization(
-                            cmsg::SetBusEffectStorage({w->busAddress, w->fxSlot, bes}));
+                        if (forBus)
+                        {
+                            w->sendToSerialization(
+                               cmsg::SetBusEffectStorage({w->busAddressOrPart, -1, w->fxSlot, bes}));
+                        }
+                        else
+                        {
+                            w->sendToSerialization(
+                                   cmsg::SetBusEffectStorage({-1, w->busAddressOrPart, w->fxSlot, bes}));
+
+                        }
                     }
                 });
         }
@@ -256,13 +311,14 @@ juce::Component *PartEffectsPane::attachMenuButtonToInt(int index)
     return retVal;
 }
 
-juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
+template <bool forBus>
+juce::Component *PartEffectsPane<forBus>::attachToggleToDeactivated(int index)
 {
     auto res = std::make_unique<jcmp::ToggleButton>();
     res->drawMode = sst::jucegui::components::ToggleButton::DrawMode::GLYPH;
     res->setGlyph(jcmp::GlyphPainter::GlyphType::SMALL_POWER_LIGHT);
 
-    auto &data = mixer->busEffectsData[busAddress][fxSlot];
+    auto &data = getPartFXStorage();
     auto &pmd = data.first[index];
     auto onGuiChange = [w = juce::Component::SafePointer(this), index](auto &a) {
         if (w)
@@ -278,7 +334,7 @@ juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
     };
 
     auto at = std::make_unique<boolAttachment_t>(
-        "Active", onGuiChange, mixer->busEffectsData[busAddress][fxSlot].second.deact[index]);
+        "Active", onGuiChange, getPartFXStorage().second.deact[index]);
     at->isInverted = true; // deact is no power light mkay
     res->setSource(at.get());
     addAndMakeVisible(*res);
@@ -290,7 +346,9 @@ juce::Component *PartEffectsPane::attachToggleToDeactivated(int index)
     return retVal;
 }
 
-template <typename T> juce::Component *PartEffectsPane::addTypedLabel(const std::string &txt)
+template <bool forBus>
+template <typename T>
+juce::Component *PartEffectsPane<forBus>::addTypedLabel(const std::string &txt)
 {
     auto l = std::make_unique<T>();
     l->setText(txt);
@@ -302,7 +360,7 @@ template <typename T> juce::Component *PartEffectsPane::addTypedLabel(const std:
     return res;
 }
 
-void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
+template <bool forBus> void PartEffectsPane<forBus>::rebuildFromJSONLibrary(const std::string &path)
 {
     bool parseWorked{false};
     auto dlyjs = connectors::JSONAssetLibrary::jsonForAsset(path);
@@ -332,7 +390,7 @@ void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
     namespace jlay = sst::jucegui::layout;
     using np = jlay::ExplicitLayout::NamedPosition;
 
-    const auto &metadata = mixer->busEffectsData[busAddress][fxSlot].first;
+    const auto &metadata = getPartFXStorage().first;
 
     auto elo = jlay::ExplicitLayout();
     const auto &cr = getContentArea();
@@ -425,7 +483,7 @@ void PartEffectsPane::rebuildFromJSONLibrary(const std::string &path)
     }
 }
 
-void PartEffectsPane::rebuildDefaultLayout()
+template <bool forBus> void PartEffectsPane<forBus>::rebuildDefaultLayout()
 {
     namespace jcmp = sst::jucegui::components;
     // Just a stack of modulation style hsliders with labels
@@ -433,7 +491,7 @@ void PartEffectsPane::rebuildDefaultLayout()
     static_assert(engine::BusEffectStorage::maxBusEffectParams <= 12,
                   "If this is false, this 3x4 grid will be bad");
     auto bx = std::min(getHeight() / 4.f - labht, getWidth() / 3.f) * 0.9f;
-    auto &b = mixer->busEffectsData[busAddress][fxSlot];
+    auto &b = getPartFXStorage();
 
     auto into = getContentArea();
     auto r =
@@ -489,12 +547,54 @@ void PartEffectsPane::rebuildDefaultLayout()
     }
 }
 
-template <typename Att> void PartEffectsPane::busEffectStorageChangedFromGUI(const Att &at, int idx)
+template <bool forBus>
+template <typename Att>
+void PartEffectsPane<forBus>::busEffectStorageChangedFromGUI(const Att &at, int idx)
 {
     updateValueTooltip(at);
-    auto &data = mixer->busEffectsData[busAddress][fxSlot];
+    auto &data = getPartFXStorage();
 
-    sendToSerialization(cmsg::SetBusEffectStorage({busAddress, fxSlot, data.second}));
+    if (forBus)
+        sendToSerialization(cmsg::SetBusEffectStorage({busAddressOrPart, -1, fxSlot, data.second}));
+    else
+        sendToSerialization(cmsg::SetBusEffectStorage({-1, busAddressOrPart, fxSlot, data.second}));
 }
 
-} // namespace scxt::ui::app::mixer_screen
+
+
+template<bool forBus>
+std::string PartEffectsPane<forBus>::effectDisplayName(engine::AvailableBusEffects t, bool forMenu)
+{
+    switch (t)
+    {
+    case engine::none:
+        return forMenu ? "None" : "FX";
+    case engine::flanger:
+        return forMenu ? "Flanger" : "FLANGER";
+    case engine::phaser:
+        return forMenu ? "Phaser" : "PHASER";
+    case engine::delay:
+        return forMenu ? "Delay" : "DELAY";
+    case engine::floatydelay:
+        return forMenu ? "Floaty Delay" : "FLOATY DELAY";
+    case engine::reverb1:
+        return forMenu ? "Reverb 1" : "REVERB 1";
+    case engine::reverb2:
+        return forMenu ? "Reverb 2" : "REVERB 2";
+    case engine::nimbus:
+        return forMenu ? "Nimbus" : "NIMBUS";
+    case engine::treemonster:
+        return forMenu ? "TreeMonster" : "TREEMONSTER";
+    case engine::bonsai:
+        return forMenu ? "Bonsai" : "BONSAI";
+    case engine::rotaryspeaker:
+        return forMenu ? "Rotary Speaker" : "ROTARY";
+    }
+
+    return "GCC gives strictly correct, but not useful in this case, warnings";
+}
+// Explicit Instantiate
+template struct PartEffectsPane<true>;
+template struct PartEffectsPane<false>;
+
+} // namespace scxt::ui::app::shared

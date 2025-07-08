@@ -29,7 +29,7 @@
 #include "app/HasEditor.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "app/mixer-screen/components/BusPane.h"
-#include "app/mixer-screen/components/PartEffectsPane.h"
+#include "app/shared/PartEffectsPane.h"
 
 #include "messaging/messaging.h"
 #include "utils.h"
@@ -49,7 +49,7 @@ MixerScreen::MixerScreen(SCXTEditor *e) : HasEditor(e)
 
     for (auto i = 0; i < partPanes.size(); ++i)
     {
-        auto pp = std::make_unique<mixer_screen::PartEffectsPane>(editor, this, i);
+        auto pp = std::make_unique<shared::PartEffectsPane<true>>(editor, this, i);
         pp->setBusAddress(0);
 
         addAndMakeVisible(*pp);
@@ -85,7 +85,9 @@ void MixerScreen::resized()
     auto ifx = fxArea.withWidth(fxq);
     for (int i = 0; i < partPanes.size(); ++i)
     {
-        partPanes[i]->setBounds(ifx.reduced(0));
+        auto sh = (ifx.getHeight() - partPanes[i]->height) / 2;
+        auto sw = (ifx.getWidth() - partPanes[i]->width) / 2;
+        partPanes[i]->setBounds(ifx.reduced(sw, sh));
         ifx = ifx.translated(fxq, 0);
     }
 }
@@ -97,7 +99,7 @@ void MixerScreen::onBusEffectFullData(
 {
     busEffectsData[bus][slot].first = pmd;
     busEffectsData[bus][slot].second = bes;
-    if (partPanes[slot]->busAddress == bus)
+    if (partPanes[slot]->busAddressOrPart == bus)
         partPanes[slot]->rebuild();
     busPane->channelStrips[bus]->effectsChanged();
 }
@@ -125,68 +127,10 @@ void MixerScreen::onBusSendData(int bus, const engine::Bus::BusSendStorage &s)
     busPane->channelStrips[bus]->onDataChanged();
 }
 
-std::string MixerScreen::effectDisplayName(engine::AvailableBusEffects t, bool forMenu)
-{
-    switch (t)
-    {
-    case engine::none:
-        return forMenu ? "None" : "FX";
-    case engine::flanger:
-        return forMenu ? "Flanger" : "FLANGER";
-    case engine::phaser:
-        return forMenu ? "Phaser" : "PHASER";
-    case engine::delay:
-        return forMenu ? "Delay" : "DELAY";
-    case engine::floatydelay:
-        return forMenu ? "Floaty Delay" : "FLOATY DELAY";
-    case engine::reverb1:
-        return forMenu ? "Reverb 1" : "REVERB 1";
-    case engine::reverb2:
-        return forMenu ? "Reverb 2" : "REVERB 2";
-    case engine::nimbus:
-        return forMenu ? "Nimbus" : "NIMBUS";
-    case engine::treemonster:
-        return forMenu ? "TreeMonster" : "TREEMONSTER";
-    case engine::bonsai:
-        return forMenu ? "Bonsai" : "BONSAI";
-    case engine::rotaryspeaker:
-        return forMenu ? "Rotary Speaker" : "ROTARY";
-    }
-
-    return "GCC gives strictly correct, but not useful in this case, warnings";
-}
-
 void MixerScreen::setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t)
 {
-    sendToSerialization(cmsg::SetBusEffectToType({bus, slot, t}));
+    sendToSerialization(cmsg::SetBusEffectToType({bus, -1, slot, t}));
     busPane->channelStrips[bus]->effectsChanged();
-}
-
-void MixerScreen::showFXSelectionMenu(int bus, int slot)
-{
-    auto p = juce::PopupMenu();
-    p.addSectionHeader("Effects");
-    p.addSeparator();
-    auto go = [w = juce::Component::SafePointer(this), bus, slot](auto q) {
-        return [w, bus, slot, q]() {
-            if (w)
-            {
-                w->setFXSlotToType(bus, slot, q);
-            }
-        };
-    };
-    auto add = [this, &go, &p](auto q) { p.addItem(effectDisplayName(q, true), go(q)); };
-    add(engine::AvailableBusEffects::none);
-    add(engine::AvailableBusEffects::reverb1);
-    add(engine::AvailableBusEffects::reverb2);
-    add(engine::AvailableBusEffects::delay);
-    add(engine::AvailableBusEffects::floatydelay);
-    add(engine::AvailableBusEffects::flanger);
-    add(engine::AvailableBusEffects::phaser);
-    add(engine::AvailableBusEffects::treemonster);
-    add(engine::AvailableBusEffects::nimbus);
-    add(engine::AvailableBusEffects::bonsai);
-    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 void MixerScreen::sendBusSendStorage(int bus)

@@ -95,7 +95,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  findIf(v, "selectionManager", *(to.getSelectionManager()));
 
                  // Now we need to restore the bus effects
-                 to.getPatch()->setupBussesOnUnstream(to);
+                 to.getPatch()->setupPatchOnUnstream(to);
 
                  to.onPartConfigurationUpdated();
 
@@ -210,59 +210,68 @@ SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,
                  findIf(v, "features", to.features);
              }))
 
-SC_STREAMDEF(
-    scxt::engine::Part, SC_FROM({
-        v = {{"config", from.configuration}, {"groups", from.getGroups()}, {"macros", from.macros}};
-        if (SC_STREAMING_FOR_PART)
-        {
-            addToObject<val_t>(v, "streamingVersion", currentStreamingVersion);
-            addToObject<val_t>(v, "streamedForPart", true);
-            assert(from.parentPatch->parentEngine);
-            addToObject<val_t>(
-                v, "samplesUsedByPart",
-                from.parentPatch->parentEngine->getSampleManager()->getSampleAddressesFor(
-                    from.getSamplesUsedByPart()));
-        }
-    }),
-    SC_TO({
-        auto &part = to;
-        part.clearGroups();
+SC_STREAMDEF(scxt::engine::Part, SC_FROM({
+                 v = {{"config", from.configuration},
+                      {"groups", from.getGroups()},
+                      {"macros", from.macros},
+                      {"partEffectStorage", from.partEffectStorage}};
+                 if (SC_STREAMING_FOR_PART)
+                 {
+                     addToObject<val_t>(v, "streamingVersion", currentStreamingVersion);
+                     addToObject<val_t>(v, "streamedForPart", true);
+                     assert(from.parentPatch->parentEngine);
+                     addToObject<val_t>(
+                         v, "samplesUsedByPart",
+                         from.parentPatch->parentEngine->getSampleManager()->getSampleAddressesFor(
+                             from.getSamplesUsedByPart()));
+                 }
+             }),
+             SC_TO({
+                 auto &part = to;
+                 part.clearGroups();
 
-        std::unique_ptr<engine::Engine::UnstreamGuard> sg;
-        bool streamedForPart{false};
-        findOrSet(v, "streamedForPart", false, streamedForPart);
-        if (streamedForPart)
-        {
-            uint64_t partStreamingVersion{0};
-            findIf(v, "streamingVersion", partStreamingVersion);
-            SCLOG("Unstreaming part state. Stream version : "
-                  << scxt::humanReadableVersion(partStreamingVersion));
+                 std::unique_ptr<engine::Engine::UnstreamGuard> sg;
+                 bool streamedForPart{false};
+                 findOrSet(v, "streamedForPart", false, streamedForPart);
+                 if (streamedForPart)
+                 {
+                     uint64_t partStreamingVersion{0};
+                     findIf(v, "streamingVersion", partStreamingVersion);
+                     SCLOG("Unstreaming part state. Stream version : "
+                           << scxt::humanReadableVersion(partStreamingVersion));
 
-            scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
-            findIf(v, "samplesUsedByPart", samples);
-            to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
-                samples);
+                     scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
+                     findIf(v, "samplesUsedByPart", samples);
+                     to.parentPatch->parentEngine->getSampleManager()
+                         ->restoreFromSampleAddressesAndIDs(samples);
 
-            to.parentPatch->parentEngine->onPartConfigurationUpdated();
-            sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
-        }
+                     to.parentPatch->parentEngine->onPartConfigurationUpdated();
+                     sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
+                 }
 
-        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
-        {
-            findIf(v, "channel", part.configuration.channel);
-        }
-        else
-        {
-            findIf(v, "config", part.configuration);
-        }
-        findIf(v, "macros", part.macros);
-        auto vzones = v.at("groups").get_array();
-        for (const auto vz : vzones)
-        {
-            auto idx = part.addGroup() - 1;
-            vz.to(*(part.getGroup(idx)));
-        }
-    }))
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
+                 {
+                     findIf(v, "channel", part.configuration.channel);
+                 }
+                 else
+                 {
+                     findIf(v, "config", part.configuration);
+                 }
+                 findIf(v, "macros", part.macros);
+
+                 part.partEffectStorage = {};
+                 findIf(v, "partEffectStorage", part.partEffectStorage);
+                 auto vzones = v.at("groups").get_array();
+                 for (const auto vz : vzones)
+                 {
+                     auto idx = part.addGroup() - 1;
+                     vz.to(*(part.getGroup(idx)));
+                 }
+                 if (to.parentPatch->parentEngine)
+                 {
+                     part.initializeAfterUnstream(*to.parentPatch->parentEngine);
+                 }
+             }))
 
 STREAM_ENUM(engine::GroupTriggerID, engine::toStringGroupTriggerID,
             engine::fromStringGroupTriggerID);

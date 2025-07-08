@@ -34,6 +34,7 @@
 #include "app/edit-screen/components/OutputPane.h"
 #include "app/edit-screen/components/ProcessorPane.h"
 #include "app/edit-screen/components/PartGroupSidebar.h"
+#include "app/edit-screen/components/PartEditScreen.h"
 
 #include "app/SCXTEditor.h"
 
@@ -56,6 +57,9 @@ EditScreen::EditScreen(SCXTEditor *e) : HasEditor(e)
     zoneElements = std::make_unique<ZoneOrGroupElements<ZoneTraits>>(this);
     groupElements = std::make_unique<ZoneOrGroupElements<GroupTraits>>(this);
 
+    partEditScreen = std::make_unique<PartEditScreen>(this);
+    addAndMakeVisible(*partEditScreen);
+
     setSelectionMode(SelectionMode::ZONE);
 }
 
@@ -70,7 +74,10 @@ void EditScreen::layout()
     auto mainRect = juce::Rectangle<int>(
         sideWidths + 3 * pad, pad, getWidth() - 2 * sideWidths - 6 * pad, getHeight() - 3 * pad);
 
+    partEditScreen->setBounds(mainRect);
+
     auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
+    SCLOG("wavHeight " << wavHeight);
     mappingPane->setBounds(mainRect.withHeight(wavHeight));
 
     zoneElements->layoutInto(mainRect);
@@ -111,16 +118,29 @@ void EditScreen::setSelectionMode(EditScreen::SelectionMode m)
     case SelectionMode::NONE:
         zoneElements->setVisible(false);
         groupElements->setVisible(false);
+        mappingPane->setVisible(true);
+        partEditScreen->setVisible(false);
         break;
 
     case SelectionMode::ZONE:
         zoneElements->setVisible(true);
         groupElements->setVisible(false);
+        mappingPane->setVisible(true);
+        partEditScreen->setVisible(false);
         break;
 
     case SelectionMode::GROUP:
         zoneElements->setVisible(false);
         groupElements->setVisible(true);
+        mappingPane->setVisible(true);
+        partEditScreen->setVisible(false);
+        break;
+
+    case SelectionMode::PART:
+        zoneElements->setVisible(false);
+        groupElements->setVisible(false);
+        mappingPane->setVisible(false);
+        partEditScreen->setVisible(true);
         break;
     }
 
@@ -278,6 +298,22 @@ void EditScreen::onOtherTabSelection()
         if (mt >= 0 && mt < 3)
             mappingPane->setSelectedTab(mt);
     }
+}
+
+void EditScreen::selectedPartChanged()
+{
+    if (partSidebar)
+        partSidebar->selectedPartChanged();
+    if (mappingPane)
+        mappingPane->selectedPartChanged();
+    if (partEditScreen)
+        partEditScreen->selectedPartChanged();
+}
+
+void EditScreen::macroDataChanged(int part, int index)
+{
+    mappingPane->macroDataChanged(part, index);
+    partEditScreen->macroDataChanged(part, index);
 }
 
 template struct EditScreen::ZoneOrGroupElements<typename EditScreen::ZoneTraits>;

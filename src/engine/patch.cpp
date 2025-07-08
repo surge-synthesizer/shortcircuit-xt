@@ -135,7 +135,7 @@ void Patch::process(Engine &e)
     busses.mainBus.process();
 }
 
-void Patch::setupBussesOnUnstream(Engine &e)
+void Patch::setupPatchOnUnstream(Engine &e)
 {
     // Assume the bus storage is correct
     busses.mainBus.initializeAfterUnstream(e);

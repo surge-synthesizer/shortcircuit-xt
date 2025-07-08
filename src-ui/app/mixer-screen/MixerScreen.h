@@ -41,9 +41,13 @@ namespace browser_ui
 {
 struct BrowserPane;
 }
+namespace shared
+{
+template <bool forBus> struct PartEffectsPane;
+}
 namespace mixer_screen
 {
-struct PartEffectsPane;
+
 struct BusPane;
 struct MixerScreen : juce::Component, HasEditor
 {
@@ -62,8 +66,7 @@ struct MixerScreen : juce::Component, HasEditor
         const engine::BusEffectStorage &);
 
     std::unique_ptr<browser_ui::BrowserPane> browser;
-    std::array<std::unique_ptr<mixer_screen::PartEffectsPane>, engine::Bus::maxEffectsPerBus>
-        partPanes;
+    std::array<std::unique_ptr<shared::PartEffectsPane<true>>, maxEffectsPerBus> partPanes;
     std::unique_ptr<mixer_screen::BusPane> busPane;
 
     using partFXMD_t = std::array<datamodel::pmd, engine::BusEffectStorage::maxBusEffectParams>;
@@ -78,12 +81,7 @@ struct MixerScreen : juce::Component, HasEditor
 
     void onBusSendData(int bus, const engine::Bus::BusSendStorage &s);
 
-    // The effects have names like 'flanger' and 'delay' internally but we
-    // want alternate display names here.
-    std::string effectDisplayName(engine::AvailableBusEffects, bool forMenu);
-
     void setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t);
-    void showFXSelectionMenu(int bus, int slot);
     void sendBusSendStorage(int bus);
 
     void setVULevelForBusses(
