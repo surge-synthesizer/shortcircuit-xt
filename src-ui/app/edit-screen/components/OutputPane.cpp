@@ -88,7 +88,7 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         addChildComponent(*consistentButton);
     }
 
-    void resized()
+    void resized() override
     {
         procRouting->setBounds(getLocalBounds().reduced(3, 5).withHeight(24));
         consistentLabel->setBounds(procRouting->getBounds());
@@ -112,7 +112,10 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
             auto c = info.procRoutingConsistent;
             procRouting->setVisible(c);
             for (int i = 0; i < nOuts; ++i)
+            {
                 levelK[i]->setVisible(c);
+                levelL[i]->setVisible(c);
+            }
             consistentButton->setVisible(!c);
             consistentLabel->setVisible(!c);
 
@@ -153,6 +156,7 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
     static constexpr int nOuts{scxt::processorsPerZoneAndGroup};
     std::array<std::unique_ptr<ProcessorPane::attachment_t>, nOuts> levelA;
     std::array<std::unique_ptr<jcmp::Knob>, nOuts> levelK;
+    std::array<std::unique_ptr<jcmp::Label>, nOuts> levelL;
 
     void updateFromProcessorPanes()
     {
@@ -168,7 +172,7 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         {
             auto w = outputPane->procWeakRefs[i];
 
-            auto kw = 36;
+            auto kw = 30, margin{4}, yPos{36}, lw{12};
             if (w)
             {
                 auto at = std::make_unique<ProcessorPane::attachment_t>(
@@ -182,12 +186,32 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
                 levelK[i] = std::make_unique<jcmp::Knob>();
                 levelK[i]->setSource(levelA[i].get());
 
-                levelK[i]->setBounds(5 + i * (kw + 5), 40, kw, kw);
+                levelK[i]->setBounds(margin + lw + i * (kw + margin + lw), yPos, kw, kw);
                 levelK[i]->setEnabled(w->processorView.type != dsp::processor::proct_none);
+
+                levelL[i] = std::make_unique<jcmp::Label>();
+                levelL[i]->setText(std::to_string(i + 1));
+                levelL[i]->setBounds(margin + i * (kw + margin + lw), yPos, lw, kw);
+
                 setupWidgetForValueTooltip(levelK[i].get(), levelA[i].get());
                 addAndMakeVisible(*levelK[i]);
+                addAndMakeVisible(*levelL[i]);
             }
         }
+    }
+
+    void paint(juce::Graphics &g) override
+    {
+        if constexpr (OTTraits::forZone)
+        {
+            if (!info.procRoutingConsistent)
+                return;
+        }
+
+        auto startP{68};
+        auto b = getLocalBounds().withTrimmedTop(startP);
+        g.setColour(juce::Colours::red);
+        // g.fillRect(b);
     }
 
     typename OTTraits::info_t &info;
