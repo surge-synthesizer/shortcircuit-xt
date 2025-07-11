@@ -82,7 +82,7 @@ void PartEditScreen::resized()
 
 void PartEditScreen::setFXSlotToType(int part, int slot, engine::AvailableBusEffects t)
 {
-    sendToSerialization(cmsg::SetBusEffectToType({-1, part, slot, t}));
+    sendToSerialization(messaging::client::SetBusEffectToType({-1, part, slot, t}));
 }
 
 void PartEditScreen::onPartEffectFullData(

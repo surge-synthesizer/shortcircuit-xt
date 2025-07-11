@@ -32,6 +32,7 @@
 #include "app/HasEditor.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "configuration.h"
+#include "engine/bus_effect.h"
 
 namespace scxt::ui::app
 {

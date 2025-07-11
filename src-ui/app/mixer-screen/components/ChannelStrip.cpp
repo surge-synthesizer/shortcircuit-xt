@@ -30,6 +30,7 @@
 #include "messaging/messaging.h"
 #include <sst/jucegui/components/VUMeter.h>
 #include "app/SCXTEditor.h"
+#include "app/shared/PartEffectsPane.h"
 
 namespace scxt::ui::app::mixer_screen
 {
