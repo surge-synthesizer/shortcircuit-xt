@@ -249,8 +249,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::string queryTabSelection(const std::string &k);
     void setTabSelection(const std::string &k, const std::string &t);
 
-    void onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
-    void onMixerBusSendData(const scxt::messaging::client::busSendData_t &);
+    void onBusOrPartEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
+    void onBusOrPartSendData(const scxt::messaging::client::busSendData_t &);
 
     void onBrowserRefresh(const bool);
     void onBrowserQueueLengthRefresh(const std::pair<int32_t, int32_t>);

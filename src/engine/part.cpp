@@ -36,6 +36,7 @@
 #include "sst/basic-blocks/simd/setup.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/basic-blocks/dsp/PanLaws.h"
+#include "messaging/messaging.h"
 
 namespace scxt::engine
 {
@@ -44,11 +45,14 @@ void Part::process(Engine &e)
     namespace blk = sst::basic_blocks::mechanics;
 
     float lcp alignas(16)[2][blockSize];
+    float defOut alignas(16)[2][blockSize];
 
     externalSignalLag.processAll();
 
     auto lev = configuration.level;
     lev = lev * lev * lev;
+
+    bool defaultAssigned{false};
 
     namespace pl = sst::basic_blocks::dsp::pan_laws;
     auto pan = configuration.pan;
@@ -63,14 +67,8 @@ void Part::process(Engine &e)
             g->process(e);
 
             auto bi = g->outputInfo.routeTo;
-            if (bi == DEFAULT_BUS)
+            if (bi == DEFAULT_BUS || bi == configuration.routeTo)
             {
-                // this should be the route to point
-                if (configuration.routeTo == DEFAULT_BUS)
-                    bi = (BusAddress)(PART_0 + partNumber);
-                else
-                    bi = configuration.routeTo;
-
                 blk::mul_block<blockSize>(g->output[0], lev, lcp[0]);
                 blk::mul_block<blockSize>(g->output[1], lev, lcp[1]);
 
@@ -85,20 +83,47 @@ void Part::process(Engine &e)
                     }
                 }
 
-                auto &obus = e.getPatch()->busses.busByAddress(bi);
-
-                blk::accumulate_from_to<blockSize>(lcp[0], obus.output[0]);
-                blk::accumulate_from_to<blockSize>(lcp[1], obus.output[1]);
+                if (defaultAssigned)
+                {
+                    blk::accumulate_from_to<blockSize>(lcp[0], defOut[0]);
+                    blk::accumulate_from_to<blockSize>(lcp[1], defOut[1]);
+                }
+                else
+                {
+                    blk::copy_from_to<blockSize>(lcp[0], defOut[0]);
+                    blk::copy_from_to<blockSize>(lcp[1], defOut[1]);
+                    defaultAssigned = true;
+                }
             }
             else
             {
-
                 auto &obus = e.getPatch()->busses.busByAddress(bi);
 
                 blk::accumulate_from_to<blockSize>(g->output[0], obus.output[0]);
                 blk::accumulate_from_to<blockSize>(g->output[1], obus.output[1]);
             }
         }
+    }
+
+    if (defaultAssigned)
+    {
+        // this should be the route to point
+        auto bi = configuration.routeTo;
+        if (configuration.routeTo == DEFAULT_BUS)
+            bi = (BusAddress)(PART_0 + partNumber);
+
+        for (auto &p : partEffects)
+        {
+            if (p)
+            {
+                p->process(defOut[0], defOut[1]);
+            }
+        }
+
+        auto &obus = e.getPatch()->busses.busByAddress(bi);
+
+        blk::accumulate_from_to<blockSize>(defOut[0], obus.output[0]);
+        blk::accumulate_from_to<blockSize>(defOut[1], obus.output[1]);
     }
 }
 
@@ -180,6 +205,50 @@ void Part::moveGroupToAfter(size_t whichGroup, size_t toAfter)
         }
         groups[toAfter + 1] = std::move(og);
     }
+}
+
+void Part::initializeAfterUnstream(Engine &e)
+{
+    for (int idx = 0; idx < maxEffectsPerPart; ++idx)
+    {
+        partEffects[idx] = createEffect(partEffectStorage[idx].type, &e, &partEffectStorage[idx]);
+        if (partEffects[idx])
+        {
+            partEffects[idx]->init(false);
+            sendBusEffectInfoToClient(e, idx);
+        }
+    }
+}
+
+void Part::setBusEffectType(Engine &e, int idx, AvailableBusEffects t)
+{
+    assert(idx >= 0 && idx < maxEffectsPerPart);
+    partEffects[idx] = createEffect(t, &e, &partEffectStorage[idx]);
+    if (partEffects[idx])
+        partEffects[idx]->init(true);
+}
+
+void Part::sendBusEffectInfoToClient(const Engine &e, int slot)
+{
+    std::array<datamodel::pmd, BusEffectStorage::maxBusEffectParams> pmds;
+
+    int saz{0};
+    if (partEffects[slot])
+    {
+        for (int i = 0; i < partEffects[slot]->numParams(); ++i)
+        {
+            pmds[i] = partEffects[slot]->paramAt(i);
+        }
+        saz = partEffects[slot]->numParams();
+    }
+    for (int i = saz; i < BusEffectStorage::maxBusEffectParams; ++i)
+        pmds[i].type = sst::basic_blocks::params::ParamMetaData::NONE;
+
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_bus_effect_full_data,
+        messaging::client::busEffectFullData_t{
+            (int)-1, partNumber, slot, {pmds, partEffectStorage[slot]}},
+        *(e.getMessageController()));
 }
 
 } // namespace scxt::engine

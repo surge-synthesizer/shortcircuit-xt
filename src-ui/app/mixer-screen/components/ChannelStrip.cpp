@@ -30,6 +30,7 @@
 #include "messaging/messaging.h"
 #include <sst/jucegui/components/VUMeter.h>
 #include "app/SCXTEditor.h"
+#include "app/shared/PartEffectsPane.h"
 
 namespace scxt::ui::app::mixer_screen
 {
@@ -68,7 +69,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
             fxmb = std::make_unique<jcmp::MenuButton>();
             fxmb->setLabel("-");
             fxmb->setOnCallback([idx, w = juce::Component::SafePointer(this)]() {
-                w->mixer->showFXSelectionMenu(w->busIndex, idx);
+                shared::PartEffectsPane<true>::showFXSelectionMenu(w->mixer, w->busIndex, idx);
             });
             addAndMakeVisible(*fxmb);
             idx++;
@@ -82,7 +83,8 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
                     if (w)
                     {
                         w->sendToSerialization(cmsg::SetBusEffectStorage(
-                            {w->busIndex, idx, w->mixer->busEffectsData[w->busIndex][idx].second}));
+                            {w->busIndex, -1, idx,
+                             w->mixer->busEffectsData[w->busIndex][idx].second}));
                     }
                 },
                 mixer->busEffectsData[busIndex][idx].second.isActive);
@@ -307,7 +309,8 @@ void ChannelStrip::effectsChanged()
         if (bed[i].second.type == engine::none)
             fxMenu[i]->setLabel("-");
         else
-            fxMenu[i]->setLabel(mixer->effectDisplayName(bed[i].second.type, false));
+            fxMenu[i]->setLabel(
+                shared::PartEffectsPane<true>::effectDisplayName(bed[i].second.type, false));
     }
     repaint();
 }

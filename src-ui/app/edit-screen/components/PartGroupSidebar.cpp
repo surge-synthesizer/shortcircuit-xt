@@ -484,8 +484,9 @@ void PartGroupSidebar::setSelectedTab(int t)
     groupSidebar->setVisible(g);
     zoneSidebar->setVisible(z);
 
-    editor->editScreen->setSelectionMode(g ? EditScreen::SelectionMode::GROUP
-                                           : EditScreen::SelectionMode::ZONE);
+    editor->editScreen->setSelectionMode(
+        p ? EditScreen::SelectionMode::PART
+          : (g ? EditScreen::SelectionMode::GROUP : EditScreen::SelectionMode::ZONE));
 
     if (g)
         editor->themeApplier.applyGroupMultiScreenTheme(this);

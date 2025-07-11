@@ -59,6 +59,9 @@ struct ModPaneGroupTraits;
 template <typename T> struct ModPane;
 struct ProcessorPane;
 struct LfoPane;
+
+struct PartEditScreen;
+
 struct EditScreen : juce::Component, HasEditor
 {
     static constexpr int numProcessorDisplays{4};
@@ -71,6 +74,8 @@ struct EditScreen : juce::Component, HasEditor
     std::unique_ptr<browser_ui::BrowserPane> browser;
     std::unique_ptr<MacroMappingVariantPane> mappingPane;
     std::unique_ptr<PartGroupSidebar> partSidebar;
+
+    std::unique_ptr<PartEditScreen> partEditScreen;
 
     struct ZoneTraits
     {
@@ -123,11 +128,15 @@ struct EditScreen : juce::Component, HasEditor
     void onVoiceInfoChanged();
     void updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
 
+    void selectedPartChanged();
+    void macroDataChanged(int part, int index);
+
     enum class SelectionMode
     {
         NONE,
         ZONE,
-        GROUP
+        GROUP,
+        PART
     } selectionMode{SelectionMode::NONE};
     void setSelectionMode(SelectionMode m);
 

@@ -53,6 +53,8 @@
 #include "datamodel/metadata.h"
 #include "sst/filters/HalfRateFilter.h"
 
+#include "bus_effect.h"
+
 namespace scxt::engine
 {
 enum BusAddress : int16_t
@@ -67,67 +69,6 @@ std::string getBusAddressLabel(BusAddress b, const std::string &defaultName = "D
                                bool shortName = false);
 
 struct Engine;
-
-/*
- * When you add an effect here you also need to add it to
- * - bus.h
- *      - in the toStringAvaialble
- * - bus.cpp
- *      - as an include of the effect
- *      - in createEffect
- * - src-ui/json-layout/bus-effects
- *      - add 'foo.json' as a blank ("{}") json file
- * - src-ui/app/mixer-screen/MixerScreen.cpp
- *      - the menu switch
- *      - the call to 'add'
- *  - src-ui/app/mixer-screen/components/PartEffectsPane.cpp
- *      - in the rebuild switch with the name of the json (Look for CS(...))
- *
- */
-enum AvailableBusEffects
-{
-    none,
-    reverb1,
-    reverb2,
-    flanger,
-    phaser,
-    delay,
-    treemonster,
-    nimbus,
-    rotaryspeaker,
-    floatydelay,
-    bonsai // if you make bonsai not last, make sure to update the fromString range
-};
-
-struct BusEffectStorage
-{
-    BusEffectStorage() { std::fill(params.begin(), params.end(), 0.f); }
-    static constexpr int maxBusEffectParams{scxt::maxBusEffectParams};
-    AvailableBusEffects type{AvailableBusEffects::none};
-    bool isActive{true};
-    bool isTemposync{false};
-    std::array<float, maxBusEffectParams> params{};
-    std::array<bool, maxBusEffectParams> deact{};
-    int16_t streamingVersion;
-
-    inline bool isDeactivated(int idx) { return deact[idx]; }
-    inline bool isExtended(int idx) { return false; }
-};
-struct BusEffect
-{
-    BusEffect(Engine *, BusEffectStorage *, float *) {}
-    virtual ~BusEffect() = default;
-
-    virtual void init(bool defaultsOverrideStorage) = 0;
-    virtual void process(float *__restrict L, float *__restrict R) = 0;
-    virtual datamodel::pmd paramAt(int i) const = 0;
-    virtual int numParams() const = 0;
-    virtual void onSampleRateChanged() = 0;
-};
-
-std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s);
-using busRemapFn_t = void (*)(int16_t, float *const);
-std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBusEffects);
 
 struct Bus : MoveableOnly<Bus>, SampleRateSupport
 {
@@ -234,46 +175,6 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
 
     std::array<std::unique_ptr<BusEffect>, maxEffectsPerBus> busEffects;
 };
-
-inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
-{
-    switch (p)
-    {
-    case none:
-        return "none";
-    case reverb1:
-        return "reverb1";
-    case reverb2:
-        return "reverb2";
-    case treemonster:
-        return "treemonster";
-    case flanger:
-        return "flanger";
-    case phaser:
-        return "phaser";
-    case delay:
-        return "delay";
-    case floatydelay:
-        return "floatydelay";
-    case nimbus:
-        return "nimbus";
-    case rotaryspeaker:
-        return "rotaryspeaker";
-    case bonsai:
-        return "bonsai";
-    }
-    return "normal";
-}
-
-inline AvailableBusEffects fromStringAvailableBusEffects(const std::string &s)
-{
-    static auto inverse = makeEnumInverse<AvailableBusEffects, toStringAvailableBusEffects>(
-        AvailableBusEffects::none, AvailableBusEffects::bonsai);
-    auto p = inverse.find(s);
-    if (p == inverse.end())
-        return none;
-    return p->second;
-}
 } // namespace scxt::engine
 
 #endif // SHORTCIRCUITXT_BUS_H

@@ -42,6 +42,8 @@
 #include "macros.h"
 #include "group_triggers.h"
 
+#include "bus_effect.h"
+
 namespace scxt::engine
 {
 struct Patch;
@@ -260,6 +262,17 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     groupContainer_t::const_iterator cend() const noexcept { return groups.cend(); }
 
     std::vector<SampleID> getSamplesUsedByPart() const;
+
+    std::array<BusEffectStorage, maxEffectsPerPart> partEffectStorage{};
+    std::array<std::unique_ptr<BusEffect>, maxEffectsPerPart> partEffects{};
+    void setBusEffectType(Engine &e, int idx, AvailableBusEffects t);
+    void initializeAfterUnstream(Engine &e);
+    void sendAllBusEffectInfoToClient(const Engine &e)
+    {
+        for (int i = 0; i < maxEffectsPerPart; ++i)
+            sendBusEffectInfoToClient(e, i);
+    }
+    void sendBusEffectInfoToClient(const Engine &, int slot);
 
   private:
     groupContainer_t groups;

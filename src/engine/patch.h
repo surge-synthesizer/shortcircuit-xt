@@ -177,7 +177,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
     }
 
     bool usesOutputBus(int bus) { return busses.usesOutput[bus]; }
-    void setupBussesOnUnstream(Engine &e);
+    void setupPatchOnUnstream(Engine &e);
     PatchID id;
 
     Engine *parentEngine{nullptr};

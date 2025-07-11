@@ -31,6 +31,7 @@
 #include "app/edit-screen/components/LFOPane.h"
 #include "app/edit-screen/components/ModPane.h"
 #include "app/edit-screen/components/ProcessorPane.h"
+#include "app/edit-screen/components/PartEditScreen.h"
 #include "app/edit-screen/components/PartGroupSidebar.h"
 #include "app/edit-screen/components/OutputPane.h"
 #include "app/mixer-screen/MixerScreen.h"
@@ -320,12 +321,11 @@ void SCXTEditor::onSelectedPart(const int16_t p)
         SCLOG("Selected Part: " << p);
     }
     selectedPart = p; // I presume I will shortly get structure messages so don't do anything else
-    if (editScreen && editScreen->partSidebar)
-        editScreen->partSidebar->selectedPartChanged();
-    if (editScreen && editScreen->mappingPane)
-        editScreen->mappingPane->selectedPartChanged();
     if (editScreen)
+    {
+        editScreen->selectedPartChanged();
         editScreen->onOtherTabSelection();
+    }
 
     repaint();
 }
@@ -337,24 +337,36 @@ void SCXTEditor::onEngineStatus(const engine::Engine::EngineStatusMessage &e)
     repaint();
 }
 
-void SCXTEditor::onMixerBusEffectFullData(const scxt::messaging::client::busEffectFullData_t &d)
+void SCXTEditor::onBusOrPartEffectFullData(const scxt::messaging::client::busEffectFullData_t &d)
 {
-    if (mixerScreen)
+    auto busi = std::get<0>(d);
+    auto parti = std::get<1>(d);
+    if (busi >= 0 && mixerScreen)
     {
-        auto busi = std::get<0>(d);
-        auto slti = std::get<1>(d);
-        const auto &bes = std::get<2>(d);
+        auto slti = std::get<2>(d);
+        const auto &bes = std::get<3>(d);
         mixerScreen->onBusEffectFullData(busi, slti, bes.first, bes.second);
+    }
+    if (parti >= 0 && editScreen)
+    {
+        auto slti = std::get<2>(d);
+        const auto &bes = std::get<3>(d);
+        editScreen->partEditScreen->onPartEffectFullData(parti, slti, bes.first, bes.second);
     }
 }
 
-void SCXTEditor::onMixerBusSendData(const scxt::messaging::client::busSendData_t &d)
+void SCXTEditor::onBusOrPartSendData(const scxt::messaging::client::busSendData_t &d)
 {
-    if (mixerScreen)
+    auto busi = std::get<0>(d);
+    auto parti = std::get<1>(d);
+    if (busi >= 0 && mixerScreen)
     {
-        auto busi = std::get<0>(d);
-        const auto &busd = std::get<1>(d);
+        const auto &busd = std::get<2>(d);
         mixerScreen->onBusSendData(busi, busd);
+    }
+    if (parti >= 0 && editScreen)
+    {
+        SCLOG("Data Send for part");
     }
 }
 
@@ -384,8 +396,10 @@ void SCXTEditor::onMacroFullState(const scxt::messaging::client::macroFullState_
 {
     const auto &[part, index, macro] = s;
     macroCache[part][index] = macro;
-    if (part == selectedPart)
-        editScreen->mappingPane->macroDataChanged(part, index);
+    if (editScreen && part == selectedPart)
+    {
+        editScreen->macroDataChanged(part, index);
+    }
     playScreen->macroDataChanged(part, index);
 }
 
@@ -394,6 +408,7 @@ void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
     const auto &[part, index, value] = s;
     macroCache[part][index].value = value;
     editScreen->mappingPane->repaint();
+    editScreen->partSidebar->repaint();
     playScreen->repaint();
 }
 

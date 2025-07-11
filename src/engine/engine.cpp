@@ -960,6 +960,11 @@ void Engine::sendMetadataToClient() const
     sendEngineStatusToClient();
 
     getPatch()->busses.sendInitialBusInfo(*this);
+
+    for (auto &p : *getPatch())
+    {
+        p->sendAllBusEffectInfoToClient(*this);
+    }
 }
 
 void Engine::sendEngineStatusToClient() const
