@@ -60,7 +60,8 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     static constexpr int width{198}, height{290};
 
     int fxSlot{0}, busAddressOrPart{0};
-    using parent_t = std::conditional_t<forBus, mixer_screen::MixerScreen, edit_screen::PartEditScreen>;
+    using parent_t =
+        std::conditional_t<forBus, mixer_screen::MixerScreen, edit_screen::PartEditScreen>;
     parent_t *parent{nullptr};
     PartEffectsPane(SCXTEditor *e, parent_t *ms, int i)
         : HasEditor(e), parent(ms), fxSlot(i), sst::jucegui::components::NamedPanel("FX")
@@ -97,7 +98,7 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     void resized() override { rebuild(); }
 
     void rebuild();
-    void showHamburger() { showFXSelectionMenu(parent, busAddressOrPart, fxSlot);};
+    void showHamburger() { showFXSelectionMenu(parent, busAddressOrPart, fxSlot); };
     static void showFXSelectionMenu(parent_t *p, int b, int s);
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);
@@ -145,8 +146,7 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
 
     template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
 
-
-public:
+  public:
     // The effects have names like 'flanger' and 'delay' internally but we
     // want alternate display names here.
     static std::string effectDisplayName(engine::AvailableBusEffects, bool forMenu);

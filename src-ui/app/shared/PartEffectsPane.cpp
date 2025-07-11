@@ -44,32 +44,34 @@ namespace scxt::ui::app::shared
 namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
 
-template <bool forBus> void PartEffectsPane<forBus>::showFXSelectionMenu(parent_t *parent,
-    int ba, int sl)
+template <bool forBus>
+void PartEffectsPane<forBus>::showFXSelectionMenu(parent_t *parent, int ba, int sl)
 {
-        auto p = juce::PopupMenu();
-        p.addSectionHeader("Effects");
-        p.addSeparator();
-        auto go = [w = juce::Component::SafePointer(parent), ba, sl](auto q) {
-            return [w, q, ba, sl]() {
-                if (w)
-                {
-                    w->setFXSlotToType(ba, sl, q);
-                }
-            };
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Effects");
+    p.addSeparator();
+    auto go = [w = juce::Component::SafePointer(parent), ba, sl](auto q) {
+        return [w, q, ba, sl]() {
+            if (w)
+            {
+                w->setFXSlotToType(ba, sl, q);
+            }
         };
-        auto add = [&go, &p](auto q) { p.addItem(shared::PartEffectsPane<true>::effectDisplayName(q, true), go(q)); };
-        add(engine::AvailableBusEffects::none);
-        add(engine::AvailableBusEffects::reverb1);
-        add(engine::AvailableBusEffects::reverb2);
-        add(engine::AvailableBusEffects::delay);
-        add(engine::AvailableBusEffects::floatydelay);
-        add(engine::AvailableBusEffects::flanger);
-        add(engine::AvailableBusEffects::phaser);
-        add(engine::AvailableBusEffects::treemonster);
-        add(engine::AvailableBusEffects::nimbus);
-        add(engine::AvailableBusEffects::bonsai);
-        p.showMenuAsync(parent->editor->defaultPopupMenuOptions());
+    };
+    auto add = [&go, &p](auto q) {
+        p.addItem(shared::PartEffectsPane<true>::effectDisplayName(q, true), go(q));
+    };
+    add(engine::AvailableBusEffects::none);
+    add(engine::AvailableBusEffects::reverb1);
+    add(engine::AvailableBusEffects::reverb2);
+    add(engine::AvailableBusEffects::delay);
+    add(engine::AvailableBusEffects::floatydelay);
+    add(engine::AvailableBusEffects::flanger);
+    add(engine::AvailableBusEffects::phaser);
+    add(engine::AvailableBusEffects::treemonster);
+    add(engine::AvailableBusEffects::nimbus);
+    add(engine::AvailableBusEffects::bonsai);
+    p.showMenuAsync(parent->editor->defaultPopupMenuOptions());
 }
 
 template <bool forBus> PartEffectsPane<forBus>::~PartEffectsPane()
@@ -183,8 +185,8 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
             }
         };
 
-        auto at = std::make_unique<boolAttachment_t>(
-            "Active", onGuiChange, getPartFXStorage().second.isTemposync);
+        auto at = std::make_unique<boolAttachment_t>("Active", onGuiChange,
+                                                     getPartFXStorage().second.isTemposync);
         res->setSource(at.get());
         addAndMakeVisible(*res);
 
@@ -206,8 +208,8 @@ T *PartEffectsPane<forBus>::attachWidgetToFloat(int pidx)
             w->busEffectStorageChangedFromGUI(a, pidx);
     };
 
-    auto at = std::make_unique<attachment_t>(
-        pmd, onGuiChange, getPartFXStorage().second.params[pidx]);
+    auto at =
+        std::make_unique<attachment_t>(pmd, onGuiChange, getPartFXStorage().second.params[pidx]);
 
     if (pmd.canTemposync)
     {
@@ -291,14 +293,13 @@ template <bool forBus> juce::Component *PartEffectsPane<forBus>::attachMenuButto
 
                         if (forBus)
                         {
-                            w->sendToSerialization(
-                               cmsg::SetBusEffectStorage({w->busAddressOrPart, -1, w->fxSlot, bes}));
+                            w->sendToSerialization(cmsg::SetBusEffectStorage(
+                                {w->busAddressOrPart, -1, w->fxSlot, bes}));
                         }
                         else
                         {
-                            w->sendToSerialization(
-                                   cmsg::SetBusEffectStorage({-1, w->busAddressOrPart, w->fxSlot, bes}));
-
+                            w->sendToSerialization(cmsg::SetBusEffectStorage(
+                                {-1, w->busAddressOrPart, w->fxSlot, bes}));
                         }
                     }
                 });
@@ -333,8 +334,8 @@ juce::Component *PartEffectsPane<forBus>::attachToggleToDeactivated(int index)
         }
     };
 
-    auto at = std::make_unique<boolAttachment_t>(
-        "Active", onGuiChange, getPartFXStorage().second.deact[index]);
+    auto at = std::make_unique<boolAttachment_t>("Active", onGuiChange,
+                                                 getPartFXStorage().second.deact[index]);
     at->isInverted = true; // deact is no power light mkay
     res->setSource(at.get());
     addAndMakeVisible(*res);
@@ -560,9 +561,7 @@ void PartEffectsPane<forBus>::busEffectStorageChangedFromGUI(const Att &at, int 
         sendToSerialization(cmsg::SetBusEffectStorage({-1, busAddressOrPart, fxSlot, data.second}));
 }
 
-
-
-template<bool forBus>
+template <bool forBus>
 std::string PartEffectsPane<forBus>::effectDisplayName(engine::AvailableBusEffects t, bool forMenu)
 {
     switch (t)
