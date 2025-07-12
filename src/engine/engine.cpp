@@ -921,6 +921,7 @@ void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
     auto zptr = std::make_unique<Zone>();
     v.to(*zptr);
 
+    zptr->engine = this;
     zptr->setupOnUnstream(*this);
 
     // give it a name
@@ -928,9 +929,7 @@ void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
 
     // Drop into selected group logic goes here
     auto sp = s.part;
-    ;
     auto sg = s.group;
-    ;
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
