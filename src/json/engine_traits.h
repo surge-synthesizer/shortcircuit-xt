@@ -563,9 +563,25 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                      findOrSet(v, "interpolationType", dsp::InterpolationTypes::Sinc,
                                s.interpolationType);
                      findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);
-                     findOrSet(v, "normalizationAmplitude", 0.f, s.normalizationAmplitude);
+
+                     findOrSet(v, "normalizationAmplitude", 1.f, s.normalizationAmplitude);
+                     findOrSet(v, "amplitude", 1.f, s.amplitude);
+                     if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2025'06'19))
+                     {
+                         /*
+                          * These versions were streamed as zeros when unimplemented.
+                          * When I implemented them I implemented them as amplitude not
+                          * db in the engine, so fix. But there was a week or two where
+                          * the old version had the correc stream so level check before
+                          * whacking.
+                          */
+                         if (s.normalizationAmplitude < 1e-3)
+                             s.normalizationAmplitude = 1;
+                         if (s.amplitude < 1e-3)
+                             s.amplitude = 1;
+                     }
+
                      findOrSet(v, "pitchOffset", 0.f, s.pitchOffset);
-                     findOrSet(v, "amplitude", 0.f, s.amplitude);
                      findOrSet(v, "pan", 0.f, s.pan);
                  }
                  else
