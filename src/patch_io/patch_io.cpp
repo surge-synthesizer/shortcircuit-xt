@@ -214,8 +214,10 @@ std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> 
     std::vector<fs::path> res;
     for (const auto &p : paths)
     {
-        SCLOG_IF(patchIO, "  - " << p);
-        res.push_back(fs::path(fs::u8path(p)));
+        SCLOG_IF(patchIO, "  -> " << p);
+        // Make sure to handle the c: shenanigans
+        res.push_back(scxt::json::unstreamPathFromString(p));
+        SCLOG_IF(patchIO, "  as " << res.back().u8string());
     }
 
     return res;
