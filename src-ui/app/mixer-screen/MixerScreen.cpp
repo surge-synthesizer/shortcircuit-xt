@@ -180,4 +180,26 @@ void MixerScreen::adjustChannelStripSoloMute()
     busPane->repaint();
 }
 
+void MixerScreen::setAllBussesToMain()
+{
+    for (int i = 0; i < maxBusses; ++i)
+    {
+        busSendData[i].pluginOutputBus = 0;
+        sendBusSendStorage(i);
+        busPane->channelStrips[i]->labelPluginOutput();
+    }
+    repaint();
+}
+
+void MixerScreen::setAllBussesToUniqueOutput()
+{
+    for (int i = 0; i < maxBusses; ++i)
+    {
+        busSendData[i].pluginOutputBus = i;
+        sendBusSendStorage(i);
+        busPane->channelStrips[i]->labelPluginOutput();
+    }
+    repaint();
+}
+
 } // namespace scxt::ui::app::mixer_screen
