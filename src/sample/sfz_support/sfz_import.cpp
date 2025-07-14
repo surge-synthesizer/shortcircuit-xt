@@ -34,7 +34,7 @@
 
 namespace scxt::sfz_support
 {
-int parseMidiNote(const std::string &s)
+int parseMidiNote(const std::string &s, int offset)
 {
     static constexpr int noteShift[7] = {-3, -1, 0, 2, 4, 5, 7};
     static constexpr int octShift[7] = {1, 1, 0, 0, 0, 0, 0};
@@ -56,7 +56,7 @@ int parseMidiNote(const std::string &s)
         // C4 is 60 so
         auto nsv = noteShift[bn];
         oct += octShift[bn]; // so a4 is actually abve c4
-        auto res = nsv + diff + (oct + 1) * 12;
+        auto res = nsv + diff + (oct + 1 + offset) * 12;
 
         return res;
     }
@@ -65,6 +65,7 @@ int parseMidiNote(const std::string &s)
 
 bool importSFZ(const fs::path &f, engine::Engine &e)
 {
+    int octaveOffset{0};
     auto &messageController = e.getMessageController();
     assert(messageController->threadingChecker.isSerialThread());
 
@@ -207,22 +208,22 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 {
                     if (oc.name == "pitch_keycenter")
                     {
-                        zn->mapping.rootKey = parseMidiNote(oc.value);
+                        zn->mapping.rootKey = parseMidiNote(oc.value, octaveOffset);
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "lokey")
                     {
-                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value);
+                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value, octaveOffset);
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "hikey")
                     {
-                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value);
+                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value, octaveOffset);
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "key")
                     {
-                        auto pmn = parseMidiNote(oc.value);
+                        auto pmn = parseMidiNote(oc.value, octaveOffset);
                         zn->mapping.rootKey = pmn;
                         zn->mapping.keyboardRange.keyStart = pmn;
                         zn->mapping.keyboardRange.keyEnd = pmn;
@@ -278,6 +279,10 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                             SCLOG("SFZ Unsupported loop_mode : " << oc.value);
                         }
                     }
+                    else if (oc.name == "transpose")
+                    {
+                        zn->mapping.pitchOffset = std::atoi(oc.value.c_str());
+                    }
 
 #define APPLYEG(v, d, t)                                                                           \
     else if (oc.name == v)                                                                         \
@@ -286,8 +291,11 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
     }
 
+                    APPLYEG("ampeg_delay", 0, dly)
+                    APPLYEG("delay", 0, dly)
                     APPLYEG("ampeg_attack", 0, a)
                     APPLYEG("ampeg_decay", 0, d)
+                    APPLYEG("ampeg_hold", 0, h)
                     APPLYEG("ampeg_release", 0, r)
                     else
                     {
@@ -360,7 +368,10 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     std::replace(vv.begin(), vv.end(), '\\', '/');
                     sampleDir = rootDir / vv;
                     SCLOG("Control: Resetting sample dir to " << sampleDir);
-                    ;
+                }
+                else if (oc.name == "octave_offset")
+                {
+                    octaveOffset = std::atoi(oc.value.c_str());
                 }
                 else
                 {
