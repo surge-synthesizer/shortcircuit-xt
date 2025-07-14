@@ -103,6 +103,7 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
             if (auxPrePost[i])
                 resetAuxRoutingGlyph(i);
         }
+
         repaint();
     }
 

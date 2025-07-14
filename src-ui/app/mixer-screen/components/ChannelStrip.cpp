@@ -169,6 +169,12 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
         muteButton->setLabel("M");
         soloAtt =
             std::make_unique<boolattachment_t>("Solo", onChange, mixer->busSendData[busIndex].solo);
+        soloAtt->andThenOnGui([w = juce::Component::SafePointer(this)](auto &a) {
+            auto v = a.value;
+            if (!w)
+                return;
+            w->mixer->adjustChannelStripSoloMute();
+        });
         soloButton = std::make_unique<jcmp::ToggleButton>();
         soloButton->setSource(soloAtt.get());
         soloButton->setLabel("S");
@@ -312,6 +318,7 @@ void ChannelStrip::effectsChanged()
             fxMenu[i]->setLabel(
                 shared::PartEffectsPane<true>::effectDisplayName(bed[i].second.type, false));
     }
+
     repaint();
 }
 
