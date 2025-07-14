@@ -58,6 +58,8 @@ MixerScreen::MixerScreen(SCXTEditor *e) : HasEditor(e)
 
     // Select the part 0 bus
     selectBus(0);
+
+    adjustChannelStripSoloMute();
 }
 
 MixerScreen::~MixerScreen() {}
@@ -125,6 +127,7 @@ void MixerScreen::onBusSendData(int bus, const engine::Bus::BusSendStorage &s)
     assert(bus >= 0 && bus < busSendData.size());
     busSendData[bus] = s;
     busPane->channelStrips[bus]->onDataChanged();
+    adjustChannelStripSoloMute();
 }
 
 void MixerScreen::setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t)
@@ -158,6 +161,23 @@ void MixerScreen::onOtherTabSelection()
             selectBus(v);
         }
     }
+}
+
+void MixerScreen::adjustChannelStripSoloMute()
+{
+    bool anySolo{false};
+    for (auto &be : busSendData)
+    {
+        anySolo = anySolo || be.solo;
+    }
+    for (auto &ch : busPane->channelStrips)
+    {
+        if (ch && ch->muteButton)
+        {
+            ch->muteButton->setEnabled(!anySolo);
+        }
+    }
+    busPane->repaint();
 }
 
 } // namespace scxt::ui::app::mixer_screen

@@ -104,9 +104,6 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
                 resetAuxRoutingGlyph(i);
         }
 
-        if (muteButton && mixer)
-            muteButton->setEnabled(!mixer->busSendData[busIndex].solo);
-
         repaint();
     }
 

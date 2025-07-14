@@ -88,6 +88,8 @@ struct MixerScreen : juce::Component, HasEditor
         const std::array<std::array<std::atomic<float>, 2>, engine::Patch::Busses::busCount> &x);
 
     void onOtherTabSelection();
+
+    void adjustChannelStripSoloMute();
 };
 } // namespace mixer_screen
 } // namespace scxt::ui::app
