@@ -211,7 +211,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     int16_t terminationSequence{-1};
     // how many blocks is the early-terminate/steal fade
-    static constexpr int blocksToTerminate{8};
+    static constexpr int blocksToTerminateAt48k{8};
+    int blocksToTerminate{blocksToTerminateAt48k};
 
     void attack()
     {
@@ -226,7 +227,15 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         voiceStarted();
     }
     void release() { setIsGated(false); }
-    void beginTerminationSequence() { terminationSequence = blocksToTerminate; }
+    void beginTerminationSequence()
+    {
+        // 8 block fade at 48k
+        blocksToTerminate =
+            (int)std::ceil(std::max(sampleRate, 44100.) * blocksToTerminateAt48k / 48000);
+        if (forceOversample)
+            blocksToTerminate *= 2;
+        terminationSequence = blocksToTerminate;
+    }
     void cleanupVoice();
 
     void onSampleRateChanged() override;
