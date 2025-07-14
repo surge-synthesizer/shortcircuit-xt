@@ -572,6 +572,9 @@ void VariantDisplay::rebuild()
     case engine::Zone::TRUE_RANDOM:
         variantPlaymodeButton->setLabel("RANDOM");
         break;
+    case engine::Zone::RANDOM_NOREPEAT:
+        variantPlaymodeButton->setLabel("RAND NO RPT");
+        break;
     case engine::Zone::RANDOM_CYCLE:
         variantPlaymodeButton->setLabel("EXCL RAND");
         break;
@@ -844,6 +847,7 @@ void VariantDisplay::showVariantPlaymodeMenu()
     };
     add(engine::Zone::VariantPlaybackMode::FORWARD_RR, "Round Robin");
     add(engine::Zone::VariantPlaybackMode::TRUE_RANDOM, "Random");
+    add(engine::Zone::VariantPlaybackMode::RANDOM_NOREPEAT, "Random (no repeat)");
     add(engine::Zone::VariantPlaybackMode::RANDOM_CYCLE, "Random (exclusive)");
     add(engine::Zone::VariantPlaybackMode::UNISON, "Unison");
 

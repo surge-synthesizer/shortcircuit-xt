@@ -273,6 +273,8 @@ std::string Zone::toStringVariantPlaybackMode(const Zone::VariantPlaybackMode &p
         return "truerand";
     case RANDOM_CYCLE:
         return "randcyc";
+    case RANDOM_NOREPEAT:
+        return "truenorep";
     case UNISON:
         return "unison";
     }

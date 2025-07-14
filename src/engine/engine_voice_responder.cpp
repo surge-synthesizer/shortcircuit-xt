@@ -147,6 +147,14 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 {
                     z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
                 }
+                else if (z->variantData.variantPlaybackMode == Zone::RANDOM_NOREPEAT)
+                {
+                    auto previdx = z->sampleIndex;
+                    auto newidx = previdx;
+                    while (newidx == previdx)
+                        newidx = engine.rng.unifInt(0, nbSampleLoadedInZone);
+                    z->sampleIndex = newidx;
+                }
                 else if (z->variantData.variantPlaybackMode == Zone::RANDOM_CYCLE)
                 {
                     if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)

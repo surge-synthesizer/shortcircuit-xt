@@ -74,9 +74,10 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     ZoneID id;
     enum VariantPlaybackMode : uint16_t
     {
-        FORWARD_RR,   // Cycle through variants in order
-        TRUE_RANDOM,  // Pick next variant at random
-        RANDOM_CYCLE, //  random without repeating the same variant twice
+        FORWARD_RR,      // Cycle through variants in order
+        TRUE_RANDOM,     // Pick next variant at random
+        RANDOM_NOREPEAT, // random never playing same variant twice
+        RANDOM_CYCLE,    // random playing each variant once before a repeat
         UNISON
     };
     DECLARE_ENUM_STRING(VariantPlaybackMode);
