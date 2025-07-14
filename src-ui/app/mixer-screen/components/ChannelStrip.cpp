@@ -356,6 +356,17 @@ void ChannelStrip::showPluginOutput()
     p.addSectionHeader("Plugin Routing");
     p.addSeparator();
 
+    p.addItem("All Busses to Main", [w = juce::Component::SafePointer(this)]() {
+        if (w && w->mixer)
+            w->mixer->setAllBussesToMain();
+    });
+    p.addItem("Each Bus to Unique Output", [w = juce::Component::SafePointer(this)]() {
+        if (w && w->mixer)
+            w->mixer->setAllBussesToUniqueOutput();
+    });
+
+    p.addSeparator();
+
     // if you change the routing change this menu too
     auto cr = mixer->busSendData[busIndex].pluginOutputBus;
 

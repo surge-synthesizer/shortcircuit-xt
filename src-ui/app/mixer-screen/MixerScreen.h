@@ -84,6 +84,9 @@ struct MixerScreen : juce::Component, HasEditor
     void setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t);
     void sendBusSendStorage(int bus);
 
+    void setAllBussesToMain();
+    void setAllBussesToUniqueOutput();
+
     void setVULevelForBusses(
         const std::array<std::array<std::atomic<float>, 2>, engine::Patch::Busses::busCount> &x);
 
