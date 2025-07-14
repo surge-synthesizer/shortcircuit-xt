@@ -947,7 +947,9 @@ void Voice::initializeGenerator()
 
 float Voice::calculateVoicePitch()
 {
-    auto fpitch = key + *endpoints->mappingTarget.pitchOffsetP;
+    auto kd = (key - zone->mapping.rootKey) * zone->mapping.tracking + zone->mapping.rootKey;
+
+    auto fpitch = kd + *endpoints->mappingTarget.pitchOffsetP;
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
     auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
     fpitch += pitchWheel * pitchMv;
@@ -959,7 +961,7 @@ float Voice::calculateVoicePitch()
     fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
     fpitch += mpePitchBend;
 
-    keytrackPerOct = (key + retuner - zone->mapping.rootKey) / 12.0;
+    keytrackPerOct = (kd + retuner - zone->mapping.rootKey) / 12.0;
 
     return fpitch;
 }
@@ -991,7 +993,8 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
                          (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
     auto &var = zone->variantData.variants[sampleIndex];
-    auto kd = (pitch - zone->mapping.rootKey) * zone->mapping.tracking;
+    // pitch already has keytrack in
+    auto kd = (pitch - zone->mapping.rootKey);
 
     float ndiff = kd + zone->parentGroup->parentPart->configuration.tuning + var.pitchOffset;
 

@@ -495,6 +495,7 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
 
                  findIf(v, "pan", zmd.pan);
                  findIf(v, "pitchOffset", zmd.pitchOffset);
+                 findIf(v, "tracking", zmd.tracking);
                  findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
                  findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
              }));
