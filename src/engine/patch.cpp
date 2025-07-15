@@ -52,6 +52,10 @@ void Patch::process(Engine &e)
 
     for (auto &b : busses.partBusses)
     {
+        if (!busses.busUsed[b.address])
+        {
+            continue;
+        }
         b.process();
         if (b.busSendStorage.supportsSends && b.busSendStorage.hasSends)
         {
@@ -59,6 +63,7 @@ void Patch::process(Engine &e)
             {
                 if (b.busSendStorage.sendLevels[i] != 0.f)
                 {
+                    busses.busUsed[i + AUX_0] = true;
                     switch (b.busSendStorage.auxLocation[i])
                     {
                     case Bus::BusSendStorage::PRE_FX:

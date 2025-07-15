@@ -46,6 +46,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
         Busses() : mainBus(MAIN_0) { initialize(); }
         void initialize()
         {
+            std::fill(busUsed.begin(), busUsed.end(), false);
             std::fill(partToVSTRouting.begin(), partToVSTRouting.end(), 0);
             std::fill(auxToVSTRouting.begin(), auxToVSTRouting.end(), 0);
             int adr = PART_0;
@@ -161,7 +162,15 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
             }
         }
         std::array<bool, numPluginOutputs> usesOutput{};
+
+        std::array<bool, busCount> busUsed;
     } busses;
+
+    Bus &getBusForOutput(BusAddress &ba)
+    {
+        busses.busUsed[(int)ba] = true;
+        return busses.busByAddress(ba);
+    }
 
     void process(Engine &e);
 

@@ -78,8 +78,7 @@ template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
                 }
                 else if (outputInfo.routeTo >= 0)
                 {
-                    auto &bs = getEngine()->getPatch()->busses;
-                    auto &tb = bs.busByAddress(outputInfo.routeTo);
+                    auto &tb = getEngine()->getPatch()->getBusForOutput(outputInfo.routeTo);
                     blk::accumulate_from_to<osBlock>(v->output[0],
                                                      OS ? tb.outputOS[0] : tb.output[0]);
                     blk::accumulate_from_to<osBlock>(v->output[1],

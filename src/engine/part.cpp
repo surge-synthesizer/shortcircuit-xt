@@ -97,7 +97,7 @@ void Part::process(Engine &e)
             }
             else
             {
-                auto &obus = e.getPatch()->busses.busByAddress(bi);
+                auto &obus = e.getPatch()->getBusForOutput(bi);
 
                 blk::accumulate_from_to<blockSize>(g->output[0], obus.output[0]);
                 blk::accumulate_from_to<blockSize>(g->output[1], obus.output[1]);
@@ -120,7 +120,7 @@ void Part::process(Engine &e)
             }
         }
 
-        auto &obus = e.getPatch()->busses.busByAddress(bi);
+        auto &obus = e.getPatch()->getBusForOutput(bi);
 
         blk::accumulate_from_to<blockSize>(defOut[0], obus.output[0]);
         blk::accumulate_from_to<blockSize>(defOut[1], obus.output[1]);
