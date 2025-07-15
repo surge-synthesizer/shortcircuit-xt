@@ -40,6 +40,7 @@
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/bus.h"
+#include "FXSlotBearing.h"
 
 namespace scxt::ui::app
 {
@@ -55,16 +56,19 @@ struct PartEditScreen;
 namespace shared
 {
 template <bool forBus>
-struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
+struct PartEffectsPane : public HasEditor,
+                         sst::jucegui::components::NamedPanel,
+                         juce::DragAndDropTarget,
+                         FXSlotBearing
 {
     static constexpr int width{198}, height{290};
 
-    int fxSlot{0}, busAddressOrPart{0};
     using parent_t =
         std::conditional_t<forBus, mixer_screen::MixerScreen, edit_screen::PartEditScreen>;
     parent_t *parent{nullptr};
     PartEffectsPane(SCXTEditor *e, parent_t *ms, int i)
-        : HasEditor(e), parent(ms), fxSlot(i), sst::jucegui::components::NamedPanel("FX")
+        : HasEditor(e), FXSlotBearing(i, -1, forBus), parent(ms),
+          sst::jucegui::components::NamedPanel("FX")
     {
         hasHamburger = true;
         onHamburger = [w = juce::Component::SafePointer(this)] {
@@ -102,6 +106,32 @@ struct PartEffectsPane : public HasEditor, sst::jucegui::components::NamedPanel
     static void showFXSelectionMenu(parent_t *p, int b, int s);
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);
+
+    bool isDragging{false}, swapFX{true};
+    void mouseDown(const juce::MouseEvent &event) override
+    {
+        isDragging = false;
+        swapFX = true;
+    }
+    void mouseDrag(const juce::MouseEvent &event) override;
+
+    bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+    {
+        return dynamic_cast<FXSlotBearing *>(dragSourceDetails.sourceComponent.get()) != nullptr;
+    }
+    void itemDragEnter(const SourceDetails &dragSourceDetails) override
+    {
+        if (dragSourceDetails.sourceComponent.get() != this)
+            setIsAccented(true);
+        repaint();
+    }
+    void itemDragExit(const SourceDetails &dragSourceDetails) override
+    {
+        if (dragSourceDetails.sourceComponent.get() != this)
+            setIsAccented(false);
+        repaint();
+    };
+    void itemDropped(const SourceDetails &dragSourceDetails) override;
 
     std::unordered_set<std::unique_ptr<juce::Component>> components;
     typedef connectors::PayloadDataAttachment<engine::BusEffectStorage> attachment_t;

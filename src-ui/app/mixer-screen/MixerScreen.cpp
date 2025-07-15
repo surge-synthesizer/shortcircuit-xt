@@ -116,8 +116,10 @@ void MixerScreen::selectBus(int index)
     for (const auto &b : busPane->channelStrips)
     {
         b->setSelected(false);
+        b->setIsAccented(false);
     }
-    busPane->channelStrips[index]->selected = true;
+    busPane->channelStrips[index]->setSelected(true);
+    busPane->channelStrips[index]->setIsAccented(true);
     editor->setTabSelection("mixer_screen", std::to_string(index));
     repaint();
 }
@@ -200,6 +202,13 @@ void MixerScreen::setAllBussesToUniqueOutput()
         busPane->channelStrips[i]->labelPluginOutput();
     }
     repaint();
+}
+
+void MixerScreen::swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove)
+{
+    SCLOG("Swapping effects " << bus1 << "/" << slot1 << " to " << bus2 << "/" << slot2
+                              << (swapVsMove ? " Swap" : " Move"));
+    editor->makeComingSoon("Swapping Effects")();
 }
 
 } // namespace scxt::ui::app::mixer_screen

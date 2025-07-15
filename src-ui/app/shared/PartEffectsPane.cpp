@@ -592,6 +592,39 @@ std::string PartEffectsPane<forBus>::effectDisplayName(engine::AvailableBusEffec
 
     return "GCC gives strictly correct, but not useful in this case, warnings";
 }
+
+template <bool forBus> void PartEffectsPane<forBus>::mouseDrag(const juce::MouseEvent &event)
+{
+    if (event.getDistanceFromDragStart() > 2)
+    {
+        if (!isDragging)
+        {
+            if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+            {
+                container->startDragging("BusEffect", this);
+                isDragging = true;
+                swapFX = !event.mods.isShiftDown();
+            }
+        }
+    }
+}
+
+template <bool forBus>
+void PartEffectsPane<forBus>::itemDropped(const SourceDetails &dragSourceDetails)
+{
+    setIsAccented(false);
+    repaint();
+    if (dragSourceDetails.sourceComponent.get() != this)
+    {
+        auto fxs = dragSourceDetails.sourceComponent.get();
+        auto fc = dynamic_cast<FXSlotBearing *>(fxs);
+        if (fc && fc != this)
+        {
+            parent->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot);
+        }
+    }
+}
+
 // Explicit Instantiate
 template struct PartEffectsPane<true>;
 template struct PartEffectsPane<false>;

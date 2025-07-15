@@ -45,6 +45,8 @@
 
 namespace scxt::ui::app::mixer_screen
 {
+struct DraggableMenuButton;
+
 struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
 {
     using attachment_t = scxt::ui::connectors::PayloadDataAttachment<engine::Bus::BusSendStorage>;
@@ -64,9 +66,7 @@ struct ChannelStrip : public HasEditor, sst::jucegui::components::NamedPanel
 
     void resized() override;
 
-    std::array<std::unique_ptr<sst::jucegui::components::MenuButton>,
-               scxt::engine::Bus::maxEffectsPerBus>
-        fxMenu;
+    std::array<std::unique_ptr<DraggableMenuButton>, scxt::engine::Bus::maxEffectsPerBus> fxMenu;
     std::unique_ptr<sst::jucegui::components::Label> fxLabel;
     std::array<std::unique_ptr<sst::jucegui::components::ToggleButton>,
                scxt::engine::Bus::maxEffectsPerBus>
