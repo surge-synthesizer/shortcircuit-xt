@@ -31,11 +31,114 @@
 #include <sst/jucegui/components/VUMeter.h>
 #include "app/SCXTEditor.h"
 #include "app/shared/PartEffectsPane.h"
+#include "app/shared/FXSlotBearing.h"
 
 namespace scxt::ui::app::mixer_screen
 {
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
+
+struct DraggableMenuButton : jcmp::MenuButton, juce::DragAndDropTarget, shared::FXSlotBearing
+{
+    MixerScreen *mixer{nullptr};
+    bool isDragging{false};
+    bool needsCBOnUp{false};
+
+    bool swapFX{false};
+
+    void mouseDown(const juce::MouseEvent &e) override
+    {
+        isDragging = false;
+        needsCBOnUp = false;
+        if (getLabel() == "-" || e.position.x > getWidth() - getHeight() * 1.3)
+        {
+            jcmp::MenuButton::mouseDown(e);
+        }
+        else
+        {
+            needsCBOnUp = true;
+        }
+    }
+
+    void mouseDrag(const juce::MouseEvent &e) override
+    {
+        if (e.getDistanceFromDragStart() > 2)
+        {
+            if (!isDragging)
+            {
+                if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+                {
+                    container->startDragging("BusEffect", this);
+                    isDragging = true;
+                    swapFX = !e.mods.isShiftDown();
+                }
+            }
+        }
+    }
+
+    void mouseUp(const juce::MouseEvent &event) override
+    {
+        if (!isDragging && needsCBOnUp && onCB)
+        {
+            onCB();
+        }
+        jcmp::MenuButton::mouseUp(event);
+    }
+
+    void paint(juce::Graphics &g) override
+    {
+        MenuButton::paint(g);
+
+        if (dropOver)
+        {
+            float rectCorner = 1.5;
+            auto b = getLocalBounds().reduced(1).toFloat();
+            g.setColour(mixer->editor->themeColor(theme::ColorMap::accent_1a));
+            g.drawRoundedRectangle(b, rectCorner, 1);
+        }
+    }
+
+    bool dropOver{false};
+    void itemDragEnter(const SourceDetails &dragSourceDetails) override
+    {
+        if (dragSourceDetails.sourceComponent.get() != this)
+        {
+            dropOver = true;
+        }
+        repaint();
+    }
+    void itemDragExit(const SourceDetails &dragSourceDetails) override
+    {
+        if (dragSourceDetails.sourceComponent.get() != this)
+        {
+            dropOver = false;
+        }
+        repaint();
+    }
+    bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
+    {
+        auto c = dragSourceDetails.sourceComponent;
+        return c && dynamic_cast<FXSlotBearing *>(c.get());
+    }
+    void itemDropped(const SourceDetails &dragSourceDetails) override
+    {
+        dropOver = false;
+        repaint();
+        auto c = dragSourceDetails.sourceComponent;
+        if (c.get() == this)
+            return;
+
+        auto mc = dynamic_cast<DraggableMenuButton *>(c.get());
+        auto fc = dynamic_cast<FXSlotBearing *>(c.get());
+        bool swap = true;
+        if (mc)
+            swap = mc->swapFX;
+        if (fc && fc->busEffect)
+        {
+            mixer->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot, swap);
+        }
+    }
+};
 
 ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     : HasEditor(e), jcmp::NamedPanel(""), mixer(m), busIndex(bi), type(t)
@@ -66,11 +169,15 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
         idx = 0;
         for (auto &fxmb : fxMenu)
         {
-            fxmb = std::make_unique<jcmp::MenuButton>();
+            fxmb = std::make_unique<DraggableMenuButton>();
+            fxmb->mixer = mixer;
             fxmb->setLabel("-");
             fxmb->setOnCallback([idx, w = juce::Component::SafePointer(this)]() {
                 shared::PartEffectsPane<true>::showFXSelectionMenu(w->mixer, w->busIndex, idx);
             });
+            fxmb->fxSlot = idx;
+            fxmb->busAddressOrPart = busIndex;
+            fxmb->busEffect = true;
             addAndMakeVisible(*fxmb);
             idx++;
         }

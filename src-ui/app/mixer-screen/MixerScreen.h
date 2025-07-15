@@ -84,6 +84,8 @@ struct MixerScreen : juce::Component, HasEditor
     void setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t);
     void sendBusSendStorage(int bus);
 
+    void swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove = true);
+
     void setAllBussesToMain();
     void setAllBussesToUniqueOutput();
 

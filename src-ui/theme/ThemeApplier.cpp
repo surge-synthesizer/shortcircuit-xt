@@ -478,6 +478,8 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     jcmp::NamedPanel::Styles::backgroundSelected, cols.get(ColorMap::bg_3));
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::labelrule,
                     cols.get(ColorMap::generic_content_medium));
+    base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::accentedPanel,
+                    cols.get(ColorMap::accent_1a));
     auto npol = cols.get(ColorMap::panel_outline_2);
     if (npol.getAlpha() == 0)
         npol = cols.get(ColorMap::bg_2).brighter(0.05);
@@ -762,6 +764,11 @@ namespace channelstrip
 void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const ThemeApplier &t)
 {
     base->setColour(VUMeter, jcmp::VUMeter::Styles::vu_gutter, cols.get(ColorMap::bg_1));
+    base->setColour(CSPanel, jcmp::NamedPanel::Styles::backgroundSelected,
+                    cols.get(ColorMap::bg_2));
+    base->setColour(CSPanel, jcmp::NamedPanel::Styles::background, cols.get(ColorMap::bg_2));
+    base->setColour(CSPanel, jcmp::NamedPanel::Styles::accentedPanel,
+                    cols.get(ColorMap::accent_1a));
 }
 } // namespace channelstrip
 namespace auxchannelstrip
@@ -769,6 +776,12 @@ namespace auxchannelstrip
 void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const ThemeApplier &t)
 {
     base->setColour(VUMeter, jcmp::VUMeter::Styles::vu_gutter, cols.get(ColorMap::bg_1));
+    base->setColour(AuxPanel, jcmp::NamedPanel::Styles::backgroundSelected,
+                    cols.get(ColorMap::bg_3));
+    base->setColour(AuxPanel, jcmp::NamedPanel::Styles::background, cols.get(ColorMap::bg_3));
+
+    base->setColour(AuxPanel, jcmp::NamedPanel::Styles::accentedPanel,
+                    cols.get(ColorMap::accent_1a));
 }
 } // namespace auxchannelstrip
 } // namespace mix
