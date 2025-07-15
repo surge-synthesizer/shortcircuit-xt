@@ -1073,9 +1073,15 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
 
     try
     {
+        // Check for old documents path
         auto res = sst::plugininfra::paths::bestDocumentsFolderPathFor(productName);
         if (!fs::is_directory(res))
-            fs::create_directories(res);
+        {
+            res = sst::plugininfra::paths::bestDocumentsVendorFolderPathFor("Surge Synth Team",
+                                                                            productName);
+            if (!fs::is_directory(res))
+                fs::create_directories(res);
+        }
         if (fs::is_directory(res))
         {
             SCLOG("Using system user directory: " << res.u8string());
