@@ -268,6 +268,101 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
             return;
         }
     }
+
+    // TODO : this really really should be ina  function
+    auto displayRegion = getLocalBounds().toFloat();
+    ;
+    auto kw = hZoom * displayRegion.getWidth() /
+              (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
+    auto vh = vZoom * displayRegion.getHeight() / 127.0;
+
+    auto newX = e.position.x / kw + hPct * 128;
+    auto cKey = (int)std::round(newX);
+    auto newY = 127 - e.position.y / vh - vPct * 128;
+    auto cVel = (int)std::round(newY);
+
+    // finding the 'best' rectangle is actually pretty hard.
+    // the brute force is n^5 in rectangles. So lets use a little
+    // heuristic - at this point find max vel and max key span
+    int16_t velMax{127}, velMin{0};
+    int16_t keyMax{127}, keyMin{0};
+    for (auto &r : display->summary)
+    {
+        if (r.kr.keyStart <= cKey && r.kr.keyEnd >= cKey)
+        {
+            if (r.vr.velStart >= cVel)
+            {
+                velMax = std::min((int)velMax, r.vr.velStart - 1);
+            }
+            if (r.vr.velEnd <= cVel)
+            {
+                velMin = std::max(r.vr.velEnd + 1, (int)velMin);
+            }
+        }
+        if (r.vr.velEnd >= cVel && r.vr.velStart <= cVel)
+        {
+            if (r.kr.keyStart >= cKey)
+            {
+                keyMax = std::min((int)keyMax, r.kr.keyStart - 1);
+            }
+            if (r.kr.keyEnd <= cKey)
+            {
+                keyMin = std::max(r.kr.keyEnd + 1, (int)keyMin);
+            }
+        }
+    }
+
+    auto overlap = [&](auto ks, auto ke, auto vs, auto ve) -> bool {
+        for (auto &r : display->summary)
+        {
+            if (r.kr.keyStart <= ke && r.kr.keyEnd >= ks && r.vr.velStart <= ve &&
+                r.vr.velEnd >= vs)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+    if (keyMax - keyMin > velMax - velMin)
+    {
+        SCLOG("Key span fixed");
+        velMin = velMax = cVel;
+        while (velMax < 127 && !overlap(keyMin, keyMax, velMin, velMax))
+            velMax++;
+        if (velMax != cVel && velMax != 127)
+            velMax--;
+
+        while (velMin > 0 && !overlap(keyMin, keyMax, velMin, velMax))
+            velMin--;
+        if (velMin != cVel && velMin != 0)
+            velMin++;
+    }
+    else
+    {
+        keyMin = keyMax = cKey;
+        while (keyMax < 127 && !overlap(keyMin, keyMax, velMin, velMax))
+            keyMax++;
+        if (keyMax != cKey && keyMax != 127)
+            keyMax--;
+        while (keyMin > 0 && !overlap(keyMin, keyMax, velMin, velMax))
+            keyMin--;
+        if (keyMin != cKey && keyMin != 0)
+            keyMin++;
+    }
+
+    auto za{editor->currentLeadZoneSelection};
+
+    namespace cmsg = scxt::messaging::client;
+
+    if (!za.has_value())
+    {
+        sendToSerialization(cmsg::AddBlankZone({0, 0, keyMin, keyMax, velMin, velMax}));
+    }
+    else
+    {
+        sendToSerialization(
+            cmsg::AddBlankZone({za->part, za->group, keyMin, keyMax, velMin, velMax}));
+    }
 }
 
 void ZoneLayoutDisplay::showMappingNonZoneMenu()
@@ -363,6 +458,11 @@ template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
 
 void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
 {
+    if (e.getDistanceFromDragStart() <= 1)
+    {
+        return;
+    }
+
     if (mouseState == DRAG_SELECTED_ZONE)
     {
         if (e.getDistanceFromDragStart() <= 2)
@@ -559,19 +659,15 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
                     selectedLead = true;
             }
         }
-        bool additiveSelect = e.mods.isShiftDown();
-        bool firstAsLead = !selectedLead && !additiveSelect;
+        bool firstAsLead = !selectedLead && !e.mods.isShiftDown();
         bool first = true;
         for (const auto &z : display->summary)
         {
             if (rz.intersects(rectangleForZone(z)))
             {
-                display->editor->doSelectionAction(z.address, true, false, first && firstAsLead);
+                display->editor->doSelectionAction(z.address, true, first && firstAsLead,
+                                                   first && firstAsLead);
                 first = false;
-            }
-            else if (!additiveSelect)
-            {
-                display->editor->doSelectionAction(z.address, false, false, false);
             }
         }
     }
