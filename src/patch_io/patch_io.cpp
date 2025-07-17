@@ -472,12 +472,13 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
     }
 }
 
-bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles style)
+bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 {
     fs::path riffPath = p;
     fs::path collectDir;
 
     e.getSampleManager()->remapIds.clear();
+    e.prepareToStream();
 
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
@@ -547,13 +548,13 @@ bool saveMulti(const fs::path &p, const scxt::engine::Engine &e, SaveStyles styl
     return true;
 }
 
-bool savePart(const fs::path &p, const scxt::engine::Engine &e, int part,
-              patch_io::SaveStyles style)
+bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::SaveStyles style)
 {
     fs::path riffPath = p;
     fs::path collectDir;
 
     e.getSampleManager()->remapIds.clear();
+    e.prepareToStream();
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
         auto [r, c, emsg] = setupForCollection(p);

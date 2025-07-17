@@ -92,17 +92,18 @@ inline void updateMacroValue(const macroValue_t &t, const engine::Engine &engine
     cont.scheduleAudioThreadCallback(
         [part = p, index = i, value = f](auto &e) {
             // Set the value
-            auto &macro = e.getPatch()->getPart(part)->macros[index];
-            macro.setValueConstrained(value);
+            auto &partO = e.getPatch()->getPart(part); // ->macros[index];
+            partO->macroLagHandler.setTargetOnMacro(index, value);
+            // macro.setValueConstrained(value);
         },
-        [part = p, index = i](auto &e) {
+        [part = p, index = i, value = f](auto &e) {
             // a separate perhaps dropped message to update plugins
             messaging::audio::SerializationToAudio s2am;
             auto &macro = e.getPatch()->getPart(part)->macros[index];
             s2am.id = audio::s2a_param_set_value;
             s2am.payloadType = audio::SerializationToAudio::FOUR_FOUR_MIX;
             s2am.payload.mix.u[0] = engine::Macro::partIndexToMacroID(part, index);
-            s2am.payload.mix.f[0] = macro.getValue01();
+            s2am.payload.mix.f[0] = macro.getValue01For(value);
 
             e.getMessageController()->sendSerializationToAudio(s2am);
         });

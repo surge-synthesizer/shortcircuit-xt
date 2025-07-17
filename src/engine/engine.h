@@ -576,6 +576,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     std::optional<fs::path> setupUserStorageDirectory();
 
+    void prepareToStream();
+
   private:
     std::unique_ptr<Patch> patch;
     std::unique_ptr<MemoryPool> memoryPool;

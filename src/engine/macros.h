@@ -69,15 +69,16 @@ struct Macro
             setValueConstrained(f);
         }
     }
-    float getValue01() const
+    float getValue01For(float vv) const
     {
-        float res = value;
+        float res = vv;
         if (isBipolar)
         {
             res = (res + 1) * 0.5;
         }
         return std::clamp(res, 0.f, 1.f);
     }
+    float getValue01() const { return getValue01For(value); }
 
     float valueFromString(const std::string &s) const
     {

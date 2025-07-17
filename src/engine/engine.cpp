@@ -1252,4 +1252,22 @@ void Engine::onPartConfigurationUpdated()
         }
     }
 }
+
+void Engine::prepareToStream()
+{
+    for (auto &part : *getPatch())
+    {
+        part->macroLagHandler.instantlySnap();
+        part->externalSignalLag.snapAllActiveToTarget();
+        for (auto &g : *part)
+        {
+            g->mUILag.instantlySnap();
+            for (auto &z : *g)
+            {
+                z->mUILag.instantlySnap();
+            }
+        }
+    }
+}
+
 } // namespace scxt::engine

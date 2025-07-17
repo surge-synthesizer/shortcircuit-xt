@@ -47,6 +47,7 @@ void Part::process(Engine &e)
     float lcp alignas(16)[2][blockSize];
     float defOut alignas(16)[2][blockSize];
 
+    macroLagHandler.process();
     externalSignalLag.processAll();
 
     auto lev = configuration.level;
