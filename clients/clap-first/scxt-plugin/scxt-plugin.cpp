@@ -114,6 +114,7 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
 {
     engine->getSampleManager()->purgeUnreferencedSamples();
+    engine->prepareToStream();
     try
     {
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_DAW);

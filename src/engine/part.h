@@ -214,6 +214,27 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     float channelAT{0.f};
     float pitchBendValue{0.f}; // -1..1 so the 8192 taken out
 
+    struct MacroUILagHandler : sst::basic_blocks::dsp::UIComponentLagHandlerBase<MacroUILagHandler>
+    {
+        Part &part;
+        int macro{-1};
+        MacroUILagHandler(Part &p) : part(p) {}
+
+        void setTargetOnMacro(int index, float value)
+        {
+            macro = index;
+            setTarget(value);
+        }
+
+        void updateDestination(float val)
+        {
+            if (macro >= 0 && macro < scxt::macrosPerPart)
+            {
+                part.macros[macro].setValueConstrained(val);
+            }
+        }
+    } macroLagHandler{*this};
+
     enum LagIndexes
     {
         pitchBend,
@@ -228,6 +249,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         externalSignalLag.setRateInMilliseconds(1000.0 * 3 * blockSize / 48000, samplerate,
                                                 blockSizeInv);
         externalSignalLag.snapAllActiveToTarget();
+        macroLagHandler.setRate(120, scxt::blockSize, samplerate);
     }
 
     std::array<Macro, macrosPerPart> macros;
@@ -273,6 +295,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
             sendBusEffectInfoToClient(e, i);
     }
     void sendBusEffectInfoToClient(const Engine &, int slot);
+
+    void prepareToStream();
 
   private:
     groupContainer_t groups;
