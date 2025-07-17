@@ -352,6 +352,8 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
 
     auto za{editor->currentLeadZoneSelection};
 
+    namespace cmsg = scxt::messaging::client;
+
     if (!za.has_value())
     {
         sendToSerialization(cmsg::AddBlankZone({0, 0, keyMin, keyMax, velMin, velMax}));
