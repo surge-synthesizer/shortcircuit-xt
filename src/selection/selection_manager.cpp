@@ -237,10 +237,23 @@ void SelectionManager::adjustInternalStateForAction(
                     leadZone[selectedPart] = za;
             }
         }
+
+        /*
+         * Adjust - if there is no selected group for this part
+         * make this zone selection select the group
+         */
+        if (allSelectedGroups[selectedPart].empty() && z.group >= 0 && z.zone >= 0)
+        {
+            SCLOG_IF(selection, "Promoting group of zone");
+            auto gza = za;
+            gza.zone = -1;
+            allSelectedGroups[selectedPart].insert(gza);
+            leadGroup[selectedPart] = gza;
+        }
     }
     else
     {
-        SCLOG("Group Naive Single Selection Selection " << za);
+        SCLOG_IF(selection, "Group Naive Single Selection Selection " << za);
         allSelectedGroups[selectedPart].clear();
         allSelectedGroups[selectedPart].insert(za);
         leadGroup[selectedPart] = za;
@@ -364,7 +377,8 @@ void SelectionManager::guaranteeSelectedLead()
         if (allSelectedZones[selectedPart].empty() && leadZone[selectedPart].part >= 0)
         {
             // Oh what to do here. Well reject it.
-            SCLOG_WFUNC("Be careful - we are promoting " << SCD(leadZone[selectedPart]));
+            SCLOG_IF(selection, __func__ << " - be careful - we are promoting "
+                                         << SCD(leadZone[selectedPart]));
             allSelectedZones[selectedPart].insert(leadZone[selectedPart]);
         }
         else if (!allSelectedZones[selectedPart].empty())
