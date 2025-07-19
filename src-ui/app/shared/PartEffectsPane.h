@@ -112,6 +112,7 @@ struct PartEffectsPane : public HasEditor,
     {
         isDragging = false;
         swapFX = true;
+        NamedPanel::mouseDown(event);
     }
     void mouseDrag(const juce::MouseEvent &event) override;
 
