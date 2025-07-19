@@ -75,9 +75,6 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     lnf = std::make_unique<sst::jucegui::style::LookAndFeelManager>(this);
     lnf->setStyle(style());
 
-    idleTimer = std::make_unique<IdleTimer>(this);
-    idleTimer->startTimer(1000 / 60);
-
     toolTip = std::make_unique<sst::jucegui::components::ToolTip>();
     addChildComponent(*toolTip);
 
@@ -115,6 +112,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     focusDebugger = std::make_unique<sst::jucegui::accessibility::FocusDebugger>(*this);
     focusDebugger->setDoFocusDebug(false);
+
+    idleTimer = std::make_unique<IdleTimer>(this);
+    idleTimer->startTimer(1000 / 60);
 
     namespace cmsg = scxt::messaging::client;
     msgCont.registerClient("SCXTEditor", [this](auto &s) {
@@ -264,16 +264,18 @@ void SCXTEditor::idle()
     }
 #endif
 
-    headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],
-                             sharedUiMemoryState.busVULevels[0][1]);
-    headerRegion->setCPULevel((double)sharedUiMemoryState.cpuLevel);
+    if (headerRegion)
+    {
+        headerRegion->setVULevel(sharedUiMemoryState.busVULevels[0][0],
+                                 sharedUiMemoryState.busVULevels[0][1]);
+        headerRegion->setCPULevel((double)sharedUiMemoryState.cpuLevel);
 
-    if (mixerScreen->isVisible())
+        headerRegion->setMemUsage(sampleManager.sampleMemoryInBytes);
+    }
+    if (mixerScreen && mixerScreen->isVisible())
     {
         mixerScreen->setVULevelForBusses(sharedUiMemoryState.busVULevels);
     }
-
-    headerRegion->setMemUsage(sampleManager.sampleMemoryInBytes);
 
     if (checkWelcomeCountdown == 0)
     {

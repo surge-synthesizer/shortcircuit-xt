@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "patch_io/patch_io.h"
+#include "UIHelpers.h"
 
 namespace scxt::ui::app::shared
 {
@@ -51,8 +52,8 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
                 return;
             }
             // send a 'save multi' message
-            w->sendToSerialization(
-                cmsg::SaveMulti({result[0].getFullPathName().toStdString(), (int)style}));
+            auto fsp = juceFileToFsPath(result[0]);
+            w->sendToSerialization(cmsg::SaveMulti({fsp.u8string(), (int)style}));
         });
 }
 
@@ -62,16 +63,17 @@ template <typename T> void doLoadMulti(T *that, std::unique_ptr<juce::FileChoose
 
     fileChooser = std::make_unique<juce::FileChooser>(
         "Load Multi", juce::File(that->editor->browser.patchIODirectory.u8string()), "*.scm");
-    fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
-        [w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
-            auto result = c.getResults();
-            if (result.isEmpty() || result.size() > 1)
-            {
-                return;
-            }
-            w->sendToSerialization(cmsg::LoadMulti(result[0].getFullPathName().toStdString()));
-        });
+    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                 juce::FileBrowserComponent::openMode,
+                             [w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+                                 auto result = c.getResults();
+                                 if (result.isEmpty() || result.size() > 1)
+                                 {
+                                     return;
+                                 }
+                                 auto fsp = juceFileToFsPath(result[0]);
+                                 w->sendToSerialization(cmsg::LoadMulti(fsp.u8string()));
+                             });
 }
 
 template <typename T>
@@ -93,8 +95,8 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
                 return;
             }
             // send a 'save multi' message
-            w->sendToSerialization(
-                cmsg::SavePart({result[0].getFullPathName().toStdString(), part, (int)style}));
+            auto fsp = juceFileToFsPath(result[0]);
+            w->sendToSerialization(cmsg::SavePart({fsp.u8string(), part, (int)style}));
         });
 }
 
@@ -113,8 +115,8 @@ void doLoadPartInto(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, in
             {
                 return;
             }
-            w->sendToSerialization(
-                cmsg::LoadPartInto({result[0].getFullPathName().toStdString(), part}));
+            auto fsp = juceFileToFsPath(result[0]);
+            w->sendToSerialization(cmsg::LoadPartInto({fsp.u8string(), part}));
         });
 }
 } // namespace scxt::ui::app::shared

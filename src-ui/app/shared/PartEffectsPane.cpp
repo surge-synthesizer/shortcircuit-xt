@@ -108,13 +108,20 @@ void PartEffectsPane<forBus>::paintMetadata(juce::Graphics &g, const juce::Recta
 template <bool forBus>
 typename PartEffectsPane<forBus>::partFXStorage_t &PartEffectsPane<forBus>::getPartFXStorage()
 {
+    if (busAddressOrPart < 0 || fxSlot < 0)
+    {
+        // once you find this fix those maxes below
+        SCLOG_ONCE("Investigate: PartEffectsPane<"
+                   << forBus << "> busAddress or fxSlot misconfigured " << busAddressOrPart << " "
+                   << fxSlot << " - will use zero");
+    }
     if constexpr (forBus)
     {
-        return parent->busEffectsData[busAddressOrPart][fxSlot];
+        return parent->busEffectsData[std::max(busAddressOrPart, 0)][std::max(fxSlot, 0)];
     }
     else
     {
-        return parent->partsEffectsData[busAddressOrPart][fxSlot];
+        return parent->partsEffectsData[std::max(busAddressOrPart, 0)][std::max(fxSlot, 0)];
     }
 }
 

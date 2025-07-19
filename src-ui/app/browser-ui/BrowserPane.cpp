@@ -37,6 +37,7 @@
 
 #include <infrastructure/user_defaults.h>
 #include "BrowserPaneInterfaces.h"
+#include "app/shared/UIHelpers.h"
 
 #define SHOW_INDEX_MENUS 0
 
@@ -172,9 +173,9 @@ struct DriveArea : juce::Component, HasEditor
                         [idxxx = idxx, w, ed](const auto &c) {
                             auto result = c.getResults();
                             namespace cmsg = scxt::messaging::client;
+                            auto fsp = shared::juceFileToFsPath(result[0]);
                             w->driveArea->browserPane->sendToSerialization(
-                                cmsg::AddBrowserDeviceLocation(
-                                    {result[0].getFullPathName().toStdString(), idxxx}));
+                                cmsg::AddBrowserDeviceLocation({fsp.u8string(), idxxx}));
                         });
                 });
             }
@@ -492,11 +493,12 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             {
                 hasStartedPreview = true;
                 namespace cmsg = scxt::messaging::client;
+                auto pth = fs::path(fs::u8path(data[rowNumber].dirent.path().u8string()));
                 scxt::messaging::client::clientSendToSerialization(
                     cmsg::PreviewBrowserSample(
                         {true,
-                         {sample::Sample::sourceTypeFromPath(data[rowNumber].dirent.path()),
-                          data[rowNumber].dirent.path().u8string(), "", -1, -1, -1}}),
+                         {sample::Sample::sourceTypeFromPath(data[rowNumber].dirent.path()), pth,
+                          "", -1, -1, -1}}),
                     browserPane->editor->msgCont);
                 repaint();
             }
