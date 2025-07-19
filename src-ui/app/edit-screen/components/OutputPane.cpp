@@ -365,8 +365,11 @@ template <typename OTTraits> void OutputPane<OTTraits>::setSelectedTab(int i)
         output->setVisible(false);
         proc->setVisible(active);
     }
-    auto kn = std::string("multi") + (OTTraits::forZone ? ".zone.output" : ".group.output");
-    editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(i));
+    if (editor->editScreen)
+    {
+        auto kn = std::string("multi") + (OTTraits::forZone ? ".zone.output" : ".group.output");
+        editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(i));
+    }
 }
 
 template <typename OTTraits> void OutputPane<OTTraits>::resized()
