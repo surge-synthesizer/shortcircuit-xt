@@ -116,7 +116,8 @@ void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
         {
             for (auto &d : ds)
             {
-                d->setValueFromModel(*((int *)da));
+                int v = *((int *)da);
+                d->setValueFromModel(v);
             }
         }
     }
