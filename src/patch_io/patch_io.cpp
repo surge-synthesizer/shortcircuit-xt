@@ -149,7 +149,7 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
             auto cex = smplst->AddSubChunk(sampleFilenameChunk, fn.size() + 1);
             auto dex = (uint8_t *)cex->LoadChunkData();
             strncpy((char *)dex, fn.c_str(), fn.size());
-            dex[fn.size() + 1] = 0;
+            dex[fn.size()] = 0;
 
             auto c = smplst->AddSubChunk(sampleDatChunk, fsz);
             auto d = (uint8_t *)c->LoadChunkData();
