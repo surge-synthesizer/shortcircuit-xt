@@ -30,6 +30,7 @@
 #include "messaging/client/client_serial.h"
 #include "SampleWaveform.h"
 #include "app/browser-ui/BrowserPaneInterfaces.h"
+#include "app/shared/UIHelpers.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -731,14 +732,13 @@ void VariantDisplay::showFileBrowser()
         [this](const juce::FileChooser &fc) mutable {
             if (fc.getURLResults().size() > 0)
             {
-                const auto u = fc.getResult().getFullPathName();
+                const auto u = shared::juceFileToFsPath(fc.getResult());
 
                 namespace cmsg = scxt::messaging::client;
                 auto za{editor->currentLeadZoneSelection};
                 auto sampleID{selectedVariation};
                 sendToSerialization(
-                    cmsg::AddSampleInZone({std::string{(const char *)(u.toUTF8())}, za->part,
-                                           za->group, za->zone, sampleID}));
+                    cmsg::AddSampleInZone({u.u8string(), za->part, za->group, za->zone, sampleID}));
             }
 
             fileChooser = nullptr;

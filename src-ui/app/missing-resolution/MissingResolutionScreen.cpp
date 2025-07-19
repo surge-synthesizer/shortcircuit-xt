@@ -36,6 +36,8 @@
 #include "sst/jucegui/components/Viewport.h"
 #include "sst/jucegui/component-adapters/DiscreteToReference.h"
 
+#include "app/shared/UIHelpers.h"
+
 namespace scxt::ui::app::missing_resolution
 {
 namespace jcmp = sst::jucegui::components;
@@ -211,7 +213,7 @@ void MissingResolutionScreen::resolveItem(int idx)
             }
             if (!w)
                 return;
-            auto p = fs::path(fs::u8path(result[0].getFullPathName().toStdString()));
+            auto p = shared::juceFileToFsPath(result[0]);
             w->applyResolution(idx, p);
         });
 }

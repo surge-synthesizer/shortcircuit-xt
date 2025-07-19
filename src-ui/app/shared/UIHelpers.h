@@ -25,18 +25,25 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_APP_SHARED_FXSLOTBEARING_H
-#define SCXT_SRC_UI_APP_SHARED_FXSLOTBEARING_H
+#ifndef SCXT_SRC_UI_APP_SHARED_UIHELPERS_H
+#define SCXT_SRC_UI_APP_SHARED_UIHELPERS_H
+
+#include <juce_core/juce_core.h>
+#include "filesystem/import.h"
 
 namespace scxt::ui::app::shared
 {
-struct FXSlotBearing
+
+inline fs::path juceFileToFsPath(const juce::File &f)
 {
-    FXSlotBearing() {}
-    FXSlotBearing(int f, int b, bool fb) : fxSlot(f), busAddressOrPart(b), busEffect(fb) {}
-    int fxSlot{0};
-    int busAddressOrPart{0};
-    bool busEffect{true};
-};
+    auto js = f.getFullPathName();
+#if JUCE_WINDOWS
+    return fs::path(js.toUTF16().getAddress());
+#else
+    return fs::path(fs::u8path(js.toUTF8().getAddress()));
+#endif
+}
+
 } // namespace scxt::ui::app::shared
-#endif // FXSLOTBEARING_H
+
+#endif // SHORTCIRCUITXT_UIHELPERS_H

@@ -129,7 +129,10 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
     std::vector<fs::path> sortedPaths(paths.begin(), paths.end());
     std::vector<std::string> sortedPathsStr;
     for (auto &p : sortedPaths)
-        sortedPathsStr.push_back(p.u8string());
+    {
+        auto pp = fs::path(fs::u8path(p.u8string()));
+        sortedPathsStr.push_back(pp.u8string());
+    }
 
     auto mpaths = tao::json::to_string(json::scxt_value(sortedPathsStr));
     auto c = lst->AddSubChunk(samplePathsChunk, mpaths.size());

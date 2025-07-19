@@ -46,6 +46,7 @@
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/shared/MenuValueTypein.h"
+#include "app/shared/UIHelpers.h"
 
 namespace scxt::ui::app
 {
@@ -311,9 +312,9 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                     w->themeApplier.recolorStylesheetWith(std::move(cm), w->style());
                 w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
                                                            theme::ColorMap::FILE_COLORMAP_ID);
+                auto fp = shared::juceFileToFsPath(result[0]);
                 w->defaultsProvider.updateUserDefaultValue(
-                    infrastructure::DefaultKeys::colormapPathIfFile,
-                    result[0].getFullPathName().toStdString());
+                    infrastructure::DefaultKeys::colormapPathIfFile, fp.u8string());
             });
     });
     p.addSeparator();
