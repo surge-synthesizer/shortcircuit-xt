@@ -165,6 +165,7 @@ GroupMatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
         auto nm = [&ms](auto &v) { return datamodel::describeValue(ms, v).name; };
 
         registerGroupModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
+        registerGroupModTarget(e, amplitudeT, ptFn, allLabel(nm(ms.amplitude)), true);
         registerGroupModTarget(e, retriggerT, ptFn, allLabel("Retrigger"));
         registerGroupModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
         registerGroupModTarget(e, curve.angleT, ptFn, curveLabel(nm(ms.curveLfoStorage.angle)));
