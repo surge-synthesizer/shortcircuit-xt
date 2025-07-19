@@ -415,7 +415,8 @@ template <typename P, typename A> void HasEditor::addSubscription(const P &p, A 
         connectors::addGuiStep(*a, [edCopy, vp, f = a.get()](auto &) {
             edCopy->editorDataCache.fireSubscription(vp, f);
         });
-        editor->editorDataCache.addSubscription(vp, a.get());
+        editor->editorDataCache.addSubscription(vp, sizeof(typename A::element_type::value_t),
+                                                a.get());
     }
 }
 } // namespace scxt::ui::app

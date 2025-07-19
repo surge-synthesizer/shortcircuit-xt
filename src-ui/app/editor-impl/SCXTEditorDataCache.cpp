@@ -25,20 +25,30 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <cassert>
 #include "app/SCXTEditorDataCache.h"
 #include "utils.h"
 
 namespace scxt::ui::app
 {
 
-void SCXTEditorDataCache::addSubscription(void *el, sst::jucegui::data::Continuous *c)
+void SCXTEditorDataCache::addSubscription(void *el, size_t soel, sst::jucegui::data::Continuous *c)
 {
+    assert(soel == sizeof(float));
     csubs[el].insert(c);
     c->addGUIDataListener(&clistener);
 }
-void SCXTEditorDataCache::addSubscription(void *el, sst::jucegui::data::Discrete *d)
+void SCXTEditorDataCache::addSubscription(void *el, size_t soel, sst::jucegui::data::Discrete *d)
 {
     dsubs[el].insert(d);
+    if (dsizes.find(el) != dsizes.end())
+    {
+        if (dsizes[el] != soel)
+        {
+            SCLOG("ERROR: Configuration in add subscriptino varied size " << soel);
+        }
+    }
+    dsizes[el] = soel;
     d->addGUIDataListener(&dlistener);
 }
 
@@ -114,9 +124,37 @@ void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
     {
         if (da >= st && da <= end)
         {
+            auto dsp = dsizes.find(da);
+            size_t size{4};
+            if (dsp == dsizes.end())
+            {
+                SCLOG("Cant locate data size for " << da);
+            }
+            else
+            {
+                size = dsp->second;
+            }
+
             for (auto &d : ds)
             {
-                int v = *((int *)da);
+                int v{0};
+                switch (size)
+                {
+                case 1:
+                    v = *((char *)da);
+                    break;
+                case 2:
+                    v = *((int16_t *)da);
+                    break;
+                case 8:
+                    v = *((int64_t *)da);
+                    break;
+                case 4:
+                default:
+                    v = *((int32_t *)da);
+                    break;
+                }
+
                 d->setValueFromModel(v);
             }
         }

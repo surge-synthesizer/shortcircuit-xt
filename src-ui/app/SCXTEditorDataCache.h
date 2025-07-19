@@ -62,8 +62,8 @@ struct SCXTEditorDataCache
     // Displayed zone tab output info
     scxt::engine::Zone::ZoneOutputInfo zoneOutputInfo;
 
-    void addSubscription(void *el, sst::jucegui::data::Continuous *);
-    void addSubscription(void *el, sst::jucegui::data::Discrete *);
+    void addSubscription(void *el, size_t soel, sst::jucegui::data::Continuous *);
+    void addSubscription(void *el, size_t soel, sst::jucegui::data::Discrete *);
     void fireSubscription(void *el, sst::jucegui::data::Continuous *);
     void fireSubscription(void *el, sst::jucegui::data::Discrete *);
 
@@ -79,6 +79,7 @@ struct SCXTEditorDataCache
     void fireAllNotificationsBetween(void *st, void *end);
     std::unordered_map<void *, std::unordered_set<sst::jucegui::data::Continuous *>> csubs;
     std::unordered_map<void *, std::unordered_set<sst::jucegui::data::Discrete *>> dsubs;
+    std::unordered_map<void *, size_t> dsizes;
     std::unordered_map<void *, std::vector<std::function<void()>>> fsubs;
 
     struct CListener : sst::jucegui::data::Continuous::DataListener
