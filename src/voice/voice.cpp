@@ -241,6 +241,7 @@ template <bool OS> bool Voice::processWithOS()
                 stepLfos[i].retrigger();
             }
             stepLfos[i].process(blockSize);
+            stepLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
         }
         else if (lfoEvaluator[i] == CURVE)
         {
@@ -256,6 +257,7 @@ template <bool OS> bool Voice::processWithOS()
                                  *lp.curve.attackP, *lp.curve.releaseP,
                                  zone->modulatorStorage[i].curveLfoStorage.useenv,
                                  zone->modulatorStorage[i].curveLfoStorage.unipolar, isGated);
+            curveLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
         }
         else if (lfoEvaluator[i] == ENV)
         {
@@ -281,6 +283,7 @@ template <bool OS> bool Voice::processWithOS()
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
                                useGate);
+            envLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
         }
         else
         {

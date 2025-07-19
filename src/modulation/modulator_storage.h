@@ -138,6 +138,7 @@ struct ModulatorStorage
 
     float rate{0.f};
     float start_phase{0.f};
+    float amplitude{1.f}; // linear - and mod target only
     bool temposync{false};
 
     modulators::StepLFOStorage stepLfoStorage;
@@ -241,6 +242,8 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                               }));
     SC_FIELD(temposync, pmd().asBool().withName("Temposync"));
     SC_FIELD(rate, pmd().asLfoRate().withName("Rate"));
+    SC_FIELD(amplitude,
+             pmd().asPercent().withName("Amplitude").withSupportsMultiplicativeModulation());
     SC_FIELD(start_phase, pmd().asPercent().withName("Phase"));
 
     SC_FIELD(stepLfoStorage.smooth, pmd()

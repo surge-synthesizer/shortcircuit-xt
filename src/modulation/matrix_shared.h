@@ -137,13 +137,15 @@ template <typename TG, uint32_t gn> struct EGTargetEndpointData
 template <typename TG, uint32_t gn> struct LFOTargetEndpointData
 {
     LFOTargetEndpointData(uint32_t p)
-        : index(p), rateT{gn, 'rate', p}, retriggerT{gn, 'rtrg', p}, curve(p), step(p), env(p)
+        : index(p), rateT{gn, 'rate', p}, amplitudeT{gn, 'ampl', p}, retriggerT{gn, 'rtrg', p},
+          curve(p), step(p), env(p)
     {
     }
     uint32_t index{0};
 
-    TG rateT, retriggerT;
+    TG rateT, amplitudeT, retriggerT;
     const float *rateP{nullptr};
+    const float *amplitudeP{nullptr};
     const float *retriggerP{nullptr};
     float zeroBase{0.f};
     struct Curve
@@ -309,6 +311,7 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     auto &ms = z.modulatorStorage[index];
 
     bindEl(m, ms, rateT, ms.rate, rateP);
+    bindEl(m, ms, amplitudeT, ms.amplitude, amplitudeP);
     bindEl(m, ms, retriggerT, zeroBase, retriggerP,
            datamodel::pmd().withName("Retrigger").asPercent());
 
