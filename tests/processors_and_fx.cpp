@@ -27,15 +27,16 @@
 
 #include "catch2/catch2.hpp"
 #include "dsp/processor/processor.h"
+#include "engine/memory_pool.h"
 
 TEST_CASE("Processors have Formatting")
 {
     namespace pdsp = scxt::dsp::processor;
     scxt::engine::MemoryPool mp;
     pdsp::ProcessorStorage procStorage;
-    uint8_t memory[dsp::processor::processorMemoryBufferSize];
-    float pfp[dsp::processor::maxProcessorFloatParams];
-    int ifp[dsp::processor::maxProcessorIntParams];
+    uint8_t memory[pdsp::processorMemoryBufferSize];
+    float pfp[pdsp::maxProcessorFloatParams];
+    int ifp[pdsp::maxProcessorIntParams];
 
     // Akip peoxr_nonw
     for (int i = 1; i < pdsp::proct_num_types; ++i)
