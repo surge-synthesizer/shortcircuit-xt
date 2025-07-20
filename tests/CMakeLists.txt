@@ -3,7 +3,9 @@ add_executable(scxt-test
 	test_main.cpp
 		sfz_parse.cpp
         streaming.cpp
-		sample_analytics.cpp)
+		sample_analytics.cpp
+		processors_and_fx.cpp
+)
 
 target_link_libraries(scxt-test
 		fmt
