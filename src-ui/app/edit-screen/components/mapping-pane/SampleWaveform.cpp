@@ -33,10 +33,7 @@
 namespace scxt::ui::app::edit_screen
 {
 
-SampleWaveform::SampleWaveform(VariantDisplay *d) : display(d), HasEditor(d->editor)
-{
-    addAndMakeVisible(samplePlaybackPosition);
-}
+SampleWaveform::SampleWaveform(VariantDisplay *d) : display(d), HasEditor(d->editor) {}
 
 void SampleWaveform::rebuildHotZones()
 {
@@ -671,17 +668,47 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.drawText(fmt::format("Norm: {} dB", db), 10, 2, getWidth(), 40,
                    juce::Justification::topLeft);
     }
+
+    for (auto &pb : playbackPositions)
+    {
+        auto px = xPixelForSample(pb);
+        if (px >= 0 && px < getWidth())
+        {
+            static constexpr int ellipseRad{2};
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_low));
+            g.drawVerticalLine(px, 0, getHeight());
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+            if (usedChannels == 1)
+            {
+                g.fillEllipse(px - ellipseRad, getHeight() / 2 - ellipseRad, 2 * ellipseRad + 1,
+                              2 * ellipseRad + 1);
+            }
+            else
+            {
+                g.fillEllipse(px - ellipseRad, getHeight() / 4 - ellipseRad, 2 * ellipseRad + 1,
+                              2 * ellipseRad + 1);
+                g.fillEllipse(px - ellipseRad, 3 * getHeight() / 4 - ellipseRad, 2 * ellipseRad + 1,
+                              2 * ellipseRad + 1);
+            }
+        }
+    }
 }
 
-void SampleWaveform::resized()
+void SampleWaveform::resized() { rebuildHotZones(); }
+
+void SampleWaveform::addSamplePlaybackPosition(int64_t samplePos)
 {
-    rebuildHotZones();
-    samplePlaybackPosition.setSize(1, getHeight());
+    playbackPositions.insert(samplePos);
+    repaint();
 }
 
-void SampleWaveform::updateSamplePlaybackPosition(int64_t samplePos)
+void SampleWaveform::clearSamplePlaybackPositions()
 {
-    // auto x = xPixelForSample(samplePos);
-    // samplePlaybackPosition.setTopLeftPosition(x, 0);
+    if (!playbackPositions.empty())
+    {
+        playbackPositions.clear();
+        repaint();
+    }
 }
+
 } // namespace scxt::ui::app::edit_screen

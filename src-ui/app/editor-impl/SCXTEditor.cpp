@@ -46,6 +46,9 @@
 #include "app/missing-resolution/MissingResolutionScreen.h"
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/screens/AlertOrPrompt.h"
+
+#include <app/edit-screen/components/MacroMappingVariantPane.h>
+#include <app/edit-screen/components/mapping-pane/VariantDisplay.h>
 #include <sst/jucegui/components/DiscreteParamMenuBuilder.h>
 
 #if MAC
@@ -238,31 +241,27 @@ void SCXTEditor::idle()
         }
     }
 
-#if 0
     /*
      * This basically doesn't work.
      */
-    if (editScreen->isVisible())
+    if (editScreen->isVisible() && editScreen->mappingPane->sampleDisplay->isVisible())
     {
         if (currentLeadZoneSelection.has_value())
         {
             bool anyActive{false};
+            editScreen->clearSamplePlaybackPositions();
             for (const auto &v : sharedUiMemoryState.voiceDisplayItems)
             {
                 if (v.active && v.group == currentLeadZoneSelection->group &&
                     v.part == currentLeadZoneSelection->part &&
                     v.zone == currentLeadZoneSelection->zone)
                 {
-                    editScreen->updateSamplePlaybackPosition(v.sample, v.samplePos);
+                    anyActive = true;
+                    editScreen->addSamplePlaybackPosition(v.sample, v.samplePos);
                 }
-            }
-            if (!anyActive)
-            {
-                editScreen->hideSamplePlaybackPosition();
             }
         }
     }
-#endif
 
     if (headerRegion)
     {

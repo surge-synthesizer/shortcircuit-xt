@@ -126,7 +126,8 @@ struct EditScreen : juce::Component, HasEditor
     void layout();
     std::map<selection::SelectionManager::ZoneAddress, size_t> voiceCountByZoneAddress;
     void onVoiceInfoChanged();
-    void updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
+    void addSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
+    void clearSamplePlaybackPositions();
 
     void selectedPartChanged();
     void macroDataChanged(int part, int index);
