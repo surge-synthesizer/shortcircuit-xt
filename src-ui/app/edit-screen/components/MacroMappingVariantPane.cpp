@@ -155,11 +155,17 @@ void MacroMappingVariantPane::invertScroll(bool invert)
     }
 }
 
-void MacroMappingVariantPane::updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
+void MacroMappingVariantPane::addSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
 {
     if (sampleDisplay->isVisible() && sampleIndex == sampleDisplay->selectedVariation)
         sampleDisplay->waveforms[sampleDisplay->selectedVariation]
-            .waveform->updateSamplePlaybackPosition(samplePos);
+            .waveform->addSamplePlaybackPosition(samplePos);
+}
+
+void MacroMappingVariantPane::clearSamplePlaybackPositions()
+{
+    sampleDisplay->waveforms[sampleDisplay->selectedVariation]
+        .waveform->clearSamplePlaybackPositions();
 }
 
 void MacroMappingVariantPane::selectedPartChanged() { macroDisplay->selectedPartChanged(); }

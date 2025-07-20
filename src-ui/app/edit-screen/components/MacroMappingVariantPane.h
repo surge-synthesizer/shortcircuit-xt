@@ -63,7 +63,8 @@ struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
     engine::Zone::ZoneMappingData mappingView;
     engine::Zone::Variants sampleView;
 
-    void updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
+    void addSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
+    void clearSamplePlaybackPositions();
 
     void invertScroll(bool invert);
     bool invertScroll() const;

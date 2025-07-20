@@ -102,10 +102,12 @@ void EditScreen::onVoiceInfoChanged()
     partSidebar->repaint();
 }
 
-void EditScreen::updateSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
+void EditScreen::addSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
 {
-    mappingPane->updateSamplePlaybackPosition(sampleIndex, samplePos);
+    mappingPane->addSamplePlaybackPosition(sampleIndex, samplePos);
 }
+
+void EditScreen::clearSamplePlaybackPositions() { mappingPane->clearSamplePlaybackPositions(); }
 
 void EditScreen::setSelectionMode(EditScreen::SelectionMode m)
 {

@@ -72,13 +72,9 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
         HZ_DRAG_LOOPEND,
     } mouseState{MouseState::NONE};
 
-    struct PlaybackCursor : juce::Component
-    {
-        void paint(juce::Graphics &g) override
-        { /*g.fillAll(juce::Colours::white);*/
-        }
-    } samplePlaybackPosition;
-    void updateSamplePlaybackPosition(int64_t samplePos);
+    std::set<int64_t> playbackPositions;
+    void addSamplePlaybackPosition(int64_t samplePos);
+    void clearSamplePlaybackPositions();
 
     void rebuildPaths();
 

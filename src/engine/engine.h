@@ -300,7 +300,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         setSampleRate(sampleRate);
         sharedUIMemoryState.voiceDisplayStateWriteCounter = 0;
 
-        const double updateFrequencyHz{15.0};
+        const double updateFrequencyHz{30.0};
 
         updateVoiceDisplayStateEvery = (int)std::floor(sampleRate / updateFrequencyHz / blockSize);
         lastUpdateVoiceDisplayState = updateVoiceDisplayStateEvery;
