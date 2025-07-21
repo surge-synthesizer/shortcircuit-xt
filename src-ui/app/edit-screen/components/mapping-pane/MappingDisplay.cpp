@@ -359,7 +359,27 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
     {
         namespace cmsg = scxt::messaging::client;
         auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition);
-        if (wsi->getCompoundElement().has_value())
+        if (wsi->encompassesMultipleSampleInfos())
+        {
+            auto els = wsi->getMultipleSampleInfos();
+            for (auto e : els)
+            {
+                if (e->getCompoundElement().has_value())
+                {
+                    sendToSerialization(cmsg::AddCompoundElementWithRange(
+                        {*e->getCompoundElement(), r[0], r[1], r[2], 0, 127}));
+                }
+                else if (
+                    e->getDirEnt()
+                        .has_value()) //  &&
+                                      //  !browser::Browser::isLoadableSingleSample(wsi->getDirEnt()->path()))
+                {
+                    sendToSerialization(cmsg::AddSampleWithRange(
+                        {e->getDirEnt()->path().u8string(), r[0], r[1], r[2], 0, 127}));
+                }
+            }
+        }
+        else if (wsi->getCompoundElement().has_value())
         {
             sendToSerialization(cmsg::AddCompoundElementWithRange(
                 {*wsi->getCompoundElement(), r[0], r[1], r[2], 0, 127}));

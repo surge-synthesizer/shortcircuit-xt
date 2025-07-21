@@ -29,6 +29,7 @@
 #define SCXT_SRC_UI_APP_BROWSER_UI_BROWSERPANEINTERFACES_H
 
 #include <optional>
+#include <set>
 #include "filesystem/import.h"
 #include "sample/compound_file.h"
 
@@ -39,6 +40,8 @@ struct WithSampleInfo
     virtual ~WithSampleInfo() {}
     virtual std::optional<fs::directory_entry> getDirEnt() const = 0;
     virtual std::optional<sample::compound::CompoundElement> getCompoundElement() const = 0;
+    virtual bool encompassesMultipleSampleInfos() const = 0;
+    virtual std::set<WithSampleInfo *> getMultipleSampleInfos() const = 0;
 };
 
 template <typename T> static bool hasSampleInfo(const T &t)

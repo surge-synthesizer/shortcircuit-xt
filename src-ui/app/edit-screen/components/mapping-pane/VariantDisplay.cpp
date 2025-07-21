@@ -918,7 +918,53 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
         auto za{editor->currentLeadZoneSelection};
         auto sampleID{getTabIndexFromPosition(dragSourceDetails.localPosition.x,
                                               dragSourceDetails.localPosition.y)};
-        if (wsi->getCompoundElement().has_value())
+        if (wsi->encompassesMultipleSampleInfos())
+        {
+            auto els = wsi->getMultipleSampleInfos();
+            auto nts = getNumTabs();
+            if (getTabNames()[nts - 1] == "+")
+                nts--;
+
+            if (nts + els.size() > maxVariantsPerZone)
+            {
+                editor->displayError("Too many samples", std::string() + "You tried to load " +
+                                                             std::to_string(els.size()) +
+                                                             " samples " +
+                                                             "into a zone which already has " +
+                                                             std::to_string(nts) + " variants");
+                return;
+            }
+            for (auto e : els)
+            {
+                if (!e->getCompoundElement().has_value() && e->getDirEnt().has_value() &&
+                    !browser::Browser::isLoadableSingleSample(e->getDirEnt()->path()))
+                {
+                    editor->displayError("Variant Not Single Sample",
+                                         std::string() + "You tried to load '" +
+                                             e->getDirEnt()->path().filename().u8string() +
+                                             "' into a " +
+                                             "variant slot, but this is not a single sample.");
+                    return;
+                }
+            }
+            auto addAt = nts;
+            for (auto e : els)
+            {
+                if (e->getCompoundElement().has_value())
+                {
+                    auto ce = *wsi->getCompoundElement();
+                    sendToSerialization(cmsg::AddCompoundElementInZone(
+                        {*e->getCompoundElement(), za->part, za->group, za->zone, addAt}));
+                }
+                else if (e->getDirEnt().has_value())
+                {
+                    sendToSerialization(cmsg::AddSampleInZone(
+                        {e->getDirEnt()->path().u8string(), za->part, za->group, za->zone, addAt}));
+                }
+                addAt++;
+            }
+        }
+        else if (wsi->getCompoundElement().has_value())
         {
             auto ce = *wsi->getCompoundElement();
             sendToSerialization(cmsg::AddCompoundElementInZone(
@@ -926,8 +972,16 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
         }
         else if (wsi->getDirEnt().has_value())
         {
-            sendToSerialization(cmsg::AddSampleInZone(
-                {wsi->getDirEnt()->path().u8string(), za->part, za->group, za->zone, sampleID}));
+            if (browser::Browser::isLoadableSingleSample(wsi->getDirEnt()->path()))
+                sendToSerialization(
+                    cmsg::AddSampleInZone({wsi->getDirEnt()->path().u8string(), za->part, za->group,
+                                           za->zone, sampleID}));
+            else
+                editor->displayError("Variant Not Single Sample",
+                                     std::string() + "You tried to load '" +
+                                         wsi->getDirEnt()->path().filename().u8string() +
+                                         "' into a " +
+                                         "variant slot, but this is not a single sample.");
         }
     }
 }

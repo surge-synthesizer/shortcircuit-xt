@@ -234,10 +234,13 @@ struct DriveArea : juce::Component, HasEditor
     }
 };
 
+struct DriveFSRowComponent;
+
 struct DriveFSArea : juce::Component, HasEditor
 {
     BrowserPane *browserPane{nullptr};
     std::unique_ptr<jcmp::ListView> listView;
+    std::set<DriveFSRowComponent *> selectedRows;
 
     DriveFSArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
@@ -450,7 +453,18 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         auto &data = browserPane->devicesPane->driveFSArea->contents;
         auto &entry = data[rowNumber];
         return entry.expandableAddress;
-        ;
+    }
+    bool encompassesMultipleSampleInfos() const override { return isDraggingMulti; }
+    std::set<WithSampleInfo *> getMultipleSampleInfos() const override
+    {
+        std::set<WithSampleInfo *> r;
+        SCLOG("Grab Multiple with " << browserPane->devicesPane->driveFSArea->selectedRows.size());
+
+        for (auto q : browserPane->devicesPane->driveFSArea->selectedRows)
+        {
+            r.insert(q);
+        }
+        return r;
     }
 
     void mouseDown(const juce::MouseEvent &event) override
@@ -513,6 +527,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         }
     }
 
+    bool isDraggingMulti{false}, isPaintSnapshot{false};
     void mouseDrag(const juce::MouseEvent &e) override
     {
         if (!isFile())
@@ -529,11 +544,15 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
             if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
             {
+                auto &dfs = browserPane->devicesPane->driveFSArea;
+                isDraggingMulti = dfs->selectedRows.size() > 1;
                 const auto &data = browserPane->devicesPane->driveFSArea->contents;
                 getProperties().set(
                     "DragAndDropSample",
                     juce::String::fromUTF8(data[rowNumber].dirent.path().u8string().c_str()));
+                isPaintSnapshot = true;
                 container->startDragging("FileSystem Row", this);
+                isPaintSnapshot = false;
                 isDragging = true;
             }
         }
@@ -541,7 +560,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
     void mouseUp(const juce::MouseEvent &event) override
     {
-        listView->rowSelected(rowNumber, true, event.mods);
+        if (!isDragging)
+            listView->rowSelected(rowNumber, true, event.mods);
 
         isMouseDownWithoutDrag = false;
         if (isDragging)
@@ -549,8 +569,6 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             isDragging = false;
         }
     }
-
-    void mouseUp() {}
 
     bool isHovered{false};
     void mouseEnter(const juce::MouseEvent &) override
@@ -673,8 +691,30 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
     }
     void paint(juce::Graphics &g) override
     {
-        const auto &data = browserPane->devicesPane->driveFSArea->contents;
-        if (rowNumber >= 0 && rowNumber < data.size())
+        auto &dfs = browserPane->devicesPane->driveFSArea;
+        const auto &data = dfs->contents;
+        if (isDraggingMulti && isPaintSnapshot)
+        {
+            auto width = getWidth();
+            auto height = getHeight();
+
+            g.setFont(browserPane->editor->themeApplier.interMediumFor(12));
+
+            // TODO: Style all of these
+            auto textColor =
+                browserPane->editor->themeColor(theme::ColorMap::generic_content_medium);
+            auto fillColor = juce::Colour(0, 0, 0).withAlpha(0.f);
+
+            fillColor = browserPane->editor->themeColor(theme::ColorMap::bg_3);
+            textColor = browserPane->editor->themeColor(theme::ColorMap::generic_content_high);
+            g.setColour(fillColor);
+            g.fillRect(0, 0, width, height);
+            auto r = getLocalBounds().reduced(2, 0);
+            auto txt = std::to_string(dfs->selectedRows.size()) + " items";
+            g.setColour(textColor);
+            g.drawText(txt, r, juce::Justification::centredLeft);
+        }
+        else if (rowNumber >= 0 && rowNumber < data.size())
         {
             const auto &entry = data[rowNumber];
             auto width = getWidth();
@@ -774,6 +814,9 @@ void DriveFSArea::setupListView()
         if (dfs)
         {
             dfs->rowNumber = r;
+            selectedRows.erase(dfs);
+            if (dfs->isSelected)
+                selectedRows.insert(dfs);
             dfs->repaint();
         }
     };
@@ -781,10 +824,16 @@ void DriveFSArea::setupListView()
         auto dfs = dynamic_cast<DriveFSRowComponent *>(c.get());
         if (dfs)
         {
+            if (r)
+                selectedRows.insert(dfs);
+            else
+                selectedRows.erase(dfs);
+
             dfs->isSelected = r;
             dfs->repaint();
         }
     };
+    listView->onRefresh = [this]() { selectedRows.clear(); };
 }
 
 struct FavoritesPane : TempPane
