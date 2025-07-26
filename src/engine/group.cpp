@@ -142,7 +142,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     float *lOut = output[0];
     float *rOut = output[1];
 
-    bool gated{attackInThisBlock};
+    gated = attackInThisBlock;
     attackInThisBlock = false;
     for (const auto &z : zones)
     {
@@ -240,6 +240,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         auto z = activeZoneWeakRefs[i];
         assert(z->isActive());
         z->process(e);
+
         assert(z->isActive() || rescanWeakRefs > 0);
         assert(oAZ == activeZones);
 
