@@ -238,8 +238,8 @@ struct Group : MoveableOnly<Group>,
     bool inRingout() const { return ringoutTime < ringoutMax; }
     bool hasActiveEGs() const
     {
-        const auto eg0A = (int)eg[0].stage <= (int)ahdsrenv_t::s_release;
-        const auto eg1A = (int)eg[1].stage <= (int)ahdsrenv_t::s_release;
+        const auto eg0A = egsActive[0] && ((int)eg[0].stage <= (int)ahdsrenv_t::s_release);
+        const auto eg1A = egsActive[1] && ((int)eg[1].stage <= (int)ahdsrenv_t::s_release);
         return eg0A || eg1A;
     }
 
@@ -260,10 +260,13 @@ struct Group : MoveableOnly<Group>,
     zoneContainer_t::iterator end() noexcept { return zones.end(); }
     zoneContainer_t::const_iterator cend() const noexcept { return zones.cend(); }
 
+    bool gated{false};
+
   private:
     zoneContainer_t zones;
     std::vector<Zone *> activeZoneWeakRefs;
     uint32_t rescanWeakRefs{0};
+
     void postZoneTraversalRemoveHandler();
 };
 } // namespace scxt::engine
