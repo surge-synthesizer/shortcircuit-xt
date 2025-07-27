@@ -244,8 +244,9 @@ struct GroupMatrixEndpoints
     struct Sources
     {
         Sources(engine::Engine *e)
-            : lfoSources(e), midiCCSources(e), egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}},
-              transportSources(e), rngSources(e), macroSources(e)
+            : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
+              egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e),
+              rngSources(e), macroSources(e)
         {
             registerGroupModSource(e, egSource[0], "EG", "EG1");
             registerGroupModSource(e, egSource[1], "EG", "EG2");

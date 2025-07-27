@@ -203,15 +203,6 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
     midiCCSources.bind(m, *(g.parentPart));
 
     int idx{0};
-
-#if 0
-    for (int i = 0; i < scxt::numTransportPhasors; ++i)
-    {
-        assert(g.getEngine());
-        m.bindSourceValue(transportSources.phasors[i], g.getEngine()->transportPhasors[i]);
-    }
-#endif
-
     auto *part = g.parentPart;
     for (int i = 0; i < macrosPerPart; ++i)
     {
