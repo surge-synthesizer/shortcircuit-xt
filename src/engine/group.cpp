@@ -144,10 +144,19 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     gated = attackInThisBlock;
     attackInThisBlock = false;
+    fGatedCount = 0;
+    fVoiceCount = 0;
+
     for (const auto &z : zones)
     {
         gated = gated || (z->gatedVoiceCount > 0);
+        fGatedCount += z->gatedVoiceCount;
+        fVoiceCount += z->activeVoices;
     }
+
+    fAnyGated = (fGatedCount > 0) * 1.f;
+    fAnySounding = (fVoiceCount > 0) * 1.f;
+    ;
 
     for (auto i = 0; i < engine::lfosPerGroup; ++i)
     {
