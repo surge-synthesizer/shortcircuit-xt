@@ -275,6 +275,8 @@ struct Group : MoveableOnly<Group>,
 
     bool gated{false};
 
+    float fGatedCount{0}, fVoiceCount{0}, fAnyGated{0}, fAnySounding{0};
+
   private:
     zoneContainer_t zones;
     std::vector<Zone *> activeZoneWeakRefs;

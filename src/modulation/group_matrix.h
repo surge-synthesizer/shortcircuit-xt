@@ -246,7 +246,7 @@ struct GroupMatrixEndpoints
         Sources(engine::Engine *e)
             : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
               egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e),
-              rngSources(e), macroSources(e)
+              rngSources(e), macroSources(e), subordinateVoiceSources(e)
         {
             registerGroupModSource(e, egSource[0], "EG", "EG1");
             registerGroupModSource(e, egSource[1], "EG", "EG2");
@@ -268,6 +268,13 @@ struct GroupMatrixEndpoints
 
             SR macros[macrosPerPart];
         } macroSources;
+
+        struct SubordinateVoiceSources
+        {
+            SubordinateVoiceSources(engine::Engine *e);
+
+            SR anyVoiceGated, anyVoiceSounding, voiceCount, gatedVoiceCount;
+        } subordinateVoiceSources;
 
         float zeroSource{0.f};
 

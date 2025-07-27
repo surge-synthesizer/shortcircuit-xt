@@ -221,6 +221,11 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
     {
         m.bindSourceValue(transportSources.phasors[i], g.phasorEvaluator.outputs[i]);
     }
+
+    m.bindSourceValue(subordinateVoiceSources.anyVoiceGated, g.fAnyGated);
+    m.bindSourceValue(subordinateVoiceSources.anyVoiceSounding, g.fAnySounding);
+    m.bindSourceValue(subordinateVoiceSources.voiceCount, g.fVoiceCount);
+    m.bindSourceValue(subordinateVoiceSources.gatedVoiceCount, g.fGatedCount);
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(
@@ -332,4 +337,23 @@ GroupMatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
         GroupMatrixConfig::setDefaultLagFor(macros[i], 25);
     }
 }
+
+GroupMatrixEndpoints::Sources::SubordinateVoiceSources::SubordinateVoiceSources(engine::Engine *e)
+    : anyVoiceGated{'gvoc', 'avgt', 0}, anyVoiceSounding{'gvoc', 'avsd', 0},
+      voiceCount{'gvoc', 'vcnt', 0}, gatedVoiceCount{'gvoc', 'vgct', 0}
+{
+    registerGroupModSource(
+        e, anyVoiceGated, [](auto &, auto &) { return "Voices"; },
+        [](auto &, auto &) { return "Any Gated"; });
+    registerGroupModSource(
+        e, anyVoiceSounding, [](auto &, auto &) { return "Voices"; },
+        [](auto &, auto &) { return "Any Sounding"; });
+    registerGroupModSource(
+        e, voiceCount, [](auto &, auto &) { return "Voices"; },
+        [](auto &, auto &) { return "Voices"; });
+    registerGroupModSource(
+        e, gatedVoiceCount, [](auto &, auto &) { return "Voices"; },
+        [](auto &, auto &) { return "Gated Voices"; });
+}
+
 } // namespace scxt::modulation
