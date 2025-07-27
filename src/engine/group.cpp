@@ -206,7 +206,6 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
                                useGate);
-
             envLfos[i].output *= *(endpoints.lfo[i].amplitudeP);
         }
         else
@@ -575,10 +574,35 @@ void Group::attack()
 
     if (isActive())
     {
+        /*
+         * Active groups have a re-attack behavior which is explicit
+         */
+
+        // Forst envelopes re-attack without delay phase
         for (int i = 0; i < egsPerGroup; ++i)
         {
             eg[i].attackFromWithDelay(eg[i].outBlock0, *(endpoints.egTarget[i].dlyP),
                                       *(endpoints.egTarget[i].aP));
+        }
+
+        // second, randoms get new values
+        randomEvaluator.evaluate(getEngine()->rng, miscSourceStorage);
+
+        // Third, LFOs which are *envelopes* need to re-attack
+        for (auto i = 0; i < engine::lfosPerGroup; ++i)
+        {
+            if (lfosActive[i])
+            {
+                const auto &ms = modulatorStorage[i];
+
+                // Looping envelopes are basically unipolar lfos so follow lfos
+                if (ms.isEnv() && !ms.envLfoStorage.loop)
+                {
+                    envLfos[i].attackFrom(envLfos[i].envelope.outBlock0,
+                                          *endpoints.lfo[i].env.delayP,
+                                          *endpoints.lfo[i].env.attackP);
+                }
+            }
         }
 
         // I *thin* we need to do this
@@ -629,7 +653,7 @@ void Group::attack()
 void Group::resetLFOs(int whichLFO)
 {
     auto sl = (whichLFO >= 0 ? whichLFO : 0);
-    auto el = (whichLFO >= 0 ? (whichLFO + 1) : engine::lfosPerZone);
+    auto el = (whichLFO >= 0 ? (whichLFO + 1) : engine::lfosPerGroup);
 
     for (auto i = sl; i < el; ++i)
     {

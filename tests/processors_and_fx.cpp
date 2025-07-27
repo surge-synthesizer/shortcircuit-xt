@@ -76,3 +76,41 @@ TEST_CASE("Processors have Formatting")
         }
     }
 }
+
+TEST_CASE("Dump Processor Tails")
+{
+    namespace pdsp = scxt::dsp::processor;
+    scxt::engine::MemoryPool mp;
+    pdsp::ProcessorStorage procStorage;
+    uint8_t memory[pdsp::processorMemoryBufferSize];
+    float pfp[pdsp::maxProcessorFloatParams];
+    int ifp[pdsp::maxProcessorIntParams];
+
+    // Akip peoxr_nonw
+    for (int i = 1; i < pdsp::proct_num_types; ++i)
+    {
+        auto pt = (pdsp::ProcessorType)i;
+        if (pdsp::isProcessorImplemented(pt))
+        {
+            DYNAMIC_SECTION("Tail for " << pdsp::getProcessorName(pt))
+            {
+                REQUIRE(true);
+                memset(memory, 0, sizeof(memory));
+                memset(pfp, 0, sizeof(pfp));
+                memset(ifp, 0, sizeof(ifp));
+                procStorage.type = pt;
+                auto p =
+                    pdsp::spawnProcessorInPlace(pt, &mp, memory, pdsp::processorMemoryBufferSize,
+                                                procStorage, pfp, ifp, false, true);
+                p->init_params();
+                p->init();
+
+                REQUIRE(p);
+
+                std::cout << "Processor " << p->getName() << " has tail at default "
+                          << p->tail_length() << std::endl;
+                pdsp::unspawnProcessor(p);
+            }
+        }
+    }
+}

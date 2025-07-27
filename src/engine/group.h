@@ -240,7 +240,20 @@ struct Group : MoveableOnly<Group>,
     {
         const auto eg0A = egsActive[0] && ((int)eg[0].stage <= (int)ahdsrenv_t::s_release);
         const auto eg1A = egsActive[1] && ((int)eg[1].stage <= (int)ahdsrenv_t::s_release);
-        return eg0A || eg1A;
+        auto res = eg0A || eg1A;
+        for (int i = 0; i < scxt::lfosPerGroup; ++i)
+        {
+            if (lfosActive[i])
+            {
+                const auto &ms = modulatorStorage[i];
+                if (ms.isEnv() && !ms.envLfoStorage.loop)
+                {
+                    res = res || ((int)envLfos[i].envelope.stage <=
+                                  (int)modulation::modulators::EnvLFO::env_t::s_release);
+                }
+            }
+        }
+        return res;
     }
 
     // Was attack on this group called in this block?
