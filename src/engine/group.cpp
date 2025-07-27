@@ -188,10 +188,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
             auto eloop = modulatorStorage[i].envLfoStorage.loop;
             auto useGate = gated;
-            if (envLfos[i].envelope.stage > scxt::modulation::modulators::EnvLFO::env_t::s_release)
-            {
-                rt = true;
-            }
+
             if (eloop)
             {
                 useGate = envLfos[i].envelope.stage <
@@ -378,6 +375,11 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         auto hasR = updateRingout() && (ringoutMax > 0) && inRingout();
         auto hasEG = hasActiveEGs();
 
+        if (hasEG) // If envelopes are still going don't start cointing ringout yet
+        {
+            ringoutTime = 0;
+        }
+
         if (hasR || hasEG)
         {
             ringoutTime += blockSize;
@@ -394,7 +396,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 bool Group::updateRingout()
 {
     auto res{false};
-    int32_t mx{0};
+    int32_t ro{0};
     for (auto &p : processors)
     {
         if (!p)
@@ -402,22 +404,22 @@ bool Group::updateRingout()
         auto tl = p->tail_length();
         if (tl != 0)
         {
-            if (tl == -1)
+            if (tl < 0)
             {
                 /*
                  * Someone is infinite. So set ringout time to 0
                  * then if someone drops away from infinite we start
                  * counting at their max
                  */
-                mx = std::numeric_limits<int32_t>::max();
+                ro = 1000 * sampleRate;
                 ringoutTime = 0;
             }
             else
-                mx = std::max(mx, tl);
+                ro = ro + tl; // we accumulate ringouts
             res = true;
         }
     }
-    ringoutMax = mx;
+    ringoutMax = ro;
     return res;
 }
 
@@ -694,6 +696,7 @@ bool Group::isActive() const
     auto haz = hasActiveZones();
     auto hae = hasActiveEGs();
     auto ir = inRingout();
+
     return haz || hae || ir;
 }
 
