@@ -8,6 +8,7 @@ add_library(${PROJECT_NAME} STATIC
         app/editor-impl/SCXTEditorMenus.cpp
         app/editor-impl/SCXTEditorResponseHandlers.cpp
         app/editor-impl/SCXTEditorDataCache.cpp
+        app/editor-impl/KeyBindings.cpp
 
         app/edit-screen/EditScreen.cpp
         app/edit-screen/components/AdsrPane.cpp
@@ -70,6 +71,7 @@ set_target_properties(scxtui_json_layouts PROPERTIES UNITY_BUILD FALSE)
 target_link_libraries(${PROJECT_NAME} PRIVATE
         fmt
         sst-plugininfra::strnatcmp
+        sst-plugininfra
         scxt-resources
         scxtui_json_layouts
         clap_juce_shim
