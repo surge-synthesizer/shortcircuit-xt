@@ -39,6 +39,7 @@
 
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/EditScreen.h"
+#include "app/editor-impl/KeyBindings.h"
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/LogScreen.h"
@@ -115,6 +116,8 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     focusDebugger = std::make_unique<sst::jucegui::accessibility::FocusDebugger>(*this);
     focusDebugger->setDoFocusDebug(false);
+
+    keyBindings = std::make_unique<KeyBindings>(this);
 
     idleTimer = std::make_unique<IdleTimer>(this);
     idleTimer->startTimer(1000 / 60);
@@ -531,6 +534,59 @@ void SCXTEditor::displayError(const std::string &title, const std::string &messa
 {
 
     displayModalOverlay(sst::jucegui::screens::AlertOrPrompt::Alert(title, message));
+}
+
+bool SCXTEditor::keyPressed(const juce::KeyPress &key)
+{
+    auto m = keyBindings->manager->matches(key);
+    ;
+    if (m.has_value())
+    {
+        switch (*m)
+        {
+        case SWITCH_GROUP_ZONE_SELECTION:
+            switchGroupOrZoneFocus();
+            return true;
+            break;
+        // DONT ADD A DEFAULT
+        case FOCUS_ZONES:
+            setActiveScreen(ActiveScreen::MULTI);
+            editScreen->viewZone();
+            return true;
+        case FOCUS_GROUPS:
+            setActiveScreen(ActiveScreen::MULTI);
+            editScreen->viewGroup();
+            return true;
+        case FOCUS_PARTS:
+            setActiveScreen(ActiveScreen::MULTI);
+            editScreen->viewPart();
+            return true;
+        case FOCUS_MIXER:
+            setActiveScreen(ActiveScreen::MIXER);
+            return true;
+        case FOCUS_PLAY:
+            setActiveScreen(ActiveScreen::PLAY);
+            return true;
+
+        case numKeyCommands:
+            break;
+        }
+    }
+    return false;
+}
+
+void SCXTEditor::switchGroupOrZoneFocus()
+{
+    if (activeScreen != ActiveScreen::MULTI)
+    {
+        // Not on multi - go to it
+        setActiveScreen(ActiveScreen::MULTI);
+        editScreen->viewZone();
+    }
+    else
+    {
+        editScreen->swapGroupZone();
+    }
 }
 
 } // namespace scxt::ui::app

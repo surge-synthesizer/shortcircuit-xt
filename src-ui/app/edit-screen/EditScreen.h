@@ -33,6 +33,7 @@
 #include <variant>
 #include "app/HasEditor.h"
 #include "app/browser-ui/BrowserPane.h"
+#include "components/PartGroupSidebar.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "selection/selection_manager.h"
 
@@ -140,6 +141,22 @@ struct EditScreen : juce::Component, HasEditor
         PART
     } selectionMode{SelectionMode::NONE};
     void setSelectionMode(SelectionMode m);
+    void viewZone() { partSidebar->setSelectedTab(2); }
+    void viewGroup() { partSidebar->setSelectedTab(1); }
+    void viewPart() { partSidebar->setSelectedTab(0); }
+    void swapGroupZone()
+    {
+        if (partSidebar->selectedTab == 2)
+        {
+            // zone to group
+            partSidebar->setSelectedTab(1);
+        }
+        else
+        {
+            // alwyas to zone
+            partSidebar->setSelectedTab(2);
+        }
+    }
 
     void onOtherTabSelection();
     // This allows us, in the future, to make this return s + selected part to have

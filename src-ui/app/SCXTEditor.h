@@ -43,6 +43,7 @@
 #include "sst/jucegui/components/WindowPanel.h"
 #include "sst/jucegui/screens/ScreenHolder.h"
 #include "sst/jucegui/style/JUCELookAndFeelAdapter.h"
+
 #include "sst/basic-blocks/dsp/RNG.h"
 #include "messaging/client/zone_messages.h"
 #include "browser/browser.h"
@@ -64,6 +65,8 @@ struct HasDiscreteParamMenuBuilder;
 }
 namespace scxt::ui::app
 {
+
+struct KeyBindings;
 
 namespace shared
 {
@@ -329,6 +332,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     float lastProcessMemoryInMegabytes{0};
 
     friend struct HasEditor;
+
+    // Keyboard shortcuts
+    std::unique_ptr<KeyBindings> keyBindings;
+    bool keyPressed(const juce::KeyPress &key) override;
+
+    void switchGroupOrZoneFocus();
 
   protected:
     template <typename T> void sendToSerialization(const T &msg)
