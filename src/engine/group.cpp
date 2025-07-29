@@ -363,6 +363,13 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     // multiply by vca level from matrix
     auto mlev = std::clamp(*endpoints.outputTarget.ampP, 0.f, 1.f);
+    if (terminationSequence > 0)
+    {
+        auto pml = mlev;
+        mlev *= 1.f * (terminationSequence - 1) / blocksToTerminate;
+        terminationSequence--;
+    }
+
     if constexpr (OS)
     {
         outputAmpOS.set_target(mlev * mlev * mlev);
@@ -395,9 +402,20 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         }
         else
         {
-            mUILag.instantlySnap();
-            parentPart->removeActiveGroup();
-            ringoutMax = 0;
+            if (blocksToTerminate < 0)
+            {
+                blocksToTerminate = std::ceil(blocksToTerminateAt48k * sampleRate / 48000.0);
+                terminationSequence = blocksToTerminate;
+            }
+
+            if (terminationSequence == 0)
+            {
+                mUILag.instantlySnap();
+                parentPart->removeActiveGroup();
+                ringoutMax = 0;
+                blocksToTerminate = -1;
+                terminationSequence = -1;
+            }
         }
     }
 }
@@ -705,8 +723,9 @@ bool Group::isActive() const
     auto haz = hasActiveZones();
     auto hae = hasActiveEGs();
     auto ir = inRingout();
+    auto et = isInTerminationFadeout();
 
-    return haz || hae || ir;
+    return haz || hae || ir || et;
 }
 
 void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix(); }

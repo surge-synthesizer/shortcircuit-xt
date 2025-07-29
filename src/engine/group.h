@@ -277,6 +277,10 @@ struct Group : MoveableOnly<Group>,
 
     float fGatedCount{0}, fVoiceCount{0}, fAnyGated{0}, fAnySounding{0};
 
+    static constexpr int32_t blocksToTerminateAt48k{16};
+    int32_t blocksToTerminate{-1}, terminationSequence{-1};
+    bool isInTerminationFadeout() const { return blocksToTerminate > 0 && terminationSequence > 0; }
+
   private:
     zoneContainer_t zones;
     std::vector<Zone *> activeZoneWeakRefs;
