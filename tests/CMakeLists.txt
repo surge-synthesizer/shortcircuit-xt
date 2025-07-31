@@ -18,7 +18,7 @@ target_link_libraries(scxt-test
 
 if (WIN32)
 	if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-		target_link_libraries(scxt-test PRIVATE DbgHelp.lib)
+		target_link_libraries(scxt-test DbgHelp.lib)
 	endif()
 endif()
 
