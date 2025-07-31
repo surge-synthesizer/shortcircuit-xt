@@ -16,4 +16,10 @@ target_link_libraries(scxt-test
         shortcircuit::catch2
         )
 
+if (WIN32)
+	if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+		target_link_libraries(scxt_test PRIVATE DbgHelp.lib)
+	endif()
+endif()
+
 
