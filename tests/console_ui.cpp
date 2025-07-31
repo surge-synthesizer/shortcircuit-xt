@@ -69,16 +69,6 @@ void ConsoleUI::drainQueue()
         {
             assert(msgCont.threadingChecker.isClientThread());
             cmsg::clientThreadExecuteSerializationMessage(queueMsg, this);
-#if BUILD_IS_DEBUG && 0
-            inboundMessageCount++;
-            inboundMessageBytes += queueMsg.size();
-            if (inboundMessageCount % 500 == 0)
-            {
-                SCLOG("Serial -> Client Message Count: "
-                      << inboundMessageCount << " size: " << inboundMessageBytes
-                      << " avg msg: " << inboundMessageBytes / inboundMessageCount);
-            }
-#endif
         }
     }
 }
