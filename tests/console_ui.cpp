@@ -37,14 +37,50 @@ ConsoleUI::ConsoleUI(messaging::MessageController &e, infrastructure::DefaultsPr
     : msgCont(e), sampleManager(s), defaultsProvider(d), browser(b), sharedUiMemoryState(st)
 {
     msgCont.registerClient("SCXTEditor", [this](auto &s) {
-        SCLOG("Test Harness message recieved " << s.size() << " bytes");
         {
             // Remember this runs on the serialization thread so needs to be thread safe
-            // std::lock_guard<std::mutex> g(callbackMutex);
-            // callbackQueue.push(s);
+            std::lock_guard<std::mutex> g(callbackMutex);
+            callbackQueue.push(s);
         }
-        // juce::MessageManager::callAsync([this]() { drainCallbackQueue(); });
     });
+}
+
+void ConsoleUI::stepUI() { drainQueue(); }
+
+void ConsoleUI::drainQueue()
+{
+    namespace cmsg = scxt::messaging::client;
+
+    bool itemsToDrain{true};
+    while (itemsToDrain)
+    {
+        itemsToDrain = false;
+        std::string queueMsg;
+        {
+            std::lock_guard<std::mutex> g(callbackMutex);
+            if (!callbackQueue.empty())
+            {
+                queueMsg = callbackQueue.front();
+                itemsToDrain = true;
+                callbackQueue.pop();
+            }
+        }
+        if (itemsToDrain)
+        {
+            assert(msgCont.threadingChecker.isClientThread());
+            cmsg::clientThreadExecuteSerializationMessage(queueMsg, this);
+#if BUILD_IS_DEBUG && 0
+            inboundMessageCount++;
+            inboundMessageBytes += queueMsg.size();
+            if (inboundMessageCount % 500 == 0)
+            {
+                SCLOG("Serial -> Client Message Count: "
+                      << inboundMessageCount << " size: " << inboundMessageBytes
+                      << " avg msg: " << inboundMessageBytes / inboundMessageCount);
+            }
+#endif
+        }
+    }
 }
 
 ConsoleUI::~ConsoleUI() { msgCont.unregisterClient(); }

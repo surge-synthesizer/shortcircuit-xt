@@ -36,5 +36,9 @@ TEST_CASE("Basic Console UI Startup")
     REQUIRE(th.engine);
     REQUIRE(th.editor);
 
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    for (int i = 0; i < 360; ++i)
+    {
+        th.editor->stepUI();
+        std::this_thread::sleep_for(std::chrono::milliseconds(17));
+    }
 }
