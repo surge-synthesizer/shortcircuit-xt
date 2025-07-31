@@ -5,6 +5,9 @@ add_executable(scxt-test
         streaming.cpp
 		sample_analytics.cpp
 		processors_and_fx.cpp
+
+		console_ui.cpp
+		ui_basics.cpp
 )
 
 target_link_libraries(scxt-test
@@ -12,5 +15,11 @@ target_link_libraries(scxt-test
         scxt-core
         shortcircuit::catch2
         )
+
+if (WIN32)
+	if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+		target_link_libraries(scxt-test DbgHelp.lib)
+	endif()
+endif()
 
 

@@ -40,7 +40,7 @@ jobs:
             os: macos-latest
             target: scxt_clapfirst_auv2
             cmakeConfig: -GNinja
-            runTests: true
+            runTests: false
             clapValidate: false
 
           - name: "ubuntu Standalone"
@@ -59,21 +59,24 @@ jobs:
             # cmakeConfig: -G"Visual Studio 17 2022" -A x64 -TClangCL -DCMAKE_UNITY_BUILD=TRUE
             # MSVC
             cmakeConfig: -G"Visual Studio 17 2022" -A x64 -DCMAKE_UNITY_BUILD=TRUE
-            runTests: false
+            runTests: false # true hangs in CI - why?
+            testPath: build/tests/Debug
             clapValidate: true
 
           - name: "mac unity"
             os: macos-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
-            runTests: false
+            runTests: true
+            testPath: build/tests
             clapValidate: true
 
           - name: "ubuntu unity"
             os: ubuntu-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
-            runTests: false
+            runTests: true
+            testPath: build/tests
             clapValidate: true
 
     steps:
@@ -102,7 +105,7 @@ jobs:
         if: ${{ matrix.runTests }}
         run: |
           cmake --build build --config Debug --target scxt-test --parallel 4
-          ./build/tests/scxt-test
+          ./${{ matrix.testPath }}/scxt-test
 
 
   build_plugin_lindoc:
