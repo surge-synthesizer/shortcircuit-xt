@@ -85,42 +85,4 @@ void ConsoleUI::drainQueue()
 
 ConsoleUI::~ConsoleUI() { msgCont.unregisterClient(); }
 
-bool TestHarness::start(double sampleRate)
-{
-    engine = std::make_unique<scxt::engine::Engine>();
-    engine->runningEnvironment = "SCXT Test Harness";
-
-    engine->setSampleRate(sampleRate);
-
-    editor = std::make_unique<ConsoleUI>(*(engine->getMessageController()), *(engine->defaults),
-                                         *(engine->getSampleManager()), *(engine->getBrowser()),
-                                         engine->sharedUIMemoryState);
-
-    keepProcessing = true;
-    audioThread = std::make_unique<std::thread>([this]() { runAudioThread(); });
-    return true;
-}
-
-TestHarness::~TestHarness()
-{
-    keepProcessing.store(false);
-    audioThread->join();
-    editor.reset();
-    engine.reset();
-}
-
-void TestHarness::runAudioThread()
-{
-    auto sr = engine->getSampleRate();
-    auto sleepTime = (uint32_t)(scxt::blockSize / sr * 1000000 * 0.5);
-
-    while (keepProcessing)
-    {
-        engine->processAudio();
-        engine->transport.timeInBeats +=
-            (double)scxt::blockSize * 120 * engine->getSampleRateInv() / 60.f;
-        std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
-    }
-}
-
 } // namespace scxt::tests

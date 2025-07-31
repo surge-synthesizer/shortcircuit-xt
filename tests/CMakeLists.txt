@@ -1,13 +1,17 @@
 # And finally the test suite
 add_executable(scxt-test
-	test_main.cpp
+		test_main.cpp
+		console_ui.cpp
+		test_utilities.cpp
+
 		sfz_parse.cpp
         streaming.cpp
 		sample_analytics.cpp
 		processors_and_fx.cpp
 
-		console_ui.cpp
 		ui_basics.cpp
+
+		selection_manager.cpp
 )
 
 target_link_libraries(scxt-test
