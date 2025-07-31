@@ -44,7 +44,6 @@ TEST_CASE("Create a Single Blank Zone and it is Selected")
             scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 }
 
-
 TEST_CASE("Create five zones then multi-select")
 {
     scxt::tests::TestHarness th;
