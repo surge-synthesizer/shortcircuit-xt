@@ -26,19 +26,22 @@
  */
 
 #include "catch2/catch2.hpp"
-#include <chrono>
+#include "engine/engine.h"
+
+#include "test_utilities.h"
 #include "console_ui.h"
 
-TEST_CASE("Basic Console UI Startup")
+TEST_CASE("Create a Single Blank Zone and it is Selected")
 {
     scxt::tests::TestHarness th;
-    REQUIRE(th.start(true));
-    REQUIRE(th.engine);
-    REQUIRE(th.editor);
+    th.start();
 
-    for (int i = 0; i < 36; ++i)
-    {
-        th.editor->stepUI();
-        std::this_thread::sleep_for(std::chrono::milliseconds(17));
-    }
+    th.stepUI();
+
+    th.sendToSerialization(scxt::messaging::client::AddBlankZone({0, 0, 60, 72, 0, 64}));
+
+    th.stepUI();
+
+    REQUIRE(th.engine->getSelectionManager()->leadZone[0] ==
+            scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 }
