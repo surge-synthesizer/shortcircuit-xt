@@ -538,7 +538,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
         {
-            return true; // !isZone();
+            return fz; // !irsZone();
         }
 
         void itemDragEnter(const SourceDetails &dragSourceDetails) override
@@ -567,18 +567,25 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             auto rd = dynamic_cast<rowComponent *>(sc.get());
             if (rd)
             {
-                auto tgt =
-                    selection::SelectionManager::ZoneAddress{gsb->editor->selectedPart, -1, -1};
-
-                if (rd->isDragMulti)
+                if (fz)
                 {
-                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
+                    auto tgt =
+                        selection::SelectionManager::ZoneAddress{gsb->editor->selectedPart, -1, -1};
+
+                    if (rd->isDragMulti)
+                    {
+                        gsb->sendToSerialization(cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
+                    }
+                    else
+                    {
+                        auto src = rd->getZoneAddress();
+
+                        gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
+                    }
                 }
                 else
                 {
-                    auto src = rd->getZoneAddress();
-
-                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
+                    // SCLOG("Dropping group onto +");
                 }
             }
         }
