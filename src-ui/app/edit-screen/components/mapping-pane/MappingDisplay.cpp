@@ -73,8 +73,9 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     auto iAdd = [this](auto &v, auto &a, auto &w) {
         ifac::attachAndAdd(mappingView, v, this, a, w);
     };
-    auto iAddConstrained = [this](auto &v, auto &a, auto &w, std::function<bool(int)> accept) {
-        ifac::attachAndAdd(mappingView, v, this, a, w);
+    auto iAddConstrained = [this, iAdd](auto &v, auto &a, auto &w,
+                                        std::function<bool(int)> accept) {
+        iAdd(v, a, w);
         connectors::addGuiStepBeforeSend(*a, [&aWrite = a, accept](const auto &a) {
             if (!accept(aWrite->value))
                 aWrite->value = a.prevValue;

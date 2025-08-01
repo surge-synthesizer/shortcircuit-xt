@@ -35,6 +35,7 @@
 #include <type_traits>
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/data/Discrete.h"
+#include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "datamodel/metadata.h"
 #include "sample/sample.h"
 #include "app/HasEditor.h"
@@ -505,7 +506,17 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         auto showTT = std::is_same_v<
             typename std::remove_cv<typename std::remove_reference<decltype(val)>::type>::type,
             float>;
-        if (showTT)
+        constexpr bool isText =
+            std::is_same_v<W, sst::jucegui::components::DraggableTextEditableValue>;
+
+        if constexpr (isText)
+        {
+            wid->onPopupMenu = [sw = juce::Component::SafePointer(wid.get())](auto &m) {
+                if (sw)
+                    sw->activateEditor();
+            };
+        }
+        else if (showTT)
         {
             e->setupWidgetForValueTooltip(wid.get(), att.get());
         }
@@ -514,6 +525,7 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
             e->setupIntAttachedWidgetForValueMenu(wid.get(), att.get());
         }
         e->addSubscription(val, att);
+
         return {std::move(att), std::move(wid)};
     }
 
