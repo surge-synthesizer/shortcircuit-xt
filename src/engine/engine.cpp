@@ -844,12 +844,32 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
     zptr->mapping.keyboardRange = krange;
     zptr->mapping.velocityRange = vrange;
     zptr->mapping.rootKey = (krange.keyStart + krange.keyEnd) / 2;
-    zptr->givenName = "Empty Zone (" + std::to_string(zptr->id.id) + ")";
-
-    // give it a name
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
+
+    // give it a name
+    std::set<std::string> zoneNames;
+    auto &part = getPatch()->getPart(sp);
+    for (auto &g : *part)
+        for (auto &z : *g)
+            zoneNames.insert(z->getName());
+
+    // Give the new zone the lowest available new zone name for the part
+    int count{0};
+    bool found{false};
+    while (!found)
+    {
+        std::string lname = "Empty Zone";
+        if (count > 0)
+            lname += " (" + std::to_string(count + 1) + ")";
+        if (zoneNames.find(lname) == zoneNames.end())
+        {
+            zptr->givenName = lname;
+            found = true;
+        }
+        count++;
+    }
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
