@@ -45,9 +45,9 @@ namespace scxt::json
 SC_STREAMDEF(scxt::selection::SelectionManager::SelectActionContents, SC_FROM({
                  auto &e = from;
                  assert(SC_STREAMING_FOR_IN_PROCESS);
-                 v = {{"p", e.part},      {"g", e.group},         {"z", e.zone},
-                      {"s", e.selecting}, {"d", e.distinct},      {"sl", e.selectingAsLead},
-                      {"fz", e.forZone},  {"ic", e.isContiguous}, {"cf", e.contiguousFrom}};
+                 v = {{"p", e.part},      {"g", e.group},    {"z", e.zone},
+                      {"s", e.selecting}, {"d", e.distinct}, {"sl", e.selectingAsLead},
+                      {"fz", e.forZone}};
              }),
              SC_TO({
                  auto &z = to;
@@ -58,8 +58,6 @@ SC_STREAMDEF(scxt::selection::SelectionManager::SelectActionContents, SC_FROM({
                  findIf(v, "d", z.distinct);
                  findIf(v, "sl", z.selectingAsLead);
                  findIf(v, "fz", z.forZone);
-                 findIf(v, "ic", z.isContiguous);
-                 findIf(v, "cf", z.contiguousFrom);
              }));
 
 SC_STREAMDEF(scxt::selection::SelectionManager::ZoneAddress, SC_FROM({

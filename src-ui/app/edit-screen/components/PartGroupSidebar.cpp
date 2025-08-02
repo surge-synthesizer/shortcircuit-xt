@@ -325,16 +325,45 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
             - cmd/ctrl click is non-contiguous toggle select zone
             - alt-click is move lead or add and make lead
          */
-        if (mods.isShiftDown())
+        if (mods.isShiftDown() && lastZoneClicked != rowZone)
         {
-            auto se = selection::SelectionManager::SelectActionContents(rowZone);
-            se.selecting = true;
-            se.distinct = false;
-            se.selectingAsLead = false;
-            se.forZone = true;
-            se.isContiguous = true;
-            se.contiguousFrom = lastZoneClicked;
-            editor->doSelectionAction(se);
+            std::vector<selection::SelectionManager::SelectActionContents> actions;
+            SCLOG_IF(selection, "Contiguous from " << lastZoneClicked << " to " << rowZone);
+
+            bool doPush{false};
+            for (auto &r : partGroupSidebar->pgzStructure)
+            {
+                bool firstDoPush{false};
+                if (r.address == lastZoneClicked || r.address == rowZone)
+                {
+                    if (!doPush)
+                    {
+                        doPush = true;
+                        firstDoPush = true;
+                    }
+                }
+                if (doPush && r.address.zone >= 0)
+                {
+                    SCLOG_IF(selection, "Including zone in selection " << r.address)
+                    auto se = selection::SelectionManager::SelectActionContents(r.address);
+                    se.selecting = true;
+                    se.distinct = false;
+                    se.selectingAsLead =
+                        (r.address == editor->currentLeadZoneSelection.value_or(
+                                          selection::SelectionManager::ZoneAddress()));
+                    se.forZone = true;
+                    actions.push_back(se);
+                }
+                if (r.address == lastZoneClicked || r.address == rowZone)
+                {
+                    if (!firstDoPush)
+                    {
+                        doPush = false;
+                        break;
+                    }
+                }
+            }
+            editor->doMultiSelectionAction(actions);
         }
         else if (rowZone.zone >= 0)
         {
