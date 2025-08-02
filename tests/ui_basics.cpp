@@ -28,6 +28,7 @@
 #include "catch2/catch2.hpp"
 #include <chrono>
 #include "console_ui.h"
+#include "test_utilities.h"
 
 TEST_CASE("Basic Console UI Startup")
 {

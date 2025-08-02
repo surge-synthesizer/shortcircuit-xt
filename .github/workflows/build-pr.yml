@@ -47,7 +47,7 @@ jobs:
             os: ubuntu-latest
             target: scxt_clapfirst_standalone
             cmakeConfig: -GNinja
-            runTests: false
+            runTests: true
             clapValidate: false
 
           - name: "win unity"

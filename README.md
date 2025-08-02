@@ -49,7 +49,7 @@ git clone <this repo or your fork>
 cd shortcircuit-xt
 git submodule update --init --recursive
 cmake -Bignore/build -DCMAKE_BUILD_TYPE=Release
-cmake --build ignore/build --config Release --target scxt_plugin_All
+cmake --build ignore/build --config Release --target shortcircuit-products
 ```
 
 Our production build uses clang on macos, and gcc on linux. We
