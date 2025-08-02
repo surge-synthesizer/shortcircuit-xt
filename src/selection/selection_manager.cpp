@@ -120,46 +120,6 @@ void SelectionManager::multiSelectAction(const std::vector<SelectActionContents>
 void SelectionManager::selectAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
-    /* A wildcard zone single select means select all in group */
-    if (z.forZone && z.isContiguous)
-    {
-        auto zf = (ZoneAddress)z;
-        auto zt = z.contiguousFrom;
-        if (zt < zf)
-        {
-            std::swap(zf, zt);
-        }
-        if (zf.part != zt.part)
-        {
-            SCLOG("ERROR: Can't do contiguous selection across parts");
-            return;
-        }
-        auto gs = zf.group;
-        auto ge = zt.group;
-        std::vector<SelectActionContents> res;
-
-        for (auto gi = gs; gi <= ge; ++gi)
-        {
-            const auto &grp = engine.getPatch()->getPart(zf.part)->getGroup(gi);
-            auto sz = ((gi == gs && zf.zone >= 0) ? zf.zone : 0);
-            auto ez = ((gi == ge && zt.zone >= 0) ? zt.zone : grp->getZones().size() - 1);
-            for (auto zi = sz; zi <= ez; ++zi)
-            {
-                SelectActionContents se;
-                se.part = zt.part;
-                se.group = gi;
-                se.zone = zi;
-                se.selecting = true;
-                se.distinct = false;
-                se.selectingAsLead = false;
-
-                res.push_back(se);
-            }
-
-            multiSelectAction(res);
-        }
-        return;
-    }
     if (z.forZone && z.zone == -1)
     {
         auto za = (ZoneAddress)z;

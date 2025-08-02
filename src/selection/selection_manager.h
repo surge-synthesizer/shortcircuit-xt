@@ -68,6 +68,7 @@ struct SelectionManager
         int32_t group{-1};
         int32_t zone{-1};
 
+        bool operator!=(const ZoneAddress &other) const { return !(*this == other); }
         bool operator==(const ZoneAddress &other) const
         {
             return part == other.part && group == other.group && zone == other.zone;
@@ -133,9 +134,6 @@ struct SelectionManager
         bool selectingAsLead{true}; // Should I force this selection to be lead?
 
         bool forZone{true}; // does this target the zone selection set (T) or group (F)
-
-        bool isContiguous{false};     // Is this a gesture which implies a contiguous selection
-        ZoneAddress contiguousFrom{}; // and if so, starting from where?
 
         friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
         {
