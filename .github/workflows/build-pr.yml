@@ -48,6 +48,7 @@ jobs:
             target: scxt_clapfirst_standalone
             cmakeConfig: -GNinja
             runTests: true
+            testPath: build/tests
             clapValidate: false
 
           - name: "win unity"
