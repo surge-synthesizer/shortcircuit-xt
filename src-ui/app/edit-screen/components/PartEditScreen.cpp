@@ -31,6 +31,7 @@
 #include "mapping-pane/MacroDisplay.h"
 #include "app/SCXTEditor.h"
 #include "app/shared/PartEffectsPane.h"
+#include "app/edit-screen/EditScreen.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -41,7 +42,7 @@ struct PartSettingsDisplay : HasEditor, juce::Component
     {
         auto ft = editor->themeApplier.interBoldFor(40);
         g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
-        g.drawText("Coming Soon", getLocalBounds(), juce::Justification::centred);
+        g.drawText("Part Settings Coming Soon", getLocalBounds(), juce::Justification::centred);
     }
 };
 
