@@ -34,25 +34,15 @@
 
 namespace scxt::messaging::client
 {
-
-inline void doApplySelectAction(const selection::SelectionManager::SelectActionContents &za,
-                                const engine::Engine &engine)
-{
-    engine.getSelectionManager()->selectAction(za);
-}
-CLIENT_TO_SERIAL(ApplySelectAction, c2s_apply_select_action,
-                 selection::SelectionManager::SelectActionContents,
-                 doApplySelectAction(payload, engine));
-
 inline void
-doApplyMultiSelectAction(const std::vector<selection::SelectionManager::SelectActionContents> &za,
-                         const engine::Engine &engine)
+doApplySelectActions(const std::vector<selection::SelectionManager::SelectActionContents> &za,
+                     const engine::Engine &engine)
 {
-    engine.getSelectionManager()->multiSelectAction(za);
+    engine.getSelectionManager()->applySelectActions(za);
 }
-CLIENT_TO_SERIAL(ApplyMultiSelectAction, c2s_apply_multi_select_action,
+CLIENT_TO_SERIAL(ApplySelectActions, c2s_apply_select_actions,
                  std::vector<selection::SelectionManager::SelectActionContents>,
-                 doApplyMultiSelectAction(payload, engine));
+                 doApplySelectActions(payload, engine));
 
 CLIENT_TO_SERIAL(SelectPart, c2s_select_part, int16_t,
                  engine.getSelectionManager()->selectPart(payload));

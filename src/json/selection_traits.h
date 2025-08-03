@@ -110,7 +110,9 @@ SC_STREAMDEF(selection::SelectionManager, SC_FROM({
                      selection::SelectionManager::SelectActionContents sac{
                          z.leadZone[z.selectedPart]};
                      sac.distinct = false;
-                     z.selectAction(sac);
+                     sac.selectingAsLead = true;
+                     sac.selecting = true;
+                     z.applySelectActions({sac});
                  }
              }));
 } // namespace scxt::json

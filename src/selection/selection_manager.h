@@ -147,14 +147,19 @@ struct SelectionManager
         ZoneAddress addr() const { return {part, group, zone}; }
     };
 
-    void selectAction(const SelectActionContents &z);
-    void multiSelectAction(const std::vector<SelectActionContents> &v);
+    void applySelectActions(const std::vector<SelectActionContents> &v);
+    void applySelectActions(const SelectActionContents &v)
+    {
+        applySelectActions(std::vector<SelectActionContents>{v});
+    }
     void guaranteeConsistencyAfterDeletes(const engine::Engine &, bool zoneDeleted,
                                           const ZoneAddress &addressDeleted);
     void selectPart(int16_t part);
     void clearAllSelections();
 
   protected:
+    std::vector<SelectActionContents>
+    transformSelectionActions(const std::vector<SelectActionContents> &);
     void adjustInternalStateForAction(const SelectActionContents &);
     void guaranteeSelectedLead();
     void guaranteeSelectedLeadSomewhereIn(int part, int group, int zone);

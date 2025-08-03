@@ -392,7 +392,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         }
     }
 
-    e.getSelectionManager()->selectAction(selection::SelectionManager::SelectActionContents(
+    e.getSelectionManager()->applySelectActions(selection::SelectionManager::SelectActionContents(
         pt, firstGroupWithZonesAdded, 0, true, true, true));
     return true;
 }

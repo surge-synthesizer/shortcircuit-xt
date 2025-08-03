@@ -300,7 +300,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                 }
             }
         }
-        e.getSelectionManager()->selectAction(
+        e.getSelectionManager()->applySelectActions(
             {pt, firstGroup, firstGroup >= 0 ? 0 : -1, true, true, true});
     }
     catch (RIFF::Exception e)

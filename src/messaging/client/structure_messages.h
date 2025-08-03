@@ -160,7 +160,7 @@ inline void createGroupIn(int partNumber, engine::Engine &engine, MessageControl
                 SCLOG_IF(selection, "Empty selection when creating group in " << p);
                 // ooof what to do
                 int32_t g = engine.getPatch()->getPart(p)->getGroups().size() - 1;
-                engine.getSelectionManager()->selectAction(
+                engine.getSelectionManager()->applySelectActions(
                     selection::SelectionManager::SelectActionContents(p, g, -1, true, true, true));
             }
         });
@@ -416,7 +416,7 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
                     tc.zone = zc + i;
                     auto act =
                         selection::SelectionManager::SelectActionContents(tc, true, i == 0, i == 0);
-                    engine.getSelectionManager()->selectAction(act);
+                    engine.getSelectionManager()->applySelectActions(act);
                 }
             }
 
