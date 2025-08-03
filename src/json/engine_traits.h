@@ -101,7 +101,6 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
 
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
-                 SCLOG("Unstream and Setup Complete");
              }))
 
 SC_STREAMDEF(scxt::engine::Patch, SC_FROM({

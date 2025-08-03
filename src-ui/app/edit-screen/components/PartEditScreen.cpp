@@ -34,12 +34,42 @@
 
 namespace scxt::ui::app::edit_screen
 {
+struct PartSettingsDisplay : HasEditor, juce::Component
+{
+    PartSettingsDisplay(SCXTEditor *e) : HasEditor(e) {}
+    void paint(juce::Graphics &g) override
+    {
+        auto ft = editor->themeApplier.interBoldFor(40);
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+        g.drawText("Coming Soon", getLocalBounds(), juce::Justification::centred);
+    }
+};
+
 PartEditScreen::PartEditScreen(HasEditor *e) : HasEditor(e)
 {
-    macroPanel = std::make_unique<sst::jucegui::components::NamedPanel>("MACROS");
+    topPanel = std::make_unique<sst::jucegui::components::NamedPanel>("MACROS");
+    topPanel->isTabbed = true;
+    topPanel->tabNames = {"MACROS", "SETTINGS"};
     macroDisplay = std::make_unique<MacroDisplay>(editor);
-    macroPanel->addAndMakeVisible(*macroDisplay);
-    addAndMakeVisible(*macroPanel);
+    partSettingsDisplay = std::make_unique<PartSettingsDisplay>(editor);
+    topPanel->addAndMakeVisible(*macroDisplay);
+    topPanel->addChildComponent(*partSettingsDisplay);
+
+    topPanel->onTabSelected = [this](int index) {
+        if (index == 1)
+        {
+            partSettingsDisplay->setVisible(true);
+            macroDisplay->setVisible(false);
+        }
+        else
+        {
+            partSettingsDisplay->setVisible(false);
+            macroDisplay->setVisible(true);
+        }
+        editor->setTabSelection(editor->editScreen->tabKey("multi.part.top"),
+                                std::to_string(index));
+    };
+    addAndMakeVisible(*topPanel);
 
     for (int i = 0; i < maxEffectsPerPart; ++i)
     {
@@ -67,8 +97,9 @@ void PartEditScreen::macroDataChanged(int part, int index)
 
 void PartEditScreen::resized()
 {
-    macroPanel->setBounds(getLocalBounds().withHeight(280));
-    macroDisplay->setBounds(macroPanel->getContentArea());
+    topPanel->setBounds(getLocalBounds().withHeight(280));
+    macroDisplay->setBounds(topPanel->getContentArea());
+    partSettingsDisplay->setBounds(topPanel->getContentArea());
 
     // HACK
     auto b = getLocalBounds().withTrimmedTop(280);
