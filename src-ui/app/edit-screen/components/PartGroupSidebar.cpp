@@ -325,7 +325,7 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
             - cmd/ctrl click is non-contiguous toggle select zone
             - alt-click is move lead or add and make lead
          */
-        if (mods.isShiftDown() && lastZoneClicked != rowZone)
+        if (mods.isShiftDown() && lastZoneClicked != rowZone && rowZone.zone >= 0)
         {
             std::vector<selection::SelectionManager::SelectActionContents> actions;
             SCLOG_IF(selection, "Contiguous from " << lastZoneClicked << " to " << rowZone);
@@ -388,10 +388,11 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         }
         else if (rowZone.group >= 0)
         {
+            // Group Selection on the server side selects all in the group
             auto se = selection::SelectionManager::SelectActionContents(rowZone);
 
             se.selecting = true;
-            se.distinct = false;
+            se.distinct = !mods.isAltDown();
             se.selectingAsLead = false;
             se.forZone = true;
             editor->doSelectionAction(se);

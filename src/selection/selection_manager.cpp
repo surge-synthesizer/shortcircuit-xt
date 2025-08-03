@@ -120,33 +120,33 @@ void SelectionManager::multiSelectAction(const std::vector<SelectActionContents>
 void SelectionManager::selectAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
-    if (z.forZone && z.zone == -1)
+    SCLOG_IF(selection, "Select Action " << z);
+    if (!z.addr().isInWithPartials(engine))
     {
-        auto za = (ZoneAddress)z;
-        if (!za.isInWithPartials(engine) || za.group == -1)
-        {
-            SCLOG("ERROR: Zone not consistent with engine");
-            return;
-        }
-
-        const auto &g = engine.getPatch()->getPart(za.part)->getGroup(za.group);
+        SCLOG("ERROR: Zone not consistent with engine");
+        return;
+    }
+    if (z.forZone && z.zone == -1 && z.group >= 0)
+    {
+        const auto &g = engine.getPatch()->getPart(z.part)->getGroup(z.group);
 
         std::vector<SelectActionContents> res;
         int idx{0};
         for (const auto &zn : *g)
         {
             auto rc = z;
+            rc.distinct = (idx == 0) && z.distinct;
+            rc.selectingAsLead = (idx == 0);
+            rc.selecting = true;
             rc.zone = idx++;
             res.push_back(rc);
         }
         multiSelectAction(res);
-        return;
     }
-    adjustInternalStateForAction(z);
-    guaranteeSelectedLead();
-    sendClientDataForLeadSelectionState();
-    sendSelectedZonesToClient();
-    debugDumpSelectionState();
+    else
+    {
+        multiSelectAction({z});
+    }
 }
 
 void SelectionManager::selectPart(int16_t part)
