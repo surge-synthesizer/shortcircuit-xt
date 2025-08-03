@@ -77,7 +77,6 @@ void EditScreen::layout()
     partEditScreen->setBounds(mainRect);
 
     auto wavHeight = mainRect.getHeight() - envHeight - modHeight - fxHeight;
-    SCLOG("wavHeight " << wavHeight);
     mappingPane->setBounds(mainRect.withHeight(wavHeight));
 
     zoneElements->layoutInto(mainRect);
@@ -299,6 +298,14 @@ void EditScreen::onOtherTabSelection()
         auto mt = std::atoi(mts.c_str());
         if (mt >= 0 && mt < 3)
             mappingPane->setSelectedTab(mt);
+    }
+
+    auto pt = editor->queryTabSelection(tabKey("multi.part.top"));
+    if (!pt.empty())
+    {
+        auto mt = std::atoi(pt.c_str());
+        if (mt >= 0 && mt < 2)
+            partEditScreen->topPanel->selectTab(mt);
     }
 }
 

@@ -43,6 +43,7 @@ template <bool forBus> struct PartEffectsPane;
 namespace edit_screen
 {
 struct MacroDisplay;
+struct PartSettingsDisplay;
 
 struct PartEditScreen : juce::Component, HasEditor
 {
@@ -54,7 +55,8 @@ struct PartEditScreen : juce::Component, HasEditor
     void macroDataChanged(int part, int index);
 
     std::unique_ptr<MacroDisplay> macroDisplay;
-    std::unique_ptr<sst::jucegui::components::NamedPanel> macroPanel;
+    std::unique_ptr<PartSettingsDisplay> partSettingsDisplay;
+    std::unique_ptr<sst::jucegui::components::NamedPanel> topPanel;
 
     void setFXSlotToType(int part, int slot, engine::AvailableBusEffects t);
 
