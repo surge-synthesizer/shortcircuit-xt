@@ -11,7 +11,7 @@ add_executable(scxt-test
 
 		ui_basics.cpp
 
-		selection_manager.cpp
+		selection_tests.cpp
 )
 
 target_link_libraries(scxt-test

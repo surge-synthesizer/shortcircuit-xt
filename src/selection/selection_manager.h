@@ -144,6 +144,7 @@ struct SelectionManager
         }
 
         operator ZoneAddress() const { return {part, group, zone}; }
+        ZoneAddress addr() const { return {part, group, zone}; }
     };
 
     void selectAction(const SelectActionContents &z);
