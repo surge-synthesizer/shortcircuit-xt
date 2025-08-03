@@ -63,7 +63,6 @@ TEST_CASE("Create five zones then multi-select")
     const auto &sm = th.engine->getSelectionManager();
     REQUIRE(sm->selectedPart == 0);
 
-
     th.sendToSerialization(abz({0, 0, 60, 72, 0, 64}));
     th.sendToSerialization(abz({0, 0, 60, 72, 65, 127}));
     th.sendToSerialization(abz({0, 0, 73, 82, 0, 64}));
