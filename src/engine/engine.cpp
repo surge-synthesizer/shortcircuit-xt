@@ -569,7 +569,7 @@ void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement
                                  (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
         },
         [p = partID, g = groupID, z = zoneID](auto &e) {
-            e.getSelectionManager()->selectAction({p, g, z, true, true, true});
+            e.getSelectionManager()->applySelectActions({p, g, z, true, true, true});
         });
 }
 
@@ -625,7 +625,7 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
                                  (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
         },
         [p = partID, g = groupID, z = zoneID](auto &e) {
-            e.getSelectionManager()->selectAction({p, g, z, true, true, true});
+            e.getSelectionManager()->applySelectActions({p, g, z, true, true, true});
         });
 }
 
@@ -710,7 +710,7 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
         });
 }
 
@@ -831,7 +831,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
         });
 }
 
@@ -885,7 +885,7 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
         });
 }
 
@@ -927,7 +927,7 @@ void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
         });
 }
 
@@ -965,7 +965,7 @@ void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
         [sp = sp, sg = sg](auto &e) {
             auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
             int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->selectAction({sp, sg, zi, true, true, true});
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
         });
 }
 
@@ -1157,7 +1157,7 @@ void Engine::sendFullRefreshToClient() const
         selection::SelectionManager::SelectActionContents sac{
             *(getSelectionManager()->currentLeadZone(*this))};
         sac.distinct = false;
-        getSelectionManager()->selectAction(sac);
+        getSelectionManager()->applySelectActions(sac);
     }
     for (int p = 0; p < numParts; ++p)
     {

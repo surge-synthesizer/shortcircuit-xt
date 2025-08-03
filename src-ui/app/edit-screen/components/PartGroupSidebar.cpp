@@ -284,7 +284,7 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
             se.distinct = !mods.isCommandDown();
             se.selectingAsLead = true;
             se.forZone = true;
-            editor->doMultiSelectionAction({se});
+            editor->doSelectionAction({se});
         }
         else
         {
@@ -292,7 +292,7 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
             se.distinct = !mods.isCommandDown();
             se.selectingAsLead = se.selecting;
             se.forZone = false;
-            editor->doMultiSelectionAction({se});
+            editor->doSelectionAction({se});
         }
     }
     std::unique_ptr<GroupSettingsCard> groupSettings;
@@ -363,7 +363,7 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
                     }
                 }
             }
-            editor->doMultiSelectionAction(actions);
+            editor->doSelectionAction(actions);
         }
         else if (rowZone.zone >= 0)
         {

@@ -54,9 +54,12 @@ TEST_CASE("Create five zones then multi-select")
 
     using abz = cmsg::AddBlankZone;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
-    using asa = cmsg::ApplySelectAction;
+    using asa = cmsg::ApplySelectActions;
     using sac = scxt::selection::SelectionManager::SelectActionContents;
 
+    auto sel = [&th](auto p, auto g, auto z, auto s, auto d, auto ld) {
+        th.sendToSerialization(cmsg::ApplySelectActions({{p, g, z, s, d, ld}}));
+    };
     const auto &sm = th.engine->getSelectionManager();
     REQUIRE(sm->selectedPart == 0);
 
@@ -72,38 +75,38 @@ TEST_CASE("Create five zones then multi-select")
 
     INFO("Single select other zones");
     // remember SAC is p/g/z select, distinct, as-lead
-    th.sendToSerialization(asa(sac{0, 0, 2, true, true, true}));
+    sel(0, 0, 2, true, true, true);
     th.stepUI();
     REQUIRE(sm->leadZone[0] == zad{0, 0, 2});
     REQUIRE(sm->allSelectedZones[0].size() == 1);
 
     INFO("Single select a second zone not as lead");
-    th.sendToSerialization(asa(sac{0, 0, 0, true, false, false}));
+    sel(0, 0, 0, true, false, false);
     th.stepUI();
     REQUIRE(sm->leadZone[0] == zad{0, 0, 2});
     REQUIRE(sm->allSelectedZones[0].size() == 2);
 
     INFO("Swap the lead");
-    th.sendToSerialization(asa(sac{0, 0, 0, true, false, true}));
+    sel(0, 0, 0, true, false, true);
     th.stepUI();
     REQUIRE(sm->leadZone[0] == zad{0, 0, 0});
     REQUIRE(sm->allSelectedZones[0].size() == 2);
 
     INFO("Unselect the non-lead");
-    th.sendToSerialization(asa(sac{0, 0, 2, false, false, false}));
+    sel(0, 0, 2, false, false, false);
     th.stepUI();
     REQUIRE(sm->leadZone[0] == zad{0, 0, 0});
     REQUIRE(sm->allSelectedZones[0].size() == 1);
 
     INFO("Select two more groups as non-lead and lead");
-    th.sendToSerialization(asa(sac{0, 0, 1, true, false, true}));
-    th.sendToSerialization(asa(sac{0, 0, 3, true, false, false}));
+    sel(0, 0, 1, true, false, true);
+    sel(0, 0, 3, true, false, false);
     th.stepUI();
     REQUIRE(sm->leadZone[0] == zad{0, 0, 1});
     REQUIRE(sm->allSelectedZones[0].size() == 3);
 
     INFO("Select a different zone disticnt and get it lead with set clear");
-    th.sendToSerialization(asa(sac{0, 0, 4, true, true, true}));
+    sel(0, 0, 4, true, true, true);
     th.stepUI();
     REQUIRE(sm->leadZone[0] == zad{0, 0, 4});
     REQUIRE(sm->allSelectedZones[0].size() == 1);

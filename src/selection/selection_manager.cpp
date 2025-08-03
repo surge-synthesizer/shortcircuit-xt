@@ -107,27 +107,36 @@ void SelectionManager::sendClientDataForLeadSelectionState()
     }
 }
 
-void SelectionManager::multiSelectAction(const std::vector<SelectActionContents> &v)
+void SelectionManager::applySelectActions(const std::vector<SelectActionContents> &v)
 {
-    for (const auto &z : v)
+    auto r = transformSelectionActions(v);
+    for (const auto &z : r)
+    {
+        if (!z.addr().isInWithPartials(engine))
+        {
+            // TODO - error message
+            continue;
+        }
         adjustInternalStateForAction(z);
+    }
     guaranteeSelectedLead();
     sendClientDataForLeadSelectionState();
     sendSelectedZonesToClient();
     debugDumpSelectionState();
 }
 
-void SelectionManager::selectAction(
-    const scxt::selection::SelectionManager::SelectActionContents &z)
+std::vector<SelectionManager::SelectActionContents>
+SelectionManager::transformSelectionActions(const std::vector<SelectActionContents> &inEls)
 {
-    SCLOG_IF(selection, "Select Action " << z);
-    if (!z.addr().isInWithPartials(engine))
+    if (inEls.size() > 1)
     {
-        SCLOG("ERROR: Zone not consistent with engine");
-        return;
+        return inEls;
     }
-    if (z.forZone && z.zone == -1 && z.group >= 0)
+    auto &sing = inEls[0];
+
+    if (sing.forZone && sing.zone == -1 && sing.group >= 0)
     {
+        auto z = sing;
         const auto &g = engine.getPatch()->getPart(z.part)->getGroup(z.group);
 
         std::vector<SelectActionContents> res;
@@ -141,12 +150,10 @@ void SelectionManager::selectAction(
             rc.zone = idx++;
             res.push_back(rc);
         }
-        multiSelectAction(res);
+        return res;
     }
-    else
-    {
-        multiSelectAction({z});
-    }
+
+    return inEls;
 }
 
 void SelectionManager::selectPart(int16_t part)

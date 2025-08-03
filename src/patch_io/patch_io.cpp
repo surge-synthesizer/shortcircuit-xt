@@ -818,7 +818,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
                 if (!pt->getGroups().empty() &&
                     part == nonconste.getSelectionManager()->selectedPart)
                 {
-                    nonconste.getSelectionManager()->selectAction({part, 0, -1});
+                    nonconste.getSelectionManager()->applySelectActions({part, 0, -1});
                 }
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();

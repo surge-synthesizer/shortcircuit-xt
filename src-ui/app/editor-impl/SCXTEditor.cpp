@@ -333,24 +333,21 @@ void SCXTEditor::drainCallbackQueue()
 void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddress &a,
                                    bool selecting, bool distinct, bool asLead)
 {
-    namespace cmsg = scxt::messaging::client;
-    currentLeadZoneSelection = a;
-    sendToSerialization(cmsg::ApplySelectAction(selection::SelectionManager::SelectActionContents{
-        a.part, a.group, a.zone, selecting, distinct, asLead}));
-    repaint();
+    doSelectionAction(selection::SelectionManager::SelectActionContents{
+        a.part, a.group, a.zone, selecting, distinct, asLead});
 }
 
 void SCXTEditor::doSelectionAction(const selection::SelectionManager::SelectActionContents &p)
 {
     namespace cmsg = scxt::messaging::client;
-    sendToSerialization(cmsg::ApplySelectAction(p));
+    sendToSerialization(cmsg::ApplySelectActions({p}));
     repaint();
 }
-void SCXTEditor::doMultiSelectionAction(
+void SCXTEditor::doSelectionAction(
     const std::vector<selection::SelectionManager::SelectActionContents> &p)
 {
     namespace cmsg = scxt::messaging::client;
-    sendToSerialization(cmsg::ApplyMultiSelectAction(p));
+    sendToSerialization(cmsg::ApplySelectActions(p));
     repaint();
 }
 

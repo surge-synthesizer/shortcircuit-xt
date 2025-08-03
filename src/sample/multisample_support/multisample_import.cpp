@@ -236,7 +236,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
     if (!addedGroupIndices.empty())
     {
-        engine.getSelectionManager()->selectAction(
+        engine.getSelectionManager()->applySelectActions(
             selection::SelectionManager::SelectActionContents(pt, addedGroupIndices.front(), 0,
                                                               true, true, true));
 
