@@ -60,14 +60,16 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
             auto cla = *display->editor->currentLeadZoneSelection;
             for (const auto &z : display->summary)
             {
+                if (!editor->isAnyZoneFromGroupSelected(z.address.group))
+                    continue;
+
                 auto r = rectangleForZone(z);
-                if (z.address == cla && rectangleForZone(z).contains(e.position))
+                if (z.address == cla && r.contains(e.position))
                 {
                     youClickedLead = true;
                     zaLead = z.address;
                 }
-                else if (display->editor->isSelected(z.address) &&
-                         rectangleForZone(z).contains(e.position))
+                else if (display->editor->isSelected(z.address) && r.contains(e.position))
                 {
                     youClickedAnySelected = true;
                     zaPrefSel = z.address;
@@ -89,6 +91,9 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
             // You clicked some random blue area. Lead select it and rmb
             for (const auto &z : display->summary)
             {
+                if (!editor->isAnyZoneFromGroupSelected(z.address.group))
+                    continue;
+
                 auto r = rectangleForZone(z);
                 if (r.contains(e.position))
                 {
@@ -680,6 +685,9 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         bool first = true;
         for (const auto &z : display->summary)
         {
+            if (!editor->isAnyZoneFromGroupSelected(z.address.group))
+                continue;
+
             if (rz.intersects(rectangleForZone(z)))
             {
                 display->editor->doSelectionAction(z.address, true, first && firstAsLead,
@@ -1160,6 +1168,9 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             for (const auto &z : display->summary)
             {
+                if (!editor->isAnyZoneFromGroupSelected(z.address.group))
+                    continue;
+
                 auto rz = rectangleForZone(z);
                 if (rz.intersects(r))
                 {
@@ -1317,7 +1328,7 @@ void ZoneLayoutDisplay::updateTooltipContents(bool andShow, const juce::Point<in
 {
     if (!cacheLastZone.has_value())
         return;
-    SCLOG_UNIMPL_ONCE("Update Tooltip in ZoneDisplaye currently bypassed");
+
     if (andShow)
     {
         juce::Timer::callAfterDelay(100, [pos, w = juce::Component::SafePointer(this)]() {

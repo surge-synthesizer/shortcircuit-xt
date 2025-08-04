@@ -74,8 +74,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
         rebuildControlsFromDescription();
     }
 
-    void setAsMultiZone(int32_t primaryType, const std::string &nm,
-                        const std::set<int32_t> &otherTypes);
+    void setAsMultiZone(int32_t primaryType, const std::string &nm);
 
     void rebuildControlsFromDescription();
     void attachRebuildToIntAttachment(int idx);

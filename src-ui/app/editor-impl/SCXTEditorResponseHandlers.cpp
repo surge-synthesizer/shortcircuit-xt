@@ -154,8 +154,8 @@ void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
 void SCXTEditor::onZoneProcessorDataMismatch(
     const scxt::messaging::client::processorMismatchPayload_t &pl)
 {
-    const auto &[idx, leadType, leadName, otherTypes] = pl;
-    editScreen->getZoneElements()->processors[idx]->setAsMultiZone(leadType, leadName, otherTypes);
+    const auto &[idx, leadType, leadName] = pl;
+    editScreen->getZoneElements()->processors[idx]->setAsMultiZone(leadType, leadName);
 }
 
 void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &d)
