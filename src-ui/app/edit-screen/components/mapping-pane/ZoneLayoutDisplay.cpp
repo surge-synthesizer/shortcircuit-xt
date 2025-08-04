@@ -109,6 +109,10 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         }
     }
 
+    // In group mode, we don't undertake selection actions or morph in the grid
+    if (isEditorInGroupMode())
+        return;
+
     if (!keyboardHotZones.empty() && keyboardHotZones[0].contains(e.position))
     {
         updateTooltipContents(true, e.position.toInt());
@@ -268,6 +272,10 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
             return;
         }
     }
+
+    // In group mode we don't create zones
+    if (isEditorInGroupMode())
+        return;
 
     // TODO : this really really should be ina  function
     auto displayRegion = getLocalBounds().toFloat();
@@ -644,6 +652,15 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         editor->hideTooltip();
         tooltipActive = false;
     }
+
+    // In group mode we don't select
+    if (isEditorInGroupMode())
+    {
+        mouseState = NONE;
+        repaint();
+        return;
+    }
+
     if (mouseState == MULTI_SELECT)
     {
         auto rz = juce::Rectangle<float>(firstMousePos, e.position);
@@ -704,6 +721,11 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
     }
     mouseState = NONE;
     repaint();
+}
+
+bool ZoneLayoutDisplay::isEditorInGroupMode() const
+{
+    return editor->editScreen->partSidebar->selectedTab == 1;
 }
 
 juce::Rectangle<float>

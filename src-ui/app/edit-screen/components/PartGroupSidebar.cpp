@@ -286,11 +286,14 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
 
         if (rowZone.zone >= 0)
         {
+            /*
             se.selecting = !isSelected;
             se.distinct = !mods.isCommandDown();
             se.selectingAsLead = true;
             se.forZone = true;
             editor->doSelectionAction({se});
+            */
+            SCLOG_ONCE_IF(selection, "Supressing zone selection in group sidebar");
         }
         else
         {
