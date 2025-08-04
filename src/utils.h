@@ -304,6 +304,14 @@ std::string logTimestamp();
         }                                                                                          \
     }
 
+#define SCLOG_ONCE_IF(x, ...)                                                                      \
+    {                                                                                              \
+        if constexpr (scxt::log::x)                                                                \
+        {                                                                                          \
+            SCLOG("[" << #x << "] " << __VA_ARGS__);                                               \
+        }                                                                                          \
+    }
+
 #define SCLOG_WFUNC(...) SCLOG(__func__ << " " << __VA_ARGS__)
 #define SCLOG_UNIMPL(...) SCLOG("\033[1;33mUnimpl [" << __func__ << "]\033[0m " << __VA_ARGS__);
 #define SCLOG_UNIMPL_ONCE(...) SCLOG_ONCE("Unimpl [" << __func__ << "] " << __VA_ARGS__);

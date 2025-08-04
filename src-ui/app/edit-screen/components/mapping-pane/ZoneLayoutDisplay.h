@@ -125,6 +125,8 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         bothHotZones.clear();
     }
 
+    bool isEditorInGroupMode() const;
+
     enum MouseState
     {
         NONE,
