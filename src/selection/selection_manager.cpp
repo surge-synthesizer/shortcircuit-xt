@@ -85,7 +85,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 
     if (allSelectedGroups[selectedPart].size() > 1)
     {
-        SCLOG_UNIMPL("Multi-group selection to do");
+        SCLOG_UNIMPL_ONCE("Multi-group selection to do");
     }
     else if (allSelectedGroups[selectedPart].size() == 1)
     {
@@ -552,8 +552,7 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
      */
     for (int i = 0; i < engine::processorCount; ++i)
     {
-        auto typ = processorTypesForSelectedZones(i);
-        if (typ.size() == 1)
+        if (acrossSelectionConsistency(true, PROCESSOR_TYPE, i))
         {
             serializationSendToClient(
                 cms::s2c_respond_single_processor_metadata_and_data,
@@ -563,14 +562,10 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
         }
         else
         {
-            // just inter-process not perma streamed so safe as int
-            std::set<int32_t> ptInt;
-            for (const auto &t : typ)
-                ptInt.insert((int32_t)t);
             serializationSendToClient(cms::s2c_notify_mismatched_processors_for_zone,
                                       cms::ProcessorsMismatched::s2c_payload_t{
                                           i, (int32_t)zp->processorDescription[i].type,
-                                          zp->processorDescription[i].typeDisplayName, ptInt},
+                                          zp->processorDescription[i].typeDisplayName},
                                       *(engine.getMessageController()));
         }
     }
@@ -697,25 +692,6 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
             cms::ProcessorMetadataAndData::s2c_payload_t{false, i, false, {}, {}},
             *(engine.getMessageController()));
     }
-}
-
-std::set<dsp::processor::ProcessorType> SelectionManager::processorTypesForSelectedZones(int pidx)
-{
-    std::set<dsp::processor::ProcessorType> res;
-
-    const auto &pt = engine.getPatch();
-    for (const auto &z : allSelectedZones[selectedPart])
-    {
-        if (z.isIn(engine))
-        {
-            res.insert(pt->getPart(z.part)
-                           ->getGroup(z.group)
-                           ->getZone(z.zone)
-                           ->processorStorage[pidx]
-                           .type);
-        }
-    }
-    return res;
 }
 
 void SelectionManager::copyZoneProcessorLeadToAll(int which)
@@ -869,6 +845,41 @@ void SelectionManager::clearAllSelections()
     for (auto &g : leadGroup)
         g = {};
     selectedPart = 0;
+}
+
+bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck,
+                                                  int index)
+{
+    if (forZone)
+    {
+        auto &lza = leadZone[selectedPart];
+        if (!lza.isInWithPartials(engine))
+            return true;
+
+        const auto &lz =
+            engine.getPatch()->getPart(lza.part)->getGroup(lza.group)->getZone(lza.zone);
+
+        for (auto &s : allSelectedZones[selectedPart])
+        {
+            if (!s.isInWithPartials(engine))
+                continue;
+            const auto &it = engine.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+            switch (whichCheck)
+            {
+            case PROCESSOR_TYPE:
+                if (lz->processorStorage[index].type != it->processorStorage[index].type)
+                    return false;
+                break;
+            case MATRIX_ROW:
+                break;
+            }
+        }
+    }
+    else
+    {
+        SCLOG_UNIMPL("Group branch");
+    }
+    return true;
 }
 
 } // namespace scxt::selection

@@ -1213,8 +1213,7 @@ void ProcessorPane::mouseUp(const juce::MouseEvent &e)
     sst::jucegui::components::NamedPanel::mouseUp(e);
 }
 
-void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::string &nm,
-                                   const std::set<int32_t> &otherTypes)
+void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::string &nm)
 {
     multiZone = true;
     multiName = nm;

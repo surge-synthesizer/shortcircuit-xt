@@ -158,6 +158,13 @@ struct SelectionManager
     void clearAllSelections();
 
   protected:
+    enum ConsistencyCheck
+    {
+        PROCESSOR_TYPE,
+        MATRIX_ROW
+    };
+    bool acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck, int index);
+
     std::vector<SelectActionContents>
     transformSelectionActions(const std::vector<SelectActionContents> &);
     void adjustInternalStateForAction(const SelectActionContents &);
@@ -200,8 +207,6 @@ struct SelectionManager
 
     // To ponder. Does this belong on this object or the engine?
     void copyZoneProcessorLeadToAll(int which);
-
-    std::set<dsp::processor::ProcessorType> processorTypesForSelectedZones(int pidx);
 
   public:
     using otherTabSelection_t = std::unordered_map<std::string, std::string>;

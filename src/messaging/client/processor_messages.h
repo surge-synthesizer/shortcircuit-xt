@@ -44,7 +44,7 @@ SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata
                  processorDataResponsePayload_t, onGroupOrZoneProcessorDataAndMetadata);
 
 // zone, lead type, leadName, all types
-typedef std::tuple<int, int, std::string, std::set<int32_t>> processorMismatchPayload_t;
+typedef std::tuple<int, int, std::string> processorMismatchPayload_t;
 SERIAL_TO_CLIENT(ProcessorsMismatched, s2c_notify_mismatched_processors_for_zone,
                  processorMismatchPayload_t, onZoneProcessorDataMismatch);
 
