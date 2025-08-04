@@ -280,6 +280,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void doSelectionAction(const selection::SelectionManager::SelectActionContents &);
     void doSelectionAction(const std::vector<selection::SelectionManager::SelectActionContents> &);
     std::optional<selection::SelectionManager::ZoneAddress> currentLeadZoneSelection;
+    std::optional<selection::SelectionManager::ZoneAddress> currentLeadGroupSelection;
     selection::SelectionManager::selectedZones_t allZoneSelections;
     selection::SelectionManager::selectedZones_t allGroupSelections;
     int16_t selectedPart{0};

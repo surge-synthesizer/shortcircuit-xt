@@ -148,6 +148,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             const auto &sg = tgl[rowNumber];
 
             bool isLeadZone = isZone() && gsb->isLeadZone(sg.address);
+            bool isLeadGroup = isGroup() && gsb->isLeadGroup(sg.address);
 
             auto editor = gsb->partGroupSidebar->editor;
 
@@ -186,11 +187,17 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             }
             else
             {
-                if (isSelected && isGroup())
+                if (isLeadGroup && isGroup())
                 {
                     fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.4);
                     textColor = editor->themeColor(theme::ColorMap::generic_content_highest);
                     lowTextColor = editor->themeColor(theme::ColorMap::accent_1a);
+                }
+                else if (isSelected && isGroup())
+                {
+                    fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.2);
+                    textColor = editor->themeColor(theme::ColorMap::generic_content_medium);
+                    lowTextColor = editor->themeColor(theme::ColorMap::accent_1b);
                 }
             }
 

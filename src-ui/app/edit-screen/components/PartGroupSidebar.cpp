@@ -226,6 +226,12 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
         return editor->currentLeadZoneSelection.has_value() &&
                za == *(editor->currentLeadZoneSelection);
     }
+
+    bool isLeadGroup(const selection::SelectionManager::ZoneAddress &za)
+    {
+        return editor->currentLeadGroupSelection.has_value() &&
+               za == *(editor->currentLeadGroupSelection);
+    }
 };
 
 struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
