@@ -134,7 +134,9 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
     }
     auto &sing = inEls[0];
 
-    if (sing.forZone && sing.zone == -1 && sing.group >= 0)
+    // single select a group selects all zones
+    if ((sing.forZone && sing.zone == -1 && sing.group >= 0) ||
+        (!sing.forZone && sing.group >= 0 && sing.zone == -1))
     {
         auto z = sing;
         const auto &g = engine.getPatch()->getPart(z.part)->getGroup(z.group);
@@ -144,12 +146,15 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
         for (const auto &zn : *g)
         {
             auto rc = z;
+            rc.forZone = true;
             rc.distinct = (idx == 0) && z.distinct;
             rc.selectingAsLead = (idx == 0);
             rc.selecting = true;
             rc.zone = idx++;
             res.push_back(rc);
         }
+        if (!z.forZone)
+            res.push_back(z);
         return res;
     }
 
@@ -206,17 +211,24 @@ void SelectionManager::adjustInternalStateForAction(
         }
 
         /*
-         * Adjust - if there is no selected group for this part
-         * make this zone selection select the group
+         * Under zone selection we want the following
+         * - Selected groups is the union of zone groups
+         * - lead group is the group of lead zone
          */
-        if (allSelectedGroups[selectedPart].empty() && z.group >= 0 && z.zone >= 0)
+        std::set<int32_t> gset;
+        allSelectedGroups[selectedPart].clear();
+        for (const auto &z : allSelectedZones[selectedPart])
         {
-            SCLOG_IF(selection, "Promoting group of zone");
-            auto gza = za;
-            gza.zone = -1;
-            allSelectedGroups[selectedPart].insert(gza);
-            leadGroup[selectedPart] = gza;
+            gset.insert(z.group);
         }
+        for (auto g : gset)
+        {
+            allSelectedGroups[selectedPart].insert({selectedPart, g, -1});
+        }
+        leadGroup[selectedPart] = {selectedPart, leadZone[selectedPart].group, -1};
+        SCLOG_IF(selection,
+                 "AllSelectedGroups[" << selectedPart << "] " << gset.size() << " groups");
+        SCLOG_IF(selection, "LeadGroup[" << selectedPart << "] " << leadGroup[selectedPart]);
     }
     else
     {
@@ -341,35 +353,46 @@ void SelectionManager::guaranteeSelectedLead()
     if (allSelectedZones[selectedPart].find(leadZone[selectedPart]) ==
         allSelectedZones[selectedPart].end())
     {
-        if (allSelectedZones[selectedPart].empty() && leadZone[selectedPart].part >= 0)
+        // Nothing is selected. So we need to pick the first zone of the first group
+        if (allSelectedZones[selectedPart].empty())
         {
-            // Oh what to do here. Well reject it.
-            SCLOG_IF(selection, __func__ << " - be careful - we are promoting "
-                                         << SCD(leadZone[selectedPart]));
-            allSelectedZones[selectedPart].insert(leadZone[selectedPart]);
+            auto &pt = engine.getPatch()->getPart(selectedPart);
+            if (pt->getGroups().empty())
+            {
+                leadZone = {};
+            }
+            else
+            {
+                auto &gr = pt->getGroup(0);
+                if (gr->getZones().empty())
+                {
+                    leadZone[selectedPart] = {};
+                }
+                else
+                {
+                    leadZone[selectedPart] = {selectedPart, 0, 0};
+                    SCLOG_IF(selection, "Lead zone is first zone of first group");
+                }
+            }
         }
         else if (!allSelectedZones[selectedPart].empty())
         {
             leadZone[selectedPart] = *(allSelectedZones[selectedPart].begin());
         }
-        else
-        {
-            leadZone[selectedPart] = {};
-        }
     }
 
     // Still at group single so far
-    assert(allSelectedGroups[selectedPart].size() < 2);
     if (allSelectedGroups[selectedPart].find(leadGroup[selectedPart]) ==
         allSelectedGroups[selectedPart].end())
     {
-        if (!allSelectedGroups[selectedPart].empty())
+        SCLOG_IF(selection, "Promoting lead group in guaranteeSelectedLead");
+        leadGroup[selectedPart] = {selectedPart, leadZone[selectedPart].group, -1};
+        if (allSelectedGroups[selectedPart].find(leadGroup[selectedPart]) ==
+                allSelectedGroups[selectedPart].end() &&
+            leadGroup[selectedPart].group >= 0)
         {
-            leadGroup[selectedPart] = *(allSelectedGroups[selectedPart].begin());
-        }
-        else
-        {
-            leadGroup[selectedPart] = {};
+            SCLOG_IF(selection, "Adding zone lead to AllSelectedGroups");
+            allSelectedGroups[selectedPart].insert(leadGroup[selectedPart]);
         }
     }
 }
@@ -401,11 +424,11 @@ void SelectionManager::sendSelectedZonesToClient()
         debugDumpSelectionState();
     }
 
-    serializationSendToClient(cms::s2c_send_selection_state,
-                              cms::selectedStateMessage_t{leadZone[selectedPart],
-                                                          allSelectedZones[selectedPart],
-                                                          allSelectedGroups[selectedPart]},
-                              *(engine.getMessageController()));
+    serializationSendToClient(
+        cms::s2c_send_selection_state,
+        cms::selectedStateMessage_t{leadZone[selectedPart], allSelectedZones[selectedPart],
+                                    leadGroup[selectedPart], allSelectedGroups[selectedPart]},
+        *(engine.getMessageController()));
 }
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const

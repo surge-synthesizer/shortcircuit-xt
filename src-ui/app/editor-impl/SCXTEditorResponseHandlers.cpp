@@ -275,19 +275,12 @@ void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
 void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)
 {
     allZoneSelections = std::get<1>(a);
-    allGroupSelections = std::get<2>(a);
+    allGroupSelections = std::get<3>(a);
 
-    auto optLead = std::get<0>(a);
-    if (optLead.has_value())
-    {
-        currentLeadZoneSelection = *optLead;
-    }
-    else
-    {
-        currentLeadZoneSelection = std::nullopt;
-        assert(allZoneSelections.empty());
-    }
+    currentLeadZoneSelection = std::get<0>(a);
+    currentLeadGroupSelection = std::get<2>(a);
 
+    SCLOG_ONCE("TODO - this may not be needed in group multi world");
     groupsWithSelectedZones.clear();
     for (const auto &sel : allZoneSelections)
     {
