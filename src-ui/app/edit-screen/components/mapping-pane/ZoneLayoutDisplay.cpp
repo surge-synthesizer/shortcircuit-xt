@@ -109,7 +109,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         }
         else
         {
-            showMappingNonZoneMenu();
+            showMappingNonZoneMenu(e.position.toInt());
             return;
         }
     }
@@ -277,21 +277,18 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
             return;
         }
     }
+}
 
-    // In group mode we don't create zones
-    if (isEditorInGroupMode())
-        return;
-
-    // TODO : this really really should be ina  function
+void ZoneLayoutDisplay::createEmptyZoneAt(const juce::Point<int> &pos)
+{
     auto displayRegion = getLocalBounds().toFloat();
-    ;
     auto kw = hZoom * displayRegion.getWidth() /
               (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
     auto vh = vZoom * displayRegion.getHeight() / 127.0;
 
-    auto newX = e.position.x / kw + hPct * 128;
+    auto newX = pos.x / kw + hPct * 128;
     auto cKey = (int)std::round(newX);
-    auto newY = 127 - e.position.y / vh - vPct * 128;
+    auto newY = 127 - pos.y / vh - vPct * 128;
     auto cVel = (int)std::round(newY);
 
     // finding the 'best' rectangle is actually pretty hard.
@@ -301,6 +298,8 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
     int16_t keyMax{127}, keyMin{0};
     for (auto &r : display->summary)
     {
+        if (!editor->isAnyZoneFromGroupSelected(r.address.group))
+            continue;
         if (r.kr.keyStart <= cKey && r.kr.keyEnd >= cKey)
         {
             if (r.vr.velStart >= cVel)
@@ -328,6 +327,9 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
     auto overlap = [&](auto ks, auto ke, auto vs, auto ve) -> bool {
         for (auto &r : display->summary)
         {
+            if (!editor->isAnyZoneFromGroupSelected(r.address.group))
+                continue;
+
             if (r.kr.keyStart <= ke && r.kr.keyEnd >= ks && r.vr.velStart <= ve &&
                 r.vr.velEnd >= vs)
             {
@@ -378,13 +380,18 @@ void ZoneLayoutDisplay::mouseDoubleClick(const juce::MouseEvent &e)
     }
 }
 
-void ZoneLayoutDisplay::showMappingNonZoneMenu()
+void ZoneLayoutDisplay::showMappingNonZoneMenu(const juce::Point<int> &pos)
 {
     auto p = juce::PopupMenu();
 
-    p.addSectionHeader("Mapping");
+    p.addSectionHeader("Mapping Area");
     p.addSeparator();
-    p.addItem("Coming Soon", []() {});
+    p.addItem("Create Empty Zone", [w = juce::Component::SafePointer(this), pos]() {
+        if (w)
+            w->createEmptyZoneAt(pos);
+    });
+    p.addSeparator();
+    p.addItem("More Coming Soon", []() {});
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
