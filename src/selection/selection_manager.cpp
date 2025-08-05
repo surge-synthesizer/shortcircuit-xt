@@ -86,6 +86,8 @@ void SelectionManager::sendClientDataForLeadSelectionState()
     if (allSelectedGroups[selectedPart].size() > 1)
     {
         SCLOG_UNIMPL_ONCE("Multi-group selection to do");
+        auto [gp, gg, gz] = leadGroup[selectedPart];
+        sendDisplayDataForSingleGroup(gp, gg);
     }
     else if (allSelectedGroups[selectedPart].size() == 1)
     {
