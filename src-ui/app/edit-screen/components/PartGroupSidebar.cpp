@@ -297,8 +297,8 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
         }
         else
         {
-            se.selecting = !isSelected;
-            se.distinct = !mods.isCommandDown();
+            se.distinct = !(mods.isCommandDown() || mods.isShiftDown()); // for now
+            se.selecting = !se.distinct || !isSelected;
             se.selectingAsLead = se.selecting;
             se.forZone = false;
             editor->doSelectionAction({se});

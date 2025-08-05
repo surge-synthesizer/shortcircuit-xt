@@ -121,8 +121,8 @@ inline void doUpdateGroupRoutingRow(const updateGroupRoutingRowPayload_t &payloa
                 {
                     auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
                     if (lg.has_value())
-                        eng.getSelectionManager()->sendDisplayDataForSingleGroup(lg->part,
-                                                                                 lg->group);
+                        eng.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(lg->part,
+                                                                                       lg->group);
                 }
             });
     }
