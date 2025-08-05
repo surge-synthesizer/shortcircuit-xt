@@ -199,7 +199,7 @@ struct SelectionManager
     void sendClientDataForLeadSelectionState();
     void sendDisplayDataForZonesBasedOnLead(int part, int group, int zone);
     void sendDisplayDataForNoZoneSelected();
-    void sendDisplayDataForSingleGroup(int part, int group);
+    void sendDisplayDataForGroupsBasedOnLead(int part, int group);
     void sendDisplayDataForNoGroupSelected();
     void sendSelectedPartMacrosToClient();
     void sendOtherTabsSelectionToClient();

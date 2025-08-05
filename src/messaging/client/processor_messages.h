@@ -260,7 +260,7 @@ inline void swapGroupProcessors(const processorPair_t &whichToType, const engine
                 }
             },
             [a = *lg](const auto &engine) {
-                engine.getSelectionManager()->sendDisplayDataForSingleGroup(a.part, a.group);
+                engine.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(a.part, a.group);
             });
     }
     else

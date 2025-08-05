@@ -83,16 +83,10 @@ void SelectionManager::sendClientDataForLeadSelectionState()
                                   *(engine.getMessageController()));
     }
 
-    if (allSelectedGroups[selectedPart].size() > 1)
+    auto clg = currentLeadGroup(engine);
+    if (clg.has_value())
     {
-        SCLOG_UNIMPL_ONCE("Multi-group selection to do");
-        auto [gp, gg, gz] = leadGroup[selectedPart];
-        sendDisplayDataForSingleGroup(gp, gg);
-    }
-    else if (allSelectedGroups[selectedPart].size() == 1)
-    {
-        auto [gp, gg, gz] = *(allSelectedGroups[selectedPart].begin());
-        sendDisplayDataForSingleGroup(gp, gg);
+        sendDisplayDataForGroupsBasedOnLead(clg->part, clg->group);
     }
     else
     {
@@ -117,6 +111,7 @@ void SelectionManager::applySelectActions(const std::vector<SelectActionContents
         if (!z.addr().isInWithPartials(engine))
         {
             // TODO - error message
+            SCLOG("Got an address outside partials " << z);
             continue;
         }
         adjustInternalStateForAction(z);
@@ -234,10 +229,27 @@ void SelectionManager::adjustInternalStateForAction(
     }
     else
     {
-        SCLOG_IF(selection, "Group Naive Single Selection Selection " << za);
-        allSelectedGroups[selectedPart].clear();
-        allSelectedGroups[selectedPart].insert(za);
-        leadGroup[selectedPart] = za;
+        if (z.selecting)
+        {
+            if (z.distinct)
+            {
+                allSelectedGroups[selectedPart].clear();
+            }
+            allSelectedGroups[selectedPart].insert(za);
+            if (z.selectingAsLead)
+                leadGroup[selectedPart] = za;
+        }
+        else
+        {
+            allSelectedGroups[selectedPart].erase(za);
+            if (leadGroup[selectedPart] == za)
+            {
+                if (engine.getPatch()->getPart(selectedPart)->getGroups().size() > 0)
+                    leadGroup[selectedPart] = {selectedPart, 0, -1};
+                else
+                    leadGroup[selectedPart] = {};
+            }
+        }
     }
 }
 
@@ -633,8 +645,12 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
                               *(engine.getMessageController()));
 }
 
-void SelectionManager::sendDisplayDataForSingleGroup(int part, int group)
+void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 {
+    if (allSelectedGroups.size() > 1)
+    {
+        SCLOG_UNIMPL_ONCE("Multi-group selection isn't there yet");
+    }
     const auto &g = engine.getPatch()->getPart(part)->getGroup(group);
     serializationSendToClient(cms::s2c_update_group_output_info,
                               cms::groupOutputInfoUpdate_t{true, g->outputInfo},
