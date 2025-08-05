@@ -288,12 +288,17 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::set<int> groupsWithSelectedZones;
     bool isAnyZoneFromGroupSelected(int groupIdx)
     {
-        return groupsWithSelectedZones.find(groupIdx) != groupsWithSelectedZones.end();
+        auto lzig =
+            (currentLeadZoneSelection.has_value() && currentLeadZoneSelection->group == groupIdx);
+        auto ing = groupsWithSelectedZones.find(groupIdx) != groupsWithSelectedZones.end();
+        return lzig || ing;
     }
 
     bool isSelected(const selection::SelectionManager::ZoneAddress &a)
     {
-        return allZoneSelections.find(a) != allZoneSelections.end();
+        auto islz = currentLeadZoneSelection.has_value() && *currentLeadZoneSelection == a;
+        auto ing = allZoneSelections.find(a) != allZoneSelections.end();
+        return islz || ing;
     }
 
     void showTooltip(const juce::Component &relativeTo);
