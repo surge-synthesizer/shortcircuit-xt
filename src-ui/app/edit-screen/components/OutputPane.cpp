@@ -74,7 +74,7 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         addAndMakeVisible(*procRouting);
 
         consistentLabel = std::make_unique<jcmp::Label>();
-        consistentLabel->setText("Routing inconsistent across selection");
+        consistentLabel->setText("Multiple Routings Selected");
         addChildComponent(*consistentLabel);
         consistentButton = std::make_unique<jcmp::TextPushButton>();
         consistentButton->setLabel("Make Consistent");

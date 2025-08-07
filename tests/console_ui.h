@@ -73,8 +73,6 @@ struct ConsoleUI
         const scxt::messaging::client::adsrViewResponsePayload_t &payload) ON_STUB;
     void onGroupOrZoneProcessorDataAndMetadata(
         const scxt::messaging::client::processorDataResponsePayload_t &d) ON_STUB;
-    void onZoneProcessorDataMismatch(
-        const scxt::messaging::client::processorMismatchPayload_t &) ON_STUB;
 
     void onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &) ON_STUB;
     void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &) ON_STUB;

@@ -43,11 +43,6 @@ typedef std::tuple<bool, int, bool, dsp::processor::ProcessorControlDescription,
 SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata_and_data,
                  processorDataResponsePayload_t, onGroupOrZoneProcessorDataAndMetadata);
 
-// zone, lead type, leadName, all types
-typedef std::tuple<int, int, std::string> processorMismatchPayload_t;
-SERIAL_TO_CLIENT(ProcessorsMismatched, s2c_notify_mismatched_processors_for_zone,
-                 processorMismatchPayload_t, onZoneProcessorDataMismatch);
-
 // C2S set processor type (sends back data and metadata)
 // tuple is forzone, whichprocessor, type
 typedef std::tuple<bool, int32_t, int32_t> setProcessorPayload_t;

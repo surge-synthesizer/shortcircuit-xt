@@ -223,7 +223,6 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     onGroupOrZoneEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &payload);
     void onGroupOrZoneProcessorDataAndMetadata(
         const scxt::messaging::client::processorDataResponsePayload_t &d);
-    void onZoneProcessorDataMismatch(const scxt::messaging::client::processorMismatchPayload_t &);
 
     void onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &);
     void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &);

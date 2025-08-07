@@ -212,6 +212,8 @@ struct ProcessorStorage
     bool isTemposynced{false};
     int16_t streamingVersion{-1};
 
+    bool procTypeConsistent{true};
+
     bool operator==(const ProcessorStorage &other) const
     {
         return (type == other.type && mix == other.mix && floatParams == other.floatParams &&

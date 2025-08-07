@@ -81,6 +81,9 @@ static constexpr uint16_t triggerConditionsPerGroup{4};
 
 static constexpr uint16_t maxGeneratorsPerVoice{64};
 
+static constexpr size_t modMatrixRowsPerZone{12};
+static constexpr size_t modMatrixRowsPerGroup{12};
+
 /*
  * This namespace guards some very useful debugging guards and logs in the code.
  */
