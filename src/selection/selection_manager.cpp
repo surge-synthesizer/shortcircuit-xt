@@ -556,7 +556,7 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
             *(engine.getMessageController()));
     }
 
-    configureAndSendZoneModMatrixMetadata(p, g, z);
+    configureAndSendZoneOrGroupModMatrixMetadata(p, g, z);
 
     // Update across selections here to see if the routing is consistent
     auto rt = zp->outputInfo.procRouting;
@@ -638,11 +638,7 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
             *(engine.getMessageController()));
     }
 
-    auto &rt = g->routingTable;
-    serializationSendToClient(cms::s2c_update_group_matrix_metadata,
-                              modulation::getGroupMatrixMetadata(*g),
-                              *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_update_group_matrix, rt, *(engine.getMessageController()));
+    configureAndSendZoneOrGroupModMatrixMetadata(part, group, -1);
 
     serializationSendToClient(cms::s2c_send_group_trigger_conditions, g->triggerConditions,
                               *(engine.getMessageController()));
@@ -703,28 +699,19 @@ void SelectionManager::copyZoneProcessorLeadToAll(int which)
         });
 }
 
-void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z)
+template <typename Config, typename Mat, typename RT>
+void SelectionManager::configureMatrixInternal(bool forZone, Mat &mat, RT &rt)
 {
-    const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-
-    // I really need to document this but basicaly this fixes the PMDs on the targets on the
-    // routing table. Or maybe even make it a function on zone (that's probably better).
-    scxt::voice::modulation::Matrix mat;
-    mat.forUIMode = true;
-    mat.prepare(zp->routingTable, engine.getSampleRate(), blockSize);
-    scxt::voice::modulation::MatrixEndpoints ep{nullptr};
-    ep.bindTargetBaseValues(mat, *zp);
-    for (auto &r : zp->routingTable.routes)
+    for (auto &r : rt.routes)
     {
-        r.extraPayload = scxt::voice::modulation::MatrixConfig::RoutingExtraPayload();
+        r.extraPayload = typename Config::RoutingExtraPayload();
 
         if (r.target.has_value())
         {
-            if (scxt::voice::modulation::MatrixConfig::isTargetModMatrixDepth(*r.target))
+            if (Config::isTargetModMatrixDepth(*r.target))
             {
-                auto rti =
-                    scxt::voice::modulation::MatrixConfig::getTargetModMatrixElement(*r.target);
-                r.extraPayload->targetBaseValue = zp->routingTable.routes[rti].depth;
+                auto rti = Config::getTargetModMatrixElement(*r.target);
+                r.extraPayload->targetBaseValue = rt.routes[rti].depth;
                 r.extraPayload->targetMetadata =
                     datamodel::pmd().asPercent().withName("Row " + std::to_string(rti + 1));
             }
@@ -741,21 +728,62 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
         }
     }
 
-    for (int i = 0; i < scxt::modMatrixRowsPerZone; ++i)
+    for (int i = 0; i < (forZone ? scxt::modMatrixRowsPerZone : scxt::modMatrixRowsPerGroup); ++i)
     {
-        zp->routingTable.routes[i].extraPayload->selConsistent =
-            acrossSelectionConsistency(true, MATRIX_ROW, i);
+        rt.routes[i].extraPayload->selConsistent =
+            acrossSelectionConsistency(forZone, MATRIX_ROW, i);
     }
+}
 
-    serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                              voice::modulation::getVoiceMatrixMetadata(*zp),
-                              *(engine.getMessageController()));
-    serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
-                              *(engine.getMessageController()));
-
-    for (auto &r : zp->routingTable.routes)
+void SelectionManager::configureAndSendZoneOrGroupModMatrixMetadata(int p, int g, int z)
+{
+    if (z >= 0)
     {
-        r.extraPayload = std::nullopt;
+        const auto &zp = engine.getPatch()->getPart(p)->getGroup(g)->getZone(z);
+
+        // I really need to document this but basicaly this fixes the PMDs on the targets on the
+        // routing table. Or maybe even make it a function on zone (that's probably better).
+        scxt::voice::modulation::Matrix mat;
+        mat.forUIMode = true;
+        mat.prepare(zp->routingTable, engine.getSampleRate(), blockSize);
+        scxt::voice::modulation::MatrixEndpoints ep{nullptr};
+        ep.bindTargetBaseValues(mat, *zp);
+
+        configureMatrixInternal<scxt::voice::modulation::MatrixConfig>(true, mat, zp->routingTable);
+
+        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
+                                  voice::modulation::getVoiceMatrixMetadata(*zp),
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
+                                  *(engine.getMessageController()));
+
+        for (auto &r : zp->routingTable.routes)
+        {
+            r.extraPayload = std::nullopt;
+        }
+    }
+    else
+    {
+        const auto &grp = engine.getPatch()->getPart(p)->getGroup(g);
+
+        scxt::modulation::GroupMatrix mat;
+        mat.forUIMode = true;
+        mat.prepare(grp->routingTable, engine.getSampleRate(), blockSize);
+        scxt::modulation::GroupMatrixEndpoints ep{nullptr};
+        ep.bindTargetBaseValues(mat, *grp);
+
+        configureMatrixInternal<scxt::modulation::GroupMatrixConfig>(true, mat, grp->routingTable);
+
+        serializationSendToClient(cms::s2c_update_group_matrix_metadata,
+                                  modulation::getGroupMatrixMetadata(*grp),
+                                  *(engine.getMessageController()));
+        serializationSendToClient(cms::s2c_update_group_matrix, grp->routingTable,
+                                  *(engine.getMessageController()));
+
+        for (auto &r : grp->routingTable.routes)
+        {
+            r.extraPayload = std::nullopt;
+        }
     }
 }
 
