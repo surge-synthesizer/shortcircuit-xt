@@ -151,8 +151,9 @@ void ProcessorPane::rebuildControlsFromDescription()
         multiButton = std::make_unique<sst::jucegui::components::TextPushButton>();
         multiButton->setLabel("Copy " + multiName + " to All");
         multiButton->setBounds(b.withTop(b.getCentreY() + 5).withHeight(25).reduced(20, 0));
-        multiButton->setOnCallback(
-            [this]() { sendToSerialization(cmsg::CopyProcessorLeadToAll(index)); });
+        multiButton->setOnCallback([this]() {
+            sendToSerialization(cmsg::CopyProcessorLeadToAll({forZone, index}));
+        });
         getContentAreaComponent()->addAndMakeVisible(*multiButton);
         return;
     }

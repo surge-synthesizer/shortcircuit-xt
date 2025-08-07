@@ -82,6 +82,7 @@ struct Group : MoveableOnly<Group>,
         bool oversample{true};
 
         ProcRoutingPath procRouting{procRoute_linear};
+        bool procRoutingConsistent{true};
         BusAddress routeTo{DEFAULT_BUS};
 
         bool hasIndependentPolyLimit{false};

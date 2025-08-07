@@ -601,11 +601,8 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
 
 void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 {
-    if (allSelectedGroups.size() > 1)
-    {
-        SCLOG_UNIMPL_ONCE("Multi-group selection isn't there yet");
-    }
     const auto &g = engine.getPatch()->getPart(part)->getGroup(group);
+    g->outputInfo.procRoutingConsistent = acrossSelectionConsistency(false, PROC_ROUTING, 0);
     serializationSendToClient(cms::s2c_update_group_output_info,
                               cms::groupOutputInfoUpdate_t{true, g->outputInfo},
                               *(engine.getMessageController()));
@@ -620,6 +617,8 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
+        g->modulatorStorage[i].modulatorConsistent =
+            acrossSelectionConsistency(false, LFO_SHAPE, i);
         serializationSendToClient(
             cms::s2c_update_group_or_zone_individual_modulator_storage,
             cms::indexedModulatorStorageUpdate_t{false, true, i, g->modulatorStorage[i]},
@@ -631,6 +630,8 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 
     for (int i = 0; i < engine::processorCount; ++i)
     {
+        g->processorStorage[i].procTypeConsistent =
+            acrossSelectionConsistency(false, PROCESSOR_TYPE, i);
         serializationSendToClient(
             cms::s2c_respond_single_processor_metadata_and_data,
             cms::ProcessorMetadataAndData::s2c_payload_t{false, i, true, g->processorDescription[i],
@@ -662,41 +663,74 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
     }
 }
 
-void SelectionManager::copyZoneProcessorLeadToAll(int which)
+void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which)
 {
-    auto lz = currentLeadZone(engine);
-    if (!lz.has_value())
-        return;
-    if (allSelectedZones[selectedPart].size() < 2)
-        return;
+    if (forZone)
+    {
+        auto lz = currentLeadZone(engine);
+        if (!lz.has_value())
+            return;
+        if (allSelectedZones[selectedPart].size() < 2)
+            return;
 
-    auto &cont = engine.getMessageController();
-    cont->scheduleAudioThreadCallback(
-        [asz = allSelectedZones[selectedPart], from = *lz, which](auto &e) {
-            const auto &fz =
-                e.getPatch()->getPart(from.part)->getGroup(from.group)->getZone(from.zone);
-            auto ftype = fz->processorStorage[which].type;
-            for (const auto &sz : asz)
-            {
-                if (sz == from)
+        auto &cont = engine.getMessageController();
+        cont->scheduleAudioThreadCallback(
+            [asz = allSelectedZones[selectedPart], from = *lz, which](auto &e) {
+                const auto &fz =
+                    e.getPatch()->getPart(from.part)->getGroup(from.group)->getZone(from.zone);
+                auto ftype = fz->processorStorage[which].type;
+                for (const auto &sz : asz)
                 {
-                    // Nothintg to do
-                }
-                else
-                {
-                    const auto &tz =
-                        e.getPatch()->getPart(sz.part)->getGroup(sz.group)->getZone(sz.zone);
+                    if (sz == from)
+                    {
+                        // Nothintg to do
+                    }
+                    else
+                    {
+                        const auto &tz =
+                            e.getPatch()->getPart(sz.part)->getGroup(sz.group)->getZone(sz.zone);
 
-                    tz->setProcessorType(which, ftype);
-                    tz->processorStorage[which] = fz->processorStorage[which];
+                        tz->setProcessorType(which, ftype);
+                        tz->processorStorage[which] = fz->processorStorage[which];
+                    }
                 }
-            }
-        },
-        [this](auto &e) {
-            auto lz = currentLeadZone(e);
-            if (lz.has_value())
-                sendDisplayDataForZonesBasedOnLead(lz->part, lz->group, lz->zone);
-        });
+            },
+            [this](auto &e) {
+                auto lz = currentLeadZone(e);
+                if (lz.has_value())
+                    sendDisplayDataForZonesBasedOnLead(lz->part, lz->group, lz->zone);
+            });
+    }
+    else
+    {
+        auto lg = currentLeadGroup(engine);
+        if (!lg.has_value())
+            return;
+        if (allSelectedGroups[selectedPart].size() < 2)
+            return;
+
+        auto &cont = engine.getMessageController();
+        cont->scheduleAudioThreadCallback(
+            [asg = allSelectedGroups[selectedPart], from = *lg, which](auto &e) {
+                const auto &fz = e.getPatch()->getPart(from.part)->getGroup(from.group);
+                auto ftype = fz->processorStorage[which].type;
+                for (const auto &sg : asg)
+                {
+                    if (sg != from)
+                    {
+                        const auto &tg = e.getPatch()->getPart(sg.part)->getGroup(sg.group);
+
+                        tg->setProcessorType(which, ftype);
+                        tg->processorStorage[which] = fz->processorStorage[which];
+                    }
+                }
+            },
+            [this](auto &e) {
+                auto lg = currentLeadGroup(e);
+                if (lg.has_value())
+                    sendDisplayDataForGroupsBasedOnLead(lg->part, lg->group);
+            });
+    }
 }
 
 template <typename Config, typename Mat, typename RT>
@@ -772,7 +806,7 @@ void SelectionManager::configureAndSendZoneOrGroupModMatrixMetadata(int p, int g
         scxt::modulation::GroupMatrixEndpoints ep{nullptr};
         ep.bindTargetBaseValues(mat, *grp);
 
-        configureMatrixInternal<scxt::modulation::GroupMatrixConfig>(true, mat, grp->routingTable);
+        configureMatrixInternal<scxt::modulation::GroupMatrixConfig>(false, mat, grp->routingTable);
 
         serializationSendToClient(cms::s2c_update_group_matrix_metadata,
                                   modulation::getGroupMatrixMetadata(*grp),
@@ -780,6 +814,7 @@ void SelectionManager::configureAndSendZoneOrGroupModMatrixMetadata(int p, int g
         serializationSendToClient(cms::s2c_update_group_matrix, grp->routingTable,
                                   *(engine.getMessageController()));
 
+        int idx{0};
         for (auto &r : grp->routingTable.routes)
         {
             r.extraPayload = std::nullopt;
@@ -818,6 +853,37 @@ void SelectionManager::clearAllSelections()
 bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck,
                                                   int index)
 {
+    auto doCheck = [forZone, whichCheck, index](const auto &lz, const auto &it) {
+        switch (whichCheck)
+        {
+        case PROCESSOR_TYPE:
+            if (lz->processorStorage[index].type != it->processorStorage[index].type)
+                return false;
+            break;
+        case LFO_SHAPE:
+            if (lz->modulatorStorage[index].modulatorShape !=
+                it->modulatorStorage[index].modulatorShape)
+                return false;
+            break;
+        case MATRIX_ROW:
+        {
+            const auto &srow = lz->routingTable.routes[index];
+            const auto &row = it->routingTable.routes[index];
+            auto same = (srow.active == row.active && srow.source == row.source &&
+                         srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
+                         srow.target == row.target);
+            if (!same)
+                return false;
+        }
+        break;
+        case PROC_ROUTING:
+            if (lz->outputInfo.procRouting != it->outputInfo.procRouting)
+                return false;
+            break;
+        }
+        return true;
+    };
+
     if (forZone)
     {
         auto &lza = leadZone[selectedPart];
@@ -832,38 +898,26 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
             if (!s.isInWithPartials(engine))
                 continue;
             const auto &it = engine.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
-            switch (whichCheck)
-            {
-            case PROCESSOR_TYPE:
-                if (lz->processorStorage[index].type != it->processorStorage[index].type)
-                    return false;
-                break;
-            case LFO_SHAPE:
-                if (lz->modulatorStorage[index].modulatorShape !=
-                    it->modulatorStorage[index].modulatorShape)
-                    return false;
-                break;
-            case MATRIX_ROW:
-            {
-                const auto &srow = lz->routingTable.routes[index];
-                const auto &row = it->routingTable.routes[index];
-                auto same = (srow.active == row.active && srow.source == row.source &&
-                             srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
-                             srow.target == row.target);
-                if (!same)
-                    return false;
-            }
-            break;
-            case PROC_ROUTING:
-                if (lz->outputInfo.procRouting != it->outputInfo.procRouting)
-                    return false;
-                break;
-            }
+            if (!doCheck(lz, it))
+                return false;
         }
     }
     else
     {
-        SCLOG_UNIMPL("Group branch");
+        auto &lga = leadGroup[selectedPart];
+        if (!lga.isInWithPartials(engine))
+            return true;
+
+        const auto &lg = engine.getPatch()->getPart(lga.part)->getGroup(lga.group);
+
+        for (auto &s : allSelectedGroups[selectedPart])
+        {
+            if (!s.isInWithPartials(engine))
+                continue;
+            const auto &it = engine.getPatch()->getPart(s.part)->getGroup(s.group);
+            if (!doCheck(lg, it))
+                return false;
+        }
     }
     return true;
 }

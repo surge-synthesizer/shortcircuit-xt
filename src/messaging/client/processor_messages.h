@@ -117,8 +117,15 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
 CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorPayload_t,
                  setProcessorType(payload, engine, cont));
 
-CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, int,
-                 engine.getSelectionManager()->copyZoneProcessorLeadToAll(payload));
+// Fix make this group or zone
+using copyProcessorLeadPayload_t = std::pair<bool, int>;
+inline void copyProcessorLeadToAll(const copyProcessorLeadPayload_t &payload,
+                                   const engine::Engine &engine)
+{
+    engine.getSelectionManager()->copyZoneOrGroupProcessorLeadToAll(payload.first, payload.second);
+}
+CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, copyProcessorLeadPayload_t,
+                 copyProcessorLeadToAll(payload, engine));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorFloatValue, c2s_update_single_processor_float_value,

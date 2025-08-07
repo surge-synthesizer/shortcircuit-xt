@@ -209,8 +209,7 @@ struct SelectionManager
     template <typename Config, typename Mat, typename RT>
     void configureMatrixInternal(bool forZone, Mat &m, RT &routingTable);
 
-    // To ponder. Does this belong on this object or the engine?
-    void copyZoneProcessorLeadToAll(int which);
+    void copyZoneOrGroupProcessorLeadToAll(bool forZone, int which);
 
   public:
     using otherTabSelection_t = std::unordered_map<std::string, std::string>;
