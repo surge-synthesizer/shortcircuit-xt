@@ -32,6 +32,7 @@
 #include "engine/zone.h"
 #include "voice/voice.h"
 #include "sst/basic-blocks/dsp/RNG.h"
+#include "sst/plugininfra/strnatcmp.h"
 
 #include "modulation/modulator_storage.h"
 
@@ -238,10 +239,10 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
             }
             else
             {
-                return ida.second < idb.second;
+                return strnatcasecmp(ida.second.c_str(), idb.second.c_str()) < 0;
             }
         }
-        return ida.first < idb.first;
+        return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
     };
 
     auto tgtCmp = [identCmp](const auto &a, const auto &b) {

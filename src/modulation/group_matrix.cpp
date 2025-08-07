@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 
+#include "sst/plugininfra/strnatcmp.h"
 #include "group_matrix.h"
 #include "engine/group.h"
 #include "engine/engine.h"
@@ -270,10 +271,13 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
         const auto &srcb = std::get<0>(b);
         const auto &ida = std::get<1>(a);
         const auto &idb = std::get<1>(b);
-        if (srca.gid == 'gmac' && srcb.gid == 'gmac')
+
+        if (srca.gid == srcb.gid && (srca.gid == 'gmac' || srca.gid == 'gelf'))
         {
+            // Renaming makes macros a special case. Rows are just obvious
             return srca.index < srcb.index;
         }
+
         if (ida.first == idb.first)
         {
             if (ida.second == idb.second)
@@ -287,10 +291,10 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
             }
             else
             {
-                return ida.second < idb.second;
+                return strnatcasecmp(ida.second.c_str(), idb.second.c_str()) < 0;
             }
         }
-        return ida.first < idb.first;
+        return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
     };
 
     auto tgtCmp = [identCmp](const auto &a, const auto &b) {

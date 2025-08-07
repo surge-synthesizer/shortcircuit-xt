@@ -737,7 +737,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
             if (tn.first.empty())
             {
-                p.addItem(tn.first + ": " + tn.second, isEnabled, selected, mop);
+                p.addItem(tn.second, isEnabled, selected, mop);
             }
             else
             {
@@ -753,7 +753,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                     subMenu.addSectionHeader(tn.first);
                     subMenu.addSeparator();
                 }
-                subMenu.addItem(tn.first + ": " + tn.second, isEnabled, selected, mop);
+                subMenu.addItem(tn.second, isEnabled, selected, mop);
                 checkPath = checkPath || selected;
             }
         }
