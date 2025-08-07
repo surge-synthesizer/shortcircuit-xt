@@ -1213,17 +1213,6 @@ void ProcessorPane::mouseUp(const juce::MouseEvent &e)
     sst::jucegui::components::NamedPanel::mouseUp(e);
 }
 
-void ProcessorPane::setAsMultiZone(int32_t primaryType, const std::string &nm)
-{
-    multiZone = true;
-    multiName = nm;
-    setEnabled(true);
-    setName("Multiple");
-    resetControls();
-    setToggleDataSource(nullptr);
-    resized();
-    repaint();
-}
 void ProcessorPane::itemDragEnter(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
     setIsAccented(true);

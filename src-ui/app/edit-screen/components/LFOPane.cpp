@@ -1165,7 +1165,7 @@ struct ConsistencyLFOPane : juce::Component
     ConsistencyLFOPane(LfoPane *p) : parent(p)
     {
         conLabel = std::make_unique<jcmp::Label>();
-        conLabel->setText("LFO Type is Inconsistent across zone selection");
+        conLabel->setText("Multiple LFO Types Selected");
         addAndMakeVisible(*conLabel);
 
         conButton = std::make_unique<jcmp::TextPushButton>();

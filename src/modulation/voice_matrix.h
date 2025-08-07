@@ -67,7 +67,7 @@ struct MatrixConfig
     static bool supportsLag(const SourceIdentifier &s) { return true; }
 
     static constexpr bool IsFixedMatrix{true};
-    static constexpr size_t FixedMatrixSize{12};
+    static constexpr size_t FixedMatrixSize{scxt::modMatrixRowsPerZone};
     static constexpr bool providesTargetRanges{true};
 
     using TI = TargetIdentifier;

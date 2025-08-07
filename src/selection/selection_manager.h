@@ -161,7 +161,9 @@ struct SelectionManager
     enum ConsistencyCheck
     {
         PROCESSOR_TYPE,
-        MATRIX_ROW
+        MATRIX_ROW,
+        PROC_ROUTING,
+        LFO_SHAPE
     };
     bool acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck, int index);
 

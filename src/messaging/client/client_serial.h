@@ -209,7 +209,6 @@ enum SerializationToClientMessageIds
     s2c_send_group_trigger_conditions,
 
     s2c_respond_single_processor_metadata_and_data,
-    s2c_notify_mismatched_processors_for_zone,
 
     s2c_send_part_configuration,
     s2c_send_selected_part,

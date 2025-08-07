@@ -531,27 +531,8 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
     for (int i = 0; i < engine::lfosPerZone; ++i)
     {
-        auto rsh = zp->modulatorStorage[i].modulatorShape;
-        auto con = true;
-        if (allSelectedZones[selectedPart].size() > 1)
-        {
-            for (const auto &sz : allSelectedZones[selectedPart])
-            {
-                const auto &zsh = engine.getPatch()
-                                      ->getPart(sz.part)
-                                      ->getGroup(sz.group)
-                                      ->getZone(sz.zone)
-                                      ->modulatorStorage[i]
-                                      .modulatorShape;
-                if (zsh != rsh)
-                {
-                    con = false;
-                    break;
-                }
-            }
-        }
-
-        zp->modulatorStorage[i].modulatorConsistent = con;
+        zp->modulatorStorage[i].modulatorConsistent =
+            acrossSelectionConsistency(true, LFO_SHAPE, i);
         serializationSendToClient(
             cms::s2c_update_group_or_zone_individual_modulator_storage,
             cms::indexedModulatorStorageUpdate_t{true, true, i, zp->modulatorStorage[i]},
@@ -566,47 +547,20 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
      */
     for (int i = 0; i < engine::processorCount; ++i)
     {
-        if (acrossSelectionConsistency(true, PROCESSOR_TYPE, i))
-        {
-            serializationSendToClient(
-                cms::s2c_respond_single_processor_metadata_and_data,
-                cms::ProcessorMetadataAndData::s2c_payload_t{
-                    true, i, true, zp->processorDescription[i], zp->processorStorage[i]},
-                *(engine.getMessageController()));
-        }
-        else
-        {
-            serializationSendToClient(cms::s2c_notify_mismatched_processors_for_zone,
-                                      cms::ProcessorsMismatched::s2c_payload_t{
-                                          i, (int32_t)zp->processorDescription[i].type,
-                                          zp->processorDescription[i].typeDisplayName},
-                                      *(engine.getMessageController()));
-        }
+        zp->processorStorage[i].procTypeConsistent =
+            acrossSelectionConsistency(true, PROCESSOR_TYPE, i);
+        serializationSendToClient(
+            cms::s2c_respond_single_processor_metadata_and_data,
+            cms::ProcessorMetadataAndData::s2c_payload_t{true, i, true, zp->processorDescription[i],
+                                                         zp->processorStorage[i]},
+            *(engine.getMessageController()));
     }
 
     configureAndSendZoneModMatrixMetadata(p, g, z);
 
     // Update across selections here to see if the routing is consistent
     auto rt = zp->outputInfo.procRouting;
-    auto con = true;
-    if (allSelectedZones[selectedPart].size() > 1)
-    {
-        for (const auto &sz : allSelectedZones[selectedPart])
-        {
-            const auto &zpr = engine.getPatch()
-                                  ->getPart(sz.part)
-                                  ->getGroup(sz.group)
-                                  ->getZone(sz.zone)
-                                  ->outputInfo.procRouting;
-
-            if (zpr != rt)
-            {
-                con = false;
-                break;
-            }
-        }
-    }
-    zp->outputInfo.procRoutingConsistent = con;
+    zp->outputInfo.procRoutingConsistent = acrossSelectionConsistency(true, PROC_ROUTING, 0);
 
     serializationSendToClient(cms::s2c_update_zone_output_info,
                               cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
@@ -787,49 +741,17 @@ void SelectionManager::configureAndSendZoneModMatrixMetadata(int p, int g, int z
         }
     }
 
-    if (allSelectedZones[selectedPart].size() == 1)
+    for (int i = 0; i < scxt::modMatrixRowsPerZone; ++i)
     {
-        for (auto &row : zp->routingTable.routes)
-            row.extraPayload->selConsistent = true;
-
-        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                                  voice::modulation::getVoiceMatrixMetadata(*zp),
-                                  *(engine.getMessageController()));
-        serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
-                                  *(engine.getMessageController()));
+        zp->routingTable.routes[i].extraPayload->selConsistent =
+            acrossSelectionConsistency(true, MATRIX_ROW, i);
     }
-    else
-    {
-        // OK so is the routing table consistent over multiple zones
-        auto &rt = zp->routingTable;
-        for (auto &row : rt.routes)
-            row.extraPayload->selConsistent = true;
-        for (const auto &sz : allSelectedZones[selectedPart])
-        {
-            const auto &szrt = engine.getPatch()
-                                   ->getPart(sz.part)
-                                   ->getGroup(sz.group)
-                                   ->getZone(sz.zone)
-                                   ->routingTable;
 
-            for (const auto &[ridx, row] : sst::cpputils::enumerate(rt.routes))
-            {
-                auto &srow = szrt.routes[ridx];
-                auto same = (srow.active == row.active && srow.source == row.source &&
-                             srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
-                             srow.target == row.target);
-                row.extraPayload->selConsistent = row.extraPayload->selConsistent && same;
-            }
-        }
-
-        // TODO: Make this zone or group based
-        serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                                  voice::modulation::getVoiceMatrixMetadata(*zp),
-                                  *(engine.getMessageController()));
-
-        serializationSendToClient(cms::s2c_update_zone_matrix, rt,
-                                  *(engine.getMessageController()));
-    }
+    serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
+                              voice::modulation::getVoiceMatrixMetadata(*zp),
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_zone_matrix, zp->routingTable,
+                              *(engine.getMessageController()));
 
     for (auto &r : zp->routingTable.routes)
     {
@@ -888,7 +810,25 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
                 if (lz->processorStorage[index].type != it->processorStorage[index].type)
                     return false;
                 break;
+            case LFO_SHAPE:
+                if (lz->modulatorStorage[index].modulatorShape !=
+                    it->modulatorStorage[index].modulatorShape)
+                    return false;
+                break;
             case MATRIX_ROW:
+            {
+                const auto &srow = lz->routingTable.routes[index];
+                const auto &row = it->routingTable.routes[index];
+                auto same = (srow.active == row.active && srow.source == row.source &&
+                             srow.sourceVia == row.sourceVia && srow.curve == row.curve &&
+                             srow.target == row.target);
+                if (!same)
+                    return false;
+            }
+            break;
+            case PROC_ROUTING:
+                if (lz->outputInfo.procRouting != it->outputInfo.procRouting)
+                    return false;
                 break;
             }
         }

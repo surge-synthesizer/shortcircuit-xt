@@ -57,6 +57,7 @@ SC_STREAMDEF(
                  {"intParams", t.intParams},
                  {"deactivated", t.deactivated},
                  {"isActive", t.isActive},
+                 {"procTypeConsistent", t.procTypeConsistent},
                  {"streamingVersion", t.streamingVersion}};
         }
     }),
@@ -92,6 +93,7 @@ SC_STREAMDEF(
             findOrSet(v, "isKeytracked", false, result.isKeytracked);
             findOrSet(v, "isTemposynced", false, result.isTemposynced);
             findOrSet(v, "streamingVersion", -1, result.streamingVersion);
+            findOrSet(v, "procTypeConsistent", true, result.procTypeConsistent);
 
             /*
              * If engine stream correct here
