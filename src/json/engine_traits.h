@@ -369,6 +369,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},
                       {"procRouting", t.procRouting},
+                      {"prCon", t.procRoutingConsistent},
                       {"routeTo", (int)t.routeTo},
                       {"hip", t.hasIndependentPolyLimit},
                       {"pl", t.polyLimit},
@@ -386,6 +387,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "routeTo", rt);
                  findIf(v, "hip", result.hasIndependentPolyLimit);
                  findIf(v, "pl", result.polyLimit);
+                 findOrSet(v, "prCon", true, result.procRoutingConsistent);
                  result.routeTo = (engine::BusAddress)(rt);
 
                  std::string tmp;

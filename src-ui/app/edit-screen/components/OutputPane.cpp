@@ -107,22 +107,19 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
     void updateProcRoutingFromInfo()
     {
         updateProcRoutingLabel();
-        if constexpr (OTTraits::forZone)
+        auto c = info.procRoutingConsistent;
+        procRouting->setVisible(c);
+        for (int i = 0; i < nOuts; ++i)
         {
-            auto c = info.procRoutingConsistent;
-            procRouting->setVisible(c);
-            for (int i = 0; i < nOuts; ++i)
-            {
-                levelK[i]->setVisible(c);
-                levelL[i]->setVisible(c);
-            }
-            consistentButton->setVisible(!c);
-            consistentLabel->setVisible(!c);
+            levelK[i]->setVisible(c);
+            levelL[i]->setVisible(c);
+        }
+        consistentButton->setVisible(!c);
+        consistentLabel->setVisible(!c);
 
-            if (!c)
-            {
-                consistentButton->setLabel("Set to " + getRoutingName(info.procRouting));
-            }
+        if (!c)
+        {
+            consistentButton->setLabel("Set to " + getRoutingName(info.procRouting));
         }
     }
     void updateProcRoutingLabel()
