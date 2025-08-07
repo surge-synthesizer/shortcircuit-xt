@@ -79,8 +79,8 @@ inline void doBeginEndEdit(bool isBegin, const editGestureFor_t &payload,
         auto lz = engine.getSelectionManager()->currentLeadZone(engine);
         if (lz.has_value())
         {
-            engine.getSelectionManager()->configureAndSendZoneModMatrixMetadata(lz->part, lz->group,
-                                                                                lz->zone);
+            engine.getSelectionManager()->configureAndSendZoneOrGroupModMatrixMetadata(
+                lz->part, lz->group, lz->zone);
         }
     }
 }

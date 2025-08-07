@@ -205,7 +205,9 @@ struct SelectionManager
     void sendDisplayDataForNoGroupSelected();
     void sendSelectedPartMacrosToClient();
     void sendOtherTabsSelectionToClient();
-    void configureAndSendZoneModMatrixMetadata(int p, int g, int z);
+    void configureAndSendZoneOrGroupModMatrixMetadata(int p, int g, int z);
+    template <typename Config, typename Mat, typename RT>
+    void configureMatrixInternal(bool forZone, Mat &m, RT &routingTable);
 
     // To ponder. Does this belong on this object or the engine?
     void copyZoneProcessorLeadToAll(int which);
