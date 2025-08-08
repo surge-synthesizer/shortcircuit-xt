@@ -62,6 +62,7 @@
 #include "missing_resolution.h"
 #include "sst/voicemanager/midi1_to_voicemanager.h"
 #include "voice/preview_voice.h"
+#include "clipboard_impl.h"
 
 namespace scxt::engine
 {
@@ -892,22 +893,26 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
 void Engine::copyZone(const selection::SelectionManager::ZoneAddress &s)
 {
     auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
-    auto v = json::scxt_value(*zoneO);
-    zoneClipboard = tao::json::msgpack::to_string(v);
-    messaging::client::serializationSendToClient(messaging::client::s2c_send_clipboard_type, "Zone",
-                                                 *messageController);
+
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_send_clipboard_type,
+        clipboard.streamToClipboard(Clipboard::ContentType::ZONE, *zoneO), *messageController);
 }
 
 void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
 {
-    if (zoneClipboard.empty())
+    if (clipboard.getClipboardType() != Clipboard::ContentType::ZONE)
+    {
         return;
-    tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
-    tao::json::msgpack::events::from_string(consumer, zoneClipboard);
-    auto v = std::move(consumer.value);
+    }
+
     auto zptr = std::make_unique<Zone>();
     zptr->engine = this;
-    v.to(*zptr);
+
+    if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::ZONE, *zptr))
+    {
+        return;
+    }
 
     std::set<std::string> zoneNames;
     auto &part = getPatch()->getPart(a.part);

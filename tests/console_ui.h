@@ -119,7 +119,7 @@ struct ConsoleUI
     void
     onMissingResolutionWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &) ON_STUB;
 
-    void onClipboardType(const std::string &) ON_STUB;
+    void onClipboardType(const scxt::engine::Clipboard::ContentType &) ON_STUB;
 
     void stepUI();
 

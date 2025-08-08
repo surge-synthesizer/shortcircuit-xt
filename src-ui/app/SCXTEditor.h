@@ -273,8 +273,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onMissingResolutionWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &);
 
-    std::string clipboardType{};
-    void onClipboardType(const std::string &s) { clipboardType = s; }
+    scxt::engine::Clipboard::ContentType clipboardType{scxt::engine::Clipboard::ContentType::NONE};
+    void onClipboardType(const scxt::engine::Clipboard::ContentType &s) { clipboardType = s; }
 
     // Originate client to serialization messages
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,
