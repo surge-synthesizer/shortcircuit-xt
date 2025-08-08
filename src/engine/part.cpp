@@ -219,6 +219,7 @@ void Part::initializeAfterUnstream(Engine &e)
             sendBusEffectInfoToClient(e, idx);
         }
     }
+    rebuildGroupChannelMask();
 }
 
 void Part::setBusEffectType(Engine &e, int idx, AvailableBusEffects t)

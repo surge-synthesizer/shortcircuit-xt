@@ -58,7 +58,14 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
         return res;
     };
     midiGlyph = mkg(jcmp::GlyphPainter::GlyphType::MIDI);
-    midiMenu = mkm("PART", "Midi");
+    midiMenu = std::make_unique<jcmp::TextPushButton>();
+    midiMenu->setLabel("PART");
+    midiMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showMidiChannelMenu();
+    });
+    addAndMakeVisible(*midiMenu);
+
     outputGlyph = mkg(jcmp::GlyphPainter::GlyphType::SPEAKER);
     outputMenu = mkm("PART", "Output");
     polyGlygh = mkg(jcmp::GlyphPainter::GlyphType::POLYPHONY);
@@ -176,6 +183,15 @@ void GroupSettingsCard::rebuildFromInfo()
         }
         repaint();
     }
+
+    if (info.midiChannel < 0)
+    {
+        midiMenu->setLabel("PART");
+    }
+    else
+    {
+        midiMenu->setLabel(std::to_string(info.midiChannel + 1));
+    }
 }
 
 void GroupSettingsCard::showPolyMenu()
@@ -206,6 +222,30 @@ void GroupSettingsCard::showPolyMenu()
                       w->sendToSerialization(
                           messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
                   });
+    }
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void GroupSettingsCard::showMidiChannelMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Group MIDI Channel");
+    p.addSeparator();
+    for (int i = -1; i < 16; ++i)
+    {
+        std::string nm{"PART"};
+        if (i >= 0)
+            nm = "Ch. " + std::to_string(i + 1);
+        p.addItem(nm, true, info.midiChannel == i, [i, w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->info.midiChannel = i;
+
+            w->rebuildFromInfo();
+            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoMidiChannel{w->info});
+        });
+        if (i == -1)
+            p.addSeparator();
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

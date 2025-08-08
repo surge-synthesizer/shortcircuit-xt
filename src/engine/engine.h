@@ -146,9 +146,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
             if (!part->configuration.mute && !part->configuration.muteDueToSolo &&
                 part->configuration.active && part->respondsToMIDIChannel(channel))
             {
+                auto prex = part->respondsToMIDIChannelExcludingGroupMask(channel);
                 auto kt = part->configuration.transpose;
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
+                    if (!group->respondsToChannelOrUsesPartChannel(channel, prex))
+                        continue;
+
                     if (!group->triggerConditions.value(*this, *group))
                         continue;
 

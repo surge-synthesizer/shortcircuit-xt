@@ -68,6 +68,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         }
 
         snprintf(configuration.name, sizeof(configuration.name), "Part %d", partNumber + 1);
+        std::fill(groupChannelMask.begin(), groupChannelMask.end(), false);
     }
     virtual ~Part() = default;
 
@@ -75,16 +76,32 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     int16_t partNumber;
     Patch *parentPatch{nullptr};
 
-    bool respondsToMIDIChannel(int16_t channel) const
+    std::array<bool, 16> groupChannelMask{};
+
+    bool respondsToMIDIChannelExcludingGroupMask(int16_t channel) const
     {
         return channel < 0 || configuration.channel == PartConfiguration::omniChannel ||
                configuration.channel == PartConfiguration::mpeChannel ||
                channel == configuration.channel;
     }
+
+    bool respondsToMIDIChannel(int16_t channel) const
+    {
+        return respondsToMIDIChannelExcludingGroupMask(channel) || groupChannelMask[channel];
+    }
     bool isMPEVoiceChannel(int16_t channel) const
     {
         return configuration.channel == PartConfiguration::mpeChannel &&
                channel != configuration.mpeGlobalChannel;
+    }
+    void rebuildGroupChannelMask()
+    {
+        std::fill(groupChannelMask.begin(), groupChannelMask.end(), false);
+        for (const auto &g : groups)
+        {
+            if (g->outputInfo.midiChannel >= 0)
+                groupChannelMask[g->outputInfo.midiChannel] = true;
+        }
     }
 
     struct PartConfiguration
