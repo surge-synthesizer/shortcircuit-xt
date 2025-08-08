@@ -46,7 +46,6 @@
 #include "modulation/group_matrix.h"
 #include "modulation/has_modulators.h"
 #include "group_triggers.h"
-#include "part.h"
 
 namespace scxt::engine
 {

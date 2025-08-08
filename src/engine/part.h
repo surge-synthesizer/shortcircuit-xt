@@ -94,15 +94,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         return configuration.channel == PartConfiguration::mpeChannel &&
                channel != configuration.mpeGlobalChannel;
     }
-    void rebuildGroupChannelMask()
-    {
-        std::fill(groupChannelMask.begin(), groupChannelMask.end(), false);
-        for (const auto &g : groups)
-        {
-            if (g->outputInfo.midiChannel >= 0)
-                groupChannelMask[g->outputInfo.midiChannel] = true;
-        }
-    }
+    void rebuildGroupChannelMask();
 
     struct PartConfiguration
     {
