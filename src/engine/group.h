@@ -93,6 +93,8 @@ struct Group : MoveableOnly<Group>,
         // makes it not quite worth it
         uint32_t vmPlayModeInt{0};
         uint64_t vmPlayModeFeaturesInt{0};
+
+        int16_t midiChannel{-1}; // -1 means "Follow Part"
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;
@@ -108,6 +110,7 @@ struct Group : MoveableOnly<Group>,
     bool lastOversample{true};
 
     void setupOnUnstream(engine::Engine &e);
+    void onGroupMidiChannelSubscriptionChanged();
 
     // ToDo editable name
     std::string getName() const { return name; }
@@ -185,6 +188,20 @@ struct Group : MoveableOnly<Group>,
     void onSampleRateChanged() override;
 
     void resetPolyAndPlaymode(engine::Engine &);
+
+    /*
+     * Only call this if you have *already* checked the part containing
+     * this group responds to the channel
+     */
+    bool respondsToChannelOrUsesPartChannel(int16_t channel, bool parentRespondsExcluding)
+    {
+        if (outputInfo.midiChannel < 0)
+            return parentRespondsExcluding;
+
+        if (outputInfo.midiChannel == channel)
+            return true;
+        return false;
+    }
 
     sst::filters::HalfRate::HalfRateFilter osDownFilter;
 

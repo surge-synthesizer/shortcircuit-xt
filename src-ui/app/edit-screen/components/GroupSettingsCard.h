@@ -68,6 +68,7 @@ struct GroupSettingsCard : juce::Component, HasEditor
 
     void showPolyMenu();
     void showPolyModeMenu();
+    void showMidiChannelMenu();
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPSETTINGSCARD_H

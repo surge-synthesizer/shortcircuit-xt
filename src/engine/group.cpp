@@ -524,6 +524,7 @@ const engine::Engine *Group::getEngine() const
 void Group::setupOnUnstream(engine::Engine &e)
 {
     onRoutingChanged();
+    onGroupMidiChannelSubscriptionChanged();
     rePrepareAndBindGroupMatrix();
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
@@ -549,6 +550,16 @@ void Group::setupOnUnstream(engine::Engine &e)
     triggerConditions.setupOnUnstream(parentPart->groupTriggerInstrumentState);
     resetPolyAndPlaymode(e);
 }
+
+void Group::onGroupMidiChannelSubscriptionChanged()
+{
+    assert(parentPart);
+    if (parentPart)
+    {
+        parentPart->rebuildGroupChannelMask();
+    }
+}
+
 void Group::onSampleRateChanged()
 {
     if (getEngine())

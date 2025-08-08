@@ -373,6 +373,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"routeTo", (int)t.routeTo},
                       {"hip", t.hasIndependentPolyLimit},
                       {"pl", t.polyLimit},
+                      {"mc", t.midiChannel},
                       {"vpm", groupInfoPlayModeTo(t.vmPlayModeInt)},
                       {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)}};
              }),
@@ -388,6 +389,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "hip", result.hasIndependentPolyLimit);
                  findIf(v, "pl", result.polyLimit);
                  findOrSet(v, "prCon", true, result.procRoutingConsistent);
+                 findOrSet(v, "mc", -1, result.midiChannel);
                  result.routeTo = (engine::BusAddress)(rt);
 
                  std::string tmp;

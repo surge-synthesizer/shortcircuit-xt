@@ -219,6 +219,7 @@ void Part::initializeAfterUnstream(Engine &e)
             sendBusEffectInfoToClient(e, idx);
         }
     }
+    rebuildGroupChannelMask();
 }
 
 void Part::setBusEffectType(Engine &e, int idx, AvailableBusEffects t)
@@ -250,6 +251,16 @@ void Part::sendBusEffectInfoToClient(const Engine &e, int slot)
         messaging::client::busEffectFullData_t{
             (int)-1, partNumber, slot, {pmds, partEffectStorage[slot]}},
         *(e.getMessageController()));
+}
+
+void Part::rebuildGroupChannelMask()
+{
+    std::fill(groupChannelMask.begin(), groupChannelMask.end(), false);
+    for (const auto &g : groups)
+    {
+        if (g->outputInfo.midiChannel >= 0)
+            groupChannelMask[g->outputInfo.midiChannel] = true;
+    }
 }
 
 } // namespace scxt::engine
