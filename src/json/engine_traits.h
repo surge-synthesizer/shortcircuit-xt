@@ -517,6 +517,8 @@ STREAM_ENUM(engine::Zone::VariantPlaybackMode, engine::Zone::toStringVariantPlay
             engine::Zone::fromStringVariantPlaybackMode);
 STREAM_ENUM(dsp::InterpolationTypes, dsp::toStringInterpolationTypes,
             dsp::fromStringInterpolationTypes);
+STREAM_ENUM(engine::Clipboard::ContentType, engine::Clipboard::toStringContentType,
+            engine::Clipboard::fromStringContentType);
 
 SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                  auto &s = from;

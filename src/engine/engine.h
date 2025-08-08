@@ -36,6 +36,7 @@
 #include "group.h"
 #include "zone.h"
 #include "patch.h"
+#include "clipboard.h"
 
 #include "configuration.h"
 
@@ -465,7 +466,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void duplicateZone(const selection::SelectionManager::ZoneAddress &);
     void copyZone(const selection::SelectionManager::ZoneAddress &);
     void pasteZone(const selection::SelectionManager::ZoneAddress &);
-    std::string zoneClipboard;
+
+    Clipboard clipboard;
 
     /*
      * OnRegister generate and send all the metdata the client needs
