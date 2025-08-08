@@ -181,6 +181,8 @@ struct MappingDisplay : juce::Component,
 
     void doZoneRename(const selection::SelectionManager::ZoneAddress &z);
 
+    bool keyPressed(const juce::KeyPress &key) override;
+
     engine::Part::zoneMappingSummary_t summary{};
 };
 

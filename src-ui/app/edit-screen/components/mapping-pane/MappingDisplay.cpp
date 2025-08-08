@@ -463,4 +463,36 @@ void MappingDisplay::doZoneRename(const selection::SelectionManager::ZoneAddress
     editor->makeComingSoon("Rename from Mapping Pane")();
 }
 
+bool MappingDisplay::keyPressed(const juce::KeyPress &key)
+{
+    if (
+#if JUCE_MAC
+        key.getModifiers().isCommandDown()
+#else
+        key.getModifiers().isCtrlDown()
+#endif
+        && (key.getKeyCode() == 'C' || key.getKeyCode() == 'V'))
+    {
+        if (key.getKeyCode() == 'C')
+        {
+            auto lz = editor->currentLeadZoneSelection;
+            if (lz.has_value())
+            {
+                sendToSerialization(cmsg::CopyZone(*lz));
+                return true;
+            }
+        }
+        else
+        {
+            auto lg = editor->currentLeadGroupSelection;
+            if (lg.has_value())
+            {
+                sendToSerialization(cmsg::PasteZone(*lg));
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 } // namespace scxt::ui::app::edit_screen

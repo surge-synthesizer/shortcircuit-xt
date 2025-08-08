@@ -894,6 +894,8 @@ void Engine::copyZone(const selection::SelectionManager::ZoneAddress &s)
     auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
     auto v = json::scxt_value(*zoneO);
     zoneClipboard = tao::json::msgpack::to_string(v);
+    messaging::client::serializationSendToClient(messaging::client::s2c_send_clipboard_type, "Zone",
+                                                 *messageController);
 }
 
 void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
@@ -904,14 +906,37 @@ void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
     tao::json::msgpack::events::from_string(consumer, zoneClipboard);
     auto v = std::move(consumer.value);
     auto zptr = std::make_unique<Zone>();
+    zptr->engine = this;
     v.to(*zptr);
+
+    std::set<std::string> zoneNames;
+    auto &part = getPatch()->getPart(a.part);
+    for (auto &g : *part)
+        for (auto &z : *g)
+            zoneNames.insert(z->getName());
+
+    // Give the new zone the lowest available new zone name for the part
+    int count{0};
+    bool found{false};
+    while (!found)
+    {
+        std::string lname = zptr->givenName;
+        if (count == 1)
+            lname += " (Copy)";
+        else if (count > 1)
+            lname += " (Copy " + std::to_string(count) + ")";
+        if (zoneNames.find(lname) == zoneNames.end())
+        {
+            zptr->givenName = lname;
+            found = true;
+        }
+        count++;
+    }
 
     zptr->setupOnUnstream(*this);
 
     auto sp = a.part;
-    ;
     auto sg = a.group;
-    ;
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(

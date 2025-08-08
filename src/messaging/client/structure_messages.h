@@ -205,6 +205,8 @@ CLIENT_TO_SERIAL(CopyZone, c2s_copy_zone, selection::SelectionManager::ZoneAddre
 CLIENT_TO_SERIAL(PasteZone, c2s_paste_zone, selection::SelectionManager::ZoneAddress,
                  engine.pasteZone(payload));
 
+SERIAL_TO_CLIENT(SendClipboardType, s2c_send_clipboard_type, std::string, onClipboardType);
+
 inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageController &cont)
 {
     auto part = engine.getSelectionManager()->selectedPart;

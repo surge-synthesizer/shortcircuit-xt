@@ -71,11 +71,12 @@ void populateZoneRightMouseMenuForZone(SendingComp *that, RenamingComp *rnThat, 
             return;
         w->sendToSerialization(cmsg::CopyZone(forZone));
     });
-    p.addItem("Paste", [w = juce::Component::SafePointer(that), forZone]() {
-        if (!w)
-            return;
-        w->sendToSerialization(cmsg::PasteZone(forZone));
-    });
+    p.addItem("Paste", that->editor->clipboardType == "Zone", false,
+              [w = juce::Component::SafePointer(that), forZone]() {
+                  if (!w)
+                      return;
+                  w->sendToSerialization(cmsg::PasteZone(forZone));
+              });
     p.addItem("Duplicate", [w = juce::Component::SafePointer(that), forZone]() {
         if (!w)
             return;

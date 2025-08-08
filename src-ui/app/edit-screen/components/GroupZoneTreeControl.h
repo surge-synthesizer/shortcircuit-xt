@@ -330,12 +330,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                             return;
                         w->doGroupRename();
                     });
-                    p.addItem("Paste Zone", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::PasteZone(za));
-                    });
+                    p.addItem("Paste Zone", gsb->editor->clipboardType == "Zone", false,
+                              [w = juce::Component::SafePointer(this)]() {
+                                  if (!w)
+                                      return;
+                                  auto za = w->getZoneAddress();
+                                  w->gsb->sendToSerialization(cmsg::PasteZone(za));
+                              });
                     p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
                             return;
