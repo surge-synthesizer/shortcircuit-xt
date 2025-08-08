@@ -84,7 +84,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
     }
 
     auto clg = currentLeadGroup(engine);
-    if (clg.has_value())
+    if (clg.has_value() && clg->part >= 0 && clg->group >= 0)
     {
         sendDisplayDataForGroupsBasedOnLead(clg->part, clg->group);
     }
@@ -255,6 +255,7 @@ void SelectionManager::adjustInternalStateForAction(
 
 void SelectionManager::sendGroupZoneMappingForSelectedPart()
 {
+    SCLOG_WFUNC_IF(selection, "");
     if (selectedPart < 0 || selectedPart >= numParts)
         return;
 
@@ -370,22 +371,38 @@ void SelectionManager::guaranteeSelectedLead()
         // Nothing is selected. So we need to pick the first zone of the first group
         if (allSelectedZones[selectedPart].empty())
         {
+            SCLOG_IF(selection, "Selected zones is empty. Looking for a candidate");
             auto &pt = engine.getPatch()->getPart(selectedPart);
             if (pt->getGroups().empty())
             {
+                SCLOG_IF(selection, "No groups are present - no lead zone");
                 leadZone = {};
             }
             else
             {
-                auto &gr = pt->getGroup(0);
-                if (gr->getZones().empty())
+                bool gotOne{false};
+                int gidx{0};
+                for (const auto &g : pt->getGroups())
                 {
+                    if (!g->getZones().empty())
+                    {
+                        gotOne = true;
+                        leadZone[selectedPart] = {selectedPart, gidx, 0};
+                        SCLOG_IF(selection, "Lead zone is first zone of group " << gidx);
+                        break;
+                    }
+                    gidx++;
+                }
+                if (!gotOne)
+                {
+                    SCLOG_IF(selection, "No zones in any group - no lead zone");
                     leadZone[selectedPart] = {};
                 }
                 else
                 {
-                    leadZone[selectedPart] = {selectedPart, 0, 0};
-                    SCLOG_IF(selection, "Lead zone is first zone of first group");
+                    SCLOG_IF(selection, "Selected leadZone[" << selectedPart
+                                                             << "]=" << leadZone[selectedPart]);
+                    allSelectedZones[selectedPart].insert(leadZone[selectedPart]);
                 }
             }
         }
@@ -507,6 +524,7 @@ std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::En
 
 void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 {
+    SCLOG_WFUNC_IF(selection, SCD(p) << SCD(g) << SCD(z));
     /*
      * The samples, mapping, ADSR, and LFO are simple functions of the lead zone.
      * Since there's no structural differences (yet - LFO types may bifurcate this)
@@ -569,6 +587,7 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
 
 void SelectionManager::sendDisplayDataForNoZoneSelected()
 {
+    SCLOG_WFUNC_IF(selection, "");
     serializationSendToClient(cms::s2c_respond_zone_mapping,
                               cms::MappingSelectedZoneView::s2c_payload_t{false, {}},
                               *(engine.getMessageController()));
@@ -601,6 +620,7 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
 
 void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 {
+    SCLOG_WFUNC_IF(selection, SCD(part) << SCD(group));
     const auto &g = engine.getPatch()->getPart(part)->getGroup(group);
     g->outputInfo.procRoutingConsistent = acrossSelectionConsistency(false, PROC_ROUTING, 0);
     serializationSendToClient(cms::s2c_update_group_output_info,
@@ -647,6 +667,7 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 
 void SelectionManager::sendDisplayDataForNoGroupSelected()
 {
+    SCLOG_WFUNC_IF(selection, "");
     for (int i = 0; i < scxt::egsPerGroup; ++i)
     {
         serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
@@ -824,6 +845,7 @@ void SelectionManager::configureAndSendZoneOrGroupModMatrixMetadata(int p, int g
 
 void SelectionManager::sendSelectedPartMacrosToClient()
 {
+    SCLOG_WFUNC_IF(selection, "");
     const auto &part = engine.getPatch()->getPart(selectedPart);
     for (int i = 0; i < macrosPerPart; ++i)
         serializationSendToClient(cms::s2c_update_macro_full_state,
@@ -833,6 +855,7 @@ void SelectionManager::sendSelectedPartMacrosToClient()
 
 void SelectionManager::sendOtherTabsSelectionToClient()
 {
+    SCLOG_WFUNC_IF(selection, "");
     serializationSendToClient(cms::s2c_send_othertab_selection, otherTabSelection,
                               *(engine.getMessageController()));
 }

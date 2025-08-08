@@ -304,6 +304,14 @@ std::string logTimestamp();
         }                                                                                          \
     }
 
+#define SCLOG_WFUNC_IF(x, ...)                                                                     \
+    {                                                                                              \
+        if constexpr (scxt::log::x)                                                                \
+        {                                                                                          \
+            SCLOG_WFUNC("[" << #x << "] " << __VA_ARGS__);                                         \
+        }                                                                                          \
+    }
+
 #define SCLOG_ONCE_IF(x, ...)                                                                      \
     {                                                                                              \
         if constexpr (scxt::log::x)                                                                \
