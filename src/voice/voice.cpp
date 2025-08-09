@@ -964,8 +964,7 @@ float Voice::calculateVoicePitch()
     fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
     fpitch += mpePitchBend;
 
-    keytrackPerOct = (kd + retuner - zone->mapping.rootKey) / 12.0;
-
+    keytrackPerOct = (key + retuner - zone->mapping.rootKey) / 12.0;
     return fpitch;
 }
 
