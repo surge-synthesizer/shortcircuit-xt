@@ -156,6 +156,8 @@ enum ProcessorType
 
     proct_fx_treemonster,
     proct_osc_VA,
+    proct_osc_saw,
+    proct_osc_sineplus,
     proct_osc_tiltnoise,
     proct_osc_correlatednoise, // last zone
     proct_num_types,
