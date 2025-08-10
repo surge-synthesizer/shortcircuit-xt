@@ -83,6 +83,8 @@
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/TiltNoise.h"
 #include "sst/voice-effects/generator/GenVA.h"
+#include "sst/voice-effects/generator/SuperSaw.h"
+#include "sst/voice-effects/generator/SinePlus.h"
 #include "sst/voice-effects/delay/StringResonator.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
@@ -99,6 +101,7 @@
 #include "sst/voice-effects/utilities/GainMatrix.h"
 #include "sst/voice-effects/dynamics/Compressor.h"
 #include "sst/voice-effects/dynamics/AutoWah.h"
+#include "sst/voice-effects/generator/SinePlus.h"
 
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb1.h"
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb2.h"
@@ -172,6 +175,16 @@ DEFINE_PROC(GenVA, sst::voice_effects::generator::GenVA<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenVA<SCXTVFXConfig<2>>, proct_osc_VA, "VA Oscillator",
             "Generators", "osc-va", dsp::sincTable);
 PROC_DEFAULT_MIX(proct_osc_VA, 0.5);
+
+DEFINE_PROC(SuperSaw, sst::voice_effects::generator::SuperSaw<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::SuperSaw<SCXTVFXConfig<2>>, proct_osc_saw,
+            "Supersaw Oscillator", "Generators", "osc-supersaw");
+PROC_DEFAULT_MIX(proct_osc_saw, 0.5);
+
+DEFINE_PROC(SinePlus, sst::voice_effects::generator::SinePlus<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::SinePlus<SCXTVFXConfig<2>>, proct_osc_sineplus,
+            "Sine Plus", "Generators", "osc-sineplus");
+PROC_DEFAULT_MIX(proct_osc_sineplus, 0.5);
 
 DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<2>>,
