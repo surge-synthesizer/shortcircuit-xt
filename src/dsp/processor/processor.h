@@ -156,6 +156,7 @@ enum ProcessorType
 
     proct_fx_treemonster,
     proct_osc_VA,
+    proct_osc_EBWaveforms,
     proct_osc_saw,
     proct_osc_sineplus,
     proct_osc_tiltnoise,

@@ -97,6 +97,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsStereoTool();
     void layoutControlsGainMatrix();
     void layoutControlsSurgeFilters();
+    void layoutControlsEBWaveforms();
     void layoutControlsFastSVF();
     void layoutControlsWaveshaper();
     void layoutControlsEQNBandParm();
