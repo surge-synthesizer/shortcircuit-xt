@@ -35,7 +35,9 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
+#include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/layouts/ExplicitLayout.h"
+#include "sst/jucegui/layouts/ListLayout.h"
 #include "sst/waveshapers/WaveshaperConfiguration.h"
 #include "sst/filters/FilterConfigurationLabels.h"
 #include <sst/jucegui/components/MenuButton.h>
@@ -84,6 +86,9 @@ void ProcessorPane::showHamburgerMenu()
     for (const auto &pd : editor->allProcessors)
     {
         if (pd.groupOnly && forZone)
+            continue;
+
+        if (pd.id == scxt::dsp::processor::proct_osc_VA)
             continue;
 
         if (pd.displayGroup != priorGroup && priorGroup != "none")
@@ -295,6 +300,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsRingMod();
         break;
 
+    case dsp::processor::proct_osc_EBWaveforms:
+        layoutControlsEBWaveforms();
+        break;
+
     case dsp::processor::proct_lifted_delay:
         layoutControlsFromJSONOrDefault("processors/lifteddelay.json");
         break;
@@ -468,6 +477,104 @@ void ProcessorPane::layoutControlsSurgeFilters()
             intEditors[i]->item->setEnabled(false);
         }
     }
+}
+
+// May want to break this up
+void ProcessorPane::layoutControlsEBWaveforms()
+{
+    namespace jlo = sst::jucegui::layouts;
+    createHamburgerStereo(3);
+
+    auto isPulse = intAttachments[0]->getValue() == 1;
+    auto isStereo = intAttachments[3]->getValue() == 1;
+    auto isUnison = intAttachments[1]->getValue() > 0;
+
+    auto bounds = getContentArea();
+
+    auto lok = [bounds](auto &e, auto &row) {
+        auto &item = e->item;
+        auto &lab = e->label;
+        auto kn = dynamic_cast<jcmp::Knob *>(item.get());
+        if (kn)
+        {
+            kn->drawLabel = false;
+        }
+        auto vl = jlo::VList().withWidth(bounds.getWidth() / 4);
+        vl.add(jlo::Component(*item).withHeight(bounds.getWidth() / 4).insetBy(4));
+        vl.add(jlo::Component(*lab).expandToFill());
+        row.add(vl);
+    };
+
+    auto main = jlo::VList().withHeight(bounds.getWidth()).at(0, 0);
+
+    auto row1 = jlo::HList().withHeight(bounds.getHeight() / 2);
+
+    auto res = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
+    res->direction = jcmp::MultiSwitch::VERTICAL;
+    row1.add(jlo::Component(*res).withWidth(bounds.getWidth() / 4));
+    intEditors[0] = std::make_unique<intEditor_t>(std::move(res));
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "TT");
+    lok(floatEditors[0], row1);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Sync");
+    lok(floatEditors[1], row1);
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Width");
+    lok(floatEditors[2], row1);
+
+    if (isPulse)
+    {
+        floatEditors[2]->item->setEnabled(true);
+        floatEditors[2]->label->setEnabled(true);
+    }
+    else
+    {
+        floatEditors[2]->item->setEnabled(false);
+        floatEditors[2]->label->setEnabled(false);
+    }
+    main.add(row1);
+
+    auto row2 = jlo::HList().withHeight(bounds.getHeight() / 2);
+
+    auto vl1 = jlo::VList().withWidth(bounds.getWidth() / 4).withAutoGap(2);
+    auto ures = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(ures));
+    intEditors[1]->label = std::make_unique<jcmp::Label>();
+    intEditors[1]->label->setText("Unison");
+    getContentAreaComponent()->addAndMakeVisible(*intEditors[1]->label);
+    vl1.add(jlo::Component(*(intEditors[1]->label)).withHeight(16));
+    vl1.add(jlo::Component(*(intEditors[1]->item)).withHeight(16));
+
+    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4], "Stereo");
+    vl1.add(jlo::Component(*(floatEditors[4]->label)).withHeight(16));
+    vl1.add(jlo::Component(*(floatEditors[4]->item)).withHeight(12));
+    floatEditors[4]->item->setEnabled(isStereo && isUnison);
+    floatEditors[4]->label->setEnabled(isStereo && isUnison);
+
+    row2.add(vl1);
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Detune");
+    lok(floatEditors[3], row2);
+    floatEditors[3]->item->setEnabled(isUnison);
+    floatEditors[3]->label->setEnabled(isUnison);
+
+    auto xtnd = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
+    xtnd->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+    xtnd->setGlyph(jcmp::GlyphPainter::PLUS);
+    intEditors[2] = std::make_unique<intEditor_t>(std::move(xtnd));
+    intEditors[2]->item->setEnabled(isUnison);
+
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Drive");
+    lok(floatEditors[5], row2);
+    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Level");
+    lok(floatEditors[6], row2);
+
+    main.add(row2);
+
+    main.doLayout();
+
+    auto detuneLoc = floatEditors[3]->item->getBounds();
+    auto xtloc = juce::Rectangle<int>(detuneLoc.getRight() - 10, detuneLoc.getY() - 4, 14, 14);
+    intEditors[2]->item->setBounds(xtloc);
 }
 
 void ProcessorPane::layoutControlsFastSVF()
