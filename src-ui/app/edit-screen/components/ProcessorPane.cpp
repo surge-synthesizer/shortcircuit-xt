@@ -514,11 +514,11 @@ void ProcessorPane::layoutControlsEBWaveforms()
     row1.add(jlo::Component(*res).withWidth(bounds.getWidth() / 4));
     intEditors[0] = std::make_unique<intEditor_t>(std::move(res));
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "TT");
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Tune");
     lok(floatEditors[0], row1);
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Sync");
     lok(floatEditors[1], row1);
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "Width");
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "PWM");
     lok(floatEditors[2], row1);
 
     if (isPulse)
@@ -544,7 +544,7 @@ void ProcessorPane::layoutControlsEBWaveforms()
     vl1.add(jlo::Component(*(intEditors[1]->label)).withHeight(16));
     vl1.add(jlo::Component(*(intEditors[1]->item)).withHeight(16));
 
-    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4], "Stereo");
+    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4], "Width");
     vl1.add(jlo::Component(*(floatEditors[4]->label)).withHeight(16));
     vl1.add(jlo::Component(*(floatEditors[4]->item)).withHeight(12));
     floatEditors[4]->item->setEnabled(isStereo && isUnison);
@@ -563,7 +563,7 @@ void ProcessorPane::layoutControlsEBWaveforms()
     intEditors[2] = std::make_unique<intEditor_t>(std::move(xtnd));
     intEditors[2]->item->setEnabled(isUnison);
 
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Drive");
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Drift");
     lok(floatEditors[5], row2);
     floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Level");
     lok(floatEditors[6], row2);
