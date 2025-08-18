@@ -64,6 +64,8 @@
 #include "voice/preview_voice.h"
 #include "clipboard_impl.h"
 
+#include "sst/basic-blocks/dsp/EllipticBlepOscillators.h"
+
 namespace scxt::engine
 {
 
@@ -1028,6 +1030,8 @@ void Engine::sendEngineStatusToClient() const
 
 void Engine::onSampleRateChanged()
 {
+    sst::basic_blocks::dsp::prepareEBOscillators(sampleRate);
+    sst::basic_blocks::dsp::prepareEBOscillators(sampleRate * 2);
     patch->setSampleRate(sampleRate);
     previewVoice->setSampleRate(sampleRate);
 
