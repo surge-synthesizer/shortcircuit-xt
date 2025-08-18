@@ -544,9 +544,19 @@ void ProcessorPane::layoutControlsEBWaveforms()
     vl1.add(jlo::Component(*(intEditors[1]->label)).withHeight(16));
     vl1.add(jlo::Component(*(intEditors[1]->item)).withHeight(16));
 
-    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4], "Width");
-    vl1.add(jlo::Component(*(floatEditors[4]->label)).withHeight(16));
-    vl1.add(jlo::Component(*(floatEditors[4]->item)).withHeight(12));
+    auto tres = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[4]);
+    tres->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
+    tres->setLabel(std::string("Rand ") + u8"\U000003C6");
+    intEditors[4] = std::make_unique<intEditor_t>(std::move(tres));
+    vl1.add(jlo::Component(*(intEditors[4]->item)).withHeight(16));
+
+    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4], "W");
+
+    auto wsl = jlo::HList().withHeight(16);
+    wsl.add(jlo::Component(*(floatEditors[4]->label)).withWidth(16));
+    wsl.add(jlo::Component(*(floatEditors[4]->item)).expandToFill().insetBy(0, 3));
+    vl1.add(wsl);
+
     floatEditors[4]->item->setEnabled(isStereo && isUnison);
     floatEditors[4]->label->setEnabled(isStereo && isUnison);
 
