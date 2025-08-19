@@ -485,9 +485,9 @@ void ProcessorPane::layoutControlsEBWaveforms()
     namespace jlo = sst::jucegui::layouts;
     createHamburgerStereo(3);
 
-    auto isPulse = intAttachments[0]->getValue() == 1;
+    auto isPulse = intAttachments[0]->getValue() == 2;
     auto isStereo = intAttachments[3]->getValue() == 1;
-    auto isUnison = intAttachments[1]->getValue() > 0;
+    auto isUnison = intAttachments[1]->getValue() > 1;
 
     auto bounds = getContentArea();
 
