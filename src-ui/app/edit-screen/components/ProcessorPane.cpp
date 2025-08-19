@@ -156,9 +156,8 @@ void ProcessorPane::rebuildControlsFromDescription()
         multiButton = std::make_unique<sst::jucegui::components::TextPushButton>();
         multiButton->setLabel("Copy " + multiName + " to All");
         multiButton->setBounds(b.withTop(b.getCentreY() + 5).withHeight(25).reduced(20, 0));
-        multiButton->setOnCallback([this]() {
-            sendToSerialization(cmsg::CopyProcessorLeadToAll({forZone, index}));
-        });
+        multiButton->setOnCallback(
+            [this]() { sendToSerialization(cmsg::CopyProcessorLeadToAll({forZone, index})); });
         getContentAreaComponent()->addAndMakeVisible(*multiButton);
         return;
     }
@@ -485,9 +484,9 @@ void ProcessorPane::layoutControlsEBWaveforms()
     namespace jlo = sst::jucegui::layouts;
     createHamburgerStereo(3);
 
-    auto isPulse = intAttachments[0]->getValue() == 1;
+    auto isPulse = intAttachments[0]->getValue() == 2;
     auto isStereo = intAttachments[3]->getValue() == 1;
-    auto isUnison = intAttachments[1]->getValue() > 0;
+    auto isUnison = intAttachments[1]->getValue() > 1;
 
     auto bounds = getContentArea();
 
