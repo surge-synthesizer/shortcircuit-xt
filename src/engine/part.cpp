@@ -54,6 +54,7 @@ void Part::process(Engine &e)
     lev = lev * lev * lev;
 
     bool defaultAssigned{false};
+    bool noGroups{true};
 
     namespace pl = sst::basic_blocks::dsp::pan_laws;
     auto pan = configuration.pan;
@@ -65,6 +66,7 @@ void Part::process(Engine &e)
     {
         if (g->isActive())
         {
+            noGroups = false;
             g->process(e);
 
             auto bi = g->outputInfo.routeTo;
@@ -106,7 +108,10 @@ void Part::process(Engine &e)
         }
     }
 
-    if (defaultAssigned)
+    if (noGroups)
+        memset(defOut, 0, sizeof(defOut));
+
+    if (defaultAssigned || noGroups)
     {
         // this should be the route to point
         auto bi = configuration.routeTo;
