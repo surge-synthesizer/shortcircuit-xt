@@ -210,7 +210,16 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     }
 
     uint32_t activeGroups{0};
-    bool isActive() { return activeGroups != 0 && configuration.active; }
+    bool isActive()
+    {
+        auto res = activeGroups != 0 && configuration.active;
+        // Temporary fix until we implement 1804
+        for (auto &pe : partEffectStorage)
+        {
+            res = res || (pe.type != AvailableBusEffects::none);
+        }
+        return res;
+    }
     void addActiveGroup() { activeGroups++; }
     void removeActiveGroup()
     {
