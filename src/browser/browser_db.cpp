@@ -83,7 +83,7 @@ std::vector<std::pair<fs::path, bool>> BrowserDB::getBrowserLocations()
         auto q = SQL::Statement(conn, query);
         while (q.step())
         {
-            res.emplace_back(fs::path{q.col_str(0)}, false);
+            res.emplace_back(fs::path{q.col_str(0)}, true);
         }
         q.finalize();
     }

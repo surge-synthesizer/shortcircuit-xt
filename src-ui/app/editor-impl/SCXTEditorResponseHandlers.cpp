@@ -433,6 +433,13 @@ void SCXTEditor::onOtherTabSelection(
     {
         editScreen->onOtherTabSelection();
     }
+
+    auto bs = queryTabSelection("browser.source");
+    if (!bs.empty() && editScreen && editScreen->browser)
+    {
+        auto v = std::atoi(bs.c_str());
+        editScreen->browser->selectPane(v);
+    }
 }
 
 void SCXTEditor::onPartConfiguration(

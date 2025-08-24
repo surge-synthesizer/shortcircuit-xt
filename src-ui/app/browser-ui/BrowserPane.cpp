@@ -188,7 +188,17 @@ struct DriveArea : juce::Component, HasEditor
     DriveArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
         listView = std::make_unique<sst::jucegui::components::ListView>();
-        listView->getRowCount = [this]() { return browserPane->roots.size(); };
+        listView->getRowCount = [this]() {
+            int ct{0};
+            for (auto &[p, s, user] : browserPane->roots)
+            {
+                if (user && (filterMode == 0 || filterMode == 2))
+                    ct++;
+                if (!user && (filterMode == 0 || filterMode == 1))
+                    ct++;
+            }
+            return ct;
+        };
         listView->getRowHeight = [this]() { return 18; };
         listView->makeRowComponent = [this]() { return makeComponent(); };
         listView->assignComponentToRow = [this](const auto &c, auto r) {
@@ -198,6 +208,13 @@ struct DriveArea : juce::Component, HasEditor
         listView->refresh();
         addAndMakeVisible(*listView);
     };
+
+    int filterMode{0};
+    void setFilterMode(int m)
+    {
+        filterMode = m;
+        listView->refresh();
+    }
 
     ~DriveArea() {}
 
@@ -219,7 +236,20 @@ struct DriveArea : juce::Component, HasEditor
         auto *dar = dynamic_cast<DriveAreaRow *>(c.get());
         if (dar)
         {
-            dar->rowNumber = r;
+            // this assumes user comes second
+            if (filterMode == 0 || filterMode == 1)
+                dar->rowNumber = r;
+            else
+            {
+                auto fnu{0};
+                for (auto &[p, s, u] : browserPane->roots)
+                {
+                    if (u)
+                        break;
+                    fnu++;
+                }
+                dar->rowNumber = r + fnu;
+            }
             dar->repaint();
         }
     }
@@ -396,6 +426,8 @@ struct DevicesPane : HasEditor, juce::Component
         divider = std::make_unique<jcmp::NamedPanelDivider>();
         addAndMakeVisible(*divider);
     }
+
+    void setFilterMode(int m) { driveArea->setFilterMode(m); }
 
     void resized() override
     {
@@ -891,7 +923,7 @@ struct sfData : sst::jucegui::data::Discrete
     {
         if (browserPane)
         {
-            browserPane->selectPane(f);
+            browserPane->selectPane(f, true);
         }
     }
 
@@ -901,14 +933,31 @@ struct sfData : sst::jucegui::data::Discrete
     {
         if (browserPane)
         {
-            switch (i)
+            if (hasFeature::hasBrowserSearch)
             {
-            case 0:
-                return "LOCATIONS";
-                //            case 1:
-                //                return "FAVORITES";
-            case 1:
-                return "SEARCH";
+                switch (i)
+                {
+                case 0:
+                    return "LOCATIONS";
+                    //            case 1:
+                    //                return "FAVORITES";
+                case 1:
+                    return "SEARCH";
+                }
+            }
+            else
+            {
+                switch (i)
+                {
+                case 0:
+                    return "ALL";
+                    //            case 1:
+                    //                return "FAVORITES";
+                case 1:
+                    return "OS";
+                case 2:
+                    return "FAVS";
+                }
             }
         }
         SCLOG("getValueAsStringFor with invalid value " << i);
@@ -916,13 +965,19 @@ struct sfData : sst::jucegui::data::Discrete
         return "-error-";
     }
 
-    int getMax() const override { return 1; }
+    int getMax() const override
+    {
+        if (hasFeature::hasBrowserSearch)
+            return 1;
+        else
+            return 2;
+    }
 };
 
 BrowserPane::BrowserPane(SCXTEditor *e)
     : HasEditor(e), sst::jucegui::components::NamedPanel("Browser")
 {
-    hasHamburger = true;
+    hasHamburger = false;
     autoPreviewEnabled = editor->defaultsProvider.getUserDefaultValue(
         infrastructure::DefaultKeys::browserAutoPreviewEnabled, true);
 
@@ -942,7 +997,7 @@ BrowserPane::BrowserPane(SCXTEditor *e)
     footerArea = std::make_unique<BrowserPaneFooter>(e, this);
     addAndMakeVisible(*footerArea);
 
-    selectPane(selectedPane);
+    selectPane(selectedPane, false);
 
     resetRoots();
 }
@@ -971,15 +1026,29 @@ void BrowserPane::resetRoots()
     repaint();
 }
 
-void BrowserPane::selectPane(int i)
+void BrowserPane::selectPane(int i, bool updatePrefs)
 {
-    selectedPane = i;
-    if (selectedPane < 0 || selectedPane > 1)
-        selectedPane = 0;
+    if (hasFeature::hasBrowserSearch)
+    {
+        selectedPane = i;
+        if (selectedPane < 0 || selectedPane > 1)
+            selectedPane = 0;
 
-    devicesPane->setVisible(selectedPane == 0);
-    // favoritesPane->setVisible(i == 1);
-    searchPane->setVisible(selectedPane == 1);
+        devicesPane->setVisible(selectedPane == 0);
+        // favoritesPane->setVisible(i == 1);
+        searchPane->setVisible(selectedPane == 1);
+    }
+    else
+    {
+        selectedPane = i;
+        devicesPane->setVisible(true);
+        searchPane->setVisible(false);
+        devicesPane->setFilterMode(i);
+    }
+    if (updatePrefs)
+    {
+        editor->setTabSelection("browser.source", std::to_string(i));
+    }
     repaint();
 }
 

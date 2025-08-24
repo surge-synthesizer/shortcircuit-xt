@@ -101,5 +101,16 @@ static constexpr bool missingResolution{false};
 static constexpr bool patchIO{false};
 } // namespace log
 
+// The wireframe implies features beyond what we have. I started coding up the UI elements
+// but this turns them off or providers simpler versions.
+namespace hasFeature
+{
+static constexpr bool undoRedo{false};               // undo-redo
+static constexpr bool memoryUsageExplanation{false}; // that chip in the header
+static constexpr bool zoneAutoMapControls{false};    // do we show the midi and automap
+static constexpr bool alternateEGModes{false};       // do we have DA only etc...
+static constexpr bool hasBrowserSearch{false};
+} // namespace hasFeature
+
 } // namespace scxt
 #endif // __SCXT__CONFIGURATION_H
