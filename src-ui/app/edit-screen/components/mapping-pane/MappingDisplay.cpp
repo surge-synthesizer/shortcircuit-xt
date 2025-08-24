@@ -49,8 +49,11 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     zoneLayoutViewport->setVZoomFloor(32.f / 128.f);
     addAndMakeVisible(*zoneLayoutViewport);
 
-    zoneHeader = std::make_unique<MappingZoneHeader>(editor);
-    addAndMakeVisible(*zoneHeader);
+    if (hasFeature::zoneAutoMapControls)
+    {
+        zoneHeader = std::make_unique<MappingZoneHeader>(editor);
+        addAndMakeVisible(*zoneHeader);
+    }
 
     // Start here tomorrow
     using ffac =
@@ -216,10 +219,14 @@ void MappingDisplay::resized()
 
     // Header
     auto b = getLocalBounds();
-    zoneHeader->setBounds(b.withHeight(headerSize));
+    auto z = b;
+    if (hasFeature::zoneAutoMapControls)
+    {
+        zoneHeader->setBounds(b.withHeight(headerSize));
 
-    // Mapping Display
-    auto z = b.withTrimmedTop(headerSize);
+        // Mapping Display
+        z = b.withTrimmedTop(headerSize);
+    }
     auto viewArea = z.withWidth(getWidth() - controlSize - 5);
     zoneLayoutViewport->setBounds(viewArea);
     /*

@@ -64,7 +64,7 @@ struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
     std::unique_ptr<SearchPane> searchPane;
     std::unique_ptr<BrowserPaneFooter> footerArea;
 
-    void selectPane(int);
+    void selectPane(int, bool updatePrefs = false);
     int selectedPane{0};
 
     bool autoPreviewEnabled{true};

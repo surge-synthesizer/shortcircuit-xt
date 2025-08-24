@@ -127,15 +127,18 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*scMenu);
 
-    undoButton = std::make_unique<jcmp::TextPushButton>();
-    undoButton->setLabel("Undo");
-    undoButton->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*undoButton);
+    if (hasFeature::undoRedo)
+    {
+        undoButton = std::make_unique<jcmp::TextPushButton>();
+        undoButton->setLabel("Undo");
+        undoButton->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*undoButton);
 
-    redoButton = std::make_unique<jcmp::TextPushButton>();
-    redoButton->setLabel("Redo");
-    redoButton->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*redoButton);
+        redoButton = std::make_unique<jcmp::TextPushButton>();
+        redoButton->setLabel("Redo");
+        redoButton->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*redoButton);
+    }
 
     tuningButton = std::make_unique<jcmp::TextPushButton>();
     tuningButton->setLabel("Tune");
@@ -159,9 +162,12 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*zoomButton);
 
-    chipButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::MEMORY);
-    chipButton->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*chipButton);
+    if (hasFeature::memoryUsageExplanation)
+    {
+        chipButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::MEMORY);
+        chipButton->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*chipButton);
+    }
 
     saveAsButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SAVE);
     saveAsButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -221,13 +227,19 @@ void HeaderRegion::resized()
     auto b = getBounds().reduced(6);
     selectedPage->setBounds(b.withWidth(196));
 
-    undoButton->setBounds(b.withTrimmedLeft(246).withWidth(48));
-    redoButton->setBounds(b.withTrimmedLeft(246 + 50).withWidth(48));
+    if (hasFeature::undoRedo)
+    {
+        undoButton->setBounds(b.withTrimmedLeft(246).withWidth(48));
+        redoButton->setBounds(b.withTrimmedLeft(246 + 50).withWidth(48));
+    }
 
     tuningButton->setBounds(b.withTrimmedLeft(823).withWidth(48));
     zoomButton->setBounds(b.withTrimmedLeft(823 + 50).withWidth(48));
 
-    chipButton->setBounds(b.withTrimmedLeft(393).withWidth(24));
+    if (hasFeature::memoryUsageExplanation)
+    {
+        chipButton->setBounds(b.withTrimmedLeft(393).withWidth(24));
+    }
     saveAsButton->setBounds(b.withTrimmedLeft(755).withWidth(24));
 
     multiMenuButton->setBounds(b.withTrimmedLeft(421).withWidth(330));

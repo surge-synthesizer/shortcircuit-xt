@@ -863,7 +863,7 @@ ModPane<GZTrait>::ModPane(SCXTEditor *e, bool fz) : jcmp::NamedPanel(""), HasEdi
     // getContentAreaComponent()->addAndMakeVisible(*viewPort);
     addAndMakeVisible(*viewPort);
 
-    hasHamburger = true;
+    hasHamburger = false;
     if (GZTrait::forZone)
     {
         setName("MOD MATRIX");

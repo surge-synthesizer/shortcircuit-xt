@@ -40,7 +40,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
 
-    hasHamburger = true;
+    hasHamburger = hasFeature::alternateEGModes;
 
     rebuildPanelComponents(idx);
 
