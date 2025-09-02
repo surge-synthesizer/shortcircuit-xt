@@ -13,8 +13,8 @@
 ;#define SCXT_BIN "..\..\build\"
 
 [Setup]
-ArchitecturesInstallIn64BitMode=x64
-ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesAllowed=x64compatible
 AppId={#MyID}
 AppName={#MyAppName}
 AppVerName={#MyAppName}
