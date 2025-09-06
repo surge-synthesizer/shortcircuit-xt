@@ -65,6 +65,7 @@ struct GroupMatrixConfig
     static bool supportsLag(const SourceIdentifier &s) { return true; }
 
     static constexpr bool IsFixedMatrix{true};
+    static constexpr bool ProvidesNonZeroTargetBases{true};
     static constexpr size_t FixedMatrixSize{scxt::modMatrixRowsPerGroup};
     static constexpr bool providesTargetRanges{true};
 
