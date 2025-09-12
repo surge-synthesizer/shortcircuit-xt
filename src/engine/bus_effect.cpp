@@ -43,7 +43,8 @@
 #include "sst/effects/TreeMonster.h"
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-enum-float-conversion" // Ignore unused variable warnings
+#pragma GCC diagnostic ignored                                                                     \
+    "-Wdeprecated-enum-float-conversion" // Ignore unused variable warnings
 #include "sst/effects/NimbusImpl.h"
 #pragma GCC diagnostic pop
 
