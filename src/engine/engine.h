@@ -186,8 +186,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     struct VoiceManagerResponder
     {
         Engine &engine;
-        std::array<pathToZone_t, maxVoices> findZoneWorkingBuffer{};
-        std::array<std::pair<pathToZone_t, int32_t>, maxVoices> voiceCreationWorkingBuffer{};
+        std::array<Engine::pathToZone_t, maxVoices> findZoneWorkingBuffer{};
+        std::array<std::pair<Engine::pathToZone_t, int32_t>, maxVoices> voiceCreationWorkingBuffer{};
 
         VoiceManagerResponder(Engine &e) : engine(e) {}
 

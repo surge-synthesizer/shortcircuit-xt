@@ -41,7 +41,12 @@
 #include "sst/effects/FloatyDelay.h"
 #include "sst/effects/Bonsai.h"
 #include "sst/effects/TreeMonster.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-enum-float-conversion" // Ignore unused variable warnings
 #include "sst/effects/NimbusImpl.h"
+#pragma GCC diagnostic pop
+
 #include "sst/effects/RotarySpeaker.h"
 #include "sst/effects/EffectCoreDetails.h"
 
