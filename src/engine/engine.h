@@ -130,6 +130,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // pre-cache some of this lookup when the patch mutates
     struct pathToZone_t
     {
+        pathToZone_t() {}
+        pathToZone_t(size_t p, size_t g, size_t z, int16_t c, int16_t k, int32_t n)
+            : part(p), group(g), zone(z), channel(c), key(k), noteid(n)
+        {
+        }
         size_t part{0};
         size_t group{0};
         size_t zone{0};
@@ -138,6 +143,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         int16_t key{-1};
         int32_t noteid{-1};
     };
+    static_assert(std::is_default_constructible_v<size_t>);
+    static_assert(std::is_default_constructible_v<int16_t>);
+    static_assert(std::is_default_constructible_v<pathToZone_t>);
+
     size_t findZone(int16_t channel, int16_t key, int32_t noteId, int16_t velocity,
                     std::array<pathToZone_t, maxVoices> &res)
     {
@@ -186,8 +195,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     struct VoiceManagerResponder
     {
         Engine &engine;
-        std::array<pathToZone_t, maxVoices> findZoneWorkingBuffer;
-        std::array<std::pair<pathToZone_t, int32_t>, maxVoices> voiceCreationWorkingBuffer;
+        std::array<Engine::pathToZone_t, maxVoices> findZoneWorkingBuffer{};
+        std::array<std::pair<Engine::pathToZone_t, int32_t>, maxVoices>
+            voiceCreationWorkingBuffer{};
 
         VoiceManagerResponder(Engine &e) : engine(e) {}
 
