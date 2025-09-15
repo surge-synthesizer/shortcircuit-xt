@@ -64,6 +64,21 @@ jobs:
             testPath: build/tests/Debug
             clapValidate: true
 
+
+          - name: "win unity Clang CL"
+            os: windows-latest
+            target: shortcircuit-products
+            # LLVM
+            # cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            # CLang CL
+            cmakeConfig: -G"Visual Studio 17 2022" -A x64 -TClangCL -DCMAKE_UNITY_BUILD=TRUE
+            # MSVC
+            # cmakeConfig: -G"Visual Studio 17 2022" -A x64 -DCMAKE_UNITY_BUILD=TRUE
+            runTests: false # true hangs in CI - why?
+            testPath: build/tests/Debug
+            clapValidate: true
+
+
           - name: "mac unity"
             os: macos-latest
             target: shortcircuit-products
