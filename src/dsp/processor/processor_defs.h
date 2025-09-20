@@ -102,6 +102,10 @@
 #include "sst/voice-effects/dynamics/Compressor.h"
 #include "sst/voice-effects/dynamics/AutoWah.h"
 
+#include "sst/filters++.h"
+
+#include "sst/voice-effects/filter/FiltersPlusPlus.h"
+
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb1.h"
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb2.h"
 #include "sst/voice-effects/lifted_bus_effects/LiftedDelay.h"
@@ -146,7 +150,56 @@ namespace procimpl::detail
 using eq3impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 3>;
 using eq3impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 3>;
 
+using vemberImpl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::VemberClassic>;
+using vemberImpl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::VemberClassic>;
+
+using k35Impl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::K35>;
+using k35Impl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::K35>;
+
+using vintageImpl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::VintageLadder>;
+using vintageImpl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::VintageLadder>;
+
+using obx4Impl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::OBXD_4Pole>;
+using obx4Impl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::OBXD_4Pole>;
+
+using cWarpImpl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::CutoffWarp>;
+using cWarpImpl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::CutoffWarp>;
+
+using rWarpImpl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::ResonanceWarp>;
+using rWarpImpl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::ResonanceWarp>;
+
+using tripoleImpl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::TriPole>;
+using tripoleImpl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::TriPole>;
+
+using SnHImpl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>, sst::filtersplusplus::FilterModel::SampleAndHold>;
+using SnHImpl_os = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>, sst::filtersplusplus::FilterModel::SampleAndHold>;
 } // namespace procimpl::detail
+
+DEFINE_PROC(VemberClassicFilter, procimpl::detail::vemberImpl,
+            procimpl::detail::vemberImpl_os, proct_VemberClassic,
+            "Vember Classic", "Filters", "vemberclassic");
+DEFINE_PROC(K35Filter, procimpl::detail::k35Impl,
+            procimpl::detail::k35Impl_os, proct_K35,
+            "K35", "Filters", "k35");
+DEFINE_PROC(VintageLadder, procimpl::detail::vintageImpl,
+            procimpl::detail::vintageImpl_os, proct_vintageladder,
+            "Vintage Ladder", "Filters", "vintageladder");
+DEFINE_PROC(OBX4PFilter, procimpl::detail::obx4Impl,
+            procimpl::detail::obx4Impl_os, proct_obx4,
+            "OB-Xd 4-Pole", "Filters", "obxd-4pole");
+DEFINE_PROC(CutoffWarpFilter, procimpl::detail::cWarpImpl,
+            procimpl::detail::cWarpImpl_os, proct_cutoffwarp,
+            "Cutoff Warp", "Filters", "cutoffwarp");
+DEFINE_PROC(ResWarpFilter, procimpl::detail::rWarpImpl,
+            procimpl::detail::rWarpImpl_os, proct_reswarp,
+            "Resonance Warp", "Filters", "reswarp");
+DEFINE_PROC(TripoleFilter, procimpl::detail::tripoleImpl,
+            procimpl::detail::tripoleImpl_os, proct_tripole,
+            "Tripole", "Filters", "tripole");
+DEFINE_PROC(SNHFilter, procimpl::detail::SnHImpl,
+            procimpl::detail::SnHImpl_os, proct_snhfilter,
+            "Sample and Hold", "Filters", "SnH");
+
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
             proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
