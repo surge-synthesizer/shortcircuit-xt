@@ -156,9 +156,8 @@ void ProcessorPane::rebuildControlsFromDescription()
         multiButton = std::make_unique<sst::jucegui::components::TextPushButton>();
         multiButton->setLabel("Copy " + multiName + " to All");
         multiButton->setBounds(b.withTop(b.getCentreY() + 5).withHeight(25).reduced(20, 0));
-        multiButton->setOnCallback([this]() {
-            sendToSerialization(cmsg::CopyProcessorLeadToAll({forZone, index}));
-        });
+        multiButton->setOnCallback(
+            [this]() { sendToSerialization(cmsg::CopyProcessorLeadToAll({forZone, index})); });
         getContentAreaComponent()->addAndMakeVisible(*multiButton);
         return;
     }
@@ -228,6 +227,9 @@ void ProcessorPane::rebuildControlsFromDescription()
     {
     case dsp::processor::proct_SurgeFilters:
         layoutControlsSurgeFilters();
+        break;
+    case dsp::processor::proct_VemberClassic:
+        layoutControlsVemberClassic();
         break;
 
     case dsp::processor::proct_fx_microgate:
@@ -437,7 +439,8 @@ void ProcessorPane::layoutControls()
     }
 }
 
-// May want to break this up
+// We broke this up, but let's keep it around for a while
+// so folks have a chance to transfer settings.
 void ProcessorPane::layoutControlsSurgeFilters()
 {
     // FIXME
@@ -477,6 +480,62 @@ void ProcessorPane::layoutControlsSurgeFilters()
             intEditors[i]->item->setEnabled(false);
         }
     }
+}
+
+void ProcessorPane::layoutControlsVemberClassic()
+{
+    createHamburgerStereo(0);
+    bool isStereo = intAttachments[0]->getValue();
+
+    auto bounds = getContentAreaComponent()->getLocalBounds();
+    auto bottom = bounds.getBottom();
+    auto right = bounds.getRight();
+    auto width = bounds.getWidth() - 10;
+
+    auto pass = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
+    pass->setBounds(
+        bounds.withLeft(5).withRight(width / 2 - 1).withTop(bottom - 24).withBottom(bottom - 2));
+    intEditors[1] = std::make_unique<intEditor_t>(std::move(pass));
+
+    auto slope = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[2]);
+    slope->setBounds(bounds.withLeft(width / 2 + 1)
+                         .withRight(right - 5)
+                         .withTop(bottom - 24)
+                         .withBottom(bottom - 2));
+    intEditors[2] = std::make_unique<intEditor_t>(std::move(slope));
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
+
+    floatEditors[1]->setVisible(isStereo);
+
+    namespace lo = theme::layout;
+    if (isStereo)
+    {
+        lo::knob<55>(*floatEditors[0], 5, 25);
+        lo::knob<55>(*floatEditors[1], 65, 25);
+    }
+    else
+    {
+        lo::knob<80>(*floatEditors[0], 20, 15);
+    }
+    lo::knob<55>(*floatEditors[2], 125, 25);
+
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
+    floatEditors[3]->setVisible(false);
+
+    auto hide3 =
+        createWidgetAttachedTo<sst::jucegui::components::JogUpDownButton>(intAttachments[3]);
+    hide3->setBounds(bounds.withSize(0, 0));
+    intEditors[3] = std::make_unique<intEditor_t>(std::move(hide3));
+    intEditors[3]->item->setEnabled(false);
+
+    auto hide4 =
+        createWidgetAttachedTo<sst::jucegui::components::JogUpDownButton>(intAttachments[4]);
+    hide4->setBounds(bounds.withSize(0, 0));
+    intEditors[4] = std::make_unique<intEditor_t>(std::move(hide4));
+    intEditors[4]->item->setEnabled(false);
 }
 
 // May want to break this up

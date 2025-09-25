@@ -93,6 +93,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void attachRebuildToDeactivateAttachment(int idx);
 
     void layoutControls();
+    void layoutControlsVemberClassic();
     void layoutControlsMicroGate();
     void layoutControlsStereoTool();
     void layoutControlsGainMatrix();
