@@ -94,6 +94,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     void layoutControls();
     void layoutControlsVemberClassic();
+    void layoutControlsK35();
+    void layoutControlsOBXD4Pole();
+    void layoutControlsWarpFilters();
     void layoutControlsMicroGate();
     void layoutControlsStereoTool();
     void layoutControlsGainMatrix();
