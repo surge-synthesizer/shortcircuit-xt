@@ -521,21 +521,6 @@ void ProcessorPane::layoutControlsVemberClassic()
         lo::knob<80>(*floatEditors[0], 20, 15);
     }
     lo::knob<55>(*floatEditors[2], 125, 25);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    floatEditors[3]->setVisible(false);
-
-    auto hide3 =
-        createWidgetAttachedTo<sst::jucegui::components::JogUpDownButton>(intAttachments[3]);
-    hide3->setBounds(bounds.withSize(0, 0));
-    intEditors[3] = std::make_unique<intEditor_t>(std::move(hide3));
-    intEditors[3]->item->setEnabled(false);
-
-    auto hide4 =
-        createWidgetAttachedTo<sst::jucegui::components::JogUpDownButton>(intAttachments[4]);
-    hide4->setBounds(bounds.withSize(0, 0));
-    intEditors[4] = std::make_unique<intEditor_t>(std::move(hide4));
-    intEditors[4]->item->setEnabled(false);
 }
 
 // May want to break this up

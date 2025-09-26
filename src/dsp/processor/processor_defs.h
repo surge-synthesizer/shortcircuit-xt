@@ -261,7 +261,7 @@ DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>
             "Filters", "filt-cytomic");
 DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
-            "Surge Filters", "Filters", "filt-sstfilters");
+            "REPLACE NOW", "Filters", "filt-sstfilters");
 DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Filters", "filt-statph");
