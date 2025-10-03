@@ -127,23 +127,16 @@ elseif (WIN32)
             COMMAND ${CMAKE_COMMAND} -E make_directory installer
             COMMAND 7z a -r installer/${SCXT_ZIP} ${SCXT_PRODUCT_DIR}/
             COMMAND ${CMAKE_COMMAND} -E echo "ZIP Installer in: installer/${SCXT_ZIP}")
-    find_program(INNOSETUP_COMPILER_EXE iscc)
-    if(NOT INNOSETUP_COMPILER_EXE)
-        file(DOWNLOAD "https://files.jrsoftware.org/is/6/innosetup-6.5.1.exe" "${CMAKE_BINARY_DIR}/innosetup-6.5.1.exe" EXPECTED_HASH SHA256=3622FFDAD7B2534239370099149C33ADB85B90054799D901CB8EC844DF7A0E41)
-        execute_process(COMMAND "${CMAKE_BINARY_DIR}/innosetup-6.5.1.exe" /VERYSILENT /CURRENTUSER /DIR=innosetup-6.5.1)
-        find_program(INNOSETUP_COMPILER_EXE iscc PATHS ${CMAKE_BINARY_DIR}/innosetup-6.5.1)
-    endif()
-    if(INNOSETUP_COMPILER_EXE)
+    if(TARGET innosetup::compiler)
         if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
             message(STATUS "Zip only for now on arm64ec")
         else()
-            message(STATUS "Using Inno Setup Compiler from ${INNOSETUP_COMPILER_EXE}")
-            add_custom_command(
-                TARGET shortcircuit-installer
+            add_custom_command(TARGET shortcircuit-installer
                 POST_BUILD
                 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                COMMAND ${INNOSETUP_COMPILER_EXE} /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss")
-            endif()
+                COMMAND innosetup::compiler /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss"
+            )
+        endif()
     else()
         message(STATUS "Inno Setup Compiler not found!")
     endif()
