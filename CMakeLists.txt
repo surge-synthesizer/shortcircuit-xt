@@ -33,6 +33,7 @@ project(ShortcircuitXT VERSION 0.${PART0}.${PART1}.0 LANGUAGES C CXX ASM)
 set(ShortcircuitXT_VERSION ${PROJECT_VERSION})
 message(STATUS "ShortcircuitXT: Using date-driven version while in alpha - ${PROJECT_VERSION}")
 
+add_subdirectory(libs/sst/sst-cmake)
 include(libs/sst/sst-plugininfra/cmake/git-version-functions.cmake)
 version_from_versionfile_or_git()
 

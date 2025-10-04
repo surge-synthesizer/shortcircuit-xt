@@ -69,3 +69,6 @@
 	path = libs/eurorack/eurorack
 	url = https://github.com/surge-synthesizer/eurorack
 	branch = surge
+[submodule "libs/sst/sst-cmake"]
+	path = libs/sst/sst-cmake
+	url = https://github.com/surge-synthesizer/sst-cmake.git
