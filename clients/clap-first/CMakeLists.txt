@@ -52,6 +52,13 @@ make_clapfirst_plugins(
         # STANDALONE_MACOS_ICON "${CMAKE_SOURCE_DIR}/resources/mac_installer/Icon.icns"
 )
 
+if (WIN32 AND TARGET rtaudio)
+        message(STATUS "Expanding RTAUDIO with ASIO directory")
+        target_include_directories(rtaudio PRIVATE
+                ${CMAKE_SOURCE_DIR}/libs/sst/sst-plugininfra/libs/asiosdk/common
+        )
+endif()
+
 # Our installer uses this
 set_target_properties(${PROJECT_NAME}_all PROPERTIES ARTEFACT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_assets)
 
