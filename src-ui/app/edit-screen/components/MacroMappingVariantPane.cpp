@@ -184,40 +184,43 @@ MappingZoneHeader::MappingZoneHeader(scxt::ui::app::SCXTEditor *ed) : HasEditor(
 
     midiButton = std::make_unique<sst::jucegui::components::GlyphButton>(
         sst::jucegui::components::GlyphPainter::GlyphType::MIDI);
-    midiButton->setOnCallback(editor->makeComingSoon());
+    midiButton->setOnCallback([this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SELECT);});
     addAndMakeVisible(*midiButton);
 
     midiUDButton = std::make_unique<sst::jucegui::components::GlyphButton>(
         sst::jucegui::components::GlyphPainter::GlyphType::MIDI,
         sst::jucegui::components::GlyphPainter::GlyphType::UP_DOWN, 16);
-    midiUDButton->setOnCallback(editor->makeComingSoon());
+    midiUDButton->setOnCallback([this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SET_VEL_BOUNDS_START);});
     addAndMakeVisible(*midiUDButton);
 
     midiLRButton = std::make_unique<sst::jucegui::components::GlyphButton>(
         sst::jucegui::components::GlyphPainter::GlyphType::MIDI,
         sst::jucegui::components::GlyphPainter::GlyphType::LEFT_RIGHT, 16);
-    midiLRButton->setOnCallback(editor->makeComingSoon());
+    midiLRButton->setOnCallback([this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SET_KEY_BOUNDS_START);});
     addAndMakeVisible(*midiLRButton);
 
-    fixOverlap = std::make_unique<sst::jucegui::components::TextPushButton>();
-    fixOverlap->setLabel("FIX OVERLAP");
-    fixOverlap->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*fixOverlap);
+    if (scxt::hasFeature::mappingPane11Controls)
+    {
+        fixOverlap = std::make_unique<sst::jucegui::components::TextPushButton>();
+        fixOverlap->setLabel("FIX OVERLAP");
+        fixOverlap->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*fixOverlap);
 
-    fadeOverlap = std::make_unique<sst::jucegui::components::TextPushButton>();
-    fadeOverlap->setLabel("FADE OVERLAP");
-    fadeOverlap->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*fadeOverlap);
+        fadeOverlap = std::make_unique<sst::jucegui::components::TextPushButton>();
+        fadeOverlap->setLabel("FADE OVERLAP");
+        fadeOverlap->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*fadeOverlap);
 
-    zoneSolo = std::make_unique<sst::jucegui::components::TextPushButton>();
-    zoneSolo->setLabel("ZONE SOLO");
-    zoneSolo->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*zoneSolo);
+        zoneSolo = std::make_unique<sst::jucegui::components::TextPushButton>();
+        zoneSolo->setLabel("ZONE SOLO");
+        zoneSolo->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*zoneSolo);
 
-    lockButton = std::make_unique<sst::jucegui::components::GlyphButton>(
-        sst::jucegui::components::GlyphPainter::GlyphType::LOCK);
-    lockButton->setOnCallback(editor->makeComingSoon());
-    addAndMakeVisible(*lockButton);
+        lockButton = std::make_unique<sst::jucegui::components::GlyphButton>(
+            sst::jucegui::components::GlyphPainter::GlyphType::LOCK);
+        lockButton->setOnCallback(editor->makeComingSoon());
+        addAndMakeVisible(*lockButton);
+    }
 
     fileLabel = std::make_unique<sst::jucegui::components::Label>();
     fileLabel->setText("FILE");
@@ -228,4 +231,11 @@ MappingZoneHeader::MappingZoneHeader(scxt::ui::app::SCXTEditor *ed) : HasEditor(
     fileMenu->setOnCallback(editor->makeComingSoon());
     addAndMakeVisible(*fileMenu);
 }
+
+
+void MappingZoneHeader::initiateMidiZoneAction(engine::Engine::MidiZoneAction a)
+{
+    sendToSerialization(cmsg::InitiateMidiZoneAction{(int)a});
+}
+
 } // namespace scxt::ui::app::edit_screen

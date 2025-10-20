@@ -178,6 +178,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_resolve_sample,
 
+    c2s_initiate_midizone_action, // the buttons at the top
+
     // part activation
     c2s_activate_next_part,
     c2s_deactivate_part,

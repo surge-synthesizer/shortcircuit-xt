@@ -186,6 +186,16 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     tuning::MidikeyRetuner midikeyRetuner;
 
+    enum struct MidiZoneAction
+    {
+        NONE,
+        SELECT,
+        SET_KEY_BOUNDS_START,
+        SET_KEY_BOUNDS_SECOND,
+        SET_VEL_BOUNDS_START,
+        SET_VEL_BOUNDS_SECOND
+    } midiZoneAction{MidiZoneAction::NONE};
+
     // new voice manager style
     struct VMConfig
     {

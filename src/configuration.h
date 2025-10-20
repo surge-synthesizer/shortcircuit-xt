@@ -107,8 +107,9 @@ namespace hasFeature
 {
 static constexpr bool undoRedo{false};               // undo-redo
 static constexpr bool memoryUsageExplanation{false}; // that chip in the header
-static constexpr bool zoneAutoMapControls{false};    // do we show the midi and automap
-static constexpr bool alternateEGModes{false};       // do we have DA only etc...
+static constexpr bool mappingPane11Controls{
+    false}; // do we show the zone mapping header we skipped for 1.0
+static constexpr bool alternateEGModes{false}; // do we have DA only etc...
 static constexpr bool hasBrowserSearch{false};
 } // namespace hasFeature
 

@@ -231,6 +231,15 @@ inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engin
 CLIENT_TO_SERIAL(DeleteVariant, c2s_delete_variant, deleteVariantPayload_t,
                  doDeleteVariant(payload, engine, cont))
 
+using initiateMidiZoneAction_t = int;
+inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
+                                     engine::Engine &engine, MessageController &cont)
+{
+    SCLOG("Initating midi zone action " << payload);
+}
+CLIENT_TO_SERIAL(InitiateMidiZoneAction, c2s_initiate_midizone_action, initiateMidiZoneAction_t,
+                 doInitiateMidiZoneAction(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ZONE_MESSAGES_H
