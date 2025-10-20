@@ -38,6 +38,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ZoomContainer.h"
 #include "engine/part.h"
+#include "engine/engine.h"
 #include "selection/selection_manager.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "app/HasEditor.h"
