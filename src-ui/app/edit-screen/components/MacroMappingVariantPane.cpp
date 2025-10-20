@@ -184,19 +184,22 @@ MappingZoneHeader::MappingZoneHeader(scxt::ui::app::SCXTEditor *ed) : HasEditor(
 
     midiButton = std::make_unique<sst::jucegui::components::GlyphButton>(
         sst::jucegui::components::GlyphPainter::GlyphType::MIDI);
-    midiButton->setOnCallback([this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SELECT);});
+    midiButton->setOnCallback(
+        [this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SELECT); });
     addAndMakeVisible(*midiButton);
 
     midiUDButton = std::make_unique<sst::jucegui::components::GlyphButton>(
         sst::jucegui::components::GlyphPainter::GlyphType::MIDI,
         sst::jucegui::components::GlyphPainter::GlyphType::UP_DOWN, 16);
-    midiUDButton->setOnCallback([this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SET_VEL_BOUNDS_START);});
+    midiUDButton->setOnCallback(
+        [this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SET_VEL_BOUNDS_START); });
     addAndMakeVisible(*midiUDButton);
 
     midiLRButton = std::make_unique<sst::jucegui::components::GlyphButton>(
         sst::jucegui::components::GlyphPainter::GlyphType::MIDI,
         sst::jucegui::components::GlyphPainter::GlyphType::LEFT_RIGHT, 16);
-    midiLRButton->setOnCallback([this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SET_KEY_BOUNDS_START);});
+    midiLRButton->setOnCallback(
+        [this]() { initiateMidiZoneAction(engine::Engine::MidiZoneAction::SET_KEY_BOUNDS_START); });
     addAndMakeVisible(*midiLRButton);
 
     if (scxt::hasFeature::mappingPane11Controls)
@@ -231,7 +234,6 @@ MappingZoneHeader::MappingZoneHeader(scxt::ui::app::SCXTEditor *ed) : HasEditor(
     fileMenu->setOnCallback(editor->makeComingSoon());
     addAndMakeVisible(*fileMenu);
 }
-
 
 void MappingZoneHeader::initiateMidiZoneAction(engine::Engine::MidiZoneAction a)
 {
