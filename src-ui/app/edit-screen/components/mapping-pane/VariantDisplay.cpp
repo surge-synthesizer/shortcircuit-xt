@@ -1055,7 +1055,7 @@ void VariantDisplay::FileInfos::paint(juce::Graphics &g)
     auto ft = editor->themeApplier.interMediumFor(12);
 
     auto w = SST_STRING_WIDTH_FLOAT(ft, msg);
-    auto bx = getLocalBounds().withWidth(w + 2 * margin).withHeight(18);
+    auto bx = getLocalBounds().withWidth(w + 4 * margin).withHeight(18);
     g.setColour(editor->themeColor(theme::ColorMap::bg_3).withAlpha(0.5f));
     g.fillRect(bx);
     g.setColour(editor->themeColor(theme::ColorMap::bg_3));

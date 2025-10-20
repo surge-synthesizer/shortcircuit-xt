@@ -38,6 +38,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ZoomContainer.h"
 #include "engine/part.h"
+#include "engine/engine.h"
 #include "selection/selection_manager.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "app/HasEditor.h"
@@ -60,6 +61,8 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
     MappingZoneHeader(SCXTEditor *ed);
 
+    void initiateMidiZoneAction(engine::Engine::MidiZoneAction);
+
     void resized() override
     {
         auto b = getLocalBounds().reduced(1);
@@ -68,10 +71,13 @@ struct MappingZoneHeader : HasEditor, juce::Component
         midiButton->setBounds(b.withTrimmedLeft(91).withWidth(16));
         midiLRButton->setBounds(b.withTrimmedLeft(113).withWidth(28));
         midiUDButton->setBounds(b.withTrimmedLeft(147).withWidth(28));
-        fixOverlap->setBounds(b.withTrimmedLeft(181).withWidth(85));
-        fadeOverlap->setBounds(b.withTrimmedLeft(181 + 87).withWidth(85));
-        zoneSolo->setBounds(b.withTrimmedLeft(181 + 2 * 87).withWidth(85));
-        lockButton->setBounds(b.withTrimmedLeft(181 + 3 * 87).withWidth(16));
+        if (scxt::hasFeature::mappingPane11Controls)
+        {
+            fixOverlap->setBounds(b.withTrimmedLeft(181).withWidth(85));
+            fadeOverlap->setBounds(b.withTrimmedLeft(181 + 87).withWidth(85));
+            zoneSolo->setBounds(b.withTrimmedLeft(181 + 2 * 87).withWidth(85));
+            lockButton->setBounds(b.withTrimmedLeft(181 + 3 * 87).withWidth(16));
+        }
         fileLabel->setBounds(b.withTrimmedLeft(181 + 3 * 87 + 20).withWidth(40));
         fileMenu->setBounds(b.withTrimmedLeft(500));
     }
