@@ -49,7 +49,7 @@ make_clapfirst_plugins(
         STANDALONE_CONFIGURATIONS
         standalone "${PRODUCT_NAME}" "org.surge-synth-team.shortcircuit-xt"
 
-        # STANDALONE_MACOS_ICON "${CMAKE_SOURCE_DIR}/resources/mac_installer/Icon.icns"
+        STANDALONE_MACOS_ICON "${CMAKE_SOURCE_DIR}/resources/images/SCAppIcon.icns"
 )
 
 # Our installer uses this
