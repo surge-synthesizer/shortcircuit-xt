@@ -294,6 +294,36 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     }
 };
 
+template <typename Under> struct DiscreteFromFloatAdapterAttachment : sst::jucegui::data::Discrete
+{
+    Under &value;
+    DiscreteFromFloatAdapterAttachment(Under &v) : value(v) {}
+
+    std::string getLabel() const override { return value.getLabel(); }
+    int getValue() const override { return (int)std::round(value.getValue()); }
+    int getDefaultValue() const override { return (int)std::round(value.getDefaultValue()); };
+    void setValueFromGUI(const int &f) override { value.setValueFromGUI(f); }
+    void setValueFromModel(const int &f) override { value.setValueFromModel(f); }
+    std::string getValueAsStringFor(int i) const override { return value.getValueAsStringFor(i); }
+    std::string getValueAsString() const override { return value.getValueAsString(); }
+    void setValueAsString(const std::string &s) override { value.setValueAsString(s); }
+    int getMin() const override { return (int)std::round(value.getMin()); }
+    int getMax() const override { return (int)std::round(value.getMax()); }
+
+    void jog(int dir) override
+    {
+        auto v = getValue();
+        v += dir;
+        if (v >= getMax())
+            v = 0;
+        if (v < 0)
+            v = getMax() - 1;
+
+        // overshoot so I can be subsequently rounded to the correct spot
+        value.setValueFromGUI(v + dir * 0.001);
+    }
+};
+
 template <typename Payload, typename ValueType = int32_t>
 struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
 {

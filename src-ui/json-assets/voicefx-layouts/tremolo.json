@@ -1,0 +1,92 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "volume": {
+      "class": "knob40",
+      "label": "Volume",
+      "binding": {
+        "index": 0,
+        "type": "float"
+      },
+      "position": {
+        "x": 10,
+        "y": 10
+      }
+    },
+    "rate": {
+      "class": "knob40",
+      "label": "Rate",
+      "binding": {
+        "index": 1,
+        "type": "float"
+      },
+      "position": {
+        "x": 65,
+        "y": 10
+      }
+    },
+    "depth": {
+      "class": "knob40",
+      "label": "Depth",
+      "binding": {
+        "index": 2,
+        "type": "float"
+      },
+      "position": {
+        "x": 65,
+        "y": 75
+      }
+    },
+    "crossover": {
+      "class": "knob40",
+      "label": "Crossover",
+      "binding": {
+        "index": 3,
+        "type": "float"
+      },
+      "position": {
+        "x": 10,
+        "y": 75
+      },
+      "enabled-if": {
+        "index": 0,
+        "type": "int",
+        "values": [
+          1
+        ]
+      }
+    },
+    "harmonic": {
+      "class": "power-switch",
+      "binding": {
+        "index": 0,
+        "type": "int"
+      },
+      "position": {
+        "x": 45,
+        "y": 70
+      }
+    },
+    "shape": {
+      "class": "vertical-multiswitch",
+      "binding": {
+        "index": 1,
+        "type": "int"
+      },
+      "position": {
+        "x": 120,
+        "y": 10,
+        "w": 70,
+        "h": 120
+      }
+    },
+    "stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "index": 2,
+        "type": "int"
+      },
+      "position": {}
+    }
+  }
+}

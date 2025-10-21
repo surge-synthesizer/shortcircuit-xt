@@ -41,6 +41,7 @@
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/bus.h"
 #include "FXSlotBearing.h"
+#include "sst/jucegui/layouts/JsonLayoutEngine.h"
 
 namespace scxt::ui::app
 {
@@ -59,7 +60,8 @@ template <bool forBus>
 struct PartEffectsPane : public HasEditor,
                          sst::jucegui::components::NamedPanel,
                          juce::DragAndDropTarget,
-                         FXSlotBearing
+                         FXSlotBearing,
+                         sst::jucegui::layouts::JsonLayoutHost
 {
     static constexpr int width{198}, height{290};
 
@@ -135,9 +137,11 @@ struct PartEffectsPane : public HasEditor,
     void itemDropped(const SourceDetails &dragSourceDetails) override;
 
     std::unordered_set<std::unique_ptr<juce::Component>> components;
-    typedef connectors::PayloadDataAttachment<engine::BusEffectStorage> attachment_t;
-    typedef connectors::BooleanPayloadDataAttachment<engine::BusEffectStorage> boolAttachment_t;
-    std::unordered_set<std::unique_ptr<attachment_t>> floatAttachments;
+    using attachment_t = connectors::PayloadDataAttachment<engine::BusEffectStorage>;
+    using boolAttachment_t = connectors::BooleanPayloadDataAttachment<engine::BusEffectStorage>;
+    using intProxyAttachment_t = connectors::DiscreteFromFloatAdapterAttachment<attachment_t>;
+    std::unordered_set<std::unique_ptr<attachment_t>> floatAttachments; // todo move this to array
+    std::array<std::unique_ptr<intProxyAttachment_t>, scxt::maxBusEffectParams> intProxyAttachments;
     std::unordered_set<std::unique_ptr<boolAttachment_t>> boolAttachments;
 
   protected:
@@ -154,7 +158,7 @@ struct PartEffectsPane : public HasEditor,
     }
 
     template <typename T>
-    T *layoutWidgetToFloat(const sst::jucegui::layout::ExplicitLayout &elo, int index,
+    T *layoutWidgetToFloat(const sst::jucegui::layouts::ExplicitLayout &elo, int index,
                            const std::string &lotag)
     {
         auto r = attachWidgetToFloat<T>(index);
@@ -162,7 +166,7 @@ struct PartEffectsPane : public HasEditor,
         return r;
     }
     template <typename T>
-    T *layoutWidgetToFloat(const sst::jucegui::layout::ExplicitLayout &elo, int index,
+    T *layoutWidgetToFloat(const sst::jucegui::layouts::ExplicitLayout &elo, int index,
                            const std::string &lotag, const std::string &label)
     {
         auto r = layoutWidgetToFloat<T>(elo, index, lotag);
@@ -175,6 +179,15 @@ struct PartEffectsPane : public HasEditor,
     void rebuildDefaultLayout();
     void rebuildFromJSONLibrary(const std::string &path);
 
+    void rebuildWithJsonLayoutEngine(const std::string &path);
+    std::vector<std::unique_ptr<juce::Component>> jsonLabels;
+
+  public:
+    std::string resolveJsonPath(const std::string &path) const override;
+    void createBindAndPosition(const sst::jucegui::layouts::json_document::Control &,
+                               const sst::jucegui::layouts::json_document::Class &) override;
+
+  protected:
     template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
 
   public:

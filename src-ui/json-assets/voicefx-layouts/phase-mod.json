@@ -1,0 +1,72 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "transpose": {
+      "class": "knob60",
+      "label": "Frequency",
+      "position": {
+        "x": 20,
+        "y": 10
+      },
+      "binding": {
+        "type": "float",
+        "index": 0
+      }
+    },
+    "depth": {
+      "class": "knob60",
+      "label": "Depth",
+      "position": {
+        "x": 108,
+        "y": 10
+      },
+      "binding": {
+        "type": "float",
+        "index": 1
+      }
+    },
+    "ratlab": {
+      "class": "ruled-label",
+      "label": "Freq. Ratio: ",
+      "position": {
+        "x": 25,
+        "y": 90,
+        "w": 140
+      }
+    },
+    "nrat": {
+      "class": "jog-updown",
+      "position": {
+        "x": 25,
+        "y": 110,
+        "w": 65
+      },
+      "binding": {
+        "type": "int",
+        "index": 0
+      }
+    },
+    "drat": {
+      "class": "jog-updown",
+      "position": {
+        "x": 100,
+        "y": 110,
+        "w": 65
+      },
+      "binding": {
+        "type": "int",
+        "index": 1
+      }
+    },
+    "olabel": {
+      "class": "label",
+      "label": "/",
+      "position": {
+        "x": 90,
+        "y": 110,
+        "w": 10,
+        "h": 22
+      }
+    }
+  }
+}

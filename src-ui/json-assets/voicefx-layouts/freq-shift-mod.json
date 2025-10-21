@@ -1,0 +1,41 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "fine": {
+      "class": "knob60",
+      "label": "Fine",
+      "binding": {
+        "index": 0,
+        "type": "float"
+      },
+      "position": {
+        "x": 10,
+        "y": 10
+      }
+    },
+    "coarse": {
+      "class": "knob60",
+      "label": "Coarse",
+      "binding": {
+        "index": 1,
+        "type": "float"
+      },
+      "position": {
+        "x": 110,
+        "y": 10
+      }
+    },
+    "feedback": {
+      "class": "knob40",
+      "label": "Feedback",
+      "binding": {
+        "index": 2,
+        "type": "float"
+      },
+      "position": {
+        "x": 70,
+        "y": 80
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "comment": "The part effect area is 190x262 inside the panel",
+  "include": "shared-layouts/shared-classes.json"
+}
