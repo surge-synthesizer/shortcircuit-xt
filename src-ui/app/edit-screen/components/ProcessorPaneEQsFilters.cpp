@@ -37,8 +37,6 @@
 #include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/EqualTuningProvider.h"
-#include "sst/voice-effects/filter/CytomicSVF.h"
-#include "sst/voice-effects/filter/SurgeBiquads.h"
 
 #include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/VSlider.h"
