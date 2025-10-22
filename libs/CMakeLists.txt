@@ -14,6 +14,9 @@ if (APPLE)
     # BaconPaul has jack kinda installed
     set(RTAUDIO_API_JACK FALSE CACHE BOOL "Not on apple")
 endif()
+if (WIN32)
+    set(RTAUDIO_API_ASIO ON CACHE BOOL "Enable ASIO for Windows standalone" FORCE)
+endif()
 add_subdirectory(clap/clap-wrapper)
 
 add_subdirectory(sst/sst-clap-helpers)
