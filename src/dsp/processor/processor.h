@@ -113,6 +113,7 @@ enum ProcessorType
     proct_SurgeBiquads,
     proct_VemberClassic,
     proct_K35,
+    proct_diodeladder,
     proct_tripole,
     proct_obx4,
     proct_cutoffwarp,

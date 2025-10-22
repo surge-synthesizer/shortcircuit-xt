@@ -60,6 +60,8 @@
  */
 
 #include "definition_helpers.h"
+#include "processor_defs.h"
+#include "processor_defs.h"
 #include "dsp/processor/processor_impl.h"
 
 #include "sst/voice-effects/delay/Widener.h"
@@ -76,7 +78,6 @@
 #include "sst/voice-effects/eq/MorphEQ.h"
 #include "sst/voice-effects/eq/TiltEQ.h"
 
-#include "sst/voice-effects/filter/CytomicSVF.h"
 #include "sst/voice-effects/filter/SSTFilters.h"
 #include "sst/voice-effects/filter/StaticPhaser.h"
 
@@ -150,6 +151,13 @@ namespace procimpl::detail
 using eq3impl = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<1>, 3>;
 using eq3impl_os = sst::voice_effects::eq::EqNBandParametric<SCXTVFXConfig<2>, 3>;
 
+using fastSVFImpl =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
+                                                sst::filtersplusplus::FilterModel::CytomicSVF>;
+using fastSVFImpl_os =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
+                                                sst::filtersplusplus::FilterModel::CytomicSVF>;
+
 using vemberImpl =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
                                                 sst::filtersplusplus::FilterModel::VemberClassic>;
@@ -162,7 +170,12 @@ using k35Impl = sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
 using k35Impl_os =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
                                                 sst::filtersplusplus::FilterModel::K35>;
-
+using diodeLadderImpl =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
+                                                sst::filtersplusplus::FilterModel::DiodeLadder>;
+using diodeLadderImpl_os =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
+                                                sst::filtersplusplus::FilterModel::DiodeLadder>;
 using vintageImpl =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
                                                 sst::filtersplusplus::FilterModel::VintageLadder>;
@@ -206,10 +219,15 @@ using SnHImpl_os =
                                                 sst::filtersplusplus::FilterModel::SampleAndHold>;
 } // namespace procimpl::detail
 
+DEFINE_PROC(CytomicSVF, detail::fastSVFImpl, detail::fastSVFImpl_os, proct_CytomicSVF, "Fast SVF",
+            "Filters", "filt-cytomic");
 DEFINE_PROC(VemberClassicFilter, procimpl::detail::vemberImpl, procimpl::detail::vemberImpl_os,
             proct_VemberClassic, "Vember Classic", "Filters", "vemberclassic");
 DEFINE_PROC(K35Filter, procimpl::detail::k35Impl, procimpl::detail::k35Impl_os, proct_K35, "K35",
             "Filters", "k35");
+DEFINE_PROC(DiodeLadderFilter, procimpl::detail::diodeLadderImpl,
+            procimpl::detail::diodeLadderImpl_os, proct_diodeladder, "Linear Ladder", "Filters",
+            "diodeladder");
 DEFINE_PROC(VintageLadder, procimpl::detail::vintageImpl, procimpl::detail::vintageImpl_os,
             proct_vintageladder, "Vintage Ladder", "Filters", "vintageladder");
 DEFINE_PROC(OBX4PFilter, procimpl::detail::obx4Impl, procimpl::detail::obx4Impl_os, proct_obx4,
@@ -278,9 +296,6 @@ DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXC
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",
             "eq-morph");
-DEFINE_PROC(CytomicSVF, sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::CytomicSVF<SCXTVFXConfig<2>>, proct_CytomicSVF, "Fast SVF",
-            "Filters", "filt-cytomic");
 DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
             "REPLACE NOW", "Filters", "filt-sstfilters");
