@@ -116,27 +116,9 @@
         "index": 4,
         "type": "float"
       },
-      "enabled-if": {
-        "type": "float-activation",
-        "index": 4,
-        "values": [
-          1
-        ]
-      },
       "position": {
         "x": 95,
         "y": 92
-      }
-    },
-    "lo-power": {
-      "class": "power-switch",
-      "binding": {
-        "index": 4,
-        "type": "float-activation"
-      },
-      "position": {
-        "x": 130,
-        "y": 89
       }
     },
     "hicut": {
@@ -146,27 +128,9 @@
         "index": 5,
         "type": "float"
       },
-      "enabled-if": {
-        "type": "float-activation",
-        "index": 5,
-        "values": [
-          1
-        ]
-      },
       "position": {
         "x": 140,
         "y": 92
-      }
-    },
-    "hi-power": {
-      "class": "power-switch",
-      "binding": {
-        "index": 5,
-        "type": "float-activation"
-      },
-      "position": {
-        "x": 180,
-        "y": 89
       }
     },
     "stereo": {

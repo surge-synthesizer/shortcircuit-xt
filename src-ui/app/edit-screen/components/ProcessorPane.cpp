@@ -1408,13 +1408,6 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         return 0;
     };
 
-    auto deactAttI = [this](int is) {
-        if (deactivateAttachments[is])
-            return deactivateAttachments[is]->getValue();
-        SCLOG("Warning: Queried an unimplemented int attachment in deactI");
-        return 0;
-    };
-
     if (ctrl.binding.has_value() && ctrl.binding->type == "float")
     {
         auto idx = ctrl.binding->index;
@@ -1451,10 +1444,20 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         bool en = true;
         if (ctrl.enabledIf.has_value())
         {
-            if (ctrl.enabledIf->type == "int")
-                en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
-            if (ctrl.enabledIf->type == "float-activation")
-                en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, deactAttI, onError);
+            en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
+        }
+
+        if (deactivateAttachments[idx])
+        {
+            en = deactivateAttachments[idx]->getValue();
+            auto pt = std::make_unique<jcmp::ToggleButton>();
+            pt->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+            pt->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
+            pt->setBounds(ctrl.position.x + ctrl.position.w - 4, ctrl.position.y, 10, 10);
+            pt->setSource(deactivateAttachments[idx].get());
+            getContentAreaComponent()->addAndMakeVisible(*pt);
+            jsonDeactEditors[idx] = std::move(pt);
+            attachRebuildToDeactivateAttachment(idx);
         }
 
         ed->setEnabled(en);
@@ -1532,39 +1535,6 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
 
         jsonIntEditors[idx] = std::move(ed);
     }
-    else if (ctrl.binding.has_value() && ctrl.binding->type == "float-activation")
-    {
-        auto idx = ctrl.binding->index;
-        if (idx < 0 || idx >= scxt::maxProcessorFloatParams)
-        {
-            onError("Index " + std::to_string(idx) + " is out of range on " + ctrl.name);
-            return;
-        }
-
-        if (!deactivateAttachments[idx])
-        {
-            onError("Deactivate attachment " + std::to_string(idx) + " is not initialized on " +
-                    ctrl.name);
-            return;
-        }
-
-        attachRebuildToDeactivateAttachment(idx);
-
-        jsonIntEditor_t ed = connectors::jsonlayout::createDiscreteWidget(ctrl, cls, onError);
-
-        if (!ed)
-        {
-            onError("Unable to create editor");
-            return;
-        }
-
-        getContentAreaComponent()->addAndMakeVisible(*ed);
-
-        auto &att = deactivateAttachments[idx];
-        connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl);
-
-        jsonDeactEditors[idx] = std::move(ed);
-    }
     else if (cls.controlType == "label")
     {
         if (!ctrl.label.has_value())
@@ -1594,7 +1564,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
     }
     else
     {
-        onError("Unbound control " + ctrl.name);
+        // onError("Unbound control " + ctrl.name);
     }
 }
 

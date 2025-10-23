@@ -52,24 +52,6 @@
       "position": {
         "x": 140,
         "y": 5
-      },
-      "enabled-if": {
-        "type": "float-activation",
-        "index": 3,
-        "values": [
-          1
-        ]
-      }
-    },
-    "lo-power": {
-      "class": "power-switch",
-      "binding": {
-        "index": 3,
-        "type": "float-activation"
-      },
-      "position": {
-        "x": 177,
-        "y": 5
       }
     },
     "highcut": {
@@ -79,26 +61,8 @@
         "index": 4,
         "type": "float"
       },
-      "enabled-if": {
-        "type": "float-activation",
-        "index": 4,
-        "values": [
-          1
-        ]
-      },
       "position": {
         "x": 140,
-        "y": 65
-      }
-    },
-    "hi-power": {
-      "class": "power-switch",
-      "binding": {
-        "index": 4,
-        "type": "float-activation"
-      },
-      "position": {
-        "x": 177,
         "y": 65
       }
     },
