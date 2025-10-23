@@ -378,7 +378,7 @@ template <typename T> inline void HasEditor::sendToSerialization(const T &msg)
 
 template <typename T> inline void HasEditor::updateValueTooltip(const T &at)
 {
-    editor->setTooltipContents(at.label, at.getValueAsString());
+    editor->setTooltipContents(at.getLabel(), at.getValueAsString());
 }
 
 template <typename W, typename A>

@@ -49,6 +49,7 @@ add_library(${PROJECT_NAME} STATIC
 
         connectors/SCXTResources.cpp
         connectors/JSONAssetSupport.cpp
+        connectors/JsonLayoutEngineSupport.cpp
 
         theme/ColorMap.cpp
         theme/ThemeApplier.cpp

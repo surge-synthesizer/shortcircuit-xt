@@ -31,6 +31,7 @@
 #include "app/edit-screen/components/PartEditScreen.h"
 
 #include "connectors/JSONAssetSupport.h"
+#include "connectors/JsonLayoutEngineSupport.h"
 
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
@@ -146,11 +147,16 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
         rebuildFromJSONLibrary("bus-effects/" #x ".json");                                         \
         break;
 
+#define NS(x)                                                                                      \
+    case engine::AvailableBusEffects::x:                                                           \
+        rebuildWithJsonLayoutEngine("partfx-layouts/" #x ".json");                                 \
+        break;
+
     switch (t)
     {
         CS(reverb1);
         CS(reverb2)
-        CS(flanger);
+        NS(flanger);
         CS(delay);
         CS(floatydelay);
         CS(nimbus);
@@ -395,7 +401,7 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuildFromJSONLibrary(cons
                                          << " components");
 
     namespace jcmp = sst::jucegui::components;
-    namespace jlay = sst::jucegui::layout;
+    namespace jlay = sst::jucegui::layouts;
     using np = jlay::ExplicitLayout::NamedPosition;
 
     const auto &metadata = getPartFXStorage().first;
@@ -629,6 +635,144 @@ void PartEffectsPane<forBus>::itemDropped(const SourceDetails &dragSourceDetails
         {
             parent->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot);
         }
+    }
+}
+
+template <bool forBus>
+void PartEffectsPane<forBus>::rebuildWithJsonLayoutEngine(const std::string &path)
+{
+    // order matters here
+    components.clear();
+    floatAttachments.clear();
+    std::fill(intProxyAttachments.begin(), intProxyAttachments.end(), nullptr);
+
+    auto eng = sst::jucegui::layouts::JsonLayoutEngine(*this);
+
+    auto res = eng.processJsonPath(path);
+    if (!res)
+        editor->displayError("JSON Parsing Error", *res.error);
+}
+
+template <bool forBus>
+std::string PartEffectsPane<forBus>::resolveJsonPath(const std::string &path) const
+{
+    auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
+    return res;
+}
+
+template <bool forBus>
+void PartEffectsPane<forBus>::createBindAndPosition(
+    const sst::jucegui::layouts::json_document::Control &ctrl,
+    const sst::jucegui::layouts::json_document::Class &cls)
+{
+    auto onError = [this, ctrl](const auto &s) {
+        editor->displayError("JSON Error : " + ctrl.name, s);
+    };
+    auto intAttI = [](int i) { return 0; };
+
+    auto zeroPoint = getContentArea().getTopLeft();
+
+    if (ctrl.binding.has_value() && ctrl.binding->type == "float")
+    {
+        auto pidx = ctrl.binding->index;
+        auto &data = getPartFXStorage();
+        auto &pmd = data.first[pidx];
+        auto onGuiChange = [w = juce::Component::SafePointer(this), pidx](auto &a) {
+            if (w)
+                w->busEffectStorageChangedFromGUI(a, pidx);
+        };
+
+        auto at = std::make_unique<attachment_t>(pmd, onGuiChange,
+                                                 getPartFXStorage().second.params[pidx]);
+
+        // auto viz = scxt::ui::connectors::jsonlayout::isVisible(ctrl, intAttI, onError);
+        // if (!viz)
+        //            return;
+
+        auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
+        if (!ed)
+        {
+            onError("Could not create widget for " + ctrl.name + " with unknown control type " +
+                    cls.controlType);
+            return;
+        }
+
+        connectors::jsonlayout::attachAndPosition(this, ed, at, ctrl, zeroPoint);
+        addAndMakeVisible(*ed);
+
+        // auto en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
+        // ed->setEnabled(en);
+
+        if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this, zeroPoint))
+        {
+            addAndMakeVisible(*lab);
+            jsonLabels.push_back(std::move(lab));
+        }
+
+        components.insert(std::move(ed));
+        floatAttachments.insert(std::move(at));
+    }
+    else if (ctrl.binding.has_value() && ctrl.binding->type == "int")
+    {
+        auto pidx = ctrl.binding->index;
+        if (pidx < 0 || pidx >= scxt::maxBusEffectParams)
+        {
+            onError("Index " + std::to_string(pidx) + " is out of range on " + ctrl.name);
+            return;
+        }
+        auto &data = getPartFXStorage();
+        auto &pmd = data.first[pidx];
+        auto onGuiChange = [w = juce::Component::SafePointer(this), pidx](auto &a) {
+            if (w)
+                w->busEffectStorageChangedFromGUI(a, pidx);
+        };
+
+        auto at = std::make_unique<attachment_t>(pmd, onGuiChange,
+                                                 getPartFXStorage().second.params[pidx]);
+        auto ipt = std::make_unique<intProxyAttachment_t>(*at);
+
+        auto ed = connectors::jsonlayout::createDiscreteWidget(ctrl, cls, onError);
+        if (!ed)
+        {
+            onError("Unable to create editor");
+            return;
+        }
+
+        addAndMakeVisible(*ed);
+        connectors::jsonlayout::attachAndPosition(this, ed, ipt, ctrl, zeroPoint);
+
+        floatAttachments.insert(std::move(at));
+        intProxyAttachments[pidx] = std::move(ipt);
+        components.insert(std::move(ed));
+    }
+    else if (cls.controlType == "label")
+    {
+        if (!ctrl.label.has_value())
+        {
+            onError("Label has no 'label' member " + ctrl.name);
+            return;
+        }
+        auto lab = std::make_unique<jcmp::Label>();
+        lab->setText(*ctrl.label);
+        lab->setJustification(juce::Justification::centred);
+        lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
+                       ctrl.position.w, ctrl.position.h);
+        addAndMakeVisible(*lab);
+        jsonLabels.push_back(std::move(lab));
+    }
+    else if (cls.controlType == "ruled-label")
+    {
+        if (!ctrl.label.has_value())
+        {
+            onError("Label has no 'label' member " + ctrl.name);
+            return;
+        }
+        auto lab = std::make_unique<jcmp::RuledLabel>();
+        lab->setText(*ctrl.label);
+        lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
+                       ctrl.position.w, ctrl.position.h);
+        addAndMakeVisible(*lab);
+        jsonLabels.push_back(std::move(lab));
     }
 }
 

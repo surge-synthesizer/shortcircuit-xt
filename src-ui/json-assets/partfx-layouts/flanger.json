@@ -1,0 +1,165 @@
+{
+  "include": "partfx-layouts/partfx-classes.json",
+  "controls": {
+    "rate": {
+      "class": "knob55",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "label": "Rate",
+      "position": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    "depth": {
+      "class": "knob55",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "label": "Depth",
+      "position": {
+        "x": 70,
+        "y": 5
+      }
+    },
+    "shape": {
+      "class": "vertical-multiswitch",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 130,
+        "y": 5,
+        "w": 60,
+        "h": 70
+      }
+    },
+    "wave": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {
+        "x": 10,
+        "y": 80,
+        "w": 170
+      }
+    },
+    "vlabel": {
+      "class": "ruled-label",
+      "label": "Voices",
+      "position": {
+        "x": 20,
+        "y": 105,
+        "w": 150
+      }
+    },
+    "voices": {
+      "class": "knob40",
+      "label": "Voices",
+      "position": {
+        "x": 22,
+        "y": 126
+      },
+      "binding": {
+        "type": "float",
+        "index": 4
+      }
+    },
+    "base": {
+      "class": "knob40",
+      "label": "Base",
+      "position": {
+        "x": 75,
+        "y": 126
+      },
+      "binding": {
+        "type": "float",
+        "index": 5
+      }
+    },
+    "spacing": {
+      "class": "knob40",
+      "label": "Spacing",
+      "position": {
+        "x": 128,
+        "y": 126
+      },
+      "binding": {
+        "type": "float",
+        "index": 6
+      }
+    },
+    "fbacklab": {
+      "class": "ruled-label",
+      "label": "Feedback",
+      "position": {
+        "x": 10,
+        "y": 185,
+        "w": 85
+      }
+    },
+    "fback": {
+      "class": "knob35",
+      "label": "Depth",
+      "position": {
+        "x": 10,
+        "y": 205
+      },
+      "binding": {
+        "type": "float",
+        "index": 7
+      }
+    },
+    "damp": {
+      "class": "knob35",
+      "label": "Damp",
+      "position": {
+        "x": 53,
+        "y": 205
+      },
+      "binding": {
+        "type": "float",
+        "index": 8
+      }
+    },
+    "outlab": {
+      "class": "ruled-label",
+      "label": "Out",
+      "position": {
+        "x": 105,
+        "y": 185,
+        "w": 80
+      }
+    },
+    "width": {
+      "class": "knob35",
+      "label": "Width",
+      "position": {
+        "x": 105,
+        "y": 205
+      },
+      "binding": {
+        "type": "float",
+        "index": 9
+      }
+    },
+    "mix": {
+      "class": "knob35",
+      "label": "Mix",
+      "position": {
+        "x": 148,
+        "y": 205
+      },
+      "binding": {
+        "type": "float",
+        "index": 10
+      }
+    }
+  }
+}

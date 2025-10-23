@@ -1,0 +1,110 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "sr": {
+      "class": "knob50",
+      "label": "Sample Rate",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    "bd": {
+      "class": "knob50",
+      "label": "BitDepth",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 70,
+        "y": 5
+      }
+    },
+    "zp": {
+      "class": "knob50",
+      "label": "ZeroPoint",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 130,
+        "y": 5
+      }
+    },
+    "lp": {
+      "class": "knob50",
+      "label": "LowPass",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 70,
+        "y": 80
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "hp": {
+      "class": "knob50",
+      "label": "HiPass",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 130,
+        "y": 80
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "power": {
+      "class": "power-switch",
+      "binding": {
+        "index": 0,
+        "type": "int"
+      },
+      "position": {
+        "x": 175,
+        "y": 75
+      }
+    },
+    "filtermode": {
+      "class": "vertical-multiswitch",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 10,
+        "y": 80,
+        "w": 50,
+        "h": 50
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    }
+  }
+}

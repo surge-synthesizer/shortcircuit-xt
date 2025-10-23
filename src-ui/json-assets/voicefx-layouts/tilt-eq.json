@@ -1,0 +1,29 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "freq": {
+      "class": "knob70",
+      "label": "Frequency",
+      "position": {
+        "x": 15,
+        "y": 25
+      },
+      "binding": {
+        "type": "float",
+        "index": 0
+      }
+    },
+    "tilt": {
+      "class": "knob70",
+      "label": "Tilt",
+      "position": {
+        "x": 105,
+        "y": 25
+      },
+      "binding": {
+        "type": "float",
+        "index": 1
+      }
+    }
+  }
+}

@@ -41,6 +41,7 @@
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/layouts/ExplicitLayout.h"
 #include "sst/jucegui/data/Continuous.h"
+#include "sst/jucegui/layouts/JsonLayoutEngine.h"
 #include "dsp/processor/processor.h"
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -48,7 +49,10 @@
 
 namespace scxt::ui::app::edit_screen
 {
-struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::DragAndDropTarget
+struct ProcessorPane : sst::jucegui::components::NamedPanel,
+                       HasEditor,
+                       juce::DragAndDropTarget,
+                       sst::jucegui::layouts::JsonLayoutHost
 {
     // ToDo: shapes of course
     typedef connectors::PayloadDataAttachment<dsp::processor::ProcessorStorage> attachment_t;
@@ -106,7 +110,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsGainMatrix();
     void layoutControlsSurgeFilters();
     void layoutControlsEBWaveforms();
-    void layoutControlsFastSVF();
     void layoutControlsWaveshaper();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
@@ -115,7 +118,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
     void layoutControlsVAOsc();
     void layoutControlsStringResonator();
     void layoutControlsStaticPhaser();
-    void LayoutControlsTremolo();
     void layoutControlsPhaser();
     void layoutControlsChorus();
     void layoutControlsFMFilter();
@@ -123,12 +125,14 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     bool layoutControlsFromJSON(const std::string &jsonpath);
     bool layoutControlsFromJSON(const std::string &jsonpath,
-                                sst::jucegui::layout::ExplicitLayout &elo);
+                                sst::jucegui::layouts::ExplicitLayout &elo);
     void layoutControlsFromJSONOrDefault(const std::string &jsonpath)
     {
         if (!layoutControlsFromJSON(jsonpath))
             layoutControls();
     }
+
+    void layoutControlsWithJsonEngine(const std::string &jsonpath);
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<
@@ -260,7 +264,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     // Layout helpers
     std::unique_ptr<intEditor_t>
-    createAndLayoutPowerButton(const sst::jucegui::layout::ExplicitLayout &elo,
+    createAndLayoutPowerButton(const sst::jucegui::layouts::ExplicitLayout &elo,
                                const std::string &lotag,
                                const std::unique_ptr<int_attachment_t> &at)
     {
@@ -274,7 +278,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<floatEditor_t> createAndLayoutLabeledFloatWidget(
-        const sst::jucegui::layout::ExplicitLayout &elo, const std::string &lotag,
+        const sst::jucegui::layouts::ExplicitLayout &elo, const std::string &lotag,
         const std::unique_ptr<attachment_t> &at, const std::string &label = "")
     {
         auto res = createWidgetAttachedTo<T>(at, label.empty() ? at->getLabel() : label);
@@ -283,6 +287,16 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel, HasEditor, juce::Dr
 
         return res;
     }
+
+    std::string resolveJsonPath(const std::string &path) const override;
+    void createBindAndPosition(const sst::jucegui::layouts::json_document::Control &,
+                               const sst::jucegui::layouts::json_document::Class &) override;
+
+    using jsonFloatEditor_t = std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>;
+    using jsonIntEditor_t = std::unique_ptr<sst::jucegui::components::DiscreteParamEditor>;
+    std::array<jsonFloatEditor_t, dsp::processor::maxProcessorFloatParams> jsonFloatEditors;
+    std::array<jsonIntEditor_t, dsp::processor::maxProcessorIntParams> jsonIntEditors;
+    std::vector<std::unique_ptr<juce::Component>> jsonLabels;
 };
 } // namespace scxt::ui::app::edit_screen
 
