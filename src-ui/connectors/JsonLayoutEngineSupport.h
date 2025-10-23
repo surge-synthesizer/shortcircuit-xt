@@ -75,9 +75,9 @@ inline bool isEnabled(const sst::jucegui::layouts::json_document::Control &ctrl,
         return true;
     }
     auto iidx = ctrl.enabledIf->index;
-    if (ctrl.enabledIf->type != "int")
+    if (ctrl.enabledIf->type != "int" && ctrl.enabledIf->type != "float-activation")
     {
-        onError("Enabled If index " + std::to_string(iidx) + " is not an int");
+        onError("Enabled If index " + std::to_string(iidx) + " is not an int or float activation");
         return true;
     }
     auto iav = indexValue(iidx);
@@ -96,7 +96,7 @@ createControlLabel(const sst::jucegui::layouts::json_document::Control &ctrl,
                    sst::jucegui::style::StyleConsumer &sc, juce::Point<int> zeroPoint = {0, 0})
 {
     namespace jcmp = sst::jucegui::components;
-    if (ctrl.label.has_value() && cls.allowsLabel)
+    if (ctrl.label.has_value())
     {
         auto lab = std::make_unique<jcmp::Label>();
         // Always position below for now
