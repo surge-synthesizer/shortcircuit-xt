@@ -1453,8 +1453,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
             auto pt = std::make_unique<jcmp::ToggleButton>();
             pt->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
             pt->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
-            pt->setBounds(ctrl.position.x + ctrl.position.w - 4,
-                ctrl.position.y, 10, 10);
+            pt->setBounds(ctrl.position.x + ctrl.position.w - 4, ctrl.position.y, 10, 10);
             pt->setSource(deactivateAttachments[idx].get());
             getContentAreaComponent()->addAndMakeVisible(*pt);
             jsonDeactEditors[idx] = std::move(pt);
@@ -1462,7 +1461,6 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         }
 
         ed->setEnabled(en);
-
 
         if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this))
         {
@@ -1566,7 +1564,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
     }
     else
     {
-        //onError("Unbound control " + ctrl.name);
+        // onError("Unbound control " + ctrl.name);
     }
 }
 
