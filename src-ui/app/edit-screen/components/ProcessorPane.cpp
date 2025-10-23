@@ -346,7 +346,7 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_fx_bitcrusher:
-        layoutControlsFromJSONOrDefault("processors/bitcrusher.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/bitcrusher.json");
         break;
 
     case dsp::processor::proct_noise_am:
@@ -1705,6 +1705,9 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
             onError("Unable to create editor");
             return;
         }
+
+        auto en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
+        ed->setEnabled(en);
 
         getContentAreaComponent()->addAndMakeVisible(*ed);
 
