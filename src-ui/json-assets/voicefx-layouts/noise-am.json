@@ -1,0 +1,69 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "threshold": {
+      "class": "knob50",
+      "label": "Threshold",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    "depth": {
+      "class": "knob50",
+      "label": "Depth",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 70,
+        "y": 5
+      }
+    },
+    "tilt": {
+      "class": "knob50",
+      "label": "Tilt",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 130,
+        "y": 5
+      }
+    },
+    "envelope": {
+      "class": "vertical-multiswitch",
+      "label": "Envelope",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {
+        "x": 40,
+        "y": 80,
+        "w": 50,
+        "h": 40
+      }
+    },
+    "noise": {
+      "class": "vertical-multiswitch",
+      "label": "Noise",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 100,
+        "y": 80,
+        "w": 50,
+        "h": 40
+      }
+    }
+  }
+}

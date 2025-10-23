@@ -1,0 +1,75 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "low": {
+      "class": "knob50",
+      "label": "Start",
+      "binding": {
+        "index": 2,
+        "type": "float"
+      },
+      "position": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    "high": {
+      "class": "knob50",
+      "label": "End",
+      "binding": {
+        "index": 3,
+        "type": "float"
+      },
+      "position": {
+        "x": 70,
+        "y": 5
+      }
+    },
+    "feedback": {
+      "class": "knob50",
+      "label": "Rate",
+      "binding": {
+        "index": 1,
+        "type": "float"
+      },
+      "position": {
+        "x": 130,
+        "y": 5
+      }
+    },
+    "rate": {
+      "class": "knob50",
+      "label": "Resonance",
+      "binding": {
+        "index": 0,
+        "type": "float"
+      },
+      "position": {
+        "x": 10,
+        "y": 80
+      }
+    },
+    "peaks": {
+      "class": "jog-updown",
+      "label": "Peaks",
+      "binding": {
+        "index": 1,
+        "type": "int"
+      },
+      "position": {
+        "x": 70,
+        "y": 100,
+        "w": 100,
+        "h": 25
+      }
+    },
+    "stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "index": 0,
+        "type": "int"
+      },
+      "position": {}
+    }
+  }
+}

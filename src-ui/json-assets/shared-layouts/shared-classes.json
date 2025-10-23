@@ -4,61 +4,52 @@
       "control-type": "knob",
       "w": 80,
       "h": 80,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob70": {
       "control-type": "knob",
       "w": 70,
       "h": 70,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob60": {
       "control-type": "knob",
       "w": 60,
       "h": 60,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob55": {
       "control-type": "knob",
       "w": 55,
       "h": 55,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob50": {
       "control-type": "knob",
       "w": 50,
       "h": 50,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob40": {
       "control-type": "knob",
       "w": 40,
       "h": 40,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob35": {
       "control-type": "knob",
       "w": 35,
       "h": 35,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "knob30": {
       "control-type": "knob",
       "w": 30,
       "h": 30,
-      "allows-label": true,
       "label-position": "bottom-center"
     },
     "ruled-label": {
-      "control-type": "ruled-label",
-      "allows-label": false
+      "control-type": "ruled-label"
     },
     "vertical-multiswitch": {
       "control-type": "multiswitch",
@@ -72,8 +63,8 @@
       "control-type": "toggle",
       "toggle-mode": "glyph",
       "glyph": "small-power-light",
-      "w": 12,
-      "h": 12
+      "w": 10,
+      "h": 10
     },
     "label": {
       "control-type": "label",

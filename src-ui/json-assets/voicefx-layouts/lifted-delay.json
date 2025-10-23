@@ -1,74 +1,49 @@
 {
   "include": "voicefx-layouts/voicefx-classes.json",
   "controls": {
-    "time-small": {
+    "left": {
       "class": "knob50",
-      "label": "Time L",
-      "binding": {
-        "index": 0,
-        "type": "float"
-      },
-      "position": {
-        "x": 10,
-        "y": 5
-      },
-      "visible-if": {
-        "index": 0,
-        "type": "int",
-        "values": [
-          1
-        ]
-      }
-    },
-    "time-large": {
-      "class": "knob80",
-      "label": "Time",
+      "label": "Left",
       "binding": {
         "index": 0,
         "type": "float"
       },
       "position": {
         "x": 5,
-        "y": 15
-      },
-      "visible-if": {
-        "index": 0,
-        "type": "int",
-        "values": [
-          0
-        ]
+        "y": 2
       }
     },
-    "time-small-r": {
+    "right": {
       "class": "knob50",
-      "label": "Time R",
+      "label": "Right",
       "binding": {
         "index": 1,
         "type": "float"
       },
-      "position": {
-        "x": 10,
-        "y": 75
-      },
-      "visible-if": {
-        "index": 0,
-        "type": "int",
+      "enabled-if": {
+        "index": 1,
+        "type": "float-activation",
         "values": [
           1
         ]
-      }
-    },
-    "feedback-header": {
-      "class": "ruled-label",
-      "label": "Feedback",
+      },
       "position": {
-        "x": 95,
-        "y": 0,
-        "w": 90,
-        "h": 15
+        "x": 60,
+        "y": 2
       }
     },
-    "feedback": {
+    "right-power": {
+      "class": "power-switch",
+      "binding": {
+        "index": 1,
+        "type": "float-activation"
+      },
+      "position": {
+        "x": 105,
+        "y": 0
+      }
+    },
+    "fb": {
       "class": "knob40",
       "label": "F/B",
       "binding": {
@@ -76,11 +51,11 @@
         "type": "float"
       },
       "position": {
-        "x": 95,
-        "y": 16
+        "x": 5,
+        "y": 92
       }
     },
-    "crossfeed": {
+    "cross": {
       "class": "knob40",
       "label": "Cross",
       "binding": {
@@ -88,25 +63,17 @@
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 16
-      },
-      "enabled-if": {
-        "index": 0,
-        "type": "int",
-        "values": [
-          1
-        ]
+        "x": 45,
+        "y": 92
       }
     },
-    "filter-header": {
+    "feedback-header": {
       "class": "ruled-label",
-      "label": "Filter",
+      "label": "Feedback",
       "position": {
-        "x": 95,
+        "x": 7,
         "y": 75,
-        "w": 90,
-        "h": 15
+        "w": 86
       }
     },
     "locut": {
@@ -136,7 +103,7 @@
       },
       "position": {
         "x": 130,
-        "y": 89
+        "y": 90
       }
     },
     "hicut": {
@@ -165,17 +132,51 @@
         "type": "float-activation"
       },
       "position": {
-        "x": 180,
-        "y": 89
+        "x": 175,
+        "y": 90
       }
     },
-    "stereo": {
-      "class": "hamburger-stereo",
+    "filter-header": {
+      "class": "ruled-label",
+      "label": "Filter",
+      "position": {
+        "x": 97,
+        "y": 75,
+        "w": 86
+      }
+    },
+    "rate": {
+      "class": "knob30",
+      "label": "Rate",
       "binding": {
-        "index": 0,
-        "type": "int"
+        "index": 6,
+        "type": "float"
       },
-      "position": {}
+      "position": {
+        "x": 122,
+        "y": 20
+      }
+    },
+    "amt": {
+      "class": "knob30",
+      "label": "Amt",
+      "binding": {
+        "index": 7,
+        "type": "float"
+      },
+      "position": {
+        "x": 155,
+        "y": 20
+      }
+    },
+    "mod-header": {
+      "class": "ruled-label",
+      "label": "Mod",
+      "position": {
+        "x": 122,
+        "y": 4,
+        "w": 65
+      }
     }
   }
 }

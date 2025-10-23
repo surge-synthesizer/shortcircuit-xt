@@ -4,6 +4,9 @@
   "classes": {
     "hamburger-stereo": {
       "control-type": "hamburger-stereo"
+    },
+    "waveshaper-menu": {
+      "control-type": "waveshaper-menu"
     }
   }
 }

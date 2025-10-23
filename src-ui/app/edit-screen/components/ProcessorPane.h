@@ -110,7 +110,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void layoutControlsGainMatrix();
     void layoutControlsSurgeFilters();
     void layoutControlsEBWaveforms();
-    void layoutControlsWaveshaper();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
@@ -122,15 +121,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void layoutControlsChorus();
     void layoutControlsFMFilter();
     void layoutControlsRingMod();
-
-    bool layoutControlsFromJSON(const std::string &jsonpath);
-    bool layoutControlsFromJSON(const std::string &jsonpath,
-                                sst::jucegui::layouts::ExplicitLayout &elo);
-    void layoutControlsFromJSONOrDefault(const std::string &jsonpath)
-    {
-        if (!layoutControlsFromJSON(jsonpath))
-            layoutControls();
-    }
 
     void layoutControlsWithJsonEngine(const std::string &jsonpath);
 
@@ -296,6 +286,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     using jsonIntEditor_t = std::unique_ptr<sst::jucegui::components::DiscreteParamEditor>;
     std::array<jsonFloatEditor_t, dsp::processor::maxProcessorFloatParams> jsonFloatEditors;
     std::array<jsonIntEditor_t, dsp::processor::maxProcessorIntParams> jsonIntEditors;
+    std::array<jsonIntEditor_t, dsp::processor::maxProcessorFloatParams> jsonDeactEditors;
     std::vector<std::unique_ptr<juce::Component>> jsonLabels;
 };
 } // namespace scxt::ui::app::edit_screen

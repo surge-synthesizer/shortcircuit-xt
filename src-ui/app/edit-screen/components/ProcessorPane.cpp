@@ -342,7 +342,7 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_lifted_delay:
-        layoutControlsFromJSONOrDefault("processors/lifteddelay.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/lifted-delay.json");
         break;
 
     case dsp::processor::proct_fx_bitcrusher:
@@ -350,7 +350,7 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_noise_am:
-        layoutControlsFromJSONOrDefault("processors/noiseam.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/noise-am.json");
         break;
 
     case dsp::processor::proct_osc_phasemod:
@@ -358,17 +358,16 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_shepard:
-        layoutControlsFromJSON("processors/shepard.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/shepard.json");
         break;
 
     case dsp::processor::proct_fx_simple_delay:
-        layoutControlsFromJSON("processors/simpledelay.json");
-        // layoutControlsWithJsonEngine("voicefx-layouts/simple-delay.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/simple-delay.json");
         break;
 
     case dsp::processor::proct_fx_waveshaper:
-        // Does JSON internally to allow custom widget creation
-        layoutControlsWaveshaper();
+        // layoutControlsWaveshaper();
+        layoutControlsWithJsonEngine("voicefx-layouts/waveshaper.json");
         break;
 
     default:
@@ -907,245 +906,6 @@ void ProcessorPane::layoutControlsEBWaveforms()
     intEditors[2]->item->setBounds(xtloc);
 }
 
-void ProcessorPane::layoutControlsWaveshaper()
-{
-    auto elo = sst::jucegui::layouts::ExplicitLayout();
-    layoutControlsFromJSON("processors/waveshaper.json", elo);
-
-    // NEED to do a custom for this
-    auto wss = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
-    editor->configureHasDiscreteMenuBuilder(wss.get());
-    wss->popupMenuBuilder->mode =
-        sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
-    wss->popupMenuBuilder->setGroupList(sst::waveshapers::WaveshaperGroupName());
-    wss->setBounds(elo.positionFor("wstype"));
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(wss));
-}
-
-bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath)
-{
-    auto elo = sst::jucegui::layouts::ExplicitLayout();
-    return layoutControlsFromJSON(jsonpath, elo);
-}
-
-bool ProcessorPane::layoutControlsFromJSON(const std::string &jsonpath,
-                                           sst::jucegui::layouts::ExplicitLayout &elo)
-{
-    auto dlyjs = connectors::JSONAssetLibrary::jsonForAsset(jsonpath);
-    connectors::JSONLayoutConsumer con;
-    try
-    {
-        tao::json::events::from_string(con, dlyjs);
-    }
-    catch (const std::exception &e)
-    {
-        SCLOG("JSON Parsing failed on '" << jsonpath << "' : " << e.what());
-        return false;
-    }
-
-    if (con.result.empty())
-    {
-        SCLOG("JSON Parsing produced no components on '" << jsonpath << "'");
-        return false;
-    }
-
-    namespace jlay = sst::jucegui::layouts;
-    using np = jlay::ExplicitLayout::NamedPosition;
-
-    int cidx{0};
-    for (const auto &c : con.result)
-    {
-        // Move these to the component
-        auto ctag = [&c](auto key, auto val) -> std::string {
-            auto itv = c.map.find(key);
-            if (itv == c.map.end())
-                return val;
-            return itv->second;
-        };
-        auto ictag = [&c](auto key, auto val) -> int64_t {
-            auto itv = c.intMap.find(key);
-            if (itv == c.intMap.end())
-                return val;
-            return itv->second;
-        };
-        auto cm = ctag("coordinate-system", "absolute");
-        auto tp = ctag("type", "float");
-        auto nm = ctag("name", std::string("anon_") + std::to_string(cidx));
-        auto lb = ctag("label", "");
-        auto comp = ctag("component", "knob");
-
-        auto ei = ictag("display-if", -1);
-        if (ei >= 0)
-        {
-            if (!intAttachments[ei])
-            {
-                SCLOG("display-if attached to unknown int param " << ei);
-            }
-            else
-            {
-                auto eiv = intAttachments[ei]->getValue();
-                if (!eiv)
-                {
-                    continue;
-                }
-            }
-        }
-
-        ei = ictag("display-unless", -1);
-        if (ei >= 0)
-        {
-            if (!intAttachments[ei])
-            {
-                SCLOG("display-unless attached to unknown int param " << ei);
-            }
-            else
-            {
-                auto eiv = intAttachments[ei]->getValue();
-                if (eiv)
-                {
-                    continue;
-                }
-            }
-        }
-
-        elo.addNamedPositionAndLabel(
-            np(nm).at({c.coords[0], c.coords[1], c.coords[2], c.coords[3]}));
-
-        if (tp == "float" && c.index >= 0)
-        {
-            assert(floatAttachments[c.index]);
-            const auto &pmd = processorControlDescription.floatControlDescriptions[c.index];
-
-            if (comp != "knob")
-                SCLOG("WARNING: Implement non-knob json!");
-
-            auto lm = ctag("label-mode", "");
-
-            if (lm == "auto" || lb.empty())
-            {
-                floatEditors[c.index] =
-                    createAndLayoutLabeledFloatWidget(elo, nm, floatAttachments[c.index]);
-            }
-            else
-            {
-                floatEditors[c.index] =
-                    createAndLayoutLabeledFloatWidget(elo, nm, floatAttachments[c.index], lb);
-            }
-
-            if (pmd.canDeactivate)
-            {
-                elo.addPowerButtonPositionTo(nm, 8);
-                auto hpLight =
-                    createWidgetAttachedTo<jcmp::ToggleButton>(deactivateAttachments[c.index]);
-                hpLight->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-                hpLight->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
-                hpLight->setBounds(elo.powerButtonPositionFor(nm));
-                floatDeactivateEditors[c.index] = std::make_unique<intEditor_t>(std::move(hpLight));
-                attachRebuildToDeactivateAttachment(c.index);
-                floatEditors[c.index]->item->setEnabled(!processorView.deactivated[c.index]);
-            }
-
-            auto ei = ictag("enabled-if", -1);
-            if (ei >= 0)
-            {
-                if (intAttachments[ei])
-                {
-                    floatEditors[c.index]->item->setEnabled(intAttachments[ei]->getValue());
-                }
-                else
-                {
-                    SCLOG("enabled-if attached to unknown int param " << ei);
-                }
-            }
-        }
-        else if (tp == "int" && c.index >= 0)
-        {
-            assert(intAttachments[c.index]);
-            bool attemptLabel{false};
-            if (comp == "power")
-            {
-                elo.addPowerButtonPositionTo(nm, 8);
-
-                intEditors[c.index] = createAndLayoutPowerButton(elo, nm, intAttachments[c.index]);
-                attachRebuildToIntAttachment(c.index);
-            }
-            else if (comp == "hamburger-stereo")
-            {
-                createHamburgerStereo(c.index);
-            }
-            else if (comp == "multiswitch")
-            {
-                auto ms = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[c.index]);
-                attachRebuildToIntAttachment(c.index);
-                ms->setBounds(elo.positionFor(nm));
-                intEditors[c.index] = std::make_unique<intEditor_t>(std::move(ms));
-                attemptLabel = true;
-            }
-            else if (comp == "jogupdown")
-            {
-                auto ms = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[c.index]);
-                attachRebuildToIntAttachment(c.index);
-                ms->setBounds(elo.positionFor(nm));
-                intEditors[c.index] = std::make_unique<intEditor_t>(std::move(ms));
-                attemptLabel = true;
-            }
-            else
-            {
-                SCLOG("Unknown int component '" << comp << "'");
-            }
-
-            if (attemptLabel && !lb.empty())
-            {
-                elo.addLabelPositionTo(nm);
-                auto lw = createLabel(lb);
-                lw->setBounds(elo.labelPositionFor(nm));
-                lw->setJustification(juce::Justification::centred);
-                otherEditors.push_back(std::move(lw));
-            }
-
-            auto ei = ictag("enabled-if", -1);
-            if (ei >= 0)
-            {
-                if (ei == c.index)
-                {
-                    SCLOG("WARNING: Enabled-if set to self on component " << c.index);
-                }
-                intEditors[c.index]->item->setEnabled(intAttachments[ei]->getValue());
-            }
-        }
-        else if (c.index < 0)
-        {
-            if (comp == "label")
-            {
-                auto lw = createLabel(lb);
-                lw->setBounds(elo.positionFor(nm));
-                lw->setJustification(juce::Justification::centredLeft);
-                otherEditors.push_back(std::move(lw));
-            }
-            else if (comp == "subheader")
-            {
-                auto lw = createLabel<jcmp::RuledLabel>(lb);
-                lw->setBounds(elo.positionFor(nm));
-                otherEditors.push_back(std::move(lw));
-            }
-            else if (comp == "custom")
-            {
-                // Up to you!
-            }
-            else
-            {
-                SCLOG("Unknown free component of type '" << comp << "'");
-            }
-        }
-        else
-        {
-            SCLOG("Index >0 and type is unknown value type '" << tp << "'");
-        }
-        cidx++;
-    }
-    return true;
-}
-
 void ProcessorPane::layoutControlsCorrelatedNoiseGen()
 {
     namespace lo = theme::layout;
@@ -1623,6 +1383,8 @@ void ProcessorPane::layoutControlsWithJsonEngine(const std::string &jsonpath)
         f.reset();
     for (auto &f : jsonIntEditors)
         f.reset();
+    for (auto &f : jsonDeactEditors)
+        f.reset();
     jsonLabels.clear();
 
     auto eng = sst::jucegui::layouts::JsonLayoutEngine(*this);
@@ -1639,7 +1401,19 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         editor->displayError("JSON Error : " + ctrl.name, s);
     };
 
-    auto intAttI = [this](int is) { return intAttachments[is]->getValue(); };
+    auto intAttI = [this](int is) {
+        if (intAttachments[is])
+            return intAttachments[is]->getValue();
+        SCLOG("Warning: Queried an unimplemented int attachment in intAttI");
+        return 0;
+    };
+
+    auto deactAttI = [this](int is) {
+        if (deactivateAttachments[is])
+            return deactivateAttachments[is]->getValue();
+        SCLOG("Warning: Queried an unimplemented int attachment in deactI");
+        return 0;
+    };
 
     if (ctrl.binding.has_value() && ctrl.binding->type == "float")
     {
@@ -1647,6 +1421,13 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         if (idx < 0 || idx >= scxt::maxProcessorFloatParams)
         {
             onError("Index " + std::to_string(idx) + " is out of range on " + ctrl.name);
+            return;
+        }
+
+        if (!floatAttachments[idx])
+        {
+            onError("Float attachment " + std::to_string(idx) + " is not initialized on " +
+                    ctrl.name);
             return;
         }
 
@@ -1667,7 +1448,14 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
 
         getContentAreaComponent()->addAndMakeVisible(*ed);
 
-        auto en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
+        bool en = true;
+        if (ctrl.enabledIf.has_value())
+        {
+            if (ctrl.enabledIf->type == "int")
+                en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
+            if (ctrl.enabledIf->type == "float-activation")
+                en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, deactAttI, onError);
+        }
 
         ed->setEnabled(en);
 
@@ -1688,6 +1476,13 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
             return;
         }
 
+        if (!intAttachments[idx])
+        {
+            onError("Int attachment " + std::to_string(idx) + " is not initialized on " +
+                    ctrl.name);
+            return;
+        }
+
         auto viz = scxt::ui::connectors::jsonlayout::isVisible(ctrl, intAttI, onError);
         if (!viz)
             return;
@@ -1698,11 +1493,26 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
             return;
         }
 
-        jsonIntEditor_t ed = connectors::jsonlayout::createDiscreteWidget(ctrl, cls, onError);
+        jsonIntEditor_t ed;
+        if (cls.controlType == "waveshaper-menu")
+        {
+            auto jud = std::make_unique<jcmp::JogUpDownButton>();
+            editor->configureHasDiscreteMenuBuilder(jud.get());
+            jud->popupMenuBuilder->mode =
+                sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
+            jud->popupMenuBuilder->setGroupList(sst::waveshapers::WaveshaperGroupName());
+
+            ed = std::move(jud);
+        }
+        else
+        {
+            ed = connectors::jsonlayout::createDiscreteWidget(ctrl, cls, onError);
+        }
 
         if (!ed)
         {
-            onError("Unable to create editor");
+            onError("Unable to create int editor for " + ctrl.name + " with unknown control type " +
+                    cls.controlType);
             return;
         }
 
@@ -1714,7 +1524,46 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         auto &att = intAttachments[idx];
         connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl);
 
+        if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this))
+        {
+            getContentAreaComponent()->addAndMakeVisible(*lab);
+            jsonLabels.push_back(std::move(lab));
+        }
+
         jsonIntEditors[idx] = std::move(ed);
+    }
+    else if (ctrl.binding.has_value() && ctrl.binding->type == "float-activation")
+    {
+        auto idx = ctrl.binding->index;
+        if (idx < 0 || idx >= scxt::maxProcessorFloatParams)
+        {
+            onError("Index " + std::to_string(idx) + " is out of range on " + ctrl.name);
+            return;
+        }
+
+        if (!deactivateAttachments[idx])
+        {
+            onError("Deactivate attachment " + std::to_string(idx) + " is not initialized on " +
+                    ctrl.name);
+            return;
+        }
+
+        attachRebuildToDeactivateAttachment(idx);
+
+        jsonIntEditor_t ed = connectors::jsonlayout::createDiscreteWidget(ctrl, cls, onError);
+
+        if (!ed)
+        {
+            onError("Unable to create editor");
+            return;
+        }
+
+        getContentAreaComponent()->addAndMakeVisible(*ed);
+
+        auto &att = deactivateAttachments[idx];
+        connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl);
+
+        jsonDeactEditors[idx] = std::move(ed);
     }
     else if (cls.controlType == "label")
     {
