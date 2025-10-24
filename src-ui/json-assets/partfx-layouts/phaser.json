@@ -1,0 +1,176 @@
+{
+  "include": "partfx-layouts/partfx-classes.json",
+  "controls": {
+    "rate": {
+      "class": "knob50",
+      "label": "Rate",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 8,
+        "y": 7
+      }
+    },
+    "depth": {
+      "class": "knob50",
+      "label": "Depth",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 70,
+        "y": 7
+      }
+    },
+    "stereo": {
+      "class": "knob50",
+      "label": "Stereo",
+      "binding": {
+        "type": "float",
+        "index": 5
+      },
+      "position": {
+        "x": 135,
+        "y": 7
+      }
+    },
+    "stages": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 8
+      },
+      "position": {
+        "x": 6,
+        "y": 80,
+        "w": 84
+      }
+    },
+    "waveform": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 10
+      },
+      "position": {
+        "x": 101,
+        "y": 80,
+        "w": 84
+      }
+    },
+    "stages-section-header": {
+      "class": "ruled-label",
+      "label": "Stages",
+      "position": {
+        "x": 5,
+        "y": 105,
+        "w": 180
+      }
+    },
+    "spread": {
+      "class": "knob40",
+      "label": "Spread",
+      "binding": {
+        "type": "float",
+        "index": 9
+      },
+      "position": {
+        "x": 5,
+        "y": 128
+      }
+    },
+    "center": {
+      "class": "knob40",
+      "label": "Center",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 52,
+        "y": 128
+      }
+    },
+    "sharpness": {
+      "class": "knob40",
+      "label": "Sharp",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 100,
+        "y": 128
+      }
+    },
+    "feedback": {
+      "class": "knob40",
+      "label": "F/back",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 147,
+        "y": 128
+      }
+    },
+    "filter-header": {
+      "class": "ruled-label",
+      "label": "Filter",
+      "position": {
+        "x": 5,
+        "y": 188,
+        "w": 38
+      }
+    },
+    "output-header": {
+      "class": "ruled-label",
+      "label": "Output",
+      "position": {
+        "x": 100,
+        "y": 188,
+        "w": 86
+      }
+    },
+    "tone": {
+      "class": "knob40",
+      "label": "Tone",
+      "binding": {
+        "type": "float",
+        "index": 11
+      },
+      "position": {
+        "x": 5,
+        "y": 208
+      }
+    },
+    "width": {
+      "class": "knob40",
+      "label": "Width",
+      "binding": {
+        "type": "float",
+        "index": 7
+      },
+      "position": {
+        "x": 100,
+        "y": 208
+      }
+    },
+    "mix": {
+      "class": "knob40",
+      "label": "Mix",
+      "binding": {
+        "type": "float",
+        "index": 6
+      },
+      "position": {
+        "x": 147,
+        "y": 208
+      }
+    }
+  }
+}
