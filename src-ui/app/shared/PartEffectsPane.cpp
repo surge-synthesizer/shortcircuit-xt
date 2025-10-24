@@ -160,7 +160,7 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
         CS(delay);
         CS(floatydelay);
         CS(nimbus);
-        CS(phaser);
+        NS(phaser);
         CS(treemonster);
         CS(rotaryspeaker);
         CS(bonsai);
@@ -700,8 +700,16 @@ void PartEffectsPane<forBus>::createBindAndPosition(
         connectors::jsonlayout::attachAndPosition(this, ed, at, ctrl, zeroPoint);
         addAndMakeVisible(*ed);
 
-        // auto en = scxt::ui::connectors::jsonlayout::isEnabled(ctrl, intAttI, onError);
-        // ed->setEnabled(en);
+        const auto &metadata = getPartFXStorage().first;
+
+        if (metadata[pidx].canDeactivate)
+        {
+            auto power = attachToggleToDeactivated(pidx);
+            power->setBounds(zeroPoint.x + ctrl.position.x + ctrl.position.w - 4,
+                             zeroPoint.y + ctrl.position.y, 10, 10);
+            auto en = !getPartFXStorage().second.deact[pidx];
+            ed->setEnabled(en);
+        }
 
         if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this, zeroPoint))
         {

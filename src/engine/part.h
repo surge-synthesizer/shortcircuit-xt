@@ -268,6 +268,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
                                                 blockSizeInv);
         externalSignalLag.snapAllActiveToTarget();
         macroLagHandler.setRate(120, scxt::blockSize, samplerate);
+        for (auto &p : partEffects)
+            if (p)
+                p->onSampleRateChanged();
     }
 
     std::array<Macro, macrosPerPart> macros;
