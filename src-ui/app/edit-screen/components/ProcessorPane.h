@@ -107,7 +107,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void layoutControlsSampleAndHold();
     void layoutControlsMicroGate();
     void layoutControlsStereoTool();
-    void layoutControlsGainMatrix();
     void layoutControlsSurgeFilters();
     void layoutControlsEBWaveforms();
     void layoutControlsEQNBandParm();
