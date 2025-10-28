@@ -353,6 +353,33 @@ template <bool OS> bool Voice::processWithOS()
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
 
+    if (firstRender)
+    {
+        /*
+         * This is a placeholder for a collection of items which will need doing
+         * including checking bounds within loops, dealing with start which
+         * pushes past loop end, start which pushes past end, and more. Just a
+         * placeholder implementation to get started on that.
+         */
+        auto [firstIndex, lastIndex] = sampleIndexRange();
+        int currGen{0};
+        for (auto currIndex = firstIndex; currIndex < lastIndex; currIndex++)
+        {
+            auto &s = zone->samplePointers[currIndex];
+            auto &variantData = zone->variantData.variants[currIndex];
+            if (!variantData.playReverse)
+            {
+                GD[currGen].samplePos =
+                    std::clamp((int64_t)(GD[currGen].playbackLowerBound +
+                                         (*endpoints->sampleTarget.startPosP * s->sample_length)),
+                               (int64_t)0, (int64_t)GD[currGen].playbackUpperBound);
+            }
+            currGen++;
+        }
+    }
+
+    firstRender = false;
+
     auto fpitch = calculateVoicePitch();
 
     auto [firstIndex, lastIndex] = sampleIndexRange();

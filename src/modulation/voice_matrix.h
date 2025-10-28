@@ -118,7 +118,7 @@ struct MatrixEndpoints
           processorTarget{
               sst::cpputils::make_array_bind_last_index<ProcessorTarget,
                                                         scxt::processorsPerZoneAndGroup>(e)},
-          mappingTarget(e), outputTarget(e), sources(e)
+          mappingTarget(e), outputTarget(e), sampleTarget(e), sources(e)
     {
     }
 
@@ -226,6 +226,21 @@ struct MatrixEndpoints
         }
         std::array<TG, MatrixConfig::FixedMatrixSize> selfT;
     } selfModulation;
+
+    struct SampleTarget
+    {
+        SampleTarget(engine::Engine *e) : startPosT('samp', 'spos', 0)
+        {
+            registerVoiceModTarget(e, startPosT, "Sample", "Start Pos");
+        }
+        void bind(Matrix &m, engine::Zone &z);
+
+        TG startPosT;
+
+        const float *startPosP{nullptr};
+
+        float zeroBase{0.f}; // this is a base zero value for things which are not in the mod map
+    } sampleTarget;
 
     struct Sources
     {

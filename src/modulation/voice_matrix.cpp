@@ -53,6 +53,7 @@ void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, e
 
     mappingTarget.bind(m, z);
     outputTarget.bind(m, z);
+    sampleTarget.bind(m, z);
 
     for (auto &p : processorTarget)
         p.bind(m, z);
@@ -84,6 +85,13 @@ void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, eng
     auto &ot = z.outputInfo;
     shmo::bindEl(m, ot, panT, ot.pan, panP);
     shmo::bindEl(m, ot, ampT, ot.amplitude, ampP);
+}
+
+void MatrixEndpoints::SampleTarget::bind(Matrix &m, engine::Zone &z)
+{
+    auto &mt = z.mapping;
+    shmo::bindEl(m, mt, startPosT, zeroBase, startPosP,
+                 datamodel::pmd().asPercentBipolar().withName("Start Pos Adjustment"));
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
