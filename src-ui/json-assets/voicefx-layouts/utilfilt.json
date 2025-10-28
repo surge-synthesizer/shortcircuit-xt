@@ -1,0 +1,77 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "lowcut": {
+      "class": "knob40",
+      "label": "LowCut",
+      "binding": {
+        "index": 0,
+        "type": "float"
+      },
+      "position": {
+        "x": 35,
+        "y": 10
+      }
+    },
+    "highcut": {
+      "class": "knob40",
+      "label": "HighCut",
+      "binding": {
+        "index": 1,
+        "type": "float"
+      },
+      "position": {
+        "x": 110,
+        "y": 10
+      }
+    },
+    "lowshelffreq": {
+      "class": "knob40",
+      "label": "Lo Shelf",
+      "binding": {
+        "index": 2,
+        "type": "float"
+      },
+      "position": {
+        "x": 5,
+        "y": 75
+      }
+    },
+    "highshelffreq": {
+      "class": "knob40",
+      "label": "Hi Shelf",
+      "binding": {
+        "index": 4,
+        "type": "float"
+      },
+      "position": {
+        "x": 140,
+        "y": 75
+      }
+    },
+    "lowshelfgain": {
+      "class": "knob30",
+      "label": "Gain",
+      "binding": {
+        "index": 3,
+        "type": "float"
+      },
+      "position": {
+        "x": 60,
+        "y": 95
+      }
+    },
+    "highshelfgain": {
+      "class": "knob30",
+      "label": "Gain",
+      "binding": {
+        "index": 5,
+        "type": "float"
+      },
+      "position": {
+        "x": 100,
+        "y": 95
+      }
+    }
+  }
+}

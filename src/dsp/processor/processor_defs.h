@@ -106,6 +106,7 @@
 #include "sst/filters++.h"
 
 #include "sst/voice-effects/filter/FiltersPlusPlus.h"
+#include "sst/voice-effects/filter/UtilityFilters.h"
 
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb1.h"
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb2.h"
@@ -246,6 +247,10 @@ DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
 DEFINE_PROC(EQGraphic6Band, sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::EqGraphic6Band<SCXTVFXConfig<2>>, proct_eq_6band,
             "6 Band Graphic", "EQ", "eq-grp-6");
+
+DEFINE_PROC(UtilityFilters, sst::voice_effects::filter::UtilityFilters<SCXTVFXConfig<1>>,
+            sst::voice_effects::filter::UtilityFilters<SCXTVFXConfig<2>>, proct_utilfilt,
+            "Utility Filter", "Filters", "util-filt");
 
 DEFINE_PROC(TiltEQ, sst::voice_effects::eq::TiltEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::TiltEQ<SCXTVFXConfig<2>>, proct_eq_tilt, "Tilt EQ", "EQ",

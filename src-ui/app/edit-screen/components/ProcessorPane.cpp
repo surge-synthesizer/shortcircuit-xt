@@ -370,6 +370,10 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsWithJsonEngine("voicefx-layouts/waveshaper.json");
         break;
 
+    case dsp::processor::proct_utilfilt:
+        layoutControlsWithJsonEngine("voicefx-layouts/utilfilt.json");
+        break;
+
     default:
         layoutControls();
         break;

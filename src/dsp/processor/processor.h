@@ -120,6 +120,7 @@ enum ProcessorType
     proct_reswarp,
     proct_vintageladder,
     proct_snhfilter,
+    proct_utilfilt,
     proct_SurgeFilters,
     proct_Tremolo,
     proct_Phaser,
