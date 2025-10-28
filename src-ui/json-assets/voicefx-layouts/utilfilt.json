@@ -9,8 +9,8 @@
         "type": "float"
       },
       "position": {
-        "x": 5,
-        "y": 5
+        "x": 35,
+        "y": 10
       }
     },
     "highcut": {
@@ -21,56 +21,56 @@
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 5
+        "x": 110,
+        "y": 10
       }
     },
     "lowshelffreq": {
       "class": "knob40",
-      "label": "LowShelfFreq",
+      "label": "Lo Shelf",
       "binding": {
         "index": 2,
         "type": "float"
       },
       "position": {
         "x": 5,
-        "y": 65
+        "y": 75
       }
     },
     "highshelffreq": {
       "class": "knob40",
-      "label": "HighShelfFreq",
-      "binding": {
-        "index": 3,
-        "type": "float"
-      },
-      "position": {
-        "x": 140,
-        "y": 65
-      }
-    },
-    "lowshelfgain": {
-      "class": "knob40",
-      "label": "LowShelfGain",
+      "label": "Hi Shelf",
       "binding": {
         "index": 4,
         "type": "float"
       },
       "position": {
-        "x": 70,
-        "y": 65
+        "x": 140,
+        "y": 75
+      }
+    },
+    "lowshelfgain": {
+      "class": "knob30",
+      "label": "Gain",
+      "binding": {
+        "index": 3,
+        "type": "float"
+      },
+      "position": {
+        "x": 60,
+        "y": 95
       }
     },
     "highshelfgain": {
-      "class": "knob40",
-      "label": "HighShelfGain",
+      "class": "knob30",
+      "label": "Gain",
       "binding": {
         "index": 5,
         "type": "float"
       },
       "position": {
-        "x": 120,
-        "y": 65
+        "x": 100,
+        "y": 95
       }
     }
   }
