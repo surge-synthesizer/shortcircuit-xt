@@ -428,6 +428,7 @@ void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
      * More or less
      */
     auto p = juce::PopupMenu();
+    p.addSectionHeader("Built-in Templates");
     p.addItem("Empty Part", [w = juce::Component::SafePointer(this)]() {
         if (w)
         {
@@ -446,6 +447,52 @@ void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
             w->sendToSerialization(cmsg::ResetEngine("InitSynth.dat"));
         }
     });
+
+    try
+    {
+        auto userTemplatesPath = editor->browser.patchIODirectory / "Templates";
+        SCLOG(userTemplatesPath.u8string());
+        if (fs::exists(userTemplatesPath))
+        {
+            std::vector<fs::path> tempCands;
+            for (auto &p : fs::directory_iterator(userTemplatesPath))
+            {
+                tempCands.push_back(p.path());
+            }
+            for (auto &[pfx, title] : {std::make_pair(".scm", "Multi"), {".scp", "Part"}})
+            {
+                bool first{true};
+                for (auto &cand : tempCands)
+                {
+                    if (extensionMatches(cand, pfx))
+                    {
+                        if (first)
+                        {
+                            p.addSeparator();
+                            p.addSectionHeader(juce::String() + "User " + title + " Templates");
+                            first = false;
+                        }
+                        auto dcand = cand;
+
+                        p.addItem(dcand.replace_extension("").filename().u8string(),
+                                  [w = juce::Component::SafePointer(this), pfx, cand]() {
+                                      if (!w)
+                                          return;
+                                      if (std::string(pfx) == ".scm")
+                                          w->sendToSerialization(cmsg::LoadMulti(cand.u8string()));
+                                      if (std::string(pfx) == ".scp")
+                                          w->sendToSerialization(cmsg::LoadPartInto(
+                                              {cand.u8string(), w->editor->selectedPart}));
+                                  });
+                    }
+                }
+            }
+        }
+    }
+    catch (fs::filesystem_error &e)
+    {
+        SCLOG(e.what());
+    }
     menu.addSubMenu("Reset Engine To", p);
 }
 
