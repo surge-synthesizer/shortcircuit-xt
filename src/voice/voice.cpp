@@ -362,19 +362,22 @@ template <bool OS> bool Voice::processWithOS()
          * placeholder implementation to get started on that.
          */
         auto [firstIndex, lastIndex] = sampleIndexRange();
-        int currGen{0};
-        for (auto currIndex = firstIndex; currIndex < lastIndex; currIndex++)
+        if (firstIndex >= 0 && lastIndex >= 0)
         {
-            auto &s = zone->samplePointers[currIndex];
-            auto &variantData = zone->variantData.variants[currIndex];
-            if (!variantData.playReverse)
+            int currGen{0};
+            for (auto currIndex = firstIndex; currIndex < lastIndex; currIndex++)
             {
-                GD[currGen].samplePos =
-                    std::clamp((int64_t)(GD[currGen].playbackLowerBound +
-                                         (*endpoints->sampleTarget.startPosP * s->sample_length)),
-                               (int64_t)0, (int64_t)GD[currGen].playbackUpperBound);
+                auto &s = zone->samplePointers[currIndex];
+                auto &variantData = zone->variantData.variants[currIndex];
+                if (!variantData.playReverse && s)
+                {
+                    GD[currGen].samplePos = std::clamp(
+                        (int64_t)(GD[currGen].playbackLowerBound +
+                                  (*endpoints->sampleTarget.startPosP * s->sample_length)),
+                        (int64_t)0, (int64_t)GD[currGen].playbackUpperBound);
+                }
+                currGen++;
             }
-            currGen++;
         }
     }
 
