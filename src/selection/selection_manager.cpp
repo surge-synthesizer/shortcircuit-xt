@@ -135,6 +135,12 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
     if ((sing.forZone && sing.zone == -1 && sing.group >= 0) ||
         (!sing.forZone && sing.group >= 0 && sing.zone == -1))
     {
+        auto lz = currentLeadZone(engine);
+        auto leadZoneForReSelect = -1;
+        if (lz.has_value() && lz->part == sing.part && lz->group == sing.group)
+        {
+            leadZoneForReSelect = lz->zone;
+        }
         auto z = sing;
         const auto &g = engine.getPatch()->getPart(z.part)->getGroup(z.group);
 
@@ -145,7 +151,8 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
             auto rc = z;
             rc.forZone = true;
             rc.distinct = (idx == 0) && z.distinct;
-            rc.selectingAsLead = (idx == 0);
+            rc.selectingAsLead = (leadZoneForReSelect < 0 && idx == 0) ||
+                                 (leadZoneForReSelect >= 0 && idx == leadZoneForReSelect);
             rc.selecting = true;
             rc.zone = idx++;
             res.push_back(rc);
