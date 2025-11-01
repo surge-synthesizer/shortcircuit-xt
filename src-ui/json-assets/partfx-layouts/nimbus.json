@@ -1,0 +1,189 @@
+{
+  "include": "partfx-layouts/partfx-classes.json",
+  "controls": {
+    "modellab": {
+      "class": "label",
+      "label": "Model",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "w": 50,
+        "h": 24
+      }
+    },
+    "model": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {
+        "x": 55,
+        "y": 0,
+        "w": 135,
+        "h": 24
+      }
+    },
+    "qualitylab": {
+      "class": "label",
+      "label": "Quality",
+      "position": {
+        "x": 0,
+        "y": 25,
+        "w": 50,
+        "h": 24
+      }
+    },
+    "quality": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 55,
+        "y": 25,
+        "w": 135,
+        "h": 24
+      }
+    },
+    "position": {
+      "class": "knob50",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "label": "Position",
+      "position": {
+        "x": 8,
+        "y": 56
+      }
+    },
+    "size": {
+      "class": "knob50",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "label": "Size",
+      "position": {
+        "x": 70,
+        "y": 56
+      }
+    },
+    "pitch": {
+      "class": "knob50",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "label": "Pitch",
+      "position": {
+        "x": 135,
+        "y": 56
+      }
+    },
+    "density": {
+      "class": "knob50",
+      "binding": {
+        "type": "float",
+        "index": 5
+      },
+      "label": "Density",
+      "position": {
+        "x": 8,
+        "y": 125
+      }
+    },
+    "texture": {
+      "class": "knob50",
+      "binding": {
+        "type": "float",
+        "index": 6
+      },
+      "label": "Texture",
+      "position": {
+        "x": 70,
+        "y": 125
+      }
+    },
+    "spread": {
+      "class": "knob50",
+      "binding": {
+        "type": "float",
+        "index": 7
+      },
+      "label": "Spread",
+      "position": {
+        "x": 135,
+        "y": 125
+      }
+    },
+    "playbacklab": {
+      "class": "ruled-label",
+      "label": "Playback",
+      "position": {
+        "x": 5,
+        "y": 193,
+        "w": 85
+      }
+    },
+    "freeze": {
+      "class": "knob40",
+      "binding": {
+        "type": "float",
+        "index": 8
+      },
+      "label": "Freeze",
+      "position": {
+        "x": 5,
+        "y": 210
+      }
+    },
+    "feedback": {
+      "class": "knob40",
+      "binding": {
+        "type": "float",
+        "index": 9
+      },
+      "label": "Feedback",
+      "position": {
+        "x": 52,
+        "y": 210
+      }
+    },
+    "outlab": {
+      "class": "ruled-label",
+      "label": "Output",
+      "position": {
+        "x": 100,
+        "y": 193,
+        "w": 85
+      }
+    },
+    "reverb": {
+      "class": "knob40",
+      "binding": {
+        "type": "float",
+        "index": 10
+      },
+      "label": "Reverb",
+      "position": {
+        "x": 100,
+        "y": 210
+      }
+    },
+    "mix": {
+      "class": "knob40",
+      "binding": {
+        "type": "float",
+        "index": 11
+      },
+      "label": "Mix",
+      "position": {
+        "x": 147,
+        "y": 210
+      }
+    }
+  }
+}

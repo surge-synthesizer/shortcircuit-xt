@@ -30,7 +30,6 @@
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/edit-screen/components/PartEditScreen.h"
 
-#include "connectors/JSONAssetSupport.h"
 #include "connectors/JsonLayoutEngineSupport.h"
 
 #include "sst/jucegui/components/Knob.h"
@@ -154,16 +153,16 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
 
     switch (t)
     {
-        CS(reverb1);
-        CS(reverb2)
+        NS(reverb1);
+        NS(reverb2)
         NS(flanger);
-        CS(delay);
-        CS(floatydelay);
-        CS(nimbus);
+        NS(delay);
+        NS(floatydelay);
+        NS(nimbus);
         NS(phaser);
-        CS(treemonster);
-        CS(rotaryspeaker);
-        CS(bonsai);
+        NS(treemonster);
+        NS(rotaryspeaker);
+        NS(bonsai);
 
     case engine::AvailableBusEffects::none:
         // Explicitly do nothing
@@ -374,129 +373,6 @@ juce::Component *PartEffectsPane<forBus>::addTypedLabel(const std::string &txt)
     return res;
 }
 
-template <bool forBus> void PartEffectsPane<forBus>::rebuildFromJSONLibrary(const std::string &path)
-{
-    bool parseWorked{false};
-    auto dlyjs = connectors::JSONAssetLibrary::jsonForAsset(path);
-    connectors::JSONLayoutConsumer con;
-    try
-    {
-        tao::json::events::from_string(con, dlyjs);
-        parseWorked = !con.result.empty();
-    }
-    catch (const std::exception &e)
-    {
-        SCLOG("JSON Parsing failed on '" << path << "' : " << e.what());
-    }
-
-    if (!parseWorked)
-    {
-        SCLOG("Parsing and loading components for json '"
-              << path << "' didn't yield layout. Using default.");
-        rebuildDefaultLayout();
-        return;
-    }
-
-    SCLOG("JSON Layout for bus effect '" << path << "' yielded " << con.result.size()
-                                         << " components");
-
-    namespace jcmp = sst::jucegui::components;
-    namespace jlay = sst::jucegui::layouts;
-    using np = jlay::ExplicitLayout::NamedPosition;
-
-    const auto &metadata = getPartFXStorage().first;
-
-    auto elo = jlay::ExplicitLayout();
-    const auto &cr = getContentArea();
-
-    int idx{0};
-    for (const auto &currentComponent : con.result)
-    {
-        auto ctag = [&currentComponent](auto key, auto val) -> std::string {
-            auto itv = currentComponent.map.find(key);
-            if (itv == currentComponent.map.end())
-                return val;
-            return itv->second;
-        };
-
-        auto cm = ctag("coordinate-system", "relative");
-        auto nm = ctag("name", std::string("anon_") + std::to_string(idx));
-
-        if (cm != "relative")
-            throw std::runtime_error("Coming soon");
-        auto &co = currentComponent.coords;
-        auto el = np(nm).scaled(cr, co[0], co[1], co[2], co[3]);
-        auto lab = ctag("label", "");
-
-        if (currentComponent.index >= 0)
-        {
-            auto comp = ctag("component", "knob");
-            if (!lab.empty())
-            {
-                elo.addNamedPositionAndLabel(el);
-            }
-            else
-            {
-                elo.addNamedPosition(el);
-            }
-
-            if (comp == "knob")
-            {
-                if (!lab.empty())
-                {
-                    layoutWidgetToFloat<jcmp::Knob>(elo, currentComponent.index, nm, lab);
-                }
-                else
-                {
-                    layoutWidgetToFloat<jcmp::Knob>(elo, currentComponent.index, nm);
-                }
-            }
-            else if (comp == "menubutton")
-            {
-                attachMenuButtonToInt(currentComponent.index)->setBounds(elo.positionFor(nm));
-            }
-            else if (comp == "jogupdown")
-            {
-                // attachWidgetToInt<jcmp::JogUpDownButton>(currentComponent.index)
-                //     ->setBounds(elo.positionFor(nm));
-            }
-            else
-            {
-                SCLOG("Unknown component : " << comp);
-            }
-
-            if (metadata[currentComponent.index].canDeactivate)
-            {
-                elo.addPowerButtonPositionTo(nm, 8);
-                attachToggleToDeactivated(currentComponent.index)
-                    ->setBounds(elo.powerButtonPositionFor(nm));
-            }
-        }
-        else
-        {
-            auto comp = ctag("component", "");
-            if (comp.empty())
-                throw std::runtime_error("No Component");
-            if (comp == "subheader")
-            {
-                elo.addNamedPosition(el);
-                addTypedLabel<jcmp::RuledLabel>(lab)->setBounds(elo.positionFor(nm));
-            }
-            else if (comp == "label")
-            {
-                elo.addNamedPosition(el);
-                addLabel(lab)->setBounds(elo.positionFor(nm));
-            }
-            else
-            {
-                SCLOG("Unknown component : " << comp);
-            }
-        }
-
-        idx++;
-    }
-}
-
 template <bool forBus> void PartEffectsPane<forBus>::rebuildDefaultLayout()
 {
     namespace jcmp = sst::jucegui::components;
@@ -646,18 +522,30 @@ void PartEffectsPane<forBus>::rebuildWithJsonLayoutEngine(const std::string &pat
     floatAttachments.clear();
     std::fill(intProxyAttachments.begin(), intProxyAttachments.end(), nullptr);
 
+    auto resJ = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
+    if (!resJ.has_value())
+    {
+        rebuildDefaultLayout();
+        return;
+    }
     auto eng = sst::jucegui::layouts::JsonLayoutEngine(*this);
 
     auto res = eng.processJsonPath(path);
     if (!res)
+    {
+        rebuildDefaultLayout();
         editor->displayError("JSON Parsing Error", *res.error);
+    }
 }
 
 template <bool forBus>
 std::string PartEffectsPane<forBus>::resolveJsonPath(const std::string &path) const
 {
     auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
-    return res;
+    if (res.has_value())
+        return *res;
+    editor->displayError("JSON Path Error", "Could not resolve path '" + path + "'");
+    return {};
 }
 
 template <bool forBus>

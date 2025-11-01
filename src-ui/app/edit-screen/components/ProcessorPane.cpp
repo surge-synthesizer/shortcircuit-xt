@@ -28,7 +28,6 @@
 #include "ProcessorPane.h"
 #include "app/SCXTEditor.h"
 
-#include "connectors/JSONAssetSupport.h"
 #include "connectors/JsonLayoutEngineSupport.h"
 #include "connectors/SCXTResources.h"
 
@@ -1359,7 +1358,10 @@ void ProcessorPane::itemDragExit(const juce::DragAndDropTarget::SourceDetails &d
 std::string ProcessorPane::resolveJsonPath(const std::string &path) const
 {
     auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
-    return res;
+    if (res.has_value())
+        return *res;
+    editor->displayError("Unable to locate JSON asset", path);
+    return {};
 }
 
 void ProcessorPane::layoutControlsWithJsonEngine(const std::string &jsonpath)

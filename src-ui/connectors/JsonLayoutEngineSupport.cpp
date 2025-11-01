@@ -29,15 +29,15 @@
 #include <sstream>
 
 #include "JsonLayoutEngineSupport.h"
-#include "JSONAssetSupport.h" // for now
 
 #include <cmrc/cmrc.hpp>
+#include "configuration.h"
 
 CMRC_DECLARE(scxtui_json_layouts);
 
 namespace scxt::ui::connectors::jsonlayout
 {
-std::string resolveJsonFile(const std::string &nm)
+std::optional<std::string> resolveJsonFile(const std::string &nm)
 {
     static bool checkedForLocal{false};
     static bool isLocal{false};
@@ -52,7 +52,7 @@ std::string resolveJsonFile(const std::string &nm)
             auto sep = fs::path{se};
             if (fs::exists(sep))
             {
-                SCLOG("Setting JSON path from environment: " << sep.u8string());
+                SCLOG_IF(jsonUI, "Setting JSON path from environment: " << sep.u8string());
                 isLocal = true;
                 localPath = sep;
             }
@@ -63,7 +63,7 @@ std::string resolveJsonFile(const std::string &nm)
             auto rp = fs::path{"src-ui"} / "json-assets";
             if (fs::exists(rp))
             {
-                SCLOG("Setting JSON path from working dir: " << rp.u8string());
+                SCLOG_IF(jsonUI, "Setting JSON path from working dir: " << rp.u8string());
                 isLocal = true;
                 localPath = rp;
             }
@@ -85,12 +85,12 @@ std::string resolveJsonFile(const std::string &nm)
             }
             else
             {
-                SCLOG("Unable to open json file: '" << rp.u8string() << "'");
+                SCLOG_IF(jsonUI, "Unable to open json file: '" << rp.u8string() << "'");
             }
         }
         else
         {
-            SCLOG("isLocal is true and local json missing: '" << rp.u8string() << "'");
+            SCLOG_IF(jsonUI, "isLocal is true and local json missing: '" << rp.u8string() << "'");
         }
     }
 
@@ -105,10 +105,10 @@ std::string resolveJsonFile(const std::string &nm)
     }
     catch (std::exception &e)
     {
-        SCLOG("Exception with cmrc : " << e.what())
+        SCLOG_IF(jsonUI, "Exception with cmrc : " << e.what())
     }
 
-    SCLOG("Unable to resolve JSON from library: '" << nm);
-    return "{}";
+    SCLOG_IF(jsonUI, "Unable to resolve JSON from library: '" << nm);
+    return std::nullopt;
 }
 } // namespace scxt::ui::connectors::jsonlayout

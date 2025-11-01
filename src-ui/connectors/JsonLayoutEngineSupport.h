@@ -39,10 +39,11 @@
 #include <sst/jucegui/components/JogUpDownButton.h>
 #include <sst/jucegui/layouts/JsonLayoutEngine.h>
 #include <concepts>
+#include <optional>
 
 namespace scxt::ui::connectors::jsonlayout
 {
-std::string resolveJsonFile(const std::string &path);
+std::optional<std::string> resolveJsonFile(const std::string &path);
 
 inline bool isVisible(const sst::jucegui::layouts::json_document::Control &ctrl,
                       std::function<int(int)> indexValue, std::function<void(std::string)> onError)
