@@ -177,7 +177,6 @@ struct PartEffectsPane : public HasEditor,
 
     // Generic, no JSON
     void rebuildDefaultLayout();
-    void rebuildFromJSONLibrary(const std::string &path);
 
     void rebuildWithJsonLayoutEngine(const std::string &path);
     std::vector<std::unique_ptr<juce::Component>> jsonLabels;

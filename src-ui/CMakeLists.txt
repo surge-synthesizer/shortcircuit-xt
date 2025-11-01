@@ -48,7 +48,6 @@ add_library(${PROJECT_NAME} STATIC
         app/shared/PartEffectsPane.cpp
 
         connectors/SCXTResources.cpp
-        connectors/JSONAssetSupport.cpp
         connectors/JsonLayoutEngineSupport.cpp
 
         theme/ColorMap.cpp

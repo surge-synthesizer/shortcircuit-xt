@@ -99,6 +99,7 @@ static constexpr bool generatorInitialization{false};
 static constexpr bool sampleLoadAndPurge{false};
 static constexpr bool missingResolution{false};
 static constexpr bool patchIO{false};
+static constexpr bool jsonUI{true};
 } // namespace log
 
 // The wireframe implies features beyond what we have. I started coding up the UI elements
@@ -107,9 +108,8 @@ namespace hasFeature
 {
 static constexpr bool undoRedo{false};               // undo-redo
 static constexpr bool memoryUsageExplanation{false}; // that chip in the header
-static constexpr bool mappingPane11Controls{
-    false}; // do we show the zone mapping header we skipped for 1.0
-static constexpr bool alternateEGModes{false}; // do we have DA only etc...
+static constexpr bool mappingPane11Controls{false};  // zone mapping header skipped for 1.0
+static constexpr bool alternateEGModes{false};       // do we have DA only etc...
 static constexpr bool hasBrowserSearch{false};
 } // namespace hasFeature
 

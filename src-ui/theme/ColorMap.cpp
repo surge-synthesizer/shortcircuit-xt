@@ -36,7 +36,7 @@
 
 #include "json/scxt_traits.h"
 
-#include "connectors/JSONAssetSupport.h"
+#include "connectors/JsonLayoutEngineSupport.h"
 
 #include "utils.h"
 
@@ -211,32 +211,43 @@ std::unique_ptr<ColorMap> ColorMap::jsonToColormap(const std::string &json)
 std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::BuiltInColorMaps cm)
 {
     std::unique_ptr<ColorMap> res;
-    std::string json;
+    std::optional<std::string> json;
     switch (cm)
     {
     case TEST:
-        json = connectors::JSONAssetLibrary::jsonForAsset("themes/test-colors.json");
-        res = ColorMap::jsonToColormap(json);
+        json = connectors::jsonlayout::resolveJsonFile("themes/test-colors.json");
+        if (json.has_value())
+            res = ColorMap::jsonToColormap(*json);
         break;
     case WIREFRAME:
-        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-dark.json");
-        res = ColorMap::jsonToColormap(json);
+        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-dark.json");
+        if (json.has_value())
+            res = ColorMap::jsonToColormap(*json);
         break;
     case HICONTRAST_DARK:
-        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-dark-hicontrast.json");
-        res = ColorMap::jsonToColormap(json);
+        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-dark-hicontrast.json");
+        if (json.has_value())
+            res = ColorMap::jsonToColormap(*json);
         break;
     case LIGHT:
-        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-light.json");
-        res = ColorMap::jsonToColormap(json);
+        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-light.json");
+        if (json.has_value())
+            res = ColorMap::jsonToColormap(*json);
         break;
     }
 
     if (!res)
     {
-        json = connectors::JSONAssetLibrary::jsonForAsset("themes/wireframe-dark.json");
-        res = ColorMap::jsonToColormap(json);
-        res->myId = WIREFRAME;
+        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-dark.json");
+        if (json.has_value())
+        {
+            res = ColorMap::jsonToColormap(*json);
+            res->myId = WIREFRAME;
+        }
+        else
+        {
+            SCLOG("Cant resolve wireframe JSON. This will probably crash");
+        }
     }
     else
     {
