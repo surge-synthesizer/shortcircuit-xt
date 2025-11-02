@@ -213,6 +213,16 @@ void Part::moveGroupToAfter(size_t whichGroup, size_t toAfter)
     }
 }
 
+void Part::swapGroups(size_t gA, size_t gB)
+{
+    if (gA < 0 || gA >= groups.size() || gB < 0 || gB >= groups.size() || gA == gB)
+    {
+        return;
+    }
+
+    std::swap(groups[gA], groups[gB]);
+}
+
 void Part::initializeAfterUnstream(Engine &e)
 {
     for (int idx = 0; idx < maxEffectsPerPart; ++idx)

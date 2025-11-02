@@ -250,7 +250,6 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         if (!res.has_value())
             path = "procrouting-layouts/linear.json";
 
-        SCLOG("Loading JSON for routing from " << path);
         auto parseRes = engine.processJsonPath(path);
         if (!parseRes)
         {

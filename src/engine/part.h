@@ -227,6 +227,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         activeGroups--;
     }
     void moveGroupToAfter(size_t whichGroup, size_t toAfter);
+    void swapGroups(size_t groupA, size_t groupB);
 
     std::array<float, 128> midiCCValues{}; // 0 .. 1 so the 128 taken out
     float channelAT{0.f};
