@@ -40,7 +40,7 @@ struct WelcomeScreen : juce::Component, HasEditor
      * If you update this version the user will see the welcome screen
      * on their next startup even if they dismissed a prior version
      */
-    static constexpr int welcomeVersion{2};
+    static constexpr int welcomeVersion{3};
     WelcomeScreen(SCXTEditor *e);
 
     void visibilityChanged() override;

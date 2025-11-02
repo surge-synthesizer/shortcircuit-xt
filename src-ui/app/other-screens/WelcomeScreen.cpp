@@ -62,12 +62,11 @@ void WelcomeScreen::okGotItDontShowAgain()
 }
 
 auto txt =
-    "Shortcircuit XT is in a alpha release. This version has incomplete and "
+    "Shortcircuit XT is in an very-late-alpha release. This version has incomplete and "
     "missing features, may have crashing bugs, and may generate improper sounds\n"
     "\n"
     "We welcome testers in this pre-alpha period but recommend a few precautions:\n\n"
     "- Consider using limiter and don't use in-ear headphones when experimenting.\n"
-    "- There is no missing sample resolution; don't move underlying files.\n"
     "- We beleive we have both the streaming and Plugin ID/Params stable as of mid Aug 24\n"
     "   but we could be wrong. If you make music you love, please do bounce stems so you can\n"
     "   recreate it.\n"
@@ -98,7 +97,8 @@ void WelcomeScreen::paint(juce::Graphics &g)
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
     g.drawText("Welcome to ShortcircuitXT", bd.reduced(10), juce::Justification::centredTop);
     g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
-    g.drawText("Alpha Release", bd.reduced(10).translated(0, 50), juce::Justification::centredTop);
+    g.drawText("Late Alpha Release", bd.reduced(10).translated(0, 50),
+               juce::Justification::centredTop);
 
     g.setFont(editor->themeApplier.interLightFor(22));
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
