@@ -641,34 +641,11 @@ void PartEffectsPane<forBus>::createBindAndPosition(
         intProxyAttachments[pidx] = std::move(ipt);
         components.insert(std::move(ed));
     }
-    else if (cls.controlType == "label")
+    else if (auto nw = connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError,
+                                                                              zeroPoint))
     {
-        if (!ctrl.label.has_value())
-        {
-            onError("Label has no 'label' member " + ctrl.name);
-            return;
-        }
-        auto lab = std::make_unique<jcmp::Label>();
-        lab->setText(*ctrl.label);
-        lab->setJustification(juce::Justification::centred);
-        lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
-                       ctrl.position.w, ctrl.position.h);
-        addAndMakeVisible(*lab);
-        jsonLabels.push_back(std::move(lab));
-    }
-    else if (cls.controlType == "ruled-label")
-    {
-        if (!ctrl.label.has_value())
-        {
-            onError("Label has no 'label' member " + ctrl.name);
-            return;
-        }
-        auto lab = std::make_unique<jcmp::RuledLabel>();
-        lab->setText(*ctrl.label);
-        lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
-                       ctrl.position.w, ctrl.position.h);
-        addAndMakeVisible(*lab);
-        jsonLabels.push_back(std::move(lab));
+        addAndMakeVisible(*nw);
+        jsonLabels.push_back(std::move(nw));
     }
 }
 

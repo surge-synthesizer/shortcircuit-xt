@@ -37,6 +37,7 @@
 #include "datamodel/metadata.h"
 #include "theme/Layout.h"
 #include "app/edit-screen/EditScreen.h"
+#include "connectors/JsonLayoutEngineSupport.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -54,24 +55,36 @@ engine::Group::GroupOutputInfo &OutPaneGroupTraits::outputInfo(SCXTEditor *e)
     return e->editorDataCache.groupOutputInfo;
 }
 
-template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
+template <typename OTTraits>
+struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHost
 {
+    typedef connectors::DiscretePayloadDataAttachment<typename OTTraits::info_t,
+                                                      typename OTTraits::route_t>
+        int_attachment_t;
+
     OutputPane<OTTraits> *outputPane{nullptr};
-    std::unique_ptr<jcmp::MenuButton> procRouting;
     std::unique_ptr<jcmp::TextPushButton> consistentButton;
     std::unique_ptr<jcmp::Label> consistentLabel;
+
+    std::unique_ptr<int_attachment_t> routingA;
+    std::unique_ptr<jcmp::MultiSwitch> multiW;
+
+    std::unique_ptr<juce::Component> routingLayoutComp;
+    struct RC : juce::Component
+    {
+    };
 
     ProcTab(SCXTEditor *e, OutputPane<OTTraits> *pane)
         : HasEditor(e), outputPane(pane), info(OTTraits::outputInfo(e))
     {
-        procRouting = std::make_unique<jcmp::MenuButton>();
-        procRouting->setLabel(OTTraits::defaultRoutingLocationName);
-        updateProcRoutingLabel();
-        procRouting->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->selectNewProcRouting();
-        });
-        addAndMakeVisible(*procRouting);
+        using fac = connectors::SingleValueFactory<int_attachment_t, typename OTTraits::int16Msg_t>;
+        fac::attachAndAdd(info, info.procRouting, this, routingA, multiW);
+        multiW->direction = jcmp::MultiSwitch::Direction::HORIZONTAL;
+        addAndMakeVisible(*multiW);
+        connectors::addGuiStep(*routingA, [this](auto &a) { updateProcRoutingFromInfo(); });
+
+        routingLayoutComp = std::make_unique<RC>();
+        addAndMakeVisible(*routingLayoutComp);
 
         consistentLabel = std::make_unique<jcmp::Label>();
         consistentLabel->setText("Multiple Routings Selected");
@@ -88,11 +101,82 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         addChildComponent(*consistentButton);
     }
 
+    std::string resolveJsonPath(const std::string &path) const override
+    {
+        auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
+        if (res.has_value())
+            return *res;
+        editor->displayError("JSON Path Error", "Could not resolve path '" + path + "'");
+        return {};
+    }
+
+    void createBindAndPosition(const sst::jucegui::layouts::json_document::Control &ctrl,
+                               const sst::jucegui::layouts::json_document::Class &cls) override
+    {
+        auto onError = [this](const std::string &msg) {
+            editor->displayError("JSON Proc Routing Error", msg);
+        };
+        if (ctrl.binding.has_value() && ctrl.binding->type == "float")
+        {
+            auto i = ctrl.binding->index;
+            if (i < 0 || i >= scxt::processorsPerZoneAndGroup)
+            {
+                onError("Binding index " + std::to_string(i) + " out of range for " + ctrl.name);
+                return;
+            }
+            auto w = outputPane->procWeakRefs[i];
+
+            auto at = std::make_unique<ProcessorPane::attachment_t>(
+                datamodel::describeValue(w->processorView, w->processorView.outputCubAmp),
+                w->processorView.outputCubAmp);
+            connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue,
+                                         ProcessorPane::attachment_t>(*at, w->processorView, w,
+                                                                      OTTraits::forZone, i);
+            levelA[i] = std::move(at);
+
+            auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
+            if (!ed)
+            {
+                onError("Could not create widget for " + ctrl.name + " with unknown control type " +
+                        cls.controlType);
+                return;
+            }
+
+            connectors::jsonlayout::attachAndPosition(this, ed, levelA[i], ctrl);
+            routingLayoutComp->addAndMakeVisible(*ed);
+            auto isNone = w->processorView.type == dsp::processor::proct_none;
+            auto isOn = w->processorView.isActive;
+            ed->setEnabled(isOn && !isNone);
+
+            jsonComponents.push_back(std::move(ed));
+
+            if (outputPane->style())
+            {
+                if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *outputPane))
+                {
+                    routingLayoutComp->addAndMakeVisible(*lab);
+                    jsonComponents.push_back(std::move(lab));
+                }
+            }
+        }
+        else if (auto nw =
+                     connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError))
+        {
+            routingLayoutComp->addAndMakeVisible(*nw);
+            jsonComponents.push_back(std::move(nw));
+        }
+        else
+        {
+            onError("Unknown control type " + cls.controlType + " for " + ctrl.name);
+        }
+    }
+
     void resized() override
     {
-        procRouting->setBounds(getLocalBounds().reduced(3, 5).withHeight(24));
-        consistentLabel->setBounds(procRouting->getBounds());
-        consistentButton->setBounds(procRouting->getBounds().translated(0, 30));
+        multiW->setBounds(getLocalBounds().reduced(0, 2).withHeight(22));
+        consistentLabel->setBounds(multiW->getBounds());
+        consistentButton->setBounds(multiW->getBounds().translated(0, 30));
+        routingLayoutComp->setBounds(getLocalBounds().withTrimmedTop(25));
     }
 
     std::string getRoutingName(typename OTTraits::route_t r)
@@ -106,14 +190,9 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
     }
     void updateProcRoutingFromInfo()
     {
-        updateProcRoutingLabel();
         auto c = info.procRoutingConsistent;
-        procRouting->setVisible(c);
-        for (int i = 0; i < nOuts; ++i)
-        {
-            levelK[i]->setVisible(c);
-            levelL[i]->setVisible(c);
-        }
+        multiW->setVisible(c);
+        routingLayoutComp->setVisible(c);
         consistentButton->setVisible(!c);
         consistentLabel->setVisible(!c);
 
@@ -121,94 +200,63 @@ template <typename OTTraits> struct ProcTab : juce::Component, HasEditor
         {
             consistentButton->setLabel("Set to " + getRoutingName(info.procRouting));
         }
-    }
-    void updateProcRoutingLabel()
-    {
-        procRouting->setLabel(getRoutingName(info.procRouting));
-        procRouting->repaint();
-    }
-    void selectNewProcRouting()
-    {
-        auto p = juce::PopupMenu();
-        p.addSectionHeader("Proc Routing");
-        p.addSeparator();
-        for (int i = OTTraits::route_t::procRoute_linear; i <= OTTraits::route_t::procRoute_bypass;
-             ++i)
+        else
         {
-            auto r = (typename OTTraits::route_t)i;
-            p.addItem(getRoutingName(r), true, info.procRouting == r,
-                      [w = juce::Component::SafePointer(this), r]() {
-                          if (w)
-                          {
-                              w->info.procRouting = r;
-                              w->template sendSingleToSerialization<typename OTTraits::int16Msg_t>(
-                                  w->info, w->info.procRouting);
-                              w->updateProcRoutingLabel();
-                          }
-                      });
+            updateFromProcessorPanes();
         }
-        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
     static constexpr int nOuts{scxt::processorsPerZoneAndGroup};
     std::array<std::unique_ptr<ProcessorPane::attachment_t>, nOuts> levelA;
-    std::array<std::unique_ptr<jcmp::Knob>, nOuts> levelK;
-    std::array<std::unique_ptr<jcmp::Label>, nOuts> levelL;
+    std::vector<std::unique_ptr<juce::Component>> jsonComponents;
 
     void updateFromProcessorPanes()
     {
-        for (auto &k : levelK)
+        routingLayoutComp->removeAllChildren();
+        jsonComponents.clear();
+        sst::jucegui::layouts::JsonLayoutEngine engine(*this);
+        std::string path = "procrouting-layouts/linear.json";
+        switch (info.procRouting)
         {
-            if (k)
-            {
-                removeChildComponent(k.get());
-            }
-        }
+        case OTTraits::route_t::procRoute_linear:
+            path = "procrouting-layouts/linear.json";
+            break;
 
-        for (int i = 0; i < nOuts; ++i)
+        case OTTraits::route_t::procRoute_ser2:
+            path = "procrouting-layouts/ser2.json";
+            break;
+
+        case OTTraits::route_t::procRoute_ser3:
+            path = "procrouting-layouts/ser3.json";
+            break;
+
+        case OTTraits::route_t::procRoute_par1:
+            path = "procrouting-layouts/par1.json";
+            break;
+
+        case OTTraits::route_t::procRoute_par2:
+            path = "procrouting-layouts/par2.json";
+            break;
+
+        case OTTraits::route_t::procRoute_par3:
+            path = "procrouting-layouts/par3.json";
+            break;
+
+        case OTTraits::route_t::procRoute_bypass:
+            path = "procrouting-layouts/byp.json";
+            break;
+        }
+        auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
+        if (!res.has_value())
+            path = "procrouting-layouts/linear.json";
+
+        SCLOG("Loading JSON for routing from " << path);
+        auto parseRes = engine.processJsonPath(path);
+        if (!parseRes)
         {
-            auto w = outputPane->procWeakRefs[i];
-
-            auto kw = 30, margin{4}, yPos{36}, lw{12};
-            if (w)
-            {
-                auto at = std::make_unique<ProcessorPane::attachment_t>(
-                    datamodel::describeValue(w->processorView, w->processorView.outputCubAmp),
-                    w->processorView.outputCubAmp);
-                connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue,
-                                             ProcessorPane::attachment_t>(*at, w->processorView, w,
-                                                                          OTTraits::forZone, i);
-                levelA[i] = std::move(at);
-
-                levelK[i] = std::make_unique<jcmp::Knob>();
-                levelK[i]->setSource(levelA[i].get());
-
-                levelK[i]->setBounds(margin + lw + i * (kw + margin + lw), yPos, kw, kw);
-                levelK[i]->setEnabled(w->processorView.type != dsp::processor::proct_none);
-
-                levelL[i] = std::make_unique<jcmp::Label>();
-                levelL[i]->setText(std::to_string(i + 1));
-                levelL[i]->setBounds(margin + i * (kw + margin + lw), yPos, lw, kw);
-
-                setupWidgetForValueTooltip(levelK[i].get(), levelA[i].get());
-                addAndMakeVisible(*levelK[i]);
-                addAndMakeVisible(*levelL[i]);
-            }
+            editor->displayError("JSON Path Error", *parseRes.error + "\nWhile parsing " + path);
+            return;
         }
-    }
-
-    void paint(juce::Graphics &g) override
-    {
-        if constexpr (OTTraits::forZone)
-        {
-            if (!info.procRoutingConsistent)
-                return;
-        }
-
-        auto startP{68};
-        auto b = getLocalBounds().withTrimmedTop(startP);
-        g.setColour(juce::Colours::red);
-        // g.fillRect(b);
     }
 
     typename OTTraits::info_t &info;

@@ -282,7 +282,16 @@ SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
             SC_FIELD(amplitude,
                      pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
             SC_FIELD(pan, pmd().asPan().withName("Pan"));
-            SC_FIELD(procRouting, pmd().asInt().withRange(0, 1));)
+            SC_FIELD(procRouting,
+                     pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "LIN"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_ser2, "S2"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_ser3, "S3"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_par1, "P1"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_par2, "P2"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_par3, "P3"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_bypass, "BYP"},
+                     }));)
 
 SC_DESCRIBE(scxt::engine::Zone::SingleVariant,
             SC_FIELD(amplitude,

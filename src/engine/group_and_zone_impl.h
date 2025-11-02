@@ -315,17 +315,17 @@ std::string HasGroupZoneProcessors<T>::getProcRoutingPathShortName(ProcRoutingPa
     switch (p)
     {
     case procRoute_linear:
-        return "SER1";
+        return "S1";
     case procRoute_ser2:
-        return "SER2";
+        return "S2";
     case procRoute_ser3:
-        return "SER3";
+        return "S3";
     case procRoute_par1:
-        return "PAR1";
+        return "P1";
     case procRoute_par2:
-        return "PAR2";
+        return "P2";
     case procRoute_par3:
-        return "PAR3";
+        return "P3";
     case procRoute_bypass:
         return "BYP";
     }

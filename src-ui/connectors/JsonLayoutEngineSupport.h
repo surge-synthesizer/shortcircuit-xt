@@ -37,6 +37,8 @@
 #include <sst/jucegui/components/ToggleButton.h>
 #include <sst/jucegui/components/MultiSwitch.h>
 #include <sst/jucegui/components/JogUpDownButton.h>
+#include <sst/jucegui/components/RuledLabel.h>
+#include <sst/jucegui/components/LineSegment.h>
 #include <sst/jucegui/layouts/JsonLayoutEngine.h>
 #include <concepts>
 #include <optional>
@@ -191,6 +193,56 @@ createDiscreteWidget(const sst::jucegui::layouts::json_document::Control &ctrl,
     else if (cls.controlType == "jog-updown")
     {
         return std::make_unique<jcmp::JogUpDownButton>();
+    }
+    return nullptr;
+}
+
+inline std::unique_ptr<juce::Component>
+createAndPositionNonDataWidget(const sst::jucegui::layouts::json_document::Control &ctrl,
+                               const sst::jucegui::layouts::json_document::Class &cls,
+                               std::function<void(std::string)> onError,
+                               juce::Point<int> zeroPoint = {0, 0})
+{
+    namespace jcmp = sst::jucegui::components;
+    if (cls.controlType == "label")
+    {
+        if (!ctrl.label.has_value())
+        {
+            onError("Label has no 'label' member " + ctrl.name);
+            return nullptr;
+        }
+        auto lab = std::make_unique<jcmp::Label>();
+        lab->setText(*ctrl.label);
+        lab->setJustification(juce::Justification::centred);
+        lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
+                       ctrl.position.w, ctrl.position.h);
+        return lab;
+    }
+    if (cls.controlType == "ruled-label")
+    {
+        if (!ctrl.label.has_value())
+        {
+            onError("Label has no 'label' member " + ctrl.name);
+            return nullptr;
+        }
+        auto lab = std::make_unique<jcmp::RuledLabel>();
+        lab->setText(*ctrl.label);
+        lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
+                       ctrl.position.w, ctrl.position.h);
+        return lab;
+    }
+    if (cls.controlType == "line-segment")
+    {
+        if (!ctrl.lineSegment.has_value())
+        {
+            onError("Line segment has no 'line-segment' member " + ctrl.name);
+            return nullptr;
+        }
+        auto lab = std::make_unique<jcmp::LineSegment>();
+        lab->setEndpointsAndBounds(
+            ctrl.lineSegment->x0 + zeroPoint.x, ctrl.lineSegment->y0 + zeroPoint.y,
+            ctrl.lineSegment->x1 + zeroPoint.x, ctrl.lineSegment->y1 + zeroPoint.y);
+        return lab;
     }
     return nullptr;
 }

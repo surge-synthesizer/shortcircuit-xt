@@ -73,6 +73,22 @@
     "ruled-label": {
       "control-type": "ruled-label",
       "h": 18
+    },
+    "bezier-segment": {
+      "control-type": "line-segment",
+      "curve": "bezier",
+      "direction": "lr"
+    },
+    "bezier-segment-ud": {
+      "control-type": "line-segment",
+      "curve": "bezier",
+      "direction": "ud"
+    },
+    "bezier-segment-lr": {
+      "control-type": "line-segment",
+      "curve": "bezier",
+      "direction": "lr",
+      "comment": "same as bezier-segment"
     }
   }
 }

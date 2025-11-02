@@ -414,6 +414,8 @@ void ProcessorPane::rebuildControlsFromDescription()
                                  bool_attachment_t::onGui_t>(*bypassAttachment, processorView, this,
                                                              forZone, index);
     setToggleDataSource(bypassAttachment.get());
+    connectors::addGuiStep(*bypassAttachment,
+                           [this](auto &a) { editor->processorBypassToggled(index); });
 
     reapplyStyle();
 
@@ -1523,36 +1525,14 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
 
         jsonIntEditors[idx] = std::move(ed);
     }
-    else if (cls.controlType == "label")
+    else if (auto nw = connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError))
     {
-        if (!ctrl.label.has_value())
-        {
-            onError("Label has no 'label' member " + ctrl.name);
-            return;
-        }
-        auto lab = std::make_unique<jcmp::Label>();
-        lab->setText(*ctrl.label);
-        lab->setJustification(juce::Justification::centred);
-        lab->setBounds(ctrl.position.x, ctrl.position.y, ctrl.position.w, ctrl.position.h);
-        getContentAreaComponent()->addAndMakeVisible(*lab);
-        jsonLabels.push_back(std::move(lab));
-    }
-    else if (cls.controlType == "ruled-label")
-    {
-        if (!ctrl.label.has_value())
-        {
-            onError("Label has no 'label' member " + ctrl.name);
-            return;
-        }
-        auto lab = std::make_unique<jcmp::RuledLabel>();
-        lab->setText(*ctrl.label);
-        lab->setBounds(ctrl.position.x, ctrl.position.y, ctrl.position.w, ctrl.position.h);
-        getContentAreaComponent()->addAndMakeVisible(*lab);
-        jsonLabels.push_back(std::move(lab));
+        getContentAreaComponent()->addAndMakeVisible(*nw);
+        jsonLabels.push_back(std::move(nw));
     }
     else
     {
-        // onError("Unbound control " + ctrl.name);
+        onError("Unbound control " + ctrl.name);
     }
 }
 

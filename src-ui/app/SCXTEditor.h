@@ -321,6 +321,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
     void addUIThemesMenu(juce::PopupMenu &p, bool addTitle = true);
 
+    void processorBypassToggled(int which);
+
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
     engine::Engine::EngineStatusMessage engineStatus;
