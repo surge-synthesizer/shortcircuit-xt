@@ -25,6 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include "app/edit-screen/components/OutputPane.h"
 #if HAS_MELATONIN_INSPECTOR
 // this has to go first because otherwise windows defines 'small' on me.
 #include "melatonin_inspector/melatonin_inspector.h"
@@ -583,6 +584,18 @@ void SCXTEditor::switchGroupOrZoneFocus()
     else
     {
         editScreen->swapGroupZone();
+    }
+}
+
+void SCXTEditor::processorBypassToggled(int which)
+{
+    if (editScreen && editScreen->getZoneElements() && editScreen->getZoneElements()->outPane)
+    {
+        editScreen->getZoneElements()->outPane->updateFromProcessorPanes();
+    }
+    if (editScreen && editScreen->getGroupElements() && editScreen->getGroupElements()->outPane)
+    {
+        editScreen->getGroupElements()->outPane->updateFromProcessorPanes();
     }
 }
 

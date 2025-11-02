@@ -1,0 +1,99 @@
+{
+  "comment": "linear: 1 -> 2 -> 3 -> 4; area is 190x107",
+  "include": "shared-layouts/shared-classes.json",
+  "controls": {
+    "li0": {
+      "class": "bezier-segment",
+      "line-segment": {
+        "x0": 0,
+        "y0": 40,
+        "x1": 10,
+        "y1": 40
+      }
+    },
+    "c0": {
+      "class": "knob30",
+      "label": "1",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 14,
+        "y": 25
+      }
+    },
+    "li1": {
+      "class": "bezier-segment",
+      "line-segment": {
+        "x0": 46,
+        "y0": 40,
+        "x1": 55,
+        "y1": 40
+      }
+    },
+    "c1": {
+      "class": "knob30",
+      "label": "2",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 59,
+        "y": 25
+      }
+    },
+    "li2": {
+      "class": "bezier-segment",
+      "line-segment": {
+        "x0": 91,
+        "y0": 40,
+        "x1": 100,
+        "y1": 40
+      }
+    },
+    "c2": {
+      "class": "knob30",
+      "label": "3",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 102,
+        "y": 25
+      }
+    },
+    "li3": {
+      "class": "bezier-segment",
+      "line-segment": {
+        "x0": 134,
+        "y0": 40,
+        "x1": 143,
+        "y1": 40
+      }
+    },
+    "c3": {
+      "class": "knob30",
+      "label": "4",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 147,
+        "y": 25
+      }
+    },
+    "li4": {
+      "class": "bezier-segment",
+      "line-segment": {
+        "x0": 179,
+        "y0": 40,
+        "x1": 188,
+        "y1": 40
+      }
+    }
+  }
+}
