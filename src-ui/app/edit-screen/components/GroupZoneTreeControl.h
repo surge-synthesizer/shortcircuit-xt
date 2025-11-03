@@ -453,7 +453,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             {
                 auto src = rd->getZoneAddress();
                 auto tgt = getZoneAddress();
-                gsb->sendToSerialization(cmsg::MoveGroupToAfter({src, tgt}));
+                gsb->sendToSerialization(cmsg::MoveGroupTo({src, tgt}));
             }
         }
         void resized() override

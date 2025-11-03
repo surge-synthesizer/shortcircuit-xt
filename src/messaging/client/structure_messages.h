@@ -457,9 +457,16 @@ inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engin
             auto &pt = e.getPatch()->getPart(ss.part);
 
             e.voiceManager.allSoundsOff();
-            pt->moveGroupToAfter(ss.group, tt.group);
+            if (tt.zone < 0)
+            {
+                pt->swapGroups(ss.group, tt.group);
+            }
+            else
+            {
+                pt->moveGroupToAfter(ss.group, tt.group);
+            }
         },
-        [ss = src, tt = tgt](auto &engine) {
+        [tt = tgt](auto &engine) {
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
@@ -467,7 +474,7 @@ inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engin
                                       *(engine.getMessageController()));
         });
 }
-CLIENT_TO_SERIAL(MoveGroupToAfter, c2s_move_group, moveGroupAddress_t,
+CLIENT_TO_SERIAL(MoveGroupTo, c2s_move_group, moveGroupAddress_t,
                  moveGroupTo(payload, engine, cont));
 
 inline void doActivateNextPart(messaging::MessageController &cont)
