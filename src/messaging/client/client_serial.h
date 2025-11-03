@@ -232,6 +232,8 @@ enum SerializationToClientMessageIds
 
     s2c_send_missing_resolution_workitem_list,
 
+    s2c_send_tuning_status,
+
     num_serializationToClientMessages
 };
 

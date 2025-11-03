@@ -267,6 +267,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onActivityNotification(const scxt::messaging::client::activityNotificationPayload_t &);
 
+    scxt::messaging::client::tuningStatusPayload_t tuningStatus;
+    void onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &);
+
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
     void onMacroFullState(const scxt::messaging::client::macroFullState_t &);
     void onMacroValue(const scxt::messaging::client::macroValue_t &);

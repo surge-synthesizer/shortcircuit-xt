@@ -1218,6 +1218,11 @@ void Engine::sendFullRefreshToClient() const
     // send missing even if empty. An empty missing flags dont show dialog
     serializationSendToClient(messaging::client::s2c_send_missing_resolution_workitem_list, missing,
                               *(getMessageController()));
+
+    serializationSendToClient(messaging::client::s2c_send_tuning_status,
+                              messaging::client::tuningStatusPayload_t{
+                                  runtimeConfig.tuningMode, runtimeConfig.tuningZoneResolution},
+                              *(getMessageController()));
 }
 
 void Engine::clearAll()
@@ -1321,6 +1326,65 @@ void Engine::prepareToStream()
                 z->mUILag.instantlySnap();
             }
         }
+    }
+}
+
+std::string Engine::toStringTuningMode(const TuningMode &m)
+{
+    switch (m)
+    {
+    case TuningMode::TWELVE_TET:
+        return "12t";
+    case TuningMode::MTS_CONTINOUS:
+        return "mts";
+    case TuningMode::MTS_NOTE_ON:
+        return "mtsno";
+    }
+}
+Engine::TuningMode Engine::fromStringTuningMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Engine::TuningMode, Engine::toStringTuningMode>(
+        Engine::TuningMode::TWELVE_TET, Engine::TuningMode::MTS_NOTE_ON);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return TuningMode::MTS_CONTINOUS;
+    return p->second;
+}
+
+std::string Engine::toStringTuningZoneResolution(const TuningZoneResolution &z)
+{
+    switch (z)
+    {
+    case TuningZoneResolution::RESOLVE_TUNED_PITCH:
+        return "tp";
+    case TuningZoneResolution::RESOLVE_KEY:
+        return "k";
+    }
+}
+
+Engine::TuningZoneResolution Engine::fromStringTuningZoneResolution(const std::string &s)
+{
+    static auto inverse =
+        makeEnumInverse<Engine::TuningZoneResolution, Engine::toStringTuningZoneResolution>(
+            Engine::TuningZoneResolution::RESOLVE_KEY,
+            Engine::TuningZoneResolution::RESOLVE_TUNED_PITCH);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return TuningZoneResolution::RESOLVE_TUNED_PITCH;
+    return p->second;
+}
+
+void Engine::resetTuningFromRuntimeConfig()
+{
+    switch (runtimeConfig.tuningMode)
+    {
+    case TuningMode::TWELVE_TET:
+        midikeyRetuner.setTuningMode(tuning::MidikeyRetuner::TWELVE_TET);
+        break;
+    case TuningMode::MTS_CONTINOUS:
+    case TuningMode::MTS_NOTE_ON:
+        midikeyRetuner.setTuningMode(tuning::MidikeyRetuner::MTS_ESP);
+        break;
     }
 }
 

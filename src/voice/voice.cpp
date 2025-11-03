@@ -200,6 +200,11 @@ void Voice::voiceStarted()
         // only the AEG needs oversampling since EG2 3 4 is only used at endpoint
     }
 
+    retunedKeyAtAttack =
+        zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+    retuneContinuous =
+        zone->getEngine()->runtimeConfig.tuningMode != engine::Engine::TuningMode::MTS_NOTE_ON;
+
     zone->addVoice(this);
 }
 
@@ -987,8 +992,10 @@ float Voice::calculateVoicePitch()
     auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
     fpitch += pitchWheel * pitchMv;
 
-    auto retuner =
-        zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+    float retuner{retunedKeyAtAttack};
+    if (retuneContinuous)
+        retuner =
+            zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
 
     fpitch += retuner;
     fpitch += noteExpressions[(int)ExpressionIDs::TUNING];

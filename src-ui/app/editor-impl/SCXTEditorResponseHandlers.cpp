@@ -496,4 +496,10 @@ void SCXTEditor::onGroupTriggerConditions(scxt::engine::GroupTriggerConditions c
 {
     editScreen->partSidebar->groupTriggerConditionChanged(g);
 }
+
+void SCXTEditor::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)
+{
+    tuningStatus = t;
+}
+
 } // namespace scxt::ui::app

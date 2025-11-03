@@ -59,6 +59,12 @@
 
 namespace scxt::json
 {
+
+STREAM_ENUM(engine::Engine::TuningZoneResolution, engine::Engine::toStringTuningZoneResolution,
+            engine::Engine::fromStringTuningZoneResolution);
+STREAM_ENUM(engine::Engine::TuningMode, engine::Engine::toStringTuningMode,
+            engine::Engine::fromStringTuningMode);
+
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  if (SC_STREAMING_FOR_IN_PROCESS)
                  {
@@ -75,6 +81,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                       {"streamingVersionHumanReadable",
                        scxt::humanReadableVersion(scxt::currentStreamingVersion)},
                       {"patch", from.getPatch()},
+                      {"runtimeConfig", from.runtimeConfig},
                       {"selectionManager", from.getSelectionManager()},
                       {"sampleManager", from.getSampleManager()}};
              }),
@@ -93,20 +100,27 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  findIf(v, "sampleManager", *(to.getSampleManager()));
                  findIf(v, "patch", *(to.getPatch()));
                  findIf(v, "selectionManager", *(to.getSelectionManager()));
+                 findIf(v, "runtimeConfig", to.runtimeConfig);
 
                  // Now we need to restore the bus effects
                  to.getPatch()->setupPatchOnUnstream(to);
-
                  to.onPartConfigurationUpdated();
+
+                 // and reset the tuning
+                 to.resetTuningFromRuntimeConfig();
 
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
              }))
 
-SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
-                 v = {{"parts", from.getParts()}, {"busses", from.busses}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig,
+             SC_FROM({ v = {{"tm", from.tuningMode}, {"tz", from.tuningZoneResolution}}; }), SC_TO({
+                 findIf(v, "tm", to.tuningMode);
+                 findIf(v, "tz", to.tuningZoneResolution);
+             }));
+
+SC_STREAMDEF(scxt::engine::Patch,
+             SC_FROM({ v = {{"parts", from.getParts()}, {"busses", from.busses}}; }), SC_TO({
                  auto &patch = to;
                  patch.resetToBlankPatch();
 
@@ -123,9 +137,8 @@ SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
                  findIf(v, "busses", patch.busses);
              }))
 
-SC_STREAMDEF(scxt::engine::Engine::PGZStructureBundle, SC_FROM({
-                 v = {{"address", t.address}, {"name", t.name}, {"features", t.features}};
-             }),
+SC_STREAMDEF(scxt::engine::Engine::PGZStructureBundle,
+             SC_FROM({ v = {{"address", t.address}, {"name", t.name}, {"features", t.features}}; }),
              SC_TO({
                  findIf(v, "address", to.address);
                  findIf(v, "name", to.name);
@@ -275,10 +288,8 @@ SC_STREAMDEF(scxt::engine::Part, SC_FROM({
 STREAM_ENUM(engine::GroupTriggerID, engine::toStringGroupTriggerID,
             engine::fromStringGroupTriggerID);
 
-SC_STREAMDEF(scxt::engine::GroupTriggerStorage, SC_FROM({
-                 v = {{"id", from.id}, {"args", from.args}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::engine::GroupTriggerStorage,
+             SC_FROM({ v = {{"id", from.id}, {"args", from.args}}; }), SC_TO({
                  findIf(v, "id", to.id);
                  findIf(v, "args", to.args);
              }));
@@ -685,15 +696,15 @@ SC_STREAMDEF(engine::Engine::EngineStatusMessage, SC_FROM({
                  findIf(v, "runningEnvironment", to.runningEnvironment);
              }));
 
-SC_STREAMDEF(
-    engine::Bus, SC_FROM({
-        v = {{"busSendStorage", t.busSendStorage}, {"busEffectStorage", t.busEffectStorage}};
-    }),
-    SC_TO({
-        findIf(v, "busSendStorage", to.busSendStorage);
-        findIf(v, "busEffectStorage", to.busEffectStorage);
-        to.resetSendState();
-    }));
+SC_STREAMDEF(engine::Bus, SC_FROM({
+                 v = {{"busSendStorage", t.busSendStorage},
+                      {"busEffectStorage", t.busEffectStorage}};
+             }),
+             SC_TO({
+                 findIf(v, "busSendStorage", to.busSendStorage);
+                 findIf(v, "busEffectStorage", to.busEffectStorage);
+                 to.resetSendState();
+             }));
 
 STREAM_ENUM_WITH_DEFAULT(engine::Bus::BusSendStorage::AuxLocation,
                          engine::Bus::BusSendStorage::AuxLocation::POST_VCA,
@@ -773,18 +784,19 @@ SC_STREAMDEF(engine::BusEffectStorage, SC_FROM({
                  }
              }));
 
-SC_STREAMDEF(
-    engine::Patch::Busses, SC_FROM({
-        v = {{"mainBus", t.mainBus}, {"partBusses", t.partBusses}, {"auxBusses", t.auxBusses}};
-    }),
-    SC_TO({
-        findIf(v, "mainBus", to.mainBus);
-        findIf(v, "partBusses", to.partBusses);
-        findIf(v, "auxBusses", to.auxBusses);
+SC_STREAMDEF(engine::Patch::Busses, SC_FROM({
+                 v = {{"mainBus", t.mainBus},
+                      {"partBusses", t.partBusses},
+                      {"auxBusses", t.auxBusses}};
+             }),
+             SC_TO({
+                 findIf(v, "mainBus", to.mainBus);
+                 findIf(v, "partBusses", to.partBusses);
+                 findIf(v, "auxBusses", to.auxBusses);
 
-        to.reconfigureSolo();
-        to.reconfigureOutputBusses();
-    }));
+                 to.reconfigureSolo();
+                 to.reconfigureOutputBusses();
+             }));
 
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_ENGINE_TRAITS_H
