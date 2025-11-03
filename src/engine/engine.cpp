@@ -1340,6 +1340,7 @@ std::string Engine::toStringTuningMode(const TuningMode &m)
     case TuningMode::MTS_NOTE_ON:
         return "mtsno";
     }
+    return "err";
 }
 Engine::TuningMode Engine::fromStringTuningMode(const std::string &s)
 {
@@ -1360,6 +1361,7 @@ std::string Engine::toStringTuningZoneResolution(const TuningZoneResolution &z)
     case TuningZoneResolution::RESOLVE_KEY:
         return "k";
     }
+    return "err";
 }
 
 Engine::TuningZoneResolution Engine::fromStringTuningZoneResolution(const std::string &s)
