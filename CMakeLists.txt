@@ -82,7 +82,6 @@ add_subdirectory(libs)
 add_subdirectory(resources)
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(clients)
 
 
 include(cmake/basic-installer.cmake)
