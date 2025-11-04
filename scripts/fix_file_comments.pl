@@ -16,21 +16,6 @@ find(
     {
         wanted => \&findfiles,
     },
-    'src-ui'
-);
-
-
-find(
-    {
-        wanted => \&findfiles,
-    },
-    'clients'
-);
-
-find(
-    {
-        wanted => \&findfiles,
-    },
     'tests'
 );
 
@@ -45,7 +30,7 @@ sub findfiles
  * A fully featured creative sampler, available as a standalone
  * and plugin for multiple platforms.
  *
- * Copyright 2019 - 2024, Various authors, as described in the github
+ * Copyright 2019 - 2025, Various authors, as described in the github
  * transaction log.
  *
  * ShortcircuitXT is released under the Gnu General Public Licence

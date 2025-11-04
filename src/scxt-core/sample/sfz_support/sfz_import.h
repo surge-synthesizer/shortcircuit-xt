@@ -4,7 +4,7 @@
  * A fully featured creative sampler, available as a standalone
  * and plugin for multiple platforms.
  *
- * Copyright 2019 - 2024, Various authors, as described in the github
+ * Copyright 2019 - 2025, Various authors, as described in the github
  * transaction log.
  *
  * ShortcircuitXT is released under the Gnu General Public Licence
@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SAMPLE_SFZ_SUPPORT_SFZ_IMPORT_H
-#define SCXT_SRC_SAMPLE_SFZ_SUPPORT_SFZ_IMPORT_H
+#ifndef SCXT_SRC_SCXT_CORE_SAMPLE_SFZ_SUPPORT_SFZ_IMPORT_H
+#define SCXT_SRC_SCXT_CORE_SAMPLE_SFZ_SUPPORT_SFZ_IMPORT_H
 
 #include "filesystem/import.h"
 #include <engine/engine.h>
