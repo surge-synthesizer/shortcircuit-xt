@@ -79,9 +79,8 @@ add_subdirectory(libs)
 
 
 # Next for now
-add_subdirectory(src)
 add_subdirectory(resources)
-add_subdirectory(src-ui)
+add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(clients)
 
