@@ -41,6 +41,12 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGFloatValue, c2s_update_zone_or_g
                              detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
                                                                          &engine::Group::gegStorage,
                                                                          payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGBoolValue, c2s_update_zone_or_group_eg_bool_value,
+                             detail::indexedZoneOrGroupDiffMsg_t<bool>,
+                             modulation::modulators::AdsrStorage,
+                             detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
+                                                                         &engine::Group::gegStorage,
+                                                                         payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageFloatValue, c2s_update_zone_or_group_modstorage_float_value,

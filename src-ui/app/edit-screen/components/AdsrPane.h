@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
+#include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -45,6 +46,8 @@ namespace scxt::ui::app::edit_screen
 struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
 {
     typedef connectors::PayloadDataAttachment<modulation::modulators::AdsrStorage> attachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<modulation::modulators::AdsrStorage>
+        boolAttachment_t;
 
     template <typename T> struct UIStore
     {
@@ -57,6 +60,10 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     UIStore<sst::jucegui::components::VSlider> sliders;
     UIStore<sst::jucegui::components::Label> labels;
     UIStore<sst::jucegui::components::Knob> knobs;
+
+    // used by group
+    std::unique_ptr<sst::jucegui::components::ToggleButton> gateToggle;
+    std::unique_ptr<boolAttachment_t> gateToggleA;
 
     modulation::modulators::AdsrStorage adsrView;
     std::array<modulation::modulators::AdsrStorage, scxt::egsPerZone - 1> zoneAdsrCache;

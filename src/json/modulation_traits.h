@@ -117,6 +117,7 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "aShape", 0.f, from.aShape);
                  addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
                  addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
+                 addUnlessDefault<val_t>(v, "groupGate", false, from.gateGroupEGOnAnyPlaying);
              }),
              SC_TO({
                  findOrSet(v, "dl", 0.f, result.dly);
@@ -128,6 +129,7 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  findOrSet(v, "aShape", 0.f, result.aShape);
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
+                 findOrSet(v, "groupGate", false, result.gateGroupEGOnAnyPlaying);
              }))
 
 STREAM_ENUM(modulation::modulators::PhasorStorage::Division,

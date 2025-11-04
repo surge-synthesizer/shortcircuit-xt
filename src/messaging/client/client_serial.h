@@ -79,6 +79,7 @@ enum ClientToSerializationMessagesIds
     c2s_end_edit,   // implemented as a hammer
 
     c2s_update_zone_or_group_eg_float_value,
+    c2s_update_zone_or_group_eg_bool_value,
     c2s_update_zone_or_group_modstorage_float_value,
     c2s_update_zone_or_group_modstorage_bool_value,
     c2s_update_zone_or_group_modstorage_int16_t_value,
