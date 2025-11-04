@@ -94,6 +94,31 @@ CLIENT_TO_SERIAL(StopSounds, c2s_silence_engine, stopSounds_t, stopSoundsMessage
 using activityNotificationPayload_t = std::pair<int, std::string>;
 SERIAL_TO_CLIENT(SendActivityNotification, s2c_send_activity_notification,
                  activityNotificationPayload_t, onActivityNotification);
+
+using tuningStatusPayload_t =
+    std::pair<engine::Engine::TuningMode, engine::Engine::TuningZoneResolution>;
+SERIAL_TO_CLIENT(SendTuningStatus, s2c_send_tuning_status, tuningStatusPayload_t, onTuningStatus);
+
+inline void applyTuningStatusPayload(const tuningStatusPayload_t &payload,
+                                     messaging::MessageController &cont)
+{
+    cont.scheduleAudioThreadCallback(
+        [p = payload](scxt::engine::Engine &e) {
+            e.runtimeConfig.tuningMode = p.first;
+            e.runtimeConfig.tuningZoneResolution = p.second;
+            e.resetTuningFromRuntimeConfig();
+        },
+        [](const auto &e) {
+            serializationSendToClient(
+                messaging::client::s2c_send_tuning_status,
+                messaging::client::tuningStatusPayload_t{e.runtimeConfig.tuningMode,
+                                                         e.runtimeConfig.tuningZoneResolution},
+                *(e.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, tuningStatusPayload_t,
+                 applyTuningStatusPayload(payload, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H

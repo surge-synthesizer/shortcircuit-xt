@@ -50,9 +50,6 @@ inline void raiseDebugError(MessageController &c)
 }
 CLIENT_TO_SERIAL(RaiseDebugError, c2s_raise_debug_error, bool, raiseDebugError(cont))
 
-CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, int32_t,
-                 engine.midikeyRetuner.setTuningMode((tuning::MidikeyRetuner::TuningMode)payload));
-
 // note, 0...1 velocity, onoff
 typedef std::tuple<int32_t, float, bool> noteOnOff_t;
 inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engine,

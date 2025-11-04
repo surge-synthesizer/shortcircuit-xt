@@ -59,6 +59,12 @@
 
 namespace scxt::json
 {
+
+STREAM_ENUM(engine::Engine::TuningZoneResolution, engine::Engine::toStringTuningZoneResolution,
+            engine::Engine::fromStringTuningZoneResolution);
+STREAM_ENUM(engine::Engine::TuningMode, engine::Engine::toStringTuningMode,
+            engine::Engine::fromStringTuningMode);
+
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  if (SC_STREAMING_FOR_IN_PROCESS)
                  {
@@ -75,6 +81,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                       {"streamingVersionHumanReadable",
                        scxt::humanReadableVersion(scxt::currentStreamingVersion)},
                       {"patch", from.getPatch()},
+                      {"runtimeConfig", from.runtimeConfig},
                       {"selectionManager", from.getSelectionManager()},
                       {"sampleManager", from.getSampleManager()}};
              }),
@@ -93,15 +100,26 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  findIf(v, "sampleManager", *(to.getSampleManager()));
                  findIf(v, "patch", *(to.getPatch()));
                  findIf(v, "selectionManager", *(to.getSelectionManager()));
+                 findIf(v, "runtimeConfig", to.runtimeConfig);
 
                  // Now we need to restore the bus effects
                  to.getPatch()->setupPatchOnUnstream(to);
-
                  to.onPartConfigurationUpdated();
+
+                 // and reset the tuning
+                 to.resetTuningFromRuntimeConfig();
 
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
              }))
+
+SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
+                 v = {{"tm", from.tuningMode}, {"tz", from.tuningZoneResolution}};
+             }),
+             SC_TO({
+                 findIf(v, "tm", to.tuningMode);
+                 findIf(v, "tz", to.tuningZoneResolution);
+             }));
 
 SC_STREAMDEF(scxt::engine::Patch, SC_FROM({
                  v = {{"parts", from.getParts()}, {"busses", from.busses}};

@@ -87,6 +87,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float mpeTimbre{0.f};    // 0..1 normalized
     float mpePressure{0.f};  // 0..1 normalized
 
+    float retunedKeyAtAttack{0.f};
+    bool retuneContinuous{true};
+
     float normalizationAmplitudeLinear; // in multiples not db
 
     static constexpr size_t noteExpressionCount{7};

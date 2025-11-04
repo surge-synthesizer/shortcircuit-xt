@@ -196,14 +196,35 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
         p.addSectionHeader("Tuning");
         p.addSeparator();
     }
-    p.addItem("Twelve TET", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->sendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::TWELVE_TET));
-    });
-    p.addItem("MTS-ESP", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->sendToSerialization(cmsg::SetTuningMode(tuning::MidikeyRetuner::MTS_ESP));
-    });
+    auto st = editScreen->editor->tuningStatus;
+    p.addItem("Twelve TET", true, st.first == engine::Engine::TuningMode::TWELVE_TET,
+              [st, w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      auto s = st;
+                      s.first = engine::Engine::TuningMode::TWELVE_TET;
+                      w->sendToSerialization(cmsg::SetTuningMode(s));
+                  }
+              });
+    p.addItem("MTS-ESP (if active)", true, st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
+              [st, w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      auto s = st;
+                      s.first = engine::Engine::TuningMode::MTS_CONTINOUS;
+                      w->sendToSerialization(cmsg::SetTuningMode(s));
+                  }
+              });
+    p.addItem("MTS-ESP NoteOn (if active)", true,
+              st.first == engine::Engine::TuningMode::MTS_NOTE_ON,
+              [st, w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      auto s = st;
+                      s.first = engine::Engine::TuningMode::MTS_NOTE_ON;
+                      w->sendToSerialization(cmsg::SetTuningMode(s));
+                  }
+              });
 }
 
 void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)

@@ -28,16 +28,19 @@
 #include "midikey_retuner.h"
 #include "libMTSClient.h"
 #include <cmath>
+#include "utils.h"
 
 namespace scxt::tuning
 {
 
 MidikeyRetuner::MidikeyRetuner()
 {
+    SCLOG("Creating Midi Key Tuner");
     mtsClient = MTS_RegisterClient();
     if (mtsClient && MTS_HasMaster(mtsClient))
     {
         tuningMode = MTS_ESP;
+        SCLOG("Found MTS with a Master");
     }
 }
 

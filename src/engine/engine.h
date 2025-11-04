@@ -186,6 +186,31 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     tuning::MidikeyRetuner midikeyRetuner;
 
+    enum struct TuningMode
+    {
+        TWELVE_TET,
+        MTS_CONTINOUS, // if MTS is present, else 12-tet obvs
+        MTS_NOTE_ON
+    };
+    DECLARE_ENUM_STRING(TuningMode);
+
+    enum struct TuningZoneResolution
+    {
+        RESOLVE_KEY,
+        RESOLVE_TUNED_PITCH
+    };
+    DECLARE_ENUM_STRING(TuningZoneResolution);
+
+    // Post 1.0 we probably want this per-part changable but that makes
+    // a variety of things harder in resolution
+    struct RuntimeConfig
+    {
+        TuningMode tuningMode{TuningMode::MTS_CONTINOUS};
+        TuningZoneResolution tuningZoneResolution{TuningZoneResolution::RESOLVE_TUNED_PITCH};
+    } runtimeConfig;
+
+    void resetTuningFromRuntimeConfig();
+
     enum struct MidiZoneAction
     {
         NONE,

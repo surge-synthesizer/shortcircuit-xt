@@ -121,6 +121,7 @@ struct ConsoleUI
 
     void onClipboardType(const scxt::engine::Clipboard::ContentType &) ON_STUB;
 
+    void onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &) ON_STUB;
     void stepUI();
 
   private:
