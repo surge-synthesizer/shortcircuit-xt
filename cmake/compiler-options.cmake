@@ -82,7 +82,7 @@ elseif (UNIX AND NOT APPLE)
             )
 else ()
 
-    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
         set(OS_COMPILE_OPTIONS
                 /bigobj
                 /wd4244   # convert float from double
@@ -93,17 +93,23 @@ else ()
                 /wd4005   # macro redefinition for nominmax
                 /utf-8
                 )
+        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            # We can set clang-cl options here if we want
+            # list(APPEND OS_COMPILE_OPTIONS )
+        endif()
+        message(STATUS "MSVC flags are ${OS_COMPILE_OPTIONS}")
     endif ()
 
     if (WIN32)
         # Win32 clang marks strncpy as deprecatred and wants strncpy_s; maybe one day
         # fix that but not today
-        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+        add_compile_definitions(_CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE)
     endif ()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         set(OS_COMPILE_OPTIONS
                 -Wno-multichar
+                -Wno-macro-redefined
                 -march=nehalem
 
                 # Targeting Windows with GCC/Clang is experimental

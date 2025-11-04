@@ -13,6 +13,15 @@ if (${SCXT_USE_FLAC})
 
     add_subdirectory(flac)
     target_compile_definitions(FLAC++ PUBLIC SCXT_USE_FLAC=1)
+
+
+    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
+        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            # Flac makes a lot of warnings which are somebody else's problem
+            target_compile_options(FLAC PRIVATE -w)
+            target_compile_options(FLAC++ PRIVATE -w)
+        endif()
+    endif()
 else ()
     add_library(FLAC INTERFACE)
     add_library(FLAC++ INTERFACE)
