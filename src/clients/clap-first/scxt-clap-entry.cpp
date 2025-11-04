@@ -32,7 +32,7 @@ namespace scxt::clap_first
 extern const void *get_factory(const char *factory_id);
 extern bool clap_init(const char *p);
 extern void clap_deinit();
-}
+} // namespace scxt::clap_first
 extern "C"
 {
 
