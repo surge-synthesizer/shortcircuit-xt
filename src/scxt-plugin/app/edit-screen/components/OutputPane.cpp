@@ -32,10 +32,8 @@
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/MenuButton.h"
-#include "sst/jucegui/components/LabeledItem.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "datamodel/metadata.h"
-#include "theme/Layout.h"
 #include "app/edit-screen/EditScreen.h"
 #include "connectors/JsonLayoutEngineSupport.h"
 
@@ -269,7 +267,7 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
-    std::unique_ptr<jcmp::Labeled<jcmp::Knob>> outputKnob, panKnob;
+    std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
     std::unique_ptr<jcmp::Labeled<jcmp::HSliderFilled>> velocitySensitivitySlider;
 
     std::unique_ptr<bool_attachment_t> oversampleAttachment;
@@ -280,9 +278,8 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     {
         using fac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
 
-        fac::attachLabelAndAdd(info, info.amplitude, this, outputAttachment, outputKnob,
-                               "Amplitude");
-        fac::attachLabelAndAdd(info, info.pan, this, panAttachment, panKnob, "Pan");
+        fac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
+        fac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
 
         if constexpr (!OTTraits::forZone)
         {
@@ -306,10 +303,14 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 
     void resized()
     {
-        namespace lo = theme::layout;
-        auto cc = lo::columnCenterX(getLocalBounds().reduced(10, 0), 2);
-        lo::knobCX<theme::layout::constants::largeKnob>(*outputKnob, cc[0], 10);
-        lo::knobCX<theme::layout::constants::largeKnob>(*panKnob, cc[1], 10);
+        auto kb = getLocalBounds().reduced(20, 0);
+        auto w = kb.getWidth() / 2;
+        auto c1 = kb.getX() + w / 2;
+        auto c2 = kb.getX() + 3 * w / 2;
+
+        auto ks{55};
+        outputKnob->setBounds(c1 - ks / 2, 10, ks, ks + 20);
+        panKnob->setBounds(c2 - ks / 2, 10, ks, ks + 20);
 
         if (!OTTraits::forZone && velocitySensitivitySlider)
         {
