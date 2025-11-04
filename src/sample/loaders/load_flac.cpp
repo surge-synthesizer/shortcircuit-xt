@@ -101,7 +101,7 @@ template <class T> class SampleFLACDecoderBase : public T
                 auto sdata = sample->GetSamplePtrF32(c);
                 for (int i = 0; i < frame->header.blocksize; i++)
                 {
-                    sdata[i + streamPos] = (double)(buffer[c][i] * 1.0) / (1L << 32);
+                    sdata[i + streamPos] = (double)(buffer[c][i] * 1.0) / (1LL << 32);
                 }
             }
             streamPos += frame->header.blocksize;
