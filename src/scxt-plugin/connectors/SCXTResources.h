@@ -4,7 +4,7 @@
  * A fully featured creative sampler, available as a standalone
  * and plugin for multiple platforms.
  *
- * Copyright 2019 - 2024, Various authors, as described in the github
+ * Copyright 2019 - 2025, Various authors, as described in the github
  * transaction log.
  *
  * ShortcircuitXT is released under the Gnu General Public Licence
@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_UI_CONNECTORS_SCXTRESOURCES_H
-#define SCXT_SRC_UI_CONNECTORS_SCXTRESOURCES_H
+#ifndef SCXT_SRC_SCXT_PLUGIN_CONNECTORS_SCXTRESOURCES_H
+#define SCXT_SRC_SCXT_PLUGIN_CONNECTORS_SCXTRESOURCES_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

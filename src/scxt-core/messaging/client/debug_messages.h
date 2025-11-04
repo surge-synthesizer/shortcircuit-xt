@@ -4,7 +4,7 @@
  * A fully featured creative sampler, available as a standalone
  * and plugin for multiple platforms.
  *
- * Copyright 2019 - 2024, Various authors, as described in the github
+ * Copyright 2019 - 2025, Various authors, as described in the github
  * transaction log.
  *
  * ShortcircuitXT is released under the Gnu General Public Licence
@@ -32,8 +32,8 @@
  * messages are not sent by most users most of the time.
  * Lets see!
  */
-#ifndef SCXT_SRC_MESSAGING_CLIENT_DEBUG_MESSAGES_H
-#define SCXT_SRC_MESSAGING_CLIENT_DEBUG_MESSAGES_H
+#ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_DEBUG_MESSAGES_H
+#define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_DEBUG_MESSAGES_H
 
 #include "client_macros.h"
 #include "client_serial.h"

@@ -10,18 +10,6 @@ find(
     },
     'src'
 );
-find(
-    {
-        wanted => \&findfiles,
-    },
-    'src-ui'
-);
-find(
-    {
-        wanted => \&findfiles,
-    },
-    'clients'
-);
 
 sub findfiles
 {
