@@ -1,4 +1,4 @@
-# JSON Layouts
+#JSON Layouts
 
 Much of the SCXT ui is relatively fixed. Things like the
 mapping pane and bus layout and stuff. But a few components

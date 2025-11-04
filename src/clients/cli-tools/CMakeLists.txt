@@ -8,7 +8,6 @@ function (add_cli_tool)
     add_executable(${CLI_SOURCE} ${CLI_SOURCE}.cpp)
     target_link_libraries(${CLI_SOURCE}
             scxt-core
-            shortcircuit::catch2
             fmt
     )
     add_dependencies(${PROJECT_NAME} ${CLI_SOURCE})
