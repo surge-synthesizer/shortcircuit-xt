@@ -1,4 +1,4 @@
-project(scxt-ui LANGUAGES CXX)
+project(scxt-plugin LANGUAGES CXX)
 
 add_library(${PROJECT_NAME} STATIC
         app/browser-ui/BrowserPane.cpp
@@ -53,6 +53,9 @@ add_library(${PROJECT_NAME} STATIC
         theme/ColorMap.cpp
         theme/ThemeApplier.cpp
 
+        clap/clap-helpers-config.cpp
+        clap/scxt-plugin.cpp
+        clap/scxt-clap-entry-impl.cpp
         )
 
 message(STATUS "Globbing json-assets directory for cmrc")
@@ -67,7 +70,6 @@ cmrc_add_resource_library(scxtui_json_layouts
 )
 set_target_properties(scxtui_json_layouts PROPERTIES UNITY_BUILD FALSE)
 
-
 target_link_libraries(${PROJECT_NAME} PRIVATE
         fmt
         sst-plugininfra::strnatcmp
@@ -76,12 +78,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         scxtui_json_layouts
         clap_juce_shim
         clap_juce_shim_headers
-        clap
-)
-target_link_libraries(${PROJECT_NAME} PUBLIC
+        clap-wrapper-extensions
+        clap-helpers
         scxt-core
         sst-jucegui
-        )
+)
+target_link_libraries(${PROJECT_NAME} PUBLIC clap)
 
 if (NOT CMAKE_UNITY_BUILD)
         #message(STATUS "Includeing Melatonin")

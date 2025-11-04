@@ -2,27 +2,7 @@ project(scxt_clapfirst)
 
 message(STATUS "Shortcircuit XT building clap-first wrappers")
 set(PRODUCT_NAME "Shortcircuit XT")
-set(IMPL_TARGET ${PROJECT_NAME}_impl)
-add_library(${IMPL_TARGET} STATIC
-        scxt-plugin/clap-helpers-config.cpp
-        scxt-plugin/scxt-plugin.cpp
-        scxt-plugin/scxt-clap-entry-impl.cpp
-)
-
-target_link_libraries(${IMPL_TARGET} PRIVATE fmt)
-
-target_link_libraries(${IMPL_TARGET} PUBLIC
-        clap_juce_shim_headers
-        scxt-core
-        scxt-ui
-        sst-plugininfra
-        clap
-        clap-helpers
-        clap-wrapper-extensions
-        clap_juce_shim
-        )
-
-target_include_directories(${IMPL_TARGET} PUBLIC .)
+set(IMPL_TARGET scxt-plugin)
 
 make_clapfirst_plugins(
         TARGET_NAME ${PROJECT_NAME}
