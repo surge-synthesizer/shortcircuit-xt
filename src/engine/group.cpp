@@ -156,7 +156,6 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     fAnyGated = (fGatedCount > 0) * 1.f;
     fAnySounding = (fVoiceCount > 0) * 1.f;
-    ;
 
     for (auto i = 0; i < engine::lfosPerGroup; ++i)
     {
@@ -220,9 +219,12 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
     phasorEvaluator.step(e.transport, miscSourceStorage);
 
-    bool envGate = gated;
     for (int i = 0; i < egsPerGroup; ++i)
     {
+        bool envGate = gated;
+        if (gegStorage[i].gateGroupEGOnAnyPlaying)
+            envGate = (fVoiceCount > 0);
+
         if (egsActive[i])
         {
             auto &aegp = endpoints.egTarget[i];

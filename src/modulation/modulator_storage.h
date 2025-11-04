@@ -50,8 +50,15 @@ struct AdsrStorage
      */
     float dly{0.0}, a{0.0}, h{0.0}, d{0.0}, s{1.0}, r{0.5};
 
-    // TODO: What are these going to be when they grow up?
+    /*
+     * -1..1 values for a shape
+     */
     float aShape{0}, dShape{0}, rShape{0};
+
+    /*
+     * Gate mode (only used by group)
+     */
+    bool gateGroupEGOnAnyPlaying{false};
 };
 
 using StepLFOStorage = sst::basic_blocks::modulators::StepLFO<scxt::blockSize>::Storage;
@@ -205,6 +212,8 @@ SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
     SC_FIELD(aShape, pmd().asPercentBipolar().withName("Attack Shape"));
     SC_FIELD(dShape, pmd().asPercentBipolar().withName("Decay Shape"));
     SC_FIELD(rShape, pmd().asPercentBipolar().withName("Release Shape"));
+    SC_FIELD(gateGroupEGOnAnyPlaying,
+             pmd().asOnOffBool().withName("Gated if ungated voices sounding"));
 })
 
 // We describe modulator storage as a compound since we address

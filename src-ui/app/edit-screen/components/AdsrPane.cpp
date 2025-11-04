@@ -28,6 +28,7 @@
 #include "AdsrPane.h"
 #include "app/SCXTEditor.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/ToggleButton.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -113,7 +114,6 @@ void AdsrPane::tabChanged(int newIndex)
     // We need to preserve our local cache
     zoneAdsrCache[displayedTabIndex] = adsrView;
     displayedTabIndex = newIndex;
-    ;
     adsrView = zoneAdsrCache[newIndex];
 
     getContentAreaComponent()->removeAllChildren();
@@ -125,6 +125,8 @@ void AdsrPane::tabChanged(int newIndex)
 void AdsrPane::rebuildPanelComponents(int useIdx)
 {
     using fac = connectors::SingleValueFactory<attachment_t, cmsg::UpdateZoneOrGroupEGFloatValue>;
+    using bfac =
+        connectors::BooleanSingleValueFactory<boolAttachment_t, cmsg::UpdateZoneOrGroupEGBoolValue>;
 
     // c++ partial application is a bummer
     auto attc = [&](auto &t, auto &a, auto &w) {
@@ -153,6 +155,19 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
     makeLabel(labels.D, "D");
     makeLabel(labels.S, "S");
     makeLabel(labels.R, "R");
+
+    if (!forZone)
+    {
+        gateToggleA =
+            bfac::attachOnly(adsrView, adsrView.gateGroupEGOnAnyPlaying, this, forZone, index);
+        assert(gateToggleA);
+        gateToggle = std::make_unique<sst::jucegui::components::ToggleButton>();
+        gateToggle->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED);
+        gateToggle->setLabel(u8"\xE2\x88\x80");
+        gateToggle->setSource(gateToggleA.get());
+        setupWidgetForValueTooltip(gateToggle.get(), gateToggleA.get());
+        getContentAreaComponent()->addAndMakeVisible(*gateToggle);
+    }
 
     if (forZone)
     {
@@ -196,6 +211,10 @@ void AdsrPane::resized()
     x += w;
     sliders.S->setBounds(x, y, w, h);
     labels.S->setBounds(x, y + h, w, lh);
+    if (!forZone && gateToggle)
+    {
+        gateToggle->setBounds(x + (w - kh) * 0.5, y - lh, kh, kh - 3);
+    }
     x += w;
     sliders.R->setBounds(x, y, w, h);
     labels.R->setBounds(x, y + h, w, lh);
