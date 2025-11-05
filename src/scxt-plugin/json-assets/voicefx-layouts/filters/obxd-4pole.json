@@ -1,0 +1,94 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
+    "cutoff": {
+      "class": "knob80",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "label": "Cutoff",
+      "position": {
+        "x": 20,
+        "y": 25
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      }
+    },
+    "cutoffL": {
+      "class": "knob55",
+      "label": "Cutoff L",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 35
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "cutoffR": {
+      "class": "knob55",
+      "label": "Cutoff R",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 65,
+        "y": 35
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "resonance": {
+      "class": "knob40",
+      "label": "Resonance",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 138,
+        "y": 15
+      }
+    },
+    "slope": {
+      "class": "knob40",
+      "label": "Slope",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 138,
+        "y": 75
+      }
+    }
+  }
+}

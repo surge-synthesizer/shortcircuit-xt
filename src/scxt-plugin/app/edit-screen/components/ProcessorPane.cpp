@@ -242,27 +242,27 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_obx4:
-        layoutControlsOBXD4Pole();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/obxd-4pole.json");
         break;
     case dsp::processor::proct_diodeladder:
-        layoutControlsLinearLadder();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/linear-ladder.json");
         break;
 
     case dsp::processor::proct_cutoffwarp:
     case dsp::processor::proct_reswarp:
-        layoutControlsWarpFilters();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/warp.json");
         break;
 
     case dsp::processor::proct_vintageladder:
-        layoutControlsVintageLadder();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/vintage-ladder.json");
         break;
 
     case dsp::processor::proct_tripole:
-        layoutControlsTripole();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/tripole.json");
         break;
 
     case dsp::processor::proct_snhfilter:
-        layoutControlsSampleAndHold();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/sample-and-hold.json");
         break;
 
     case dsp::processor::proct_fx_microgate:
@@ -523,205 +523,6 @@ void ProcessorPane::layoutControlsSurgeFilters()
             intEditors[i]->item->setEnabled(false);
         }
     }
-}
-
-void ProcessorPane::layoutControlsLinearLadder()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 25);
-        lo::knob<55>(*floatEditors[1], 65, 25);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 15);
-    }
-    lo::knob<55>(*floatEditors[2], 125, 25);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto bottom = bounds.getBottom();
-    auto width = bounds.getWidth();
-
-    auto pass = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[2]);
-    pass->setBounds(
-        bounds.withLeft(5).withRight(width - 5).withTop(bottom - 24).withBottom(bottom - 2));
-    intEditors[2] = std::make_unique<intEditor_t>(std::move(pass));
-}
-
-void ProcessorPane::layoutControlsOBXD4Pole()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 35);
-        lo::knob<55>(*floatEditors[1], 65, 35);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 25);
-    }
-    lo::knob<40>(*floatEditors[2], 138, 15);
-    lo::knob<40>(*floatEditors[3], 138, 75);
-}
-
-void ProcessorPane::layoutControlsWarpFilters()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 25);
-        lo::knob<55>(*floatEditors[1], 65, 25);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 15);
-    }
-    lo::knob<55>(*floatEditors[2], 125, 25);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto bottom = bounds.getBottom();
-    auto width = bounds.getWidth();
-
-    auto pass = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    pass->setBounds(
-        bounds.withLeft(5).withRight(width / 2 - 1).withTop(bottom - 24).withBottom(bottom - 2));
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(pass));
-
-    auto drive = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[3]);
-    drive->setBounds(bounds.withLeft(width / 2 + 1)
-                         .withRight(width - 5)
-                         .withTop(bottom - 48)
-                         .withBottom(bottom - 26));
-    intEditors[3] = std::make_unique<intEditor_t>(std::move(drive));
-
-    auto stage = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[4]);
-    stage->setBounds(bounds.withLeft(width / 2 + 1)
-                         .withRight(width - 5)
-                         .withTop(bottom - 24)
-                         .withBottom(bottom - 2));
-    intEditors[4] = std::make_unique<intEditor_t>(std::move(stage));
-}
-
-void ProcessorPane::layoutControlsVintageLadder()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 25);
-        lo::knob<55>(*floatEditors[1], 65, 25);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 15);
-    }
-    lo::knob<55>(*floatEditors[2], 125, 25);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto bottom = bounds.getBottom();
-    auto width = bounds.getWidth();
-
-    auto method = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[4]);
-    method->setBounds(
-        bounds.withLeft(5).withRight(width - 5).withTop(bottom - 27).withBottom(bottom - 2));
-    intEditors[4] = std::make_unique<intEditor_t>(std::move(method));
-}
-
-void ProcessorPane::layoutControlsTripole()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 25);
-        lo::knob<55>(*floatEditors[1], 65, 25);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 15);
-    }
-    lo::knob<55>(*floatEditors[2], 125, 25);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto bottom = bounds.getBottom();
-    auto width = bounds.getWidth();
-
-    auto pass = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    pass->setBounds(bounds.withLeft(5)
-                        .withRight(width * 5 / 9 + 8)
-                        .withTop(bottom - 24)
-                        .withBottom(bottom - 2));
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(pass));
-
-    auto stage = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[4]);
-    stage->setBounds(bounds.withLeft(width * 5 / 9 + 10)
-                         .withRight(width - 5)
-                         .withTop(bottom - 24)
-                         .withBottom(bottom - 2));
-    intEditors[4] = std::make_unique<intEditor_t>(std::move(stage));
-}
-
-void ProcessorPane::layoutControlsSampleAndHold()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 35);
-        lo::knob<55>(*floatEditors[1], 65, 35);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 25);
-    }
-    lo::knob<55>(*floatEditors[2], 125, 35);
 }
 
 // May want to break this up
