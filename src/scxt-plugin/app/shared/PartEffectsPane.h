@@ -35,7 +35,6 @@
 #include <sst/jucegui/components/NamedPanel.h>
 #include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/GlyphPainter.h>
-#include <sst/jucegui/layouts/ExplicitLayout.h>
 
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -155,24 +154,6 @@ struct PartEffectsPane : public HasEditor,
     juce::Component *addLabel(const std::string &txt)
     {
         return addTypedLabel<sst::jucegui::components::Label>(txt);
-    }
-
-    template <typename T>
-    T *layoutWidgetToFloat(const sst::jucegui::layouts::ExplicitLayout &elo, int index,
-                           const std::string &lotag)
-    {
-        auto r = attachWidgetToFloat<T>(index);
-        r->setBounds(elo.positionFor(lotag));
-        return r;
-    }
-    template <typename T>
-    T *layoutWidgetToFloat(const sst::jucegui::layouts::ExplicitLayout &elo, int index,
-                           const std::string &lotag, const std::string &label)
-    {
-        auto r = layoutWidgetToFloat<T>(elo, index, lotag);
-        auto l = addLabel(label);
-        l->setBounds(elo.labelPositionFor(lotag));
-        return r;
     }
 
     // Generic, no JSON

@@ -37,7 +37,6 @@
 #include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
-#include "sst/jucegui/layouts/ExplicitLayout.h"
 
 namespace scxt::ui::app::shared
 {
