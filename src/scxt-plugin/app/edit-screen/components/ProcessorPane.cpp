@@ -63,6 +63,7 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index, bool fz)
     };
 
     setTogglable(true);
+    setupJsonTypeMap();
 }
 
 ProcessorPane::~ProcessorPane() { resetControls(); }
@@ -131,6 +132,61 @@ void ProcessorPane::resetControls()
     otherEditors.clear();
 
     setToggleDataSource(nullptr);
+}
+
+void ProcessorPane::setupJsonTypeMap()
+{
+    auto a = [this](auto x, auto y) { jsonDefinitions[x] = std::string("voicefx-layouts/") + y; };
+
+    a(dsp::processor::proct_VemberClassic, "filters/vember-classic.json");
+    a(dsp::processor::proct_VemberClassic, "filters/vember-classic.json");
+    a(dsp::processor::proct_obx4, "filters/obxd-4pole.json");
+    a(dsp::processor::proct_diodeladder, "filters/linear-ladder.json");
+    a(dsp::processor::proct_cutoffwarp, "filters/warp.json");
+    a(dsp::processor::proct_reswarp, "filters/warp.json");
+    a(dsp::processor::proct_vintageladder, "filters/vintage-ladder.json");
+    a(dsp::processor::proct_tripole, "filters/tripole.json");
+    a(dsp::processor::proct_snhfilter, "filters/sample-and-hold.json");
+    a(dsp::processor::proct_CytomicSVF, "filters/fast-svf.json");
+    a(dsp::processor::proct_StaticPhaser, "filters/static-phaser.json");
+    a(dsp::processor::proct_fmfilter, "filters/fm-filter.json");
+    a(dsp::processor::proct_utilfilt, "filters/utility-filter.json");
+
+    a(dsp::processor::proct_eq_tilt, "eq/tilt-eq.json");
+
+    a(dsp::processor::proct_osc_correlatednoise, "generators/correlated-noise.json");
+    a(dsp::processor::proct_stringResonator, "generators/string-resonator.json");
+
+    a(dsp::processor::proct_Tremolo, "modulation/tremolo.json");
+    a(dsp::processor::proct_Chorus, "modulation/chorus.json");
+    a(dsp::processor::proct_Phaser, "modulation/phaser.json");
+    a(dsp::processor::proct_shepard, "modulation/shepard.json");
+
+    a(dsp::processor::proct_fx_microgate, "delay/microgate.json");
+    a(dsp::processor::proct_lifted_delay, "delay/lifted-delay.json");
+    a(dsp::processor::proct_fx_simple_delay, "delay/simple-delay.json");
+
+    a(dsp::processor::proct_gainmatrix, "utility/gain-matrix.json");
+    a(dsp::processor::proct_stereotool, "utility/stereo-tool.json");
+
+    a(dsp::processor::proct_fx_ringmod, "audio-rate-mod/ring-mod.json");
+    a(dsp::processor::proct_fx_freqshiftmod, "audio-rate-mod/freq-shift-mod.json");
+    a(dsp::processor::proct_noise_am, "audio-rate-mod/noise-am.json");
+    a(dsp::processor::proct_osc_phasemod, "audio-rate-mod/phase-mod.json");
+
+    a(dsp::processor::proct_fx_bitcrusher, "distortion/bitcrusher.json");
+    a(dsp::processor::proct_fx_waveshaper, "distortion/waveshaper.json");
+
+#if DEBUG
+    for (auto &[_, s] : jsonDefinitions)
+    {
+        auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(s);
+        if (!res.has_value())
+        {
+            SCLOG("Unable to load JSON for " << s);
+        }
+    }
+#endif
 }
 
 void ProcessorPane::rebuildControlsFromDescription()
@@ -227,150 +283,35 @@ void ProcessorPane::rebuildControlsFromDescription()
     mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
     addAdditionalHamburgerComponent(std::move(mixEditor->item));
 
-    switch (processorControlDescription.type)
+    auto jit = jsonDefinitions.find(processorControlDescription.type);
+    if (jit != jsonDefinitions.end())
     {
-    case dsp::processor::proct_VemberClassic:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/vember-classic.json");
-        break;
+        layoutControlsWithJsonEngine(jit->second);
+    }
+    else
+    {
+        switch (processorControlDescription.type)
+        {
+        case dsp::processor::proct_eq_3band_parametric_A:
+            layoutControlsEQNBandParm();
+            break;
 
-    case dsp::processor::proct_K35:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/k35.json");
-        break;
+        case dsp::processor::proct_eq_morph:
+            layoutControlsEQMorph();
+            break;
 
-    case dsp::processor::proct_obx4:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/obxd-4pole.json");
-        break;
-    case dsp::processor::proct_diodeladder:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/linear-ladder.json");
-        break;
+        case dsp::processor::proct_eq_6band:
+            layoutControlsEQGraphic();
+            break;
 
-    case dsp::processor::proct_cutoffwarp:
-    case dsp::processor::proct_reswarp:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/warp.json");
-        break;
+        case dsp::processor::proct_osc_EBWaveforms:
+            layoutControlsEBWaveforms();
+            break;
 
-    case dsp::processor::proct_vintageladder:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/vintage-ladder.json");
-        break;
-
-    case dsp::processor::proct_tripole:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/tripole.json");
-        break;
-
-    case dsp::processor::proct_snhfilter:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/sample-and-hold.json");
-        break;
-
-    case dsp::processor::proct_fx_microgate:
-        layoutControlsWithJsonEngine("voicefx-layouts/delay/micrograte.json");
-        break;
-
-    case dsp::processor::proct_stereotool:
-        layoutControlsWithJsonEngine("voicefx-layouts/utility/stereo-tool.json");
-        break;
-
-    case dsp::processor::proct_gainmatrix:
-        layoutControlsWithJsonEngine("voicefx-layouts/utility/gain-matrix.json");
-        break;
-
-    case dsp::processor::proct_CytomicSVF:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/fast-svf.json");
-        break;
-
-    case dsp::processor::proct_eq_1band_parametric_A:
-    case dsp::processor::proct_eq_2band_parametric_A:
-    case dsp::processor::proct_eq_3band_parametric_A:
-        layoutControlsEQNBandParm();
-        break;
-
-    case dsp::processor::proct_eq_tilt:
-        layoutControlsWithJsonEngine("voicefx-layouts/eq/tilt-eq.json");
-        break;
-
-    case dsp::processor::proct_eq_morph:
-        layoutControlsEQMorph();
-        break;
-
-    case dsp::processor::proct_eq_6band:
-        layoutControlsEQGraphic();
-        break;
-
-    case dsp::processor::proct_osc_correlatednoise:
-        layoutControlsWithJsonEngine("voicefx-layouts/generators/correlated-noise.json");
-        break;
-
-    case dsp::processor::proct_stringResonator:
-        layoutControlsWithJsonEngine("voicefx-layouts/generators/string-resonator.json");
-        break;
-
-    case dsp::processor::proct_StaticPhaser:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/static-phaser.json");
-        break;
-
-    case dsp::processor::proct_fmfilter:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/fm-filter.json");
-        break;
-
-    case dsp::processor::proct_Tremolo:
-        layoutControlsWithJsonEngine("voicefx-layouts/modulation/tremolo.json");
-        break;
-
-    case dsp::processor::proct_Phaser:
-        layoutControlsWithJsonEngine("voicefx-layouts/modulation/phaser.json");
-        break;
-
-    case dsp::processor::proct_Chorus:
-        layoutControlsWithJsonEngine("voicefx-layouts/modulation/chorus.json");
-        break;
-
-    case dsp::processor::proct_fx_ringmod:
-        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/ring-mod.json");
-        break;
-
-    case dsp::processor::proct_osc_EBWaveforms:
-        layoutControlsEBWaveforms();
-        break;
-
-    case dsp::processor::proct_fx_freqshiftmod:
-        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/freq-shift-mod.json");
-        break;
-
-    case dsp::processor::proct_lifted_delay:
-        layoutControlsWithJsonEngine("voicefx-layouts/delay/lifted-delay.json");
-        break;
-
-    case dsp::processor::proct_fx_bitcrusher:
-        layoutControlsWithJsonEngine("voicefx-layouts/distortion/bitcrusher.json");
-        break;
-
-    case dsp::processor::proct_noise_am:
-        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/noise-am.json");
-        break;
-
-    case dsp::processor::proct_osc_phasemod:
-        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/phase-mod.json");
-        break;
-
-    case dsp::processor::proct_shepard:
-        layoutControlsWithJsonEngine("voicefx-layouts/modulation/shepard.json");
-        break;
-
-    case dsp::processor::proct_fx_simple_delay:
-        layoutControlsWithJsonEngine("voicefx-layouts/delay/simple-delay.json");
-        break;
-
-    case dsp::processor::proct_fx_waveshaper:
-        // layoutControlsWaveshaper();
-        layoutControlsWithJsonEngine("voicefx-layouts/distortion/waveshaper.json");
-        break;
-
-    case dsp::processor::proct_utilfilt:
-        layoutControlsWithJsonEngine("voicefx-layouts/filters/utility-filter.json");
-        break;
-
-    default:
-        layoutControls();
-        break;
+        default:
+            layoutControls();
+            break;
+        }
     }
 
     if (processorControlDescription.supportsKeytrack)

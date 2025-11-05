@@ -116,7 +116,7 @@
       "class": "knob40",
       "binding": {
         "type": "float",
-        "index": 7
+        "index": 6
       },
       "label": "Rate",
       "position": {
@@ -128,7 +128,7 @@
       "class": "knob40",
       "binding": {
         "type": "float",
-        "index": 8
+        "index": 7
       },
       "label": "Depth",
       "position": {
