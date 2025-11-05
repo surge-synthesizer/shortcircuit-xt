@@ -31,8 +31,7 @@
 #include <vector>
 #include <cassert>
 #include <juce_gui_basics/juce_gui_basics.h>
-
-#include "sst/jucegui/components/LabeledItem.h"
+#include "sst/jucegui/components/Label.h"
 
 namespace scxt::ui::theme::layout
 {
@@ -46,25 +45,26 @@ static constexpr int mediumKnob{40};
 static constexpr int mediumSmallKnob{32};
 } // namespace constants
 
+template <typename T> struct Labeled
+{
+    Labeled() = default;
+    ~Labeled() = default;
+    template <typename W> Labeled(std::unique_ptr<W> &&inItem) : item{std::move(inItem)} {}
+    std::unique_ptr<T> item;
+    std::unique_ptr<sst::jucegui::components::Label> label;
+
+    void setVisible(bool b)
+    {
+        item->setVisible(b);
+        label->setVisible(b);
+    }
+};
 using coord_t = int;
 using posn_t = juce::Rectangle<coord_t>;
 
 inline posn_t belowWithHeight(const posn_t &p, int withHeight)
 {
     return {p.getX(), p.getY() + p.getHeight(), p.getWidth(), withHeight};
-}
-
-inline posn_t belowLabel(const posn_t &p)
-{
-    return {p.getX(),
-            p.getY() + p.getHeight() + constants::labelHeight + 2 * constants::labelMargin,
-            p.getWidth(), p.getHeight()};
-}
-
-inline posn_t toRightOf(const posn_t &p)
-{
-    return {p.getX() + p.getWidth() + constants::labelMargin, p.getY(), p.getWidth(),
-            p.getHeight()};
 }
 
 inline posn_t labelBelow(const posn_t &p)
@@ -105,23 +105,20 @@ inline std::vector<coord_t> columnCenterX(const posn_t &r, int N)
     return res;
 }
 
-template <typename T>
-inline posn_t labeledAt(const sst::jucegui::components::Labeled<T> &lt, const posn_t &p)
+template <typename T> inline posn_t labeledAt(const Labeled<T> &lt, const posn_t &p)
 {
     lt.item->setBounds(p);
     lt.label->setBounds(labelBelow(p));
     return p;
 }
 
-template <int size, typename T>
-inline posn_t knob(sst::jucegui::components::Labeled<T> &lt, float x, float y)
+template <int size, typename T> inline posn_t knob(Labeled<T> &lt, float x, float y)
 {
     auto kc = posn_t(x, y, size, size);
     return labeledAt(lt, kc);
 }
 
-template <int size, typename T>
-inline posn_t knobCX(sst::jucegui::components::Labeled<T> &lt, float x, float y)
+template <int size, typename T> inline posn_t knobCX(Labeled<T> &lt, float x, float y)
 {
     return knob<size, T>(lt, x - size / 2, y);
 }

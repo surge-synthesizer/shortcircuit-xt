@@ -36,16 +36,15 @@
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TextPushButton.h"
-#include "sst/jucegui/components/LabeledItem.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/GlyphPainter.h"
-#include "sst/jucegui/layouts/ExplicitLayout.h"
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/layouts/JsonLayoutEngine.h"
 #include "dsp/processor/processor.h"
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/zone.h"
+#include "theme/Layout.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -104,13 +103,13 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     void layoutControlsWithJsonEngine(const std::string &jsonpath);
 
+    // massive swaths of this can go in the near future
     template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<
-        sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>
+    std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>
     createWidgetAttachedTo(const std::unique_ptr<attachment_t> &at, const std::string &label)
     {
         auto res = std::make_unique<
-            sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>();
+            theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>();
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
         setupWidgetForValueTooltip(kn.get(), at);
@@ -156,12 +155,11 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     }
 
     template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<
-        sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>>
+    std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>>
     createWidgetAttachedTo(const std::unique_ptr<int_attachment_t> &at, const std::string &label)
     {
         auto res = std::make_unique<
-            sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
+            theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
         res->item = createWidgetAttachedTo<T>(at);
         auto lb = std::make_unique<sst::jucegui::components::Label>();
         lb->setText(label);
@@ -200,10 +198,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     bool multiZone{false};
 
-    using floatEditor_t =
-        sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>;
-    using intEditor_t =
-        sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>;
+    using floatEditor_t = theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>;
+    using intEditor_t = theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>;
 
     std::array<std::unique_ptr<floatEditor_t>, dsp::processor::maxProcessorFloatParams>
         floatEditors;
@@ -222,8 +218,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     std::vector<std::unique_ptr<juce::Component>> otherEditors;
 
-    std::unique_ptr<
-        sst::jucegui::components::Labeled<sst::jucegui::components::ContinuousParamEditor>>
+    std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>
         mixEditor;
     std::unique_ptr<attachment_t> mixAttachment;
 
@@ -231,32 +226,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     std::unique_ptr<sst::jucegui::components::TextPushButton> multiButton;
 
     std::string multiName;
-
-    // Layout helpers
-    std::unique_ptr<intEditor_t>
-    createAndLayoutPowerButton(const sst::jucegui::layouts::ExplicitLayout &elo,
-                               const std::string &lotag,
-                               const std::unique_ptr<int_attachment_t> &at)
-    {
-        namespace jcmp = sst::jucegui::components;
-        auto res = createWidgetAttachedTo<jcmp::ToggleButton>(at);
-        res->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-        res->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
-        res->setBounds(elo.powerButtonPositionFor(lotag));
-        return std::make_unique<intEditor_t>(std::move(res));
-    }
-
-    template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<floatEditor_t> createAndLayoutLabeledFloatWidget(
-        const sst::jucegui::layouts::ExplicitLayout &elo, const std::string &lotag,
-        const std::unique_ptr<attachment_t> &at, const std::string &label = "")
-    {
-        auto res = createWidgetAttachedTo<T>(at, label.empty() ? at->getLabel() : label);
-        res->item->setBounds(elo.positionFor(lotag));
-        res->label->setBounds(elo.labelPositionFor(lotag));
-
-        return res;
-    }
 
     std::string resolveJsonPath(const std::string &path) const override;
     void createBindAndPosition(const sst::jucegui::layouts::json_document::Control &,

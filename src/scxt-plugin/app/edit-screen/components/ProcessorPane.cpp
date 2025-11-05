@@ -37,7 +37,6 @@
 #include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
 #include "sst/jucegui/components/HSliderFilled.h"
-#include "sst/jucegui/layouts/ExplicitLayout.h"
 #include "sst/jucegui/layouts/ListLayout.h"
 #include "sst/waveshapers/WaveshaperConfiguration.h"
 #include "sst/filters/FilterConfigurationLabels.h"
@@ -461,7 +460,7 @@ void ProcessorPane::layoutControls()
         getContentAreaComponent()->addAndMakeVisible(*label);
 
         intEditors[i] = std::make_unique<
-            sst::jucegui::components::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
+            theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
         intEditors[i]->item = std::move(kn);
         intEditors[i]->label = std::move(label);
 

@@ -268,7 +268,8 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     OutputPane<OTTraits> *parent{nullptr};
     std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
-    std::unique_ptr<jcmp::Labeled<jcmp::HSliderFilled>> velocitySensitivitySlider;
+    std::unique_ptr<jcmp::HSliderFilled> velocitySensitivitySlider;
+    std::unique_ptr<jcmp::Label> velocitySensitivityLabel;
 
     std::unique_ptr<bool_attachment_t> oversampleAttachment;
     std::unique_ptr<jcmp::ToggleButton> oversampleButton;
@@ -283,8 +284,11 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
 
         if constexpr (!OTTraits::forZone)
         {
-            fac::attachLabelAndAdd(info, info.velocitySensitivity, this,
-                                   velocitySensitivityAttachment, velocitySensitivitySlider, "Vel");
+            fac::attachAndAdd(info, info.velocitySensitivity, this, velocitySensitivityAttachment,
+                              velocitySensitivitySlider);
+            velocitySensitivityLabel = std::make_unique<jcmp::Label>();
+            velocitySensitivityLabel->setText("Vel");
+            addAndMakeVisible(*velocitySensitivityLabel);
             using bfac = connectors::BooleanSingleValueFactory<
                 bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
             bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
@@ -316,8 +320,8 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         {
             auto b = getLocalBounds();
             auto op = b.withTop(b.getBottom() - 20).translated(0, -27).reduced(30, 4);
-            velocitySensitivitySlider->item->setBounds(op.withTrimmedLeft(30));
-            velocitySensitivitySlider->label->setBounds(op.withWidth(30));
+            velocitySensitivitySlider->setBounds(op.withTrimmedLeft(30));
+            velocitySensitivityLabel->setBounds(op.withWidth(30));
         }
 
         if (!OTTraits::forZone && oversampleButton)
